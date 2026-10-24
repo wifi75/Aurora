@@ -31,6 +31,7 @@ Versione 0.9.0, provata dal vivo con JTDX 2.2.159 e una radio reale.
 - **Sei lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) e un tooltip su ogni controllo.
 - **Guida e statistiche**: guida in-app breve nelle sei lingue; pagina Statistiche con premi, QSO per banda e paesi mancanti; i tuoi messaggi trasmessi compaiono come righe `Tx`.
 - **DX Cluster, orologio, log**: finestra DX Cluster (server telnet pubblici o propri, doppio clic = la radio va sulla frequenza dello spot), client NTP con indicatore dell'orologio, impostazioni vere di JTDX lette dal suo file e finestra Log di Log4OM2 in sola lettura.
+- **Strumenti della stazione**: livello dell'audio in ingresso con cursore e AUTO sul volume di registrazione di Windows, storico dei messaggi ricevuti (30 giorni, ricercabile), spot del cluster sulla cascata, diagnosi automatica (orologio, audio, nominativo), pagina Propagazione con PSK Reporter e hamqsl.com (**spenti finche' non li accendi**) e mappa dei QSO e delle stazioni ricevute.
 - **Telefono**: PWA sulla stessa rete; associazione con codice (durata decisa da te) oppure accesso senza codice per le prove.
 
 Cosa manca: `docs/mancante.md`. Esiti delle prove con JTDX: `docs/fase0-rapporto.md`.
