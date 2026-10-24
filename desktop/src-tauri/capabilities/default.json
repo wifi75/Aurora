@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "La finestra di Aurora mostra la pagina del core locale e non chiama il guscio: nessun permesso in piu'.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

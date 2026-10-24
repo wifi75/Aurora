@@ -36,6 +36,10 @@ Versione 0.10.0, provata dal vivo con JTDX 2.2.159 e una radio reale.
 
 Cosa manca: `docs/mancante.md`. Esiti delle prove con JTDX: `docs/fase0-rapporto.md`.
 
+## Installazione (Windows)
+
+Il modo piu' semplice: l'installatore `Aurora_X.Y.Z_x64-setup.exe` (programma con vassoio, avvio con Windows e aggiornamenti firmati). Come si installa, dove stanno i dati e come si fa un rilascio: `docs/installer-windows.md`.
+
 ## Avvio rapido (Windows)
 
 ```

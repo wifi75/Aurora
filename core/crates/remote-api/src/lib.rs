@@ -314,7 +314,7 @@ impl AppState {
         self.current_status().is_some()
     }
 
-    pub(crate) fn current_status(&self) -> Option<StationStatus> {
+    pub fn current_status(&self) -> Option<StationStatus> {
         self.shared.lock().ok().and_then(|s| s.status.clone())
     }
 }

@@ -5,3 +5,5 @@ captures/
 data/
 node_modules/
 dist/
+desktop/src-tauri/gen/
+dist-release/
