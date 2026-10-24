@@ -159,3 +159,27 @@ async fn ws_closed_on_shutdown() {
     .await;
     assert_eq!(closed, Ok(true), "il flusso doveva chiudersi allo spegnimento");
 }
+
+#[tokio::test]
+async fn invalid_spectrum_row_is_not_forwarded_to_clients() {
+    let s = state();
+    let addr = serve(&s).await;
+    let cookie = cookie_for(&s);
+    let (mut ws, _) = connect_async(ws_request(addr, Some(&cookie))).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    let spectrum = s.bus.spectrum();
+    spectrum.send(SpectrumRow { seq: 1, f_min_hz: 0, f_max_hz: 3000, bins: vec![] }).unwrap();
+    spectrum.send(SpectrumRow { seq: 2, f_min_hz: 0, f_max_hz: 3000, bins: vec![0; 5000] }).unwrap();
+    spectrum.send(SpectrumRow { seq: 3, f_min_hz: 3000, f_max_hz: 0, bins: vec![1; 8] }).unwrap();
+    spectrum.send(row(4)).unwrap();
+    let msg = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if let Some(Ok(Message::Binary(b))) = ws.next().await {
+                return b;
+            }
+        }
+    })
+    .await
+    .expect("deve arrivare almeno la riga valida");
+    assert_eq!(u64::from_be_bytes(msg[1..9].try_into().unwrap()), 4, "le righe non valide non vanno inoltrate");
+}

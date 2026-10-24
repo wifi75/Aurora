@@ -37,6 +37,14 @@ export async function getHealth(): Promise<Health> {
   return HealthSchema.parse(await (await request('/health')).json());
 }
 
+/** Il dispositivo e' associato? Solo un 401 vuol dire "no"; ogni altro errore e' un problema di rete. */
+export async function checkSession(): Promise<boolean> {
+  const response = await fetch(`${BASE}/devices`, { credentials: 'include' });
+  if (response.status === 401) return false;
+  if (!response.ok) throw new ApiError(response.status, 'error');
+  return true;
+}
+
 export async function postHalt(): Promise<void> {
   await request('/commands/halt-tx', { method: 'POST' });
 }

@@ -38,11 +38,14 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
     let mut spectrum = state.bus.subscribe_spectrum();
     let mut check = interval(REVOCATION_CHECK);
     let mut stop = state.subscribe_shutdown();
+    if *stop.borrow() {
+        return;
+    }
 
-    if let Some(status) = state.current_status() {
-        if !send_event(&mut socket, &Event::Status(status)).await {
-            return;
-        }
+    if let Some(status) = state.current_status()
+        && !send_event(&mut socket, &Event::Status(status)).await
+    {
+        return;
     }
 
     loop {
@@ -51,15 +54,21 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
                 Ok(event) => if !send_event(&mut socket, &event).await { return; },
                 // Un client in ritardo riparte dallo stato corrente, non dagli arretrati.
                 Err(RecvError::Lagged(_)) => {
-                    if let Some(status) = state.current_status() {
-                        if !send_event(&mut socket, &Event::Status(status)).await { return; }
+                    if let Some(status) = state.current_status()
+                        && !send_event(&mut socket, &Event::Status(status)).await
+                    {
+                        return;
                     }
                 }
                 Err(RecvError::Closed) => return,
             },
             received = spectrum.recv() => match received {
                 Ok(row) => {
-                    if !send(&mut socket, Message::Binary(encode_spectrum(&row).into())).await { return; }
+                    if let Err(e) = row.validate() {
+                        tracing::warn!("riga di spettro scartata: {e}");
+                    } else if !send(&mut socket, Message::Binary(encode_spectrum(&row).into())).await {
+                        return;
+                    }
                 }
                 Err(RecvError::Lagged(_)) => {}
                 Err(RecvError::Closed) => return,

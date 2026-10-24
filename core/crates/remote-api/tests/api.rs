@@ -47,7 +47,7 @@ async fn unknown_cookie_is_401() {
 async fn pair_flow_sets_httponly_samesite_cookie() {
     let s = state();
     let app = router(&s);
-    let start = call(&app, req(Method::POST, "/api/v1/pair/start").from_loopback()).await;
+    let start = call(&app, req(Method::POST, "/api/v1/pair/start").via_loopback()).await;
     status_is(&start, StatusCode::OK);
     let j = body_json(start).await;
     let code = j["code"].as_str().unwrap().to_string();
@@ -83,7 +83,7 @@ async fn pair_start_refuses_non_loopback() {
 async fn locked_pairing_returns_429_with_retry_after() {
     let s = state();
     let app = router(&s);
-    call(&app, req(Method::POST, "/api/v1/pair/start").from_loopback()).await;
+    call(&app, req(Method::POST, "/api/v1/pair/start").via_loopback()).await;
     let wrong = r#"{"code":"00000000","device_name":"x"}"#;
     let mut last = None;
     for _ in 0..6 {

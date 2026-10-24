@@ -29,6 +29,8 @@ pub struct Config {
     pub engine: EngineKind,
     /// Durata del ciclo del simulatore, in millisecondi.
     pub cycle_ms: u64,
+    /// Cookie di sessione con attributo `Secure`: da attivare quando si arriva in HTTPS (Tailscale, Cloudflare).
+    pub secure_cookie: bool,
 }
 
 #[derive(Debug)]
@@ -77,6 +79,7 @@ impl Config {
             ui_dir: get("AURORA_UI_DIR").map(PathBuf::from),
             engine,
             cycle_ms,
+            secure_cookie: matches!(get("AURORA_SECURE_COOKIE").as_deref(), Some("1" | "true")),
         })
     }
 }
@@ -109,7 +112,7 @@ pub async fn run(
 ) -> Result<RunningServer, StartError> {
     let (auth, logbook) = open_storage(&config.data_dir)?;
     let bus = Bus::new(4096);
-    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe(), false);
+    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe(), config.secure_cookie);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };

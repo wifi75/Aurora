@@ -64,7 +64,7 @@ impl Req {
         self.headers.push((k, v));
         self
     }
-    pub fn from_loopback(mut self) -> Self {
+    pub fn via_loopback(mut self) -> Self {
         self.peer = loopback();
         self
     }

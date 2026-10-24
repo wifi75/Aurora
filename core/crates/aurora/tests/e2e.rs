@@ -30,6 +30,7 @@ fn config(ui_dir: Option<PathBuf>) -> Config {
         ui_dir,
         engine: EngineKind::Sim,
         cycle_ms: 300,
+        secure_cookie: false,
     }
 }
 
@@ -166,11 +167,11 @@ async fn e2e_decode_with_tag_roundtrips_to_json() {
     let mut ws = open_ws(server.addr, &cookie_for(&server)).await;
     let mut tagged = false;
     for _ in 0..60 {
-        if let Some(Event::Decode(d)) = next_event(&mut ws, 1).await {
-            if matches!(d.tag, Some(DecodeTag::Cq | DecodeTag::NewDxcc | DecodeTag::NewZone)) {
-                tagged = true;
-                break;
-            }
+        if let Some(Event::Decode(d)) = next_event(&mut ws, 1).await
+            && matches!(d.tag, Some(DecodeTag::Cq | DecodeTag::NewDxcc | DecodeTag::NewZone))
+        {
+            tagged = true;
+            break;
         }
     }
     assert!(tagged, "nessun decode con etichetta");
@@ -220,18 +221,21 @@ fn config_defaults_and_overrides_and_errors() {
     assert_eq!(c.bind, "127.0.0.1:8787".parse::<SocketAddr>().unwrap());
     assert_eq!(c.cycle_ms, 15_000);
     assert!(c.ui_dir.is_none());
+    assert!(!c.secure_cookie);
     assert!(matches!(c.engine, EngineKind::Sim));
 
     let env = |k: &str| match k {
         "AURORA_BIND" => Some("0.0.0.0:9000".to_string()),
         "AURORA_UI_DIR" => Some("ui".to_string()),
         "AURORA_SIM_CYCLE_MS" => Some("500".to_string()),
+        "AURORA_SECURE_COOKIE" => Some("1".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
     assert_eq!(c.bind.port(), 9000);
     assert_eq!(c.ui_dir, Some(PathBuf::from("ui")));
     assert_eq!(c.cycle_ms, 500);
+    assert!(c.secure_cookie);
 
     assert!(Config::from_lookup(|k| (k == "AURORA_BIND").then(|| "non-un-indirizzo".to_string())).is_err());
     assert!(Config::from_lookup(|k| (k == "AURORA_ENGINE").then(|| "jtdx".to_string())).is_err());

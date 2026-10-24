@@ -6,16 +6,39 @@ Progettazione e sviluppo: Tiziano Cassone
 
 ## Stato
 
-Fase 0 (spike di fattibilita' su JTDX). Nessuna interfaccia ancora.
+Versione 0.2.0: core e interfaccia funzionanti su una **stazione simulata** (cascata, decode, STOP TX, associazione del telefono).
+Il collegamento reale a JTDX è in corso (Fase 0: prove su JTDX 159, vedi `docs/fase0-rapporto.md`).
+
+## Avvio rapido (Windows)
+
+```
+.\scripts\avvia-sviluppo.ps1
+```
+
+Avvia il core (porta 8787) e l'interfaccia (porta 5173) in una sola tab di Windows Terminal. Poi apri `http://127.0.0.1:5173`.
+
+### Associare un telefono
+
+Con Aurora acceso sul PC:
+
+```
+.\scripts\associa-telefono.ps1
+```
+
+Mostra un codice di 8 cifre e un QR (valgono 2 minuti). Inquadra il QR con il telefono (stessa rete Wi-Fi), dai un nome al dispositivo e conferma.
+Nessuna password: l'accesso è per dispositivo associato; si revoca dall'elenco dei dispositivi.
 
 ## Documentazione
 
 - Specifica: `docs/2026-10-24-aurora-design.md`
-- Piano 1: `docs/2026-10-24-aurora-fase0-spike-plan.md`
+- API: `docs/api.md`
+- Piano 1 (Fase 0): `docs/2026-10-24-aurora-fase0-spike-plan.md` · Piano 2 (core e interfaccia): `docs/2026-10-24-aurora-piano2-core-ui.md`
+- Rapporti: `docs/fase0-rapporto.md`, `docs/piano2-rapporto.md`
 
 ## Sviluppo
 
 ```
-cd core
-cargo test --workspace
+cd core && cargo test --workspace      # test del core
+cd app && npm install && npm test      # test dell'interfaccia
+cd app && npm run build                # build di produzione (tsc + vite)
 ```
