@@ -44,6 +44,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
         .route("/api/v1/input-level", get(input_level_get).put(input_level_put))
+        .route("/api/v1/engine/native", get(native_engine_get))
         .route("/api/v1/online", get(online_get).put(online_put))
         .route("/api/v1/online/psk", get(online_psk))
         .route("/api/v1/online/solar", get(online_solar))
@@ -573,6 +574,13 @@ fn input_level_service(state: &AppState) -> Result<std::sync::Arc<input_level::I
 }
 
 /// Il volume di registrazione di Windows dell'ingresso audio e se la regolazione automatica (AUTO) e' accesa.
+/// Il motore proprio: decodifica in ombra dall'audio e confronto con i messaggi di JTDX (quota ritrovata, messaggi solo di uno dei due).
+#[utoipa::path(get, path = "/api/v1/engine/native", responses((status = 200, description = "Stato e confronto con JTDX; `enabled: false` se spento")))]
+async fn native_engine_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    let status = state.native_status.read().ok().and_then(|slot| slot.as_ref().map(|f| f()));
+    Json(status.unwrap_or_else(|| json!({ "enabled": false })))
+}
+
 #[utoipa::path(get, path = "/api/v1/input-level", responses((status = 200, description = "Dispositivo, volume 0-100 e AUTO"), (status = 404, description = "Nessun ingresso audio regolabile (input_level_unavailable)"), (status = 502, description = "Il dispositivo non risponde (input_level_device)")))]
 async fn input_level_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let service = input_level_service(&state)?;

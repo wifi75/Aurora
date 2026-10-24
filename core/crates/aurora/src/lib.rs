@@ -13,7 +13,7 @@ pub mod online;
 pub mod updates;
 pub mod wanted;
 
-use audio_spectrum::run_capture;
+use audio_spectrum::run_capture_tapped;
 use auth::{DeviceStore, SystemClock};
 use aurora_core::{Bus, Engine, EngineIo, Event, StationStatus};
 use axum::{http::StatusCode, routing::any};
@@ -91,6 +91,8 @@ pub struct Config {
     pub open_access: bool,
     /// Chi arriva da questo PC entra senza codice (programma Windows). Dall'ambiente: `AURORA_TRUST_LOCAL=1`.
     pub local_trust: bool,
+    /// Il motore proprio decodifica in ombra dall'audio e si confronta con JTDX. Dall'ambiente: `AURORA_NATIVE_DECODE=1`.
+    pub native_decode: bool,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
     /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
@@ -142,6 +144,7 @@ impl Config {
             pair_ttl_secs: 600,
             open_access: false,
             local_trust: false,
+            native_decode: false,
             log4om_db: None,
             jtdx_ini: None,
         }
@@ -242,6 +245,11 @@ impl Config {
                 None | Some("0") => false,
                 Some("1") => true,
                 Some(other) => return Err(StartError::BadConfig(format!("AURORA_TRUST_LOCAL deve essere 0 o 1, non {other}"))),
+            },
+            native_decode: match get("AURORA_NATIVE_DECODE").as_deref() {
+                None | Some("0") => false,
+                Some("1") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_NATIVE_DECODE deve essere 0 o 1, non {other}"))),
             },
             pair_ttl_secs: match get("AURORA_PAIR_TTL_SECS") {
                 None => 600,
@@ -776,13 +784,21 @@ pub async fn run(
     }
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
-    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture(Some(hint), bus.spectrum(), bus.events()) {
+    let (native_tx, native_rx) = std::sync::mpsc::channel();
+    let tap = config.native_decode.then_some(native_tx);
+    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture_tapped(Some(hint), bus.spectrum(), bus.events(), tap) {
         Ok(handle) => Some(handle),
         Err(e) => {
             tracing::warn!("cascata audio non attiva: {e}");
             None
         }
     });
+
+    // il motore proprio decodifica in ombra l'audio della cascata e si confronta con JTDX
+    if config.native_decode && audio.is_some() {
+        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone());
+        state.set_native_status(Arc::new(move || engine.status()));
+    }
 
     let listener = TcpListener::bind(config.bind)
         .await

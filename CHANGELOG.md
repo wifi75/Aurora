@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Motore proprio, ricezione FT8 (in ombra)**: crate `ft8` (messaggi a 77 bit, CRC, LDPC con BP e OSD, sincronismo, decoder del periodo con sottrazione, modulazione GFSK) e crate `engine-native` (audio a 12 kHz, periodi UTC di 15 s, decodifica, confronto con JTDX). Decodifica in ombra accanto a JTDX, scrive `native-decodes.log` e `native-parity.log` nella cartella dei dati e racconta il confronto in `GET /api/v1/engine/native`. Acceso nel programma Windows (`AURORA_NATIVE_DECODE=0` lo spegne). Algoritmi di JTDX 2.2.159 e WSJT-X (GPL 3).
+- **Analisi di Decodium** (sorgente pubblico e REA): CAT per tutte le radio (`docs/analisi-decodium-cat.md`), cascata (`docs/analisi-decodium-cascata.md`), banda satura (`docs/analisi-decodium-banda-satura.md`).
 
 ## 0.10.6 - 2026-10-24
 - **Niente finestra di PowerShell**: cambiando banda (e nelle altre letture della radio) si apriva per un attimo una finestra nera di PowerShell; ora parte nascosta, come gia' faceva la sessione fissa. Vale anche per l'avvio dell'installatore dell'aggiornamento e per la correzione dell'ora.
