@@ -29,6 +29,8 @@ pub type RulesSaver = Arc<dyn Fn(&Rules) + Send + Sync>;
 pub type Log4omProvider = Arc<dyn Fn(usize) -> Result<serde_json::Value, String> + Send + Sync>;
 /// Legge le impostazioni di JTDX dal suo file di configurazione (sola lettura).
 pub type JtdxConfigProvider = Arc<dyn Fn() -> Result<serde_json::Value, String> + Send + Sync>;
+/// Dato un nominativo, paese e zone dal file cty.dat.
+pub type DxccProvider = Arc<dyn Fn(&str) -> Option<serde_json::Value> + Send + Sync>;
 pub type StatsProvider = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
 
 const MAX_KNOWN_DECODES: usize = 500;
@@ -62,6 +64,7 @@ pub struct AppState {
     pub clock: Option<Arc<clock_sync::ClockService>>,
     /// Client DX Cluster: spot dei cluster telnet.
     pub cluster: Option<Arc<dx_cluster::ClusterService>>,
+    pub dxcc: Option<DxccProvider>,
     /// Preferenze dell'interfaccia salvate sul server.
     pub ui_settings: Option<Arc<ui_settings::UiSettings>>,
     pub rules_saver: Option<RulesSaver>,
@@ -112,7 +115,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, jtdx_config: None, clock: None, cluster: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, jtdx_config: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -130,6 +133,11 @@ impl AppState {
 
     pub fn with_clock(mut self, clock: Arc<clock_sync::ClockService>) -> AppState {
         self.clock = Some(clock);
+        self
+    }
+
+    pub fn with_dxcc_if(mut self, lookup: Option<DxccProvider>) -> AppState {
+        self.dxcc = lookup;
         self
     }
 

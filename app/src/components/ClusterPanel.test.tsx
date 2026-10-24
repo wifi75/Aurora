@@ -38,7 +38,7 @@ describe('ClusterPanel', () => {
     vi.mocked(getClusterSpots).mockResolvedValue({ config: config(false), servers: [], spots: [] });
     show();
     expect(await screen.findByText(/DX Cluster è spento/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Apri le impostazioni' })).toHaveAttribute('href', '#/impostazioni');
+    expect(screen.getByRole('link', { name: 'Apri le impostazioni' })).toHaveAttribute('href', '#/impostazioni/cluster');
   });
 
   it('asks for the callsign when it is missing', async () => {

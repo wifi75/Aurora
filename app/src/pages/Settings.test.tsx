@@ -23,6 +23,7 @@ vi.mock('../api/client', () => ({
     worked_qsos: 2056,
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   }),
+  getClock: vi.fn().mockResolvedValue({ config: { enabled: true, servers: ['it.pool.ntp.org'], interval_secs: 900, warn_ms: 200, auto_correct: false }, last: null }),
   getJtdxConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
   getFrequencies: vi.fn().mockResolvedValue([{ band: '20m', mode: 'FT8', hz: 14_074_000 }]),
   putFrequencies: vi.fn().mockResolvedValue(undefined),
@@ -74,6 +75,15 @@ function open() {
 const goTo = (name: string) => fireEvent.click(screen.getByRole('tab', { name }));
 
 describe('Settings tabs', () => {
+  it('opens straight on the tab asked by the link', () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Settings initialTab="clock" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole('tab', { name: 'Orologio' })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('has a separate tab for each configuration function, in JTDX order, and shows one at a time', () => {
     open();
     const names = screen.getAllByRole('tab').map((t) => t.textContent);

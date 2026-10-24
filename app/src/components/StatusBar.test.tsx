@@ -38,11 +38,9 @@ describe('StatusBar', () => {
     expect(container.querySelector('.pill--dx')).toBeNull();
   });
 
-  it('still shows band, frequency, mode and own station', () => {
+  it('keeps only the link and the frequency: band, mode, state and own station are shown elsewhere', () => {
     render(<StatusBar status={base} connection="open" />);
-    expect(screen.getByText('15m')).toBeInTheDocument();
     expect(screen.getByText('21.074 MHz')).toBeInTheDocument();
-    expect(screen.getByText('FT8')).toBeInTheDocument();
-    expect(screen.getByText('AA1AA FN42')).toBeInTheDocument();
+    for (const gone of ['15m', 'FT8', 'AA1AA FN42']) expect(screen.queryByText(gone)).toBeNull();
   });
 });

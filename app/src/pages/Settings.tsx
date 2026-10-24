@@ -41,9 +41,9 @@ const TABS: readonly TabDef[] = [
 ];
 
 /** Impostazioni: una scheda per ogni funzione di configurazione, come in JTDX. */
-export function Settings() {
+export function Settings({ initialTab }: { initialTab?: string }) {
   const t = useT();
-  const [id, setId] = useState(TABS[0]!.id);
+  const [id, setId] = useState(TABS.some((x) => x.id === initialTab) ? (initialTab as string) : TABS[0]!.id);
   const tab = TABS.find((x) => x.id === id) ?? TABS[0]!;
   return (
     <div className="settings">

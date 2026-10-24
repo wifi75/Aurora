@@ -48,7 +48,7 @@ export function App() {
   } else if (!session.data) {
     content = <Pair onPaired={onPaired} />;
   } else if (route.name === 'settings') {
-    content = <Settings />;
+    content = <Settings key={route.tab ?? ''} initialTab={route.tab} />;
   } else if (route.name === 'automation') {
     content = <Automation />;
   } else if (route.name === 'stats') {

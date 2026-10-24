@@ -225,7 +225,7 @@ export function Live() {
           onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
         />
       </div>
-      <RxControls mode={status?.mode ?? ''} />
+      <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
       <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
       {note ? (
         <p className="live-toast" role="status" aria-live="polite">

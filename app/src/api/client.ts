@@ -289,6 +289,16 @@ export async function putCluster(config: ClusterConfig): Promise<void> {
   await request('/dx-cluster', { ...jsonInit(config), method: 'PUT' });
 }
 
+/** Paese e zone di un nominativo, dal file dei prefissi (cty.dat); 404 se non lo conosce. */
+export async function getDxcc(call: string): Promise<{ country: string; continent: string; prefix: string; cq_zone: number; itu_zone: number }> {
+  return (await (await request(`/dxcc/${encodeURIComponent(call)}`)).json()) as { country: string; continent: string; prefix: string; cq_zone: number; itu_zone: number };
+}
+
+/** Prova un server: si collega e legge il benvenuto, senza dire chi siamo. */
+export async function testClusterServer(host: string, port: number): Promise<{ ok: boolean; ms: number | null; banner: string | null; error: string | null }> {
+  return (await (await request('/dx-cluster/test', jsonInit({ host, port }))).json()) as { ok: boolean; ms: number | null; banner: string | null; error: string | null };
+}
+
 /** I server DX Cluster pubblici noti. */
 export async function getClusterCatalog(): Promise<ClusterCatalogEntry[]> {
   return (await (await request('/dx-cluster/catalog')).json()) as ClusterCatalogEntry[];

@@ -4,6 +4,7 @@ import { ApiError, checkClock, correctClock, getClock, putClock, type ClockConfi
 import { useT, type T } from '../i18n';
 import { clockInTolerance, offsetLabel } from '../lib/clock';
 import { Check, Help, Row } from './common';
+import { useAutosave } from './useAutosave';
 
 interface Draft {
   enabled: boolean;
@@ -95,6 +96,13 @@ export function ClockTab() {
     onError: (e) => setNote(errorText(e, t)),
   });
 
+  useAutosave(
+    parsed,
+    draft !== null,
+    (config) => save.mutate(config),
+    (config) => void putClock(config).catch(() => undefined),
+  );
+
   if (clock.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!clock.data || !shown) return <p className="muted">{t('set.loading')}</p>;
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
@@ -129,10 +137,7 @@ export function ClockTab() {
         <input type="number" className="set-number" min={10} max={5000} value={shown.warn} onChange={(e) => set({ warn: e.target.value })} />
       </label>
       <Check label={t('clock.auto')} hint={t('tip.clock.auto')} checked={shown.auto} onChange={(v) => set({ auto: v })} />
-      {!parsed ? <p className="notice">{t('clock.invalid')}</p> : null}
-      <button type="button" className="glass glass--on" disabled={!parsed || save.isPending} onClick={() => parsed && save.mutate(parsed)}>
-        {t('clock.save')}
-      </button>
+      {!parsed ? <p className="notice">{t('clock.invalid')}</p> : <Help>{t('clock.autosave')}</Help>}
       {note ? <p className="live-note" role="status">{note}</p> : null}
     </>
   );

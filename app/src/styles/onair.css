@@ -799,3 +799,112 @@
   align-items: center;
   gap: 0.4rem 0.75rem;
 }
+
+/* LED di collegamento: verde raggiungibile, rosso no, grigio che pulsa mentre si verifica */
+.led {
+  display: inline-block;
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: #7d8590;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 40%) inset;
+}
+
+.led--ok {
+  background: #39ff14;
+  box-shadow: 0 0 8px #39ff14;
+}
+
+.led--fail {
+  background: #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+}
+
+.led--testing {
+  animation: led-pulse 1s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led--testing {
+    animation: none;
+  }
+}
+
+/* durante la trasmissione la barra del periodo diventa rossa */
+.period--tx {
+  border-color: #ff4d4d;
+  box-shadow: 0 0 10px rgb(255 77 77 / 45%);
+}
+
+.period--tx .period-fill {
+  background: #ff2d2d;
+  box-shadow: 0 0 10px #ff2d2d;
+}
+
+/* DX Cluster compatto: un rigo per spot, righe alternate in due colori */
+.cluster-table {
+  font-size: 0.68rem;
+  table-layout: auto;
+}
+
+.cluster-table th,
+.cluster-table td {
+  padding: 0.1rem 0.35rem;
+  white-space: nowrap;
+}
+
+.cluster-table td {
+  border-top: 0;
+  vertical-align: middle;
+}
+
+.cluster-who {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 22rem;
+  overflow: hidden;
+}
+
+.cluster-table .cluster-country,
+.cluster-table .cluster-comment {
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cluster-table .cluster-country {
+  flex: 0 1 auto;
+}
+
+.cluster-table .cluster-comment {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}
+
+.cluster-table tbody tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.cluster-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.cluster-table .cluster-row:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.cluster-table .cluster-row--mine {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
