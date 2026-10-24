@@ -83,6 +83,23 @@ Colonna **Pri.**: A = indispensabile per sostituire JTDX nell'uso quotidiano, M 
 | Scaricamento di campioni audio (`Download Samples`) | JTDX | B |
 | Lingue dell'interfaccia (sono presenti traduzioni multiple) | Aurora (italiano per primo) | M |
 
+## Funzioni confermate dal codice di JTDX (azioni e menu trovati con REA, 109 procedure `MainWindow::`)
+
+Fonte: `rea search --kind procedures` su `jtdx.exe` (2026-10-24). Sono le azioni reali del programma, da usare come lista di controllo per la parità.
+
+| Area | Azioni trovate |
+|---|---|
+| **Modi** | FT8, FT4 (profondità *deep*, *medium*, *fast*), JT9, JT65, JT9+JT65, T10, WSPR-2, MT1…MT24 e *MTAuto* (messaggi di più tipi) |
+| **Decodifica** | Quick / Medium / Deepest decode; FT8 su 1, 2 o 3 cicli; FT8 SWL su 1, 2 o 3 cicli; filtro RX basso / medio / alto; decodifica dei file rimasti in una cartella; *Freeze decode*; *Replay decodes* |
+| **Operatività** | Pulsanti **Call CQ** e **Answer CQ**; *Halt Tx* ed *Escape halt*; generazione del messaggio CQ (`genCQMsg`); messaggio libero; priorità del chiamante e ricerca dei CQ; salti della frequenza di trasmissione; disattivare il filtro alla ricezione/invio del 73 |
+| **UDP** | Accettazione dei Reply: solo CQ / CQ e 73 / qualsiasi |
+| **File e log** | Salva tutto / salva i decodificati; apri la cartella dei log; apri / cancella `wsjtx_log.adi`; cancella `ALL.TXT`; cancella tutti i `.wav` della cartella di salvataggio; apri file e *Open next in directory* |
+| **Visualizzazione** | Cascata larga; impostazioni; comandi speciali del mouse; scorciatoie da tastiera |
+| **Lingue** | Catalano, cinese (semplificato e tradizionale), croato, danese, estone, francese, giapponese, inglese, italiano, lettone, olandese, polacco, portoghese (e BR), russo, spagnolo, svedese, ungherese |
+| **Aiuto** | Avviso sul diritto d'autore, sito e forum di JTDX, pagina "funzioni aggiuntive di JTDX improved", prefissi e suffissi, informazioni |
+
+**Limite confermato:** JTDX 159 non accetta `Configure` né `SwitchConfiguration` via UDP: livello di decodifica, filtri, cicli FT8 e simili si cambiano solo dalla sua finestra (oppure riscrivendoli in Aurora). Le azioni che Aurora può comandare da fuori sono Reply, Replay, HaltTx, FreeText, evidenziare un nominativo, frequenza di trasmissione (tipo 50) e `TriggerCQ` (tipo 51).
+
 ## Funzioni nuove proposte (da scegliere con Tiziano)
 
 1. **Automazione dei QSO** con regole, prova a vuoto e salvaguardie (già in specifica §6).

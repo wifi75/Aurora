@@ -96,3 +96,8 @@ Funzioni decompilate: `NetworkMessage::Builder::Builder` (0x5967b0), `MessageCli
 
 **Non accettati**: `Configure` (15), `SwitchConfiguration` (14), `Location` (11) e gli altri tipi: **le impostazioni del motore non si possono cambiare via UDP in JTDX 159.**
 **Controlli**: un messaggio in ingresso e' ignorato se l'**identificativo non coincide** con quello del client JTDX (va copiato dai suoi Heartbeat/Status); se lo schema in ingresso e' piu' alto di quello in uso, JTDX lo adotta.
+
+**`Status` (tipo 1) di JTDX** (`MessageClient::status_update`, 0x56abc0): u64 frequenza, stringhe modo / DX call / rapporto / modo Tx, bool Tx abilitato / in trasmissione / in decodifica, i32 RX DF, i32 TX DF, stringhe mio nominativo / mio locatore / locatore DX, bool watchdog Tx, stringa sotto-modo, bool modo veloce e **un bool finale** (significato da identificare).
+Mancano rispetto a WSJT-X: tolleranza di frequenza, periodo T/R, nome della configurazione e testo di trasmissione. Aurora deve ricavare il periodo dal modo (FT8 15 s, FT4 7,5 s) e non puo' leggere il testo Tx corrente.
+
+**Da confermare con la cattura reale (prova manuale 1):** schema effettivamente usato da JTDX nei suoi pacchetti, significato del bool finale di `Status`, significato dei due bool del segnale `trigger_CQ(testo, bool, bool)` (il tipo 51 in ingresso legge una stringa e un bool). Il gestore e' probabilmente collegato al pulsante "Call CQ" (`on_pbCallCQ_clicked`, 0x4a4880) e a `genCQMsg` (0x4c1da0).
