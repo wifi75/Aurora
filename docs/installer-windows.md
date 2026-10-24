@@ -27,7 +27,7 @@ Una seconda copia lanciata per errore non apre un secondo core: mostra la finest
 2. Quando c'e' una versione nuova arriva una **notifica di Windows**, la barra in alto nella pagina propone *Installa ora* e la voce del vassoio diventa *Installa Aurora X*.
 3. *Installa*: scarica l'installatore e la **firma**, controlla la firma con la chiave pubblica di Aurora (`desktop/updater.pub`, incorporata nel programma) e **solo se e' valida** lo avvia; Aurora si chiude e si riapre da sola. Con una firma sbagliata o mancante non si installa nulla. Non si installa mai mentre si trasmette.
 
-**Repository privato.** `wifi75/Aurora` e' privato: senza token GitHub non lascia vedere ne' scaricare le release. In Impostazioni → Aggiornamenti si incolla un token di **sola lettura** (fine-grained, permesso *Contents: read* su questo repository); resta solo nel file `update.json` dei dati e non esce mai dall'API. Con release pubbliche il token non serve.
+**Repository pubblico.** `wifi75/Aurora` e' pubblico dal 2026-10-24: le release si vedono e si scaricano senza token (verificato con `curl` senza credenziali). Il campo token in Impostazioni → Aggiornamenti serve solo per un repository privato (token di **sola lettura**, *Contents: read*; resta nel file `update.json` dei dati).
 
 ## Per chi rilascia
 
