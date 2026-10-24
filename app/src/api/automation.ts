@@ -13,7 +13,9 @@ export const AutomationStateSchema = z.object({
     /** Risponde anche ai CQ della lista dei desiderati (un core piu' vecchio non lo manda: spento). */
     reply_to_wanted: z.boolean().default(false),
     /** Con piu' CQ interessanti nello stesso ciclo: la novita' piu' rara o il segnale piu' forte (un core piu' vecchio non lo manda: rarita'). */
-    prefer: z.enum(['rarity', 'snr']).default('rarity'),
+    prefer: z.enum(['rarity', 'snr', 'score']).default('rarity'),
+    cooldown_secs: z.number().default(900),
+    respect_cq_direction: z.boolean().default(true),
   }),
   limits: z.object({
     max_consecutive_cycles: z.number(),
