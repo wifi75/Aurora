@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError, getUpdate, installUpdate } from '../api/client';
 import { useT } from '../i18n';
 import { browserStorage } from '../lib/theme';
@@ -33,6 +33,11 @@ export function UpdateBar() {
       setFailure(t('upd.installFailed', { message: error instanceof ApiError ? error.code : '—' }));
     }
   };
+  // quando il core avvisa di una versione nuova i dati della pagina sono vecchi (senza «Installa ora»): si rileggono
+  const refetch = update.refetch;
+  useEffect(() => {
+    if (notice) void refetch();
+  }, [notice, refetch]);
   // l'evento del core arriva subito; il controllo della pagina dopo, con tutti i dettagli
   const release = update.data?.available ?? (notice ? { version: notice.version, tag: notice.tag, name: '', url: notice.url } : null);
   if (!release || hidden === release.version) return null;
