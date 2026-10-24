@@ -2774,3 +2774,473 @@
   gap: 0.4rem;
   margin: 0.4rem 0;
 }
+
+/* Telefono: testata compatta, menu a scorrimento, bersagli da dito, campi che non fanno zoom */
+@media (max-width: 40rem) {
+  .app-header {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    padding: 0.4rem var(--space-3);
+  }
+
+  .app-brand {
+    order: 1;
+    margin-right: auto;
+  }
+
+  .app-header .lang-select {
+    order: 2;
+  }
+
+  .app-header .theme-toggle {
+    order: 3;
+  }
+
+  /* le pagine in una sola riga che scorre di lato, la pagina corrente sempre in vista */
+  .app-nav {
+    order: 4;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    margin: 0 calc(var(--space-3) * -1);
+    padding: 0 var(--space-3) 0.2rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .app-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-nav .glass {
+    flex: none;
+    min-height: 2.75rem;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  .app-main {
+    padding: var(--space-3);
+  }
+
+  /* un campo sotto i 16 px fa ingrandire la pagina quando lo si tocca */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  .lang-select select {
+    min-height: 2.25rem;
+  }
+
+  /* bersagli da almeno 44 px */
+  .chip,
+  button.glass,
+  .glass,
+  .mpick-button,
+  .tabs .glass,
+  .history-bar select,
+  .map-select select {
+    min-height: 2.75rem;
+  }
+
+  .decode-row,
+  .history-row td {
+    min-height: 2.75rem;
+  }
+
+  .decode-row {
+    padding-block: 0.35rem;
+  }
+
+  /* i testi piccoli diventano leggibili */
+  .cluster-table th,
+  .cluster-link,
+  .cmd-title,
+  .tx-n,
+  .tx-step,
+  .badge,
+  .badge--tag,
+  .in-level-state,
+  .history-foot {
+    font-size: 0.75rem;
+  }
+
+  /* Storico: solo cio' che serve in una riga stretta */
+  .history-table th:nth-child(5),
+  .history-table td:nth-child(5),
+  .history-table th:nth-child(7),
+  .history-table td:nth-child(7) {
+    display: none;
+  }
+
+  .history-bar input[type='search'] {
+    flex: 1 0 100%;
+  }
+
+  /* Propagazione: i tre indici per riga */
+  .prop-indices {
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  }
+
+  /* barra di diagnosi e avvisi a tutta larghezza */
+  .diag-item {
+    padding: 0.5rem 0.7rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  /* le regole piu' specifiche dei pulsanti dei comandi: anche loro da dito */
+  button.glass.chip,
+  .cmd-chips button.chip,
+  .tx-block .cmd-chips button.chip,
+  .rx-row button.chip,
+  .macro-chips .glass,
+  .tx-commands .macro-chips .glass {
+    min-height: 2.75rem;
+    padding-inline: 0.75rem;
+  }
+
+  button.glass.chip.chip--arrow {
+    min-width: 2.75rem;
+  }
+
+  /* STOP TX resta raggiungibile sopra la riga in fondo */
+  .stop-bar {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    padding-bottom: var(--space-2);
+  }
+
+  .stop-btn {
+    min-height: 3rem;
+  }
+}
+
+/* Telefono e tablet: i pannelli con elenco prendono l'altezza del loro contenuto (prima restavano a zero) */
+@media (max-width: 63.99rem) {
+  .dock-panel:not(.dock-panel--waterfall):not(.dock-panel--tx) .dock-body {
+    flex: 0 1 auto;
+  }
+
+  .dock-panel--log .dock-body,
+  .dock-panel--cluster .dock-body {
+    max-height: 24rem;
+  }
+
+  .dock-panel--station .dock-body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* due finestre affiancate sul PC: in colonna sul telefono, ognuna alta quanto serve */
+  .dock-pair > .dock-panel {
+    flex: none;
+  }
+}
+
+/* Telefono: pulsanti in griglie ordinate a colonne uguali, tutti da dito */
+@media (max-width: 40rem) {
+  .band-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .mode-switch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .band-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(3.4rem, 1fr));
+    gap: var(--space-2);
+  }
+
+  .mode-switch .glass,
+  .band-bar .glass {
+    justify-content: center;
+    width: 100%;
+    min-height: 2.75rem;
+  }
+
+  /* stato: in linea, frequenza e orologio vanno a capo in modo ordinato */
+  .status-bar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* comandi di ricezione: tre per riga */
+  .rx-row .cmd-chips {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  /* tutti i gruppi di pulsanti dei comandi: due o tre colonne uguali, testo al centro */
+  .cmd-chips,
+  .macro-chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .macro-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cmd-chips button.chip,
+  .macro-chips .glass,
+  .tx-block .cmd-chips button.chip {
+    justify-content: center;
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* righe di comandi: i campi occupano la riga, i pulsanti vanno sotto in griglia */
+  .cmd-line {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .cmd-line input[type='text'],
+  .cmd-line input.cmd-free {
+    flex: 1 1 100%;
+    min-height: 2.75rem;
+  }
+
+  .cmd-line > button {
+    flex: 1 1 calc(50% - var(--space-2));
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  /* Trasmissione: una sola colonna; i sei messaggi si toccano comodamente */
+  .tx-panel {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .tx-panel .tx-main {
+    flex: 1 0 100%;
+  }
+
+  .tx-panel .tx-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tx-list li {
+    min-height: 2.75rem;
+    font-size: 0.95rem;
+  }
+
+  .tx-list li .tx-step {
+    font-size: 0.75rem;
+  }
+
+  /* Rx e Pwr affiancati sotto, non sopra ai messaggi */
+  .tx-panel .in-level,
+  .tx-panel .out-level {
+    flex: 1 1 calc(50% - var(--space-2));
+    padding: var(--space-2) 0;
+  }
+
+  .in-level .glass--on,
+  .in-level-auto {
+    min-height: 2.5rem;
+    min-width: 4.5rem;
+    justify-content: center;
+  }
+}
+
+/* Telefono: la pagina Stazione a schede, un pannello alla volta a tutta larghezza */
+@media (max-width: 40rem) {
+  .live-top {
+    gap: var(--space-2);
+  }
+
+  /* STOP TX c'e' gia' in fondo, sempre in vista: qui non serve il doppione */
+  .live-actions .stop-compact {
+    display: none;
+  }
+
+  .phone-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .phone-tablist {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    gap: var(--space-2);
+    margin: 0 calc(var(--space-3) * -1);
+    padding: var(--space-2) var(--space-3);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    background: var(--bg);
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .phone-tablist::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phone-tablist .glass {
+    flex: none;
+    min-height: 2.75rem;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  .phone-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 40dvh;
+    padding: var(--space-2);
+    background: linear-gradient(180deg, var(--glass-lo), transparent);
+    border: var(--border-width) solid var(--border);
+    border-radius: 0.8rem;
+  }
+
+  /* gli elenchi riempiono lo schermo e scorrono dentro il pannello */
+  .phone-panel--all .decode-list,
+  .phone-panel--cq .decode-list,
+  .phone-panel--log .log4om,
+  .phone-panel--cluster .cluster {
+    max-height: calc(100dvh - 15rem);
+    overflow: auto;
+  }
+
+  .phone-panel--waterfall {
+    height: 60dvh;
+    min-height: 18rem;
+  }
+
+  .phone-panel--waterfall .wf-stack {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Telefono: la barra in alto occupa poco (modo, banda e stato in tre righe) */
+@media (max-width: 40rem) {
+  .mode-switch,
+  .band-bar {
+    height: auto;
+    align-content: start;
+  }
+
+  .mode-switch .glass,
+  .band-bar .glass {
+    height: 2.75rem;
+  }
+
+  .status-bar .pill {
+    min-height: 2rem;
+    padding-block: 0.2rem;
+    font-size: 0.8rem;
+  }
+
+  .status-bar .pill--dx {
+    flex: 1 0 100%;
+  }
+}
+
+@media (max-width: 40rem) {
+  .live-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .band-row {
+    width: 100%;
+  }
+
+  .band-bar {
+    grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr));
+  }
+
+  .live-actions {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 40rem) {
+  .band-row,
+  .band-bar,
+  .mode-switch {
+    flex: none;
+    height: auto;
+    min-height: 0;
+  }
+
+  .band-bar .glass,
+  .mode-switch .glass {
+    height: 2.75rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  /* una sola riga di bande a colonne uguali (senza auto-fit, che calcolava l'altezza di una colonna sola) */
+  .band-bar {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none;
+  }
+}
+
+/* Telefono: ogni messaggio su due righe: ora, rapporto, testo e etichetta sopra; paese e distanza sotto */
+@media (max-width: 40rem) {
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 3.7rem 2rem minmax(0, 1fr) auto;
+    grid-auto-rows: auto;
+    column-gap: 0.4rem;
+    align-items: center;
+    row-gap: 0.1rem;
+    padding-block: 0.4rem;
+  }
+
+  .decode-list .decode-row .c-time {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.78rem;
+  }
+
+  .decode-list .decode-row .c-snr {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .decode-list .decode-row .decode-text {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+
+  .decode-list .decode-row .badge-cell,
+  .decode-list .decode-row > span:last-child {
+    grid-area: 1 / 4 / 2 / 5;
+    width: auto;
+    min-width: 4.5rem;
+  }
+
+  .decode-list .decode-row .decode-where {
+    grid-area: 2 / 3 / 3 / 5;
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+}

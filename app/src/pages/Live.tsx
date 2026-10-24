@@ -12,6 +12,7 @@ import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
+import { PhoneTabs } from '../components/PhoneTabs';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
@@ -30,6 +31,7 @@ import { bandOf } from '../lib/format';
 import { signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
+import { usePhone } from '../lib/phone';
 import { registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { cqDecodes } from '../state/selectors';
@@ -45,6 +47,7 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 
 export function Live() {
   const t = useT();
+  const phone = usePhone();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
@@ -240,13 +243,28 @@ export function Live() {
         <StatusBar status={status} connection={connection} />
         <div className="live-actions">
           <TxBanner status={status} />
-          <AlertSwitch value={alerts} onChange={changeAlerts} />
+          {phone ? null : <AlertSwitch value={alerts} onChange={changeAlerts} />}
           <StopButton variant="compact" />
         </div>
       </div>
-      <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
+      {phone ? null : <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />}
       <DiagnosisBar />
-      <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
+      {phone ? (
+        <PhoneTabs
+          titles={titles}
+          render={renderPanel}
+          extra={{
+            station: (
+              <>
+                <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
+                <AlertSwitch value={alerts} onChange={changeAlerts} />
+              </>
+            ),
+          }}
+        />
+      ) : (
+        <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
+      )}
       {note ? (
         <p className="live-toast" role="status" aria-live="polite">
           {note}
