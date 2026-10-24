@@ -81,6 +81,7 @@ Principi:
 | Componente | Compito | Note |
 |---|---|---|
 | `engine` | Trait `Engine` + `JtdxUdpEngine` | Isola il resto da JTDX |
+| `udp-hub` | Riceve il flusso UDP di JTDX, lo **inoltra identico** ai programmi gia' presenti (GridTracker2) e rimanda a JTDX i loro comandi | Vedi `docs/udp-flussi.md`: nella stazione di Tiziano JTDX parla con GridTracker2 (porta 2333) e con Log4OM2 (2237); Aurora non deve rompere questo giro |
 | `udp-bridge` | Codifica/decodifica il protocollo UDP (Qt `QDataStream`) | Test con registrazioni reali di pacchetti |
 | `audio-spectrum` | Cattura audio, FFT, quantizzazione a 8 bit, emissione righe | Funziona anche con JTDX fermo |
 | `rig-control` | Frequenza, banda, modo, PTT via `rigctld` | Dopo H3 |
@@ -248,3 +249,4 @@ Nessuna cartella locale né riferimento a strumenti di assistenza nel repository
 3. ~~Conferma di SQLite al posto di PostgreSQL (§8).~~ Confermato il 2026-10-24.
 4. Dominio da usare per Cloudflare (modalità C): serve dalla Fase 3 (proposta: `aurora.iu3cyv.eu`).
 5. ~~Assenza di login con password (§7).~~ Confermata il 2026-10-24.
+6. **Come inserirsi nel flusso UDP esistente** (hub davanti a GridTracker2, multicast, o sostituzione): vedi `docs/udp-flussi.md`. Il log principale resta Log4OM2, alimentato direttamente da JTDX sulla porta 2237.
