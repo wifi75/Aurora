@@ -18,18 +18,16 @@ import { StopButton } from '../components/StopButton';
 import { TxBanner } from '../components/TxBanner';
 import { TxPanel } from '../components/TxPanel';
 import { Waterfall } from '../components/Waterfall';
-import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useNotify } from '../lib/notify';
 import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
-import { clearHeight, readLayout, resizePanel, saveLayout, type Layout, type PanelId } from '../lib/layout';
+import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
-import { readSize, saveSize, type WaterfallSize } from '../lib/waterfallSize';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
 
@@ -57,7 +55,6 @@ export function Live() {
     const timer = setTimeout(() => setNote(''), 4000);
     return () => clearTimeout(timer);
   }, [note]);
-  const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
 
   const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
   const alertsRef = useRef(alerts);
@@ -97,13 +94,6 @@ export function Live() {
   const changeLayout = (next: Layout) => {
     saveLayout(browserStorage(), next);
     setLayout(next);
-  };
-
-  // Grande = la cascata prende lo spazio che resta; Ridotta = una fascia; Nascosta = niente cascata
-  const changeSize = (next: WaterfallSize) => {
-    saveSize(browserStorage(), next);
-    setSize(next);
-    changeLayout(next === 'small' ? resizePanel(layout, 'waterfall', 160) : clearHeight(layout, 'waterfall'));
   };
 
   const titles: Record<PanelId, string> = {
@@ -215,7 +205,6 @@ export function Live() {
         <div className="live-actions">
           <TxBanner status={status} />
           <AlertSwitch value={alerts} onChange={changeAlerts} />
-          <WaterfallSizeSwitch value={size} onChange={changeSize} />
           <StopButton variant="compact" />
         </div>
       </div>
@@ -233,7 +222,7 @@ export function Live() {
         />
       </div>
       <RxControls mode={status?.mode ?? ''} />
-      <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
+      <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
       {note ? (
         <p className="live-toast" role="status" aria-live="polite">
           {note}
