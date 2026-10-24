@@ -182,12 +182,12 @@ export const controlStrings = {
     'Ao responder a um CQ começa em Tx2 em vez de Tx1.',
   ],
   'tip.ctl.tx_period': [
-    'Alterna il periodo in cui trasmetti: pari o dispari.',
-    'Switches the period in which you transmit: even or odd.',
-    'Wechselt die Sendeperiode: gerade oder ungerade.',
-    "Alterne la période d'émission : paire ou impaire.",
-    'Alterna el periodo en que transmites: par o impar.',
-    'Alterna o período em que transmites: par ou ímpar.',
+    'Periodo di trasmissione: «Tx 00/30» trasmette ai secondi 00 e 30 di ogni minuto, «Tx 15/45» ai secondi 15 e 45. Un clic passa dall\'uno all\'altro; rispondendo a una stazione si imposta da solo quello giusto.',
+    'Transmit period: “Tx 00/30” transmits at seconds 00 and 30 of every minute, “Tx 15/45” at seconds 15 and 45. One click switches between them; answering a station sets the right one by itself.',
+    'Sendeperiode: „Tx 00/30“ sendet bei Sekunde 00 und 30 jeder Minute, „Tx 15/45“ bei 15 und 45. Ein Klick wechselt; beim Antworten auf eine Station wird die passende automatisch gesetzt.',
+    'Période d’émission : « Tx 00/30 » émet aux secondes 00 et 30 de chaque minute, « Tx 15/45 » aux secondes 15 et 45. Un clic passe de l’une à l’autre ; en répondant à une station, la bonne se règle toute seule.',
+    'Periodo de transmisión: «Tx 00/30» transmite en los segundos 00 y 30 de cada minuto, «Tx 15/45» en los 15 y 45. Un clic alterna; al responder a una estación se pone sola la correcta.',
+    'Período de transmissão: «Tx 00/30» transmite aos segundos 00 e 30 de cada minuto, «Tx 15/45» aos 15 e 45. Um clique alterna; ao responder a uma estação, o certo define-se sozinho.',
   ],
   'tip.ctl.auto_tx': [
     'Abilita la trasmissione automatica di Aurora. Può far trasmettere: serve la trasmissione aperta dal PC.',

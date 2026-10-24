@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
+import { RowAverager } from '../render/smooth';
+
+/** Righe del core (15 al secondo) mediate a gruppi: circa 4 al secondo, la velocita' di una cascata leggibile. */
+const ROWS_PER_STEP = 4;
 
 interface Props {
   /** Registra la funzione che riceve ogni riga di spettro; restituisce come annullare. */
@@ -47,7 +51,11 @@ export function Waterfall({ register }: Props) {
         fit();
         observer = new ResizeObserver(fit);
         observer.observe(canvas);
-        unregister = register((bins) => b.pushRow(bins));
+        const average = new RowAverager(ROWS_PER_STEP);
+        unregister = register((bins) => {
+          const row = average.add(bins);
+          if (row) b.pushRow(row);
+        });
       })
       .catch(() => {
         if (!cancelled) setPhase('unsupported');

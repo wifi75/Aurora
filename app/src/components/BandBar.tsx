@@ -9,12 +9,14 @@ interface Props {
   bands?: readonly string[];
   /** Bloccata (per esempio in trasmissione). */
   locked?: boolean;
+  /** Banda appena scelta: si accende subito, prima che la radio e il motore la confermino. */
+  pendingBand?: string | null;
 }
 
 /** Barra delle bande come nel motore: la banda in uso e' accesa; con il comando radio si cambia banda con un clic. */
-export function BandBar({ dialHz, onPick, bands = BAND_NAMES, locked = false }: Props) {
+export function BandBar({ dialHz, onPick, bands = BAND_NAMES, locked = false, pendingBand = null }: Props) {
   const t = useT();
-  const current = dialHz > 0 ? bandOf(dialHz) : null;
+  const current = pendingBand ?? (dialHz > 0 ? bandOf(dialHz) : null);
   return (
     <div className="band-bar" role="group" aria-label={t('band.group')} title={t('tip.band.bar')}>
       {bands.map((name) => (

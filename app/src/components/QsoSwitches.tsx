@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
+import { periodLabel } from '../lib/txPeriod';
+import { useStation } from '../state/station';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
 const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_b4', 'bypass', 'skip_tx1', 'tx_period'];
@@ -16,6 +18,7 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const [note, setNote] = useState('');
+  const mode = useStation((st) => st.status?.mode);
   const state = controls.data ?? {};
   const reachable = !controls.isError;
 
@@ -34,6 +37,23 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
     ids.map((id) => {
       const on = state[id] === true;
       const arming = ARMING.includes(id);
+      // il periodo di trasmissione e' una scelta tra due, non un acceso/spento: il testo dice quale periodo e' in uso
+      const period = id === 'tx_period' ? periodLabel(on, mode) : null;
+      if (period) {
+        return (
+          <button
+            key={id}
+            type="button"
+            className={`glass chip chip--period chip--period-${on ? 'even' : 'odd'}`}
+            aria-pressed={on}
+            disabled={!reachable}
+            title={t(`tip.ctl.${id}` as Key)}
+            onClick={() => void set(id, !on)}
+          >
+            {period}
+          </button>
+        );
+      }
       return (
         <button
           key={id}

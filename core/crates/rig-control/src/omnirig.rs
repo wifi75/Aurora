@@ -9,8 +9,9 @@ pub struct WindowsRig;
 ///
 /// Non si usa `SetSimplexMode`: sulla FT-2000 mette la radio sul VFO B e la lascia (o la rimette) in split, anche se
 /// subito dopo si scrive lo split spento. Provato dal vivo, in questo ordine: si scrive `Split` spento
-/// (`PM_SPLITOFF` = 0x10000), si aspetta che la radio lo accetti (torna da sola sul VFO A), si scrive la frequenza e si
-/// ricontrolla lo split un paio di volte.
+/// (`PM_SPLITOFF` = 0x10000) solo se non e' gia' spento (di norma lo e': il percorso veloce non aspetta nulla), si scrive
+/// la frequenza e si ricontrolla lo split una volta dopo un attimo. Le attese sono a scatti brevi con uscita appena la
+/// radio ha risposto: il cambio banda dura poco piu' dell'avvio di PowerShell.
 ///
 /// Si scrive `FreqA`, non `Freq`: sulla FT-2000 OmniRig non rende scrivibile `Freq` (`WriteableParams` senza PM_FREQ) e la
 /// scrittura viene ignorata senza errore: il comando risulta riuscito ma la radio resta dov'era. Scrivere il VFO subito dopo lo split lo fa riaccendere: non si fa.
@@ -19,11 +20,11 @@ pub fn script(hz: u64) -> String {
         "$o = New-Object -ComObject OmniRig.OmniRigX; \
          for ($i = 0; $i -lt 8 -and $o.Rig1.Status -ne 4; $i++) {{ Start-Sleep -Milliseconds 400 }}; \
          if ($o.Rig1.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
-         $r = $o.Rig1; $r.Split = 65536; \
-         for ($i = 0; $i -lt 8; $i++) {{ Start-Sleep -Milliseconds 400; if ($r.Split -eq 65536) {{ break }} }}; \
+         $r = $o.Rig1; \
+         if ($r.Split -ne 65536) {{ $r.Split = 65536; for ($i = 0; $i -lt 16; $i++) {{ Start-Sleep -Milliseconds 200; if ($r.Split -eq 65536) {{ break }} }} }}; \
          $r.FreqA = {hz}; \
-         for ($i = 0; $i -lt 8; $i++) {{ Start-Sleep -Milliseconds 300; if ($r.FreqA -eq {hz}) {{ break }} }}; \
-         for ($i = 0; $i -lt 4; $i++) {{ Start-Sleep -Milliseconds 400; if ($r.Split -ne 65536) {{ $r.Split = 65536 }} }}"
+         for ($i = 0; $i -lt 24; $i++) {{ if ($r.FreqA -eq {hz}) {{ break }}; Start-Sleep -Milliseconds 100 }}; \
+         Start-Sleep -Milliseconds 300; if ($r.Split -ne 65536) {{ $r.Split = 65536 }}"
     )
 }
 

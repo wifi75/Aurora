@@ -1,9 +1,16 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, WATERFALL_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
+import { RowClock } from './smooth';
 
 export const WATERFALL_WIDTH = 1024;
 export const WATERFALL_HEIGHT = 512;
+
+/** Righe per pixel: una riga per pixel, meno solo se la finestra e' piu' alta dell'anello. */
+export function rowsPerPixel(heightPx: number): number {
+  const usable = WATERFALL_HEIGHT - 2;
+  return heightPx > usable ? usable / heightPx : 1;
+}
 
 const VERTEX = `#version 300 es
 out vec2 v_uv;
@@ -13,7 +20,10 @@ void main() {
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
-// La riga piu' recente sta in alto: lo scorrimento e' solo un offset sull'anello, nessuna ricopiatura.
+// La riga piu' recente sta in alto e le altre scendono: lo scorrimento e' solo un offset sull'anello, nessuna ricopiatura.
+// Una riga vale un pixel (niente compressione verticale che farebbe tremolare i segnali); u_frac e' la frazione di riga
+// gia' scorsa dall'ultima riga arrivata, cosi' la cascata scende in modo continuo. In orizzontale si mediano quattro
+// punti (e si tiene anche il massimo) perche' i 1024 canali sono piu' dei pixel e un segnale stretto non sparisca ne' tremi.
 const FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 v_uv;
@@ -22,9 +32,22 @@ uniform sampler2D u_tex;
 uniform sampler2D u_lut;
 uniform float u_head;
 uniform float u_h;
+uniform float u_frac;
+uniform float u_rpp;
+uniform vec2 u_px;
+float at(float x, float r) {
+  return texture(u_tex, vec2(x, r)).r;
+}
 void main() {
-  float r = fract((u_head - 0.5 - v_uv.y * u_h) / u_h);
-  float v = texture(u_tex, vec2(v_uv.x, r)).r;
+  float py = v_uv.y * u_px.y * u_rpp;
+  float coord = min(u_head - py + u_frac, u_head - 0.5);
+  float r = fract(coord / u_h);
+  float w = 1.0 / u_px.x;
+  float a = at(v_uv.x - 0.375 * w, r);
+  float b = at(v_uv.x - 0.125 * w, r);
+  float c = at(v_uv.x + 0.125 * w, r);
+  float d = at(v_uv.x + 0.375 * w, r);
+  float v = 0.5 * (a + b + c + d) * 0.25 + 0.5 * max(max(a, b), max(c, d));
   o = vec4(texture(u_lut, vec2(v * 0.99609375 + 0.001953125, 0.5)).rgb, 1.0);
 }`;
 
@@ -50,6 +73,10 @@ export class WebGl2Waterfall implements WaterfallBackend {
   private lut: WebGLTexture | null = null;
   private uHead: WebGLUniformLocation | null = null;
   private uH: WebGLUniformLocation | null = null;
+  private uFrac: WebGLUniformLocation | null = null;
+  private uRpp: WebGLUniformLocation | null = null;
+  private uPx: WebGLUniformLocation | null = null;
+  private readonly clock = new RowClock();
   private raf = 0;
   private readonly ring = new RowRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
 
@@ -74,6 +101,9 @@ export class WebGl2Waterfall implements WaterfallBackend {
     this.program = program;
     this.uHead = gl.getUniformLocation(program, 'u_head');
     this.uH = gl.getUniformLocation(program, 'u_h');
+    this.uFrac = gl.getUniformLocation(program, 'u_frac');
+    this.uRpp = gl.getUniformLocation(program, 'u_rpp');
+    this.uPx = gl.getUniformLocation(program, 'u_px');
 
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     this.tex = gl.createTexture();
@@ -103,6 +133,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
   pushRow(row: Uint8Array): void {
     const index = this.ring.push(row);
     if (index < 0) return;
+    this.clock.push(performance.now());
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
@@ -145,6 +176,11 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.useProgram(this.program);
     gl.uniform1f(this.uHead, this.ring.head);
     gl.uniform1f(this.uH, WATERFALL_HEIGHT);
+    gl.uniform1f(this.uFrac, this.clock.fraction(performance.now()));
+    gl.uniform1f(this.uRpp, rowsPerPixel(this.canvas.height));
+    gl.uniform2f(this.uPx, this.canvas.width, this.canvas.height);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    // la cascata scende di continuo: si ridisegna a ogni fotogramma
+    this.schedule();
   }
 }

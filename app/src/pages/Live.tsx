@@ -46,6 +46,7 @@ export function Live() {
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
+  const pendingBand = useStation((s) => s.pendingBand);
   const connection = useStation((s) => s.connection);
   const chosenBands = useBandFilter((s) => s.bands);
   const filters = useFilters((s) => s.filters);
@@ -173,16 +174,32 @@ export function Live() {
 
   const setFrequency = (which: string, hz: number, send: (hz: number) => Promise<void>) =>
     attempt(() => send(hz), t('note.freqSet', { which, hz }));
-  const pickMode = (mode: string) =>
-    attempt(async () => {
-      await postMode(mode);
-      useStation.getState().patchStatus({ mode });
+  // il pulsante scelto si accende subito e resta cosi' finche' il motore non conferma; se il comando fallisce torna com'era
+  const pickMode = (mode: string) => {
+    const before = useStation.getState().status?.mode;
+    useStation.getState().patchStatus({ mode });
+    return attempt(async () => {
+      try {
+        await postMode(mode);
+      } catch (error) {
+        if (before !== undefined) useStation.getState().revertStatus(['mode'], { mode: before });
+        throw error;
+      }
     }, t('note.modeSet', { mode }));
-  const pickBand = (band: string) =>
-    attempt(async () => {
-      const done = await postBand(band);
-      if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+  };
+  const pickBand = (band: string) => {
+    const store = useStation.getState();
+    store.setPendingBand(band);
+    return attempt(async () => {
+      try {
+        const done = await postBand(band);
+        if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+      } catch (error) {
+        useStation.getState().setPendingBand(null);
+        throw error;
+      }
     }, t('note.bandSet', { band }));
+  };
 
   const onReply = useCallback(
     async (id: number) => {
@@ -221,6 +238,7 @@ export function Live() {
           <BandBar
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}
+            pendingBand={pendingBand}
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
           />
