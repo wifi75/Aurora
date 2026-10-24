@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -55,6 +55,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
+        .route("/api/v1/wishlist", get(wishlist_get).put(wishlist_put))
+        .route("/api/v1/wishlist/test", post(wishlist_test))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
@@ -874,6 +876,68 @@ async fn ui_settings_put(
             ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "ui_settings_write")
         })?;
     Ok(Json(json!({ "ok": true })))
+}
+
+fn wishlist_service(state: &AppState) -> Result<std::sync::Arc<wishlist::WishlistService>, ApiError> {
+    state.wishlist.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "wishlist_unavailable"))
+}
+
+/// La lista dei desiderati e gli ultimi avvisi.
+#[utoipa::path(get, path = "/api/v1/wishlist", responses((status = 200, description = "Lista dei desiderati e avvisi recenti"), (status = 404, description = "Non disponibile (wishlist_unavailable)")))]
+async fn wishlist_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = wishlist_service(&state)?;
+    Ok(Json(json!({ "config": service.config(), "recent": service.recent() })))
+}
+
+/// Cambia la lista dei desiderati: si salva e vale subito.
+#[utoipa::path(put, path = "/api/v1/wishlist", responses((status = 200, description = "Lista salvata"), (status = 400, description = "Voce non valida (bad_wishlist)"), (status = 500, description = "Scrittura su disco fallita (wishlist_write)")))]
+async fn wishlist_put(State(state): State<AppState>, _: Authed, Json(config): Json<wishlist::Wishlist>) -> Result<Json<Value>, ApiError> {
+    let service = wishlist_service(&state)?;
+    let config = config.normalized();
+    config.validate().map_err(|e| {
+        tracing::debug!("lista dei desiderati rifiutata: {e}");
+        ApiError::new(StatusCode::BAD_REQUEST, "bad_wishlist")
+    })?;
+    let saved = service.set_config(config).map_err(|e| {
+        tracing::warn!("salvataggio della lista dei desiderati fallito: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "wishlist_write")
+    })?;
+    Ok(Json(json!({ "ok": true, "config": saved })))
+}
+
+/// Manda un avviso di prova: compare nella pagina e, se c'e' un indirizzo, arriva al telefono. Dice se il telefono l'ha ricevuto.
+#[utoipa::path(post, path = "/api/v1/wishlist/test", responses((status = 200, description = "Avviso di prova inviato; `phone` dice l'esito verso il telefono"), (status = 404, description = "Non disponibile (wishlist_unavailable)")))]
+async fn wishlist_test(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = wishlist_service(&state)?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
+    let alert = aurora_core::WantedAlert {
+        call: "TEST".into(),
+        reason: "call".into(),
+        source: "test".into(),
+        text: "Avviso di prova di Aurora".into(),
+        freq_hz: None,
+        band: None,
+        snr: None,
+        country: None,
+        grid: None,
+        time_ms: now,
+    };
+    service.remember(alert.clone());
+    let _ = state.bus.events().send(aurora_core::Event::Wanted(alert.clone()));
+    let url = service.config().notify_url;
+    if url.is_empty() {
+        return Ok(Json(json!({ "ok": true, "phone": "no_url" })));
+    }
+    let result = tokio::task::spawn_blocking(move || wishlist::send_notification(&url, &wishlist::alert_title(&alert), &wishlist::alert_body(&alert)))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "wishlist_task"))?;
+    match result {
+        Ok(()) => Ok(Json(json!({ "ok": true, "phone": "sent" }))),
+        Err(e) => {
+            tracing::warn!("avviso di prova al telefono non inviato: {e}");
+            Ok(Json(json!({ "ok": true, "phone": "failed" })))
+        }
+    }
 }
 
 /// I quadrati locatore gia' lavorati, con il numero di QSO e le bande, per la mappa.

@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import type { AuroraEvent, DecodedMessage, StationStatus } from '../api/schemas';
+import type { AuroraEvent, DecodedMessage, StationStatus, WantedAlert } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { bandOf } from '../lib/format';
 import { usePrefs } from '../lib/prefs';
 
 const MAX_DECODES = 200;
 const MAX_TX_LOG = 50;
+const MAX_WANTED = 20;
 /** Quanto resta la stazione scelta col doppio clic se il motore non la conferma. */
 const PENDING_MS = 20_000;
 /** Quanto vale un cambio comandato (banda, modo) prima che il motore lo confermi: oltre, vince lo stato del motore. */
@@ -22,6 +23,11 @@ interface StationState {
   /** Quando e' stata scelta (ms Unix): dopo un po' si smette di aspettare il motore. */
   pendingSince: number;
   connection: ConnectionState;
+  /** Gli ultimi avvisi della lista dei desiderati, i piu' recenti per primi. */
+  wanted: WantedAlert[];
+  /** L'avviso mostrato nella barra in alto, finche' non si chiude. */
+  wantedBanner: WantedAlert | null;
+  dismissWanted(): void;
   /** Cambi comandati (banda, modo) che il motore non ha ancora confermato: finche' non coincidono, hanno la precedenza. */
   pending: Partial<StationStatus>;
   pendingAt: number;
@@ -84,6 +90,11 @@ export const useStation = create<StationState>((set) => ({
   pending: {},
   pendingAt: 0,
   pendingBand: null,
+  wanted: [],
+  wantedBanner: null,
+  dismissWanted() {
+    set({ wantedBanner: null });
+  },
   apply(event) {
     switch (event.type) {
       case 'status': {
@@ -112,6 +123,11 @@ export const useStation = create<StationState>((set) => ({
       case 'decode': {
         const { type: _type, ...decode } = event;
         set((s) => ({ decodes: [decode, ...s.decodes].slice(0, MAX_DECODES) }));
+        break;
+      }
+      case 'wanted': {
+        const { type: _type, ...alert } = event;
+        set((s) => ({ wanted: [alert, ...s.wanted].slice(0, MAX_WANTED), wantedBanner: alert }));
         break;
       }
       case 'tx_halted':
@@ -150,6 +166,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null });
   },
 }));

@@ -61,4 +61,13 @@ export const mapStrings = {
     '{call} · {grid} · {snr} dB',
     '{call} · {grid} · {snr} dB',
   ],
+  'wiki.map.t': ['Mappa', 'Map', 'Karte', 'Carte', 'Mapa', 'Mapa'],
+  'wiki.map.b': [
+    'La pagina Mappa mostra sul planisfero i quadrati locatore già lavorati nel log di Log4OM2 (più QSO, più colore; filtro per banda), le stazioni che stai ricevendo ora dal locatore nei messaggi (azzurro = CQ, blu = in QSO) e la tua posizione (stella). Rotella o + e − per ingrandire, trascina per spostare, un clic su una stazione ne mostra i dati.',
+    'The Map page shows on a world map the grid squares already worked in the Log4OM2 log (more QSOs, more colour; band filter), the stations you are receiving now from the locator in their messages (light blue = CQ, blue = in QSO) and your position (star). Wheel or + and − to zoom, drag to move, a click on a station shows its details.',
+    'Die Kartenseite zeigt auf der Weltkarte die im Log von Log4OM2 bereits gearbeiteten Locator-Felder (mehr QSOs, mehr Farbe; Bandfilter), die Stationen, die du gerade empfängst, nach dem Locator in ihren Nachrichten (hellblau = CQ, blau = im QSO) und deine Position (Stern). Mausrad oder + und − zum Zoomen, ziehen zum Verschieben, ein Klick auf eine Station zeigt ihre Daten.',
+    'La page Carte montre sur le planisphère les carrés locator déjà travaillés dans le log de Log4OM2 (plus de QSO, plus de couleur ; filtre par bande), les stations que tu reçois maintenant d’après le locator de leurs messages (bleu clair = CQ, bleu = en QSO) et ta position (étoile). Molette ou + et − pour zoomer, glisser pour déplacer, un clic sur une station affiche ses données.',
+    'La página Mapa muestra en el planisferio las cuadrículas ya trabajadas en el log de Log4OM2 (más QSO, más color; filtro por banda), las estaciones que recibes ahora según el locator de sus mensajes (azul claro = CQ, azul = en QSO) y tu posición (estrella). Rueda o + y − para ampliar, arrastra para mover, un clic en una estación muestra sus datos.',
+    'A página Mapa mostra no planisfério os quadrados de locator já trabalhados no log do Log4OM2 (mais QSO, mais cor; filtro por banda), as estações que estás a receber agora pelo locator das mensagens (azul claro = CQ, azul = em QSO) e a tua posição (estrela). Roda ou + e − para ampliar, arrasta para mover, um clique numa estação mostra os dados.',
+  ],
 } as const;

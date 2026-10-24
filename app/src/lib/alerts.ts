@@ -1,7 +1,7 @@
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { isCallToMe } from './mycall';
 
-export type AlertKind = 'dxcc' | 'news' | 'me';
+export type AlertKind = 'dxcc' | 'news' | 'me' | 'wanted';
 
 export interface AlertPrefs {
   enabled: boolean;
@@ -99,6 +99,8 @@ const NOTES: Record<AlertKind, number[]> = {
   dxcc: [660, 880, 1320],
   news: [880],
   me: [1047, 1319, 1047, 1319],
+  // una stazione della lista dei desiderati: due note che salgono, poi ancora una piu' acuta
+  wanted: [784, 1175, 1568, 1976],
 };
 
 export function playAlert(kind: AlertKind, volume: number, ctx: ToneContext): void {

@@ -9,7 +9,9 @@ import { flagCode } from '../lib/flags';
 import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
+import { wishReason } from '../lib/wishlist';
 import { useStation } from '../state/station';
+import { useWishlist } from '../state/wishlist';
 
 const KEY = 'aurora-cluster-filters';
 const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
@@ -35,6 +37,7 @@ export function ClusterPanel() {
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
   const [note, setNote] = useState('');
+  const wishlist = useWishlist((s) => s.list);
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
   const change = (next: SpotFilters) => {
@@ -138,10 +141,11 @@ export function ClusterPanel() {
             {shown.map((s) => {
               const code = flagCode(s.country);
               const mine = s.band !== null && s.band === myBand;
+              const wanted = wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null;
               return (
                 <tr
                   key={s.id}
-                  className={`cluster-row${mine ? ' cluster-row--mine' : ''}`}
+                  className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}`}
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
                   onDoubleClick={() => void tune(s)}
                 >

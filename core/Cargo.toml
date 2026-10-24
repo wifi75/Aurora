@@ -1,5 +1,7 @@
 [workspace]
 members = ["crates/*"]
+# una cartella di compilazione finita per sbaglio dentro crates/ (cargo lanciato da li') non deve rompere il workspace
+exclude = ["crates/target"]
 resolver = "3"
 
 [workspace.package]

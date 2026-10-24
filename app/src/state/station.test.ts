@@ -182,6 +182,20 @@ describe('useStation', () => {
     expect(bandOrModeChanged(status, { ...status, dial_hz: 21_074_000 })).toBe(true);
   });
 
+  it('keeps the wanted alerts, newest first, and the banner until it is dismissed', () => {
+    const { apply, dismissWanted } = useStation.getState();
+    const alert = { type: 'wanted' as const, call: 'K1ABC', reason: 'call', source: 'decode', text: 'CQ K1ABC FN42', time_ms: 1 };
+    apply(alert);
+    apply({ ...alert, call: '3Y0J', time_ms: 2 });
+    expect(useStation.getState().wanted.map((w) => w.call)).toEqual(['3Y0J', 'K1ABC']);
+    expect(useStation.getState().wantedBanner?.call).toBe('3Y0J');
+    dismissWanted();
+    expect(useStation.getState().wantedBanner).toBeNull();
+    expect(useStation.getState().wanted).toHaveLength(2);
+    useStation.getState().reset();
+    expect(useStation.getState().wanted).toEqual([]);
+  });
+
   it('remembers the station picked with a double click until the engine reports its own DX', () => {
     const { apply, setPendingDx } = useStation.getState();
     setPendingDx('BB2BB');

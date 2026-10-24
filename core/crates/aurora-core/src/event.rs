@@ -90,6 +90,25 @@ pub struct QsoRecord {
     pub time_ms: u32,
 }
 
+/// Una stazione della lista dei desiderati e' stata vista, in un messaggio decodificato o in uno spot del cluster.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WantedAlert {
+    pub call: String,
+    /// Perche' e' desiderata: `call`, `prefix`, `country` o `grid`.
+    pub reason: String,
+    /// Dove e' stata vista: `decode` o `cluster`.
+    pub source: String,
+    /// Il messaggio decodificato o il commento dello spot.
+    pub text: String,
+    pub freq_hz: Option<u64>,
+    pub band: Option<String>,
+    pub snr: Option<i32>,
+    pub country: Option<String>,
+    pub grid: Option<String>,
+    /// Quando (millisecondi Unix).
+    pub time_ms: u64,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -97,6 +116,7 @@ pub enum Event {
     Decode(DecodedMessage),
     QsoLogged(QsoRecord),
     TxHalted,
+    Wanted(WantedAlert),
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.
