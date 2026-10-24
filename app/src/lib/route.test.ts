@@ -29,6 +29,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/guida')).toEqual({ name: 'guide' });
   });
 
+  it('reads the map and history pages', () => {
+    expect(parseRoute('#/mappa')).toEqual({ name: 'map' });
+    expect(parseRoute('#/storico')).toEqual({ name: 'history' });
+  });
+
   it('defaults to the live page', () => {
     expect(parseRoute('')).toEqual({ name: 'live' });
     expect(parseRoute('#/')).toEqual({ name: 'live' });

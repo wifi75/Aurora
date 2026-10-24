@@ -1,0 +1,12 @@
+[package]
+name = "decode-history"
+description = "Storico dei messaggi decodificati: tutto cio' che si riceve, ricercabile per nominativo, banda, modo e periodo; non e' il log dei QSO"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+rusqlite = { workspace = true }
+serde = { workspace = true }

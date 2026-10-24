@@ -41,6 +41,6 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Lista dei desiderati con avvisi (pagina, suono, notifica del browser, telefono via ntfy); resta la notifica push nativa (richiede HTTPS) e la prova con il telefono vero
 - [x] Licenza: GPL-3.0-or-later (file `LICENSE`)
 - [x] Livello RX: indicatore e avvisi, cursore e AUTO sul volume di registrazione di Windows (da provare dal vivo con la radio: AUTO in ricezione, che non tocchi nulla in TX)
-- [ ] Decidere cosa integrare da Decodium (scelti: livello RX, storico decode + spot su cascata, PSK Reporter + propagazione, automazioni piu' sicure; ordine: prima queste, poi il programma Windows): elenco in `docs/confronto-decodium.md` (slider livello RX, storico decode, PSK 'chi mi ha sentito', propagazione, spot cluster sulla cascata...)
+- [ ] Decidere cosa integrare da Decodium (fatti: livello RX, storico decode, nascondi gia' lavorate; scelti: livello RX, storico decode + spot su cascata, PSK Reporter + propagazione, automazioni piu' sicure; ordine: prima queste, poi il programma Windows): elenco in `docs/confronto-decodium.md` (slider livello RX, storico decode, PSK 'chi mi ha sentito', propagazione, spot cluster sulla cascata...)
 - [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA
 - [ ] Clippy con --all-targets segnala lint nuovi (field_reassign_with_default, len_zero) nei test di clock-sync, dx-cluster e remote-api/tests/dx_cluster.rs: preesistenti, da sistemare

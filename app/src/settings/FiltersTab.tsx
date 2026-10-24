@@ -50,6 +50,7 @@ export function FiltersTab() {
       <div className="set-checks">
         <Check label={t('fil.nonStandard')} checked={filters.hideNonStandard} onChange={(v) => set({ hideNonStandard: v })} />
         <Check label={t('fil.ownContinent')} checked={filters.hideOwnContinent} onChange={(v) => set({ hideOwnContinent: v })} />
+        <Check label={t('fil.worked')} checked={filters.hideWorked} onChange={(v) => set({ hideWorked: v })} />
       </div>
       <button type="button" className="glass" onClick={() => useFilters.getState().reset()}>
         {t('set.reset')}

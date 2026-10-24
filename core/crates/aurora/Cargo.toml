@@ -24,6 +24,7 @@ dx-cluster = { path = "../dx-cluster" }
 wishlist = { path = "../wishlist" }
 updater = { path = "../updater" }
 input-level = { path = "../input-level" }
+decode-history = { path = "../decode-history" }
 dxcc = { path = "../dxcc" }
 qso-engine = { path = "../qso-engine" }
 qso-export = { path = "../qso-export" }

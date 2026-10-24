@@ -19,6 +19,7 @@ rig-control = { path = "../rig-control" }
 wishlist = { path = "../wishlist" }
 updater = { path = "../updater" }
 input-level = { path = "../input-level" }
+decode-history = { path = "../decode-history" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

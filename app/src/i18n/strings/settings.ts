@@ -385,6 +385,14 @@ export const settingsStrings = {
   'fil.onlyCqRr73': ['Solo CQ / RR73 / 73', 'Only CQ / RR73 / 73', 'Nur CQ / RR73 / 73', 'Seulement CQ / RR73 / 73', 'Solo CQ / RR73 / 73', 'Só CQ / RR73 / 73'],
   'fil.nonStandard': ['Nascondi i messaggi non standard', 'Hide non-standard messages', 'Nicht standardisierte Nachrichten ausblenden', 'Masquer les messages non standard', 'Ocultar mensajes no estándar', 'Esconder mensagens não padrão'],
   'fil.ownContinent': ['Nascondi i messaggi del proprio continente', 'Hide messages from my own continent', 'Nachrichten vom eigenen Kontinent ausblenden', 'Masquer les messages de mon propre continent', 'Ocultar mensajes de mi propio continente', 'Esconder mensagens do meu próprio continente'],
+  'fil.worked': [
+    'Nascondi i CQ di stazioni già collegate su questa banda',
+    'Hide CQs from stations already worked on this band',
+    'CQ-Rufe von auf diesem Band bereits gearbeiteten Stationen ausblenden',
+    'Masquer les CQ de stations déjà contactées sur cette bande',
+    'Ocultar los CQ de estaciones ya contactadas en esta banda',
+    'Esconder os CQ de estações já contactadas nesta banda',
+  ],
   'fil.help': [
     'I filtri riguardano solo cosa vedi negli elenchi: i messaggi nascosti restano decodificati e le automazioni li vedono lo stesso.',
     'Filters only affect what you see in the lists: hidden messages are still decoded and automation still sees them.',

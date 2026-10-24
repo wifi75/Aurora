@@ -1,4 +1,5 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
+import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
 import { HealthSchema, type Health, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
@@ -238,6 +239,47 @@ export async function getInputLevel(): Promise<InputLevelState> {
 export async function putInputLevel(change: { volume_pct?: number; auto?: boolean }): Promise<InputLevelState> {
   const body = (await (await request('/input-level', { ...jsonInit(change), method: 'PUT' })).json()) as { status: InputLevelState };
   return body.status;
+}
+
+/** Un messaggio dello storico (la riga com'e' nel core). */
+export interface HistoryRow {
+  id: number;
+  ts_ms: number;
+  band: string | null;
+  mode: string;
+  dial_hz: number;
+  freq_hz: number;
+  snr: number;
+  dt: number;
+  text: string;
+  call: string | null;
+  country: string | null;
+  continent: string | null;
+  tag: string | null;
+}
+
+export interface HistoryPage {
+  total: number;
+  rows: HistoryRow[];
+}
+
+export interface HistoryStats {
+  total: number;
+  oldest_ms: number | null;
+  calls: number;
+}
+
+export async function getHistory(filter: HistoryFilter, offset: number, limit: number): Promise<HistoryPage> {
+  const params = historyParams(filter, offset, limit, Date.now());
+  return (await (await request(`/history?${params.toString()}`)).json()) as HistoryPage;
+}
+
+export async function getHistoryStats(): Promise<HistoryStats> {
+  return (await (await request('/history/stats')).json()) as HistoryStats;
+}
+
+export async function clearHistory(): Promise<void> {
+  await request('/history', { method: 'DELETE' });
 }
 
 export interface AwardStats {

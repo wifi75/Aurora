@@ -2533,3 +2533,71 @@
   text-align: center;
   font-size: var(--text-xs);
 }
+
+/* Storico dei messaggi */
+.history-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.history-help {
+  margin: 0;
+}
+
+.history-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.history-bar input[type='search'] {
+  min-width: 12rem;
+  min-height: 1.8rem;
+  padding: 0 0.6rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--text-muted);
+  border-radius: 0.4rem;
+}
+
+.history-table-wrap {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.25rem 0.6rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.history-table th.num,
+.history-table td.num {
+  text-align: right;
+}
+
+.history-row {
+  cursor: pointer;
+}
+
+.history-row:hover {
+  background: var(--glass-lo);
+}
+
+.history-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.85rem;
+}

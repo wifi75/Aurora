@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Storico dei messaggi**: ogni messaggio ricevuto si ricorda (`data/history.sqlite`, 30 giorni, `AURORA_HISTORY_DAYS`) e si cerca nella nuova pagina Storico per nominativo o testo, banda, modo e periodo, con pagine da 100 e svuotamento su conferma (`GET/DELETE /api/v1/history`, `GET /api/v1/history/stats`). Non e' il log dei QSO e non vi finisce nulla.
+- **Filtro «Nascondi i CQ di stazioni gia' collegate su questa banda»** nella scheda Filtri: gli altri messaggi di quelle stazioni restano visibili.
 - **Livello RX**: indicatore del livello dell'audio in ingresso accanto al cursore Pwr (valore medio, picco, stato Muto/Basso/Giusto/Alto/Saturo) con avviso di saturazione dopo 3 secondi e di silenzio dopo 8; evento `audio_level` sul flusso. Idea dal confronto con Decodium, scritta da zero.
 - **Volume di registrazione di Windows**: cursore e pulsante AUTO accanto all'indicatore Rx (`GET/PUT /api/v1/input-level`), sul dispositivo da cui viene la cascata, lo stesso di JTDX. AUTO scende subito se il segnale satura, sale piano se resta debole, non agisce in trasmissione e si spegne se muovi il cursore; la scelta si ricorda in `data/input-level.json`.
 - **Licenza**: Aurora e' rilasciata con la GNU GPL versione 3 o successiva (`LICENSE`, `license` nei manifest, badge del README).

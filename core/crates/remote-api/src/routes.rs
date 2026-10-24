@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -44,6 +44,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
         .route("/api/v1/input-level", get(input_level_get).put(input_level_put))
+        .route("/api/v1/history", get(history_get).delete(history_clear))
+        .route("/api/v1/history/stats", get(history_stats))
         .route("/api/v1/controls", get(controls_get))
         .route("/api/v1/commands/control", post(control_press))
         .route("/api/v1/commands/tx-message", post(tx_message))
@@ -447,6 +449,61 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+fn history_store(state: &AppState) -> Result<std::sync::Arc<decode_history::HistoryStore>, ApiError> {
+    state.history.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "history_unavailable"))
+}
+
+fn history_error(e: decode_history::HistoryError) -> ApiError {
+    tracing::warn!("{e}");
+    ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "history_error")
+}
+
+#[derive(Deserialize)]
+struct HistoryParams {
+    /// Parte di un nominativo o del testo del messaggio.
+    q: Option<String>,
+    band: Option<String>,
+    mode: Option<String>,
+    from_ms: Option<u64>,
+    to_ms: Option<u64>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+}
+
+/// I messaggi ricevuti, i piu' recenti per primi, filtrati e a pagine (al massimo 500 per volta).
+#[utoipa::path(get, path = "/api/v1/history", responses((status = 200, description = "`total` e `rows`"), (status = 404, description = "Storico non disponibile (history_unavailable)")))]
+async fn history_get(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<HistoryParams>) -> Result<Json<Value>, ApiError> {
+    let store = history_store(&state)?;
+    let query = decode_history::Query { text: p.q, band: p.band, mode: p.mode, from_ms: p.from_ms, to_ms: p.to_ms, limit: p.limit.unwrap_or(100), offset: p.offset.unwrap_or(0) };
+    match tokio::task::spawn_blocking(move || store.query(&query)).await {
+        Ok(Ok(page)) => Ok(Json(json!(page))),
+        Ok(Err(e)) => Err(history_error(e)),
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "history_task")),
+    }
+}
+
+/// Quanti messaggi e stazioni ci sono nello storico e da quando.
+#[utoipa::path(get, path = "/api/v1/history/stats", responses((status = 200, description = "`total`, `oldest_ms`, `calls`"), (status = 404, description = "Storico non disponibile (history_unavailable)")))]
+async fn history_stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let store = history_store(&state)?;
+    match tokio::task::spawn_blocking(move || store.stats()).await {
+        Ok(Ok(stats)) => Ok(Json(json!(stats))),
+        Ok(Err(e)) => Err(history_error(e)),
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "history_task")),
+    }
+}
+
+/// Svuota lo storico dei messaggi (non tocca il log dei QSO).
+#[utoipa::path(delete, path = "/api/v1/history", responses((status = 200, description = "Quanti messaggi sono stati tolti"), (status = 404, description = "Storico non disponibile (history_unavailable)")))]
+async fn history_clear(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let store = history_store(&state)?;
+    match tokio::task::spawn_blocking(move || store.clear()).await {
+        Ok(Ok(removed)) => Ok(Json(json!({ "ok": true, "removed": removed }))),
+        Ok(Err(e)) => Err(history_error(e)),
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "history_task")),
     }
 }
 
