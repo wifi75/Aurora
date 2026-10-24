@@ -31,6 +31,16 @@ describe('DecodeList', () => {
     expect(screen.getByText('Giappone')).toBeInTheDocument();
   });
 
+  it('shows the distance in km like JTDX when the own locator is known', () => {
+    render(<DecodeList decodes={[decode({ country: 'Giappone' })]} myGrid="JN45" onReply={() => {}} />);
+    expect(screen.getByText(/\[\d+ km\]/)).toBeInTheDocument();
+  });
+
+  it('shows the delta time column', () => {
+    render(<DecodeList decodes={[decode({ delta_time: 0.3 })]} onReply={() => {}} />);
+    expect(screen.getByText('0.3')).toBeInTheDocument();
+  });
+
   it('shows no country text when unknown', () => {
     render(<DecodeList decodes={[decode({ country: null }), decode({ id: 8 })]} onReply={() => {}} />);
     expect(screen.queryByText('Giappone')).not.toBeInTheDocument();

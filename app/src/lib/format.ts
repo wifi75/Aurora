@@ -25,6 +25,8 @@ const BANDS: ReadonlyArray<readonly [string, number, number]> = [
   ['2m', 144_000, 148_000],
 ];
 
+export const BAND_NAMES: readonly string[] = BANDS.map(([name]) => name);
+
 export function bandOf(hz: number): string | null {
   const khz = hz / 1000;
   return BANDS.find(([, from, to]) => khz >= from && khz <= to)?.[0] ?? null;

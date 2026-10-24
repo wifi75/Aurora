@@ -20,12 +20,14 @@ engine-sim = { path = "../engine-sim" }
 engine-jtdx = { path = "../engine-jtdx" }
 dxcc = { path = "../dxcc" }
 qso-engine = { path = "../qso-engine" }
+qso-export = { path = "../qso-export" }
 audio-spectrum = { path = "../audio-spectrum" }
 udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 remote-api = { path = "../remote-api" }
 tokio = { workspace = true }
+serde_json = { workspace = true }
 axum = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }

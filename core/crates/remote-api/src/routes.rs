@@ -24,7 +24,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -37,6 +37,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/halt-tx", post(halt_tx))
         .route("/api/v1/commands/reply", post(reply))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
+        .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)
@@ -318,6 +319,11 @@ async fn automation_put(
         automation.set_enabled(enabled);
     }
     Ok(Json(serde_json::to_value(automation.state()).unwrap_or(Value::Null)))
+}
+
+#[utoipa::path(get, path = "/api/v1/station-info", responses((status = 200, description = "Come e' avviata la stazione (sola lettura)")))]
+async fn station_info(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    Json((*state.station_info).clone())
 }
 
 async fn openapi() -> Json<Value> {

@@ -1,0 +1,13 @@
+[package]
+name = "qso-export"
+description = "Trasporto dei QSO registrati verso log esterni (ADIF su UDP o su file)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+logbook = { path = "../logbook" }
+tokio = { workspace = true, features = ["io-util"] }
+tracing = { workspace = true }

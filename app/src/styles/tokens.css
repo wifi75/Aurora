@@ -60,6 +60,18 @@
   /* Cascata: la colormap vive in src/render/colormap.ts con gli stessi colori */
   --wf-bg: #080c18;
 
+  /* Vetro: superfici traslucide con luce dall'alto e bagliore dell'accento */
+  --glass-hi: rgb(255 255 255 / 0.16);
+  --glass-lo: rgb(255 255 255 / 0.04);
+  --glass-edge: rgb(255 255 255 / 0.2);
+  --glass-shine: rgb(255 255 255 / 0.28);
+  --glass-shadow: rgb(0 0 0 / 0.4);
+  --glow: rgb(63 214 200 / 0.45);
+  --panel-glass: rgb(17 23 34 / 0.62);
+  --aurora-a: rgb(63 214 200 / 0.14);
+  --aurora-b: rgb(120 90 255 / 0.16);
+  --aurora-c: rgb(255 93 138 / 0.08);
+
   color-scheme: dark;
 }
 
@@ -81,6 +93,16 @@
   --warn: #9a5d00;
   --danger: #c62a2a;
   --wf-bg: #0b0e14;
+  --glass-hi: rgb(255 255 255 / 0.9);
+  --glass-lo: rgb(255 255 255 / 0.5);
+  --glass-edge: rgb(255 255 255 / 0.9);
+  --glass-shine: rgb(255 255 255 / 1);
+  --glass-shadow: rgb(30 50 90 / 0.22);
+  --glow: rgb(11 127 117 / 0.4);
+  --panel-glass: rgb(255 255 255 / 0.66);
+  --aurora-a: rgb(11 127 117 / 0.13);
+  --aurora-b: rgb(110 90 255 / 0.12);
+  --aurora-c: rgb(255 93 138 / 0.08);
   color-scheme: light;
 }
 

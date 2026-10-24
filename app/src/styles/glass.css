@@ -1,0 +1,508 @@
+/* Aspetto vivo: sfondo luminoso, pannelli e pulsanti di vetro traslucido, finestre trascinabili. */
+
+body {
+  background:
+    radial-gradient(60rem 38rem at 8% -10%, var(--aurora-a), transparent 60%),
+    radial-gradient(48rem 34rem at 96% 6%, var(--aurora-b), transparent 62%),
+    radial-gradient(52rem 30rem at 50% 110%, var(--aurora-c), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* Intestazione e marchio */
+.app-header {
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.app-brand {
+  background: linear-gradient(100deg, var(--accent), #8e7bff 55%, #ff5d8a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.22em;
+  text-decoration: none;
+}
+
+.app-nav {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Pulsanti di vetro: luce dall'alto, bordo luminoso, bagliore all'accensione */
+.glass,
+button.glass,
+.size-switch,
+.theme-toggle,
+.alert-switch button,
+.notice button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.65rem;
+  box-shadow:
+    inset 0 1px 0 var(--glass-shine),
+    0 6px 18px -6px var(--glass-shadow);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.5);
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-fade) var(--ease-out),
+    border-color var(--dur-fade) var(--ease-out);
+}
+
+.glass:active,
+.theme-toggle:active,
+.alert-switch button:active,
+.size-switch button:active {
+  transform: scale(0.97);
+}
+
+.glass--on,
+.alert-switch button[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-shine),
+    0 0 0 1px var(--accent),
+    0 0 22px -2px var(--glow);
+  color: var(--text);
+}
+
+.glass:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass:hover:not(:disabled),
+  .theme-toggle:hover,
+  .alert-switch button:hover {
+    border-color: var(--accent);
+    box-shadow:
+      inset 0 1px 0 var(--glass-shine),
+      0 0 18px -4px var(--glow),
+      0 6px 18px -6px var(--glass-shadow);
+  }
+}
+
+/* Il gruppo a tre scelte resta un blocco unico, ma di vetro */
+.size-switch {
+  padding: 0;
+  overflow: hidden;
+}
+
+.size-switch button {
+  background: transparent;
+  min-height: 2.25rem;
+}
+
+.size-switch button[aria-pressed='true'] {
+  background: linear-gradient(180deg, var(--glow), transparent);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* Targhette di stato */
+.pill {
+  background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
+  border-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 var(--glass-shine);
+}
+
+.pill--link.pill--open {
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 0 14px -4px var(--ok);
+}
+
+/* Pannelli e finestre */
+.panel,
+.dock-panel {
+  background: var(--panel-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.9rem;
+  box-shadow:
+    inset 0 1px 0 var(--glass-shine),
+    0 18px 40px -18px var(--glass-shadow);
+}
+
+.settings {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: var(--text-xl);
+}
+
+.settings-block {
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.settings-block > :not(.panel-title) {
+  margin-inline: var(--space-4);
+}
+
+.settings-hint {
+  margin-block: 0;
+  font-size: var(--text-sm);
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-2);
+}
+
+.color-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.65rem;
+}
+
+.color-chip {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  box-shadow: 0 0 14px -2px currentColor, inset 0 1px 0 var(--glass-shine);
+}
+
+.color-row input[type='color'] {
+  width: 2.75rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.auto-tags {
+  display: grid;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+}
+
+.auto-field {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 24rem;
+  font-size: var(--text-sm);
+}
+
+.auto-field input {
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+
+.auto-log {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.auto-log li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+/* Etichette dei messaggi: colori scelti nelle impostazioni */
+.badge--tag {
+  border-radius: 999px;
+  box-shadow: 0 0 12px -2px currentColor;
+}
+
+.decode-row {
+  box-shadow: inset 3px 0 0 var(--row-accent, transparent);
+}
+
+/* Dock: due colonne di finestre trascinabili e ridimensionabili */
+.dock {
+  display: grid;
+  grid-template-columns: minmax(0, var(--dock-split)) 0.75rem minmax(0, var(--dock-rest));
+  flex: 1;
+  min-height: 0;
+}
+
+.dock-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+.dock-panel {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 6rem;
+  overflow: hidden;
+}
+
+.dock-grip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border-width) solid var(--glass-edge);
+  background: linear-gradient(180deg, var(--glass-hi), transparent);
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.dock-grip h2 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+.dock-grip-dots {
+  width: 0.9rem;
+  height: 0.9rem;
+  background: radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 0 0 / 0.45rem 0.45rem;
+  opacity: 0.8;
+}
+
+.dock--dragging,
+.dock--dragging * {
+  cursor: grabbing !important;
+}
+
+.dock-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dock-body .waterfall {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.dock-body .decode-list {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+  border: 0;
+}
+
+.dock-resize {
+  height: 0.6rem;
+  background: linear-gradient(180deg, transparent, var(--glass-hi));
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.dock-resize::after {
+  content: '';
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin: 0.2rem auto 0;
+  border-radius: 3px;
+  background: var(--text-muted);
+  opacity: 0.55;
+}
+
+.dock-splitter {
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, var(--glass-edge), transparent);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dock-splitter:hover {
+    background: linear-gradient(180deg, transparent, var(--accent), transparent);
+  }
+}
+
+.dock-drop {
+  height: 4.5rem;
+  border: 2px dashed var(--accent);
+  border-radius: 0.9rem;
+  background: var(--glow);
+  opacity: 0.55;
+}
+
+.dock-empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 6rem;
+  border: 2px dashed var(--glass-edge);
+  border-radius: 0.9rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Su schermi stretti le colonne si impilano e il trascinamento si spegne */
+@media (max-width: 63.99rem) {
+  .dock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .dock-splitter,
+  .dock-resize,
+  .dock-grip-dots {
+    display: none;
+  }
+
+  .dock-grip {
+    cursor: default;
+    touch-action: auto;
+  }
+
+  .dock-panel {
+    flex: none;
+    height: auto !important;
+  }
+
+  .dock-panel--waterfall {
+    height: 14rem !important;
+  }
+
+  .dock-panel--cq .dock-body,
+  .dock-panel--all .dock-body {
+    max-height: 22rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass,
+  .theme-toggle {
+    transition: none;
+  }
+}
+
+/* Schede delle impostazioni */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: var(--border-width) solid var(--glass-edge);
+}
+
+/* Elenco delle stazioni nello stile di JTDX: righe colorate per tipo, paese e distanza a destra */
+.decode-row {
+  grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) minmax(7rem, 11rem) auto;
+  gap: var(--space-2);
+  min-height: 1.9rem;
+  padding-block: 0.15rem;
+  background: color-mix(in srgb, var(--row-accent, transparent) 34%, transparent);
+  font-size: var(--text-sm);
+}
+
+.decode-row .num {
+  text-align: right;
+}
+
+.decode-where {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .decode-row:hover {
+    background: color-mix(in srgb, var(--row-accent, var(--accent)) 52%, transparent);
+  }
+}
+
+/* Barra delle bande: la banda in uso e' accesa */
+.band-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.band-bar button {
+  min-width: 2.6rem;
+  min-height: 2rem;
+  padding: 0 var(--space-2);
+}
+
+/* Telefono: orario, dB e messaggio; paese sotto il messaggio; niente DT e frequenza */
+@media (max-width: 63.99rem) {
+  .decode-row {
+    grid-template-columns: 4.1rem 2.3rem minmax(0, 1fr) auto;
+    row-gap: 0;
+  }
+
+  .decode-row > :nth-child(3),
+  .decode-row > :nth-child(4) {
+    display: none;
+  }
+
+  .decode-row > :nth-child(5) {
+    grid-column: 3;
+  }
+
+  .decode-row > :nth-child(6) {
+    grid-column: 3;
+    grid-row: 2;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .decode-row > :nth-child(7) {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+
+  .decode-row > :nth-child(-n + 2) {
+    grid-row: 1 / span 2;
+  }
+
+  .live-actions {
+    flex-wrap: wrap;
+  }
+}

@@ -64,6 +64,7 @@ dependencies = [
  "futures-util",
  "logbook",
  "qso-engine",
+ "qso-export",
  "remote-api",
  "serde_json",
  "tokio",
@@ -1098,6 +1099,16 @@ dependencies = [
  "aurora-core",
  "engine-jtdx",
  "serde",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "qso-export"
+version = "0.4.0"
+dependencies = [
+ "aurora-core",
+ "logbook",
  "tokio",
  "tracing",
 ]

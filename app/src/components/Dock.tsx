@@ -1,0 +1,144 @@
+import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { movePanel, resizePanel, setSplit, type Layout, type PanelId, type Zone } from '../lib/layout';
+
+interface Props {
+  layout: Layout;
+  onChange(layout: Layout): void;
+  titles: Record<PanelId, string>;
+  /** Pannelli da non mostrare (per esempio la cascata nascosta). */
+  hidden?: readonly PanelId[];
+  render(id: PanelId): ReactNode;
+}
+
+interface DropSpot {
+  zone: Zone;
+  index: number;
+}
+
+/**
+ * Due colonne di pannelli: ognuno si trascina dalla barra del titolo (anche in un'altra colonna o in basso),
+ * si ridimensiona dal bordo inferiore, e il divisore sposta la larghezza delle colonne.
+ * Su schermi stretti le colonne si impilano e il trascinamento e' spento.
+ */
+export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
+  const columns = useRef<Record<Zone, HTMLDivElement | null>>({ left: null, right: null });
+  const root = useRef<HTMLDivElement | null>(null);
+  const [dragging, setDragging] = useState<PanelId | null>(null);
+  const [spot, setSpot] = useState<DropSpot | null>(null);
+
+  const spotAt = (x: number, y: number, dragged: PanelId): DropSpot => {
+    const left = columns.current.left?.getBoundingClientRect();
+    const zone: Zone = left && x < left.right + 4 ? 'left' : 'right';
+    const panels = Array.from(columns.current[zone]?.querySelectorAll<HTMLElement>('[data-panel]') ?? []).filter(
+      (el) => el.dataset.panel !== dragged,
+    );
+    const index = panels.filter((el) => {
+      const r = el.getBoundingClientRect();
+      return y > r.top + r.height / 2;
+    }).length;
+    return { zone, index };
+  };
+
+  const startDrag = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(id);
+    setSpot(spotAt(e.clientX, e.clientY, id));
+  };
+  const moveDrag = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (dragging === id) setSpot(spotAt(e.clientX, e.clientY, id));
+  };
+  const endDrag = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (dragging !== id) return;
+    const target = spotAt(e.clientX, e.clientY, id);
+    setDragging(null);
+    setSpot(null);
+    onChange(movePanel(layout, id, target.zone, target.index));
+  };
+
+  const startResize = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
+    const panel = e.currentTarget.closest<HTMLElement>('[data-panel]');
+    if (!panel) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const startY = e.clientY;
+    const startHeight = panel.getBoundingClientRect().height;
+    const handle = e.currentTarget;
+    const move = (ev: PointerEvent) => onChange(resizePanel(layout, id, startHeight + ev.clientY - startY));
+    const stop = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  };
+
+  const startSplit = (e: ReactPointerEvent<HTMLElement>) => {
+    const box = root.current?.getBoundingClientRect();
+    if (!box) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const handle = e.currentTarget;
+    const move = (ev: PointerEvent) => onChange(setSplit(layout, (ev.clientX - box.left) / box.width));
+    const stop = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  };
+
+  const column = (zone: Zone) => {
+    const ids = layout[zone].filter((id) => !hidden.includes(id));
+    const visible = ids.filter((id) => id !== dragging);
+    const nodes: ReactNode[] = [];
+    const marker = (key: string) => <div key={key} className="dock-drop" aria-hidden="true" />;
+    visible.forEach((id, i) => {
+      if (spot?.zone === zone && spot.index === i) nodes.push(marker(`drop-${i}`));
+      const height = layout.heights[id];
+      nodes.push(
+        <section
+          key={id}
+          data-panel={id}
+          className={`dock-panel dock-panel--${id}`}
+          style={height ? { height, flex: 'none' } : undefined}
+        >
+          <header
+            className="dock-grip"
+            onPointerDown={startDrag(id)}
+            onPointerMove={moveDrag(id)}
+            onPointerUp={endDrag(id)}
+            onPointerCancel={() => {
+              setDragging(null);
+              setSpot(null);
+            }}
+          >
+            <span className="dock-grip-dots" aria-hidden="true" />
+            <h2>{titles[id]}</h2>
+          </header>
+          <div className="dock-body">{render(id)}</div>
+          <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={`Altezza di ${titles[id]}`} onPointerDown={startResize(id)} />
+        </section>,
+      );
+    });
+    if (spot?.zone === zone && spot.index >= visible.length) nodes.push(marker('drop-end'));
+    if (visible.length === 0 && !(spot?.zone === zone)) {
+      nodes.push(
+        <div key="empty" className="dock-empty">
+          Trascina qui un pannello
+        </div>,
+      );
+    }
+    return nodes;
+  };
+
+  return (
+    <div ref={root} className={`dock${dragging ? ' dock--dragging' : ''}`} style={{ ['--dock-split' as string]: `${layout.split}fr`, ['--dock-rest' as string]: `${1 - layout.split}fr` }}>
+      <div className="dock-col" ref={(el) => { columns.current.left = el; }}>{column('left')}</div>
+      <div className="dock-splitter" role="separator" aria-orientation="vertical" aria-label="Larghezza delle colonne" onPointerDown={startSplit} />
+      <div className="dock-col" ref={(el) => { columns.current.right = el; }}>{column('right')}</div>
+    </div>
+  );
+}

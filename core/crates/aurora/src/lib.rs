@@ -16,6 +16,7 @@ use dxcc::DxccDb;
 use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::Logbook;
+use qso_export::{Exporter, Target};
 use qso_engine::{Automation, AutomationConfig, Limits, Rules};
 use remote_api::{build_router, AppState, TxPolicy};
 use tokio::{net::TcpListener, task::JoinHandle};
@@ -57,6 +58,10 @@ pub struct Config {
     pub worked_adif: Option<PathBuf>,
     /// Salvaguardie dell'automazione dei QSO: si impostano solo qui, sul PC.
     pub auto_limits: Limits,
+    /// Log esterni che ricevono ogni QSO come ADIF su UDP (attenzione ai doppioni con il server UDP secondario di JTDX).
+    pub export_udp: Vec<SocketAddr>,
+    /// File ADIF a cui aggiungere ogni QSO.
+    pub export_file: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -96,6 +101,8 @@ impl Config {
             cty_path: None,
             worked_adif: None,
             auto_limits: Limits::default(),
+            export_udp: Vec::new(),
+            export_file: None,
         }
     }
 
@@ -147,6 +154,13 @@ impl Config {
                 return Err(StartError::BadConfig(format!("AURORA_REPLAY_ON_CONNECT deve essere 0 o 1, non {other}")));
             }
         };
+        let mut export_udp = Vec::new();
+        for part in get("AURORA_EXPORT_UDP").unwrap_or_default().split(',').map(str::trim).filter(|p| !p.is_empty()) {
+            export_udp.push(
+                part.parse()
+                    .map_err(|_| StartError::BadConfig(format!("AURORA_EXPORT_UDP contiene un indirizzo non valido: {part}")))?,
+            );
+        }
         let defaults = Limits::default();
         let auto_limits = Limits {
             max_consecutive_cycles: positive(&get, "AURORA_AUTO_MAX_CYCLES", defaults.max_consecutive_cycles)?,
@@ -173,6 +187,8 @@ impl Config {
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
+            export_udp,
+            export_file: get("AURORA_EXPORT_FILE").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
         })
     }
 }
@@ -270,7 +286,37 @@ pub async fn run(
             now: Arc::new(unix_secs),
         },
     );
+    let mut targets: Vec<Target> = config.export_udp.iter().map(|a| Target::UdpAdif(*a)).collect();
+    targets.extend(config.export_file.clone().map(Target::File));
+    // il log di Aurora si riempie sempre; i log esterni solo se configurati
+    let _exporter = Exporter::spawn(&bus, Arc::clone(&logbook), targets, Arc::new(unix_secs));
+    // paesi e QSO gia' fatti si leggono una volta sola, prima di avviare il motore
+    let enrichment = load_dxcc(config.cty_path.as_deref()).map(|db| {
+        let worked = load_worked(config.worked_adif.as_deref(), &db);
+        (db, worked)
+    });
+    let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
+    let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());
+    let info = serde_json::json!({
+        "version": aurora_core::version::APP_VERSION,
+        "engine": if config.engine == EngineKind::Jtdx { "jtdx" } else { "sim" },
+        "tx_allowed": live_tx,
+        "udp_listen": config.udp_listen.to_string(),
+        "udp_forward": config.udp_forward.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        "export_udp": config.export_udp.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        "export_file": config.export_file.as_ref().map(|p| p.display().to_string()),
+        "audio_device": config.audio_device,
+        "cty_loaded": dxcc_loaded,
+        "worked_qsos": worked_qsos,
+        "limits": {
+            "max_consecutive_cycles": config.auto_limits.max_consecutive_cycles,
+            "max_per_day": config.auto_limits.max_per_day,
+            "dead_man_secs": config.auto_limits.dead_man_secs,
+            "run_unattended": config.auto_limits.run_unattended,
+        },
+    });
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
+        .with_station_info(info)
         .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
@@ -289,8 +335,7 @@ pub async fn run(
                 ..JtdxConfig::default()
             };
             let mut engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
-            if let Some(db) = load_dxcc(config.cty_path.as_deref()) {
-                let worked = load_worked(config.worked_adif.as_deref(), &db);
+            if let Some((db, worked)) = enrichment {
                 engine = engine.with_enrichment(db, worked);
             }
             (tokio::spawn(engine.run(io)), Some(hub))

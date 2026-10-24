@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { postReply } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
+import { BandBar } from '../components/BandBar';
+import { Dock } from '../components/Dock';
 import { DecodeList } from '../components/DecodeList';
 import { FrequencyRuler } from '../components/FrequencyRuler';
-import { Panel } from '../components/Panel';
 import { StationPanel } from '../components/StationPanel';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
@@ -14,6 +15,7 @@ import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type Ale
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
+import { clearHeight, readLayout, resizePanel, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { readSize, saveSize, type WaterfallSize } from '../lib/waterfallSize';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
@@ -61,9 +63,36 @@ export function Live() {
     });
   }, []);
 
+  const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
+  const changeLayout = (next: Layout) => {
+    saveLayout(browserStorage(), next);
+    setLayout(next);
+  };
+
+  // Grande = la cascata prende lo spazio che resta; Ridotta = una fascia; Nascosta = niente cascata
   const changeSize = (next: WaterfallSize) => {
     saveSize(browserStorage(), next);
     setSize(next);
+    changeLayout(next === 'small' ? resizePanel(layout, 'waterfall', 160) : clearHeight(layout, 'waterfall'));
+  };
+
+  const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', cq: 'CQ e novità', all: 'Attività di banda' };
+  const renderPanel = (id: PanelId) => {
+    switch (id) {
+      case 'waterfall':
+        return (
+          <>
+            <Waterfall register={registerSpectrum} />
+            <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
+          </>
+        );
+      case 'station':
+        return <StationPanel status={status} />;
+      case 'cq':
+        return <DecodeList decodes={cqDecodes(decodes)} myGrid={status?.de_grid} onReply={onReply} emptyText="Nessun CQ per ora" />;
+      case 'all':
+        return <DecodeList decodes={decodes} myGrid={status?.de_grid} onReply={onReply} />;
+    }
   };
 
   useEffect(() => {
@@ -96,23 +125,8 @@ export function Live() {
           <StopButton variant="compact" />
         </div>
       </div>
-      <div className={`live-body live-body--${size}`}>
-        <section className="desk-main" aria-label="Cascata">
-          <Waterfall register={registerSpectrum} />
-          <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
-        </section>
-        <aside className="desk-side">
-          <Panel title="Stazione" className="station-panel">
-            <StationPanel status={status} />
-          </Panel>
-          <Panel title="CQ e novità" className="panel--cq">
-            <DecodeList decodes={cqDecodes(decodes)} onReply={onReply} emptyText="Nessun CQ per ora" />
-          </Panel>
-          <Panel title="Tutti i messaggi" className="panel--all">
-            <DecodeList decodes={decodes} onReply={onReply} />
-          </Panel>
-        </aside>
-      </div>
+      <BandBar dialHz={status?.dial_hz ?? 0} />
+      <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
       <p className="live-note" role="status" aria-live="polite">
         {note}
       </p>

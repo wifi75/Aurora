@@ -14,6 +14,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/pair/12ab34')).toEqual({ name: 'pair', code: '1234' });
   });
 
+  it('reads the settings and automation pages', () => {
+    expect(parseRoute('#/impostazioni')).toEqual({ name: 'settings' });
+    expect(parseRoute('#/automazioni')).toEqual({ name: 'automation' });
+  });
+
   it('defaults to the live page', () => {
     expect(parseRoute('')).toEqual({ name: 'live' });
     expect(parseRoute('#/')).toEqual({ name: 'live' });

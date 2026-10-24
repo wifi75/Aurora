@@ -38,6 +38,8 @@ pub struct AppState {
     pub secure_cookie: bool,
     /// L'automazione dei QSO, se il programma la offre.
     pub automation: Option<Automation>,
+    /// Come e' avviata la stazione (da mostrare nelle impostazioni, sola lettura).
+    pub station_info: Arc<serde_json::Value>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -77,7 +79,12 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), shared, shutdown: Arc::new(shutdown) }
+    }
+
+    pub fn with_station_info(mut self, info: serde_json::Value) -> AppState {
+        self.station_info = Arc::new(info);
+        self
     }
 
     pub fn with_automation(mut self, automation: Automation) -> AppState {

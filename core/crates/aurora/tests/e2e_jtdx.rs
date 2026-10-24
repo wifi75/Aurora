@@ -74,6 +74,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(c.cty_path.is_none() && c.worked_adif.is_none());
     assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (6, 40, 120));
     assert!(!c.auto_limits.run_unattended);
+    assert!(c.export_udp.is_empty() && c.export_file.is_none());
 
     let env = |k: &str| match k {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
@@ -88,6 +89,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_AUTO_MAX_PER_DAY" => Some("10".to_string()),
         "AURORA_AUTO_DEAD_MAN_SECS" => Some("30".to_string()),
         "AURORA_AUTO_UNATTENDED" => Some("1".to_string()),
+        "AURORA_EXPORT_UDP" => Some("127.0.0.1:2239, 127.0.0.1:2240".to_string()),
+        "AURORA_EXPORT_FILE" => Some("dati/export.adi".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
@@ -102,6 +105,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert_eq!(c.worked_adif, Some(PathBuf::from("dati/log.adi")));
     assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (3, 10, 30));
     assert!(c.auto_limits.run_unattended);
+    assert_eq!(c.export_udp.len(), 2);
+    assert_eq!(c.export_file, Some(PathBuf::from("dati/export.adi")));
 
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
     assert!(Config::from_lookup(bad("AURORA_UDP_LISTEN", "non-un-indirizzo")).is_err());
@@ -113,6 +118,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(Config::from_lookup(bad("AURORA_AUTO_MAX_PER_DAY", "molte")).is_err());
     assert!(Config::from_lookup(bad("AURORA_AUTO_DEAD_MAN_SECS", "-5")).is_err());
     assert!(Config::from_lookup(bad("AURORA_AUTO_UNATTENDED", "si")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_EXPORT_UDP", "127.0.0.1:2239,xyz")).is_err());
 }
 
 #[tokio::test]

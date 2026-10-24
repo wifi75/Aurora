@@ -1,3 +1,4 @@
+import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { HealthSchema, type Health } from './schemas';
 
 const BASE = '/api/v1';
@@ -55,4 +56,37 @@ export async function postReply(decodeId: number): Promise<void> {
 
 export async function finishPairing(code: string, deviceName: string): Promise<void> {
   await request('/pair/finish', jsonInit({ code, device_name: deviceName }));
+}
+
+export async function getAutomation(): Promise<AutomationState> {
+  return AutomationStateSchema.parse(await (await request('/automation')).json());
+}
+
+export interface AutomationChange {
+  enabled?: boolean;
+  mode?: 'dry_run' | 'live';
+  rules?: AutomationRules;
+  accept_license_notice?: boolean;
+}
+
+export async function putAutomation(change: AutomationChange): Promise<AutomationState> {
+  const init = { ...jsonInit(change), method: 'PUT' };
+  return AutomationStateSchema.parse(await (await request('/automation', init)).json());
+}
+
+export interface StationInfo {
+  engine?: string;
+  tx_allowed: boolean;
+  udp_listen: string;
+  udp_forward: string[];
+  export_udp: string[];
+  export_file: string | null;
+  audio_device: string | null;
+  cty_loaded: number;
+  worked_qsos: number;
+  limits: { max_consecutive_cycles: number; max_per_day: number; dead_man_secs: number; run_unattended: boolean };
+}
+
+export async function getStationInfo(): Promise<StationInfo> {
+  return (await (await request('/station-info')).json()) as StationInfo;
 }
