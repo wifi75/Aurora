@@ -17,6 +17,9 @@ Stato al 2026-10-24, versione 0.8.0. Per riprendere il lavoro leggi anche `docs/
 - Log di Log4OM2: database SQLite in `Documents\LOG4OM2\<nominativo>.sqlite` (36484 QSO, 98 colonne, tabella `Log`), aperto solo in lettura nelle prove. Aurora oggi legge solo l'ADIF di JTDX (2060 QSO): novita' e statistiche ne escono sottostimate. Lettura da decidere con Tiziano.
 - Avvio di sviluppo: serve `AURORA_AUDIO_DEVICE='USB Audio'` per la cascata; senza e' vuota (dimenticato una volta al riavvio).
 
+- Cursore Pwr: un cursore orizzontale ruotato di 90 gradi (il verticale per CSS era invertito in alcuni browser e portava il livello al minimo, 45 dB, scambiato per «non funziona»). 100% = 0 dB di attenuazione, sempre in alto. Il valore parte al rilascio e richiede la trasmissione aperta.
+- Esc ferma la trasmissione e spegne AutoTX e Abilita Tx (opzione in Generali, accesa). Il doppio clic su un messaggio accende anche Abilita Tx: con «1 QSO» JTDX lo spegne a ogni QSO finito.
+
 ## Sicurezza (non negoziabile)
 - Trasmissione chiusa di default (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore). STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.

@@ -40,12 +40,12 @@ export const wikiStrings = {
   ],
   'wiki.stop.t': ['Trasmettere e STOP', 'Transmitting and STOP', 'Senden und STOP', 'Émettre et STOP', 'Transmitir y STOP', 'Transmitir e STOP'],
   'wiki.stop.b': [
-    'La trasmissione è chiusa finché non la apri dal PC. STOP TX ferma tutto, spegne l’automazione ed è sempre disponibile. La linguetta rossa lampeggiante a destra significa “in onda”, quella verde “in ascolto”.',
-    'Transmission is closed until you open it from the PC. STOP TX halts everything, turns automation off and is always available. The blinking red tab on the right means “on air”, the green one “listening”.',
-    'Das Senden ist gesperrt, bis du es am PC freigibst. STOP TX hält alles an, schaltet die Automatik aus und ist immer verfügbar. Der rot blinkende Reiter rechts heißt „auf Sendung“, der grüne „Empfang“.',
-    "L'émission est fermée tant que tu ne l'ouvres pas depuis le PC. STOP TX arrête tout, coupe l'automatisation et reste toujours disponible. L'onglet rouge clignotant à droite signifie « à l'antenne », le vert « à l'écoute ».",
-    'La transmisión está cerrada hasta que la abras desde el PC. STOP TX lo detiene todo, apaga la automatización y siempre está disponible. La pestaña roja parpadeante a la derecha significa «en el aire», la verde «escuchando».',
-    'A transmissão está fechada até a abrires no PC. O STOP TX pára tudo, desliga a automação e está sempre disponível. O separador vermelho intermitente à direita significa «no ar», o verde «a ouvir».',
+    'La trasmissione è chiusa finché non la apri dal PC. STOP TX ferma tutto, spegne l’automazione ed è sempre disponibile. La linguetta rossa lampeggiante a destra significa “in onda”, quella verde “in ascolto”. Il tasto Esc fa lo stesso di STOP TX e spegne anche AutoTX e Abilita Tx.',
+    'Transmission is closed until you open it from the PC. STOP TX halts everything, turns automation off and is always available. The blinking red tab on the right means “on air”, the green one “listening”. The Esc key does the same as STOP TX and also switches off AutoTX and Enable Tx.',
+    'Das Senden ist gesperrt, bis du es am PC freigibst. STOP TX hält alles an, schaltet die Automatik aus und ist immer verfügbar. Der rot blinkende Reiter rechts heißt „auf Sendung“, der grüne „Empfang“. Die Esc-Taste wirkt wie STOP TX und schaltet auch AutoTX und Tx an aus.',
+    "L'émission est fermée tant que tu ne l'ouvres pas depuis le PC. STOP TX arrête tout, coupe l'automatisation et reste toujours disponible. L'onglet rouge clignotant à droite signifie « à l'antenne », le vert « à l'écoute ». La touche Échap fait comme STOP TX et coupe aussi AutoTX et Activer Tx.",
+    'La transmisión está cerrada hasta que la abras desde el PC. STOP TX lo detiene todo, apaga la automatización y siempre está disponible. La pestaña roja parpadeante a la derecha significa «en el aire», la verde «escuchando». La tecla Esc hace lo mismo que STOP TX y apaga también AutoTX y Activar Tx.',
+    'A transmissão está fechada até a abrires no PC. O STOP TX pára tudo, desliga a automação e está sempre disponível. O separador vermelho intermitente à direita significa «no ar», o verde «a ouvir». A tecla Esc faz o mesmo que o STOP TX e desliga também AutoTX e Ativar Tx.',
   ],
   'wiki.band.t': ['Banda e modo', 'Band and mode', 'Band und Betriebsart', 'Bande et mode', 'Banda y modo', 'Banda e modo'],
   'wiki.band.b': [
