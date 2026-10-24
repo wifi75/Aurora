@@ -14,11 +14,11 @@ export const outputStrings = {
   ],
   'out.saved': ['Livello di uscita impostato.', 'Output level set.', 'Ausgangspegel gesetzt.', 'Niveau de sortie réglé.', 'Nivel de salida fijado.', 'Nível de saída definido.'],
   'tip.out': [
-    "Regola il livello audio di uscita. Se l'RTX è fuori ALC abbassa questo livello. Per un'emissione ottima il livello ALC deve rimanere a 0. Si cambia solo con la trasmissione abilitata.",
-    'Adjusts the audio output level. If the transceiver is out of ALC, lower this level. For an optimal emission the ALC level must stay at 0. It can only be changed with transmission enabled.',
-    'Stellt den Audio-Ausgangspegel ein. Wenn das Funkgerät außerhalb des ALC arbeitet, senke diesen Pegel. Für eine optimale Aussendung muss der ALC-Pegel bei 0 bleiben. Nur bei freigegebenem Senden änderbar.',
-    "Règle le niveau audio de sortie. Si l'émetteur-récepteur dépasse l'ALC, baisse ce niveau. Pour une émission optimale, le niveau ALC doit rester à 0. Modifiable seulement avec l'émission activée.",
-    'Ajusta el nivel de audio de salida. Si el equipo sale del ALC, baja este nivel. Para una emisión óptima el nivel ALC debe quedar en 0. Solo se cambia con la transmisión habilitada.',
-    'Ajusta o nível de áudio de saída. Se o rádio sai do ALC, baixa este nível. Para uma emissão ótima o nível ALC deve ficar em 0. Só se muda com a transmissão ativa.',
+    "Regola il livello audio di uscita. Se l'RTX è fuori ALC abbassa questo livello. Per un'emissione ottima il livello ALC deve rimanere a 0. Si regola anche a trasmissione ferma, come in JTDX.",
+    'Adjusts the audio output level. If the transceiver is out of ALC, lower this level. For an optimal emission the ALC level must stay at 0. It can be set with transmission stopped too, as in JTDX.',
+    'Stellt den Audio-Ausgangspegel ein. Wenn das Funkgerät außerhalb des ALC arbeitet, senke diesen Pegel. Für eine optimale Aussendung muss der ALC-Pegel bei 0 bleiben. Auch bei gestopptem Senden einstellbar, wie in JTDX.',
+    "Règle le niveau audio de sortie. Si l'émetteur-récepteur dépasse l'ALC, baisse ce niveau. Pour une émission optimale, le niveau ALC doit rester à 0. Réglable aussi à l'arrêt de l'émission, comme dans JTDX.",
+    'Ajusta el nivel de audio de salida. Si el equipo sale del ALC, baja este nivel. Para una emisión óptima el nivel ALC debe quedar en 0. Se ajusta también con la transmisión parada, como en JTDX.',
+    'Ajusta o nível de áudio de saída. Se o rádio sai do ALC, baixa este nível. Para uma emissão ótima o nível ALC deve ficar em 0. Ajusta-se também com a transmissão parada, como no JTDX.',
   ],
 } as const satisfies Record<string, Entry>;

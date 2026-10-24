@@ -67,12 +67,13 @@ describe('OutputLevel', () => {
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledWith(22.1));
   });
 
-  it('is locked when transmission is closed and explains why in its tooltip', async () => {
+  it('can be changed with transmission closed too, like the Pwr slider of JTDX', async () => {
     show(false);
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
-    expect(slider).toHaveAttribute('aria-disabled', 'true');
+    await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
+    expect(slider).toHaveAttribute('aria-disabled', 'false');
     fireEvent.keyDown(slider, { key: 'ArrowUp' });
-    expect(slider).toHaveAttribute('aria-valuenow', '50');
+    expect(slider).toHaveAttribute('aria-valuenow', '51');
     expect(screen.getByTitle(/ALC/)).toBeInTheDocument();
   });
 

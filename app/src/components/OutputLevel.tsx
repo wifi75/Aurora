@@ -7,12 +7,12 @@ import { replyErrorMessage } from '../lib/replyError';
 import { VerticalSlider } from './VerticalSlider';
 
 interface Props {
-  /** Cambiare il livello vale come un comando di trasmissione: serve la trasmissione aperta. */
-  txAllowed: boolean;
+  /** Il livello si regola sempre, come in JTDX; la proprieta' resta perche' il pannello la passa a tutti i suoi blocchi. */
+  txAllowed?: boolean;
 }
 
 /** Il cursore "Pwr" di JTDX: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
-export function OutputLevel({ txAllowed }: Props) {
+export function OutputLevel(_: Props) {
   const t = useT();
   const client = useQueryClient();
   const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 15_000) });
@@ -43,7 +43,6 @@ export function OutputLevel({ txAllowed }: Props) {
       <VerticalSlider
         value={pct}
         label={t('out.label')}
-        disabled={!txAllowed}
         onChange={setPct}
         onCommit={(v) => void commit(v)}
       />

@@ -67,12 +67,12 @@ export const wikiStrings = {
   ],
   'wiki.pwr.t': ['Livello audio (Pwr)', 'Audio level (Pwr)', 'Audiopegel (Pwr)', 'Niveau audio (Pwr)', 'Nivel de audio (Pwr)', 'Nível de áudio (Pwr)'],
   'wiki.pwr.b': [
-    'Il cursore Pwr regola l’audio che esce verso la radio, come in JTDX. Tienilo basso: se l’ALC della radio si muove, abbassalo. Modificarlo richiede la trasmissione aperta.',
-    'The Pwr slider sets the audio sent to the radio, as in JTDX. Keep it low: if the radio’s ALC moves, lower it. Changing it needs transmission to be open.',
-    'Der Pwr-Regler stellt das Audio zum Funkgerät ein, wie in JTDX. Halte ihn niedrig: bewegt sich die ALC, senke ihn. Ändern geht nur bei freigegebenem Senden.',
-    "Le curseur Pwr règle l'audio envoyé vers la radio, comme dans JTDX. Garde-le bas : si l'ALC bouge, baisse-le. Le modifier demande l'émission ouverte.",
-    'El control Pwr ajusta el audio que va a la radio, como en JTDX. Mantenlo bajo: si el ALC se mueve, bájalo. Cambiarlo requiere la transmisión abierta.',
-    'O cursor Pwr regula o áudio enviado ao rádio, como no JTDX. Mantém-no baixo: se o ALC se mexer, baixa-o. Alterá-lo exige a transmissão aberta.',
+    'Il cursore Pwr regola l’audio che esce verso la radio, come in JTDX. Tienilo basso: se l’ALC della radio si muove, abbassalo. Si regola sempre, anche a trasmissione ferma (il massimo è in alto).',
+    'The Pwr slider sets the audio sent to the radio, as in JTDX. Keep it low: if the radio’s ALC moves, lower it. It can always be set, even with transmission stopped (maximum is at the top).',
+    'Der Pwr-Regler stellt das Audio zum Funkgerät ein, wie in JTDX. Halte ihn niedrig: bewegt sich die ALC, senke ihn. Er lässt sich immer einstellen, auch bei gestopptem Senden (Maximum oben).',
+    "Le curseur Pwr règle l'audio envoyé vers la radio, comme dans JTDX. Garde-le bas : si l'ALC bouge, baisse-le. Il se règle toujours, même à l'arrêt de l'émission (le maximum est en haut).",
+    'El control Pwr ajusta el audio que va a la radio, como en JTDX. Mantenlo bajo: si el ALC se mueve, bájalo. Se ajusta siempre, incluso con la transmisión parada (el máximo está arriba).',
+    'O cursor Pwr regula o áudio enviado ao rádio, como no JTDX. Mantém-no baixo: se o ALC se mexer, baixa-o. Ajusta-se sempre, mesmo com a transmissão parada (o máximo está em cima).',
   ],
   'wiki.auto.t': ['Automazioni', 'Automation', 'Automatik', 'Automatisation', 'Automatización', 'Automação'],
   'wiki.auto.b': [

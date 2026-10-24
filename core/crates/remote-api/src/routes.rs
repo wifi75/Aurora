@@ -383,10 +383,12 @@ struct OutputLevelBody {
     attenuation_db: f64,
 }
 
-/// Cambia il livello di uscita: alzarlo puo' sovrapilotare la radio (ALC), quindi vale come un comando di trasmissione.
-#[utoipa::path(put, path = "/api/v1/output-level", responses((status = 200, description = "Livello impostato"), (status = 400, description = "Fuori dal cursore, 0-45 dB (bad_level)"), (status = 403, description = "Trasmissione non abilitata o via non consentita"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+/// Cambia il livello di uscita, come il cursore Pwr di JTDX: si puo' anche a trasmissione chiusa (non fa trasmettere); da una via non consentita no.
+#[utoipa::path(put, path = "/api/v1/output-level", responses((status = 200, description = "Livello impostato"), (status = 400, description = "Fuori dal cursore, 0-45 dB (bad_level)"), (status = 403, description = "Via non consentita"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn output_level_put(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<OutputLevelBody>) -> Result<Json<Value>, ApiError> {
-    check_tx_allowed(&state, &headers)?;
+    if !state.policy.allows(transport_of(&headers)) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_not_allowed_on_transport"));
+    }
     let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     if !body.attenuation_db.is_finite() || !(0.0..=MAX_ATTENUATION_DB).contains(&body.attenuation_db) {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_level"));

@@ -93,17 +93,15 @@ async fn sets_the_attenuation_in_tenths_of_a_db() {
 }
 
 #[tokio::test]
-async fn changing_the_drive_needs_transmission_open_and_a_consented_transport() {
+async fn the_level_can_be_changed_with_transmission_closed_but_not_from_a_refused_transport() {
     let r = rig(392, false);
     let closed = state_with(Some(r.clone()), false);
-    let resp = put(&closed, r#"{"attenuation_db":5}"#, false).await;
-    status_is(&resp, StatusCode::FORBIDDEN);
-    assert_eq!(body_json(resp).await["error"], "tx_disabled");
-    let open = state_with(Some(r.clone()), true);
-    let resp = put(&open, r#"{"attenuation_db":5}"#, true).await;
+    status_is(&put(&closed, r#"{"attenuation_db":5}"#, false).await, StatusCode::OK);
+    assert_eq!(*r.attenuation.lock().unwrap(), 50, "come in JTDX, anche a trasmissione chiusa");
+    let resp = put(&closed, r#"{"attenuation_db":20}"#, true).await;
     status_is(&resp, StatusCode::FORBIDDEN);
     assert_eq!(body_json(resp).await["error"], "tx_not_allowed_on_transport");
-    assert_eq!(*r.attenuation.lock().unwrap(), 392, "nulla e' cambiato");
+    assert_eq!(*r.attenuation.lock().unwrap(), 50, "da una via non consentita nulla cambia");
 }
 
 #[tokio::test]
