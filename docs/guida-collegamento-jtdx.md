@@ -18,7 +18,7 @@ Aurora fa da "ripetitore": quello che riceve da JTDX lo gira uguale a GridTracke
 In un terminale PowerShell:
 
 ```powershell
-cd C:\Users\Tiziano\Desktop\progetti\Aurora\core
+cd D:\progetti\Aurora\core
 $env:AURORA_ENGINE = 'jtdx'
 $env:AURORA_UDP_LISTEN = '127.0.0.1:2334'
 $env:AURORA_UDP_FORWARD = '127.0.0.1:2333'
