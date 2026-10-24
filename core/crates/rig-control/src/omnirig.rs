@@ -42,10 +42,15 @@ pub fn script(hz: u64) -> String {
 }
 
 pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
-    let out = Command::new("powershell.exe")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
-        .output()
-        .map_err(|e| RigError(format!("PowerShell non avviabile: {e}")))?;
+    let mut command = Command::new("powershell.exe");
+    command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // niente finestra nera quando Aurora gira come programma a finestre (cambio banda, letture)
+        command.creation_flags(0x0800_0000);
+    }
+    let out = command.output().map_err(|e| RigError(format!("PowerShell non avviabile: {e}")))?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {

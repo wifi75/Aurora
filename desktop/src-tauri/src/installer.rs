@@ -63,7 +63,14 @@ impl UpdateInstaller for DesktopInstaller {
         let path = dir.join(file_name);
         std::fs::write(&path, &data).map_err(|e| format!("pacchetto non salvato: {e}"))?;
         let installer = path.to_str().ok_or("percorso del pacchetto non valido")?;
-        Command::new("cmd").args(detached_command_args(installer)).spawn().map_err(|e| format!("installatore non avviato: {e}"))?;
+        let mut launcher = Command::new("cmd");
+        launcher.args(detached_command_args(installer));
+        {
+            use std::os::windows::process::CommandExt;
+            // `cmd` non deve aprire una finestra nera: l'installatore parte da solo
+            launcher.creation_flags(0x0800_0000);
+        }
+        launcher.spawn().map_err(|e| format!("installatore non avviato: {e}"))?;
         tracing::info!("aggiornamento {} avviato da {}", release.version, path.display());
 
         // un attimo per rispondere alla pagina, poi si chiude: l'installatore non puo' sostituire un programma aperto
