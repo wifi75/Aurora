@@ -14,7 +14,7 @@ pub struct WindowsRig;
 pub fn script(hz: u64) -> String {
     format!(
         "$o = New-Object -ComObject OmniRig.OmniRigX; \
-         if ($o.Rig1.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
+         for ($i = 0; $i -lt 8 -and $o.Rig1.Status -ne 4; $i++) {{ Start-Sleep -Milliseconds 400 }};          if ($o.Rig1.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
          $r = $o.Rig1; $r.Split = 65536; \
          for ($i = 0; $i -lt 8; $i++) {{ Start-Sleep -Milliseconds 400; if ($r.Split -eq 65536) {{ break }} }}; \
          $r.Freq = {hz}; \
@@ -41,7 +41,12 @@ fn powershell(script: &str) -> Result<(), RigError> {
 
 impl Rig for WindowsRig {
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
-        powershell(&script(hz))
+        // OmniRig a volte e' occupato un istante (JTDX che legge la radio): un secondo tentativo basta
+        powershell(&script(hz)).or_else(|first| {
+            tracing::warn!("cambio frequenza, primo tentativo fallito: {first}");
+            std::thread::sleep(std::time::Duration::from_millis(600));
+            powershell(&script(hz))
+        })
     }
 
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError> {

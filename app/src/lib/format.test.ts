@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bandOf, formatClock, formatDial, formatKhz } from './format';
+import { bandOf, formatClock, formatDial, formatKhz, formatKhzWhole } from './format';
 
 describe('format', () => {
   it('formats the dial frequency in MHz', () => {
@@ -7,6 +7,9 @@ describe('format', () => {
     expect(formatDial(7_074_000)).toBe('7.074,0 kHz');
     expect(formatDial(21_074_790)).toBe('21.074,8 kHz');
     expect(formatKhz(1840)).toBe('1.840,0');
+    expect(formatKhzWhole(3798.0)).toBe('3.798');
+    expect(formatKhzWhole(7084.2)).toBe('7.084');
+    expect(formatKhzWhole(28074)).toBe('28.074');
   });
 
   it('formats milliseconds since midnight as HH:MM:SS', () => {

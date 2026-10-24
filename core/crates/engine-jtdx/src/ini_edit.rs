@@ -22,7 +22,8 @@ pub fn kind_of(key: &str) -> Option<Kind> {
         "bool" => Kind::Bool,
         "text" => Kind::Text,
         "num" => Kind::Num,
-        "enum:save" | "enum:reply" => Kind::Choice(&["0", "1", "2"]),
+        "enum:save" => Kind::Choice(&["0", "1", "2"]),
+        "enum:reply" => Kind::Choice(&["1", "2", "3"]),
         "enum:depth" => Kind::Choice(&["1", "2", "3"]),
         _ => return None,
     })
