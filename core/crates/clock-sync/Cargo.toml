@@ -1,0 +1,13 @@
+[package]
+name = "clock-sync"
+description = "Client NTP configurabile: misura lo scarto dell'orologio del PC e, se si vuole, lo corregge"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

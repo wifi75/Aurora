@@ -489,9 +489,12 @@ pub async fn run(
             "run_unattended": config.auto_limits.run_unattended,
         },
     });
+    let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::PowerShellSetter));
+    let _clock_task = clock.spawn();
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access)
+        .with_clock(Arc::clone(&clock))
         .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {

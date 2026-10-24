@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -53,6 +53,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/jtdx-config", get(jtdx_config))
+        .route("/api/v1/clock", get(clock_get).put(clock_put))
+        .route("/api/v1/clock/check", post(clock_check))
+        .route("/api/v1/clock/correct", post(clock_correct))
         .route("/api/v1/ui-settings/{kind}", get(ui_settings_get).put(ui_settings_put))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
@@ -605,6 +608,64 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+fn clock_service(state: &AppState) -> Result<std::sync::Arc<clock_sync::ClockService>, ApiError> {
+    state.clock.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "clock_unavailable"))
+}
+
+/// Cambiare l'ora del PC e' un'azione sul computer: solo dalla rete di casa, mai da un proxy.
+fn from_home_network(peer: Option<SocketAddr>, headers: &HeaderMap) -> bool {
+    peer.is_some_and(|p| is_home_network(p.ip())) && !is_proxied(headers)
+}
+
+#[utoipa::path(get, path = "/api/v1/clock", responses((status = 200, description = "Impostazioni del client NTP e ultima misura dell'orologio"), (status = 404, description = "Non disponibile (clock_unavailable)")))]
+async fn clock_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let clock = clock_service(&state)?;
+    Ok(Json(json!({ "config": clock.config(), "last": clock.last() })))
+}
+
+#[utoipa::path(put, path = "/api/v1/clock", responses((status = 200, description = "Impostazioni salvate"), (status = 400, description = "Valori non validi (bad_clock)"), (status = 403, description = "La correzione automatica si accende solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (clock_unavailable)"), (status = 500, description = "Scrittura non riuscita (clock_write)")))]
+async fn clock_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(config): Json<clock_sync::Config>) -> Result<Json<Value>, ApiError> {
+    let clock = clock_service(&state)?;
+    if config.auto_correct && !clock.config().auto_correct && !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    config.validate().map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_clock"))?;
+    tokio::task::spawn_blocking(move || clock.set_config(config))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "clock_task"))?
+        .map_err(|e| {
+            tracing::warn!("salvataggio delle impostazioni dell'orologio fallito: {e}");
+            ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "clock_write")
+        })?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[utoipa::path(post, path = "/api/v1/clock/check", responses((status = 200, description = "Misura fatta ora: scarto e ritardo di rete"), (status = 404, description = "Non disponibile (clock_unavailable)")))]
+async fn clock_check(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let clock = clock_service(&state)?;
+    tokio::task::spawn_blocking(move || json!(clock.check_now()))
+        .await
+        .map(Json)
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "clock_task"))
+}
+
+#[utoipa::path(post, path = "/api/v1/clock/correct", responses((status = 200, description = "Orologio corretto; nuova misura"), (status = 403, description = "Solo dalla rete di casa (local_only) o serve l'amministratore (clock_needs_admin)"), (status = 404, description = "Non disponibile (clock_unavailable)"), (status = 502, description = "Nessun server ha risposto o correzione fallita (clock_correct_failed)")))]
+async fn clock_correct(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let clock = clock_service(&state)?;
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    match tokio::task::spawn_blocking(move || clock.correct_now()).await {
+        Ok(Ok(m)) => Ok(Json(json!(m))),
+        Ok(Err(e)) if e.contains("amministratore") => Err(ApiError::new(StatusCode::FORBIDDEN, "clock_needs_admin")),
+        Ok(Err(e)) => {
+            tracing::warn!("correzione dell'orologio fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "clock_correct_failed"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "clock_task")),
+    }
 }
 
 #[utoipa::path(get, path = "/api/v1/jtdx-config", responses((status = 200, description = "Impostazioni di JTDX lette dal suo file (sola lettura, senza segreti)"), (status = 404, description = "File non configurato (jtdx_config_unavailable)"), (status = 502, description = "File non leggibile (jtdx_config_read)")))]

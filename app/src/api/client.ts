@@ -230,6 +230,44 @@ export interface StatsResponse {
   missing_dxcc: string[];
 }
 
+export interface ClockConfig {
+  enabled: boolean;
+  servers: string[];
+  interval_secs: number;
+  warn_ms: number;
+  auto_correct: boolean;
+}
+
+export interface ClockMeasurement {
+  at_ms: number;
+  server: string | null;
+  offset_ms: number | null;
+  delay_ms: number | null;
+  servers_ok: number;
+  servers_tried: number;
+  error: string | null;
+  corrected: boolean;
+}
+
+/** Client NTP: impostazioni e ultima misura dell'orologio del PC. */
+export async function getClock(): Promise<{ config: ClockConfig; last: ClockMeasurement | null }> {
+  return (await (await request('/clock')).json()) as { config: ClockConfig; last: ClockMeasurement | null };
+}
+
+export async function putClock(config: ClockConfig): Promise<void> {
+  await request('/clock', { ...jsonInit(config), method: 'PUT' });
+}
+
+/** Misura subito lo scarto dell'orologio. */
+export async function checkClock(): Promise<ClockMeasurement> {
+  return (await (await request('/clock/check', { method: 'POST' })).json()) as ClockMeasurement;
+}
+
+/** Sposta l'ora di Windows dello scarto misurato (serve l'amministratore, solo dal PC di casa). */
+export async function correctClock(): Promise<ClockMeasurement> {
+  return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
+}
+
 /** Le impostazioni di JTDX, per nome, come testo (dal suo file di configurazione). */
 export async function getJtdxConfig(): Promise<Record<string, string>> {
   return (await (await request('/jtdx-config')).json()) as Record<string, string>;

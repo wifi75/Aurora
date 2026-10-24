@@ -689,3 +689,9 @@
 .pill-dx-flag {
   border-radius: 2px;
 }
+
+/* orologio fuori tolleranza */
+.pill--warn {
+  color: #ffd23f;
+  border-color: #ffd23f;
+}

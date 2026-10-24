@@ -79,7 +79,7 @@ describe('Settings tabs', () => {
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
     expect(names).toEqual([
       'Generali', 'Radio', 'Audio', 'Sequenza', 'Macro TX', 'Segnalazioni', 'Frequenze', 'Notifiche', 'Filtri',
-      'Programmazione', 'Avanzate', 'Accesso', 'Finestre', 'Bande',
+      'Programmazione', 'Avanzate', 'Orologio', 'Accesso', 'Finestre', 'Bande',
     ]);
     expect(screen.getByRole('tab', { name: 'Generali' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Generali');

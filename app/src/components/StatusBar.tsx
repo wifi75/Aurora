@@ -1,6 +1,7 @@
 import type { StationStatus } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { useT } from '../i18n';
+import { ClockPill } from './ClockPill';
 import { countryOfCall } from '../lib/dxCountry';
 import { flagCode } from '../lib/flags';
 import { bandOf, formatMhz } from '../lib/format';
@@ -40,6 +41,7 @@ export function StatusBar({ status, connection }: Props) {
           <span className={`pill data ${status.transmitting ? 'pill--tx' : 'pill--rx'}`} title={t('tip.status.state')}>
             {state}
           </span>
+          <ClockPill />
           <span className="pill data muted" title={t('tip.status.me')}>
             {status.de_call} {status.de_grid}
           </span>

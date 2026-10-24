@@ -58,6 +58,7 @@ dependencies = [
  "aurora-core",
  "auth",
  "axum",
+ "clock-sync",
  "dxcc",
  "engine-jtdx",
  "engine-sim",
@@ -234,6 +235,16 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "rand_core 0.10.1",
+]
+
+[[package]]
+name = "clock-sync"
+version = "0.8.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1209,6 +1220,7 @@ dependencies = [
  "aurora-core",
  "auth",
  "axum",
+ "clock-sync",
  "futures-util",
  "logbook",
  "qrcode",
