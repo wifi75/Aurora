@@ -395,3 +395,68 @@ fn rules_without_the_preference_in_an_old_file_default_to_rarity() {
     assert_eq!(rules.prefer, qso_engine::Prefer::Rarity);
     assert!(!rules.reply_to_wanted);
 }
+
+#[test]
+fn a_station_that_never_answered_can_be_tried_again_after_the_cooldown() {
+    let rules = Rules { max_attempts_per_call: 1, cooldown_secs: 900, ..Rules::default() };
+    let mut b = Brain::new(rules, Limits { max_consecutive_cycles: 99, ..Limits::default() }, true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    assert_eq!(kind(&mut b, &cq(1, "AT1AA"), T0), DecisionKind::Reply);
+    assert_eq!(kind(&mut b, &cq(2, "AT1AA"), T0 + 100), DecisionKind::Skipped, "ancora nella pausa");
+    assert_eq!(kind(&mut b, &cq(3, "AT1AA"), T0 + 900 + 61), DecisionKind::Reply, "la pausa e' scaduta");
+}
+
+#[test]
+fn the_cooldown_must_be_a_sensible_time() {
+    assert!(!Rules { cooldown_secs: 10, ..Rules::default() }.is_valid());
+    assert!(!Rules { cooldown_secs: 100_000, ..Rules::default() }.is_valid());
+    assert!(Rules { cooldown_secs: 600, ..Rules::default() }.is_valid());
+}
+
+fn directional(id: u64, text: &str, continent: Option<&str>) -> DecodedMessage {
+    DecodedMessage { continent: continent.map(str::to_string), ..decode(id, text, Some(DecodeTag::NewDxcc), -10) }
+}
+
+#[test]
+fn a_directional_cq_is_answered_only_from_the_right_continent() {
+    let mut b = live_brain();
+    b.set_own_continent(Some("EU".into()));
+    assert_eq!(kind(&mut b, &directional(1, "CQ NA K1ABC FN42", Some("NA")), T0), DecisionKind::Skipped, "e' per il Nord America");
+    assert_eq!(kind(&mut b, &directional(2, "CQ EU K1ABC FN42", Some("NA")), T0 + 100), DecisionKind::Reply);
+}
+
+#[test]
+fn cq_dx_is_skipped_from_the_own_continent_but_not_from_far_away() {
+    let mut b = live_brain();
+    b.set_own_continent(Some("EU".into()));
+    assert_eq!(kind(&mut b, &directional(1, "CQ DX DL1ABC JO31", Some("EU")), T0), DecisionKind::Skipped);
+    assert_eq!(kind(&mut b, &directional(2, "CQ DX K1ABC FN42", Some("NA")), T0 + 100), DecisionKind::Reply);
+    assert_eq!(kind(&mut b, &directional(3, "CQDX W9XYZ EN37", Some("NA")), T0 + 200), DecisionKind::Reply, "attivo: un solo QSO per volta, ma non esclusa per la zona");
+}
+
+#[test]
+fn directions_are_ignored_when_the_rule_is_off_or_the_continent_is_unknown() {
+    let mut b = live_brain();
+    assert_eq!(kind(&mut b, &directional(1, "CQ NA K1ABC FN42", Some("NA")), T0), DecisionKind::Reply, "continente proprio sconosciuto");
+    let rules = Rules { respect_cq_direction: false, ..Rules::default() };
+    let mut b = Brain::new(rules, Limits::default(), true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    b.set_own_continent(Some("EU".into()));
+    assert_eq!(kind(&mut b, &directional(2, "CQ NA K1ABC FN42", Some("NA")), T0), DecisionKind::Reply);
+}
+
+#[test]
+fn the_score_weighs_rarity_and_signal_together() {
+    let rules = Rules { prefer: qso_engine::Prefer::Score, ..Rules::default() };
+    let mut b = Brain::new(rules, Limits::default(), true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    // stessa novita': vince il segnale; una novita' piu' rara batte un segnale solo un po' piu' forte
+    let weak_rare = decode(1, "CQ AA1AA FN42", Some(DecodeTag::NewDxcc), -16);
+    let strong_common = decode(2, "CQ BB1BB FN42", Some(DecodeTag::NewGrid), -2);
+    let decisions = b.on_batch(&[weak_rare, strong_common], T0);
+    let reply = decisions.iter().find(|d| d.kind == DecisionKind::Reply).expect("una risposta");
+    assert_eq!(reply.call.as_deref(), Some("AA1AA"), "paese nuovo (4) +4 punti di segnale batte griglia (1) +11");
+}
