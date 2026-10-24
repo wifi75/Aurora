@@ -4,7 +4,7 @@ import { RowRing } from './ring';
 import { RowClock } from './smooth';
 
 export const WATERFALL_WIDTH = 1024;
-export const WATERFALL_HEIGHT = 512;
+export const WATERFALL_HEIGHT = 1024;
 
 /** Righe per pixel: una riga per pixel, meno solo se la finestra e' piu' alta dell'anello. */
 export function rowsPerPixel(heightPx: number): number {
