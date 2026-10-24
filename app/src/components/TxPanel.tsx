@@ -19,10 +19,10 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
   const t = useT();
   const pendingDx = useStation((s) => s.pendingDx);
   const messages = status
-    ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: status.dx_call ?? '', report: status.report ?? '' })
+    ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: pendingDx || status.dx_call || '', report: status.report ?? '' })
     : [];
   const active = activeTx(messages, status?.tx_message);
-  const next = status && active < 0 ? nextTx(decodes, status.de_call, status.dx_call ?? '') : -1;
+  const next = status && active < 0 ? nextTx(decodes, status.de_call, pendingDx || status.dx_call || '') : -1;
 
   return (
     <div className="tx-panel">
@@ -32,8 +32,8 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
       {status && (
         <>
           <div className="tx-dx">
-            <strong className="data tx-dx-call">{status.dx_call || pendingDx || '—'}</strong>
-            {status.dx_grid ? <span className="data muted">{status.dx_grid}</span> : null}
+            <strong className="data tx-dx-call">{pendingDx || status.dx_call || '—'}</strong>
+            {status.dx_grid && !pendingDx ? <span className="data muted">{status.dx_grid}</span> : null}
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>

@@ -4,6 +4,8 @@ import type { ConnectionState } from '../api/stream';
 
 const MAX_DECODES = 200;
 const MAX_TX_LOG = 50;
+/** Quanto resta la stazione scelta col doppio clic se JTDX non la conferma. */
+const PENDING_MS = 20_000;
 
 interface StationState {
   status: StationStatus | null;
@@ -13,6 +15,8 @@ interface StationState {
   txLog: DecodedMessage[];
   /** Stazione scelta con il doppio clic, mostrata come DX finche' JTDX non riporta la sua. */
   pendingDx: string | null;
+  /** Quando e' stata scelta (ms Unix): dopo un po' si smette di aspettare JTDX. */
+  pendingSince: number;
   connection: ConnectionState;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) senza aspettare il prossimo stato di JTDX. */
@@ -24,11 +28,20 @@ interface StationState {
 
 let nextTxId = -1;
 
+/** La stazione scelta resta finche' JTDX non riporta la stessa (o scade): uno stato di JTDX con la stazione di prima non la cancella. */
+function settledPending(s: { pendingDx: string | null; pendingSince: number }, dxCall: string | null | undefined): { pendingDx: null } | Record<string, never> {
+  if (!s.pendingDx) return {};
+  const confirmed = (dxCall ?? '').toUpperCase() === s.pendingDx.toUpperCase();
+  const expired = Date.now() - s.pendingSince > PENDING_MS;
+  return confirmed || expired ? { pendingDx: null } : {};
+}
+
 export const useStation = create<StationState>((set) => ({
   status: null,
   decodes: [],
   txLog: [],
   pendingDx: null,
+  pendingSince: 0,
   connection: 'connecting',
   apply(event) {
     switch (event.type) {
@@ -37,8 +50,7 @@ export const useStation = create<StationState>((set) => ({
         set((s) => {
           const message = status.tx_message?.trim() ?? '';
           const starts = status.transmitting && message !== '' && (!s.status?.transmitting || s.status.tx_message !== status.tx_message);
-          const dxKnown = (status.dx_call ?? '') !== '';
-          if (!starts) return dxKnown ? { status, pendingDx: null } : { status };
+          if (!starts) return { status, ...settledPending(s, status.dx_call) };
           const row: DecodedMessage = {
             id: nextTxId--,
             time_ms: Date.now() % 86_400_000,
@@ -48,7 +60,7 @@ export const useStation = create<StationState>((set) => ({
             text: message,
             tag: null,
           };
-          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...(dxKnown ? { pendingDx: null } : {}) };
+          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...settledPending(s, status.dx_call) };
         });
         break;
       }
@@ -68,12 +80,12 @@ export const useStation = create<StationState>((set) => ({
     set((s) => (s.status ? { status: { ...s.status, ...patch } } : s));
   },
   setPendingDx(call) {
-    set({ pendingDx: call });
+    set({ pendingDx: call, pendingSince: Date.now() });
   },
   setConnection(connection) {
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, connection: 'connecting' });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting' });
   },
 }));

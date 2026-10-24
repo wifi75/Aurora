@@ -219,3 +219,40 @@ async fn changing_mode_without_a_known_band_leaves_the_dial_to_jtdx() {
     status_is(&mode(&s, r#"{"mode":"FT8"}"#).await, StatusCode::OK);
     assert!(rig.calls.lock().unwrap().is_empty());
 }
+
+async fn frequency(s: &AppState, body: &str) -> axum::response::Response {
+    let cookie = cookie_for(s);
+    call(&router(s), req(Method::POST, "/api/v1/commands/frequency").cookie(&cookie).json(body)).await
+}
+
+#[tokio::test]
+async fn an_exact_frequency_inside_an_amateur_band_moves_the_radio() {
+    let (s, rig) = state_with_rig(false);
+    let resp = frequency(&s, r#"{"hz":7143700}"#).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["dial_hz"], 7_143_700);
+    assert_eq!(*rig.calls.lock().unwrap(), vec![7_143_700]);
+}
+
+#[tokio::test]
+async fn a_frequency_outside_the_amateur_bands_is_refused() {
+    let (s, rig) = state_with_rig(false);
+    for hz in [0u64, 100_000, 15_000_000, 99_000_000, 500_000_000] {
+        let resp = frequency(&s, &format!(r#"{{"hz":{hz}}}"#)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], "bad_frequency", "{hz}");
+    }
+    assert!(rig.calls.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn the_frequency_is_never_changed_while_transmitting_and_failures_are_reported() {
+    let (s, rig) = state_with_rig(false);
+    s.bus.events().send(Event::Status(StationStatus { transmitting: true, ..StationStatus::default() })).unwrap();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let resp = frequency(&s, r#"{"hz":14074000}"#).await;
+    status_is(&resp, StatusCode::CONFLICT);
+    assert!(rig.calls.lock().unwrap().is_empty());
+    let (s, _) = state_with_rig(true);
+    status_is(&frequency(&s, r#"{"hz":14074000}"#).await, StatusCode::BAD_GATEWAY);
+}

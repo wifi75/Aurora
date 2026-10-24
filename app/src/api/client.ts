@@ -109,6 +109,11 @@ export async function postBand(band: string): Promise<{ dial_hz?: number }> {
   return (await (await request('/commands/band', jsonInit({ band }))).json()) as { dial_hz?: number };
 }
 
+/** Porta la radio su una frequenza esatta (Hz), come per uno spot del cluster. */
+export async function postFrequency(hz: number): Promise<{ dial_hz?: number }> {
+  return (await (await request('/commands/frequency', jsonInit({ hz }))).json()) as { dial_hz?: number };
+}
+
 export async function postMode(mode: string): Promise<void> {
   await request('/commands/mode', jsonInit({ mode }));
 }

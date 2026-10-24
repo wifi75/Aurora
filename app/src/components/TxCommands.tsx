@@ -121,8 +121,8 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
 
         <div className="cmd-line cmd-dx" role="group" aria-label={t('ctl.sec.dx')}>
           <span className="cmd-tag">DX</span>
-          <strong className="data">{status?.dx_call || pendingDx || t('ctl.dxNone')}</strong>
-          {status?.dx_grid ? <span className="data muted">{status.dx_grid}</span> : null}
+          <strong className="data">{pendingDx || status?.dx_call || t('ctl.dxNone')}</strong>
+          {status?.dx_grid && !pendingDx ? <span className="data muted">{status.dx_grid}</span> : null}
           {press('clear_dx')}
           {press('gen_msgs')}
         </div>
@@ -171,7 +171,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
               type="button"
               className="glass"
               title={t('tip.macro.chip')}
-              onClick={() => setText(expandMacro(m, { dx: status?.dx_call ?? '', me: status?.de_call ?? '', report: status?.report ?? '' }))}
+              onClick={() => setText(expandMacro(m, { dx: pendingDx || status?.dx_call || '', me: status?.de_call ?? '', report: status?.report ?? '' }))}
             >
               {m}
             </button>

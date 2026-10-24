@@ -246,6 +246,20 @@ impl RunningServer {
     }
 }
 
+/// Applica le impostazioni a JTDX: lo chiude (se e' acceso), scrive il suo file con una copia di sicurezza e lo riavvia
+/// come stava. Se la scrittura fallisce JTDX viene comunque riavviato, cosi' non si resta senza.
+fn apply_jtdx_settings(path: &Path, changes: &std::collections::BTreeMap<String, String>) -> Result<(), String> {
+    let running = rig_control::jtdx_process::find().map_err(|e| e.to_string())?;
+    if let Some(r) = &running {
+        rig_control::jtdx_process::stop(r.id, 25).map_err(|e| e.to_string())?;
+    }
+    let written = engine_jtdx::ini_edit::apply_changes(path, changes);
+    if let Some(r) = &running {
+        rig_control::jtdx_process::start(r).map_err(|e| format!("JTDX non riavviato: {e}"))?;
+    }
+    written
+}
+
 fn open_storage(data_dir: &Path, pair_ttl_secs: u64) -> Result<(Arc<DeviceStore>, Arc<Logbook>), StartError> {
     std::fs::create_dir_all(data_dir).map_err(|e| StartError::Io(format!("{}: {e}", data_dir.display())))?;
     let auth = DeviceStore::open(&data_dir.join("devices.db"), Arc::new(SystemClock))
@@ -534,6 +548,9 @@ pub async fn run(
                     .map(|view| serde_json::json!(view))
                     .map_err(|e| e.to_string())
             }) as remote_api::Log4omProvider
+        }))
+        .with_jtdx_apply_if(config.jtdx_ini.clone().map(|path| {
+            Arc::new(move |changes: std::collections::BTreeMap<String, String>| apply_jtdx_settings(&path, &changes)) as remote_api::JtdxApplier
         }))
         .with_jtdx_config_if(config.jtdx_ini.clone().map(|path| {
             Arc::new(move || engine_jtdx::ini::read_shown(&path).map(|settings| serde_json::json!(settings))) as remote_api::JtdxConfigProvider
