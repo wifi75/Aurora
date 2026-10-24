@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hzAt, leftPercent } from './markers';
+import { hzAt, leftPercent, signalBandwidthHz } from './markers';
 
 describe('markers', () => {
   it('places a frequency as a percentage of the audio band', () => {
@@ -22,5 +22,15 @@ describe('markers', () => {
 
   it('is the inverse of leftPercent', () => {
     for (const hz of [200, 958, 1500, 2999]) expect(hzAt(leftPercent(hz, 0, 3000) / 100, 0, 3000)).toBe(hz);
+  });
+});
+
+describe('signalBandwidthHz', () => {
+  it('is narrower in FT8 than in FT4 and zero for the other modes', () => {
+    expect(signalBandwidthHz('FT8')).toBe(50);
+    expect(signalBandwidthHz('FT4')).toBeCloseTo(83.3, 1);
+    expect(signalBandwidthHz('FT8')).toBeLessThan(signalBandwidthHz('FT4'));
+    expect(signalBandwidthHz('JT')).toBe(0);
+    expect(signalBandwidthHz(undefined)).toBe(0);
   });
 });

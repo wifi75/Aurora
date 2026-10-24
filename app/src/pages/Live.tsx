@@ -26,6 +26,7 @@ import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type Ale
 import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
+import { signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
@@ -122,6 +123,7 @@ export function Live() {
                 fMaxHz={F_MAX_HZ}
                 rxHz={status?.rx_df}
                 txHz={status?.tx_df}
+                bandwidthHz={signalBandwidthHz(status?.mode)}
                 onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
                 onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
               />
