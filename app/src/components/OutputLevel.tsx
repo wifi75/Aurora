@@ -39,6 +39,7 @@ export function OutputLevel({ txAllowed }: Props) {
   return (
     <div className="out-level" title={t('tip.out')}>
       <span className="out-level-title">Pwr</span>
+      <span className="out-level-track">
       <input
           type="range"
           min={0}
@@ -51,6 +52,7 @@ export function OutputLevel({ txAllowed }: Props) {
           onPointerUp={() => void commit()}
           onKeyUp={() => void commit()}
         />
+      </span>
       <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{pct}%</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
