@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.10.3 - 2026-10-24
+- **Installazione forzata sopra una versione aperta**: l'installatore (e il disinstallatore) chiude Aurora da solo, anche se e' nascosta nel vassoio, e prosegue senza fermarsi con «Aurora e' in esecuzione!». Il core riparte al prossimo avvio. Vale dalla 0.10.3: chi ha una versione piu' vecchia deve chiudere Aurora a mano una volta (vassoio, Esci).
+
 ## 0.10.2 - 2026-10-24
 - **Programma Windows senza associazione**: la finestra di Aurora sul PC entra da sola, senza «Associa questo dispositivo». Vale solo per chi arriva da questo stesso PC (mai da un proxy o da un tunnel); i telefoni e gli altri PC chiedono sempre il codice. Si spegne con `AURORA_TRUST_LOCAL=0` in `aurora.env`.
 
