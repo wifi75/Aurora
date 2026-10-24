@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Spot del cluster sulla cascata**: gli spot della banda in uso che cadono dentro la cascata (frequenza dello spot meno quella della radio) compaiono in basso con tacca e nominativo, su piu' righe se vicini, per dieci minuti; un clic porta la frequenza di ricezione (Rx) su quella dello spot. Solo ricezione, non trasmette.
 - **Storico dei messaggi**: ogni messaggio ricevuto si ricorda (`data/history.sqlite`, 30 giorni, `AURORA_HISTORY_DAYS`) e si cerca nella nuova pagina Storico per nominativo o testo, banda, modo e periodo, con pagine da 100 e svuotamento su conferma (`GET/DELETE /api/v1/history`, `GET /api/v1/history/stats`). Non e' il log dei QSO e non vi finisce nulla.
 - **Filtro «Nascondi i CQ di stazioni gia' collegate su questa banda»** nella scheda Filtri: gli altri messaggi di quelle stazioni restano visibili.
 - **Livello RX**: indicatore del livello dell'audio in ingresso accanto al cursore Pwr (valore medio, picco, stato Muto/Basso/Giusto/Alto/Saturo) con avviso di saturazione dopo 3 secondi e di silenzio dopo 8; evento `audio_level` sul flusso. Idea dal confronto con Decodium, scritta da zero.

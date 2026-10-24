@@ -14,6 +14,7 @@ import { ModeSwitch } from '../components/ModeSwitch';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
+import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
 import { TxBanner } from '../components/TxBanner';
 import { TxPanel } from '../components/TxPanel';
@@ -126,6 +127,7 @@ export function Live() {
                 onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
                 onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
               />
+              <SpotMarkers fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} dialHz={status?.dial_hz} onPick={(hz) => void setFrequency('Rx', hz, postRxFrequency)} />
             </div>
             <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
           </>
