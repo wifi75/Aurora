@@ -5,7 +5,7 @@ import { flagCode } from '../lib/flags';
 import { formatClock } from '../lib/format';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { useNotify } from '../lib/notify';
-import { isCallToMe } from '../lib/mycall';
+import { isCallToMe, isClosingMessage } from '../lib/mycall';
 import { formatDistance, usePrefs } from '../lib/prefs';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
@@ -125,7 +125,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
             ) : (
               <span className="badge-cell" />
             )}
-            {toMe ? <span className="me-mark" aria-hidden="true" /> : null}
+            {toMe && !isClosingMessage(d.text) ? <span className="me-mark" aria-hidden="true" /> : null}
           </button>
         );
       })}

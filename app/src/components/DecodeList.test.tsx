@@ -59,6 +59,20 @@ describe('DecodeList', () => {
     expect(document.querySelectorAll('mark.dx-call')).toHaveLength(1);
   });
 
+  it('drops the red mark once the QSO is closed (RR73 or 73 addressed to me)', () => {
+    render(
+      <DecodeList
+        myCall="AA1AA"
+        decodes={[decode({ id: 1, text: 'AA1AA BB2BB RR73' }), decode({ id: 2, text: 'AA1AA CC3CC 73' }), decode({ id: 3, text: 'AA1AA DD4DD -10' })]}
+        onReply={() => {}}
+      />,
+    );
+    const rows = screen.getAllByRole('button');
+    expect(rows[0]?.querySelector('.me-mark')).toBeNull();
+    expect(rows[1]?.querySelector('.me-mark')).toBeNull();
+    expect(rows[2]?.querySelector('.me-mark')).not.toBeNull();
+  });
+
   it('highlights nothing without a station being called', () => {
     render(<DecodeList decodes={[decode({ text: 'AA1AA BB2BB -10' })]} onReply={() => {}} />);
     expect(document.querySelector('mark.dx-call')).toBeNull();

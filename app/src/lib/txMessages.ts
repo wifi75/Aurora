@@ -22,11 +22,30 @@ export function txMessages({ myCall, myGrid, dxCall, report }: QsoContext): stri
   return [`${head} ${grid}`, `${head} ${rpt}`, `${head} R${rpt}`, `${head} RR73`, `${head} 73`, cq];
 }
 
-/** Indice (0-5) del messaggio che il motore sta trasmettendo, o -1. */
+/**
+ * A quale dei sei messaggi standard corrisponde un testo di trasmissione, riconoscendone il tipo
+ * (locatore, rapporto, R+rapporto, RRR/RR73, 73, CQ), o -1. Serve quando il testo non coincide con il modello,
+ * per esempio perche' il motore manda un rapporto diverso da quello che Aurora conosce.
+ */
+export function classifyTx(message: string): number {
+  const tokens = message.trim().toUpperCase().split(/\s+/);
+  if (tokens[0] === 'CQ' || tokens[0] === 'QRZ') return 5;
+  if (tokens.length < 3) return -1;
+  const payload = tokens.slice(2).join(' ');
+  if (payload === 'RRR' || payload === 'RR73') return 3;
+  if (payload === '73') return 4;
+  if (/^R[+-]\d{2}$/.test(payload)) return 2;
+  if (/^[+-]\d{2}$/.test(payload)) return 1;
+  if (/^[A-R]{2}\d{2}$/.test(payload)) return 0;
+  return -1;
+}
+
+/** Indice (0-5) del messaggio che il motore sta trasmettendo, o -1: prima il testo identico, poi il tipo di messaggio. */
 export function activeTx(messages: string[], current: string | null | undefined): number {
   const wanted = current?.trim().toUpperCase();
   if (!wanted) return -1;
-  return messages.findIndex((m) => m !== '' && m.toUpperCase() === wanted);
+  const exact = messages.findIndex((m) => m !== '' && m.toUpperCase() === wanted);
+  return exact >= 0 ? exact : classifyTx(wanted);
 }
 
 /**

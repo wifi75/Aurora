@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCallToMe } from './mycall';
+import { isCallToMe, isClosingMessage } from './mycall';
 
 describe('isCallToMe', () => {
   it('is true when the first call of the message is mine', () => {
@@ -27,5 +27,16 @@ describe('isCallToMe', () => {
 
   it('accepts a compound call addressed with its base call', () => {
     expect(isCallToMe('AA1AA/P BB2BB -10', 'AA1AA/P')).toBe(true);
+  });
+});
+
+describe('isClosingMessage', () => {
+  it('is true only for RR73 and 73 at the end', () => {
+    expect(isClosingMessage('IU3ABC KC2NJ RR73')).toBe(true);
+    expect(isClosingMessage('IU3ABC KC2NJ 73')).toBe(true);
+    expect(isClosingMessage(' iu3abc kc2nj rr73 ')).toBe(true);
+    expect(isClosingMessage('IU3ABC KC2NJ RRR')).toBe(false);
+    expect(isClosingMessage('IU3ABC KC2NJ R-12')).toBe(false);
+    expect(isClosingMessage('CQ KC2NJ FN20')).toBe(false);
   });
 });
