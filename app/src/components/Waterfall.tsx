@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
+import { LEVEL_KEYS, clampLevel, readLevels, type Levels } from '../render/levels';
 import { RowAverager } from '../render/smooth';
 
 /** Righe del core (15 al secondo) mediate a gruppi. Di base nessuna media (15 righe al secondo, come Decodium: scorre fluida);
@@ -12,11 +13,21 @@ export function rowsPerStep(raw: string | null | undefined): number {
   return Number.isInteger(n) && n >= 1 && n <= 4 ? n : DEFAULT_ROWS_PER_STEP;
 }
 
-function savedRowsPerStep(): number {
+const ROWS_KEY = 'aurora-wf-rows';
+
+function readPref(key: string): string | null {
   try {
-    return rowsPerStep(window.localStorage.getItem('aurora-wf-rows'));
+    return window.localStorage.getItem(key);
   } catch {
-    return DEFAULT_ROWS_PER_STEP;
+    return null;
+  }
+}
+
+function writePref(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // senza archivio del browser le regolazioni valgono fino alla chiusura della pagina
   }
 }
 
@@ -34,6 +45,11 @@ export function Waterfall({ register }: Props) {
   // WebGPU puo' aver gia' preso il canvas: per ripiegare su WebGL2 serve un canvas nuovo
   const [attempt, setAttempt] = useState<{ forced?: 'webgl2'; key: number }>({ key: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backendRef = useRef<WaterfallBackend | null>(null);
+  const [levels, setLevels] = useState<Levels>(() => readLevels(readPref));
+  const [rows, setRows] = useState(() => rowsPerStep(readPref(ROWS_KEY)));
+  const rowsRef = useRef(rows);
+  const levelsRef = useRef(levels);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,6 +71,8 @@ export function Waterfall({ register }: Props) {
           return;
         }
         backend = b;
+        backendRef.current = b;
+        b.setLevels(levelsRef.current);
         setKind(b.kind);
         setPhase('ready');
         const fit = () => {
@@ -65,8 +83,9 @@ export function Waterfall({ register }: Props) {
         fit();
         observer = new ResizeObserver(fit);
         observer.observe(canvas);
-        const average = new RowAverager(savedRowsPerStep());
+        let average = new RowAverager(rowsRef.current);
         unregister = register((bins) => {
+          if (average.every !== rowsRef.current) average = new RowAverager(rowsRef.current);
           const row = average.add(bins);
           if (row) b.pushRow(row);
         });
@@ -77,6 +96,7 @@ export function Waterfall({ register }: Props) {
 
     return () => {
       cancelled = true;
+      backendRef.current = null;
       unregister();
       observer?.disconnect();
       backend?.destroy();
@@ -89,6 +109,47 @@ export function Waterfall({ register }: Props) {
       {phase === 'unsupported' && (
         <p className="waterfall-note">{t('wf.unsupported')}</p>
       )}
+      <div className="wf-controls">
+        {(['black', 'gain', 'contrast'] as const).map((name) => (
+          <label key={name} className="wf-slider">
+            <span>{t(`wf.${name}`)}</span>
+            <input
+              type="range"
+              min={name === 'black' ? 0 : name === 'gain' ? 0.4 : 0.5}
+              max={name === 'black' ? 0.6 : 2.5}
+              step={0.05}
+              value={levels[name]}
+              aria-label={t(`wf.${name}`)}
+              onChange={(e) => {
+                const next = { ...levelsRef.current, [name]: clampLevel(name, Number(e.target.value)) };
+                levelsRef.current = next;
+                setLevels(next);
+                backendRef.current?.setLevels(next);
+                writePref(LEVEL_KEYS[name], String(next[name]));
+              }}
+            />
+          </label>
+        ))}
+        <label className="wf-slider">
+          <span>{t('wf.speed')}</span>
+          <select
+            value={rows}
+            aria-label={t('wf.speed')}
+            onChange={(e) => {
+              const next = rowsPerStep(e.target.value);
+              rowsRef.current = next;
+              setRows(next);
+              writePref(ROWS_KEY, String(next));
+            }}
+          >
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={n}>
+                {n === 1 ? '15/s' : `${(15 / n).toFixed(1).replace('.0', '')}/s`}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
     </div>
   );
 }
