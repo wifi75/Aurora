@@ -38,12 +38,12 @@ Identificativi (`AutomationId`, la parte finale) dei controlli di JTDX e come li
 | Messaggi | `txb1`..`txb6` | pulsanti «Now»: cambiano subito il messaggio, anche durante la trasmissione (riavviando la sequenza) | **non usati**: potrebbero tagliare una trasmissione; si usa il pallino |
 | Messaggi | `tx5` (combo) | messaggio 5 con le macro | letto come testo |
 | Messaggi | `genStdMsgsPushButton` «Gen.Msgs» | rigenera i sei messaggi standard | comandato (`gen_msgs`) |
-| QSO | `AutoSeqButton` «AutoSeq n» | sequenza automatica dei messaggi | letto e comandato |
+| QSO | `AutoSeqButton` «AutoSeq n» | sequenza automatica dei messaggi; n e' il livello 0-7 | letto e comandato; il testo (con il livello) e' quello di JTDX |
 | QSO | `skipTx1` «Salta Tx1» | rispondendo a un CQ si parte da Tx2 invece di Tx1 | letto e comandato; la scheda barra la riga 1 |
 | QSO | `singleQSOButton` «1 QSO» | dopo un QSO finito spegne Abilita Tx | letto e comandato |
 | QSO | `AnsB4Button` «Risp B4» | risponde anche a chi si e' gia' lavorato | letto e comandato |
 | QSO | `bypassButton` «Bypassa» | salta i filtri del testo | letto e comandato |
-| QSO | `rrr1CheckBox` «RRR» | usa RRR al posto di RR73 nel Tx4 | non esposto |
+| QSO | `rrr1CheckBox` «RRR» | usa RRR al posto di RR73 nel Tx4 | letto e comandato |
 | QSO | `TxMinuteButton` «TX 00/30» / «TX 15/45» | **periodo di trasmissione**: pari o dispari; il testo cambia con lo stato e col modo (in FT4 «TX 00») | letto e comandato; Aurora mostra **il testo di JTDX** |
 | Trasmissione | `enableTxButton` «Abilita Tx» | arma la trasmissione automatica | letto e comandato (solo con la trasmissione aperta) |
 | Trasmissione | `AutoTxButton` «AutoTX» | trasmissione automatica | letto e comandato (solo con la trasmissione aperta) |
@@ -53,7 +53,8 @@ Identificativi (`AutomationId`, la parte finale) dei controlli di JTDX e come li
 | Frequenze | `pbR2T` ▲, `pbT2R` ▼, `pbTxLock` | copia Rx→Tx, Tx→Rx, Tx=Rx | comandato |
 | DX | `dxCallEntry`, `dxGridEntry` | stazione in collegamento | letto; impostato col doppio clic (`Reply`) |
 | DX | `ClearDxButton` «Canc DX» | libera la stazione | comandato (anche con doppio Esc) |
-| DX | `wantedCall`, `wantedGrid`, `wantedCountry`, `cbShowWanted` | ricerca di una stazione | non usato |
+| DX | `wantedCall`, `wantedGrid`, `wantedCountry`, `cbShowWanted` «Ricerca» | ricerca di una stazione | non usato (comando `show_wanted` disponibile) |
+| DX | `cbShowSpot` «Spt» | manda lo spot al cluster/rete | **Mai**: Aurora non manda spot ne' messaggi pubblici |
 | Report | `rptSpinBox` «Rapporto -12» | rapporto da mandare | letto (`report`) |
 | Modo | `ft8Button`, `ft4Button`, `jtButton`, `HoundButton` | modo e Hound | letto e comandato |
 | Banda | `pb160`..`pb2`, `bandComboBox` | banda | letta (frequenza) e comandata (OmniRig) |

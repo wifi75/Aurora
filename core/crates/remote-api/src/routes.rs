@@ -452,7 +452,7 @@ async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<V
         Ok(Ok((list, tx))) => {
             let map: serde_json::Map<String, Value> = list.into_iter().map(|(id, on)| (id, Value::Bool(on))).collect();
             // i sei messaggi Tx di JTDX e quello selezionato (1-6), quando la radio li sa leggere
-            let tx = tx.map(|t| json!({ "messages": t.messages, "selected": t.selected, "minute": t.minute_label }));
+            let tx = tx.map(|t| json!({ "messages": t.messages, "selected": t.selected, "minute": t.minute_label, "autoseq": t.autoseq_label }));
             Ok(Json(json!({ "controls": map, "tx": tx })))
         }
         Ok(Err(e)) => {

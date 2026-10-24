@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ getControls: vi.fn(), postControl: vi.fn().mockResolvedValue(undefined) }));
 import { getControls, postControl } from '../api/client';
+import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 import { QsoSwitches } from './QsoSwitches';
 
@@ -38,6 +39,18 @@ describe('QsoSwitches', () => {
     fireEvent.click(odd);
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('tx_period', true));
     useStation.setState({ status: null });
+  });
+
+  it('shows the AutoSeq level written by the engine and has the RRR box', async () => {
+    useEngineTx.getState().set({ messages: ['', '', '', '', '', ''], selected: null, minute: '', autoseq: 'AutoSeq 3' });
+    vi.mocked(getControls).mockResolvedValue({ autoseq: true, rrr: false });
+    render(<QsoSwitches txAllowed />);
+    expect(await screen.findByRole('button', { name: 'AutoSeq 3' })).toBeInTheDocument();
+    const rrr = screen.getByRole('button', { name: 'RRR' });
+    expect(rrr).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(rrr);
+    await waitFor(() => expect(postControl).toHaveBeenCalledWith('rrr', true));
+    useEngineTx.getState().set(null);
   });
 
   it('keeps Enable Tx and AutoTX off-limits while transmission is closed, but lets you turn them off', async () => {

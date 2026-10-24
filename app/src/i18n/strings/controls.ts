@@ -129,6 +129,7 @@ export const controlStrings = {
   'ctl.answer_b4': ['Risp B4', 'Answer B4', 'Antw. B4', 'Rép. B4', 'Resp. B4', 'Resp. B4'],
   'ctl.bypass': ['Bypassa', 'Bypass', 'Bypass', 'Bypass', 'Omitir', 'Ignorar'],
   'ctl.skip_tx1': ['Salta Tx1', 'Skip Tx1', 'Tx1 aus', 'Sauter Tx1', 'Saltar Tx1', 'Saltar Tx1'],
+  'ctl.rrr': ['RRR', 'RRR', 'RRR', 'RRR', 'RRR', 'RRR'],
   'ctl.tx_period': ['Periodo Tx', 'Tx period', 'Tx-Periode', 'Période Tx', 'Periodo Tx', 'Período Tx'],
   'ctl.auto_tx': ['AutoTX', 'AutoTX', 'AutoTX', 'AutoTX', 'AutoTX', 'AutoTX'],
   'ctl.enable_tx': ['Abilita Tx', 'Enable Tx', 'Tx an', 'Activer Tx', 'Activar Tx', 'Ativar Tx'],
@@ -181,6 +182,14 @@ export const controlStrings = {
     'En répondant à un CQ, commence à Tx2 au lieu de Tx1.',
     'Al responder a un CQ empieza en Tx2 en lugar de Tx1.',
     'Ao responder a um CQ começa em Tx2 em vez de Tx1.',
+  ],
+  'tip.ctl.rrr': [
+    'Senza spunta il messaggio di chiusura (Tx4) è RR73; con la spunta è RRR. Con RRR la stazione risponde 73 e il QSO si chiude col suo 73.',
+    'Unchecked, the closing message (Tx4) is RR73; checked, it is RRR. With RRR the other station answers 73 and the QSO closes with its 73.',
+    'Ohne Haken lautet die Schlussnachricht (Tx4) RR73; mit Haken RRR. Mit RRR antwortet die Gegenstation 73 und das QSO endet mit deren 73.',
+    'Sans coche, le message de clôture (Tx4) est RR73 ; coché, c’est RRR. Avec RRR l’autre station répond 73 et le QSO se termine avec son 73.',
+    'Sin marca, el mensaje de cierre (Tx4) es RR73; con marca, RRR. Con RRR la otra estación responde 73 y el QSO termina con su 73.',
+    'Sem visto, a mensagem de fecho (Tx4) é RR73; com visto, RRR. Com RRR a outra estação responde 73 e o QSO termina com o seu 73.',
   ],
   'tip.ctl.tx_period': [
     'Periodo di trasmissione: «Tx 00/30» trasmette ai secondi 00 e 30 di ogni minuto, «Tx 15/45» ai secondi 15 e 45. Un clic passa dall\'uno all\'altro; rispondendo a una stazione si imposta da solo quello giusto.',

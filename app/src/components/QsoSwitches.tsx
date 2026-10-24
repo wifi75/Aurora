@@ -8,7 +8,7 @@ import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
-const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_b4', 'bypass', 'skip_tx1', 'tx_period'];
+const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period'];
 const SENDING: ControlId[] = ['auto_tx', 'enable_tx'];
 /** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
 const ARMING: ControlId[] = ['auto_tx', 'enable_tx'];
@@ -21,6 +21,7 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const [note, setNote] = useState('');
   const mode = useStation((st) => st.status?.mode);
   const minuteLabel = useEngineTx((st) => st.tx?.minute ?? '');
+  const autoseqLabel = useEngineTx((st) => st.tx?.autoseq ?? '');
   const state = controls.data ?? {};
   const reachable = !controls.isError;
 
@@ -67,7 +68,8 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
           onClick={() => void set(id, !on)}
         >
           {on ? <span className="chip-led" aria-hidden="true" /> : null}
-          {t(`ctl.${id}` as Key)}
+          {/* AutoSeq porta il livello nel testo, come nel motore: «AutoSeq 3» */}
+          {id === 'autoseq' && autoseqLabel !== '' ? autoseqLabel : t(`ctl.${id}` as Key)}
         </button>
       );
     });

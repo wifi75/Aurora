@@ -6,6 +6,8 @@ export interface EngineTx {
   selected: number | null;
   /** Il testo della casella del periodo come lo scrive il motore ("TX 00/30", "TX 15/45", "TX 00"...). */
   minute: string;
+  /** Il testo del pulsante AutoSeq, che porta il livello ("AutoSeq 3"). */
+  autoseq: string;
 }
 
 /** Quanto vale la scelta fatta a mano prima che il motore la confermi: oltre, vince quello che dice il motore. */
@@ -51,8 +53,8 @@ export const useEngineTx = create<EngineTxState>((set) => ({
 /** Il testo del campo `tx` dell'API, se valido: sei messaggi e una selezione tra 1 e 6 (o nessuna). */
 export function parseEngineTx(raw: unknown): EngineTx | null {
   if (!raw || typeof raw !== 'object') return null;
-  const { messages, selected, minute } = raw as { messages?: unknown; selected?: unknown; minute?: unknown };
+  const { messages, selected, minute, autoseq } = raw as { messages?: unknown; selected?: unknown; minute?: unknown; autoseq?: unknown };
   if (!Array.isArray(messages) || messages.length !== 6 || !messages.every((m) => typeof m === 'string')) return null;
   const n = typeof selected === 'number' && selected >= 1 && selected <= 6 ? selected : null;
-  return { messages: messages as string[], selected: n, minute: typeof minute === 'string' ? minute.trim() : '' };
+  return { messages: messages as string[], selected: n, minute: typeof minute === 'string' ? minute.trim() : '', autoseq: typeof autoseq === 'string' ? autoseq.trim() : '' };
 }
