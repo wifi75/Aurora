@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getStationInfo, postBand, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
@@ -189,6 +189,9 @@ export function Live() {
       await attempt(
         async () => {
           await postReply(id);
+          // la stazione e' scelta: perche' JTDX la chiami da solo al momento giusto serve anche Abilita Tx
+          // (con 1 QSO acceso JTDX lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'
+          if (info.data?.tx_allowed) await postControl('enable_tx', true).catch(() => undefined);
           // la stazione chiamata compare subito nel blocco DX, prima che JTDX la riporti
           const call = target ? callOf(target.text) : null;
           if (call) useStation.getState().setPendingDx(call);
@@ -197,7 +200,7 @@ export function Live() {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [t, info.data?.tx_allowed],
   );
 
   return (
