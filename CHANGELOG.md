@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.10.0 - 2026-10-24
 - **Telefono** (schermi fino a 640 px): la pagina Stazione diventa a schede (Attivita' di banda, CQ, Trasmissione, Comandi, Cascata, DX Cluster, Log), una alla volta a tutta larghezza e con la scelta ricordata; menu e testata compatti con scorrimento di lato; modo, banda, comandi e interruttori del QSO in griglie a colonne uguali con bersagli da 44 px; campi a 16 px (niente zoom); messaggi su due righe con il testo leggibile; STOP TX sopra la riga in fondo. Corretti anche i pannelli con elenco che si schiacciavano a zero su schermi stretti. Sopra i 640 px non cambia nulla.
 - **Aggiornamento automatico, base**: il core scarica il pacchetto di installazione dalla release (anche da un repository privato col token), ne verifica la firma minisign e lo installa solo se valida; `POST /api/v1/update/install` (solo dal PC, mai in trasmissione) e pulsante «Installa ora» nella barra degli aggiornamenti, visibile solo quando il programma sa installare (`can_install`). Il guscio Windows che lo usa non c'e' ancora.
 - **Automazione, filtro dei falsi decode**: prima di rispondere a un CQ si scartano i messaggi segnati «?» dal motore, i nominativi senza la forma di un nominativo e i segnali sotto -23 dB di stazioni mai sentite in sessione; il motivo compare nel registro delle decisioni. Non cambia l'elenco dei messaggi.
