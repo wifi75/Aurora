@@ -15,10 +15,14 @@ use remote_api::{build_router, AppState, TxPolicy};
 use tower::ServiceExt;
 
 pub fn state() -> AppState {
+    state_with_live_tx(true)
+}
+
+pub fn state_with_live_tx(live: bool) -> AppState {
     let bus = Bus::new(4096);
     let auth = Arc::new(DeviceStore::open_in_memory(Arc::new(SystemClock)).unwrap());
     let logbook = Arc::new(Logbook::open_in_memory().unwrap());
-    AppState::new(bus, auth, logbook, TxPolicy::default_safe(), false)
+    AppState::new(bus, auth, logbook, TxPolicy::default_safe().with_live_tx(live), false)
 }
 
 pub fn token_for(state: &AppState) -> String {

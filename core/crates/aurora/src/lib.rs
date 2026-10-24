@@ -112,7 +112,7 @@ pub async fn run(
 ) -> Result<RunningServer, StartError> {
     let (auth, logbook) = open_storage(&config.data_dir)?;
     let bus = Bus::new(4096);
-    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe(), config.secure_cookie);
+    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(true), config.secure_cookie);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };

@@ -190,3 +190,44 @@ async fn openapi_lists_health_and_stream() {
     assert!(j["paths"]["/api/v1/health"].is_object());
     assert!(j["paths"]["/api/v1/stream"].is_object());
 }
+
+#[tokio::test]
+async fn reply_is_403_tx_disabled_when_live_tx_is_off_even_for_a_known_decode() {
+    let s = state_with_live_tx(false);
+    s.bus.events().send(decode(31)).unwrap();
+    wait_known(&s, 31).await;
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/reply").cookie(&cookie).json(r#"{"decode_id":31}"#)).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+    assert_eq!(body_json(resp).await["error"], "tx_disabled");
+}
+
+#[tokio::test]
+async fn tx_disabled_is_checked_before_the_decode_lookup() {
+    let s = state_with_live_tx(false);
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/reply").cookie(&cookie).json(r#"{"decode_id":777}"#)).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+    assert_eq!(body_json(resp).await["error"], "tx_disabled");
+}
+
+#[tokio::test]
+async fn nothing_is_queued_for_the_engine_when_live_tx_is_off() {
+    let s = state_with_live_tx(false);
+    let mut rx = s.bus.take_command_rx().unwrap();
+    s.bus.events().send(decode(32)).unwrap();
+    wait_known(&s, 32).await;
+    let cookie = cookie_for(&s);
+    call(&router(&s), req(Method::POST, "/api/v1/commands/reply").cookie(&cookie).json(r#"{"decode_id":32}"#)).await;
+    assert!(rx.try_recv().is_err(), "un Reply respinto non deve arrivare al motore");
+}
+
+#[tokio::test]
+async fn halt_tx_works_when_live_tx_is_off() {
+    let s = state_with_live_tx(false);
+    let mut rx = s.bus.take_command_rx().unwrap();
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/halt-tx").cookie(&cookie)).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(rx.recv().await, Some(Command::HaltTx));
+}

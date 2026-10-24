@@ -211,13 +211,16 @@ struct ReplyBody {
     decode_id: u64,
 }
 
-#[utoipa::path(post, path = "/api/v1/commands/reply", responses((status = 200, description = "Risposta inviata al motore"), (status = 403, description = "Trasmissione non consentita da questa via"), (status = 404, description = "Decode sconosciuto")))]
+#[utoipa::path(post, path = "/api/v1/commands/reply", responses((status = 200, description = "Risposta inviata al motore"), (status = 403, description = "Trasmissione non abilitata (tx_disabled) o non consentita da questa via"), (status = 404, description = "Decode sconosciuto")))]
 async fn reply(
     State(state): State<AppState>,
     _: Authed,
     headers: HeaderMap,
     Json(body): Json<ReplyBody>,
 ) -> Result<Json<Value>, ApiError> {
+    if !state.policy.live_tx() {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"));
+    }
     if !state.policy.allows(transport_of(&headers)) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_not_allowed_on_transport"));
     }
