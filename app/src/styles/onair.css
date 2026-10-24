@@ -218,3 +218,44 @@
   outline: 1px solid #ffe600;
   outline-offset: -1px;
 }
+
+/* Bandiera accanto al paese */
+.decode-flag {
+  width: 1.25em;
+  height: 0.95em;
+  margin-right: 0.4rem;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+  vertical-align: -0.1em;
+}
+
+/* Tx1-Tx6: in rosso quello in trasmissione, in giallo la fase che tocca dopo */
+.tx-list li[aria-current='true'] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--stop) 85%, #fff), var(--stop));
+  border-color: rgb(255 255 255 / 0.7);
+  color: var(--stop-ink);
+  font-weight: var(--weight-strong);
+  box-shadow: 0 0 22px -2px var(--stop);
+  animation: tx-blink 0.9s steps(1, end) infinite;
+}
+
+.tx-list li[aria-current='true'] .tx-n {
+  color: inherit;
+}
+
+.tx-list li[data-next='true'] {
+  background: linear-gradient(180deg, rgb(255 230 0 / 0.28), rgb(255 230 0 / 0.08));
+  border-color: #ffe600;
+  box-shadow: 0 0 16px -4px #ffe600;
+  font-weight: var(--weight-strong);
+}
+
+.tx-list li[data-next='true'] .tx-n {
+  color: #ffe600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-list li[aria-current='true'] {
+    animation: none;
+  }
+}

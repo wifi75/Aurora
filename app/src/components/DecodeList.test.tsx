@@ -68,6 +68,20 @@ describe('DecodeList', () => {
     expect(screen.getByText('0.3')).toBeInTheDocument();
   });
 
+  it('shows the flag of the country next to its name', () => {
+    const { container } = render(<DecodeList decodes={[decode({ country: 'Japan' })]} onReply={() => {}} />);
+    const flag = container.querySelector('.fi.fi-jp');
+    expect(flag).not.toBeNull();
+    expect(flag).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('Japan')).toBeInTheDocument();
+  });
+
+  it('shows no flag for a country without one', () => {
+    const { container } = render(<DecodeList decodes={[decode({ country: 'ITU HQ' })]} onReply={() => {}} />);
+    expect(container.querySelector('.fi')).toBeNull();
+    expect(screen.getByText('ITU HQ')).toBeInTheDocument();
+  });
+
   it('shows no country text when unknown', () => {
     render(<DecodeList decodes={[decode({ country: null }), decode({ id: 8 })]} onReply={() => {}} />);
     expect(screen.queryByText('Giappone')).not.toBeInTheDocument();

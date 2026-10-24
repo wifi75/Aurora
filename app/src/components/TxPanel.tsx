@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
 import type { StationStatus } from '../api/schemas';
-import { activeTx, txMessages } from '../lib/txMessages';
+import type { DecodedMessage } from '../api/schemas';
+import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 import { replyErrorMessage } from '../lib/replyError';
 
 interface Props {
@@ -11,16 +12,19 @@ interface Props {
   initialFrequency?: number;
   /** Stato di JTDX: stazione DX, rapporto e messaggio in corso. */
   status?: StationStatus | null;
+  /** Messaggi decodificati (i piu' recenti per primi): servono a capire a che punto e' il QSO. */
+  decodes?: DecodedMessage[];
 }
 
 const MAX_TEXT = 13;
 
 /** Comandi di trasmissione: CQ, messaggio libero e frequenza audio. Cio' che trasmette si abilita solo dal PC. */
-export function TxPanel({ txAllowed, initialFrequency = 1500, status = null }: Props) {
+export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, decodes = [] }: Props) {
   const messages = status
     ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: status.dx_call ?? '', report: status.report ?? '' })
     : [];
   const active = activeTx(messages, status?.tx_message);
+  const next = status && active < 0 ? nextTx(decodes, status.de_call, status.dx_call ?? '') : -1;
   const [dx, setDx] = useState(false);
   const [text, setText] = useState('');
   const [hz, setHz] = useState(String(initialFrequency));
@@ -48,7 +52,7 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null }: P
           </div>
           <ol className="tx-list" aria-label="Messaggi Tx1-Tx6">
             {messages.map((m, i) => (
-              <li key={i} aria-current={i === active ? 'true' : undefined} className={m === '' ? 'tx-empty' : undefined}>
+              <li key={i} aria-current={i === active ? 'true' : undefined} data-next={i === next && m !== '' ? 'true' : undefined} className={m === '' ? 'tx-empty' : undefined}>
                 <span className="tx-n">Tx{i + 1}</span>
                 <span className="data">{m}</span>
               </li>

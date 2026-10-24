@@ -2,6 +2,7 @@ import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/500.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
+import 'flag-icons/css/flag-icons.min.css';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';

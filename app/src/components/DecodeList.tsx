@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { formatClock } from '../lib/format';
+import { flagCode } from '../lib/flags';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 
 const BADGES: Partial<Record<DecodeTag, { label: string; color: string }>> = {
@@ -92,6 +93,7 @@ export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText = 'In a
               <span className="data">{dxCall ? highlightCall(d.text, dxCall) : d.text}</span>
             </span>
             <span className="decode-where">
+              {flagCode(d.country) ? <span className={`fi fi-${flagCode(d.country)} decode-flag`} aria-hidden="true" /> : null}
               {d.country ? <span className="decode-country">{d.country}</span> : null}
               {mine && distanceOf(mine, d.text) !== null ? <span className="num muted"> [{distanceOf(mine, d.text)} km]</span> : null}
             </span>

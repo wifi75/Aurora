@@ -108,7 +108,7 @@ export function Live() {
       case 'station':
         return <StationPanel status={status} />;
       case 'tx':
-        return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} />;
+        return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
       case 'cq':
         return <DecodeList decodes={cqDecodes(decodes)} myGrid={status?.de_grid} dxCall={status?.dx_call} onReply={onReply} emptyText="Nessun CQ per ora" />;
       case 'all':

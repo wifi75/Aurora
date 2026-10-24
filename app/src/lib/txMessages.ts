@@ -28,3 +28,23 @@ export function activeTx(messages: string[], current: string | null | undefined)
   if (!wanted) return -1;
   return messages.findIndex((m) => m !== '' && m.toUpperCase() === wanted);
 }
+
+/**
+ * Quale messaggio (0-5, cioe' Tx1-Tx6) tocca trasmettere ora, secondo la fase del QSO: guarda l'ultimo
+ * messaggio che la stazione chiamata ha mandato a noi (elenco dal piu' recente).
+ */
+export function nextTx(decodes: ReadonlyArray<{ text: string }>, myCall: string, dxCall: string): number {
+  const me = myCall.trim().toUpperCase();
+  const dx = dxCall.trim().toUpperCase();
+  if (!dx) return 5;
+  for (const d of decodes) {
+    const tokens = d.text.trim().toUpperCase().split(/\s+/);
+    if (tokens[0] !== me || tokens[1] !== dx) continue;
+    const payload = tokens.slice(2).join(' ');
+    if (/^(RRR|RR73|73)$/.test(payload)) return 4;
+    if (/^R[+-]\d{2}$/.test(payload)) return 3;
+    if (/^[+-]\d{2}$/.test(payload)) return 2;
+    if (/^[A-R]{2}\d{2}$/.test(payload)) return 1;
+  }
+  return 0;
+}

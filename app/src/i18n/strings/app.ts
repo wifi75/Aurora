@@ -1,0 +1,57 @@
+import type { Entry } from '../core';
+
+/** Struttura generale: navigazione, intestazione, piede di pagina, tema e lingua. [it, en, de, fr, es, pt] */
+export const appStrings = {
+  'nav.pages': ['Pagine', 'Pages', 'Seiten', 'Pages', 'Páginas', 'Páginas'],
+  'nav.station': ['Stazione', 'Station', 'Station', 'Station', 'Estación', 'Estação'],
+  'nav.automation': ['Automazioni', 'Automation', 'Automatik', 'Automatisation', 'Automatización', 'Automação'],
+  'nav.stats': ['Statistiche', 'Statistics', 'Statistik', 'Statistiques', 'Estadísticas', 'Estatísticas'],
+  'nav.settings': ['Impostazioni', 'Settings', 'Einstellungen', 'Réglages', 'Ajustes', 'Definições'],
+  'nav.wiki': ['Guida', 'Guide', 'Anleitung', 'Guide', 'Guía', 'Guia'],
+  'app.verifying': ['Verifica del dispositivo…', 'Checking the device…', 'Gerät wird geprüft …', "Vérification de l'appareil…", 'Comprobando el dispositivo…', 'A verificar o dispositivo…'],
+  'app.noCore': [
+    'Non riesco a contattare Aurora. Controlla che sia acceso sul PC e che la rete sia raggiungibile.',
+    'I cannot reach Aurora. Check that it is running on the PC and that the network is reachable.',
+    'Aurora ist nicht erreichbar. Prüfe, ob es auf dem PC läuft und das Netzwerk erreichbar ist.',
+    "Impossible de joindre Aurora. Vérifie qu'il tourne sur le PC et que le réseau est joignable.",
+    'No consigo conectar con Aurora. Comprueba que esté en marcha en el PC y que la red sea accesible.',
+    'Não consigo contactar o Aurora. Verifica se está ligado no PC e se a rede está acessível.',
+  ],
+  'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
+  'footer.credit': [
+    '{name} v{version} — Progettazione e sviluppo: {author}',
+    '{name} v{version} — Design and development: {author}',
+    '{name} v{version} — Entwurf und Entwicklung: {author}',
+    '{name} v{version} — Conception et développement : {author}',
+    '{name} v{version} — Diseño y desarrollo: {author}',
+    '{name} v{version} — Projeto e desenvolvimento: {author}',
+  ],
+  'footer.coreDown': [
+    'Core non raggiungibile. Controlla che Aurora sia acceso sul PC.',
+    'Core not reachable. Check that Aurora is running on the PC.',
+    'Core nicht erreichbar. Prüfe, ob Aurora auf dem PC läuft.',
+    'Core injoignable. Vérifie qu’Aurora tourne sur le PC.',
+    'Núcleo no accesible. Comprueba que Aurora esté en marcha en el PC.',
+    'Núcleo inacessível. Verifica se o Aurora está ligado no PC.',
+  ],
+  'footer.connecting': ['Connessione al core…', 'Connecting to the core…', 'Verbindung zum Core …', 'Connexion au core…', 'Conectando con el núcleo…', 'A ligar ao núcleo…'],
+  'theme.light': ['Tema chiaro', 'Light theme', 'Helles Design', 'Thème clair', 'Tema claro', 'Tema claro'],
+  'theme.dark': ['Tema scuro', 'Dark theme', 'Dunkles Design', 'Thème sombre', 'Tema oscuro', 'Tema escuro'],
+  'tip.theme': [
+    'Passa tra tema scuro (consigliato di notte) e tema chiaro.',
+    'Switch between the dark theme (best at night) and the light theme.',
+    'Wechselt zwischen dunklem (nachts empfohlen) und hellem Design.',
+    'Bascule entre le thème sombre (conseillé la nuit) et le thème clair.',
+    'Cambia entre el tema oscuro (recomendado de noche) y el claro.',
+    'Alterna entre o tema escuro (recomendado à noite) e o claro.',
+  ],
+  'lang.label': ['Lingua', 'Language', 'Sprache', 'Langue', 'Idioma', 'Idioma'],
+  'tip.lang': [
+    "Scegli la lingua dell'interfaccia; la scelta resta su questo dispositivo.",
+    'Choose the interface language; it is remembered on this device.',
+    'Wähle die Sprache der Oberfläche; sie bleibt auf diesem Gerät gespeichert.',
+    "Choisis la langue de l'interface ; elle reste mémorisée sur cet appareil.",
+    'Elige el idioma de la interfaz; se recuerda en este dispositivo.',
+    'Escolhe o idioma da interface; fica guardado neste dispositivo.',
+  ],
+} as const satisfies Record<string, Entry>;
