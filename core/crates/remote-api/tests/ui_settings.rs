@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 fn state_with_store(name: &str) -> (AppState, std::path::PathBuf) {
     let dir = std::env::temp_dir().join(format!("aurora-ui-api-{name}-{}", std::process::id()));
+    std::fs::remove_dir_all(&dir).ok();
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("ui-settings.json");
     (state().with_ui_settings(Arc::new(UiSettings::open(&path))), path)

@@ -9,6 +9,7 @@ use remote_api::AppState;
 
 fn cluster_state(name: &str) -> AppState {
     let dir = std::env::temp_dir().join(format!("aurora-cluster-api-{name}-{}", std::process::id()));
+    std::fs::remove_dir_all(&dir).ok();
     std::fs::create_dir_all(&dir).unwrap();
     state().with_cluster(ClusterService::open(&dir.join("dx-cluster.json")))
 }

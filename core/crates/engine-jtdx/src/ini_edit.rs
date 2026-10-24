@@ -174,6 +174,7 @@ mod tests {
     #[test]
     fn writes_the_file_and_keeps_a_copy() {
         let dir = std::env::temp_dir().join(format!("aurora-ini-edit-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("JTDX.ini");
         std::fs::write(&path, INI).unwrap();

@@ -12,8 +12,18 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Automazioni con prova a vuoto, tetti e dead-man
 - [x] Esportazione dei QSO verso log esterni
 - [x] Guida in-app, pagina Statistiche, righe Tx nell'elenco
+- [x] DX Cluster telnet (server pubblici e propri, LED di raggiungibilita', doppio clic = frequenza dello spot)
+- [x] Client NTP configurabile con indicatore dell'orologio e DT mediano
+- [x] Impostazioni di JTDX lette dal suo file (UDP, radio, audio, sequenza, avvisi, avanzate)
+- [x] Log di Log4OM2 in sola lettura, finestra Log
+- [x] Modo JT, comandi di ricezione di JTDX, split della radio spento a ogni cambio banda
 
 ## Da fare
+- [ ] Modifica delle impostazioni di JTDX dall'interfaccia (il core c'e': scrive il file e riavvia JTDX), compresa la scheda Radio
+- [ ] Riordino delle pagine delle impostazioni: gruppi, colori, struttura chiara
+- [ ] Rendere molto piu' veloce Abilita Tx (sessione PowerShell fissa): oggi il doppio clic puo' perdere il periodo giusto
+- [ ] Log remoto via UDP (QSO nuovi da Log4OM2 su un altro PC)
+- [ ] Prove con la radio dei comandi nuovi: modo JT, doppio clic sul cluster, applicazione delle impostazioni di JTDX
 - [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
 - [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\<nominativo>.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
 - [ ] Mappa dei QSO e dei CQ
