@@ -6,6 +6,7 @@ import { Footer } from './components/Footer';
 import { LanguageSelect } from './components/LanguageSelect';
 import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
+import { WantedBar } from './components/WantedBar';
 import { applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
 import { useRoute } from './lib/route';
@@ -90,6 +91,7 @@ export function App() {
         <LanguageSelect />
         <ThemeToggle />
       </header>
+      {session.data ? <WantedBar /> : null}
       <main className="app-main">{content}</main>
       <Footer />
     </div>

@@ -15,6 +15,7 @@ engine-jtdx = { path = "../engine-jtdx" }
 logbook = { path = "../logbook" }
 qso-engine = { path = "../qso-engine" }
 rig-control = { path = "../rig-control" }
+wishlist = { path = "../wishlist" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

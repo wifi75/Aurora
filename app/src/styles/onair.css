@@ -2334,3 +2334,71 @@
 .map-picked {
   margin-left: auto;
 }
+
+/* Lista dei desiderati: avviso in alto e stazioni evidenziate negli elenchi */
+.wanted-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  padding: 0.45rem 0.9rem;
+  color: #1a1400;
+  background: #ffd23f;
+  border-bottom: 2px solid #b88a00;
+  font-size: 0.9rem;
+}
+
+.wanted-bar .muted {
+  color: #5a4600;
+}
+
+.wanted-bar .glass {
+  color: #1a1400;
+  background: rgb(255 255 255 / 0.55);
+  border-color: #b88a00;
+}
+
+.wanted-star {
+  font-size: 1.1rem;
+}
+
+.wanted-text {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.decode-row--wanted {
+  box-shadow: inset 4px 0 0 #ffd23f;
+}
+
+.decode-row--wanted .decode-text .data {
+  color: #ffd23f;
+  font-weight: 700;
+}
+
+:root[data-theme='light'] .decode-row--wanted .decode-text .data {
+  color: #8a6400;
+}
+
+.cluster-row--wanted {
+  box-shadow: inset 4px 0 0 #ffd23f;
+  background: color-mix(in srgb, #ffd23f 16%, transparent);
+}
+
+.wish-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.wish-recent {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}

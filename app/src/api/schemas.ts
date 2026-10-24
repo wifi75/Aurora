@@ -71,10 +71,25 @@ export const QsoRecordSchema = z.object({
 });
 export type QsoRecord = z.infer<typeof QsoRecordSchema>;
 
+export const WantedAlertSchema = z.object({
+  call: z.string(),
+  reason: z.string(),
+  source: z.string(),
+  text: z.string(),
+  freq_hz: z.number().nullable().optional(),
+  band: z.string().nullable().optional(),
+  snr: z.number().nullable().optional(),
+  country: z.string().nullable().optional(),
+  grid: z.string().nullable().optional(),
+  time_ms: z.number(),
+});
+export type WantedAlert = z.infer<typeof WantedAlertSchema>;
+
 export const EventSchema = z.discriminatedUnion('type', [
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
   QsoRecordSchema.extend({ type: z.literal('qso_logged') }),
   z.object({ type: z.literal('tx_halted') }),
+  WantedAlertSchema.extend({ type: z.literal('wanted') }),
 ]);
 export type AuroraEvent = z.infer<typeof EventSchema>;

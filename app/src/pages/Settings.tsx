@@ -11,6 +11,7 @@ import { MacrosTab } from '../settings/MacrosTab';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
+import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
 
 interface TabDef {
@@ -34,6 +35,7 @@ const TABS: readonly TabDef[] = [
   { id: 'schedule', label: 'tab.schedule', tip: 'tip.tab.schedule', render: () => <ScheduleTab /> },
   { id: 'advanced', label: 'tab.advanced', tip: 'tip.tab.advanced', render: () => <AdvancedTab /> },
   { id: 'cluster', label: 'tab.cluster', tip: 'tip.tab.cluster', render: () => <ClusterTab /> },
+  { id: 'wishlist', label: 'tab.wishlist', tip: 'tip.tab.wishlist', render: () => <WishlistTab /> },
   { id: 'clock', label: 'tab.clock', tip: 'tip.tab.clock', render: () => <ClockTab /> },
   { id: 'access', label: 'tab.access', tip: 'tip.tab.access', render: () => <AccessTab /> },
   { id: 'windows', label: 'tab.windows', tip: 'tip.tab.windows', render: () => <WindowsTab /> },

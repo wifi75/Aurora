@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Lista dei desiderati** (Impostazioni → Desiderati): nominativi, prefissi, paesi e griglie da collegare, con filtro di banda e attesa tra due avvisi. Il core guarda ogni messaggio decodificato e ogni spot del cluster (anche a pagina chiusa); alla prima apparizione una barra gialla in alto (con suono se gli avvisi sonori sono accesi, e notifica del browser se consentita), la riga evidenziata negli elenchi e, con un indirizzo **ntfy**, la notifica sul telefono. Rotte `GET/PUT /wishlist` e `POST /wishlist/test`; nuovo crate `wishlist`.
 - **Mappa** (`#/mappa`): planisfero con i quadrati locatore gia' lavorati nel log di Log4OM2 (piu' QSO, piu' colore; filtro per banda), le stazioni che si ricevono ora dal loro locatore (CQ e risposte, colori delle etichette del motore) e la tua posizione. Rotella o + e − per ingrandire, si trascina. Nuova rotta `GET /map/worked` (aggregata nel database: 17.000 QSO diventano 1.500 righe). Il flusso dei dati ora sta nell'applicazione e non nella pagina della stazione: cambiando pagina i messaggi continuano ad arrivare.
 - Interruttori del QSO allineati alla finestra di JTDX: pulsante AutoSeq con il livello scritto dal motore («AutoSeq 3») e casella RRR (senza spunta il Tx4 e' RR73, con la spunta RRR).
 - Impostazioni → Generali: casella «Cambiando banda o modo svuota l'attivita' di banda» (accesa di base). Vale per i cambi fatti da Aurora, subito, e per quelli fatti nel motore; spenta l'elenco resta, e «Cancella» lo svuota a mano.

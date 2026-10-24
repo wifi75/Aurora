@@ -1,5 +1,6 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
-import { HealthSchema, type Health } from './schemas';
+import type { Wishlist } from '../lib/wishlist';
+import { HealthSchema, type Health, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 
 const BASE = '/api/v1';
@@ -386,6 +387,22 @@ export interface Log4omView {
 
 export async function getLog4om(limit: number): Promise<Log4omView> {
   return (await (await request(`/log4om?limit=${limit}`)).json()) as Log4omView;
+}
+
+/** La lista dei desiderati e gli ultimi avvisi. */
+export async function getWishlist(): Promise<{ config: Wishlist; recent: WantedAlert[] }> {
+  return (await (await request('/wishlist')).json()) as { config: Wishlist; recent: WantedAlert[] };
+}
+
+export async function putWishlist(config: Wishlist): Promise<Wishlist> {
+  const body = (await (await request('/wishlist', { ...jsonInit(config), method: 'PUT' })).json()) as { config: Wishlist };
+  return body.config;
+}
+
+/** Manda un avviso di prova; `phone` dice l'esito verso il telefono: `no_url`, `sent` o `failed`. */
+export async function testWishlist(): Promise<'no_url' | 'sent' | 'failed'> {
+  const body = (await (await request('/wishlist/test', { method: 'POST' })).json()) as { phone: 'no_url' | 'sent' | 'failed' };
+  return body.phone;
 }
 
 /** Un quadrato locatore (4 caratteri) con QSO nel log: quanti e su quali bande. */

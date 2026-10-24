@@ -1,0 +1,14 @@
+[package]
+name = "wishlist"
+description = "Lista dei desiderati: riconosce le stazioni volute nei messaggi e negli spot e manda l'avviso (pagina, telefono con ntfy)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+ureq = { version = "3.5.0", default-features = false, features = ["rustls"] }

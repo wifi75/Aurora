@@ -6,6 +6,8 @@ import { formatClock } from '../lib/format';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { useNotify } from '../lib/notify';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
+import { senderOf, wishReason } from '../lib/wishlist';
+import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
@@ -75,6 +77,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
+  const wishlist = useWishlist((s) => s.list);
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -96,12 +99,15 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
         const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
         const code = prefs.showFlag ? flagCode(d.country) : null;
         const toMe = !own && isCallToMe(d.text, myCall);
+        // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
+        const sender = own || !wishlist.enabled ? null : senderOf(d.text);
+        const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
         return (
           <button
             type="button"
             key={d.id}
-            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : undefined}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : undefined}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${wanted ? ' decode-row--wanted' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}

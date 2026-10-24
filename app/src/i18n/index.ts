@@ -6,6 +6,7 @@ import { accessStrings } from './strings/access';
 import { controlStrings } from './strings/controls';
 import { clusterStrings } from './strings/cluster';
 import { mapStrings } from './strings/map';
+import { wishStrings } from './strings/wish';
 import { clockStrings } from './strings/clock';
 import { engineConfigStrings } from './strings/engineconfig';
 import { automationStrings } from './strings/automation';
@@ -19,7 +20,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...clusterStrings, ...mapStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...clusterStrings, ...mapStrings, ...wishStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 
