@@ -69,12 +69,14 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert_eq!(c.udp_listen, "127.0.0.1:2334".parse::<SocketAddr>().unwrap());
     assert!(c.udp_forward.is_empty());
     assert!(!c.allow_tx, "la trasmissione e' chiusa per impostazione predefinita");
+    assert!(c.audio_device.is_none());
 
     let env = |k: &str| match k {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
         "AURORA_UDP_LISTEN" => Some("127.0.0.1:2340".to_string()),
         "AURORA_UDP_FORWARD" => Some("127.0.0.1:2333, 127.0.0.1:2335".to_string()),
         "AURORA_ALLOW_TX" => Some("1".to_string()),
+        "AURORA_AUDIO_DEVICE" => Some("USB Audio".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
@@ -83,6 +85,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert_eq!(c.udp_forward.len(), 2);
     assert_eq!(c.udp_forward[1].port(), 2335);
     assert!(c.allow_tx);
+    assert_eq!(c.audio_device.as_deref(), Some("USB Audio"));
 
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
     assert!(Config::from_lookup(bad("AURORA_UDP_LISTEN", "non-un-indirizzo")).is_err());

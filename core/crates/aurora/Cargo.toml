@@ -18,6 +18,7 @@ path = "src/main.rs"
 aurora-core = { path = "../aurora-core" }
 engine-sim = { path = "../engine-sim" }
 engine-jtdx = { path = "../engine-jtdx" }
+audio-spectrum = { path = "../audio-spectrum" }
 udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }

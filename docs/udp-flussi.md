@@ -55,7 +55,7 @@ Quando il QSO viene accettato JTDX fa, in quest'ordine:
 
 Il collegamento verso Log4OM2 (punto 4) e' quindi **indipendente dal server primario**: cambiare la porta del primario per usare l'hub di Aurora non lo tocca.
 
-## Il QSO nel dettaglio (prima versione)
+## Chi tiene il log
 
 Quando il contatto si chiude JTDX registra il QSO e lo manda in due modi: messaggi `QsoLogged` (tipo 5) e `LoggedADIF` (tipo 12) sul server primario, e l'ADIF sul secondario verso Log4OM, che lo scrive nel proprio log. **Il log "ufficiale" di Tiziano e' Log4OM2.** Aurora non deve duplicarlo: deve leggere gli stessi eventi per le proprie statistiche, ma lasciare a Log4OM la scrittura del log principale (o, in alternativa, inoltrargli il QSO).
 

@@ -181,3 +181,20 @@ fn config_defaults_and_overrides_and_errors() {
     assert!(Config::from_lookup(|k| (k == "AURORA_BIND").then(|| "non-un-indirizzo".to_string())).is_err());
     assert!(Config::from_lookup(|k| (k == "AURORA_ENGINE").then(|| "marte".to_string())).is_err());
 }
+
+#[tokio::test]
+async fn missing_audio_device_does_not_stop_the_server() {
+    let (tx, rx) = oneshot::channel::<()>();
+    let server = run(
+        Config { audio_device: Some("__dispositivo-inesistente__".into()), ..config(None) },
+        async move {
+            let _ = rx.await;
+        },
+    )
+    .await
+    .expect("senza scheda audio Aurora deve partire lo stesso");
+    let (status, body) = http(server.addr, "GET", "/api/v1/health", None, None).await;
+    assert_eq!(status, 200);
+    assert!(body.contains(r#""status":"ok""#));
+    let _ = tx.send(());
+}

@@ -7,6 +7,7 @@ use std::{
     sync::Arc,
 };
 
+use audio_spectrum::run_capture;
 use auth::{DeviceStore, SystemClock};
 use aurora_core::{Bus, Engine, EngineIo};
 use axum::{http::StatusCode, routing::any};
@@ -42,6 +43,8 @@ pub struct Config {
     pub udp_forward: Vec<SocketAddr>,
     /// Consente i comandi che fanno trasmettere JTDX (Reply). Predefinito: no.
     pub allow_tx: bool,
+    /// Parte del nome dell'ingresso audio da cui ricavare la cascata (vuoto: nessuna cattura audio).
+    pub audio_device: Option<String>,
 }
 
 #[derive(Debug)]
@@ -76,6 +79,7 @@ impl Config {
             udp_listen: SocketAddr::from(([127, 0, 0, 1], 2334)),
             udp_forward: Vec::new(),
             allow_tx: false,
+            audio_device: None,
         }
     }
 
@@ -130,6 +134,7 @@ impl Config {
             udp_listen,
             udp_forward,
             allow_tx,
+            audio_device: get("AURORA_AUDIO_DEVICE").filter(|d| !d.trim().is_empty()),
         })
     }
 }
@@ -193,6 +198,15 @@ pub async fn run(
         app = app.fallback_service(ServeDir::new(ui).fallback(ServeFile::new(index)));
     }
 
+    // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
+    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture(Some(hint), bus.spectrum()) {
+        Ok(handle) => Some(handle),
+        Err(e) => {
+            tracing::warn!("cascata audio non attiva: {e}");
+            None
+        }
+    });
+
     let listener = TcpListener::bind(config.bind)
         .await
         .map_err(|e| StartError::Io(format!("{}: {e}", config.bind)))?;
@@ -214,6 +228,7 @@ pub async fn run(
         if let Some(hub) = hub_for_task {
             hub.stop();
         }
+        drop(audio);
     });
     Ok(RunningServer { addr, state, hub, task })
 }
