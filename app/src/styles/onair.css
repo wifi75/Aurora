@@ -2155,3 +2155,182 @@
 .wf-marker--band .wf-marker-line {
   display: none;
 }
+
+/* Mappa dei QSO e delle stazioni ricevute */
+.map-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.map-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.map-check,
+.map-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.map-select select {
+  min-height: 1.8rem;
+  padding: 0 0.5rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--text-muted);
+  border-radius: 0.4rem;
+}
+
+.map-swatch {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.5rem;
+  border-radius: 0.15rem;
+}
+
+.map-swatch--worked {
+  background: #0f8f83;
+}
+
+.map-swatch--cq {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #3fd6c8;
+}
+
+.worldmap {
+  position: relative;
+  border: 1px solid var(--row-line);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.worldmap-svg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  min-height: 14rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.worldmap-svg:active {
+  cursor: grabbing;
+}
+
+.worldmap-sea {
+  fill: #0b1830;
+}
+
+.worldmap-grat line {
+  stroke: #2b3a54;
+  stroke-width: 0.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.worldmap-land {
+  fill: #223049;
+}
+
+.worldmap-borders {
+  fill: none;
+  stroke: #3a4c6b;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.worldmap-worked rect {
+  fill: #12c4b2;
+  stroke: #0f8f83;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.worldmap-station {
+  stroke: #0b1830;
+  cursor: pointer;
+}
+
+.worldmap-station--selected {
+  stroke: #fff;
+}
+
+.worldmap-home path {
+  fill: #ffd23f;
+  stroke: #0b1830;
+  stroke-width: 1;
+}
+
+:root[data-theme='light'] .worldmap-sea {
+  fill: #cfe3f7;
+}
+
+:root[data-theme='light'] .worldmap-land {
+  fill: #f3efe3;
+}
+
+:root[data-theme='light'] .worldmap-borders {
+  stroke: #b9b19b;
+}
+
+:root[data-theme='light'] .worldmap-grat line {
+  stroke: #a9c4e0;
+}
+
+.worldmap-zoom {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.worldmap-zoom button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
+  font-size: 0.8rem;
+}
+
+.map-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.map-dot--cq {
+  background: #3fd6c8;
+}
+
+.map-dot--qso {
+  background: #7aa2ff;
+}
+
+.map-star {
+  color: #ffd23f;
+  font-style: normal;
+}
+
+.map-picked {
+  margin-left: auto;
+}

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { checkSession } from './api/client';
+import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
 import { LanguageSelect } from './components/LanguageSelect';
 import { useT } from './i18n';
@@ -9,9 +10,12 @@ import { applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
+import { emitSpectrum } from './lib/spectrumFeed';
+import { useStation } from './state/station';
 import { Automation } from './pages/Automation';
 import { Settings } from './pages/Settings';
 import { Live } from './pages/Live';
+import { MapPage } from './pages/MapPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { Wiki } from './pages/Wiki';
@@ -25,6 +29,16 @@ export function App() {
     applyColors(document.documentElement, readColors(browserStorage()));
   }, []);
   const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false });
+
+  // Il flusso dei dati sta qui e non nella pagina della stazione: cambiando pagina (per esempio sulla mappa) i messaggi
+  // continuano ad arrivare e non si perde nulla.
+  const paired = !!session.data;
+  useEffect(() => {
+    if (!paired) return;
+    const { apply, setConnection } = useStation.getState();
+    const stream = openStream({ onEvent: apply, onSpectrum: (frame) => emitSpectrum(frame.bins), onState: setConnection });
+    return () => stream.close();
+  }, [paired]);
 
   const onPaired = () => {
     location.hash = '#/';
@@ -53,6 +67,8 @@ export function App() {
     content = <Automation />;
   } else if (route.name === 'stats') {
     content = <Stats />;
+  } else if (route.name === 'map') {
+    content = <MapPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else {
@@ -67,6 +83,7 @@ export function App() {
           <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
           <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
+          <a className={`glass${route.name === 'map' ? ' glass--on' : ''}`} aria-current={route.name === 'map' ? 'page' : undefined} href="#/mappa">{t('nav.map')}</a>
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
         </nav>

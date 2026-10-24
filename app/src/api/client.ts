@@ -388,6 +388,18 @@ export async function getLog4om(limit: number): Promise<Log4omView> {
   return (await (await request(`/log4om?limit=${limit}`)).json()) as Log4omView;
 }
 
+/** Un quadrato locatore (4 caratteri) con QSO nel log: quanti e su quali bande. */
+export interface WorkedSquare {
+  grid: string;
+  count: number;
+  bands: string[];
+}
+
+/** I quadrati locatore gia' lavorati, dal log di Log4OM2 (per la mappa). */
+export async function getWorkedMap(): Promise<{ squares: WorkedSquare[] }> {
+  return (await (await request('/map/worked')).json()) as { squares: WorkedSquare[] };
+}
+
 export async function getStats(): Promise<StatsResponse> {
   return (await (await request('/stats')).json()) as StatsResponse;
 }

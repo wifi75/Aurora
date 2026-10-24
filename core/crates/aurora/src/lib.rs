@@ -603,6 +603,13 @@ pub async fn run(
                     .map_err(|e| e.to_string())
             }) as remote_api::Log4omProvider
         }))
+        .with_worked_map_if(config.log4om_db.clone().map(|path| {
+            Arc::new(move || {
+                logbook::log4om::worked_squares(&path)
+                    .map(|squares| serde_json::json!({ "squares": squares }))
+                    .map_err(|e| e.to_string())
+            }) as remote_api::WorkedMapProvider
+        }))
         .with_engine_apply_if(config.jtdx_ini.clone().map(|path| {
             Arc::new(move |changes: std::collections::BTreeMap<String, String>| apply_jtdx_settings(&path, &changes)) as remote_api::JtdxApplier
         }))

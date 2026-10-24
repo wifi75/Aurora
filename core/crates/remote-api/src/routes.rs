@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -54,6 +54,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
+        .route("/api/v1/map/worked", get(map_worked))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
@@ -873,6 +874,17 @@ async fn ui_settings_put(
             ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "ui_settings_write")
         })?;
     Ok(Json(json!({ "ok": true })))
+}
+
+/// I quadrati locatore gia' lavorati, con il numero di QSO e le bande, per la mappa.
+#[utoipa::path(get, path = "/api/v1/map/worked", responses((status = 200, description = "Quadrati lavorati: totale e [{grid, count, bands}]"), (status = 404, description = "Log non configurato (map_unavailable)"), (status = 502, description = "File non leggibile (map_read)")))]
+async fn map_worked(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let read = state.worked_map.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "map_unavailable"))?;
+    tokio::task::spawn_blocking(move || read())
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "map_task"))?
+        .map(Json)
+        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "map_read"))
 }
 
 #[derive(Deserialize)]
