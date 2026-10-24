@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiError, applyJtdxConfig, getJtdxConfig } from '../api/client';
+import { ApiError, applyEngineConfig, getEngineConfig } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
-import { JTDX_GROUPS, type JtdxGroup, type JtdxItem } from '../lib/jtdxGroups';
-import { useJtdxDraft } from '../lib/jtdxDraft';
+import { ENGINE_GROUPS, type EngineGroup, type EngineItem } from '../lib/engineGroups';
+import { useEngineDraft } from '../lib/engineDraft';
 import { Help } from './common';
 
 /** I valori ammessi per le voci a scelta (come li scrive il file del motore). */
@@ -25,9 +25,9 @@ function errorText(error: unknown, t: T): string {
   return t('jx.err.failed');
 }
 
-function Field({ item, current, draft, label }: { item: JtdxItem; current: string | undefined; draft: string | undefined; label: string }) {
+function Field({ item, current, draft, label }: { item: EngineItem; current: string | undefined; draft: string | undefined; label: string }) {
   const t = useT();
-  const set = useJtdxDraft((s) => s.set);
+  const set = useEngineDraft((s) => s.set);
   const value = draft ?? current ?? '';
   const change = (next: string) => set(item.key, next, current);
   const id = `jx-${item.key}`;
@@ -64,16 +64,16 @@ function Field({ item, current, draft, label }: { item: JtdxItem; current: strin
 function ApplyBar() {
   const t = useT();
   const client = useQueryClient();
-  const changes = useJtdxDraft((s) => s.changes);
-  const clear = useJtdxDraft((s) => s.clear);
+  const changes = useEngineDraft((s) => s.changes);
+  const clear = useEngineDraft((s) => s.clear);
   const [note, setNote] = useState('');
   const apply = useMutation({
-    mutationFn: () => applyJtdxConfig(changes),
+    mutationFn: () => applyEngineConfig(changes),
     onSuccess: () => {
       clear();
       setNote(t('jx.applied'));
-      // JTDX impiega qualche secondo a riaprirsi: poi si rilegge il suo file
-      setTimeout(() => void client.invalidateQueries({ queryKey: ['jtdx-config'] }), 6000);
+      // il motore impiega qualche secondo a riaprirsi: poi si rilegge il suo file
+      setTimeout(() => void client.invalidateQueries({ queryKey: ['engine-config'] }), 6000);
     },
     onError: (e) => setNote(errorText(e, t)),
   });
@@ -104,11 +104,11 @@ function ApplyBar() {
   );
 }
 
-/** Le impostazioni del motore (JTDX) di un gruppo, lette dal suo file e modificabili qui. */
-export function JtdxValues({ group, title }: { group: JtdxGroup; title?: string }) {
+/** Le impostazioni del motore (il motore) di un gruppo, lette dal suo file e modificabili qui. */
+export function EngineValues({ group, title }: { group: EngineGroup; title?: string }) {
   const t = useT();
-  const config = useQuery({ queryKey: ['jtdx-config'], queryFn: getJtdxConfig, retry: false, refetchInterval: 15_000 });
-  const changes = useJtdxDraft((s) => s.changes);
+  const config = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, refetchInterval: 15_000 });
+  const changes = useEngineDraft((s) => s.changes);
   return (
     <section aria-label={title ?? t('jx.title')}>
       <h3 className="set-sub">{title ?? t('jx.title')}</h3>
@@ -119,7 +119,7 @@ export function JtdxValues({ group, title }: { group: JtdxGroup; title?: string 
       ) : (
         <>
           <div className="jx-list">
-            {JTDX_GROUPS[group].map((item) => (
+            {ENGINE_GROUPS[group].map((item) => (
               <Field key={item.key} item={item} current={config.data[item.key]} draft={changes[item.key]} label={t(`jx.${item.key}` as Key)} />
             ))}
           </div>

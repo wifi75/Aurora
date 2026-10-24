@@ -5,10 +5,10 @@ import { readAlerts, saveAlerts, type AlertPrefs } from '../lib/alerts';
 import { COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
 import { browserStorage } from '../lib/theme';
-import { JtdxValues } from './JtdxValues';
+import { EngineValues } from './EngineValues';
 import { Help } from './common';
 
-/** Scheda Notifiche: per ogni tipo di messaggio colore, evidenziazione e suono, come in JTDX. */
+/** Scheda Notifiche: per ogni tipo di messaggio colore, evidenziazione e suono, come nel motore. */
 export function NotificationsTab() {
   const t = useT();
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
@@ -83,7 +83,7 @@ export function NotificationsTab() {
       >
         {t('not.restoreColors')}
       </button>
-      <JtdxValues group="notifications" />
+      <EngineValues group="notifications" />
     </>
   );
 }

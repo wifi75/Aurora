@@ -8,7 +8,7 @@ import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 interface Props {
   /** La trasmissione e' aperta su questo PC (AURORA_ALLOW_TX=1). */
   txAllowed: boolean;
-  /** Stato di JTDX: stazione DX, rapporto e messaggio in corso. */
+  /** Stato del motore: stazione DX, rapporto e messaggio in corso. */
   status?: StationStatus | null;
   /** Messaggi decodificati (i piu' recenti per primi): servono a capire a che punto e' il QSO. */
   decodes?: DecodedMessage[];

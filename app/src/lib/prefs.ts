@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { browserStorage } from './theme';
 
-/** Come si mostrano i messaggi (scheda Generali di JTDX): unita', paese, bandiera, distanza, DT. */
+/** Come si mostrano i messaggi (scheda Generali del motore): unita', paese, bandiera, distanza, DT. */
 export interface Prefs {
   distanceUnit: 'km' | 'mi';
   showCountry: boolean;
   showFlag: boolean;
   showDistance: boolean;
   showDt: boolean;
-  /** Il doppio clic su un messaggio risponde a quella stazione (come in JTDX); spento seleziona soltanto. */
+  /** Il doppio clic su un messaggio risponde a quella stazione (come nel motore); spento seleziona soltanto. */
   doubleClickReply: boolean;
   /** Il tasto Esc ferma la trasmissione e spegne AutoTX e Abilita Tx. */
   escStop: boolean;

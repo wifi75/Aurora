@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { replyAccepted } from './replyMode';
 
 describe('replyAccepted', () => {
-  it('accepts everything when JTDX takes any message or the setting is unknown', () => {
+  it('accepts everything when the engine takes any message or the setting is unknown', () => {
     expect(replyAccepted('3', 'SP8ADU GI7KMC -08')).toBe(true);
     expect(replyAccepted(undefined, 'SP8ADU GI7KMC -08')).toBe(true);
   });
 
-  it('with "CQ only" (the value JTDX has by default) accepts only CQs', () => {
+  it('with "CQ only" (the value the engine has by default) accepts only CQs', () => {
     expect(replyAccepted('1', 'CQ DX F5ABC JN18')).toBe(true);
     expect(replyAccepted('1', 'F5DGQ OY1HJ 73')).toBe(false);
     expect(replyAccepted('1', 'SP8ADU GI7KMC -08')).toBe(false);

@@ -16,7 +16,7 @@ describe('draftToConfig', () => {
     });
   });
 
-  it('accepts an empty callsign (the core then uses the one of JTDX) and no commands', () => {
+  it('accepts an empty callsign (the core then uses the one of the engine) and no commands', () => {
     expect(draftToConfig({ ...base, callsign: '', login: '' })?.login_commands).toEqual([]);
   });
 

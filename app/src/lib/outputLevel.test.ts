@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { attenuationFromPercent, levelPercent } from './outputLevel';
 
 describe('output level', () => {
-  it('maps the attenuation of JTDX (0-45 dB) to a level in percent, 100 = no attenuation', () => {
+  it('maps the attenuation of the engine (0-45 dB) to a level in percent, 100 = no attenuation', () => {
     expect(levelPercent(0)).toBe(100);
     expect(levelPercent(45)).toBe(0);
     expect(levelPercent(22.5)).toBe(50);

@@ -72,7 +72,7 @@ describe('useStation', () => {
     expect(useStation.getState().txLog).toHaveLength(0);
   });
 
-  it('patchStatus shows a change at once, before JTDX reports it, and ignores it without a status', () => {
+  it('patchStatus shows a change at once, before the engine reports it, and ignores it without a status', () => {
     useStation.getState().patchStatus({ dial_hz: 1 });
     expect(useStation.getState().status).toBeNull();
     useStation.getState().apply({ type: 'status', ...status });
@@ -82,7 +82,7 @@ describe('useStation', () => {
     expect(useStation.getState().status?.de_call).toBe('AA1AA');
   });
 
-  it('remembers the station picked with a double click until JTDX reports its own DX', () => {
+  it('remembers the station picked with a double click until the engine reports its own DX', () => {
     const { apply, setPendingDx } = useStation.getState();
     setPendingDx('BB2BB');
     expect(useStation.getState().pendingDx).toBe('BB2BB');

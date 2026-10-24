@@ -9,7 +9,7 @@ const DOUBLE_MS = 700;
 /**
  * Esc ferma la trasmissione e spegne AutoTX e Abilita Tx (spegnere e' sempre permesso). Le tre chiamate partono
  * insieme e un errore dell'una non ferma le altre: e' il tasto d'emergenza. Si accende e spegne in Impostazioni.
- * Con un doppio Esc si libera anche la stazione da chiamare: come "Canc DX" di JTDX, che pulisce nominativo e griglia
+ * Con un doppio Esc si libera anche la stazione da chiamare: come "Canc DX" del motore, che pulisce nominativo e griglia
  * DX (anche quelli arrivati con un Reply via UDP), e Aurora dimentica la stazione scelta con il doppio clic.
  */
 export function useEscapeStop(): void {

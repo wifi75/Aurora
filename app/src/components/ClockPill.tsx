@@ -4,7 +4,7 @@ import { useT } from '../i18n';
 import { clockInTolerance, medianDt, offsetLabel } from '../lib/clock';
 import { useStation } from '../state/station';
 
-/** Nella barra di stato: lo scarto dell'orologio dai server NTP e il DT mediano dei messaggi, come il "Med" di JTDX. */
+/** Nella barra di stato: lo scarto dell'orologio dai server NTP e il DT mediano dei messaggi, come il "Med" del motore. */
 export function ClockPill() {
   const t = useT();
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });

@@ -436,7 +436,7 @@ button.glass,
   border-bottom: var(--border-width) solid var(--glass-edge);
 }
 
-/* Elenco delle stazioni nello stile di JTDX: righe colorate per tipo, paese e distanza a destra */
+/* Elenco delle stazioni nello stile del motore: righe colorate per tipo, paese e distanza a destra */
 .decode-row {
   grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) 17.5rem 9rem;
   gap: var(--space-2);

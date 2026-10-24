@@ -16,7 +16,7 @@ describe('FrequencyMarkers', () => {
     expect(screen.getByText('Tx 1500')).toBeInTheDocument();
   });
 
-  it('shows nothing for a frequency JTDX has not reported', () => {
+  it('shows nothing for a frequency the engine has not reported', () => {
     render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} onRx={() => {}} onTx={() => {}} />);
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });

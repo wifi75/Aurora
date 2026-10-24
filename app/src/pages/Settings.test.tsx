@@ -24,7 +24,7 @@ vi.mock('../api/client', () => ({
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   }),
   getClock: vi.fn().mockResolvedValue({ config: { enabled: true, servers: ['it.pool.ntp.org'], interval_secs: 900, warn_ms: 200, auto_correct: false }, last: null }),
-  getJtdxConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
+  getEngineConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
   getFrequencies: vi.fn().mockResolvedValue([{ band: '20m', mode: 'FT8', hz: 14_074_000 }]),
   putFrequencies: vi.fn().mockResolvedValue(undefined),
   getSchedule: vi.fn().mockResolvedValue({ enabled: false, entries: [] }),
@@ -84,7 +84,7 @@ describe('Settings tabs', () => {
     expect(screen.getByRole('tab', { name: 'Orologio' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('has a separate tab for each configuration function, in JTDX order, and shows one at a time', () => {
+  it('has a separate tab for each configuration function, in the usual order, and shows one at a time', () => {
     open();
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
     expect(names).toEqual([
@@ -130,7 +130,7 @@ describe('Radio, Audio, Reports and Advanced', () => {
     expect(await screen.findByText('USB Audio')).toBeInTheDocument();
   });
 
-  it('shows the real JTDX values: UDP server and port, audio device, decoding depth', async () => {
+  it('shows the real the engine values: UDP server and port, audio device, decoding depth', async () => {
     open();
     goTo('Segnalazioni');
     expect(await screen.findByText('Server UDP primario: porta')).toBeInTheDocument();
@@ -151,10 +151,10 @@ describe('Radio, Audio, Reports and Advanced', () => {
     expect(screen.getByText('2056 QSO')).toBeInTheDocument();
   });
 
-  it('explains that the decoder parameters live in JTDX and links the guide', () => {
+  it('explains that the decoder parameters live in the engine and links the guide', () => {
     open();
     goTo('Avanzate');
-    expect(screen.getByText(/motore di JTDX/)).toBeInTheDocument();
+    expect(screen.getAllByText(/motore/).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'Leggi la guida' })).toHaveAttribute('href', '#/guida');
   });
 });
@@ -168,7 +168,7 @@ describe('Sequence', () => {
 });
 
 describe('Macros', () => {
-  it('adds and removes a macro and restores the five of JTDX', () => {
+  it('adds and removes a macro and restores the five of the engine', () => {
     open();
     goTo('Macro TX');
     expect(screen.getByText('@ TNX 73')).toBeInTheDocument();
@@ -195,7 +195,7 @@ describe('Frequencies', () => {
 });
 
 describe('Notifications', () => {
-  it('has a color, a highlight and a sound switch for every kind, like JTDX', () => {
+  it('has a color, a highlight and a sound switch for every kind, like the old one', () => {
     open();
     goTo('Notifiche');
     for (const key of COLOR_KEYS) {

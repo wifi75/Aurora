@@ -28,7 +28,7 @@ describe('OutputLevel', () => {
     expect(value).toHaveAttribute('title', expect.stringMatching(/50 % · attenuazione 22.5 dB/));
   });
 
-  it('sends the new level only when released, and up means less level, as in JTDX', async () => {
+  it('sends the new level only when released, and up means less level, as in the old one', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
@@ -45,7 +45,7 @@ describe('OutputLevel', () => {
     expect(screen.getByText('30%')).toBeInTheDocument();
   });
 
-  it('the bottom of the track is full power (0 dB) and the top the minimum (45 dB), like JTDX', async () => {
+  it('the bottom of the track is full power (0 dB) and the top the minimum (45 dB), like the old one', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
@@ -68,7 +68,7 @@ describe('OutputLevel', () => {
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledWith(22.1));
   });
 
-  it('can be changed with transmission closed too, like the Pwr slider of JTDX', async () => {
+  it('can be changed with transmission closed too, like the Pwr slider of the engine', async () => {
     show(false);
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));

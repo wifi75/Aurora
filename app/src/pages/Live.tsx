@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getJtdxConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
@@ -91,7 +91,7 @@ export function Live() {
     });
   }, []);
 
-  const jtdx = useQuery({ queryKey: ['jtdx-config'], queryFn: getJtdxConfig, retry: false, staleTime: 30_000 });
+  const engineConfig = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, staleTime: 30_000 });
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
   const changeLayout = (next: Layout) => {
@@ -187,26 +187,26 @@ export function Live() {
   const onReply = useCallback(
     async (id: number) => {
       const target = useStation.getState().decodes.find((d) => d.id === id);
-      // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che JTDX la riporti
+      // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che il motore la riporti
       const call = target ? callOf(target.text) : null;
       if (call) useStation.getState().setPendingDx(call);
       await attempt(
         async () => {
-          // la stazione e' scelta: perche' JTDX la chiami da solo al momento giusto serve anche Abilita Tx
-          // (con 1 QSO acceso JTDX lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'.
+          // la stazione e' scelta: perche' il motore la chiami da solo al momento giusto serve anche Abilita Tx
+          // (con 1 QSO acceso il motore lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'.
           // Le due richieste partono insieme: ogni attimo conta, la trasmissione parte solo se Abilita Tx e' acceso in tempo.
           const arm = info.data?.tx_allowed ? postControl('enable_tx', true).catch(() => undefined) : Promise.resolve();
           await postReply(id);
           await arm;
         },
-        // se JTDX ignorera' quel tipo di messaggio lo si dice, invece di non fare nulla in silenzio
-        replyAccepted(jtdx.data?.AcceptUDPReplyMessages, target?.text ?? '')
+        // se il motore ignorera' quel tipo di messaggio lo si dice, invece di non fare nulla in silenzio
+        replyAccepted(engineConfig.data?.AcceptUDPReplyMessages, target?.text ?? '')
           ? t('note.replySent', { text: target?.text ?? '' })
           : `${t('note.replySent', { text: target?.text ?? '' })} ${t('note.replyMode')}`,
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, info.data?.tx_allowed, jtdx.data?.AcceptUDPReplyMessages],
+    [t, info.data?.tx_allowed, engineConfig.data?.AcceptUDPReplyMessages],
   );
 
   return (

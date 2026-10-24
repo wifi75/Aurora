@@ -8,7 +8,7 @@ function memory(initial: Record<string, string> = {}) {
 const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { throw new Error('no'); } };
 
 describe('layout', () => {
-  it('starts like JTDX: all the stations on the left with the waterfall under them', () => {
+  it('starts like the old one: all the stations on the left with the waterfall under them', () => {
     const l = defaultLayout();
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
     expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);

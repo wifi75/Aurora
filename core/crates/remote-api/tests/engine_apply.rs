@@ -20,12 +20,12 @@ fn with_applier(fail: bool) -> (AppState, Seen) {
         log.lock().unwrap().push(changes);
         if fail { Err("rotto".to_string()) } else { Ok(()) }
     });
-    (state().with_jtdx_apply_if(Some(applier)), seen)
+    (state().with_engine_apply_if(Some(applier)), seen)
 }
 
 async fn post(s: &AppState, body: &str, proxied: bool) -> axum::response::Response {
     let cookie = cookie_for(s);
-    let mut r = req(Method::POST, "/api/v1/jtdx-config").cookie(&cookie).json(body);
+    let mut r = req(Method::POST, "/api/v1/engine-config").cookie(&cookie).json(body);
     if proxied {
         r = r.header("x-forwarded-for", "1.2.3.4");
     }
@@ -35,7 +35,7 @@ async fn post(s: &AppState, body: &str, proxied: bool) -> axum::response::Respon
 #[tokio::test]
 async fn needs_a_paired_device() {
     let (s, _) = with_applier(false);
-    status_is(&call(&router(&s), req(Method::POST, "/api/v1/jtdx-config").json(r#"{"changes":{"MyCall":"AA1AA"}}"#)).await, StatusCode::UNAUTHORIZED);
+    status_is(&call(&router(&s), req(Method::POST, "/api/v1/engine-config").json(r#"{"changes":{"MyCall":"AA1AA"}}"#)).await, StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -85,7 +85,7 @@ async fn a_failure_of_the_applier_is_reported_and_a_missing_one_says_so() {
     let (s, _) = with_applier(true);
     let resp = post(&s, r#"{"changes":{"MyCall":"IU3ABC"}}"#, false).await;
     status_is(&resp, StatusCode::BAD_GATEWAY);
-    assert_eq!(body_json(resp).await["error"], "jtdx_apply_failed");
+    assert_eq!(body_json(resp).await["error"], "engine_apply_failed");
     let resp = post(&state(), r#"{"changes":{"MyCall":"IU3ABC"}}"#, false).await;
     status_is(&resp, StatusCode::NOT_FOUND);
 }

@@ -32,7 +32,7 @@ describe('DecodeList', () => {
     expect(screen.getByText('Giappone')).toBeInTheDocument();
   });
 
-  it('shows the distance in km like JTDX when the own locator is known', () => {
+  it('shows the distance in km like the old one when the own locator is known', () => {
     render(<DecodeList decodes={[decode({ country: 'Giappone' })]} myGrid="JN45" onReply={() => {}} />);
     expect(screen.getByText(/^\d+ km$/)).toBeInTheDocument();
   });

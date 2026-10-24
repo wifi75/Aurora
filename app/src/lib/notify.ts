@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { COLOR_KEYS, type ColorKey } from './colors';
 import { browserStorage } from './theme';
 
-/** Per ogni tipo di messaggio: evidenziarlo (colore, etichetta) e se far suonare l'avviso (scheda Notifiche di JTDX). */
+/** Per ogni tipo di messaggio: evidenziarlo (colore, etichetta) e se far suonare l'avviso (scheda Notifiche del motore). */
 export interface Notify {
   highlight: Record<ColorKey, boolean>;
   sound: Record<ColorKey, boolean>;

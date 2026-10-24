@@ -18,7 +18,7 @@ export function StatusBar({ status, connection }: Props) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
   const pendingDx = useStation((s) => s.pendingDx);
-  // la stazione scelta col doppio clic compare subito, prima che JTDX la riporti
+  // la stazione scelta col doppio clic compare subito, prima che il motore la riporti
   const dxCall = pendingDx || status?.dx_call || '';
   const heard = countryOfCall(decodes, dxCall);
   // la stazione scelta puo' non essere tra i messaggi recenti: allora il paese si cerca nel file dei prefissi

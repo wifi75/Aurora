@@ -8,7 +8,7 @@ const MAX_FREE_TEXT = 13;
 type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
-/** Le cinque macro di JTDX: @ = nominativo DX, & = mio nominativo, # = rapporto. */
+/** Le cinque macro del motore: @ = nominativo DX, & = mio nominativo, # = rapporto. */
 export function defaultMacros(): string[] {
   return ['@ TNX 73', 'TU ^ 73', '@ &', '@ #', '@ R#'];
 }

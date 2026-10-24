@@ -31,7 +31,7 @@ describe('expandMacro', () => {
 describe('the macro list', () => {
   beforeEach(() => localStorage.clear());
 
-  it('starts with the five macros of JTDX', () => {
+  it('starts with the five macros of the engine', () => {
     expect(defaultMacros()).toEqual(['@ TNX 73', 'TU ^ 73', '@ &', '@ #', '@ R#']);
     expect(readMacros(memory())).toEqual(defaultMacros());
   });

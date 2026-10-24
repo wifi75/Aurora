@@ -1,4 +1,4 @@
-/** Le stesse categorie di colore di JTDX (piu' la risposta automatica di Aurora). */
+/** Le stesse categorie di colore del motore (piu' la risposta automatica di Aurora). */
 export const COLOR_KEYS = [
   'cq',
   'my_call',
@@ -33,7 +33,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
-/** Valori di partenza presi dal tema scuro di JTDX 2.2.159. */
+/** Valori di partenza presi dal tema scuro del motore 2.2.159. */
 export function defaultColors(): TagColors {
   return {
     cq: '#e6dcd2',

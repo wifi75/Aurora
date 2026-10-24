@@ -1,12 +1,12 @@
-/** Le voci di JTDX mostrate in ogni scheda delle impostazioni, con il tipo di valore. */
-export type JtdxKind = 'bool' | 'text' | 'num' | 'enum:save' | 'enum:reply' | 'enum:depth';
+/** Le voci del motore mostrate in ogni scheda delle impostazioni, con il tipo di valore. */
+export type EngineKind = 'bool' | 'text' | 'num' | 'enum:save' | 'enum:reply' | 'enum:depth';
 
-export interface JtdxItem {
+export interface EngineItem {
   key: string;
-  kind: JtdxKind;
+  kind: EngineKind;
 }
 
-export const JTDX_GROUPS = {
+export const ENGINE_GROUPS = {
   general: [
     { key: 'MyCall', kind: 'text' },
     { key: 'MyGrid', kind: 'text' },
@@ -105,6 +105,6 @@ export const JTDX_GROUPS = {
     { key: 'AutoErase', kind: 'bool' },
     { key: 'HideFT8Dupes', kind: 'bool' },
   ],
-} as const satisfies Record<string, readonly JtdxItem[]>;
+} as const satisfies Record<string, readonly EngineItem[]>;
 
-export type JtdxGroup = keyof typeof JTDX_GROUPS;
+export type EngineGroup = keyof typeof ENGINE_GROUPS;

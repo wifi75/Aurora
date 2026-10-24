@@ -11,7 +11,7 @@ export function clockInTolerance(offsetMs: number, warnMs: number): boolean {
 }
 
 /**
- * Il DT mediano dei messaggi appena decodificati, come il "Med" di JTDX: se l'orologio e' giusto sta vicino a zero.
+ * Il DT mediano dei messaggi appena decodificati, come il "Med" del motore: se l'orologio e' giusto sta vicino a zero.
  * Si guardano i messaggi dell'ultimo periodo (i piu' recenti per primi) e servono almeno tre per fidarsi.
  */
 export function medianDt(decodes: readonly DecodedMessage[], windowMs = 20_000): number | null {

@@ -20,7 +20,7 @@ interface TabDef {
   render(): ReactNode;
 }
 
-/** Le schede, nell'ordine di JTDX, piu' quelle di Aurora (Finestre e Bande). */
+/** Le schede, nell'ordine del motore, piu' quelle di Aurora (Finestre e Bande). */
 const TABS: readonly TabDef[] = [
   { id: 'general', label: 'tab.general', tip: 'tip.tab.general', render: () => <GeneralTab /> },
   { id: 'radio', label: 'tab.radio', tip: 'tip.tab.radio', render: () => <RadioTab /> },
@@ -40,7 +40,7 @@ const TABS: readonly TabDef[] = [
   { id: 'bands', label: 'tab.bands', tip: 'tip.tab.bands', render: () => <BandsTab /> },
 ];
 
-/** Impostazioni: una scheda per ogni funzione di configurazione, come in JTDX. */
+/** Impostazioni: una scheda per ogni funzione di configurazione, come nel motore. */
 export function Settings({ initialTab }: { initialTab?: string }) {
   const t = useT();
   const [id, setId] = useState(TABS.some((x) => x.id === initialTab) ? (initialTab as string) : TABS[0]!.id);

@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('QsoSwitches', () => {
-  it('shows the state of the JTDX switches and sets the wanted state when one is pressed', async () => {
+  it('shows the state of the engine switches and sets the wanted state when one is pressed', async () => {
     render(<QsoSwitches txAllowed />);
     const autoseq = await screen.findByRole('button', { name: 'AutoSeq' });
     await waitFor(() => expect(autoseq).toHaveAttribute('aria-pressed', 'true'));
@@ -37,10 +37,10 @@ describe('QsoSwitches', () => {
     expect(screen.getByRole('button', { name: 'AutoTX' })).toBeDisabled();
   });
 
-  it('explains and disables the switches when JTDX cannot be reached', async () => {
+  it('explains and disables the switches when the engine cannot be reached', async () => {
     vi.mocked(getControls).mockRejectedValue(new Error('502'));
     render(<QsoSwitches txAllowed />);
-    expect(await screen.findByText(/comandi di jtdx non raggiungibili/i)).toBeInTheDocument();
+    expect(await screen.findByText(/comandi di Aurora non raggiungibili/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'AutoSeq' })).toBeDisabled();
   });
 });

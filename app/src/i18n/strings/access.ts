@@ -9,7 +9,7 @@ export const accessStrings = {
     'Wie man sich mit Aurora verbindet: Kopplungscode, codefreier Zugang für Tests und verbundene Geräte.',
     "Comment se connecter à Aurora : code d'association, accès sans code pour les essais et appareils connectés.",
     'Cómo conectarse a Aurora: código de vinculación, acceso sin código para pruebas y dispositivos conectados.',
-    'Como ligar ao Aurora: código de associação, acesso sem código para testes e dispositivos ligados.',
+    'Como ligar à Aurora: código de associação, acesso sem código para testes e dispositivos ligados.',
   ],
   'acc.open': ['Accesso senza codice (solo per le prove)', 'Code-free access (testing only)', 'Zugang ohne Code (nur für Tests)', 'Accès sans code (essais seulement)', 'Acceso sin código (solo para pruebas)', 'Acesso sem código (só para testes)'],
   'tip.acc.open': [
@@ -26,7 +26,7 @@ export const accessStrings = {
     'Achtung: Solange es an ist, kann jedes Gerät im Heimnetz Aurora steuern, einschließlich Senden, wenn es freigegeben ist. Gilt nicht für Internet, Tunnel und Proxys. Schalte es nach den Tests aus.',
     "Attention : tant que c'est activé, tout appareil du réseau domestique peut commander Aurora, émission comprise si elle est ouverte. Ne vaut pas pour internet, tunnels et proxys. Désactive-le à la fin des essais.",
     'Atención: mientras esté activo, cualquier dispositivo de la red doméstica puede controlar Aurora, incluida la transmisión si está abierta. No vale para internet, túneles ni proxies. Apágalo al terminar las pruebas.',
-    'Atenção: enquanto ligado, qualquer dispositivo da rede doméstica pode controlar o Aurora, incluindo a transmissão se estiver aberta. Não vale para a internet, túneis e proxies. Desliga-o no fim dos testes.',
+    'Atenção: enquanto ligado, qualquer dispositivo da rede doméstica pode controlar a Aurora, incluindo a transmissão se estiver aberta. Não vale para a internet, túneis e proxies. Desliga-o no fim dos testes.',
   ],
   'acc.pcOnly': [
     'Questa impostazione si cambia solo dal PC dove gira Aurora (apri la pagina dal PC).',
@@ -34,7 +34,7 @@ export const accessStrings = {
     'Diese Einstellung lässt sich nur am PC ändern, auf dem Aurora läuft (öffne die Seite am PC).',
     "Ce réglage ne se change que depuis le PC où tourne Aurora (ouvre la page depuis le PC).",
     'Este ajuste solo se cambia desde el PC donde corre Aurora (abre la página desde el PC).',
-    'Esta definição só se muda a partir do PC onde corre o Aurora (abre a página a partir do PC).',
+    'Esta definição só se muda a partir do PC onde corre a Aurora (abre a página a partir do PC).',
   ],
   'acc.banner': [
     'Accesso senza codice attivo: solo prove, rete di casa.',

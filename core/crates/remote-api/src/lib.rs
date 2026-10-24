@@ -61,8 +61,8 @@ pub struct AppState {
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
     pub log4om: Option<Log4omProvider>,
-    pub jtdx_config: Option<JtdxConfigProvider>,
-    pub jtdx_apply: Option<JtdxApplier>,
+    pub engine_config: Option<JtdxConfigProvider>,
+    pub engine_apply: Option<JtdxApplier>,
     /// Client NTP: controllo dell'orologio del PC.
     pub clock: Option<Arc<clock_sync::ClockService>>,
     /// Client DX Cluster: spot dei cluster telnet.
@@ -118,7 +118,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, jtdx_config: None, jtdx_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -154,13 +154,13 @@ impl AppState {
         self
     }
 
-    pub fn with_jtdx_apply_if(mut self, applier: Option<JtdxApplier>) -> AppState {
-        self.jtdx_apply = applier;
+    pub fn with_engine_apply_if(mut self, applier: Option<JtdxApplier>) -> AppState {
+        self.engine_apply = applier;
         self
     }
 
-    pub fn with_jtdx_config_if(mut self, reader: Option<JtdxConfigProvider>) -> AppState {
-        self.jtdx_config = reader;
+    pub fn with_engine_config_if(mut self, reader: Option<JtdxConfigProvider>) -> AppState {
+        self.engine_config = reader;
         self
     }
 

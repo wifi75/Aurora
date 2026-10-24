@@ -6,7 +6,7 @@ import { accessStrings } from './strings/access';
 import { controlStrings } from './strings/controls';
 import { clusterStrings } from './strings/cluster';
 import { clockStrings } from './strings/clock';
-import { jtdxConfigStrings } from './strings/jtdxconfig';
+import { engineConfigStrings } from './strings/engineconfig';
 import { automationStrings } from './strings/automation';
 import { outputStrings } from './strings/output';
 import { settingsStrings } from './strings/settings';
@@ -18,7 +18,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...jtdxConfigStrings, ...clockStrings, ...clusterStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...clusterStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

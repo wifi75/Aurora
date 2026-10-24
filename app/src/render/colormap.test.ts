@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JTDX_STOPS, NOTTE_RADIO_STOPS, buildLut, lutColor } from './colormap';
+import { WATERFALL_STOPS, NOTTE_RADIO_STOPS, buildLut, lutColor } from './colormap';
 
 describe('colormap', () => {
   it('buildLut first and last stop match NOTTE_RADIO_STOPS', () => {
@@ -24,8 +24,8 @@ describe('colormap', () => {
     expect(lutColor(lut, Number.NaN)).toEqual(lutColor(lut, 0));
   });
 
-  it('the default JTDX palette goes blue, then yellow, then white', () => {
-    const lut = buildLut(JTDX_STOPS);
+  it('the default the engine palette goes blue, then yellow, then white', () => {
+    const lut = buildLut(WATERFALL_STOPS);
     const [r0, g0, b0] = lutColor(lut, 0.2);
     expect(b0).toBeGreaterThan(r0 + 40);
     expect(b0).toBeGreaterThan(g0);

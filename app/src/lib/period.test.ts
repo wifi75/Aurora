@@ -4,7 +4,7 @@ import { periodPosition, periodSecs } from './period';
 const at = (h: number, m: number, s: number, ms = 0) => Date.UTC(2026, 9, 24, h, m, s, ms);
 
 describe('period position', () => {
-  it('shows the elapsed whole seconds like JTDX: 13:02:14 is 14/15', () => {
+  it('shows the elapsed whole seconds like the old one: 13:02:14 is 14/15', () => {
     expect(periodPosition(at(13, 2, 14), 'FT8').seconds).toBe(14);
     expect(periodPosition(at(13, 2, 14, 999), 'FT8').seconds).toBe(14);
   });

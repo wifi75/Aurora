@@ -10,7 +10,7 @@ const SENDING: ControlId[] = ['auto_tx', 'enable_tx'];
 /** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
 const ARMING: ControlId[] = ['auto_tx', 'enable_tx'];
 
-/** Stato e comando degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...). Spegnere e' sempre permesso. */
+/** Stato e comando degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). Spegnere e' sempre permesso. */
 export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const t = useT();
   const client = useQueryClient();

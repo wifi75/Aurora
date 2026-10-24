@@ -7,11 +7,11 @@ import { replyErrorMessage } from '../lib/replyError';
 import { VerticalSlider } from './VerticalSlider';
 
 interface Props {
-  /** Il livello si regola sempre, come in JTDX; la proprieta' resta perche' il pannello la passa a tutti i suoi blocchi. */
+  /** Il livello si regola sempre, come nel motore; la proprieta' resta perche' il pannello la passa a tutti i suoi blocchi. */
   txAllowed?: boolean;
 }
 
-/** Il cursore "Pwr" di JTDX: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
+/** Il cursore "Pwr" del motore: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
 export function OutputLevel(_: Props) {
   const t = useT();
   const client = useQueryClient();
@@ -19,7 +19,7 @@ export function OutputLevel(_: Props) {
   const [pct, setPct] = useState<number | null>(null);
   const [note, setNote] = useState('');
 
-  // il valore di JTDX vince quando non si sta trascinando
+  // il valore del motore vince quando non si sta trascinando
   useEffect(() => {
     if (level.data && pct === null) setPct(levelPercent(level.data.attenuation_db));
   }, [level.data, pct]);
@@ -40,7 +40,7 @@ export function OutputLevel(_: Props) {
   return (
     <div className="out-level" title={t('tip.out')}>
       <span className="out-level-title">Pwr</span>
-      {/* come in JTDX il cursore e' l'attenuazione: in basso 0 dB (potenza massima), in alto 45 dB (minima) */}
+      {/* come nel motore il cursore e' l'attenuazione: in basso 0 dB (potenza massima), in alto 45 dB (minima) */}
       <VerticalSlider
         value={100 - pct}
         label={t('out.label')}

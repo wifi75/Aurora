@@ -11,8 +11,8 @@ export const NOTTE_RADIO_STOPS: ColorStops = [
   [1, [255, 250, 235]],
 ];
 
-/** Colori dello spettro di JTDX: fondo blu, segnali gialli, i piu' forti bianchi. */
-export const JTDX_STOPS: ColorStops = [
+/** Colori dello spettro del motore: fondo blu, segnali gialli, i piu' forti bianchi. */
+export const WATERFALL_STOPS: ColorStops = [
   [0, [0, 0, 40]],
   [0.3, [0, 16, 140]],
   [0.5, [20, 60, 220]],
