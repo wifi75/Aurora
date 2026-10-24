@@ -28,16 +28,16 @@ describe('MapPage', () => {
   it('draws the worked squares of the log and counts them', async () => {
     render(<MapPage />);
     expect(await screen.findByText(/2 griglie lavorate · 4 QSO/)).toBeInTheDocument();
-    expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(2);
+    expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(2);
   });
 
   it('filters the worked squares by band', async () => {
     render(<MapPage />);
     await screen.findByText(/2 griglie lavorate/);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '40m' } });
-    expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(1);
+    expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(1);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '15m' } });
-    expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(1);
+    expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(1);
   });
 
   it('shows the stations received now and their details on a click', async () => {
@@ -54,16 +54,40 @@ describe('MapPage', () => {
     vi.mocked(getWorkedMap).mockRejectedValueOnce(new Error('404'));
     render(<MapPage />);
     expect(await screen.findByText(/Il log di Log4OM2 non è collegato/)).toBeInTheDocument();
-    expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(0);
+    expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(0);
   });
 
   it('hides the squares and the stations with their check boxes', async () => {
     useStation.getState().apply({ type: 'decode', id: 1, time_ms: 1, snr: -12, delta_time: 0, freq_hz: 1500, text: 'CQ K1ABC FN42', tag: null });
     render(<MapPage />);
-    await waitFor(() => expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(2));
+    await waitFor(() => expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(2));
     fireEvent.click(screen.getByLabelText('Griglie lavorate'));
-    expect(document.querySelectorAll('.worldmap-worked rect')).toHaveLength(0);
+    expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(0);
     fireEvent.click(screen.getByLabelText('Stazioni ricevute ora'));
     expect(document.querySelectorAll('.worldmap-station')).toHaveLength(0);
+  });
+
+  it('starts with the real background and the night, and the checks switch them and are remembered', async () => {
+    localStorage.clear();
+    const { unmount } = render(<MapPage />);
+    await screen.findByText(/2 griglie lavorate/);
+    expect(document.querySelector('.worldmap-view')).toHaveClass('worldmap--tiles');
+    expect(document.querySelector('.worldmap-night')).not.toBeNull();
+    fireEvent.click(screen.getByLabelText('Sfondo reale'));
+    fireEvent.click(screen.getByLabelText('Giorno e notte'));
+    expect(document.querySelector('.worldmap-view')).not.toHaveClass('worldmap--tiles');
+    expect(document.querySelector('.worldmap-night')).toBeNull();
+    unmount();
+    render(<MapPage />);
+    expect(screen.getByLabelText('Sfondo reale')).not.toBeChecked();
+    expect(screen.getByLabelText('Giorno e notte')).not.toBeChecked();
+  });
+
+  it('draws the equator, the tropics and the polar circles with their names', async () => {
+    render(<MapPage />);
+    await screen.findByText(/2 griglie lavorate/);
+    expect(document.querySelectorAll('.worldmap-parallel')).toHaveLength(5);
+    expect(document.body.textContent).toContain('Tropico del Cancro');
+    expect(document.body.textContent).toContain('Circolo polare antartico');
   });
 });

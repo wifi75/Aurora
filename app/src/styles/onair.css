@@ -2207,99 +2207,162 @@
 
 .worldmap {
   position: relative;
-  border: 1px solid var(--row-line);
-  border-radius: 0.6rem;
+  height: calc(100dvh - 12rem);
+  min-height: 22rem;
   overflow: hidden;
+  border: 1px solid var(--row-line);
+  border-radius: 0.8rem;
+  box-shadow: 0 10px 40px -18px rgb(0 0 0 / 0.7);
 }
 
-.worldmap-svg {
-  display: block;
+.worldmap--compact {
+  height: 28rem;
+  min-height: 18rem;
+}
+
+.worldmap-view {
   width: 100%;
-  aspect-ratio: 2 / 1;
-  min-height: 14rem;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
+  height: 100%;
+  background: #0b1830;
+  font-family: inherit;
 }
 
-.worldmap-svg:active {
-  cursor: grabbing;
-}
-
-.worldmap-sea {
-  fill: #0b1830;
-}
-
-.worldmap-grat line {
-  stroke: #2b3a54;
-  stroke-width: 0.25;
-  vector-effect: non-scaling-stroke;
-}
-
+/* terra disegnata dal programma, sotto le tessere: quando non c'e' internet la mappa resta leggibile */
 .worldmap-land {
-  fill: #223049;
+  fill: #27364f;
+  stroke: #46597a;
 }
 
-.worldmap-borders {
-  fill: none;
-  stroke: #3a4c6b;
-  stroke-width: 0.5;
-  vector-effect: non-scaling-stroke;
+.worldmap--tiles .leaflet-container,
+.worldmap--tiles .worldmap-view {
+  background: #a9cde0;
 }
 
-.worldmap-worked rect {
-  fill: #12c4b2;
-  stroke: #0f8f83;
-  stroke-width: 0.5;
-  vector-effect: non-scaling-stroke;
+/* la notte: velo scuro con un leggero bordo luminoso lungo la linea alba-tramonto */
+.worldmap-night {
+  mix-blend-mode: multiply;
+}
+
+.worldmap-parallel {
+  stroke: #0b1322;
+  stroke-opacity: 0.45;
+  stroke-dasharray: 5 6;
+}
+
+.worldmap-parallel--eq {
+  stroke-opacity: 0.6;
+  stroke-dasharray: none;
+}
+
+.worldmap .leaflet-tooltip.worldmap-parallel-label {
+  padding: 0 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1c2b44;
+  background: rgb(255 255 255 / 0.55);
+  border: 0;
+  box-shadow: none;
+  font-family: inherit;
+}
+
+.worldmap .leaflet-tooltip.worldmap-parallel-label::before {
+  display: none;
+}
+
+.worldmap-worked-rect {
+  cursor: help;
 }
 
 .worldmap-station {
-  stroke: #0b1830;
   cursor: pointer;
+  filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.55));
 }
 
 .worldmap-station--selected {
-  stroke: #fff;
+  filter: drop-shadow(0 0 7px #ffe14a);
 }
 
-.worldmap-home path {
-  fill: #ffd23f;
-  stroke: #0b1830;
-  stroke-width: 1;
+.worldmap-selected-link {
+  filter: drop-shadow(0 0 3px #ffe14a);
 }
 
-:root[data-theme='light'] .worldmap-sea {
-  fill: #cfe3f7;
+.worldmap-home span {
+  display: block;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: #ffd23f;
+  text-align: center;
+  text-shadow: 0 0 3px #0b1322, 0 0 8px #0b1322, 0 0 12px #ffd23f;
 }
 
-:root[data-theme='light'] .worldmap-land {
-  fill: #f3efe3;
+.worldmap .leaflet-control-attribution {
+  font-size: 0.62rem;
+  background: rgb(255 255 255 / 0.7);
+  color: #1c2b44;
 }
 
-:root[data-theme='light'] .worldmap-borders {
-  stroke: #b9b19b;
+.worldmap .leaflet-tooltip {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.6);
+  font-family: var(--font-data);
+  font-size: 0.78rem;
 }
 
-:root[data-theme='light'] .worldmap-grat line {
-  stroke: #a9c4e0;
+.worldmap .leaflet-tooltip-top::before,
+.worldmap .leaflet-tooltip-bottom::before,
+.worldmap .leaflet-tooltip-left::before,
+.worldmap .leaflet-tooltip-right::before {
+  display: none;
+}
+
+/* lettura sotto il cursore, come in GridTracker2: coordinate, distanza, direzione e locatore */
+.worldmap-readout {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 800;
+  min-width: 2rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: var(--weight-strong);
+  color: #fff;
+  background: rgb(0 0 0 / 0.72);
+  border-radius: 0.3rem;
+  pointer-events: none;
+}
+
+.worldmap-readout:empty,
+.worldmap-readout:blank {
+  display: none;
 }
 
 .worldmap-zoom {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  z-index: 800;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
 .worldmap-zoom button {
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
+  justify-content: center;
   font-size: 1.1rem;
   line-height: 1;
+}
+
+@media (max-width: 40rem) {
+  .worldmap {
+    height: calc(100dvh - 15rem);
+    min-height: 18rem;
+  }
 }
 
 .map-legend {
@@ -2648,89 +2711,344 @@
   outline: none;
 }
 
-/* Propagazione e ricezione */
+/* Propagazione e ricezione: cruscotto */
 .prop-page {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1rem;
+}
+
+.prop-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.prop-head .page-title {
+  margin: 0;
 }
 
 .prop-card {
-  padding: 0.8rem 1rem;
-  background: var(--glass-lo);
+  padding: 1rem 1.25rem 1.25rem;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
   border: 1px solid var(--glass-edge);
-  border-radius: 0.8rem;
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 18px 50px -28px rgb(0 0 0 / 0.8);
 }
 
 .prop-card h2 {
-  margin: 0 0 0.6rem;
-  font-size: var(--text-md);
-}
-
-.prop-indices {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.5rem 1rem;
-  margin-bottom: 0.8rem;
-}
-
-.prop-index {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.85rem;
-}
-
-.prop-index strong {
-  font-size: var(--text-md);
-}
-
-.prop-table {
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.prop-table th,
-.prop-table td {
-  padding: 0.3rem 1rem 0.3rem 0;
-  text-align: left;
-}
-
-.prop-row--mine th {
-  color: var(--accent);
-}
-
-.prop-cond {
-  display: inline-block;
-  min-width: 4.5rem;
-  padding: 0.1rem 0.5rem;
-  text-align: center;
-  border: 1px solid currentColor;
-  border-radius: 0.4rem;
-}
-
-.prop-cond--good {
-  color: var(--ok);
-}
-
-.prop-cond--fair {
-  color: var(--warn);
-}
-
-.prop-cond--poor {
-  color: var(--danger);
-}
-
-.prop-cond--none {
+  margin: 0 0 0.8rem;
+  font-size: 0.8rem;
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
+.prop-card h3 {
+  margin: 1.2rem 0 0.6rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* quadranti */
+.prop-gauges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 46rem;
+}
+
+.gauge {
+  margin: 0;
+  text-align: center;
+  color: var(--ok);
+}
+
+.gauge--fair {
+  color: var(--warn);
+}
+
+.gauge--poor {
+  color: var(--danger);
+}
+
+.gauge--none {
+  color: var(--text-muted);
+}
+
+.gauge svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gauge-track,
+.gauge-value {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.gauge-track {
+  stroke: var(--glass-edge);
+  opacity: 0.55;
+}
+
+.gauge-value {
+  stroke: currentColor;
+  filter: drop-shadow(0 0 7px currentColor);
+}
+
+.gauge-number {
+  fill: var(--text);
+  font-family: var(--font-data);
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.gauge figcaption {
+  margin-top: -0.2rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* fatti accanto ai quadranti */
+.prop-facts,
+.prop-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.prop-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0.7rem;
+}
+
+.prop-stat strong {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.prop-stat span {
+  font-size: 0.75rem;
+}
+
+/* matrice delle bande */
+.prop-matrix {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 46rem;
+}
+
+.prop-matrix-head,
+.prop-matrix-row {
+  display: grid;
+  grid-template-columns: 9rem repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.prop-matrix-head > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.prop-matrix-head small,
+.prop-group small {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.prop-now {
+  color: var(--text) !important;
+}
+
+.prop-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--font-data);
+  font-weight: var(--weight-strong);
+}
+
+.prop-matrix-row--mine .prop-group {
+  color: var(--accent);
+}
+
+.prop-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--ok);
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 0.7rem;
+}
+
+.prop-tile b {
+  color: var(--text);
+  font-weight: var(--weight-strong);
+}
+
+.prop-tile--fair {
+  color: var(--warn);
+}
+
+.prop-tile--poor {
+  color: var(--danger);
+}
+
+.prop-tile--none {
+  color: var(--text-muted);
+}
+
+.prop-tile--active {
+  box-shadow: 0 0 0 1px currentColor, 0 0 18px -4px currentColor;
+}
+
+.prop-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.prop-meter i {
+  display: block;
+  width: 5px;
+  background: currentColor;
+  border-radius: 2px;
+  opacity: 0.22;
+}
+
+.prop-meter i:nth-child(1) {
+  height: 8px;
+}
+
+.prop-meter i:nth-child(2) {
+  height: 13px;
+}
+
+.prop-meter i:nth-child(3) {
+  height: 18px;
+}
+
+.prop-meter i.on {
+  opacity: 1;
+}
+
 .prop-credit {
-  margin: 0.6rem 0 0;
+  margin: 1rem 0 0;
   font-size: 0.8rem;
 }
 
-.prop-summary {
-  margin: 0 0 0.5rem;
+/* chi ti ha ricevuto: mappa, barre per banda, tabella */
+.prop-card .worldmap {
+  margin-top: 0.9rem;
+}
+
+.prop-bars {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 34rem;
+  margin-top: 1rem;
+}
+
+.prop-bar {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.prop-bar > span:last-child {
+  text-align: right;
+}
+
+.prop-bar-track {
+  height: 0.6rem;
+  overflow: hidden;
+  background: var(--glass-lo);
+  border-radius: 999px;
+}
+
+.prop-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  box-shadow: 0 0 10px -2px currentColor;
+}
+
+.prop-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  margin-top: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.prop-legend i,
+.prop-dot {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.prop-table-wrap {
+  max-height: 22rem;
+  margin-top: 1rem;
+  overflow: auto;
+}
+
+@media (max-width: 40rem) {
+  .prop-card {
+    padding: 0.8rem;
+  }
+
+  .prop-gauges {
+    gap: 0.3rem;
+  }
+
+  .gauge-number {
+    font-size: 38px;
+  }
+
+  .prop-matrix-head,
+  .prop-matrix-row {
+    grid-template-columns: 5.5rem repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .prop-tile {
+    padding: 0.55rem 0.6rem;
+  }
 }
 
 /* Diagnosi della stazione */

@@ -46,9 +46,9 @@ struct Shared {
 }
 
 /// Installa la versione nuova trovata dal controllo: la scarica, ne verifica la firma, avvia l'installazione e chiude il programma.
-/// Ritorna la versione che sta installando; e' bloccante.
+/// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.
 pub trait UpdateInstaller: Send + Sync {
-    fn install(&self) -> Result<String, String>;
+    fn install(&self, updates: Arc<updater::UpdateService>) -> Result<String, String>;
 }
 
 #[derive(Clone)]
@@ -182,6 +182,11 @@ impl AppState {
 
     pub fn with_update_installer(mut self, installer: Arc<dyn UpdateInstaller>) -> AppState {
         self.update_installer = Some(installer);
+        self
+    }
+
+    pub fn with_update_installer_if(mut self, installer: Option<Arc<dyn UpdateInstaller>>) -> AppState {
+        self.update_installer = installer;
         self
     }
 

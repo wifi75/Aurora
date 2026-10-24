@@ -61,10 +61,14 @@ describe('PropagationPage', () => {
   it('lists who received me, with the distance from my grid', async () => {
     useStation.getState().apply({ type: 'status', dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: false, de_call: 'IU3ABC', de_grid: 'IO91wm' });
     render(<PropagationPage />);
-    expect(await screen.findByText('JA1ABC')).toBeInTheDocument();
-    expect(screen.getByText(/1 stazioni ti hanno ricevuto nelle ultime 3 ore · la più lontana: JA1ABC a \d+ km/)).toBeInTheDocument();
+    expect((await screen.findAllByText('JA1ABC')).length).toBeGreaterThan(0);
+    expect(screen.getByText('stazioni ti hanno ricevuto (ultime 3 ore)')).toBeInTheDocument();
+    expect(screen.getByText(/^\d+ km$/)).toBeInTheDocument();
+    expect(screen.getAllByText('JA1ABC').length).toBeGreaterThan(1);
+    expect(document.querySelector('.worldmap-receiver')).not.toBeNull();
+    expect(document.querySelectorAll('.worldmap-link')).toHaveLength(1);
     expect(screen.getByText('Japan')).toBeInTheDocument();
-    expect(screen.getByText('20m')).toBeInTheDocument();
+    expect(screen.getAllByText('20m').length).toBeGreaterThan(0);
   });
 
   it('says when nobody received me and when a service failed', async () => {
@@ -87,5 +91,32 @@ describe('PropagationPage', () => {
     expect(await screen.findByText('101')).toBeInTheDocument();
     expect(screen.queryByText('Chi mi ha ricevuto')).toBeNull();
     expect(getPsk).not.toHaveBeenCalled();
+  });
+
+  it('shows the solar dials, tells day from night at my place and which band group is in use', async () => {
+    useStation.getState().apply({ type: 'status', dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: false, de_call: 'IU3ABC', de_grid: 'IO91wm' });
+    render(<PropagationPage />);
+    await screen.findByText('101');
+    expect(screen.getByRole('img', { name: 'Flusso solare: 101' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Indice K: 1' })).toBeInTheDocument();
+    expect(screen.getByText('banda in uso')).toBeInTheDocument();
+    expect(screen.getAllByText('da te adesso')).toHaveLength(1);
+    expect(document.querySelectorAll('.prop-tile')).toHaveLength(8);
+    expect(document.querySelectorAll('.prop-tile--active')).toHaveLength(4);
+  });
+
+  it('counts the stations per band', async () => {
+    vi.mocked(getPsk).mockResolvedValue(
+      psk([
+        { receiver: 'JA1ABC', locator: 'PM95', snr: -12, freq_hz: 14_075_500, mode: 'FT8', time_s: 3_600, country: 'Japan' },
+        { receiver: 'G0XYZ', locator: 'IO91', snr: 3, freq_hz: 7_075_000, mode: 'FT8', time_s: 3_500, country: 'England' },
+        { receiver: 'K1ABC', locator: 'FN42', snr: -3, freq_hz: 7_075_000, mode: 'FT8', time_s: 3_400, country: null },
+      ]),
+    );
+    render(<PropagationPage />);
+    await screen.findAllByText('G0XYZ');
+    const bars = [...document.querySelectorAll('.prop-bar')].map((b) => b.textContent);
+    expect(bars).toEqual(['40m2', '20m1']);
+    expect(screen.getByText('3 dB')).toBeInTheDocument();
   });
 });
