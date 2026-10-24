@@ -12,3 +12,4 @@ Stazione digitale FT8/FT4 con automazione dei QSO e controllo remoto; JTDX e' il
 - Nessun riferimento a strumenti di assistenza nel repository, ne' nei messaggi di commit.
 - Le prove manuali con radio e telefono le fa il proprietario; qui si eseguono i test automatici.
 - Specifica e piani in `docs/`.
+- Logiche di QSO, trasmissione e selezione dei messaggi: leggere `docs/logiche-jtdx.md` prima di toccarle. JTDX e' la fonte della verita': Aurora legge il suo stato (UDP, finestra) invece di ricalcolarlo.

@@ -8,6 +8,10 @@ Stato al 2026-10-24, versione 0.9.0. Per riprendere il lavoro leggi anche `docs/
 - Nessun login a password: dispositivi associati con un codice monouso (durata scelta dall'operatore, 1-60 minuti, predefinito 10). Per le prove esiste l'accesso senza codice, solo rete di casa, mai da proxy.
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
 
+## Logiche di JTDX
+- `docs/logiche-jtdx.md` raccoglie le logiche del motore e come le segue Aurora: JTDX decide (messaggio da trasmettere, periodo, avanzamento), Aurora legge e comanda come un utente. Tabella di tutti i controlli della sua finestra e delle impostazioni che contano, errori passati e la regola che ne viene.
+- Dopo un riavvio lo stato si legge dalla finestra di JTDX (meno di 1 s) e indirizzo e identificativo UDP di JTDX stanno in `data/jtdx-peer.txt`, cosi' STOP e i comandi partono subito.
+
 ## Come funziona il collegamento con la stazione
 - JTDX → server UDP primario `127.0.0.1:2334` = hub di Aurora → inoltro identico a GridTracker2 (2333). Il server secondario di JTDX verso Log4OM2 (2237) non si tocca: non aggiungere lo stesso destinatario ad `AURORA_EXPORT_UDP`, i QSO sarebbero doppi.
 - Cambio banda e frequenza Rx: stesso OmniRig che usa JTDX come CAT. Cambio modo FT8/FT4 e frequenza Rx: si comandano i controlli di JTDX con l'accessibilità di Windows (UI Automation) via PowerShell.

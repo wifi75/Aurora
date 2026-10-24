@@ -4,6 +4,7 @@ import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
 import { periodLabel } from '../lib/txPeriod';
+import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
@@ -19,6 +20,7 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const [note, setNote] = useState('');
   const mode = useStation((st) => st.status?.mode);
+  const minuteLabel = useEngineTx((st) => st.tx?.minute ?? '');
   const state = controls.data ?? {};
   const reachable = !controls.isError;
 
@@ -38,7 +40,7 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
       const on = state[id] === true;
       const arming = ARMING.includes(id);
       // il periodo di trasmissione e' una scelta tra due, non un acceso/spento: il testo dice quale periodo e' in uso
-      const period = id === 'tx_period' ? periodLabel(on, mode) : null;
+      const period = id === 'tx_period' ? periodLabel(on, mode, minuteLabel) : null;
       if (period) {
         return (
           <button

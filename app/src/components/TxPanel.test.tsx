@@ -61,6 +61,7 @@ describe('TxPanel', () => {
     useEngineTx.getState().set({
       messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
       selected: 2,
+      minute: 'TX 00/30',
     });
     const quiet = { ...status, transmitting: false, tx_message: null };
     render(<TxPanel txAllowed status={quiet} decodes={[]} />);
@@ -73,6 +74,7 @@ describe('TxPanel', () => {
     useEngineTx.getState().set({
       messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
       selected: 2,
+      minute: 'TX 00/30',
     });
     const quiet = { ...status, transmitting: false, tx_message: null };
     render(<TxPanel txAllowed status={quiet} decodes={[]} />);
@@ -87,6 +89,7 @@ describe('TxPanel', () => {
     useEngineTx.getState().set({
       messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
       selected: 2,
+      minute: 'TX 00/30',
     });
     const quiet = { ...status, transmitting: false, tx_message: null };
     render(<TxPanel txAllowed status={quiet} decodes={[]} />);
@@ -100,6 +103,7 @@ describe('TxPanel', () => {
     useEngineTx.getState().set({
       messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
       selected: 4,
+      minute: 'TX 00/30',
     });
     const { unmount } = render(<TxPanel txAllowed status={{ ...status, transmitting: false, tx_message: null }} decodes={[]} />);
     expect(screen.getByText('BB2BB AA1AA RR73').closest('li')).toHaveAttribute('data-next', 'true');
