@@ -11,8 +11,13 @@ interface StationState {
   decodes: DecodedMessage[];
   /** I nostri messaggi trasmessi, piu' recenti per primi, con id negativi (non sono decodifiche e non si rispondono). */
   txLog: DecodedMessage[];
+  /** Stazione scelta con il doppio clic, mostrata come DX finche' JTDX non riporta la sua. */
+  pendingDx: string | null;
   connection: ConnectionState;
   apply(event: AuroraEvent): void;
+  /** Mostra subito un cambio comandato (banda, modo) senza aspettare il prossimo stato di JTDX. */
+  patchStatus(patch: Partial<StationStatus>): void;
+  setPendingDx(call: string | null): void;
   setConnection(state: ConnectionState): void;
   reset(): void;
 }
@@ -23,6 +28,7 @@ export const useStation = create<StationState>((set) => ({
   status: null,
   decodes: [],
   txLog: [],
+  pendingDx: null,
   connection: 'connecting',
   apply(event) {
     switch (event.type) {
@@ -31,7 +37,8 @@ export const useStation = create<StationState>((set) => ({
         set((s) => {
           const message = status.tx_message?.trim() ?? '';
           const starts = status.transmitting && message !== '' && (!s.status?.transmitting || s.status.tx_message !== status.tx_message);
-          if (!starts) return { status };
+          const dxKnown = (status.dx_call ?? '') !== '';
+          if (!starts) return dxKnown ? { status, pendingDx: null } : { status };
           const row: DecodedMessage = {
             id: nextTxId--,
             time_ms: Date.now() % 86_400_000,
@@ -41,7 +48,7 @@ export const useStation = create<StationState>((set) => ({
             text: message,
             tag: null,
           };
-          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG) };
+          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...(dxKnown ? { pendingDx: null } : {}) };
         });
         break;
       }
@@ -57,10 +64,16 @@ export const useStation = create<StationState>((set) => ({
         break;
     }
   },
+  patchStatus(patch) {
+    set((s) => (s.status ? { status: { ...s.status, ...patch } } : s));
+  },
+  setPendingDx(call) {
+    set({ pendingDx: call });
+  },
   setConnection(connection) {
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], connection: 'connecting' });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, connection: 'connecting' });
   },
 }));

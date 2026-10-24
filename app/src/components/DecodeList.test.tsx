@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
+import { usePrefs } from '../lib/prefs';
 import { DecodeList } from './DecodeList';
 
 const decode = (over: Partial<DecodedMessage> = {}): DecodedMessage => ({
@@ -175,5 +176,14 @@ describe('DecodeList', () => {
     expect(screen.getByText('Tx')).toBeInTheDocument();
     fireEvent.doubleClick(row);
     expect(onReply).not.toHaveBeenCalled();
+  });
+
+  it('with the double-click option off, a double click only selects the row', () => {
+    usePrefs.getState().set({ doubleClickReply: false });
+    const onReply = vi.fn();
+    render(<DecodeList decodes={[decode()]} onReply={onReply} />);
+    fireEvent.doubleClick(screen.getByRole('button', { name: /JA1XYZ/ }));
+    expect(onReply).not.toHaveBeenCalled();
+    usePrefs.getState().reset();
   });
 });

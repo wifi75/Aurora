@@ -89,6 +89,11 @@ impl FrequencyTable {
         valid_entries(&self.0)
     }
 
+    /// La banda in cui cade una frequenza di dial, tra quelle della tabella.
+    pub fn band_of(&self, hz: u64) -> Option<String> {
+        self.0.iter().find(|x| band_limits(&x.band).is_some_and(|(lo, hi)| (lo..=hi).contains(&hz))).map(|x| x.band.clone())
+    }
+
     /// Frequenza di dial per banda e modo.
     pub fn frequency(&self, band: &str, mode: &str) -> Option<u64> {
         let band = canonical_band(band)?;

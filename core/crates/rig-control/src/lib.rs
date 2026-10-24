@@ -2,6 +2,7 @@
 //! quindi Aurora puo' cambiare frequenza senza togliere la radio a JTDX.
 
 pub mod bands;
+pub mod controls;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;
@@ -35,4 +36,14 @@ pub trait Rig: Send + Sync {
 
     /// Cambia il modo di JTDX ("FT8" o "FT4").
     fn set_mode(&self, mode: &str) -> Result<(), RigError>;
+
+    /// Stato degli interruttori di JTDX (`controls::CONTROLS`): coppie nome e acceso.
+    fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
+    /// Porta un interruttore allo stato voluto (`Some`) o preme un pulsante semplice (`None`).
+    fn set_control(&self, _id: &str, _on: Option<bool>) -> Result<(), RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
 }

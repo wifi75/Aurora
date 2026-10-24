@@ -447,6 +447,22 @@ export const settingsStrings = {
     'Los parámetros de decodificación (intentos, pasadas, intervalo DT, profundidad, modo rápido o profundo, filtros de recepción, ciclos FT8) son del motor de JTDX y no se pueden cambiar desde fuera: JTDX 159 no acepta configuración por UDP. Se ajustan en JTDX, Ajustes → Avanzado y menú Decodificar.',
     'Os parâmetros de descodificação (tentativas, passagens, intervalo DT, profundidade, modo rápido ou profundo, filtros de receção, ciclos FT8) são do motor do JTDX e não se podem mudar de fora: o JTDX 159 não aceita configuração por UDP. Definem-se no JTDX, Definições → Avançado e menu Descodificar.',
   ],
+  'gen.dblReply': [
+    'Doppio clic: rispondi alla stazione',
+    'Double click: answer the station',
+    'Doppelklick: Station anrufen',
+    'Double-clic : répondre à la station',
+    'Doble clic: responder a la estación',
+    'Duplo clique: responder à estação',
+  ],
+  'tip.gen.dblReply': [
+    'Come in JTDX: il doppio clic su un messaggio mette quella stazione come DX e, al momento giusto, JTDX la chiama da solo. Spento, il doppio clic seleziona soltanto. Serve la trasmissione aperta.',
+    'As in JTDX: double-clicking a message makes that station the DX and, at the right moment, JTDX calls it by itself. Off, a double click only selects. Needs transmission open.',
+    'Wie in JTDX: Ein Doppelklick auf eine Nachricht macht die Station zum DX und JTDX ruft sie zur richtigen Zeit selbst an. Aus: Doppelklick wählt nur aus. Senden muss freigegeben sein.',
+    "Comme dans JTDX : un double-clic sur un message fait de cette station le DX et, au bon moment, JTDX l'appelle seul. Désactivé, le double-clic sélectionne seulement. Demande l'émission ouverte.",
+    'Como en JTDX: el doble clic en un mensaje pone esa estación como DX y, en el momento justo, JTDX la llama solo. Apagado, el doble clic solo selecciona. Requiere la transmisión abierta.',
+    'Como no JTDX: o duplo clique numa mensagem faz dessa estação o DX e, no momento certo, o JTDX chama-a sozinho. Desligado, o duplo clique só seleciona. Exige a transmissão aberta.',
+  ],
   'adv.wiki': ['Leggi la guida', 'Read the guide', 'Anleitung lesen', 'Lire le guide', 'Leer la guía', 'Ler o guia'],
   // Finestre
   'win.help': [

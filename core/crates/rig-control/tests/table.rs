@@ -76,3 +76,13 @@ fn hour_and_minute_come_from_unix_seconds_in_utc() {
     assert_eq!(hm_of(6 * 3600 + 30 * 60 + 59), (6, 30));
     assert_eq!(hm_of(86_400 * 20_000 + 12 * 3600 + 5 * 60), (12, 5));
 }
+
+#[test]
+fn band_of_finds_the_band_a_dial_frequency_belongs_to() {
+    let t = rig_control::table::FrequencyTable::default();
+    assert_eq!(t.band_of(21_074_000).as_deref(), Some("15m"));
+    assert_eq!(t.band_of(14_074_000).as_deref(), Some("20m"));
+    assert_eq!(t.band_of(50_313_000).as_deref(), Some("6m"));
+    assert_eq!(t.band_of(12_345_678), None);
+    assert_eq!(t.band_of(0), None);
+}

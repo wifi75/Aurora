@@ -49,20 +49,12 @@ pub fn attenuation_set_script(tenths: u32) -> String {
     format!("{OUT_ATTENUATION_HEAD}$r.SetValue({tenths})")
 }
 
-/// Script PowerShell che accende il pulsante (se non lo e' gia'). `button` viene solo da `button_id`.
+/// Script PowerShell che sceglie il modo premendo il pulsante come un clic (`Invoke`): `Toggle()` accenderebbe solo
+/// la casella senza far cambiare modo a JTDX. Si preme se il pulsante e' spento o se anche l'altro risulta acceso
+/// (stato incoerente). `button` viene solo da `button_id`.
 pub fn mode_script(button: &str) -> String {
+    let other = if button == "ft4Button" { "ft8Button" } else { "ft4Button" };
     format!(
-        "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; \
-         $p = Get-Process jtdx -ErrorAction SilentlyContinue | Select-Object -First 1; \
-         if (-not $p) {{ Write-Error 'JTDX non in esecuzione'; exit 3 }}; \
-         $root = [System.Windows.Automation.AutomationElement]::RootElement; \
-         $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $p.Id); \
-         $main = $root.FindAll('Children', $cond) | Where-Object {{ $_.Current.ClassName -eq 'MainWindow' }} | Select-Object -First 1; \
-         if (-not $main) {{ Write-Error 'finestra di JTDX non trovata'; exit 4 }}; \
-         $all = $main.FindAll('Descendants', [System.Windows.Automation.Condition]::TrueCondition); \
-         $el = $all | Where-Object {{ $_.Current.AutomationId -like '*.{button}' }} | Select-Object -First 1; \
-         if (-not $el) {{ Write-Error 'pulsante non trovato'; exit 5 }}; \
-         $t = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern); \
-         if ($t.Current.ToggleState -ne 'On') {{ $t.Toggle() }}"
+        "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes;          $p = Get-Process jtdx -ErrorAction SilentlyContinue | Select-Object -First 1;          if (-not $p) {{ Write-Error 'JTDX non in esecuzione'; exit 3 }};          $root = [System.Windows.Automation.AutomationElement]::RootElement;          $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $p.Id);          $main = $root.FindAll('Children', $cond) | Where-Object {{ $_.Current.ClassName -eq 'MainWindow' }} | Select-Object -First 1;          if (-not $main) {{ Write-Error 'finestra di JTDX non trovata'; exit 4 }};          $all = $main.FindAll('Descendants', [System.Windows.Automation.Condition]::TrueCondition);          $el = $all | Where-Object {{ $_.Current.AutomationId -like '*.{button}' }} | Select-Object -First 1;          $ot = $all | Where-Object {{ $_.Current.AutomationId -like '*.{other}' }} | Select-Object -First 1;          if (-not $el) {{ Write-Error 'pulsante non trovato'; exit 5 }};          $on = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -eq 'On';          $otherOn = $ot -and ($ot.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -eq 'On');          if ((-not $on) -or $otherOn) {{ $el.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() }}"
     )
 }

@@ -1,0 +1,58 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { getControls, postControl, type ControlId } from '../api/client';
+import { useT, type Key } from '../i18n';
+import { replyErrorMessage } from '../lib/replyError';
+
+/** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
+const QSO_TOGGLES: ControlId[] = ['autoseq', 'single_qso', 'answer_b4', 'bypass', 'skip_tx1', 'tx_period', 'auto_tx', 'enable_tx'];
+/** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
+const ARMING: ControlId[] = ['auto_tx', 'enable_tx'];
+
+/** Stato e comando degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...). Spegnere e' sempre permesso. */
+export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
+  const t = useT();
+  const client = useQueryClient();
+  const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
+  const [note, setNote] = useState('');
+  const state = controls.data ?? {};
+  const reachable = !controls.isError;
+
+  const set = async (id: ControlId, on: boolean) => {
+    try {
+      await postControl(id, on);
+      client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, [id]: on }));
+      await client.invalidateQueries({ queryKey: ['controls'] });
+      setNote('');
+    } catch (error) {
+      setNote(replyErrorMessage(error, t));
+    }
+  };
+
+  return (
+    <section className="cmd-sec tx-block" aria-label={t('ctl.sec.qso')}>
+      <h3 className="cmd-title">{t('ctl.sec.qso')}</h3>
+      <div className="cmd-chips">
+        {QSO_TOGGLES.map((id) => {
+          const on = state[id] === true;
+          const arming = ARMING.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`glass chip${on ? ' glass--on' : ''}${arming ? ' chip--arming' : ''}`}
+              aria-pressed={on}
+              disabled={!reachable || (arming && !on && !txAllowed)}
+              title={t(`tip.ctl.${id}` as Key)}
+              onClick={() => void set(id, !on)}
+            >
+              {t(`ctl.${id}` as Key)}
+            </button>
+          );
+        })}
+      </div>
+      {!reachable ? <p className="muted tx-note">{t('ctl.unavailable')}</p> : null}
+      {note ? <p className="live-note" role="status">{note}</p> : null}
+    </section>
+  );
+}

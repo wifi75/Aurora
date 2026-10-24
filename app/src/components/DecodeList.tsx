@@ -104,7 +104,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
             className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
-            onDoubleClick={() => (own ? undefined : onReply(d.id))}
+            onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
           >
             <span className="c-time num muted">{formatClock(d.time_ms)}</span>
             <span className="c-snr num">{own ? 'Tx' : d.snr}</span>

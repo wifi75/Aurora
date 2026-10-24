@@ -157,7 +157,7 @@ export const stationStrings = {
     'Demasiadas tentativas. Tenta de novo em {n} segundos.',
   ],
   'panel.waterfall': ['Cascata', 'Waterfall', 'Wasserfall', 'Cascade', 'Cascada', 'Cascata'],
-  'panel.station': ['Stazione', 'Station', 'Station', 'Station', 'Estación', 'Estação'],
+  'panel.station': ['Comandi', 'Commands', 'Befehle', 'Commandes', 'Comandos', 'Comandos'],
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
   'panel.all': ['Attività di banda', 'Band activity', 'Bandaktivität', 'Activité de la bande', 'Actividad de banda', 'Atividade da banda'],

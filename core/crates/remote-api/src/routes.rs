@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -42,6 +42,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
+        .route("/api/v1/controls", get(controls_get))
+        .route("/api/v1/commands/control", post(control_press))
         .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
         .route("/api/v1/pairing-settings", get(pairing_get).put(pairing_put))
         .route("/api/v1/access", get(access_get).put(access_put))
@@ -399,6 +401,53 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
     }
 }
 
+/// Stato degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...).
+#[utoipa::path(get, path = "/api/v1/controls", responses((status = 200, description = "Stato di ogni interruttore"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    match tokio::task::spawn_blocking(move || rig.controls()).await {
+        Ok(Ok(list)) => {
+            let map: serde_json::Map<String, Value> = list.into_iter().map(|(id, on)| (id, Value::Bool(on))).collect();
+            Ok(Json(json!({ "controls": map })))
+        }
+        Ok(Err(e)) => {
+            tracing::warn!("lettura dei controlli di JTDX fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct ControlBody {
+    id: String,
+    on: Option<bool>,
+}
+
+/// Imposta un interruttore di JTDX o preme un suo pulsante. Accendere Abilita Tx o AutoTX puo' far trasmettere:
+/// serve la trasmissione aperta e una via consentita; spegnerli e' sempre permesso.
+#[utoipa::path(post, path = "/api/v1/commands/control", responses((status = 200, description = "Fatto"), (status = 400, description = "Controllo sconosciuto o argomenti sbagliati (bad_control)"), (status = 403, description = "Trasmissione non abilitata o via non consentita"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn control_press(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<ControlBody>) -> Result<Json<Value>, ApiError> {
+    let control = rig_control::controls::find(&body.id).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_control"))?;
+    let wants_state = control.kind == rig_control::controls::Kind::Toggle;
+    if wants_state != body.on.is_some() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_control"));
+    }
+    if control.tx && body.on == Some(true) {
+        check_tx_allowed(&state, &headers)?;
+    }
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let (id, on) = (control.id, body.on);
+    match tokio::task::spawn_blocking(move || rig.set_control(id, on)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "id": id }))),
+        Ok(Err(e)) => {
+            tracing::warn!("comando a JTDX fallito ({id}): {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
 #[derive(Deserialize)]
 struct RxFrequencyBody {
     hz: u32,
@@ -439,8 +488,21 @@ async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<
     }
     let mode = body.mode.trim().to_uppercase();
     let shown = mode.clone();
-    match tokio::task::spawn_blocking(move || rig.set_mode(&mode)).await {
-        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "mode": shown }))),
+    // JTDX al cambio di modo salta all'ultima frequenza che aveva in quel modo, anche su un'altra banda:
+    // si resta nella banda di prima, sulla frequenza che la tabella indica per il nuovo modo
+    let dial = {
+        let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+        state.current_status().filter(|s| s.dial_hz > 0).and_then(|s| table.band_of(s.dial_hz)).and_then(|band| table.frequency(&band, &mode))
+    };
+    let work = move || -> Result<(), rig_control::RigError> {
+        rig.set_mode(&mode)?;
+        if let Some(hz) = dial {
+            rig.set_frequency(hz)?;
+        }
+        Ok(())
+    };
+    match tokio::task::spawn_blocking(work).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "mode": shown, "dial_hz": dial }))),
         Ok(Err(e)) => {
             tracing::warn!("cambio modo fallito: {e}");
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))

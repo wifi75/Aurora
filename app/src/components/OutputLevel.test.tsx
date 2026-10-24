@@ -50,6 +50,6 @@ describe('OutputLevel', () => {
   it('says so when the level cannot be read', async () => {
     vi.mocked(getOutputLevel).mockRejectedValue(new Error('503'));
     show();
-    expect(await screen.findByText(/non disponibile/i)).toBeInTheDocument();
+    expect(await screen.findByTitle(/non disponibile/i)).toBeInTheDocument();
   });
 });

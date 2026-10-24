@@ -174,17 +174,25 @@ button {
 
 .stop-btn {
   width: 100%;
-  min-height: var(--touch-min);
+  min-height: 2.25rem;
   background: var(--stop);
   color: var(--stop-ink);
   border: 0;
   border-radius: var(--radius);
   font-family: var(--font-data);
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
   font-weight: var(--weight-strong);
   letter-spacing: 0.1em;
   cursor: pointer;
   transition: transform var(--dur-press) var(--ease-out);
+}
+
+/* a riposo: contorno rosso e fondo trasparente, occupa poco e non grida */
+.stop-btn.stop-btn--idle {
+  background: transparent;
+  color: var(--stop);
+  box-shadow: inset 0 0 0 var(--border-width) var(--stop);
+  opacity: 0.8;
 }
 
 .stop-btn:active {
@@ -460,7 +468,7 @@ button.primary {
   }
 
   .stop-compact .stop-btn {
-    width: 12rem;
+    width: 7rem;
   }
 
   .stop-compact .stop-note {
@@ -627,3 +635,26 @@ button.primary {
 .stats-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .stats-table th, .stats-table td { padding: var(--space-1) var(--space-2); text-align: left; border-bottom: 1px solid var(--border); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin: 0; list-style: none; }
+
+/* Esito di un comando: una nota che galleggia in basso e si spegne da sola */
+.live-toast {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  z-index: var(--layer-sticky);
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+/* le note vuote non tengono spazio */
+.live-note:empty,
+.stop-note:empty {
+  display: none;
+}

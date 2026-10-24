@@ -104,8 +104,9 @@ export async function postTxFrequency(hz: number): Promise<void> {
   await request('/commands/tx-frequency', jsonInit({ hz }));
 }
 
-export async function postBand(band: string): Promise<void> {
-  await request('/commands/band', jsonInit({ band }));
+/** Risponde con la frequenza impostata (`dial_hz`), cosi' la pagina la mostra subito. */
+export async function postBand(band: string): Promise<{ dial_hz?: number }> {
+  return (await (await request('/commands/band', jsonInit({ band }))).json()) as { dial_hz?: number };
 }
 
 export async function postMode(mode: string): Promise<void> {
@@ -231,4 +232,19 @@ export interface StatsResponse {
 
 export async function getStats(): Promise<StatsResponse> {
   return (await (await request('/stats')).json()) as StatsResponse;
+}
+
+export type ControlId =
+  | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'split' | 'show_wanted'
+  | 'auto_tx' | 'enable_tx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx';
+
+/** Stato degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...). */
+export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {
+  const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>> };
+  return body.controls ?? {};
+}
+
+/** Porta un interruttore allo stato voluto, o preme un pulsante semplice (senza `on`). */
+export async function postControl(id: ControlId, on?: boolean): Promise<void> {
+  await request('/commands/control', jsonInit(on === undefined ? { id } : { id, on }));
 }

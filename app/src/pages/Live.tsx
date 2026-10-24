@@ -10,7 +10,7 @@ import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { ModeSwitch } from '../components/ModeSwitch';
-import { StationPanel } from '../components/StationPanel';
+import { TxCommands } from '../components/TxCommands';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
 import { TxBanner } from '../components/TxBanner';
@@ -18,7 +18,7 @@ import { TxPanel } from '../components/TxPanel';
 import { Waterfall } from '../components/Waterfall';
 import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
 import { useT } from '../i18n';
-import { applyFilters, useFilters } from '../lib/filters';
+import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useNotify } from '../lib/notify';
 import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
@@ -49,6 +49,12 @@ export function Live() {
   const filters = useFilters((s) => s.filters);
   const shown = applyFilters(decodes, filters, status?.own_continent);
   const [note, setNote] = useState('');
+  // l'esito di un comando appare un attimo sopra la pagina e sparisce: non occupa spazio
+  useEffect(() => {
+    if (!note) return;
+    const timer = setTimeout(() => setNote(''), 4000);
+    return () => clearTimeout(timer);
+  }, [note]);
   const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
 
   const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
@@ -126,7 +132,7 @@ export function Live() {
           </>
         );
       case 'station':
-        return <StationPanel status={status} />;
+        return <TxCommands txAllowed={info.data?.tx_allowed ?? false} status={status} />;
       case 'tx':
         return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
       case 'cq':
@@ -166,13 +172,29 @@ export function Live() {
 
   const setFrequency = (which: string, hz: number, send: (hz: number) => Promise<void>) =>
     attempt(() => send(hz), t('note.freqSet', { which, hz }));
-  const pickMode = (mode: string) => attempt(() => postMode(mode), t('note.modeSet', { mode }));
-  const pickBand = (band: string) => attempt(() => postBand(band), t('note.bandSet', { band }));
+  const pickMode = (mode: string) =>
+    attempt(async () => {
+      await postMode(mode);
+      useStation.getState().patchStatus({ mode });
+    }, t('note.modeSet', { mode }));
+  const pickBand = (band: string) =>
+    attempt(async () => {
+      const done = await postBand(band);
+      if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+    }, t('note.bandSet', { band }));
 
   const onReply = useCallback(
     async (id: number) => {
       const target = useStation.getState().decodes.find((d) => d.id === id);
-      await attempt(() => postReply(id), t('note.replySent', { text: target?.text ?? '' }));
+      await attempt(
+        async () => {
+          await postReply(id);
+          // la stazione chiamata compare subito nel blocco DX, prima che JTDX la riporti
+          const call = target ? callOf(target.text) : null;
+          if (call) useStation.getState().setPendingDx(call);
+        },
+        t('note.replySent', { text: target?.text ?? '' }),
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t],
@@ -203,9 +225,11 @@ export function Live() {
         />
       </div>
       <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
-      <p className="live-note" role="status" aria-live="polite">
-        {note}
-      </p>
+      {note ? (
+        <p className="live-toast" role="status" aria-live="polite">
+          {note}
+        </p>
+      ) : null}
       <StopButton variant="bar" />
     </div>
   );

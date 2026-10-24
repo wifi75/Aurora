@@ -31,6 +31,8 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `POST /commands/rx-frequency` | `{hz}` 100-3000, vale anche in trasmissione |
 | `POST /commands/band` | `{band, mode?}` → frequenza dalla tabella. `400 bad_band`, `409 transmitting`, `502 rig_error`, `503 rig_unavailable` |
 | `POST /commands/mode` | `{mode}` `FT8`/`FT4`. Stessi errori di `band` |
+| `GET /controls` | Stato degli interruttori di JTDX `{controls: {autoseq, single_qso, answer_b4, bypass, skip_tx1, tx_period, split, show_wanted, auto_tx, enable_tx}}` |
+| `POST /commands/control` | `{id, on}` per un interruttore, `{id}` per un pulsante (`clear_dx`, `gen_msgs`, `rx_to_tx`, `tx_to_rx`). Accendere `enable_tx` o `auto_tx` richiede la trasmissione aperta (`403`); `400 bad_control` |
 | `GET/PUT /output-level` | Livello audio di uscita di JTDX (cursore Pwr) come attenuazione `{attenuation_db}` 0-45; la scrittura richiede la trasmissione aperta e una via consentita. `400 bad_level` |
 
 ## Impostazioni e dati

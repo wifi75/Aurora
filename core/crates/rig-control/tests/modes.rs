@@ -11,11 +11,22 @@ fn only_the_modes_jtdx_can_switch_to_are_known() {
 }
 
 #[test]
-fn the_script_carries_only_a_known_button_id_and_toggles_it_only_when_off() {
+fn the_script_carries_only_a_known_button_id_and_presses_it_like_a_click() {
     let s = mode_script("ft4Button");
     assert!(s.contains("*.ft4Button"), "{s}");
-    assert!(s.contains("ToggleState -ne 'On'"), "{s}");
     assert!(s.contains("jtdx"), "{s}");
+    // Toggle() accende solo la casella senza cambiare modo: serve il clic (Invoke), che fa scattare il segnale di JTDX
+    assert!(s.contains("InvokePattern"), "{s}");
+    assert!(!s.contains(".Toggle()"), "{s}");
+}
+
+#[test]
+fn the_script_presses_the_other_button_too_when_both_look_on_and_never_twice() {
+    let s = mode_script("ft4Button");
+    // si preme solo se il pulsante e' spento o se anche l'altro risulta acceso (stato incoerente)
+    assert!(s.contains("(-not $on) -or $otherOn"), "{s}");
+    assert!(s.contains("*.ft8Button"), "{s}");
+    assert_eq!(s.matches(".Invoke()").count(), 1, "{s}");
 }
 
 #[test]

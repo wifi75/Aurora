@@ -53,4 +53,21 @@ impl Rig for WindowsRig {
         let button = crate::modes::button_id(mode).ok_or_else(|| RigError(format!("modo sconosciuto: {mode}")))?;
         powershell(&crate::modes::mode_script(button))
     }
+
+    fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
+        let text = powershell_output(&crate::controls::read_script())?;
+        Ok(text
+            .lines()
+            .filter_map(|line| {
+                let (id, value) = line.trim().split_once('=')?;
+                crate::controls::find(id)?;
+                Some((id.to_string(), value.trim() == "1"))
+            })
+            .collect())
+    }
+
+    fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
+        let control = crate::controls::find(id).ok_or_else(|| RigError(format!("controllo sconosciuto: {id}")))?;
+        powershell(&crate::controls::set_script(control, on))
+    }
 }

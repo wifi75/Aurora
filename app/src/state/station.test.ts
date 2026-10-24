@@ -71,4 +71,27 @@ describe('useStation', () => {
     useStation.getState().reset();
     expect(useStation.getState().txLog).toHaveLength(0);
   });
+
+  it('patchStatus shows a change at once, before JTDX reports it, and ignores it without a status', () => {
+    useStation.getState().patchStatus({ dial_hz: 1 });
+    expect(useStation.getState().status).toBeNull();
+    useStation.getState().apply({ type: 'status', ...status });
+    useStation.getState().patchStatus({ dial_hz: 14_074_000, mode: 'FT4' });
+    expect(useStation.getState().status?.dial_hz).toBe(14_074_000);
+    expect(useStation.getState().status?.mode).toBe('FT4');
+    expect(useStation.getState().status?.de_call).toBe('AA1AA');
+  });
+
+  it('remembers the station picked with a double click until JTDX reports its own DX', () => {
+    const { apply, setPendingDx } = useStation.getState();
+    setPendingDx('BB2BB');
+    expect(useStation.getState().pendingDx).toBe('BB2BB');
+    apply({ type: 'status', ...status, dx_call: null });
+    expect(useStation.getState().pendingDx).toBe('BB2BB');
+    apply({ type: 'status', ...status, dx_call: 'BB2BB' });
+    expect(useStation.getState().pendingDx).toBeNull();
+    setPendingDx('CC3CC');
+    useStation.getState().reset();
+    expect(useStation.getState().pendingDx).toBeNull();
+  });
 });

@@ -518,15 +518,15 @@ button.glass,
 .tx-panel {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-2);
 }
 
 .tx-main {
   display: grid;
   flex: 1;
   min-width: 0;
-  gap: var(--space-3);
+  gap: var(--space-2);
   align-content: start;
 }
 
@@ -568,15 +568,19 @@ button.glass,
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .tx-list li {
   display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  gap: var(--space-2);
-  min-height: 1.7rem;
-  padding: 0.15rem var(--space-2);
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: var(--space-1);
+  min-height: 1.4rem;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 var(--space-2);
   background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
   border: var(--border-width) solid var(--glass-edge);
   border-radius: 0.5rem;
@@ -735,4 +739,123 @@ button.glass,
   font-size: 0.62rem;
   letter-spacing: 0.02em;
   line-height: 1.5;
+}
+
+/* Pannello comandi: sezioni compatte, interruttori a pastiglia */
+.tx-commands .tx-main {
+  gap: var(--space-2);
+}
+
+.cmd-sec {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cmd-title {
+  margin: 0;
+  font-size: var(--text-xs, var(--text-sm));
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cmd-chips,
+.cmd-dx,
+.cmd-freq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+button.glass.chip {
+  min-height: 1.5rem;
+  padding: 0 var(--space-2);
+  border-radius: 0.5rem;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* Abilita Tx e AutoTX: acceso diventa rosso, e' la trasmissione che parte */
+button.glass.chip--arming.glass--on {
+  background: var(--stop);
+  color: var(--stop-ink);
+}
+
+.cmd-hz {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.cmd-hz input {
+  width: 5rem;
+}
+
+.cmd-arrows {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+button.glass.chip.chip--arrow {
+  min-height: 1.1rem;
+  padding: 0 var(--space-2);
+  line-height: 1;
+}
+
+/* Scheda Trasmissione: a sinistra DX e Tx1-Tx6, a destra gli interruttori del QSO */
+.tx-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.tx-left {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+@container (max-width: 22rem) {
+  .tx-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Comandi e Trasmissione: l'altezza e' quella del contenuto (niente menu nascosti); il resto va a CQ e novita' */
+@media (min-width: 64rem) {
+  .dock-panel--station,
+  .dock-panel--tx {
+    flex: 0 0 auto;
+  }
+
+  .dock-panel--station .dock-body,
+  .dock-panel--tx .dock-body {
+    overflow: visible;
+  }
+}
+
+/* Due blocchi distinti nella scheda Trasmissione: stazione DX con i messaggi, e interruttori del QSO */
+.tx-split {
+  gap: var(--space-2);
+}
+
+.tx-block {
+  align-content: start;
+  padding: var(--space-2);
+  background: linear-gradient(180deg, var(--glass-lo), transparent);
+  border: var(--border-width) solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.tx-dx {
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.tx-dx-call {
+  font-size: var(--text-base, 1rem);
 }

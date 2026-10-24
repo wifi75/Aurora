@@ -14,7 +14,7 @@ interface Props {
 export function OutputLevel({ txAllowed }: Props) {
   const t = useT();
   const client = useQueryClient();
-  const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: 15_000 });
+  const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 15_000) });
   const [pct, setPct] = useState<number | null>(null);
   const [note, setNote] = useState('');
 
@@ -23,7 +23,7 @@ export function OutputLevel({ txAllowed }: Props) {
     if (level.data && pct === null) setPct(levelPercent(level.data.attenuation_db));
   }, [level.data, pct]);
 
-  if (level.isError) return <p className="muted tx-note">{t('out.unavailable')}</p>;
+  if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>Pwr –</p>;
   if (pct === null) return null;
 
   const commit = async () => {

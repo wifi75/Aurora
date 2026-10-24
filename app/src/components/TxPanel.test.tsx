@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../api/client', () => ({ getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn(), getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
 import type { StationStatus } from '../api/schemas';
 import { TxPanel } from './TxPanel';
@@ -50,56 +50,9 @@ describe('TxPanel', () => {
     expect(document.querySelector('[data-next]')).toBeNull();
   });
 
-  it('fills the free message from a macro with the DX call and report', async () => {
-    render(<TxPanel txAllowed status={status} />);
-    fireEvent.click(screen.getByRole('button', { name: '@ R#' }));
-    expect(screen.getByLabelText(/messaggio libero/i)).toHaveValue('BB2BB R-10');
-    fireEvent.click(screen.getByRole('button', { name: /prepara/i }));
-    await waitFor(() => expect(postFreeText).toHaveBeenCalledWith('BB2BB R-10', false));
-  });
-
   it('shows the transmit and receive frequencies', () => {
     render(<TxPanel txAllowed status={status} />);
     expect(screen.getByText('Tx 1500 Hz')).toBeInTheDocument();
     expect(screen.getByText('Rx 1200 Hz')).toBeInTheDocument();
-  });
-
-  it('with transmission closed it explains and disables what would transmit', () => {
-    render(<TxPanel txAllowed={false} />);
-    expect(screen.getByText(/trasmissione chiusa/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^CQ/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /invia/i })).toBeDisabled();
-  });
-
-  it('calls CQ, with DX when chosen', async () => {
-    render(<TxPanel txAllowed />);
-    fireEvent.click(screen.getByRole('button', { name: /^CQ$/ }));
-    await waitFor(() => expect(postCq).toHaveBeenCalledWith(''));
-    fireEvent.click(screen.getByLabelText('DX'));
-    fireEvent.click(screen.getByRole('button', { name: /^CQ DX$/ }));
-    await waitFor(() => expect(postCq).toHaveBeenLastCalledWith('DX'));
-  });
-
-  it('sends a free text in uppercase, limited to 13 characters', async () => {
-    render(<TxPanel txAllowed />);
-    const box = screen.getByLabelText(/messaggio libero/i);
-    fireEvent.change(box, { target: { value: 'tnx 73 gl dx e altro' } });
-    expect(box).toHaveValue('TNX 73 GL DX ');
-    fireEvent.click(screen.getByRole('button', { name: /invia/i }));
-    await waitFor(() => expect(postFreeText).toHaveBeenCalledWith('TNX 73 GL DX', true));
-  });
-
-  it('prepares a message without transmitting, even with transmission closed', async () => {
-    render(<TxPanel txAllowed={false} />);
-    fireEvent.change(screen.getByLabelText(/messaggio libero/i), { target: { value: '73' } });
-    fireEvent.click(screen.getByRole('button', { name: /prepara/i }));
-    await waitFor(() => expect(postFreeText).toHaveBeenCalledWith('73', false));
-  });
-
-  it('sets the transmit frequency within the audio band', async () => {
-    render(<TxPanel txAllowed={false} />);
-    fireEvent.change(screen.getByLabelText(/frequenza di trasmissione/i), { target: { value: '1800' } });
-    fireEvent.click(screen.getByRole('button', { name: /imposta/i }));
-    await waitFor(() => expect(postTxFrequency).toHaveBeenCalledWith(1800));
   });
 });

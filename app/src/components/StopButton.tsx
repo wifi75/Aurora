@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ApiError, postHalt } from '../api/client';
 import { useT, type T } from '../i18n';
+import { useStation } from '../state/station';
 
 type Phase = { kind: 'idle' } | { kind: 'ok' } | { kind: 'error'; message: string };
 
@@ -17,6 +18,8 @@ interface Props {
 /** Sempre attivo, anche con il collegamento caduto: un tocco, nessuna conferma. */
 export function StopButton({ variant = 'bar' }: Props) {
   const t = useT();
+  // in trasmissione e' il pulsante pieno e ben visibile; a riposo resta una presenza discreta (sempre attivo)
+  const transmitting = useStation((s) => s.status?.transmitting ?? false);
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
 
   const stop = async () => {
@@ -30,7 +33,7 @@ export function StopButton({ variant = 'bar' }: Props) {
 
   return (
     <div className={variant === 'bar' ? 'stop-bar' : 'stop-compact'}>
-      <button type="button" className="stop-btn" onClick={stop} title={t('tip.stop')}>
+      <button type="button" className={`stop-btn${transmitting ? '' : ' stop-btn--idle'}`} onClick={stop} title={t('tip.stop')}>
         {t('stop.button')}
       </button>
       <p className="stop-note" role="status" aria-live="polite">

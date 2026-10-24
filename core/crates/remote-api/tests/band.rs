@@ -191,3 +191,31 @@ async fn rx_failures_and_missing_rig_are_reported() {
     status_is(&rx(&s, r#"{"hz":1000}"#).await, StatusCode::BAD_GATEWAY);
     status_is(&rx(&state(), r#"{"hz":1000}"#).await, StatusCode::SERVICE_UNAVAILABLE);
 }
+
+async fn publish_status(s: &AppState, dial_hz: u64, mode: &str) {
+    s.bus
+        .events()
+        .send(Event::Status(StationStatus { dial_hz, mode: mode.into(), ..StationStatus::default() }))
+        .unwrap();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+}
+
+#[tokio::test]
+async fn changing_mode_keeps_the_band_and_moves_the_dial_to_the_frequency_of_that_mode() {
+    let (s, rig) = state_with_rig(false);
+    publish_status(&s, 21_074_000, "FT8").await;
+    let resp = mode(&s, r#"{"mode":"FT4"}"#).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(*rig.modes.lock().unwrap(), vec!["FT4".to_string()]);
+    assert_eq!(*rig.calls.lock().unwrap(), vec![21_140_000]);
+    assert_eq!(body_json(resp).await["dial_hz"], 21_140_000);
+}
+
+#[tokio::test]
+async fn changing_mode_without_a_known_band_leaves_the_dial_to_jtdx() {
+    let (s, rig) = state_with_rig(false);
+    status_is(&mode(&s, r#"{"mode":"FT4"}"#).await, StatusCode::OK);
+    publish_status(&s, 12_345_678, "FT8").await;
+    status_is(&mode(&s, r#"{"mode":"FT8"}"#).await, StatusCode::OK);
+    assert!(rig.calls.lock().unwrap().is_empty());
+}
