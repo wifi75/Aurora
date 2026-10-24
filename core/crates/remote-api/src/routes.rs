@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -44,6 +44,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
         .route("/api/v1/input-level", get(input_level_get).put(input_level_put))
+        .route("/api/v1/online", get(online_get).put(online_put))
+        .route("/api/v1/online/psk", get(online_psk))
+        .route("/api/v1/online/solar", get(online_solar))
+        .route("/api/v1/online/refresh", post(online_refresh))
         .route("/api/v1/history", get(history_get).delete(history_clear))
         .route("/api/v1/history/stats", get(history_stats))
         .route("/api/v1/controls", get(controls_get))
@@ -449,6 +453,55 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+fn online_service(state: &AppState) -> Result<std::sync::Arc<online_info::OnlineService>, ApiError> {
+    state.online.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "online_unavailable"))
+}
+
+fn unix_ms() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
+}
+
+/// Quali servizi online sono accesi (PSK Reporter, propagazione). Spenti finche' non si accendono.
+#[utoipa::path(get, path = "/api/v1/online", responses((status = 200, description = "`psk` e `solar`"), (status = 404, description = "Non disponibile (online_unavailable)")))]
+async fn online_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    Ok(Json(json!(online_service(&state)?.settings())))
+}
+
+/// Accende o spegne i servizi online. Spegnere dimentica cio' che si era scaricato.
+#[utoipa::path(put, path = "/api/v1/online", responses((status = 200, description = "Impostazioni salvate"), (status = 404, description = "Non disponibile (online_unavailable)"), (status = 500, description = "Scrittura su disco fallita (online_write)")))]
+async fn online_put(State(state): State<AppState>, _: Authed, Json(settings): Json<online_info::Settings>) -> Result<Json<Value>, ApiError> {
+    let saved = online_service(&state)?.set_settings(settings).map_err(|e| {
+        tracing::warn!("salvataggio dei servizi online fallito: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "online_write")
+    })?;
+    Ok(Json(json!(saved)))
+}
+
+/// Chi ha ricevuto il nostro nominativo nelle ultime ore, da PSK Reporter (se acceso).
+#[utoipa::path(get, path = "/api/v1/online/psk", responses((status = 200, description = "`enabled` e `psk` (`fetched_ms`, `callsign`, `reports`, `error`)"), (status = 404, description = "Non disponibile (online_unavailable)")))]
+async fn online_psk(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = online_service(&state)?;
+    Ok(Json(json!({ "enabled": service.settings().psk, "psk": service.psk() })))
+}
+
+/// Le condizioni di propagazione da hamqsl.com (se acceso).
+#[utoipa::path(get, path = "/api/v1/online/solar", responses((status = 200, description = "`enabled` e `solar` (`fetched_ms`, `data`, `error`)"), (status = 404, description = "Non disponibile (online_unavailable)")))]
+async fn online_solar(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = online_service(&state)?;
+    Ok(Json(json!({ "enabled": service.settings().solar, "solar": service.solar() })))
+}
+
+/// Chiede subito i dati ai servizi accesi, al massimo una volta al minuto per servizio; `asked` dice se ha chiesto qualcosa.
+#[utoipa::path(post, path = "/api/v1/online/refresh", responses((status = 200, description = "`asked`"), (status = 404, description = "Non disponibile (online_unavailable)")))]
+async fn online_refresh(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = online_service(&state)?;
+    let callsign = state.current_status().map(|s| s.de_call).unwrap_or_default();
+    match tokio::task::spawn_blocking(move || service.refresh_now(unix_ms(), &callsign)).await {
+        Ok(asked) => Ok(Json(json!({ "asked": asked }))),
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "online_task")),
     }
 }
 

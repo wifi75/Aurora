@@ -25,6 +25,7 @@ wishlist = { path = "../wishlist" }
 updater = { path = "../updater" }
 input-level = { path = "../input-level" }
 decode-history = { path = "../decode-history" }
+online-info = { path = "../online-info" }
 dxcc = { path = "../dxcc" }
 qso-engine = { path = "../qso-engine" }
 qso-export = { path = "../qso-export" }
