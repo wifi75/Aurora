@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Comandi a JTDX molto piu' rapidi**: Abilita Tx, la scelta del messaggio Tx, il cambio modo, la frequenza Rx e il livello Pwr passano da una sessione PowerShell sempre aperta che ricorda per dieci minuti i controlli della finestra di JTDX. Misurato dal vivo: un comando scende da circa 1 secondo a circa 60 ms, la lettura periodica da circa 1 secondo a circa 460 ms. Due sessioni (comandi e letture) cosi' una lettura lenta non fa aspettare mai un comando; si riaprono da sole se si bloccano; si riscaldano all'avvio e ogni cinque minuti.
+- **Priorita' tra piu' CQ nello stesso ciclo**: i messaggi di un ciclo si raccolgono per 350 ms e l'automazione risponde a **uno solo**, il migliore. Regola «Con piu' CQ nello stesso ciclo rispondi a»: la novita' piu' rara (prima la lista dei desiderati, poi paese nuovo, nuovo su banda, zona, griglia; a parita' il segnale piu' forte) oppure il segnale piu' forte. Il registro dice quale e' stato scelto e quali sono stati lasciati. Tetti e salvaguardie valgono per la risposta scelta.
+- **Cambio banda: il modo della radio si rimette**: se la radio, cambiando banda, richiama il modo memorizzato per quella banda (per esempio USB al posto di USB dati), Aurora riscrive il modo di prima, solo se e' cambiato e se OmniRig lo permette per quella radio. Da provare con la radio.
 
 ## 0.10.0 - 2026-10-24
 - **Telefono** (schermi fino a 640 px): la pagina Stazione diventa a schede (Attivita' di banda, CQ, Trasmissione, Comandi, Cascata, DX Cluster, Log), una alla volta a tutta larghezza e con la scelta ricordata; menu e testata compatti con scorrimento di lato; modo, banda, comandi e interruttori del QSO in griglie a colonne uguali con bersagli da 44 px; campi a 16 px (niente zoom); messaggi su due righe con il testo leggibile; STOP TX sopra la riga in fondo. Corretti anche i pannelli con elenco che si schiacciavano a zero su schermi stretti. Sopra i 640 px non cambia nulla.

@@ -11,7 +11,7 @@ const base: AutomationState = {
   enabled: false,
   mode: 'dry_run',
   live_allowed: false,
-  rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false },
+  rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false, prefer: 'rarity' as const },
   limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   replies_today: 0,
   consecutive: 0,
@@ -64,6 +64,13 @@ describe('Automation', () => {
     fireEvent.click(await screen.findByLabelText(/rispondi anche ai cq della lista dei desiderati/i));
     fireEvent.click(screen.getByRole('button', { name: /salva le regole/i }));
     await waitFor(() => expect(putAutomation).toHaveBeenCalledWith({ rules: { ...base.rules, reply_to_wanted: true } }));
+  });
+
+  it('lets the operator choose which CQ to answer when there are several', async () => {
+    show();
+    fireEvent.change(await screen.findByLabelText(/con più cq nello stesso ciclo/i), { target: { value: 'snr' } });
+    fireEvent.click(screen.getByRole('button', { name: /salva le regole/i }));
+    await waitFor(() => expect(putAutomation).toHaveBeenCalledWith({ rules: { ...base.rules, prefer: 'snr' } }));
   });
 
   it('shows the error when the automation is unavailable', async () => {

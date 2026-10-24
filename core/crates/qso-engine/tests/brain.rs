@@ -314,3 +314,84 @@ fn the_band_filter_of_the_wishlist_sees_the_frequency_of_the_radio() {
     b.on_dial(14_074_000);
     assert_eq!(b.on_decode(&d, T0 + 1).unwrap().kind, DecisionKind::Reply);
 }
+
+fn tagged(id: u64, call: &str, tag: DecodeTag, snr: i32) -> DecodedMessage {
+    decode(id, &format!("CQ {call} FN42"), Some(tag), snr)
+}
+
+fn replies(decisions: &[qso_engine::Decision]) -> Vec<String> {
+    decisions.iter().filter(|d| matches!(d.kind, DecisionKind::Reply | DecisionKind::WouldReply)).filter_map(|d| d.call.clone()).collect()
+}
+
+#[test]
+fn among_several_cqs_in_one_cycle_it_answers_only_the_rarest() {
+    let mut b = live_brain();
+    let batch = [
+        tagged(1, "AT1AA", DecodeTag::NewGrid, -5),
+        tagged(2, "AT2AA", DecodeTag::NewDxcc, -15),
+        tagged(3, "AT3AA", DecodeTag::NewDxccBand, -2),
+        tagged(4, "AT4AA", DecodeTag::NewZone, -3),
+    ];
+    let decisions = b.on_batch(&batch, T0);
+    assert_eq!(replies(&decisions), vec!["AT2AA"], "il paese mai collegato batte tutto, anche con meno segnale");
+    let info = decisions.iter().find(|d| d.kind == DecisionKind::Info).expect("dice perche' ha scelto");
+    assert!(info.reason.contains("scelto AT2AA") && info.reason.contains("AT1AA, AT3AA, AT4AA"), "{}", info.reason);
+    assert_eq!(b.state().replies_today, 1, "una sola risposta partita");
+}
+
+#[test]
+fn with_the_same_rarity_the_stronger_signal_wins_and_then_the_first_arrived() {
+    let mut b = live_brain();
+    let batch = [tagged(1, "AT1AA", DecodeTag::NewDxcc, -12), tagged(2, "AT2AA", DecodeTag::NewDxcc, -4), tagged(3, "AT3AA", DecodeTag::NewDxcc, -4)];
+    assert_eq!(replies(&b.on_batch(&batch, T0)), vec!["AT2AA"]);
+}
+
+#[test]
+fn the_rule_can_prefer_the_strongest_signal() {
+    let rules = Rules { prefer: qso_engine::Prefer::Snr, ..Rules::default() };
+    let mut b = Brain::new(rules, Limits::default(), true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    // il paese nuovo e' debole (-17), la griglia nuova e' forte: con «segnale» vince la griglia
+    let batch = [tagged(1, "AT1AA", DecodeTag::NewDxcc, -17), tagged(2, "AT2AA", DecodeTag::NewGrid, -3)];
+    assert_eq!(replies(&b.on_batch(&batch, T0)), vec!["AT2AA"]);
+}
+
+#[test]
+fn a_wishlist_station_beats_any_novelty() {
+    let mut b = Brain::new(Rules { reply_to: vec![DecodeTag::NewDxcc], reply_to_wanted: true, ..Rules::default() }, Limits::default(), true);
+    b.set_wanted_matcher(std::sync::Arc::new(|d: &DecodedMessage, _| d.text.contains("T1WANT").then(|| "nominativo".to_string())));
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    let batch = [tagged(1, "AT1AA", DecodeTag::NewDxcc, -3), tagged(2, "T1WANT", DecodeTag::Cq, -14)];
+    assert_eq!(replies(&b.on_batch(&batch, T0)), vec!["T1WANT"]);
+}
+
+#[test]
+fn skipped_cqs_in_the_batch_do_not_compete_and_a_lone_candidate_needs_no_explanation() {
+    let mut b = live_brain();
+    let batch = [tagged(1, "AT1AA", DecodeTag::NewDxcc, -30), tagged(2, "AT2AA", DecodeTag::NewGrid, -5)];
+    let decisions = b.on_batch(&batch, T0);
+    assert_eq!(replies(&decisions), vec!["AT2AA"], "il primo e' sotto il segnale minimo");
+    assert!(decisions.iter().all(|d| d.kind != DecisionKind::Info), "un solo candidato: niente spiegazione della scelta");
+}
+
+#[test]
+fn the_caps_apply_to_the_chosen_reply_only() {
+    let mut b = Brain::new(Rules::default(), Limits { max_per_day: 1, ..Limits::default() }, true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    let batch = [tagged(1, "AT1AA", DecodeTag::NewDxcc, -5), tagged(2, "AT2AA", DecodeTag::NewDxcc, -6)];
+    assert_eq!(replies(&b.on_batch(&batch, T0)).len(), 1);
+    let again = [tagged(3, "AT3AA", DecodeTag::NewDxcc, -5)];
+    let later = b.on_batch(&again, T0 + 100);
+    assert_eq!(later.last().map(|d| d.kind), Some(DecisionKind::Blocked), "tetto giornaliero raggiunto");
+}
+
+#[test]
+fn rules_without_the_preference_in_an_old_file_default_to_rarity() {
+    let old = r#"{"reply_to":["new_dxcc"],"min_snr":-18,"excluded_calls":[],"max_attempts_per_call":2}"#;
+    let rules: Rules = serde_json::from_str(old).unwrap();
+    assert_eq!(rules.prefer, qso_engine::Prefer::Rarity);
+    assert!(!rules.reply_to_wanted);
+}

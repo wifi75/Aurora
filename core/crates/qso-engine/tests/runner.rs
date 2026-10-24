@@ -30,6 +30,7 @@ fn rig(live_allowed: bool, limits: Limits) -> Rig {
             rules: Rules::default(),
             limits,
             live_allowed,
+            batch_window: Duration::from_millis(20),
             tick_every: Duration::from_millis(20),
             now: Arc::new(move || now.load(Ordering::SeqCst)),
         },
@@ -148,4 +149,18 @@ async fn halt_called_directly_switches_it_off() {
     r.auto.set_enabled(true);
     r.auto.halt();
     assert!(!r.auto.state().enabled);
+}
+
+#[tokio::test]
+async fn the_cqs_of_one_cycle_make_a_single_reply_to_the_best_one() {
+    let r = rig(true, Limits::default());
+    r.auto.set_mode(Mode::Live).unwrap();
+    r.auto.set_enabled(true);
+    let mut rx = r.commands;
+    // arrivano quasi insieme, come a fine ciclo: un paese nuovo debole e una griglia nuova forte
+    let _ = r.bus.events().send(Event::Decode(DecodedMessage { id: 1, time_ms: 0, snr: -15, delta_time: 0.0, freq_hz: 1500, text: "CQ AT1AA FN42".into(), tag: Some(DecodeTag::NewDxcc), country: None, continent: None }));
+    let _ = r.bus.events().send(Event::Decode(DecodedMessage { id: 2, time_ms: 0, snr: -3, delta_time: 0.0, freq_hz: 1500, text: "CQ AT2AA FN42".into(), tag: Some(DecodeTag::NewGrid), country: None, continent: None }));
+    let first = tokio::time::timeout(Duration::from_secs(2), rx.recv()).await.expect("una risposta").expect("comando");
+    assert!(matches!(first, Command::Reply { decode_id: 1 }), "{first:?}");
+    assert!(tokio::time::timeout(Duration::from_millis(300), rx.recv()).await.is_err(), "una sola risposta per ciclo");
 }

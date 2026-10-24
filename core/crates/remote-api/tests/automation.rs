@@ -20,6 +20,7 @@ fn state_with_automation(live_allowed: bool) -> (AppState, Automation) {
             rules: Rules::default(),
             limits: Limits::default(),
             live_allowed,
+            batch_window: Duration::from_millis(20),
             tick_every: Duration::from_millis(50),
             now: Arc::new(|| 1_000_000),
         },

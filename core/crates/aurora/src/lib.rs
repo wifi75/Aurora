@@ -529,6 +529,7 @@ pub async fn run(
     let automation = Automation::spawn(
         &bus,
         AutomationConfig {
+            batch_window: Duration::from_millis(350),
             rules: load_rules(&rules_path),
             limits: config.auto_limits.clone(),
             live_allowed: live_tx,
@@ -687,7 +688,11 @@ pub async fn run(
         .with_schedule(Arc::clone(&schedule))
         .with_settings_saver(settings_saver)
         .with_rules_saver(Arc::new(move |rules: &Rules| save_rules(&rules_path, rules)))
-        .with_rig_if(config.rig_omnirig.then(|| Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>))
+        .with_rig_if(config.rig_omnirig.then(|| {
+            // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
+            rig_control::WindowsRig::keep_warm();
+            Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
+        }))
         .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;

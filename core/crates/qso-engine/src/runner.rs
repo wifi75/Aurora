@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use aurora_core::{Bus, Command, Event};
+use aurora_core::{Bus, Command, DecodedMessage, Event};
 use tokio::{sync::broadcast::error::RecvError, task::JoinHandle, time::interval};
 
 use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, Rules, WantedMatcher};
@@ -20,6 +20,9 @@ pub struct AutomationConfig {
     pub live_allowed: bool,
     /// Ogni quanto controllare il dead-man (in produzione: 1 secondo).
     pub tick_every: Duration,
+    /// Per quanto tempo si raccolgono i messaggi di un ciclo prima di scegliere a quale CQ rispondere (in produzione: 350 ms:
+    /// arrivano tutti insieme a fine ciclo, e la risposta deve partire subito).
+    pub batch_window: Duration,
     /// Secondi UTC.
     pub now: Arc<dyn Fn() -> u64 + Send + Sync>,
 }
@@ -71,15 +74,36 @@ impl Automation {
         let commands = bus.commands();
         let weak = Arc::downgrade(&inner);
         let mut ticker = interval(config.tick_every);
+        let window = config.batch_window;
         let handle = tokio::spawn(async move {
+            // i messaggi dello stesso ciclo si valutano insieme: si risponde a uno solo, il migliore
+            let mut pending: Vec<DecodedMessage> = Vec::new();
+            let mut flush_at: Option<tokio::time::Instant> = None;
             loop {
                 tokio::select! {
                     received = events.recv() => {
                         let Some(inner) = weak.upgrade() else { break };
                         match received {
-                            Ok(event) => handle_event(&inner, &commands, event),
+                            Ok(Event::Decode(d)) => {
+                                pending.push(d);
+                                flush_at.get_or_insert_with(|| tokio::time::Instant::now() + window);
+                            }
+                            Ok(event) => handle_event(&inner, event),
                             Err(RecvError::Lagged(_)) => {}
                             Err(RecvError::Closed) => break,
+                        }
+                    }
+                    () = async {
+                        match flush_at {
+                            Some(at) => tokio::time::sleep_until(at).await,
+                            None => std::future::pending::<()>().await,
+                        }
+                    } => {
+                        flush_at = None;
+                        if let Some(inner) = weak.upgrade() {
+                            flush(&inner, &commands, std::mem::take(&mut pending));
+                        } else {
+                            break;
                         }
                     }
                     _ = ticker.tick() => {
@@ -134,19 +158,28 @@ fn lock(brain: &Mutex<Brain>) -> MutexGuard<'_, Brain> {
     brain.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-fn handle_event(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, event: Event) {
+/// Valuta i messaggi di un ciclo e manda la risposta al CQ scelto, se c'e'.
+fn flush(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, decodes: Vec<DecodedMessage>) {
+    if decodes.is_empty() {
+        return;
+    }
+    let now = (inner.now)();
+    let decisions = lock(&inner.brain).on_batch(&decodes, now);
+    for decision in decisions {
+        if decision.kind == DecisionKind::Reply
+            && let Some(decode_id) = decision.decode_id
+            && commands.try_send(Command::Reply { decode_id }).is_err()
+        {
+            tracing::warn!("risposta automatica non consegnata al motore");
+        }
+    }
+}
+
+fn handle_event(inner: &Inner, event: Event) {
     let now = (inner.now)();
     match event {
-        Event::Decode(d) => {
-            let decision = lock(&inner.brain).on_decode(&d, now);
-            if let Some(decision) = decision
-                && decision.kind == DecisionKind::Reply
-                && let Some(decode_id) = decision.decode_id
-                && commands.try_send(Command::Reply { decode_id }).is_err()
-            {
-                tracing::warn!("risposta automatica non consegnata al motore");
-            }
-        }
+        // i messaggi si raccolgono a gruppi nel ciclo principale (`flush`)
+        Event::Decode(_) => {}
         Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged(&q.call),
         Event::TxHalted => lock(&inner.brain).on_halt(now),
         Event::Status(s) => lock(&inner.brain).on_dial(s.dial_hz),
