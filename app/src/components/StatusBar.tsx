@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDxcc } from '../api/client';
 import { countryOfCall } from '../lib/dxCountry';
 import { flagCode } from '../lib/flags';
-import { formatMhz } from '../lib/format';
+import { formatDial } from '../lib/format';
 import { useStation } from '../state/station';
 
 interface Props {
@@ -17,9 +17,12 @@ interface Props {
 export function StatusBar({ status, connection }: Props) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
-  const heard = countryOfCall(decodes, status?.dx_call);
+  const pendingDx = useStation((s) => s.pendingDx);
+  // la stazione scelta col doppio clic compare subito, prima che JTDX la riporti
+  const dxCall = pendingDx || status?.dx_call || '';
+  const heard = countryOfCall(decodes, dxCall);
   // la stazione scelta puo' non essere tra i messaggi recenti: allora il paese si cerca nel file dei prefissi
-  const looked = useQuery({ queryKey: ['dxcc', status?.dx_call ?? ''], queryFn: () => getDxcc(status?.dx_call ?? ''), enabled: !heard && !!status?.dx_call, staleTime: Infinity, retry: false });
+  const looked = useQuery({ queryKey: ['dxcc', dxCall], queryFn: () => getDxcc(dxCall), enabled: !heard && dxCall !== '', staleTime: Infinity, retry: false });
   const dxCountry = heard ?? looked.data?.country ?? null;
   const dxFlag = flagCode(dxCountry);
   const label = { connecting: t('conn.connecting'), open: t('conn.open'), closed: t('conn.closed') }[connection];
@@ -31,14 +34,14 @@ export function StatusBar({ status, connection }: Props) {
       {status && (
         <>
           <span className="pill data" title={t('tip.status.freq')}>
-            {formatMhz(status.dial_hz)}
+            {formatDial(status.dial_hz)}
           </span>
           <ClockPill />
-          {status.dx_call ? (
+          {dxCall ? (
             <span className="pill data pill--dx" title={t('tip.status.dx')}>
               <span className="pill-dx-main">
-                <span className="pill-dx-label">DX</span> <strong>{status.dx_call}</strong>
-                {status.dx_grid ? <span className="muted"> {status.dx_grid}</span> : null}
+                <span className="pill-dx-label">DX</span> <strong>{dxCall}</strong>
+                {status.dx_grid && !pendingDx ? <span className="muted"> {status.dx_grid}</span> : null}
               </span>
               {dxCountry ? (
                 <span className="pill-dx-country">

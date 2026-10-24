@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, jtdx_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -39,6 +39,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
+        .route("/api/v1/commands/frequency", post(change_frequency))
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
@@ -52,7 +53,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
-        .route("/api/v1/jtdx-config", get(jtdx_config))
+        .route("/api/v1/jtdx-config", get(jtdx_config).post(jtdx_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
@@ -372,6 +373,34 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
     }
 }
 
+#[derive(Deserialize)]
+struct FrequencyBody {
+    /// Frequenza di dial in Hz.
+    hz: u64,
+}
+
+/// Porta la radio su una frequenza esatta (per esempio quella di uno spot), solo dentro le bande dei radioamatori.
+/// Mai durante la trasmissione.
+#[utoipa::path(post, path = "/api/v1/commands/frequency", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Fuori dalle bande dei radioamatori (bad_frequency)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
+async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<FrequencyBody>) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    if rig_control::bands::amateur_band(body.hz).is_none() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
+    }
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    let hz = body.hz;
+    match tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio frequenza fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
 const MAX_ATTENUATION_DB: f64 = 45.0;
 
 /// Livello audio di uscita di JTDX (cursore Pwr) come attenuazione in dB: 0 = livello massimo.
@@ -613,6 +642,35 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+#[derive(Deserialize)]
+struct JtdxApplyBody {
+    changes: std::collections::BTreeMap<String, String>,
+}
+
+/// Cambia impostazioni di JTDX: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. Solo dalla rete di casa
+/// e mai mentre si trasmette: JTDX resta spento qualche secondo.
+#[utoipa::path(post, path = "/api/v1/jtdx-config", responses((status = 200, description = "Impostazioni applicate e JTDX riavviato"), (status = 400, description = "Voce o valore non ammessi (bad_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (jtdx_config_unavailable)"), (status = 409, description = "Si sta trasmettendo (transmitting)"), (status = 502, description = "Applicazione non riuscita (jtdx_apply_failed)")))]
+async fn jtdx_config_apply(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<JtdxApplyBody>) -> Result<Json<Value>, ApiError> {
+    let apply = state.jtdx_apply.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "jtdx_config_unavailable"))?;
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    if body.changes.is_empty() || body.changes.len() > 100 || body.changes.iter().any(|(k, v)| engine_jtdx::ini_edit::check_value(k, v).is_err()) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting"));
+    }
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    match tokio::task::spawn_blocking(move || apply(body.changes)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
+        Ok(Err(e)) => {
+            tracing::warn!("applicazione delle impostazioni di JTDX fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "jtdx_apply_failed"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "jtdx_task")),
+    }
 }
 
 #[utoipa::path(get, path = "/api/v1/dxcc/{call}", responses((status = 200, description = "Paese, continente e zone del nominativo (dal file cty.dat)"), (status = 400, description = "Nominativo non valido (bad_call)"), (status = 404, description = "Sconosciuto o file non caricato (dxcc_unknown)")))]

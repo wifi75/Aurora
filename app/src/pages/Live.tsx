@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getJtdxConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
@@ -23,6 +23,7 @@ import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useNotify } from '../lib/notify';
 import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
+import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
@@ -90,6 +91,7 @@ export function Live() {
     });
   }, []);
 
+  const jtdx = useQuery({ queryKey: ['jtdx-config'], queryFn: getJtdxConfig, retry: false, staleTime: 30_000 });
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
   const changeLayout = (next: Layout) => {
@@ -185,6 +187,9 @@ export function Live() {
   const onReply = useCallback(
     async (id: number) => {
       const target = useStation.getState().decodes.find((d) => d.id === id);
+      // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che JTDX la riporti
+      const call = target ? callOf(target.text) : null;
+      if (call) useStation.getState().setPendingDx(call);
       await attempt(
         async () => {
           // la stazione e' scelta: perche' JTDX la chiami da solo al momento giusto serve anche Abilita Tx
@@ -193,39 +198,39 @@ export function Live() {
           const arm = info.data?.tx_allowed ? postControl('enable_tx', true).catch(() => undefined) : Promise.resolve();
           await postReply(id);
           await arm;
-          // la stazione chiamata compare subito nel blocco DX, prima che JTDX la riporti
-          const call = target ? callOf(target.text) : null;
-          if (call) useStation.getState().setPendingDx(call);
         },
-        t('note.replySent', { text: target?.text ?? '' }),
+        // se JTDX ignorera' quel tipo di messaggio lo si dice, invece di non fare nulla in silenzio
+        replyAccepted(jtdx.data?.AcceptUDPReplyMessages, target?.text ?? '')
+          ? t('note.replySent', { text: target?.text ?? '' })
+          : `${t('note.replySent', { text: target?.text ?? '' })} ${t('note.replyMode')}`,
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, info.data?.tx_allowed],
+    [t, info.data?.tx_allowed, jtdx.data?.AcceptUDPReplyMessages],
   );
 
   return (
     <div className="live">
       <div className="live-top">
+        <div className="band-row">
+          <ModeSwitch
+            mode={status?.mode ?? ''}
+            locked={status?.transmitting ?? false}
+            onPick={info.data?.rig_control ? (mode) => void pickMode(mode) : undefined}
+          />
+          <BandBar
+            bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
+            dialHz={status?.dial_hz ?? 0}
+            locked={status?.transmitting ?? false}
+            onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
+          />
+        </div>
         <StatusBar status={status} connection={connection} />
         <div className="live-actions">
           <TxBanner status={status} />
           <AlertSwitch value={alerts} onChange={changeAlerts} />
           <StopButton variant="compact" />
         </div>
-      </div>
-      <div className="band-row">
-        <ModeSwitch
-          mode={status?.mode ?? ''}
-          locked={status?.transmitting ?? false}
-          onPick={info.data?.rig_control ? (mode) => void pickMode(mode) : undefined}
-        />
-        <BandBar
-          bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
-          dialHz={status?.dial_hz ?? 0}
-          locked={status?.transmitting ?? false}
-          onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
-        />
       </div>
       <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
       <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />

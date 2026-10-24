@@ -1,5 +1,12 @@
-export function formatMhz(hz: number): string {
-  return `${(hz / 1e6).toFixed(4)} MHz`;
+/** Una frequenza in kHz come si scrive in Italia: punto delle migliaia e un decimale dopo la virgola (21074 -> "21.074,0"). */
+export function formatKhz(khz: number): string {
+  const [whole = '', frac = '0'] = khz.toFixed(1).split('.');
+  return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${frac}`;
+}
+
+/** La frequenza di JTDX in Hz come kHz con il decimale dei 100 Hz: 21074000 -> "21.074,0 kHz". */
+export function formatDial(hz: number): string {
+  return `${formatKhz(hz / 1000)} kHz`;
 }
 
 /** Millisecondi dalla mezzanotte UTC come HH:MM:SS; oltre le 24 ore riparte da zero. */

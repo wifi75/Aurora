@@ -1,6 +1,9 @@
 import { useT } from '../i18n';
 
-const MODES = ['FT8', 'FT4'] as const;
+const MODES = ['FT8', 'FT4', 'JT'] as const;
+
+/** JTDX riporta JT65, JT9 o JT65+JT9: per il selettore sono tutti il modo JT. */
+const isActive = (m: string, mode: string) => (m === 'JT' ? mode.toUpperCase().startsWith('JT') : m === mode);
 
 interface Props {
   /** Modo in uso, come lo riporta JTDX. */
@@ -11,7 +14,7 @@ interface Props {
   locked?: boolean;
 }
 
-/** Selettore FT8 / FT4 come in JTDX; il modo in uso e' acceso. */
+/** Selettore FT8 / FT4 / JT come in JTDX; il modo in uso e' acceso. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   const t = useT();
   return (
@@ -21,13 +24,13 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
           key={m}
           type="button"
           data-mode={m}
-          className={`glass${m === mode ? ' glass--on' : ''}`}
-          aria-pressed={m === mode}
-          aria-current={m === mode ? 'true' : undefined}
+          className={`glass${isActive(m, mode) ? ' glass--on' : ''}`}
+          aria-pressed={isActive(m, mode)}
+          aria-current={isActive(m, mode) ? 'true' : undefined}
           disabled={!onPick || locked}
           title={onPick ? (locked ? t('mode.locked') : t('mode.pick', { mode: m })) : t('band.noRig')}
           onClick={() => {
-            if (m !== mode) onPick?.(m);
+            if (!isActive(m, mode)) onPick?.(m);
           }}
         >
           {m}

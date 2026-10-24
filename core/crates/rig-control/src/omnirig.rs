@@ -17,7 +17,7 @@ pub fn script(hz: u64) -> String {
     )
 }
 
-fn powershell_output(script: &str) -> Result<String, RigError> {
+pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
     let out = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
         .output()

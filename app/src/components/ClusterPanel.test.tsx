@@ -6,10 +6,10 @@ import type { ClusterSpot } from '../api/client';
 vi.mock('../api/client', () => ({
   getClusterSpots: vi.fn(),
   getStationInfo: vi.fn().mockResolvedValue({ rig_control: true }),
-  postBand: vi.fn().mockResolvedValue({ dial_hz: 7_074_000 }),
+  postFrequency: vi.fn().mockResolvedValue({ dial_hz: 14_074_000 }),
   ApiError: class extends Error {},
 }));
-import { getClusterSpots, postBand } from '../api/client';
+import { getClusterSpots, postFrequency } from '../api/client';
 import { useStation } from '../state/station';
 import { ClusterPanel } from './ClusterPanel';
 
@@ -28,7 +28,7 @@ function show() {
 }
 
 beforeEach(() => {
-  vi.mocked(postBand).mockClear();
+  vi.mocked(postFrequency).mockClear();
   localStorage.clear();
   useStation.setState({ status: { dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'IU3ABC', de_grid: 'JN55' } });
 });
@@ -68,18 +68,18 @@ describe('ClusterPanel', () => {
     expect(screen.getByText('JA1ABC')).toBeInTheDocument();
   });
 
-  it('a click on a spot on another band moves the radio there', async () => {
+  it('a double click on a spot moves the radio to its exact frequency', async () => {
     vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(1, 'K1ABC', '40m', 'CW', 'United States')] });
     show();
-    fireEvent.click(await screen.findByText('K1ABC'));
-    await waitFor(() => expect(postBand).toHaveBeenCalledWith('40m'));
-    expect(await screen.findByText('Radio portata su 40m.')).toBeInTheDocument();
+    fireEvent.doubleClick(await screen.findByText('K1ABC'));
+    await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_074_000));
+    expect(await screen.findByText('Radio portata su 14.074,0 kHz.')).toBeInTheDocument();
   });
 
-  it('does nothing when the spot is already on the band of the radio', async () => {
+  it('a single click only selects: the radio does not move', async () => {
     vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(1, 'JA1ABC', '20m', 'FT8', 'Japan')] });
     show();
     fireEvent.click(await screen.findByText('JA1ABC'));
-    expect(postBand).not.toHaveBeenCalled();
+    expect(postFrequency).not.toHaveBeenCalled();
   });
 });

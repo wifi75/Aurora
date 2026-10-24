@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getClusterSpots, getStationInfo, postBand, type ClusterSpot } from '../api/client';
+import { getClusterSpots, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
 import { useT } from '../i18n';
-import { filterSpots, formatKhz, spotAge, type SpotFilters } from '../lib/cluster';
+import { filterSpots, spotAge, type SpotFilters } from '../lib/cluster';
+import { formatKhz } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
@@ -75,14 +76,15 @@ export function ClusterPanel() {
   const shown = filterSpots(spots, filters, myBand);
 
   const tune = async (spot: ClusterSpot) => {
-    if (!spot.band || spot.band === myBand) return;
     if (!info.data?.rig_control) {
       setNote(t('cluster.noRig'));
       return;
     }
     try {
-      await postBand(spot.band);
-      setNote(t('cluster.tuned', { band: spot.band }));
+      // la frequenza esatta dello spot (kHz -> Hz); la radio non si sposta mai fuori dalle bande dei radioamatori
+      const done = await postFrequency(Math.round(spot.freq_khz * 1000));
+      if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+      setNote(t('cluster.tuned', { freq: formatKhz(spot.freq_khz) }));
     } catch (error) {
       setNote(replyErrorMessage(error, t));
     }
@@ -122,6 +124,7 @@ export function ClusterPanel() {
               <th>{t('cluster.col.call')}</th>
               <th aria-hidden="true" />
               <th>{t('cluster.col.country')}</th>
+              <th>{t('cluster.col.mode')}</th>
               <th>{t('cluster.col.comment')}</th>
               <th>{t('cluster.col.time')}</th>
             </tr>
@@ -134,8 +137,8 @@ export function ClusterPanel() {
                 <tr
                   key={s.id}
                   className={`cluster-row${mine ? ' cluster-row--mine' : ''}`}
-                  title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, band: s.band ?? '—' })}
-                  onClick={() => void tune(s)}
+                  title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
+                  onDoubleClick={() => void tune(s)}
                 >
                   <td className="data cluster-de" title={`${spotAge(s)} s`}>
                     {s.spotter}
@@ -148,7 +151,8 @@ export function ClusterPanel() {
                   </td>
                   <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>
                   <td className="cluster-country">{s.country ?? ''}</td>
-                  <td className="cluster-comment">{[s.mode && !s.comment.toUpperCase().includes(s.mode) ? s.mode : '', s.comment].filter(Boolean).join(' ')}</td>
+                  <td className="data cluster-mode">{s.mode ?? ''}</td>
+                  <td className="cluster-comment">{s.comment}</td>
                   <td className="data cluster-utc">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2)}</td>
                 </tr>
               );

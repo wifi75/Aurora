@@ -5,6 +5,7 @@
 
 pub mod enrich;
 pub mod ini;
+pub mod ini_edit;
 pub mod map;
 pub mod text;
 pub mod worked;

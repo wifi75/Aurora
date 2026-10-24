@@ -8,6 +8,7 @@ pub mod omnirig;
 pub mod schedule;
 pub mod table;
 
+pub mod jtdx_process;
 pub use omnirig::WindowsRig;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
