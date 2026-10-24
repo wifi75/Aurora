@@ -77,6 +77,16 @@ impl Drop for CaptureHandle {
     }
 }
 
+/// Un blocco di audio come arriva dalla scheda (mono, frequenza di campionamento della scheda), con l'ora di arrivo.
+/// Serve al motore proprio, che lo porta a 12 kHz e lo divide nei periodi di 15 secondi.
+#[derive(Debug, Clone)]
+pub struct AudioChunk {
+    pub rate: u32,
+    pub samples: Vec<f32>,
+    /// Millisecondi dal 1970 (UTC) al momento in cui il blocco e' stato ricevuto: e' la fine dei suoi campioni.
+    pub received_unix_ms: u64,
+}
+
 /// Apre l'ingresso audio (`device_hint` e' una parte del nome, senza distinzione di maiuscole) e
 /// pubblica le righe di spettro e, quattro volte al secondo, il livello (`Event::AudioLevel`).
 /// Condivide la scheda con altre applicazioni (modalita' condivisa).
@@ -84,6 +94,16 @@ pub fn run_capture(
     device_hint: Option<&str>,
     rows: broadcast::Sender<SpectrumRow>,
     events: broadcast::Sender<Event>,
+) -> Result<CaptureHandle, CaptureError> {
+    run_capture_tapped(device_hint, rows, events, None)
+}
+
+/// Come [`run_capture`], e in piu' manda ogni blocco di audio a `tap` (per il decoder proprio).
+pub fn run_capture_tapped(
+    device_hint: Option<&str>,
+    rows: broadcast::Sender<SpectrumRow>,
+    events: broadcast::Sender<Event>,
+    tap: Option<mpsc::Sender<AudioChunk>>,
 ) -> Result<CaptureHandle, CaptureError> {
     let host = cpal::default_host();
     let device = match device_hint {
@@ -167,6 +187,10 @@ pub fn run_capture(
         while !stop_thread.load(Ordering::SeqCst) {
             match chunks_rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(chunk) => {
+                    if let Some(tap) = &tap {
+                        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
+                        let _ = tap.send(AudioChunk { rate, samples: chunk.clone(), received_unix_ms: now });
+                    }
                     for level in meter.push(&chunk) {
                         publish_level(&events, level);
                     }

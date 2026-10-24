@@ -47,6 +47,9 @@ struct Shared {
 
 /// Installa la versione nuova trovata dal controllo: la scarica, ne verifica la firma, avvia l'installazione e chiude il programma.
 /// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.
+/// Racconta lo stato del motore proprio in JSON.
+pub type NativeStatusFn = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
+
 pub trait UpdateInstaller: Send + Sync {
     fn install(&self, updates: Arc<updater::UpdateService>) -> Result<String, String>;
 }
@@ -102,6 +105,8 @@ pub struct AppState {
     pub open_access: Arc<std::sync::atomic::AtomicBool>,
     /// Il programma Windows entra senza codice: vale solo per chi arriva da questo PC (loopback, mai da un proxy). I telefoni chiedono sempre il codice.
     pub local_trust: bool,
+    /// Stato del motore proprio (decodifica in ombra e confronto con JTDX), se e' acceso: lo mette chi lo avvia.
+    pub native_status: Arc<std::sync::RwLock<Option<NativeStatusFn>>>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -141,7 +146,14 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+    }
+
+    /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
+    pub fn set_native_status(&self, status: NativeStatusFn) {
+        if let Ok(mut slot) = self.native_status.write() {
+            *slot = Some(status);
+        }
     }
 
     /// Chi apre Aurora dallo stesso PC entra senza codice di associazione (programma Windows).

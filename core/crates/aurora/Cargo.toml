@@ -31,6 +31,7 @@ qso-engine = { path = "../qso-engine" }
 qso-export = { path = "../qso-export" }
 rig-control = { path = "../rig-control" }
 audio-spectrum = { path = "../audio-spectrum" }
+engine-native = { path = "../engine-native" }
 udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
