@@ -60,6 +60,8 @@ pub struct AppState {
     pub jtdx_config: Option<JtdxConfigProvider>,
     /// Client NTP: controllo dell'orologio del PC.
     pub clock: Option<Arc<clock_sync::ClockService>>,
+    /// Client DX Cluster: spot dei cluster telnet.
+    pub cluster: Option<Arc<dx_cluster::ClusterService>>,
     /// Preferenze dell'interfaccia salvate sul server.
     pub ui_settings: Option<Arc<ui_settings::UiSettings>>,
     pub rules_saver: Option<RulesSaver>,
@@ -110,7 +112,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, jtdx_config: None, clock: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, jtdx_config: None, clock: None, cluster: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -128,6 +130,11 @@ impl AppState {
 
     pub fn with_clock(mut self, clock: Arc<clock_sync::ClockService>) -> AppState {
         self.clock = Some(clock);
+        self
+    }
+
+    pub fn with_cluster(mut self, cluster: Arc<dx_cluster::ClusterService>) -> AppState {
+        self.cluster = Some(cluster);
         self
     }
 

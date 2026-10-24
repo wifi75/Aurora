@@ -1,4 +1,4 @@
-export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log';
+export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log' | 'cluster';
 export type Zone = 'left' | 'right';
 
 export interface Layout {
@@ -12,10 +12,12 @@ export interface Layout {
   collapsed: PanelId[];
 }
 
-export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log'];
+export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster'];
 const KEY = 'aurora-layout';
 /** Altezza predefinita dell'attivita' di banda: bassa, perche' la cascata resti in vista. */
 const ALL_HEIGHT = 300;
+/** Altezza predefinita della riga DX Cluster | Comandi. */
+const CLUSTER_HEIGHT = 340;
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 2000;
 const MIN_SPLIT = 0.25;
@@ -25,7 +27,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'log', 'waterfall'], right: ['station', 'tx', 'cq'], heights: { all: ALL_HEIGHT }, split: 0.6, collapsed: [] };
+  return { left: ['all', 'log', 'waterfall'], right: ['cluster', 'station', 'tx', 'cq'], heights: { all: ALL_HEIGHT, cluster: CLUSTER_HEIGHT }, split: 0.5, collapsed: [] };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -57,11 +59,21 @@ export function setSplit(layout: Layout, split: number): Layout {
   return { ...layout, split: clamp(split, MIN_SPLIT, MAX_SPLIT) };
 }
 
-/** Una disposizione salvata prima della finestra Log: la finestra nuova va accanto all'attivita' di banda. */
-function withLogPanel(left: unknown, right: unknown): unknown {
-  if (!Array.isArray(left) || !Array.isArray(right) || [...left, ...right].includes('log')) return left;
-  const at = left.indexOf('all');
-  return at < 0 ? [...left, 'log'] : [...left.slice(0, at + 1), 'log', ...left.slice(at + 1)];
+/** Disposizioni salvate prima delle finestre Log e DX Cluster: le nuove vanno al loro posto, accanto a quelle con cui stanno in coppia. */
+function withNewPanels(left: unknown, right: unknown): { left: unknown; right: unknown } {
+  if (!Array.isArray(left) || !Array.isArray(right)) return { left, right };
+  let l: unknown[] = left;
+  let r: unknown[] = right;
+  const has = (id: string) => [...l, ...r].includes(id);
+  if (!has('log')) {
+    const at = l.indexOf('all');
+    l = at < 0 ? [...l, 'log'] : [...l.slice(0, at + 1), 'log', ...l.slice(at + 1)];
+  }
+  if (!has('cluster')) {
+    const at = r.indexOf('station');
+    r = at < 0 ? ['cluster', ...r] : [...r.slice(0, at), 'cluster', ...r.slice(at)];
+  }
+  return { left: l, right: r };
 }
 
 function validPanels(left: unknown, right: unknown): left is PanelId[] {
@@ -75,7 +87,7 @@ export function readLayout(storage: ReadableStorage): Layout {
     const raw = storage?.getItem(KEY);
     if (!raw) return defaultLayout();
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    parsed.left = withLogPanel(parsed.left, parsed.right);
+    ({ left: parsed.left, right: parsed.right } = withNewPanels(parsed.left, parsed.right));
     if (!validPanels(parsed.left, parsed.right)) return defaultLayout();
     const heights: Layout['heights'] = {};
     if (typeof parsed.heights === 'object' && parsed.heights !== null) {
@@ -84,6 +96,8 @@ export function readLayout(storage: ReadableStorage): Layout {
         if (typeof h === 'number' && Number.isFinite(h)) heights[id] = Math.round(clamp(h, MIN_HEIGHT, MAX_HEIGHT));
       }
     }
+    // la riga DX Cluster | Comandi ha sempre un'altezza: una disposizione salvata prima non ne aveva
+    if (heights.cluster === undefined) heights.cluster = CLUSTER_HEIGHT;
     const split = typeof parsed.split === 'number' && Number.isFinite(parsed.split) ? clamp(parsed.split, MIN_SPLIT, MAX_SPLIT) : defaultLayout().split;
     const collapsed = Array.isArray(parsed.collapsed) ? ALL_PANELS.filter((p) => (parsed.collapsed as unknown[]).includes(p)) : [];
     return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split, collapsed };

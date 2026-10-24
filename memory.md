@@ -20,6 +20,10 @@ Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/
 - Cursore Pwr: un cursore orizzontale ruotato di 90 gradi (il verticale per CSS era invertito in alcuni browser e portava il livello al minimo, 45 dB, scambiato per «non funziona»). 100% = 0 dB di attenuazione, sempre in alto. Il valore parte al rilascio e richiede la trasmissione aperta.
 - Esc ferma la trasmissione e spegne AutoTX e Abilita Tx (opzione in Generali, accesa). Il doppio clic su un messaggio accende anche Abilita Tx: con «1 QSO» JTDX lo spegne a ogni QSO finito.
 
+- Preferenze dell'interfaccia sul server (`data/ui-settings.json`, separate per PC e telefono): non si perdono cambiando indirizzo o browser. Le impostazioni di JTDX si leggono (sola lettura) da `JTDX.ini` (`AURORA_JTDX_INI`), senza password.
+- Client NTP (`clock-sync`, scheda Orologio): controlla lo scarto dell'ora di Windows; correggerla serve Aurora come amministratore e solo dalla rete di casa. Indicatore «Orologio» e DT mediano (il «Med» di JTDX) nella barra di stato.
+- DX Cluster (`dx-cluster`, finestra a sinistra di Comandi, scheda DX Cluster): client telnet, spento di default; server pubblici verificati il 2026-10-24 nel catalogo; accetta solo comandi di consultazione (`sh/`, `set/`...), mai spot o messaggi pubblici. Log di Log4OM2 letto in sola lettura (`AURORA_LOG4OM_DB`).
+
 ## Sicurezza (non negoziabile)
 - Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.

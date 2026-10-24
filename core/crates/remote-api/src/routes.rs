@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, cluster_get, cluster_put, cluster_catalog, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -53,6 +53,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/jtdx-config", get(jtdx_config))
+        .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
+        .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
+        .route("/api/v1/dx-cluster/command", post(cluster_command))
         .route("/api/v1/clock", get(clock_get).put(clock_put))
         .route("/api/v1/clock/check", post(clock_check))
         .route("/api/v1/clock/correct", post(clock_correct))
@@ -608,6 +611,56 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+fn cluster_service(state: &AppState) -> Result<std::sync::Arc<dx_cluster::ClusterService>, ApiError> {
+    state.cluster.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cluster_unavailable"))
+}
+
+#[derive(Deserialize)]
+struct ClusterQuery {
+    since: Option<u64>,
+    limit: Option<usize>,
+}
+
+#[utoipa::path(get, path = "/api/v1/dx-cluster", responses((status = 200, description = "Impostazioni, stato dei collegamenti e spot piu' recenti di `since` (piu' nuovi per primi)"), (status = 404, description = "Non disponibile (cluster_unavailable)")))]
+async fn cluster_get(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<ClusterQuery>) -> Result<Json<Value>, ApiError> {
+    let cluster = cluster_service(&state)?;
+    let limit = q.limit.unwrap_or(200).clamp(1, dx_cluster::MAX_SPOTS);
+    Ok(Json(json!({ "config": cluster.config(), "servers": cluster.statuses(), "spots": cluster.spots_since(q.since.unwrap_or(0), limit) })))
+}
+
+#[utoipa::path(put, path = "/api/v1/dx-cluster", responses((status = 200, description = "Impostazioni salvate e collegamenti rifatti"), (status = 400, description = "Valori non validi (bad_cluster)"), (status = 404, description = "Non disponibile (cluster_unavailable)"), (status = 500, description = "Scrittura non riuscita (cluster_write)")))]
+async fn cluster_put(State(state): State<AppState>, _: Authed, Json(config): Json<dx_cluster::Config>) -> Result<Json<Value>, ApiError> {
+    let cluster = cluster_service(&state)?;
+    config.validate().map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_cluster"))?;
+    // salva e rifa' i collegamenti: servono dentro il runtime, ma la scrittura su disco e' breve
+    cluster.set_config(config).map_err(|e| {
+        tracing::warn!("salvataggio delle impostazioni del DX Cluster fallito: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "cluster_write")
+    })?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[utoipa::path(get, path = "/api/v1/dx-cluster/catalog", responses((status = 200, description = "Server DX Cluster pubblici noti, da aggiungere con un clic")))]
+async fn cluster_catalog(_: Authed) -> Json<Value> {
+    Json(json!(dx_cluster::CATALOG))
+}
+
+#[derive(Deserialize)]
+struct ClusterCommandBody {
+    server: String,
+    text: String,
+}
+
+#[utoipa::path(post, path = "/api/v1/dx-cluster/command", responses((status = 200, description = "Comando inviato al cluster"), (status = 400, description = "Comando non ammesso: solo consultazione e impostazioni (bad_command)"), (status = 409, description = "Server non collegato (not_connected)"), (status = 404, description = "Non disponibile (cluster_unavailable)")))]
+async fn cluster_command(State(state): State<AppState>, _: Authed, Json(body): Json<ClusterCommandBody>) -> Result<Json<Value>, ApiError> {
+    let cluster = cluster_service(&state)?;
+    if !dx_cluster::valid_command(&body.text) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_command"));
+    }
+    cluster.send_command(&body.server, &body.text).map_err(|_| ApiError::new(StatusCode::CONFLICT, "not_connected"))?;
+    Ok(Json(json!({ "ok": true })))
 }
 
 fn clock_service(state: &AppState) -> Result<std::sync::Arc<clock_sync::ClockService>, ApiError> {

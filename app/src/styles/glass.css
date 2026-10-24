@@ -947,3 +947,19 @@ button.glass.chip.chip--main {
     height: auto !important;
   }
 }
+
+/* DX Cluster a sinistra di Comandi: due finestre in una riga, alte uguali, ognuna scorre per conto suo */
+.dock-pair > .dock-panel--cluster,
+.dock-pair > .dock-panel--station {
+  flex: 1 1 0;
+}
+
+.dock-pair .dock-panel--station .dock-body,
+.dock-pair .dock-panel--cluster .dock-body {
+  min-height: 0;
+  overflow: auto;
+}
+
+.dock-pair > .dock-panel:nth-child(2) .dock-resize {
+  display: none;
+}

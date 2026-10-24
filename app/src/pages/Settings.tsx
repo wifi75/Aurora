@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useT, type Key } from '../i18n';
 import { AccessTab } from '../settings/AccessTab';
 import { ClockTab } from '../settings/ClockTab';
+import { ClusterTab } from '../settings/ClusterTab';
 import { FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralTab } from '../settings/GeneralTab';
@@ -32,6 +33,7 @@ const TABS: readonly TabDef[] = [
   { id: 'filters', label: 'tab.filters', tip: 'tip.tab.filters', render: () => <FiltersTab /> },
   { id: 'schedule', label: 'tab.schedule', tip: 'tip.tab.schedule', render: () => <ScheduleTab /> },
   { id: 'advanced', label: 'tab.advanced', tip: 'tip.tab.advanced', render: () => <AdvancedTab /> },
+  { id: 'cluster', label: 'tab.cluster', tip: 'tip.tab.cluster', render: () => <ClusterTab /> },
   { id: 'clock', label: 'tab.clock', tip: 'tip.tab.clock', render: () => <ClockTab /> },
   { id: 'access', label: 'tab.access', tip: 'tip.tab.access', render: () => <AccessTab /> },
   { id: 'windows', label: 'tab.windows', tip: 'tip.tab.windows', render: () => <WindowsTab /> },

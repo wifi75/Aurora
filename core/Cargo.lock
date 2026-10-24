@@ -59,6 +59,7 @@ dependencies = [
  "auth",
  "axum",
  "clock-sync",
+ "dx-cluster",
  "dxcc",
  "engine-jtdx",
  "engine-sim",
@@ -385,6 +386,16 @@ checksum = "1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38"
 dependencies = [
  "bitflags",
  "objc2",
+]
+
+[[package]]
+name = "dx-cluster"
+version = "0.8.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1221,6 +1232,7 @@ dependencies = [
  "auth",
  "axum",
  "clock-sync",
+ "dx-cluster",
  "futures-util",
  "logbook",
  "qrcode",
