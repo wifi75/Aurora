@@ -808,7 +808,8 @@ button.glass.chip.chip--arrow {
 
 /* Scheda Trasmissione: a sinistra DX e Tx1-Tx6, a destra gli interruttori del QSO */
 .tx-split {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* blocco DX a larghezza contenuta (circa il 40% in meno): il resto va agli interruttori */
+  grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
   align-items: start;
 }
 
