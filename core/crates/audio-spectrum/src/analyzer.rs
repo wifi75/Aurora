@@ -6,9 +6,14 @@ pub const F_MAX_HZ: u32 = 3000;
 pub const OUTPUT_BINS: usize = 1024;
 const ROWS_PER_SECOND: usize = 15;
 const MIN_SAMPLE_RATE: u32 = 8000;
-/// Scala dei valori: -110 dBFS (nero) ... -20 dBFS (massimo).
-const FLOOR_DB: f32 = -110.0;
-const CEIL_DB: f32 = -20.0;
+/// Contrasto automatico: il nero segue il rumore di fondo (mediana dei bin, mediata nel tempo).
+/// Lo sfondo cade a `MARGIN_DB` sotto il rumore; il massimo e' `HEADROOM_DB` sopra di esso.
+const MARGIN_DB: f32 = 5.0;
+const HEADROOM_DB: f32 = 40.0;
+/// Sotto questo livello assoluto il rumore stimato non scende: il silenzio resta nero.
+const ABSOLUTE_FLOOR_DB: f32 = -100.0;
+/// Quanto in fretta la stima segue il fondo (per riga; a 15 righe al secondo: circa 1 secondo).
+const NOISE_ALPHA: f32 = 0.1;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AnalyzerError {
@@ -41,6 +46,8 @@ pub struct SpectrumAnalyzer {
     ranges: Vec<(usize, usize)>,
     /// Ampiezza di un seno a fondo scala dopo la finestra di Hann.
     full_scale: f32,
+    /// Rumore di fondo stimato, in dBFS.
+    noise_db: Option<f32>,
 }
 
 impl SpectrumAnalyzer {
@@ -76,6 +83,7 @@ impl SpectrumAnalyzer {
             scratch,
             ranges,
             full_scale: n as f32 / 4.0,
+            noise_db: None,
         })
     }
 
@@ -102,13 +110,27 @@ impl SpectrumAnalyzer {
             self.buf[i] = Complex::new(s * self.window[i], 0.0);
         }
         self.fft.process_with_scratch(&mut self.buf, &mut self.scratch);
-        self.ranges
+        let dbs: Vec<f32> = self
+            .ranges
             .iter()
             .map(|&(lo, hi)| {
                 let magnitude = self.buf[lo..hi].iter().map(|c| c.norm()).fold(0.0f32, f32::max);
-                let db = 20.0 * (magnitude.max(1e-12) / self.full_scale).log10();
-                ((db - FLOOR_DB) / (CEIL_DB - FLOOR_DB) * 255.0).clamp(0.0, 255.0).round() as u8
+                (20.0 * (magnitude.max(1e-12) / self.full_scale).log10()).clamp(-200.0, 60.0)
             })
+            .collect();
+
+        let mut sorted = dbs.clone();
+        let mid = sorted.len() / 2;
+        let median = *sorted.select_nth_unstable_by(mid, f32::total_cmp).1;
+        let noise = match self.noise_db {
+            None => median,
+            Some(previous) => previous + NOISE_ALPHA * (median - previous),
+        };
+        self.noise_db = Some(noise);
+
+        let reference = noise.max(ABSOLUTE_FLOOR_DB);
+        dbs.iter()
+            .map(|db| ((db - (reference - MARGIN_DB)) / (HEADROOM_DB + MARGIN_DB) * 255.0).clamp(0.0, 255.0).round() as u8)
             .collect()
     }
 }

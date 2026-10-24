@@ -21,7 +21,7 @@ fn bin_of(freq_hz: f32) -> f32 {
 fn sine_1500hz_peaks_at_bin_512_plus_minus_2() {
     for rate in [12_000u32, 44_100, 48_000] {
         let mut a = SpectrumAnalyzer::new(rate).unwrap();
-        let rows = a.push(&sine(1500.0, 0.01, rate, 1.0));
+        let rows = a.push(&sine(1500.0, 0.0001, rate, 1.0));
         assert!(!rows.is_empty(), "{rate} Hz: nessuna riga prodotta");
         let last = rows.last().unwrap();
         assert_eq!(last.len(), OUTPUT_BINS);
@@ -97,4 +97,53 @@ fn very_quiet_or_invalid_samples_never_produce_garbage() {
     bad[200] = f32::INFINITY;
     let rows = b.push(&bad);
     assert!(!rows.is_empty(), "campioni non validi non devono bloccare l'analisi");
+}
+
+/// Rumore bianco deterministico (xorshift) di ampiezza massima `amp`.
+fn noise(amp: f32, rate: u32, seconds: f32, seed: u64) -> Vec<f32> {
+    let mut x = seed | 1;
+    (0..(rate as f32 * seconds) as usize)
+        .map(|_| {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            amp * (((x >> 11) as f64 / (1u64 << 53) as f64) as f32 * 2.0 - 1.0)
+        })
+        .collect()
+}
+
+fn mean(row: &[u8]) -> f32 {
+    row.iter().map(|v| f32::from(*v)).sum::<f32>() / row.len() as f32
+}
+
+#[test]
+fn background_stays_dark_whatever_the_noise_level() {
+    for amp in [0.3f32, 0.003] {
+        let mut a = SpectrumAnalyzer::new(48_000).unwrap();
+        let row = a.push(&noise(amp, 48_000, 3.0, 7)).pop().unwrap();
+        let m = mean(&row);
+        assert!((10.0..=80.0).contains(&m), "ampiezza del rumore {amp}: media dello sfondo {m}");
+    }
+}
+
+#[test]
+fn a_tone_30_db_above_the_noise_stands_out_whatever_the_noise_level() {
+    // ampiezza del rumore -> ampiezza del tono (circa 30 dB sopra il rumore di fondo)
+    for (noise_amp, tone_amp) in [(0.3f32, 0.105f32), (0.003, 0.00105)] {
+        let mut a = SpectrumAnalyzer::new(48_000).unwrap();
+        let signal = mix(&noise(noise_amp, 48_000, 3.0, 11), &sine(1500.0, tone_amp, 48_000, 3.0));
+        let row = a.push(&signal).pop().unwrap();
+        let peak = row[peak_bin(&row)];
+        assert!(peak > 170, "rumore {noise_amp}: picco {peak}");
+        assert!(mean(&row) < 90.0, "lo sfondo non deve salire con il rumore");
+    }
+}
+
+#[test]
+fn noise_estimate_follows_a_change_of_background_over_a_few_seconds() {
+    let mut a = SpectrumAnalyzer::new(48_000).unwrap();
+    let _ = a.push(&noise(0.003, 48_000, 2.0, 3));
+    let rows = a.push(&noise(0.3, 48_000, 6.0, 5));
+    let m = mean(rows.last().unwrap());
+    assert!((10.0..=80.0).contains(&m), "dopo qualche secondo lo sfondo torna scuro: {m}");
 }
