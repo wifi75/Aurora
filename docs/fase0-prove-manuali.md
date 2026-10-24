@@ -6,7 +6,7 @@ della radio (o usare un carico fittizio).**
 
 ## Prova 1 — Cattura UDP da JTDX (ipotesi H1)
 
-1. In JTDX: Impostazioni → Reporting → UDP Server: indirizzo `127.0.0.1`, porta `2237`.
+1. In JTDX: Impostazioni → Reporting → UDP Server: indirizzo `127.0.0.1`, porta `2237`. Per la prova 2 attiva anche **"Accept UDP requests"** e, dal menu, **"Accept UDP Reply messages"** (il reverse di `jtdx.exe` mostra che senza queste opzioni il Reply viene ignorato).
 2. In un terminale: `.\target\debug\udp_capture.exe 2237 crates\udp-bridge\tests\fixtures`
 3. Lasciare JTDX in ascolto su una banda attiva (es. 20 m, 14.074 MHz) per almeno 5 cicli (75 secondi).
 4. Atteso: righe con tipo `0` (Heartbeat), `1` (Status), `2` (Decode). Fermare con Ctrl+C.

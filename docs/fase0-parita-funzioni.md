@@ -53,7 +53,10 @@ Colonna **Pri.**: A = indispensabile per sostituire JTDX nell'uso quotidiano, M 
 | Invio a PSK Reporter (spot) | JTDX → Aurora | M |
 | Invio a eQSL | JTDX → Aurora | B |
 | DXSummit / cluster | JTDX → Aurora | M |
-| Secondo server UDP (inoltro a software esterni) | JTDX | M |
+| Secondo server UDP (inoltro a software esterni) e invio del QSO in ADIF via UDP | JTDX (confermato dal reverse) | M |
+| Filtri sui messaggi UDP (non passare i decode con nominativo non confermato) | JTDX (confermato dal reverse) | M |
+| DX Lab Suite Commander come controllo radio | JTDX | B |
+| Accettazione dei Reply UDP in tre modi (CQ, CQ+73, qualsiasi) | JTDX (confermato dal reverse) | A |
 | Cooperazione con programmi esterni (log, rotori, ecc.) | UDP | M |
 
 ## Dati e avvisi
