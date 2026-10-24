@@ -104,6 +104,12 @@ pub fn gfsk_wave(tones: &[u8; 79], f0_hz: f32) -> Vec<f32> {
 
 /// Come [`gfsk_wave`] ma con prodotto banda-tempo `bt` a scelta (in JTDX `gen_ft8wavesub` usa 4.0 per la sottrazione).
 pub fn gfsk_wave_bt(tones: &[u8; 79], f0_hz: f32, bt: f32) -> Vec<f32> {
+    gfsk_iq(tones, f0_hz, bt).0
+}
+
+/// L'onda GFSK in fase (`sin`) e in quadratura (`cos`), stesse rampe: serve alla sottrazione dei segnali gia' decodificati,
+/// dove ampiezza e fase del segnale ricevuto si stimano con i due riferimenti.
+pub fn gfsk_iq(tones: &[u8; 79], f0_hz: f32, bt: f32) -> (Vec<f32>, Vec<f32>) {
     let nsps = NSPS;
     let pulse = pulse_table(f64::from(bt));
     let twopi = 2.0 * PI;
@@ -132,13 +138,16 @@ pub fn gfsk_wave_bt(tones: &[u8; 79], f0_hz: f32, bt: f32) -> Vec<f32> {
     let shift = twopi * f64::from(f0_hz) / SAMPLE_RATE as f64;
     let mut phi = 0.0f64;
     let mut wave = Vec::with_capacity(WAVE_SAMPLES);
+    let mut quad = Vec::with_capacity(WAVE_SAMPLES);
     for &d in &dphi[nsps..nsps + WAVE_SAMPLES] {
         wave.push(phi.sin() as f32);
+        quad.push(phi.cos() as f32);
         phi = (phi + d + shift) % twopi;
     }
 
     apply_ramps(&mut wave);
-    wave
+    apply_ramps(&mut quad);
+    (wave, quad)
 }
 
 /// Onda FSK pura, senza filtro gaussiano e senza rampe: fase continua, frequenza costante `f0_hz + 6.25 * tono` per
