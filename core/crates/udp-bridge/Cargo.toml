@@ -1,0 +1,7 @@
+[package]
+name = "udp-bridge"
+description = "Codifica e decodifica del protocollo UDP di JTDX/WSJT-X (Qt QDataStream)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false

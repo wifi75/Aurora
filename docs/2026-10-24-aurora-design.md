@@ -19,6 +19,19 @@ sopra di esso (opzione "A" scelta il 2026-10-24).
 4. Telefono utilizzabile da LAN, Tailscale e Cloudflare con lo stesso dispositivo associato.
 5. STOP TX efficace entro un ciclo di trasmissione da qualsiasi interfaccia.
 
+### 1.1 Parità funzionale e funzioni nuove (requisito aggiunto il 2026-10-24)
+Aurora deve offrire **tutte le funzioni che oggi ci sono in JTDX**, con grafica molto migliorata, e in più funzioni nuove.
+- **Inventario obbligatorio in Fase 0:** elenco completo delle funzioni di JTDX 159 (menu, impostazioni, modi, filtri di
+  decodifica, CAT, log, avvisi, tasti rapidi) in `docs/fase0-parita-funzioni.md`, ciascuna con lo stato:
+  *esposta dal protocollo UDP* / *solo nella finestra di JTDX* / *da riscrivere in Aurora*.
+- **Limite dell'opzione A:** le impostazioni interne del motore (profondità di decodifica, filtri, alcune opzioni
+  di rete CAT/audio) non passano dal protocollo UDP. Finché il motore è JTDX restano nella sua finestra, oppure si
+  riscrivono in Aurora (opzione B parziale) o si modificano i file di configurazione di JTDX. La scelta funzione per
+  funzione si fa leggendo l'inventario.
+- **Funzioni nuove da definire con Tiziano** (proposte iniziali): avvisi per stazioni/paesi cercati, statistiche e
+  premi (DXCC, WAZ, griglie) con avanzamento, propagazione e mappa del terminatore, notifiche push sul telefono,
+  riproduzione dei cicli decodificati, temi di colore multipli.
+
 ### Fuori ambito (per ora)
 Decoder proprio (opzione B), altri modi oltre FT8/FT4, app nativa degli store, multi-stazione.
 L'architettura non deve però impedire un decoder proprio in futuro (vedi `Engine` al §4).
@@ -109,10 +122,7 @@ Quadranti proposti: varianza 4, movimento 6 (alto sulla cascata, nullo sui contr
 Le altre sette scelte (palette, tipografia, geometria, densità, profondità, pulsanti, movimento)
 verranno dichiarate in un file di **design token** committato prima dei componenti. Direzioni proposte:
 
-- **A · Console industriale "notte radio":** fondo scuro tinto, accenti luminosi usati solo come stato,
-  dati in monospazio, la cascata è la sorgente di colore. Coerente con l'uso notturno e il tema radio.
-- **B · Denso operativo "operatore DX":** massima informazione per pixel, righe compatte,
-  scorciatoie da tastiera visibili, tema scuro e chiaro bilanciati.
+**Direzione scelta: "Notte radio" (2026-10-24, confermata dopo aver visto cinque proposte).** Console industriale: fondo blu notte tinto (`#0b0e14`), pannelli `#111722`, bordi `#243046`, testo `#cdd7e6`, testo secondario `#6f7f96`; accento ciano `#3fd6c8` per stato RX e regole AUTO, ambra `#f2a93b` per gli eventi rari (nuovo DXCC/zona), rosso `#ff5d5d` solo per STOP TX. La colormap della cascata va da blu notte a verde acqua, ciano, giallo, bianco. Angoli di raggio 4, dati in monospazio, una sola famiglia di icone. Le altre direzioni valutate (Fosforo, Aurora boreale, Carta e inchiostro, Cabina ambra) restano come varianti di tema generate dai token.
 
 Regole già fissate: entrambe le modalità chiara e scura; tutti i valori estetici dai token;
 bersagli ≥48 px su touch, testo dei campi ≥16 px; niente animazioni su azioni ripetute;
@@ -233,7 +243,7 @@ Nessuna cartella locale né riferimento a strumenti di assistenza nel repository
 
 ## 14. Domande ancora aperte
 
-1. Direzione grafica: A (Console industriale) o B (Denso operativo)?
+1. ~~Direzione grafica~~ Scelta: Notte radio (2026-10-24).
 2. Licenza di Aurora: se parla con JTDX solo via UDP come processo separato non è un'opera derivata e la licenza è libera; se riusa codice di JTDX/WSJT-X deve essere GPL. Si decide dopo lo spike.
 3. ~~Conferma di SQLite al posto di PostgreSQL (§8).~~ Confermato il 2026-10-24.
 4. Dominio da usare per Cloudflare (modalità C): serve dalla Fase 3 (proposta: `aurora.iu3cyv.eu`).

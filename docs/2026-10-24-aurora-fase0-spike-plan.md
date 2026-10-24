@@ -171,7 +171,8 @@ Aurora/
 - [ ] **Step 2: Valutare il percorso di scrittura.** Verificare nella documentazione/sorgenti di JTDX se il messaggio `Configure` (tipo 15) permette di cambiare banda/frequenza; se no, ipotizzare di **far possedere `rigctld-jtdx.exe` ad Aurora** e di configurare JTDX come rig "Hamlib NET rigctl" verso `127.0.0.1:4532`, così entrambi condividono la radio.
 - [ ] **Step 3: PROVA MANUALE (Tiziano) del percorso scelto:** avviare `rigctld-jtdx.exe` (parametri esatti nel rapporto) con la porta COM della radio, configurare JTDX su NET rigctl, poi da un terminale `echo f | nc 127.0.0.1 4532` (o equivalente PowerShell) per leggere la frequenza. **Esito = H3.**
 - [ ] **Step 4: Prova H4:** avviare JTDX minimizzato (oppure con un collegamento impostato su "minimizzata") e far girare un'ora con `udp_capture`: i datagrammi continuano ad arrivare? **Esito = H4.**
-- [ ] **Step 5: Commit** del rapporto parziale `docs: esiti H3 e H4`.
+- [ ] **Step 5: Inventario delle funzioni di JTDX (parità funzionale, spec §1.1).** Creare `docs/fase0-parita-funzioni.md`: tabella con una riga per funzione (menu, schede di Impostazioni, filtri, tasti rapidi) e le colonne *funzione*, *dove sta in JTDX*, *via UDP / solo JTDX / da riscrivere*, *priorità*. Fonti: finestre di `jtdx.exe` esplorate da Tiziano, manuale JTDX, sorgenti pubblici. Terminare con la lista delle funzioni nuove proposte, da far scegliere a Tiziano.
+- [ ] **Step 6: Commit** del rapporto parziale `docs: esiti H3 e H4 e inventario funzioni`.
 
 ---
 
