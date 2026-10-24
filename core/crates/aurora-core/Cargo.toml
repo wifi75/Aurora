@@ -1,0 +1,14 @@
+[package]
+name = "aurora-core"
+description = "Tipi di dominio, bus di eventi e trait Engine di Aurora"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
