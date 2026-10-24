@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -45,6 +45,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
         .route("/api/v1/controls", get(controls_get))
         .route("/api/v1/commands/control", post(control_press))
+        .route("/api/v1/commands/tx-message", post(tx_message))
         .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
         .route("/api/v1/pairing-settings", get(pairing_get).put(pairing_put))
         .route("/api/v1/access", get(access_get).put(access_put))
@@ -447,10 +448,12 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
 #[utoipa::path(get, path = "/api/v1/controls", responses((status = 200, description = "Stato di ogni interruttore"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
-    match tokio::task::spawn_blocking(move || rig.controls()).await {
-        Ok(Ok(list)) => {
+    match tokio::task::spawn_blocking(move || rig.controls_and_tx()).await {
+        Ok(Ok((list, tx))) => {
             let map: serde_json::Map<String, Value> = list.into_iter().map(|(id, on)| (id, Value::Bool(on))).collect();
-            Ok(Json(json!({ "controls": map })))
+            // i sei messaggi Tx di JTDX e quello selezionato (1-6), quando la radio li sa leggere
+            let tx = tx.map(|t| json!({ "messages": t.messages, "selected": t.selected }));
+            Ok(Json(json!({ "controls": map, "tx": tx })))
         }
         Ok(Err(e)) => {
             tracing::warn!("lettura dei controlli di JTDX fallita: {e}");
@@ -484,6 +487,31 @@ async fn control_press(State(state): State<AppState>, _: Authed, headers: Header
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "id": id }))),
         Ok(Err(e)) => {
             tracing::warn!("comando a JTDX fallito ({id}): {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct TxMessageBody {
+    /// Numero del messaggio Tx, da 1 a 6.
+    n: u8,
+}
+
+/// Sceglie a mano il messaggio Tx da cui il motore parte (come il pallino accanto ai messaggi): trasmette quello alla
+/// prossima occasione e poi prosegue da solo. Non accende la trasmissione e non ne avvia una: vale anche a trasmissione chiusa.
+#[utoipa::path(post, path = "/api/v1/commands/tx-message", responses((status = 200, description = "Messaggio selezionato"), (status = 400, description = "Numero fuori da 1-6 (bad_message)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn tx_message(State(state): State<AppState>, _: Authed, Json(body): Json<TxMessageBody>) -> Result<Json<Value>, ApiError> {
+    if !(1..=6).contains(&body.n) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_message"));
+    }
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let n = body.n;
+    match tokio::task::spawn_blocking(move || rig.select_tx_message(n)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "n": n }))),
+        Ok(Err(e)) => {
+            tracing::warn!("selezione del messaggio Tx {n} fallita: {e}");
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),

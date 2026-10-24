@@ -43,6 +43,16 @@ pub trait Rig: Send + Sync {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 
+    /// Gli interruttori e, se la radio li sa leggere, i sei messaggi Tx con quello selezionato, in una lettura sola.
+    fn controls_and_tx(&self) -> Result<controls::Reading, RigError> {
+        Ok((self.controls()?, None))
+    }
+
+    /// Seleziona il messaggio di trasmissione `n` (1-6): il motore trasmette da quello e poi prosegue da solo.
+    fn select_tx_message(&self, _n: u8) -> Result<(), RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
     /// Porta un interruttore allo stato voluto (`Some`) o preme un pulsante semplice (`None`).
     fn set_control(&self, _id: &str, _on: Option<bool>) -> Result<(), RigError> {
         Err(RigError("comando non supportato da questa radio".into()))

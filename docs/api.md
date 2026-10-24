@@ -32,7 +32,8 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `POST /commands/band` | `{band, mode?}` → frequenza dalla tabella. `400 bad_band`, `409 transmitting`, `502 rig_error`, `503 rig_unavailable` |
 | `POST /commands/mode` | `{mode}` `FT8`/`FT4`/`JT`. Stessi errori di `band` |
 | `POST /commands/frequency` | `{hz}` → porta la radio su una frequenza esatta, solo dentro le bande dei radioamatori. `400 bad_frequency`, `409 transmitting`, `502 rig_error`. Lo split della radio si spegne |
-| `GET /controls` | Stato degli interruttori di JTDX `{controls: {autoseq, single_qso, answer_b4, bypass, skip_tx1, tx_period, split, show_wanted, auto_tx, enable_tx}}` |
+| `GET /controls` | Stato degli interruttori di JTDX `{controls: {autoseq, single_qso, answer_b4, bypass, skip_tx1, tx_period, split, show_wanted, auto_tx, enable_tx}, tx}`; `tx` = `{messages: [sei testi Tx1-Tx6 come li ha il motore], selected: 1-6}` (il pallino selezionato, cioe' da dove trasmette), oppure `null` se la radio non li sa leggere. Una lettura sola, circa un secondo |
+| `POST /commands/tx-message` | `{n}` da 1 a 6: seleziona il messaggio Tx da cui il motore parte (come il pallino), senza accendere ne' avviare la trasmissione; vale anche a trasmissione chiusa. `400 bad_message`, `502 rig_error`, `503 rig_unavailable` |
 | `POST /commands/control` | `{id, on}` per un interruttore, `{id}` per un pulsante (`clear_dx`, `gen_msgs`, `rx_to_tx`, `tx_to_rx`). Accendere `enable_tx` o `auto_tx` richiede la trasmissione aperta (`403`); `400 bad_control` |
 | `GET/PUT /output-level` | Livello audio di uscita di JTDX (cursore Pwr) come attenuazione `{attenuation_db}` 0-45; si regola anche a trasmissione chiusa (come in JTDX), non da una via non consentita. `400 bad_level` |
 

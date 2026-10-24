@@ -74,15 +74,19 @@ impl Rig for WindowsRig {
     }
 
     fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
+        Ok(self.controls_and_tx()?.0)
+    }
+
+    fn controls_and_tx(&self) -> Result<crate::controls::Reading, RigError> {
         let text = powershell_output(&crate::controls::read_script())?;
-        Ok(text
-            .lines()
-            .filter_map(|line| {
-                let (id, value) = line.trim().split_once('=')?;
-                crate::controls::find(id)?;
-                Some((id.to_string(), value.trim() == "1"))
-            })
-            .collect())
+        Ok(crate::controls::parse_reading(&text))
+    }
+
+    fn select_tx_message(&self, n: u8) -> Result<(), RigError> {
+        if !(1..=6).contains(&n) {
+            return Err(RigError(format!("messaggio Tx non valido: {n}")));
+        }
+        powershell(&crate::controls::select_tx_script(n))
     }
 
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {

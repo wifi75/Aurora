@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Messaggi Tx1-Tx6 come nel motore: Aurora legge dalla sua finestra i testi veri (rapporto e CQ come li ha scritti) e il pallino selezionato, cioe' da dove trasmette; con «Salta Tx1» si parte da Tx2 e la prima riga si vede barrata. I messaggi si scelgono a mano con un clic (`POST /commands/tx-message`): il motore trasmette da quello e poi prosegue da solo. La riga e' accesa forte mentre si trasmette e col solo bordo mentre aspetta il turno.
 - Orologio UTC (HH:MM:SS) accanto alla barra del periodo, con la stessa grafica e la stessa misura della barra.
 - Cambio banda piu' veloce: da circa 2,7 a circa 0,9 secondi (attese a scatti brevi, split toccato solo se serve). Il pulsante di banda o di modo scelto si accende subito e resta cosi' finche' il motore non conferma, senza tornare indietro e poi riavanzare; se il comando fallisce torna com'era. Vale anche per il doppio clic sul cluster.
 - Tasto del periodo di trasmissione come nel motore: «Tx 00/30» o «Tx 15/45» (FT4: «Tx 00/15» o «Tx 7,5/22,5»), di due colori, un clic passa dall'uno all'altro.

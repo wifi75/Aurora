@@ -13,7 +13,9 @@ use rig_control::{Rig, RigError};
 #[derive(Default)]
 struct FakeRig {
     pressed: Mutex<Vec<(String, Option<bool>)>>,
+    selected: Mutex<Vec<u8>>,
     fail: bool,
+    with_tx: bool,
 }
 
 impl Rig for FakeRig {
@@ -37,6 +39,21 @@ impl Rig for FakeRig {
             return Err(RigError("JTDX non risponde".into()));
         }
         Ok(vec![("autoseq".into(), true), ("enable_tx".into(), false)])
+    }
+    fn controls_and_tx(&self) -> Result<rig_control::controls::Reading, RigError> {
+        let switches = self.controls()?;
+        let tx = self.with_tx.then(|| rig_control::controls::TxState {
+            messages: vec!["M7SZY IU3ABC IO91".into(), "M7SZY IU3ABC -07".into(), String::new(), String::new(), String::new(), "CQ DX IU3ABC IO91".into()],
+            selected: Some(2),
+        });
+        Ok((switches, tx))
+    }
+    fn select_tx_message(&self, n: u8) -> Result<(), RigError> {
+        if self.fail {
+            return Err(RigError("JTDX non risponde".into()));
+        }
+        self.selected.lock().unwrap().push(n);
+        Ok(())
     }
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         if self.fail {
@@ -82,6 +99,23 @@ async fn lists_the_state_of_every_control() {
     let v = body_json(r).await;
     assert_eq!(v["controls"]["autoseq"], true);
     assert_eq!(v["controls"]["enable_tx"], false);
+}
+
+#[tokio::test]
+async fn returns_the_six_tx_messages_and_the_selected_one_when_the_rig_reads_them() {
+    let rig = FakeRig { with_tx: true, ..FakeRig::default() };
+    let s = state_with(Some(Arc::new(rig)), false);
+    let v = body_json(get(&s).await).await;
+    assert_eq!(v["tx"]["selected"], 2);
+    assert_eq!(v["tx"]["messages"][1], "M7SZY IU3ABC -07");
+    assert_eq!(v["tx"]["messages"][5], "CQ DX IU3ABC IO91");
+}
+
+#[tokio::test]
+async fn tx_is_null_when_the_rig_cannot_read_the_messages() {
+    let s = state_with(Some(Arc::new(FakeRig::default())), false);
+    let v = body_json(get(&s).await).await;
+    assert!(v["tx"].is_null());
 }
 
 #[tokio::test]
@@ -142,4 +176,37 @@ async fn rejects_unknown_controls_and_wrong_arguments() {
     assert!(rig.pressed.lock().unwrap().is_empty());
     status_is(&press(&s, r#"{"id":"clear_dx"}"#).await, StatusCode::OK);
     assert_eq!(*rig.pressed.lock().unwrap(), vec![("clear_dx".to_string(), None)]);
+}
+
+async fn pick(s: &AppState, body: &str) -> axum::response::Response {
+    let cookie = cookie_for(s);
+    call(&router(s), req(Method::POST, "/api/v1/commands/tx-message").cookie(&cookie).json(body)).await
+}
+
+#[tokio::test]
+async fn selects_a_tx_message_even_with_transmission_closed() {
+    let rig = Arc::new(FakeRig::default());
+    let s = state_with(Some(rig.clone()), false);
+    let r = pick(&s, r#"{"n":2}"#).await;
+    status_is(&r, StatusCode::OK);
+    assert_eq!(body_json(r).await["n"], 2);
+    assert_eq!(*rig.selected.lock().unwrap(), vec![2]);
+}
+
+#[tokio::test]
+async fn refuses_a_tx_message_outside_one_to_six_and_needs_a_paired_device() {
+    let rig = Arc::new(FakeRig::default());
+    let s = state_with(Some(rig.clone()), true);
+    for bad in [r#"{"n":0}"#, r#"{"n":7}"#, r#"{"n":255}"#] {
+        status_is(&pick(&s, bad).await, StatusCode::BAD_REQUEST);
+    }
+    status_is(&call(&router(&s), req(Method::POST, "/api/v1/commands/tx-message").json(r#"{"n":1}"#)).await, StatusCode::UNAUTHORIZED);
+    assert!(rig.selected.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn tx_message_without_a_rig_or_with_a_failing_jtdx_is_unavailable_or_a_bad_gateway() {
+    status_is(&pick(&state_with(None, true), r#"{"n":3}"#).await, StatusCode::SERVICE_UNAVAILABLE);
+    let failing = FakeRig { fail: true, ..FakeRig::default() };
+    status_is(&pick(&state_with(Some(Arc::new(failing)), true), r#"{"n":3}"#).await, StatusCode::BAD_GATEWAY);
 }
