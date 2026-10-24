@@ -71,6 +71,8 @@ pub struct Config {
     pub open_access: bool,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
+    /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
+    pub jtdx_ini: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -116,6 +118,7 @@ impl Config {
             pair_ttl_secs: 600,
             open_access: false,
             log4om_db: None,
+            jtdx_ini: None,
         }
     }
 
@@ -200,6 +203,7 @@ impl Config {
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
+            jtdx_ini: get("AURORA_JTDX_INI").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             log4om_db: get("AURORA_LOG4OM_DB").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             export_udp,
             open_access: match get("AURORA_OPEN_ACCESS").as_deref() {
@@ -501,6 +505,9 @@ pub async fn run(
                     .map(|view| serde_json::json!(view))
                     .map_err(|e| e.to_string())
             }) as remote_api::Log4omProvider
+        }))
+        .with_jtdx_config_if(config.jtdx_ini.clone().map(|path| {
+            Arc::new(move || engine_jtdx::ini::read_shown(&path).map(|settings| serde_json::json!(settings))) as remote_api::JtdxConfigProvider
         }))
         .with_frequencies(Arc::clone(&frequencies))
         .with_schedule(Arc::clone(&schedule))

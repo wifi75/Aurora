@@ -4,6 +4,7 @@
 //! `allow_tx`; `HaltTx` invece parte sempre.
 
 pub mod enrich;
+pub mod ini;
 pub mod map;
 pub mod text;
 pub mod worked;

@@ -1,4 +1,5 @@
 import { useT } from '../i18n';
+import { JtdxValues } from './JtdxValues';
 import { Help, InfoTab, Row } from './common';
 
 /** Scheda Radio: come Aurora e JTDX condividono la radio. */
@@ -11,6 +12,7 @@ export function RadioTab() {
           <h3 className="set-sub">{t('radio.sharing')}</h3>
           <Row name={t('radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
           <Help>{t('radio.help')}</Help>
+          <JtdxValues group="radio" />
         </>
       )}
     />
@@ -26,6 +28,7 @@ export function AudioTab() {
         <>
           <Row name={t('audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
           <Help>{t('audio.help')}</Help>
+          <JtdxValues group="audio" />
         </>
       )}
     />
@@ -57,6 +60,7 @@ export function ReportsTab() {
           ))}
           <Row name={t('rep.cty')}>{info.cty_loaded > 0 ? t('rep.countries', { n: info.cty_loaded }) : t('rep.notLoaded')}</Row>
           <Row name={t('rep.log')}>{info.worked_qsos > 0 ? t('rep.qsos', { n: info.worked_qsos }) : t('rep.notRead')}</Row>
+          <JtdxValues group="reports" />
         </>
       )}
     />
@@ -69,6 +73,7 @@ export function AdvancedTab() {
   return (
     <>
       <Help>{t('adv.help')}</Help>
+      <JtdxValues group="advanced" />
       <a className="glass glass--link" href="#/guida">
         {t('adv.wiki')}
       </a>

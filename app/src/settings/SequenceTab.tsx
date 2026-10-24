@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAutomation, putAutomation } from '../api/client';
 import { AutomationRulesForm } from '../components/AutomationRulesForm';
 import { useT } from '../i18n';
+import { JtdxValues } from './JtdxValues';
 import { Help } from './common';
 
 /** Scheda Sequenza: le regole con cui Aurora risponde da sola ai CQ (le stesse della pagina Automazioni). */
@@ -19,6 +20,7 @@ export function SequenceTab() {
     <>
       <Help>{t('seq.intro')}</Help>
       <AutomationRulesForm rules={state.data.rules} onSave={(rules) => save.mutate(rules)} error={save.isError} />
+      <JtdxValues group="sequence" />
       <a className="glass glass--link" href="#/automazioni">
         {t('seq.link')}
       </a>

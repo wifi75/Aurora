@@ -230,6 +230,11 @@ export interface StatsResponse {
   missing_dxcc: string[];
 }
 
+/** Le impostazioni di JTDX, per nome, come testo (dal suo file di configurazione). */
+export async function getJtdxConfig(): Promise<Record<string, string>> {
+  return (await (await request('/jtdx-config')).json()) as Record<string, string>;
+}
+
 export interface Log4omQso {
   date: string;
   call: string;

@@ -23,6 +23,7 @@ vi.mock('../api/client', () => ({
     worked_qsos: 2056,
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   }),
+  getJtdxConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
   getFrequencies: vi.fn().mockResolvedValue([{ band: '20m', mode: 'FT8', hz: 14_074_000 }]),
   putFrequencies: vi.fn().mockResolvedValue(undefined),
   getSchedule: vi.fn().mockResolvedValue({ enabled: false, entries: [] }),
@@ -117,6 +118,18 @@ describe('Radio, Audio, Reports and Advanced', () => {
     open();
     goTo('Audio');
     expect(await screen.findByText('USB Audio')).toBeInTheDocument();
+  });
+
+  it('shows the real JTDX values: UDP server and port, audio device, decoding depth', async () => {
+    open();
+    goTo('Segnalazioni');
+    expect(await screen.findByText('Server UDP primario: porta')).toBeInTheDocument();
+    expect(screen.getByText('2334')).toBeInTheDocument();
+    expect(screen.getByText('CQ e 73')).toBeInTheDocument();
+    goTo('Audio');
+    expect(await screen.findByText('Microfono di prova')).toBeInTheDocument();
+    goTo('Avanzate');
+    expect(await screen.findByText('profonda')).toBeInTheDocument();
   });
 
   it('shows the export targets, UDP, countries and QSOs', async () => {

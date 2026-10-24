@@ -3,6 +3,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
+import { JtdxValues } from './JtdxValues';
 import { Check, Help, Row } from './common';
 
 /** Scheda Generali: la stazione (letta da JTDX), come si mostrano i messaggi, lingua e tema. */
@@ -17,6 +18,7 @@ export function GeneralTab() {
       <Row name={t('gen.call')}>{status?.de_call || '—'}</Row>
       <Row name={t('gen.grid')}>{status?.de_grid || '—'}</Row>
       <Help>{t('gen.fromJtdx')}</Help>
+      <JtdxValues group="general" />
 
       <h3 className="set-sub">{t('gen.screen')}</h3>
       <div className="set-checks">

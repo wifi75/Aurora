@@ -24,6 +24,8 @@ if ($Jtdx) {
     if (Test-Path $cty) { $engineEnv += "`$env:AURORA_CTY_PATH='$cty'; " }
     if (Test-Path $log) { $engineEnv += "`$env:AURORA_WORKED_ADIF='$log'; " }
     $engineEnv += "`$env:AURORA_RIG='omnirig'; "
+    $ini = Join-Path $env:LOCALAPPDATA 'JTDX\JTDX.ini'
+    if (Test-Path $ini) { $engineEnv += "`$env:AURORA_JTDX_INI='$ini'; " }
     $l4o = Get-ChildItem (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'LOG4OM2') -Filter '*.sqlite' -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1
     if ($l4o) { $engineEnv += "`$env:AURORA_LOG4OM_DB='$($l4o.FullName)'; " }
     if ($Audio) { $engineEnv += "`$env:AURORA_AUDIO_DEVICE='$Audio'; " }

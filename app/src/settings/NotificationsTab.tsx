@@ -5,6 +5,7 @@ import { readAlerts, saveAlerts, type AlertPrefs } from '../lib/alerts';
 import { COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
 import { browserStorage } from '../lib/theme';
+import { JtdxValues } from './JtdxValues';
 import { Help } from './common';
 
 /** Scheda Notifiche: per ogni tipo di messaggio colore, evidenziazione e suono, come in JTDX. */
@@ -82,6 +83,7 @@ export function NotificationsTab() {
       >
         {t('not.restoreColors')}
       </button>
+      <JtdxValues group="notifications" />
     </>
   );
 }
