@@ -3,8 +3,22 @@ import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
 import { RowAverager } from '../render/smooth';
 
-/** Righe del core (15 al secondo) mediate a gruppi: circa 4 al secondo, la velocita' di una cascata leggibile. */
-const ROWS_PER_STEP = 4;
+/** Righe del core (15 al secondo) mediate a gruppi. Di base nessuna media (15 righe al secondo, come Decodium: scorre fluida);
+ * con la chiave `aurora-wf-rows` (1-4) si puo' mediare di piu', per una cascata piu' lenta e meno rumorosa. */
+const DEFAULT_ROWS_PER_STEP = 1;
+
+export function rowsPerStep(raw: string | null | undefined): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 && n <= 4 ? n : DEFAULT_ROWS_PER_STEP;
+}
+
+function savedRowsPerStep(): number {
+  try {
+    return rowsPerStep(window.localStorage.getItem('aurora-wf-rows'));
+  } catch {
+    return DEFAULT_ROWS_PER_STEP;
+  }
+}
 
 interface Props {
   /** Registra la funzione che riceve ogni riga di spettro; restituisce come annullare. */
@@ -51,7 +65,7 @@ export function Waterfall({ register }: Props) {
         fit();
         observer = new ResizeObserver(fit);
         observer.observe(canvas);
-        const average = new RowAverager(ROWS_PER_STEP);
+        const average = new RowAverager(savedRowsPerStep());
         unregister = register((bins) => {
           const row = average.add(bins);
           if (row) b.pushRow(row);

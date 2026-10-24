@@ -33,7 +33,7 @@ export class RowClock {
   private last = 0;
   private interval: number;
 
-  constructor(initialMs = 267) {
+  constructor(initialMs = 67) {
     this.interval = initialMs;
   }
 
