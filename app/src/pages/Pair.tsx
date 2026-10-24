@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError, finishPairing } from '../api/client';
+import { defaultDeviceName } from '../lib/deviceName';
 
 interface Props {
   initialCode?: string;
@@ -19,7 +20,7 @@ function messageFor(error: unknown): string {
 
 export function Pair({ initialCode = '', onPaired }: Props) {
   const [code, setCode] = useState(digitsOnly(initialCode));
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => defaultDeviceName(navigator.userAgent));
   const [error, setError] = useState('');
   const [lockLeft, setLockLeft] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -71,7 +72,7 @@ export function Pair({ initialCode = '', onPaired }: Props) {
       </label>
       <label>
         Nome del dispositivo
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="iPhone di Tiziano" maxLength={64} />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome del dispositivo" maxLength={64} />
       </label>
       <button type="submit" className="primary">
         Associa questo dispositivo

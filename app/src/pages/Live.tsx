@@ -2,12 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { postReply } from '../api/client';
 import { openStream } from '../api/stream';
 import { DecodeList } from '../components/DecodeList';
+import { FrequencyRuler } from '../components/FrequencyRuler';
+import { Panel } from '../components/Panel';
+import { StationPanel } from '../components/StationPanel';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
 import { Waterfall } from '../components/Waterfall';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
+import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
+
+const F_MIN_HZ = 0;
+const F_MAX_HZ = 3000;
 
 export function Live() {
   const status = useStation((s) => s.status);
@@ -37,15 +44,31 @@ export function Live() {
 
   return (
     <div className="live">
-      <StatusBar status={status} connection={connection} />
+      <div className="live-top">
+        <StatusBar status={status} connection={connection} />
+        <StopButton variant="compact" />
+      </div>
       <div className="live-body">
-        <Waterfall register={registerSpectrum} />
-        <DecodeList decodes={decodes} onReply={onReply} />
+        <section className="desk-main" aria-label="Cascata">
+          <Waterfall register={registerSpectrum} />
+          <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
+        </section>
+        <aside className="desk-side">
+          <Panel title="Stazione" className="station-panel">
+            <StationPanel status={status} />
+          </Panel>
+          <Panel title="Chiamate CQ" className="panel--cq">
+            <DecodeList decodes={cqDecodes(decodes)} onReply={onReply} emptyText="Nessun CQ per ora" />
+          </Panel>
+          <Panel title="Tutti i messaggi" className="panel--all">
+            <DecodeList decodes={decodes} onReply={onReply} />
+          </Panel>
+        </aside>
       </div>
       <p className="live-note" role="status" aria-live="polite">
         {note}
       </p>
-      <StopButton />
+      <StopButton variant="bar" />
     </div>
   );
 }

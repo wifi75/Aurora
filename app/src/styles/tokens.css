@@ -84,28 +84,6 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --bg: #eef1f6;
-    --panel: #ffffff;
-    --panel-raised: #f6f8fb;
-    --border: #c5cfde;
-    --text: #12192a;
-    --text-muted: #55627a;
-    --accent: #0b7f75;
-    --accent-ink: #ffffff;
-    --rare: #9a5d00;
-    --rare-ink: #ffffff;
-    --stop: #c62a2a;
-    --stop-ink: #ffffff;
-    --ok: #0b7f75;
-    --warn: #9a5d00;
-    --danger: #c62a2a;
-    --wf-bg: #0b0e14;
-    color-scheme: light;
-  }
-}
-
 /* Su touch i controlli crescono da soli */
 @media (pointer: coarse) {
   :root {

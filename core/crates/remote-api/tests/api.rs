@@ -231,3 +231,29 @@ async fn halt_tx_works_when_live_tx_is_off() {
     status_is(&resp, StatusCode::OK);
     assert_eq!(rx.recv().await, Some(Command::HaltTx));
 }
+
+/// Un proxy (Vite in sviluppo, cloudflared, Tailscale serve) apre la connessione dal PC stesso:
+/// per il core la richiesta sembra locale. Le intestazioni del proxy la tradiscono.
+#[tokio::test]
+async fn pair_start_refuses_proxied_requests_even_from_loopback() {
+    for (name, value) in [
+        ("x-forwarded-for", "192.168.1.50"),
+        ("forwarded", "for=192.168.1.50"),
+        ("x-real-ip", "192.168.1.50"),
+        ("cf-connecting-ip", "203.0.113.9"),
+        ("cf-ray", "abc"),
+        ("tailscale-user-login", "qualcuno@example.com"),
+    ] {
+        let s = state();
+        let resp = call(&router(&s), req(Method::POST, "/api/v1/pair/start").via_loopback().header(name, value)).await;
+        status_is(&resp, StatusCode::FORBIDDEN);
+        assert_eq!(body_json(resp).await["error"], "local_only", "intestazione {name}");
+    }
+}
+
+#[tokio::test]
+async fn pair_start_still_works_from_loopback_without_proxy_headers() {
+    let s = state();
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/pair/start").via_loopback()).await;
+    status_is(&resp, StatusCode::OK);
+}

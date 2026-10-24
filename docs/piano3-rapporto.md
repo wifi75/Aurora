@@ -26,6 +26,13 @@ I cinque punti del Review Focus hanno un test ciascuno: datagrammi estranei né 
 - **Fixture**: i pacchetti reali sono anonimizzati (nominativi e locatori di fantasia, stessa lunghezza).
 - La revisione finale del branch l'ho fatta io, non un revisore indipendente.
 
+## Dopo il collegamento (stesso giorno)
+
+- **Correzione di sicurezza:** il codice di associazione si poteva chiedere dal telefono passando dal proxy di sviluppo (per il core ogni richiesta del proxy sembra locale). Ora `pair/start` rifiuta le richieste con intestazioni di proxy (`x-forwarded-for`, `cf-ray`, Tailscale...) anche da loopback; il proxy di Vite le aggiunge (`xfwd`). Test scritto prima. Il codice si chiede con `scripts/associa-telefono.ps1` (connessione diretta al core).
+- **Interfaccia da PC:** layout a finestra larga da 64 rem (cascata grande a sinistra con righello delle frequenze e segnaposto dei decode, pannelli Stazione / Chiamate CQ / Tutti i messaggi a destra, STOP TX grande in alto); su telefono resta una colonna.
+- **Tema scuro "Notte radio" predefinito**, con interruttore Scuro/Chiaro che ricorda la scelta (prima seguiva il tema di Windows e appariva chiaro).
+- **Nome del dispositivo precompilato** nella pagina di associazione (PC Windows, iPhone, ...).
+
 ## Limiti noti
 
 - **I comandi di GridTracker2 attraversano l'hub senza passare dal cancello di Aurora**, come già oggi: un doppio clic in GridTracker2 fa trasmettere JTDX anche con `AURORA_ALLOW_TX=0`.

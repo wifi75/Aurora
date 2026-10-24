@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8787', ws: true, changeOrigin: false },
+      // xfwd: il core vede che la richiesta e' passata da un proxy e rifiuta di dare codici di associazione
+      '/api': { target: 'http://127.0.0.1:8787', ws: true, changeOrigin: false, xfwd: true },
     },
   },
   test: {

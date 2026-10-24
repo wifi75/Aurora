@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checkSession } from './api/client';
 import { Footer } from './components/Footer';
+import { ThemeToggle } from './components/ThemeToggle';
 import { useRoute } from './lib/route';
 import { Live } from './pages/Live';
 import { Pair } from './pages/Pair';
@@ -39,6 +40,7 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <span className="app-brand">AURORA</span>
+        <ThemeToggle />
       </header>
       <main className="app-main">{content}</main>
       <Footer />

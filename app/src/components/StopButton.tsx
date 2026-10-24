@@ -10,8 +10,13 @@ function messageFor(error: unknown): string {
   return 'Non sono riuscito a fermare la trasmissione. Controlla la connessione e riprova.';
 }
 
+interface Props {
+  /** `bar`: barra fissa in fondo (telefono). `compact`: pulsante grande nella barra in alto (PC). */
+  variant?: 'bar' | 'compact';
+}
+
 /** Sempre attivo, anche con il collegamento caduto: un tocco, nessuna conferma. */
-export function StopButton() {
+export function StopButton({ variant = 'bar' }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
 
   const stop = async () => {
@@ -24,7 +29,7 @@ export function StopButton() {
   };
 
   return (
-    <div className="stop-bar">
+    <div className={variant === 'bar' ? 'stop-bar' : 'stop-compact'}>
       <button type="button" className="stop-btn" onClick={stop}>
         STOP TX
       </button>

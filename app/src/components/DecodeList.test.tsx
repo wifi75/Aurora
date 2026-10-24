@@ -25,6 +25,11 @@ describe('DecodeList', () => {
     expect(screen.getByText('In ascolto: i messaggi compaiono qui')).toBeInTheDocument();
   });
 
+  it('shows a custom empty message when given', () => {
+    render(<DecodeList decodes={[]} onReply={() => {}} emptyText="Nessun CQ per ora" />);
+    expect(screen.getByText('Nessun CQ per ora')).toBeInTheDocument();
+  });
+
   it('row click calls onReply with id', () => {
     const onReply = vi.fn();
     render(<DecodeList decodes={[decode({ id: 42 })]} onReply={onReply} />);

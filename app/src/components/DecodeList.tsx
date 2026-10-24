@@ -10,13 +10,15 @@ const BADGES: Partial<Record<DecodeTag, { label: string; kind: 'rare' | 'auto' }
 interface Props {
   decodes: DecodedMessage[];
   onReply(decodeId: number): void;
+  /** Testo dello stato vuoto (predefinito: invito all'ascolto). */
+  emptyText?: string;
 }
 
-export function DecodeList({ decodes, onReply }: Props) {
+export function DecodeList({ decodes, onReply, emptyText = 'In ascolto: i messaggi compaiono qui' }: Props) {
   if (decodes.length === 0) {
     return (
       <section className="decode-list decode-list--empty" aria-label="Messaggi decodificati">
-        <p>In ascolto: i messaggi compaiono qui</p>
+        <p>{emptyText}</p>
       </section>
     );
   }

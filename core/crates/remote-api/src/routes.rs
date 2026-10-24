@@ -63,6 +63,15 @@ impl IntoResponse for ApiError {
     }
 }
 
+/// Un proxy (Vite, cloudflared, Tailscale serve) apre la connessione dal PC stesso, quindi per il core la
+/// richiesta sembra locale: le sue intestazioni la tradiscono. Il codice di associazione si chiede solo
+/// con una connessione diretta.
+fn is_proxied(headers: &HeaderMap) -> bool {
+    ["x-forwarded-for", "x-forwarded-host", "forwarded", "x-real-ip", "cf-connecting-ip", "cf-ray", "tailscale-user-login", "tailscale-user-name"]
+        .iter()
+        .any(|name| headers.contains_key(*name))
+}
+
 fn session_token(headers: &HeaderMap) -> Option<String> {
     let cookies = headers.get(header::COOKIE)?.to_str().ok()?;
     cookies
@@ -111,9 +120,10 @@ struct PairStartBody {
 async fn pair_start(
     State(state): State<AppState>,
     Peer(peer): Peer,
+    headers: HeaderMap,
     body: Option<Json<PairStartBody>>,
 ) -> Result<Json<Value>, ApiError> {
-    if !peer.is_some_and(|p| p.ip().is_loopback()) {
+    if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
     let pairing = state
