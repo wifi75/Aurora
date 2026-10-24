@@ -4,7 +4,7 @@
 
 | # | Ipotesi | Stato | Prova |
 |---|---|---|---|
-| H1 | JTDX 159 parla il protocollo UDP di WSJT-X | **supportata dal reverse** (formato esatto ancora da confermare con la cattura) | prova manuale 1 (`fase0-prove-manuali.md`) |
+| H1 | JTDX 159 parla il protocollo UDP di WSJT-X | **CONFERMATA** da 64 pacchetti reali (2026-10-24): tutti decodificati da `udp-bridge`, 0 errori | prova manuale 1 (`fase0-prove-manuali.md`) |
 | H2 | Cattura audio in parallelo a JTDX | da verificare | prova 3; unico ingresso visto: `Microfono (2- USB Audio Device)` |
 | H3 | Lettura/scrittura frequenza e PTT | da verificare | prova 4; `rigctld-jtdx` supporta `-m -r -s -t` e le porte TCP (aiuto verificato) |
 | H4 | JTDX stabile minimizzato | da verificare | prova 5 |
@@ -101,3 +101,24 @@ Funzioni decompilate: `NetworkMessage::Builder::Builder` (0x5967b0), `MessageCli
 Mancano rispetto a WSJT-X: tolleranza di frequenza, periodo T/R, nome della configurazione e testo di trasmissione. Aurora deve ricavare il periodo dal modo (FT8 15 s, FT4 7,5 s) e non puo' leggere il testo Tx corrente.
 
 **Da confermare con la cattura reale (prova manuale 1):** schema effettivamente usato da JTDX nei suoi pacchetti, significato del bool finale di `Status`, significato dei due bool del segnale `trigger_CQ(testo, bool, bool)` (il tipo 51 in ingresso legge una stringa e un bool). Il gestore e' probabilmente collegato al pulsante "Call CQ" (`on_pbCallCQ_clicked`, 0x4a4880) e a `genCQMsg` (0x4c1da0).
+
+## Cattura reale da JTDX 2.2.159 (2026-10-24) — H1 confermata
+
+Strumento: `udp_capture` sulla porta 2333 (il server UDP primario gia' impostato in JTDX; nessuna modifica alla configurazione). Radio accesa, FT8, durante la prova la banda e il modo sono stati cambiati (20 m, 15 m, FT4/FT8).
+
+| Tipo | Pacchetti | Contenuto |
+|---|---|---|
+| 0 Heartbeat | 4 | schema massimo 3, versione `2.2.159`, nessuna revisione; circa uno ogni 15 s |
+| 3 Clear | 1 | solo l'intestazione, all'avvio |
+| 1 Status | 21 | uno a ogni cambio di stato (banda, modo, DF, decodifica) |
+| 2 Decode | 38 (due cicli FT8 da 19) | modo `~` per FT8; DT con un decimale |
+
+Risultati:
+- **Schema 2** in tutti i pacchetti di JTDX (supporta fino al 3). Identificativo `JTDX`.
+- **`udp-bridge` decodifica tutti i 64 pacchetti** senza errori; la correzione dell'Heartbeat era necessaria.
+- **Status**: `dial_freq` vale 0 finche' JTDX non e' collegato alla radio (primo pacchetto all'avvio); poi la frequenza reale (14.074, 14.080, 21.074 MHz) e `dial_freq` cambia con la banda. Il **byte finale** dopo `fast_mode` vale 0 solo nel primo Status e 1 in 28 pacchetti su 29: probabilmente "monitor/ricezione attiva" (da confermare).
+- **Decode**: ora in millisecondi UTC (es. 25 905 000 = 07:11:45), un lotto di 19 decode per ciclo di 15 s, `new = true`, bassa confidenza e fuori onda a falso. I messaggi con nominativo non completo compaiono come `<...>`.
+- **Il filtro "prevent false UDP spots" di JTDX e' attivo** nella tua configurazione: alcuni decode con punto interrogativo non arrivano via UDP.
+- Test permanenti con pacchetti reali anonimizzati: `crates/udp-bridge/tests/fixtures/` (nominativi e locatori sostituiti da valori di fantasia). Le catture complete restano in `core/captures/` (ignorata da git).
+
+Ancora aperti: H5 (il Reply avvia davvero la sequenza), H2 (audio in parallelo), H3 (frequenza e PTT), H4 (JTDX minimizzato).
