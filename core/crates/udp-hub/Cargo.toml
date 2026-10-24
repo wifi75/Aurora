@@ -1,0 +1,12 @@
+[package]
+name = "udp-hub"
+description = "Hub UDP: riceve il flusso di JTDX, lo inoltra identico agli altri programmi e rimanda a JTDX i loro comandi"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+udp-bridge = { path = "../udp-bridge" }
+tokio = { workspace = true }
+tracing = { workspace = true }

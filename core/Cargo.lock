@@ -1755,6 +1755,15 @@ name = "udp-bridge"
 version = "0.2.0"
 
 [[package]]
+name = "udp-hub"
+version = "0.2.0"
+dependencies = [
+ "tokio",
+ "tracing",
+ "udp-bridge",
+]
+
+[[package]]
 name = "unicase"
 version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
