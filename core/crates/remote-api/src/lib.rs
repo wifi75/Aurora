@@ -66,6 +66,8 @@ pub struct AppState {
     pub worked_map: Option<WorkedMapProvider>,
     /// La lista dei desiderati, con i suoi avvisi.
     pub wishlist: Option<Arc<wishlist::WishlistService>>,
+    /// Il controllo delle nuove versioni di Aurora.
+    pub updates: Option<Arc<updater::UpdateService>>,
     pub engine_config: Option<JtdxConfigProvider>,
     pub engine_apply: Option<JtdxApplier>,
     /// Client NTP: controllo dell'orologio del PC.
@@ -123,7 +125,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, updates: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -146,6 +148,11 @@ impl AppState {
 
     pub fn with_dxcc_if(mut self, lookup: Option<DxccProvider>) -> AppState {
         self.dxcc = lookup;
+        self
+    }
+
+    pub fn with_updates(mut self, updates: Arc<updater::UpdateService>) -> AppState {
+        self.updates = Some(updates);
         self
     }
 

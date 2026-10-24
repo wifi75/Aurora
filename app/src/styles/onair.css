@@ -2402,3 +2402,26 @@
   padding-left: 1.1rem;
   font-size: 0.85rem;
 }
+
+/* Nuova versione di Aurora sul repository */
+.update-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  padding: 0.4rem 0.9rem;
+  color: #04201c;
+  background: #3fd6c8;
+  border-bottom: 2px solid #0f8f83;
+  font-size: 0.9rem;
+}
+
+.update-bar .muted {
+  color: #0a4a43;
+}
+
+.update-bar .glass {
+  color: #04201c;
+  background: rgb(255 255 255 / 0.55);
+  border-color: #0f8f83;
+}

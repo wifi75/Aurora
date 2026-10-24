@@ -21,6 +21,7 @@ engine-jtdx = { path = "../engine-jtdx" }
 clock-sync = { path = "../clock-sync" }
 dx-cluster = { path = "../dx-cluster" }
 wishlist = { path = "../wishlist" }
+updater = { path = "../updater" }
 dxcc = { path = "../dxcc" }
 qso-engine = { path = "../qso-engine" }
 qso-export = { path = "../qso-export" }

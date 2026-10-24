@@ -46,6 +46,8 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `GET/PUT /schedule` | Programmazione delle bande `{enabled, entries:[{hour, minute, band}]}`, al massimo 5 righe; `400 bad_schedule` |
 | `GET/PUT /automation` | Stato, regole, limiti e registro; dal telefono solo prova a vuoto o spegnimento. `403 local_only`, `403 tx_disabled`, `400 bad_rules`/`notice_required` |
 | `GET /stats` | Premi (DXCC, zone CQ e ITU, griglie, prefissi) e paesi mancanti, dal log ADIF |
+| `GET /update`, `PUT /update` | Aggiornamenti: versione in uso, impostazioni `{enabled, repo, interval_hours, prereleases, has_token}` (il token non si restituisce mai; nel PUT `token` assente = si lascia, vuoto = si toglie), ultima release trovata e `available` se piu' nuova; `400 bad_update` |
+| `POST /update/check` | Controlla subito sul repository (serve internet); risponde con lo stato, `error` spiega un fallimento |
 | `GET /wishlist`, `PUT /wishlist` | Lista dei desiderati `{enabled, calls, prefixes, countries, grids, bands, cooldown_min, from_decodes, from_cluster, notify_url}` e avvisi recenti `{config, recent}`; il PUT valida e normalizza (`400 bad_wishlist`) e vale subito |
 | `POST /wishlist/test` | Avviso di prova: compare nella pagina e, con `notify_url`, va al telefono; risponde `{phone: no_url|sent|failed}` |
 | `GET /map/worked` | Quadrati locatore gia' lavorati per la mappa: `{squares: [{grid, count, bands}]}`, aggregati dal log di Log4OM2 (sola lettura); `404 map_unavailable`, `502 map_read` |
