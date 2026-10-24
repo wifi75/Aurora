@@ -254,6 +254,10 @@ export const stationStrings = {
     'Grande, reducida u oculta. También puedes cambiar su tamaño a mano desde el borde inferior.',
     'Grande, reduzida ou oculta. Também podes redimensioná-la à mão pelo bordo inferior.',
   ],
+  'wf.black': ['Nero', 'Black', 'Schwarz', 'Noir', 'Negro', 'Preto'],
+  'wf.gain': ['Guadagno', 'Gain', 'Verstärkung', 'Gain', 'Ganancia', 'Ganho'],
+  'wf.contrast': ['Contrasto', 'Contrast', 'Kontrast', 'Contraste', 'Contraste', 'Contraste'],
+  'wf.speed': ['Velocità', 'Speed', 'Tempo', 'Vitesse', 'Velocidad', 'Velocidade'],
   'wf.aria': ['Cascata dello spettro audio', 'Audio spectrum waterfall', 'Wasserfall des Audiospektrums', 'Cascade du spectre audio', 'Cascada del espectro de audio', 'Cascata do espectro de áudio'],
   'wf.unsupported': [
     'Questo browser non supporta la grafica accelerata (WebGPU o WebGL2): la cascata non può essere mostrata.',

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cascata: nero, guadagno, contrasto e velocita'**: quattro regolazioni sul bordo alto della cascata (si vedono passando il mouse, sempre sul telefono) come in Decodium; agiscono sul disegno e quindi su tutta la storia, e restano salvate.
 - **Cascata piu' reattiva**: niente piu' media a 4 righe (mostrava 3,8 righe al secondo); ora scorre a 15 righe al secondo come Decodium, con il doppio di storia. La media si puo' rimettere con la chiave `aurora-wf-rows` (1-4).
 - **Motore proprio, ricezione FT8 (in ombra)**: crate `ft8` (messaggi a 77 bit, CRC, LDPC con BP e OSD, sincronismo, decoder del periodo con sottrazione, modulazione GFSK) e crate `engine-native` (audio a 12 kHz, periodi UTC di 15 s, decodifica, confronto con JTDX). Decodifica in ombra accanto a JTDX, scrive `native-decodes.log` e `native-parity.log` nella cartella dei dati e racconta il confronto in `GET /api/v1/engine/native`. Acceso nel programma Windows (`AURORA_NATIVE_DECODE=0` lo spegne). Algoritmi di JTDX 2.2.159 e WSJT-X (GPL 3).
 - **Analisi di Decodium** (sorgente pubblico e REA): CAT per tutte le radio (`docs/analisi-decodium-cat.md`), cascata (`docs/analisi-decodium-cascata.md`), banda satura (`docs/analisi-decodium-banda-satura.md`).
