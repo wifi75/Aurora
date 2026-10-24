@@ -576,6 +576,13 @@ pub async fn run(
         let worked = load_worked(config.worked_adif.as_deref(), &db);
         (db, worked)
     });
+    // il continente di chi opera (dal nominativo di JTDX): serve a rispettare i CQ direzionali («CQ NA», «CQ DX»)
+    if let Some((db, _)) = &enrichment
+        && let Some(call) = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).and_then(|m| m.get("MyCall").cloned())
+        && let Some(hit) = db.lookup(&call)
+    {
+        automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
+    }
     let stats_source = enrichment.as_ref().zip(config.worked_adif.clone()).map(|((db, _), path)| (Arc::clone(db), path));
     let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());

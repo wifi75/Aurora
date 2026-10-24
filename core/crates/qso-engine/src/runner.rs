@@ -142,6 +142,11 @@ impl Automation {
         lock(&self.inner.brain).set_wanted_matcher(matcher);
     }
 
+    /// Il continente di chi opera, per rispettare i CQ direzionali.
+    pub fn set_own_continent(&self, continent: Option<String>) {
+        lock(&self.inner.brain).set_own_continent(continent);
+    }
+
     /// STOP TX: spegne l'automazione.
     pub fn halt(&self) {
         lock(&self.inner.brain).on_halt((self.inner.now)());

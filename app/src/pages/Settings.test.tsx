@@ -31,7 +31,7 @@ vi.mock('../api/client', () => ({
   putSchedule: vi.fn().mockResolvedValue(undefined),
   getAutomation: vi.fn().mockResolvedValue({
     enabled: false, mode: 'dry_run', live_allowed: false,
-    rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false, prefer: 'rarity' as const },
+    rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false, prefer: 'rarity' as const, cooldown_secs: 900, respect_cq_direction: true },
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
     replies_today: 0, consecutive: 0, log: [],
   }),

@@ -40,6 +40,21 @@ pub struct Rules {
     /// Quando in un ciclo ci sono piu' CQ interessanti, a quale rispondere.
     #[serde(default)]
     pub prefer: Prefer,
+    /// Dopo quanti secondi i tentativi falliti verso una stazione si dimenticano e si puo' riprovare (banda affollata: una stazione
+    /// che non risponde oggi puo' rispondere tra un quarto d'ora).
+    #[serde(default = "default_cooldown_secs")]
+    pub cooldown_secs: u64,
+    /// Rispetta i CQ direzionali: «CQ NA» solo dal Nord America, «CQ DX» solo da fuori dal proprio continente.
+    #[serde(default = "default_true")]
+    pub respect_cq_direction: bool,
+}
+
+fn default_cooldown_secs() -> u64 {
+    900
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Come scegliere tra piu' CQ interessanti arrivati nello stesso ciclo.
@@ -51,6 +66,8 @@ pub enum Prefer {
     Rarity,
     /// Il segnale piu' forte; a parita' la novita' piu' rara.
     Snr,
+    /// Un punteggio che pesa la novita' (10 per ogni livello di rarita') e il segnale (da 0 a 18 punti tra -24 e +12 dB).
+    Score,
 }
 
 /// Dice se un messaggio e' di una stazione desiderata (e perche'), data la frequenza della radio.
@@ -65,6 +82,8 @@ impl Default for Rules {
             max_attempts_per_call: 2,
             reply_to_wanted: false,
             prefer: Prefer::Rarity,
+            cooldown_secs: default_cooldown_secs(),
+            respect_cq_direction: true,
         }
     }
 }
@@ -83,7 +102,9 @@ impl Rules {
                 .excluded_calls
                 .iter()
                 .all(|c| (3..=13).contains(&c.trim().len()) && c.trim().chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/'));
-        tags_ok && calls_ok && (-30..=20).contains(&self.min_snr) && (1..=10).contains(&self.max_attempts_per_call)
+        tags_ok && calls_ok && (-30..=20).contains(&self.min_snr)
+            && (1..=10).contains(&self.max_attempts_per_call)
+            && (60..=7200).contains(&self.cooldown_secs)
     }
 }
 
@@ -156,7 +177,9 @@ pub struct BrainState {
 pub struct Brain {
     state: BrainState,
     day: u64,
-    attempts: HashMap<String, u32>,
+    /// Tentativi per stazione con l'istante dell'ultimo (secondi UTC): scadono dopo `cooldown_secs`.
+    attempts: HashMap<String, (u32, u64)>,
+    own_continent: Option<String>,
     active: Option<(String, u64)>,
     no_client_since: Option<u64>,
     /// Stazioni gia' sentite in questa sessione: un segnale debole di una mai sentita e' sospetto.
@@ -180,6 +203,7 @@ impl Brain {
             },
             day: 0,
             attempts: HashMap::new(),
+            own_continent: None,
             active: None,
             no_client_since: None,
             heard: HashSet::new(),
@@ -194,6 +218,11 @@ impl Brain {
     }
 
     /// La frequenza della radio, per i filtri di banda della lista dei desiderati.
+    /// Il continente di chi opera (AF, AN, AS, EU, NA, OC, SA): serve a rispettare i CQ direzionali.
+    pub fn set_own_continent(&mut self, continent: Option<String>) {
+        self.own_continent = continent.map(|c| c.trim().to_uppercase()).filter(|c| !c.is_empty());
+    }
+
     pub fn on_dial(&mut self, hz: u64) {
         self.dial_hz = (hz > 0).then_some(hz);
     }
@@ -342,7 +371,18 @@ impl Brain {
         if self.state.rules.excluded_calls.iter().any(|c| c.trim().eq_ignore_ascii_case(&call)) {
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call} e' nell'elenco delle esclusioni")));
         }
-        if self.attempts.get(&call).copied().unwrap_or(0) >= self.state.rules.max_attempts_per_call {
+        if let Some(&(_, last)) = self.attempts.get(&call)
+            && now.saturating_sub(last) >= self.state.rules.cooldown_secs
+        {
+            // la pausa e' passata: si puo' riprovare
+            self.attempts.remove(&call);
+        }
+        if self.state.rules.respect_cq_direction
+            && let Some(why) = self.direction_mismatch(&d.text, d.continent.as_deref())
+        {
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: {why}")));
+        }
+        if self.attempts.get(&call).map_or(0, |a| a.0) >= self.state.rules.max_attempts_per_call {
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: tentativi esauriti senza QSO")));
         }
         if let Some((busy, since)) = &self.active
@@ -379,7 +419,9 @@ impl Brain {
             self.state.consecutive += 1;
             self.state.replies_today += 1;
         }
-        *self.attempts.entry(c.call.clone()).or_insert(0) += 1;
+        let entry = self.attempts.entry(c.call.clone()).or_insert((0, now));
+        entry.0 += 1;
+        entry.1 = now;
         self.active = Some((c.call.clone(), now));
         let (kind, reason) = if live {
             (DecisionKind::Reply, format!("Rispondo a {}: {}", c.call, c.why))
@@ -387,6 +429,18 @@ impl Brain {
             (DecisionKind::WouldReply, format!("Risponderei a {}: {} (prova a vuoto)", c.call, c.why))
         };
         self.push(now, kind, call_opt, Some(c.decode_id), reason)
+    }
+
+    /// Il CQ e' diretto a un'altra zona? «CQ NA» e' per il Nord America, «CQ DX» per chi sta fuori dal continente di chi chiama.
+    /// Senza conoscere il proprio continente (o quello di chi chiama, per «DX») non si esclude nulla.
+    fn direction_mismatch(&self, text: &str, sender_continent: Option<&str>) -> Option<String> {
+        let own = self.own_continent.as_deref()?;
+        let modifier = cq_modifier(text)?;
+        match modifier.as_str() {
+            "AF" | "AN" | "AS" | "EU" | "NA" | "OC" | "SA" if modifier != own => Some(format!("CQ {modifier}: non e' per il tuo continente ({own})")),
+            "DX" if sender_continent.is_some_and(|c| c.eq_ignore_ascii_case(own)) => Some(format!("CQ DX dal tuo stesso continente ({own})")),
+            _ => None,
+        }
     }
 
     fn roll_day(&mut self, now: u64) {
@@ -417,11 +471,26 @@ struct Candidate {
     why: String,
 }
 
+/// Il modificatore di un CQ («CQ NA K1ABC FN42» -> NA; «CQDX» -> DX); `None` se non c'e'.
+fn cq_modifier(text: &str) -> Option<String> {
+    let mut tokens = text.split_whitespace().map(str::to_uppercase);
+    match tokens.next()?.as_str() {
+        "CQDX" => Some("DX".to_string()),
+        "CQ" => tokens.next().filter(|t| (2..=4).contains(&t.len()) && t.chars().all(|c| c.is_ascii_uppercase())),
+        _ => None,
+    }
+}
+
 impl Candidate {
+    fn score(&self) -> i32 {
+        i32::from(self.rank) * 10 + (self.snr + 24).clamp(0, 36) / 2
+    }
+
     fn better_than(&self, other: &Candidate, prefer: Prefer) -> bool {
         match prefer {
             Prefer::Rarity => (self.rank, self.snr) > (other.rank, other.snr),
             Prefer::Snr => (self.snr, self.rank) > (other.snr, other.rank),
+            Prefer::Score => (self.score(), self.snr) > (other.score(), other.snr),
         }
     }
 }

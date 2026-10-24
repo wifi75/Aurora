@@ -39,10 +39,24 @@ export function AutomationRulesForm({ rules: saved, onSave, error = false }: Pro
       </label>
       <label className="auto-field" title={t('tip.auto.prefer')}>
         {t('auto.prefer')}
-        <select value={rules.prefer} onChange={(e) => setDraft({ ...rules, prefer: e.target.value === 'snr' ? 'snr' : 'rarity' })}>
+        <select value={rules.prefer} onChange={(e) => setDraft({ ...rules, prefer: e.target.value === 'snr' ? 'snr' : e.target.value === 'score' ? 'score' : 'rarity' })}>
           <option value="rarity">{t('auto.prefer.rarity')}</option>
           <option value="snr">{t('auto.prefer.snr')}</option>
+          <option value="score">{t('auto.prefer.score')}</option>
         </select>
+      </label>
+      <label className="auto-field" title={t('tip.auto.cooldown')}>
+        {t('auto.cooldown')}
+        <input
+          type="number"
+          min={1}
+          max={120}
+          value={Math.round(rules.cooldown_secs / 60)}
+          onChange={(e) => setDraft({ ...rules, cooldown_secs: Math.min(7200, Math.max(60, Number(e.target.value) * 60)) })}
+        />
+      </label>
+      <label className="auto-wanted" title={t('tip.auto.direction')}>
+        <input type="checkbox" checked={rules.respect_cq_direction} onChange={(e) => setDraft({ ...rules, respect_cq_direction: e.target.checked })} /> {t('auto.direction')}
       </label>
       <label className="auto-field" title={t('tip.auto.minSnr')}>
         {t('auto.minSnr')}
