@@ -38,6 +38,9 @@ interface StationState {
   /** L'ultima misura del livello dell'ingresso audio e quando e' arrivata (ms Unix); senza misure recenti l'indicatore si nasconde. */
   audioLevel: AudioLevel | null;
   audioLevelAt: number;
+  /** Quando e' arrivato l'ultimo messaggio decodificato e il primo stato del motore (ms Unix): servono alla diagnosi. */
+  lastDecodeAt: number | null;
+  sessionStartAt: number | null;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) e lo tiene finche' il motore non lo riporta uguale (o scade). */
   patchStatus(patch: Partial<StationStatus>): void;
@@ -100,6 +103,8 @@ export const useStation = create<StationState>((set) => ({
   updateNotice: null,
   audioLevel: null,
   audioLevelAt: 0,
+  lastDecodeAt: null,
+  sessionStartAt: null,
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -114,7 +119,8 @@ export const useStation = create<StationState>((set) => ({
           const message = status.tx_message?.trim() ?? '';
           const starts = status.transmitting && message !== '' && (!s.status?.transmitting || s.status.tx_message !== status.tx_message);
           const cleared = clearedOnChange(s.status, status);
-          if (!starts) return { status, ...cleared, ...keep, ...settledPending(s, status.dx_call) };
+          const session = { sessionStartAt: s.sessionStartAt ?? Date.now() };
+          if (!starts) return { status, ...session, ...cleared, ...keep, ...settledPending(s, status.dx_call) };
           const row: DecodedMessage = {
             id: nextTxId--,
             time_ms: Date.now() % 86_400_000,
@@ -124,13 +130,13 @@ export const useStation = create<StationState>((set) => ({
             text: message,
             tag: null,
           };
-          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
+          return { status, ...session, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
         });
         break;
       }
       case 'decode': {
         const { type: _type, ...decode } = event;
-        set((s) => ({ decodes: [decode, ...s.decodes].slice(0, MAX_DECODES) }));
+        set((s) => ({ decodes: [decode, ...s.decodes].slice(0, MAX_DECODES), lastDecodeAt: Date.now() }));
         break;
       }
       case 'wanted': {
@@ -184,6 +190,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0 });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null });
   },
 }));

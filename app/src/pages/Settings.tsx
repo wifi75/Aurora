@@ -11,6 +11,7 @@ import { MacrosTab } from '../settings/MacrosTab';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
+import { OnlineTab } from '../settings/OnlineTab';
 import { UpdatesTab } from '../settings/UpdatesTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
@@ -37,6 +38,7 @@ const TABS: readonly TabDef[] = [
   { id: 'advanced', label: 'tab.advanced', tip: 'tip.tab.advanced', render: () => <AdvancedTab /> },
   { id: 'cluster', label: 'tab.cluster', tip: 'tip.tab.cluster', render: () => <ClusterTab /> },
   { id: 'wishlist', label: 'tab.wishlist', tip: 'tip.tab.wishlist', render: () => <WishlistTab /> },
+  { id: 'online', label: 'tab.online', tip: 'tip.tab.online', render: () => <OnlineTab /> },
   { id: 'updates', label: 'tab.updates', tip: 'tip.tab.updates', render: () => <UpdatesTab /> },
   { id: 'clock', label: 'tab.clock', tip: 'tip.tab.clock', render: () => <ClockTab /> },
   { id: 'access', label: 'tab.access', tip: 'tip.tab.access', render: () => <AccessTab /> },

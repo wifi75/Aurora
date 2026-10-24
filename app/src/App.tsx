@@ -19,6 +19,7 @@ import { Settings } from './pages/Settings';
 import { Live } from './pages/Live';
 import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
+import { PropagationPage } from './pages/PropagationPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { Wiki } from './pages/Wiki';
@@ -74,6 +75,8 @@ export function App() {
     content = <MapPage />;
   } else if (route.name === 'history') {
     content = <HistoryPage />;
+  } else if (route.name === 'propagation') {
+    content = <PropagationPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else {
@@ -90,6 +93,7 @@ export function App() {
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
           <a className={`glass${route.name === 'map' ? ' glass--on' : ''}`} aria-current={route.name === 'map' ? 'page' : undefined} href="#/mappa">{t('nav.map')}</a>
           <a className={`glass${route.name === 'history' ? ' glass--on' : ''}`} aria-current={route.name === 'history' ? 'page' : undefined} href="#/storico">{t('nav.history')}</a>
+          <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
         </nav>

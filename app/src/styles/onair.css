@@ -2647,3 +2647,123 @@
   color: #fff;
   outline: none;
 }
+
+/* Propagazione e ricezione */
+.prop-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.prop-card {
+  padding: 0.8rem 1rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0.8rem;
+}
+
+.prop-card h2 {
+  margin: 0 0 0.6rem;
+  font-size: var(--text-md);
+}
+
+.prop-indices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.prop-index {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.prop-index strong {
+  font-size: var(--text-md);
+}
+
+.prop-table {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.prop-table th,
+.prop-table td {
+  padding: 0.3rem 1rem 0.3rem 0;
+  text-align: left;
+}
+
+.prop-row--mine th {
+  color: var(--accent);
+}
+
+.prop-cond {
+  display: inline-block;
+  min-width: 4.5rem;
+  padding: 0.1rem 0.5rem;
+  text-align: center;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+}
+
+.prop-cond--good {
+  color: var(--ok);
+}
+
+.prop-cond--fair {
+  color: var(--warn);
+}
+
+.prop-cond--poor {
+  color: var(--danger);
+}
+
+.prop-cond--none {
+  color: var(--text-muted);
+}
+
+.prop-credit {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+}
+
+.prop-summary {
+  margin: 0 0 0.5rem;
+}
+
+/* Diagnosi della stazione */
+.diag {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diag-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+}
+
+.diag-item--problem {
+  border-left-color: var(--danger);
+}
+
+.diag-item--warning {
+  border-left-color: var(--warn);
+}
+
+.diag-item--info {
+  border-left-color: var(--text-muted);
+}
