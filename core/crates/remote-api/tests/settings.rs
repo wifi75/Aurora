@@ -23,6 +23,12 @@ impl Rig for FakeRig {
     fn set_rx_frequency(&self, _: u32) -> Result<(), RigError> {
         Ok(())
     }
+    fn output_attenuation(&self) -> Result<u32, RigError> {
+        Ok(0)
+    }
+    fn set_output_attenuation(&self, _: u32) -> Result<(), RigError> {
+        Ok(())
+    }
     fn set_mode(&self, _: &str) -> Result<(), RigError> {
         Ok(())
     }

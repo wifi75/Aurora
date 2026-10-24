@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -41,7 +41,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/band", post(change_band))
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
+        .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
         .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
+        .route("/api/v1/pairing-settings", get(pairing_get).put(pairing_put))
+        .route("/api/v1/access", get(access_get).put(access_put))
         .route("/api/v1/schedule", get(schedule_get).put(schedule_put))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
@@ -93,6 +96,16 @@ fn session_token(headers: &HeaderMap) -> Option<String> {
         .map(|(_, v)| v.to_string())
 }
 
+/// Indirizzo della rete di casa: loopback, privato o link-local. Un indirizzo pubblico non lo e' mai.
+fn is_home_network(ip: std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
+        std::net::IpAddr::V6(v6) => {
+            v6.is_loopback() || (v6.segments()[0] & 0xfe00) == 0xfc00 || (v6.segments()[0] & 0xffc0) == 0xfe80
+        }
+    }
+}
+
 /// Dispositivo autenticato dal cookie di sessione.
 pub struct Authed(pub DeviceId);
 
@@ -100,6 +113,13 @@ impl FromRequestParts<AppState> for Authed {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        // prove: con l'accesso senza codice acceso entra chi e' sulla rete di casa e non arriva da un proxy
+        if state.open_access.load(std::sync::atomic::Ordering::SeqCst) {
+            let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
+            if peer.is_some_and(is_home_network) && !is_proxied(&parts.headers) {
+                return Ok(Authed(DeviceId(0)));
+            }
+        }
         session_token(&parts.headers)
             .and_then(|t| state.auth.verify(&t))
             .map(Authed)
@@ -339,6 +359,46 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
     }
 }
 
+const MAX_ATTENUATION_DB: f64 = 45.0;
+
+/// Livello audio di uscita di JTDX (cursore Pwr) come attenuazione in dB: 0 = livello massimo.
+#[utoipa::path(get, path = "/api/v1/output-level", responses((status = 200, description = "Attenuazione in dB e limiti"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn output_level_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    match tokio::task::spawn_blocking(move || rig.output_attenuation()).await {
+        Ok(Ok(tenths)) => Ok(Json(json!({ "attenuation_db": f64::from(tenths) / 10.0, "min_db": 0.0, "max_db": MAX_ATTENUATION_DB }))),
+        Ok(Err(e)) => {
+            tracing::warn!("lettura del livello di uscita fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct OutputLevelBody {
+    attenuation_db: f64,
+}
+
+/// Cambia il livello di uscita: alzarlo puo' sovrapilotare la radio (ALC), quindi vale come un comando di trasmissione.
+#[utoipa::path(put, path = "/api/v1/output-level", responses((status = 200, description = "Livello impostato"), (status = 400, description = "Fuori dal cursore, 0-45 dB (bad_level)"), (status = 403, description = "Trasmissione non abilitata o via non consentita"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn output_level_put(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<OutputLevelBody>) -> Result<Json<Value>, ApiError> {
+    check_tx_allowed(&state, &headers)?;
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    if !body.attenuation_db.is_finite() || !(0.0..=MAX_ATTENUATION_DB).contains(&body.attenuation_db) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_level"));
+    }
+    let tenths = (body.attenuation_db * 10.0).round() as u32;
+    match tokio::task::spawn_blocking(move || rig.set_output_attenuation(tenths)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "attenuation_db": f64::from(tenths) / 10.0 }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio del livello di uscita fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
 #[derive(Deserialize)]
 struct RxFrequencyBody {
     hz: u32,
@@ -478,6 +538,53 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+#[utoipa::path(get, path = "/api/v1/pairing-settings", responses((status = 200, description = "Durata del codice di associazione e limiti")))]
+async fn pairing_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    let (min, max) = auth::DeviceStore::code_ttl_limits();
+    Json(json!({ "code_ttl_secs": state.auth.code_ttl_secs(), "min_secs": min, "max_secs": max }))
+}
+
+#[derive(Deserialize)]
+struct PairingBody {
+    code_ttl_secs: u64,
+}
+
+/// Quanto vale un codice di associazione: lo decide l'operatore, solo dal PC (e' una scelta di sicurezza).
+#[utoipa::path(put, path = "/api/v1/pairing-settings", responses((status = 200, description = "Durata impostata"), (status = 400, description = "Fuori dai limiti (bad_ttl)"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn pairing_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<PairingBody>) -> Result<Json<Value>, ApiError> {
+    if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let (min, max) = auth::DeviceStore::code_ttl_limits();
+    if !(min..=max).contains(&body.code_ttl_secs) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_ttl"));
+    }
+    state.auth.set_code_ttl(body.code_ttl_secs);
+    saved(&state);
+    Ok(Json(json!({ "ok": true, "code_ttl_secs": state.auth.code_ttl_secs() })))
+}
+
+#[utoipa::path(get, path = "/api/v1/access", responses((status = 200, description = "Se l'accesso senza codice e' acceso")))]
+async fn access_get(State(state): State<AppState>) -> Json<Value> {
+    Json(json!({ "open": state.open_access.load(std::sync::atomic::Ordering::SeqCst) }))
+}
+
+#[derive(Deserialize)]
+struct AccessBody {
+    open: bool,
+}
+
+/// Accesso senza codice, solo per le prove: si accende e si spegne dal PC, non resta al riavvio.
+#[utoipa::path(put, path = "/api/v1/access", responses((status = 200, description = "Impostato"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn access_put(State(state): State<AppState>, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<AccessBody>) -> Result<Json<Value>, ApiError> {
+    if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    state.open_access.store(body.open, std::sync::atomic::Ordering::SeqCst);
+    tracing::warn!("accesso senza codice {}", if body.open { "ACCESO (solo prove, rete di casa)" } else { "spento" });
+    Ok(Json(json!({ "ok": true, "open": body.open })))
 }
 
 fn saved(state: &AppState) {

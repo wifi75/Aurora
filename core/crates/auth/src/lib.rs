@@ -8,7 +8,10 @@ use std::{path::Path, sync::{Arc, Mutex}, time::{SystemTime, UNIX_EPOCH}};
 use rusqlite::{params, Connection, OptionalExtension};
 use sha2::{Digest, Sha256};
 
-const CODE_TTL_SECS: u64 = 120;
+/// Durata predefinita del codice di associazione: 10 minuti, il tempo di arrivare al telefono.
+const DEFAULT_CODE_TTL_SECS: u64 = 600;
+const MIN_CODE_TTL_SECS: u64 = 60;
+const MAX_CODE_TTL_SECS: u64 = 3600;
 const MAX_FAILURES: u32 = 5;
 const LOCK_SECS: u64 = 60;
 const MAX_NAME_CHARS: usize = 64;
@@ -86,6 +89,7 @@ pub struct DeviceStore {
     conn: Mutex<Connection>,
     clock: Arc<dyn Clock>,
     pairing: Mutex<Pairing>,
+    code_ttl_secs: std::sync::atomic::AtomicU64,
 }
 
 fn random_bytes<const N: usize>() -> Result<[u8; N], AuthError> {
@@ -126,7 +130,27 @@ impl DeviceStore {
                 created_at INTEGER NOT NULL
             );",
         )?;
-        Ok(DeviceStore { conn: Mutex::new(conn), clock, pairing: Mutex::new(Pairing::default()) })
+        Ok(DeviceStore { conn: Mutex::new(conn), clock, pairing: Mutex::new(Pairing::default()), code_ttl_secs: std::sync::atomic::AtomicU64::new(DEFAULT_CODE_TTL_SECS) })
+    }
+
+    /// Durata del codice di associazione, tenuta tra un minuto e un'ora. Il codice resta monouso.
+    pub fn with_code_ttl(self, secs: u64) -> DeviceStore {
+        self.set_code_ttl(secs);
+        self
+    }
+
+    /// Cambia la durata dei codici da ora in poi (anche a programma acceso).
+    pub fn set_code_ttl(&self, secs: u64) {
+        self.code_ttl_secs.store(secs.clamp(MIN_CODE_TTL_SECS, MAX_CODE_TTL_SECS), std::sync::atomic::Ordering::SeqCst);
+    }
+
+    pub fn code_ttl_secs(&self) -> u64 {
+        self.code_ttl_secs.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// Limiti ammessi per la durata, in secondi.
+    pub const fn code_ttl_limits() -> (u64, u64) {
+        (MIN_CODE_TTL_SECS, MAX_CODE_TTL_SECS)
     }
 
     fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, AuthError> {
@@ -141,9 +165,10 @@ impl DeviceStore {
     pub fn start_pairing(&self) -> Result<PairingCode, AuthError> {
         let n = u64::from_be_bytes(random_bytes::<8>()?) % 100_000_000;
         let code = format!("{n:08}");
-        let expires = self.clock.now_secs() + CODE_TTL_SECS;
+        let ttl = self.code_ttl_secs();
+        let expires = self.clock.now_secs() + ttl;
         self.pairing()?.code = Some((code.clone(), expires));
-        Ok(PairingCode { code, expires_in_secs: CODE_TTL_SECS })
+        Ok(PairingCode { code, expires_in_secs: ttl })
     }
 
     pub fn finish_pairing(&self, code: &str, device_name: &str) -> Result<Token, AuthError> {

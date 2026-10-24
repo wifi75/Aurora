@@ -17,6 +17,7 @@ describe('notification flags', () => {
     expect(n.sound.new_dxcc).toBe(true);
     expect(n.sound.new_zone).toBe(true);
     expect(n.sound.cq).toBe(false);
+    expect(n.sound.my_call).toBe(true);
     expect(n.sound.worked_call).toBe(false);
     expect(n.sound.auto).toBe(false);
   });

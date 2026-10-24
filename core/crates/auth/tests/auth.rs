@@ -34,7 +34,7 @@ fn pairing_returns_64_hex_token_that_verifies() {
     let code = s.start_pairing().unwrap();
     assert_eq!(code.code.len(), 8);
     assert!(code.code.chars().all(|c| c.is_ascii_digit()));
-    assert_eq!(code.expires_in_secs, 120);
+    assert_eq!(code.expires_in_secs, 600, "il codice dura 10 minuti per impostazione predefinita");
     let token = s.finish_pairing(&code.code, "iPhone di Tiziano").unwrap();
     assert_eq!(token.0.len(), 64);
     assert!(token.0.chars().all(|c| c.is_ascii_hexdigit()));
@@ -50,10 +50,40 @@ fn wrong_code_is_bad_code() {
 }
 
 #[test]
-fn code_expires_after_120s() {
+fn the_code_lifetime_can_be_changed_and_is_kept_within_sane_limits() {
+    let clock = FakeClock::new();
+    let short = DeviceStore::open_in_memory(Arc::new(clock.clone())).unwrap().with_code_ttl(30);
+    assert_eq!(short.start_pairing().unwrap().expires_in_secs, 60, "mai meno di un minuto");
+    let long = DeviceStore::open_in_memory(Arc::new(clock.clone())).unwrap().with_code_ttl(999_999);
+    assert_eq!(long.start_pairing().unwrap().expires_in_secs, 3600, "mai piu' di un'ora");
+    let custom = DeviceStore::open_in_memory(Arc::new(clock)).unwrap().with_code_ttl(300);
+    assert_eq!(custom.start_pairing().unwrap().expires_in_secs, 300);
+}
+
+#[test]
+fn the_lifetime_can_be_changed_while_running_and_applies_to_the_next_code() {
+    let (s, _) = store();
+    assert_eq!(s.code_ttl_secs(), 600);
+    s.set_code_ttl(300);
+    assert_eq!(s.code_ttl_secs(), 300);
+    assert_eq!(s.start_pairing().unwrap().expires_in_secs, 300);
+    s.set_code_ttl(1);
+    assert_eq!(s.code_ttl_secs(), 60, "sempre dentro i limiti");
+}
+
+#[test]
+fn code_survives_the_old_two_minutes_and_expires_after_ten() {
     let (s, clock) = store();
     let code = s.start_pairing().unwrap();
-    clock.advance(121);
+    clock.advance(300);
+    assert!(s.finish_pairing(&code.code, "ancora valido").is_ok());
+}
+
+#[test]
+fn code_expires_after_the_lifetime() {
+    let (s, clock) = store();
+    let code = s.start_pairing().unwrap();
+    clock.advance(601);
     assert_eq!(s.finish_pairing(&code.code, "x").unwrap_err(), AuthError::Expired);
 }
 

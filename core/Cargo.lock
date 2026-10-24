@@ -41,7 +41,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-spectrum"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "cpal",
@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "aurora"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -80,7 +80,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -89,7 +89,7 @@ dependencies = [
 
 [[package]]
 name = "auth"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -378,11 +378,11 @@ dependencies = [
 
 [[package]]
 name = "dxcc"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "engine-jtdx"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "dxcc",
@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "engine-sim"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "tokio",
@@ -772,7 +772,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "logbook"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "rusqlite",
@@ -1064,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "probes"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "cpal",
  "rustfft",
@@ -1097,7 +1097,7 @@ checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
 name = "qso-engine"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "engine-jtdx",
@@ -1109,7 +1109,7 @@ dependencies = [
 
 [[package]]
 name = "qso-export"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -1203,7 +1203,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "remote-api"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "aurora-core",
  "auth",
@@ -1224,7 +1224,7 @@ dependencies = [
 
 [[package]]
 name = "rig-control"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "serde",
 ]
@@ -1820,11 +1820,11 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
 name = "udp-bridge"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "udp-hub"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "tokio",
  "tracing",

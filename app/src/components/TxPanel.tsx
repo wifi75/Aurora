@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
 import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { useT } from '../i18n';
+import { OutputLevel } from './OutputLevel';
+import { expandMacro, useMacros } from '../lib/macros';
 import { replyErrorMessage } from '../lib/replyError';
 import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 
@@ -26,6 +28,7 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
     : [];
   const active = activeTx(messages, status?.tx_message);
   const next = status && active < 0 ? nextTx(decodes, status.de_call, status.dx_call ?? '') : -1;
+  const macros = useMacros((s) => s.macros);
   const [dx, setDx] = useState(false);
   const [text, setText] = useState('');
   const [hz, setHz] = useState(String(initialFrequency));
@@ -67,6 +70,7 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
         </>
       )}
       {!txAllowed && <p className="muted tx-note">{t('tx.closed')}</p>}
+      <OutputLevel txAllowed={txAllowed} />
       <div className="tx-row">
         <button
           type="button"
@@ -91,6 +95,21 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
           placeholder="TNX 73"
         />
       </label>
+      <div className="macro-chips" role="group" aria-label={t('macro.chips')}>
+        {macros.map((m) => (
+          <button
+            key={m}
+            type="button"
+            className="glass"
+            title={t('tip.macro.chip')}
+            onClick={() =>
+              setText(expandMacro(m, { dx: status?.dx_call ?? '', me: status?.de_call ?? '', report: status?.report ?? '' }))
+            }
+          >
+            {m}
+          </button>
+        ))}
+      </div>
       <div className="tx-row">
         <button
           type="button"

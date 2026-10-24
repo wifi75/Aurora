@@ -27,6 +27,28 @@ pub fn rx_script(hz: u32) -> String {
     )
 }
 
+const OUT_ATTENUATION_HEAD: &str = "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; \
+         $p = Get-Process jtdx -ErrorAction SilentlyContinue | Select-Object -First 1; \
+         if (-not $p) { Write-Error 'JTDX non in esecuzione'; exit 3 }; \
+         $root = [System.Windows.Automation.AutomationElement]::RootElement; \
+         $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $p.Id); \
+         $main = $root.FindAll('Children', $cond) | Where-Object { $_.Current.ClassName -eq 'MainWindow' } | Select-Object -First 1; \
+         if (-not $main) { Write-Error 'finestra di JTDX non trovata'; exit 4 }; \
+         $all = $main.FindAll('Descendants', [System.Windows.Automation.Condition]::TrueCondition); \
+         $el = $all | Where-Object { $_.Current.AutomationId -like '*.outAttenuation' } | Select-Object -First 1; \
+         if (-not $el) { Write-Error 'cursore non trovato'; exit 5 }; \
+         $r = $el.GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern); ";
+
+/// Script che stampa l'attenuazione di uscita di JTDX in decimi di dB (cursore "Pwr").
+pub fn attenuation_read_script() -> String {
+    format!("{OUT_ATTENUATION_HEAD}[int]$r.Current.Value")
+}
+
+/// Script che imposta l'attenuazione di uscita (decimi di dB); `tenths` e' un numero.
+pub fn attenuation_set_script(tenths: u32) -> String {
+    format!("{OUT_ATTENUATION_HEAD}$r.SetValue({tenths})")
+}
+
 /// Script PowerShell che accende il pulsante (se non lo e' gia'). `button` viene solo da `button_id`.
 pub fn mode_script(button: &str) -> String {
     format!(

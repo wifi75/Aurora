@@ -2,13 +2,17 @@ import { useCallback } from 'react';
 import { fill, pick, type Lang } from './core';
 import { useLang } from './lang';
 import { appStrings } from './strings/app';
+import { accessStrings } from './strings/access';
+import { automationStrings } from './strings/automation';
+import { outputStrings } from './strings/output';
+import { settingsStrings } from './strings/settings';
 import { stationStrings } from './strings/station';
 
 export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

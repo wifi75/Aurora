@@ -259,3 +259,222 @@
     animation: none;
   }
 }
+
+/* Impostazioni: elementi comuni delle schede */
+.set-sub {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.set-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space-2);
+}
+
+.set-checks--row {
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+}
+
+.set-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.set-add {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.set-add input {
+  flex: 1;
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+
+.macro-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.macro-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--border-width) solid var(--glass-edge);
+}
+
+.macro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.macro-chips .glass {
+  min-height: 1.9rem;
+  padding: 0 var(--space-2);
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+}
+
+.freq-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.freq-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.freq-table td,
+.freq-table th {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--border-width) solid var(--glass-edge);
+}
+
+.freq-table input,
+.freq-table select,
+.auto-field select {
+  min-height: 2rem;
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.4rem;
+  color: var(--text);
+}
+
+.lang-select select {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.lang-select option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* Riga selezionata con un clic: il doppio clic trasmette */
+.decode-row--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Avviso: accesso senza codice attivo */
+.open-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  background: linear-gradient(180deg, #ffe600, #e0b800);
+  color: #1a1400;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+}
+
+.open-banner a {
+  color: inherit;
+}
+
+.ttl-input {
+  width: 6rem;
+  min-height: 2.25rem;
+  padding: 0 var(--space-2);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+
+.offer {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.65rem;
+}
+
+.offer-code {
+  font-size: var(--text-xl);
+  letter-spacing: 0.2em;
+}
+
+.offer-qr {
+  width: 12rem;
+  height: 12rem;
+  background: #fff;
+  border-radius: 0.5rem;
+}
+
+/* Una stazione mi sta chiamando: riga in rilievo e tacca rossa a destra, come in JTDX */
+.decode-row--me {
+  background: linear-gradient(90deg, rgb(230 255 60 / 0.42), rgb(180 230 40 / 0.28)) !important;
+  color: #fff;
+  font-weight: var(--weight-strong);
+  animation: me-glow 1.6s ease-in-out infinite alternate;
+}
+
+.decode-row--me .data {
+  color: #fff;
+  text-shadow: 0 0 6px rgb(255 240 0 / 0.8);
+}
+
+.me-mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0.6rem;
+  background: #e5141b;
+  box-shadow: 0 0 10px 1px #e5141b;
+}
+
+.decode-row {
+  position: relative;
+}
+
+@keyframes me-glow {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decode-row--me {
+    animation: none;
+  }
+}
+
+/* Livello audio di uscita */
+.out-level {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.out-level input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}

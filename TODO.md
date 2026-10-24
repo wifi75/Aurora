@@ -1,9 +1,24 @@
 # TODO
 
-- [ ] Fase 0: spike su JTDX (ipotesi H1-H5), vedi docs/2026-10-24-aurora-fase0-spike-plan.md
-- [ ] Fase 1: core in sola lettura (udp-bridge, logbook, remote-api, associazione dispositivi)
-- [ ] Fase 2: interfaccia Live (cascata WebGPU/WebGL2, decode, mappa)
-- [ ] Fase 3: Tailscale e Cloudflare, policy per trasporto
-- [ ] Fase 4: comandi manuali (Reply, STOP TX, banda)
-- [ ] Fase 5: motore delle automazioni (prova a vuoto, poi reale)
-- [ ] Fase 6: rifinitura grafica, prestazioni su telefono, installatore
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-24, v0.6.0).
+
+## Fatto
+- [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
+- [x] Core: bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite, associazione dispositivi, API e WebSocket
+- [x] Interfaccia: stazione, cascata WebGPU/WebGL2, finestre trascinabili, impostazioni a schede, sei lingue, tooltip
+- [x] Dati: DXCC da `cty.dat`, QSO già fatti, etichette come JTDX, statistiche del log
+- [x] Trasmissione: CQ, testo libero, frequenza Tx, risposta con doppio clic, STOP TX
+- [x] Radio: cambio banda (OmniRig), cambio modo FT8/FT4, frequenza Rx
+- [x] Automazioni con prova a vuoto, tetti e dead-man
+- [x] Esportazione dei QSO verso log esterni
+
+## Da fare
+- [ ] Sistemare la versione smartphone (dati non visibili, lampeggio): da diagnosticare sul telefono
+- [ ] Wiki in-app con spiegazioni brevi nelle sei lingue
+- [ ] Pagina Statistiche e premi nell'interfaccia (l'API c'è)
+- [ ] Mappa dei QSO e dei CQ
+- [ ] Trasporti sicuri: HTTPS locale, Tailscale, Cloudflare con Access
+- [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora
+- [ ] Lista dei desiderati e avvisi push sul telefono
+- [ ] Licenza del progetto (decisione di Tiziano)
+- [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA

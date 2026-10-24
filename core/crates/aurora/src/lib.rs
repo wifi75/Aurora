@@ -65,6 +65,10 @@ pub struct Config {
     pub export_file: Option<PathBuf>,
     /// Comando della radio via OmniRig (la stessa che usa JTDX): cambio banda dall'interfaccia.
     pub rig_omnirig: bool,
+    /// Durata del codice di associazione, in secondi (60-3600).
+    pub pair_ttl_secs: u64,
+    /// Accesso senza codice per le prove (solo rete di casa). Spento per impostazione predefinita.
+    pub open_access: bool,
 }
 
 #[derive(Debug)]
@@ -107,6 +111,8 @@ impl Config {
             export_udp: Vec::new(),
             export_file: None,
             rig_omnirig: false,
+            pair_ttl_secs: 600,
+            open_access: false,
         }
     }
 
@@ -192,6 +198,20 @@ impl Config {
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
             export_udp,
+            open_access: match get("AURORA_OPEN_ACCESS").as_deref() {
+                None | Some("0") => false,
+                Some("1") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_OPEN_ACCESS deve essere 0 o 1, non {other}"))),
+            },
+            pair_ttl_secs: match get("AURORA_PAIR_TTL_SECS") {
+                None => 600,
+                Some(v) => v
+                    .trim()
+                    .parse::<u64>()
+                    .ok()
+                    .filter(|n| (60..=3600).contains(n))
+                    .ok_or_else(|| StartError::BadConfig(format!("AURORA_PAIR_TTL_SECS deve essere tra 60 e 3600, non {v}")))?,
+            },
             rig_omnirig: match get("AURORA_RIG").as_deref() {
                 None | Some("none") | Some("") => false,
                 Some("omnirig") => true,
@@ -217,10 +237,11 @@ impl RunningServer {
     }
 }
 
-fn open_storage(data_dir: &Path) -> Result<(Arc<DeviceStore>, Arc<Logbook>), StartError> {
+fn open_storage(data_dir: &Path, pair_ttl_secs: u64) -> Result<(Arc<DeviceStore>, Arc<Logbook>), StartError> {
     std::fs::create_dir_all(data_dir).map_err(|e| StartError::Io(format!("{}: {e}", data_dir.display())))?;
     let auth = DeviceStore::open(&data_dir.join("devices.db"), Arc::new(SystemClock))
-        .map_err(|e| StartError::Storage(e.to_string()))?;
+        .map_err(|e| StartError::Storage(e.to_string()))?
+        .with_code_ttl(pair_ttl_secs);
     let logbook = Logbook::open(&data_dir.join("logbook.db")).map_err(|e| StartError::Storage(e.to_string()))?;
     Ok((Arc::new(auth), Arc::new(logbook)))
 }
@@ -291,7 +312,21 @@ fn load_schedule(path: &Path) -> Schedule {
     schedule
 }
 
-fn save_settings(dir: &Path, frequencies: &Mutex<FrequencyTable>, schedule: &Mutex<Schedule>) {
+fn load_pair_ttl(path: &Path, default: u64) -> u64 {
+    let Ok(text) = std::fs::read_to_string(path) else { return default };
+    match serde_json::from_str::<serde_json::Value>(&text).ok().and_then(|v| v["code_ttl_secs"].as_u64()) {
+        Some(secs) if (60..=3600).contains(&secs) => secs,
+        _ => {
+            tracing::warn!("durata del codice non valida in {}: uso quella predefinita", path.display());
+            default
+        }
+    }
+}
+
+fn save_settings(dir: &Path, auth: &DeviceStore, frequencies: &Mutex<FrequencyTable>, schedule: &Mutex<Schedule>) {
+    if let Err(e) = std::fs::write(dir.join("pairing.json"), serde_json::json!({ "code_ttl_secs": auth.code_ttl_secs() }).to_string()) {
+        tracing::warn!("durata del codice non salvata: {e}");
+    }
     let table = frequencies.lock().unwrap_or_else(|p| p.into_inner());
     if let Ok(json) = serde_json::to_string(table.entries())
         && let Err(e) = std::fs::write(dir.join("frequencies.json"), json)
@@ -390,7 +425,8 @@ pub async fn run(
     config: Config,
     shutdown: impl Future<Output = ()> + Send + 'static,
 ) -> Result<RunningServer, StartError> {
-    let (auth, logbook) = open_storage(&config.data_dir)?;
+    let pair_ttl = load_pair_ttl(&config.data_dir.join("pairing.json"), config.pair_ttl_secs);
+    let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
     let bus = Bus::new(4096);
     // con il simulatore trasmettere e' innocuo; con JTDX reale la trasmissione e' chiusa salvo AURORA_ALLOW_TX=1
     let live_tx = match config.engine {
@@ -400,8 +436,8 @@ pub async fn run(
     let frequencies = Arc::new(Mutex::new(load_frequencies(&config.data_dir.join("frequencies.json"))));
     let schedule = Arc::new(Mutex::new(load_schedule(&config.data_dir.join("schedule.json"))));
     let settings_saver: Arc<dyn Fn() + Send + Sync> = {
-        let (frequencies, schedule, dir) = (Arc::clone(&frequencies), Arc::clone(&schedule), config.data_dir.clone());
-        Arc::new(move || save_settings(&dir, &frequencies, &schedule))
+        let (frequencies, schedule, dir, auth) = (Arc::clone(&frequencies), Arc::clone(&schedule), config.data_dir.clone(), Arc::clone(&auth));
+        Arc::new(move || save_settings(&dir, &auth, &frequencies, &schedule))
     };
     let rules_path = config.data_dir.join("automation-rules.json");
     let automation = Automation::spawn(
@@ -447,6 +483,7 @@ pub async fn run(
     });
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
+        .with_open_access(config.open_access)
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {
                 let worked = load_worked(Some(&path), &db);

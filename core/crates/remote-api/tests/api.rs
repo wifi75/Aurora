@@ -54,7 +54,7 @@ async fn pair_flow_sets_httponly_samesite_cookie() {
     let j = body_json(start).await;
     let code = j["code"].as_str().unwrap().to_string();
     assert_eq!(code.len(), 8);
-    assert_eq!(j["expires_in"], 120);
+    assert_eq!(j["expires_in"], 600);
     assert!(j["qr_svg"].as_str().unwrap().contains("<svg"));
 
     let body = format!(r#"{{"code":"{code}","device_name":"iPhone"}}"#);

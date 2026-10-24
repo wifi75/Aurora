@@ -438,7 +438,7 @@ button.glass,
 
 /* Elenco delle stazioni nello stile di JTDX: righe colorate per tipo, paese e distanza a destra */
 .decode-row {
-  grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) minmax(7rem, 11rem) auto;
+  grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) 17.5rem 9rem;
   gap: var(--space-2);
   min-height: 1.9rem;
   padding-block: 0.15rem;
@@ -482,28 +482,30 @@ button.glass,
     row-gap: 0;
   }
 
-  .decode-row > :nth-child(3),
-  .decode-row > :nth-child(4) {
+  .decode-row .c-dt,
+  .decode-row .c-freq {
     display: none;
   }
 
-  .decode-row > :nth-child(5) {
+  .decode-row .decode-text {
     grid-column: 3;
   }
 
-  .decode-row > :nth-child(6) {
+  .decode-row .decode-where {
     grid-column: 3;
     grid-row: 2;
     font-size: var(--text-xs);
     color: var(--text-muted);
   }
 
-  .decode-row > :nth-child(7) {
+  .decode-row .badge,
+  .decode-row > span:last-child {
     grid-column: 4;
     grid-row: 1 / span 2;
   }
 
-  .decode-row > :nth-child(-n + 2) {
+  .decode-row .c-time,
+  .decode-row .c-snr {
     grid-row: 1 / span 2;
   }
 
@@ -597,4 +599,132 @@ button.glass,
 .dock-panel--flying {
   opacity: 0.45;
   outline: 2px dashed var(--accent);
+}
+
+/* Senza la colonna DT */
+.decode-list--no-dt .decode-row {
+  grid-template-columns: 4.6rem 2.6rem 3.2rem minmax(0, 1fr) 17.5rem 9rem;
+}
+
+@media (max-width: 63.99rem) {
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.1rem 2.3rem minmax(0, 1fr) auto;
+  }
+}
+
+/* Paese: bandiera, nome e distanza in celle di larghezza fissa */
+.decode-where {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 6.5rem;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.decode-where .w-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.decode-where .w-km {
+  text-align: right;
+}
+
+.decode-flag {
+  display: inline-block;
+}
+
+/* Etichetta: cella fissa, il testo si accorcia ma la colonna non si sposta */
+.badge-cell {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 63.99rem) {
+  .decode-where {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .decode-where .w-flag:empty {
+    display: none;
+  }
+
+  .decode-where .w-km {
+    text-align: left;
+  }
+}
+
+/* Le righe si adattano alla larghezza del pannello, non della finestra: sempre incolonnate */
+.decode-list {
+  container-type: inline-size;
+}
+
+/* pannello medio: via DT e frequenza, colonne fisse piu' strette */
+@container (max-width: 54rem) {
+  .decode-row .c-dt,
+  .decode-row .c-freq {
+    display: none;
+  }
+
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.4rem minmax(0, 1fr) 14rem 8.5rem;
+  }
+
+  .decode-where {
+    grid-template-columns: 1.6rem minmax(0, 1fr) 5.4rem;
+  }
+}
+
+/* pannello stretto: due righe per messaggio, orario e dB a sinistra, etichetta a destra */
+@container (max-width: 40rem) {
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.1rem 2.3rem minmax(0, 1fr) 7.5rem;
+    row-gap: 0;
+  }
+
+  .decode-row .decode-text {
+    grid-column: 3;
+  }
+
+  .decode-row .decode-where {
+    grid-column: 3;
+    grid-row: 2;
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .decode-where .w-flag:empty {
+    display: none;
+  }
+
+  .decode-where .w-km {
+    text-align: left;
+  }
+
+  .decode-row .badge-cell {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+
+  .decode-row .c-time,
+  .decode-row .c-snr {
+    grid-row: 1 / span 2;
+  }
+}
+
+/* Etichette piccole: il nome intero e' nel tooltip */
+.decode-row .badge--tag {
+  padding: 0 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
 }

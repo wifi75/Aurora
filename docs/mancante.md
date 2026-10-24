@@ -1,11 +1,11 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-10-24, versione 0.4.0. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-10-24, versione 0.6.0. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
 
-Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF, associazione dispositivi, API e WebSocket), interfaccia a finestra larga e da telefono (cascata WebGPU/WebGL2, righello, pannelli, STOP TX, tema scuro/chiaro, associazione da link), cascata dall'audio (H2 confermata), trasmissione chiusa di default, contrasto automatico, paese e novita' dei decode (DXCC, banda, zona, griglia), avvisi sonori.
+Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF, associazione dispositivi, API e WebSocket); interfaccia a finestra larga e da telefono con finestre trascinabili e ridimensionabili; cascata WebGPU/WebGL2 con barre Rx/Tx; paese con bandiera e novità dei decode (DXCC, zona CQ/ITU, griglia, prefisso, stazione, per banda); avvisi sonori e chiamate verso di te; trasmissione (CQ, testo libero, risposta con doppio clic, STOP TX) chiusa di default; cambio banda, modo FT8/FT4 e frequenza Rx; livello audio di uscita (Pwr); automazioni con prova a vuoto; esportazione dei QSO; impostazioni a 13 schede, sei lingue e tooltip; filtri, macro, frequenze, programmazione; codice di associazione di durata scelta e accesso senza codice per le prove.
 
 ## Da fare, in ordine di lavoro
 
@@ -22,15 +22,20 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 9 ✔ | **TriggerCQ** e **SetTxDeltaFreq** (tipi 50 e 51) | M | Significato dei bool di `trigger_CQ` da confermare |
 | 10 | **Trasporti sicuri**: HTTPS locale con certificato fissato dall'associazione, Tailscale, Cloudflare con Access | A | Oggi l'accesso da telefono e' HTTP sulla rete locale |
 | 11 | **Programma Windows** (guscio Tauri 2) con avvio automatico di Aurora | A | Oggi l'interfaccia e' una pagina web |
-| 12 ◐ | **Pagina Impostazioni** (a schede, in sola lettura per trasmissione/log/collegamenti; si cambiano ancora da variabili d'ambiente) (dispositivi associati, revoca, trasmissione, audio, inoltro) | M | Oggi si configura da variabili d'ambiente |
-| 13 | **Log e statistiche** di Aurora (da QsoLogged), premi DXCC/WAZ/griglie con avanzamento | M | Il log ufficiale resta Log4OM2 |
+| 12 ✔ | **Pagina Impostazioni** a schede come JTDX | M | Le funzioni di JTDX che non si comandano da fuori (decodifica, filtri RX) restano in JTDX e la scheda Avanzate lo spiega |
+| 13 ◐ | **Log e statistiche** di Aurora (da QsoLogged), premi DXCC/WAZ/griglie con avanzamento | M | L'API `GET /stats` c'è; manca la pagina nell'interfaccia. Il log ufficiale resta Log4OM2 |
 | 14 | **Wanted list** e avvisi push sul telefono (PWA) | M | |
 | 15 | **Mappa** dei QSO e dei CQ con terminatore | M | Servono dati geografici offline |
-| 16 | **Lingue** (italiano, inglese) | M | |
-| 17 | **Modo SWL, FT4, JT65/JT9**: visualizzazione e comandi per modo | M | Oggi si legge il modo da JTDX |
+| 16 ✔ | **Lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) | M | Tabelle in `app/src/i18n/strings` |
+| 17 ◐ | **Modo SWL, FT4, JT65/JT9**: visualizzazione e comandi per modo | M | FT8/FT4 si cambiano dalla pagina; restano SWL, Hound, JT65/JT9 |
 | 18 | Riproduzione dei cicli decodificati, statistiche di propagazione | B | |
 | 19 | Tipo `HighlightCallsign` (evidenziare i lavorati dentro JTDX) | B | |
 | 20 | Il bool finale dello `Status` di JTDX: capire che cosa e' | B | |
+
+| 21 | **Wiki in-app** con spiegazioni brevi nelle sei lingue | A | Richiesta da Tiziano; i tooltip ci sono già |
+| 22 | **Pagina Statistiche** nell'interfaccia | M | Vedi voce 13 |
+| 24 | **Versione smartphone da sistemare** | A | Segnalato da Tiziano il 2026-10-24: sul telefono non si vedono i dati, la pagina lampeggia, molte cose da mettere a posto. Da diagnosticare sul telefono vero (flusso WebSocket, ridisegni, layout stretto) |
+| 23 | **Righe Tx nell'elenco** (i propri messaggi trasmessi, come in JTDX) | M | Si ricavano dal messaggio in trasmissione dello stato |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 

@@ -115,3 +115,97 @@ export async function postMode(mode: string): Promise<void> {
 export async function postRxFrequency(hz: number): Promise<void> {
   await request('/commands/rx-frequency', jsonInit({ hz }));
 }
+
+export interface FrequencyEntry {
+  band: string;
+  mode: string;
+  hz: number;
+}
+
+export async function getFrequencies(): Promise<FrequencyEntry[]> {
+  return (await (await request('/frequencies')).json()) as FrequencyEntry[];
+}
+
+export async function putFrequencies(entries: FrequencyEntry[]): Promise<void> {
+  await request('/frequencies', { ...jsonInit(entries), method: 'PUT' });
+}
+
+export interface ScheduleEntry {
+  hour: number;
+  minute: number;
+  band: string;
+}
+
+export interface ScheduleState {
+  enabled: boolean;
+  entries: ScheduleEntry[];
+}
+
+export async function getSchedule(): Promise<ScheduleState> {
+  return (await (await request('/schedule')).json()) as ScheduleState;
+}
+
+export async function putSchedule(state: ScheduleState): Promise<void> {
+  await request('/schedule', { ...jsonInit(state), method: 'PUT' });
+}
+
+export async function getAccess(): Promise<{ open: boolean }> {
+  return (await (await request('/access')).json()) as { open: boolean };
+}
+
+export async function putAccess(open: boolean): Promise<void> {
+  await request('/access', { ...jsonInit({ open }), method: 'PUT' });
+}
+
+export interface PairingSettings {
+  code_ttl_secs: number;
+  min_secs: number;
+  max_secs: number;
+}
+
+export async function getPairingSettings(): Promise<PairingSettings> {
+  return (await (await request('/pairing-settings')).json()) as PairingSettings;
+}
+
+export async function putPairingSettings(codeTtlSecs: number): Promise<void> {
+  await request('/pairing-settings', { ...jsonInit({ code_ttl_secs: codeTtlSecs }), method: 'PUT' });
+}
+
+export interface PairedDevice {
+  id: number;
+  name: string;
+  created_at: number;
+}
+
+export async function getDevices(): Promise<PairedDevice[]> {
+  return (await (await request('/devices')).json()) as PairedDevice[];
+}
+
+export async function revokeDevice(id: number): Promise<void> {
+  await request(`/devices/${id}`, { method: 'DELETE' });
+}
+
+export interface PairingOffer {
+  code: string;
+  expires_in: number;
+  qr_svg: string;
+}
+
+/** Un codice nuovo con il QR; il link punta all'indirizzo da cui si sta guardando la pagina. */
+export async function startPairing(baseUrl: string): Promise<PairingOffer> {
+  return (await (await request('/pair/start', jsonInit({ base_url: baseUrl }))).json()) as PairingOffer;
+}
+
+export interface OutputLevelState {
+  attenuation_db: number;
+  min_db: number;
+  max_db: number;
+}
+
+export async function getOutputLevel(): Promise<OutputLevelState> {
+  return (await (await request('/output-level')).json()) as OutputLevelState;
+}
+
+export async function putOutputLevel(attenuationDb: number): Promise<void> {
+  await request('/output-level', { ...jsonInit({ attenuation_db: attenuationDb }), method: 'PUT' });
+}

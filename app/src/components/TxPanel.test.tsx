@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../api/client', () => ({ getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
 import type { StationStatus } from '../api/schemas';
 import { TxPanel } from './TxPanel';
@@ -11,6 +13,11 @@ const status: StationStatus = {
   de_call: 'AA1AA', de_grid: 'FN42', dx_call: 'BB2BB', dx_grid: 'KK00', report: '-10',
   tx_df: 1500, rx_df: 1200, tx_message: 'BB2BB AA1AA -10', tr_period: 15,
 };
+
+/** Il pannello contiene il livello di uscita, che legge da Aurora: serve il contesto delle query. */
+function render(ui: ReactElement) {
+  return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
+}
 
 beforeEach(() => {
   vi.mocked(postCq).mockClear();
@@ -41,6 +48,14 @@ describe('TxPanel', () => {
     render(<TxPanel txAllowed status={status} decodes={[]} />);
     expect(screen.getByText('BB2BB AA1AA -10').closest('li')).toHaveAttribute('aria-current', 'true');
     expect(document.querySelector('[data-next]')).toBeNull();
+  });
+
+  it('fills the free message from a macro with the DX call and report', async () => {
+    render(<TxPanel txAllowed status={status} />);
+    fireEvent.click(screen.getByRole('button', { name: '@ R#' }));
+    expect(screen.getByLabelText(/messaggio libero/i)).toHaveValue('BB2BB R-10');
+    fireEvent.click(screen.getByRole('button', { name: /prepara/i }));
+    await waitFor(() => expect(postFreeText).toHaveBeenCalledWith('BB2BB R-10', false));
   });
 
   it('shows the transmit and receive frequencies', () => {

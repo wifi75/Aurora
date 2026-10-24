@@ -1,4 +1,4 @@
-use rig_control::modes::{button_id, mode_script, rx_script};
+use rig_control::modes::{attenuation_read_script, attenuation_set_script, button_id, mode_script, rx_script};
 
 #[test]
 fn only_the_modes_jtdx_can_switch_to_are_known() {
@@ -23,4 +23,14 @@ fn the_rx_script_sets_a_number_on_the_rx_spin_box() {
     let s = rx_script(1234);
     assert!(s.contains("*.RxFreqSpinBox"), "{s}");
     assert!(s.contains("SetValue(1234)"), "{s}");
+}
+
+#[test]
+fn the_output_level_scripts_use_the_slider_of_jtdx() {
+    let read = attenuation_read_script();
+    assert!(read.contains("*.outAttenuation"), "{read}");
+    assert!(read.contains("Current.Value"), "{read}");
+    let set = attenuation_set_script(125);
+    assert!(set.contains("*.outAttenuation"), "{set}");
+    assert!(set.contains("SetValue(125)"), "{set}");
 }

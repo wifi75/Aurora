@@ -37,6 +37,12 @@ impl Rig for FakeRig {
         Ok(())
     }
 
+    fn output_attenuation(&self) -> Result<u32, RigError> {
+        Ok(0)
+    }
+    fn set_output_attenuation(&self, _: u32) -> Result<(), RigError> {
+        Ok(())
+    }
     fn set_mode(&self, mode: &str) -> Result<(), RigError> {
         if self.fail {
             return Err(RigError("JTDX non risponde".into()));

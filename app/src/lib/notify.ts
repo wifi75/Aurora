@@ -12,7 +12,7 @@ export type FlagKind = keyof Notify;
 
 const KEY = 'aurora-notify';
 /** Chi suona per impostazione predefinita: le novita' rare, come gli avvisi di prima. */
-const SOUND_BY_DEFAULT: readonly ColorKey[] = ['new_dxcc', 'new_dxcc_band', 'new_zone', 'new_zone_band', 'new_itu', 'new_grid', 'new_px'];
+const SOUND_BY_DEFAULT: readonly ColorKey[] = ['my_call', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_zone_band', 'new_itu', 'new_grid', 'new_px'];
 
 type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;

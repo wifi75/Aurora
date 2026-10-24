@@ -17,6 +17,8 @@ import { TxPanel } from '../components/TxPanel';
 import { Waterfall } from '../components/Waterfall';
 import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
 import { useT } from '../i18n';
+import { applyFilters, useFilters } from '../lib/filters';
+import { useNotify } from '../lib/notify';
 import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
@@ -37,6 +39,8 @@ export function Live() {
   const decodes = useStation((s) => s.decodes);
   const connection = useStation((s) => s.connection);
   const chosenBands = useBandFilter((s) => s.bands);
+  const filters = useFilters((s) => s.filters);
+  const shown = applyFilters(decodes, filters, status?.own_continent);
   const [note, setNote] = useState('');
   const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
 
@@ -66,7 +70,7 @@ export function Live() {
   useEffect(() => {
     let lastId: number | null = null;
     return useStation.subscribe((state) => {
-      const picked = pickAlert(state.decodes, lastId);
+      const picked = pickAlert(state.decodes, lastId, useNotify.getState().notify.sound, useStation.getState().status?.de_call);
       lastId = picked.lastId;
       const prefs = alertsRef.current;
       if (picked.kind && prefs.enabled && audioRef.current) playAlert(picked.kind, prefs.volume, audioRef.current);
@@ -121,15 +125,16 @@ export function Live() {
       case 'cq':
         return (
           <DecodeList
-            decodes={cqDecodes(decodes)}
+            decodes={cqDecodes(shown)}
             myGrid={status?.de_grid}
+            myCall={status?.de_call}
             dxCall={status?.dx_call}
             onReply={onReply}
             emptyText={t('decode.noCq')}
           />
         );
       case 'all':
-        return <DecodeList decodes={decodes} myGrid={status?.de_grid} dxCall={status?.dx_call} onReply={onReply} />;
+        return <DecodeList decodes={shown} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
     }
   };
 

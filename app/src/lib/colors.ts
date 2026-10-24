@@ -22,27 +22,10 @@ export const COLOR_KEYS = [
 export type ColorKey = (typeof COLOR_KEYS)[number];
 export type TagColors = Record<ColorKey, string>;
 
-/** Nomi mostrati nel pannello delle impostazioni. */
-export const COLOR_LABELS: Record<ColorKey, string> = {
-  cq: 'CQ',
-  my_call: 'Chiamata a me',
-  tx_msg: 'Mio messaggio in trasmissione',
-  new_dxcc: 'Nuovo DXCC',
-  new_dxcc_band: 'DXCC su nuova banda',
-  new_zone: 'Nuova zona CQ',
-  new_zone_band: 'Zona CQ su nuova banda',
-  new_itu: 'Nuova zona ITU',
-  new_itu_band: 'Zona ITU su nuova banda',
-  new_grid: 'Nuova griglia',
-  new_grid_band: 'Griglia su nuova banda',
-  new_px: 'Nuovo prefisso (WPX)',
-  new_px_band: 'Prefisso su nuova banda',
-  new_call: 'Nuova stazione',
-  new_call_band: 'Stazione su nuova banda',
-  standard_call: 'Stazione comune',
-  worked_call: "Già lavorata",
-  auto: 'Risposta automatica',
-};
+/** Chiave di traduzione del nome di ogni tipo di messaggio. */
+export function kindKey(key: ColorKey): `kind.${ColorKey}` {
+  return `kind.${key}`;
+}
 
 const KEY = 'aurora-colors';
 const HEX = /^#[0-9a-fA-F]{6}$/;

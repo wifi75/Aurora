@@ -22,8 +22,8 @@ const broken = {
   },
 };
 
-const decode = (id: number, tag: DecodedMessage['tag']): DecodedMessage => ({
-  id, time_ms: id, snr: -10, delta_time: 0, freq_hz: 1500, text: `msg ${id}`, tag,
+const decode = (id: number, tag: DecodedMessage['tag'], text = `msg ${id}`): DecodedMessage => ({
+  id, time_ms: id, snr: -10, delta_time: 0, freq_hz: 1500, text, tag,
 });
 
 describe('alertKind', () => {
@@ -38,6 +38,56 @@ describe('alertKind', () => {
     expect(alertKind('cq')).toBeNull();
     expect(alertKind('auto')).toBeNull();
     expect(alertKind(null)).toBeNull();
+  });
+});
+
+describe('alertKind with the per-kind sound flags', () => {
+  it('stays silent for a kind whose sound is switched off', () => {
+    expect(alertKind('new_dxcc', { new_dxcc: false })).toBeNull();
+    expect(alertKind('new_zone', { new_dxcc: false })).toBe('news');
+  });
+
+  it('rings for a kind whose sound was switched on, even a common one', () => {
+    expect(alertKind('new_call', { new_call: true })).toBe('news');
+    expect(alertKind('worked_call', { worked_call: true })).toBe('news');
+    expect(alertKind('cq', { cq: true })).toBe('news');
+  });
+
+  it('never rings for the automatic replies', () => {
+    expect(alertKind('auto', { auto: true })).toBeNull();
+  });
+
+  it('pickAlert honours the flags', () => {
+    const list = [decode(9, 'new_dxcc'), decode(8, 'new_zone')];
+    expect(pickAlert(list, 7, { new_dxcc: false })).toEqual({ kind: 'news', lastId: 9 });
+    expect(pickAlert(list, 7, { new_dxcc: false, new_zone: false })).toEqual({ kind: null, lastId: 9 });
+  });
+});
+
+describe('a call addressed to me', () => {
+  const calling = (id: number) => decode(id, null, 'AA1AA BB2BB -10');
+
+  it('rings its own insistent sound, stronger than the news', () => {
+    const list = [calling(9), decode(8, 'new_dxcc')];
+    expect(pickAlert(list, 7, undefined, 'AA1AA')).toEqual({ kind: 'me', lastId: 9 });
+  });
+
+  it('can be silenced with the my_call sound flag', () => {
+    expect(pickAlert([calling(9)], 7, { my_call: false }, 'AA1AA')).toEqual({ kind: null, lastId: 9 });
+  });
+
+  it('does not ring for my own messages or without my callsign', () => {
+    expect(pickAlert([decode(9, null, 'BB2BB AA1AA -10')], 7, undefined, 'AA1AA').kind).toBeNull();
+    expect(pickAlert([calling(9)], 7).kind).toBeNull();
+  });
+
+  it('plays four alternating notes', () => {
+    const tones: number[] = [];
+    playAlert('me', 1, { now: () => 0, tone: (hz) => tones.push(hz) });
+    expect(tones).toHaveLength(4);
+    expect(tones[0]).toBe(tones[2]);
+    expect(tones[1]).toBe(tones[3]);
+    expect(tones[0]).not.toBe(tones[1]);
   });
 });
 

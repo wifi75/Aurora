@@ -1,6 +1,7 @@
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
+import { isCallToMe } from './mycall';
 
-export type AlertKind = 'dxcc' | 'news';
+export type AlertKind = 'dxcc' | 'news' | 'me';
 
 export interface AlertPrefs {
   enabled: boolean;
@@ -15,7 +16,9 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 /** Un paese nuovo suona forte; le altre novita' (nuova banda, zona, griglia) con una nota sola. Il CQ semplice tace. */
-export function alertKind(tag: DecodeTag | null | undefined): AlertKind | null {
+export function alertKind(tag: DecodeTag | null | undefined, sound?: Partial<Record<DecodeTag, boolean>>): AlertKind | null {
+  if (tag && sound && sound[tag] === false) return null;
+  if (tag && sound && sound[tag] === true && alertKind(tag) === null && tag !== 'auto') return 'news';
   switch (tag) {
     case 'new_dxcc':
       return 'dxcc';
@@ -60,13 +63,23 @@ export function saveAlerts(storage: WritableStorage, prefs: AlertPrefs): void {
  * Tra i messaggi arrivati dopo `lastId` (i piu' recenti per primi) sceglie l'avviso piu' importante.
  * Alla prima chiamata (`lastId` nullo) si limita a ricordare dove siamo: i messaggi gia' presenti non suonano.
  */
-export function pickAlert(decodes: DecodedMessage[], lastId: number | null): { kind: AlertKind | null; lastId: number | null } {
+export function pickAlert(
+  decodes: DecodedMessage[],
+  lastId: number | null,
+  sound?: Partial<Record<string, boolean>>,
+  myCall?: string | null,
+): { kind: AlertKind | null; lastId: number | null } {
   const newest = decodes.reduce<number | null>((max, d) => (max === null || d.id > max ? d.id : max), null);
   if (lastId === null) return { kind: null, lastId: newest };
   let kind: AlertKind | null = null;
   for (const d of decodes) {
     if (d.id <= lastId) continue;
-    const found = alertKind(d.tag);
+    // una stazione che mi chiama batte qualunque novita'
+    if (myCall && sound?.my_call !== false && isCallToMe(d.text, myCall)) {
+      kind = 'me';
+      break;
+    }
+    const found = alertKind(d.tag, sound);
     if (found === 'dxcc') {
       kind = 'dxcc';
       break;
@@ -85,6 +98,7 @@ export interface ToneContext {
 const NOTES: Record<AlertKind, number[]> = {
   dxcc: [660, 880, 1320],
   news: [880],
+  me: [1047, 1319, 1047, 1319],
 };
 
 export function playAlert(kind: AlertKind, volume: number, ctx: ToneContext): void {

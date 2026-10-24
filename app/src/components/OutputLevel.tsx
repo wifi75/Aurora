@@ -1,0 +1,60 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { getOutputLevel, putOutputLevel } from '../api/client';
+import { useT } from '../i18n';
+import { attenuationFromPercent, levelPercent } from '../lib/outputLevel';
+import { replyErrorMessage } from '../lib/replyError';
+
+interface Props {
+  /** Cambiare il livello vale come un comando di trasmissione: serve la trasmissione aperta. */
+  txAllowed: boolean;
+}
+
+/** Il cursore "Pwr" di JTDX: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
+export function OutputLevel({ txAllowed }: Props) {
+  const t = useT();
+  const client = useQueryClient();
+  const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: 15_000 });
+  const [pct, setPct] = useState<number | null>(null);
+  const [note, setNote] = useState('');
+
+  // il valore di JTDX vince quando non si sta trascinando
+  useEffect(() => {
+    if (level.data && pct === null) setPct(levelPercent(level.data.attenuation_db));
+  }, [level.data, pct]);
+
+  if (level.isError) return <p className="muted tx-note">{t('out.unavailable')}</p>;
+  if (pct === null) return null;
+
+  const commit = async () => {
+    try {
+      await putOutputLevel(attenuationFromPercent(pct));
+      await client.invalidateQueries({ queryKey: ['output-level'] });
+      setNote(t('out.saved'));
+    } catch (error) {
+      setNote(replyErrorMessage(error, t));
+    }
+  };
+
+  return (
+    <div className="out-level" title={t('tip.out')}>
+      <label className="auto-field">
+        {t('out.label')}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={pct}
+          disabled={!txAllowed}
+          aria-label={t('out.label')}
+          onChange={(e) => setPct(Number(e.target.value))}
+          onPointerUp={() => void commit()}
+          onKeyUp={() => void commit()}
+        />
+      </label>
+      <span className="data muted">{t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}</span>
+      {note ? <span className="live-note" role="status">{note}</span> : null}
+    </div>
+  );
+}

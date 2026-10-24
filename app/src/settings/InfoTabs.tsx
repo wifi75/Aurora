@@ -1,0 +1,77 @@
+import { useT } from '../i18n';
+import { Help, InfoTab, Row } from './common';
+
+/** Scheda Radio: come Aurora e JTDX condividono la radio. */
+export function RadioTab() {
+  const t = useT();
+  return (
+    <InfoTab
+      render={(info) => (
+        <>
+          <h3 className="set-sub">{t('radio.sharing')}</h3>
+          <Row name={t('radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
+          <Help>{t('radio.help')}</Help>
+        </>
+      )}
+    />
+  );
+}
+
+/** Scheda Audio: da dove arriva l'audio della cascata. */
+export function AudioTab() {
+  const t = useT();
+  return (
+    <InfoTab
+      render={(info) => (
+        <>
+          <Row name={t('audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
+          <Help>{t('audio.help')}</Help>
+        </>
+      )}
+    />
+  );
+}
+
+/** Scheda Segnalazioni: a chi vanno i QSO e quali file dati sono caricati. */
+export function ReportsTab() {
+  const t = useT();
+  return (
+    <InfoTab
+      render={(info) => (
+        <>
+          <h3 className="set-sub">{t('rep.export')}</h3>
+          {info.export_udp.length === 0 && !info.export_file ? <p className="muted">{t('rep.none')}</p> : null}
+          {info.export_udp.map((a) => (
+            <Row key={a} name={t('rep.udp')}>
+              {a}
+            </Row>
+          ))}
+          {info.export_file ? <Row name={t('rep.file')}>{info.export_file}</Row> : null}
+          <Help>{t('rep.help')}</Help>
+          <h3 className="set-sub">UDP</h3>
+          <Row name={t('rep.udpServer')}>{info.udp_listen}</Row>
+          {info.udp_forward.map((a) => (
+            <Row key={a} name={t('rep.forward')}>
+              {a}
+            </Row>
+          ))}
+          <Row name={t('rep.cty')}>{info.cty_loaded > 0 ? t('rep.countries', { n: info.cty_loaded }) : t('rep.notLoaded')}</Row>
+          <Row name={t('rep.log')}>{info.worked_qsos > 0 ? t('rep.qsos', { n: info.worked_qsos }) : t('rep.notRead')}</Row>
+        </>
+      )}
+    />
+  );
+}
+
+/** Scheda Avanzate: i parametri del decodificatore stanno in JTDX. */
+export function AdvancedTab() {
+  const t = useT();
+  return (
+    <>
+      <Help>{t('adv.help')}</Help>
+      <a className="glass glass--link" href="#/guida">
+        {t('adv.wiki')}
+      </a>
+    </>
+  );
+}

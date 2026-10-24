@@ -58,6 +58,8 @@ pub struct AppState {
     pub schedule: Arc<Mutex<Schedule>>,
     /// Chiamato dopo ogni modifica di frequenze o programmazione, per salvarle.
     pub settings_saver: Option<Arc<dyn Fn() + Send + Sync>>,
+    /// Accesso senza codice per le prove, solo dalla rete di casa. Mai salvato: al riavvio e' sempre spento.
+    pub open_access: Arc<std::sync::atomic::AtomicBool>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -97,7 +99,13 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+    }
+
+    /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
+    pub fn with_open_access(self, open: bool) -> AppState {
+        self.open_access.store(open, std::sync::atomic::Ordering::SeqCst);
+        self
     }
 
     pub fn with_stats_if(self, stats: Option<StatsProvider>) -> AppState {

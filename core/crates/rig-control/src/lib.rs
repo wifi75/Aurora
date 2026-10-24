@@ -28,6 +28,11 @@ pub trait Rig: Send + Sync {
     /// Imposta la frequenza audio di ricezione di JTDX (Hz).
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError>;
 
+    /// Attenuazione dell'audio di uscita di JTDX (cursore Pwr), in decimi di dB: 0 = massimo livello.
+    fn output_attenuation(&self) -> Result<u32, RigError>;
+
+    fn set_output_attenuation(&self, tenths: u32) -> Result<(), RigError>;
+
     /// Cambia il modo di JTDX ("FT8" o "FT4").
     fn set_mode(&self, mode: &str) -> Result<(), RigError>;
 }

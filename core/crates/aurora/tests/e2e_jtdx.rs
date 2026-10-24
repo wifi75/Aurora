@@ -76,6 +76,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(!c.auto_limits.run_unattended);
     assert!(c.export_udp.is_empty() && c.export_file.is_none());
     assert!(!c.rig_omnirig, "il comando radio e' spento per impostazione predefinita");
+    assert_eq!(c.pair_ttl_secs, 600);
+    assert!(!c.open_access, "l'accesso senza codice e' spento per impostazione predefinita");
 
     let env = |k: &str| match k {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
@@ -93,6 +95,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_EXPORT_UDP" => Some("127.0.0.1:2239, 127.0.0.1:2240".to_string()),
         "AURORA_EXPORT_FILE" => Some("dati/export.adi".to_string()),
         "AURORA_RIG" => Some("omnirig".to_string()),
+        "AURORA_PAIR_TTL_SECS" => Some("900".to_string()),
+        "AURORA_OPEN_ACCESS" => Some("1".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
@@ -109,6 +113,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(c.auto_limits.run_unattended);
     assert_eq!(c.export_udp.len(), 2);
     assert!(c.rig_omnirig);
+    assert_eq!(c.pair_ttl_secs, 900);
+    assert!(c.open_access);
     assert_eq!(c.export_file, Some(PathBuf::from("dati/export.adi")));
 
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
@@ -123,6 +129,10 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(Config::from_lookup(bad("AURORA_AUTO_UNATTENDED", "si")).is_err());
     assert!(Config::from_lookup(bad("AURORA_EXPORT_UDP", "127.0.0.1:2239,xyz")).is_err());
     assert!(Config::from_lookup(bad("AURORA_RIG", "hamlib")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "10")).is_err(), "meno di un minuto non e' ammesso");
+    assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "7200")).is_err(), "piu' di un'ora non e' ammesso");
+    assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "tanto")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_OPEN_ACCESS", "si")).is_err());
     assert!(!Config::from_lookup(bad("AURORA_RIG", "none")).unwrap().rig_omnirig);
 }
 
@@ -320,6 +330,56 @@ async fn frequencies_and_schedule_are_loaded_at_start_and_saved_when_changed() {
     assert_eq!(code, 200);
     let saved = std::fs::read_to_string(data.join("frequencies.json")).unwrap();
     assert!(saved.contains("40m") && saved.contains("7074000"), "{saved}");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn the_pairing_lifetime_is_loaded_at_start_and_saved_when_the_operator_changes_it() {
+    let data = temp_dir("pairing");
+    std::fs::write(data.join("pairing.json"), r#"{"code_ttl_secs":300}"#).unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: data.clone(),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (_, body) = http(server.addr, "GET", "/api/v1/pairing-settings", Some(&cookie), None).await;
+    assert!(body.contains("\"code_ttl_secs\":300"), "{body}");
+    let (code, _) = http(server.addr, "PUT", "/api/v1/pairing-settings", Some(&cookie), Some(r#"{"code_ttl_secs":1200}"#)).await;
+    assert_eq!(code, 200, "la richiesta di prova arriva da loopback");
+    let saved = std::fs::read_to_string(data.join("pairing.json")).unwrap();
+    assert!(saved.contains("1200"), "{saved}");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn with_open_access_a_home_network_device_gets_in_without_a_code() {
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: temp_dir("open"),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        open_access: true,
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let (code, _) = http(server.addr, "GET", "/api/v1/devices", None, None).await;
+    assert_eq!(code, 200, "senza cookie, dalla rete di casa");
+    let (_, access) = http(server.addr, "GET", "/api/v1/access", None, None).await;
+    assert!(access.contains("\"open\":true"), "{access}");
     drop(tx);
 }
 

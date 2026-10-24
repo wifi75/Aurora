@@ -1,10 +1,14 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
-import { formatClock } from '../lib/format';
 import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
+import { formatClock } from '../lib/format';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
+import { useNotify } from '../lib/notify';
+import { isCallToMe } from '../lib/mycall';
+import { formatDistance, usePrefs } from '../lib/prefs';
 
+/** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
 const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
   new_dxcc: { label: 'tag.new_dxcc', color: 'new-dxcc' },
   new_dxcc_band: { label: 'tag.new_dxcc_band', color: 'new-dxcc-band' },
@@ -59,15 +63,21 @@ interface Props {
   onReply(decodeId: number): void;
   /** Il proprio locatore, per mostrare la distanza di ogni stazione. */
   myGrid?: string;
+  /** Il proprio nominativo: i messaggi rivolti a me si evidenziano forte, come nel vecchio programma. */
+  myCall?: string | null;
   /** Stazione che si sta chiamando: la sua riga e il suo nominativo si evidenziano. */
   dxCall?: string | null;
   /** Testo dello stato vuoto (predefinito: invito all'ascolto). */
   emptyText?: string;
 }
 
-export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText }: Props) {
+export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText }: Props) {
   const t = useT();
+  const prefs = usePrefs((s) => s.prefs);
+  const notify = useNotify((s) => s.notify);
   const mine = myGrid ? gridCenter(myGrid) : null;
+  // un clic seleziona la riga; trasmettere richiede il doppio clic (come in JTDX)
+  const [selected, setSelected] = useState<number | null>(null);
   if (decodes.length === 0) {
     return (
       <section className="decode-list decode-list--empty" aria-label={t('decode.aria')}>
@@ -76,39 +86,45 @@ export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText }: Prop
     );
   }
   return (
-    <section className="decode-list" aria-label={t('decode.aria')}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
       {decodes.map((d) => {
-        const badge = d.tag ? BADGES[d.tag] : undefined;
+        // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque
+        const lit = d.tag && notify.highlight[d.tag] ? d.tag : null;
+        const badge = lit ? BADGES[lit] : undefined;
+        const accent = accentOf(lit);
+        const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
+        const code = prefs.showFlag ? flagCode(d.country) : null;
+        const toMe = isCallToMe(d.text, myCall);
         return (
           <button
             type="button"
             key={d.id}
-            className={`decode-row${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}`}
-            style={accentOf(d.tag) ? ({ '--row-accent': `var(--tag-${accentOf(d.tag)})` } as CSSProperties) : undefined}
-            onClick={() => onReply(d.id)}
+            title={toMe ? t('tip.row.me') : undefined}
+            className={`decode-row${toMe ? ' decode-row--me' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
+            onClick={() => setSelected(d.id)}
+            onDoubleClick={() => onReply(d.id)}
           >
-            <span className="num muted">{formatClock(d.time_ms)}</span>
-            <span className="num">{d.snr}</span>
-            <span className="num muted">{d.delta_time.toFixed(1)}</span>
-            <span className="num muted">{d.freq_hz}</span>
+            <span className="c-time num muted">{formatClock(d.time_ms)}</span>
+            <span className="c-snr num">{d.snr}</span>
+            {prefs.showDt ? <span className="c-dt num muted">{d.delta_time.toFixed(1)}</span> : null}
+            <span className="c-freq num muted">{d.freq_hz}</span>
             <span className="decode-text">
               <span className="data">{dxCall ? highlightCall(d.text, dxCall) : d.text}</span>
             </span>
             <span className="decode-where">
-              {flagCode(d.country) ? <span className={`fi fi-${flagCode(d.country)} decode-flag`} aria-hidden="true" /> : null}
-              {d.country ? <span className="decode-country">{d.country}</span> : null}
-              {mine && distanceOf(mine, d.text) !== null ? <span className="num muted"> [{distanceOf(mine, d.text)} km]</span> : null}
+              <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
+              <span className="w-country">{prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}</span>
+              <span className="w-km num muted">{km !== null ? `[${formatDistance(km, prefs.distanceUnit)}]` : ''}</span>
             </span>
             {badge ? (
-              <span
-                className="badge badge--tag"
-                style={{ background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
-              >
+              <span className="badge badge--tag badge-cell" title={t(`kind.${lit}` as Key)} style={{ background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}>
                 {t(badge.label)}
               </span>
             ) : (
-              <span />
+              <span className="badge-cell" />
             )}
+            {toMe ? <span className="me-mark" aria-hidden="true" /> : null}
           </button>
         );
       })}
