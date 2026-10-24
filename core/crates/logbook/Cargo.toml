@@ -1,0 +1,11 @@
+[package]
+name = "logbook"
+description = "Log dei QSO su SQLite con controllo dei duplicati ed esportazione ADIF"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+rusqlite = { workspace = true }
