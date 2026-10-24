@@ -16,6 +16,20 @@ describe('FrequencyMarkers', () => {
     expect(screen.getByText('Tx 1500')).toBeInTheDocument();
   });
 
+  it('draws the bars as wide as the signal of the mode, from the frequency to the right', () => {
+    const { rerender } = render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} bandwidthHz={50} onRx={() => {}} onTx={() => {}} />);
+    const rx = screen.getByRole('slider', { name: /frequenza rx/i });
+    expect(rx).toHaveClass('wf-marker--band');
+    expect(rx).toHaveStyle({ left: '33.33333333333333%', width: '1.6666666666666667%' });
+    rerender(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} bandwidthHz={83.3} onRx={() => {}} onTx={() => {}} />);
+    expect(screen.getByRole('slider', { name: /frequenza tx/i })).toHaveStyle({ width: '2.7766666666666664%' });
+  });
+
+  it('keeps the thin bar without a known bandwidth', () => {
+    render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} onRx={() => {}} onTx={() => {}} />);
+    expect(screen.getByRole('slider', { name: /frequenza rx/i })).not.toHaveClass('wf-marker--band');
+  });
+
   it('shows nothing for a frequency the engine has not reported', () => {
     render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} onRx={() => {}} onTx={() => {}} />);
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();

@@ -8,6 +8,8 @@ interface Props {
   /** Frequenze di ricezione e trasmissione che riporta il motore (Hz); assenti = nessun segnaposto. */
   rxHz?: number | null;
   txHz?: number | null;
+  /** Larghezza del segnale del modo in uso (Hz): le barre la occupano a destra della frequenza. 0 o assente = barra sottile. */
+  bandwidthHz?: number;
   onRx(hz: number): void;
   onTx(hz: number): void;
 }
@@ -16,10 +18,10 @@ const STEP = 10;
 const BIG_STEP = 50;
 
 /**
- * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione.
+ * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione, larghe quanto il segnale del modo.
  * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
  */
-export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Props) {
+export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, onRx, onTx }: Props) {
   const t = useT();
   const box = useRef<HTMLDivElement | null>(null);
 
@@ -57,8 +59,11 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Pro
     hz == null ? null : (
       <div
         key={kind}
-        className={`wf-marker wf-marker--${kind}`}
-        style={{ left: `${leftPercent(hz, fMinHz, fMaxHz)}%` }}
+        className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}`}
+        style={{
+          left: `${leftPercent(hz, fMinHz, fMaxHz)}%`,
+          ...(bandwidthHz > 0 ? { width: `${(bandwidthHz / (fMaxHz - fMinHz)) * 100}%` } : {}),
+        }}
         role="slider"
         tabIndex={0}
         aria-label={name}

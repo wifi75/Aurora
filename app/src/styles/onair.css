@@ -2134,3 +2134,24 @@
   outline: 2px solid #3fd6c8;
   outline-offset: 1px;
 }
+
+/* Barre Rx e Tx larghe quanto il segnale del modo (FT8 50 Hz, FT4 83 Hz): la frequenza e' il bordo sinistro, il tono piu' basso */
+.wf-marker--band {
+  margin-left: 0;
+  min-width: 6px;
+  border-left: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  box-shadow: 0 0 8px 1px color-mix(in srgb, currentColor 45%, transparent);
+}
+
+/* area per afferrarla anche quando la barra e' stretta */
+.wf-marker--band::after {
+  content: '';
+  position: absolute;
+  inset: 0 -8px;
+}
+
+.wf-marker--band .wf-marker-line {
+  display: none;
+}
