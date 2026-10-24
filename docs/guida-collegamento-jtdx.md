@@ -28,7 +28,17 @@ cargo run -p aurora
 
 Deve comparire "in ascolto su http://127.0.0.1:8787". Lascia GridTracker2 e Log4OM2 accesi come sempre. Per avere anche la cascata dall'audio aggiungi, prima di `cargo run`, `$env:AURORA_AUDIO_DEVICE = 'USB Audio'`.
 
-Se vuoi l'interfaccia: in un secondo terminale `cd ..\app; npm run dev`, poi apri `http://127.0.0.1:5173` e associa il dispositivo con `.\scripts\associa-telefono.ps1`.
+**Modo più semplice (consigliato):** un solo comando avvia Aurora con JTDX, l'inoltro a GridTracker2 e l'interfaccia, in una sola tab di Windows Terminal:
+
+```powershell
+.\scripts\avvia-sviluppo.ps1 -Jtdx
+```
+
+Con la cascata dall'audio: `.\scripts\avvia-sviluppo.ps1 -Jtdx -Audio "USB Audio"`.
+
+L'interfaccia è una **pagina web**: si apre nel browser su `http://localhost:5173` (Aurora non è ancora un programma Windows a sé; quello arriverà con il guscio desktop). Associa il browser con il codice che dà `.\scripts\associa-telefono.ps1`.
+
+**Importante:** dopo il Passo 2 JTDX manda i dati ad Aurora, quindi **Aurora deve restare acceso** finché vuoi che GridTracker2 riceva i decode. Se Aurora è spento, GridTracker2 non riceve nulla (Log4OM2 sì, perché usa il collegamento diretto). Per tornare com'era basta rimettere la porta di JTDX a 2333.
 
 ## Passo 2 — Punta JTDX ad Aurora (una sola modifica)
 

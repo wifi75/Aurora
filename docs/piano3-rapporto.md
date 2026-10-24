@@ -32,6 +32,8 @@ I cinque punti del Review Focus hanno un test ciascuno: datagrammi estranei né 
 - **L'hub si fida di chiunque scriva sulla sua porta** (resta su `127.0.0.1`).
 - **Non provato con JTDX, GridTracker2 e Log4OM2 reali insieme.** Va fatto da Tiziano seguendo `docs/guida-collegamento-jtdx.md`.
 - **L'audio in parallelo a JTDX (H2) non è verificato:** la cattura compila ed è coperta dai test dell'analizzatore, ma la prova con la scheda USB reale è manuale.
+- **Aurora deve restare acceso** dopo il cambio di porta in JTDX: se si spegne GridTracker2 non riceve piu' nulla (per riavere il flusso basta rimettere 2333 in JTDX).
+- L'interfaccia e' una pagina web, non un programma Windows (il guscio desktop e' previsto).
 - Restano fuori: comando della radio (frequenza e PTT, H3), `TriggerCQ` e `SetTxDeltaFreq` (tipi 50 e 51, significato dei bool non confermato), automazioni dei QSO, HTTPS/Tailscale/Cloudflare, copia dei QSO in un log proprio.
 - Il significato del bool finale dello `Status` di JTDX resta da identificare (vale 1 in 28 pacchetti su 29).
 
@@ -45,7 +47,7 @@ Seguire `docs/guida-collegamento-jtdx.md` in ordine:
 5. (Facoltativo, con carico fittizio) `AURORA_ALLOW_TX=1` e risposta a un CQ.
 6. (Facoltativo) `AURORA_AUDIO_DEVICE='USB Audio'`: la cascata deve scorrere con i segnali veri mentre JTDX decodifica.
 
-Esiti: _da compilare dopo le prove_.
+Esiti (2026-10-24): collegamento eseguito con Tiziano. Porta del server primario di JTDX cambiata da 2333 a 2334 (copia di sicurezza `JTDX.ini.bak-prima-di-aurora`); Aurora riceve lo Status di JTDX (21,074 MHz, FT8); l'interfaccia si apre nel browser; **GridTracker2 mostra ancora i decode** tramite l'inoltro dell'hub. Non ancora provati: decode in Aurora con Monitor acceso, cascata dall'audio, risposta a un CQ, QSO fino a Log4OM2 a collegamento attivo.
 
 ## Prossimi passi
 

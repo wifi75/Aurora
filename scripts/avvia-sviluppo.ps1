@@ -1,8 +1,24 @@
 # Avvia l'ambiente di sviluppo di Aurora: core (porta 8787) e, se esiste, interfaccia (porta 5173).
 # Una sola tab di Windows Terminal con un pannello per servizio. Salta cio' che e' gia' in ascolto.
 
+#   .\scripts\avvia-sviluppo.ps1            -> stazione simulata
+#   .\scripts\avvia-sviluppo.ps1 -Jtdx      -> JTDX reale: Aurora fa da ripetitore verso GridTracker2
+#   opzioni con -Jtdx: -Inoltra 127.0.0.1:2333   -Audio "USB Audio"
+param(
+    [switch]$Jtdx,
+    [string]$Inoltra = '127.0.0.1:2333',
+    [string]$Audio = ''
+)
+
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+
+# Con JTDX reale: motore JTDX, ascolto dell'hub su 2334, inoltro identico a GridTracker2. Trasmissione sempre chiusa.
+$engineEnv = ''
+if ($Jtdx) {
+    $engineEnv = "`$env:AURORA_ENGINE='jtdx'; `$env:AURORA_UDP_LISTEN='127.0.0.1:2334'; `$env:AURORA_UDP_FORWARD='$Inoltra'; "
+    if ($Audio) { $engineEnv += "`$env:AURORA_AUDIO_DEVICE='$Audio'; " }
+}
 
 function Test-Port([int]$Port) {
     [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
@@ -13,7 +29,7 @@ $services = @()
 if (-not (Test-Port 8787)) {
     $services += @{
         Name = 'Aurora core'; Color = '#3fd6c8'; Port = 8787; Dir = "$root\core"
-        Cmd = "`$env:AURORA_BIND='0.0.0.0:8787'; `$env:AURORA_DATA_DIR='$root\data'; cargo run -p aurora"
+        Cmd = "$engineEnv`$env:AURORA_BIND='0.0.0.0:8787'; `$env:AURORA_DATA_DIR='$root\data'; cargo run -p aurora"
     }
 }
 if ((Test-Path "$root\app\package.json") -and -not (Test-Port 5173)) {
