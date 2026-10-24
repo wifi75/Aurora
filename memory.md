@@ -21,7 +21,7 @@ Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/
 - Esc ferma la trasmissione e spegne AutoTX e Abilita Tx (opzione in Generali, accesa). Il doppio clic su un messaggio accende anche Abilita Tx: con «1 QSO» JTDX lo spegne a ogni QSO finito.
 
 ## Sicurezza (non negoziabile)
-- Trasmissione chiusa di default (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore). STOP TX mai bloccato e spegne anche l'automazione.
+- Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.
 - Automazioni: partono spente e in prova a vuoto; il modo reale solo dal PC con l'avviso confermato; limiti impostati sul PC.
 - Nei repository niente nominativi reali, niente riferimenti a strumenti di assistenza, niente segreti.

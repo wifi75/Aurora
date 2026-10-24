@@ -3,11 +3,11 @@
 
 #   .\scripts\avvia-sviluppo.ps1            -> stazione simulata
 #   .\scripts\avvia-sviluppo.ps1 -Jtdx      -> JTDX reale: Aurora fa da ripetitore verso GridTracker2
-#   -Tx  -> apre la trasmissione (AURORA_ALLOW_TX=1): serve per il cursore Pwr, CQ e risposte; senza, resta chiusa
+#   -Chiusa -> tiene chiusa la trasmissione (AURORA_ALLOW_TX=0); di norma lo script la apre: servono per CQ e risposte con doppio clic
 #   opzioni con -Jtdx: -Inoltra 127.0.0.1:2333   -Audio "USB Audio"
 param(
     [switch]$Jtdx,
-    [switch]$Tx,
+    [switch]$Chiusa,
     [string]$Inoltra = '127.0.0.1:2333',
     [string]$Audio = ''
 )
@@ -39,7 +39,7 @@ if (Test-Path "$root\app\dist\index.html") {
     # L'interfaccia compilata si apre anche dall'indirizzo del core (porta 8787), senza il server di sviluppo.
     $engineEnv += "`$env:AURORA_UI_DIR='$root\app\dist'; "
 }
-if ($Tx) { $engineEnv += "`$env:AURORA_ALLOW_TX='1'; " }
+if (-not $Chiusa) { $engineEnv += "`$env:AURORA_ALLOW_TX='1'; " }
 # Accesso senza codice: solo dalla rete di casa, mai da internet o proxy.
 $engineEnv += "`$env:AURORA_OPEN_ACCESS='1'; "
 if (-not (Test-Port 8787)) {
