@@ -4,7 +4,26 @@ Studio del 2026-10-24 del repository <https://github.com/iu8lmc/Decodium-4.0-Cor
 temporanea, letto senza eseguire nulla). Quattro letture parallele (interfaccia, servizi e rete, radio/audio/sequenza, altri modi), con
 file e righe a sostegno di ogni voce; dove il nome prometteva più del codice lo diciamo.
 
-## Cos'è e cosa significa per Aurora
+## Stato dell'integrazione (2026-10-24)
+
+Scelte da Tiziano: livello RX, storico e spot sulla cascata, PSK Reporter e propagazione, automazioni piu' sicure. Fatto, scritto da zero:
+
+| Voce | Stato |
+|---|---|
+| 1 Misuratore e avviso di overdrive/silenzio | **fatto** (indicatore Rx accanto a Pwr, evento `audio_level`) |
+| 2 Livello RX regolabile + AUTO | **fatto** (volume di registrazione di Windows, `GET/PUT /input-level`); AUTO da provare dal vivo |
+| 12 Filtro anti-ghost | **fatto** (`qso-engine::ghost`: «?», forma del nominativo, -23 dB mai sentita) |
+| 13 Auto Call, priorita' tra piu' CQ | non fatto (l'automazione risponde al primo CQ valido) |
+| 14 DX-watch | **fatto in forma semplice**: regola «rispondi ai desiderati» che usa la lista degli avvisi |
+| 19 Nascondi gia' lavorate | **fatto** (filtro sui CQ delle stazioni gia' collegate sulla banda) |
+| 22 Storico dei decode | **fatto** (`decode-history`, pagina Storico) |
+| 23 Spot del cluster sulla cascata | **fatto** (clic = frequenza Rx sullo spot) |
+| 31 PSK Reporter «chi mi ha sentito» | **fatto** (solo HTTP, a richiesta, spento di default) |
+| 33 Propagazione | **fatto** (hamqsl.com, a richiesta, spento di default) |
+| 34 Autodiagnosi | **fatto** (orologio, audio, nominativo, silenzio di ricezione) |
+| 3 Livello TX per banda, 4 QSY con riapplicazione del modo, 36 utenti LoTW, 42 credenziali cifrate | non fatti |
+
+## Cos'e' e cosa significa per Aurora
 
 - Decodium è una stazione digitale completa in **Qt/QML + C++** (circa 3.100 file), figlia di WSJT-X: ha i **propri decoder** (FT8, FT4,
   FT2, Q65, MSK144, JT65/JT9/JT4, FST4, WSPR), CW, RTTY, SSB, SSTV, voice keyer, rotore, SDR, mappa, cluster, PSK Reporter.

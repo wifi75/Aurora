@@ -158,4 +158,4 @@ export const wikiStrings = {
 } as const satisfies Record<string, Entry>;
 
 /** Ordine degli argomenti nella pagina; ogni voce ha le chiavi `wiki.<id>.t` e `wiki.<id>.b`. */
-export const WIKI_TOPICS = ['list', 'reply', 'tx', 'stop', 'band', 'spectrum', 'pwr', 'rx', 'log', 'cluster', 'clock', 'enginecfg', 'map', 'wanted', 'updates', 'auto', 'phone', 'stats', 'tips'] as const;
+export const WIKI_TOPICS = ['list', 'reply', 'tx', 'stop', 'band', 'spectrum', 'pwr', 'rx', 'log', 'cluster', 'clock', 'enginecfg', 'map', 'history', 'spots', 'rxlevel', 'propagation', 'diagnosis', 'wanted', 'updates', 'auto', 'phone', 'stats', 'tips'] as const;
