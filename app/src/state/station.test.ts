@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { useStation } from './station';
 
@@ -13,6 +13,7 @@ const decode = (id: number): DecodedMessage => ({
 
 describe('useStation', () => {
   beforeEach(() => useStation.getState().reset());
+  afterEach(() => vi.useRealTimers());
 
   it('apply status updates station', () => {
     useStation.getState().apply({ type: 'status', ...status });
@@ -80,6 +81,55 @@ describe('useStation', () => {
     expect(useStation.getState().status?.dial_hz).toBe(14_074_000);
     expect(useStation.getState().status?.mode).toBe('FT4');
     expect(useStation.getState().status?.de_call).toBe('AA1AA');
+  });
+
+  it('keeps a commanded change over the old states of the engine until it reports the same value', () => {
+    const { apply, patchStatus } = useStation.getState();
+    apply({ type: 'status', ...status });
+    patchStatus({ mode: 'FT4', dial_hz: 7_047_500 });
+    apply({ type: 'status', ...status }); // stato vecchio: non rimette indietro il pulsante
+    expect(useStation.getState().status?.mode).toBe('FT4');
+    expect(useStation.getState().status?.dial_hz).toBe(7_047_500);
+    apply({ type: 'status', ...status, mode: 'FT4' }); // il modo e' confermato, la frequenza no
+    expect(useStation.getState().pending).toEqual({ dial_hz: 7_047_500 });
+    apply({ type: 'status', ...status, mode: 'FT4', dial_hz: 7_047_500 });
+    expect(useStation.getState().pending).toEqual({});
+    apply({ type: 'status', ...status, mode: 'FT8' }); // da qui in poi vale quello che dice il motore
+    expect(useStation.getState().status?.mode).toBe('FT8');
+  });
+
+  it('gives up on a commanded change the engine never confirms', () => {
+    vi.useFakeTimers();
+    try {
+      const { apply, patchStatus } = useStation.getState();
+      apply({ type: 'status', ...status });
+      patchStatus({ mode: 'FT4' });
+      vi.advanceTimersByTime(9_000);
+      apply({ type: 'status', ...status });
+      expect(useStation.getState().status?.mode).toBe('FT8');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('puts the old value back when the command fails', () => {
+    const { apply, patchStatus, revertStatus } = useStation.getState();
+    apply({ type: 'status', ...status });
+    patchStatus({ mode: 'FT4' });
+    revertStatus(['mode'], { mode: 'FT8' });
+    expect(useStation.getState().status?.mode).toBe('FT8');
+    apply({ type: 'status', ...status });
+    expect(useStation.getState().status?.mode).toBe('FT8');
+  });
+
+  it('lights the chosen band at once and drops it when the engine is on that band', () => {
+    const { apply, setPendingBand } = useStation.getState();
+    apply({ type: 'status', ...status });
+    setPendingBand('40m');
+    apply({ type: 'status', ...status }); // ancora sulla banda di prima
+    expect(useStation.getState().pendingBand).toBe('40m');
+    apply({ type: 'status', ...status, dial_hz: 7_074_000 });
+    expect(useStation.getState().pendingBand).toBeNull();
   });
 
   it('remembers the station picked with a double click until the engine reports its own DX', () => {

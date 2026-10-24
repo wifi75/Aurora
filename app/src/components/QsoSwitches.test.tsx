@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ getControls: vi.fn(), postControl: vi.fn().mockResolvedValue(undefined) }));
 import { getControls, postControl } from '../api/client';
+import { useStation } from '../state/station';
 import { QsoSwitches } from './QsoSwitches';
 
 function render(ui: ReactElement) {
@@ -26,6 +27,17 @@ describe('QsoSwitches', () => {
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('autoseq', false));
     fireEvent.click(screen.getByRole('button', { name: '1 QSO' }));
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('single_qso', true));
+  });
+
+  it('shows the transmit period as Tx 00/30 or Tx 15/45 and switches between them', async () => {
+    useStation.setState({ status: { mode: 'FT8' } as never });
+    vi.mocked(getControls).mockResolvedValue({ tx_period: false });
+    render(<QsoSwitches txAllowed />);
+    const odd = await screen.findByRole('button', { name: 'Tx 15/45' });
+    expect(odd).toHaveClass('chip--period-odd');
+    fireEvent.click(odd);
+    await waitFor(() => expect(postControl).toHaveBeenCalledWith('tx_period', true));
+    useStation.setState({ status: null });
   });
 
   it('keeps Enable Tx and AutoTX off-limits while transmission is closed, but lets you turn them off', async () => {

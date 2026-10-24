@@ -78,12 +78,17 @@ export function ClusterPanel() {
       setNote(t('cluster.noRig'));
       return;
     }
+    // la frequenza esatta dello spot (kHz -> Hz); la radio non si sposta mai fuori dalle bande dei radioamatori
+    const hz = Math.round(spot.freq_khz * 1000);
+    const before = useStation.getState().status?.dial_hz;
+    // la nuova frequenza si vede subito; se il comando fallisce torna quella di prima
+    useStation.getState().patchStatus({ dial_hz: hz });
     try {
-      // la frequenza esatta dello spot (kHz -> Hz); la radio non si sposta mai fuori dalle bande dei radioamatori
-      const done = await postFrequency(Math.round(spot.freq_khz * 1000));
+      const done = await postFrequency(hz);
       if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
       setNote(t('cluster.tuned', { freq: formatKhz(spot.freq_khz) }));
     } catch (error) {
+      if (before !== undefined) useStation.getState().revertStatus(['dial_hz'], { dial_hz: before });
       setNote(replyErrorMessage(error, t));
     }
   };

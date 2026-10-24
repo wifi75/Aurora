@@ -1,10 +1,12 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, WATERFALL_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
-import { WATERFALL_HEIGHT, WATERFALL_WIDTH } from './webgl2';
+import { RowClock } from './smooth';
+import { WATERFALL_HEIGHT, WATERFALL_WIDTH, rowsPerPixel } from './webgl2';
 
 const SHADER = /* wgsl */ `
-struct U { head: f32, h: f32, pad0: f32, pad1: f32 };
+// head/h: anello; frac: frazione di riga gia' scorsa; rpp: righe per pixel; w/ch: dimensioni del canvas in pixel
+struct U { head: f32, h: f32, frac: f32, rpp: f32, w: f32, ch: f32, pad0: f32, pad1: f32 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var tex: texture_2d<f32>;
 @group(0) @binding(2) var lut: texture_2d<f32>;
@@ -20,9 +22,22 @@ struct VOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
   return o;
 }
 
+// Una riga vale un pixel e la cascata scende di continuo (frac); in orizzontale si mediano quattro punti e si tiene anche
+// il massimo, perche' i 1024 canali sono piu' dei pixel e un segnale stretto non sparisca ne' tremi.
+fn at(x: f32, r: f32) -> f32 {
+  return textureSampleLevel(tex, samp, vec2f(x, r), 0.0).r;
+}
+
 @fragment fn fs(in: VOut) -> @location(0) vec4f {
-  let r = fract((u.head - 0.5 - in.uv.y * u.h) / u.h);
-  let v = textureSampleLevel(tex, samp, vec2f(in.uv.x, r), 0.0).r;
+  let py = in.uv.y * u.ch * u.rpp;
+  let coord = min(u.head - py + u.frac, u.head - 0.5);
+  let r = fract(coord / u.h);
+  let w = 1.0 / u.w;
+  let a = at(in.uv.x - 0.375 * w, r);
+  let b = at(in.uv.x - 0.125 * w, r);
+  let c4 = at(in.uv.x + 0.125 * w, r);
+  let d = at(in.uv.x + 0.375 * w, r);
+  let v = 0.5 * (a + b + c4 + d) * 0.25 + 0.5 * max(max(a, b), max(c4, d));
   let c = textureSampleLevel(lut, samp, vec2f(v * 0.99609375 + 0.001953125, 0.5), 0.0).rgb;
   return vec4f(c, 1.0);
 }`;
@@ -39,6 +54,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
   private uniforms!: GPUBuffer;
   private raf = 0;
   private alive = false;
+  private readonly clock = new RowClock();
   private readonly ring = new RowRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
 
   async init(canvas: HTMLCanvasElement): Promise<void> {
@@ -69,7 +85,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
     const lut = buildLut(WATERFALL_STOPS);
     device.queue.writeTexture({ texture: this.lutTexture }, lut.buffer as ArrayBuffer, { bytesPerRow: LUT_SIZE * 4 }, [LUT_SIZE, 1]);
 
-    this.uniforms = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.uniforms = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -99,6 +115,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
   pushRow(row: Uint8Array): void {
     const index = this.ring.push(row);
     if (index < 0 || !this.alive) return;
+    this.clock.push(performance.now());
     const slice = this.ring.data.slice(index * WATERFALL_WIDTH, (index + 1) * WATERFALL_WIDTH);
     this.device.queue.writeTexture(
       { texture: this.texture, origin: [0, index, 0] },
@@ -135,7 +152,16 @@ export class WebGpuWaterfall implements WaterfallBackend {
 
   private draw(): void {
     if (!this.alive) return;
-    this.device.queue.writeBuffer(this.uniforms, 0, new Float32Array([this.ring.head, WATERFALL_HEIGHT, 0, 0]));
+    this.device.queue.writeBuffer(this.uniforms, 0, new Float32Array([
+      this.ring.head,
+      WATERFALL_HEIGHT,
+      this.clock.fraction(performance.now()),
+      rowsPerPixel(this.canvas.height),
+      this.canvas.width,
+      this.canvas.height,
+      0,
+      0,
+    ]));
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
@@ -152,5 +178,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
     pass.draw(3);
     pass.end();
     this.device.queue.submit([encoder.finish()]);
+    // la cascata scende di continuo: si ridisegna a ogni fotogramma
+    this.schedule();
   }
 }
