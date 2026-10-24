@@ -26,6 +26,11 @@ async function start() {
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }
+  // senza un indirizzo preciso si riparte dall'ultima pagina aperta
+  const { lastPageToRestore } = await import('./lib/lastPage');
+  const { browserStorage } = await import('./lib/theme');
+  const restore = lastPageToRestore(browserStorage(), location.hash);
+  if (restore) history.replaceState(null, '', restore);
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
   if (root) {

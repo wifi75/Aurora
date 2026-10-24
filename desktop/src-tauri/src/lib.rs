@@ -2,20 +2,23 @@
 //! Il vassoio tiene Aurora a portata di mano, parte con Windows e si aggiorna da sola quando esce una versione nuova.
 
 mod installer;
+mod links;
 mod settings;
+mod window_state;
 
 use std::{
     error::Error,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use aurora_core::Event;
 use tauri::{
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent, Wry,
+    webview::NewWindowResponse,
+    AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as _};
 use tauri_plugin_notification::NotificationExt;
@@ -33,6 +36,8 @@ struct Core {
 /// La voce del vassoio che propone l'aggiornamento: spenta finche' non ce n'e' uno.
 struct UpdateItem(MenuItem<Wry>);
 
+static LAST_WINDOW_SAVE: Mutex<Option<Instant>> = Mutex::new(None);
+
 const FIRST_RUN_MARKER: &str = "desktop-primo-avvio";
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
 
@@ -44,17 +49,31 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))
         .plugin(tauri_plugin_notification::init())
         .setup(move |app| start(app, hidden))
-        .on_window_event(|window, event| {
+        .on_window_event(|window, event| match event {
             // chiudere la finestra la nasconde: Aurora resta nel vassoio, col core acceso
-            if let WindowEvent::CloseRequested { api, .. } = event {
+            WindowEvent::CloseRequested { api, .. } => {
+                remember_window(window);
                 api.prevent_close();
                 let _ = window.hide();
             }
+            // dimensione e posizione si ricordano per il prossimo avvio (senza scrivere a ogni pixel)
+            WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
+                if let Ok(mut last) = LAST_WINDOW_SAVE.lock() {
+                    if last.is_none_or(|t| t.elapsed() > Duration::from_millis(600)) {
+                        *last = Some(Instant::now());
+                        remember_window(window);
+                    }
+                }
+            }
+            _ => {}
         })
         .build(tauri::generate_context!());
     match built {
         Ok(app) => app.run(|handle, event| {
             if let RunEvent::Exit = event {
+                if let Some(window) = handle.get_webview_window("main") {
+                    remember_window(&window.as_ref().window());
+                }
                 stop_core(handle);
             }
         }),
@@ -147,6 +166,12 @@ fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
             let update_item = build_tray(&handle)?;
             app.manage(UpdateItem(update_item));
             open_window(&handle, &page, !hidden)?;
+            // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'
+            if values.get("AURORA_MONITOR_ON_START").map(String::as_str) != Some("0") {
+                if let Some(state) = core_state(&handle) {
+                    monitor_on_start(state);
+                }
+            }
             let watcher = handle.clone();
             tauri::async_runtime::spawn(async move {
                 loop {
@@ -185,13 +210,89 @@ fn show_main(app: &AppHandle) {
 
 fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn Error>> {
     let parsed: tauri::Url = url.parse()?;
-    WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
+    // si crea nascosta, si rimette la dimensione dell'ultima volta e solo dopo si mostra (niente salti)
+    let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
         .title("Aurora")
         .inner_size(1360.0, 860.0)
-        .min_inner_size(360.0, 560.0)
-        .visible(visible)
+        .min_inner_size(f64::from(window_state::MIN_WIDTH), f64::from(window_state::MIN_HEIGHT))
+        .visible(false)
+        // i link a siti (note di versione, guida) si aprono nel browser di Windows, non in una finestra nuova
+        .on_new_window(|url, _| {
+            links::open_in_browser(url.as_str());
+            NewWindowResponse::Deny
+        })
         .build()?;
+    restore_window(app, &window);
+    if visible {
+        window.show()?;
+    }
     Ok(())
+}
+
+fn core_state(app: &AppHandle) -> Option<remote_api::AppState> {
+    app.try_state::<Core>().and_then(|core| core.state.clone())
+}
+
+/// All'avvio porta Monitora su acceso, appena il motore risponde (puo' partire dopo Aurora: si riprova per dieci minuti).
+fn monitor_on_start(state: remote_api::AppState) {
+    std::thread::spawn(move || {
+        let Some(rig) = state.rig.clone() else { return };
+        for _ in 0..120 {
+            if let Ok((list, _)) = rig.controls_and_tx() {
+                match list.iter().find(|(id, _)| id == "monitor") {
+                    Some((_, true)) => return,
+                    Some((_, false)) => {
+                        if rig.set_control("monitor", Some(true)).is_ok() {
+                            tracing::info!("Monitora acceso all'avvio");
+                            return;
+                        }
+                    }
+                    None => {}
+                }
+            }
+            std::thread::sleep(Duration::from_secs(5));
+        }
+    });
+}
+
+fn restore_window(app: &AppHandle, window: &WebviewWindow) {
+    let Some(core) = app.try_state::<Core>() else { return };
+    let Some(state) = window_state::load(&core.data_dir) else { return };
+    let monitors: Vec<window_state::Monitor> = window
+        .available_monitors()
+        .map(|all| all.iter().map(|m| (m.position().x, m.position().y, m.size().width, m.size().height)).collect())
+        .unwrap_or_default();
+    if !window_state::is_usable(&state, &monitors) {
+        return;
+    }
+    let _ = window.set_size(PhysicalSize::new(state.width, state.height));
+    let _ = window.set_position(PhysicalPosition::new(state.x, state.y));
+    if state.maximized {
+        let _ = window.maximize();
+    }
+}
+
+/// Salva dimensione e posizione della finestra principale. Da massimizzata resta la misura di prima e si segna solo che lo era.
+fn remember_window(window: &tauri::Window) {
+    if window.label() != "main" || window.is_minimized().unwrap_or(false) {
+        return;
+    }
+    let Some(core) = window.app_handle().try_state::<Core>() else { return };
+    let previous = window_state::load(&core.data_dir);
+    let state = if window.is_maximized().unwrap_or(false) {
+        match previous {
+            Some(p) => window_state::WindowState { maximized: true, ..p },
+            None => return,
+        }
+    } else {
+        let (Ok(size), Ok(pos)) = (window.inner_size(), window.outer_position()) else { return };
+        window_state::WindowState { width: size.width, height: size.height, x: pos.x, y: pos.y, maximized: false }
+    };
+    if previous != Some(state) {
+        if let Err(e) = window_state::save(&core.data_dir, &state) {
+            tracing::warn!("posizione della finestra non salvata: {e}");
+        }
+    }
 }
 
 fn open_window_app(app: &AppHandle, path: &str) -> Result<(), Box<dyn Error>> {

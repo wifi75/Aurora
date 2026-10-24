@@ -10,6 +10,7 @@ import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
 import { applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
+import { rememberRoute, rememberedTab } from './lib/lastPage';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
@@ -29,6 +30,9 @@ export function App() {
   const route = useRoute();
   useEscapeStop();
   const queryClient = useQueryClient();
+  useEffect(() => {
+    rememberRoute(browserStorage(), route);
+  }, [route]);
   useEffect(() => {
     applyColors(document.documentElement, readColors(browserStorage()));
   }, []);
@@ -66,7 +70,7 @@ export function App() {
   } else if (!session.data) {
     content = <Pair onPaired={onPaired} />;
   } else if (route.name === 'settings') {
-    content = <Settings key={route.tab ?? ''} initialTab={route.tab} />;
+    content = <Settings key={route.tab ?? ''} initialTab={route.tab ?? rememberedTab(browserStorage())} />;
   } else if (route.name === 'automation') {
     content = <Automation />;
   } else if (route.name === 'stats') {

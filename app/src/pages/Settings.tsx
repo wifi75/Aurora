@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useT, type Key } from '../i18n';
+import { rememberTab } from '../lib/lastPage';
+import { browserStorage } from '../lib/theme';
 import { AccessTab } from '../settings/AccessTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
@@ -65,7 +67,10 @@ export function Settings({ initialTab }: { initialTab?: string }) {
             aria-controls="settings-panel"
             title={t(x.tip)}
             className={`glass${tab.id === x.id ? ' glass--on' : ''}`}
-            onClick={() => setId(x.id)}
+            onClick={() => {
+              setId(x.id);
+              rememberTab(browserStorage(), x.id);
+            }}
           >
             {t(x.label)}
           </button>

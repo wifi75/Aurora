@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.10.4 - 2026-10-24
+- **Trasmissione aperta nel programma Windows**: `AURORA_ALLOW_TX=1` e' il predefinito (scelta del proprietario); `AURORA_ALLOW_TX=0` in `aurora.env` la chiude. STOP, tetti e automazioni spente di default restano.
+- **Monitora acceso all'avvio**: appena il motore risponde (anche se parte dopo Aurora, fino a dieci minuti) l'ascolto si accende; `AURORA_MONITOR_ON_START=0` lo lascia com'e'.
+- **Aurora riparte da dove l'hai lasciata**: ultima pagina aperta, ultima scheda delle impostazioni e dimensione/posizione della finestra (con controllo che non finisca fuori da un monitor staccato).
+- **Barra degli aggiornamenti**: «Installa ora» compare anche quando la versione nuova e' arrivata a pagina gia' aperta; «Note e download» apre il browser di Windows invece di non fare nulla.
+
 ## 0.10.3 - 2026-10-24
 - **Installazione forzata sopra una versione aperta**: l'installatore (e il disinstallatore) chiude Aurora da solo, anche se e' nascosta nel vassoio, e prosegue senza fermarsi con «Aurora e' in esecuzione!». Il core riparte al prossimo avvio. Vale dalla 0.10.3: chi ha una versione piu' vecchia deve chiudere Aurora a mano una volta (vassoio, Esci).
 

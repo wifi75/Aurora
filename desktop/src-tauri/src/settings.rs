@@ -4,8 +4,8 @@
 //! 2. dal file `aurora.env` nella cartella dei dati (`CHIAVE=valore`, `#` per i commenti);
 //! 3. dal rilevamento automatico di JTDX, di Log4OM2 e del file dei paesi.
 //!
-//! Tutto cio' che non si trova resta al valore predefinito del core. La trasmissione resta **chiusa** finche' non la si apre con
-//! `AURORA_ALLOW_TX=1` nel file: nessun rilevamento la accende.
+//! Tutto cio' che non si trova resta al valore predefinito del core. La trasmissione nel programma Windows e' **aperta** (scelta del proprietario); per chiuderla
+//! `AURORA_ALLOW_TX=0` nel file. STOP, tetti, dead-man e automazioni spente di default restano.
 
 use std::{
     collections::BTreeMap,
@@ -125,6 +125,8 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_BIND".into(), "0.0.0.0:8787".into());
     // la finestra del programma entra senza codice (solo da questo PC); i telefoni lo chiedono sempre
     v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
+    // trasmissione aperta: la scelta e' del proprietario, STOP e tetti restano; `AURORA_ALLOW_TX=0` la chiude
+    v.insert("AURORA_ALLOW_TX".into(), "1".into());
     if let Some(file) = env_file {
         v.extend(parse_env_file(file));
     }
@@ -141,8 +143,8 @@ pub fn sample_env_file() -> &'static str {
     "# Impostazioni di Aurora. Ogni riga e' CHIAVE=valore; le righe con # sono commenti.\n\
      # Si applicano al prossimo avvio. Le variabili d'ambiente AURORA_* hanno la precedenza su questo file.\n\
      #\n\
-     # La trasmissione e' CHIUSA. Per aprirla (CQ, risposte con doppio clic, automazione in modo reale):\n\
-     # AURORA_ALLOW_TX=1\n\
+     # La trasmissione e' APERTA (CQ, risposte con doppio clic, automazione in modo reale). Per chiuderla:\n\
+     # AURORA_ALLOW_TX=0\n\
      #\n\
      # Accesso dal telefono sulla rete di casa senza codice di associazione (solo per le prove):\n\
      # AURORA_OPEN_ACCESS=1\n\
@@ -247,22 +249,22 @@ mod tests {
     }
 
     #[test]
-    fn the_defaults_reach_the_phone_and_keep_transmission_closed() {
+    fn the_defaults_reach_the_phone_and_open_transmission() {
         let p = Places { local_app_data: None, documents: None, jtdx_roots: vec![] };
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), None, vec![]);
         assert_eq!(v["AURORA_BIND"], "0.0.0.0:8787");
-        assert!(!v.contains_key("AURORA_ALLOW_TX"), "la trasmissione non si apre mai da sola");
+        assert_eq!(v["AURORA_ALLOW_TX"], "1");
         assert!(!v.contains_key("AURORA_OPEN_ACCESS"));
         let config = config_from(&v).expect("configurazione valida");
         assert!(config.local_trust && !config.open_access, "il PC entra senza codice, la rete di casa no");
-        assert!(!config.allow_tx);
+        assert!(config.allow_tx);
         assert_eq!(config.bind.port(), 8787);
     }
 
     #[test]
     fn the_sample_file_changes_nothing_until_edited() {
         assert!(parse_env_file(sample_env_file()).is_empty());
-        assert!(sample_env_file().contains("# AURORA_ALLOW_TX=1"));
+        assert!(sample_env_file().contains("# AURORA_ALLOW_TX=0"));
     }
 
     #[test]
