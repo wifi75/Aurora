@@ -70,7 +70,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(c.udp_forward.is_empty());
     assert!(!c.allow_tx, "la trasmissione e' chiusa per impostazione predefinita");
     assert!(c.audio_device.is_none());
-    assert!(c.replay_on_connect, "il Replay all'avvio e' attivo per impostazione predefinita");
+    assert!(!c.replay_on_connect, "il Replay all'avvio e' spento: aprendo Aurora non si rivedono le stazioni di prima");
     assert!(c.cty_path.is_none() && c.worked_adif.is_none());
     assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (6, 40, 120));
     assert!(!c.auto_limits.run_unattended);
@@ -85,7 +85,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_UDP_FORWARD" => Some("127.0.0.1:2333, 127.0.0.1:2335".to_string()),
         "AURORA_ALLOW_TX" => Some("1".to_string()),
         "AURORA_AUDIO_DEVICE" => Some("USB Audio".to_string()),
-        "AURORA_REPLAY_ON_CONNECT" => Some("0".to_string()),
+        "AURORA_REPLAY_ON_CONNECT" => Some("1".to_string()),
         "AURORA_CTY_PATH" => Some("dati/cty.dat".to_string()),
         "AURORA_WORKED_ADIF" => Some("dati/log.adi".to_string()),
         "AURORA_AUTO_MAX_CYCLES" => Some("3".to_string()),
@@ -106,7 +106,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert_eq!(c.udp_forward[1].port(), 2335);
     assert!(c.allow_tx);
     assert_eq!(c.audio_device.as_deref(), Some("USB Audio"));
-    assert!(!c.replay_on_connect);
+    assert!(c.replay_on_connect);
     assert_eq!(c.cty_path, Some(PathBuf::from("dati/cty.dat")));
     assert_eq!(c.worked_adif, Some(PathBuf::from("dati/log.adi")));
     assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (3, 10, 30));
