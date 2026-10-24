@@ -1,6 +1,7 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, WATERFALL_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
+import { DEFAULT_LEVELS, type Levels } from './levels';
 import { RowClock } from './smooth';
 
 export const WATERFALL_WIDTH = 1024;
@@ -35,6 +36,7 @@ uniform float u_h;
 uniform float u_frac;
 uniform float u_rpp;
 uniform vec2 u_px;
+uniform vec3 u_levels;
 float at(float x, float r) {
   return texture(u_tex, vec2(x, r)).r;
 }
@@ -48,7 +50,10 @@ void main() {
   float c = at(v_uv.x + 0.125 * w, r);
   float d = at(v_uv.x + 0.375 * w, r);
   float v = 0.5 * (a + b + c + d) * 0.25 + 0.5 * max(max(a, b), max(c, d));
-  o = vec4(texture(u_lut, vec2(v * 0.99609375 + 0.001953125, 0.5)).rgb, 1.0);
+  float x = clamp((v - u_levels.x) / max(1.0 - u_levels.x, 0.05), 0.0, 1.0);
+  x = pow(x, 1.0 / u_levels.y);
+  x = clamp((x - 0.5) * u_levels.z + 0.5, 0.0, 1.0);
+  o = vec4(texture(u_lut, vec2(x * 0.99609375 + 0.001953125, 0.5)).rgb, 1.0);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -76,6 +81,8 @@ export class WebGl2Waterfall implements WaterfallBackend {
   private uFrac: WebGLUniformLocation | null = null;
   private uRpp: WebGLUniformLocation | null = null;
   private uPx: WebGLUniformLocation | null = null;
+  private uLevels: WebGLUniformLocation | null = null;
+  private levels: Levels = DEFAULT_LEVELS;
   private readonly clock = new RowClock();
   private raf = 0;
   private readonly ring = new RowRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
@@ -104,6 +111,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
     this.uFrac = gl.getUniformLocation(program, 'u_frac');
     this.uRpp = gl.getUniformLocation(program, 'u_rpp');
     this.uPx = gl.getUniformLocation(program, 'u_px');
+    this.uLevels = gl.getUniformLocation(program, 'u_levels');
 
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     this.tex = gl.createTexture();
@@ -169,6 +177,10 @@ export class WebGl2Waterfall implements WaterfallBackend {
     });
   }
 
+  setLevels(levels: Levels): void {
+    this.levels = levels;
+  }
+
   private draw(): void {
     const gl = this.gl;
     if (!this.program) return;
@@ -179,6 +191,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.uniform1f(this.uFrac, this.clock.fraction(performance.now()));
     gl.uniform1f(this.uRpp, rowsPerPixel(this.canvas.height));
     gl.uniform2f(this.uPx, this.canvas.width, this.canvas.height);
+    gl.uniform3f(this.uLevels, this.levels.black, this.levels.gain, this.levels.contrast);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     // la cascata scende di continuo: si ridisegna a ogni fotogramma
     this.schedule();

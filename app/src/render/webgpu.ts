@@ -1,12 +1,13 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, WATERFALL_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
+import { DEFAULT_LEVELS, type Levels } from './levels';
 import { RowClock } from './smooth';
 import { WATERFALL_HEIGHT, WATERFALL_WIDTH, rowsPerPixel } from './webgl2';
 
 const SHADER = /* wgsl */ `
 // head/h: anello; frac: frazione di riga gia' scorsa; rpp: righe per pixel; w/ch: dimensioni del canvas in pixel
-struct U { head: f32, h: f32, frac: f32, rpp: f32, w: f32, ch: f32, pad0: f32, pad1: f32 };
+struct U { head: f32, h: f32, frac: f32, rpp: f32, w: f32, ch: f32, black: f32, gain: f32, contrast: f32, pad0: f32, pad1: f32, pad2: f32 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var tex: texture_2d<f32>;
 @group(0) @binding(2) var lut: texture_2d<f32>;
@@ -38,7 +39,10 @@ fn at(x: f32, r: f32) -> f32 {
   let c4 = at(in.uv.x + 0.125 * w, r);
   let d = at(in.uv.x + 0.375 * w, r);
   let v = 0.5 * (a + b + c4 + d) * 0.25 + 0.5 * max(max(a, b), max(c4, d));
-  let c = textureSampleLevel(lut, samp, vec2f(v * 0.99609375 + 0.001953125, 0.5), 0.0).rgb;
+  var x = clamp((v - u.black) / max(1.0 - u.black, 0.05), 0.0, 1.0);
+  x = pow(x, 1.0 / u.gain);
+  x = clamp((x - 0.5) * u.contrast + 0.5, 0.0, 1.0);
+  let c = textureSampleLevel(lut, samp, vec2f(x * 0.99609375 + 0.001953125, 0.5), 0.0).rgb;
   return vec4f(c, 1.0);
 }`;
 
@@ -85,7 +89,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
     const lut = buildLut(WATERFALL_STOPS);
     device.queue.writeTexture({ texture: this.lutTexture }, lut.buffer as ArrayBuffer, { bytesPerRow: LUT_SIZE * 4 }, [LUT_SIZE, 1]);
 
-    this.uniforms = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.uniforms = device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -109,6 +113,13 @@ export class WebGpuWaterfall implements WaterfallBackend {
       ],
     });
     this.alive = true;
+    this.schedule();
+  }
+
+  private levels: Levels = DEFAULT_LEVELS;
+
+  setLevels(levels: Levels): void {
+    this.levels = levels;
     this.schedule();
   }
 
@@ -159,6 +170,10 @@ export class WebGpuWaterfall implements WaterfallBackend {
       rowsPerPixel(this.canvas.height),
       this.canvas.width,
       this.canvas.height,
+      this.levels.black,
+      this.levels.gain,
+      this.levels.contrast,
+      0,
       0,
       0,
     ]));

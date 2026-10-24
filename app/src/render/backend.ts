@@ -1,3 +1,5 @@
+import type { Levels } from './levels';
+
 export type BackendKind = 'webgpu' | 'webgl2';
 
 export interface WaterfallBackend {
@@ -5,6 +7,8 @@ export interface WaterfallBackend {
   init(canvas: HTMLCanvasElement): Promise<void>;
   /** Aggiunge una riga di spettro (byte 0-255, riscalata alla larghezza della texture). */
   pushRow(row: Uint8Array): void;
+  /** Nero, guadagno e contrasto del disegno (si applicano subito a tutta la storia). */
+  setLevels(levels: Levels): void;
   resize(widthPx: number, heightPx: number): void;
   destroy(): void;
 }
