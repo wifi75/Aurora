@@ -1,5 +1,5 @@
 import type { DecodedMessage, StationStatus } from '../api/schemas';
-import { useT } from '../i18n';
+import { useT, type Key } from '../i18n';
 import { useStation } from '../state/station';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
@@ -46,8 +46,9 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 data-next={i === next && m !== '' ? 'true' : undefined}
                 className={m === '' ? 'tx-empty' : undefined}
               >
-                <span className="tx-n">Tx{i + 1}</span>
-                <span className="data">{m}</span>
+                <span className="tx-n">{i + 1}</span>
+                <span className="data tx-msg">{m}</span>
+                <span className="tx-step">{t(`tx.step.${i + 1}` as Key)}</span>
               </li>
             ))}
           </ol>

@@ -960,7 +960,7 @@
 .dock-panel--cq .decode-country,
 .dock-panel--all .decode-where,
 .dock-panel--cq .decode-where {
-  font-size: 0.62rem;
+  font-size: 0.74rem;
 }
 
 .dock-panel--all .badge,
@@ -1018,13 +1018,13 @@
 .dock-panel--all .decode-row,
 .dock-panel--cq .decode-list,
 .dock-panel--cq .decode-row {
-  font-size: 0.66rem;
+  font-size: 0.8rem;
 }
 
 @container (max-width: 40rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 3.4rem 1.7rem minmax(0, 1fr) minmax(0, 8.5rem) 4.8rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) minmax(0, 11rem) 3.9rem;
     row-gap: 0;
   }
 
@@ -1075,16 +1075,338 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4rem 2rem minmax(0, 1fr) 12rem 4.8rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 14rem 3.9rem;
   }
 }
 
 @container (min-width: 54.01rem) {
   .decode-list .decode-row {
-    grid-template-columns: 4rem 2rem 2.6rem 3.2rem minmax(0, 1fr) 14rem 4.8rem;
+    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 1fr) 16rem 3.9rem;
   }
 
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4rem 2rem 3.2rem minmax(0, 1fr) 14rem 4.8rem;
+    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 1fr) 16rem 3.9rem;
   }
+}
+
+/* riga che parte dal bordo sinistro: si recupera lo spazio prima dell'orario; il carattere dell'intera riga e' piu' grande */
+.dock-panel--all .decode-row,
+.dock-panel--cq .decode-row {
+  padding-left: 0.3rem;
+  padding-right: 0.4rem;
+  gap: 0.4rem;
+  min-height: 1.8rem;
+}
+
+.dock-panel--all .decode-list .badge,
+.dock-panel--cq .decode-list .badge {
+  font-size: 0.56rem;
+}
+
+/* Trasmissione: gerarchia chiara. Stazione DX in grande, i sei messaggi numerati con il loro ruolo, interruttori raggruppati e ben acceso/spento */
+.tx-block {
+  padding: 0.6rem 0.75rem;
+}
+
+.tx-block .cmd-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.tx-dx {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.45rem;
+  border-bottom: var(--border-width) solid var(--row-line);
+}
+
+.tx-dx-call {
+  font-size: 1.5rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.tx-dx .tx-freqs {
+  display: flex;
+  flex-basis: 100%;
+  gap: 0.8rem;
+  font-size: 0.7rem;
+}
+
+.tx-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tx-list li {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.7rem;
+  padding: 0 0.5rem 0 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: var(--row-b);
+  border: var(--border-width) solid var(--row-line);
+  border-radius: 0.5rem;
+}
+
+.tx-list li .tx-n {
+  display: grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 50%;
+}
+
+.tx-list li .tx-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-list li .tx-step {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tx-list li.tx-empty {
+  opacity: 0.55;
+}
+
+.tx-list li[aria-current='true'] {
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.tx-list li[aria-current='true'] .tx-n {
+  color: var(--accent);
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.tx-list li[aria-current='true'] .tx-step {
+  color: var(--accent-ink);
+}
+
+.tx-list li[data-next='true'] {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.qso-group {
+  margin: 0.45rem 0 0.25rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tx-block .cmd-chips button.chip {
+  min-height: 1.6rem;
+  padding: 0 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+}
+
+/* acceso: riempito con il colore dell'accento e un pallino; spento: solo contorno */
+.tx-block .cmd-chips button.chip.glass--on {
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.tx-block .cmd-chips button.chip.chip--arming.glass--on {
+  color: var(--stop-ink);
+  background: var(--stop);
+  border-color: var(--stop);
+  box-shadow: 0 0 10px var(--stop);
+}
+
+.chip-led {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+/* etichette strette: il testo va su due righe minuscole dentro la stessa altezza del rigo */
+.decode-list .badge,
+.decode-list .badge-cell {
+  height: 1.3rem;
+  padding: 0 0.15rem;
+  font-size: 0.46rem;
+  font-weight: 700;
+  line-height: 0.56rem;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+}
+
+.dock-panel--all .decode-list .badge,
+.dock-panel--cq .decode-list .badge {
+  font-size: 0.46rem;
+}
+
+/* bandiera e nome del paese piu' grandi */
+.dock-panel--all .decode-flag,
+.dock-panel--cq .decode-flag {
+  width: 1.7em;
+  height: 1.3em;
+  margin-right: 0.35rem;
+}
+
+.dock-panel--all .decode-country,
+.dock-panel--cq .decode-country,
+.dock-panel--all .decode-where,
+.dock-panel--cq .decode-where {
+  font-size: 0.84rem;
+}
+
+@container (min-width: 40.01rem) {
+  .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.2rem minmax(0, 1fr) 6.5rem;
+  }
+}
+
+@container (max-width: 40rem) {
+  .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+  }
+}
+
+/* Trasmissione: il blocco Stazione DX e' largo abbastanza da mostrare per intero i messaggi Tx1-Tx6 */
+.tx-split {
+  grid-template-columns: minmax(19rem, 1.5fr) minmax(0, 1fr);
+}
+
+.tx-list li {
+  min-height: 1.85rem;
+  font-size: 0.82rem;
+}
+
+.tx-list li .tx-step {
+  font-size: 0.66rem;
+}
+
+/* DX Cluster: colonne DE | Freq | DX | bandiera | Paese | Commenti | UTC */
+.cluster-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.cluster-table th:nth-child(1) { width: 18%; }
+.cluster-table th:nth-child(2) { width: 17%; }
+.cluster-table th:nth-child(3) { width: 17%; }
+.cluster-table th:nth-child(4) { width: 8%; }
+.cluster-table th:nth-child(5) { width: 18%; }
+.cluster-table th:nth-child(7) { width: 12%; }
+
+.cluster-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.78rem;
+}
+
+.cluster-table th {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cluster-freq {
+  display: inline-block;
+  padding: 0 0.45rem;
+  font-weight: 700;
+  color: #2b1700;
+  background: #ffb347;
+  border-radius: 999px;
+}
+
+.cluster-dx {
+  font-size: 0.82rem;
+}
+
+.cluster-flag {
+  text-align: center;
+}
+
+.cluster-table .decode-flag {
+  width: 1.7em;
+  height: 1.2em;
+  margin: 0;
+}
+
+.cluster-table td.cluster-country,
+.cluster-table td.cluster-comment {
+  display: table-cell;
+  max-width: none;
+  color: var(--text);
+}
+
+.cluster-table td.cluster-comment {
+  opacity: 0.85;
+}
+
+.cluster-utc {
+  text-align: right;
+}
+
+/* tema chiaro: il verde fluo non si legge, la linguetta "in ascolto" diventa verde scuro su verde chiaro */
+:root[data-theme='light'] .onair-tab[data-state='rx'] {
+  background: #d3f3df;
+  border-color: #1b8a47;
+  color: #075a2a;
+  font-weight: 700;
+}
+
+/* DX Cluster stretto: via la colonna Commenti, le altre si dividono lo spazio */
+.cluster {
+  container-type: inline-size;
+}
+
+@container (max-width: 34rem) {
+  .cluster-table th:nth-child(6),
+  .cluster-table td:nth-child(6) {
+    display: none;
+  }
+
+  .cluster-table th:nth-child(1) { width: 20%; }
+  .cluster-table th:nth-child(2) { width: 20%; }
+  .cluster-table th:nth-child(3) { width: 19%; }
+  .cluster-table th:nth-child(4) { width: 9%; }
+  .cluster-table th:nth-child(5) { width: 20%; }
+  .cluster-table th:nth-child(7) { width: 12%; }
 }

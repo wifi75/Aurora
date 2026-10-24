@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ClusterSpot } from '../api/client';
-import { filterSpots, spotAge } from './cluster';
+import { filterSpots, formatKhz, spotAge } from './cluster';
 
 const spot = (id: number, call: string, band: string | null, mode: string | null): ClusterSpot => ({
   id, received_ms: 1_000_000, server: 'Prova', spotter: 'W3LPL', freq_khz: 14074, dx_call: call, comment: '', time_utc: '1234', grid: null, band, mode, country: null, continent: null,
@@ -32,5 +32,15 @@ describe('spotAge', () => {
   it('counts the seconds since the spot arrived and never goes negative', () => {
     expect(spotAge(spot(1, 'K1ABC', null, null), 1_090_000)).toBe(90);
     expect(spotAge(spot(1, 'K1ABC', null, null), 900_000)).toBe(0);
+  });
+});
+
+describe('formatKhz', () => {
+  it('writes kHz with the thousands dot and the decimal comma', () => {
+    expect(formatKhz(14074)).toBe('14.074,0');
+    expect(formatKhz(28313.2)).toBe('28.313,2');
+    expect(formatKhz(7143.7)).toBe('7.143,7');
+    expect(formatKhz(144310.25)).toBe('144.310,3');
+    expect(formatKhz(1840)).toBe('1.840,0');
   });
 });

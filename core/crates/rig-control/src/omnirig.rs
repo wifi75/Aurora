@@ -6,11 +6,14 @@ use crate::{Rig, RigError};
 pub struct WindowsRig;
 
 /// Lo script contiene solo un numero ricavato da un `u64`: niente testo dell'utente.
+/// `SetSimplexMode` da solo non spegne lo split di alcune radio (FT-2000): se era acceso resta acceso e cambiando
+/// banda la radio resta in split. JTDX lavora senza split, quindi lo si spegne esplicitamente (`PM_SPLITOFF` = 0x10000).
 pub fn script(hz: u64) -> String {
     format!(
         "$o = New-Object -ComObject OmniRig.OmniRigX; \
          if ($o.Rig1.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
-         $o.Rig1.SetSimplexMode({hz})"
+         $o.Rig1.SetSimplexMode({hz}); \
+         $o.Rig1.Split = 65536"
     )
 }
 
