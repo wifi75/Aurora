@@ -7,7 +7,7 @@ import { usePrefs } from '../lib/prefs';
 export function Log4omPanel() {
   const t = useT();
   const count = usePrefs((s) => s.prefs.log4omCount);
-  const log = useQuery({ queryKey: ['log4om', count], queryFn: () => getLog4om(count), refetchInterval: 30_000, retry: false });
+  const log = useQuery({ queryKey: ['log4om', count], queryFn: () => getLog4om(count), refetchInterval: 10_000, retry: false });
 
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
