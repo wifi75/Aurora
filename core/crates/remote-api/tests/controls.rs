@@ -46,6 +46,7 @@ impl Rig for FakeRig {
             messages: vec!["M7SZY IU3ABC IO91".into(), "M7SZY IU3ABC -07".into(), String::new(), String::new(), String::new(), "CQ DX IU3ABC IO91".into()],
             selected: Some(2),
             minute_label: "TX 15/45".into(),
+            autoseq_label: "AutoSeq 3".into(),
         });
         Ok((switches, tx))
     }
@@ -111,6 +112,7 @@ async fn returns_the_six_tx_messages_and_the_selected_one_when_the_rig_reads_the
     assert_eq!(v["tx"]["messages"][1], "M7SZY IU3ABC -07");
     assert_eq!(v["tx"]["messages"][5], "CQ DX IU3ABC IO91");
     assert_eq!(v["tx"]["minute"], "TX 15/45");
+    assert_eq!(v["tx"]["autoseq"], "AutoSeq 3");
 }
 
 #[tokio::test]

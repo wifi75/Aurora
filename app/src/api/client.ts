@@ -393,7 +393,7 @@ export async function getStats(): Promise<StatsResponse> {
 }
 
 export type ControlId =
-  | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'split' | 'show_wanted'
+  | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
   | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx';
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */

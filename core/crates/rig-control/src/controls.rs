@@ -40,6 +40,7 @@ pub const CONTROLS: &[Control] = &[
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
+    toggle("rrr", "rrr1CheckBox"),
     toggle("split", "pbTxLock"),
     toggle("show_wanted", "cbShowWanted"),
     toggle("hound", "HoundButton"),
@@ -83,6 +84,8 @@ pub struct TxState {
     /// Il testo della casella del periodo come lo scrive JTDX ("TX 00/30", "TX 15/45", "TX 00"...): cambia con lo stato e col modo,
     /// quindi si legge invece di ricostruirlo.
     pub minute_label: String,
+    /// Il testo del pulsante AutoSeq, che porta il livello ("AutoSeq 3").
+    pub autoseq_label: String,
 }
 
 /// Interpreta l'uscita di `read_script`: gli interruttori (`nome=1|0`) e, se c'e', lo stato dei messaggi
@@ -96,6 +99,7 @@ pub fn parse_reading(text: &str) -> Reading {
     let mut seen = false;
     let mut selected = None;
     let mut minute_label = String::new();
+    let mut autoseq_label = String::new();
     for line in text.lines() {
         // di un messaggio contano gli spazi dentro, non il fine riga
         let line = line.trim_end_matches(['\r', '\n']);
@@ -109,13 +113,16 @@ pub fn parse_reading(text: &str) -> Reading {
         } else if id == "txminute" {
             minute_label = value.trim().to_string();
             seen = true;
+        } else if id == "txautoseq" {
+            autoseq_label = value.trim().to_string();
+            seen = true;
         } else if id == "txsel" {
             selected = value.trim().parse::<u8>().ok().filter(|n| (1..=6).contains(n));
         } else if find(id).is_some() {
             switches.push((id.to_string(), value.trim() == "1"));
         }
     }
-    (switches, seen.then_some(TxState { messages, selected, minute_label }))
+    (switches, seen.then_some(TxState { messages, selected, minute_label, autoseq_label }))
 }
 
 /// Script che stampa `nome=1` o `nome=0` per ogni interruttore trovato in JTDX, poi i sei messaggi Tx (`txmsg1=...`) e il
@@ -134,7 +141,9 @@ pub fn read_script() -> String {
          $rb = $all | Where-Object {{ $_.Current.AutomationId -like ('*.txrb' + $n) }} | Select-Object -First 1; \
          if ($rb) {{ try {{ if ($rb.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected) {{ Write-Output ('txsel=' + $n) }} }} catch {{ }} }} }}; \
          $tm = $all | Where-Object {{ $_.Current.AutomationId -like '*.TxMinuteButton' }} | Select-Object -First 1; \
-         if ($tm) {{ Write-Output ('txminute=' + $tm.Current.Name) }}",
+         if ($tm) {{ Write-Output ('txminute=' + $tm.Current.Name) }}; \
+         $as = $all | Where-Object {{ $_.Current.AutomationId -like '*.AutoSeqButton' }} | Select-Object -First 1; \
+         if ($as) {{ Write-Output ('txautoseq=' + $as.Current.Name) }}",
         pairs.join(", ")
     )
 }
@@ -178,7 +187,7 @@ mod tests {
     #[test]
     fn reads_switches_messages_and_the_selected_one() {
         let text = "autoseq=1\nskip_tx1=1\nmonitor=0\ntxmsg1=M7SZY IU3ABC IO91\ntxmsg2=M7SZY IU3ABC -07\ntxmsg3=M7SZY IU3ABC R-07\n\
-                    txmsg4=M7SZY IU3ABC RR73\ntxmsg5=M7SZY IU3ABC 73\ntxmsg6=CQ DX IU3ABC IO91\ntxsel=2\ntxminute=TX 15/45\n";
+                    txmsg4=M7SZY IU3ABC RR73\ntxmsg5=M7SZY IU3ABC 73\ntxmsg6=CQ DX IU3ABC IO91\ntxsel=2\ntxminute=TX 15/45\ntxautoseq=AutoSeq 3\n";
         let (switches, tx) = parse_reading(text);
         assert_eq!(switches, vec![("autoseq".into(), true), ("skip_tx1".into(), true), ("monitor".into(), false)]);
         let tx = tx.expect("stato dei messaggi");
@@ -186,6 +195,7 @@ mod tests {
         assert_eq!(tx.messages[1], "M7SZY IU3ABC -07");
         assert_eq!(tx.messages[5], "CQ DX IU3ABC IO91");
         assert_eq!(tx.minute_label, "TX 15/45");
+        assert_eq!(tx.autoseq_label, "AutoSeq 3");
     }
 
     #[test]
