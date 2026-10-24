@@ -37,8 +37,8 @@ fn status_packet() -> (Vec<u8>, usize) {
     w.bool(true); // decoding
     w.u32(1500);
     w.u32(1200);
-    w.utf8(Some("IU3CYV"));
-    w.utf8(Some("JN55"));
+    w.utf8(Some("IK1ABC"));
+    w.utf8(Some("JN45"));
     w.utf8(Some("PM95"));
     w.bool(false); // tx watchdog
     w.utf8(Some(""));
@@ -48,7 +48,7 @@ fn status_packet() -> (Vec<u8>, usize) {
     w.u32(20);
     w.u32(15);
     w.utf8(Some("Default"));
-    w.utf8(Some("CQ IU3CYV JN55"));
+    w.utf8(Some("CQ IK1ABC JN45"));
     (w.into_bytes(), mandatory)
 }
 
@@ -73,7 +73,7 @@ fn decode_heartbeat() {
 
 #[test]
 fn decode_decode_message() {
-    let p = decode(&decode_packet(Some("CQ DX IU3CYV JN55"))).unwrap();
+    let p = decode(&decode_packet(Some("CQ DX IK1ABC JN45"))).unwrap();
     match p.message {
         Message::Decode(d) => {
             assert!(d.is_new);
@@ -82,7 +82,7 @@ fn decode_decode_message() {
             assert_eq!(d.delta_time, 0.3);
             assert_eq!(d.delta_freq, 1500);
             assert_eq!(d.mode.as_deref(), Some("~"));
-            assert_eq!(d.message.as_deref(), Some("CQ DX IU3CYV JN55"));
+            assert_eq!(d.message.as_deref(), Some("CQ DX IK1ABC JN45"));
             assert!(!d.low_confidence && !d.off_air);
         }
         other => panic!("atteso Decode, trovato {other:?}"),
@@ -99,12 +99,12 @@ fn decode_status_all_fields() {
             assert_eq!(s.dx_call.as_deref(), Some("JA1XYZ"));
             assert!(s.tx_enabled && !s.transmitting && s.decoding);
             assert_eq!((s.rx_df, s.tx_df), (1500, 1200));
-            assert_eq!(s.de_call.as_deref(), Some("IU3CYV"));
-            assert_eq!(s.de_grid.as_deref(), Some("JN55"));
+            assert_eq!(s.de_call.as_deref(), Some("IK1ABC"));
+            assert_eq!(s.de_grid.as_deref(), Some("JN45"));
             assert_eq!(s.dx_grid.as_deref(), Some("PM95"));
             assert_eq!(s.submode.as_deref(), Some(""));
             assert_eq!(s.tr_period, Some(15));
-            assert_eq!(s.tx_message.as_deref(), Some("CQ IU3CYV JN55"));
+            assert_eq!(s.tx_message.as_deref(), Some("CQ IK1ABC JN45"));
         }
         other => panic!("atteso Status, trovato {other:?}"),
     }

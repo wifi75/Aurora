@@ -54,13 +54,13 @@ fn encode_reply_echoes_decode_fields() {
 
 #[test]
 fn encode_free_text_utf8() {
-    let bytes = encode_free_text("JTDX", 2, "73 da IU3CYV è qui", false);
+    let bytes = encode_free_text("JTDX", 2, "73 da IK1ABC è qui", false);
     let mut r = Reader::new(&bytes);
     assert_eq!(r.u32(), Ok(MAGIC));
     assert_eq!(r.u32(), Ok(2));
     assert_eq!(r.u32(), Ok(FREE_TEXT));
     assert_eq!(r.utf8(), Ok(Some("JTDX".to_string())));
-    assert_eq!(r.utf8(), Ok(Some("73 da IU3CYV è qui".to_string())));
+    assert_eq!(r.utf8(), Ok(Some("73 da IK1ABC è qui".to_string())));
     assert_eq!(r.bool(), Ok(false));
     assert!(r.is_empty());
 }

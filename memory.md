@@ -20,7 +20,7 @@ Stato al 2026-10-24, versione 0.6.0. Per riprendere il lavoro leggi anche `docs/
 - Nei repository niente nominativi reali, niente riferimenti a strumenti di assistenza, niente segreti.
 
 ## Problemi noti
-- Versione smartphone (segnalato 2026-10-24): sul telefono non si vedono i dati e la pagina lampeggia; sul PC va bene. Da diagnosticare sul telefono vero.
+- Versione smartphone (segnalato 2026-10-24): causa trovata e corretta, il flusso WebSocket si chiudeva ogni secondo in accesso senza codice. Da riprovare sul telefono vero; restano da verificare layout e lampeggio grafico.
 - Da fuori casa non ci si collega ancora (trasporti Tailscale/Cloudflare da fare); l'accesso senza codice vale solo per indirizzi della rete di casa.
 
 ## Convenzioni di lavoro

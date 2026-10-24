@@ -84,7 +84,7 @@ Aurora/
 **Interfaces:**
 - Consumes: `Engine`, `EngineIo`, `Event`, `Command`, `SpectrumRow` (Task 1).
 - Produces: `pub struct SimConfig { pub seed: u64, pub cycle_ms: u64 }` (predefinito 15 000), `pub struct SimEngine`, `SimEngine::new(SimConfig)`, `impl Engine for SimEngine`.
-- Comportamento: ogni ~66 ms una `SpectrumRow` (1024 bin, 0–3000 Hz, rumore deterministico più 6–10 tracce strette per ciclo); a ogni ciclo 5–12 `Decode` con testi realistici (es. `CQ DX JA1XYZ PM95`, `DL2ABC K1ABC FN42`), una quota con tag `Cq`/`NewDxcc`/`NewZone`; `Status` all'avvio e a ogni ciclo (20 m, 14 074 000 Hz, FT8, de_call `IU3CYV`, griglia `JN55`); `Command::HaltTx` → `Event::TxHalted` e `transmitting=false`; `Command::Reply` su un id noto → `Status{transmitting:true}` (simulato). Stesso `seed` ⇒ stessa sequenza di decode.
+- Comportamento: ogni ~66 ms una `SpectrumRow` (1024 bin, 0–3000 Hz, rumore deterministico più 6–10 tracce strette per ciclo); a ogni ciclo 5–12 `Decode` con testi realistici (es. `CQ DX JA1XYZ PM95`, `DL2ABC K1ABC FN42`), una quota con tag `Cq`/`NewDxcc`/`NewZone`; `Status` all'avvio e a ogni ciclo (20 m, 14 074 000 Hz, FT8, de_call `IK1ABC`, griglia `JN45`); `Command::HaltTx` → `Event::TxHalted` e `transmitting=false`; `Command::Reply` su un id noto → `Status{transmitting:true}` (simulato). Stesso `seed` ⇒ stessa sequenza di decode.
 
 - [ ] **Step 1: Test** (con `tokio::time::pause`): `emits_status_on_start`, `emits_spectrum_rows_with_1024_bins_in_range`, `emits_decodes_each_cycle`, `same_seed_same_decode_texts`, `halt_tx_emits_tx_halted_and_clears_transmitting`, `reply_unknown_id_is_ignored_without_panic`.
 - [ ] **Step 2: Run** `cargo test -p engine-sim` — Expected: FAIL.

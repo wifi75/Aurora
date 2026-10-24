@@ -359,7 +359,7 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
 
     #[test]
     fn the_wpx_prefix_is_everything_up_to_the_last_digit() {
-        assert_eq!(wpx_prefix("IU3WJQ").as_deref(), Some("IU3"));
+        assert_eq!(wpx_prefix("IK1ABC").as_deref(), Some("IK1"));
         assert_eq!(wpx_prefix("3DA0XX").as_deref(), Some("3DA0"));
         assert_eq!(wpx_prefix("kh6abc").as_deref(), Some("KH6"));
         assert_eq!(wpx_prefix("AT3AB/P").as_deref(), Some("AT3"));

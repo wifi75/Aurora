@@ -13,7 +13,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Esportazione dei QSO verso log esterni
 
 ## Da fare
-- [ ] Sistemare la versione smartphone (dati non visibili, lampeggio): da diagnosticare sul telefono
+- [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
 - [ ] Wiki in-app con spiegazioni brevi nelle sei lingue
 - [ ] Pagina Statistiche e premi nell'interfaccia (l'API c'è)
 - [ ] Mappa dei QSO e dei CQ

@@ -67,9 +67,9 @@ fn adif_contains_call_band_mode_and_eoh_eor() {
 fn adif_length_is_in_bytes_for_utf8() {
     let lb = Logbook::open_in_memory().unwrap();
     let mut q = qso("JA1XYZ", "20m", "FT8");
-    q.grid = "JN55é".to_string();
+    q.grid = "JN45é".to_string();
     lb.add(&q).unwrap();
-    assert!(lb.export_adif().unwrap().contains("<GRIDSQUARE:6>JN55é"));
+    assert!(lb.export_adif().unwrap().contains("<GRIDSQUARE:6>JN45é"));
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::atomic::Ordering, time::Duration};
 
 use auth::DeviceId;
 use aurora_core::Event;
@@ -84,7 +84,14 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
                 return;
             }
             _ = check.tick() => {
-                if !state.auth.exists(device) {
+                // L'accesso senza codice usa un dispositivo virtuale che non sta nell'archivio:
+                // vale finche' resta acceso, non finche' esiste una registrazione.
+                let still_valid = if device == DeviceId(0) && state.open_access.load(Ordering::SeqCst) {
+                    true
+                } else {
+                    state.auth.exists(device)
+                };
+                if !still_valid {
                     let _ = socket.send(Message::Close(None)).await;
                     return;
                 }
