@@ -4,6 +4,7 @@ description = "Associazione dei dispositivi e verifica dei token di sessione"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

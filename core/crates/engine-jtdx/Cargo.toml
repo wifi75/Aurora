@@ -4,6 +4,7 @@ description = "Motore Aurora che traduce il flusso UDP di JTDX negli eventi dell
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

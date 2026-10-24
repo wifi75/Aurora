@@ -4,4 +4,5 @@ description = "Codifica e decodifica del protocollo UDP di JTDX/WSJT-X (Qt QData
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false

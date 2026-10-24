@@ -4,6 +4,7 @@ description = "Client DX Cluster telnet: spot dei server pubblici o propri, conf
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

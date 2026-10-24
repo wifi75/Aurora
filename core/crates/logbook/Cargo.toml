@@ -4,6 +4,7 @@ description = "Log dei QSO su SQLite con controllo dei duplicati ed esportazione
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

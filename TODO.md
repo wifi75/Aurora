@@ -39,5 +39,6 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Controllo delle nuove versioni sul repository con avviso (barra, evento, telefono)
 - [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora e aggiornamento automatico (OTA): scarica e installa la release; serve firma dei pacchetti e un repository leggibile (pubblico o con token)
 - [x] Lista dei desiderati con avvisi (pagina, suono, notifica del browser, telefono via ntfy); resta la notifica push nativa (richiede HTTPS) e la prova con il telefono vero
-- [ ] Licenza del progetto (decisione di Tiziano)
+- [x] Licenza: GPL-3.0-or-later (file `LICENSE`)
+- [ ] Decidere cosa integrare da Decodium: elenco in `docs/confronto-decodium.md` (slider livello RX, storico decode, PSK 'chi mi ha sentito', propagazione, spot cluster sulla cascata...)
 - [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA

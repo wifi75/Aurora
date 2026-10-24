@@ -4,6 +4,7 @@ description = "Comando della radio (frequenza e banda) condiviso con JTDX tramit
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

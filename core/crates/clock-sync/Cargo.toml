@@ -4,6 +4,7 @@ description = "Client NTP configurabile: misura lo scarto dell'orologio del PC e
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]
