@@ -8,7 +8,7 @@
 | H2 | Cattura audio in parallelo a JTDX | da verificare | prova 3; unico ingresso visto: `Microfono (2- USB Audio Device)` |
 | H3 | Lettura/scrittura frequenza e PTT | da verificare | prova 4; `rigctld-jtdx` supporta `-m -r -s -t` e le porte TCP (aiuto verificato) |
 | H4 | JTDX stabile minimizzato | da verificare | prova 5 |
-| H5 | `Reply` UDP avvia un QSO completo | **supportata dal reverse** (serve l'opzione "Accept UDP requests"; avvio del QSO da confermare con la prova 2) | prova 2 |
+| H5 | `Reply` UDP avvia un QSO completo | **CONFERMATA dalla prova (2026-10-24)**: il Reply ha compilato DX Call e locatore, **acceso Enable Tx e fatto trasmettere**. **supportata dal reverse** (serve l'opzione "Accept UDP requests"; avvio del QSO da confermare con la prova 2) | prova 2 |
 
 ## Decisioni prese durante l'esecuzione
 
@@ -122,3 +122,18 @@ Risultati:
 - Test permanenti con pacchetti reali anonimizzati: `crates/udp-bridge/tests/fixtures/` (nominativi e locatori sostituiti da valori di fantasia). Le catture complete restano in `core/captures/` (ignorata da git).
 
 Ancora aperti: H5 (il Reply avvia davvero la sequenza), H2 (audio in parallelo), H3 (frequenza e PTT), H4 (JTDX minimizzato).
+
+## Prova del Reply su JTDX 2.2.159 (2026-10-24) — H5 confermata, con un effetto inatteso
+
+Procedura: Status precedente con `tx_enabled=0` e `transmitting=0`; Reply inviato con `udp_send` su un CQ decodificato 17 secondi prima (`CQ A41HA LL93`, modo "solo CQ").
+
+Sequenza osservata negli Status di JTDX dopo il Reply:
+1. `dx_call` passa da vuoto a `A41HA`, poi compare `dx_grid = LL93` e il rapporto cambia (-15 → -1): JTDX ha elaborato il decode come un doppio clic.
+2. **`tx_enabled` passa a 1** e al ciclo successivo **`transmitting` passa a 1** (una sola trasmissione FT8): il Reply ha acceso Enable Tx e ha fatto partire la risposta, anche con Enable Tx spento all'inizio.
+3. HaltTx inviato subito dopo: `tx_enabled` torna a 0 e `transmitting` a 0 entro un ciclo. **HaltTx funziona.**
+
+Conseguenze:
+- **Un Reply via UDP avvia da solo la trasmissione** (nella configurazione di Tiziano). Per Aurora e' la funzione che serve all'automazione dei QSO, ma va trattata come un comando che trasmette: mai inviarlo in prova senza antenna o carico fittizio.
+- **Enable Tx spento non e' una protezione contro il Reply.** Le salvaguardie di Aurora (prova a vuoto, tetto di cicli, dead-man switch, STOP TX) devono stare in Aurora e non dipendere da questa impostazione.
+- La trasmissione di prova e' avvenuta senza che Tiziano se l'aspettasse: errore mio nell'aver presentato il rischio come condizionato a Enable Tx. La guida alle prove e' stata corretta.
+- Da verificare sul log di JTDX (ALL.TXT) il testo esatto trasmesso.

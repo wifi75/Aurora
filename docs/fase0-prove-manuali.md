@@ -14,7 +14,10 @@ della radio (o usare un carico fittizio).**
 6. Poi: togliere `#[ignore]` da `every_real_capture_decodes_and_is_plausible` in `crates/udp-bridge/tests/captured.rs`
    e dirmi di eseguire `cargo test -p udp-bridge`: se fallisce, il formato di JTDX differisce da quello ipotizzato e lo correggo.
 
-## Prova 2 — Comandi verso JTDX (ipotesi H5)
+## Prova 2 — Comandi verso JTDX (ipotesi H5) — GIA' ESEGUITA il 2026-10-24
+
+**Attenzione (provato dal vivo): un `reply` fa trasmettere.** JTDX accende da solo Enable Tx e risponde alla stazione, anche se Enable Tx era spento. Eseguire questa prova solo con antenna scollegata, carico fittizio o potenza azzerata, e tenere pronto `udp_send ... halt`. Esito in `fase0-rapporto.md`.
+
 
 Con Enable Tx **spento**:
 1. Scegliere un file `Status` (`*-1.bin`) e un file `Decode` (`*-2.bin`) tra quelli catturati.
