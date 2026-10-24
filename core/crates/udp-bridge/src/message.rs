@@ -252,3 +252,8 @@ pub fn encode_reply(id: &str, schema: u32, decode: &Decode, modifiers: u8) -> Ve
     w.u8(modifiers);
     w.into_bytes()
 }
+
+/// Chiede a JTDX di rimandare i decode correnti (utile a chi si collega a sessione iniziata).
+pub fn encode_replay(id: &str, schema: u32) -> Vec<u8> {
+    command_header(REPLAY, schema, id).into_bytes()
+}

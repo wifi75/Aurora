@@ -357,6 +357,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "engine-jtdx"
+version = "0.2.0"
+dependencies = [
+ "aurora-core",
+ "tokio",
+ "tracing",
+ "udp-bridge",
+ "udp-hub",
+]
+
+[[package]]
 name = "engine-sim"
 version = "0.2.0"
 dependencies = [

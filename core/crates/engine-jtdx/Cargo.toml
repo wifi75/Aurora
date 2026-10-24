@@ -1,0 +1,14 @@
+[package]
+name = "engine-jtdx"
+description = "Motore Aurora che traduce il flusso UDP di JTDX negli eventi dell'applicazione e i comandi in pacchetti per JTDX"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+udp-bridge = { path = "../udp-bridge" }
+udp-hub = { path = "../udp-hub" }
+tokio = { workspace = true }
+tracing = { workspace = true }

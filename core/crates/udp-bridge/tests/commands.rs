@@ -1,4 +1,4 @@
-use udp_bridge::message::{encode_free_text, encode_halt_tx, encode_reply, FREE_TEXT, HALT_TX, REPLY};
+use udp_bridge::message::{encode_free_text, encode_halt_tx, encode_replay, encode_reply, FREE_TEXT, HALT_TX, REPLAY, REPLY};
 use udp_bridge::wire::Reader;
 use udp_bridge::{Decode, MAGIC};
 
@@ -60,4 +60,15 @@ fn encode_free_text_utf8() {
     assert_eq!(r.utf8(), Ok(Some("73 da IU3CYV è qui".to_string())));
     assert_eq!(r.bool(), Ok(false));
     assert!(r.is_empty());
+}
+
+#[test]
+fn encode_replay_layout() {
+    let bytes = encode_replay("JTDX", 2);
+    let mut r = Reader::new(&bytes);
+    assert_eq!(r.u32(), Ok(MAGIC));
+    assert_eq!(r.u32(), Ok(2));
+    assert_eq!(r.u32(), Ok(REPLAY));
+    assert_eq!(r.utf8(), Ok(Some("JTDX".to_string())));
+    assert!(r.is_empty(), "Replay non ha altri campi");
 }
