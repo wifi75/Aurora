@@ -36,7 +36,7 @@ Le righe marcate **(dedotto)** non sono ancora state osservate dal vivo.
 | Flusso | Direzione | Dove | Contenuto | Stato |
 |---|---|---|---|---|
 | Primario | JTDX → GridTracker2 | `127.0.0.1:2333` | Heartbeat, Clear, Status, Decode (catturati dal vivo); QsoLogged e LoggedADIF alla fine del QSO (`EnableUDP1adifSending=true`) | catturato (tranne QSO) |
-| Secondario | JTDX → Log4OM2 | `127.0.0.1:2237` | QSO in ADIF (`EnableUDP2adifBroadcast=true`) | da dettagliare con il reverse (in corso) |
+| Secondario | JTDX → Log4OM2 | `127.0.0.1:2237` | QSO in ADIF come datagramma semplice, **non** nel protocollo con il numero magico (`EnableUDP2adifBroadcast=true`) | confermato dal reverse |
 | Inoltro | GridTracker2 → Log4OM2 | `2236` (tipo 1) e `2238` (tipo 3: `SAVE_NEW_QSO`, `UPLOAD_QSO`) | log e chiamate | dedotto dalla configurazione di Log4OM |
 | Ritorno | GridTracker2 → JTDX | indirizzo mittente di JTDX (porta effimera) | Reply (doppio clic su una stazione), evidenziazione dei nominativi | dedotto |
 
@@ -44,7 +44,18 @@ Impostazioni di JTDX che contano: `UDPServer=127.0.0.1`, `UDPServerPort=2333`, `
 `AcceptUDPRequests=true`, `AcceptUDPReplyMessages=1` (solo CQ), `ApplyFiltersToUDPmessages=true`, `preventFalseUDPspots=true`,
 `udpWindowToFront=true`, `udpWindowRestore=true`, `Tx2QSO=true` (un Reply avvia la trasmissione).
 
-## Il QSO a fine contatto
+## Il QSO a fine contatto (confermato dal reverse: `MainWindow::acceptQSO2`, 0x473a4f)
+
+Quando il QSO viene accettato JTDX fa, in quest'ordine:
+1. lo aggiunge al proprio elenco dei lavorati (`LogBook::addAsWorked`);
+2. manda il messaggio **`QsoLogged` (tipo 5)** al server primario, sempre;
+3. se `EnableUDP1adifSending`, manda il **`LoggedADIF` (tipo 12)** al primario;
+4. se `EnableUDP2adifBroadcast`, manda l'**ADIF come datagramma UDP semplice, senza intestazione del protocollo**, al server secondario (un `QUdpSocket` nuovo a ogni QSO): e' quello che Log4OM2 riceve sulla 2237;
+5. invia a eQSL se configurato, pulisce DX Call e scrive la riga nell'ALL.TXT.
+
+Il collegamento verso Log4OM2 (punto 4) e' quindi **indipendente dal server primario**: cambiare la porta del primario per usare l'hub di Aurora non lo tocca.
+
+## Il QSO nel dettaglio (prima versione)
 
 Quando il contatto si chiude JTDX registra il QSO e lo manda in due modi: messaggi `QsoLogged` (tipo 5) e `LoggedADIF` (tipo 12) sul server primario, e l'ADIF sul secondario verso Log4OM, che lo scrive nel proprio log. **Il log "ufficiale" di Tiziano e' Log4OM2.** Aurora non deve duplicarlo: deve leggere gli stessi eventi per le proprie statistiche, ma lasciare a Log4OM la scrittura del log principale (o, in alternativa, inoltrargli il QSO).
 

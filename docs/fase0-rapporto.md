@@ -137,3 +137,7 @@ Conseguenze:
 - **Enable Tx spento non e' una protezione contro il Reply.** Le salvaguardie di Aurora (prova a vuoto, tetto di cicli, dead-man switch, STOP TX) devono stare in Aurora e non dipendere da questa impostazione.
 - La trasmissione di prova e' avvenuta senza che Tiziano se l'aspettasse: errore mio nell'aver presentato il rischio come condizionato a Enable Tx. La guida alle prove e' stata corretta.
 - Da verificare sul log di JTDX (ALL.TXT) il testo esatto trasmesso.
+
+### Fine del QSO: `MainWindow::acceptQSO2` (decompilato con REA)
+
+Ordine delle operazioni e destinazioni nella mappa `docs/udp-flussi.md`. Punto chiave: il server UDP **secondario** riceve l'ADIF come datagramma grezzo (nessuna intestazione del protocollo di WSJT-X), quindi Aurora non lo vede e non puo' sostituirlo; sul primario arrivano invece `QsoLogged` (tipo 5) e `LoggedADIF` (tipo 12), che il motore di Aurora traduce nell'evento `qso_logged`.
