@@ -1,24 +1,25 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { formatClock } from '../lib/format';
+import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 
-const BADGES: Partial<Record<DecodeTag, { label: string; color: string }>> = {
-  new_dxcc: { label: 'NUOVO DXCC', color: 'new-dxcc' },
-  new_dxcc_band: { label: 'DXCC NUOVA BANDA', color: 'new-dxcc-band' },
-  new_zone: { label: 'NUOVA ZONA', color: 'new-zone' },
-  new_zone_band: { label: 'ZONA NUOVA BANDA', color: 'new-zone-band' },
-  new_itu: { label: 'NUOVA ITU', color: 'new-itu' },
-  new_itu_band: { label: 'ITU NUOVA BANDA', color: 'new-itu-band' },
-  new_grid: { label: 'NUOVA GRIGLIA', color: 'new-grid' },
-  new_grid_band: { label: 'GRIGLIA NUOVA BANDA', color: 'new-grid-band' },
-  new_px: { label: 'NUOVO PREFISSO', color: 'new-px' },
-  new_px_band: { label: 'PREFISSO NUOVA BANDA', color: 'new-px-band' },
-  new_call: { label: 'NUOVA STAZIONE', color: 'new-call' },
-  new_call_band: { label: 'STAZIONE NUOVA BANDA', color: 'new-call-band' },
-  worked_call: { label: 'GIÀ LAVORATA', color: 'worked-call' },
-  auto: { label: 'AUTO', color: 'auto' },
+const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
+  new_dxcc: { label: 'tag.new_dxcc', color: 'new-dxcc' },
+  new_dxcc_band: { label: 'tag.new_dxcc_band', color: 'new-dxcc-band' },
+  new_zone: { label: 'tag.new_zone', color: 'new-zone' },
+  new_zone_band: { label: 'tag.new_zone_band', color: 'new-zone-band' },
+  new_itu: { label: 'tag.new_itu', color: 'new-itu' },
+  new_itu_band: { label: 'tag.new_itu_band', color: 'new-itu-band' },
+  new_grid: { label: 'tag.new_grid', color: 'new-grid' },
+  new_grid_band: { label: 'tag.new_grid_band', color: 'new-grid-band' },
+  new_px: { label: 'tag.new_px', color: 'new-px' },
+  new_px_band: { label: 'tag.new_px_band', color: 'new-px-band' },
+  new_call: { label: 'tag.new_call', color: 'new-call' },
+  new_call_band: { label: 'tag.new_call_band', color: 'new-call-band' },
+  worked_call: { label: 'tag.worked_call', color: 'worked-call' },
+  auto: { label: 'tag.auto', color: 'auto' },
 };
 
 /** Colore della barra accanto al messaggio: quello dell'etichetta, o dei CQ. */
@@ -64,17 +65,18 @@ interface Props {
   emptyText?: string;
 }
 
-export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText = 'In ascolto: i messaggi compaiono qui' }: Props) {
+export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText }: Props) {
+  const t = useT();
   const mine = myGrid ? gridCenter(myGrid) : null;
   if (decodes.length === 0) {
     return (
-      <section className="decode-list decode-list--empty" aria-label="Messaggi decodificati">
-        <p>{emptyText}</p>
+      <section className="decode-list decode-list--empty" aria-label={t('decode.aria')}>
+        <p>{emptyText ?? t('decode.empty')}</p>
       </section>
     );
   }
   return (
-    <section className="decode-list" aria-label="Messaggi decodificati">
+    <section className="decode-list" aria-label={t('decode.aria')}>
       {decodes.map((d) => {
         const badge = d.tag ? BADGES[d.tag] : undefined;
         return (
@@ -102,7 +104,7 @@ export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText = 'In a
                 className="badge badge--tag"
                 style={{ background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
               >
-                {badge.label}
+                {t(badge.label)}
               </span>
             ) : (
               <span />

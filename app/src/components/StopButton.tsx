@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { ApiError, postHalt } from '../api/client';
+import { useT, type T } from '../i18n';
 
 type Phase = { kind: 'idle' } | { kind: 'ok' } | { kind: 'error'; message: string };
 
-function messageFor(error: unknown): string {
-  if (error instanceof ApiError && error.status === 401) {
-    return 'Dispositivo non associato: associalo di nuovo con un codice dal PC.';
-  }
-  return 'Non sono riuscito a fermare la trasmissione. Controlla la connessione e riprova.';
+function messageFor(error: unknown, t: T): string {
+  if (error instanceof ApiError && error.status === 401) return t('stop.unpaired');
+  return t('stop.fail');
 }
 
 interface Props {
@@ -17,6 +16,7 @@ interface Props {
 
 /** Sempre attivo, anche con il collegamento caduto: un tocco, nessuna conferma. */
 export function StopButton({ variant = 'bar' }: Props) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
 
   const stop = async () => {
@@ -24,17 +24,17 @@ export function StopButton({ variant = 'bar' }: Props) {
       await postHalt();
       setPhase({ kind: 'ok' });
     } catch (error) {
-      setPhase({ kind: 'error', message: messageFor(error) });
+      setPhase({ kind: 'error', message: messageFor(error, t) });
     }
   };
 
   return (
     <div className={variant === 'bar' ? 'stop-bar' : 'stop-compact'}>
-      <button type="button" className="stop-btn" onClick={stop}>
-        STOP TX
+      <button type="button" className="stop-btn" onClick={stop} title={t('tip.stop')}>
+        {t('stop.button')}
       </button>
       <p className="stop-note" role="status" aria-live="polite">
-        {phase.kind === 'ok' ? 'Trasmissione fermata' : phase.kind === 'error' ? phase.message : ''}
+        {phase.kind === 'ok' ? t('stop.ok') : phase.kind === 'error' ? phase.message : ''}
       </p>
     </div>
   );

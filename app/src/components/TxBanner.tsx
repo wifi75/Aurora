@@ -1,4 +1,5 @@
 import type { StationStatus } from '../api/schemas';
+import { useT } from '../i18n';
 
 interface Props {
   status: StationStatus | null;
@@ -9,22 +10,23 @@ interface Props {
  * verde fisso = ascolto. In trasmissione riporta il messaggio che parte.
  */
 export function TxBanner({ status }: Props) {
+  const t = useT();
   if (!status) return null;
   if (status.transmitting) {
     return (
-      <div className="onair-tab" role="alert" data-state="tx">
+      <div className="onair-tab" role="alert" data-state="tx" title={t('tip.onair')}>
         <span className="onair-dot" aria-hidden="true" />
-        <strong>IN TRASMISSIONE</strong>
+        <strong>{t('onair.tx')}</strong>
         {status.tx_message ? <span className="data onair-msg">{status.tx_message}</span> : null}
         {status.tx_df ? <span className="data">{status.tx_df} Hz</span> : null}
       </div>
     );
   }
   return (
-    <div className="onair-tab" role="status" data-state="rx">
+    <div className="onair-tab" role="status" data-state="rx" title={t('tip.onair')}>
       <span className="onair-dot" aria-hidden="true" />
-      <strong>IN ASCOLTO</strong>
-      {status.tx_enabled ? <span className="onair-armed">Tx abilitato</span> : null}
+      <strong>{t('onair.rx')}</strong>
+      {status.tx_enabled ? <span className="onair-armed">{t('onair.armed')}</span> : null}
     </div>
   );
 }

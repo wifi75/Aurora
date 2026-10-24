@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 type Phase = 'loading' | 'ready' | 'unsupported';
 
 export function Waterfall({ register }: Props) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>('loading');
   const [kind, setKind] = useState('');
   // WebGPU puo' aver gia' preso il canvas: per ripiegare su WebGL2 serve un canvas nuovo
@@ -61,11 +63,9 @@ export function Waterfall({ register }: Props) {
 
   return (
     <div className="waterfall" data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} role="img" aria-label="Cascata dello spettro audio" />
+      <canvas key={attempt.key} ref={canvasRef} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {phase === 'unsupported' && (
-        <p className="waterfall-note">
-          Questo browser non supporta la grafica accelerata (WebGPU o WebGL2): la cascata non può essere mostrata.
-        </p>
+        <p className="waterfall-note">{t('wf.unsupported')}</p>
       )}
     </div>
   );

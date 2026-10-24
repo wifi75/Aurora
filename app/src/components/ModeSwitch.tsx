@@ -1,3 +1,5 @@
+import { useT } from '../i18n';
+
 const MODES = ['FT8', 'FT4'] as const;
 
 interface Props {
@@ -11,8 +13,9 @@ interface Props {
 
 /** Selettore FT8 / FT4 come in JTDX; il modo in uso e' acceso. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
+  const t = useT();
   return (
-    <div className="mode-switch" role="group" aria-label="Modo">
+    <div className="mode-switch" role="group" aria-label={t('mode.group')} title={t('tip.mode.bar')}>
       {MODES.map((m) => (
         <button
           key={m}
@@ -21,7 +24,7 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
           aria-pressed={m === mode}
           aria-current={m === mode ? 'true' : undefined}
           disabled={!onPick || locked}
-          title={onPick ? (locked ? 'Non si cambia modo in trasmissione' : `Passa a ${m}`) : 'Comando radio non attivo (AURORA_RIG=omnirig)'}
+          title={onPick ? (locked ? t('mode.locked') : t('mode.pick', { mode: m })) : t('band.noRig')}
           onClick={() => {
             if (m !== mode) onPick?.(m);
           }}

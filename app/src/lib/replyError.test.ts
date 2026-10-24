@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../api/client';
-import { replyErrorMessage } from './replyError';
+import { translate, type T } from '../i18n';
+import { replyErrorMessage as message } from './replyError';
+
+const t: T = (key, vars) => translate('it', key, vars);
+const replyErrorMessage = (error: unknown) => message(error, t);
 
 describe('replyErrorMessage', () => {
   it('explains that transmission is switched off in Aurora', () => {

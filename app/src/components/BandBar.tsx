@@ -1,3 +1,4 @@
+import { useT } from '../i18n';
 import { BAND_NAMES, bandOf } from '../lib/format';
 
 interface Props {
@@ -12,9 +13,10 @@ interface Props {
 
 /** Barra delle bande come in JTDX: la banda in uso e' accesa; con il comando radio si cambia banda con un clic. */
 export function BandBar({ dialHz, onPick, bands = BAND_NAMES, locked = false }: Props) {
+  const t = useT();
   const current = dialHz > 0 ? bandOf(dialHz) : null;
   return (
-    <div className="band-bar" role="group" aria-label="Bande">
+    <div className="band-bar" role="group" aria-label={t('band.group')} title={t('tip.band.bar')}>
       {bands.map((name) => (
         <button
           key={name}
@@ -23,7 +25,7 @@ export function BandBar({ dialHz, onPick, bands = BAND_NAMES, locked = false }: 
           aria-pressed={name === current}
           aria-current={name === current ? 'true' : undefined}
           disabled={!onPick || locked}
-          title={onPick ? (locked ? 'Non si cambia banda in trasmissione' : `Vai su ${name}`) : 'Comando radio non attivo (AURORA_RIG=omnirig)'}
+          title={onPick ? (locked ? t('band.locked') : t('band.pick', { band: name })) : t('band.noRig')}
           onClick={() => onPick?.(name)}
         >
           {name.replace('m', '')}

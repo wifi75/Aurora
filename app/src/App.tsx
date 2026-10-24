@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { checkSession } from './api/client';
 import { Footer } from './components/Footer';
+import { LanguageSelect } from './components/LanguageSelect';
+import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
 import { applyColors, readColors } from './lib/colors';
 import { useRoute } from './lib/route';
@@ -12,6 +14,7 @@ import { Live } from './pages/Live';
 import { Pair } from './pages/Pair';
 
 export function App() {
+  const t = useT();
   const route = useRoute();
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -28,13 +31,13 @@ export function App() {
   if (route.name === 'pair') {
     content = <Pair initialCode={route.code} autoSubmit={route.code.length === 8} onPaired={onPaired} />;
   } else if (session.isPending) {
-    content = <p className="muted">Verifica del dispositivo…</p>;
+    content = <p className="muted">{t('app.verifying')}</p>;
   } else if (session.isError) {
     content = (
       <div className="notice">
-        <p>Non riesco a contattare Aurora. Controlla che sia acceso sul PC e che la rete sia raggiungibile.</p>
+        <p>{t('app.noCore')}</p>
         <button type="button" onClick={() => session.refetch()}>
-          Riprova
+          {t('app.retry')}
         </button>
       </div>
     );
@@ -52,11 +55,12 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <a className="app-brand" href="#/">AURORA</a>
-        <nav className="app-nav" aria-label="Pagine">
-          <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} href="#/">Stazione</a>
-          <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} href="#/automazioni">Automazioni</a>
-          <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} href="#/impostazioni">Impostazioni</a>
+        <nav className="app-nav" aria-label={t('nav.pages')}>
+          <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} href="#/">{t('nav.station')}</a>
+          <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} href="#/automazioni">{t('nav.automation')}</a>
+          <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} href="#/impostazioni">{t('nav.settings')}</a>
         </nav>
+        <LanguageSelect />
         <ThemeToggle />
       </header>
       <main className="app-main">{content}</main>

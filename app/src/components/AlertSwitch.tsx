@@ -1,3 +1,4 @@
+import { useT } from '../i18n';
 import type { AlertPrefs } from '../lib/alerts';
 
 interface Props {
@@ -7,13 +8,14 @@ interface Props {
 
 /** Interruttore degli avvisi sonori con il volume; il volume si muove solo ad avvisi accesi. */
 export function AlertSwitch({ value, onChange }: Props) {
+  const t = useT();
   return (
-    <div className="alert-switch" role="group" aria-label="Avvisi sonori">
+    <div className="alert-switch" role="group" aria-label={t('alert.button')} title={t('tip.alert')}>
       <button type="button" aria-pressed={value.enabled} onClick={() => onChange({ ...value, enabled: !value.enabled })}>
-        Avvisi sonori
+        {t('alert.button')}
       </button>
       <label>
-        <span className="visually-hidden">Volume degli avvisi</span>
+        <span className="visually-hidden">{t('alert.volume')}</span>
         <input
           type="range"
           min="0"

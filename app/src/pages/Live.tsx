@@ -4,26 +4,27 @@ import { getStationInfo, postBand, postMode, postReply, postRxFrequency, postTxF
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
-import { ModeSwitch } from '../components/ModeSwitch';
-import { TxBanner } from '../components/TxBanner';
+import { DecodeList } from '../components/DecodeList';
 import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
-import { TxPanel } from '../components/TxPanel';
-import { DecodeList } from '../components/DecodeList';
 import { FrequencyRuler } from '../components/FrequencyRuler';
+import { ModeSwitch } from '../components/ModeSwitch';
 import { StationPanel } from '../components/StationPanel';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
-import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
+import { TxBanner } from '../components/TxBanner';
+import { TxPanel } from '../components/TxPanel';
 import { Waterfall } from '../components/Waterfall';
+import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
+import { useT } from '../i18n';
 import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
+import { useBandFilter, visibleBands } from '../lib/bandFilter';
+import { bandOf } from '../lib/format';
+import { clearHeight, readLayout, resizePanel, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
-import { clearHeight, readLayout, resizePanel, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { readSize, saveSize, type WaterfallSize } from '../lib/waterfallSize';
-import { useBandFilter, visibleBands } from '../lib/bandFilter';
-import { bandOf } from '../lib/format';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
 
@@ -31,6 +32,7 @@ const F_MIN_HZ = 0;
 const F_MAX_HZ = 3000;
 
 export function Live() {
+  const t = useT();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const connection = useStation((s) => s.connection);
@@ -85,7 +87,14 @@ export function Live() {
     changeLayout(next === 'small' ? resizePanel(layout, 'waterfall', 160) : clearHeight(layout, 'waterfall'));
   };
 
-  const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', tx: 'Trasmissione', cq: 'CQ e novità', all: 'Attività di banda' };
+  const titles: Record<PanelId, string> = {
+    waterfall: t('panel.waterfall'),
+    station: t('panel.station'),
+    tx: t('panel.tx'),
+    cq: t('panel.cq'),
+    all: t('panel.all'),
+  };
+
   const renderPanel = (id: PanelId) => {
     switch (id) {
       case 'waterfall':
@@ -110,7 +119,15 @@ export function Live() {
       case 'tx':
         return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
       case 'cq':
-        return <DecodeList decodes={cqDecodes(decodes)} myGrid={status?.de_grid} dxCall={status?.dx_call} onReply={onReply} emptyText="Nessun CQ per ora" />;
+        return (
+          <DecodeList
+            decodes={cqDecodes(decodes)}
+            myGrid={status?.de_grid}
+            dxCall={status?.dx_call}
+            onReply={onReply}
+            emptyText={t('decode.noCq')}
+          />
+        );
       case 'all':
         return <DecodeList decodes={decodes} myGrid={status?.de_grid} dxCall={status?.dx_call} onReply={onReply} />;
     }
@@ -126,42 +143,28 @@ export function Live() {
     return () => stream.close();
   }, []);
 
-  const setFrequency = async (which: string, hz: number, send: (hz: number) => Promise<void>) => {
+  const attempt = async (action: () => Promise<void>, done: string) => {
     try {
-      await send(hz);
-      setNote(`${which} impostato a ${hz} Hz.`);
+      await action();
+      setNote(done);
     } catch (error) {
-      setNote(replyErrorMessage(error));
+      setNote(replyErrorMessage(error, t));
     }
   };
 
-  const pickMode = async (mode: string) => {
-    try {
-      await postMode(mode);
-      setNote(`Modo portato su ${mode}.`);
-    } catch (error) {
-      setNote(replyErrorMessage(error));
-    }
-  };
+  const setFrequency = (which: string, hz: number, send: (hz: number) => Promise<void>) =>
+    attempt(() => send(hz), t('note.freqSet', { which, hz }));
+  const pickMode = (mode: string) => attempt(() => postMode(mode), t('note.modeSet', { mode }));
+  const pickBand = (band: string) => attempt(() => postBand(band), t('note.bandSet', { band }));
 
-  const pickBand = async (band: string) => {
-    try {
-      await postBand(band);
-      setNote(`Radio portata su ${band}.`);
-    } catch (error) {
-      setNote(replyErrorMessage(error));
-    }
-  };
-
-  const onReply = useCallback(async (id: number) => {
-    const target = useStation.getState().decodes.find((d) => d.id === id);
-    try {
-      await postReply(id);
-      setNote(`Risposta inviata: ${target?.text ?? ''}`);
-    } catch (error) {
-      setNote(replyErrorMessage(error));
-    }
-  }, []);
+  const onReply = useCallback(
+    async (id: number) => {
+      const target = useStation.getState().decodes.find((d) => d.id === id);
+      await attempt(() => postReply(id), t('note.replySent', { text: target?.text ?? '' }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  );
 
   return (
     <div className="live">
@@ -180,12 +183,12 @@ export function Live() {
           locked={status?.transmitting ?? false}
           onPick={info.data?.rig_control ? (mode) => void pickMode(mode) : undefined}
         />
-      <BandBar
-        bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
-        dialHz={status?.dial_hz ?? 0}
-        locked={status?.transmitting ?? false}
-        onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
-      />
+        <BandBar
+          bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
+          dialHz={status?.dial_hz ?? 0}
+          locked={status?.transmitting ?? false}
+          onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
+        />
       </div>
       <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
       <p className="live-note" role="status" aria-live="polite">

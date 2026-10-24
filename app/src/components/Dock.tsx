@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useT } from '../i18n';
 import { movePanel, resizePanel, setSplit, toggleCollapsed, type Layout, type PanelId, type Zone } from '../lib/layout';
 
 interface Props {
@@ -29,6 +30,7 @@ function capture(el: HTMLElement, pointerId: number): void {
 }
 
 export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
+  const t = useT();
   const columns = useRef<Record<Zone, HTMLDivElement | null>>({ left: null, right: null });
   const root = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState<PanelId | null>(null);
@@ -147,7 +149,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
             onPointerMove={moveDrag(id)}
             onPointerUp={endDrag(id)}
             onDoubleClick={() => onChange(toggleCollapsed(layout, id))}
-            title="Doppio clic: riduci o riapri"
+            title={t('tip.dock.grip')}
             onPointerCancel={() => {
               setDragging(null);
               setSpot(null);
@@ -157,7 +159,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
             <h2>{titles[id]}</h2>
           </header>
           {!folded && <div className="dock-body">{render(id)}</div>}
-          {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={`Altezza di ${titles[id]}`} onPointerDown={startResize(id)} />}
+          {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={t('dock.height', { title: titles[id] })} title={t('tip.dock.resize')} onPointerDown={startResize(id)} />}
         </section>,
       );
     });
@@ -165,7 +167,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
     if (ids.length === 0 && !(spot?.zone === zone)) {
       nodes.push(
         <div key="empty" className="dock-empty">
-          Trascina qui un pannello
+          {t('dock.empty')}
         </div>,
       );
     }
@@ -175,7 +177,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
   return (
     <div ref={root} className={`dock${dragging ? ' dock--dragging' : ''}`} style={{ ['--dock-split' as string]: `${layout.split}fr`, ['--dock-rest' as string]: `${1 - layout.split}fr` }}>
       <div className="dock-col" ref={(el) => { columns.current.left = el; }}>{column('left')}</div>
-      <div className="dock-splitter" role="separator" aria-orientation="vertical" aria-label="Larghezza delle colonne" onPointerDown={startSplit} />
+      <div className="dock-splitter" role="separator" aria-orientation="vertical" aria-label={t('dock.width')} onPointerDown={startSplit} />
       <div className="dock-col" ref={(el) => { columns.current.right = el; }}>{column('right')}</div>
     </div>
   );

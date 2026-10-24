@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, finishPairing } from '../api/client';
+import { useT, type T } from '../i18n';
 import { defaultDeviceName } from '../lib/deviceName';
 
 interface Props {
@@ -11,16 +12,17 @@ interface Props {
 
 const digitsOnly = (v: string) => v.replace(/\D/g, '').slice(0, 8);
 
-function messageFor(error: unknown): string {
+function messageFor(error: unknown, t: T): string {
   if (error instanceof ApiError) {
-    if (error.code === 'bad_code') return 'Codice non valido. Controlla le cifre e riprova.';
-    if (error.code === 'expired') return 'Il codice è scaduto. Generane uno nuovo sul PC.';
-    if (error.code === 'bad_name') return 'Dai al dispositivo un nome tra 1 e 64 caratteri.';
+    if (error.code === 'bad_code') return t('pair.badCode');
+    if (error.code === 'expired') return t('pair.expired');
+    if (error.code === 'bad_name') return t('pair.badName');
   }
-  return 'Non riesco a contattare Aurora. Controlla che sia acceso sul PC e che la rete sia raggiungibile.';
+  return t('app.noCore');
 }
 
 export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) {
+  const t = useT();
   const [code, setCode] = useState(digitsOnly(initialCode));
   const [name, setName] = useState(() => defaultDeviceName(navigator.userAgent));
   const [error, setError] = useState('');
@@ -36,11 +38,11 @@ export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) 
   const attempt = async () => {
     if (lockLeft > 0 || busy) return;
     if (code.length !== 8) {
-      setError('Il codice ha 8 cifre: controlla quello mostrato sul PC.');
+      setError(t('pair.short'));
       return;
     }
     if (name.trim() === '') {
-      setError('Dai un nome al dispositivo, per riconoscerlo nell\'elenco.');
+      setError(t('pair.nameRequired'));
       return;
     }
     setError('');
@@ -50,7 +52,7 @@ export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) 
       onPaired();
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) setLockLeft(e.retryAfterSecs ?? 60);
-      else setError(messageFor(e));
+      else setError(messageFor(e, t));
     } finally {
       setBusy(false);
     }
@@ -72,10 +74,10 @@ export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) 
 
   return (
     <form className="pair" onSubmit={submit} noValidate>
-      <h1>Associa questo dispositivo</h1>
-      <p className="muted">Sul PC apri Aurora e genera un codice: vale 2 minuti.</p>
+      <h1>{t('pair.title')}</h1>
+      <p className="muted">{t('pair.hint')}</p>
       <label>
-        Codice di associazione
+        {t('pair.code')}
         <input
           className="data"
           inputMode="numeric"
@@ -86,14 +88,14 @@ export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) 
         />
       </label>
       <label>
-        Nome del dispositivo
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome del dispositivo" maxLength={64} />
+        {t('pair.name')}
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('pair.name')} maxLength={64} />
       </label>
       <button type="submit" className="primary">
-        Associa questo dispositivo
+        {t('pair.button')}
       </button>
       <p className="form-note" role="alert">
-        {lockLeft > 0 ? `Troppi tentativi. Riprova tra ${lockLeft} secondi.` : error}
+        {lockLeft > 0 ? t('pair.locked', { n: lockLeft }) : error}
       </p>
     </form>
   );

@@ -1,4 +1,5 @@
 import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useT } from '../i18n';
 import { hzAt, leftPercent } from '../lib/markers';
 
 interface Props {
@@ -19,6 +20,7 @@ const BIG_STEP = 50;
  * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
  */
 export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Props) {
+  const t = useT();
   const box = useRef<HTMLDivElement | null>(null);
 
   const hzFromPointer = (clientX: number): number => {
@@ -60,6 +62,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Pro
         role="slider"
         tabIndex={0}
         aria-label={name}
+        title={kind === 'rx' ? t('tip.marker.rx') : t('tip.marker.tx')}
         aria-valuemin={fMinHz}
         aria-valuemax={fMaxHz}
         aria-valuenow={hz}
@@ -82,8 +85,8 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Pro
           else onRx(hz);
         }}
       />
-      {marker('rx', rxHz, onRx, 'Frequenza Rx (verde)')}
-      {marker('tx', txHz, onTx, 'Frequenza Tx (rossa)')}
+      {marker('rx', rxHz, onRx, t('marker.rx'))}
+      {marker('tx', txHz, onTx, t('marker.tx'))}
     </div>
   );
 }
