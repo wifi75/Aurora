@@ -2601,3 +2601,49 @@
   gap: 0.5rem 1rem;
   font-size: 0.85rem;
 }
+
+/* Spot del DX Cluster sulla cascata */
+.wf-spots {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.wf-spot {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0.5rem;
+  height: 1rem;
+  padding: 0;
+  color: #ffd84a;
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  border-left: 2px solid currentColor;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.wf-spot-call {
+  padding: 0 0.25rem;
+  background: rgb(0 0 0 / 0.55);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.wf-spot--tick {
+  height: 0.6rem;
+  opacity: 0.8;
+}
+
+.wf-spot:hover,
+.wf-spot:focus-visible {
+  color: #fff;
+  outline: none;
+}

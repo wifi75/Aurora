@@ -2,6 +2,14 @@ import type { Entry } from '../core';
 
 /** DX Cluster: finestra e scheda delle impostazioni. [it, en, de, fr, es, pt] */
 export const clusterStrings = {
+  'wf.spot': [
+    '{call} · spot di {spotter} su {freq} kHz: un clic porta la ricezione su questa frequenza',
+    '{call} · spotted by {spotter} on {freq} kHz: click to move the receive frequency here',
+    '{call} · gespottet von {spotter} auf {freq} kHz: Klick setzt die Empfangsfrequenz hierher',
+    '{call} · repéré par {spotter} sur {freq} kHz : un clic place la réception ici',
+    '{call} · spot de {spotter} en {freq} kHz: un clic lleva la recepción a esta frecuencia',
+    '{call} · spot de {spotter} em {freq} kHz: um clique leva a receção para esta frequência',
+  ],
   'tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'tip.tab.cluster': [
     'Collega Aurora a uno o più DX Cluster (server telnet pubblici o tuoi) per vedere gli spot degli altri radioamatori: chi è in aria, su che frequenza e con che modo.',
