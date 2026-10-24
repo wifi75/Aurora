@@ -1,4 +1,4 @@
-/** Il cursore "Pwr" di JTDX e' un'attenuazione da 0 a 45 dB; qui si mostra come livello (100 % = nessuna attenuazione). */
+/** Il cursore "Pwr" del motore e' un'attenuazione da 0 a 45 dB; qui si mostra come livello (100 % = nessuna attenuazione). */
 export const MAX_ATTENUATION_DB = 45;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));

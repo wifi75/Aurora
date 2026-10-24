@@ -5,7 +5,7 @@ import { hzAt, leftPercent } from '../lib/markers';
 interface Props {
   fMinHz: number;
   fMaxHz: number;
-  /** Frequenze di ricezione e trasmissione che riporta JTDX (Hz); assenti = nessun segnaposto. */
+  /** Frequenze di ricezione e trasmissione che riporta il motore (Hz); assenti = nessun segnaposto. */
   rxHz?: number | null;
   txHz?: number | null;
   onRx(hz: number): void;
@@ -16,7 +16,7 @@ const STEP = 10;
 const BIG_STEP = 50;
 
 /**
- * Le due barre di JTDX sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione.
+ * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione.
  * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
  */
 export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, onRx, onTx }: Props) {

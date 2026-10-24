@@ -549,10 +549,10 @@ pub async fn run(
                     .map_err(|e| e.to_string())
             }) as remote_api::Log4omProvider
         }))
-        .with_jtdx_apply_if(config.jtdx_ini.clone().map(|path| {
+        .with_engine_apply_if(config.jtdx_ini.clone().map(|path| {
             Arc::new(move |changes: std::collections::BTreeMap<String, String>| apply_jtdx_settings(&path, &changes)) as remote_api::JtdxApplier
         }))
-        .with_jtdx_config_if(config.jtdx_ini.clone().map(|path| {
+        .with_engine_config_if(config.jtdx_ini.clone().map(|path| {
             Arc::new(move || engine_jtdx::ini::read_shown(&path).map(|settings| serde_json::json!(settings))) as remote_api::JtdxConfigProvider
         }))
         .with_frequencies(Arc::clone(&frequencies))
@@ -572,12 +572,12 @@ pub async fn run(
                     .await
                     .map_err(|e| StartError::Io(e.to_string()))?,
             );
-            let jtdx_config = JtdxConfig {
+            let engine_config = JtdxConfig {
                 allow_tx: config.allow_tx,
                 replay_on_connect: config.replay_on_connect,
                 ..JtdxConfig::default()
             };
-            let mut engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
+            let mut engine = JtdxEngine::new(Arc::clone(&hub), engine_config, Arc::new(EngineClock));
             if let Some((db, worked)) = enrichment {
                 engine = engine.with_enrichment(db, worked);
             }

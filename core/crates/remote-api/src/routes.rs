@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, jtdx_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -53,7 +53,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/log4om", get(log4om))
-        .route("/api/v1/jtdx-config", get(jtdx_config).post(jtdx_config_apply))
+        .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
@@ -651,9 +651,9 @@ struct JtdxApplyBody {
 
 /// Cambia impostazioni di JTDX: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. Solo dalla rete di casa
 /// e mai mentre si trasmette: JTDX resta spento qualche secondo.
-#[utoipa::path(post, path = "/api/v1/jtdx-config", responses((status = 200, description = "Impostazioni applicate e JTDX riavviato"), (status = 400, description = "Voce o valore non ammessi (bad_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (jtdx_config_unavailable)"), (status = 409, description = "Si sta trasmettendo (transmitting)"), (status = 502, description = "Applicazione non riuscita (jtdx_apply_failed)")))]
-async fn jtdx_config_apply(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<JtdxApplyBody>) -> Result<Json<Value>, ApiError> {
-    let apply = state.jtdx_apply.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "jtdx_config_unavailable"))?;
+#[utoipa::path(post, path = "/api/v1/engine-config", responses((status = 200, description = "Impostazioni applicate e JTDX riavviato"), (status = 400, description = "Voce o valore non ammessi (bad_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (engine_config_unavailable)"), (status = 409, description = "Si sta trasmettendo (transmitting)"), (status = 502, description = "Applicazione non riuscita (engine_apply_failed)")))]
+async fn engine_config_apply(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<JtdxApplyBody>) -> Result<Json<Value>, ApiError> {
+    let apply = state.engine_apply.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_config_unavailable"))?;
     if !from_home_network(peer, &headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
@@ -667,7 +667,7 @@ async fn jtdx_config_apply(State(state): State<AppState>, _: Authed, Peer(peer):
         Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
         Ok(Err(e)) => {
             tracing::warn!("applicazione delle impostazioni di JTDX fallita: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "jtdx_apply_failed"))
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "engine_apply_failed"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "jtdx_task")),
     }
@@ -803,14 +803,14 @@ async fn clock_correct(State(state): State<AppState>, _: Authed, Peer(peer): Pee
     }
 }
 
-#[utoipa::path(get, path = "/api/v1/jtdx-config", responses((status = 200, description = "Impostazioni di JTDX lette dal suo file (sola lettura, senza segreti)"), (status = 404, description = "File non configurato (jtdx_config_unavailable)"), (status = 502, description = "File non leggibile (jtdx_config_read)")))]
-async fn jtdx_config(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    let read = state.jtdx_config.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "jtdx_config_unavailable"))?;
+#[utoipa::path(get, path = "/api/v1/engine-config", responses((status = 200, description = "Impostazioni di JTDX lette dal suo file (sola lettura, senza segreti)"), (status = 404, description = "File non configurato (engine_config_unavailable)"), (status = 502, description = "File non leggibile (engine_config_read)")))]
+async fn engine_config(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let read = state.engine_config.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_config_unavailable"))?;
     tokio::task::spawn_blocking(move || read())
         .await
-        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "jtdx_config_task"))?
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_config_task"))?
         .map(Json)
-        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "jtdx_config_read"))
+        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "engine_config_read"))
 }
 
 #[utoipa::path(get, path = "/api/v1/ui-settings/{kind}", responses((status = 200, description = "Preferenze dell'interfaccia per tipo di dispositivo (desktop o mobile)"), (status = 400, description = "Tipo non valido (bad_kind)")))]

@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getClusterSpots, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
 import { useT } from '../i18n';
-import { filterSpots, spotAge, type SpotFilters } from '../lib/cluster';
+import { MultiPick } from './MultiPick';
+import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
-import { bandOf } from '../lib/format';
+import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
@@ -14,16 +15,13 @@ const KEY = 'aurora-cluster-filters';
 const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
 
 function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { band: 'all', mode: 'all', search: '' };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '' };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as Partial<SpotFilters>;
-    return {
-      band: typeof p.band === 'string' ? p.band : defaults.band,
-      mode: typeof p.mode === 'string' ? p.mode : defaults.mode,
-      search: '',
-    };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown };
+    // le versioni precedenti salvavano una sola banda e un solo modo
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '' };
   } catch {
     return defaults;
   }
@@ -42,7 +40,7 @@ export function ClusterPanel() {
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ band: next.band, mode: next.mode }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }
@@ -93,18 +91,20 @@ export function ClusterPanel() {
   return (
     <div className="cluster">
       <div className="cluster-bar" title={t('tip.cluster.filters')}>
-        <select aria-label={t('cluster.filter.band')} value={filters.band} onChange={(e) => change({ ...filters, band: e.target.value })}>
-          <option value="all">{t('cluster.filter.band')}: {t('cluster.filter.bandAll')}</option>
-          <option value="now">{t('cluster.filter.bandNow')}</option>
-        </select>
-        <select aria-label={t('cluster.filter.mode')} value={filters.mode} onChange={(e) => change({ ...filters, mode: e.target.value })}>
-          <option value="all">{t('cluster.filter.mode')}: {t('cluster.filter.modeAll')}</option>
-          {MODES.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+        <MultiPick
+          label={t('cluster.filter.band')}
+          allLabel={t('cluster.filter.bandAll')}
+          options={[{ value: 'now', label: t('cluster.filter.bandNow') }, ...BAND_NAMES.map((b) => ({ value: b, label: b }))]}
+          selected={filters.bands}
+          onChange={(bands) => change({ ...filters, bands })}
+        />
+        <MultiPick
+          label={t('cluster.filter.mode')}
+          allLabel={t('cluster.filter.modeAll')}
+          options={MODES.map((m) => ({ value: m, label: m }))}
+          selected={filters.modes}
+          onChange={(modes) => change({ ...filters, modes })}
+        />
         <input type="search" aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}

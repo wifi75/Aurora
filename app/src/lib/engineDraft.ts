@@ -8,7 +8,7 @@ interface DraftState {
   clear(): void;
 }
 
-export const useJtdxDraft = create<DraftState>((set) => ({
+export const useEngineDraft = create<DraftState>((set) => ({
   changes: {},
   set(key, value, current) {
     set((s) => {

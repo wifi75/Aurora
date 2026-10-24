@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BandBar } from './BandBar';
 
 describe('BandBar', () => {
-  it('lists the bands like JTDX and lights the current one', () => {
+  it('lists the bands like the old one and lights the current one', () => {
     render(<BandBar dialHz={21_074_000} />);
     const names = screen.getAllByRole('button').map((b) => b.textContent);
     expect(names).toEqual(['160', '80', '60', '40', '30', '20', '17', '15', '12', '10', '6', '2']);

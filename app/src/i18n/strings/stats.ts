@@ -9,7 +9,7 @@ export const statsStrings = {
     'Statistik nicht verfügbar: Aurora hat das QSO-Log nicht gefunden.',
     "Statistiques indisponibles : Aurora n'a pas trouvé le log des QSO.",
     'Estadísticas no disponibles: Aurora no encontró el log de QSO.',
-    'Estatísticas indisponíveis: o Aurora não encontrou o log de QSO.',
+    'Estatísticas indisponíveis: a Aurora não encontrou o log de QSO.',
   ],
   'stats.awards': ['Premi', 'Awards', 'Diplome', 'Diplômes', 'Diplomas', 'Diplomas'],
   'stats.qsos': ['QSO nel log', 'QSOs in the log', 'QSOs im Log', 'QSO dans le log', 'QSO en el log', 'QSO no log'],

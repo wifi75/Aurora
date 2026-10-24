@@ -453,7 +453,7 @@
   border-radius: 0.5rem;
 }
 
-/* Una stazione mi sta chiamando: riga in rilievo e tacca rossa a destra, come in JTDX */
+/* Una stazione mi sta chiamando: riga in rilievo e tacca rossa a destra, come nel motore */
 .decode-row--me {
   background: linear-gradient(90deg, rgb(230 255 60 / 0.42), rgb(180 230 40 / 0.28)) !important;
   color: #fff;
@@ -629,7 +629,7 @@
   margin-left: 0.5rem;
 }
 
-/* comandi di ricezione di JTDX e avanzamento del periodo */
+/* comandi di ricezione del motore e avanzamento del periodo */
 .rx-row {
   display: flex;
   flex-wrap: wrap;
@@ -1852,4 +1852,126 @@
   background: var(--panel);
   border: 2px solid #e0a100;
   border-radius: 0.6rem;
+}
+
+/* Filtri del cluster a scelta multipla: menu fisso, leggibile in entrambi i temi */
+.mpick {
+  position: relative;
+}
+
+.mpick-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.6rem;
+  padding: 0 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mpick-label {
+  color: var(--text-muted);
+}
+
+.mpick-caret {
+  margin-left: 0.15rem;
+  font-size: 0.7rem;
+}
+
+.mpick-menu {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: 0;
+  min-width: 9rem;
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0.25rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--text-muted);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.mpick-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+
+.mpick-item:hover {
+  background: var(--row-b);
+}
+
+.mpick-item--all {
+  font-weight: 700;
+  border-bottom: 1px solid var(--row-line);
+  border-radius: 0.3rem 0.3rem 0 0;
+}
+
+/* Tema scuro, Stazione DX: righe neutre (niente verde a righe alterne), testo nitido e una sola tinta per la riga in corso */
+.dock-panel {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li {
+  color: #eaf0fc;
+  background: #1b2638;
+  border: 1px solid #2b3a54;
+  box-shadow: none;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li:nth-child(even) {
+  background: #222f45;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li .tx-step {
+  color: #b6c3db;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li .tx-n {
+  color: #fff;
+  background: #5b6e94;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li.tx-empty {
+  color: #8fa0bf;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li[data-next='true'] {
+  border: 1px solid #3fd6c8;
+  background: #1f3a46;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li[aria-current='true'] {
+  color: #fff;
+  background: #0f8f83;
+  border: 1px solid #3fd6c8;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+:root:not([data-theme='light']) .tx-panel .tx-list li[aria-current='true'] .tx-step {
+  color: #e6fffb;
+}
+
+:root:not([data-theme='light']) .tx-block {
+  background: #151f30;
+  border: 1px solid #2b3a54;
+}
+
+:root:not([data-theme='light']) .tx-block .cmd-title {
+  color: #9db0d0;
 }

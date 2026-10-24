@@ -11,7 +11,7 @@ const ONLY: ReadonlyArray<{ value: OnlyMode; label: Key }> = [
 
 const list = (text: string) => text.split(',').map((x) => x.trim()).filter(Boolean);
 
-/** Scheda Filtri: cosa nascondere o mostrare soltanto negli elenchi, come in JTDX. */
+/** Scheda Filtri: cosa nascondere o mostrare soltanto negli elenchi, come nel motore. */
 export function FiltersTab() {
   const t = useT();
   const filters = useFilters((s) => s.filters);

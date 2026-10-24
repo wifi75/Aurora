@@ -35,7 +35,7 @@ describe('TxPanel', () => {
     expect(screen.getByText('BB2BB AA1AA 73').closest('li')).not.toHaveAttribute('aria-current');
   });
 
-  it('lights the phase of the QSO that comes next when nothing matches what JTDX is sending', () => {
+  it('lights the phase of the QSO that comes next when nothing matches what the engine is sending', () => {
     const quiet = { ...status, transmitting: false, tx_message: null };
     render(<TxPanel txAllowed status={quiet} decodes={[{ id: 1, time_ms: 1, snr: -5, delta_time: 0, freq_hz: 1500, text: 'AA1AA BB2BB -12', tag: null }]} />);
     const next = screen.getByText('BB2BB AA1AA R-10').closest('li');
@@ -44,7 +44,7 @@ describe('TxPanel', () => {
     expect(screen.getByText('BB2BB AA1AA FN42').closest('li')).not.toHaveAttribute('data-next');
   });
 
-  it('prefers the exact message JTDX is sending over the predicted phase', () => {
+  it('prefers the exact message the engine is sending over the predicted phase', () => {
     render(<TxPanel txAllowed status={status} decodes={[]} />);
     expect(screen.getByText('BB2BB AA1AA -10').closest('li')).toHaveAttribute('aria-current', 'true');
     expect(document.querySelector('[data-next]')).toBeNull();

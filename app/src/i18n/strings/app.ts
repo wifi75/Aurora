@@ -15,7 +15,7 @@ export const appStrings = {
     'Aurora ist nicht erreichbar. Prüfe, ob es auf dem PC läuft und das Netzwerk erreichbar ist.',
     "Impossible de joindre Aurora. Vérifie qu'il tourne sur le PC et que le réseau est joignable.",
     'No consigo conectar con Aurora. Comprueba que esté en marcha en el PC y que la red sea accesible.',
-    'Não consigo contactar o Aurora. Verifica se está ligado no PC e se a rede está acessível.',
+    'Não consigo contactar a Aurora. Verifica se está ligado no PC e se a rede está acessível.',
   ],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
@@ -32,7 +32,7 @@ export const appStrings = {
     'Core nicht erreichbar. Prüfe, ob Aurora auf dem PC läuft.',
     'Core injoignable. Vérifie qu’Aurora tourne sur le PC.',
     'Núcleo no accesible. Comprueba que Aurora esté en marcha en el PC.',
-    'Núcleo inacessível. Verifica se o Aurora está ligado no PC.',
+    'Núcleo inacessível. Verifica se a Aurora está ligado no PC.',
   ],
   'footer.connecting': ['Connessione al core…', 'Connecting to the core…', 'Verbindung zum Core …', 'Connexion au core…', 'Conectando con el núcleo…', 'A ligar ao núcleo…'],
   'theme.light': ['Tema chiaro', 'Light theme', 'Helles Design', 'Thème clair', 'Tema claro', 'Tema claro'],

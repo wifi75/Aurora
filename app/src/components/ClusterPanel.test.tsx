@@ -63,7 +63,8 @@ describe('ClusterPanel', () => {
     vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(2, 'JA1ABC', '20m', 'FT8', 'Japan'), spot(1, 'K1ABC', '40m', 'CW', 'United States')] });
     show();
     await screen.findByText('K1ABC');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Banda' }), { target: { value: 'now' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Banda' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'La mia banda' }));
     expect(screen.queryByText('K1ABC')).toBeNull();
     expect(screen.getByText('JA1ABC')).toBeInTheDocument();
   });

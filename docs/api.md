@@ -46,8 +46,8 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `GET/PUT /automation` | Stato, regole, limiti e registro; dal telefono solo prova a vuoto o spegnimento. `403 local_only`, `403 tx_disabled`, `400 bad_rules`/`notice_required` |
 | `GET /stats` | Premi (DXCC, zone CQ e ITU, griglie, prefissi) e paesi mancanti, dal log ADIF |
 | `GET /log4om?limit=` | Ultimi QSO del log di Log4OM2 (sola lettura) e totale; `404 log4om_unavailable` |
-| `GET /jtdx-config` | Impostazioni di JTDX lette dal suo `JTDX.ini` (solo voci elencate, nessuna password); `404 jtdx_config_unavailable` |
-| `POST /jtdx-config` | `{changes: {chiave: valore}}` → chiude JTDX, scrive il file con copia di sicurezza, lo riavvia. Solo rete di casa (`403 local_only`), mai in trasmissione (`409 transmitting`); `400 bad_setting`, `502 jtdx_apply_failed` |
+| `GET /engine-config` | Impostazioni di JTDX lette dal suo `JTDX.ini` (solo voci elencate, nessuna password); `404 engine_config_unavailable` |
+| `POST /engine-config` | `{changes: {chiave: valore}}` → chiude JTDX, scrive il file con copia di sicurezza, lo riavvia. Solo rete di casa (`403 local_only`), mai in trasmissione (`409 transmitting`); `400 bad_setting`, `502 engine_apply_failed` |
 | `GET/PUT /clock` | Client NTP: `{config, last}`; `PUT` salva (`400 bad_clock`); accendere la correzione automatica solo dalla rete di casa |
 | `POST /clock/check` · `POST /clock/correct` | Misura subito lo scarto; sposta l'ora di Windows (amministratore, solo rete di casa: `403 clock_needs_admin`/`local_only`) |
 | `GET/PUT /dx-cluster?since=&limit=` | Impostazioni, stato dei collegamenti e spot recenti; `PUT` salva e rifa' i collegamenti (`400 bad_cluster`) |

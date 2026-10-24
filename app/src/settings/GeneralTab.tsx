@@ -3,10 +3,10 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
-import { JtdxValues } from './JtdxValues';
+import { EngineValues } from './EngineValues';
 import { Check, Help, Row } from './common';
 
-/** Scheda Generali: la stazione (letta da JTDX), come si mostrano i messaggi, lingua e tema. */
+/** Scheda Generali: la stazione (letta dal motore), come si mostrano i messaggi, lingua e tema. */
 export function GeneralTab() {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
@@ -17,8 +17,8 @@ export function GeneralTab() {
       <h3 className="set-sub">{t('gen.station')}</h3>
       <Row name={t('gen.call')}>{status?.de_call || '—'}</Row>
       <Row name={t('gen.grid')}>{status?.de_grid || '—'}</Row>
-      <Help>{t('gen.fromJtdx')}</Help>
-      <JtdxValues group="general" />
+      <Help>{t('gen.fromEngine')}</Help>
+      <EngineValues group="general" />
 
       <h3 className="set-sub">{t('gen.screen')}</h3>
       <div className="set-checks">

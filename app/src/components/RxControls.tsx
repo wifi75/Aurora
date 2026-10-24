@@ -5,12 +5,12 @@ import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
 
-/** Interruttori di ricezione di JTDX, nell'ordine della sua finestra. */
+/** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
 const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'monitor', 'sync', 'agc', 'filter'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
-/** Avanzamento del periodo, come l'indicatore "14/15" di JTDX, ma continuo: si ridisegna a ogni fotogramma. */
+/** Avanzamento del periodo, come l'indicatore "14/15" del motore, ma continuo: si ridisegna a ogni fotogramma. */
 function PeriodBar({ mode, label, transmitting }: { mode: string; label: string; transmitting: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -33,7 +33,7 @@ function PeriodBar({ mode, label, transmitting }: { mode: string; label: string;
   );
 }
 
-/** Comandi di ricezione di JTDX (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo. */
+/** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo. */
 export function RxControls({ mode, transmitting = false }: { mode: string; transmitting?: boolean }) {
   const t = useT();
   const client = useQueryClient();

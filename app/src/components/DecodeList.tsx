@@ -76,7 +76,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
   const prefs = usePrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
   const mine = myGrid ? gridCenter(myGrid) : null;
-  // un clic seleziona la riga; trasmettere richiede il doppio clic (come in JTDX)
+  // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
   if (decodes.length === 0) {
     return (

@@ -352,14 +352,14 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-/** Le impostazioni di JTDX, per nome, come testo (dal suo file di configurazione). */
-export async function getJtdxConfig(): Promise<Record<string, string>> {
-  return (await (await request('/jtdx-config')).json()) as Record<string, string>;
+/** Le impostazioni del motore, per nome, come testo (dal suo file di configurazione). */
+export async function getEngineConfig(): Promise<Record<string, string>> {
+  return (await (await request('/engine-config')).json()) as Record<string, string>;
 }
 
 /** Applica modifiche alle impostazioni del motore: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. */
-export async function applyJtdxConfig(changes: Record<string, string>): Promise<void> {
-  await request('/jtdx-config', jsonInit({ changes }));
+export async function applyEngineConfig(changes: Record<string, string>): Promise<void> {
+  await request('/engine-config', jsonInit({ changes }));
 }
 
 export interface Log4omQso {
@@ -390,7 +390,7 @@ export type ControlId =
   | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'split' | 'show_wanted'
   | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx';
 
-/** Stato degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...). */
+/** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {
   const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>> };
   return body.controls ?? {};

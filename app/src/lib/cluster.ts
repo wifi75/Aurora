@@ -1,10 +1,10 @@
 import type { ClusterSpot } from '../api/client';
 
 export interface SpotFilters {
-  /** `all` oppure `now` (la banda su cui e' JTDX). */
-  band: string;
-  /** `all` oppure un modo (FT8, FT4, CW, SSB, RTTY). */
-  mode: string;
+  /** Bande scelte: `now` e' la banda su cui e' il motore; vuoto = tutte. */
+  bands: string[];
+  /** Modi scelti (FT8, FT4, CW, SSB, RTTY...); vuoto = tutti. */
+  modes: string[];
   search: string;
 }
 
@@ -12,11 +12,21 @@ export interface SpotFilters {
 export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters, currentBand: string | null): ClusterSpot[] {
   const search = filters.search.trim().toUpperCase();
   return spots.filter((s) => {
-    if (filters.band === 'now' && s.band !== currentBand) return false;
-    if (filters.mode !== 'all' && s.mode !== filters.mode) return false;
+    if (filters.bands.length > 0) {
+      const mine = filters.bands.includes('now') && s.band === currentBand;
+      if (!mine && !(s.band !== null && filters.bands.includes(s.band))) return false;
+    }
+    if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.includes(s.mode))) return false;
     if (search !== '' && !s.dx_call.includes(search)) return false;
     return true;
   });
+}
+
+/** Il filtro salvato dalle versioni precedenti era una sola voce (`all`, `now` o una banda): lo porta alla lista. */
+export function toList(stored: unknown): string[] {
+  if (Array.isArray(stored)) return stored.filter((v): v is string => typeof v === 'string');
+  if (typeof stored === 'string' && stored !== 'all' && stored !== '') return [stored];
+  return [];
 }
 
 /** Secondi da quando Aurora ha ricevuto lo spot. */

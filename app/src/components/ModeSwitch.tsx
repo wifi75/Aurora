@@ -2,11 +2,11 @@ import { useT } from '../i18n';
 
 const MODES = ['FT8', 'FT4', 'JT'] as const;
 
-/** JTDX riporta JT65, JT9 o JT65+JT9: per il selettore sono tutti il modo JT. */
+/** il motore riporta JT65, JT9 o JT65+JT9: per il selettore sono tutti il modo JT. */
 const isActive = (m: string, mode: string) => (m === 'JT' ? mode.toUpperCase().startsWith('JT') : m === mode);
 
 interface Props {
-  /** Modo in uso, come lo riporta JTDX. */
+  /** Modo in uso, come lo riporta il motore. */
   mode: string;
   /** Cambia modo; senza, il selettore mostra solo il modo in uso. */
   onPick?(mode: string): void;
@@ -14,7 +14,7 @@ interface Props {
   locked?: boolean;
 }
 
-/** Selettore FT8 / FT4 / JT come in JTDX; il modo in uso e' acceso. */
+/** Selettore FT8 / FT4 / JT come nel motore; il modo in uso e' acceso. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   const t = useT();
   return (

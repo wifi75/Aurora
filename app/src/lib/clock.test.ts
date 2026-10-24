@@ -16,7 +16,7 @@ describe('clock helpers', () => {
     expect(clockInTolerance(200, 200)).toBe(true);
   });
 
-  it('takes the median DT of the last period, like the Med of JTDX', () => {
+  it('takes the median DT of the last period, like the Med of the engine', () => {
     const list = [d(5, 100_000, 0.3), d(4, 100_000, 0.1), d(3, 99_000, 0.2), d(2, 98_000, 2.5), d(1, 10_000, 9)];
     expect(medianDt(list)).toBe(0.25);
   });

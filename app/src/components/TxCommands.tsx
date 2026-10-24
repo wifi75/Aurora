@@ -12,13 +12,13 @@ interface Props {
   txAllowed: boolean;
   /** Frequenza audio di partenza (Hz). */
   initialFrequency?: number;
-  /** Stato di JTDX: frequenze, stazione DX e dati per riempire le macro. */
+  /** Stato del motore: frequenze, stazione DX e dati per riempire le macro. */
   status?: StationStatus | null;
 }
 
 const MAX_TEXT = 13;
 
-/** Pannello comandi come quello di JTDX, ma raccolto: QSO, frequenze, stazione DX, CQ e messaggio libero. */
+/** Pannello comandi come quello del motore, ma raccolto: QSO, frequenze, stazione DX, CQ e messaggio libero. */
 export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }: Props) {
   const t = useT();
   const pendingDx = useStation((s) => s.pendingDx);
@@ -33,7 +33,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
   const [note, setNote] = useState('');
 
-  // la frequenza vera e' quella di JTDX: quando cambia lì si aggiorna anche qui
+  // la frequenza vera e' quella del motore: quando cambia lì si aggiorna anche qui
   useEffect(() => {
     if (status?.tx_df != null) setTxHz(String(status.tx_df));
   }, [status?.tx_df]);

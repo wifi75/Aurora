@@ -9,7 +9,7 @@ export function formatKhzWhole(khz: number): string {
   return Math.round(khz).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-/** La frequenza di JTDX in Hz come kHz con il decimale dei 100 Hz: 21074000 -> "21.074,0 kHz". */
+/** La frequenza del motore in Hz come kHz con il decimale dei 100 Hz: 21074000 -> "21.074,0 kHz". */
 export function formatDial(hz: number): string {
   return `${formatKhz(hz / 1000)} kHz`;
 }

@@ -17,7 +17,7 @@ export const clockStrings = {
     'FT8 und FT4 dekodieren nur bei richtiger PC-Uhr gut: ab einer halben Sekunde Abweichung gehen Nachrichten verloren und andere dekodieren dich nicht. Aurora fragt NTP-Server ab, zeigt die Abweichung und kann die Windows-Uhr korrigieren.',
     'FT8 et FT4 ne décodent bien que si l’horloge du PC est juste : au-delà d’une demi-seconde d’écart, des messages se perdent et les autres ne te décodent pas. Aurora interroge des serveurs NTP, montre l’écart et peut corriger l’horloge de Windows.',
     'FT8 y FT4 solo decodifican bien si el reloj del PC es correcto: con más de medio segundo de error se pierden mensajes y los demás no te decodifican. Aurora consulta servidores NTP, muestra el error y puede corregir el reloj de Windows.',
-    'O FT8 e o FT4 só descodificam bem se o relógio do PC estiver certo: com mais de meio segundo de erro perdem-se mensagens e os outros não te descodificam. O Aurora consulta servidores NTP, mostra o erro e pode corrigir o relógio do Windows.',
+    'O FT8 e o FT4 só descodificam bem se o relógio do PC estiver certo: com mais de meio segundo de erro perdem-se mensagens e os outros não te descodificam. A Aurora consulta servidores NTP, mostra o erro e pode corrigir o relógio do Windows.',
   ],
   'clock.enabled': [
     'Controllo periodico acceso',
@@ -33,7 +33,7 @@ export const clockStrings = {
     'Aurora prüft die Uhr selbstständig im gewählten Intervall. Aus: nur per Taste.',
     'Aurora contrôle l’horloge seule à l’intervalle choisi. Désactivé, seulement avec le bouton.',
     'Aurora comprueba el reloj sola en el intervalo elegido. Apagado, solo con el botón.',
-    'O Aurora verifica o relógio sozinho no intervalo escolhido. Desligado, só com o botão.',
+    'A Aurora verifica o relógio sozinho no intervalo escolhido. Desligado, só com o botão.',
   ],
   'clock.servers': [
     'Server NTP (uno per riga)',
@@ -97,7 +97,7 @@ export const clockStrings = {
     'Überschreitet die Abweichung die Schwelle, stellt Aurora die Windows-Zeit. Aurora muss als Administrator laufen; einschaltbar nur vom Heim-PC. Sonst aus lassen und von Hand korrigieren.',
     'Quand l’écart dépasse le seuil, Aurora change l’heure de Windows. Aurora doit être lancée en administrateur et cela ne s’active que depuis le PC de la maison. Sinon, laisse désactivé et corrige à la main.',
     'Cuando el error supera el umbral Aurora cambia la hora de Windows. Hay que iniciar Aurora como administrador y solo se activa desde el PC de casa. Si no puedes, déjalo apagado y corrige a mano.',
-    'Quando o erro ultrapassa o limiar o Aurora muda a hora do Windows. É preciso iniciar o Aurora como administrador e só se liga a partir do PC de casa. Se não puderes, deixa desligado e corrige à mão.',
+    'Quando o erro ultrapassa o limiar a Aurora muda a hora do Windows. É preciso iniciar a Aurora como administrador e só se liga a partir do PC de casa. Se não puderes, deixa desligado e corrige à mão.',
   ],
   'clock.save': [
     'Salva le impostazioni',
@@ -147,7 +147,7 @@ export const clockStrings = {
     'Verschiebt die Windows-Zeit um die gemessene Abweichung und misst erneut. Aurora muss als Administrator laufen; nur vom Heim-PC.',
     'Décale l’heure de Windows de l’écart mesuré, puis mesure à nouveau. Aurora doit être lancée en administrateur ; seulement depuis le PC de la maison.',
     'Desplaza la hora de Windows el error medido y vuelve a medir. Requiere Aurora como administrador y solo funciona desde el PC de casa.',
-    'Desloca a hora do Windows pelo erro medido e mede de novo. Exige o Aurora como administrador e só funciona a partir do PC de casa.',
+    'Desloca a hora do Windows pelo erro medido e mede de novo. Exige a Aurora como administrador e só funciona a partir do PC de casa.',
   ],
   'clock.needsAdmin': [
     'Windows non lo permette: chiudi Aurora e riavviala come amministratore (tasto destro, Esegui come amministratore).',
@@ -155,7 +155,7 @@ export const clockStrings = {
     'Windows erlaubt das nicht: Aurora schließen und als Administrator neu starten (Rechtsklick, Als Administrator ausführen).',
     'Windows ne le permet pas : ferme Aurora et relance-la en administrateur (clic droit, Exécuter en tant qu’administrateur).',
     'Windows no lo permite: cierra Aurora y reiníciala como administrador (clic derecho, Ejecutar como administrador).',
-    'O Windows não permite: feche o Aurora e reinicie-o como administrador (botão direito, Executar como administrador).',
+    'O Windows não permite: feche a Aurora e reinicie-o como administrador (botão direito, Executar como administrador).',
   ],
   'clock.pcOnly': [
     'Solo dal PC di casa: da qui non si può cambiare l’ora.',
@@ -251,12 +251,12 @@ export const clockStrings = {
   ],
   'clock.pill': ['Orologio', 'Clock', 'Uhr', 'Horloge', 'Reloj', 'Relógio'],
   'tip.clock.pill': [
-    'Scarto dell’orologio di Windows rispetto ai server NTP. Verde: allineato; giallo: oltre la soglia, in Impostazioni → Orologio puoi correggerlo. DT è lo scarto medio di tempo dei messaggi appena decodificati (come «Med» di JTDX): vicino a zero va bene.',
-    'Windows clock error against the NTP servers. Green: in sync; yellow: beyond the threshold, in Settings → Clock you can correct it. DT is the mean time error of the messages just decoded (like JTDX “Med”): close to zero is good.',
-    'Abweichung der Windows-Uhr gegenüber den NTP-Servern. Grün: synchron; gelb: über der Schwelle, unter Einstellungen → Uhr korrigierbar. DT ist der mittlere Zeitfehler der gerade dekodierten Nachrichten (wie „Med“ in JTDX): nahe null ist gut.',
-    'Écart de l’horloge de Windows par rapport aux serveurs NTP. Vert : synchronisée ; jaune : au-delà du seuil, tu peux la corriger dans Réglages → Horloge. DT est l’écart de temps moyen des messages qui viennent d’être décodés (comme « Med » de JTDX) : proche de zéro, c’est bien.',
-    'Error del reloj de Windows frente a los servidores NTP. Verde: sincronizado; amarillo: por encima del umbral, puedes corregirlo en Ajustes → Reloj. DT es el error de tiempo medio de los mensajes recién decodificados (como «Med» de JTDX): cerca de cero está bien.',
-    'Erro do relógio do Windows face aos servidores NTP. Verde: sincronizado; amarelo: acima do limiar, podes corrigi-lo em Definições → Relógio. DT é o erro de tempo médio das mensagens acabadas de descodificar (como «Med» do JTDX): perto de zero está bem.',
+    'Scarto dell’orologio di Windows rispetto ai server NTP. Verde: allineato; giallo: oltre la soglia, in Impostazioni → Orologio puoi correggerlo. DT è lo scarto medio di tempo dei messaggi appena decodificati (come «Med» di Aurora): vicino a zero va bene.',
+    'Windows clock error against the NTP servers. Green: in sync; yellow: beyond the threshold, in Settings → Clock you can correct it. DT is the mean time error of the messages just decoded: close to zero is good.',
+    'Abweichung der Windows-Uhr gegenüber den NTP-Servern. Grün: synchron; gelb: über der Schwelle, unter Einstellungen → Uhr korrigierbar. DT ist der mittlere Zeitfehler der gerade dekodierten Nachrichten: nahe null ist gut.',
+    'Écart de l’horloge de Windows par rapport aux serveurs NTP. Vert : synchronisée ; jaune : au-delà du seuil, tu peux la corriger dans Réglages → Horloge. DT est l’écart de temps moyen des messages qui viennent d’être décodés (comme « Med » d’Aurora) : proche de zéro, c’est bien.',
+    'Error del reloj de Windows frente a los servidores NTP. Verde: sincronizado; amarillo: por encima del umbral, puedes corregirlo en Ajustes → Reloj. DT es el error de tiempo medio de los mensajes recién decodificados (como «Med» de Aurora): cerca de cero está bien.',
+    'Erro do relógio do Windows face aos servidores NTP. Verde: sincronizado; amarelo: acima do limiar, podes corrigi-lo em Definições → Relógio. DT é o erro de tempo médio das mensagens acabadas de descodificar (como «Med» da Aurora): perto de zero está bem.',
   ],
   'clock.dt': ['DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s'],
 } as const satisfies Record<string, Entry>;

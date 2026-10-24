@@ -32,7 +32,7 @@ export const automationStrings = {
     ' Das Senden ist gerade gesperrt: Aurora wurde mit AURORA_ALLOW_TX=0 gestartet.',
     " L'émission est fermée : Aurora a été lancée avec AURORA_ALLOW_TX=0.",
     ' La transmisión está cerrada: Aurora se arrancó con AURORA_ALLOW_TX=0.',
-    ' A transmissão está fechada: o Aurora foi arrancado com AURORA_ALLOW_TX=0.',
+    ' A transmissão está fechada: a Aurora foi arrancado com AURORA_ALLOW_TX=0.',
   ],
   'auto.limits': [
     'Limiti impostati sul PC: {cycles} risposte di fila senza QSO, {perDay} al giorno, spenta dopo {dead} s senza dispositivi collegati. Oggi: {today} risposte.',
@@ -48,7 +48,7 @@ export const automationStrings = {
   'auto.attempts': ['Tentativi per stazione', 'Attempts per station', 'Versuche pro Station', 'Tentatives par station', 'Intentos por estación', 'Tentativas por estação'],
   'auto.excluded': ['Stazioni escluse (separate da virgola)', 'Excluded stations (comma separated)', 'Ausgeschlossene Stationen (durch Komma getrennt)', 'Stations exclues (séparées par des virgules)', 'Estaciones excluidas (separadas por comas)', 'Estações excluídas (separadas por vírgulas)'],
   'auto.saveRules': ['Salva le regole', 'Save the rules', 'Regeln speichern', 'Enregistrer les règles', 'Guardar las reglas', 'Guardar as regras'],
-  'auto.rejected': ['Modifica non accettata da Aurora.', 'Aurora did not accept the change.', 'Aurora hat die Änderung nicht akzeptiert.', "Aurora n'a pas accepté la modification.", 'Aurora no aceptó el cambio.', 'O Aurora não aceitou a alteração.'],
+  'auto.rejected': ['Modifica non accettata da Aurora.', 'Aurora did not accept the change.', 'Aurora hat die Änderung nicht akzeptiert.', "Aurora n'a pas accepté la modification.", 'Aurora no aceptó el cambio.', 'A Aurora não aceitou a alteração.'],
   'auto.log': ['Registro delle decisioni', 'Decision log', 'Entscheidungsprotokoll', 'Journal des décisions', 'Registro de decisiones', 'Registo de decisões'],
   'auto.noLog': ['Nessuna decisione ancora.', 'No decisions yet.', 'Noch keine Entscheidungen.', 'Aucune décision pour le moment.', 'Ninguna decisión todavía.', 'Ainda nenhuma decisão.'],
   'auto.kind.reply': ['Risposta', 'Reply', 'Antwort', 'Réponse', 'Respuesta', 'Resposta'],

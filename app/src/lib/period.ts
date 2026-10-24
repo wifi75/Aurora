@@ -4,8 +4,8 @@ export function periodSecs(mode: string): number {
 }
 
 /**
- * Dove siamo nel periodo, agganciati all'orologio come i periodi di JTDX (FT8: :00, :15, :30, :45).
- * `seconds` sono i secondi interi trascorsi, come l'indicatore "14/15" di JTDX (da 0 a durata - 1);
+ * Dove siamo nel periodo, agganciati all'orologio come i periodi del motore (FT8: :00, :15, :30, :45).
+ * `seconds` sono i secondi interi trascorsi, come l'indicatore "14/15" del motore (da 0 a durata - 1);
  * `fraction` va da 0 a 1 e fa scorrere la barra senza scatti.
  */
 export function periodPosition(nowMs: number, mode: string): { seconds: number; fraction: number; length: number } {

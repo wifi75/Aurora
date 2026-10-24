@@ -1,8 +1,8 @@
 import { useT } from '../i18n';
-import { JtdxValues } from './JtdxValues';
+import { EngineValues } from './EngineValues';
 import { Help, InfoTab, Row } from './common';
 
-/** Scheda Radio: come Aurora e JTDX condividono la radio. */
+/** Scheda Radio: come Aurora e il motore condividono la radio. */
 export function RadioTab() {
   const t = useT();
   return (
@@ -12,7 +12,7 @@ export function RadioTab() {
           <h3 className="set-sub">{t('radio.sharing')}</h3>
           <Row name={t('radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
           <Help>{t('radio.help')}</Help>
-          <JtdxValues group="radio" />
+          <EngineValues group="radio" />
         </>
       )}
     />
@@ -28,7 +28,7 @@ export function AudioTab() {
         <>
           <Row name={t('audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
           <Help>{t('audio.help')}</Help>
-          <JtdxValues group="audio" />
+          <EngineValues group="audio" />
         </>
       )}
     />
@@ -60,20 +60,20 @@ export function ReportsTab() {
           ))}
           <Row name={t('rep.cty')}>{info.cty_loaded > 0 ? t('rep.countries', { n: info.cty_loaded }) : t('rep.notLoaded')}</Row>
           <Row name={t('rep.log')}>{info.worked_qsos > 0 ? t('rep.qsos', { n: info.worked_qsos }) : t('rep.notRead')}</Row>
-          <JtdxValues group="reports" />
+          <EngineValues group="reports" />
         </>
       )}
     />
   );
 }
 
-/** Scheda Avanzate: i parametri del decodificatore stanno in JTDX. */
+/** Scheda Avanzate: i parametri del decodificatore stanno nel motore. */
 export function AdvancedTab() {
   const t = useT();
   return (
     <>
       <Help>{t('adv.help')}</Help>
-      <JtdxValues group="advanced" />
+      <EngineValues group="advanced" />
       <a className="glass glass--link" href="#/guida">
         {t('adv.wiki')}
       </a>

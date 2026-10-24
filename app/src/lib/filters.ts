@@ -5,7 +5,7 @@ import { browserStorage } from './theme';
 export const CONTINENTS = ['AF', 'AN', 'AS', 'EU', 'NA', 'OC', 'SA'] as const;
 export type OnlyMode = 'all' | 'cq' | 'cq_rrr' | 'cq_rr73';
 
-/** Filtri dell'elenco dei messaggi, come la scheda Filtri di JTDX. Solo visualizzazione: nulla viene perso. */
+/** Filtri dell'elenco dei messaggi, come la scheda Filtri del motore. Solo visualizzazione: nulla viene perso. */
 export interface Filters {
   hideContinents: string[];
   hideCountries: string[];

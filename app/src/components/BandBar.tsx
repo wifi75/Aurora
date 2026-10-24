@@ -11,7 +11,7 @@ interface Props {
   locked?: boolean;
 }
 
-/** Barra delle bande come in JTDX: la banda in uso e' accesa; con il comando radio si cambia banda con un clic. */
+/** Barra delle bande come nel motore: la banda in uso e' accesa; con il comando radio si cambia banda con un clic. */
 export function BandBar({ dialHz, onPick, bands = BAND_NAMES, locked = false }: Props) {
   const t = useT();
   const current = dialHz > 0 ? bandOf(dialHz) : null;

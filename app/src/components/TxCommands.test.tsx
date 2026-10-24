@@ -21,7 +21,7 @@ const status: StationStatus = {
   tx_df: 1500, rx_df: 1200, tx_message: 'BB2BB AA1AA -10', tr_period: 15,
 };
 
-/** Il pannello legge lo stato degli interruttori di JTDX da Aurora: serve il contesto delle query. */
+/** Il pannello legge lo stato degli interruttori da Aurora: serve il contesto delle query. */
 function render(ui: ReactElement) {
   return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
 }
@@ -93,7 +93,7 @@ describe('TxCommands', () => {
     expect(screen.getByText('KK00')).toBeInTheDocument();
   });
 
-  it('starts the audio frequencies from the ones JTDX reports', () => {
+  it('starts the audio frequencies from the ones the engine reports', () => {
     render(<TxCommands txAllowed status={status} />);
     expect(screen.getByLabelText(/^Tx \(Hz\)/)).toHaveValue(1500);
     expect(screen.getByLabelText(/^Rx \(Hz\)/)).toHaveValue(1200);
