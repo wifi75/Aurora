@@ -25,5 +25,6 @@ fn unknown_bands_are_refused() {
 fn the_omnirig_script_carries_only_the_number_and_checks_the_radio_is_online() {
     let s = script(14_074_000);
     assert!(s.contains("SetSimplexMode(14074000)"), "{s}");
+    assert!(s.contains("Split = 65536"), "cambiando banda lo split va spento: {s}");
     assert!(s.contains("Rig1.Status -ne 4"), "{s}");
 }

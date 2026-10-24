@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getClusterSpots, getStationInfo, postBand, type ClusterSpot } from '../api/client';
 import { useT } from '../i18n';
-import { filterSpots, spotAge, type SpotFilters } from '../lib/cluster';
+import { filterSpots, formatKhz, spotAge, type SpotFilters } from '../lib/cluster';
 import { flagCode } from '../lib/flags';
 import { bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
@@ -117,11 +117,13 @@ export function ClusterPanel() {
         <table className="cluster-table">
           <thead>
             <tr>
-              <th>{t('cluster.col.time')}</th>
+              <th>{t('cluster.col.by')}</th>
               <th>{t('cluster.col.freq')}</th>
               <th>{t('cluster.col.call')}</th>
-              <th>{t('cluster.col.mode')}</th>
-              <th>{t('cluster.col.by')}</th>
+              <th aria-hidden="true" />
+              <th>{t('cluster.col.country')}</th>
+              <th>{t('cluster.col.comment')}</th>
+              <th>{t('cluster.col.time')}</th>
             </tr>
           </thead>
           <tbody>
@@ -135,18 +137,19 @@ export function ClusterPanel() {
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, band: s.band ?? '—' })}
                   onClick={() => void tune(s)}
                 >
-                  <td className="data muted">{s.time_utc}</td>
-                  <td className="data">{s.freq_khz.toFixed(1)}</td>
-                  <td className="cluster-who">
-                    <strong className="data">{s.dx_call}</strong>
-                    {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
-                    {s.country ? <span className="cluster-country">{s.country}</span> : null}
-                    {s.comment ? <span className="cluster-comment muted">{s.comment}</span> : null}
-                  </td>
-                  <td className="data">{s.mode ?? ''}</td>
-                  <td className="data muted" title={`${spotAge(s)} s`}>
+                  <td className="data cluster-de" title={`${spotAge(s)} s`}>
                     {s.spotter}
                   </td>
+                  <td>
+                    <span className="cluster-freq data">{formatKhz(s.freq_khz)}</span>
+                  </td>
+                  <td>
+                    <strong className="data cluster-dx">{s.dx_call}</strong>
+                  </td>
+                  <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>
+                  <td className="cluster-country">{s.country ?? ''}</td>
+                  <td className="cluster-comment">{[s.mode && !s.comment.toUpperCase().includes(s.mode) ? s.mode : '', s.comment].filter(Boolean).join(' ')}</td>
+                  <td className="data cluster-utc">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2)}</td>
                 </tr>
               );
             })}

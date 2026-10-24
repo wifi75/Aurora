@@ -19,6 +19,12 @@ export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters,
   });
 }
 
+/** La frequenza come sui cluster italiani: kHz con il punto delle migliaia e la virgola dei decimi (14074.0 -> "14.074,0"). */
+export function formatKhz(khz: number): string {
+  const [whole = '', frac = '0'] = khz.toFixed(1).split('.');
+  return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${frac}`;
+}
+
 /** Secondi da quando Aurora ha ricevuto lo spot. */
 export function spotAge(spot: ClusterSpot, now = Date.now()): number {
   return Math.max(0, Math.round((now - spot.received_ms) / 1000));

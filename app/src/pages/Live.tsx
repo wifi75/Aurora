@@ -187,10 +187,12 @@ export function Live() {
       const target = useStation.getState().decodes.find((d) => d.id === id);
       await attempt(
         async () => {
-          await postReply(id);
           // la stazione e' scelta: perche' JTDX la chiami da solo al momento giusto serve anche Abilita Tx
-          // (con 1 QSO acceso JTDX lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'
-          if (info.data?.tx_allowed) await postControl('enable_tx', true).catch(() => undefined);
+          // (con 1 QSO acceso JTDX lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'.
+          // Le due richieste partono insieme: ogni attimo conta, la trasmissione parte solo se Abilita Tx e' acceso in tempo.
+          const arm = info.data?.tx_allowed ? postControl('enable_tx', true).catch(() => undefined) : Promise.resolve();
+          await postReply(id);
+          await arm;
           // la stazione chiamata compare subito nel blocco DX, prima che JTDX la riporti
           const call = target ? callOf(target.text) : null;
           if (call) useStation.getState().setPendingDx(call);
