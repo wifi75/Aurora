@@ -1,5 +1,5 @@
 export function formatMhz(hz: number): string {
-  return `${(hz / 1e6).toFixed(3)} MHz`;
+  return `${(hz / 1e6).toFixed(4)} MHz`;
 }
 
 /** Millisecondi dalla mezzanotte UTC come HH:MM:SS; oltre le 24 ore riparte da zero. */

@@ -40,7 +40,7 @@ describe('StatusBar', () => {
 
   it('keeps only the link and the frequency: band, mode, state and own station are shown elsewhere', () => {
     render(<StatusBar status={base} connection="open" />);
-    expect(screen.getByText('21.074 MHz')).toBeInTheDocument();
+    expect(screen.getByText('21.0740 MHz')).toBeInTheDocument();
     for (const gone of ['15m', 'FT8', 'AA1AA FN42']) expect(screen.queryByText(gone)).toBeNull();
   });
 });
