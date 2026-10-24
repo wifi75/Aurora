@@ -104,6 +104,14 @@ impl Hub {
         self.shared.peer.lock().ok().and_then(|p| *p)
     }
 
+    /// Imposta l'indirizzo di JTDX prima che mandi qualcosa (per esempio quello visto prima di un riavvio di Aurora, finche' JTDX
+    /// e' lo stesso programma in esecuzione): cosi' i comandi, anche STOP, arrivano subito. Il primo datagramma vero lo sostituisce.
+    pub fn set_peer(&self, addr: Option<SocketAddr>) {
+        if let Ok(mut peer) = self.shared.peer.lock() {
+            *peer = addr;
+        }
+    }
+
     /// I datagrammi validi arrivati da JTDX, nell'ordine di arrivo.
     pub fn subscribe(&self) -> broadcast::Receiver<Vec<u8>> {
         self.shared.tx.subscribe()

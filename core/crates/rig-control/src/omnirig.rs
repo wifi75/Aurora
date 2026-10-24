@@ -82,6 +82,10 @@ impl Rig for WindowsRig {
         Ok(crate::controls::parse_reading(&text))
     }
 
+    fn engine_snapshot(&self) -> Result<crate::snapshot::Snapshot, RigError> {
+        Ok(crate::snapshot::parse(&powershell_output(&crate::snapshot::read_script())?))
+    }
+
     fn select_tx_message(&self, n: u8) -> Result<(), RigError> {
         if !(1..=6).contains(&n) {
             return Err(RigError(format!("messaggio Tx non valido: {n}")));

@@ -6,6 +6,7 @@ pub mod controls;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;
+pub mod snapshot;
 pub mod table;
 
 pub mod jtdx_process;
@@ -46,6 +47,11 @@ pub trait Rig: Send + Sync {
     /// Gli interruttori e, se la radio li sa leggere, i sei messaggi Tx con quello selezionato, in una lettura sola.
     fn controls_and_tx(&self) -> Result<controls::Reading, RigError> {
         Ok((self.controls()?, None))
+    }
+
+    /// Lo stato di JTDX letto dalla sua finestra: serve subito dopo l'avvio, prima che mandi il suo stato UDP.
+    fn engine_snapshot(&self) -> Result<snapshot::Snapshot, RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
     }
 
     /// Seleziona il messaggio di trasmissione `n` (1-6): il motore trasmette da quello e poi prosegue da solo.

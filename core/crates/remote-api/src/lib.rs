@@ -239,6 +239,11 @@ impl AppState {
         self.shared.lock().is_ok_and(|s| s.known.contains(&id))
     }
 
+    /// Se e' gia' arrivato uno stato (da JTDX o dalla lettura iniziale della sua finestra).
+    pub fn has_status(&self) -> bool {
+        self.current_status().is_some()
+    }
+
     pub(crate) fn current_status(&self) -> Option<StationStatus> {
         self.shared.lock().ok().and_then(|s| s.status.clone())
     }
