@@ -92,8 +92,9 @@ impl State {
                 tx_enabled: true,
                 transmitting: false,
                 decoding: true,
-                de_call: "IU3CYV".into(),
-                de_grid: "JN55".into(),
+                de_call: "AA1AA".into(),
+                de_grid: "FN42".into(),
+                ..StationStatus::default()
             },
             tracks: Vec::new(),
             seq: 0,

@@ -192,7 +192,7 @@ async fn e2e_decode_carries_country_and_news_when_data_files_are_given() {
     }
     let d = seen.expect("decode non ricevuto");
     assert_eq!(d.country.as_deref(), Some("Utopia"));
-    assert_eq!(d.tag, Some(aurora_core::DecodeTag::Cq), "AA1AA e' un paese gia' lavorato su 15m: solo CQ");
+    assert_eq!(d.tag, Some(aurora_core::DecodeTag::NewPx), "AA1AA: paese, zona e griglia gia' fatti su 15m, ma il prefisso AA1 no");
     drop(tx);
 }
 

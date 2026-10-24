@@ -38,18 +38,39 @@ impl Enrichment {
         if self.worked.is_empty() {
             return (country, base);
         }
-        let tag = match self.worked.novelty(sender, parsed.grid.as_deref(), band, &self.db) {
-            Novelty::NewDxcc => Some(DecodeTag::NewDxcc),
-            Novelty::NewDxccBand => Some(DecodeTag::NewDxccBand),
-            Novelty::NewZone => Some(DecodeTag::NewZone),
-            Novelty::NewGrid if parsed.is_cq => Some(DecodeTag::NewGrid),
-            _ => base,
-        };
-        (country, tag)
+        let novelty = self.worked.novelty(sender, parsed.grid.as_deref(), band, &self.db);
+        (country, tag_for(novelty, parsed.is_cq).or(base))
     }
 
     /// Un QSO appena chiuso: da subito la stazione non e' piu' una novita'.
     pub fn record_qso(&mut self, call: &str, grid: &str, band: &str) {
         self.worked.add_qso(call, grid, band, &self.db);
+    }
+}
+
+/// Etichetta di una novita'. In un messaggio tra altre due stazioni contano solo paese, zona e ITU;
+/// griglia, prefisso, stazione e "gia' lavorata" si segnalano per i CQ.
+fn tag_for(novelty: Novelty, is_cq: bool) -> Option<DecodeTag> {
+    let broad = match novelty {
+        Novelty::NewDxcc => Some(DecodeTag::NewDxcc),
+        Novelty::NewDxccBand => Some(DecodeTag::NewDxccBand),
+        Novelty::NewZone => Some(DecodeTag::NewZone),
+        Novelty::NewZoneBand => Some(DecodeTag::NewZoneBand),
+        Novelty::NewItu => Some(DecodeTag::NewItu),
+        Novelty::NewItuBand => Some(DecodeTag::NewItuBand),
+        _ => None,
+    };
+    if broad.is_some() || !is_cq {
+        return broad;
+    }
+    match novelty {
+        Novelty::NewGrid => Some(DecodeTag::NewGrid),
+        Novelty::NewGridBand => Some(DecodeTag::NewGridBand),
+        Novelty::NewPx => Some(DecodeTag::NewPx),
+        Novelty::NewPxBand => Some(DecodeTag::NewPxBand),
+        Novelty::NewCall => Some(DecodeTag::NewCall),
+        Novelty::NewCallBand => Some(DecodeTag::NewCallBand),
+        Novelty::Worked => Some(DecodeTag::WorkedCall),
+        _ => None,
     }
 }

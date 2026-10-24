@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
+import type { StationStatus } from '../api/schemas';
 import { TxPanel } from './TxPanel';
+
+const status: StationStatus = {
+  dial_hz: 21_074_000, mode: 'FT8', tx_enabled: true, transmitting: true, decoding: false,
+  de_call: 'AA1AA', de_grid: 'FN42', dx_call: 'BB2BB', dx_grid: 'KK00', report: '-10',
+  tx_df: 1500, rx_df: 1200, tx_message: 'BB2BB AA1AA -10', tr_period: 15,
+};
 
 beforeEach(() => {
   vi.mocked(postCq).mockClear();
@@ -12,6 +19,21 @@ beforeEach(() => {
 });
 
 describe('TxPanel', () => {
+  it('shows the DX station and the six messages, lighting the one being sent', () => {
+    render(<TxPanel txAllowed status={status} />);
+    expect(screen.getByText('BB2BB')).toBeInTheDocument();
+    expect(screen.getByText('BB2BB AA1AA FN42')).toBeInTheDocument();
+    expect(screen.getByText('CQ AA1AA FN42')).toBeInTheDocument();
+    expect(screen.getByText('BB2BB AA1AA -10').closest('li')).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByText('BB2BB AA1AA 73').closest('li')).not.toHaveAttribute('aria-current');
+  });
+
+  it('shows the transmit and receive frequencies', () => {
+    render(<TxPanel txAllowed status={status} />);
+    expect(screen.getByText('Tx 1500 Hz')).toBeInTheDocument();
+    expect(screen.getByText('Rx 1200 Hz')).toBeInTheDocument();
+  });
+
   it('with transmission closed it explains and disables what would transmit', () => {
     render(<TxPanel txAllowed={false} />);
     expect(screen.getByText(/trasmissione chiusa/i)).toBeInTheDocument();

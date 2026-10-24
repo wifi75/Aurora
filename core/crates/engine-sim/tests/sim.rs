@@ -41,8 +41,8 @@ async fn emits_status_on_start() {
         Event::Status(s) => {
             assert_eq!(s.dial_hz, 14_074_000);
             assert_eq!(s.mode, "FT8");
-            assert_eq!(s.de_call, "IU3CYV");
-            assert_eq!(s.de_grid, "JN55");
+            assert_eq!(s.de_call, "AA1AA");
+            assert_eq!(s.de_grid, "FN42");
             assert!(!s.transmitting);
         }
         other => panic!("atteso Status, trovato {other:?}"),

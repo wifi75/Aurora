@@ -65,11 +65,35 @@ fn event_serializes_with_type_tag() {
         tx_enabled: true,
         transmitting: false,
         decoding: true,
-        de_call: "IU3CYV".into(),
-        de_grid: "JN55".into(),
+        de_call: "AA1AA".into(),
+        de_grid: "FN42".into(),
+        ..StationStatus::default()
     });
     let back: Event = serde_json::from_str(&serde_json::to_string(&status).unwrap()).unwrap();
     assert_eq!(back, status);
+}
+
+#[test]
+fn status_carries_the_dx_and_transmit_details_and_old_json_still_parses() {
+    let status = Event::Status(StationStatus {
+        dial_hz: 21_074_000,
+        mode: "FT8".into(),
+        de_call: "AA1AA".into(),
+        de_grid: "FN42".into(),
+        dx_call: Some("BB2BB".into()),
+        dx_grid: Some("KK00".into()),
+        report: Some("-10".into()),
+        tx_df: Some(1500),
+        rx_df: Some(1200),
+        tx_message: Some("BB2BB AA1AA FN42".into()),
+        tr_period: Some(15),
+        ..StationStatus::default()
+    });
+    let back: Event = serde_json::from_str(&serde_json::to_string(&status).unwrap()).unwrap();
+    assert_eq!(back, status);
+    let old = r#"{"type":"status","dial_hz":1,"mode":"FT8","tx_enabled":false,"transmitting":false,"decoding":false,"de_call":"A","de_grid":"B"}"#;
+    let parsed: Event = serde_json::from_str(old).unwrap();
+    assert!(matches!(parsed, Event::Status(s) if s.dx_call.is_none() && s.tx_df.is_none()));
 }
 
 #[test]

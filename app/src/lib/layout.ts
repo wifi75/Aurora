@@ -8,6 +8,8 @@ export interface Layout {
   heights: Partial<Record<PanelId, number>>;
   /** Quota di larghezza della colonna sinistra. */
   split: number;
+  /** Pannelli ridotti alla sola barra del titolo. */
+  collapsed: PanelId[];
 }
 
 export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all'];
@@ -21,7 +23,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6 };
+  return { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -42,6 +44,11 @@ export function resizePanel(layout: Layout, id: PanelId, height: number): Layout
 export function clearHeight(layout: Layout, id: PanelId): Layout {
   const { [id]: _removed, ...heights } = layout.heights;
   return { ...layout, heights };
+}
+
+export function toggleCollapsed(layout: Layout, id: PanelId): Layout {
+  const collapsed = layout.collapsed.includes(id) ? layout.collapsed.filter((p) => p !== id) : [...layout.collapsed, id];
+  return { ...layout, collapsed };
 }
 
 export function setSplit(layout: Layout, split: number): Layout {
@@ -68,7 +75,8 @@ export function readLayout(storage: ReadableStorage): Layout {
       }
     }
     const split = typeof parsed.split === 'number' && Number.isFinite(parsed.split) ? clamp(parsed.split, MIN_SPLIT, MAX_SPLIT) : defaultLayout().split;
-    return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split };
+    const collapsed = Array.isArray(parsed.collapsed) ? ALL_PANELS.filter((p) => (parsed.collapsed as unknown[]).includes(p)) : [];
+    return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split, collapsed };
   } catch {
     return defaultLayout();
   }

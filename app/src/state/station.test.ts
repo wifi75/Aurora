@@ -4,7 +4,7 @@ import { useStation } from './station';
 
 const status: StationStatus = {
   dial_hz: 14_074_000, mode: 'FT8', tx_enabled: true, transmitting: false, decoding: true,
-  de_call: 'IU3CYV', de_grid: 'JN55',
+  de_call: 'AA1AA', de_grid: 'FN42',
 };
 
 const decode = (id: number): DecodedMessage => ({

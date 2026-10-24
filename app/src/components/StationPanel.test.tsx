@@ -5,7 +5,7 @@ import { StationPanel } from './StationPanel';
 
 const status = (over: Partial<StationStatus> = {}): StationStatus => ({
   dial_hz: 21_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true,
-  de_call: 'IU3CYV', de_grid: 'JN55', ...over,
+  de_call: 'AA1AA', de_grid: 'FN42', ...over,
 });
 
 describe('StationPanel', () => {
@@ -14,7 +14,7 @@ describe('StationPanel', () => {
     expect(screen.getByText('15m')).toBeInTheDocument();
     expect(screen.getByText('21.074 MHz')).toBeInTheDocument();
     expect(screen.getByText('FT8')).toBeInTheDocument();
-    expect(screen.getByText('IU3CYV JN55')).toBeInTheDocument();
+    expect(screen.getByText('AA1AA FN42')).toBeInTheDocument();
   });
 
   it('says whether it is receiving', () => {

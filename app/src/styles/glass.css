@@ -532,3 +532,58 @@ button.glass,
   margin: 0;
   font-size: var(--text-sm);
 }
+
+.tx-dx {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.tx-freqs {
+  margin-left: auto;
+  display: inline-flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.tx-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.tx-list li {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: var(--space-2);
+  min-height: 1.7rem;
+  padding: 0.15rem var(--space-2);
+  background: linear-gradient(180deg, var(--glass-hi), var(--glass-lo));
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+}
+
+.tx-list li[aria-current='true'] {
+  border-color: var(--stop);
+  box-shadow: 0 0 18px -3px var(--stop);
+}
+
+.tx-empty {
+  opacity: 0.45;
+}
+
+.tx-n {
+  color: var(--text-muted);
+}
+
+.dock-panel--folded .dock-grip {
+  border-bottom: 0;
+}
+
+.dock-panel {
+  min-height: 3rem;
+}

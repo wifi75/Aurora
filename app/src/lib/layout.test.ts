@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearHeight, defaultLayout, movePanel, readLayout, resizePanel, saveLayout, setSplit } from './layout';
+import { clearHeight, defaultLayout, movePanel, toggleCollapsed, readLayout, resizePanel, saveLayout, setSplit } from './layout';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -35,6 +35,20 @@ describe('layout', () => {
     let l = defaultLayout();
     for (const id of ['station', 'tx', 'cq'] as const) l = movePanel(l, id, 'left', 0);
     expect(l.right).toEqual([]);
+  });
+
+  it('collapses a panel to its title bar and expands it again', () => {
+    const once = toggleCollapsed(defaultLayout(), 'waterfall');
+    expect(once.collapsed).toEqual(['waterfall']);
+    expect(toggleCollapsed(once, 'waterfall').collapsed).toEqual([]);
+  });
+
+  it('remembers collapsed panels and ignores bad values', () => {
+    const store = memory();
+    saveLayout(store, toggleCollapsed(defaultLayout(), 'cq'));
+    expect(readLayout(store).collapsed).toEqual(['cq']);
+    const raw = '{"left":["all","waterfall"],"right":["station","tx","cq"],"heights":{},"split":0.5,"collapsed":["cq","nope",7]}';
+    expect(readLayout(memory({ 'aurora-layout': raw })).collapsed).toEqual(['cq']);
   });
 
   it('forgets a chosen height', () => {

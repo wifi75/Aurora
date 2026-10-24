@@ -130,10 +130,10 @@ async fn same_country_on_another_band_is_new_band() {
 }
 
 #[tokio::test]
-async fn an_already_worked_station_is_a_plain_cq() {
+async fn an_already_worked_station_is_tagged_worked() {
     let mut r = rig(ADIF_ATLANTIS_15M).await;
     r.on_15m().await;
-    assert_eq!(r.decode("CQ AT3AB FN42", 100).await.0, Some(DecodeTag::Cq));
+    assert_eq!(r.decode("CQ AT3AB FN42", 100).await.0, Some(DecodeTag::WorkedCall));
 }
 
 #[tokio::test]
@@ -169,7 +169,16 @@ async fn a_logged_qso_updates_the_novelty_immediately() {
             _ => panic!("QSO non ricevuto"),
         }
     }
-    assert_eq!(r.decode("CQ LM2ZZ KK00", 101).await.0, Some(DecodeTag::Cq), "il paese non e' piu' nuovo");
+    assert_eq!(r.decode("CQ LM2ZZ KK00", 101).await.0, Some(DecodeTag::NewPx), "il paese non e' piu' nuovo, il prefisso LM2 si");
+}
+
+#[tokio::test]
+async fn new_prefix_and_new_call_are_reported_for_cq() {
+    let mut r = rig("<CALL:5>AT3AB<BAND:3>15m<GRIDSQUARE:4>FN42<EOR>
+").await;
+    r.on_15m().await;
+    assert_eq!(r.decode("CQ AT9ZZ FN42", 100).await.0, Some(DecodeTag::NewPx));
+    assert_eq!(r.decode("CQ AT3CD FN42", 101).await.0, Some(DecodeTag::NewCall));
 }
 
 #[tokio::test]

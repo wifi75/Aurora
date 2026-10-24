@@ -21,7 +21,10 @@ export function alertKind(tag: DecodeTag | null | undefined): AlertKind | null {
       return 'dxcc';
     case 'new_dxcc_band':
     case 'new_zone':
+    case 'new_zone_band':
+    case 'new_itu':
     case 'new_grid':
+    case 'new_px':
       return 'news';
     default:
       return null;

@@ -284,6 +284,6 @@ fn tag_text(tag: DecodeTag) -> &'static str {
         DecodeTag::NewDxccBand => "paese nuovo su questa banda",
         DecodeTag::NewZone => "zona nuova",
         DecodeTag::NewGrid => "griglia nuova",
-        DecodeTag::Cq | DecodeTag::Auto => "CQ",
+        _ => "CQ",
     }
 }

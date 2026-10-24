@@ -1,6 +1,10 @@
 use aurora_core::{DecodeTag, DecodedMessage, QsoRecord, StationStatus};
 use udp_bridge::{Decode as WireDecode, Message, Status as WireStatus};
 
+fn non_empty(text: Option<&str>) -> Option<String> {
+    text.map(str::trim).filter(|t| !t.is_empty()).map(str::to_string)
+}
+
 pub fn to_status(s: &WireStatus) -> StationStatus {
     StationStatus {
         dial_hz: s.dial_freq,
@@ -10,6 +14,13 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         decoding: s.decoding,
         de_call: s.de_call.clone().unwrap_or_default(),
         de_grid: s.de_grid.clone().unwrap_or_default(),
+        dx_call: non_empty(s.dx_call.as_deref()),
+        dx_grid: non_empty(s.dx_grid.as_deref()),
+        report: non_empty(s.report.as_deref()),
+        tx_df: Some(s.tx_df),
+        rx_df: Some(s.rx_df),
+        tx_message: non_empty(s.tx_message.as_deref()),
+        tr_period: s.tr_period,
     }
 }
 

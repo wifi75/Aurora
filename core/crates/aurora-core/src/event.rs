@@ -4,7 +4,7 @@ use crate::CoreError;
 
 pub const MAX_SPECTRUM_BINS: usize = 4096;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct StationStatus {
     pub dial_hz: u64,
     pub mode: String,
@@ -13,6 +13,25 @@ pub struct StationStatus {
     pub decoding: bool,
     pub de_call: String,
     pub de_grid: String,
+    /// Stazione in collegamento (nominativo DX) e suo locatore, se JTDX li riporta.
+    #[serde(default)]
+    pub dx_call: Option<String>,
+    #[serde(default)]
+    pub dx_grid: Option<String>,
+    /// Rapporto di segnale impostato.
+    #[serde(default)]
+    pub report: Option<String>,
+    /// Frequenze audio di trasmissione e ricezione (Hz).
+    #[serde(default)]
+    pub tx_df: Option<u32>,
+    #[serde(default)]
+    pub rx_df: Option<u32>,
+    /// Messaggio in trasmissione o pronto.
+    #[serde(default)]
+    pub tx_message: Option<String>,
+    /// Durata del ciclo, in secondi.
+    #[serde(default)]
+    pub tr_period: Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,7 +43,17 @@ pub enum DecodeTag {
     /// Paese gia' collegato, ma non su questa banda.
     NewDxccBand,
     NewZone,
+    NewZoneBand,
+    NewItu,
+    NewItuBand,
     NewGrid,
+    NewGridBand,
+    NewPx,
+    NewPxBand,
+    NewCall,
+    NewCallBand,
+    /// Stazione gia' collegata su questa banda.
+    WorkedCall,
     Auto,
 }
 

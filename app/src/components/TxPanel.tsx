@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { postCq, postFreeText, postTxFrequency } from '../api/client';
+import type { StationStatus } from '../api/schemas';
+import { activeTx, txMessages } from '../lib/txMessages';
 import { replyErrorMessage } from '../lib/replyError';
 
 interface Props {
@@ -7,12 +9,18 @@ interface Props {
   txAllowed: boolean;
   /** Frequenza audio di partenza (Hz). */
   initialFrequency?: number;
+  /** Stato di JTDX: stazione DX, rapporto e messaggio in corso. */
+  status?: StationStatus | null;
 }
 
 const MAX_TEXT = 13;
 
 /** Comandi di trasmissione: CQ, messaggio libero e frequenza audio. Cio' che trasmette si abilita solo dal PC. */
-export function TxPanel({ txAllowed, initialFrequency = 1500 }: Props) {
+export function TxPanel({ txAllowed, initialFrequency = 1500, status = null }: Props) {
+  const messages = status
+    ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: status.dx_call ?? '', report: status.report ?? '' })
+    : [];
+  const active = activeTx(messages, status?.tx_message);
   const [dx, setDx] = useState(false);
   const [text, setText] = useState('');
   const [hz, setHz] = useState(String(initialFrequency));
@@ -29,6 +37,25 @@ export function TxPanel({ txAllowed, initialFrequency = 1500 }: Props) {
 
   return (
     <div className="tx-panel">
+      {status && (
+        <>
+          <div className="tx-dx">
+            <span className="muted">DX</span> <strong className="data">{status.dx_call ?? '—'}</strong>
+            {status.dx_grid ? <span className="data muted"> {status.dx_grid}</span> : null}
+            <span className="data muted tx-freqs">
+              <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
+            </span>
+          </div>
+          <ol className="tx-list" aria-label="Messaggi Tx1-Tx6">
+            {messages.map((m, i) => (
+              <li key={i} aria-current={i === active ? 'true' : undefined} className={m === '' ? 'tx-empty' : undefined}>
+                <span className="tx-n">Tx{i + 1}</span>
+                <span className="data">{m}</span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
       {!txAllowed && (
         <p className="muted tx-note">
           Trasmissione chiusa: Aurora si avvia con AURORA_ALLOW_TX=0. Si apre solo dal PC, all'avvio.

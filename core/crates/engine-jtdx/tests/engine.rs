@@ -107,6 +107,27 @@ fn allow_tx() -> JtdxConfig {
 }
 
 #[tokio::test]
+async fn status_carries_the_details_jtdx_reports() {
+    let mut r = rig(JtdxConfig::default()).await;
+    let bytes = fixture("status-decoding.bin");
+    let wire = match decode(&bytes).unwrap().message {
+        Message::Status(s) => s,
+        other => panic!("{other:?}"),
+    };
+    r.send(&bytes).await;
+    match r.event().await {
+        Some(Event::Status(s)) => {
+            assert_eq!(s.tx_df, Some(wire.tx_df));
+            assert_eq!(s.rx_df, Some(wire.rx_df));
+            assert_eq!(s.dx_call, wire.dx_call.clone().filter(|c| !c.is_empty()));
+            assert_eq!(s.tx_message, wire.tx_message.clone().map(|m| m.trim().to_string()).filter(|m| !m.is_empty()));
+            assert_eq!(s.tr_period, wire.tr_period);
+        }
+        other => panic!("atteso Status, trovato {other:?}"),
+    }
+}
+
+#[tokio::test]
 async fn halt_command_announces_tx_halted_even_before_jtdx_is_known() {
     let mut r = rig(JtdxConfig::default()).await;
     r.command(Command::HaltTx).await;

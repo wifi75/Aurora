@@ -7,11 +7,20 @@ const BADGES: Partial<Record<DecodeTag, { label: string; color: string }>> = {
   new_dxcc: { label: 'NUOVO DXCC', color: 'new-dxcc' },
   new_dxcc_band: { label: 'DXCC NUOVA BANDA', color: 'new-dxcc-band' },
   new_zone: { label: 'NUOVA ZONA', color: 'new-zone' },
+  new_zone_band: { label: 'ZONA NUOVA BANDA', color: 'new-zone-band' },
+  new_itu: { label: 'NUOVA ITU', color: 'new-itu' },
+  new_itu_band: { label: 'ITU NUOVA BANDA', color: 'new-itu-band' },
   new_grid: { label: 'NUOVA GRIGLIA', color: 'new-grid' },
+  new_grid_band: { label: 'GRIGLIA NUOVA BANDA', color: 'new-grid-band' },
+  new_px: { label: 'NUOVO PREFISSO', color: 'new-px' },
+  new_px_band: { label: 'PREFISSO NUOVA BANDA', color: 'new-px-band' },
+  new_call: { label: 'NUOVA STAZIONE', color: 'new-call' },
+  new_call_band: { label: 'STAZIONE NUOVA BANDA', color: 'new-call-band' },
+  worked_call: { label: 'GIÀ LAVORATA', color: 'worked-call' },
   auto: { label: 'AUTO', color: 'auto' },
 };
 
-/** Colore della barra accanto al messaggio: l'etichetta se c'e', altrimenti quello dei CQ. */
+/** Colore della barra accanto al messaggio: quello dell'etichetta, o dei CQ. */
 function accentOf(tag: DecodeTag | null | undefined): string | null {
   if (tag === 'cq') return 'cq';
   return tag ? (BADGES[tag]?.color ?? null) : null;

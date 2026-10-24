@@ -37,7 +37,7 @@ describe('EventSchema', () => {
     expect(
       EventSchema.safeParse({
         type: 'status', dial_hz: 14074000, mode: 'FT8', tx_enabled: true, transmitting: false,
-        decoding: true, de_call: 'IU3CYV', de_grid: 'JN55',
+        decoding: true, de_call: 'AA1AA', de_grid: 'FN42',
       }).success,
     ).toBe(true);
     expect(EventSchema.safeParse({ type: 'tx_halted' }).success).toBe(true);

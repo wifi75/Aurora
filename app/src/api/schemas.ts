@@ -16,10 +16,33 @@ export const StationStatusSchema = z.object({
   decoding: z.boolean(),
   de_call: z.string(),
   de_grid: z.string(),
+  dx_call: z.string().nullable().optional(),
+  dx_grid: z.string().nullable().optional(),
+  report: z.string().nullable().optional(),
+  tx_df: z.number().nullable().optional(),
+  rx_df: z.number().nullable().optional(),
+  tx_message: z.string().nullable().optional(),
+  tr_period: z.number().nullable().optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 
-export const DecodeTagSchema = z.enum(['cq', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_grid', 'auto']);
+export const DecodeTagSchema = z.enum([
+  'cq',
+  'new_dxcc',
+  'new_dxcc_band',
+  'new_zone',
+  'new_zone_band',
+  'new_itu',
+  'new_itu_band',
+  'new_grid',
+  'new_grid_band',
+  'new_px',
+  'new_px_band',
+  'new_call',
+  'new_call_band',
+  'worked_call',
+  'auto',
+]);
 export type DecodeTag = z.infer<typeof DecodeTagSchema>;
 
 export const DecodedMessageSchema = z.object({

@@ -2,7 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use dxcc::DxccDb;
 
-/// Che cosa c'e' di nuovo in una stazione rispetto ai QSO gia' fatti, in ordine di importanza.
+/// Che cosa c'e' di nuovo in una stazione rispetto ai QSO gia' fatti, dal piu' raro al meno raro
+/// (come l'ordine dei colori di JTDX).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Novelty {
     /// Paese mai collegato, su nessuna banda.
@@ -11,11 +12,21 @@ pub enum Novelty {
     NewDxccBand,
     /// Zona CQ mai collegata.
     NewZone,
+    NewZoneBand,
+    /// Zona ITU mai collegata.
+    NewItu,
+    NewItuBand,
     /// Locatore (4 caratteri) mai collegato.
     NewGrid,
+    NewGridBand,
+    /// Prefisso (WPX) mai collegato.
+    NewPx,
+    NewPxBand,
+    /// Stazione mai collegata.
+    NewCall,
+    NewCallBand,
     /// Stessa stazione gia' collegata su questa banda.
     Worked,
-    Nothing,
 }
 
 /// QSO gia' fatti: servono per capire se una stazione e' una novita'.
@@ -24,19 +35,40 @@ pub struct WorkedLog {
     qsos: usize,
     /// (banda, nominativo) gia' collegati.
     calls: HashSet<(String, String)>,
+    /// Nominativi collegati su almeno una banda.
+    any_call: HashSet<String>,
     /// Paesi collegati su almeno una banda.
     entities: HashSet<usize>,
     /// (paese, banda) collegati.
     entity_bands: HashSet<(usize, String)>,
-    /// Zone CQ collegate.
     zones: HashSet<u8>,
+    zone_bands: HashSet<(u8, String)>,
+    itu: HashSet<u8>,
+    itu_bands: HashSet<(u8, String)>,
     /// Locatori di 4 caratteri collegati.
     grids: HashSet<String>,
+    grid_bands: HashSet<(String, String)>,
+    prefixes: HashSet<String>,
+    prefix_bands: HashSet<(String, String)>,
 }
 
 fn grid4(grid: &str) -> Option<String> {
     let g: String = grid.trim().chars().take(4).collect::<String>().to_uppercase();
     (g.chars().count() == 4).then_some(g)
+}
+
+/// Prefisso WPX: tutto fino all'ultima cifra del nominativo (senza suffissi come /P).
+pub fn wpx_prefix(call: &str) -> Option<String> {
+    let call = call.trim().to_uppercase();
+    if call.starts_with('<') {
+        return None;
+    }
+    let main = call
+        .split('/')
+        .filter(|p| !matches!(*p, "P" | "M" | "QRP" | "MM" | "AM" | "A" | "B" | "LH") && !(p.len() == 1 && p.chars().all(|c| c.is_ascii_digit())))
+        .max_by_key(|p| p.len())?;
+    let last_digit = main.rfind(|c: char| c.is_ascii_digit())?;
+    Some(main[..=last_digit].to_string())
 }
 
 impl WorkedLog {
@@ -67,10 +99,19 @@ impl WorkedLog {
             self.entities.insert(found.entity);
             self.entity_bands.insert((found.entity, band.clone()));
             self.zones.insert(found.cq_zone);
+            self.zone_bands.insert((found.cq_zone, band.clone()));
+            self.itu.insert(found.itu_zone);
+            self.itu_bands.insert((found.itu_zone, band.clone()));
         }
         if let Some(g) = grid4(grid) {
+            self.grid_bands.insert((g.clone(), band.clone()));
             self.grids.insert(g);
         }
+        if let Some(px) = wpx_prefix(&call) {
+            self.prefix_bands.insert((px.clone(), band.clone()));
+            self.prefixes.insert(px);
+        }
+        self.any_call.insert(call.clone());
         self.calls.insert((band, call));
         self.qsos += 1;
     }
@@ -88,14 +129,39 @@ impl WorkedLog {
             if !self.zones.contains(&found.cq_zone) {
                 return Novelty::NewZone;
             }
+            if !self.zone_bands.contains(&(found.cq_zone, band.clone())) {
+                return Novelty::NewZoneBand;
+            }
+            if !self.itu.contains(&found.itu_zone) {
+                return Novelty::NewItu;
+            }
+            if !self.itu_bands.contains(&(found.itu_zone, band.clone())) {
+                return Novelty::NewItuBand;
+            }
         }
-        if grid.and_then(grid4).is_some_and(|g| !self.grids.contains(&g)) {
-            return Novelty::NewGrid;
+        if let Some(g) = grid.and_then(grid4) {
+            if !self.grids.contains(&g) {
+                return Novelty::NewGrid;
+            }
+            if !self.grid_bands.contains(&(g, band.clone())) {
+                return Novelty::NewGridBand;
+            }
         }
-        if self.calls.contains(&(band, call)) {
-            return Novelty::Worked;
+        if let Some(px) = wpx_prefix(&call) {
+            if !self.prefixes.contains(&px) {
+                return Novelty::NewPx;
+            }
+            if !self.prefix_bands.contains(&(px, band.clone())) {
+                return Novelty::NewPxBand;
+            }
         }
-        Novelty::Nothing
+        if !self.any_call.contains(&call) {
+            return Novelty::NewCall;
+        }
+        if !self.calls.contains(&(band, call)) {
+            return Novelty::NewCallBand;
+        }
+        Novelty::Worked
     }
 
     /// QSO completi letti o aggiunti.
@@ -179,8 +245,8 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         assert_eq!(log.novelty("LM1XY", Some("KK00"), "20m", &db), Novelty::NewDxcc);
         // paese collegato su 20m e 40m, su 15m no
         assert_eq!(log.novelty("AT9ZZ", Some("FN42"), "15m", &db), Novelty::NewDxccBand);
-        // zona CQ 15 (AT5) gia' collegata sul log: AT5EF era un QSO; zona 14 e' di AT3AB
-        assert_eq!(log.novelty("AT9ZZ", Some("FN42"), "20m", &db), Novelty::Nothing);
+        // zona CQ 14, ITU 27 e griglia FN42 gia' collegate su 20m; il prefisso AT9 no
+        assert_eq!(log.novelty("AT9ZZ", Some("FN42"), "20m", &db), Novelty::NewPx);
         // griglia mai collegata
         assert_eq!(log.novelty("AT9ZZ", Some("KK00"), "20m", &db), Novelty::NewGrid);
         // stessa stazione, stessa banda
@@ -214,15 +280,53 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         log.add_qso("LM1XY", "KK00", "20m", &db);
         assert_eq!(log.len(), 1);
         assert_eq!(log.novelty("LM1XY", Some("KK00"), "20m", &db), Novelty::Worked);
-        assert_eq!(log.novelty("LM2ZZ", Some("KK00"), "20m", &db), Novelty::Nothing, "il paese non e' piu' nuovo");
+        assert_eq!(log.novelty("LM2ZZ", Some("KK00"), "20m", &db), Novelty::NewPx, "il paese non e' piu' nuovo, il prefisso LM2 si");
     }
 
     #[test]
     fn unknown_calls_are_never_dxcc_news() {
         let db = db();
         let log = WorkedLog::from_adif(ADIF, &db);
-        assert_eq!(log.novelty("QQ9QQ", None, "20m", &db), Novelty::Nothing);
+        assert_eq!(log.novelty("QQ9QQ", None, "20m", &db), Novelty::NewPx, "senza paese restano prefisso e stazione");
         assert_eq!(log.novelty("QQ9QQ", Some("KK00"), "20m", &db), Novelty::NewGrid);
+    }
+
+    #[test]
+    fn the_wpx_prefix_is_everything_up_to_the_last_digit() {
+        assert_eq!(wpx_prefix("IU3WJQ").as_deref(), Some("IU3"));
+        assert_eq!(wpx_prefix("3DA0XX").as_deref(), Some("3DA0"));
+        assert_eq!(wpx_prefix("kh6abc").as_deref(), Some("KH6"));
+        assert_eq!(wpx_prefix("AT3AB/P").as_deref(), Some("AT3"));
+        assert_eq!(wpx_prefix("<...>"), None);
+        assert_eq!(wpx_prefix("ABC"), None);
+    }
+
+    #[test]
+    fn every_level_of_novelty_follows_the_jtdx_order() {
+        let db = db();
+        // AT3AB: zona CQ 14 ITU 27, FN42, prefisso AT3, solo su 20m
+        let log = WorkedLog::from_adif("<CALL:5>AT3AB<BAND:3>20m<GRIDSQUARE:4>FN42<EOR>
+", &db);
+        assert_eq!(log.novelty("AT3AB", Some("FN42"), "20m", &db), Novelty::Worked);
+        assert_eq!(log.novelty("AT3AB", Some("FN42"), "15m", &db), Novelty::NewDxccBand, "il paese e' nuovo sulla banda: vince");
+        // stesso paese, banda gia' fatta: dal piu' raro al meno raro
+        assert_eq!(log.novelty("AT3CD", Some("FN42"), "20m", &db), Novelty::NewCall, "stessi zona, griglia e prefisso, stazione nuova");
+        assert_eq!(log.novelty("AT9ZZ", Some("FN42"), "20m", &db), Novelty::NewPx);
+        assert_eq!(log.novelty("AT3CD", Some("GG55"), "20m", &db), Novelty::NewGrid);
+        assert_eq!(log.novelty("AT5XX", Some("FN42"), "20m", &db), Novelty::NewZone, "AT5 ha zona CQ 15");
+    }
+
+    #[test]
+    fn band_variants_appear_when_the_item_was_worked_only_elsewhere() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        log.add_qso("AT3AB", "FN42", "20m", &db);
+        log.add_qso("AT3CD", "FN43", "15m", &db); // il paese ha entrambe le bande
+        // griglia FN42 e prefisso AT3 sono stati fatti solo su 20m
+        assert_eq!(log.novelty("AT3EF", Some("FN42"), "15m", &db), Novelty::NewGridBand);
+        assert_eq!(log.novelty("AT3EF", Some("FN43"), "20m", &db), Novelty::NewGridBand);
+        // stazione fatta solo su 20m, vista ora su 15m, con griglia gia' fatta su 15m
+        assert_eq!(log.novelty("AT3AB", Some("FN43"), "15m", &db), Novelty::NewCallBand);
     }
 
     #[test]

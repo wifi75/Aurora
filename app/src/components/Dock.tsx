@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { movePanel, resizePanel, setSplit, type Layout, type PanelId, type Zone } from '../lib/layout';
+import { movePanel, resizePanel, setSplit, toggleCollapsed, type Layout, type PanelId, type Zone } from '../lib/layout';
 
 interface Props {
   layout: Layout;
@@ -97,19 +97,22 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
     const marker = (key: string) => <div key={key} className="dock-drop" aria-hidden="true" />;
     visible.forEach((id, i) => {
       if (spot?.zone === zone && spot.index === i) nodes.push(marker(`drop-${i}`));
-      const height = layout.heights[id];
+      const folded = layout.collapsed.includes(id);
+      const height = folded ? undefined : layout.heights[id];
       nodes.push(
         <section
           key={id}
           data-panel={id}
-          className={`dock-panel dock-panel--${id}`}
-          style={height ? { height, flex: 'none' } : undefined}
+          className={`dock-panel dock-panel--${id}${folded ? ' dock-panel--folded' : ''}`}
+          style={folded ? { flex: 'none', minHeight: 0 } : height ? { height, flex: 'none' } : undefined}
         >
           <header
             className="dock-grip"
             onPointerDown={startDrag(id)}
             onPointerMove={moveDrag(id)}
             onPointerUp={endDrag(id)}
+            onDoubleClick={() => onChange(toggleCollapsed(layout, id))}
+            title="Doppio clic: riduci o riapri"
             onPointerCancel={() => {
               setDragging(null);
               setSpot(null);
@@ -118,8 +121,8 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
             <span className="dock-grip-dots" aria-hidden="true" />
             <h2>{titles[id]}</h2>
           </header>
-          <div className="dock-body">{render(id)}</div>
-          <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={`Altezza di ${titles[id]}`} onPointerDown={startResize(id)} />
+          {!folded && <div className="dock-body">{render(id)}</div>}
+          {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={`Altezza di ${titles[id]}`} onPointerDown={startResize(id)} />}
         </section>,
       );
     });
