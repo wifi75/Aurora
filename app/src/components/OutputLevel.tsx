@@ -40,11 +40,12 @@ export function OutputLevel(_: Props) {
   return (
     <div className="out-level" title={t('tip.out')}>
       <span className="out-level-title">Pwr</span>
+      {/* come in JTDX il cursore e' l'attenuazione: in basso 0 dB (potenza massima), in alto 45 dB (minima) */}
       <VerticalSlider
-        value={pct}
+        value={100 - pct}
         label={t('out.label')}
-        onChange={setPct}
-        onCommit={(v) => void commit(v)}
+        onChange={(v) => setPct(100 - v)}
+        onCommit={(v) => void commit(100 - v)}
       />
       <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{pct}%</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}

@@ -28,11 +28,11 @@ describe('OutputLevel', () => {
     expect(value).toHaveAttribute('title', expect.stringMatching(/50 % · attenuazione 22.5 dB/));
   });
 
-  it('sends the new level only when released, and up means more level', async () => {
+  it('sends the new level only when released, and up means less level, as in JTDX', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
-    // binario alto 100 px a partire da y=0: il punto y=20 e' in alto, quindi l'80%
+    // binario alto 100 px a partire da y=0: il punto y=20 e' in alto, quindi il cursore e' all'80% di attenuazione (livello 20%)
     slider.getBoundingClientRect = () => ({ top: 0, height: 100, bottom: 100, left: 0, right: 10, width: 10, x: 0, y: 0, toJSON: () => ({}) });
     fireEvent.pointerDown(slider, { clientY: 20, pointerId: 1 });
     expect(slider).toHaveAttribute('aria-valuenow', '80');
@@ -41,29 +41,30 @@ describe('OutputLevel', () => {
     expect(putOutputLevel).not.toHaveBeenCalled();
     fireEvent.pointerUp(slider, { pointerId: 1 });
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledTimes(1));
-    expect(putOutputLevel).toHaveBeenCalledWith(13.5);
+    expect(putOutputLevel).toHaveBeenCalledWith(31.5);
+    expect(screen.getByText('30%')).toBeInTheDocument();
   });
 
-  it('the top of the track is 100% (no attenuation) and the bottom is 0%', async () => {
+  it('the bottom of the track is full power (0 dB) and the top the minimum (45 dB), like JTDX', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
     slider.getBoundingClientRect = () => ({ top: 0, height: 100, bottom: 100, left: 0, right: 10, width: 10, x: 0, y: 0, toJSON: () => ({}) });
-    fireEvent.pointerDown(slider, { clientY: 0, pointerId: 1 });
+    fireEvent.pointerDown(slider, { clientY: 100, pointerId: 1 });
     fireEvent.pointerUp(slider, { pointerId: 1 });
     await waitFor(() => expect(putOutputLevel).toHaveBeenLastCalledWith(0));
-    fireEvent.pointerDown(slider, { clientY: 100, pointerId: 1 });
+    fireEvent.pointerDown(slider, { clientY: 0, pointerId: 1 });
     fireEvent.pointerUp(slider, { pointerId: 1 });
     await waitFor(() => expect(putOutputLevel).toHaveBeenLastCalledWith(45));
   });
 
-  it('works from the keyboard: arrow up raises the level and the value is sent on key up', async () => {
+  it('works from the keyboard: arrow down moves the cursor down (more power) and the value is sent on key up', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
-    fireEvent.keyDown(slider, { key: 'ArrowUp' });
-    expect(slider).toHaveAttribute('aria-valuenow', '51');
-    fireEvent.keyUp(slider, { key: 'ArrowUp' });
+    fireEvent.keyDown(slider, { key: 'ArrowDown' });
+    expect(slider).toHaveAttribute('aria-valuenow', '49');
+    fireEvent.keyUp(slider, { key: 'ArrowDown' });
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledWith(22.1));
   });
 
