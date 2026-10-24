@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-24, v0.8.1).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-24, v0.9.0).
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
@@ -14,12 +14,12 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Guida in-app, pagina Statistiche, righe Tx nell'elenco
 - [x] DX Cluster telnet (server pubblici e propri, LED di raggiungibilita', doppio clic = frequenza dello spot)
 - [x] Client NTP configurabile con indicatore dell'orologio e DT mediano
-- [x] Impostazioni di JTDX lette dal suo file (UDP, radio, audio, sequenza, avvisi, avanzate)
+- [x] Impostazioni del motore (JTDX) lette dal suo file e modificabili da Aurora (barra Applica e riavvia, copia di sicurezza)
 - [x] Log di Log4OM2 in sola lettura, finestra Log
 - [x] Modo JT, comandi di ricezione di JTDX, split della radio spento a ogni cambio banda
 
 ## Da fare
-- [ ] Modifica delle impostazioni di JTDX dall'interfaccia (il core c'e': scrive il file e riavvia JTDX), compresa la scheda Radio
+- [ ] Impostazioni modificabili: aggiungere le voci che mancano (nominativo, locatore, nome e altre della scheda Generali e Radio) e provarle con la radio
 - [ ] Riordino delle pagine delle impostazioni: gruppi, colori, struttura chiara
 - [ ] Rendere molto piu' veloce Abilita Tx (sessione PowerShell fissa): oggi il doppio clic puo' perdere il periodo giusto
 - [ ] Log remoto via UDP (QSO nuovi da Log4OM2 su un altro PC)
