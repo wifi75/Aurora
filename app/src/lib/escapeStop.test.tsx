@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../api/client', () => ({ postHalt: vi.fn().mockResolvedValue(undefined), postControl: vi.fn().mockResolvedValue(undefined) }));
 import { postControl, postHalt } from '../api/client';
 import { usePrefs } from './prefs';
+import { useStation } from '../state/station';
 import { useEscapeStop } from './escapeStop';
 
 function Probe() {
@@ -12,6 +13,8 @@ function Probe() {
 }
 
 beforeEach(() => {
+  vi.useRealTimers();
+  useStation.getState().setPendingDx(null);
   vi.mocked(postHalt).mockClear();
   vi.mocked(postControl).mockClear();
   usePrefs.getState().reset();
@@ -47,5 +50,39 @@ describe('useEscapeStop', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     await Promise.resolve();
     expect(postControl).toHaveBeenCalledWith('auto_tx', false);
+  });
+
+  it('a single Escape does not clear the station being called', () => {
+    useStation.getState().setPendingDx('DO1ID');
+    render(<Probe />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(postControl).not.toHaveBeenCalledWith('clear_dx');
+    expect(useStation.getState().pendingDx).toBe('DO1ID');
+  });
+
+  it('a double Escape also clears the DX station and the one chosen by double click', () => {
+    vi.useFakeTimers();
+    useStation.getState().setPendingDx('DO1ID');
+    render(<Probe />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    vi.advanceTimersByTime(300);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(postControl).toHaveBeenCalledWith('clear_dx');
+    expect(useStation.getState().pendingDx).toBeNull();
+    expect(postHalt).toHaveBeenCalledTimes(2);
+  });
+
+  it('two Escapes too far apart are two single ones, and a third one starts over', () => {
+    vi.useFakeTimers();
+    render(<Probe />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    vi.advanceTimersByTime(1500);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(postControl).not.toHaveBeenCalledWith('clear_dx');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(postControl).toHaveBeenCalledWith('clear_dx');
+    vi.mocked(postControl).mockClear();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(postControl).not.toHaveBeenCalledWith('clear_dx');
   });
 });

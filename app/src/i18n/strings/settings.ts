@@ -456,12 +456,12 @@ export const settingsStrings = {
     'Esc: parar a transmissão',
   ],
   'tip.gen.escStop': [
-    'Il tasto Esc ferma subito la trasmissione e spegne AutoTX e Abilita Tx, come STOP TX. Vale in tutte le pagine.',
-    'The Esc key stops transmitting at once and switches off AutoTX and Enable Tx, like STOP TX. Works on every page.',
-    'Die Esc-Taste stoppt das Senden sofort und schaltet AutoTX und Tx an aus, wie STOP TX. Gilt auf allen Seiten.',
-    'La touche Échap arrête aussitôt l’émission et coupe AutoTX et Activer Tx, comme STOP TX. Valable sur toutes les pages.',
-    'La tecla Esc detiene al instante la transmisión y apaga AutoTX y Activar Tx, como STOP TX. Vale en todas las páginas.',
-    'A tecla Esc pára logo a transmissão e desliga AutoTX e Ativar Tx, como o STOP TX. Vale em todas as páginas.',
+    'Il tasto Esc ferma subito la trasmissione e spegne AutoTX e Abilita Tx, come STOP TX. Vale in tutte le pagine. Premuto due volte di seguito libera anche la stazione da chiamare (come Canc DX).',
+    'The Esc key stops transmitting at once and switches off AutoTX and Enable Tx, like STOP TX. Works on every page. Pressed twice in a row it also clears the station to call (like Clear DX).',
+    'Die Esc-Taste stoppt das Senden sofort und schaltet AutoTX und Tx an aus, wie STOP TX. Gilt auf allen Seiten. Zweimal hintereinander gedrückt löscht sie auch die anzurufende Station (wie DX löschen).',
+    'La touche Échap arrête aussitôt l’émission et coupe AutoTX et Activer Tx, comme STOP TX. Valable sur toutes les pages. Pressée deux fois de suite, elle efface aussi la station à appeler (comme Effacer DX).',
+    'La tecla Esc detiene al instante la transmisión y apaga AutoTX y Activar Tx, como STOP TX. Vale en todas las páginas. Pulsada dos veces seguidas borra también la estación a llamar (como Borrar DX).',
+    'A tecla Esc pára logo a transmissão e desliga AutoTX e Ativar Tx, como o STOP TX. Vale em todas as páginas. Premida duas vezes seguidas limpa também a estação a chamar (como Limpar DX).',
   ],
   'gen.log4omCount': [
     'QSO mostrati nella finestra Log',

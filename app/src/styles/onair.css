@@ -941,3 +941,56 @@
 .decode-row {
   border-bottom: var(--border-width) solid var(--row-line);
 }
+
+/* elenchi compatti: Attivita' di banda, CQ e novita', DX Cluster e Log con caratteri piccoli e righe basse */
+.dock-panel--all .decode-list,
+.dock-panel--cq .decode-list {
+  font-size: 0.7rem;
+}
+
+.dock-panel--all .decode-row,
+.dock-panel--cq .decode-row {
+  min-height: 1.55rem;
+  padding: 0.1rem 0.5rem;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.dock-panel--all .decode-country,
+.dock-panel--cq .decode-country,
+.dock-panel--all .decode-where,
+.dock-panel--cq .decode-where {
+  font-size: 0.62rem;
+}
+
+.dock-panel--all .badge,
+.dock-panel--cq .badge {
+  font-size: 0.56rem;
+  padding: 0 0.35rem;
+}
+
+.dock-panel--all .decode-flag,
+.dock-panel--cq .decode-flag {
+  margin-right: 0.3rem;
+}
+
+.cluster-table {
+  font-size: 0.62rem;
+}
+
+.cluster-bar select,
+.cluster-bar input,
+.cluster-link {
+  font-size: 0.64rem;
+}
+
+.log4om-table,
+.log4om-note,
+.log4om-total {
+  font-size: 0.64rem;
+}
+
+.log4om-table td,
+.log4om-table th {
+  padding: 0.1rem 0.4rem;
+}
