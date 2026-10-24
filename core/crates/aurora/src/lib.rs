@@ -8,6 +8,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+pub mod history;
 pub mod updates;
 pub mod wanted;
 
@@ -53,6 +54,8 @@ pub struct Config {
     pub allow_tx: bool,
     /// Parte del nome dell'ingresso audio da cui ricavare la cascata (vuoto: nessuna cattura audio).
     pub audio_device: Option<String>,
+    /// Per quanti giorni si ricordano i messaggi ricevuti nello storico (0 = per sempre).
+    pub history_days: u32,
     /// Con JTDX: chiede il Replay dei decode correnti appena lo vede. Spento per impostazione predefinita: aprendo
     /// Aurora non si rivedono le stazioni ricevute prima. Se acceso, chi riceve il flusso (GridTracker2) le riceve di
     /// nuovo, marcate come "non nuove".
@@ -112,6 +115,7 @@ impl Config {
             udp_forward: Vec::new(),
             allow_tx: false,
             audio_device: None,
+            history_days: 30,
             replay_on_connect: false,
             cty_path: None,
             worked_adif: None,
@@ -203,6 +207,7 @@ impl Config {
             udp_forward,
             allow_tx,
             audio_device: get("AURORA_AUDIO_DEVICE").filter(|d| !d.trim().is_empty()),
+            history_days: get("AURORA_HISTORY_DAYS").and_then(|d| d.trim().parse().ok()).unwrap_or(30),
             replay_on_connect,
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
@@ -587,6 +592,18 @@ pub async fn run(
     if let Some(service) = &input_level {
         service.spawn_auto(bus.subscribe_events());
     }
+    // lo storico dei messaggi ricevuti: se il file non si apre Aurora parte lo stesso e lo dice
+    let history = match decode_history::HistoryStore::open(&config.data_dir.join("history.sqlite")) {
+        Ok(store) => {
+            let store = Arc::new(store);
+            history::spawn_recorder(Arc::clone(&store), bus.subscribe_events(), config.history_days);
+            Some(store)
+        }
+        Err(e) => {
+            tracing::warn!("{e}");
+            None
+        }
+    };
     if let Some((db, _)) = enrichment.as_ref() {
         let db = Arc::clone(db);
         cluster.set_enricher(Arc::new(move |call: &str| {
@@ -607,6 +624,7 @@ pub async fn run(
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level)
+        .with_history_if(history)
         .with_updates(Arc::clone(&updates))
         .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {
             let db = Arc::clone(db);

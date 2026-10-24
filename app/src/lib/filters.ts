@@ -13,6 +13,8 @@ export interface Filters {
   only: OnlyMode;
   hideNonStandard: boolean;
   hideOwnContinent: boolean;
+  /** Nasconde i CQ di stazioni gia' collegate su questa banda (il motore le segna `worked_call`); gli altri messaggi restano. */
+  hideWorked: boolean;
 }
 
 const KEY = 'aurora-filters';
@@ -22,7 +24,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultFilters(): Filters {
-  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false };
+  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false };
 }
 
 const isCallToken = (token: string) =>
@@ -78,6 +80,7 @@ export function applyFilters(decodes: DecodedMessage[], filters: Filters, ownCon
     if (filters.only === 'cq_rrr' && !isCq(d.text) && !signoff(d.text, false)) return false;
     if (filters.only === 'cq_rr73' && !isCq(d.text) && !signoff(d.text, true)) return false;
     if (filters.hideNonStandard && !isStandard(d.text)) return false;
+    if (filters.hideWorked && d.tag === 'worked_call' && isCq(d.text)) return false;
     return true;
   });
 }
@@ -96,6 +99,7 @@ export function readFilters(storage: ReadableStorage): Filters {
     if (typeof parsed.only === 'string' && ONLY.includes(parsed.only)) filters.only = parsed.only as OnlyMode;
     filters.hideNonStandard = parsed.hideNonStandard === true;
     filters.hideOwnContinent = parsed.hideOwnContinent === true;
+    filters.hideWorked = parsed.hideWorked === true;
   } catch {
     return defaultFilters();
   }

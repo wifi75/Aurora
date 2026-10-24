@@ -17,6 +17,7 @@ import { useStation } from './state/station';
 import { Automation } from './pages/Automation';
 import { Settings } from './pages/Settings';
 import { Live } from './pages/Live';
+import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
@@ -71,6 +72,8 @@ export function App() {
     content = <Stats />;
   } else if (route.name === 'map') {
     content = <MapPage />;
+  } else if (route.name === 'history') {
+    content = <HistoryPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else {
@@ -86,6 +89,7 @@ export function App() {
           <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
           <a className={`glass${route.name === 'map' ? ' glass--on' : ''}`} aria-current={route.name === 'map' ? 'page' : undefined} href="#/mappa">{t('nav.map')}</a>
+          <a className={`glass${route.name === 'history' ? ' glass--on' : ''}`} aria-current={route.name === 'history' ? 'page' : undefined} href="#/storico">{t('nav.history')}</a>
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
         </nav>

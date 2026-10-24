@@ -72,6 +72,17 @@ describe('applyFilters', () => {
     expect(ids(applyFilters(sample, f({ hideOwnContinent: true }), null))).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
+  it('hides the CQ of stations already worked on the band but keeps the rest of their traffic', () => {
+    const list = [
+      d(1, 'CQ K1ABC FN42', { tag: 'worked_call' }),
+      d(2, 'AA1AA K1ABC -10', { tag: 'worked_call' }),
+      d(3, 'CQ W1XYZ FN31', { tag: 'new_dxcc' }),
+      d(4, 'CQ DL1AB JO62', { tag: null }),
+    ];
+    expect(ids(applyFilters(list, f({ hideWorked: true }), 'EU'))).toEqual([2, 3, 4]);
+    expect(ids(applyFilters(list, f({ hideWorked: false }), 'EU'))).toEqual([1, 2, 3, 4]);
+  });
+
   it('combines the filters', () => {
     expect(ids(applyFilters(sample, f({ only: 'cq', hideContinents: ['NA'] }), 'EU'))).toEqual([1]);
   });
