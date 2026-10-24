@@ -37,6 +37,13 @@ export function AutomationRulesForm({ rules: saved, onSave, error = false }: Pro
       <label className="auto-wanted" title={t('tip.auto.wanted')}>
         <input type="checkbox" checked={rules.reply_to_wanted} onChange={(e) => setDraft({ ...rules, reply_to_wanted: e.target.checked })} /> {t('auto.wanted')}
       </label>
+      <label className="auto-field" title={t('tip.auto.prefer')}>
+        {t('auto.prefer')}
+        <select value={rules.prefer} onChange={(e) => setDraft({ ...rules, prefer: e.target.value === 'snr' ? 'snr' : 'rarity' })}>
+          <option value="rarity">{t('auto.prefer.rarity')}</option>
+          <option value="snr">{t('auto.prefer.snr')}</option>
+        </select>
+      </label>
       <label className="auto-field" title={t('tip.auto.minSnr')}>
         {t('auto.minSnr')}
         <input type="number" min={-30} max={20} value={rules.min_snr} onChange={(e) => setDraft({ ...rules, min_snr: Number(e.target.value) })} />

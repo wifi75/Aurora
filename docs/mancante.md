@@ -35,7 +35,7 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 21 | ~~Wiki in-app~~ | fatto | Pagina `#/guida`, 11 argomenti in sei lingue (0.7.0) |
 | 22 | ~~Pagina Statistiche~~ | fatto | Pagina `#/statistiche` da `GET /stats` (0.7.0) |
 | 24 ◐ | **Versione smartphone** | A | Dati mancanti corretti; pagina Stazione rifatta a schede con pulsanti da dito (sotto 640 px). Da rivedere Storico, Propagazione, Mappa, Impostazioni, Automazioni e da provare sul telefono vero |
-| 25 | **Priorita' tra piu' CQ** nello stesso ciclo e riapplicazione del modo dopo il cambio banda | M | Dal confronto con Decodium (`confronto-decodium.md`) |
+| 25 ✔ | **Priorita' tra piu' CQ** nello stesso ciclo, riapplicazione del modo dopo il cambio banda, comandi a JTDX rapidi | M | Fatti (0.10.x); il modo della radio e la scelta del CQ vanno provati con la radio |
 | 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)

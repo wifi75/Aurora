@@ -13,7 +13,7 @@ Scelte da Tiziano: livello RX, storico e spot sulla cascata, PSK Reporter e prop
 | 1 Misuratore e avviso di overdrive/silenzio | **fatto** (indicatore Rx accanto a Pwr, evento `audio_level`) |
 | 2 Livello RX regolabile + AUTO | **fatto** (volume di registrazione di Windows, `GET/PUT /input-level`); AUTO da provare dal vivo |
 | 12 Filtro anti-ghost | **fatto** (`qso-engine::ghost`: «?», forma del nominativo, -23 dB mai sentita) |
-| 13 Auto Call, priorita' tra piu' CQ | non fatto (l'automazione risponde al primo CQ valido) |
+| 13 Auto Call, priorita' tra piu' CQ | **fatto** (rarita' o segnale piu' forte, un solo CQ per ciclo) |
 | 14 DX-watch | **fatto in forma semplice**: regola «rispondi ai desiderati» che usa la lista degli avvisi |
 | 19 Nascondi gia' lavorate | **fatto** (filtro sui CQ delle stazioni gia' collegate sulla banda) |
 | 22 Storico dei decode | **fatto** (`decode-history`, pagina Storico) |
@@ -21,7 +21,8 @@ Scelte da Tiziano: livello RX, storico e spot sulla cascata, PSK Reporter e prop
 | 31 PSK Reporter «chi mi ha sentito» | **fatto** (solo HTTP, a richiesta, spento di default) |
 | 33 Propagazione | **fatto** (hamqsl.com, a richiesta, spento di default) |
 | 34 Autodiagnosi | **fatto** (orologio, audio, nominativo, silenzio di ricezione) |
-| 3 Livello TX per banda, 4 QSY con riapplicazione del modo, 36 utenti LoTW, 42 credenziali cifrate | non fatti |
+| 4 QSY con riapplicazione del modo | **fatto** (modo della radio rimesso dopo il cambio banda) |
+| 3 Livello TX per banda, 36 utenti LoTW, 42 credenziali cifrate | non fatti |
 
 ## Cos'e' e cosa significa per Aurora
 

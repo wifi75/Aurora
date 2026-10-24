@@ -37,6 +37,20 @@ pub struct Rules {
     /// Risponde anche ai CQ delle stazioni della lista dei desiderati (nominativo, prefisso, paese o griglia), oltre alle etichette sopra.
     #[serde(default)]
     pub reply_to_wanted: bool,
+    /// Quando in un ciclo ci sono piu' CQ interessanti, a quale rispondere.
+    #[serde(default)]
+    pub prefer: Prefer,
+}
+
+/// Come scegliere tra piu' CQ interessanti arrivati nello stesso ciclo.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Prefer {
+    /// La novita' piu' rara (lista dei desiderati, paese nuovo, nuovo su banda, zona, griglia); a parita' il segnale piu' forte.
+    #[default]
+    Rarity,
+    /// Il segnale piu' forte; a parita' la novita' piu' rara.
+    Snr,
 }
 
 /// Dice se un messaggio e' di una stazione desiderata (e perche'), data la frequenza della radio.
@@ -50,6 +64,7 @@ impl Default for Rules {
             excluded_calls: Vec::new(),
             max_attempts_per_call: 2,
             reply_to_wanted: false,
+            prefer: Prefer::Rarity,
         }
     }
 }
@@ -253,7 +268,48 @@ impl Brain {
         }
     }
 
+    /// Un solo messaggio: come un gruppo di uno.
     pub fn on_decode(&mut self, d: &DecodedMessage, now: u64) -> Option<Decision> {
+        self.on_batch(std::slice::from_ref(d), now).pop()
+    }
+
+    /// I messaggi arrivati insieme a fine ciclo: si valutano tutti e si risponde **a uno solo**, il migliore secondo la preferenza
+    /// delle regole (la novita' piu' rara, o il segnale piu' forte). Le decisioni sono quelle da registrare, in ordine; la risposta,
+    /// se c'e', e' l'unica di tipo `Reply` o `WouldReply`.
+    pub fn on_batch(&mut self, decodes: &[DecodedMessage], now: u64) -> Vec<Decision> {
+        let mut decisions = Vec::new();
+        let mut candidates: Vec<Candidate> = Vec::new();
+        for d in decodes {
+            match self.screen(d, now) {
+                Screened::Ignore => {}
+                Screened::Skipped(decision) => decisions.push(decision),
+                Screened::Candidate(c) => candidates.push(c),
+            }
+        }
+        if candidates.is_empty() {
+            return decisions;
+        }
+        let prefer = self.state.rules.prefer;
+        // il migliore: meglio chi ha rango o segnale piu' alti; a parita', il primo arrivato
+        let mut best = 0;
+        for (i, c) in candidates.iter().enumerate().skip(1) {
+            if c.better_than(&candidates[best], prefer) {
+                best = i;
+            }
+        }
+        let chosen = candidates.swap_remove(best);
+        if !candidates.is_empty() {
+            let mut others: Vec<String> = candidates.iter().map(|c| c.call.clone()).collect();
+            others.sort();
+            let reason = format!("Tra {} CQ interessanti scelto {} (altri: {})", candidates.len() + 1, chosen.call, others.join(", "));
+            decisions.push(self.push(now, DecisionKind::Info, Some(chosen.call.clone()), Some(chosen.decode_id), reason));
+        }
+        decisions.push(self.commit(chosen, now));
+        decisions
+    }
+
+    /// Valuta un messaggio senza cambiare lo stato della risposta: lo scarta (con il motivo) o lo propone come candidato.
+    fn screen(&mut self, d: &DecodedMessage, now: u64) -> Screened {
         let parsed = parse_message(&d.text);
         // chi e' gia' stato sentito si ricorda anche a automazione spenta: serve a giudicare i segnali deboli
         let heard_before = parsed.sender.as_ref().is_some_and(|c| self.heard.contains(c));
@@ -264,65 +320,73 @@ impl Brain {
             self.heard.insert(sender.clone());
         }
         if !self.state.enabled {
-            return None;
+            return Screened::Ignore;
         }
         self.roll_day(now);
         let tag_wanted = d.tag.is_some_and(|t| self.state.rules.reply_to.contains(&t));
         let list_reason = if self.state.rules.reply_to_wanted && parsed.is_cq { self.wanted.as_ref().and_then(|m| m(d, self.dial_hz)) } else { None };
         if !(tag_wanted || list_reason.is_some()) || !parsed.is_cq {
-            return None;
+            return Screened::Ignore;
         }
         let Some(call) = parsed.sender else {
-            return Some(self.push(now, DecisionKind::Skipped, None, Some(d.id), "Nominativo non leggibile nel messaggio".into()));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, None, Some(d.id), "Nominativo non leggibile nel messaggio".into()));
         };
         let call_opt = Some(call.clone());
         if let Some(why) = ghost::suspicion(&d.text, &call, d.snr, heard_before) {
-            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: {why}")));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: {why}")));
         }
         if d.snr < self.state.rules.min_snr {
             let reason = format!("{call}: segnale {} dB sotto il minimo di {} dB", d.snr, self.state.rules.min_snr);
-            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
         }
         if self.state.rules.excluded_calls.iter().any(|c| c.trim().eq_ignore_ascii_case(&call)) {
-            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call} e' nell'elenco delle esclusioni")));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call} e' nell'elenco delle esclusioni")));
         }
         if self.attempts.get(&call).copied().unwrap_or(0) >= self.state.rules.max_attempts_per_call {
-            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: tentativi esauriti senza QSO")));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: tentativi esauriti senza QSO")));
         }
         if let Some((busy, since)) = &self.active
             && now.saturating_sub(*since) < ACTIVE_QSO_SECS
         {
             let reason = format!("{call}: QSO gia' in corso con {busy}");
-            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
         }
+        let why = match (&list_reason, d.tag) {
+            (Some(reason), _) if !tag_wanted => format!("nella lista dei desiderati ({reason})"),
+            (_, Some(tag)) => tag_text(tag).to_string(),
+            _ => "CQ di interesse".to_string(),
+        };
+        let tag_rank = if tag_wanted { d.tag.map_or(0, rank_of) } else { 0 };
+        let rank = if list_reason.is_some() { WISHLIST_RANK.max(tag_rank) } else { tag_rank };
+        Screened::Candidate(Candidate { call, decode_id: d.id, snr: d.snr, rank, why })
+    }
+
+    /// Risponde al candidato scelto, se i tetti lo permettono.
+    fn commit(&mut self, c: Candidate, now: u64) -> Decision {
+        let call_opt = Some(c.call.clone());
         let live = self.state.mode == Mode::Live;
         if live {
             if self.state.consecutive >= self.state.limits.max_consecutive_cycles {
                 self.state.enabled = false;
                 self.active = None;
                 let reason = format!("Raggiunte {} risposte di fila senza QSO: automazione spenta", self.state.limits.max_consecutive_cycles);
-                return Some(self.push(now, DecisionKind::Blocked, call_opt, Some(d.id), reason));
+                return self.push(now, DecisionKind::Blocked, call_opt, Some(c.decode_id), reason);
             }
             if self.state.replies_today >= self.state.limits.max_per_day {
                 let reason = format!("Raggiunto il tetto di {} risposte al giorno", self.state.limits.max_per_day);
-                return Some(self.push(now, DecisionKind::Blocked, call_opt, Some(d.id), reason));
+                return self.push(now, DecisionKind::Blocked, call_opt, Some(c.decode_id), reason);
             }
             self.state.consecutive += 1;
             self.state.replies_today += 1;
         }
-        *self.attempts.entry(call.clone()).or_insert(0) += 1;
-        self.active = Some((call.clone(), now));
-        let why = match (&list_reason, d.tag) {
-            (Some(reason), _) if !tag_wanted => format!("nella lista dei desiderati ({reason})"),
-            (_, Some(tag)) => tag_text(tag).to_string(),
-            _ => "CQ di interesse".to_string(),
-        };
+        *self.attempts.entry(c.call.clone()).or_insert(0) += 1;
+        self.active = Some((c.call.clone(), now));
         let (kind, reason) = if live {
-            (DecisionKind::Reply, format!("Rispondo a {call}: {why}"))
+            (DecisionKind::Reply, format!("Rispondo a {}: {}", c.call, c.why))
         } else {
-            (DecisionKind::WouldReply, format!("Risponderei a {call}: {why} (prova a vuoto)"))
+            (DecisionKind::WouldReply, format!("Risponderei a {}: {} (prova a vuoto)", c.call, c.why))
         };
-        Some(self.push(now, kind, call_opt, Some(d.id), reason))
+        self.push(now, kind, call_opt, Some(c.decode_id), reason)
     }
 
     fn roll_day(&mut self, now: u64) {
@@ -340,6 +404,46 @@ impl Brain {
             self.state.log.remove(0);
         }
         decision
+    }
+}
+
+/// Un CQ che ha passato tutti i controlli e puo' essere scelto.
+struct Candidate {
+    call: String,
+    decode_id: u64,
+    snr: i32,
+    /// Quanto e' interessante: piu' alto = piu' raro.
+    rank: u8,
+    why: String,
+}
+
+impl Candidate {
+    fn better_than(&self, other: &Candidate, prefer: Prefer) -> bool {
+        match prefer {
+            Prefer::Rarity => (self.rank, self.snr) > (other.rank, other.snr),
+            Prefer::Snr => (self.snr, self.rank) > (other.snr, other.rank),
+        }
+    }
+}
+
+enum Screened {
+    /// Non interessa: non si registra nulla.
+    Ignore,
+    Skipped(Decision),
+    Candidate(Candidate),
+}
+
+/// Una stazione della lista dei desiderati vale piu' di qualunque novita': l'ha scelta l'operatore.
+const WISHLIST_RANK: u8 = 5;
+
+/// Quanto e' rara una novita': un paese mai collegato batte uno nuovo solo su questa banda, poi zona e griglia.
+fn rank_of(tag: DecodeTag) -> u8 {
+    match tag {
+        DecodeTag::NewDxcc => 4,
+        DecodeTag::NewDxccBand => 3,
+        DecodeTag::NewZone => 2,
+        DecodeTag::NewGrid => 1,
+        _ => 0,
     }
 }
 

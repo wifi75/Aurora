@@ -6,6 +6,7 @@ pub mod controls;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;
+pub mod session;
 pub mod snapshot;
 pub mod table;
 
