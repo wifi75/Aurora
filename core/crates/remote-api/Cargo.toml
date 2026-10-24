@@ -10,6 +10,7 @@ publish = false
 aurora-core = { path = "../aurora-core" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
+qso-engine = { path = "../qso-engine" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

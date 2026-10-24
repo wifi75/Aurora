@@ -107,6 +107,13 @@ fn allow_tx() -> JtdxConfig {
 }
 
 #[tokio::test]
+async fn halt_command_announces_tx_halted_even_before_jtdx_is_known() {
+    let mut r = rig(JtdxConfig::default()).await;
+    r.command(Command::HaltTx).await;
+    assert!(matches!(r.event().await, Some(Event::TxHalted)), "lo STOP deve spegnere anche l'automazione");
+}
+
+#[tokio::test]
 async fn status_fixture_becomes_station_status() {
     let mut r = rig(JtdxConfig::default()).await;
     r.send(&fixture("status-decoding.bin")).await;

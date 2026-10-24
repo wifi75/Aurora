@@ -14,6 +14,7 @@ use auth::DeviceStore;
 use aurora_core::{Bus, Event, StationStatus};
 use axum::Router;
 use logbook::Logbook;
+use qso_engine::Automation;
 use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
@@ -35,6 +36,8 @@ pub struct AppState {
     pub policy: TxPolicy,
     /// Se vero il cookie di sessione porta l'attributo `Secure` (HTTPS).
     pub secure_cookie: bool,
+    /// L'automazione dei QSO, se il programma la offre.
+    pub automation: Option<Automation>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -74,7 +77,12 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, shared, shutdown: Arc::new(shutdown) }
+    }
+
+    pub fn with_automation(mut self, automation: Automation) -> AppState {
+        self.automation = Some(automation);
+        self
     }
 
     /// Chiede a tutti i flussi aperti di chiudersi (spegnimento ordinato).

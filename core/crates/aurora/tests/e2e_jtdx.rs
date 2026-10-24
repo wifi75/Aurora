@@ -72,6 +72,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(c.audio_device.is_none());
     assert!(c.replay_on_connect, "il Replay all'avvio e' attivo per impostazione predefinita");
     assert!(c.cty_path.is_none() && c.worked_adif.is_none());
+    assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (6, 40, 120));
+    assert!(!c.auto_limits.run_unattended);
 
     let env = |k: &str| match k {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
@@ -82,6 +84,10 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_REPLAY_ON_CONNECT" => Some("0".to_string()),
         "AURORA_CTY_PATH" => Some("dati/cty.dat".to_string()),
         "AURORA_WORKED_ADIF" => Some("dati/log.adi".to_string()),
+        "AURORA_AUTO_MAX_CYCLES" => Some("3".to_string()),
+        "AURORA_AUTO_MAX_PER_DAY" => Some("10".to_string()),
+        "AURORA_AUTO_DEAD_MAN_SECS" => Some("30".to_string()),
+        "AURORA_AUTO_UNATTENDED" => Some("1".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
@@ -94,6 +100,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(!c.replay_on_connect);
     assert_eq!(c.cty_path, Some(PathBuf::from("dati/cty.dat")));
     assert_eq!(c.worked_adif, Some(PathBuf::from("dati/log.adi")));
+    assert_eq!((c.auto_limits.max_consecutive_cycles, c.auto_limits.max_per_day, c.auto_limits.dead_man_secs), (3, 10, 30));
+    assert!(c.auto_limits.run_unattended);
 
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
     assert!(Config::from_lookup(bad("AURORA_UDP_LISTEN", "non-un-indirizzo")).is_err());
@@ -101,6 +109,19 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(Config::from_lookup(bad("AURORA_ALLOW_TX", "2")).is_err());
     assert!(Config::from_lookup(bad("AURORA_ALLOW_TX", "forse")).is_err());
     assert!(Config::from_lookup(bad("AURORA_REPLAY_ON_CONNECT", "boh")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_AUTO_MAX_CYCLES", "0")).is_err(), "un tetto a zero bloccherebbe tutto: si rifiuta");
+    assert!(Config::from_lookup(bad("AURORA_AUTO_MAX_PER_DAY", "molte")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_AUTO_DEAD_MAN_SECS", "-5")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_AUTO_UNATTENDED", "si")).is_err());
+}
+
+#[tokio::test]
+async fn e2e_automation_starts_off_and_dry_run_and_live_is_closed_by_default() {
+    let r = rig(false, vec![]).await;
+    let cookie = cookie_for(&r.server);
+    let (code, body) = http(r.server.addr, "GET", "/api/v1/automation", Some(&cookie), None).await;
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains("\"enabled\":false") && body.contains("\"mode\":\"dry_run\"") && body.contains("\"live_allowed\":false"), "{body}");
 }
 
 #[tokio::test]

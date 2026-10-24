@@ -19,6 +19,7 @@ aurora-core = { path = "../aurora-core" }
 engine-sim = { path = "../engine-sim" }
 engine-jtdx = { path = "../engine-jtdx" }
 dxcc = { path = "../dxcc" }
+qso-engine = { path = "../qso-engine" }
 audio-spectrum = { path = "../audio-spectrum" }
 udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }

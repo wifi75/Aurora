@@ -38,6 +38,8 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
     let mut spectrum = state.bus.subscribe_spectrum();
     let mut check = interval(REVOCATION_CHECK);
     let mut stop = state.subscribe_shutdown();
+    // finche' il flusso e' aperto l'automazione sa che c'e' qualcuno (dead-man)
+    let _present = state.automation.as_ref().map(|a| a.client_guard());
     if *stop.borrow() {
         return;
     }

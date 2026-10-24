@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
-use std::{net::SocketAddr, path::PathBuf, time::Duration};
+use std::{
+    net::SocketAddr,
+    path::PathBuf,
+    sync::atomic::{AtomicU64, Ordering},
+    time::Duration,
+};
 
 use aurora::RunningServer;
 use aurora_core::Event;
@@ -14,10 +19,14 @@ use tokio_tungstenite::{
     tungstenite::{client::IntoClientRequest, Message},
 };
 
+static COUNTER: AtomicU64 = AtomicU64::new(0);
+
 pub fn temp_dir(tag: &str) -> PathBuf {
+    // l'orologio di Windows e' grossolano: il contatore evita cartelle uguali tra test paralleli
     let dir = std::env::temp_dir().join(format!(
-        "aurora-e2e-{tag}-{}-{}",
+        "aurora-e2e-{tag}-{}-{}-{}",
         std::process::id(),
+        COUNTER.fetch_add(1, Ordering::SeqCst),
         std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
     ));
     std::fs::create_dir_all(&dir).unwrap();

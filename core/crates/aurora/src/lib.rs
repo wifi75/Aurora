@@ -5,6 +5,7 @@ use std::{
     net::SocketAddr,
     path::{Path, PathBuf},
     sync::Arc,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use audio_spectrum::run_capture;
@@ -15,6 +16,7 @@ use dxcc::DxccDb;
 use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::Logbook;
+use qso_engine::{Automation, AutomationConfig, Limits, Rules};
 use remote_api::{build_router, AppState, TxPolicy};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::services::{ServeDir, ServeFile};
@@ -53,6 +55,8 @@ pub struct Config {
     pub cty_path: Option<PathBuf>,
     /// Log ADIF dei QSO gia' fatti, per segnalare nuovi DXCC, zone e griglie.
     pub worked_adif: Option<PathBuf>,
+    /// Salvaguardie dell'automazione dei QSO: si impostano solo qui, sul PC.
+    pub auto_limits: Limits,
 }
 
 #[derive(Debug)]
@@ -91,6 +95,7 @@ impl Config {
             replay_on_connect: true,
             cty_path: None,
             worked_adif: None,
+            auto_limits: Limits::default(),
         }
     }
 
@@ -142,6 +147,17 @@ impl Config {
                 return Err(StartError::BadConfig(format!("AURORA_REPLAY_ON_CONNECT deve essere 0 o 1, non {other}")));
             }
         };
+        let defaults = Limits::default();
+        let auto_limits = Limits {
+            max_consecutive_cycles: positive(&get, "AURORA_AUTO_MAX_CYCLES", defaults.max_consecutive_cycles)?,
+            max_per_day: positive(&get, "AURORA_AUTO_MAX_PER_DAY", defaults.max_per_day)?,
+            dead_man_secs: u64::from(positive(&get, "AURORA_AUTO_DEAD_MAN_SECS", u32::try_from(defaults.dead_man_secs).unwrap_or(120))?),
+            run_unattended: match get("AURORA_AUTO_UNATTENDED").as_deref() {
+                None | Some("0") => false,
+                Some("1") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_AUTO_UNATTENDED deve essere 0 o 1, non {other}"))),
+            },
+        };
         Ok(Config {
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
@@ -156,6 +172,7 @@ impl Config {
             replay_on_connect,
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
+            auto_limits,
         })
     }
 }
@@ -214,6 +231,23 @@ fn load_worked(path: Option<&Path>, db: &DxccDb) -> WorkedLog {
     }
 }
 
+fn unix_secs() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
+}
+
+/// Numero intero maggiore di zero da una variabile; un tetto a zero bloccherebbe tutto e si rifiuta.
+fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> Result<u32, StartError> {
+    match get(name) {
+        None => Ok(default),
+        Some(v) => v
+            .trim()
+            .parse::<u32>()
+            .ok()
+            .filter(|n| *n > 0)
+            .ok_or_else(|| StartError::BadConfig(format!("{name} deve essere un numero maggiore di zero, non {v}"))),
+    }
+}
+
 /// Avvia il server e ritorna subito; si ferma quando `shutdown` si completa.
 pub async fn run(
     config: Config,
@@ -226,7 +260,18 @@ pub async fn run(
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
     };
-    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie);
+    let automation = Automation::spawn(
+        &bus,
+        AutomationConfig {
+            rules: Rules::default(),
+            limits: config.auto_limits.clone(),
+            live_allowed: live_tx,
+            tick_every: Duration::from_secs(1),
+            now: Arc::new(unix_secs),
+        },
+    );
+    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
+        .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };

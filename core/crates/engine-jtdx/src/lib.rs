@@ -115,7 +115,7 @@ impl Engine for JtdxEngine {
                     Err(RecvError::Closed) => return,
                 },
                 command = io.commands.recv() => match command {
-                    Some(c) => on_command(&hub, &config, clock.as_ref(), &mut state, c).await,
+                    Some(c) => on_command(&hub, &config, clock.as_ref(), &io, &mut state, c).await,
                     None => return,
                 },
             }
@@ -183,7 +183,11 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
     }
 }
 
-async fn on_command(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, state: &mut State, command: Command) {
+async fn on_command(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &EngineIo, state: &mut State, command: Command) {
+    // lo STOP si annuncia sempre, anche se JTDX non e' ancora noto: chi ascolta (l'automazione) deve fermarsi
+    if command == Command::HaltTx {
+        let _ = io.events.send(Event::TxHalted);
+    }
     let Some((id, schema)) = state.ident.clone() else {
         tracing::warn!("comando scartato: JTDX non ancora noto");
         return;

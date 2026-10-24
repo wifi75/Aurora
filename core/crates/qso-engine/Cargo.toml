@@ -1,0 +1,14 @@
+[package]
+name = "qso-engine"
+description = "Automazione dei QSO: regole, salvaguardie e registro delle decisioni"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+engine-jtdx = { path = "../engine-jtdx" }
+serde = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

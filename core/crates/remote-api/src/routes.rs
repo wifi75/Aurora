@@ -12,6 +12,8 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
+use aurora_core::DecodeTag;
+use qso_engine::{Mode, Rules};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use utoipa::OpenApi;
@@ -22,7 +24,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, ws::stream))]
+#[openapi(paths(health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -34,6 +36,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/devices/{id}", delete(revoke_device))
         .route("/api/v1/commands/halt-tx", post(halt_tx))
         .route("/api/v1/commands/reply", post(reply))
+        .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)
@@ -213,6 +216,10 @@ fn dispatch(state: &AppState, command: Command) -> Result<Json<Value>, ApiError>
 /// Fermare la trasmissione e' sempre permesso, da qualunque via.
 #[utoipa::path(post, path = "/api/v1/commands/halt-tx", responses((status = 200, description = "Comando inviato (idempotente)")))]
 async fn halt_tx(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    // lo STOP spegne anche l'automazione, qualunque sia il motore
+    if let Some(automation) = &state.automation {
+        automation.halt();
+    }
     dispatch(&state, Command::HaltTx)
 }
 
@@ -238,6 +245,79 @@ async fn reply(
         return Err(ApiError::new(StatusCode::NOT_FOUND, "unknown_decode"));
     }
     dispatch(&state, Command::Reply { decode_id: body.decode_id })
+}
+
+#[utoipa::path(get, path = "/api/v1/automation", responses((status = 200, description = "Stato, regole, limiti e registro delle decisioni"), (status = 404, description = "Automazione non disponibile")))]
+async fn automation_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let automation = state.automation.as_ref().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "automation_unavailable"))?;
+    Ok(Json(serde_json::to_value(automation.state()).unwrap_or(Value::Null)))
+}
+
+#[derive(Deserialize)]
+struct AutomationBody {
+    enabled: Option<bool>,
+    mode: Option<Mode>,
+    rules: Option<Rules>,
+    /// Conferma dell'avviso sulla responsabilita' della trasmissione automatica.
+    #[serde(default)]
+    accept_license_notice: bool,
+}
+
+const MAX_EXCLUDED_CALLS: usize = 200;
+
+/// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
+fn rules_are_valid(rules: &Rules) -> bool {
+    let tags_ok = !rules.reply_to.is_empty()
+        && rules.reply_to.iter().all(|t| matches!(t, DecodeTag::NewDxcc | DecodeTag::NewDxccBand | DecodeTag::NewZone | DecodeTag::NewGrid));
+    let calls_ok = rules.excluded_calls.len() <= MAX_EXCLUDED_CALLS
+        && rules.excluded_calls.iter().all(|c| {
+            (3..=13).contains(&c.trim().len()) && c.trim().chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/')
+        });
+    tags_ok && calls_ok && (-30..=20).contains(&rules.min_snr) && (1..=10).contains(&rules.max_attempts_per_call)
+}
+
+/// Accendere e spegnere: dal telefono si accende solo in prova a vuoto. Il modo reale si sceglie dal PC.
+#[utoipa::path(put, path = "/api/v1/automation", responses((status = 200, description = "Applicato; stato aggiornato"), (status = 400, description = "Regole non valide o avviso non confermato"), (status = 403, description = "Modo reale non consentito (local_only, tx_disabled)"), (status = 404, description = "Automazione non disponibile")))]
+async fn automation_put(
+    State(state): State<AppState>,
+    _: Authed,
+    Peer(peer): Peer,
+    headers: HeaderMap,
+    Json(body): Json<AutomationBody>,
+) -> Result<Json<Value>, ApiError> {
+    let automation = state.automation.as_ref().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "automation_unavailable"))?;
+    let from_pc = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if let Some(rules) = &body.rules
+        && !rules_are_valid(rules)
+    {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_rules"));
+    }
+    if body.mode == Some(Mode::Live) {
+        if !from_pc {
+            return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+        }
+        if !body.accept_license_notice {
+            return Err(ApiError::new(StatusCode::BAD_REQUEST, "notice_required"));
+        }
+        if !automation.state().live_allowed {
+            return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"));
+        }
+    }
+    let mode_after = body.mode.unwrap_or(automation.state().mode);
+    if body.enabled == Some(true) && mode_after == Mode::Live && !from_pc {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    // tutto convalidato: ora si applica
+    if let Some(rules) = body.rules {
+        automation.set_rules(rules);
+    }
+    if let Some(mode) = body.mode {
+        automation.set_mode(mode).map_err(|_| ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"))?;
+    }
+    if let Some(enabled) = body.enabled {
+        automation.set_enabled(enabled);
+    }
+    Ok(Json(serde_json::to_value(automation.state()).unwrap_or(Value::Null)))
 }
 
 async fn openapi() -> Json<Value> {

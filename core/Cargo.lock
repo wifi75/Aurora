@@ -63,6 +63,7 @@ dependencies = [
  "engine-sim",
  "futures-util",
  "logbook",
+ "qso-engine",
  "remote-api",
  "serde_json",
  "tokio",
@@ -1091,6 +1092,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
+name = "qso-engine"
+version = "0.4.0"
+dependencies = [
+ "aurora-core",
+ "engine-jtdx",
+ "serde",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1184,6 +1196,7 @@ dependencies = [
  "futures-util",
  "logbook",
  "qrcode",
+ "qso-engine",
  "serde",
  "serde_json",
  "tokio",
