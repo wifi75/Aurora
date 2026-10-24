@@ -1,6 +1,6 @@
 # Licenze delle dipendenze
 
-Elenco generato da `scripts/licenze-terze-parti.py` (non modificare a mano). Aurora e' rilasciata con la GNU GPL 3 o successiva (`LICENSE`);
+Elenco generato da `scripts/licenze-terze-parti.py` (non modificare a mano). Aurora e' rilasciata con la GNU GPL 3 (`LICENSE`);
 le librerie qui sotto mantengono la propria licenza. Dove una libreria ne offre piu' di una (`MIT OR Apache-2.0`) si usa la piu' permissiva.
 Gli avvisi che accompagnano il programma sono in `THIRD-PARTY-NOTICES.md`.
 

@@ -28,7 +28,7 @@
       "../../app/dist": "dist"
     },
     "publisher": "Tiziano Cassone (IU3WJQ)",
-    "copyright": "© 2026 Tiziano Cassone (IU3WJQ) — GNU GPL 3.0 o successiva",
+    "copyright": "© 2026 Tiziano Cassone (IU3WJQ) — GNU GPL 3.0",
     "homepage": "https://github.com/wifi75/Aurora",
     "category": "Utility",
     "shortDescription": "Stazione digitale FT8/FT4",

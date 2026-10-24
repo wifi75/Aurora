@@ -4,7 +4,7 @@ version = "0.10.4"
 description = "Aurora per Windows: il programma con il core dentro, il vassoio, l'avvio automatico e gli aggiornamenti"
 authors = ["Tiziano Cassone (IU3WJQ)"]
 edition = "2024"
-license = "GPL-3.0-or-later"
+license = "GPL-3.0-only"
 publish = false
 
 # Un workspace a parte: Tauri ha dipendenze pesanti che non servono ai test del core.

@@ -13,9 +13,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# licenze compatibili con la distribuzione di Aurora sotto GPL-3.0-or-later
+# licenze compatibili con la distribuzione di Aurora sotto GPL-3.0
 PERMISSIVE = ('MIT', 'Apache', 'BSD', 'ISC', 'Unicode', 'Zlib', '0BSD', 'CC0', 'MPL', 'Unlicense', 'BlueOak', 'OFL', 'CDLA-Permissive', 'BSL-1.0')
-OWN = 'GPL-3.0-or-later'
+OWN = 'GPL-3.0-only'
 
 
 def cargo(manifest):
@@ -56,7 +56,7 @@ problems = [(k, lic) for k, lic in everything.items() if lic != OWN and not any(
 lines = [
     '# Licenze delle dipendenze',
     '',
-    'Elenco generato da `scripts/licenze-terze-parti.py` (non modificare a mano). Aurora e\' rilasciata con la GNU GPL 3 o successiva (`LICENSE`);',
+    'Elenco generato da `scripts/licenze-terze-parti.py` (non modificare a mano). Aurora e\' rilasciata con la GNU GPL 3 (`LICENSE`);',
     'le librerie qui sotto mantengono la propria licenza. Dove una libreria ne offre piu\' di una (`MIT OR Apache-2.0`) si usa la piu\' permissiva.',
     'Gli avvisi che accompagnano il programma sono in `THIRD-PARTY-NOTICES.md`.',
     '',
@@ -78,4 +78,4 @@ if problems:
     for (name, ver), lic in problems:
         print(' ', name, ver, lic)
     sys.exit(1)
-print('Tutte le licenze sono permissive o compatibili con la GPL-3.0-or-later.')
+print('Tutte le licenze sono permissive o compatibili con la GPL-3.0.')

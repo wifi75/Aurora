@@ -31,7 +31,7 @@ Scelte da Tiziano: livello RX, storico e spot sulla cascata, PSK Reporter e prop
 - Aurora è un'altra cosa: **non decodifica**, usa JTDX come motore e lo comanda. Per questo tutto ciò che richiede un decoder o un
   modulatore propri (più flussi FT8 insieme, Q65, SSTV, CW...) è fuori portata o richiede un lavoro enorme; tutto ciò che sta **attorno**
   (livelli audio, mappa, avvisi, storico, servizi, interfaccia) si può replicare.
-- **Licenza**: Decodium è GPL-3.0. Aurora è ora GPL-3.0-or-later, quindi il codice sarebbe compatibile; ma è C++/QML e non si porta
+- **Licenza**: Decodium è GPL-3.0. Aurora è GPL-3.0, quindi il codice sarebbe compatibile; ma è C++/QML e non si porta
   riga per riga in Rust/TypeScript: si **riscrivono le idee** dopo averle capite, indicando la fonte quando serve.
 
 ## Lo slider RX/TX dell'intestazione

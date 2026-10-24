@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Licenza GPL-3.0 (solo)**: Aurora passa da «3 o successiva» a «3», perche' il motore FT8/FT4 proprio porta in Rust algoritmi di JTDX e WSJT-X (GPL 3). Manifest, README, installatore e script delle licenze allineati.
 
 ## 0.10.4 - 2026-10-24
 - **Trasmissione aperta nel programma Windows**: `AURORA_ALLOW_TX=1` e' il predefinito (scelta del proprietario); `AURORA_ALLOW_TX=0` in `aurora.env` la chiude. STOP, tetti e automazioni spente di default restano.
