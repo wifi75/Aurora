@@ -11,7 +11,7 @@ use std::{
 use aurora_core::{Bus, Command, Event};
 use tokio::{sync::broadcast::error::RecvError, task::JoinHandle, time::interval};
 
-use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, Rules};
+use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, Rules, WantedMatcher};
 
 pub struct AutomationConfig {
     pub rules: Rules,
@@ -113,6 +113,11 @@ impl Automation {
         lock(&self.inner.brain).set_rules(rules);
     }
 
+    /// Come riconoscere le stazioni della lista dei desiderati, per la regola «rispondi ai desiderati».
+    pub fn set_wanted_matcher(&self, matcher: WantedMatcher) {
+        lock(&self.inner.brain).set_wanted_matcher(matcher);
+    }
+
     /// STOP TX: spegne l'automazione.
     pub fn halt(&self) {
         lock(&self.inner.brain).on_halt((self.inner.now)());
@@ -144,6 +149,7 @@ fn handle_event(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, ev
         }
         Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged(&q.call),
         Event::TxHalted => lock(&inner.brain).on_halt(now),
-        Event::Status(_) | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) => {}
+        Event::Status(s) => lock(&inner.brain).on_dial(s.dial_hz),
+        Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) => {}
     }
 }

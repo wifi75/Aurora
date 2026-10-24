@@ -1,13 +1,20 @@
 //! Il cervello dell'automazione: decide, non trasmette. Il tempo (secondi UTC) lo passa il chiamante,
 //! cosi' ogni salvaguardia si prova senza orologio.
 
-use std::collections::HashMap;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use aurora_core::{DecodeTag, DecodedMessage};
 use engine_jtdx::text::parse_message;
 use serde::{Deserialize, Serialize};
 
+use crate::ghost;
+
 const LOG_CAPACITY: usize = 100;
+/// Quante stazioni sentite si ricordano al massimo (poi si riparte da zero).
+const HEARD_CAPACITY: usize = 5_000;
 /// Dopo una risposta, per tanto tempo nessun'altra (a meno che il QSO non venga registrato prima).
 const ACTIVE_QSO_SECS: u64 = 60;
 const DAY_SECS: u64 = 86_400;
@@ -27,7 +34,13 @@ pub struct Rules {
     pub min_snr: i32,
     pub excluded_calls: Vec<String>,
     pub max_attempts_per_call: u32,
+    /// Risponde anche ai CQ delle stazioni della lista dei desiderati (nominativo, prefisso, paese o griglia), oltre alle etichette sopra.
+    #[serde(default)]
+    pub reply_to_wanted: bool,
 }
+
+/// Dice se un messaggio e' di una stazione desiderata (e perche'), data la frequenza della radio.
+pub type WantedMatcher = Arc<dyn Fn(&DecodedMessage, Option<u64>) -> Option<String> + Send + Sync>;
 
 impl Default for Rules {
     fn default() -> Self {
@@ -36,6 +49,7 @@ impl Default for Rules {
             min_snr: -18,
             excluded_calls: Vec::new(),
             max_attempts_per_call: 2,
+            reply_to_wanted: false,
         }
     }
 }
@@ -43,7 +57,8 @@ impl Default for Rules {
 impl Rules {
     /// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
     pub fn is_valid(&self) -> bool {
-        let tags_ok = !self.reply_to.is_empty()
+        // senza etichette si risponde solo ai desiderati; ne' etichette ne' desiderati vorrebbe dire non rispondere mai
+        let tags_ok = (!self.reply_to.is_empty() || self.reply_to_wanted)
             && self
                 .reply_to
                 .iter()
@@ -129,6 +144,10 @@ pub struct Brain {
     attempts: HashMap<String, u32>,
     active: Option<(String, u64)>,
     no_client_since: Option<u64>,
+    /// Stazioni gia' sentite in questa sessione: un segnale debole di una mai sentita e' sospetto.
+    heard: HashSet<String>,
+    dial_hz: Option<u64>,
+    wanted: Option<WantedMatcher>,
 }
 
 impl Brain {
@@ -148,7 +167,20 @@ impl Brain {
             attempts: HashMap::new(),
             active: None,
             no_client_since: None,
+            heard: HashSet::new(),
+            dial_hz: None,
+            wanted: None,
         }
+    }
+
+    /// Come riconoscere le stazioni desiderate (la lista sta fuori dal cervello).
+    pub fn set_wanted_matcher(&mut self, matcher: WantedMatcher) {
+        self.wanted = Some(matcher);
+    }
+
+    /// La frequenza della radio, per i filtri di banda della lista dei desiderati.
+    pub fn on_dial(&mut self, hz: u64) {
+        self.dial_hz = (hz > 0).then_some(hz);
     }
 
     pub fn state(&self) -> &BrainState {
@@ -222,19 +254,31 @@ impl Brain {
     }
 
     pub fn on_decode(&mut self, d: &DecodedMessage, now: u64) -> Option<Decision> {
+        let parsed = parse_message(&d.text);
+        // chi e' gia' stato sentito si ricorda anche a automazione spenta: serve a giudicare i segnali deboli
+        let heard_before = parsed.sender.as_ref().is_some_and(|c| self.heard.contains(c));
+        if let Some(sender) = &parsed.sender {
+            if self.heard.len() >= HEARD_CAPACITY {
+                self.heard.clear();
+            }
+            self.heard.insert(sender.clone());
+        }
         if !self.state.enabled {
             return None;
         }
         self.roll_day(now);
-        let wanted = d.tag.is_some_and(|t| self.state.rules.reply_to.contains(&t));
-        let parsed = parse_message(&d.text);
-        if !wanted || !parsed.is_cq {
+        let tag_wanted = d.tag.is_some_and(|t| self.state.rules.reply_to.contains(&t));
+        let list_reason = if self.state.rules.reply_to_wanted && parsed.is_cq { self.wanted.as_ref().and_then(|m| m(d, self.dial_hz)) } else { None };
+        if !(tag_wanted || list_reason.is_some()) || !parsed.is_cq {
             return None;
         }
         let Some(call) = parsed.sender else {
             return Some(self.push(now, DecisionKind::Skipped, None, Some(d.id), "Nominativo non leggibile nel messaggio".into()));
         };
         let call_opt = Some(call.clone());
+        if let Some(why) = ghost::suspicion(&d.text, &call, d.snr, heard_before) {
+            return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: {why}")));
+        }
         if d.snr < self.state.rules.min_snr {
             let reason = format!("{call}: segnale {} dB sotto il minimo di {} dB", d.snr, self.state.rules.min_snr);
             return Some(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
@@ -268,7 +312,11 @@ impl Brain {
         }
         *self.attempts.entry(call.clone()).or_insert(0) += 1;
         self.active = Some((call.clone(), now));
-        let why = d.tag.map_or("CQ di interesse", tag_text);
+        let why = match (&list_reason, d.tag) {
+            (Some(reason), _) if !tag_wanted => format!("nella lista dei desiderati ({reason})"),
+            (_, Some(tag)) => tag_text(tag).to_string(),
+            _ => "CQ di interesse".to_string(),
+        };
         let (kind, reason) = if live {
             (DecisionKind::Reply, format!("Rispondo a {call}: {why}"))
         } else {

@@ -2767,3 +2767,10 @@
 .diag-item--info {
   border-left-color: var(--text-muted);
 }
+
+.auto-wanted {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+}

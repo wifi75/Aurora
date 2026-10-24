@@ -34,6 +34,9 @@ export function AutomationRulesForm({ rules: saved, onSave, error = false }: Pro
           </label>
         ))}
       </fieldset>
+      <label className="auto-wanted" title={t('tip.auto.wanted')}>
+        <input type="checkbox" checked={rules.reply_to_wanted} onChange={(e) => setDraft({ ...rules, reply_to_wanted: e.target.checked })} /> {t('auto.wanted')}
+      </label>
       <label className="auto-field" title={t('tip.auto.minSnr')}>
         {t('auto.minSnr')}
         <input type="number" min={-30} max={20} value={rules.min_snr} onChange={(e) => setDraft({ ...rules, min_snr: Number(e.target.value) })} />

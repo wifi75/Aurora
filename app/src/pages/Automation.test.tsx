@@ -11,7 +11,7 @@ const base: AutomationState = {
   enabled: false,
   mode: 'dry_run',
   live_allowed: false,
-  rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2 },
+  rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false },
   limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   replies_today: 0,
   consecutive: 0,
@@ -57,6 +57,13 @@ describe('Automation', () => {
     fireEvent.change(await screen.findByLabelText(/segnale minimo/i), { target: { value: '-12' } });
     fireEvent.click(screen.getByRole('button', { name: /salva le regole/i }));
     await waitFor(() => expect(putAutomation).toHaveBeenCalledWith({ rules: { ...base.rules, min_snr: -12 } }));
+  });
+
+  it('turns on the replies to the wishlist and saves them with the rules', async () => {
+    show();
+    fireEvent.click(await screen.findByLabelText(/rispondi anche ai cq della lista dei desiderati/i));
+    fireEvent.click(screen.getByRole('button', { name: /salva le regole/i }));
+    await waitFor(() => expect(putAutomation).toHaveBeenCalledWith({ rules: { ...base.rules, reply_to_wanted: true } }));
   });
 
   it('shows the error when the automation is unavailable', async () => {

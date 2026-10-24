@@ -10,6 +10,8 @@ export const AutomationStateSchema = z.object({
     min_snr: z.number(),
     excluded_calls: z.array(z.string()),
     max_attempts_per_call: z.number(),
+    /** Risponde anche ai CQ della lista dei desiderati (un core piu' vecchio non lo manda: spento). */
+    reply_to_wanted: z.boolean().default(false),
   }),
   limits: z.object({
     max_consecutive_cycles: z.number(),
