@@ -282,6 +282,71 @@ export async function clearHistory(): Promise<void> {
   await request('/history', { method: 'DELETE' });
 }
 
+/** Quali servizi online sono accesi (PSK Reporter, propagazione). */
+export interface OnlineSettings {
+  psk: boolean;
+  solar: boolean;
+}
+
+export interface PskReport {
+  receiver: string;
+  locator: string;
+  snr: number | null;
+  freq_hz: number;
+  mode: string;
+  /** Secondi Unix. */
+  time_s: number;
+  country: string | null;
+}
+
+export interface PskState {
+  enabled: boolean;
+  psk: { fetched_ms: number; callsign: string; hours: number; reports: PskReport[]; error: string | null };
+}
+
+export interface SolarData {
+  updated: string;
+  sfi: number | null;
+  a_index: number | null;
+  k_index: number | null;
+  xray: string;
+  sunspots: number | null;
+  aurora: number | null;
+  solar_wind: number | null;
+  magnetic_field: number | null;
+  geomag: string;
+  signal_noise: string;
+  muf: string;
+  bands: Array<{ name: string; time: string; condition: string }>;
+  vhf: Array<{ name: string; location: string; status: string }>;
+}
+
+export interface SolarState {
+  enabled: boolean;
+  solar: { fetched_ms: number; data: SolarData | null; error: string | null };
+}
+
+export async function getOnline(): Promise<OnlineSettings> {
+  return (await (await request('/online')).json()) as OnlineSettings;
+}
+
+export async function putOnline(settings: OnlineSettings): Promise<OnlineSettings> {
+  return (await (await request('/online', { ...jsonInit(settings), method: 'PUT' })).json()) as OnlineSettings;
+}
+
+export async function getPsk(): Promise<PskState> {
+  return (await (await request('/online/psk')).json()) as PskState;
+}
+
+export async function getSolar(): Promise<SolarState> {
+  return (await (await request('/online/solar')).json()) as SolarState;
+}
+
+/** Chiede subito i dati ai servizi accesi (al massimo una volta al minuto per servizio). */
+export async function refreshOnline(): Promise<{ asked: boolean }> {
+  return (await (await request('/online/refresh', { method: 'POST' })).json()) as { asked: boolean };
+}
+
 export interface AwardStats {
   qsos: number;
   dxcc_worked: number;

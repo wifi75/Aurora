@@ -32,6 +32,7 @@ describe('parseRoute', () => {
   it('reads the map and history pages', () => {
     expect(parseRoute('#/mappa')).toEqual({ name: 'map' });
     expect(parseRoute('#/storico')).toEqual({ name: 'history' });
+    expect(parseRoute('#/propagazione')).toEqual({ name: 'propagation' });
   });
 
   it('defaults to the live page', () => {

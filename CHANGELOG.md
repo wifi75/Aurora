@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Servizi online a richiesta** (scheda Impostazioni > Servizi online, **spenti di default**): *PSK Reporter* (chi ha ricevuto il tuo nominativo nelle ultime 3 ore, con distanza dal tuo locatore e il piu' lontano) e *propagazione* da hamqsl.com (flusso solare, indici A e K, condizioni per gruppo di bande di giorno e di notte, con la banda in uso evidenziata). Nuova pagina Propagazione. Sono richieste di sola lettura e rare; ogni servizio dice cosa vede il sito; non si invia mai nulla di cio' che si riceve o trasmette.
+- **Diagnosi automatica** nella pagina Stazione: avvisa quando l'orologio e' fuori oltre il 4 % del periodo (8 % = problema), l'ingresso audio e' saturo, muto o debole, manca il nominativo nel motore o non si decodifica nulla da 3 minuti; ognuno con il modo di sistemarlo. Sparisce quando e' tutto a posto.
 - **Spot del cluster sulla cascata**: gli spot della banda in uso che cadono dentro la cascata (frequenza dello spot meno quella della radio) compaiono in basso con tacca e nominativo, su piu' righe se vicini, per dieci minuti; un clic porta la frequenza di ricezione (Rx) su quella dello spot. Solo ricezione, non trasmette.
 - **Storico dei messaggi**: ogni messaggio ricevuto si ricorda (`data/history.sqlite`, 30 giorni, `AURORA_HISTORY_DAYS`) e si cerca nella nuova pagina Storico per nominativo o testo, banda, modo e periodo, con pagine da 100 e svuotamento su conferma (`GET/DELETE /api/v1/history`, `GET /api/v1/history/stats`). Non e' il log dei QSO e non vi finisce nulla.
 - **Filtro «Nascondi i CQ di stazioni gia' collegate su questa banda»** nella scheda Filtri: gli altri messaggi di quelle stazioni restano visibili.

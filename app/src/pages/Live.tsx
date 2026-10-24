@@ -6,6 +6,7 @@ import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
+import { DiagnosisBar } from '../components/DiagnosisBar';
 import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
@@ -244,6 +245,7 @@ export function Live() {
         </div>
       </div>
       <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
+      <DiagnosisBar />
       <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
       {note ? (
         <p className="live-toast" role="status" aria-live="polite">
