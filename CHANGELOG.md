@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- Riavvio di Aurora: i dati arrivano subito. Prima lo stato di JTDX (frequenza, modo, DX) compariva solo a fine periodo, fino a 13-15 secondi dopo, e nel frattempo anche STOP e i comandi non partivano. Ora Aurora legge lo stato dalla finestra di JTDX in meno di un secondo e ricorda su disco indirizzo e identificativo di JTDX (`data/jtdx-peer.txt`), cosi' i comandi, compreso STOP, raggiungono JTDX subito; la pagina si riconnette in 2 secondi al massimo (prima 8). I messaggi decodificati restano quelli del periodo in corso: nessuna vecchia stazione ricompare.
+- Le letture da JTDX con l'accessibilita' di Windows escono ora in UTF-8 (prima la console li rovinava: lo spazio non divisibile della frequenza diventava un carattere illeggibile).
 - Barre Rx (verde) e Tx (rossa) sulla cascata larghe quanto il segnale del modo, dalla frequenza verso destra: FT8 50 Hz (piu' stretta), FT4 83 Hz; per gli altri modi resta la barra sottile.
 - Messaggi Tx1-Tx6 come nel motore: Aurora legge dalla sua finestra i testi veri (rapporto e CQ come li ha scritti) e il pallino selezionato, cioe' da dove trasmette; con «Salta Tx1» si parte da Tx2 e la prima riga si vede barrata. I messaggi si scelgono a mano con un clic (`POST /commands/tx-message`): il motore trasmette da quello e poi prosegue da solo. La riga e' accesa forte mentre si trasmette e col solo bordo mentre aspetta il turno.
 - Orologio UTC (HH:MM:SS) accanto alla barra del periodo, con la stessa grafica e la stessa misura della barra.

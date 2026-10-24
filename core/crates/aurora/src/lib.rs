@@ -10,7 +10,7 @@ use std::{
 
 use audio_spectrum::run_capture;
 use auth::{DeviceStore, SystemClock};
-use aurora_core::{Bus, Engine, EngineIo};
+use aurora_core::{Bus, Engine, EngineIo, Event, StationStatus};
 use axum::{http::StatusCode, routing::any};
 use dxcc::DxccDb;
 use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
@@ -20,7 +20,7 @@ use qso_export::{Exporter, Target};
 use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use qso_engine::{Automation, AutomationConfig, Limits, Rules};
 use remote_api::{build_router, AppState, TxPolicy};
-use tokio::{net::TcpListener, task::JoinHandle};
+use tokio::{net::TcpListener, sync::broadcast, task::JoinHandle};
 use tower_http::services::{ServeDir, ServeFile};
 use udp_hub::{Hub, HubConfig};
 
@@ -367,6 +367,60 @@ fn save_settings(dir: &Path, auth: &DeviceStore, frequencies: &Mutex<FrequencyTa
 }
 
 /// Ogni 15 secondi guarda l'ora UTC: al minuto di una riga porta la radio sulla banda, se non si trasmette.
+/// Lo stato di partenza dalla finestra di JTDX. Dopo un riavvio di Aurora, JTDX manda il suo stato UDP solo a fine periodo (fino
+/// a 15 secondi dopo) e nel frattempo la pagina resta vuota: lo si legge subito dalla sua finestra, una volta; il primo stato vero
+/// lo sostituisce. Se JTDX non e' ancora pronto si riprova per un po'.
+fn spawn_status_bootstrap(state: AppState, events: broadcast::Sender<Event>, rig: Arc<dyn Rig>, ini: Option<std::path::PathBuf>) {
+    tokio::spawn(async move {
+        let (call, grid) = ini
+            .as_deref()
+            .and_then(|path| engine_jtdx::ini::read_shown(path).ok())
+            .map(|settings| (settings.get("MyCall").cloned().unwrap_or_default(), settings.get("MyGrid").cloned().unwrap_or_default()))
+            .unwrap_or_default();
+        for _ in 0..8 {
+            if state.has_status() {
+                return;
+            }
+            let reader = Arc::clone(&rig);
+            match tokio::task::spawn_blocking(move || reader.engine_snapshot()).await {
+                Ok(Ok(snapshot)) if snapshot.dial_hz.is_some() => {
+                    // nel frattempo puo' essere arrivato lo stato vero: quello vale di piu'
+                    if !state.has_status() {
+                        tracing::info!("stato iniziale letto dalla finestra di JTDX: {} Hz", snapshot.dial_hz.unwrap_or_default());
+                        let _ = events.send(Event::Status(snapshot_to_status(&snapshot, &call, &grid)));
+                    }
+                    return;
+                }
+                Ok(Ok(_)) => tracing::debug!("la finestra di JTDX non ha dato la frequenza: si riprova"),
+                Ok(Err(e)) => tracing::debug!("stato iniziale di JTDX non letto: {e}"),
+                Err(e) => tracing::debug!("lettura dello stato iniziale interrotta: {e}"),
+            }
+            tokio::time::sleep(Duration::from_secs(2)).await;
+        }
+    });
+}
+
+/// Lo stato per l'interfaccia a partire da quello letto dalla finestra di JTDX e dal suo file di impostazioni.
+fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str, de_grid: &str) -> StationStatus {
+    StationStatus {
+        dial_hz: snapshot.dial_hz.unwrap_or_default(),
+        mode: snapshot.mode.clone().unwrap_or_default(),
+        tx_enabled: snapshot.tx_enabled,
+        transmitting: snapshot.transmitting,
+        decoding: false,
+        de_call: de_call.to_string(),
+        de_grid: de_grid.to_string(),
+        dx_call: snapshot.dx_call.clone(),
+        dx_grid: snapshot.dx_grid.clone(),
+        report: snapshot.report.clone(),
+        tx_df: snapshot.tx_df,
+        rx_df: snapshot.rx_df,
+        tx_message: None,
+        tr_period: None,
+        own_continent: None,
+    }
+}
+
 fn spawn_scheduler(state: AppState, rig: Arc<dyn Rig>) {
     tokio::spawn(async move {
         let mut last: Option<(u64, u8, u8)> = None;
@@ -575,6 +629,7 @@ pub async fn run(
             let engine_config = JtdxConfig {
                 allow_tx: config.allow_tx,
                 replay_on_connect: config.replay_on_connect,
+                peer_cache: Some(config.data_dir.join("jtdx-peer.txt")),
                 ..JtdxConfig::default()
             };
             let mut engine = JtdxEngine::new(Arc::clone(&hub), engine_config, Arc::new(EngineClock));
@@ -587,7 +642,10 @@ pub async fn run(
 
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {
-        spawn_scheduler(state.clone(), rig);
+        spawn_scheduler(state.clone(), rig.clone());
+        if config.engine == EngineKind::Jtdx {
+            spawn_status_bootstrap(state.clone(), bus.events(), rig, config.jtdx_ini.clone());
+        }
     }
 
     let mut app = build_router(state.clone()).route("/api/{*rest}", any(|| async { StatusCode::NOT_FOUND }));
@@ -638,4 +696,31 @@ pub async fn run(
         drop(audio);
     });
     Ok(RunningServer { addr, state, hub, task })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_status_read_from_the_jtdx_window_fills_the_page_until_the_real_one_arrives() {
+        let snapshot = rig_control::snapshot::Snapshot {
+            dial_hz: Some(14_080_000),
+            mode: Some("FT4".into()),
+            dx_call: Some("M7SZY".into()),
+            dx_grid: None,
+            tx_df: Some(1084),
+            rx_df: Some(1034),
+            report: Some("-2".into()),
+            transmitting: false,
+            tx_enabled: true,
+        };
+        let status = snapshot_to_status(&snapshot, "IU3ABC", "IO91wm");
+        assert_eq!((status.dial_hz, status.mode.as_str()), (14_080_000, "FT4"));
+        assert_eq!((status.de_call.as_str(), status.de_grid.as_str()), ("IU3ABC", "IO91wm"));
+        assert_eq!(status.dx_call.as_deref(), Some("M7SZY"));
+        assert_eq!((status.tx_df, status.rx_df), (Some(1084), Some(1034)));
+        assert!(status.tx_enabled && !status.transmitting && !status.decoding);
+        assert!(status.tx_message.is_none());
+    }
 }

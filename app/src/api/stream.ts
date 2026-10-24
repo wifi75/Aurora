@@ -36,8 +36,8 @@ export interface StreamHandlers {
   onState(state: ConnectionState): void;
 }
 
-const RETRY_MIN_MS = 500;
-const RETRY_MAX_MS = 8000;
+const RETRY_MIN_MS = 250;
+const RETRY_MAX_MS = 2000;
 
 function streamUrl(): string {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';

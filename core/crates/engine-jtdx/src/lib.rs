@@ -45,7 +45,7 @@ impl Clock for SystemClock {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct JtdxConfig {
     /// Se falso, `Reply` viene rifiutato: un Reply fa trasmettere JTDX.
     pub allow_tx: bool,
@@ -53,12 +53,32 @@ pub struct JtdxConfig {
     pub reply_max_age_ms: u64,
     /// Chiede a JTDX di rimandare i decode correnti appena lo vede (o lo rivede riavviato).
     pub replay_on_connect: bool,
+    /// File dove ricordare indirizzo e identificativo di JTDX: dopo un riavvio di Aurora i comandi (anche STOP) partono subito,
+    /// senza aspettare il primo pacchetto di JTDX (che arriva a fine periodo, anche 15 secondi dopo).
+    pub peer_cache: Option<std::path::PathBuf>,
 }
 
 impl Default for JtdxConfig {
     fn default() -> Self {
-        JtdxConfig { allow_tx: false, reply_max_age_ms: 45_000, replay_on_connect: true }
+        JtdxConfig { allow_tx: false, reply_max_age_ms: 45_000, replay_on_connect: true, peer_cache: None }
     }
+}
+
+/// Indirizzo, identificativo e schema di JTDX come si ricordano su disco: tre righe di testo.
+pub fn encode_peer(addr: SocketAddr, id: &str, schema: u32) -> String {
+    format!("{addr}\n{id}\n{schema}\n")
+}
+
+/// Il contrario di `encode_peer`; `None` se il file e' vuoto, rovinato o con un identificativo con a capo.
+pub fn decode_peer(text: &str) -> Option<(SocketAddr, String, u32)> {
+    let mut lines = text.lines();
+    let addr = lines.next()?.trim().parse().ok()?;
+    let id = lines.next()?.trim().to_string();
+    let schema = lines.next()?.trim().parse().ok()?;
+    if id.is_empty() || lines.next().is_some_and(|l| !l.trim().is_empty()) {
+        return None;
+    }
+    Some((addr, id, schema))
 }
 
 pub struct JtdxEngine {
@@ -88,6 +108,8 @@ struct State {
     /// Identificativo e schema dell'ultimo pacchetto di JTDX: i comandi devono riusarli.
     ident: Option<(String, u32)>,
     last_peer: Option<SocketAddr>,
+    /// Quello gia' scritto nel file dell'indirizzo: si riscrive solo se cambia.
+    saved_peer: Option<(SocketAddr, String, u32)>,
     enrichment: Option<Enrichment>,
     /// Banda corrente, dall'ultima frequenza comunicata da JTDX.
     band: Option<&'static str>,
@@ -108,7 +130,15 @@ fn message_id(m: &Message) -> Option<String> {
 impl Engine for JtdxEngine {
     async fn run(self, mut io: EngineIo) {
         let JtdxEngine { hub, config, clock, mut datagrams, enrichment } = self;
-        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None, enrichment, band: None };
+        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None, saved_peer: None, enrichment, band: None };
+        if let Some(path) = &config.peer_cache
+            && let Some((addr, id, schema)) = std::fs::read_to_string(path).ok().as_deref().and_then(decode_peer)
+        {
+            hub.set_peer(Some(addr));
+            state.ident = Some((id.clone(), schema));
+            state.last_peer = Some(addr);
+            state.saved_peer = Some((addr, id, schema));
+        }
         loop {
             tokio::select! {
                 received = datagrams.recv() => match received {
@@ -122,6 +152,19 @@ impl Engine for JtdxEngine {
                 },
             }
         }
+    }
+}
+
+/// Ricorda su disco dove sta JTDX (se e' cambiato), per i comandi subito dopo un riavvio di Aurora.
+fn remember_peer(config: &JtdxConfig, state: &mut State, peer: Option<SocketAddr>) {
+    let (Some(path), Some(addr), Some((id, schema))) = (&config.peer_cache, peer, &state.ident) else { return };
+    let current = (addr, id.clone(), *schema);
+    if state.saved_peer.as_ref() == Some(&current) {
+        return;
+    }
+    match std::fs::write(path, encode_peer(current.0, &current.1, current.2)) {
+        Ok(()) => state.saved_peer = Some(current),
+        Err(e) => tracing::warn!("indirizzo di JTDX non salvato in {}: {e}", path.display()),
     }
 }
 
@@ -145,6 +188,7 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
 
     // JTDX nuovo (o riavviato con un'altra porta): si chiede di rimandare i decode correnti
     let peer = hub.jtdx_addr();
+    remember_peer(config, state, peer);
     if peer != state.last_peer {
         state.last_peer = peer;
         if let (true, Some((id, schema))) = (config.replay_on_connect, &state.ident) {

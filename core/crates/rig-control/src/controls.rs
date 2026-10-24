@@ -64,7 +64,8 @@ pub fn find(id: &str) -> Option<&'static Control> {
     CONTROLS.iter().find(|c| c.id == id)
 }
 
-const HEAD: &str = "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; \
+pub(crate) const HEAD: &str = "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false; \
+     Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; \
      $p = Get-Process jtdx -ErrorAction SilentlyContinue | Select-Object -First 1; \
      if (-not $p) { Write-Error 'JTDX non in esecuzione'; exit 3 }; \
      $root = [System.Windows.Automation.AutomationElement]::RootElement; \
