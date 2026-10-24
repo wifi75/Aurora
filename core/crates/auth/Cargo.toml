@@ -1,0 +1,13 @@
+[package]
+name = "auth"
+description = "Associazione dei dispositivi e verifica dei token di sessione"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+rusqlite = { workspace = true }
+sha2 = { workspace = true }
+getrandom = { workspace = true }
+hex = { workspace = true }
