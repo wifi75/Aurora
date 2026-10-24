@@ -7,9 +7,12 @@ import { Panel } from '../components/Panel';
 import { StationPanel } from '../components/StationPanel';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
+import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
 import { Waterfall } from '../components/Waterfall';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
+import { browserStorage } from '../lib/theme';
+import { readSize, saveSize, type WaterfallSize } from '../lib/waterfallSize';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
 
@@ -21,6 +24,12 @@ export function Live() {
   const decodes = useStation((s) => s.decodes);
   const connection = useStation((s) => s.connection);
   const [note, setNote] = useState('');
+  const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
+
+  const changeSize = (next: WaterfallSize) => {
+    saveSize(browserStorage(), next);
+    setSize(next);
+  };
 
   useEffect(() => {
     const { apply, setConnection } = useStation.getState();
@@ -46,9 +55,12 @@ export function Live() {
     <div className="live">
       <div className="live-top">
         <StatusBar status={status} connection={connection} />
-        <StopButton variant="compact" />
+        <div className="live-actions">
+          <WaterfallSizeSwitch value={size} onChange={changeSize} />
+          <StopButton variant="compact" />
+        </div>
       </div>
-      <div className="live-body">
+      <div className={`live-body live-body--${size}`}>
         <section className="desk-main" aria-label="Cascata">
           <Waterfall register={registerSpectrum} />
           <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
