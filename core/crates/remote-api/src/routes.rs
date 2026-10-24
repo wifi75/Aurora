@@ -141,6 +141,13 @@ impl FromRequestParts<AppState> for Authed {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        // programma Windows: chi arriva da questo stesso PC (loopback, non da un proxy) entra senza codice
+        if state.local_trust {
+            let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
+            if peer.is_some_and(|ip| ip.is_loopback()) && !is_proxied(&parts.headers) {
+                return Ok(Authed(DeviceId(0)));
+            }
+        }
         // prove: con l'accesso senza codice acceso entra chi e' sulla rete di casa e non arriva da un proxy
         if state.open_access.load(std::sync::atomic::Ordering::SeqCst) {
             let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());

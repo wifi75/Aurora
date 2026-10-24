@@ -123,6 +123,8 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_UI_DIR".into(), text(ui_dir));
     // raggiungibile dal telefono sulla rete di casa; l'accesso richiede comunque il codice di associazione
     v.insert("AURORA_BIND".into(), "0.0.0.0:8787".into());
+    // la finestra del programma entra senza codice (solo da questo PC); i telefoni lo chiedono sempre
+    v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
     if let Some(file) = env_file {
         v.extend(parse_env_file(file));
     }
@@ -144,6 +146,9 @@ pub fn sample_env_file() -> &'static str {
      #\n\
      # Accesso dal telefono sulla rete di casa senza codice di associazione (solo per le prove):\n\
      # AURORA_OPEN_ACCESS=1\n\
+     #\n\
+     # La finestra del programma sul PC entra senza codice (i telefoni lo chiedono sempre). Per toglierlo:\n\
+     # AURORA_TRUST_LOCAL=0\n\
      #\n\
      # Porta e indirizzo (predefinito 0.0.0.0:8787, raggiungibile dal telefono):\n\
      # AURORA_BIND=0.0.0.0:8787\n\
@@ -249,6 +254,7 @@ mod tests {
         assert!(!v.contains_key("AURORA_ALLOW_TX"), "la trasmissione non si apre mai da sola");
         assert!(!v.contains_key("AURORA_OPEN_ACCESS"));
         let config = config_from(&v).expect("configurazione valida");
+        assert!(config.local_trust && !config.open_access, "il PC entra senza codice, la rete di casa no");
         assert!(!config.allow_tx);
         assert_eq!(config.bind.port(), 8787);
     }

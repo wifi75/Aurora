@@ -89,6 +89,8 @@ pub struct Config {
     pub pair_ttl_secs: u64,
     /// Accesso senza codice per le prove (solo rete di casa). Spento per impostazione predefinita.
     pub open_access: bool,
+    /// Chi arriva da questo PC entra senza codice (programma Windows). Dall'ambiente: `AURORA_TRUST_LOCAL=1`.
+    pub local_trust: bool,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
     /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
@@ -139,6 +141,7 @@ impl Config {
             rig_omnirig: false,
             pair_ttl_secs: 600,
             open_access: false,
+            local_trust: false,
             log4om_db: None,
             jtdx_ini: None,
         }
@@ -234,6 +237,11 @@ impl Config {
                 None | Some("0") => false,
                 Some("1") => true,
                 Some(other) => return Err(StartError::BadConfig(format!("AURORA_OPEN_ACCESS deve essere 0 o 1, non {other}"))),
+            },
+            local_trust: match get("AURORA_TRUST_LOCAL").as_deref() {
+                None | Some("0") => false,
+                Some("1") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_TRUST_LOCAL deve essere 0 o 1, non {other}"))),
             },
             pair_ttl_secs: match get("AURORA_PAIR_TTL_SECS") {
                 None => 600,
@@ -655,6 +663,7 @@ pub async fn run(
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access)
+        .with_local_trust(config.local_trust)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))

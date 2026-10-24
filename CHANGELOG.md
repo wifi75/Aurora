@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.10.2 - 2026-10-24
+- **Programma Windows senza associazione**: la finestra di Aurora sul PC entra da sola, senza «Associa questo dispositivo». Vale solo per chi arriva da questo stesso PC (mai da un proxy o da un tunnel); i telefoni e gli altri PC chiedono sempre il codice. Si spegne con `AURORA_TRUST_LOCAL=0` in `aurora.env`.
+
 ## 0.10.1 - 2026-10-24
 - **Licenze**: `THIRD-PARTY-NOTICES.md` (avvisi di terze parti) e `docs/licenze-terze-parti.md` (tutte le dipendenze con la licenza, generato da `scripts/licenze-terze-parti.py`, controllo che siano compatibili con la GPL-3.0-or-later). Autore con nominativo (IU3WJQ) in README, pacchetti, installatore e piede dell'interfaccia.
 - **Programma Windows con installatore** (`desktop/`, Tauri 2): Aurora si installa con un installatore personalizzato (logo, autore, licenza GPL, barra laterale e intestazione con il marchio, italiano e inglese, senza permessi di amministratore). Il core gira dentro il programma e la finestra mostra la sua pagina; chiudendola Aurora resta nel **vassoio** (apri, installa aggiornamento, cerca aggiornamenti, avvia con Windows, cartella dei dati, esci), parte con Windows e una seconda copia mostra la prima. Trova da sola JTDX, il suo log, `cty.dat`, Log4OM2 e l'ingresso audio; le impostazioni si danno in `%APPDATA%\Aurora\aurora.env`. Trasmissione sempre chiusa finche' non la si apre.

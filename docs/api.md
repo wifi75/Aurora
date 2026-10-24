@@ -83,4 +83,4 @@ Predefinito: i comandi che fanno trasmettere sono ammessi da rete locale e Tails
 ## Variabili d'ambiente del programma `aurora`
 
 Vedi `.env.example`. In breve: `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE`, `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_ALLOW_TX`,
-`AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS` (giorni di storico dei messaggi, predefinito 30, 0 = per sempre), `AURORA_JTDX_INI`, `AURORA_LOG4OM_DB`, `AURORA_REPLAY_ON_CONNECT` (predefinito 0), `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_AUTO_*`.
+`AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS` (giorni di storico dei messaggi, predefinito 30, 0 = per sempre), `AURORA_JTDX_INI`, `AURORA_LOG4OM_DB`, `AURORA_REPLAY_ON_CONNECT` (predefinito 0), `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL` (il PC entra senza codice; acceso dal programma Windows), `AURORA_AUTO_*`.
