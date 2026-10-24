@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.10.5 - 2026-10-24
+- **Aggiornamento automatico riparato**: l'installatore partiva e si chiudeva subito perche' la riga che chiude Aurora chiudeva anche i suoi figli, installatore compreso. Ora chiude solo il programma e Aurora lancia l'installatore staccato da se' (`cmd /C start`). Dalla 0.10.5 in poi l'aggiornamento da Aurora funziona; chi ha la 0.10.4 installa la 0.10.5 a mano una volta.
 - **Licenza GPL-3.0 (solo)**: Aurora passa da «3 o successiva» a «3», perche' il motore FT8/FT4 proprio porta in Rust algoritmi di JTDX e WSJT-X (GPL 3). Manifest, README, installatore e script delle licenze allineati.
 
 ## 0.10.4 - 2026-10-24

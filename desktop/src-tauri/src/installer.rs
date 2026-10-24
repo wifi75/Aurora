@@ -19,6 +19,14 @@ pub fn installer_args() -> [&'static str; 3] {
     ["/P", "/R", "/UPDATE"]
 }
 
+/// Come lanciare l'installatore **staccato** da Aurora: tramite `cmd /C start`, che termina subito, cosi' l'installatore non risulta figlio di
+/// Aurora e non viene chiuso insieme a lei quando la chiude per sostituirla (ne' dalla riga di chiusura dei vecchi disinstallatori).
+pub fn detached_command_args(installer: &str) -> Vec<String> {
+    let mut args = vec!["/C".to_string(), "start".to_string(), String::new(), installer.to_string()];
+    args.extend(installer_args().iter().map(|a| (*a).to_string()));
+    args
+}
+
 /// Il nome del file da salvare: solo la parte finale, senza percorsi, e solo se sembra un installatore.
 pub fn safe_file_name(asset_name: &str) -> Option<String> {
     let name = asset_name.rsplit(['/', '\\']).next()?.trim();
@@ -54,7 +62,8 @@ impl UpdateInstaller for DesktopInstaller {
         std::fs::create_dir_all(&dir).map_err(|e| format!("cartella temporanea: {e}"))?;
         let path = dir.join(file_name);
         std::fs::write(&path, &data).map_err(|e| format!("pacchetto non salvato: {e}"))?;
-        Command::new(&path).args(installer_args()).spawn().map_err(|e| format!("installatore non avviato: {e}"))?;
+        let installer = path.to_str().ok_or("percorso del pacchetto non valido")?;
+        Command::new("cmd").args(detached_command_args(installer)).spawn().map_err(|e| format!("installatore non avviato: {e}"))?;
         tracing::info!("aggiornamento {} avviato da {}", release.version, path.display());
 
         // un attimo per rispondere alla pagina, poi si chiude: l'installatore non puo' sostituire un programma aperto
@@ -86,6 +95,14 @@ mod tests {
     fn the_installer_runs_without_questions_and_reopens_aurora() {
         let args = installer_args();
         assert!(args.contains(&"/P") && args.contains(&"/R"));
+    }
+
+    #[test]
+    fn the_installer_is_started_detached_through_cmd_start() {
+        let args = detached_command_args(r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
+        assert_eq!(&args[..3], ["/C", "start", ""], "start vuole prima il titolo (vuoto)");
+        assert_eq!(args[3], r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
+        assert_eq!(&args[4..], ["/P", "/R", "/UPDATE"]);
     }
 
     #[test]
