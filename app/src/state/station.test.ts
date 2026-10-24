@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage, StationStatus } from '../api/schemas';
-import { useStation } from './station';
+import { usePrefs } from '../lib/prefs';
+import { bandOrModeChanged, useStation } from './station';
 
 const status: StationStatus = {
   dial_hz: 14_074_000, mode: 'FT8', tx_enabled: true, transmitting: false, decoding: true,
@@ -130,6 +131,55 @@ describe('useStation', () => {
     expect(useStation.getState().pendingBand).toBe('40m');
     apply({ type: 'status', ...status, dial_hz: 7_074_000 });
     expect(useStation.getState().pendingBand).toBeNull();
+  });
+
+  it('clears the band activity when the band or the mode changes, if the option is on', () => {
+    const { apply } = useStation.getState();
+    apply({ type: 'status', ...status });
+    apply({ type: 'decode', ...decode(1) });
+    apply({ type: 'status', ...status, dial_hz: 14_075_000 }); // stessa banda: resta
+    expect(useStation.getState().decodes).toHaveLength(1);
+    apply({ type: 'status', ...status, dial_hz: 7_074_000 }); // un'altra banda: si svuota
+    expect(useStation.getState().decodes).toHaveLength(0);
+    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'status', ...status, dial_hz: 7_074_000, mode: 'FT4' }); // un altro modo: si svuota
+    expect(useStation.getState().decodes).toHaveLength(0);
+  });
+
+  it('clears at once when the change is commanded from Aurora, and only once', () => {
+    const { apply, patchStatus } = useStation.getState();
+    apply({ type: 'status', ...status });
+    apply({ type: 'decode', ...decode(1) });
+    patchStatus({ dial_hz: 7_074_000 });
+    expect(useStation.getState().decodes).toHaveLength(0);
+    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'status', ...status, dial_hz: 7_074_000 }); // il motore conferma: non si svuota di nuovo
+    expect(useStation.getState().decodes.map((d) => d.id)).toEqual([2]);
+  });
+
+  it('keeps the list when the option is off and never clears on the first status', () => {
+    usePrefs.getState().set({ clearOnChange: false });
+    try {
+      const { apply } = useStation.getState();
+      apply({ type: 'status', ...status });
+      apply({ type: 'decode', ...decode(1) });
+      apply({ type: 'status', ...status, dial_hz: 7_074_000, mode: 'FT4' });
+      expect(useStation.getState().decodes).toHaveLength(1);
+    } finally {
+      usePrefs.getState().set({ clearOnChange: true });
+    }
+    useStation.getState().reset();
+    useStation.getState().apply({ type: 'decode', ...decode(5) });
+    useStation.getState().apply({ type: 'status', ...status });
+    expect(useStation.getState().decodes).toHaveLength(1);
+  });
+
+  it('bandOrModeChanged ignores unknown frequencies and modes', () => {
+    expect(bandOrModeChanged(null, status)).toBe(false);
+    expect(bandOrModeChanged({ ...status, dial_hz: 0 }, status)).toBe(false);
+    expect(bandOrModeChanged({ ...status, mode: '' }, { ...status, mode: 'FT4' })).toBe(false);
+    expect(bandOrModeChanged(status, { ...status, mode: 'FT4' })).toBe(true);
+    expect(bandOrModeChanged(status, { ...status, dial_hz: 21_074_000 })).toBe(true);
   });
 
   it('remembers the station picked with a double click until the engine reports its own DX', () => {

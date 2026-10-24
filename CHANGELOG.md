@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Impostazioni → Generali: casella «Cambiando banda o modo svuota l'attivita' di banda» (accesa di base). Vale per i cambi fatti da Aurora, subito, e per quelli fatti nel motore; spenta l'elenco resta, e «Cancella» lo svuota a mano.
 - Riavvio di Aurora: i dati arrivano subito. Prima lo stato di JTDX (frequenza, modo, DX) compariva solo a fine periodo, fino a 13-15 secondi dopo, e nel frattempo anche STOP e i comandi non partivano. Ora Aurora legge lo stato dalla finestra di JTDX in meno di un secondo e ricorda su disco indirizzo e identificativo di JTDX (`data/jtdx-peer.txt`), cosi' i comandi, compreso STOP, raggiungono JTDX subito; la pagina si riconnette in 2 secondi al massimo (prima 8). I messaggi decodificati restano quelli del periodo in corso: nessuna vecchia stazione ricompare.
 - Le letture da JTDX con l'accessibilita' di Windows escono ora in UTF-8 (prima la console li rovinava: lo spazio non divisibile della frequenza diventava un carattere illeggibile).
 - Barre Rx (verde) e Tx (rossa) sulla cascata larghe quanto il segnale del modo, dalla frequenza verso destra: FT8 50 Hz (piu' stretta), FT4 83 Hz; per gli altri modi resta la barra sottile.
