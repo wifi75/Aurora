@@ -24,6 +24,8 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 
 ## Da fare
 - [ ] Impostazioni del motore modificabili: provare «Applica e riavvia» con la radio (lo fa Tiziano) ed eventualmente aggiungere voci
+- [ ] Programma Windows (Tauri 2): guscio con core incorporato, vassoio, avvio automatico, installer NSIS, chiave di rilascio fuori dal repository, script di rilascio. Fatta la base dell'aggiornamento (scarico, firma, API, pulsante)
+- [ ] Telefono: riviste solo Stazione, testata e pulsanti; da rivedere una per una Storico, Propagazione, Mappa, Impostazioni, Automazioni (e provare sul telefono vero)
 - [ ] Riordino delle pagine delle impostazioni: gruppi, colori, struttura chiara
 - [ ] Rendere molto piu' veloce Abilita Tx (sessione PowerShell fissa): oggi il doppio clic puo' perdere il periodo giusto
 - [ ] Log remoto via UDP (QSO nuovi da Log4OM2 su un altro PC)
