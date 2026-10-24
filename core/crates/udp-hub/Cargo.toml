@@ -4,6 +4,7 @@ description = "Hub UDP: riceve il flusso di JTDX, lo inoltra identico agli altri
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

@@ -4,6 +4,7 @@ description = "Trasporto dei QSO registrati verso log esterni (ADIF su UDP o su 
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

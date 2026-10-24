@@ -4,6 +4,7 @@ description = "Controllo delle nuove versioni di Aurora sul repository (release 
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

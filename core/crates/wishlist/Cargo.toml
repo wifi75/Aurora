@@ -4,6 +4,7 @@ description = "Lista dei desiderati: riconosce le stazioni volute nei messaggi e
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

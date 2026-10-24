@@ -4,6 +4,7 @@ description = "API HTTP versionata e flusso WebSocket di Aurora"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

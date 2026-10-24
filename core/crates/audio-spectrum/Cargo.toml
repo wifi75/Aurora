@@ -4,6 +4,7 @@ description = "Spettro audio per la cascata di Aurora: analizzatore FFT e cattur
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]

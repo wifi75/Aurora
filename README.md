@@ -13,7 +13,7 @@
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
-[![Licenza](https://img.shields.io/badge/Licenza-da%20definire-lightgrey)](#licenza)
+[![Licenza](https://img.shields.io/badge/Licenza-GPL--3.0--or--later-blue)](LICENSE)
 
 Stazione digitale FT8/FT4 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Usa JTDX come motore di decodifica e trasmissione; Aurora è il cervello e lo schermo.
 
@@ -96,4 +96,6 @@ Sul PC con Aurora accesa, i test del core si lanciano con `--target-dir target/t
 
 ## Licenza
 
-Da definire: non esiste ancora un file `LICENSE`.
+Aurora e' software libero, rilasciato con la **GNU General Public License versione 3 o successiva** (`GPL-3.0-or-later`): testo completo in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone.
+
+Chi ridistribuisce Aurora, anche modificata, deve farlo con la stessa licenza e rendere disponibili i sorgenti. Le librerie di terzi che l'interfaccia include (`world-atlas` e `topojson-client` per la mappa, licenza ISC, e le altre dipendenze elencate in `app/package.json` e `core/Cargo.toml`) mantengono le proprie licenze.

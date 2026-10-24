@@ -4,6 +4,7 @@ description = "Automazione dei QSO: regole, salvaguardie e registro delle decisi
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dev-dependencies]

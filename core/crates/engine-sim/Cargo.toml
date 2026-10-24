@@ -4,6 +4,7 @@ description = "Stazione simulata deterministica per sviluppare e provare Aurora 
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
+license.workspace = true
 publish = false
 
 [dependencies]
