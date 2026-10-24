@@ -1975,3 +1975,46 @@
 :root:not([data-theme='light']) .tx-block .cmd-title {
   color: #9db0d0;
 }
+
+/* Testo nitido nei pannelli: il vetro sfocato (backdrop-filter) con fondo trasparente fa disegnare il testo in scala di grigi,
+   morbido soprattutto chiaro su scuro. Fondo pieno e niente sfocatura dietro; corpi a pixel interi per le tabelle piccole. */
+.dock-panel {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: var(--panel);
+}
+
+:root[data-theme='light'] .dock-panel {
+  background-color: #fff;
+}
+
+.cluster-table,
+.log4om-table,
+.log4om-note,
+.log4om-total {
+  font-size: 10px;
+}
+
+.cluster-table .cluster-dx,
+.log4om-table .log4om-call {
+  font-size: 11px;
+}
+
+/* Dove ci si trova: la voce attiva del menu in alto e la scheda aperta delle Impostazioni si vedono a colpo d'occhio */
+.app-nav .glass--on,
+.tabs .glass--on,
+.tabs .glass[aria-selected='true'] {
+  color: #fff;
+  font-weight: 800;
+  background: #0f8f83;
+  border-color: #3fd6c8;
+  box-shadow: inset 0 -3px 0 #3fd6c8;
+}
+
+:root[data-theme='light'] .app-nav .glass--on,
+:root[data-theme='light'] .tabs .glass--on,
+:root[data-theme='light'] .tabs .glass[aria-selected='true'] {
+  background: #0a7d72;
+  border-color: #065c54;
+  box-shadow: inset 0 -3px 0 #065c54;
+}

@@ -64,11 +64,11 @@ export function App() {
       <header className="app-header">
         <a className="app-brand" href="#/">AURORA</a>
         <nav className="app-nav" aria-label={t('nav.pages')}>
-          <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} href="#/">{t('nav.station')}</a>
-          <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} href="#/automazioni">{t('nav.automation')}</a>
-          <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} href="#/statistiche">{t('nav.stats')}</a>
-          <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} href="#/impostazioni">{t('nav.settings')}</a>
-          <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} href="#/guida">{t('nav.wiki')}</a>
+          <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
+          <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
+          <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
+          <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
+          <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
         </nav>
         <LanguageSelect />
         <ThemeToggle />
