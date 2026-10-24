@@ -27,6 +27,7 @@ remote-api = { path = "../../core/crates/remote-api" }
 updater = { path = "../../core/crates/updater" }
 engine-jtdx = { path = "../../core/crates/engine-jtdx" }
 tokio = { version = "1", features = ["sync", "time"] }
+serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

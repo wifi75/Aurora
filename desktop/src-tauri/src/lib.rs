@@ -102,7 +102,11 @@ fn ui_dir(app: &AppHandle) -> PathBuf {
 
 fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
     let handle = app.handle().clone();
-    let data_dir = handle.path().data_dir()?.join("Aurora");
+    // di norma %APPDATA%\Aurora; `AURORA_DATA_DIR` nell'ambiente sceglie un'altra cartella (per le prove)
+    let data_dir = match std::env::var_os("AURORA_DATA_DIR") {
+        Some(dir) => PathBuf::from(dir),
+        None => handle.path().data_dir()?.join("Aurora"),
+    };
     std::fs::create_dir_all(&data_dir)?;
     init_logging(&data_dir);
     let env_path = data_dir.join("aurora.env");
@@ -136,7 +140,10 @@ fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
             tauri::async_runtime::spawn(async move {
                 server.join().await;
             });
-            first_run_autostart(&handle, &data_dir);
+            // `AURORA_AUTOSTART=0` (nel file o nell'ambiente) tiene Aurora fuori dai programmi che partono con Windows
+            if values.get("AURORA_AUTOSTART").map(String::as_str) != Some("0") {
+                first_run_autostart(&handle, &data_dir);
+            }
             let update_item = build_tray(&handle)?;
             app.manage(UpdateItem(update_item));
             open_window(&handle, &page, !hidden)?;

@@ -30,6 +30,10 @@ Write-Host "Versioni: core $vCore, programma Windows $vDesktop, tauri.conf $vCon
 if (@($vCore, $vDesktop, $vConf, $vNpm, $vApp | Select-Object -Unique).Count -ne 1) {
     throw 'Le versioni non coincidono: allinea core/Cargo.toml, desktop/src-tauri/Cargo.toml, tauri.conf.json e i due package.json.'
 }
+# la chiave pubblica nella configurazione deve essere quella incorporata nel programma
+$pubConf = (Get-Content "$root\desktop\src-tauri\tauri.conf.json" -Raw | ConvertFrom-Json).plugins.updater.pubkey
+$pubFile = (Get-Content "$root\desktop\updater.pub" -Raw).Trim()
+if ($pubConf -ne $pubFile) { throw 'La chiave pubblica in tauri.conf.json non coincide con desktop\updater.pub' }
 if ($SoloControllo) { Write-Host 'Versioni allineate.'; return }
 
 if (-not (Test-Path $Chiave)) { throw "Chiave di firma non trovata: $Chiave" }
@@ -41,7 +45,7 @@ try { npm run build; if ($LASTEXITCODE -ne 0) { throw 'Compilazione dell''interf
 Write-Host '2/3 Programma e installatore (la prima volta richiede qualche minuto)...'
 Push-Location "$root\desktop"
 try {
-    $env:TAURI_SIGNING_PRIVATE_KEY_PATH = $Chiave
+    $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content $Chiave -Raw)
     if (-not (Test-Path env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) { $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = '' }
     npx tauri build
     if ($LASTEXITCODE -ne 0) { throw 'Compilazione del programma fallita' }

@@ -151,6 +151,9 @@ pub fn sample_env_file() -> &'static str {
      # Ingresso audio per la cascata (parte del nome); di norma e' quello scelto in JTDX:\n\
      # AURORA_AUDIO_DEVICE=USB Audio\n\
      #\n\
+     # Non mettere Aurora tra i programmi che partono con Windows (al primo avvio lo e' di norma):\n\
+     # AURORA_AUTOSTART=0\n\
+     #\n\
      # Giorni di storico dei messaggi ricevuti (0 = per sempre):\n\
      # AURORA_HISTORY_DAYS=30\n"
 }
