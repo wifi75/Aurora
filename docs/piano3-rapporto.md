@@ -19,7 +19,7 @@ I cinque punti del Review Focus hanno un test ciascuno: datagrammi estranei né 
 
 - **Due cancelli indipendenti per la trasmissione:** l'API (`TxPolicy::live_tx`, risposta `403 tx_disabled`) e il motore (`JtdxConfig::allow_tx`). Entrambi chiusi per impostazione predefinita; con il simulatore l'API resta aperta perché non c'è radio.
 - **`Hub::start` è asincrono** (il piano lo dava sincrono): il bind UDP di Tokio lo richiede.
-- **Replay all'avvio**: il motore chiede a JTDX di rimandare i decode correnti la prima volta che lo vede (e quando si riavvia). I programmi a valle li ricevono di nuovo, marcati "non nuovi"; è disattivabile con `AURORA_REPLAY_ON_CONNECT=0`. I Replay già noti non vengono mostrati due volte.
+- **Replay all'avvio**: il motore chiede a JTDX di rimandare i decode correnti la prima volta che lo vede (e quando si riavvia). I programmi a valle li ricevono di nuovo, marcati "non nuovi"; dal 2026-10-24 è spento per impostazione predefinita (`AURORA_REPLAY_ON_CONNECT=1` lo riaccende). I Replay già noti non vengono mostrati due volte.
 - **Il motore si iscrive all'hub nel costruttore**, non in `run`: nessun datagramma si perde tra la creazione e l'avvio.
 - **Cascata dall'audio**: se l'ingresso non c'è Aurora parte lo stesso, con un avviso chiaro e l'elenco dei dispositivi.
 - **Messaggio d'errore nell'interfaccia** distinto per «trasmissione disattivata in Aurora» (test scritto prima).

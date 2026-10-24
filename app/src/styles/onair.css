@@ -645,8 +645,9 @@
   max-width: 16rem;
   height: 1.25rem;
   overflow: hidden;
-  background: var(--glass-lo);
-  border: var(--border-width) solid var(--glass-edge);
+  /* barra sempre scura, in entrambi i temi: il testo bianco resta leggibile */
+  background: #121a24;
+  border: var(--border-width) solid #3a4a5e;
   border-radius: 999px;
 }
 
@@ -664,7 +665,8 @@
   font-weight: 600;
   line-height: 1.25rem;
   text-align: center;
-  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0 1px 2px #000;
 }
 
 /* stazione DX nella barra di stato: nominativo sopra, bandiera e paese sotto in piccolo */
@@ -893,18 +895,49 @@
   max-width: none;
 }
 
+.cluster-table tbody tr {
+  border-bottom: var(--border-width) solid var(--row-line);
+}
+
 .cluster-table tbody tr:nth-child(odd) {
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  background: var(--row-a);
 }
 
 .cluster-table tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  background: var(--row-b);
 }
 
 .cluster-table .cluster-row:hover {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 28%, var(--row-b));
 }
 
 .cluster-table .cluster-row--mine {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 24%, var(--row-b));
+}
+
+.cluster-table td,
+.cluster-table td .muted {
+  color: var(--text);
+}
+
+.cluster-table td .muted {
+  opacity: 0.78;
+}
+
+/* stesse righe alternate nel log di Log4OM2 */
+.log4om-table tbody tr:nth-child(odd) {
+  background: var(--row-a);
+}
+
+.log4om-table tbody tr:nth-child(even) {
+  background: var(--row-b);
+}
+
+.log4om-table td {
+  border-top-color: var(--row-line);
+}
+
+/* righe dell'elenco messaggi ben separate in entrambi i temi */
+.decode-row {
+  border-bottom: var(--border-width) solid var(--row-line);
 }

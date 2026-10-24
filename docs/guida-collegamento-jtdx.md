@@ -71,7 +71,7 @@ Il decode su cui rispondere deve essere ancora nella finestra di JTDX (al massim
 | Variabile | Valore | A cosa serve |
 |---|---|---|
 | `AURORA_UDP_FORWARD` | `127.0.0.1:2333,127.0.0.1:2335` | più destinazioni, separate da virgole |
-| `AURORA_REPLAY_ON_CONNECT` | `0` | non chiedere a JTDX di rimandare i decode all'avvio (GridTracker2 li riceverebbe di nuovo, marcati "non nuovi") |
+| `AURORA_REPLAY_ON_CONNECT` | `0` | `1` chiede a JTDX di rimandare i decode correnti all'avvio (si rivedono le stazioni di prima e GridTracker2 le riceve di nuovo, marcate "non nuove"); spento per impostazione predefinita |
 | `AURORA_AUDIO_DEVICE` | `USB Audio` | parte del nome dell'ingresso audio per la cascata |
 | `AURORA_BIND` | `0.0.0.0:8787` | rende Aurora raggiungibile dal telefono sulla rete locale |
 

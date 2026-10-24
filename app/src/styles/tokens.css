@@ -1,12 +1,12 @@
 /* Token del tema "Notte radio" (console industriale). Nessun valore estetico fuori da qui. */
 :root {
   /* Superfici e testo: modalita' scura nativa */
-  --bg: #0b0e14;
-  --panel: #111722;
-  --panel-raised: #171f2d;
-  --border: #243046;
-  --text: #cdd7e6;
-  --text-muted: #6f7f96;
+  --bg: #090c12;
+  --panel: #131b28;
+  --panel-raised: #1b2536;
+  --border: #3d4d69;
+  --text: #e6edf8;
+  --text-muted: #a3b3ca;
 
   /* Accenti: ciano = stato e regole AUTO, ambra = eventi rari, rosso = solo STOP TX */
   --accent: #3fd6c8;
@@ -66,13 +66,17 @@
   --wf-bg: #080c18;
 
   /* Vetro: superfici traslucide con luce dall'alto e bagliore dell'accento */
-  --glass-hi: rgb(255 255 255 / 0.16);
-  --glass-lo: rgb(255 255 255 / 0.04);
-  --glass-edge: rgb(255 255 255 / 0.2);
+  --glass-hi: rgb(255 255 255 / 0.18);
+  --glass-lo: rgb(255 255 255 / 0.08);
+  --glass-edge: rgb(255 255 255 / 0.32);
   --glass-shine: rgb(255 255 255 / 0.28);
   --glass-shadow: rgb(0 0 0 / 0.4);
   --glow: rgb(63 214 200 / 0.45);
-  --panel-glass: rgb(17 23 34 / 0.62);
+  /* righe alternate degli elenchi: due tinte ben distinte e testo sempre leggibile */
+  --row-a: rgb(63 214 200 / 0.14);
+  --row-b: rgb(255 255 255 / 0.05);
+  --row-line: rgb(255 255 255 / 0.2);
+  --panel-glass: rgb(19 27 40 / 0.92);
   --aurora-a: rgb(63 214 200 / 0.14);
   --aurora-b: rgb(120 90 255 / 0.16);
   --aurora-c: rgb(255 93 138 / 0.08);
@@ -82,12 +86,12 @@
 
 /* Modalita' chiara: un secondo set di valori, non un filtro */
 :root[data-theme='light'] {
-  --bg: #eef1f6;
+  --bg: #d8dfe9;
   --panel: #ffffff;
-  --panel-raised: #f6f8fb;
-  --border: #c5cfde;
-  --text: #12192a;
-  --text-muted: #55627a;
+  --panel-raised: #eef2f8;
+  --border: #7a8aa6;
+  --text: #0b1322;
+  --text-muted: #3d4a63;
   --accent: #0b7f75;
   --mode-ft8: #5b45d6;
   --mode-ft8-ink: #ffffff;
@@ -103,12 +107,16 @@
   --danger: #c62a2a;
   --wf-bg: #0b0e14;
   --glass-hi: rgb(255 255 255 / 0.9);
-  --glass-lo: rgb(255 255 255 / 0.5);
-  --glass-edge: rgb(255 255 255 / 0.9);
+  --glass-lo: rgb(18 25 42 / 0.09);
+  /* bordi scuri e ben visibili: nel tema chiaro i bordi bianchi sparivano sul bianco */
+  --glass-edge: rgb(18 25 42 / 0.42);
+  --row-a: #cfe9e5;
+  --row-b: #ffffff;
+  --row-line: rgb(18 25 42 / 0.3);
   --glass-shine: rgb(255 255 255 / 1);
   --glass-shadow: rgb(30 50 90 / 0.22);
   --glow: rgb(11 127 117 / 0.4);
-  --panel-glass: rgb(255 255 255 / 0.66);
+  --panel-glass: rgb(255 255 255 / 0.97);
   --aurora-a: rgb(11 127 117 / 0.13);
   --aurora-b: rgb(110 90 255 / 0.12);
   --aurora-c: rgb(255 93 138 / 0.08);

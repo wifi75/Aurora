@@ -50,8 +50,9 @@ pub struct Config {
     pub allow_tx: bool,
     /// Parte del nome dell'ingresso audio da cui ricavare la cascata (vuoto: nessuna cattura audio).
     pub audio_device: Option<String>,
-    /// Con JTDX: chiede il Replay dei decode correnti appena lo vede. Chi riceve il flusso (GridTracker2) li
-    /// riceve di nuovo, marcati come "non nuovi".
+    /// Con JTDX: chiede il Replay dei decode correnti appena lo vede. Spento per impostazione predefinita: aprendo
+    /// Aurora non si rivedono le stazioni ricevute prima. Se acceso, chi riceve il flusso (GridTracker2) le riceve di
+    /// nuovo, marcate come "non nuove".
     pub replay_on_connect: bool,
     /// File `cty.dat` per riconoscere il paese di ogni stazione. Senza, niente paese ne' novita'.
     pub cty_path: Option<PathBuf>,
@@ -108,7 +109,7 @@ impl Config {
             udp_forward: Vec::new(),
             allow_tx: false,
             audio_device: None,
-            replay_on_connect: true,
+            replay_on_connect: false,
             cty_path: None,
             worked_adif: None,
             auto_limits: Limits::default(),
@@ -164,8 +165,8 @@ impl Config {
             }
         };
         let replay_on_connect = match get("AURORA_REPLAY_ON_CONNECT").as_deref() {
-            None | Some("1" | "true") => true,
-            Some("0" | "false") => false,
+            None | Some("0" | "false") => false,
+            Some("1" | "true") => true,
             Some(other) => {
                 return Err(StartError::BadConfig(format!("AURORA_REPLAY_ON_CONNECT deve essere 0 o 1, non {other}")));
             }
