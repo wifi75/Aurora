@@ -107,13 +107,14 @@ export const clockStrings = {
     'Guardar los ajustes',
     'Guardar as definições',
   ],
-  'clock.saved': [
-    'Impostazioni salvate.',
-    'Settings saved.',
-    'Einstellungen gespeichert.',
-    'Réglages enregistrés.',
-    'Ajustes guardados.',
-    'Definições guardadas.',
+  'clock.saved': ['Salvato.', 'Saved.', 'Gespeichert.', 'Enregistré.', 'Guardado.', 'Guardado.'],
+  'clock.autosave': [
+    'Le modifiche si salvano da sole.',
+    'Changes are saved automatically.',
+    'Änderungen werden automatisch gespeichert.',
+    'Les modifications s’enregistrent toutes seules.',
+    'Los cambios se guardan solos.',
+    'As alterações guardam-se sozinhas.',
   ],
   'clock.invalid': [
     'Valori non validi: da 1 a 8 server, intervallo da 1 a 1440 minuti, soglia da 10 a 5000 ms.',

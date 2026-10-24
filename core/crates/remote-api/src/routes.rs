@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, cluster_get, cluster_put, cluster_catalog, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, jtdx_config, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -54,7 +54,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/jtdx-config", get(jtdx_config))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
+        .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
+        .route("/api/v1/dx-cluster/test", post(cluster_test))
         .route("/api/v1/dx-cluster/command", post(cluster_command))
         .route("/api/v1/clock", get(clock_get).put(clock_put))
         .route("/api/v1/clock/check", post(clock_check))
@@ -613,6 +615,14 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
 }
 
+#[utoipa::path(get, path = "/api/v1/dxcc/{call}", responses((status = 200, description = "Paese, continente e zone del nominativo (dal file cty.dat)"), (status = 400, description = "Nominativo non valido (bad_call)"), (status = 404, description = "Sconosciuto o file non caricato (dxcc_unknown)")))]
+async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
+    if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_call"));
+    }
+    state.dxcc.as_ref().and_then(|lookup| lookup(&call)).map(Json).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "dxcc_unknown"))
+}
+
 fn cluster_service(state: &AppState) -> Result<std::sync::Arc<dx_cluster::ClusterService>, ApiError> {
     state.cluster.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cluster_unavailable"))
 }
@@ -645,6 +655,20 @@ async fn cluster_put(State(state): State<AppState>, _: Authed, Json(config): Jso
 #[utoipa::path(get, path = "/api/v1/dx-cluster/catalog", responses((status = 200, description = "Server DX Cluster pubblici noti, da aggiungere con un clic")))]
 async fn cluster_catalog(_: Authed) -> Json<Value> {
     Json(json!(dx_cluster::CATALOG))
+}
+
+#[derive(Deserialize)]
+struct ClusterTestBody {
+    host: String,
+    port: u16,
+}
+
+#[utoipa::path(post, path = "/api/v1/dx-cluster/test", responses((status = 200, description = "Esito della prova: raggiungibile o no, tempo e benvenuto del server"), (status = 400, description = "Indirizzo non valido (bad_server)")))]
+async fn cluster_test(_: Authed, Json(body): Json<ClusterTestBody>) -> Result<Json<Value>, ApiError> {
+    if body.host.is_empty() || body.host.len() > 253 || !body.host.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-') || body.port == 0 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_server"));
+    }
+    Ok(Json(json!(dx_cluster::probe(&body.host, body.port).await)))
 }
 
 #[derive(Deserialize)]

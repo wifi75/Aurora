@@ -54,7 +54,7 @@ export function ClusterPanel() {
     return (
       <div className="cluster-note">
         <p className="muted">{t('cluster.off')}</p>
-        <a className="glass glass--link" href="#/impostazioni">
+        <a className="glass glass--link" href="#/impostazioni/cluster">
           {t('cluster.settings')}
         </a>
       </div>
@@ -64,7 +64,7 @@ export function ClusterPanel() {
     return (
       <div className="cluster-note">
         <p className="muted">{t('cluster.noCall')}</p>
-        <a className="glass glass--link" href="#/impostazioni">
+        <a className="glass glass--link" href="#/impostazioni/cluster">
           {t('cluster.settings')}
         </a>
       </div>
@@ -137,13 +137,10 @@ export function ClusterPanel() {
                 >
                   <td className="data muted">{s.time_utc}</td>
                   <td className="data">{s.freq_khz.toFixed(1)}</td>
-                  <td>
+                  <td className="cluster-who">
                     <strong className="data">{s.dx_call}</strong>
-                    {s.country ? (
-                      <span className="cluster-country">
-                        {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {s.country}
-                      </span>
-                    ) : null}
+                    {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
+                    {s.country ? <span className="cluster-country">{s.country}</span> : null}
                     {s.comment ? <span className="cluster-comment muted">{s.comment}</span> : null}
                   </td>
                   <td className="data">{s.mode ?? ''}</td>

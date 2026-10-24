@@ -19,6 +19,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/automazioni')).toEqual({ name: 'automation' });
   });
 
+  it('opens a precise settings tab', () => {
+    expect(parseRoute('#/impostazioni/cluster')).toEqual({ name: 'settings', tab: 'cluster' });
+    expect(parseRoute('#/impostazioni/')).toEqual({ name: 'live' });
+  });
+
   it('reads the statistics and guide pages', () => {
     expect(parseRoute('#/statistiche')).toEqual({ name: 'stats' });
     expect(parseRoute('#/guida')).toEqual({ name: 'guide' });

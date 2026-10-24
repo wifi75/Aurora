@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { ApiError, getClusterCatalog, getClusterSpots, putCluster, sendClusterCommand, type ClusterConfig, type ClusterServer } from '../api/client';
+import { useEffect, useRef, useState } from 'react';
+import { ApiError, getClusterCatalog, getClusterSpots, putCluster, sendClusterCommand, testClusterServer, type ClusterConfig, type ClusterServer } from '../api/client';
 import { useT, type T } from '../i18n';
 import { Check, Help } from './common';
+import { useAutosave } from './useAutosave';
 
 const MAX_SERVERS = 8;
 
@@ -47,7 +48,17 @@ function errorText(error: unknown, t: T): string {
   return t('cluster.failed');
 }
 
-/** Scheda DX Cluster: server pubblici o propri (telnet), nominativo, comandi, stato dei collegamenti. */
+/** Esito del test di collegamento di un server. */
+type Led = { state: 'testing' } | { state: 'ok'; ms: number; banner: string | null } | { state: 'fail'; detail: string };
+
+function LedLight({ led, t }: { led: Led | undefined; t: T }) {
+  const state = led?.state ?? 'testing';
+  const text = !led || led.state === 'testing' ? t('cluster.led.testing') : led.state === 'ok' ? t('cluster.led.ok', { ms: led.ms }) : t('cluster.led.fail', { detail: led.detail });
+  const banner = led?.state === 'ok' && led.banner ? ` — ${led.banner}` : '';
+  return <span className={`led led--${state}`} role="img" aria-label={text} title={`${text}${banner}`} />;
+}
+
+/** Scheda DX Cluster: server pubblici o propri (telnet), nominativo, comandi, stato dei collegamenti. Si salva da sola. */
 export function ClusterTab() {
   const t = useT();
   const client = useQueryClient();
@@ -58,6 +69,8 @@ export function ClusterTab() {
   const [pick, setPick] = useState('');
   const [custom, setCustom] = useState({ name: '', host: '', port: '7300' });
   const [command, setCommand] = useState({ server: '', text: '' });
+  const [leds, setLeds] = useState<Record<string, Led>>({});
+  const testing = useRef(new Set<string>());
 
   const shown: Draft | null = draft ?? (state.data ? toDraft(state.data.config) : null);
   const parsed = shown ? draftToConfig(shown) : null;
@@ -71,6 +84,13 @@ export function ClusterTab() {
     },
     onError: (e) => setNote(errorText(e, t)),
   });
+  useAutosave(
+    parsed,
+    draft !== null,
+    (config) => save.mutate(config),
+    (config) => void putCluster(config).catch(() => undefined),
+  );
+
   const send = useMutation({
     mutationFn: () => sendClusterCommand(command.server, command.text.trim()),
     onSuccess: () => {
@@ -80,6 +100,27 @@ export function ClusterTab() {
     onError: (e) => setNote(errorText(e, t)),
   });
 
+  const probe = (server: ClusterServer) => {
+    const key = `${server.host}:${server.port}`;
+    if (testing.current.has(key)) return;
+    testing.current.add(key);
+    setLeds((all) => ({ ...all, [key]: { state: 'testing' } }));
+    testClusterServer(server.host, server.port)
+      .then((r) => setLeds((all) => ({ ...all, [key]: r.ok ? { state: 'ok', ms: r.ms ?? 0, banner: r.banner } : { state: 'fail', detail: r.error ?? '' } })))
+      .catch(() => setLeds((all) => ({ ...all, [key]: { state: 'fail', detail: t('cluster.failed') } })))
+      .finally(() => testing.current.delete(key));
+  };
+
+  // ogni server mostrato ha il suo test di collegamento: parte da solo, anche per quelli appena aggiunti
+  const serverList = shown?.servers ?? [];
+  const listKey = serverList.map((s) => `${s.host}:${s.port}`).join('|');
+  useEffect(() => {
+    for (const s of serverList) {
+      if (!leds[`${s.host}:${s.port}`]) probe(s);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listKey]);
+
   if (state.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!state.data || !shown) return <p className="muted">{t('set.loading')}</p>;
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
@@ -87,7 +128,7 @@ export function ClusterTab() {
   const add = (server: ClusterServer) => {
     if (shown.servers.length >= MAX_SERVERS) return setNote(t('cluster.add.full'));
     if (shown.servers.some((s) => s.host === server.host && s.port === server.port)) return setNote(t('cluster.add.exists'));
-    setNote('');
+    setNote(t('cluster.added', { name: server.name }));
     set({ servers: [...shown.servers, server] });
   };
   const addPublic = () => {
@@ -97,7 +138,7 @@ export function ClusterTab() {
   };
   const addCustom = () => {
     const port = Number(custom.port);
-    add({ name: custom.name.trim() || custom.host, host: custom.host.trim(), port, enabled: true });
+    add({ name: custom.name.trim() || custom.host.trim(), host: custom.host.trim(), port, enabled: true });
     setCustom({ name: '', host: '', port: '7300' });
   };
   const changeServer = (index: number, change: Partial<ClusterServer>) =>
@@ -118,17 +159,21 @@ export function ClusterTab() {
       <div className="cluster-servers" title={t('tip.cluster.server')}>
         {shown.servers.map((s, i) => (
           <div className="cluster-server" key={`${s.host}:${s.port}`}>
+            <LedLight led={leds[`${s.host}:${s.port}`]} t={t} />
             <Check label={t('cluster.server.on')} checked={s.enabled} onChange={(v) => changeServer(i, { enabled: v })} />
             <strong>{s.name}</strong>
             <span className="data muted">
               {s.host}:{s.port}
             </span>
-            <button type="button" className="glass chip" onClick={() => set({ servers: shown.servers.filter((_, k) => k !== i) })}>
+            <button type="button" className="glass chip" onClick={() => { setNote(t('cluster.removed')); set({ servers: shown.servers.filter((_, k) => k !== i) }); }}>
               {t('cluster.server.remove')}
             </button>
           </div>
         ))}
       </div>
+      <button type="button" className="glass chip" title={t('tip.cluster.test')} onClick={() => shown.servers.forEach(probe)}>
+        {t('cluster.test')}
+      </button>
 
       <h3 className="set-sub">{t('cluster.add.heading')}</h3>
       <div className="cmd-line" title={t('tip.cluster.catalog')}>
@@ -167,17 +212,15 @@ export function ClusterTab() {
         <span>{t('cluster.age')}</span>
         <input type="number" className="set-number" min={5} max={1440} value={shown.maxAge} onChange={(e) => set({ maxAge: e.target.value })} />
       </label>
-      {!parsed ? <p className="notice">{t('cluster.invalid')}</p> : null}
-      <button type="button" className="glass glass--on" disabled={!parsed || save.isPending} onClick={() => parsed && save.mutate(parsed)}>
-        {t('cluster.save')}
-      </button>
+      {!parsed ? <p className="notice">{t('cluster.invalid')}</p> : <Help>{t('cluster.autosave')}</Help>}
       {note ? <p className="live-note" role="status">{note}</p> : null}
 
       <h3 className="set-sub">{t('cluster.state')}</h3>
       {state.data.servers.length === 0 ? <p className="muted">{t('cluster.state.none')}</p> : null}
       {state.data.servers.map((s) => (
         <p key={s.key} className={s.state === 'error' ? 'notice' : 'muted'}>
-          <strong>{s.name}</strong> — {t(`cluster.state.${s.state}` as 'cluster.state.error', { n: s.spots, detail: s.detail ?? '' })}
+          <span className={`led led--${s.state === 'connected' ? 'ok' : s.state === 'error' ? 'fail' : 'testing'}`} aria-hidden="true" /> <strong>{s.name}</strong> —{' '}
+          {t(`cluster.state.${s.state}` as 'cluster.state.error', { n: s.spots, detail: s.detail ?? '' })}
         </p>
       ))}
 

@@ -131,6 +131,45 @@ impl Config {
     }
 }
 
+/// Esito della prova di un server: si collega, aspetta il benvenuto e si scollega senza entrare.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Probe {
+    pub ok: bool,
+    /// Quanto ha impiegato il collegamento, in millisecondi.
+    pub ms: Option<u64>,
+    /// La prima riga di benvenuto del server, se ne ha mandata una.
+    pub banner: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Verifica che un server risponda, senza dire chi siamo: niente nominativo, quindi nessuna traccia nel cluster.
+pub async fn probe(host: &str, port: u16) -> Probe {
+    let fail = |error: String| Probe { ok: false, ms: None, banner: None, error: Some(error) };
+    if !valid_host(host) || port == 0 {
+        return fail("indirizzo non valido".into());
+    }
+    let started = std::time::Instant::now();
+    let mut stream = match tokio::time::timeout(Duration::from_secs(5), TcpStream::connect((host, port))).await {
+        Err(_) => return fail("nessuna risposta entro 5 secondi".into()),
+        Ok(Err(e)) => return fail(format!("{e}")),
+        Ok(Ok(stream)) => stream,
+    };
+    let ms = started.elapsed().as_millis() as u64;
+    let mut buf = [0u8; 512];
+    let banner = match tokio::time::timeout(Duration::from_secs(2), stream.read(&mut buf)).await {
+        Ok(Ok(n)) if n > 0 => {
+            let (text, _) = telnet::Decoder::default().feed(&buf[..n]);
+            String::from_utf8_lossy(&text)
+                .lines()
+                .map(|l| l.chars().filter(|c| !c.is_control()).collect::<String>().trim().to_string())
+                .find(|l| !l.is_empty())
+                .map(|l| l.chars().take(100).collect::<String>())
+        }
+        _ => None,
+    };
+    Probe { ok: true, ms: Some(ms), banner, error: None }
+}
+
 /// Un server pubblico noto, da aggiungere con un clic. Verificati raggiungibili il 2026-10-24.
 #[derive(Debug, Clone, Serialize)]
 pub struct CatalogEntry {
@@ -410,7 +449,8 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                                 log_in(&mut writer, callsign, commands).await?;
                             }
                         }
-                        b'\r' | 0 => {}
+                        // \r, NUL e i BEL (due a fine riga negli spot di DXSpider) non fanno parte del testo
+                        control if control < 0x20 && control != b'\t' => {}
                         other => line.push(other),
                     }
                     if line.len() > MAX_LINE {
@@ -459,6 +499,30 @@ mod tests {
 
     fn local(port: u16) -> ServerCfg {
         ServerCfg { name: "Prova".into(), host: "127.0.0.1".into(), port, enabled: true }
+    }
+
+    #[tokio::test]
+    async fn the_probe_reaches_a_live_server_and_reads_its_welcome() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let (mut s, _) = listener.accept().await.unwrap();
+            s.write_all(&[255, 253, 24]).await.unwrap();
+            s.write_all(b"\r\nBenvenuti nel cluster di prova\r\nlogin: ").await.unwrap();
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        });
+        let p = probe("127.0.0.1", port).await;
+        assert!(p.ok, "{p:?}");
+        assert_eq!(p.banner.as_deref(), Some("Benvenuti nel cluster di prova"));
+        assert!(p.ms.is_some() && p.error.is_none());
+    }
+
+    #[tokio::test]
+    async fn the_probe_says_why_a_server_does_not_answer() {
+        let closed = probe("127.0.0.1", 1).await;
+        assert!(!closed.ok && closed.error.is_some() && closed.ms.is_none(), "{closed:?}");
+        assert!(!probe("; rm", 7300).await.ok);
+        assert!(!probe("host.example", 0).await.ok);
     }
 
     #[test]
@@ -533,6 +597,8 @@ mod tests {
             let refusal_or_call = String::from_utf8_lossy(&call).into_owned();
             write.write_all(b"Hello IU3ABC, there are 3 users\r\nDX de W3LPL:     14074.0  JA1ABC       FT8 -10 dB                     1234Z\r\n").await.unwrap();
             write.write_all(b"DX de W3LPL:     14074.0  JA1ABC       FT8 -10 dB                     1234Z\r\n").await.unwrap();
+            // come i veri DXSpider: senza commento e con due BEL in fondo alla riga
+            write.write_all(b"DX de ON6VL:      7124.7  OT5A                                        1406Z\x07\x07\r\n").await.unwrap();
             write.write_all(b"DX de G4ABC:      7010.5  K1ABC        cw 22 wpm       0856Z IO91\r\n").await.unwrap();
             let mut command = Vec::new();
             reader.read_until(10, &mut command).await.unwrap();
@@ -548,18 +614,20 @@ mod tests {
         svc.set_config(c).unwrap();
 
         let mut waited = 0;
-        while svc.spots_since(0, 10).len() < 2 && waited < 60 {
+        while svc.spots_since(0, 10).len() < 3 && waited < 60 {
             tokio::time::sleep(Duration::from_millis(100)).await;
             waited += 1;
         }
         let spots = svc.spots_since(0, 10);
-        assert_eq!(spots.len(), 2, "lo spot doppio si tiene una volta sola: {spots:?}");
+        assert_eq!(spots.len(), 3, "lo spot doppio si tiene una volta sola: {spots:?}");
         assert_eq!(spots[0].dx_call, "K1ABC", "i piu' nuovi per primi");
         assert_eq!(spots[0].grid.as_deref(), Some("IO91"));
-        assert_eq!(spots[1].country.as_deref(), Some("Japan"));
-        assert_eq!(svc.spots_since(spots[1].id, 10).len(), 1, "dall'id in poi");
+        assert_eq!(spots[1].dx_call, "OT5A", "la riga con i BEL e senza commento e' uno spot");
+        assert_eq!(spots[1].time_utc, "1406");
+        assert_eq!(spots[2].country.as_deref(), Some("Japan"));
+        assert_eq!(svc.spots_since(spots[2].id, 10).len(), 2, "dall'id in poi");
         let status = svc.statuses();
-        assert_eq!((status[0].state, status[0].spots), ("connected", 2));
+        assert_eq!((status[0].state, status[0].spots), ("connected", 3));
 
         svc.send_command(&format!("127.0.0.1:{port}"), "sh/dx 5").unwrap();
         assert!(svc.send_command("altro:1", "sh/dx").is_err());

@@ -11,7 +11,7 @@ const RX_TOGGLES: ControlId[] = ['hound', 'jt', 'swl', 'monitor', 'sync', 'agc',
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
 /** Avanzamento del periodo, come l'indicatore "14/15" di JTDX, ma continuo: si ridisegna a ogni fotogramma. */
-function PeriodBar({ mode, label }: { mode: string; label: string }) {
+function PeriodBar({ mode, label, transmitting }: { mode: string; label: string; transmitting: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     let frame = 0;
@@ -24,7 +24,7 @@ function PeriodBar({ mode, label }: { mode: string; label: string }) {
   }, []);
   const { seconds, fraction, length } = periodPosition(now, mode);
   return (
-    <div className="period" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={length} aria-valuenow={seconds} title={label}>
+    <div className={`period${transmitting ? ' period--tx' : ''}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={length} aria-valuenow={seconds} title={label}>
       <span className="period-fill" style={{ width: `${fraction * 100}%` }} />
       <span className="period-text data">
         {seconds}/{Math.round(length)}
@@ -34,7 +34,7 @@ function PeriodBar({ mode, label }: { mode: string; label: string }) {
 }
 
 /** Comandi di ricezione di JTDX (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo. */
-export function RxControls({ mode }: { mode: string }) {
+export function RxControls({ mode, transmitting = false }: { mode: string; transmitting?: boolean }) {
   const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
@@ -78,7 +78,7 @@ export function RxControls({ mode }: { mode: string }) {
           </button>
         ))}
       </div>
-      <PeriodBar mode={mode} label={t('ctl.period')} />
+      <PeriodBar mode={mode} label={t('ctl.period')} transmitting={transmitting} />
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
   );

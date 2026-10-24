@@ -81,3 +81,23 @@ async fn without_the_service_everything_says_so() {
     assert_eq!(body_json(resp).await["error"], "cluster_unavailable");
     let _ = Arc::new(0);
 }
+
+#[tokio::test]
+async fn the_connection_test_needs_a_pairing_and_refuses_bad_addresses() {
+    let s = cluster_state("probe");
+    status_is(&call(&router(&s), req(Method::POST, "/api/v1/dx-cluster/test").json(r#"{"host":"a.b","port":7300}"#)).await, StatusCode::UNAUTHORIZED);
+    let bad = send(&s, Method::POST, "/api/v1/dx-cluster/test", Some(r#"{"host":"; rm -rf","port":7300}"#)).await;
+    status_is(&bad, StatusCode::BAD_REQUEST);
+    assert_eq!(body_json(bad).await["error"], "bad_server");
+    status_is(&send(&s, Method::POST, "/api/v1/dx-cluster/test", Some(r#"{"host":"a.b","port":0}"#)).await, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn the_connection_test_reports_an_unreachable_server_without_failing() {
+    let s = cluster_state("probe-down");
+    let resp = send(&s, Method::POST, "/api/v1/dx-cluster/test", Some(r#"{"host":"127.0.0.1","port":1}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!(v["ok"], false);
+    assert!(v["error"].is_string());
+}

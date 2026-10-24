@@ -511,6 +511,15 @@ pub async fn run(
         .with_open_access(config.open_access)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
+        .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {
+            let db = Arc::clone(db);
+            Arc::new(move |call: &str| {
+                db.lookup(call).map(|l| {
+                    let e = db.entity(l.entity);
+                    serde_json::json!({ "country": e.name, "continent": e.continent, "prefix": e.prefix, "cq_zone": l.cq_zone, "itu_zone": l.itu_zone })
+                })
+            }) as remote_api::DxccProvider
+        }))
         .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {
