@@ -7,11 +7,11 @@ use std::{
     time::Duration,
 };
 
-use aurora_core::SpectrumRow;
+use aurora_core::{AudioLevel, Event, SpectrumRow};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tokio::sync::broadcast;
 
-use crate::{AnalyzerError, SpectrumAnalyzer, F_MAX_HZ};
+use crate::{AnalyzerError, LevelMeter, SpectrumAnalyzer, F_MAX_HZ};
 
 /// 1, 10, 100, 1000...
 fn is_power_of_ten(mut n: u64) -> bool {
@@ -78,10 +78,12 @@ impl Drop for CaptureHandle {
 }
 
 /// Apre l'ingresso audio (`device_hint` e' una parte del nome, senza distinzione di maiuscole) e
-/// pubblica le righe di spettro. Condivide la scheda con altre applicazioni (modalita' condivisa).
+/// pubblica le righe di spettro e, quattro volte al secondo, il livello (`Event::AudioLevel`).
+/// Condivide la scheda con altre applicazioni (modalita' condivisa).
 pub fn run_capture(
     device_hint: Option<&str>,
     rows: broadcast::Sender<SpectrumRow>,
+    events: broadcast::Sender<Event>,
 ) -> Result<CaptureHandle, CaptureError> {
     let host = cpal::default_host();
     let device = match device_hint {
@@ -100,6 +102,7 @@ pub fn run_capture(
     let channels = usize::from(supported.channels()).max(1);
     let format = supported.sample_format();
     let mut analyzer = SpectrumAnalyzer::new(rate).map_err(CaptureError::Analyzer)?;
+    let mut meter = LevelMeter::new(rate);
 
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = Arc::clone(&stop);
@@ -164,6 +167,9 @@ pub fn run_capture(
         while !stop_thread.load(Ordering::SeqCst) {
             match chunks_rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(chunk) => {
+                    for level in meter.push(&chunk) {
+                        publish_level(&events, level);
+                    }
                     for bins in analyzer.push(&chunk) {
                         seq += 1;
                         let _ = rows.send(SpectrumRow { seq, f_min_hz: 0, f_max_hz: F_MAX_HZ, bins });
@@ -184,6 +190,11 @@ pub fn run_capture(
         }
         Err(_) => Err(CaptureError::Stream("il thread di cattura si e' chiuso senza rispondere".into())),
     }
+}
+
+fn publish_level(events: &broadcast::Sender<Event>, level: AudioLevel) {
+    // senza ascoltatori l'invio fallisce: e' normale
+    let _ = events.send(Event::AudioLevel(level));
 }
 
 #[cfg(test)]

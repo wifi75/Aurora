@@ -118,6 +118,33 @@ pub struct UpdateNotice {
     pub url: String,
 }
 
+/// Giudizio sul livello dell'audio in ingresso.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LevelState {
+    /// Ingresso muto da molto: cavo, dispositivo o volume.
+    Silent,
+    /// Troppo debole per decodificare bene.
+    Low,
+    Good,
+    /// Alto ma non ancora saturo.
+    High,
+    /// Saturo da qualche secondo: abbassare il volume della scheda o della radio.
+    Overdrive,
+}
+
+/// Misura del livello dell'audio in ingresso, una ogni quarto di secondo.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AudioLevel {
+    /// Picco assoluto, 0-1.
+    pub peak: f32,
+    /// Valore efficace, 0-1.
+    pub rms: f32,
+    /// Quota di campioni a fondo scala, 0-1.
+    pub clipped: f32,
+    pub state: LevelState,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -127,6 +154,7 @@ pub enum Event {
     TxHalted,
     Wanted(WantedAlert),
     UpdateAvailable(UpdateNotice),
+    AudioLevel(AudioLevel),
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.
