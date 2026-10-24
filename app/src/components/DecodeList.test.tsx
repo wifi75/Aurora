@@ -34,7 +34,7 @@ describe('DecodeList', () => {
 
   it('shows the distance in km like JTDX when the own locator is known', () => {
     render(<DecodeList decodes={[decode({ country: 'Giappone' })]} myGrid="JN45" onReply={() => {}} />);
-    expect(screen.getByText(/\[\d+ km\]/)).toBeInTheDocument();
+    expect(screen.getByText(/^\d+ km$/)).toBeInTheDocument();
   });
 
   it('puts the station being called in evidence in the messages that name it', () => {

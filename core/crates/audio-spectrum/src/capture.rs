@@ -1,6 +1,6 @@
 use std::{
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc, Arc,
     },
     thread::JoinHandle,
@@ -12,6 +12,14 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tokio::sync::broadcast;
 
 use crate::{AnalyzerError, SpectrumAnalyzer, F_MAX_HZ};
+
+/// 1, 10, 100, 1000...
+fn is_power_of_ten(mut n: u64) -> bool {
+    while n >= 10 && n % 10 == 0 {
+        n /= 10;
+    }
+    n == 1
+}
 
 #[derive(Debug)]
 pub enum CaptureError {
@@ -100,7 +108,16 @@ pub fn run_capture(
     // lo stream non e' `Send` su tutte le piattaforme: vive e muore nel thread che lo crea
     let thread = std::thread::spawn(move || {
         let (chunks_tx, chunks_rx) = mpsc::channel::<Vec<f32>>();
-        let on_error = |e: cpal::Error| tracing::warn!("errore del flusso audio: {e}");
+        // Un buffer perso ogni tanto e' normale (USB, carico del PC): lascia un buco di pochi ms nella cascata.
+        // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
+        let glitches = Arc::new(AtomicU64::new(0));
+        let on_error = move |e: cpal::Error| {
+            let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
+            tracing::debug!("errore del flusso audio: {e}");
+            if is_power_of_ten(n) {
+                tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+            }
+        };
         let built = match format {
             cpal::SampleFormat::F32 => {
                 let tx = chunks_tx.clone();
@@ -166,5 +183,17 @@ pub fn run_capture(
             Err(e)
         }
         Err(_) => Err(CaptureError::Stream("il thread di cattura si e' chiuso senza rispondere".into())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_power_of_ten;
+
+    #[test]
+    fn warns_only_at_powers_of_ten() {
+        let hits: Vec<u64> = (1..=1000).filter(|n| is_power_of_ten(*n)).collect();
+        assert_eq!(hits, vec![1, 10, 100, 1000]);
+        assert!(!is_power_of_ten(0) && !is_power_of_ten(20) && !is_power_of_ten(101));
     }
 }

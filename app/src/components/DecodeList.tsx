@@ -116,7 +116,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">{prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}</span>
-              <span className="w-km num muted">{km !== null ? `[${formatDistance(km, prefs.distanceUnit)}]` : ''}</span>
+              <span className="w-km num muted">{km !== null ? formatDistance(km, prefs.distanceUnit) : ''}</span>
             </span>
             {badge ? (
               <span className="badge badge--tag badge-cell" title={t(`kind.${lit}` as Key)} style={{ background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}>

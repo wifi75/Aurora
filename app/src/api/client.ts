@@ -357,6 +357,11 @@ export async function getJtdxConfig(): Promise<Record<string, string>> {
   return (await (await request('/jtdx-config')).json()) as Record<string, string>;
 }
 
+/** Applica modifiche alle impostazioni del motore: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. */
+export async function applyJtdxConfig(changes: Record<string, string>): Promise<void> {
+  await request('/jtdx-config', jsonInit({ changes }));
+}
+
 export interface Log4omQso {
   date: string;
   call: string;

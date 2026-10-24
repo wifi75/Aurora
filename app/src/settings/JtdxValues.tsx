@@ -1,25 +1,114 @@
-import { useQuery } from '@tanstack/react-query';
-import { getJtdxConfig } from '../api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { ApiError, applyJtdxConfig, getJtdxConfig } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
-import { JTDX_GROUPS, type JtdxGroup, type JtdxKind } from '../lib/jtdxGroups';
-import { Help, Row } from './common';
+import { JTDX_GROUPS, type JtdxGroup, type JtdxItem } from '../lib/jtdxGroups';
+import { useJtdxDraft } from '../lib/jtdxDraft';
+import { Help } from './common';
 
-/** Il valore di una voce di JTDX come testo leggibile. */
-export function formatJtdxValue(kind: JtdxKind, raw: string | undefined, t: T): string {
-  if (raw === undefined || raw === '') return t('jx.empty');
-  if (kind === 'bool') return raw === 'true' || raw === '1' ? t('jx.yes') : t('jx.no');
-  if (kind.startsWith('enum:')) {
-    const key = `jx.${kind.slice(5)}.${raw}` as Key;
-    const text = t(key);
-    return text === key ? raw : text;
-  }
-  return raw;
+/** I valori ammessi per le voci a scelta (come li scrive il file del motore). */
+const CHOICES: Record<string, readonly string[]> = { 'enum:save': ['0', '1', '2'], 'enum:reply': ['1', '2', '3'], 'enum:depth': ['1', '2', '3'] };
+
+/** Il valore di una voce a scelta come testo leggibile; un valore sconosciuto resta com'e'. */
+export function choiceLabel(kind: string, raw: string, t: T): string {
+  const key = `jx.${kind.slice(5)}.${raw}` as Key;
+  const text = t(key);
+  return text === key ? raw : text;
 }
 
-/** Le impostazioni di JTDX di un gruppo, lette dal suo file (sola consultazione). */
+function errorText(error: unknown, t: T): string {
+  if (error instanceof ApiError) {
+    if (error.code === 'transmitting') return t('jx.err.transmitting');
+    if (error.code === 'local_only') return t('jx.err.local');
+    if (error.code === 'bad_setting') return t('jx.err.bad');
+  }
+  return t('jx.err.failed');
+}
+
+function Field({ item, current, draft, label }: { item: JtdxItem; current: string | undefined; draft: string | undefined; label: string }) {
+  const t = useT();
+  const set = useJtdxDraft((s) => s.set);
+  const value = draft ?? current ?? '';
+  const change = (next: string) => set(item.key, next, current);
+  const id = `jx-${item.key}`;
+  let control;
+  if (item.kind === 'bool') {
+    control = <input id={id} type="checkbox" checked={value === 'true' || value === '1'} onChange={(e) => change(e.target.checked ? 'true' : 'false')} />;
+  } else if (item.kind === 'num') {
+    control = <input id={id} type="number" className="set-number" value={value} onChange={(e) => change(e.target.value)} />;
+  } else if (item.kind === 'text') {
+    control = <input id={id} type="text" className="jx-text" value={value} maxLength={200} onChange={(e) => change(e.target.value)} />;
+  } else {
+    const choices = CHOICES[item.kind] ?? [];
+    const options = value !== '' && !choices.includes(value) ? [value, ...choices] : choices;
+    control = (
+      <select id={id} value={value} onChange={(e) => change(e.target.value)}>
+        {value === '' ? <option value="" /> : null}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {choiceLabel(item.kind, o, t)}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <label className={`jx-row${draft !== undefined ? ' jx-row--changed' : ''}`} htmlFor={id} title={t('tip.jx')}>
+      <span className="jx-name">{label}</span>
+      {control}
+    </label>
+  );
+}
+
+/** Barra in fondo: quante modifiche aspettano, con "Applica e riavvia" e "Annulla". */
+function ApplyBar() {
+  const t = useT();
+  const client = useQueryClient();
+  const changes = useJtdxDraft((s) => s.changes);
+  const clear = useJtdxDraft((s) => s.clear);
+  const [note, setNote] = useState('');
+  const apply = useMutation({
+    mutationFn: () => applyJtdxConfig(changes),
+    onSuccess: () => {
+      clear();
+      setNote(t('jx.applied'));
+      // JTDX impiega qualche secondo a riaprirsi: poi si rilegge il suo file
+      setTimeout(() => void client.invalidateQueries({ queryKey: ['jtdx-config'] }), 6000);
+    },
+    onError: (e) => setNote(errorText(e, t)),
+  });
+  const count = Object.keys(changes).length;
+  if (count === 0 && !note) return null;
+  return (
+    <div className="jx-bar" role="status">
+      {count > 0 ? <strong>{t('jx.pending', { n: count })}</strong> : null}
+      {count > 0 ? (
+        <>
+          <button
+            type="button"
+            className="glass glass--on"
+            disabled={apply.isPending}
+            onClick={() => {
+              if (window.confirm(t('jx.confirm'))) apply.mutate();
+            }}
+          >
+            {t('jx.apply')}
+          </button>
+          <button type="button" className="glass" disabled={apply.isPending} onClick={() => { clear(); setNote(''); }}>
+            {t('jx.discard')}
+          </button>
+        </>
+      ) : null}
+      {note ? <span className="live-note">{note}</span> : null}
+    </div>
+  );
+}
+
+/** Le impostazioni del motore (JTDX) di un gruppo, lette dal suo file e modificabili qui. */
 export function JtdxValues({ group, title }: { group: JtdxGroup; title?: string }) {
   const t = useT();
   const config = useQuery({ queryKey: ['jtdx-config'], queryFn: getJtdxConfig, retry: false, refetchInterval: 15_000 });
+  const changes = useJtdxDraft((s) => s.changes);
   return (
     <section aria-label={title ?? t('jx.title')}>
       <h3 className="set-sub">{title ?? t('jx.title')}</h3>
@@ -29,12 +118,13 @@ export function JtdxValues({ group, title }: { group: JtdxGroup; title?: string 
         <p className="muted">{t('set.loading')}</p>
       ) : (
         <>
-          {JTDX_GROUPS[group].map((item) => (
-            <Row key={item.key} name={t(`jx.${item.key}` as Key)} hint={t('tip.jx')}>
-              {formatJtdxValue(item.kind, config.data[item.key], t)}
-            </Row>
-          ))}
+          <div className="jx-list">
+            {JTDX_GROUPS[group].map((item) => (
+              <Field key={item.key} item={item} current={config.data[item.key]} draft={changes[item.key]} label={t(`jx.${item.key}` as Key)} />
+            ))}
+          </div>
           <Help>{t('jx.note')}</Help>
+          <ApplyBar />
         </>
       )}
     </section>

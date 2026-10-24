@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { getClusterSpots, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
 import { useT } from '../i18n';
 import { filterSpots, spotAge, type SpotFilters } from '../lib/cluster';
-import { formatKhz } from '../lib/format';
+import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
@@ -144,7 +144,7 @@ export function ClusterPanel() {
                     {s.spotter}
                   </td>
                   <td>
-                    <span className="cluster-freq data">{formatKhz(s.freq_khz)}</span>
+                    <span className="cluster-freq data">{formatKhzWhole(s.freq_khz)}</span>
                   </td>
                   <td>
                     <strong className="data cluster-dx">{s.dx_call}</strong>

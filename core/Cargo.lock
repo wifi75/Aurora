@@ -1253,6 +1253,7 @@ name = "rig-control"
 version = "0.8.1"
 dependencies = [
  "serde",
+ "tracing",
 ]
 
 [[package]]

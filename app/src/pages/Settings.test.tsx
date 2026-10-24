@@ -134,12 +134,12 @@ describe('Radio, Audio, Reports and Advanced', () => {
     open();
     goTo('Segnalazioni');
     expect(await screen.findByText('Server UDP primario: porta')).toBeInTheDocument();
-    expect(screen.getByText('2334')).toBeInTheDocument();
-    expect(screen.getByText('CQ e 73')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2334')).toBeInTheDocument();
+    expect(screen.getByText('solo CQ')).toBeInTheDocument();
     goTo('Audio');
-    expect(await screen.findByText('Microfono di prova')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Microfono di prova')).toBeInTheDocument();
     goTo('Avanzate');
-    expect(await screen.findByText('profonda')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('profonda')).toBeInTheDocument();
   });
 
   it('shows the export targets, UDP, countries and QSOs', async () => {

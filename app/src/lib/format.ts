@@ -4,6 +4,11 @@ export function formatKhz(khz: number): string {
   return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${frac}`;
 }
 
+/** Come `formatKhz` ma senza decimale, per il cluster dove non serve (3798,0 -> "3.798"). */
+export function formatKhzWhole(khz: number): string {
+  return Math.round(khz).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 /** La frequenza di JTDX in Hz come kHz con il decimale dei 100 Hz: 21074000 -> "21.074,0 kHz". */
 export function formatDial(hz: number): string {
   return `${formatKhz(hz / 1000)} kHz`;
