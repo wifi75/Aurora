@@ -109,10 +109,15 @@ impl ClockSetter for PowerShellSetter {
         }
         // il numero e' un f64 formattato qui: nessun testo dell'utente nello script
         let script = format!("Set-Date -Date ([DateTime]::Now.AddMilliseconds({offset_ms:.0})) | Out-Null");
-        let out = std::process::Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
-            .output()
-            .map_err(|e| format!("PowerShell non partito: {e}"))?;
+        let mut command = std::process::Command::new("powershell");
+        command.args(["-NoProfile", "-NonInteractive", "-Command", &script]);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            // niente finestra nera quando Aurora gira come programma a finestre
+            command.creation_flags(0x0800_0000);
+        }
+        let out = command.output().map_err(|e| format!("PowerShell non partito: {e}"))?;
         if out.status.success() {
             Ok(())
         } else {
