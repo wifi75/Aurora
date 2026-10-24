@@ -666,3 +666,26 @@
   text-align: center;
   text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
+
+/* stazione DX nella barra di stato: nominativo sopra, bandiera e paese sotto in piccolo */
+.pill--dx {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.pill-dx-country {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-body, inherit);
+  font-size: 0.62rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill-dx-flag {
+  border-radius: 2px;
+}

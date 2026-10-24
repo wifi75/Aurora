@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { StationStatus } from '../api/schemas';
+import { useStation } from '../state/station';
 import { StatusBar } from './StatusBar';
 
 const base: StationStatus = {
@@ -15,6 +16,14 @@ describe('StatusBar', () => {
     expect(dx).toBeInTheDocument();
     expect(dx.closest('.pill--dx')).not.toBeNull();
     expect(screen.getByText('KK00')).toBeInTheDocument();
+  });
+
+  it('shows flag and country small under the DX call, from the messages of that station', () => {
+    useStation.setState({ decodes: [{ id: 1, time_ms: 0, snr: -5, delta_time: 0.1, freq_hz: 1000, text: 'CQ DO1ID JO41', tag: null, country: 'Fed. Rep. of Germany' }] });
+    const { container } = render(<StatusBar status={{ ...base, dx_call: 'DO1ID', dx_grid: 'JO41' }} connection="open" />);
+    expect(screen.getByText('Fed. Rep. of Germany')).toBeInTheDocument();
+    expect(container.querySelector('.pill--dx .fi-de')).not.toBeNull();
+    useStation.setState({ decodes: [] });
   });
 
   it('shows no DX pill when nobody is being called', () => {
