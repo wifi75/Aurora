@@ -4,6 +4,8 @@
 //! `allow_tx`; `HaltTx` invece parte sempre.
 
 pub mod map;
+pub mod text;
+pub mod worked;
 pub mod store;
 
 use std::{
