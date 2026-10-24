@@ -10,15 +10,20 @@ use std::{
 use auth::{DeviceStore, SystemClock};
 use aurora_core::{Bus, Engine, EngineIo};
 use axum::{http::StatusCode, routing::any};
+use engine_jtdx::{JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::Logbook;
 use remote_api::{build_router, AppState, TxPolicy};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::services::{ServeDir, ServeFile};
+use udp_hub::{Hub, HubConfig};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EngineKind {
+    /// Stazione simulata, senza radio.
     Sim,
+    /// JTDX reale, tramite l'hub UDP.
+    Jtdx,
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +36,12 @@ pub struct Config {
     pub cycle_ms: u64,
     /// Cookie di sessione con attributo `Secure`: da attivare quando si arriva in HTTPS (Tailscale, Cloudflare).
     pub secure_cookie: bool,
+    /// Dove l'hub ascolta il flusso di JTDX (il server UDP primario di JTDX va puntato qui).
+    pub udp_listen: SocketAddr,
+    /// A chi l'hub inoltra il flusso identico (per esempio GridTracker2 su 127.0.0.1:2333).
+    pub udp_forward: Vec<SocketAddr>,
+    /// Consente i comandi che fanno trasmettere JTDX (Reply). Predefinito: no.
+    pub allow_tx: bool,
 }
 
 #[derive(Debug)]
@@ -53,6 +64,21 @@ impl std::fmt::Display for StartError {
 impl std::error::Error for StartError {}
 
 impl Config {
+    /// Valori predefiniti (stazione simulata, trasmissione chiusa).
+    pub fn defaults() -> Config {
+        Config {
+            bind: SocketAddr::from(([127, 0, 0, 1], 8787)),
+            data_dir: PathBuf::from("data"),
+            ui_dir: None,
+            engine: EngineKind::Sim,
+            cycle_ms: 15_000,
+            secure_cookie: false,
+            udp_listen: SocketAddr::from(([127, 0, 0, 1], 2334)),
+            udp_forward: Vec::new(),
+            allow_tx: false,
+        }
+    }
+
     pub fn from_env() -> Result<Config, StartError> {
         Self::from_lookup(|k| std::env::var(k).ok())
     }
@@ -65,6 +91,7 @@ impl Config {
             .map_err(|_| StartError::BadConfig(format!("AURORA_BIND non e' un indirizzo valido: {bind_text}")))?;
         let engine = match get("AURORA_ENGINE").as_deref() {
             None | Some("sim") => EngineKind::Sim,
+            Some("jtdx") => EngineKind::Jtdx,
             Some(other) => return Err(StartError::BadConfig(format!("AURORA_ENGINE sconosciuto: {other}"))),
         };
         let cycle_ms = match get("AURORA_SIM_CYCLE_MS") {
@@ -73,6 +100,26 @@ impl Config {
                 .parse()
                 .map_err(|_| StartError::BadConfig(format!("AURORA_SIM_CYCLE_MS non e' un numero: {v}")))?,
         };
+        let udp_listen = match get("AURORA_UDP_LISTEN") {
+            None => Config::defaults().udp_listen,
+            Some(v) => v
+                .parse()
+                .map_err(|_| StartError::BadConfig(format!("AURORA_UDP_LISTEN non e' un indirizzo valido: {v}")))?,
+        };
+        let mut udp_forward = Vec::new();
+        for part in get("AURORA_UDP_FORWARD").unwrap_or_default().split(',').map(str::trim).filter(|p| !p.is_empty()) {
+            udp_forward.push(
+                part.parse()
+                    .map_err(|_| StartError::BadConfig(format!("AURORA_UDP_FORWARD contiene un indirizzo non valido: {part}")))?,
+            );
+        }
+        let allow_tx = match get("AURORA_ALLOW_TX").as_deref() {
+            None | Some("0" | "false") => false,
+            Some("1" | "true") => true,
+            Some(other) => {
+                return Err(StartError::BadConfig(format!("AURORA_ALLOW_TX deve essere 0 o 1, non {other}")));
+            }
+        };
         Ok(Config {
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
@@ -80,6 +127,9 @@ impl Config {
             engine,
             cycle_ms,
             secure_cookie: matches!(get("AURORA_SECURE_COOKIE").as_deref(), Some("1" | "true")),
+            udp_listen,
+            udp_forward,
+            allow_tx,
         })
     }
 }
@@ -87,6 +137,8 @@ impl Config {
 pub struct RunningServer {
     pub addr: SocketAddr,
     pub state: AppState,
+    /// Presente solo con il motore JTDX.
+    pub hub: Option<Arc<Hub>>,
     task: JoinHandle<()>,
 }
 
@@ -112,14 +164,27 @@ pub async fn run(
 ) -> Result<RunningServer, StartError> {
     let (auth, logbook) = open_storage(&config.data_dir)?;
     let bus = Bus::new(4096);
-    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(true), config.secure_cookie);
+    // con il simulatore trasmettere e' innocuo; con JTDX reale la trasmissione e' chiusa salvo AURORA_ALLOW_TX=1
+    let live_tx = match config.engine {
+        EngineKind::Sim => true,
+        EngineKind::Jtdx => config.allow_tx,
+    };
+    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };
-    let engine_task = match config.engine {
-        EngineKind::Sim => tokio::spawn(
-            SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io),
-        ),
+    let (engine_task, hub) = match config.engine {
+        EngineKind::Sim => (tokio::spawn(SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io)), None),
+        EngineKind::Jtdx => {
+            let hub = Arc::new(
+                Hub::start(HubConfig { listen: config.udp_listen, forward: config.udp_forward.clone() })
+                    .await
+                    .map_err(|e| StartError::Io(e.to_string()))?,
+            );
+            let jtdx_config = JtdxConfig { allow_tx: config.allow_tx, ..JtdxConfig::default() };
+            let engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
+            (tokio::spawn(engine.run(io)), Some(hub))
+        }
     };
 
     let mut app = build_router(state.clone()).route("/api/{*rest}", any(|| async { StatusCode::NOT_FOUND }));
@@ -134,6 +199,7 @@ pub async fn run(
     let addr = listener.local_addr().map_err(|e| StartError::Io(e.to_string()))?;
 
     let closing = state.clone();
+    let hub_for_task = hub.clone();
     let task = tokio::spawn(async move {
         let served = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
             .with_graceful_shutdown(async move {
@@ -145,6 +211,9 @@ pub async fn run(
             tracing::error!("server terminato con errore: {e}");
         }
         engine_task.abort();
+        if let Some(hub) = hub_for_task {
+            hub.stop();
+        }
     });
-    Ok(RunningServer { addr, state, task })
+    Ok(RunningServer { addr, state, hub, task })
 }

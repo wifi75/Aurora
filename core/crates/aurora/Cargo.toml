@@ -17,6 +17,8 @@ path = "src/main.rs"
 [dependencies]
 aurora-core = { path = "../aurora-core" }
 engine-sim = { path = "../engine-sim" }
+engine-jtdx = { path = "../engine-jtdx" }
+udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 remote-api = { path = "../remote-api" }
@@ -27,6 +29,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [dev-dependencies]
+udp-bridge = { path = "../udp-bridge" }
 serde_json = { workspace = true }
 tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }

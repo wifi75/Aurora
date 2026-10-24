@@ -1,27 +1,13 @@
+mod common;
+
 use std::{net::SocketAddr, path::PathBuf, time::Duration};
 
 use aurora::{run, Config, EngineKind, RunningServer};
 use aurora_core::{DecodeTag, Event};
+use common::*;
 use futures_util::StreamExt;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
-    sync::oneshot,
-};
-use tokio_tungstenite::{
-    connect_async,
-    tungstenite::{client::IntoClientRequest, Message},
-};
-
-fn temp_dir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "aurora-e2e-{tag}-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
-    ));
-    std::fs::create_dir_all(&dir).unwrap();
-    dir
-}
+use tokio::sync::oneshot;
+use tokio_tungstenite::tungstenite::Message;
 
 fn config(ui_dir: Option<PathBuf>) -> Config {
     Config {
@@ -30,7 +16,7 @@ fn config(ui_dir: Option<PathBuf>) -> Config {
         ui_dir,
         engine: EngineKind::Sim,
         cycle_ms: 300,
-        secure_cookie: false,
+        ..Config::defaults()
     }
 }
 
@@ -42,51 +28,6 @@ async fn start(ui_dir: Option<PathBuf>) -> (RunningServer, oneshot::Sender<()>) 
     .await
     .unwrap();
     (server, tx)
-}
-
-fn cookie_for(server: &RunningServer) -> String {
-    let code = server.state.auth.start_pairing().unwrap();
-    format!("aurora_session={}", server.state.auth.finish_pairing(&code.code, "e2e").unwrap().0)
-}
-
-/// Client HTTP minimo: restituisce (stato, corpo).
-async fn http(addr: SocketAddr, method: &str, path: &str, cookie: Option<&str>, body: Option<&str>) -> (u16, String) {
-    let mut s = TcpStream::connect(addr).await.unwrap();
-    let body = body.unwrap_or("");
-    let mut req = format!("{method} {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n");
-    if let Some(c) = cookie {
-        req.push_str(&format!("Cookie: {c}\r\n"));
-    }
-    if !body.is_empty() {
-        req.push_str(&format!("Content-Type: application/json\r\nContent-Length: {}\r\n", body.len()));
-    }
-    req.push_str("\r\n");
-    req.push_str(body);
-    s.write_all(req.as_bytes()).await.unwrap();
-    let mut raw = Vec::new();
-    s.read_to_end(&mut raw).await.unwrap();
-    let text = String::from_utf8_lossy(&raw).to_string();
-    let status = text.split_whitespace().nth(1).unwrap().parse().unwrap();
-    let body = text.split("\r\n\r\n").nth(1).unwrap_or("").to_string();
-    (status, body)
-}
-
-type Ws = tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<TcpStream>>;
-
-async fn open_ws(addr: SocketAddr, cookie: &str) -> Ws {
-    let mut r = format!("ws://{addr}/api/v1/stream").into_client_request().unwrap();
-    r.headers_mut().insert("Cookie", cookie.parse().unwrap());
-    connect_async(r).await.unwrap().0
-}
-
-async fn next_event(ws: &mut Ws, secs: u64) -> Option<Event> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(secs);
-    while tokio::time::Instant::now() < deadline {
-        if let Ok(Some(Ok(Message::Text(t)))) = tokio::time::timeout(Duration::from_millis(500), ws.next()).await {
-            return serde_json::from_str(t.as_str()).ok();
-        }
-    }
-    None
 }
 
 #[tokio::test]
@@ -238,5 +179,5 @@ fn config_defaults_and_overrides_and_errors() {
     assert!(c.secure_cookie);
 
     assert!(Config::from_lookup(|k| (k == "AURORA_BIND").then(|| "non-un-indirizzo".to_string())).is_err());
-    assert!(Config::from_lookup(|k| (k == "AURORA_ENGINE").then(|| "jtdx".to_string())).is_err());
+    assert!(Config::from_lookup(|k| (k == "AURORA_ENGINE").then(|| "marte".to_string())).is_err());
 }

@@ -46,6 +46,7 @@ dependencies = [
  "aurora-core",
  "auth",
  "axum",
+ "engine-jtdx",
  "engine-sim",
  "futures-util",
  "logbook",
@@ -56,6 +57,8 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "udp-bridge",
+ "udp-hub",
 ]
 
 [[package]]
