@@ -1,5 +1,32 @@
 <!doctype html>
 <html lang="it">
-<head><meta charset="utf-8"><title>Aurora</title></head>
-<body style="background:#0b1322;color:#e6edf8;font-family:sans-serif"><p>Aurora si sta avviando…</p></body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurora</title>
+  <style>
+    body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: #0b1322; color: #e6edf8; font-family: 'Segoe UI', sans-serif; }
+    main { max-width: 34rem; padding: 2rem; text-align: center; }
+    h1 { letter-spacing: 0.22em; font-weight: 600; }
+    p { color: #a3b3ca; line-height: 1.5; }
+    code { color: #ff9d9d; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AURORA</h1>
+    <p id="msg">Aurora si sta avviando…</p>
+  </main>
+  <script>
+    // la pagina di errore: il guscio passa il motivo nell'indirizzo
+    const error = new URLSearchParams(location.search).get('errore');
+    if (error) {
+      const msg = document.getElementById('msg');
+      msg.textContent = 'Aurora non è partita: ';
+      const code = document.createElement('code');
+      code.textContent = error;
+      msg.append(code, document.createElement('br'), 'Controlla il file aurora.env nella cartella dei dati (dal vassoio: «Apri la cartella dei dati»).');
+    }
+  </script>
+</body>
 </html>

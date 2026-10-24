@@ -1,0 +1,34 @@
+[package]
+name = "aurora-desktop"
+version = "0.10.0"
+description = "Aurora per Windows: il programma con il core dentro, il vassoio, l'avvio automatico e gli aggiornamenti"
+authors = ["Tiziano Cassone"]
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+# Un workspace a parte: Tauri ha dipendenze pesanti che non servono ai test del core.
+[workspace]
+
+[lib]
+name = "aurora_desktop_lib"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-notification = "2"
+aurora = { path = "../../core/crates/aurora" }
+aurora-core = { path = "../../core/crates/aurora-core" }
+remote-api = { path = "../../core/crates/remote-api" }
+updater = { path = "../../core/crates/updater" }
+engine-jtdx = { path = "../../core/crates/engine-jtdx" }
+tokio = { version = "1", features = ["sync", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+strip = true

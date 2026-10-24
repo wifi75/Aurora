@@ -21,7 +21,7 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 8 ✔ | **Comando della radio** via rigctld (frequenza, banda, PTT) | A | H3 da verificare; JTDX potrebbe usare Hamlib NET rigctl |
 | 9 ✔ | **TriggerCQ** e **SetTxDeltaFreq** (tipi 50 e 51) | M | Significato dei bool di `trigger_CQ` da confermare |
 | 10 | **Trasporti sicuri**: HTTPS locale con certificato fissato dall'associazione, Tailscale, Cloudflare con Access | A | Oggi l'accesso da telefono e' HTTP sulla rete locale |
-| 11 ◐ | **Programma Windows** (guscio Tauri 2) con avvio automatico di Aurora, installer e aggiornamento OTA | A | Fatta la base dell'aggiornamento (scarico, firma minisign, `POST /update/install`, pulsante Installa ora). Mancano guscio, vassoio, avvio automatico, installer NSIS e script di rilascio |
+| 11 ✔ | **Programma Windows** (guscio Tauri 2) con avvio automatico, installatore e aggiornamento OTA firmato | A | Fatto (`desktop/`, `docs/installer-windows.md`); da provare l'installazione e un aggiornamento vero tra due versioni |
 | 12 ✔ | **Pagina Impostazioni** a schede come JTDX | M | Le funzioni di JTDX che non si comandano da fuori (decodifica, filtri RX) restano in JTDX e la scheda Avanzate lo spiega |
 | 13 ✔ | **Log e statistiche** di Aurora, premi DXCC/WAZ/griglie con avanzamento | M | Pagina Statistiche (0.7.0) e storico dei messaggi ricevuti (pagina Storico). Il log ufficiale resta Log4OM2 |
 | 14 ✔ | **Wanted list** e avvisi sul telefono (ntfy) | M | Lista dei desiderati con avvisi in pagina e sul telefono; l'automazione puo' rispondere ai loro CQ |

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Aurora",
+  "version": "0.10.0",
+  "identifier": "it.aurora.station",
+  "build": {
+    "frontendDist": "../stub"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "resources": {
+      "../../app/dist": "dist"
+    },
+    "publisher": "Tiziano Cassone",
+    "copyright": "© 2026 Tiziano Cassone — GNU GPL 3.0 o successiva",
+    "homepage": "https://github.com/wifi75/Aurora",
+    "category": "Utility",
+    "shortDescription": "Stazione digitale FT8/FT4",
+    "longDescription": "Aurora è una stazione digitale FT8/FT4 con automazione dei QSO e controllo da telefono. Usa JTDX come motore di decodifica e trasmissione; Aurora è il cervello e lo schermo.",
+    "licenseFile": "../../LICENSE",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Italian", "English"],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "startMenuFolder": "Aurora"
+      }
+    }
+  }
+}
