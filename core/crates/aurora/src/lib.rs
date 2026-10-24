@@ -571,6 +571,22 @@ pub async fn run(
     let _clock_task = clock.spawn();
     // DX Cluster: paese degli spot dal file cty.dat; nominativo di JTDX se non ne e' stato scelto uno; parte solo se acceso
     let wishlist = wishlist::WishlistService::open(&config.data_dir.join("wishlist.json"));
+    // la regola «rispondi ai desiderati» dell'automazione guarda la stessa lista che avvisa
+    {
+        let list = Arc::clone(&wishlist);
+        automation.set_wanted_matcher(Arc::new(move |d, dial| {
+            wanted::alert_for_decode(&list.config(), d, dial, 0).map(|a| {
+                match a.reason.as_str() {
+                    "call" => "nominativo",
+                    "prefix" => "prefisso",
+                    "country" => "paese",
+                    "grid" => "griglia",
+                    other => other,
+                }
+                .to_string()
+            })
+        }));
+    }
     let updates = updater::UpdateService::open(&config.data_dir.join("update.json"), env!("CARGO_PKG_VERSION"));
     let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
     // il livello dell'ingresso audio si regola sullo stesso dispositivo da cui viene la cascata

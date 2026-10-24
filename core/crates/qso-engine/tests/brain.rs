@@ -209,3 +209,108 @@ fn log_keeps_only_the_latest_decisions() {
     }
     assert_eq!(b.state().log.len(), 100);
 }
+
+#[test]
+fn a_ghost_decode_is_skipped_with_the_reason_and_does_not_use_up_an_attempt() {
+    let mut b = live_brain();
+    // «?» = decodifica incerta; un nominativo che non lo e'; un segnale molto debole di una stazione mai sentita
+    let uncertain = decode(1, "CQ AT1AA FN42 ?", Some(DecodeTag::NewDxcc), -10);
+    let d = b.on_decode(&uncertain, T0).unwrap();
+    assert_eq!(d.kind, DecisionKind::Skipped);
+    assert!(d.reason.contains("incerta"), "{}", d.reason);
+    let shape = decode(2, "CQ AAAA1 FN42", Some(DecodeTag::NewDxcc), -10);
+    assert!(b.on_decode(&shape, T0 + 1).unwrap().reason.contains("forma di un nominativo"));
+    let weak = decode(3, "CQ AT2AA FN42", Some(DecodeTag::NewDxcc), -25);
+    let d = b.on_decode(&weak, T0 + 2).unwrap();
+    assert_eq!(d.kind, DecisionKind::Skipped);
+    assert!(d.reason.contains("mai sentita"), "{}", d.reason);
+    assert_eq!(b.state().replies_today, 0, "nessuna risposta partita");
+    assert_eq!(b.on_decode(&cq(4, "AT1AA"), T0 + 3).unwrap().kind, DecisionKind::Reply, "la stessa stazione, decodificata bene, si risponde");
+}
+
+#[test]
+fn a_weak_signal_is_fine_once_the_station_has_been_heard() {
+    let mut b = Brain::new(Rules { min_snr: -30, ..Rules::default() }, Limits::default(), true);
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    // la stazione e' stata sentita (anche non desiderata, anche prima di accendere l'automazione)
+    b.on_decode(&decode(1, "CQ AT1AA FN42", None, -15), T0);
+    let weak = decode(2, "CQ AT1AA FN42", Some(DecodeTag::NewDxcc), -25);
+    assert_eq!(b.on_decode(&weak, T0 + 1).unwrap().kind, DecisionKind::Reply);
+}
+
+#[test]
+fn the_heard_stations_are_remembered_even_while_the_automation_is_off() {
+    let mut b = Brain::new(Rules { min_snr: -30, ..Rules::default() }, Limits::default(), true);
+    assert!(b.on_decode(&decode(1, "CQ AT1AA FN42", None, -15), T0).is_none());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0 + 5);
+    let weak = decode(2, "CQ AT1AA FN42", Some(DecodeTag::NewDxcc), -25);
+    assert_eq!(b.on_decode(&weak, T0 + 6).unwrap().kind, DecisionKind::Reply);
+}
+
+fn wanted_only() -> Rules {
+    Rules { reply_to: vec![], reply_to_wanted: true, ..Rules::default() }
+}
+
+fn matcher() -> qso_engine::WantedMatcher {
+    std::sync::Arc::new(|d: &DecodedMessage, dial: Option<u64>| {
+        let wanted = d.text.contains("T1WANT") || (d.text.contains("T2BAND") && dial == Some(14_074_000));
+        wanted.then(|| "nominativo".to_string())
+    })
+}
+
+#[test]
+fn replies_to_the_wishlist_when_the_rule_is_on_and_says_why() {
+    assert!(wanted_only().is_valid(), "senza etichette ma con i desiderati e' una regola sensata");
+    assert!(!Rules { reply_to: vec![], ..Rules::default() }.is_valid(), "nessuna delle due: non risponderebbe mai");
+    let mut b = Brain::new(wanted_only(), Limits::default(), true);
+    b.set_wanted_matcher(matcher());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    let d = b.on_decode(&decode(1, "CQ T1WANT FN42", Some(DecodeTag::Cq), -10), T0).unwrap();
+    assert_eq!(d.kind, DecisionKind::Reply);
+    assert!(d.reason.contains("lista dei desiderati") && d.reason.contains("nominativo"), "{}", d.reason);
+    assert!(b.on_decode(&decode(2, "CQ AT9AA FN42", Some(DecodeTag::NewDxcc), -10), T0 + 100).is_none(), "gli altri CQ non interessano");
+}
+
+#[test]
+fn the_wishlist_rule_does_nothing_when_off_and_is_not_triggered_by_a_reply_to_someone_else() {
+    let mut b = Brain::new(Rules { reply_to_wanted: false, ..Rules::default() }, Limits::default(), true);
+    b.set_wanted_matcher(matcher());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    assert!(b.on_decode(&decode(1, "CQ T1WANT FN42", Some(DecodeTag::Cq), -10), T0).is_none());
+    let mut b = Brain::new(wanted_only(), Limits::default(), true);
+    b.set_wanted_matcher(matcher());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    assert!(b.on_decode(&decode(2, "IU3ABC T1WANT -10", Some(DecodeTag::Cq), -10), T0).is_none(), "non e' un CQ");
+}
+
+#[test]
+fn the_wishlist_rule_keeps_every_safeguard_and_the_ghost_filter() {
+    let mut b = Brain::new(wanted_only(), Limits { max_consecutive_cycles: 1, ..Limits::default() }, true);
+    b.set_wanted_matcher(matcher());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    let weak = decode(1, "CQ T1WANT FN42", Some(DecodeTag::Cq), -26);
+    assert_eq!(b.on_decode(&weak, T0).unwrap().kind, DecisionKind::Skipped, "un desiderato debole e mai sentito resta sospetto");
+    assert_eq!(b.on_decode(&decode(2, "CQ T1WANT FN42", Some(DecodeTag::Cq), -10), T0 + 1).unwrap().kind, DecisionKind::Reply);
+    // il tetto delle risposte di fila vale anche per i desiderati
+    b.on_qso_logged("T1WANT");
+    assert_eq!(b.on_decode(&decode(3, "CQ T1WANT FN42", Some(DecodeTag::Cq), -10), T0 + 200).unwrap().kind, DecisionKind::Reply);
+    assert_eq!(b.on_decode(&decode(4, "CQ T1WANT FN42", Some(DecodeTag::Cq), -10), T0 + 400).unwrap().kind, DecisionKind::Blocked);
+}
+
+#[test]
+fn the_band_filter_of_the_wishlist_sees_the_frequency_of_the_radio() {
+    let mut b = Brain::new(wanted_only(), Limits::default(), true);
+    b.set_wanted_matcher(matcher());
+    b.set_mode(Mode::Live).unwrap();
+    b.set_enabled(true, T0);
+    let d = decode(1, "CQ T2BAND FN42", Some(DecodeTag::Cq), -10);
+    assert!(b.on_decode(&d, T0).is_none(), "frequenza della radio ancora ignota");
+    b.on_dial(14_074_000);
+    assert_eq!(b.on_decode(&d, T0 + 1).unwrap().kind, DecisionKind::Reply);
+}
