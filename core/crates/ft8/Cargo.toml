@@ -1,0 +1,11 @@
+[package]
+name = "ft8"
+description = "Motore FT8/FT4 di Aurora: messaggi a 77 bit, codice LDPC, sincronismo, decodifica e modulazione (algoritmi di JTDX e WSJT-X, GPL 3)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+rustfft = "6.4.1"

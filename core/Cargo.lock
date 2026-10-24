@@ -493,6 +493,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ft8"
+version = "0.10.4"
+dependencies = [
+ "rustfft",
+]
+
+[[package]]
 name = "futures-core"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
