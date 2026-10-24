@@ -24,7 +24,8 @@ Progettazione e sviluppo: Tiziano Cassone
 Versione 0.8.0, provata dal vivo con JTDX 2.2.159 e una radio reale.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
-- **Trasmissione**: CQ, messaggio libero, frequenza Tx, risposta con doppio clic, STOP TX sempre attivo. È **chiusa** finché non la apri dal PC (`AURORA_ALLOW_TX=1`).
+- **Comandi come JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, frequenze Tx/Rx con copia, Canc DX, Gen.Msgs; il doppio clic su un messaggio imposta il DX e JTDX lo chiama al momento giusto (opzione in Impostazioni → Generali).
+- **Trasmissione**: CQ, messaggio libero, frequenza Tx, livello Pwr verticale, STOP TX sempre attivo (discreto a riposo, pieno in trasmissione). È **chiusa** finché non la apri dal PC (`AURORA_ALLOW_TX=1`).
 - **Automazioni**: risposte ai CQ con novità, partono spente e in prova a vuoto, con tetti, dead-man e STOP.
 - **Impostazioni a schede** come JTDX (generali, radio, audio, sequenza, macro TX, segnalazioni, frequenze, notifiche, filtri, programmazione, avanzate) più accesso, finestre e bande.
 - **Sei lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) e un tooltip su ogni controllo.
@@ -40,6 +41,8 @@ Cosa manca: `docs/mancante.md`. Esiti delle prove con JTDX: `docs/fase0-rapporto
 ```
 
 Avvia il core (porta 8787) e l'interfaccia (porta 5173) in una sola tab di Windows Terminal; con `-Jtdx` si collega al JTDX reale e trova da solo `cty.dat` e il log dei QSO. Apri la pagina **dall'indirizzo IP del PC** (per esempio `http://192.168.1.225:8787`), non da `localhost`: è lo stesso indirizzo che usa il telefono.
+
+Per avere anche la cascata imposta `AURORA_AUDIO_DEVICE` (parte del nome dell'ingresso audio, per esempio `USB Audio`): senza, la cascata resta vuota.
 
 Per servire l'interfaccia compilata dal core (senza il server di sviluppo): `cd app && npm run build`, poi avvia Aurora con `AURORA_UI_DIR=app\dist` e `AURORA_BIND=0.0.0.0:8787`.
 

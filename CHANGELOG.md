@@ -7,6 +7,7 @@
 - Corretto il cambio modo FT8/FT4: prima accendeva solo la casella senza far cambiare modo a JTDX; ora preme il pulsante e resta nella banda di prima, sulla frequenza che la tabella indica per il nuovo modo.
 - Cambio banda e modo si vedono subito nella pagina, senza aspettare il prossimo stato di JTDX.
 - STOP TX piu' piccolo e discreto a riposo, pieno in trasmissione; l'esito dei comandi e' una nota che sparisce da sola e non occupa spazio.
+- Pulsanti di modo e di banda a misura fissa; FT8 viola e FT4 ambra, anche da spenti.
 
 ## 0.7.0 - 2026-10-24
 - Guida in-app (`#/guida`): 11 argomenti brevi nelle sei lingue, raggiungibile dalla testata e dalla scheda Avanzate.

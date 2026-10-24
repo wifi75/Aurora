@@ -15,7 +15,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 
 ## Da fare
 - [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
-- [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\IU3CYV.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
+- [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\<nominativo>.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
 - [ ] Mappa dei QSO e dei CQ
 - [ ] Trasporti sicuri: HTTPS locale, Tailscale, Cloudflare con Access
 - [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora

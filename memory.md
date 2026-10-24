@@ -13,6 +13,10 @@ Stato al 2026-10-24, versione 0.8.0. Per riprendere il lavoro leggi anche `docs/
 - Cambio banda e frequenza Rx: stesso OmniRig che usa JTDX come CAT. Cambio modo FT8/FT4 e frequenza Rx: si comandano i controlli di JTDX con l'accessibilità di Windows (UI Automation) via PowerShell.
 - `TriggerCQ` (UDP tipo 51): il secondo parametro a `true` abilita Tx (provato dal vivo).
 
+- Comandi a JTDX con UI Automation: i pulsanti si premono con `Invoke` (il clic), mai con `Toggle()`, che accende solo la casella senza far scattare il segnale (era il bug di FT4). L'elenco dei controlli raggiungibili e' chiuso (`rig-control/src/controls.rs`): niente accordo ne' log. Cambiando modo si resta nella banda di prima, sulla frequenza della tabella.
+- Log di Log4OM2: database SQLite in `Documents\LOG4OM2\<nominativo>.sqlite` (36484 QSO, 98 colonne, tabella `Log`), aperto solo in lettura nelle prove. Aurora oggi legge solo l'ADIF di JTDX (2060 QSO): novita' e statistiche ne escono sottostimate. Lettura da decidere con Tiziano.
+- Avvio di sviluppo: serve `AURORA_AUDIO_DEVICE='USB Audio'` per la cascata; senza e' vuota (dimenticato una volta al riavvio).
+
 ## Sicurezza (non negoziabile)
 - Trasmissione chiusa di default (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore). STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.
