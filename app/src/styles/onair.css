@@ -2508,3 +2508,28 @@
     box-shadow: 0 0 10px var(--danger);
   }
 }
+
+.in-level-pair {
+  display: flex;
+  align-items: flex-end;
+}
+
+.in-level-pair .in-level-meter,
+.in-level-pair .vslider {
+  margin-inline: 0.35rem;
+}
+
+.in-level-value {
+  font-size: var(--text-xs);
+}
+
+.in-level-auto {
+  padding: 0.1rem 0.45rem;
+  font-size: var(--text-xs);
+}
+
+.in-level .live-note {
+  max-width: 4.5rem;
+  text-align: center;
+  font-size: var(--text-xs);
+}

@@ -1,0 +1,16 @@
+[package]
+name = "input-level"
+description = "Livello dell'ingresso audio: volume di registrazione di Windows regolabile a mano o con la regolazione automatica (AUTO)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+audio-spectrum = { path = "../audio-spectrum" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

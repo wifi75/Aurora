@@ -48,6 +48,7 @@ dependencies = [
  "rustfft",
  "tokio",
  "tracing",
+ "windows",
 ]
 
 [[package]]
@@ -64,6 +65,7 @@ dependencies = [
  "engine-jtdx",
  "engine-sim",
  "futures-util",
+ "input-level",
  "logbook",
  "qso-engine",
  "qso-export",
@@ -708,6 +710,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "input-level"
+version = "0.9.0"
+dependencies = [
+ "audio-spectrum",
+ "aurora-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1254,6 +1268,7 @@ dependencies = [
  "dx-cluster",
  "engine-jtdx",
  "futures-util",
+ "input-level",
  "logbook",
  "qrcode",
  "qso-engine",
