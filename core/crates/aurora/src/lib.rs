@@ -9,6 +9,7 @@ use std::{
 };
 
 pub mod history;
+pub mod online;
 pub mod updates;
 pub mod wanted;
 
@@ -592,6 +593,9 @@ pub async fn run(
     if let Some(service) = &input_level {
         service.spawn_auto(bus.subscribe_events());
     }
+    // PSK Reporter e propagazione: spenti finche' non si accendono
+    let online = online_info::OnlineService::open(&config.data_dir.join("online.json"), Arc::new(online_info::HttpFetch::new(env!("CARGO_PKG_VERSION"))));
+    online::spawn_refresher(Arc::clone(&online), bus.subscribe_events());
     // lo storico dei messaggi ricevuti: se il file non si apre Aurora parte lo stesso e lo dice
     let history = match decode_history::HistoryStore::open(&config.data_dir.join("history.sqlite")) {
         Ok(store) => {
@@ -624,6 +628,7 @@ pub async fn run(
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level)
+        .with_online(online)
         .with_history_if(history)
         .with_updates(Arc::clone(&updates))
         .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {

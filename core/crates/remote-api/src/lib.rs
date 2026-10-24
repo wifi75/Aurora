@@ -68,6 +68,8 @@ pub struct AppState {
     pub wishlist: Option<Arc<wishlist::WishlistService>>,
     /// Il livello dell'ingresso audio (volume di registrazione di Windows, AUTO).
     pub input_level: Option<Arc<input_level::InputLevelService>>,
+    /// PSK Reporter e propagazione, a richiesta.
+    pub online: Option<Arc<online_info::OnlineService>>,
     /// Lo storico dei messaggi ricevuti.
     pub history: Option<Arc<decode_history::HistoryStore>>,
     /// Il controllo delle nuove versioni di Aurora.
@@ -129,7 +131,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, updates: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -167,6 +169,11 @@ impl AppState {
 
     pub fn with_input_level_if(mut self, service: Option<Arc<input_level::InputLevelService>>) -> AppState {
         self.input_level = service;
+        self
+    }
+
+    pub fn with_online(mut self, service: Arc<online_info::OnlineService>) -> AppState {
+        self.online = Some(service);
         self
     }
 
