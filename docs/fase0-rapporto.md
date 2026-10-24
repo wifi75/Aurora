@@ -68,3 +68,31 @@ Conseguenze per Aurora:
 - Nelle impostazioni di JTDX: attivare "Accept UDP requests", scegliere il modo di accettazione e **disattivare "porta in primo piano" e "ripristina la finestra"** per non farsi togliere il fuoco a ogni risposta.
 - Per verificare le risposte basta attivare il log di debug di JTDX e leggere ALL.TXT: contiene "UDP Reply request received / processed / ignored".
 - Resta da confermare (decompilando i costruttori dei messaggi) la larghezza dei campi sul filo (`float` o `double`).
+
+### Formato dei messaggi UDP confermato dal reverse (REA su `jtdx.exe`)
+
+Funzioni decompilate: `NetworkMessage::Builder::Builder` (0x5967b0), `MessageClient::decode` (0x56e420), `impl::heartbeat` (0x56dd80),
+`impl::parse_message` (0x56c360), `qso_logged` (0x56a164), `WSPR_decode` (0x56a5e4). Elenco completo delle funzioni `MessageClient::` e `NetworkMessage::` ottenuto con `rea search --kind procedures`.
+
+**Intestazione** (identica a WSJT-X): numero magico `0xADBCCBDA` (u32), schema (u32), tipo (u32), identificativo (stringa Qt UTF-8). Il `QDataStream` usa la versione Qt 5.0 per lo schema 1, **Qt 5.2 per lo schema 2**, **Qt 5.4 per lo schema 3**; uno schema diverso da 1–3 produce l'eccezione "Unrecognized message schema".
+**Numeri decimali**: nessuna chiamata a `setFloatingPointPrecision`, quindi il `float` di Qt viene scritto come **double a 8 byte** (comportamento predefinito di Qt 5): conferma la scelta di `f64`.
+
+**Messaggi inviati da JTDX**
+- `Heartbeat` (tipo 0): schema massimo (u32, vale 3) + **una sola stringa** (versione). *Non c'e' il campo "revisione" di WSJT-X: `udp-bridge` e' stato corretto per accettarne l'assenza (test scritto prima).*
+- `Decode` (tipo 2): bool `new`, QTime (u32 ms), i32 SNR, double DT, u32 DF, stringa modo, stringa testo, bool bassa confidenza, bool fuori onda. Identico a quanto implementato.
+- `QsoLogged` (tipo 5): QDateTime fine QSO, nominativo DX, locatore DX, u64 frequenza, modo, rapporto inviato, rapporto ricevuto, potenza, commenti, nome, QDateTime inizio, nominativo operatore, mio nominativo, mio locatore. Identico a WSJT-X.
+- `WSPRDecode` (tipo 10) e `LoggedADIF` (tipo 12): presenti come in WSJT-X. `Clear`, `Status`: dello stesso tipo di WSJT-X (Status in corso di verifica).
+
+**Messaggi accettati da JTDX** (`parse_message`)
+| Tipo | Nome | Campi |
+|---|---|---|
+| 4 | Reply | QTime, i32 SNR, double DT, u32 DF, modo, testo, bool bassa confidenza, u8 modificatori |
+| 7 | Replay | nessuno (JTDX rimanda i decode correnti) |
+| 8 | HaltTx | bool `solo Tx automatico` |
+| 9 | FreeText | stringa, bool `invia` |
+| 13 | HighlightCallsign | nominativo, colore sfondo, colore testo, bool |
+| 50 | **SetTxDeltaFreq** (solo JTDX) | i32 frequenza audio di trasmissione |
+| 51 | **TriggerCQ** (solo JTDX) | stringa, bool |
+
+**Non accettati**: `Configure` (15), `SwitchConfiguration` (14), `Location` (11) e gli altri tipi: **le impostazioni del motore non si possono cambiare via UDP in JTDX 159.**
+**Controlli**: un messaggio in ingresso e' ignorato se l'**identificativo non coincide** con quello del client JTDX (va copiato dai suoi Heartbeat/Status); se lo schema in ingresso e' piu' alto di quello in uso, JTDX lo adotta.

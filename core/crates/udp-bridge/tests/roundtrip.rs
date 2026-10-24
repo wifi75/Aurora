@@ -219,3 +219,19 @@ fn qso_logged_reads_call_grid_freq_and_mode() {
         other => panic!("atteso QsoLogged, trovato {other:?}"),
     }
 }
+
+/// Reverse di JTDX 159 (MessageClient::impl::heartbeat): schema massimo + UNA sola stringa (la versione).
+#[test]
+fn heartbeat_without_revision_is_accepted() {
+    let mut w = header(0);
+    w.u32(3);
+    w.utf8(Some("159"));
+    match decode(&w.into_bytes()).unwrap().message {
+        Message::Heartbeat { max_schema, version, revision, .. } => {
+            assert_eq!(max_schema, 3);
+            assert_eq!(version.as_deref(), Some("159"));
+            assert_eq!(revision, None);
+        }
+        other => panic!("atteso Heartbeat, trovato {other:?}"),
+    }
+}

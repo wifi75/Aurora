@@ -105,12 +105,14 @@ pub fn decode(datagram: &[u8]) -> Result<Packet, Error> {
     let schema = r.u32()?;
     let kind = r.u32()?;
     let message = match kind {
-        HEARTBEAT => Message::Heartbeat {
-            id: r.utf8()?,
-            max_schema: r.u32()?,
-            version: r.utf8()?,
-            revision: r.utf8()?,
-        },
+        HEARTBEAT => {
+            let id = r.utf8()?;
+            let max_schema = r.u32()?;
+            let version = r.utf8()?;
+            // JTDX invia solo lo schema massimo e la versione: la revisione (WSJT-X) puo' mancare.
+            let revision = if r.is_empty() { None } else { r.utf8()? };
+            Message::Heartbeat { id, max_schema, version, revision }
+        }
         STATUS => Message::Status(read_status(&mut r)?),
         DECODE => Message::Decode(read_decode(&mut r)?),
         CLEAR => Message::Clear { id: r.utf8()? },
