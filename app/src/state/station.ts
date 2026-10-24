@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { AuroraEvent, DecodedMessage, StationStatus } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { bandOf } from '../lib/format';
+import { usePrefs } from '../lib/prefs';
 
 const MAX_DECODES = 200;
 const MAX_TX_LOG = 50;
@@ -60,6 +61,19 @@ function withPending(s: { pending: Partial<StationStatus>; pendingAt: number }, 
   return { status: merged as unknown as StationStatus, pending: pending as Partial<StationStatus> };
 }
 
+/** Banda o modo diversi da prima (e prima noti): si svuota l'attivita' di banda, se l'opzione e' accesa. */
+export function bandOrModeChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
+  if (!before || !after) return false;
+  const band = (s: StationStatus) => (s.dial_hz > 0 ? bandOf(s.dial_hz) : null);
+  const bandChanged = band(before) !== null && band(after) !== null && band(before) !== band(after);
+  const modeChanged = before.mode !== '' && after.mode !== '' && before.mode !== after.mode;
+  return bandChanged || modeChanged;
+}
+
+function clearedOnChange(before: StationStatus | null | undefined, after: StationStatus | null | undefined): { decodes: DecodedMessage[]; txLog: DecodedMessage[] } | Record<string, never> {
+  return usePrefs.getState().prefs.clearOnChange && bandOrModeChanged(before, after) ? { decodes: [], txLog: [] } : {};
+}
+
 export const useStation = create<StationState>((set) => ({
   status: null,
   decodes: [],
@@ -80,7 +94,8 @@ export const useStation = create<StationState>((set) => ({
           const keep = { pending, pendingBand: s.pendingBand !== null && bandOf(status.dial_hz) === s.pendingBand ? null : s.pendingBand };
           const message = status.tx_message?.trim() ?? '';
           const starts = status.transmitting && message !== '' && (!s.status?.transmitting || s.status.tx_message !== status.tx_message);
-          if (!starts) return { status, ...keep, ...settledPending(s, status.dx_call) };
+          const cleared = clearedOnChange(s.status, status);
+          if (!starts) return { status, ...cleared, ...keep, ...settledPending(s, status.dx_call) };
           const row: DecodedMessage = {
             id: nextTxId--,
             time_ms: Date.now() % 86_400_000,
@@ -90,7 +105,7 @@ export const useStation = create<StationState>((set) => ({
             text: message,
             tag: null,
           };
-          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call) };
+          return { status, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
         });
         break;
       }
@@ -107,7 +122,11 @@ export const useStation = create<StationState>((set) => ({
     }
   },
   patchStatus(patch) {
-    set((s) => (s.status ? { status: { ...s.status, ...patch }, pending: { ...s.pending, ...patch }, pendingAt: Date.now() } : s));
+    set((s) => {
+      if (!s.status) return s;
+      const status = { ...s.status, ...patch };
+      return { status, ...clearedOnChange(s.status, status), pending: { ...s.pending, ...patch }, pendingAt: Date.now() };
+    });
   },
   revertStatus(keys, previous) {
     set((s) => {
