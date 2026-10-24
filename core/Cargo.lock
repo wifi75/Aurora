@@ -64,6 +64,7 @@ dependencies = [
  "dx-cluster",
  "dxcc",
  "engine-jtdx",
+ "engine-native",
  "engine-sim",
  "futures-util",
  "input-level",
@@ -433,6 +434,19 @@ dependencies = [
  "tracing",
  "udp-bridge",
  "udp-hub",
+]
+
+[[package]]
+name = "engine-native"
+version = "0.10.6"
+dependencies = [
+ "audio-spectrum",
+ "aurora-core",
+ "ft8",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

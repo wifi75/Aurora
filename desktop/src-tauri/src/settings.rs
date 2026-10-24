@@ -125,6 +125,8 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_BIND".into(), "0.0.0.0:8787".into());
     // la finestra del programma entra senza codice (solo da questo PC); i telefoni lo chiedono sempre
     v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
+    // il motore proprio decodifica in ombra accanto a JTDX e si confronta con lui (`AURORA_NATIVE_DECODE=0` lo spegne)
+    v.insert("AURORA_NATIVE_DECODE".into(), "1".into());
     // trasmissione aperta: la scelta e' del proprietario, STOP e tetti restano; `AURORA_ALLOW_TX=0` la chiude
     v.insert("AURORA_ALLOW_TX".into(), "1".into());
     if let Some(file) = env_file {
