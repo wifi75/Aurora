@@ -19,7 +19,7 @@ Il programma Windows (cartella `desktop/`) e' Tauri 2: dentro c'e' il **core di 
 
 Una seconda copia lanciata per errore non apre un secondo core: mostra la finestra della prima.
 
-**Dal telefono.** L'indirizzo e' sempre `http://<IP del PC>:8787`. L'accesso richiede il codice di associazione (l'accesso senza codice si accende solo con `AURORA_OPEN_ACCESS=1`).
+**Dal telefono.** L'indirizzo e' sempre `http://<IP del PC>:8787`. La finestra del programma sul PC entra da sola (nessuna associazione: vale solo per le richieste che arrivano da questo stesso PC, `AURORA_TRUST_LOCAL=0` la toglie); dal telefono l'accesso richiede il codice di associazione (l'accesso senza codice si accende solo con `AURORA_OPEN_ACCESS=1`).
 
 ## Aggiornamenti
 

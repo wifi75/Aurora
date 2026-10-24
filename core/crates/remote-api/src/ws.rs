@@ -86,7 +86,7 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
             _ = check.tick() => {
                 // L'accesso senza codice usa un dispositivo virtuale che non sta nell'archivio:
                 // vale finche' resta acceso, non finche' esiste una registrazione.
-                let still_valid = if device == DeviceId(0) && state.open_access.load(Ordering::SeqCst) {
+                let still_valid = if device == DeviceId(0) && (state.local_trust || state.open_access.load(Ordering::SeqCst)) {
                     true
                 } else {
                     state.auth.exists(device)
