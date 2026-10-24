@@ -1,0 +1,7 @@
+[package]
+name = "dxcc"
+description = "Lettura di cty.dat e ricerca del paese (DXCC) di un nominativo"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
