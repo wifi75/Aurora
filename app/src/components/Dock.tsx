@@ -11,6 +11,9 @@ interface Props {
   render(id: PanelId): ReactNode;
 }
 
+/** Finestre che si disegnano affiancate quando sono vicine e aperte: la prima a sinistra, la seconda a destra. */
+const PAIRS: Partial<Record<PanelId, PanelId>> = { all: 'log', cluster: 'station' };
+
 interface DropSpot {
   zone: Zone;
   index: number;
@@ -130,11 +133,12 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
     let slot = 0; // posizione tra i pannelli che non si stanno trascinando
     // Attivita' di banda e Log vicini, aperti e non in volo: una riga sola, uno accanto all'altro
     const paired = (id: PanelId, next?: PanelId) =>
-      id === 'all' && next === 'log' && ![id, next].some((p) => layout.collapsed.includes(p) || p === dragging);
+      next !== undefined && PAIRS[id] === next && ![id, next].some((p) => layout.collapsed.includes(p) || p === dragging);
     let row: ReactNode[] | null = null;
+    let rowSecond: PanelId | null = null;
     ids.forEach((id, at) => {
       const flying = id === dragging;
-      const inRow = row !== null && id === 'log';
+      const inRow = row !== null && id === rowSecond;
       if (!flying && !inRow) {
         if (spot?.zone === zone && spot.index === slot) nodes.push(marker(`drop-${slot}`));
         slot += 1;
@@ -171,8 +175,9 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
       );
       if (startsRow) {
         row = [section];
+        rowSecond = PAIRS[id] ?? null;
         nodes.push(
-          <div key="pair" className="dock-pair" style={height ? { height, flex: 'none' } : undefined}>
+          <div key={`pair-${id}`} className="dock-pair" style={height ? { height, flex: 'none' } : { minHeight: '14rem', flex: 'none' }}>
             {row}
           </div>,
         );

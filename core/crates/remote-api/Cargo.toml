@@ -10,6 +10,7 @@ publish = false
 aurora-core = { path = "../aurora-core" }
 auth = { path = "../auth" }
 clock-sync = { path = "../clock-sync" }
+dx-cluster = { path = "../dx-cluster" }
 logbook = { path = "../logbook" }
 qso-engine = { path = "../qso-engine" }
 rig-control = { path = "../rig-control" }

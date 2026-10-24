@@ -491,10 +491,26 @@ pub async fn run(
     });
     let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::PowerShellSetter));
     let _clock_task = clock.spawn();
+    // DX Cluster: paese degli spot dal file cty.dat; nominativo di JTDX se non ne e' stato scelto uno; parte solo se acceso
+    let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
+    if let Some((db, _)) = enrichment.as_ref() {
+        let db = Arc::clone(db);
+        cluster.set_enricher(Arc::new(move |call: &str| {
+            db.lookup(call).map(|l| {
+                let entity = db.entity(l.entity);
+                (entity.name.clone(), entity.continent.clone())
+            })
+        }));
+    }
+    if let Some(call) = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).and_then(|m| m.get("MyCall").cloned()) {
+        cluster.default_callsign(&call);
+    }
+    cluster.restart();
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access)
         .with_clock(Arc::clone(&clock))
+        .with_cluster(Arc::clone(&cluster))
         .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {

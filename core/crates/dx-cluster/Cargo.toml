@@ -1,0 +1,13 @@
+[package]
+name = "dx-cluster"
+description = "Client DX Cluster telnet: spot dei server pubblici o propri, configurabile dalle impostazioni"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

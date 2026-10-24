@@ -230,6 +230,75 @@ export interface StatsResponse {
   missing_dxcc: string[];
 }
 
+export interface ClusterServer {
+  name: string;
+  host: string;
+  port: number;
+  enabled: boolean;
+}
+
+export interface ClusterConfig {
+  enabled: boolean;
+  callsign: string;
+  servers: ClusterServer[];
+  login_commands: string[];
+  max_spots: number;
+  max_age_min: number;
+}
+
+export interface ClusterSpot {
+  id: number;
+  received_ms: number;
+  server: string;
+  spotter: string;
+  freq_khz: number;
+  dx_call: string;
+  comment: string;
+  time_utc: string;
+  grid: string | null;
+  band: string | null;
+  mode: string | null;
+  country: string | null;
+  continent: string | null;
+}
+
+export interface ClusterServerStatus {
+  key: string;
+  name: string;
+  state: 'connecting' | 'connected' | 'error';
+  detail: string | null;
+  spots: number;
+  since_ms: number;
+}
+
+export interface ClusterCatalogEntry {
+  name: string;
+  host: string;
+  port: number;
+  software: string;
+  place: string;
+  note: string;
+}
+
+/** Impostazioni, stato dei collegamenti e spot recenti del DX Cluster (`limit` spot al massimo). */
+export async function getClusterSpots(limit = 200): Promise<{ config: ClusterConfig; servers: ClusterServerStatus[]; spots: ClusterSpot[] }> {
+  return (await (await request(`/dx-cluster?limit=${limit}`)).json()) as { config: ClusterConfig; servers: ClusterServerStatus[]; spots: ClusterSpot[] };
+}
+
+export async function putCluster(config: ClusterConfig): Promise<void> {
+  await request('/dx-cluster', { ...jsonInit(config), method: 'PUT' });
+}
+
+/** I server DX Cluster pubblici noti. */
+export async function getClusterCatalog(): Promise<ClusterCatalogEntry[]> {
+  return (await (await request('/dx-cluster/catalog')).json()) as ClusterCatalogEntry[];
+}
+
+/** Manda un comando di consultazione a un cluster collegato (mai spot o messaggi). */
+export async function sendClusterCommand(server: string, text: string): Promise<void> {
+  await request('/dx-cluster/command', jsonInit({ server, text }));
+}
+
 export interface ClockConfig {
   enabled: boolean;
   servers: string[];

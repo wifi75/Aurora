@@ -5,6 +5,7 @@ import { getStationInfo, postBand, postControl, postMode, postReply, postRxFrequ
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
+import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
 import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
@@ -103,6 +104,7 @@ export function Live() {
     cq: t('panel.cq'),
     all: t('panel.all'),
     log: t('panel.log'),
+    cluster: t('panel.cluster'),
   };
 
   const renderPanel = (id: PanelId) => {
@@ -139,6 +141,8 @@ export function Live() {
             emptyText={t('decode.noCq')}
           />
         );
+      case 'cluster':
+        return <ClusterPanel />;
       case 'log':
         return <Log4omPanel />;
       case 'all':
