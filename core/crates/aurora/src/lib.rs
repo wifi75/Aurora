@@ -259,6 +259,31 @@ fn unix_secs() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
 }
 
+/// Regole salvate dall'ultima volta; un file mancante o non valido vale come regole predefinite.
+fn load_rules(path: &Path) -> Rules {
+    match std::fs::read_to_string(path) {
+        Ok(text) => match serde_json::from_str::<Rules>(&text) {
+            Ok(rules) if rules.is_valid() => rules,
+            _ => {
+                tracing::warn!("regole dell'automazione non valide in {}: uso quelle predefinite", path.display());
+                Rules::default()
+            }
+        },
+        Err(_) => Rules::default(),
+    }
+}
+
+fn save_rules(path: &Path, rules: &Rules) {
+    match serde_json::to_string(rules) {
+        Ok(json) => {
+            if let Err(e) = std::fs::write(path, json) {
+                tracing::warn!("regole non salvate in {}: {e}", path.display());
+            }
+        }
+        Err(e) => tracing::warn!("regole non serializzabili: {e}"),
+    }
+}
+
 /// Numero intero maggiore di zero da una variabile; un tetto a zero bloccherebbe tutto e si rifiuta.
 fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> Result<u32, StartError> {
     match get(name) {
@@ -284,10 +309,11 @@ pub async fn run(
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
     };
+    let rules_path = config.data_dir.join("automation-rules.json");
     let automation = Automation::spawn(
         &bus,
         AutomationConfig {
-            rules: Rules::default(),
+            rules: load_rules(&rules_path),
             limits: config.auto_limits.clone(),
             live_allowed: live_tx,
             tick_every: Duration::from_secs(1),
@@ -303,6 +329,7 @@ pub async fn run(
         let worked = load_worked(config.worked_adif.as_deref(), &db);
         (db, worked)
     });
+    let stats_source = enrichment.as_ref().zip(config.worked_adif.clone()).map(|((db, _), path)| (Arc::clone(db), path));
     let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());
     let info = serde_json::json!({
@@ -326,7 +353,14 @@ pub async fn run(
     });
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
-        .with_rig_if(config.rig_omnirig.then(|| Arc::new(rig_control::OmniRig) as Arc<dyn rig_control::Rig>))
+        .with_stats_if(stats_source.map(|(db, path)| {
+            Arc::new(move || {
+                let worked = load_worked(Some(&path), &db);
+                serde_json::json!({ "stats": worked.stats(&db), "missing_dxcc": worked.missing_dxcc(&db) })
+            }) as Arc<dyn Fn() -> serde_json::Value + Send + Sync>
+        }))
+        .with_rules_saver(Arc::new(move |rules: &Rules| save_rules(&rules_path, rules)))
+        .with_rig_if(config.rig_omnirig.then(|| Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>))
         .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;

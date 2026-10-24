@@ -11,6 +11,17 @@ export const NOTTE_RADIO_STOPS: ColorStops = [
   [1, [255, 250, 235]],
 ];
 
+/** Colori dello spettro di JTDX: fondo blu, segnali gialli, i piu' forti bianchi. */
+export const JTDX_STOPS: ColorStops = [
+  [0, [0, 0, 40]],
+  [0.3, [0, 16, 140]],
+  [0.5, [20, 60, 220]],
+  [0.68, [70, 170, 235]],
+  [0.82, [255, 230, 40]],
+  [0.93, [255, 150, 20]],
+  [1, [255, 255, 255]],
+];
+
 export const LUT_SIZE = 256;
 
 /** Tabella RGBA (4 byte per voce) interpolata linearmente tra i punti. */

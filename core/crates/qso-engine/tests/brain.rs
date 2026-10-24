@@ -25,6 +25,23 @@ fn kind(b: &mut Brain, d: &DecodedMessage, now: u64) -> DecisionKind {
 }
 
 #[test]
+fn rules_validation_rejects_dangerous_or_absurd_rules() {
+    assert!(Rules::default().is_valid());
+    assert!(!Rules { reply_to: vec![], ..Rules::default() }.is_valid(), "senza etichette non risponderebbe mai");
+    assert!(!Rules { reply_to: vec![DecodeTag::Cq], ..Rules::default() }.is_valid(), "rispondere a ogni CQ non e' ammesso");
+    assert!(!Rules { min_snr: -90, ..Rules::default() }.is_valid());
+    assert!(!Rules { max_attempts_per_call: 0, ..Rules::default() }.is_valid());
+    assert!(!Rules { excluded_calls: vec!["NON UN NOMINATIVO".into()], ..Rules::default() }.is_valid());
+}
+
+#[test]
+fn rules_survive_a_json_roundtrip() {
+    let rules = Rules { min_snr: -12, excluded_calls: vec!["AT1AA".into()], ..Rules::default() };
+    let back: Rules = serde_json::from_str(&serde_json::to_string(&rules).unwrap()).unwrap();
+    assert_eq!(back, rules);
+}
+
+#[test]
 fn starts_off_and_in_dry_run() {
     let mut b = Brain::new(Rules::default(), Limits::default(), true);
     assert!(!b.state().enabled);

@@ -15,6 +15,8 @@ use rig_control::{Rig, RigError};
 
 struct FakeRig {
     calls: Mutex<Vec<u64>>,
+    modes: Mutex<Vec<String>>,
+    rx: Mutex<Vec<u32>>,
     fail: bool,
 }
 
@@ -26,10 +28,26 @@ impl Rig for FakeRig {
         self.calls.lock().unwrap().push(hz);
         Ok(())
     }
+
+    fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError> {
+        if self.fail {
+            return Err(RigError("JTDX non risponde".into()));
+        }
+        self.rx.lock().unwrap().push(hz);
+        Ok(())
+    }
+
+    fn set_mode(&self, mode: &str) -> Result<(), RigError> {
+        if self.fail {
+            return Err(RigError("JTDX non risponde".into()));
+        }
+        self.modes.lock().unwrap().push(mode.to_string());
+        Ok(())
+    }
 }
 
 fn state_with_rig(fail: bool) -> (AppState, Arc<FakeRig>) {
-    let rig = Arc::new(FakeRig { calls: Mutex::new(vec![]), fail });
+    let rig = Arc::new(FakeRig { calls: Mutex::new(vec![]), modes: Mutex::new(vec![]), rx: Mutex::new(vec![]), fail });
     let auth = Arc::new(DeviceStore::open_in_memory(Arc::new(SystemClock)).unwrap());
     let book = Arc::new(Logbook::open_in_memory().unwrap());
     let s = AppState::new(Bus::new(64), auth, book, TxPolicy::default_safe(), false).with_rig(rig.clone());
@@ -94,4 +112,76 @@ async fn it_needs_a_paired_device() {
     let (s, _) = state_with_rig(false);
     let resp = call(&build_router(s), req(Method::POST, "/api/v1/commands/band").json(r#"{"band":"20m"}"#)).await;
     status_is(&resp, StatusCode::UNAUTHORIZED);
+}
+
+async fn mode(s: &AppState, body: &str) -> axum::response::Response {
+    let cookie = cookie_for(s);
+    call(&router(s), req(Method::POST, "/api/v1/commands/mode").cookie(&cookie).json(body)).await
+}
+
+#[tokio::test]
+async fn a_known_mode_is_handed_to_the_rig_uppercase() {
+    let (s, rig) = state_with_rig(false);
+    status_is(&mode(&s, r#"{"mode":"ft4"}"#).await, StatusCode::OK);
+    assert_eq!(*rig.modes.lock().unwrap(), vec!["FT4".to_string()]);
+}
+
+#[tokio::test]
+async fn an_unknown_mode_is_refused() {
+    let (s, rig) = state_with_rig(false);
+    let resp = mode(&s, r#"{"mode":"JT65"}"#).await;
+    status_is(&resp, StatusCode::BAD_REQUEST);
+    assert_eq!(body_json(resp).await["error"], "bad_mode");
+    assert!(rig.modes.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn the_mode_is_never_changed_while_transmitting() {
+    let (s, rig) = state_with_rig(false);
+    s.bus.events().send(Event::Status(StationStatus { transmitting: true, ..StationStatus::default() })).unwrap();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let resp = mode(&s, r#"{"mode":"FT4"}"#).await;
+    status_is(&resp, StatusCode::CONFLICT);
+    assert!(rig.modes.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn mode_failures_and_missing_rig_are_reported() {
+    let (s, _) = state_with_rig(true);
+    status_is(&mode(&s, r#"{"mode":"FT8"}"#).await, StatusCode::BAD_GATEWAY);
+    let none = state();
+    status_is(&mode(&none, r#"{"mode":"FT8"}"#).await, StatusCode::SERVICE_UNAVAILABLE);
+}
+
+async fn rx(s: &AppState, body: &str) -> axum::response::Response {
+    let cookie = cookie_for(s);
+    call(&router(s), req(Method::POST, "/api/v1/commands/rx-frequency").cookie(&cookie).json(body)).await
+}
+
+#[tokio::test]
+async fn the_rx_frequency_is_handed_to_the_rig_within_the_audio_band() {
+    let (s, rig) = state_with_rig(false);
+    status_is(&rx(&s, r#"{"hz":1000}"#).await, StatusCode::OK);
+    assert_eq!(*rig.rx.lock().unwrap(), vec![1000]);
+    for hz in [0, 50, 3500, 99999] {
+        let resp = rx(&s, &format!(r#"{{"hz":{hz}}}"#)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+    }
+    assert_eq!(rig.rx.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn the_rx_frequency_may_change_while_transmitting() {
+    let (s, rig) = state_with_rig(false);
+    s.bus.events().send(Event::Status(StationStatus { transmitting: true, ..StationStatus::default() })).unwrap();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    status_is(&rx(&s, r#"{"hz":1200}"#).await, StatusCode::OK);
+    assert_eq!(*rig.rx.lock().unwrap(), vec![1200]);
+}
+
+#[tokio::test]
+async fn rx_failures_and_missing_rig_are_reported() {
+    let (s, _) = state_with_rig(true);
+    status_is(&rx(&s, r#"{"hz":1000}"#).await, StatusCode::BAD_GATEWAY);
+    status_is(&rx(&state(), r#"{"hz":1000}"#).await, StatusCode::SERVICE_UNAVAILABLE);
 }

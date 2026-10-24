@@ -1,0 +1,188 @@
+/* Stato di trasmissione: rosso lampeggiante = in onda, verde fisso = ascolto */
+
+/* Banda in uso: impossibile non vederla */
+.band-bar button[aria-current='true'] {
+  min-width: 3.2rem;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 0 0 2px var(--accent),
+    0 0 26px 2px var(--glow);
+  color: var(--accent-ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-strong);
+  opacity: 1;
+}
+
+.band-bar button:disabled:not([aria-current='true']) {
+  opacity: 0.75;
+}
+
+.band-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+.band-choice label {
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* Linguetta di stato a destra: verde fisso = ascolto, rosso lampeggiante = trasmissione in onda */
+.onair-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: 0.1rem var(--space-3);
+  border: var(--border-width) solid currentColor;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.onair-tab[data-state='rx'] {
+  background: rgb(63 214 110 / 0.14);
+  color: #4be37f;
+}
+
+.onair-tab[data-state='tx'] {
+  background: var(--stop);
+  border-color: rgb(255 255 255 / 0.7);
+  color: var(--stop-ink);
+  animation: tx-blink 0.9s steps(1, end) infinite;
+}
+
+.onair-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px 1px currentColor;
+}
+
+.onair-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: normal;
+}
+
+.onair-armed {
+  color: var(--warn);
+  letter-spacing: normal;
+}
+
+@keyframes tx-blink {
+  0%,
+  100% {
+    box-shadow: 0 0 14px 2px var(--stop);
+    filter: none;
+  }
+  50% {
+    box-shadow: none;
+    filter: brightness(0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onair-tab[data-state='tx'] {
+    animation: none;
+  }
+}
+
+.band-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.mode-switch {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.mode-switch button[aria-current='true'] {
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 22px 2px var(--glow);
+  color: var(--accent-ink);
+  font-weight: var(--weight-strong);
+  opacity: 1;
+}
+
+/* Barre di frequenza sopra la cascata: verde = Rx, rossa = Tx */
+.wf-stack {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wf-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wf-pad {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  pointer-events: auto;
+}
+
+.wf-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.4rem;
+  margin-left: -0.7rem;
+  pointer-events: auto;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.wf-marker-line {
+  position: absolute;
+  top: 1.1rem;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: currentColor;
+  box-shadow: 0 0 8px 1px currentColor;
+}
+
+.wf-marker-tag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 0.35rem;
+  border: 2px solid currentColor;
+  border-radius: 0.3rem;
+  background: rgb(0 0 0 / 0.45);
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.wf-marker--rx {
+  color: #3dff6a;
+}
+
+.wf-marker--tx {
+  color: #ff4040;
+}
+
+.wf-marker:focus-visible {
+  outline: none;
+}
+
+.wf-marker:focus-visible .wf-marker-tag {
+  box-shadow: 0 0 0 2px var(--accent);
+}

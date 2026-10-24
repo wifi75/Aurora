@@ -14,7 +14,7 @@ use auth::DeviceStore;
 use aurora_core::{Bus, Event, StationStatus};
 use axum::Router;
 use logbook::Logbook;
-use qso_engine::Automation;
+use qso_engine::{Automation, Rules};
 use rig_control::Rig;
 use tokio::sync::{broadcast::error::RecvError, watch};
 
@@ -43,6 +43,10 @@ pub struct AppState {
     pub station_info: Arc<serde_json::Value>,
     /// La radio comandabile (cambio banda), se disponibile.
     pub rig: Option<Arc<dyn Rig>>,
+    /// Salva le regole dell'automazione quando cambiano (per ritrovarle al riavvio).
+    /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
+    pub stats: Option<Arc<dyn Fn() -> serde_json::Value + Send + Sync>>,
+    pub rules_saver: Option<Arc<dyn Fn(&Rules) + Send + Sync>>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -82,7 +86,24 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, shared, shutdown: Arc::new(shutdown) }
+    }
+
+    pub fn with_stats_if(self, stats: Option<Arc<dyn Fn() -> serde_json::Value + Send + Sync>>) -> AppState {
+        match stats {
+            Some(s) => self.with_stats(s),
+            None => self,
+        }
+    }
+
+    pub fn with_stats(mut self, stats: Arc<dyn Fn() -> serde_json::Value + Send + Sync>) -> AppState {
+        self.stats = Some(stats);
+        self
+    }
+
+    pub fn with_rules_saver(mut self, saver: Arc<dyn Fn(&Rules) + Send + Sync>) -> AppState {
+        self.rules_saver = Some(saver);
+        self
     }
 
     pub fn with_rig(mut self, rig: Arc<dyn Rig>) -> AppState {

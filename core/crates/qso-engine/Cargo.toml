@@ -6,6 +6,9 @@ version.workspace = true
 authors.workspace = true
 publish = false
 
+[dev-dependencies]
+serde_json = { workspace = true }
+
 [dependencies]
 aurora-core = { path = "../aurora-core" }
 engine-jtdx = { path = "../engine-jtdx" }

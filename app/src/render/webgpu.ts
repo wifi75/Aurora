@@ -1,5 +1,5 @@
 import type { WaterfallBackend } from './backend';
-import { LUT_SIZE, NOTTE_RADIO_STOPS, buildLut } from './colormap';
+import { LUT_SIZE, JTDX_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
 import { WATERFALL_HEIGHT, WATERFALL_WIDTH } from './webgl2';
 
@@ -66,7 +66,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
       format: 'rgba8unorm',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
-    const lut = buildLut(NOTTE_RADIO_STOPS);
+    const lut = buildLut(JTDX_STOPS);
     device.queue.writeTexture({ texture: this.lutTexture }, lut.buffer as ArrayBuffer, { bytesPerRow: LUT_SIZE * 4 }, [LUT_SIZE, 1]);
 
     this.uniforms = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });

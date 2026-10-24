@@ -1,5 +1,5 @@
 import type { WaterfallBackend } from './backend';
-import { LUT_SIZE, NOTTE_RADIO_STOPS, buildLut } from './colormap';
+import { LUT_SIZE, JTDX_STOPS, buildLut } from './colormap';
 import { RowRing } from './ring';
 
 export const WATERFALL_WIDTH = 1024;
@@ -88,7 +88,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
     this.lut = gl.createTexture();
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.lut);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, LUT_SIZE, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, buildLut(NOTTE_RADIO_STOPS));
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, LUT_SIZE, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, buildLut(JTDX_STOPS));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

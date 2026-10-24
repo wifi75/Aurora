@@ -2,9 +2,10 @@
 //! quindi Aurora puo' cambiare frequenza senza togliere la radio a JTDX.
 
 pub mod bands;
+pub mod modes;
 pub mod omnirig;
 
-pub use omnirig::OmniRig;
+pub use omnirig::WindowsRig;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RigError(pub String);
@@ -21,4 +22,10 @@ impl std::error::Error for RigError {}
 /// asincrono le sposta su un thread dedicato.
 pub trait Rig: Send + Sync {
     fn set_frequency(&self, hz: u64) -> Result<(), RigError>;
+
+    /// Imposta la frequenza audio di ricezione di JTDX (Hz).
+    fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError>;
+
+    /// Cambia il modo di JTDX ("FT8" o "FT4").
+    fn set_mode(&self, mode: &str) -> Result<(), RigError>;
 }

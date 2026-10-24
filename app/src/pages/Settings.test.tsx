@@ -16,6 +16,7 @@ vi.mock('../api/client', () => ({
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   }),
 }));
+import { useBandFilter } from '../lib/bandFilter';
 import { Settings } from './Settings';
 
 beforeEach(() => {
@@ -35,12 +36,25 @@ describe('Settings', () => {
   it('has a separate tab for each kind of configuration and shows one at a time', () => {
     open();
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
-    expect(names).toEqual(['Colori', 'Finestre', 'Avvisi sonori', 'Trasmissione', 'Log esterni', 'Collegamenti']);
+    expect(names).toEqual(['Colori', 'Finestre', 'Bande', 'Avvisi sonori', 'Trasmissione', 'Log esterni', 'Collegamenti']);
     expect(screen.getByRole('tab', { name: 'Colori' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Colori');
     fireEvent.click(screen.getByRole('tab', { name: 'Finestre' }));
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Finestre');
     expect(screen.queryByLabelText('Nuovo DXCC')).not.toBeInTheDocument();
+  });
+
+  it('lets the user choose which bands the station page shows, with immediate effect', () => {
+    useBandFilter.getState().reset();
+    open();
+    fireEvent.click(screen.getByRole('tab', { name: 'Bande' }));
+    const box = screen.getByLabelText('160m');
+    expect(box).toBeChecked();
+    fireEvent.click(box);
+    expect(box).not.toBeChecked();
+    expect(useBandFilter.getState().bands).not.toContain('160m');
+    fireEvent.click(screen.getByRole('button', { name: /tutte le bande/i }));
+    expect(useBandFilter.getState().bands).toContain('160m');
   });
 
   it('shows the transmission state and says it is closed', async () => {

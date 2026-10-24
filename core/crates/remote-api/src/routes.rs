@@ -12,7 +12,6 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use aurora_core::DecodeTag;
 use qso_engine::{Mode, Rules};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -24,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(change_band, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -40,8 +39,11 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
+        .route("/api/v1/commands/mode", post(change_mode))
+        .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
+        .route("/api/v1/stats", get(stats))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)
@@ -328,6 +330,56 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
 }
 
 #[derive(Deserialize)]
+struct RxFrequencyBody {
+    hz: u32,
+}
+
+/// Sposta la frequenza di ricezione (barra verde). Non fa trasmettere, quindi vale anche in trasmissione.
+#[utoipa::path(post, path = "/api/v1/commands/rx-frequency", responses((status = 200, description = "Frequenza Rx impostata"), (status = 400, description = "Fuori dalla banda audio (100-3000 Hz)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn rx_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<RxFrequencyBody>) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    if !(100..=3000).contains(&body.hz) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
+    }
+    let hz = body.hz;
+    match tokio::task::spawn_blocking(move || rig.set_rx_frequency(hz)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "hz": hz }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio frequenza Rx fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct ModeBody {
+    mode: String,
+}
+
+/// Porta JTDX in FT8 o FT4 (preme il suo pulsante). Mai durante la trasmissione.
+#[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<ModeBody>) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    if rig_control::modes::button_id(&body.mode).is_none() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_mode"));
+    }
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    let mode = body.mode.trim().to_uppercase();
+    let shown = mode.clone();
+    match tokio::task::spawn_blocking(move || rig.set_mode(&mode)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "mode": shown }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio modo fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
 struct TxFrequencyBody {
     hz: u32,
 }
@@ -356,19 +408,6 @@ struct AutomationBody {
     accept_license_notice: bool,
 }
 
-const MAX_EXCLUDED_CALLS: usize = 200;
-
-/// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
-fn rules_are_valid(rules: &Rules) -> bool {
-    let tags_ok = !rules.reply_to.is_empty()
-        && rules.reply_to.iter().all(|t| matches!(t, DecodeTag::NewDxcc | DecodeTag::NewDxccBand | DecodeTag::NewZone | DecodeTag::NewGrid));
-    let calls_ok = rules.excluded_calls.len() <= MAX_EXCLUDED_CALLS
-        && rules.excluded_calls.iter().all(|c| {
-            (3..=13).contains(&c.trim().len()) && c.trim().chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/')
-        });
-    tags_ok && calls_ok && (-30..=20).contains(&rules.min_snr) && (1..=10).contains(&rules.max_attempts_per_call)
-}
-
 /// Accendere e spegnere: dal telefono si accende solo in prova a vuoto. Il modo reale si sceglie dal PC.
 #[utoipa::path(put, path = "/api/v1/automation", responses((status = 200, description = "Applicato; stato aggiornato"), (status = 400, description = "Regole non valide o avviso non confermato"), (status = 403, description = "Modo reale non consentito (local_only, tx_disabled)"), (status = 404, description = "Automazione non disponibile")))]
 async fn automation_put(
@@ -381,7 +420,7 @@ async fn automation_put(
     let automation = state.automation.as_ref().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "automation_unavailable"))?;
     let from_pc = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
     if let Some(rules) = &body.rules
-        && !rules_are_valid(rules)
+        && !rules.is_valid()
     {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_rules"));
     }
@@ -402,6 +441,9 @@ async fn automation_put(
     }
     // tutto convalidato: ora si applica
     if let Some(rules) = body.rules {
+        if let Some(save) = &state.rules_saver {
+            save(&rules);
+        }
         automation.set_rules(rules);
     }
     if let Some(mode) = body.mode {
@@ -416,6 +458,16 @@ async fn automation_put(
 #[utoipa::path(get, path = "/api/v1/station-info", responses((status = 200, description = "Come e' avviata la stazione (sola lettura)")))]
 async fn station_info(State(state): State<AppState>, _: Authed) -> Json<Value> {
     Json((*state.station_info).clone())
+}
+
+#[utoipa::path(get, path = "/api/v1/stats", responses((status = 200, description = "Avanzamento nei premi e paesi mancanti"), (status = 404, description = "Log non disponibile (stats_unavailable)")))]
+async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let compute = state.stats.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "stats_unavailable"))?;
+    // legge e analizza il log: fuori dal thread asincrono
+    tokio::task::spawn_blocking(move || compute())
+        .await
+        .map(Json)
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
 }
 
 async fn openapi() -> Json<Value> {

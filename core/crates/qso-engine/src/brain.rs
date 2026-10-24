@@ -40,6 +40,23 @@ impl Default for Rules {
     }
 }
 
+impl Rules {
+    /// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
+    pub fn is_valid(&self) -> bool {
+        let tags_ok = !self.reply_to.is_empty()
+            && self
+                .reply_to
+                .iter()
+                .all(|t| matches!(t, DecodeTag::NewDxcc | DecodeTag::NewDxccBand | DecodeTag::NewZone | DecodeTag::NewGrid));
+        let calls_ok = self.excluded_calls.len() <= 200
+            && self
+                .excluded_calls
+                .iter()
+                .all(|c| (3..=13).contains(&c.trim().len()) && c.trim().chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/'));
+        tags_ok && calls_ok && (-30..=20).contains(&self.min_snr) && (1..=10).contains(&self.max_attempts_per_call)
+    }
+}
+
 /// Salvaguardie: si impostano sul PC, l'API non le cambia.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Limits {

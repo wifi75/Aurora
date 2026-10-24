@@ -11,6 +11,17 @@ describe('BandBar', () => {
     expect(screen.getByRole('button', { name: '20' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('shows only the chosen bands', () => {
+    render(<BandBar dialHz={14_074_000} bands={['40m', '20m']} />);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['40', '20']);
+  });
+
+  it('marks the current band so it can be told at a glance', () => {
+    render(<BandBar dialHz={14_074_000} />);
+    expect(screen.getByRole('button', { name: '20' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: '40' })).not.toHaveAttribute('aria-current');
+  });
+
   it('lights nothing outside the bands', () => {
     render(<BandBar dialHz={0} />);
     expect(screen.getAllByRole('button').every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true);

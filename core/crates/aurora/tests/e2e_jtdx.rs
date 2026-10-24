@@ -202,6 +202,96 @@ async fn e2e_decode_carries_country_and_news_when_data_files_are_given() {
 }
 
 #[tokio::test]
+async fn automation_rules_are_loaded_at_start_and_saved_when_changed() {
+    let data = temp_dir("rules");
+    std::fs::write(
+        data.join("automation-rules.json"),
+        r#"{"reply_to":["new_dxcc"],"min_snr":-11,"excluded_calls":["AT1AA"],"max_attempts_per_call":2}"#,
+    )
+    .unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: data.clone(),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (_, body) = http(server.addr, "GET", "/api/v1/automation", Some(&cookie), None).await;
+    assert!(body.contains("\"min_snr\":-11") && body.contains("AT1AA"), "{body}");
+    let change = r#"{"rules":{"reply_to":["new_zone"],"min_snr":-7,"excluded_calls":[],"max_attempts_per_call":3}}"#;
+    let (code, _) = http(server.addr, "PUT", "/api/v1/automation", Some(&cookie), Some(change)).await;
+    assert_eq!(code, 200);
+    let saved = std::fs::read_to_string(data.join("automation-rules.json")).unwrap();
+    assert!(saved.contains("\"min_snr\":-7") && saved.contains("new_zone"), "{saved}");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn an_invalid_rules_file_falls_back_to_the_defaults() {
+    let data = temp_dir("rules-bad");
+    std::fs::write(data.join("automation-rules.json"), r#"{"reply_to":["cq"],"min_snr":-11,"excluded_calls":[],"max_attempts_per_call":2}"#).unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: data,
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (_, body) = http(server.addr, "GET", "/api/v1/automation", Some(&cookie), None).await;
+    assert!(body.contains("\"min_snr\":-18"), "{body}");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn e2e_stats_come_from_the_log_and_list_missing_countries() {
+    let dir = temp_dir("stats");
+    let (cty, adif) = (dir.join("cty.dat"), dir.join("log.adi"));
+    std::fs::write(&cty, CTY).unwrap();
+    std::fs::write(&adif, "<CALL:5>AA9ZZ<BAND:3>15m<GRIDSQUARE:4>FN42<EOR>
+").unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: temp_dir("stats-data"),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        cty_path: Some(cty),
+        worked_adif: Some(adif.clone()),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (code, body) = http(server.addr, "GET", "/api/v1/stats", Some(&cookie), None).await;
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains("\"dxcc_worked\":1") && body.contains("Lemuria"), "{body}");
+    // un QSO nuovo nel file si vede alla richiesta successiva, senza riavvio
+    std::fs::write(&adif, "<CALL:5>AA9ZZ<BAND:3>15m<GRIDSQUARE:4>FN42<EOR>
+<CALL:5>LM1XY<BAND:3>20m<EOR>
+").unwrap();
+    let (_, again) = http(server.addr, "GET", "/api/v1/stats", Some(&cookie), None).await;
+    assert!(again.contains("\"dxcc_worked\":2"), "{again}");
+    drop(tx);
+}
+
+#[tokio::test]
 async fn missing_data_files_do_not_stop_aurora() {
     let (tx, rx) = oneshot::channel::<()>();
     let config = Config {

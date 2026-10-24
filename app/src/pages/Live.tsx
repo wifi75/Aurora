@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getStationInfo, postBand, postReply } from '../api/client';
+import { getStationInfo, postBand, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
+import { ModeSwitch } from '../components/ModeSwitch';
+import { TxBanner } from '../components/TxBanner';
 import { Dock } from '../components/Dock';
+import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { TxPanel } from '../components/TxPanel';
 import { DecodeList } from '../components/DecodeList';
 import { FrequencyRuler } from '../components/FrequencyRuler';
@@ -19,6 +22,8 @@ import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { clearHeight, readLayout, resizePanel, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { readSize, saveSize, type WaterfallSize } from '../lib/waterfallSize';
+import { useBandFilter, visibleBands } from '../lib/bandFilter';
+import { bandOf } from '../lib/format';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
 
@@ -29,6 +34,7 @@ export function Live() {
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const connection = useStation((s) => s.connection);
+  const chosenBands = useBandFilter((s) => s.bands);
   const [note, setNote] = useState('');
   const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
 
@@ -85,7 +91,17 @@ export function Live() {
       case 'waterfall':
         return (
           <>
-            <Waterfall register={registerSpectrum} />
+            <div className="wf-stack">
+              <Waterfall register={registerSpectrum} />
+              <FrequencyMarkers
+                fMinHz={F_MIN_HZ}
+                fMaxHz={F_MAX_HZ}
+                rxHz={status?.rx_df}
+                txHz={status?.tx_df}
+                onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
+                onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
+              />
+            </div>
             <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
           </>
         );
@@ -109,6 +125,24 @@ export function Live() {
     });
     return () => stream.close();
   }, []);
+
+  const setFrequency = async (which: string, hz: number, send: (hz: number) => Promise<void>) => {
+    try {
+      await send(hz);
+      setNote(`${which} impostato a ${hz} Hz.`);
+    } catch (error) {
+      setNote(replyErrorMessage(error));
+    }
+  };
+
+  const pickMode = async (mode: string) => {
+    try {
+      await postMode(mode);
+      setNote(`Modo portato su ${mode}.`);
+    } catch (error) {
+      setNote(replyErrorMessage(error));
+    }
+  };
 
   const pickBand = async (band: string) => {
     try {
@@ -134,16 +168,25 @@ export function Live() {
       <div className="live-top">
         <StatusBar status={status} connection={connection} />
         <div className="live-actions">
+          <TxBanner status={status} />
           <AlertSwitch value={alerts} onChange={changeAlerts} />
           <WaterfallSizeSwitch value={size} onChange={changeSize} />
           <StopButton variant="compact" />
         </div>
       </div>
+      <div className="band-row">
+        <ModeSwitch
+          mode={status?.mode ?? ''}
+          locked={status?.transmitting ?? false}
+          onPick={info.data?.rig_control ? (mode) => void pickMode(mode) : undefined}
+        />
       <BandBar
+        bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
         dialHz={status?.dial_hz ?? 0}
         locked={status?.transmitting ?? false}
         onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
       />
+      </div>
       <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
       <p className="live-note" role="status" aria-live="polite">
         {note}

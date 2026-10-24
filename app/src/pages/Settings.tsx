@@ -4,10 +4,12 @@ import { getStationInfo, type StationInfo } from '../api/client';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { readAlerts, saveAlerts, type AlertPrefs } from '../lib/alerts';
 import { COLOR_KEYS, COLOR_LABELS, applyColors, defaultColors, readColors, saveColors, type ColorKey, type TagColors } from '../lib/colors';
+import { useBandFilter } from '../lib/bandFilter';
+import { BAND_NAMES } from '../lib/format';
 import { defaultLayout, saveLayout } from '../lib/layout';
 import { browserStorage } from '../lib/theme';
 
-const TABS = ['Colori', 'Finestre', 'Avvisi sonori', 'Trasmissione', 'Log esterni', 'Collegamenti'] as const;
+const TABS = ['Colori', 'Finestre', 'Bande', 'Avvisi sonori', 'Trasmissione', 'Log esterni', 'Collegamenti'] as const;
 type Tab = (typeof TABS)[number];
 
 /** Impostazioni di questo dispositivo e stato della stazione, una scheda per ogni funzione. */
@@ -36,6 +38,7 @@ export function Settings() {
         <h2 className="panel-title">{tab}</h2>
         {tab === 'Colori' && <ColorsTab />}
         {tab === 'Finestre' && <WindowsTab />}
+        {tab === 'Bande' && <BandsTab />}
         {tab === 'Avvisi sonori' && <AlertsTab />}
         {tab === 'Trasmissione' && <InfoTab render={(i) => <TransmissionInfo info={i} />} />}
         {tab === 'Log esterni' && <InfoTab render={(i) => <ExportInfo info={i} />} />}
@@ -94,6 +97,27 @@ function WindowsTab() {
       <p className="live-note" role="status">
         {note}
       </p>
+    </>
+  );
+}
+
+function BandsTab() {
+  const bands = useBandFilter((s) => s.bands);
+  const { toggle, reset } = useBandFilter.getState();
+  return (
+    <>
+      <p className="muted settings-hint">Scegli quali bande compaiono nella barra della stazione. La banda in uso si vede sempre.</p>
+      <div className="band-choice">
+        {BAND_NAMES.map((name) => (
+          <label key={name} className={`glass${bands.includes(name) ? ' glass--on' : ''}`}>
+            <input type="checkbox" checked={bands.includes(name)} onChange={() => toggle(name)} aria-label={name} />
+            <span>{name}</span>
+          </label>
+        ))}
+      </div>
+      <button type="button" className="glass" onClick={reset}>
+        Tutte le bande
+      </button>
     </>
   );
 }

@@ -163,6 +163,23 @@ async fn rules_can_be_changed_and_are_validated() {
 }
 
 #[tokio::test]
+async fn saved_rules_are_handed_to_the_saver_only_when_valid() {
+    let (s, _a) = state_with_automation(true);
+    let saved = Arc::new(std::sync::Mutex::new(Vec::<qso_engine::Rules>::new()));
+    let sink = Arc::clone(&saved);
+    let s = s.with_rules_saver(Arc::new(move |r: &qso_engine::Rules| sink.lock().unwrap().push(r.clone())));
+    let cookie = cookie_for(&s);
+    let app = build_router(s);
+    let good = r#"{"rules":{"reply_to":["new_dxcc"],"min_snr":-9,"excluded_calls":[],"max_attempts_per_call":2}}"#;
+    status_is(&call(&app, req(Method::PUT, "/api/v1/automation").cookie(&cookie).json(good)).await, StatusCode::OK);
+    let bad = r#"{"rules":{"reply_to":["cq"],"min_snr":-9,"excluded_calls":[],"max_attempts_per_call":2}}"#;
+    status_is(&call(&app, req(Method::PUT, "/api/v1/automation").cookie(&cookie).json(bad)).await, StatusCode::BAD_REQUEST);
+    let saved = saved.lock().unwrap();
+    assert_eq!(saved.len(), 1);
+    assert_eq!(saved[0].min_snr, -9);
+}
+
+#[tokio::test]
 async fn a_bad_request_changes_nothing() {
     let (s, a) = state_with_automation(true);
     let cookie = cookie_for(&s);

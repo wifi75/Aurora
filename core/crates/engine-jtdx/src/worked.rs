@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use dxcc::DxccDb;
+use serde::Serialize;
 
 /// Che cosa c'e' di nuovo in una stazione rispetto ai QSO gia' fatti, dal piu' raro al meno raro
 /// (come l'ordine dei colori di JTDX).
@@ -50,6 +51,30 @@ pub struct WorkedLog {
     grid_bands: HashSet<(String, String)>,
     prefixes: HashSet<String>,
     prefix_bands: HashSet<(String, String)>,
+    band_qsos: HashMap<String, usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct BandStats {
+    pub band: String,
+    pub dxcc: usize,
+    pub qsos: usize,
+}
+
+/// Avanzamento nei premi, calcolato dai QSO gia' fatti.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Stats {
+    pub qsos: usize,
+    pub dxcc_worked: usize,
+    pub dxcc_total: usize,
+    pub cq_zones_worked: usize,
+    pub cq_zones_total: usize,
+    pub itu_zones_worked: usize,
+    pub itu_zones_total: usize,
+    pub grids: usize,
+    pub prefixes: usize,
+    pub calls: usize,
+    pub bands: Vec<BandStats>,
 }
 
 fn grid4(grid: &str) -> Option<String> {
@@ -112,6 +137,7 @@ impl WorkedLog {
             self.prefixes.insert(px);
         }
         self.any_call.insert(call.clone());
+        *self.band_qsos.entry(band.clone()).or_insert(0) += 1;
         self.calls.insert((band, call));
         self.qsos += 1;
     }
@@ -164,6 +190,40 @@ impl WorkedLog {
         Novelty::Worked
     }
 
+    /// Avanzamento nei premi DXCC, WAZ, ITU, griglie e prefissi, con il dettaglio per banda.
+    pub fn stats(&self, db: &DxccDb) -> Stats {
+        let mut bands: Vec<BandStats> = self
+            .band_qsos
+            .iter()
+            .map(|(band, qsos)| BandStats {
+                band: band.clone(),
+                dxcc: self.entity_bands.iter().filter(|(_, b)| b == band).count(),
+                qsos: *qsos,
+            })
+            .collect();
+        bands.sort_by_key(|b| band_order(&b.band));
+        Stats {
+            qsos: self.qsos,
+            dxcc_worked: self.entities.len(),
+            dxcc_total: db.len(),
+            cq_zones_worked: self.zones.len(),
+            cq_zones_total: 40,
+            itu_zones_worked: self.itu.len(),
+            itu_zones_total: 90,
+            grids: self.grids.len(),
+            prefixes: self.prefixes.len(),
+            calls: self.any_call.len(),
+            bands,
+        }
+    }
+
+    /// Paesi di `cty.dat` mai collegati, in ordine alfabetico.
+    pub fn missing_dxcc(&self, db: &DxccDb) -> Vec<String> {
+        let mut names: Vec<String> = (0..db.len()).filter(|i| !self.entities.contains(i)).map(|i| db.entity(i).name.clone()).collect();
+        names.sort();
+        names
+    }
+
     /// QSO completi letti o aggiunti.
     pub fn len(&self) -> usize {
         self.qsos
@@ -172,6 +232,12 @@ impl WorkedLog {
     pub fn is_empty(&self) -> bool {
         self.qsos == 0
     }
+}
+
+/// Ordine delle bande dalla piu' bassa (altre bande in fondo, per nome).
+fn band_order(band: &str) -> (usize, String) {
+    const ORDER: [&str; 12] = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m"];
+    (ORDER.iter().position(|b| *b == band).unwrap_or(ORDER.len()), band.to_string())
 }
 
 /// Record ADIF completi (terminati da `<EOR>`), con i nomi dei campi in maiuscolo.
@@ -327,6 +393,38 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         assert_eq!(log.novelty("AT3EF", Some("FN43"), "20m", &db), Novelty::NewGridBand);
         // stazione fatta solo su 20m, vista ora su 15m, con griglia gia' fatta su 15m
         assert_eq!(log.novelty("AT3AB", Some("FN43"), "15m", &db), Novelty::NewCallBand);
+    }
+
+    #[test]
+    fn stats_count_what_was_worked_per_award() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        log.add_qso("AT3AB", "FN42", "20m", &db);
+        log.add_qso("AT5EF", "FN43", "15m", &db);
+        log.add_qso("LM1XY", "KK00", "20m", &db);
+        log.add_qso("LM1XY", "KK00", "20m", &db);
+        let s = log.stats(&db);
+        assert_eq!(s.qsos, 4);
+        assert_eq!((s.dxcc_worked, s.dxcc_total), (2, 2));
+        assert_eq!(s.cq_zones_worked, 3, "zone 14, 15 e 5");
+        assert_eq!(s.cq_zones_total, 40);
+        assert_eq!(s.itu_zones_total, 90);
+        assert_eq!(s.grids, 3);
+        assert_eq!(s.prefixes, 3, "AT3, AT5, LM1");
+        assert_eq!(s.calls, 3, "LM1XY conta una volta sola");
+        let b20 = s.bands.iter().find(|b| b.band == "20m").unwrap();
+        assert_eq!((b20.dxcc, b20.qsos), (2, 3));
+        let b15 = s.bands.iter().find(|b| b.band == "15m").unwrap();
+        assert_eq!((b15.dxcc, b15.qsos), (1, 1));
+    }
+
+    #[test]
+    fn missing_dxcc_lists_the_countries_never_worked() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        assert_eq!(log.missing_dxcc(&db), vec!["Atlantis".to_string(), "Lemuria".to_string()]);
+        log.add_qso("LM1XY", "KK00", "20m", &db);
+        assert_eq!(log.missing_dxcc(&db), vec!["Atlantis".to_string()]);
     }
 
     #[test]

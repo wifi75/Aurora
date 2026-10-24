@@ -107,3 +107,11 @@ export async function postTxFrequency(hz: number): Promise<void> {
 export async function postBand(band: string): Promise<void> {
   await request('/commands/band', jsonInit({ band }));
 }
+
+export async function postMode(mode: string): Promise<void> {
+  await request('/commands/mode', jsonInit({ mode }));
+}
+
+export async function postRxFrequency(hz: number): Promise<void> {
+  await request('/commands/rx-frequency', jsonInit({ hz }));
+}

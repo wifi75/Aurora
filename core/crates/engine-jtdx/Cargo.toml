@@ -11,5 +11,6 @@ aurora-core = { path = "../aurora-core" }
 udp-bridge = { path = "../udp-bridge" }
 udp-hub = { path = "../udp-hub" }
 dxcc = { path = "../dxcc" }
+serde = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
