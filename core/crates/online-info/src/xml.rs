@@ -95,7 +95,7 @@ pub fn element_text(xml: &str, name: &str) -> Option<String> {
 }
 
 /// Gli elementi `<name attr...>testo</name>` con i loro attributi e il testo.
-pub fn elements<'a>(xml: &'a str, name: &str) -> Vec<(HashMap<String, String>, String)> {
+pub fn elements(xml: &str, name: &str) -> Vec<(HashMap<String, String>, String)> {
     let close = format!("</{name}>");
     let mut out = Vec::new();
     let mut rest = xml;

@@ -283,8 +283,7 @@ mod tests {
         assert!(bad(&|c| c.servers = (0..9).map(|i| format!("s{i}.example.org")).collect()));
         assert!(bad(&|c| c.interval_secs = 5));
         assert!(bad(&|c| c.warn_ms = 1));
-        let mut ok = Config::default();
-        ok.servers = vec!["192.168.1.1".into(), "time.example.org:1230".into()];
+        let ok = Config { servers: vec!["192.168.1.1".into(), "time.example.org:1230".into()], ..Config::default() };
         assert!(ok.validate().is_ok());
     }
 
@@ -296,8 +295,7 @@ mod tests {
             _ => Err(format!("{server}: nessuna risposta")),
         });
         let service = ClockService::open(&temp("best"), query, Arc::new(FakeSetter { calls: Mutex::default(), fail: false }));
-        let mut c = Config::default();
-        c.servers = vec!["lento".into(), "rotto".into(), "veloce".into()];
+        let c = Config { servers: vec!["lento".into(), "rotto".into(), "veloce".into()], ..Config::default() };
         service.set_config(c).unwrap();
         let m = service.check_now();
         assert_eq!(m.server.as_deref(), Some("veloce"));

@@ -35,7 +35,7 @@ async fn shows_the_defaults_switched_off_with_no_spots() {
     let s = cluster_state("defaults");
     let v = body_json(send(&s, Method::GET, "/api/v1/dx-cluster", None).await).await;
     assert_eq!(v["config"]["enabled"], false);
-    assert!(v["config"]["servers"].as_array().unwrap().len() >= 1);
+    assert!(!v["config"]["servers"].as_array().unwrap().is_empty());
     assert_eq!(v["spots"].as_array().unwrap().len(), 0);
     assert_eq!(v["servers"].as_array().unwrap().len(), 0);
 }
