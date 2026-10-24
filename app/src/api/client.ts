@@ -223,6 +223,23 @@ export async function putOutputLevel(attenuationDb: number): Promise<void> {
   await request('/output-level', { ...jsonInit({ attenuation_db: attenuationDb }), method: 'PUT' });
 }
 
+/** Il volume di registrazione di Windows dell'ingresso audio e la regolazione automatica (AUTO). */
+export interface InputLevelState {
+  device: string;
+  volume_pct: number;
+  auto: boolean;
+}
+
+export async function getInputLevel(): Promise<InputLevelState> {
+  return (await (await request('/input-level')).json()) as InputLevelState;
+}
+
+/** Con un volume scelto a mano AUTO si spegne, salvo che lo stesso invio lo riaccenda. */
+export async function putInputLevel(change: { volume_pct?: number; auto?: boolean }): Promise<InputLevelState> {
+  const body = (await (await request('/input-level', { ...jsonInit(change), method: 'PUT' })).json()) as { status: InputLevelState };
+  return body.status;
+}
+
 export interface AwardStats {
   qsos: number;
   dxcc_worked: number;

@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -43,6 +43,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
         .route("/api/v1/output-level", get(output_level_get).put(output_level_put))
+        .route("/api/v1/input-level", get(input_level_get).put(input_level_put))
         .route("/api/v1/controls", get(controls_get))
         .route("/api/v1/commands/control", post(control_press))
         .route("/api/v1/commands/tx-message", post(tx_message))
@@ -446,6 +447,58 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+fn input_level_service(state: &AppState) -> Result<std::sync::Arc<input_level::InputLevelService>, ApiError> {
+    state.input_level.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "input_level_unavailable"))
+}
+
+/// Il volume di registrazione di Windows dell'ingresso audio e se la regolazione automatica (AUTO) e' accesa.
+#[utoipa::path(get, path = "/api/v1/input-level", responses((status = 200, description = "Dispositivo, volume 0-100 e AUTO"), (status = 404, description = "Nessun ingresso audio regolabile (input_level_unavailable)"), (status = 502, description = "Il dispositivo non risponde (input_level_device)")))]
+async fn input_level_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = input_level_service(&state)?;
+    match tokio::task::spawn_blocking(move || service.status()).await {
+        Ok(Ok(status)) => Ok(Json(json!(status))),
+        Ok(Err(e)) => {
+            tracing::warn!("lettura del livello di ingresso fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "input_level_device"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "input_level_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct InputLevelBody {
+    volume_pct: Option<f64>,
+    auto: Option<bool>,
+}
+
+/// Cambia il volume di registrazione (0-100) e/o la regolazione automatica. Con un volume scelto a mano AUTO si spegne, salvo che lo stesso corpo lo riaccenda.
+#[utoipa::path(put, path = "/api/v1/input-level", responses((status = 200, description = "Impostato"), (status = 400, description = "Volume fuori scala o corpo vuoto (bad_input_level)"), (status = 404, description = "Nessun ingresso audio regolabile (input_level_unavailable)"), (status = 502, description = "Il dispositivo non risponde (input_level_device)")))]
+async fn input_level_put(State(state): State<AppState>, _: Authed, Json(body): Json<InputLevelBody>) -> Result<Json<Value>, ApiError> {
+    let service = input_level_service(&state)?;
+    if body.volume_pct.is_none() && body.auto.is_none() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_input_level"));
+    }
+    let result = tokio::task::spawn_blocking(move || {
+        if let Some(pct) = body.volume_pct {
+            service.set_volume_pct(pct)?;
+        }
+        if let Some(auto) = body.auto {
+            service.set_auto(auto);
+        }
+        service.status()
+    })
+    .await;
+    match result {
+        Ok(Ok(status)) => Ok(Json(json!({ "ok": true, "status": status }))),
+        Ok(Err(input_level::InputLevelError::BadValue)) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_input_level")),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio del livello di ingresso fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "input_level_device"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "input_level_task")),
     }
 }
 

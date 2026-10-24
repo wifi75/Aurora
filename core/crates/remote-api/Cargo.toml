@@ -18,6 +18,7 @@ qso-engine = { path = "../qso-engine" }
 rig-control = { path = "../rig-control" }
 wishlist = { path = "../wishlist" }
 updater = { path = "../updater" }
+input-level = { path = "../input-level" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

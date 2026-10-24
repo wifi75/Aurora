@@ -3,7 +3,7 @@ import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-librar
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ ApiError: class ApiError extends Error {}, getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn(), getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined), postTxMessage: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../api/client', () => ({ ApiError: class ApiError extends Error {}, getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn(), getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), getInputLevel: vi.fn().mockRejectedValue(new Error('sin ingresso')), putInputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined), postTxMessage: vi.fn().mockResolvedValue(undefined) }));
 import { getControls, postCq, postFreeText, postTxFrequency, postTxMessage } from '../api/client';
 import { useEngineTx } from '../state/engineTx';
 import type { StationStatus } from '../api/schemas';

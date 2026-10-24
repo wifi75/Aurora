@@ -567,6 +567,26 @@ pub async fn run(
     let wishlist = wishlist::WishlistService::open(&config.data_dir.join("wishlist.json"));
     let updates = updater::UpdateService::open(&config.data_dir.join("update.json"), env!("CARGO_PKG_VERSION"));
     let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
+    // il livello dell'ingresso audio si regola sullo stesso dispositivo da cui viene la cascata
+    let input_level = config.audio_device.as_deref().and_then(|hint| match audio_spectrum::InputEndpoint::find(hint) {
+        Ok(endpoint) => {
+            let service = input_level::InputLevelService::open(Arc::new(endpoint), &config.data_dir.join("input-level.json"));
+            match service.status() {
+                Ok(_) => Some(service),
+                Err(e) => {
+                    tracing::warn!("livello dell'ingresso audio non regolabile: {e}");
+                    None
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!("livello dell'ingresso audio non regolabile: {e}");
+            None
+        }
+    });
+    if let Some(service) = &input_level {
+        service.spawn_auto(bus.subscribe_events());
+    }
     if let Some((db, _)) = enrichment.as_ref() {
         let db = Arc::clone(db);
         cluster.set_enricher(Arc::new(move |call: &str| {
@@ -586,6 +606,7 @@ pub async fn run(
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
+        .with_input_level_if(input_level)
         .with_updates(Arc::clone(&updates))
         .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {
             let db = Arc::clone(db);
