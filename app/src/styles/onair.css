@@ -2096,7 +2096,14 @@
   padding: 0.2rem 0.5rem;
 }
 
-/* Orologio UTC accanto alla barra del periodo: stessa grafica e stessa misura della barra (e' la sua stessa classe) */
+/* Orologio UTC accanto alla barra del periodo: stessa forma e altezza della barra (e' la sua stessa classe), ma stretto
+   quanto basta per le cifre e con lo sfondo blu notte per distinguerlo */
 .period--clock {
   display: block;
+  flex: 0 0 auto;
+  width: 5.6rem;
+  min-width: 0;
+  max-width: none;
+  background: #1c2b4a;
+  border-color: #4f78b5;
 }
