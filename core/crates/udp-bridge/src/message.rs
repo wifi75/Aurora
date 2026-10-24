@@ -13,6 +13,10 @@ pub const FREE_TEXT: u32 = 9;
 pub const WSPR_DECODE: u32 = 10;
 pub const LOCATION: u32 = 11;
 pub const LOGGED_ADIF: u32 = 12;
+/// Solo JTDX: frequenza audio di trasmissione.
+pub const SET_TX_FREQ: u32 = 50;
+/// Solo JTDX: come il pulsante "CQ". Provato dal vivo: con il bool a `true` JTDX abilita Tx e trasmette il CQ.
+pub const TRIGGER_CQ: u32 = 51;
 
 /// Un datagramma decodificato: numero di schema e contenuto.
 #[derive(Debug, Clone, PartialEq)]
@@ -250,6 +254,21 @@ pub fn encode_reply(id: &str, schema: u32, decode: &Decode, modifiers: u8) -> Ve
     w.utf8(decode.message.as_deref());
     w.bool(decode.low_confidence);
     w.u8(modifiers);
+    w.into_bytes()
+}
+
+/// Imposta la frequenza audio di trasmissione (Hz); non fa trasmettere.
+pub fn encode_set_tx_freq(id: &str, schema: u32, hz: i32) -> Vec<u8> {
+    let mut w = command_header(SET_TX_FREQ, schema, id);
+    w.i32(hz);
+    w.into_bytes()
+}
+
+/// Come il pulsante CQ di JTDX (con `modifier` per esempio "DX"); fa trasmettere.
+pub fn encode_trigger_cq(id: &str, schema: u32, modifier: &str, flag: bool) -> Vec<u8> {
+    let mut w = command_header(TRIGGER_CQ, schema, id);
+    w.utf8(Some(modifier));
+    w.bool(flag);
     w.into_bytes()
 }
 

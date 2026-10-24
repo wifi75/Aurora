@@ -11,19 +11,19 @@ describe('layout', () => {
   it('starts like JTDX: all the stations on the left with the waterfall under them', () => {
     const l = defaultLayout();
     expect(l.left).toEqual(['all', 'waterfall']);
-    expect(l.right).toEqual(['station', 'cq']);
+    expect(l.right).toEqual(['station', 'tx', 'cq']);
   });
 
   it('moves a panel to another zone at a position, keeping every panel exactly once', () => {
     const l = movePanel(defaultLayout(), 'cq', 'left', 0);
     expect(l.left).toEqual(['cq', 'all', 'waterfall']);
-    expect(l.right).toEqual(['station']);
+    expect(l.right).toEqual(['station', 'tx']);
   });
 
   it('reorders inside the same zone and clamps the position', () => {
-    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['cq', 'station']);
-    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['cq', 'station']);
-    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'station', 'cq']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['tx', 'cq', 'station']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['tx', 'cq', 'station']);
+    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'station', 'tx', 'cq']);
   });
 
   it('puts the waterfall below everything else', () => {
@@ -33,7 +33,7 @@ describe('layout', () => {
 
   it('lets a zone stay empty', () => {
     let l = defaultLayout();
-    for (const id of ['station', 'cq'] as const) l = movePanel(l, id, 'left', 0);
+    for (const id of ['station', 'tx', 'cq'] as const) l = movePanel(l, id, 'left', 0);
     expect(l.right).toEqual([]);
   });
 
@@ -57,7 +57,7 @@ describe('layout', () => {
     expect(readLayout(store)).toEqual(l);
     expect(readLayout(memory({ 'aurora-layout': 'non json' }))).toEqual(defaultLayout());
     expect(readLayout(memory({ 'aurora-layout': '{"left":["waterfall"],"right":["station"],"heights":{},"split":0.5}' }))).toEqual(defaultLayout());
-    expect(readLayout(memory({ 'aurora-layout': '{"left":["waterfall","waterfall"],"right":["station","cq","all"],"heights":{},"split":0.5}' }))).toEqual(defaultLayout());
+    expect(readLayout(memory({ 'aurora-layout': '{"left":["waterfall","waterfall"],"right":["station","tx","cq","all"],"heights":{},"split":0.5}' }))).toEqual(defaultLayout());
     expect(readLayout(broken)).toEqual(defaultLayout());
     expect(() => saveLayout(broken, l)).not.toThrow();
     expect(readLayout(null)).toEqual(defaultLayout());

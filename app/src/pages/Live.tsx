@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { postReply } from '../api/client';
+import { getStationInfo, postReply } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { Dock } from '../components/Dock';
+import { TxPanel } from '../components/TxPanel';
 import { DecodeList } from '../components/DecodeList';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { StationPanel } from '../components/StationPanel';
@@ -63,6 +65,7 @@ export function Live() {
     });
   }, []);
 
+  const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
   const changeLayout = (next: Layout) => {
     saveLayout(browserStorage(), next);
@@ -76,7 +79,7 @@ export function Live() {
     changeLayout(next === 'small' ? resizePanel(layout, 'waterfall', 160) : clearHeight(layout, 'waterfall'));
   };
 
-  const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', cq: 'CQ e novità', all: 'Attività di banda' };
+  const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', tx: 'Trasmissione', cq: 'CQ e novità', all: 'Attività di banda' };
   const renderPanel = (id: PanelId) => {
     switch (id) {
       case 'waterfall':
@@ -88,6 +91,8 @@ export function Live() {
         );
       case 'station':
         return <StationPanel status={status} />;
+      case 'tx':
+        return <TxPanel txAllowed={info.data?.tx_allowed ?? false} />;
       case 'cq':
         return <DecodeList decodes={cqDecodes(decodes)} myGrid={status?.de_grid} onReply={onReply} emptyText="Nessun CQ per ora" />;
       case 'all':

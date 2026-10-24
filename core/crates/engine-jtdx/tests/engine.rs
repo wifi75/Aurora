@@ -10,7 +10,7 @@ use std::{
 use aurora_core::{Bus, Command, DecodeTag, Engine, EngineIo, Event};
 use engine_jtdx::{Clock, JtdxConfig, JtdxEngine};
 use tokio::{net::UdpSocket, sync::broadcast, time::timeout};
-use udp_bridge::{decode, encode_halt_tx, encode_replay, encode_reply, wire::Writer, Message, MAGIC};
+use udp_bridge::{decode, encode_free_text, encode_halt_tx, encode_replay, encode_reply, encode_set_tx_freq, encode_trigger_cq, wire::Writer, Message, MAGIC};
 use udp_hub::{Hub, HubConfig};
 
 const REPLY: u32 = 4;
@@ -111,6 +111,49 @@ async fn halt_command_announces_tx_halted_even_before_jtdx_is_known() {
     let mut r = rig(JtdxConfig::default()).await;
     r.command(Command::HaltTx).await;
     assert!(matches!(r.event().await, Some(Event::TxHalted)), "lo STOP deve spegnere anche l'automazione");
+}
+
+#[tokio::test]
+async fn free_text_that_transmits_needs_allow_tx() {
+    let closed = rig(JtdxConfig::default()).await;
+    closed.send(&fixture("status-decoding.bin")).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    closed.command(Command::SendFreeText { text: "TNX 73".into(), send: true }).await;
+    let got = closed.received(400).await;
+    assert!(got.iter().all(|d| kind_of(d) != 9), "senza allow_tx nessun testo libero da trasmettere");
+
+    let open = rig(allow_tx()).await;
+    open.send(&fixture("status-decoding.bin")).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    open.command(Command::SendFreeText { text: "TNX 73".into(), send: true }).await;
+    assert!(open.received(400).await.contains(&encode_free_text("JTDX", 2, "TNX 73", true)));
+}
+
+#[tokio::test]
+async fn free_text_that_only_prepares_the_message_is_always_allowed() {
+    let r = rig(JtdxConfig::default()).await;
+    r.send(&fixture("status-decoding.bin")).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    r.command(Command::SendFreeText { text: "TNX 73".into(), send: false }).await;
+    assert!(r.received(400).await.contains(&encode_free_text("JTDX", 2, "TNX 73", false)));
+}
+
+#[tokio::test]
+async fn cq_needs_allow_tx_but_the_tx_frequency_does_not() {
+    let closed = rig(JtdxConfig::default()).await;
+    closed.send(&fixture("status-decoding.bin")).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    closed.command(Command::CallCq { modifier: String::new() }).await;
+    closed.command(Command::SetTxFrequency { hz: 1234 }).await;
+    let got = closed.received(400).await;
+    assert!(got.iter().all(|d| kind_of(d) != 51), "senza allow_tx il CQ non parte");
+    assert!(got.contains(&encode_set_tx_freq("JTDX", 2, 1234)), "cambiare frequenza non fa trasmettere");
+
+    let open = rig(allow_tx()).await;
+    open.send(&fixture("status-decoding.bin")).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    open.command(Command::CallCq { modifier: "DX".into() }).await;
+    assert!(open.received(400).await.contains(&encode_trigger_cq("JTDX", 2, "DX", true)));
 }
 
 #[tokio::test]

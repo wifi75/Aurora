@@ -506,3 +506,29 @@ button.glass,
     flex-wrap: wrap;
   }
 }
+
+/* Pannello di trasmissione */
+.tx-panel {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  padding: var(--space-3);
+}
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tx-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.tx-note {
+  margin: 0;
+  font-size: var(--text-sm);
+}

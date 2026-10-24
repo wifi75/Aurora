@@ -90,3 +90,15 @@ export interface StationInfo {
 export async function getStationInfo(): Promise<StationInfo> {
   return (await (await request('/station-info')).json()) as StationInfo;
 }
+
+export async function postFreeText(text: string, send: boolean): Promise<void> {
+  await request('/commands/free-text', jsonInit({ text, send }));
+}
+
+export async function postCq(modifier: string): Promise<void> {
+  await request('/commands/cq', jsonInit({ modifier }));
+}
+
+export async function postTxFrequency(hz: number): Promise<void> {
+  await request('/commands/tx-frequency', jsonInit({ hz }));
+}

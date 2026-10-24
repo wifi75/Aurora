@@ -1,4 +1,4 @@
-export type PanelId = 'waterfall' | 'station' | 'cq' | 'all';
+export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all';
 export type Zone = 'left' | 'right';
 
 export interface Layout {
@@ -10,7 +10,7 @@ export interface Layout {
   split: number;
 }
 
-export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'cq', 'all'];
+export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all'];
 const KEY = 'aurora-layout';
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 2000;
@@ -21,7 +21,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'waterfall'], right: ['station', 'cq'], heights: {}, split: 0.6 };
+  return { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6 };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));

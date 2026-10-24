@@ -1,4 +1,7 @@
-use udp_bridge::message::{encode_free_text, encode_halt_tx, encode_replay, encode_reply, FREE_TEXT, HALT_TX, REPLAY, REPLY};
+use udp_bridge::message::{
+    encode_free_text, encode_halt_tx, encode_replay, encode_reply, encode_set_tx_freq, encode_trigger_cq, FREE_TEXT, HALT_TX, REPLAY, REPLY,
+    SET_TX_FREQ, TRIGGER_CQ,
+};
 use udp_bridge::wire::Reader;
 use udp_bridge::{Decode, MAGIC};
 
@@ -59,6 +62,33 @@ fn encode_free_text_utf8() {
     assert_eq!(r.utf8(), Ok(Some("JTDX".to_string())));
     assert_eq!(r.utf8(), Ok(Some("73 da IU3CYV è qui".to_string())));
     assert_eq!(r.bool(), Ok(false));
+    assert!(r.is_empty());
+}
+
+#[test]
+fn encode_set_tx_freq_layout() {
+    let bytes = encode_set_tx_freq("JTDX", 2, 1500);
+    let mut r = Reader::new(&bytes);
+    assert_eq!(r.u32(), Ok(MAGIC));
+    assert_eq!(r.u32(), Ok(2));
+    assert_eq!(r.u32(), Ok(SET_TX_FREQ));
+    assert_eq!(SET_TX_FREQ, 50);
+    assert_eq!(r.utf8(), Ok(Some("JTDX".to_string())));
+    assert_eq!(r.i32(), Ok(1500));
+    assert!(r.is_empty());
+}
+
+#[test]
+fn encode_trigger_cq_layout() {
+    let bytes = encode_trigger_cq("JTDX", 2, "DX", true);
+    let mut r = Reader::new(&bytes);
+    assert_eq!(r.u32(), Ok(MAGIC));
+    assert_eq!(r.u32(), Ok(2));
+    assert_eq!(r.u32(), Ok(TRIGGER_CQ));
+    assert_eq!(TRIGGER_CQ, 51);
+    assert_eq!(r.utf8(), Ok(Some("JTDX".to_string())));
+    assert_eq!(r.utf8(), Ok(Some("DX".to_string())));
+    assert_eq!(r.bool(), Ok(true));
     assert!(r.is_empty());
 }
 

@@ -192,6 +192,8 @@ impl State {
                     self.emit_status(io);
                 }
             }
+            // il simulatore non ha un motore di messaggi: questi comandi non hanno effetto
+            Command::SendFreeText { .. } | Command::CallCq { .. } | Command::SetTxFrequency { .. } => {}
         }
     }
 }

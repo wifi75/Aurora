@@ -17,7 +17,7 @@ use std::{
 
 use aurora_core::{Command, Engine, EngineIo, Event};
 use tokio::sync::broadcast::{self, error::RecvError};
-use udp_bridge::{decode, encode_halt_tx, encode_replay, encode_reply, Message};
+use udp_bridge::{decode, encode_free_text, encode_halt_tx, encode_replay, encode_reply, encode_set_tx_freq, encode_trigger_cq, Message};
 use udp_hub::Hub;
 
 use dxcc::DxccDb;
@@ -195,6 +195,23 @@ async fn on_command(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Engi
     match command {
         // fermare la trasmissione e' sempre ammesso
         Command::HaltTx => send_to_jtdx(hub, encode_halt_tx(&id, schema, false), "HaltTx").await,
+        Command::SendFreeText { text, send } => {
+            if send && !config.allow_tx {
+                tracing::warn!("testo libero respinto: la trasmissione non e' abilitata");
+                return;
+            }
+            send_to_jtdx(hub, encode_free_text(&id, schema, &text, send), "FreeText").await;
+        }
+        Command::CallCq { modifier } => {
+            if !config.allow_tx {
+                tracing::warn!("CQ respinto: la trasmissione non e' abilitata");
+                return;
+            }
+            send_to_jtdx(hub, encode_trigger_cq(&id, schema, &modifier, true), "TriggerCQ").await;
+        }
+        Command::SetTxFrequency { hz } => {
+            send_to_jtdx(hub, encode_set_tx_freq(&id, schema, i32::try_from(hz).unwrap_or(1500)), "SetTxFreq").await;
+        }
         Command::Reply { decode_id } => {
             if !config.allow_tx {
                 tracing::warn!("Reply respinto: la trasmissione non e' abilitata (un Reply fa trasmettere JTDX)");

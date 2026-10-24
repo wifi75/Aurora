@@ -24,7 +24,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -36,6 +36,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/devices/{id}", delete(revoke_device))
         .route("/api/v1/commands/halt-tx", post(halt_tx))
         .route("/api/v1/commands/reply", post(reply))
+        .route("/api/v1/commands/free-text", post(free_text))
+        .route("/api/v1/commands/cq", post(call_cq))
+        .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stream", get(ws::stream))
@@ -246,6 +249,69 @@ async fn reply(
         return Err(ApiError::new(StatusCode::NOT_FOUND, "unknown_decode"));
     }
     dispatch(&state, Command::Reply { decode_id: body.decode_id })
+}
+
+/// Chi fa trasmettere deve avere la trasmissione aperta e arrivare da una via consentita.
+fn check_tx_allowed(state: &AppState, headers: &HeaderMap) -> Result<(), ApiError> {
+    if !state.policy.live_tx() {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"));
+    }
+    if !state.policy.allows(transport_of(headers)) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_not_allowed_on_transport"));
+    }
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct FreeTextBody {
+    text: String,
+    #[serde(default)]
+    send: bool,
+}
+
+/// Testo libero di FT8: al massimo 13 caratteri tra lettere, cifre e ` +-./?`.
+fn clean_free_text(text: &str) -> Option<String> {
+    let t = text.trim().to_uppercase();
+    let ok = (1..=13).contains(&t.chars().count()) && t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || " +-./?".contains(c));
+    ok.then_some(t)
+}
+
+#[utoipa::path(post, path = "/api/v1/commands/free-text", responses((status = 200, description = "Messaggio libero inviato al motore"), (status = 400, description = "Testo non valido (bad_text)"), (status = 403, description = "Con send=true: trasmissione non abilitata o non consentita da questa via")))]
+async fn free_text(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<FreeTextBody>) -> Result<Json<Value>, ApiError> {
+    let text = clean_free_text(&body.text).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_text"))?;
+    if body.send {
+        check_tx_allowed(&state, &headers)?;
+    }
+    dispatch(&state, Command::SendFreeText { text, send: body.send })
+}
+
+#[derive(Deserialize, Default)]
+struct CqBody {
+    #[serde(default)]
+    modifier: String,
+}
+
+#[utoipa::path(post, path = "/api/v1/commands/cq", responses((status = 200, description = "CQ chiesto a JTDX"), (status = 400, description = "Modificatore non valido"), (status = 403, description = "Trasmissione non abilitata o non consentita da questa via")))]
+async fn call_cq(State(state): State<AppState>, _: Authed, headers: HeaderMap, body: Option<Json<CqBody>>) -> Result<Json<Value>, ApiError> {
+    let modifier = body.map(|Json(b)| b.modifier).unwrap_or_default().trim().to_uppercase();
+    if modifier.len() > 4 || !modifier.chars().all(|c| c.is_ascii_uppercase()) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_modifier"));
+    }
+    check_tx_allowed(&state, &headers)?;
+    dispatch(&state, Command::CallCq { modifier })
+}
+
+#[derive(Deserialize)]
+struct TxFrequencyBody {
+    hz: u32,
+}
+
+#[utoipa::path(post, path = "/api/v1/commands/tx-frequency", responses((status = 200, description = "Frequenza audio di trasmissione impostata"), (status = 400, description = "Fuori dalla banda audio (200-3000 Hz)")))]
+async fn tx_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<TxFrequencyBody>) -> Result<Json<Value>, ApiError> {
+    if !(200..=3000).contains(&body.hz) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
+    }
+    dispatch(&state, Command::SetTxFrequency { hz: body.hz })
 }
 
 #[utoipa::path(get, path = "/api/v1/automation", responses((status = 200, description = "Stato, regole, limiti e registro delle decisioni"), (status = 404, description = "Automazione non disponibile")))]
