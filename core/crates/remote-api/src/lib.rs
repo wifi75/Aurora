@@ -14,7 +14,7 @@ use auth::DeviceStore;
 use aurora_core::{Bus, Event, StationStatus};
 use axum::Router;
 use logbook::Logbook;
-use tokio::sync::broadcast::error::RecvError;
+use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
 pub use policy::{transport_of, Transport, TxPolicy};
@@ -36,6 +36,7 @@ pub struct AppState {
     /// Se vero il cookie di sessione porta l'attributo `Secure` (HTTPS).
     pub secure_cookie: bool,
     shared: Arc<Mutex<Shared>>,
+    shutdown: Arc<watch::Sender<bool>>,
 }
 
 impl AppState {
@@ -72,7 +73,17 @@ impl AppState {
                 }
             }
         });
-        AppState { bus, auth, logbook, policy, secure_cookie, shared }
+        let (shutdown, _) = watch::channel(false);
+        AppState { bus, auth, logbook, policy, secure_cookie, shared, shutdown: Arc::new(shutdown) }
+    }
+
+    /// Chiede a tutti i flussi aperti di chiudersi (spegnimento ordinato).
+    pub fn begin_shutdown(&self) {
+        let _ = self.shutdown.send(true);
+    }
+
+    pub(crate) fn subscribe_shutdown(&self) -> watch::Receiver<bool> {
+        self.shutdown.subscribe()
     }
 
     pub fn knows_decode(&self, id: u64) -> bool {

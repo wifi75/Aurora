@@ -139,3 +139,23 @@ async fn ws_closed_after_device_revoked() {
     .await;
     assert_eq!(closed, Ok(true), "il flusso doveva chiudersi dopo la revoca");
 }
+
+#[tokio::test]
+async fn ws_closed_on_shutdown() {
+    let s = state();
+    let addr = serve(&s).await;
+    let cookie = cookie_for(&s);
+    let (mut ws, _) = connect_async(ws_request(addr, Some(&cookie))).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    s.begin_shutdown();
+    let closed = tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            match ws.next().await {
+                None | Some(Err(_)) | Some(Ok(Message::Close(_))) => return true,
+                Some(Ok(_)) => {}
+            }
+        }
+    })
+    .await;
+    assert_eq!(closed, Ok(true), "il flusso doveva chiudersi allo spegnimento");
+}

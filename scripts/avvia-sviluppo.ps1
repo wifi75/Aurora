@@ -1,0 +1,73 @@
+# Avvia l'ambiente di sviluppo di Aurora: core (porta 8787) e, se esiste, interfaccia (porta 5173).
+# Una sola tab di Windows Terminal con un pannello per servizio. Salta cio' che e' gia' in ascolto.
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $PSScriptRoot
+
+function Test-Port([int]$Port) {
+    [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+}
+
+# Il core va per primo: l'interfaccia fa da proxy verso di lui.
+$services = @()
+if (-not (Test-Port 8787)) {
+    $services += @{
+        Name = 'Aurora core'; Color = '#3fd6c8'; Port = 8787; Dir = "$root\core"
+        Cmd = "`$env:AURORA_BIND='0.0.0.0:8787'; `$env:AURORA_DATA_DIR='$root\data'; cargo run -p aurora"
+    }
+}
+if ((Test-Path "$root\app\package.json") -and -not (Test-Port 5173)) {
+    $services += @{
+        Name = 'Aurora interfaccia'; Color = '#f2a93b'; Port = 5173; Dir = "$root\app"
+        Cmd = 'npm run dev -- --host'
+    }
+}
+
+if ($services.Count -eq 0) {
+    Write-Host 'Tutto e'' gia'' acceso: niente da avviare.'
+}
+elseif (Get-Command wt.exe -ErrorAction SilentlyContinue) {
+    # Un'unica invocazione di wt.exe: il ';' e' un elemento dell'array, non un separatore di PowerShell.
+    $wtArgs = @()
+    for ($i = 0; $i -lt $services.Count; $i++) {
+        $s = $services[$i]
+        if ($i -eq 0) { $wtArgs += 'new-tab' } else { $wtArgs += @(';', 'split-pane', '-H') }
+        $wtArgs += @(
+            '--title', $s.Name, '--suppressApplicationTitle', '--tabColor', $s.Color,
+            '-d', $s.Dir, '--',
+            'powershell', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $s.Cmd
+        )
+    }
+    & wt.exe @wtArgs
+}
+else {
+    foreach ($s in $services) {
+        Start-Process powershell -WorkingDirectory $s.Dir -ArgumentList @(
+            '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $s.Cmd
+        )
+    }
+}
+
+# "Avviato" non vuol dire "pronto": attende che le porte siano davvero in ascolto.
+$pending = $services | ForEach-Object { $_.Port }
+for ($t = 0; $t -lt 240 -and $pending.Count -gt 0; $t++) {
+    $pending = @($pending | Where-Object { -not (Test-Port $_) })
+    if ($pending.Count -gt 0) { Start-Sleep -Milliseconds 500 }
+}
+if ($pending.Count -gt 0) {
+    Write-Host "Ancora in attesa sulle porte: $($pending -join ', '). La prima compilazione puo' richiedere qualche minuto: guarda la tab."
+}
+
+# Indirizzi di rete reali, per provare dal telefono (escluse interfacce virtuali e link-local).
+$lan = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.IPAddress -notlike '169.254.*' -and $_.IPAddress -ne '127.0.0.1' -and
+        $_.InterfaceAlias -notmatch 'vEthernet|WSL|Docker|Loopback|Hyper-V|VirtualBox|VMware'
+    } | ForEach-Object { $_.IPAddress }
+
+Write-Host ''
+Write-Host 'Aurora - ambiente di sviluppo'
+Write-Host '  Core:         http://127.0.0.1:8787/api/v1/health'
+if (Test-Path "$root\app\package.json") { Write-Host '  Interfaccia:  http://127.0.0.1:5173' }
+foreach ($ip in $lan) { Write-Host "  Dal telefono: http://${ip}:5173  (stessa rete Wi-Fi)" }
+Write-Host '  Per spegnere: chiudi la tab di Windows Terminal.'

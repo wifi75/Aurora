@@ -37,6 +37,7 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
     let mut events = state.bus.subscribe_events();
     let mut spectrum = state.bus.subscribe_spectrum();
     let mut check = interval(REVOCATION_CHECK);
+    let mut stop = state.subscribe_shutdown();
 
     if let Some(status) = state.current_status() {
         if !send_event(&mut socket, &Event::Status(status)).await {
@@ -67,6 +68,10 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
                 None | Some(Err(_)) | Some(Ok(Message::Close(_))) => return,
                 Some(Ok(_)) => {}
             },
+            _ = stop.changed() => {
+                let _ = socket.send(Message::Close(None)).await;
+                return;
+            }
             _ = check.tick() => {
                 if !state.auth.exists(device) {
                     let _ = socket.send(Message::Close(None)).await;

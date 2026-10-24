@@ -2,3 +2,6 @@ target/
 *.log
 .env
 captures/
+data/
+node_modules/
+dist/

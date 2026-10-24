@@ -1,0 +1,32 @@
+[package]
+name = "aurora"
+description = "Binario di Aurora: collega motore, log, autenticazione e API"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "aurora"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aurora"
+path = "src/main.rs"
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+engine-sim = { path = "../engine-sim" }
+auth = { path = "../auth" }
+logbook = { path = "../logbook" }
+remote-api = { path = "../remote-api" }
+tokio = { workspace = true }
+axum = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
