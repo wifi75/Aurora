@@ -36,11 +36,11 @@ fn fixture(name: &str) -> Vec<u8> {
     std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
 
-async fn start(cache: &PathBuf) -> (Bus, Arc<Hub>) {
+async fn start(cache: &std::path::Path) -> (Bus, Arc<Hub>) {
     let hub = Arc::new(Hub::start(HubConfig { listen: "127.0.0.1:0".parse().unwrap(), forward: vec![] }).await.unwrap());
     let bus = Bus::new(1024);
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands: bus.take_command_rx().unwrap() };
-    let config = JtdxConfig { peer_cache: Some(cache.clone()), ..JtdxConfig::default() };
+    let config = JtdxConfig { peer_cache: Some(cache.to_path_buf()), ..JtdxConfig::default() };
     tokio::spawn(JtdxEngine::new(Arc::clone(&hub), config, Arc::new(FakeClock(AtomicU64::new(1_000_000)))).run(io));
     (bus, hub)
 }

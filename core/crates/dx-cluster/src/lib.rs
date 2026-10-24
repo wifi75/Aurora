@@ -564,17 +564,18 @@ mod tests {
         assert!(bad(&|c| c.login_commands = vec!["x".repeat(81)]));
         assert!(bad(&|c| c.max_spots = 10));
         assert!(bad(&|c| c.max_age_min = 1));
-        let mut ok = Config::default();
-        ok.callsign = "IU3ABC".into();
-        ok.login_commands = vec!["set/ft8".into(), "SH/DX 10".into(), "accept/spots on hf/ft8".into()];
+        let ok = Config {
+            callsign: "IU3ABC".into(),
+            login_commands: vec!["set/ft8".into(), "SH/DX 10".into(), "accept/spots on hf/ft8".into()],
+            ..Config::default()
+        };
         assert!(ok.validate().is_ok());
     }
 
     #[tokio::test]
     async fn nothing_connects_while_switched_off_or_without_a_callsign() {
         let svc = ClusterService::open(&temp("off"));
-        let mut c = Config::default();
-        c.servers = vec![local(9)];
+        let mut c = Config { servers: vec![local(9)], ..Config::default() };
         svc.set_config(c.clone()).unwrap();
         assert!(svc.statuses().is_empty(), "spento");
         c.enabled = true;
@@ -608,10 +609,7 @@ mod tests {
 
         let svc = ClusterService::open(&temp("flow"));
         svc.set_enricher(Arc::new(|call: &str| (call == "JA1ABC").then(|| ("Japan".to_string(), "AS".to_string()))));
-        let mut c = Config::default();
-        c.enabled = true;
-        c.callsign = "IU3ABC".into();
-        c.servers = vec![local(port)];
+        let c = Config { enabled: true, callsign: "IU3ABC".into(), servers: vec![local(port)], ..Config::default() };
         svc.set_config(c).unwrap();
 
         let mut waited = 0;
@@ -642,10 +640,7 @@ mod tests {
     #[tokio::test]
     async fn an_unreachable_server_is_reported_as_an_error() {
         let svc = ClusterService::open(&temp("down"));
-        let mut c = Config::default();
-        c.enabled = true;
-        c.callsign = "IU3ABC".into();
-        c.servers = vec![local(1)];
+        let c = Config { enabled: true, callsign: "IU3ABC".into(), servers: vec![local(1)], ..Config::default() };
         svc.set_config(c).unwrap();
         let mut waited = 0;
         while svc.statuses().first().is_none_or(|s| s.state != "error") && waited < 60 {
