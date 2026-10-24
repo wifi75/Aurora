@@ -15,7 +15,7 @@ struct Fake {
 }
 
 impl UpdateInstaller for Fake {
-    fn install(&self) -> Result<String, String> {
+    fn install(&self, _updates: Arc<updater::UpdateService>) -> Result<String, String> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         self.result.clone()
     }
@@ -23,7 +23,10 @@ impl UpdateInstaller for Fake {
 
 fn with_installer(result: Result<String, String>) -> (AppState, Arc<Fake>) {
     let fake = Arc::new(Fake { calls: AtomicUsize::new(0), result });
-    (state().with_update_installer(fake.clone()), fake)
+    let dir = std::env::temp_dir().join(format!("aurora-api-inst-with-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let service = updater::UpdateService::open_with_api(&dir.join("update.json"), "0.9.0", "http://127.0.0.1:1");
+    (state().with_updates(service).with_update_installer(fake.clone()), fake)
 }
 
 #[tokio::test]

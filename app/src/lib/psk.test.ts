@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PskReport } from '../api/client';
-import { conditionGroup, pskRows, summarize } from './psk';
+import { bandCounts, bestSnr, conditionGroup, latestPerReceiver, pskRows, summarize } from './psk';
 
 const report = (receiver: string, locator: string, freq_hz: number, over: Partial<PskReport> = {}): PskReport => ({ receiver, locator, snr: -10, freq_hz, mode: 'FT8', time_s: 100, country: null, ...over });
 
@@ -47,5 +47,34 @@ describe('conditionGroup', () => {
     expect(conditionGroup('10m')).toBe('12m-10m');
     expect(conditionGroup('160m')).toBeNull();
     expect(conditionGroup(null)).toBeNull();
+  });
+});
+
+describe('band counts, best report and one line per receiver', () => {
+  const rows = pskRows(
+    [
+      report('G0XYZ', 'IO91', 14_075_000, { snr: -5, time_s: 10 }),
+      report('G0XYZ', 'IO91', 14_075_000, { snr: 2, time_s: 20 }),
+      report('G0XYZ', 'IO91', 7_075_000, { snr: -9, time_s: 15 }),
+      report('JA1ABC', 'PM95', 14_075_000, { snr: -20, time_s: 5 }),
+      report('K1ABC', 'FN42', 3_000_000, { snr: null, time_s: 1 }),
+    ],
+    'IO91wm',
+  );
+
+  it('counts the different stations per band in band order and skips unknown bands', () => {
+    expect(bandCounts(rows)).toEqual([{ band: '40m', count: 1 }, { band: '20m', count: 2 }]);
+    expect(bandCounts([])).toEqual([]);
+  });
+
+  it('finds the best report', () => {
+    expect(bestSnr(rows)).toEqual({ call: 'G0XYZ', snr: 2 });
+    expect(bestSnr(pskRows([report('X1X', 'IO91', 14_075_000, { snr: null })], null))).toBeNull();
+  });
+
+  it('keeps the latest report of each receiver on each band', () => {
+    const latest = latestPerReceiver(rows);
+    expect(latest).toHaveLength(4);
+    expect(latest.find((r) => r.receiver === 'G0XYZ' && r.band === '20m')?.snr).toBe(2);
   });
 });

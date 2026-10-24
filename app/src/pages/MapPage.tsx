@@ -5,7 +5,23 @@ import { WorldMap } from '../components/WorldMap';
 import { useT } from '../i18n';
 import { stationsWithGrid } from '../lib/mapStations';
 import { bandOf } from '../lib/format';
+import { readMapOptions, saveMapOptions, type MapOptions } from '../lib/mapOptions';
 import { useStation } from '../state/station';
+
+/** Le scritte della mappa nella lingua scelta. */
+export function mapLabels(t: ReturnType<typeof useT>) {
+  return {
+    zoomIn: t('map.zoomIn'),
+    zoomOut: t('map.zoomOut'),
+    reset: t('map.reset'),
+    aria: t('map.aria'),
+    equator: t('map.line.equator'),
+    cancer: t('map.line.cancer'),
+    capricorn: t('map.line.capricorn'),
+    arctic: t('map.line.arctic'),
+    antarctic: t('map.line.antarctic'),
+  };
+}
 
 /** Mappa: i quadrati locatore gia' lavorati (dal log) e le stazioni che si ricevono ora (dal loro locatore). */
 export function MapPage() {
@@ -17,6 +33,12 @@ export function MapPage() {
   const [showWorked, setShowWorked] = useState(true);
   const [showLive, setShowLive] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+  const [options, setOptions] = useState<MapOptions>(() => readMapOptions());
+  const change = (next: Partial<MapOptions>) => {
+    const merged = { ...options, ...next };
+    saveMapOptions(merged);
+    setOptions(merged);
+  };
 
   const squares = worked.data?.squares ?? [];
   const bands = useMemo(() => [...new Set(squares.flatMap((s) => s.bands))].sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10)), [squares]);
@@ -39,6 +61,14 @@ export function MapPage() {
           <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} />
           <span className="map-swatch map-swatch--cq" aria-hidden="true" />
           {t('map.live')}
+        </label>
+        <label className="map-check" title={t('map.tiles.tip')}>
+          <input type="checkbox" checked={options.tiles} onChange={(e) => change({ tiles: e.target.checked })} />
+          {t('map.tiles')}
+        </label>
+        <label className="map-check">
+          <input type="checkbox" checked={options.night} onChange={(e) => change({ night: e.target.checked })} />
+          {t('map.night')}
         </label>
         <label className="map-select">
           {t('map.band')}
@@ -64,10 +94,9 @@ export function MapPage() {
         homeGrid={status?.de_grid}
         selected={selected}
         onSelect={setSelected}
-        zoomInLabel={t('map.zoomIn')}
-        zoomOutLabel={t('map.zoomOut')}
-        resetLabel={t('map.reset')}
-        ariaLabel={t('map.aria')}
+        tiles={options.tiles}
+        night={options.night}
+        labels={mapLabels(t)}
       />
       <div className="map-legend">
         <span>

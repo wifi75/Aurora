@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceKm, gridCenter, gridOfMessage } from './geo';
+import { bearingDeg, distanceKm, gridCenter, gridOfMessage, greatCircle, latLonToGrid } from './geo';
 
 describe('gridCenter', () => {
   it('returns the center of a 4-character locator', () => {
@@ -44,5 +44,50 @@ describe('gridOfMessage', () => {
     expect(gridOfMessage('UX7QV PW2DSY RR73')).toBeNull();
     expect(gridOfMessage('VU2FR R2BQM -18')).toBeNull();
     expect(gridOfMessage('')).toBeNull();
+  });
+});
+
+describe('bearing, great circle and locator of a point', () => {
+  const rome = { lat: 41.9, lon: 12.5 };
+  const tokyo = { lat: 35.7, lon: 139.7 };
+
+  it('gives the initial bearing between two places', () => {
+    expect(bearingDeg({ lat: 0, lon: 0 }, { lat: 10, lon: 0 })).toBe(0);
+    expect(bearingDeg({ lat: 0, lon: 0 }, { lat: 0, lon: 10 })).toBe(90);
+    expect(bearingDeg({ lat: 0, lon: 0 }, { lat: -10, lon: 0 })).toBe(180);
+    expect(bearingDeg({ lat: 0, lon: 0 }, { lat: 0, lon: -10 })).toBe(270);
+    expect(bearingDeg(rome, tokyo)).toBeGreaterThan(35);
+    expect(bearingDeg(rome, tokyo)).toBeLessThan(45);
+  });
+
+  it('draws the short way: it starts and ends on the points and bends towards the pole', () => {
+    const line = greatCircle(rome, tokyo, 24);
+    expect(line).toHaveLength(25);
+    expect(line[0]).toEqual({ lat: rome.lat, lon: rome.lon });
+    expect(line.at(-1)?.lat).toBeCloseTo(tokyo.lat, 5);
+    expect(line.at(-1)?.lon).toBeCloseTo(tokyo.lon, 5);
+    expect(Math.max(...line.map((p) => p.lat))).toBeGreaterThan(50);
+  });
+
+  it('keeps the longitude continuous across the date line', () => {
+    const line = greatCircle({ lat: 35, lon: 170 }, { lat: 35, lon: -170 }, 20);
+    for (let i = 1; i < line.length; i++) expect(Math.abs(line[i]!.lon - line[i - 1]!.lon)).toBeLessThan(5);
+    expect(line.at(-1)?.lon).toBeGreaterThan(180);
+  });
+
+  it('handles two identical points without dividing by zero', () => {
+    expect(greatCircle(rome, rome)).toHaveLength(2);
+  });
+
+  it('finds the six character locator of a place', () => {
+    expect(latLonToGrid(41.9, 12.5)).toBe('JN61gv');
+    expect(latLonToGrid(-90, -180)).toBe('AA00aa');
+    expect(latLonToGrid(89.99, 179.99)).toBe('RR99xx');
+    expect(latLonToGrid(41.9, 12.5 + 360)).toBe('JN61gv');
+  });
+
+  it('agrees with the locator reader', () => {
+    const p = gridCenter('JN45te')!;
+    expect(latLonToGrid(p.lat, p.lon)).toBe('JN45te');
   });
 });

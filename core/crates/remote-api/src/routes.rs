@@ -1108,7 +1108,8 @@ async fn update_install(State(state): State<AppState>, _: Authed, Peer(peer): Pe
     if state.current_status().is_some_and(|s| s.transmitting) {
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
-    match tokio::task::spawn_blocking(move || installer.install()).await {
+    let updates = update_service(&state)?;
+    match tokio::task::spawn_blocking(move || installer.install(updates)).await {
         Ok(Ok(version)) => Ok(Json(json!({ "ok": true, "version": version }))),
         Ok(Err(e)) => {
             tracing::warn!("installazione dell'aggiornamento non riuscita: {e}");

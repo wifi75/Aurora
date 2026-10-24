@@ -1,5 +1,5 @@
 import type { PskReport } from '../api/client';
-import { bandOf } from './format';
+import { BAND_NAMES, bandOf } from './format';
 import { distanceKm, gridCenter } from './geo';
 
 export interface PskRow extends PskReport {
@@ -51,4 +51,36 @@ export function conditionGroup(band: string | null): string | null {
     default:
       return null;
   }
+}
+
+/** Quante stazioni diverse hanno ricevuto su ogni banda, nell'ordine delle bande (dalla piu' bassa). */
+export function bandCounts(rows: readonly PskRow[]): Array<{ band: string; count: number }> {
+  const seen = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (!r.band) continue;
+    const set = seen.get(r.band) ?? new Set<string>();
+    set.add(r.receiver);
+    seen.set(r.band, set);
+  }
+  return BAND_NAMES.filter((b) => seen.has(b)).map((band) => ({ band, count: seen.get(band)?.size ?? 0 }));
+}
+
+/** Il rapporto migliore ricevuto (il piu' alto), con chi l'ha dato. */
+export function bestSnr(rows: readonly PskRow[]): { call: string; snr: number } | null {
+  let best: { call: string; snr: number } | null = null;
+  for (const r of rows) {
+    if (r.snr !== null && (!best || r.snr > best.snr)) best = { call: r.receiver, snr: r.snr };
+  }
+  return best;
+}
+
+/** Un solo ricevente per banda (l'ultimo rapporto): serve a disegnare una linea per ognuno e non centinaia sovrapposte. */
+export function latestPerReceiver(rows: readonly PskRow[]): PskRow[] {
+  const byKey = new Map<string, PskRow>();
+  for (const r of rows) {
+    const key = `${r.receiver}|${r.band ?? ''}`;
+    const old = byKey.get(key);
+    if (!old || r.time_s > old.time_s) byKey.set(key, r);
+  }
+  return [...byKey.values()];
 }

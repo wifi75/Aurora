@@ -37,8 +37,20 @@ pub enum EngineKind {
     Jtdx,
 }
 
+/// Chi sa installare un aggiornamento (il programma Windows lo da' alla partenza).
+#[derive(Clone)]
+pub struct UpdateInstallerHandle(pub Arc<dyn remote_api::UpdateInstaller>);
+
+impl std::fmt::Debug for UpdateInstallerHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "UpdateInstallerHandle")
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
+    /// Se presente, la pagina propone «Installa ora» per le versioni nuove e l'API sa installarle.
+    pub update_installer: Option<UpdateInstallerHandle>,
     pub bind: SocketAddr,
     pub data_dir: PathBuf,
     pub ui_dir: Option<PathBuf>,
@@ -106,6 +118,7 @@ impl Config {
     /// Valori predefiniti (stazione simulata, trasmissione chiusa).
     pub fn defaults() -> Config {
         Config {
+            update_installer: None,
             bind: SocketAddr::from(([127, 0, 0, 1], 8787)),
             data_dir: PathBuf::from("data"),
             ui_dir: None,
@@ -198,6 +211,7 @@ impl Config {
             },
         };
         Ok(Config {
+            update_installer: None,
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
             ui_dir: get("AURORA_UI_DIR").map(PathBuf::from),
@@ -645,6 +659,7 @@ pub async fn run(
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level)
+        .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
         .with_online(online)
         .with_history_if(history)
         .with_updates(Arc::clone(&updates))

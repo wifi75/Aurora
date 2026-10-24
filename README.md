@@ -99,4 +99,4 @@ Sul PC con Aurora accesa, i test del core si lanciano con `--target-dir target/t
 
 Aurora e' software libero, rilasciato con la **GNU General Public License versione 3 o successiva** (`GPL-3.0-or-later`): testo completo in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone.
 
-Chi ridistribuisce Aurora, anche modificata, deve farlo con la stessa licenza e rendere disponibili i sorgenti. Le librerie di terzi che l'interfaccia include (`world-atlas` e `topojson-client` per la mappa, licenza ISC, e le altre dipendenze elencate in `app/package.json` e `core/Cargo.toml`) mantengono le proprie licenze.
+Chi ridistribuisce Aurora, anche modificata, deve farlo con la stessa licenza e rendere disponibili i sorgenti. Le librerie di terzi che l'interfaccia include (`leaflet` per la mappa, licenza BSD-2-Clause, `world-atlas` e `topojson-client`, licenza ISC;  le tessere dello sfondo della mappa sono di Esri e National Geographic, con la loro attribuzione sulla mappa, e le altre dipendenze elencate in `app/package.json` e `core/Cargo.toml`) mantengono le proprie licenze.
