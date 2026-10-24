@@ -8,3 +8,5 @@ publish = false
 
 [dependencies]
 udp-bridge = { path = "../udp-bridge" }
+cpal = "0.18.2"
+rustfft = "6.4.1"
