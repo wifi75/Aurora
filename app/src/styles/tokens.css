@@ -1,0 +1,114 @@
+/* Token del tema "Notte radio" (console industriale). Nessun valore estetico fuori da qui. */
+:root {
+  /* Superfici e testo: modalita' scura nativa */
+  --bg: #0b0e14;
+  --panel: #111722;
+  --panel-raised: #171f2d;
+  --border: #243046;
+  --text: #cdd7e6;
+  --text-muted: #6f7f96;
+
+  /* Accenti: ciano = stato e regole AUTO, ambra = eventi rari, rosso = solo STOP TX */
+  --accent: #3fd6c8;
+  --accent-ink: #04201d;
+  --rare: #f2a93b;
+  --rare-ink: #241604;
+  --stop: #ff5d5d;
+  --stop-ink: #1a0505;
+  --ok: #3fd6c8;
+  --warn: #f2a93b;
+  --danger: #ff5d5d;
+
+  /* Tipografia */
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-data: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --weight-regular: 400;
+  --weight-strong: 500;
+  --leading-body: 1.55;
+  --leading-tight: 1.2;
+
+  /* Geometria e spaziatura (base 4 px) */
+  --radius: 4px;
+  --border-width: 1px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --control-h: 2.75rem;
+  --touch-min: 3rem;
+
+  /* Livelli (niente z-index arbitrari) */
+  --layer-base: 0;
+  --layer-sticky: 10;
+  --layer-overlay: 20;
+
+  /* Movimento: solo transform e opacity, mai su azioni ripetute */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 140ms;
+  --dur-fade: 180ms;
+  --dur-panel: 280ms;
+
+  /* Cascata: la colormap vive in src/render/colormap.ts con gli stessi colori */
+  --wf-bg: #080c18;
+
+  color-scheme: dark;
+}
+
+/* Modalita' chiara: un secondo set di valori, non un filtro */
+:root[data-theme='light'] {
+  --bg: #eef1f6;
+  --panel: #ffffff;
+  --panel-raised: #f6f8fb;
+  --border: #c5cfde;
+  --text: #12192a;
+  --text-muted: #55627a;
+  --accent: #0b7f75;
+  --accent-ink: #ffffff;
+  --rare: #9a5d00;
+  --rare-ink: #ffffff;
+  --stop: #c62a2a;
+  --stop-ink: #ffffff;
+  --ok: #0b7f75;
+  --warn: #9a5d00;
+  --danger: #c62a2a;
+  --wf-bg: #0b0e14;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #eef1f6;
+    --panel: #ffffff;
+    --panel-raised: #f6f8fb;
+    --border: #c5cfde;
+    --text: #12192a;
+    --text-muted: #55627a;
+    --accent: #0b7f75;
+    --accent-ink: #ffffff;
+    --rare: #9a5d00;
+    --rare-ink: #ffffff;
+    --stop: #c62a2a;
+    --stop-ink: #ffffff;
+    --ok: #0b7f75;
+    --warn: #9a5d00;
+    --danger: #c62a2a;
+    --wf-bg: #0b0e14;
+    color-scheme: light;
+  }
+}
+
+/* Su touch i controlli crescono da soli */
+@media (pointer: coarse) {
+  :root {
+    --control-h: 3.25rem;
+  }
+}
