@@ -37,6 +37,15 @@ Stato al 2026-10-24, versione 0.10.6. Per riprendere il lavoro leggi anche `docs
 - Il nominativo dell'autore (IU3WJQ) compare come firma: README, licenza, pacchetti, installatore, piede dell'interfaccia. Il **locatore** vero non va mai nei file: usare dati finti (IU3ABC, IO91wm) in prove ed esempi. Prima della pubblicazione la cronologia e' stata riscritta (locatore tolto, email personale sostituita da quella `users.noreply.github.com`).
 - Giro periodico: ogni 30 minuti si fa un giro completo di git (commit) e documentazione (CHANGELOG, TODO, memory, docs/api, README).
 
+## Posizione del progetto
+
+- Dal 2026-10-25 la cartella di lavoro e' `D:\progetti\Aurora` (prima `C:\Users\Tiziano\Desktop\progetti\Aurora`), come tutti gli altri progetti in `D:\progetti`. Le cartelle di compilazione (`core/target`, `desktop/src-tauri/target`, `app/node_modules`) si ricostruiscono. `AGENTS.md` ha struttura, comandi e regole aggiornati.
+
+## Motore proprio e analisi di Decodium (2026-10-24/25)
+
+- Crate `core/crates/ft8`: modulazione, CRC e LDPC, sincronismo e messaggi a 77 bit portati e provati (67 prove); manca il decoder del periodo intero (`decode.rs`), il confronto con JTDX e l'integrazione in Aurora. Piano in `docs/2026-10-24-aurora-motore-ft8.md`.
+- Analisi di Decodium (sorgente pubblico GPL 3 e REA): `docs/analisi-decodium-cascata.md` (la cascata mostra 3,8 righe/s per la media a 4: causa principale); CAT per tutte le radio e banda satura in arrivo.
+
 ## Sicurezza (non negoziabile)
 - Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.
