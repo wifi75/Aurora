@@ -206,6 +206,16 @@ impl DeviceStore {
         .map(DeviceId)
     }
 
+    /// Il dispositivo e' ancora associato (non revocato)?
+    pub fn exists(&self, id: DeviceId) -> bool {
+        self.conn()
+            .and_then(|c| {
+                c.query_row("SELECT COUNT(*) FROM devices WHERE id = ?1", params![id.0], |r| r.get::<_, i64>(0))
+                    .map_err(AuthError::from)
+            })
+            .is_ok_and(|n| n > 0)
+    }
+
     pub fn list(&self) -> Result<Vec<DeviceInfo>, AuthError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare("SELECT id, name, created_at FROM devices ORDER BY id")?;

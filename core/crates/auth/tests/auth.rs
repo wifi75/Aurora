@@ -132,3 +132,14 @@ fn empty_device_name_is_rejected() {
     let code = s.start_pairing().unwrap();
     assert_eq!(s.finish_pairing(&code.code, "   ").unwrap_err(), AuthError::BadName);
 }
+
+#[test]
+fn exists_is_false_after_revoke() {
+    let (s, _) = store();
+    let code = s.start_pairing().unwrap();
+    let token = s.finish_pairing(&code.code, "telefono").unwrap();
+    let id = s.verify(&token.0).unwrap();
+    assert!(s.exists(id));
+    s.revoke(id).unwrap();
+    assert!(!s.exists(id));
+}

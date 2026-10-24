@@ -1,0 +1,24 @@
+[package]
+name = "remote-api"
+description = "API HTTP versionata e flusso WebSocket di Aurora"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+auth = { path = "../auth" }
+logbook = { path = "../logbook" }
+tokio = { workspace = true }
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+qrcode = { workspace = true }
+utoipa = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tower = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
