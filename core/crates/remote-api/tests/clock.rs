@@ -21,6 +21,7 @@ impl ClockSetter for Setter {
 
 fn clock_state(name: &str, admin: bool) -> (AppState, Arc<Setter>) {
     let dir = std::env::temp_dir().join(format!("aurora-clock-api-{name}-{}", std::process::id()));
+    std::fs::remove_dir_all(&dir).ok();
     std::fs::create_dir_all(&dir).unwrap();
     let query: QueryFn = Arc::new(|_: &str| Ok(Sample { offset_ms: 250.0, delay_ms: 12.0, stratum: 2 }));
     let setter = Arc::new(Setter { calls: Mutex::default(), admin });

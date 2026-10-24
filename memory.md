@@ -24,6 +24,12 @@ Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/
 - Client NTP (`clock-sync`, scheda Orologio): controlla lo scarto dell'ora di Windows; correggerla serve Aurora come amministratore e solo dalla rete di casa. Indicatore «Orologio» e DT mediano (il «Med» di JTDX) nella barra di stato.
 - DX Cluster (`dx-cluster`, finestra a sinistra di Comandi, scheda DX Cluster): client telnet, spento di default; server pubblici verificati il 2026-10-24 nel catalogo; accetta solo comandi di consultazione (`sh/`, `set/`...), mai spot o messaggi pubblici. Log di Log4OM2 letto in sola lettura (`AURORA_LOG4OM_DB`).
 
+- Radio FT-2000 via OmniRig: `SetSimplexMode` la mette in split e sul VFO B. Il cambio banda scrive `Split` spento, aspetta che la radio lo accetti e solo dopo scrive `Freq`; scrivere `Vfo` subito dopo lo split lo fa riaccendere (provato dal vivo).
+- Il doppio clic puo' perdere il periodo perche' Abilita Tx passa da PowerShell e UI Automation (circa 1 s): idea per risolverlo, una sessione PowerShell fissa.
+- Modifica delle impostazioni di JTDX: scrivendo `JTDX.ini` a JTDX chiuso (lo riscrive all'uscita). Core pronto (`ini_edit`, `jtdx_process`), interfaccia da fare.
+- Nessun nominativo o locatore reali nei file del repository: usare dati finti (IU3ABC, IO91wm). Nella cronologia locale ci sono commit con quelli veri: prima di un push serve riscriverla.
+- Giro periodico: ogni 30 minuti si fa un giro completo di git (commit) e documentazione (CHANGELOG, TODO, memory, docs/api, README) senza il push finche' la cronologia non e' ripulita.
+
 ## Sicurezza (non negoziabile)
 - Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.
 - Un Reply fa trasmettere JTDX anche con Enable Tx spento: provato per errore il 2026-10-24, non si ripete senza carico fittizio e conferma.
