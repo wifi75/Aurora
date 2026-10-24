@@ -292,6 +292,64 @@ async fn e2e_stats_come_from_the_log_and_list_missing_countries() {
 }
 
 #[tokio::test]
+async fn frequencies_and_schedule_are_loaded_at_start_and_saved_when_changed() {
+    let data = temp_dir("settings");
+    std::fs::write(data.join("frequencies.json"), r#"[{"band":"20m","mode":"FT8","hz":14075000}]"#).unwrap();
+    std::fs::write(data.join("schedule.json"), r#"{"enabled":true,"entries":[{"hour":6,"minute":30,"band":"20m"}]}"#).unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: data.clone(),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (_, freq) = http(server.addr, "GET", "/api/v1/frequencies", Some(&cookie), None).await;
+    assert!(freq.contains("14075000") && !freq.contains("7074000"), "{freq}");
+    let (_, sched) = http(server.addr, "GET", "/api/v1/schedule", Some(&cookie), None).await;
+    assert!(sched.contains("\"enabled\":true") && sched.contains("06") || sched.contains("\"hour\":6"), "{sched}");
+
+    let change = r#"[{"band":"40m","mode":"FT8","hz":7074000}]"#;
+    let (code, _) = http(server.addr, "PUT", "/api/v1/frequencies", Some(&cookie), Some(change)).await;
+    assert_eq!(code, 200);
+    let saved = std::fs::read_to_string(data.join("frequencies.json")).unwrap();
+    assert!(saved.contains("40m") && saved.contains("7074000"), "{saved}");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn a_broken_settings_file_falls_back_to_the_defaults() {
+    let data = temp_dir("settings-bad");
+    std::fs::write(data.join("frequencies.json"), "non json").unwrap();
+    std::fs::write(data.join("schedule.json"), r#"{"enabled":true,"entries":[{"hour":99,"minute":0,"band":"20m"}]}"#).unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: data,
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let cookie = cookie_for(&server);
+    let (_, freq) = http(server.addr, "GET", "/api/v1/frequencies", Some(&cookie), None).await;
+    assert!(freq.contains("14074000"), "{freq}");
+    let (_, sched) = http(server.addr, "GET", "/api/v1/schedule", Some(&cookie), None).await;
+    assert!(sched.contains("\"enabled\":false"), "{sched}");
+    drop(tx);
+}
+
+#[tokio::test]
 async fn missing_data_files_do_not_stop_aurora() {
     let (tx, rx) = oneshot::channel::<()>();
     let config = Config {

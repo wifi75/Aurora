@@ -12,6 +12,7 @@ fn decode_event() -> Event {
         text: "CQ DX JA1XYZ PM95".to_string(),
         tag: Some(DecodeTag::NewDxcc),
         country: None,
+        continent: None,
     })
 }
 
@@ -107,9 +108,11 @@ fn decode_event_carries_country_and_the_new_tags() {
         text: "CQ AT3AB FN42".into(),
         tag: Some(DecodeTag::NewDxccBand),
         country: Some("Atlantis".into()),
+        continent: Some("EU".into()),
     });
     let v: serde_json::Value = serde_json::to_value(&event).unwrap();
     assert_eq!(v["country"], "Atlantis");
+    assert_eq!(v["continent"], "EU");
     assert_eq!(v["tag"], "new_dxcc_band");
     let grid = Event::Decode(DecodedMessage { tag: Some(DecodeTag::NewGrid), country: None, ..match event.clone() {
         Event::Decode(d) => d,

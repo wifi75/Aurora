@@ -4,7 +4,7 @@ use std::{
     future::Future,
     net::SocketAddr,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -17,6 +17,7 @@ use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as Engi
 use engine_sim::{SimConfig, SimEngine};
 use logbook::Logbook;
 use qso_export::{Exporter, Target};
+use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use qso_engine::{Automation, AutomationConfig, Limits, Rules};
 use remote_api::{build_router, AppState, TxPolicy};
 use tokio::{net::TcpListener, task::JoinHandle};
@@ -259,6 +260,93 @@ fn unix_secs() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
 }
 
+/// Frequenze salvate; un file mancante o non valido vale come tabella predefinita.
+fn load_frequencies(path: &Path) -> FrequencyTable {
+    let mut table = FrequencyTable::default();
+    if let Ok(text) = std::fs::read_to_string(path) {
+        let loaded = serde_json::from_str::<Vec<rig_control::table::Entry>>(&text).map_err(|e| e.to_string()).and_then(|entries| table.set(entries).map_err(String::from));
+        if loaded.is_err() {
+            tracing::warn!("frequenze non valide in {}: uso quelle predefinite", path.display());
+        }
+    }
+    table
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct ScheduleFile {
+    enabled: bool,
+    entries: Vec<rig_control::schedule::ScheduleEntry>,
+}
+
+fn load_schedule(path: &Path) -> Schedule {
+    let mut schedule = Schedule::default();
+    if let Ok(text) = std::fs::read_to_string(path) {
+        let loaded = serde_json::from_str::<ScheduleFile>(&text)
+            .map_err(|e| e.to_string())
+            .and_then(|file| schedule.set(file.enabled, file.entries).map_err(String::from));
+        if loaded.is_err() {
+            tracing::warn!("programmazione non valida in {}: ignorata", path.display());
+        }
+    }
+    schedule
+}
+
+fn save_settings(dir: &Path, frequencies: &Mutex<FrequencyTable>, schedule: &Mutex<Schedule>) {
+    let table = frequencies.lock().unwrap_or_else(|p| p.into_inner());
+    if let Ok(json) = serde_json::to_string(table.entries())
+        && let Err(e) = std::fs::write(dir.join("frequencies.json"), json)
+    {
+        tracing::warn!("frequenze non salvate: {e}");
+    }
+    drop(table);
+    let schedule = schedule.lock().unwrap_or_else(|p| p.into_inner());
+    let file = ScheduleFile { enabled: schedule.enabled(), entries: schedule.entries().to_vec() };
+    if let Ok(json) = serde_json::to_string(&file)
+        && let Err(e) = std::fs::write(dir.join("schedule.json"), json)
+    {
+        tracing::warn!("programmazione non salvata: {e}");
+    }
+}
+
+/// Ogni 15 secondi guarda l'ora UTC: al minuto di una riga porta la radio sulla banda, se non si trasmette.
+fn spawn_scheduler(state: AppState, rig: Arc<dyn Rig>) {
+    tokio::spawn(async move {
+        let mut last: Option<(u64, u8, u8)> = None;
+        let mut tick = tokio::time::interval(Duration::from_secs(15));
+        loop {
+            tick.tick().await;
+            let now = unix_secs();
+            let (hour, minute) = rig_control::schedule::hm_of(now);
+            let key = (now / 86_400, hour, minute);
+            if last == Some(key) {
+                continue;
+            }
+            let band = {
+                let schedule = state.schedule.lock().unwrap_or_else(|p| p.into_inner());
+                schedule.due(hour, minute).map(|e| e.band.clone())
+            };
+            let Some(band) = band else { continue };
+            last = Some(key);
+            if state.is_transmitting() {
+                tracing::info!("programmazione: {band} rinviata, si sta trasmettendo");
+                last = None;
+                continue;
+            }
+            let found = {
+                let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+                table.frequency(&band, &state.current_mode())
+            };
+            if let Some(hz) = found {
+                let rig = Arc::clone(&rig);
+                match tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await {
+                    Ok(Ok(())) => tracing::info!("programmazione: radio portata su {band}"),
+                    other => tracing::warn!("programmazione: cambio banda fallito: {other:?}"),
+                }
+            }
+        }
+    });
+}
+
 /// Regole salvate dall'ultima volta; un file mancante o non valido vale come regole predefinite.
 fn load_rules(path: &Path) -> Rules {
     match std::fs::read_to_string(path) {
@@ -308,6 +396,12 @@ pub async fn run(
     let live_tx = match config.engine {
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
+    };
+    let frequencies = Arc::new(Mutex::new(load_frequencies(&config.data_dir.join("frequencies.json"))));
+    let schedule = Arc::new(Mutex::new(load_schedule(&config.data_dir.join("schedule.json"))));
+    let settings_saver: Arc<dyn Fn() + Send + Sync> = {
+        let (frequencies, schedule, dir) = (Arc::clone(&frequencies), Arc::clone(&schedule), config.data_dir.clone());
+        Arc::new(move || save_settings(&dir, &frequencies, &schedule))
     };
     let rules_path = config.data_dir.join("automation-rules.json");
     let automation = Automation::spawn(
@@ -359,6 +453,9 @@ pub async fn run(
                 serde_json::json!({ "stats": worked.stats(&db), "missing_dxcc": worked.missing_dxcc(&db) })
             }) as Arc<dyn Fn() -> serde_json::Value + Send + Sync>
         }))
+        .with_frequencies(Arc::clone(&frequencies))
+        .with_schedule(Arc::clone(&schedule))
+        .with_settings_saver(settings_saver)
         .with_rules_saver(Arc::new(move |rules: &Rules| save_rules(&rules_path, rules)))
         .with_rig_if(config.rig_omnirig.then(|| Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>))
         .with_automation(automation);
@@ -385,6 +482,11 @@ pub async fn run(
             (tokio::spawn(engine.run(io)), Some(hub))
         }
     };
+
+    // la programmazione delle bande ha senso solo se la radio e' comandabile
+    if let Some(rig) = state.rig.clone() {
+        spawn_scheduler(state.clone(), rig);
+    }
 
     let mut app = build_router(state.clone()).route("/api/{*rest}", any(|| async { StatusCode::NOT_FOUND }));
     if let Some(ui) = &config.ui_dir {

@@ -67,6 +67,7 @@ dependencies = [
  "qso-export",
  "remote-api",
  "rig-control",
+ "serde",
  "serde_json",
  "tokio",
  "tokio-tungstenite 0.30.0",
@@ -1224,6 +1225,9 @@ dependencies = [
 [[package]]
 name = "rig-control"
 version = "0.5.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "rsqlite-vfs"

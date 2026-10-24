@@ -47,6 +47,7 @@ fn cq(id: u64, call: &str) -> Event {
         text: format!("CQ {call} FN42"),
         tag: Some(DecodeTag::NewDxcc),
         country: None,
+        continent: None,
     })
 }
 

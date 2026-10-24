@@ -20,6 +20,7 @@ struct Rig {
     hub: Arc<Hub>,
     jtdx: UdpSocket,
     events: broadcast::Receiver<Event>,
+    last_continent: std::sync::Mutex<Option<String>>,
 }
 
 async fn rig(adif: &str) -> Rig {
@@ -34,7 +35,7 @@ async fn rig(adif: &str) -> Rig {
     let jtdx = UdpSocket::bind("127.0.0.1:0").await.unwrap();
     // il Rig tiene vivo il bus finche' vive
     std::mem::forget(bus);
-    Rig { hub, jtdx, events }
+    Rig { hub, jtdx, events, last_continent: std::sync::Mutex::new(None) }
 }
 
 fn fixture(name: &str) -> Vec<u8> {
@@ -100,7 +101,10 @@ impl Rig {
         self.send(&decode_packet(text, time_ms)).await;
         loop {
             match timeout(Duration::from_secs(1), self.events.recv()).await {
-                Ok(Ok(Event::Decode(d))) => return (d.tag, d.country),
+                Ok(Ok(Event::Decode(d))) => {
+                    *self.last_continent.lock().unwrap() = d.continent.clone();
+                    return (d.tag, d.country);
+                }
                 Ok(Ok(_)) => {}
                 _ => panic!("Decode non ricevuto"),
             }
@@ -188,6 +192,18 @@ async fn an_empty_worked_log_means_no_novelty_tags_only_cq() {
     let (tag, country) = r.decode("CQ LM1XY KK00", 100).await;
     assert_eq!(tag, Some(DecodeTag::Cq), "senza lavorati tutto sarebbe una novita': non si etichetta");
     assert_eq!(country.as_deref(), Some("Lemuria"), "il paese si mostra comunque");
+}
+
+#[tokio::test]
+async fn decodes_carry_the_continent_of_the_sender() {
+    let mut r = rig(ADIF_ATLANTIS_15M).await;
+    r.on_15m().await;
+    r.decode("CQ LM1XY KK00", 100).await;
+    assert_eq!(r.last_continent.lock().unwrap().as_deref(), Some("NA"));
+    r.decode("CQ AT9ZZ FN42", 101).await;
+    assert_eq!(r.last_continent.lock().unwrap().as_deref(), Some("EU"));
+    r.decode("TNX 73 GL", 102).await;
+    assert_eq!(*r.last_continent.lock().unwrap(), None, "senza nominativo non c'e' continente");
 }
 
 #[tokio::test]

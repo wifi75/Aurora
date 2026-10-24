@@ -32,6 +32,9 @@ pub struct StationStatus {
     /// Durata del ciclo, in secondi.
     #[serde(default)]
     pub tr_period: Option<u32>,
+    /// Continente del proprio nominativo, se `cty.dat` e' caricato.
+    #[serde(default)]
+    pub own_continent: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -70,6 +73,9 @@ pub struct DecodedMessage {
     /// Paese di chi trasmette, se riconosciuto.
     #[serde(default)]
     pub country: Option<String>,
+    /// Continente di chi trasmette (AF, AN, AS, EU, NA, OC, SA), se il paese e' noto.
+    #[serde(default)]
+    pub continent: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

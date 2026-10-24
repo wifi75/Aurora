@@ -1,3 +1,11 @@
+/// Nome canonico della banda (`20m`), da `20`, `20M` o ` 20m `; `None` se non e' una banda nota.
+pub fn canonical_band(band: &str) -> Option<String> {
+    let band = band.trim().to_lowercase();
+    let digits = band.strip_suffix('m').unwrap_or(&band);
+    let name = format!("{digits}m");
+    ft8_frequency(&name).map(|_| name)
+}
+
 /// Frequenza di dial FT8 della banda (Hz), come le frequenze predefinite di JTDX.
 pub fn ft8_frequency(band: &str) -> Option<u64> {
     let band = band.trim().to_lowercase();

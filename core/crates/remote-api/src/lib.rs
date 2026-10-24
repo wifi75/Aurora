@@ -15,7 +15,7 @@ use aurora_core::{Bus, Event, StationStatus};
 use axum::Router;
 use logbook::Logbook;
 use qso_engine::{Automation, Rules};
-use rig_control::Rig;
+use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
@@ -52,6 +52,12 @@ pub struct AppState {
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
     pub rules_saver: Option<RulesSaver>,
+    /// Frequenze di lavoro per banda e modo (si cambiano dalle impostazioni).
+    pub frequencies: Arc<Mutex<FrequencyTable>>,
+    /// Programmazione delle bande per orario.
+    pub schedule: Arc<Mutex<Schedule>>,
+    /// Chiamato dopo ogni modifica di frequenze o programmazione, per salvarle.
+    pub settings_saver: Option<Arc<dyn Fn() + Send + Sync>>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -91,7 +97,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, shared, shutdown: Arc::new(shutdown) }
     }
 
     pub fn with_stats_if(self, stats: Option<StatsProvider>) -> AppState {
@@ -109,6 +115,31 @@ impl AppState {
     pub fn with_rules_saver(mut self, saver: RulesSaver) -> AppState {
         self.rules_saver = Some(saver);
         self
+    }
+
+    pub fn with_frequencies(mut self, frequencies: Arc<Mutex<FrequencyTable>>) -> AppState {
+        self.frequencies = frequencies;
+        self
+    }
+
+    pub fn with_schedule(mut self, schedule: Arc<Mutex<Schedule>>) -> AppState {
+        self.schedule = schedule;
+        self
+    }
+
+    pub fn with_settings_saver(mut self, saver: Arc<dyn Fn() + Send + Sync>) -> AppState {
+        self.settings_saver = Some(saver);
+        self
+    }
+
+    /// Vero se JTDX sta trasmettendo adesso.
+    pub fn is_transmitting(&self) -> bool {
+        self.current_status().is_some_and(|s| s.transmitting)
+    }
+
+    /// Modo in uso ("FT8" o "FT4"); FT8 finche' JTDX non lo ha detto.
+    pub fn current_mode(&self) -> String {
+        self.current_status().map(|s| s.mode).filter(|m| !m.is_empty()).unwrap_or_else(|| "FT8".into())
     }
 
     pub fn with_rig(mut self, rig: Arc<dyn Rig>) -> AppState {

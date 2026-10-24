@@ -14,6 +14,7 @@ fn decode(id: u64) -> Event {
         text: "CQ DX JA1XYZ PM95".into(),
         tag: None,
         country: None,
+        continent: None,
     })
 }
 

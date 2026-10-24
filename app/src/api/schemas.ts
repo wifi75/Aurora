@@ -23,6 +23,7 @@ export const StationStatusSchema = z.object({
   rx_df: z.number().nullable().optional(),
   tx_message: z.string().nullable().optional(),
   tr_period: z.number().nullable().optional(),
+  own_continent: z.string().nullable().optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 
@@ -54,6 +55,7 @@ export const DecodedMessageSchema = z.object({
   text: z.string(),
   tag: DecodeTagSchema.nullable(),
   country: z.string().nullable().optional(),
+  continent: z.string().nullable().optional(),
 });
 export type DecodedMessage = z.infer<typeof DecodedMessageSchema>;
 

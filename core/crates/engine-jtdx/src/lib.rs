@@ -153,7 +153,9 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
     match packet.message {
         Message::Status(s) => {
             state.band = if s.dial_freq > 0 { band_of(s.dial_freq) } else { None };
-            let _ = io.events.send(Event::Status(to_status(&s)));
+            let mut status = to_status(&s);
+            status.own_continent = state.enrichment.as_ref().and_then(|e| e.continent_of(&status.de_call));
+            let _ = io.events.send(Event::Status(status));
         }
         Message::Decode(d) => {
             // un decode rimandato da un Replay e gia' noto non va mostrato due volte
@@ -163,9 +165,10 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
             let id = state.store.insert(d.clone(), clock.now_ms());
             let mut message = to_decoded(id, &d);
             if let Some(enrichment) = &state.enrichment {
-                let (country, tag) = enrichment.annotate(&message.text, state.band);
-                message.country = country;
-                message.tag = tag;
+                let found = enrichment.annotate(&message.text, state.band);
+                message.country = found.country;
+                message.continent = found.continent;
+                message.tag = found.tag;
             }
             let _ = io.events.send(Event::Decode(message));
         }

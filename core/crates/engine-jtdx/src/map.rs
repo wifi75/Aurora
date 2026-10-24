@@ -21,6 +21,7 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         rx_df: Some(s.rx_df),
         tx_message: non_empty(s.tx_message.as_deref()),
         tr_period: s.tr_period,
+        own_continent: None,
     }
 }
 
@@ -37,6 +38,7 @@ pub fn to_decoded(id: u64, d: &WireDecode) -> DecodedMessage {
         text,
         tag: is_cq.then_some(DecodeTag::Cq),
         country: None,
+        continent: None,
     }
 }
 

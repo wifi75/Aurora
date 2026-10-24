@@ -61,6 +61,7 @@ async fn ws_receives_json_event_and_binary_spectrum_frame_with_expected_layout()
             text: "CQ TEST I2ABC JN45".into(),
             tag: None,
             country: None,
+            continent: None,
         }))
         .unwrap();
     s.bus.spectrum().send(row(0x0102_0304_0506_0708)).unwrap();

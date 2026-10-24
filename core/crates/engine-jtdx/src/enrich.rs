@@ -8,6 +8,13 @@ use crate::{
     worked::{Novelty, WorkedLog},
 };
 
+/// Esito dell'arricchimento di un messaggio.
+pub struct Annotation {
+    pub country: Option<String>,
+    pub continent: Option<String>,
+    pub tag: Option<DecodeTag>,
+}
+
 /// Paese e novita' di un decode, ricavati da `cty.dat` e dai QSO gia' fatti.
 pub struct Enrichment {
     db: Arc<DxccDb>,
@@ -19,27 +26,33 @@ impl Enrichment {
         Enrichment { db, worked }
     }
 
+    /// Continente di un nominativo (`AF`, `EU`, `NA`...), se `cty.dat` lo riconosce.
+    pub fn continent_of(&self, call: &str) -> Option<String> {
+        self.db.lookup(call).map(|found| self.db.entity(found.entity).continent.clone())
+    }
+
     /// Paese ed etichetta di un messaggio sulla banda corrente.
     ///
     /// Il paese si mostra sempre che sia noto. Le novita' si segnalano solo se il registro dei lavorati
     /// non e' vuoto (altrimenti tutto sarebbe "nuovo") e se la banda e' nota. La nuova griglia conta solo
     /// per i CQ: un messaggio tra altre due stazioni segnala al piu' un paese o una zona nuovi.
-    pub fn annotate(&self, text: &str, band: Option<&str>) -> (Option<String>, Option<DecodeTag>) {
+    pub fn annotate(&self, text: &str, band: Option<&str>) -> Annotation {
         let parsed = parse_message(text);
         let country = parsed
             .sender
             .as_deref()
             .and_then(|call| self.db.lookup(call))
             .map(|found| self.db.entity(found.entity).name.clone());
+        let continent = parsed.sender.as_deref().and_then(|call| self.continent_of(call));
         let base = parsed.is_cq.then_some(DecodeTag::Cq);
         let (Some(sender), Some(band)) = (parsed.sender.as_deref(), band) else {
-            return (country, base);
+            return Annotation { country, continent, tag: base };
         };
         if self.worked.is_empty() {
-            return (country, base);
+            return Annotation { country, continent, tag: base };
         }
         let novelty = self.worked.novelty(sender, parsed.grid.as_deref(), band, &self.db);
-        (country, tag_for(novelty, parsed.is_cq).or(base))
+        Annotation { country, continent, tag: tag_for(novelty, parsed.is_cq).or(base) }
     }
 
     /// Un QSO appena chiuso: da subito la stazione non e' piu' una novita'.

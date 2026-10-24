@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -41,6 +41,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/band", post(change_band))
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
+        .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
+        .route("/api/v1/schedule", get(schedule_get).put(schedule_put))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
@@ -307,13 +309,21 @@ async fn call_cq(State(state): State<AppState>, _: Authed, headers: HeaderMap, b
 #[derive(Deserialize)]
 struct BandBody {
     band: String,
+    /// Modo di cui si vuole la frequenza (predefinito: quello in uso).
+    mode: Option<String>,
 }
 
 /// Porta la radio sulla frequenza FT8 della banda (OmniRig, condiviso con JTDX). Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/band", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Banda sconosciuta (bad_band)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
 async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<BandBody>) -> Result<Json<Value>, ApiError> {
     let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
-    let hz = rig_control::bands::ft8_frequency(&body.band).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_band"))?;
+    let mode = body.mode.clone().unwrap_or_else(|| state.current_mode());
+    // il blocco chiude il lock prima di qualunque attesa
+    let found = {
+        let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+        table.frequency(&body.band, &mode)
+    };
+    let hz = found.ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_band"))?;
     if state.current_status().is_some_and(|s| s.transmitting) {
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
@@ -468,6 +478,50 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+fn saved(state: &AppState) {
+    if let Some(save) = &state.settings_saver {
+        save();
+    }
+}
+
+#[utoipa::path(get, path = "/api/v1/frequencies", responses((status = 200, description = "Frequenze di lavoro per banda e modo")))]
+async fn frequencies_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+    Json(serde_json::to_value(table.entries()).unwrap_or(Value::Null))
+}
+
+#[utoipa::path(put, path = "/api/v1/frequencies", responses((status = 200, description = "Tabella sostituita"), (status = 400, description = "Tabella non valida (bad_frequencies)")))]
+async fn frequencies_put(State(state): State<AppState>, _: Authed, Json(entries): Json<Vec<rig_control::table::Entry>>) -> Result<Json<Value>, ApiError> {
+    {
+        let mut table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+        table.set(entries).map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_frequencies"))?;
+    }
+    saved(&state);
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[utoipa::path(get, path = "/api/v1/schedule", responses((status = 200, description = "Programmazione delle bande")))]
+async fn schedule_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    let schedule = state.schedule.lock().unwrap_or_else(|p| p.into_inner());
+    Json(json!({ "enabled": schedule.enabled(), "entries": schedule.entries() }))
+}
+
+#[derive(Deserialize)]
+struct ScheduleBody {
+    enabled: bool,
+    entries: Vec<rig_control::schedule::ScheduleEntry>,
+}
+
+#[utoipa::path(put, path = "/api/v1/schedule", responses((status = 200, description = "Programmazione impostata"), (status = 400, description = "Programmazione non valida (bad_schedule)")))]
+async fn schedule_put(State(state): State<AppState>, _: Authed, Json(body): Json<ScheduleBody>) -> Result<Json<Value>, ApiError> {
+    {
+        let mut schedule = state.schedule.lock().unwrap_or_else(|p| p.into_inner());
+        schedule.set(body.enabled, body.entries).map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_schedule"))?;
+    }
+    saved(&state);
+    Ok(Json(json!({ "ok": true })))
 }
 
 async fn openapi() -> Json<Value> {

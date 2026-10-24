@@ -4,7 +4,7 @@ use aurora_core::{DecodeTag, DecodedMessage};
 use qso_engine::{Brain, DecisionKind, Limits, Mode, Rules};
 
 fn decode(id: u64, text: &str, tag: Option<DecodeTag>, snr: i32) -> DecodedMessage {
-    DecodedMessage { id, time_ms: 0, snr, delta_time: 0.0, freq_hz: 1500, text: text.into(), tag, country: None }
+    DecodedMessage { id, time_ms: 0, snr, delta_time: 0.0, freq_hz: 1500, text: text.into(), tag, country: None, continent: None }
 }
 
 fn cq(id: u64, call: &str) -> DecodedMessage {

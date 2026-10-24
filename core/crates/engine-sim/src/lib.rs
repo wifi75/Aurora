@@ -159,6 +159,7 @@ impl State {
             text,
             tag,
             country: None,
+            continent: None,
         }
     }
 
