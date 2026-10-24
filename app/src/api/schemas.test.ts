@@ -17,6 +17,15 @@ describe('EventSchema', () => {
     if (parsed.type === 'decode') expect(parsed.tag).toBe('new_dxcc');
   });
 
+  it('accepts the new tags and the country, and a decode without country', () => {
+    const base = { type: 'decode', id: 1, time_ms: 0, snr: -1, delta_time: 0, freq_hz: 100, text: 'X' };
+    const a = EventSchema.safeParse({ ...base, tag: 'new_dxcc_band', country: 'Giappone' });
+    const b = EventSchema.safeParse({ ...base, tag: 'new_grid' });
+    expect(a.success).toBe(true);
+    expect(b.success).toBe(true);
+    if (a.success && a.data.type === 'decode') expect(a.data.country).toBe('Giappone');
+  });
+
   it('accepts a decode event without tag (null)', () => {
     const parsed = EventSchema.safeParse({
       type: 'decode', id: 1, time_ms: 0, snr: -1, delta_time: 0, freq_hz: 100, text: 'X', tag: null,

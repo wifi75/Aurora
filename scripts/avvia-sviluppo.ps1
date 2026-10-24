@@ -17,6 +17,10 @@ $root = Split-Path -Parent $PSScriptRoot
 $engineEnv = ''
 if ($Jtdx) {
     $engineEnv = "`$env:AURORA_ENGINE='jtdx'; `$env:AURORA_UDP_LISTEN='127.0.0.1:2334'; `$env:AURORA_UDP_FORWARD='$Inoltra'; "
+    $cty = 'C:\JTDX64\159\share\jtdx\cty.dat'
+    $log = Join-Path $env:LOCALAPPDATA 'JTDX\wsjtx_log.adi'
+    if (Test-Path $cty) { $engineEnv += "`$env:AURORA_CTY_PATH='$cty'; " }
+    if (Test-Path $log) { $engineEnv += "`$env:AURORA_WORKED_ADIF='$log'; " }
     if ($Audio) { $engineEnv += "`$env:AURORA_AUDIO_DEVICE='$Audio'; " }
 }
 

@@ -11,6 +11,7 @@ fn decode_event() -> Event {
         freq_hz: 1500,
         text: "CQ DX JA1XYZ PM95".to_string(),
         tag: Some(DecodeTag::NewDxcc),
+        country: None,
     })
 }
 
@@ -69,4 +70,37 @@ fn event_serializes_with_type_tag() {
     });
     let back: Event = serde_json::from_str(&serde_json::to_string(&status).unwrap()).unwrap();
     assert_eq!(back, status);
+}
+
+#[test]
+fn decode_event_carries_country_and_the_new_tags() {
+    let event = Event::Decode(DecodedMessage {
+        id: 3,
+        time_ms: 1,
+        snr: -5,
+        delta_time: 0.1,
+        freq_hz: 900,
+        text: "CQ AT3AB FN42".into(),
+        tag: Some(DecodeTag::NewDxccBand),
+        country: Some("Atlantis".into()),
+    });
+    let v: serde_json::Value = serde_json::to_value(&event).unwrap();
+    assert_eq!(v["country"], "Atlantis");
+    assert_eq!(v["tag"], "new_dxcc_band");
+    let grid = Event::Decode(DecodedMessage { tag: Some(DecodeTag::NewGrid), country: None, ..match event.clone() {
+        Event::Decode(d) => d,
+        _ => unreachable!(),
+    } });
+    let v: serde_json::Value = serde_json::to_value(&grid).unwrap();
+    assert_eq!(v["tag"], "new_grid");
+    assert!(v["country"].is_null());
+}
+
+#[test]
+fn decode_json_without_country_still_parses() {
+    let old = r#"{"type":"decode","id":1,"time_ms":0,"snr":-1,"delta_time":0.0,"freq_hz":100,"text":"X","tag":null}"#;
+    match serde_json::from_str::<Event>(old).unwrap() {
+        Event::Decode(d) => assert_eq!(d.country, None),
+        other => panic!("{other:?}"),
+    }
 }

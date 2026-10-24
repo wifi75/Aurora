@@ -19,8 +19,12 @@ pub struct StationStatus {
 #[serde(rename_all = "snake_case")]
 pub enum DecodeTag {
     Cq,
+    /// Paese mai collegato.
     NewDxcc,
+    /// Paese gia' collegato, ma non su questa banda.
+    NewDxccBand,
     NewZone,
+    NewGrid,
     Auto,
 }
 
@@ -34,6 +38,9 @@ pub struct DecodedMessage {
     pub freq_hz: u32,
     pub text: String,
     pub tag: Option<DecodeTag>,
+    /// Paese di chi trasmette, se riconosciuto.
+    #[serde(default)]
+    pub country: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

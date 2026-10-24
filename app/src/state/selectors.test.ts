@@ -12,6 +12,11 @@ describe('cqDecodes', () => {
     expect(cqDecodes(list).map((d) => d.id)).toEqual([5, 3, 1]);
   });
 
+  it('keeps every kind of news too', () => {
+    const list = [decode(4, 'new_dxcc_band'), decode(3, 'new_grid'), decode(2, 'new_zone'), decode(1, null)];
+    expect(cqDecodes(list).map((d) => d.id)).toEqual([4, 3, 2]);
+  });
+
   it('limits the number of messages', () => {
     const list = Array.from({ length: 100 }, (_, i) => decode(i + 1, 'cq'));
     expect(cqDecodes(list, 40)).toHaveLength(40);

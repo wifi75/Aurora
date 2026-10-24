@@ -25,6 +25,7 @@ pub fn to_decoded(id: u64, d: &WireDecode) -> DecodedMessage {
         freq_hz: d.delta_freq,
         text,
         tag: is_cq.then_some(DecodeTag::Cq),
+        country: None,
     }
 }
 

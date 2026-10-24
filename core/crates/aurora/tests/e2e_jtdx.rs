@@ -71,6 +71,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(!c.allow_tx, "la trasmissione e' chiusa per impostazione predefinita");
     assert!(c.audio_device.is_none());
     assert!(c.replay_on_connect, "il Replay all'avvio e' attivo per impostazione predefinita");
+    assert!(c.cty_path.is_none() && c.worked_adif.is_none());
 
     let env = |k: &str| match k {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
@@ -79,6 +80,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_ALLOW_TX" => Some("1".to_string()),
         "AURORA_AUDIO_DEVICE" => Some("USB Audio".to_string()),
         "AURORA_REPLAY_ON_CONNECT" => Some("0".to_string()),
+        "AURORA_CTY_PATH" => Some("dati/cty.dat".to_string()),
+        "AURORA_WORKED_ADIF" => Some("dati/log.adi".to_string()),
         _ => None,
     };
     let c = Config::from_lookup(env).unwrap();
@@ -89,6 +92,8 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     assert!(c.allow_tx);
     assert_eq!(c.audio_device.as_deref(), Some("USB Audio"));
     assert!(!c.replay_on_connect);
+    assert_eq!(c.cty_path, Some(PathBuf::from("dati/cty.dat")));
+    assert_eq!(c.worked_adif, Some(PathBuf::from("dati/log.adi")));
 
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
     assert!(Config::from_lookup(bad("AURORA_UDP_LISTEN", "non-un-indirizzo")).is_err());
@@ -116,6 +121,72 @@ async fn e2e_jtdx_status_and_decode_arrive_over_websocket() {
         }
     }
     assert!(status && decode_seen, "status: {status}, decode: {decode_seen}");
+}
+
+const CTY: &str = "Utopia: 14: 27: EU: 43.00: -7.00: -1.0: AA:
+    AA;
+Lemuria: 05: 08: NA: 10.00: 60.00: 5.0: LM:
+    LM;
+";
+
+#[tokio::test]
+async fn e2e_decode_carries_country_and_news_when_data_files_are_given() {
+    let dir = temp_dir("enrich");
+    let (cty, adif) = (dir.join("cty.dat"), dir.join("log.adi"));
+    std::fs::write(&cty, CTY).unwrap();
+    std::fs::write(&adif, "<CALL:5>AA9ZZ<BAND:3>15m<GRIDSQUARE:4>FN42<EOR>
+").unwrap();
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: temp_dir("enrich-data"),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        cty_path: Some(cty),
+        worked_adif: Some(adif),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    let jtdx = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let hub = server.hub.as_ref().unwrap().local_addr();
+    let mut ws = open_ws(server.addr, &cookie_for(&server)).await;
+    jtdx.send_to(&fixture("status-decoding.bin"), hub).await.unwrap();
+    jtdx.send_to(&fixture("decode-cq.bin"), hub).await.unwrap();
+    let mut seen = None;
+    for _ in 0..10 {
+        if let Some(Event::Decode(d)) = next_event(&mut ws, 1).await {
+            seen = Some(d);
+            break;
+        }
+    }
+    let d = seen.expect("decode non ricevuto");
+    assert_eq!(d.country.as_deref(), Some("Utopia"));
+    assert_eq!(d.tag, Some(aurora_core::DecodeTag::Cq), "AA1AA e' un paese gia' lavorato su 15m: solo CQ");
+    drop(tx);
+}
+
+#[tokio::test]
+async fn missing_data_files_do_not_stop_aurora() {
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: temp_dir("enrich-missing"),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        cty_path: Some(PathBuf::from("/non/esiste/cty.dat")),
+        worked_adif: Some(PathBuf::from("/non/esiste/log.adi")),
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await;
+    assert!(server.is_ok());
+    drop(tx);
 }
 
 #[tokio::test]

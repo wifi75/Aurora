@@ -3,7 +3,9 @@ import { formatClock } from '../lib/format';
 
 const BADGES: Partial<Record<DecodeTag, { label: string; kind: 'rare' | 'auto' }>> = {
   new_dxcc: { label: 'NUOVO DXCC', kind: 'rare' },
+  new_dxcc_band: { label: 'DXCC NUOVA BANDA', kind: 'rare' },
   new_zone: { label: 'NUOVA ZONA', kind: 'rare' },
+  new_grid: { label: 'NUOVA GRIGLIA', kind: 'rare' },
   auto: { label: 'AUTO', kind: 'auto' },
 };
 
@@ -31,7 +33,10 @@ export function DecodeList({ decodes, onReply, emptyText = 'In ascolto: i messag
             <span className="num muted">{formatClock(d.time_ms)}</span>
             <span className="num">{d.snr}</span>
             <span className="num muted">{d.freq_hz}</span>
-            <span className="data decode-text">{d.text}</span>
+            <span className="decode-text">
+              <span className="data">{d.text}</span>
+              {d.country ? <span className="decode-country muted">{d.country}</span> : null}
+            </span>
             {badge ? <span className={`badge badge--${badge.kind}`}>{badge.label}</span> : <span />}
           </button>
         );

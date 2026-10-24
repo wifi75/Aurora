@@ -1,8 +1,10 @@
 import type { DecodedMessage } from '../api/schemas';
 
-/** Solo i messaggi a cui conviene rispondere: CQ e novita' (nuovo DXCC o nuova zona). Ordine invariato. */
+const WORTH_ANSWERING = new Set(['cq', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_grid']);
+
+/** Solo i messaggi a cui conviene rispondere: CQ e novita' di ogni genere. Ordine invariato. */
 export function cqDecodes(decodes: DecodedMessage[], limit = 40): DecodedMessage[] {
   return decodes
-    .filter((d) => d.tag === 'cq' || d.tag === 'new_dxcc' || d.tag === 'new_zone')
+    .filter((d) => d.tag !== null && WORTH_ANSWERING.has(d.tag))
     .slice(0, limit);
 }

@@ -13,6 +13,7 @@ fn decode(id: u64) -> Event {
         freq_hz: 1500,
         text: "CQ DX JA1XYZ PM95".into(),
         tag: None,
+        country: None,
     })
 }
 

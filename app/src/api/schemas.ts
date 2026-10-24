@@ -19,7 +19,7 @@ export const StationStatusSchema = z.object({
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 
-export const DecodeTagSchema = z.enum(['cq', 'new_dxcc', 'new_zone', 'auto']);
+export const DecodeTagSchema = z.enum(['cq', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_grid', 'auto']);
 export type DecodeTag = z.infer<typeof DecodeTagSchema>;
 
 export const DecodedMessageSchema = z.object({
@@ -30,6 +30,7 @@ export const DecodedMessageSchema = z.object({
   freq_hz: z.number(),
   text: z.string(),
   tag: DecodeTagSchema.nullable(),
+  country: z.string().nullable().optional(),
 });
 export type DecodedMessage = z.infer<typeof DecodedMessageSchema>;
 

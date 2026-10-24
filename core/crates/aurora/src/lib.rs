@@ -11,7 +11,8 @@ use audio_spectrum::run_capture;
 use auth::{DeviceStore, SystemClock};
 use aurora_core::{Bus, Engine, EngineIo};
 use axum::{http::StatusCode, routing::any};
-use engine_jtdx::{JtdxConfig, JtdxEngine, SystemClock as EngineClock};
+use dxcc::DxccDb;
+use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::Logbook;
 use remote_api::{build_router, AppState, TxPolicy};
@@ -48,6 +49,10 @@ pub struct Config {
     /// Con JTDX: chiede il Replay dei decode correnti appena lo vede. Chi riceve il flusso (GridTracker2) li
     /// riceve di nuovo, marcati come "non nuovi".
     pub replay_on_connect: bool,
+    /// File `cty.dat` per riconoscere il paese di ogni stazione. Senza, niente paese ne' novita'.
+    pub cty_path: Option<PathBuf>,
+    /// Log ADIF dei QSO gia' fatti, per segnalare nuovi DXCC, zone e griglie.
+    pub worked_adif: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -84,6 +89,8 @@ impl Config {
             allow_tx: false,
             audio_device: None,
             replay_on_connect: true,
+            cty_path: None,
+            worked_adif: None,
         }
     }
 
@@ -147,6 +154,8 @@ impl Config {
             allow_tx,
             audio_device: get("AURORA_AUDIO_DEVICE").filter(|d| !d.trim().is_empty()),
             replay_on_connect,
+            cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
+            worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
         })
     }
 }
@@ -172,6 +181,37 @@ fn open_storage(data_dir: &Path) -> Result<(Arc<DeviceStore>, Arc<Logbook>), Sta
         .map_err(|e| StartError::Storage(e.to_string()))?;
     let logbook = Logbook::open(&data_dir.join("logbook.db")).map_err(|e| StartError::Storage(e.to_string()))?;
     Ok((Arc::new(auth), Arc::new(logbook)))
+}
+
+/// Carica `cty.dat`; se manca o non e' leggibile Aurora parte lo stesso, senza paese ne' novita'.
+fn load_dxcc(path: Option<&Path>) -> Option<Arc<DxccDb>> {
+    let path = path?;
+    match DxccDb::from_file(path) {
+        Ok(db) => {
+            tracing::info!("cty.dat letto: {} paesi", db.len());
+            Some(Arc::new(db))
+        }
+        Err(e) => {
+            tracing::warn!("paesi DXCC non attivi: {e}");
+            None
+        }
+    }
+}
+
+/// Carica i QSO gia' fatti; un file mancante o illeggibile vale come log vuoto (nessuna novita' segnalata).
+fn load_worked(path: Option<&Path>, db: &DxccDb) -> WorkedLog {
+    let Some(path) = path else { return WorkedLog::new() };
+    match std::fs::read(path) {
+        Ok(bytes) => {
+            let log = WorkedLog::from_adif(&String::from_utf8_lossy(&bytes), db);
+            tracing::info!("log letto: {} QSO", log.len());
+            log
+        }
+        Err(e) => {
+            tracing::warn!("log dei QSO non letto ({}): {e}", path.display());
+            WorkedLog::new()
+        }
+    }
 }
 
 /// Avvia il server e ritorna subito; si ferma quando `shutdown` si completa.
@@ -203,7 +243,11 @@ pub async fn run(
                 replay_on_connect: config.replay_on_connect,
                 ..JtdxConfig::default()
             };
-            let engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
+            let mut engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
+            if let Some(db) = load_dxcc(config.cty_path.as_deref()) {
+                let worked = load_worked(config.worked_adif.as_deref(), &db);
+                engine = engine.with_enrichment(db, worked);
+            }
             (tokio::spawn(engine.run(io)), Some(hub))
         }
     };

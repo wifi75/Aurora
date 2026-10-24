@@ -157,6 +157,7 @@ impl State {
             freq_hz: (bin as u32 * F_MAX_HZ) / BINS as u32,
             text,
             tag,
+            country: None,
         }
     }
 

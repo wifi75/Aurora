@@ -20,6 +20,22 @@ describe('DecodeList', () => {
     expect(screen.getByText('NUOVA ZONA')).toBeInTheDocument();
   });
 
+  it('shows the new band and new grid badges', () => {
+    render(<DecodeList decodes={[decode({ id: 1, tag: 'new_dxcc_band' }), decode({ id: 2, tag: 'new_grid' })]} onReply={() => {}} />);
+    expect(screen.getByText('DXCC NUOVA BANDA')).toBeInTheDocument();
+    expect(screen.getByText('NUOVA GRIGLIA')).toBeInTheDocument();
+  });
+
+  it('shows the country of the sender when known', () => {
+    render(<DecodeList decodes={[decode({ country: 'Giappone' })]} onReply={() => {}} />);
+    expect(screen.getByText('Giappone')).toBeInTheDocument();
+  });
+
+  it('shows no country text when unknown', () => {
+    render(<DecodeList decodes={[decode({ country: null }), decode({ id: 8 })]} onReply={() => {}} />);
+    expect(screen.queryByText('Giappone')).not.toBeInTheDocument();
+  });
+
   it('empty state invites listening', () => {
     render(<DecodeList decodes={[]} onReply={() => {}} />);
     expect(screen.getByText('In ascolto: i messaggi compaiono qui')).toBeInTheDocument();

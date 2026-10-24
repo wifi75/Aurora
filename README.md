@@ -6,7 +6,7 @@ Progettazione e sviluppo: Tiziano Cassone
 
 ## Stato
 
-Versione 0.3.0: core e interfaccia funzionanti su una **stazione simulata** oppure su **JTDX reale** (decode, stato, STOP TX, associazione del telefono, cascata dall'audio).
+Versione 0.4.0: core e interfaccia funzionanti su una **stazione simulata** oppure su **JTDX reale** (decode, stato, STOP TX, associazione del telefono, cascata dall'audio, paese e novita' dei decode, avvisi sonori).
 Esiti delle prove con JTDX 159 in `docs/fase0-rapporto.md`.
 
 ## Avvio rapido (Windows)

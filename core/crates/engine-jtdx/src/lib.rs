@@ -3,6 +3,7 @@
 //! Sicurezza: `Reply` fa trasmettere JTDX (provato dal vivo), quindi viene inviato solo con
 //! `allow_tx`; `HaltTx` invece parte sempre.
 
+pub mod enrich;
 pub mod map;
 pub mod text;
 pub mod worked;
@@ -19,9 +20,13 @@ use tokio::sync::broadcast::{self, error::RecvError};
 use udp_bridge::{decode, encode_halt_tx, encode_replay, encode_reply, Message};
 use udp_hub::Hub;
 
+use dxcc::DxccDb;
+
 use crate::{
-    map::{to_decoded, to_qso, to_status},
+    enrich::Enrichment,
+    map::{band_of, to_decoded, to_qso, to_status},
     store::DecodeStore,
+    worked::WorkedLog,
 };
 
 const DAY_MS: u64 = 86_400_000;
@@ -59,13 +64,20 @@ pub struct JtdxEngine {
     config: JtdxConfig,
     clock: Arc<dyn Clock>,
     datagrams: broadcast::Receiver<Vec<u8>>,
+    enrichment: Option<Enrichment>,
 }
 
 impl JtdxEngine {
     /// Si iscrive subito all'hub: nessun datagramma inviato dopo `new` va perso.
     pub fn new(hub: Arc<Hub>, config: JtdxConfig, clock: Arc<dyn Clock>) -> Self {
         let datagrams = hub.subscribe();
-        JtdxEngine { hub, config, clock, datagrams }
+        JtdxEngine { hub, config, clock, datagrams, enrichment: None }
+    }
+
+    /// Aggiunge paese e novita' (nuovo DXCC, zona, griglia) ai decode.
+    pub fn with_enrichment(mut self, db: Arc<DxccDb>, worked: WorkedLog) -> Self {
+        self.enrichment = Some(Enrichment::new(db, worked));
+        self
     }
 }
 
@@ -74,6 +86,9 @@ struct State {
     /// Identificativo e schema dell'ultimo pacchetto di JTDX: i comandi devono riusarli.
     ident: Option<(String, u32)>,
     last_peer: Option<SocketAddr>,
+    enrichment: Option<Enrichment>,
+    /// Banda corrente, dall'ultima frequenza comunicata da JTDX.
+    band: Option<&'static str>,
 }
 
 fn message_id(m: &Message) -> Option<String> {
@@ -90,8 +105,8 @@ fn message_id(m: &Message) -> Option<String> {
 
 impl Engine for JtdxEngine {
     async fn run(self, mut io: EngineIo) {
-        let JtdxEngine { hub, config, clock, mut datagrams } = self;
-        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None };
+        let JtdxEngine { hub, config, clock, mut datagrams, enrichment } = self;
+        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None, enrichment, band: None };
         loop {
             tokio::select! {
                 received = datagrams.recv() => match received {
@@ -137,6 +152,7 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
 
     match packet.message {
         Message::Status(s) => {
+            state.band = if s.dial_freq > 0 { band_of(s.dial_freq) } else { None };
             let _ = io.events.send(Event::Status(to_status(&s)));
         }
         Message::Decode(d) => {
@@ -145,12 +161,21 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
                 return;
             }
             let id = state.store.insert(d.clone(), clock.now_ms());
-            let _ = io.events.send(Event::Decode(to_decoded(id, &d)));
+            let mut message = to_decoded(id, &d);
+            if let Some(enrichment) = &state.enrichment {
+                let (country, tag) = enrichment.annotate(&message.text, state.band);
+                message.country = country;
+                message.tag = tag;
+            }
+            let _ = io.events.send(Event::Decode(message));
         }
         Message::Clear { .. } => state.store.clear(),
         ref m @ Message::QsoLogged { .. } => {
             let time_ms = (clock.now_ms() % DAY_MS) as u32;
             if let Some(qso) = to_qso(m, time_ms) {
+                if let Some(enrichment) = &mut state.enrichment {
+                    enrichment.record_qso(&qso.call, &qso.grid, &qso.band);
+                }
                 let _ = io.events.send(Event::QsoLogged(qso));
             }
         }

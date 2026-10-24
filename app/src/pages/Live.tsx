@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { postReply } from '../api/client';
 import { openStream } from '../api/stream';
+import { AlertSwitch } from '../components/AlertSwitch';
 import { DecodeList } from '../components/DecodeList';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Panel } from '../components/Panel';
@@ -9,6 +10,7 @@ import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
 import { WaterfallSizeSwitch } from '../components/WaterfallSizeSwitch';
 import { Waterfall } from '../components/Waterfall';
+import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
 import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
@@ -25,6 +27,39 @@ export function Live() {
   const connection = useStation((s) => s.connection);
   const [note, setNote] = useState('');
   const [size, setSize] = useState<WaterfallSize>(() => readSize(browserStorage()));
+
+  const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
+  const alertsRef = useRef(alerts);
+  alertsRef.current = alerts;
+  const audioRef = useRef<ToneContext | null>(null);
+
+  const changeAlerts = (next: AlertPrefs) => {
+    // il contesto audio si crea al primo gesto dell'utente: i browser non lo permettono prima
+    if (next.enabled && !audioRef.current) audioRef.current = webAudioContext();
+    saveAlerts(browserStorage(), next);
+    setAlerts(next);
+  };
+
+  // avvisi gia' accesi da una visita precedente: l'audio si abilita al primo tocco sulla pagina
+  useEffect(() => {
+    if (!alerts.enabled || audioRef.current) return;
+    const arm = () => {
+      audioRef.current ??= webAudioContext();
+    };
+    window.addEventListener('pointerdown', arm, { once: true });
+    return () => window.removeEventListener('pointerdown', arm);
+  }, [alerts.enabled]);
+
+  // suona solo per i messaggi arrivati dopo l'apertura della pagina
+  useEffect(() => {
+    let lastId: number | null = null;
+    return useStation.subscribe((state) => {
+      const picked = pickAlert(state.decodes, lastId);
+      lastId = picked.lastId;
+      const prefs = alertsRef.current;
+      if (picked.kind && prefs.enabled && audioRef.current) playAlert(picked.kind, prefs.volume, audioRef.current);
+    });
+  }, []);
 
   const changeSize = (next: WaterfallSize) => {
     saveSize(browserStorage(), next);
@@ -56,6 +91,7 @@ export function Live() {
       <div className="live-top">
         <StatusBar status={status} connection={connection} />
         <div className="live-actions">
+          <AlertSwitch value={alerts} onChange={changeAlerts} />
           <WaterfallSizeSwitch value={size} onChange={changeSize} />
           <StopButton variant="compact" />
         </div>
@@ -69,7 +105,7 @@ export function Live() {
           <Panel title="Stazione" className="station-panel">
             <StationPanel status={status} />
           </Panel>
-          <Panel title="Chiamate CQ" className="panel--cq">
+          <Panel title="CQ e novità" className="panel--cq">
             <DecodeList decodes={cqDecodes(decodes)} onReply={onReply} emptyText="Nessun CQ per ora" />
           </Panel>
           <Panel title="Tutti i messaggi" className="panel--all">
