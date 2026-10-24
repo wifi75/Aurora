@@ -87,6 +87,7 @@ export const controlStrings = {
     'Limpa as janelas de mensagens da Aurora.',
   ],
   'ctl.sec.rx': ['Ricezione', 'Reception', 'Empfang', 'Réception', 'Recepción', 'Receção'],
+  'ctl.clock': ['Ora UTC del PC', 'PC time, UTC', 'PC-Zeit, UTC', 'Heure du PC, UTC', 'Hora del PC, UTC', 'Hora do PC, UTC'],
   'ctl.period': ['Secondo del periodo in corso', 'Second of the current period', 'Sekunde der laufenden Periode', 'Seconde de la période en cours', 'Segundo del periodo en curso', 'Segundo do período em curso'],
   'ctl.hound': ['Hound', 'Hound', 'Hound', 'Hound', 'Hound', 'Hound'],
   'tip.ctl.hound': [

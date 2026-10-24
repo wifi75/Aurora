@@ -2095,3 +2095,8 @@
 .log4om-table th {
   padding: 0.2rem 0.5rem;
 }
+
+/* Orologio UTC accanto alla barra del periodo: stessa grafica e stessa misura della barra (e' la sua stessa classe) */
+.period--clock {
+  display: block;
+}

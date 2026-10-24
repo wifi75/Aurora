@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { formatClock } from '../lib/format';
 import { periodPosition } from '../lib/period';
 import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
@@ -11,7 +12,7 @@ const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'monitor', 'sync', 'agc', 'filt
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
 /** Avanzamento del periodo, come l'indicatore "14/15" del motore, ma continuo: si ridisegna a ogni fotogramma. */
-function PeriodBar({ mode, label, transmitting }: { mode: string; label: string; transmitting: boolean }) {
+function PeriodBar({ mode, label, clockLabel, transmitting }: { mode: string; label: string; clockLabel: string; transmitting: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     let frame = 0;
@@ -24,12 +25,18 @@ function PeriodBar({ mode, label, transmitting }: { mode: string; label: string;
   }, []);
   const { seconds, fraction, length } = periodPosition(now, mode);
   return (
-    <div className={`period${transmitting ? ' period--tx' : ''}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={length} aria-valuenow={seconds} title={label}>
-      <span className="period-fill" style={{ width: `${fraction * 100}%` }} />
-      <span className="period-text data">
-        {seconds}/{Math.round(length)}
-      </span>
-    </div>
+    <>
+      <div className={`period${transmitting ? ' period--tx' : ''}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={length} aria-valuenow={seconds} title={label}>
+        <span className="period-fill" style={{ width: `${fraction * 100}%` }} />
+        <span className="period-text data">
+          {seconds}/{Math.round(length)}
+        </span>
+      </div>
+      {/* l'ora UTC del PC accanto alla barra, con la sua stessa grafica e misura: sono i secondi che contano per i periodi */}
+      <time className="period period--clock" dateTime={new Date(now).toISOString()} aria-label={clockLabel} title={clockLabel}>
+        <span className="period-text data">{formatClock(now)}</span>
+      </time>
+    </>
   );
 }
 
@@ -78,7 +85,7 @@ export function RxControls({ mode, transmitting = false }: { mode: string; trans
           </button>
         ))}
       </div>
-      <PeriodBar mode={mode} label={t('ctl.period')} transmitting={transmitting} />
+      <PeriodBar mode={mode} label={t('ctl.period')} clockLabel={t('ctl.clock')} transmitting={transmitting} />
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
   );
