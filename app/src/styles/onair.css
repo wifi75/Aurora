@@ -1004,3 +1004,87 @@
   flex: 2 1 0;
   min-width: 15.5rem;
 }
+
+/* Attivita' di banda: sempre un rigo solo per messaggio, anche con il pannello stretto */
+.decode-list .decode-text,
+.decode-list .decode-text .data,
+.decode-list .decode-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-panel--all .decode-list,
+.dock-panel--all .decode-row,
+.dock-panel--cq .decode-list,
+.dock-panel--cq .decode-row {
+  font-size: 0.66rem;
+}
+
+@container (max-width: 40rem) {
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 3.4rem 1.7rem minmax(0, 1fr) minmax(0, 8.5rem) 4.8rem;
+    row-gap: 0;
+  }
+
+  .decode-list .decode-row .decode-text {
+    grid-column: auto;
+  }
+
+  .decode-list .decode-row .decode-where {
+    display: grid;
+    grid-column: auto;
+    grid-row: auto;
+    grid-template-columns: 1.3rem minmax(0, 1fr);
+    gap: 0;
+    font-size: inherit;
+  }
+
+  .decode-list .decode-row .decode-where .w-km {
+    display: none;
+  }
+
+  .decode-list .decode-row .badge-cell {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .decode-list .decode-row .c-time,
+  .decode-list .decode-row .c-snr {
+    grid-row: auto;
+  }
+}
+
+/* Etichette (GRIGLIA, NUOVA STAZ....) piccole e di misura fissa: il testo lungo si accorcia, la colonna non cambia */
+.decode-list .badge,
+.decode-list .badge-cell {
+  display: block;
+  box-sizing: border-box;
+  height: 0.95rem;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  font-size: 0.5rem;
+  line-height: 0.95rem;
+  letter-spacing: 0;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container (min-width: 40.01rem) and (max-width: 54rem) {
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4rem 2rem minmax(0, 1fr) 12rem 4.8rem;
+  }
+}
+
+@container (min-width: 54.01rem) {
+  .decode-list .decode-row {
+    grid-template-columns: 4rem 2rem 2.6rem 3.2rem minmax(0, 1fr) 14rem 4.8rem;
+  }
+
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4rem 2rem 3.2rem minmax(0, 1fr) 14rem 4.8rem;
+  }
+}
