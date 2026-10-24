@@ -20,6 +20,7 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
         <button
           key={m}
           type="button"
+          data-mode={m}
           className={`glass${m === mode ? ' glass--on' : ''}`}
           aria-pressed={m === mode}
           aria-current={m === mode ? 'true' : undefined}

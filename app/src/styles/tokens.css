@@ -10,6 +10,11 @@
 
   /* Accenti: ciano = stato e regole AUTO, ambra = eventi rari, rosso = solo STOP TX */
   --accent: #3fd6c8;
+  /* un colore per modo: FT8 viola, FT4 ambra; le bande restano ciano */
+  --mode-ft8: #9b8cff;
+  --mode-ft8-ink: #120d33;
+  --mode-ft4: #ffb347;
+  --mode-ft4-ink: #2b1700;
   --accent-ink: #04201d;
   --rare: #f2a93b;
   --rare-ink: #241604;
@@ -84,6 +89,10 @@
   --text: #12192a;
   --text-muted: #55627a;
   --accent: #0b7f75;
+  --mode-ft8: #5b45d6;
+  --mode-ft8-ink: #ffffff;
+  --mode-ft4: #b25e00;
+  --mode-ft4-ink: #ffffff;
   --accent-ink: #ffffff;
   --rare: #9a5d00;
   --rare-ink: #ffffff;

@@ -2,7 +2,6 @@
 
 /* Banda in uso: impossibile non vederla */
 .band-bar button[aria-current='true'] {
-  min-width: 3.2rem;
   background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
   border-color: var(--accent);
   box-shadow:
@@ -10,7 +9,6 @@
     0 0 0 2px var(--accent),
     0 0 26px 2px var(--glow);
   color: var(--accent-ink);
-  font-size: var(--text-md);
   font-weight: var(--weight-strong);
   opacity: 1;
 }
@@ -107,12 +105,39 @@
   gap: var(--space-1);
 }
 
-.mode-switch button[aria-current='true'] {
-  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent), 0 0 22px 2px var(--glow);
-  color: var(--accent-ink);
+/* Misure fisse: acceso o spento, ogni pulsante di modo e di banda occupa lo stesso spazio */
+.mode-switch button,
+.band-bar button {
+  justify-content: center;
+  box-sizing: border-box;
+  width: 3.5rem;
+  min-width: 3.5rem;
+  padding: 0;
+  font-size: var(--text-sm);
+}
+
+.mode-switch button[data-mode='FT8'] {
+  --mode: var(--mode-ft8);
+  --mode-ink: var(--mode-ft8-ink);
+}
+
+.mode-switch button[data-mode='FT4'] {
+  --mode: var(--mode-ft4);
+  --mode-ink: var(--mode-ft4-ink);
+}
+
+/* a riposo il colore del modo resta sul bordo e sul testo, cosi' si distinguono anche da spenti */
+.mode-switch button {
+  border-color: color-mix(in srgb, var(--mode) 55%, transparent);
+  color: var(--mode);
   font-weight: var(--weight-strong);
+}
+
+.mode-switch button[aria-current='true'] {
+  background: linear-gradient(180deg, var(--mode), color-mix(in srgb, var(--mode) 55%, #000));
+  border-color: var(--mode);
+  box-shadow: 0 0 0 2px var(--mode), 0 0 22px 2px color-mix(in srgb, var(--mode) 60%, transparent);
+  color: var(--mode-ink);
   opacity: 1;
 }
 
