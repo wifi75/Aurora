@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.8.1 - 2026-10-24
 - Tasto Esc: ferma la trasmissione e spegne AutoTX e Abilita Tx, in tutte le pagine; si spegne in Impostazioni → Generali.
 - Il doppio clic su un messaggio accende anche Abilita Tx (con la trasmissione aperta): con «1 QSO» JTDX lo spegne a ogni QSO finito e non richiamava piu' la stazione scelta.
 - Blocco DX della scheda Trasmissione piu' stretto.

@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-24, versione 0.8.0. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - JTDX 2.2.159 (`C:\JTDX64\159`) resta il motore di decodifica, CAT e TX; Aurora è cervello e interfaccia. JTDX non accetta `Configure` via UDP: le sue impostazioni di decodifica restano in JTDX.
