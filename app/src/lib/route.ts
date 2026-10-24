@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'guide' };
+export type Route = { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'guide' };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche e guida. Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -10,6 +10,7 @@ export function parseRoute(hash: string): Route {
   if (settings) return settings[1] ? { name: 'settings', tab: settings[1] } : { name: 'settings' };
   if (hash === '#/automazioni') return { name: 'automation' };
   if (hash === '#/statistiche') return { name: 'stats' };
+  if (hash === '#/mappa') return { name: 'map' };
   if (hash === '#/guida') return { name: 'guide' };
   return { name: 'live' };
 }

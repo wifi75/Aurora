@@ -34,7 +34,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [ ] Pubblicazione: 9 commit locali non pushati; il nominativo reale resta in due commit gia' su GitHub (`561c576`, `248b7f3`) e nei tag v0.6.0-v0.8.0: riscriverli richiede un force-push (decide Tiziano)
 - [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
 - [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\<nominativo>.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
-- [ ] Mappa dei QSO e dei CQ
+- [x] Mappa dei QSO e dei CQ (resta: linee verso la stazione scelta e la mappa senza Log4OM2, dal log ADIF)
 - [ ] Trasporti sicuri: HTTPS locale, Tailscale, Cloudflare con Access
 - [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora
 - [ ] Lista dei desiderati e avvisi push sul telefono

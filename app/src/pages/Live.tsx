@@ -2,7 +2,6 @@ import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
-import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
@@ -29,7 +28,7 @@ import { bandOf } from '../lib/format';
 import { signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
-import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
+import { registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { cqDecodes } from '../state/selectors';
 import { useStation } from '../state/station';
@@ -154,16 +153,6 @@ export function Live() {
         return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
     }
   };
-
-  useEffect(() => {
-    const { apply, setConnection } = useStation.getState();
-    const stream = openStream({
-      onEvent: apply,
-      onSpectrum: (frame) => emitSpectrum(frame.bins),
-      onState: setConnection,
-    });
-    return () => stream.close();
-  }, []);
 
   const attempt = async (action: () => Promise<void>, done: string) => {
     try {

@@ -27,6 +27,8 @@ pub type RulesSaver = Arc<dyn Fn(&Rules) + Send + Sync>;
 /// Calcola le statistiche del log a ogni richiesta.
 /// Legge gli ultimi N QSO del log di Log4OM2 (sola lettura).
 pub type Log4omProvider = Arc<dyn Fn(usize) -> Result<serde_json::Value, String> + Send + Sync>;
+/// I quadrati locatore gia' lavorati (per la mappa), dal log.
+pub type WorkedMapProvider = Arc<dyn Fn() -> Result<serde_json::Value, String> + Send + Sync>;
 /// Legge le impostazioni di JTDX dal suo file di configurazione (sola lettura).
 pub type JtdxConfigProvider = Arc<dyn Fn() -> Result<serde_json::Value, String> + Send + Sync>;
 /// Dato un nominativo, paese e zone dal file cty.dat.
@@ -61,6 +63,7 @@ pub struct AppState {
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
     pub log4om: Option<Log4omProvider>,
+    pub worked_map: Option<WorkedMapProvider>,
     pub engine_config: Option<JtdxConfigProvider>,
     pub engine_apply: Option<JtdxApplier>,
     /// Client NTP: controllo dell'orologio del PC.
@@ -118,7 +121,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -161,6 +164,11 @@ impl AppState {
 
     pub fn with_engine_config_if(mut self, reader: Option<JtdxConfigProvider>) -> AppState {
         self.engine_config = reader;
+        self
+    }
+
+    pub fn with_worked_map_if(mut self, reader: Option<WorkedMapProvider>) -> AppState {
+        self.worked_map = reader;
         self
     }
 
