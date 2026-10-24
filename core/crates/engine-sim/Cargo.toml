@@ -1,0 +1,14 @@
+[package]
+name = "engine-sim"
+description = "Stazione simulata deterministica per sviluppare e provare Aurora senza radio"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

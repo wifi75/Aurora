@@ -143,6 +143,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "engine-sim"
+version = "0.0.2"
+dependencies = [
+ "aurora-core",
+ "tokio",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
