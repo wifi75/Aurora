@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-24, versione 0.9.0. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - JTDX 2.2.159 (`C:\JTDX64\159`) resta il motore di decodifica, CAT e TX; Aurora è cervello e interfaccia. JTDX non accetta `Configure` via UDP: le sue impostazioni di decodifica restano in JTDX.
@@ -45,3 +45,7 @@ Stato al 2026-10-24, versione 0.8.1. Per riprendere il lavoro leggi anche `docs/
 - I test del core con Aurora accesa: `cargo test --target-dir target/testrun` (Windows blocca l'eseguibile in uso). Mai lanciare cargo da `core/crates`.
 - Aurora si guarda dall'IP del PC (192.168.1.225:8787), non da `localhost`; l'avvio di sviluppo imposta tutte le variabili in una sola chiamata (le variabili d'ambiente non passano tra chiamate PowerShell).
 - Testi dell'interfaccia: una tabella per area in `app/src/i18n/strings/`, colonne `[it, en, de, fr, es, pt]`; i test impediscono chiavi mancanti o segnaposto diversi.
+
+- Impostazioni del motore modificabili dall'interfaccia (`JtdxValues`, bozza in `lib/jtdxDraft.ts`): le modifiche non si salvano da sole, restano in bozza finche' non si preme «Applica e riavvia JTDX» (chiude JTDX, scrive `JTDX.ini` con copia `JTDX.ini.bak-aurora`, riavvia). Nel testo dell'interfaccia l'applicazione e' Aurora, JTDX e' «il motore».
+- Avvio: `scripts/avvia-sviluppo.ps1` parte sempre da pulito (chiude core e pannelli rimasti, una sola finestra `wt -w aurora`, una sola copia di JTDX). Il cambio banda ritenta una volta: OmniRig a volte e' occupato per un istante.
+- Regola di AGENTS.md: nessun riferimento all'assistente nei messaggi di commit; i commit locali fino a questo ciclo ne hanno ancora (trailer): da pulire prima del push insieme a nominativo e locatore reali.
