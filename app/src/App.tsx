@@ -18,7 +18,7 @@ export function App() {
 
   let content;
   if (route.name === 'pair') {
-    content = <Pair initialCode={route.code} onPaired={onPaired} />;
+    content = <Pair initialCode={route.code} autoSubmit={route.code.length === 8} onPaired={onPaired} />;
   } else if (session.isPending) {
     content = <p className="muted">Verifica del dispositivo…</p>;
   } else if (session.isError) {

@@ -1,9 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, finishPairing } from '../api/client';
 import { defaultDeviceName } from '../lib/deviceName';
 
 interface Props {
   initialCode?: string;
+  /** Aperta da un link con il codice (QR o pulsante): si associa da sola, senza un clic. */
+  autoSubmit?: boolean;
   onPaired(): void;
 }
 
@@ -18,7 +20,7 @@ function messageFor(error: unknown): string {
   return 'Non riesco a contattare Aurora. Controlla che sia acceso sul PC e che la rete sia raggiungibile.';
 }
 
-export function Pair({ initialCode = '', onPaired }: Props) {
+export function Pair({ initialCode = '', autoSubmit = false, onPaired }: Props) {
   const [code, setCode] = useState(digitsOnly(initialCode));
   const [name, setName] = useState(() => defaultDeviceName(navigator.userAgent));
   const [error, setError] = useState('');
@@ -31,8 +33,7 @@ export function Pair({ initialCode = '', onPaired }: Props) {
     return () => clearInterval(timer);
   }, [lockLeft > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const attempt = async () => {
     if (lockLeft > 0 || busy) return;
     if (code.length !== 8) {
       setError('Il codice ha 8 cifre: controlla quello mostrato sul PC.');
@@ -54,6 +55,20 @@ export function Pair({ initialCode = '', onPaired }: Props) {
       setBusy(false);
     }
   };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void attempt();
+  };
+
+  // il codice e' monouso: un solo tentativo automatico, anche con il doppio montaggio di sviluppo
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (autoSubmit && !autoTried.current && code.length === 8) {
+      autoTried.current = true;
+      void attempt();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <form className="pair" onSubmit={submit} noValidate>

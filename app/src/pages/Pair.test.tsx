@@ -59,4 +59,31 @@ describe('Pair', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Associa questo dispositivo' }));
     expect(await screen.findByText('Il codice è scaduto. Generane uno nuovo sul PC.')).toBeInTheDocument();
   });
+
+  it('submits by itself when opened from a link with a code', async () => {
+    vi.mocked(finishPairing).mockResolvedValue();
+    const onPaired = vi.fn();
+    render(<Pair initialCode="12345678" autoSubmit onPaired={onPaired} />);
+    await vi.waitFor(() => expect(onPaired).toHaveBeenCalledTimes(1));
+    expect(finishPairing).toHaveBeenCalledTimes(1);
+    expect(finishPairing).toHaveBeenCalledWith('12345678', expect.any(String));
+  });
+
+  it('does not submit by itself without the link flag', async () => {
+    render(<Pair initialCode="12345678" onPaired={() => {}} />);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(finishPairing).not.toHaveBeenCalled();
+  });
+
+  it('does not submit by itself when the code is incomplete', async () => {
+    render(<Pair initialCode="1234" autoSubmit onPaired={() => {}} />);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(finishPairing).not.toHaveBeenCalled();
+  });
+
+  it('shows the reason when the automatic attempt fails', async () => {
+    vi.mocked(finishPairing).mockRejectedValue(new ApiError(410, 'expired'));
+    render(<Pair initialCode="12345678" autoSubmit onPaired={() => {}} />);
+    expect(await screen.findByText('Il codice è scaduto. Generane uno nuovo sul PC.')).toBeInTheDocument();
+  });
 });
