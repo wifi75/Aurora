@@ -6,6 +6,8 @@ Il programma Windows (cartella `desktop/`) e' Tauri 2: dentro c'e' il **core di 
 
 **Installazione.** Si lancia `Aurora_X.Y.Z_x64-setup.exe`: installatore con logo, autore, licenza (GPL) e barra laterale, in italiano o inglese. Si installa per l'utente corrente (senza chiedere i permessi di amministratore) e mette Aurora nel menu Start.
 
+**Aggiornare a mano.** Si lancia il nuovo installatore sopra quello vecchio: se Aurora e' aperta (anche nel vassoio) la chiude da solo e conserva i dati. Questo vale dalla 0.10.3; con versioni precedenti installate, la prima volta si chiude Aurora dal vassoio (Esci) prima di lanciare l'installatore.
+
 **Primo avvio.** Aurora cerca da sola JTDX (`%LOCALAPPDATA%\JTDX\JTDX.ini`), il suo log, il file dei paesi (`cty.dat`), l'archivio di Log4OM2 e l'ingresso audio scelto in JTDX. Senza JTDX parte con il simulatore. Si mette tra i programmi che partono con Windows (si toglie dal vassoio).
 
 **Trasmissione chiusa.** Come sempre: si apre solo con `AURORA_ALLOW_TX=1`. Le impostazioni si scrivono nel file `aurora.env` (dal vassoio: *Apri la cartella dei dati*; si crea al primo avvio, tutto commentato) e valgono al prossimo avvio. Le variabili d'ambiente `AURORA_*` hanno la precedenza sul file. Due voci utili: `AURORA_AUTOSTART=0` tiene Aurora fuori dai programmi che partono con Windows (al primo avvio ci si mette da sola), `AURORA_DATA_DIR` sceglie un'altra cartella dei dati.
