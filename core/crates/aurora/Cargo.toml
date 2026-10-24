@@ -21,6 +21,7 @@ engine-jtdx = { path = "../engine-jtdx" }
 dxcc = { path = "../dxcc" }
 qso-engine = { path = "../qso-engine" }
 qso-export = { path = "../qso-export" }
+rig-control = { path = "../rig-control" }
 audio-spectrum = { path = "../audio-spectrum" }
 udp-hub = { path = "../udp-hub" }
 auth = { path = "../auth" }

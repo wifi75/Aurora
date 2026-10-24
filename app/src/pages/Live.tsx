@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getStationInfo, postReply } from '../api/client';
+import { getStationInfo, postBand, postReply } from '../api/client';
 import { openStream } from '../api/stream';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
@@ -110,6 +110,15 @@ export function Live() {
     return () => stream.close();
   }, []);
 
+  const pickBand = async (band: string) => {
+    try {
+      await postBand(band);
+      setNote(`Radio portata su ${band}.`);
+    } catch (error) {
+      setNote(replyErrorMessage(error));
+    }
+  };
+
   const onReply = useCallback(async (id: number) => {
     const target = useStation.getState().decodes.find((d) => d.id === id);
     try {
@@ -130,7 +139,11 @@ export function Live() {
           <StopButton variant="compact" />
         </div>
       </div>
-      <BandBar dialHz={status?.dial_hz ?? 0} />
+      <BandBar
+        dialHz={status?.dial_hz ?? 0}
+        locked={status?.transmitting ?? false}
+        onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
+      />
       <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
       <p className="live-note" role="status" aria-live="polite">
         {note}

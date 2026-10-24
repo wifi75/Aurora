@@ -66,6 +66,7 @@ dependencies = [
  "qso-engine",
  "qso-export",
  "remote-api",
+ "rig-control",
  "serde_json",
  "tokio",
  "tokio-tungstenite 0.30.0",
@@ -1208,6 +1209,7 @@ dependencies = [
  "logbook",
  "qrcode",
  "qso-engine",
+ "rig-control",
  "serde",
  "serde_json",
  "tokio",
@@ -1216,6 +1218,10 @@ dependencies = [
  "tracing",
  "utoipa",
 ]
+
+[[package]]
+name = "rig-control"
+version = "0.5.0"
 
 [[package]]
 name = "rsqlite-vfs"

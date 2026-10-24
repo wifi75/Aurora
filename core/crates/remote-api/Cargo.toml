@@ -11,6 +11,7 @@ aurora-core = { path = "../aurora-core" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 qso-engine = { path = "../qso-engine" }
+rig-control = { path = "../rig-control" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

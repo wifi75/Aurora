@@ -18,8 +18,8 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 5 ✔ | **Avvisi sonori** per le novità | A | Suoni generati dal browser, per categoria, con interruttore e volume |
 | 6 ✔ | **Motore delle automazioni** (`qso-engine`): regole, prova a vuoto, tetto di cicli, dead-man switch, registro delle decisioni | A | Salvaguardie già decise in specifica §6; un Reply fa trasmettere |
 | 7 ✔ | Pagina **Automazioni** nell'interfaccia | A | Regole, interruttori, cronologia con il motivo di ogni decisione |
-| 8 | **Comando della radio** via rigctld (frequenza, banda, PTT) | A | H3 da verificare; JTDX potrebbe usare Hamlib NET rigctl |
-| 9 | **TriggerCQ** e **SetTxDeltaFreq** (tipi 50 e 51) | M | Significato dei bool di `trigger_CQ` da confermare |
+| 8 ✔ | **Comando della radio** via rigctld (frequenza, banda, PTT) | A | H3 da verificare; JTDX potrebbe usare Hamlib NET rigctl |
+| 9 ✔ | **TriggerCQ** e **SetTxDeltaFreq** (tipi 50 e 51) | M | Significato dei bool di `trigger_CQ` da confermare |
 | 10 | **Trasporti sicuri**: HTTPS locale con certificato fissato dall'associazione, Tailscale, Cloudflare con Access | A | Oggi l'accesso da telefono e' HTTP sulla rete locale |
 | 11 | **Programma Windows** (guscio Tauri 2) con avvio automatico di Aurora | A | Oggi l'interfaccia e' una pagina web |
 | 12 ◐ | **Pagina Impostazioni** (a schede, in sola lettura per trasmissione/log/collegamenti; si cambiano ancora da variabili d'ambiente) (dispositivi associati, revoca, trasmissione, audio, inoltro) | M | Oggi si configura da variabili d'ambiente |

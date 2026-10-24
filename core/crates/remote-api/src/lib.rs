@@ -15,6 +15,7 @@ use aurora_core::{Bus, Event, StationStatus};
 use axum::Router;
 use logbook::Logbook;
 use qso_engine::Automation;
+use rig_control::Rig;
 use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
@@ -40,6 +41,8 @@ pub struct AppState {
     pub automation: Option<Automation>,
     /// Come e' avviata la stazione (da mostrare nelle impostazioni, sola lettura).
     pub station_info: Arc<serde_json::Value>,
+    /// La radio comandabile (cambio banda), se disponibile.
+    pub rig: Option<Arc<dyn Rig>>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -79,7 +82,19 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, shared, shutdown: Arc::new(shutdown) }
+    }
+
+    pub fn with_rig(mut self, rig: Arc<dyn Rig>) -> AppState {
+        self.rig = Some(rig);
+        self
+    }
+
+    pub fn with_rig_if(self, rig: Option<Arc<dyn Rig>>) -> AppState {
+        match rig {
+            Some(r) => self.with_rig(r),
+            None => self,
+        }
     }
 
     pub fn with_station_info(mut self, info: serde_json::Value) -> AppState {

@@ -12,6 +12,7 @@
 - Etichette complete come i colori di JTDX: zona CQ e ITU (anche per banda), griglia per banda, prefisso (WPX), nuova stazione, gia' lavorata.
 - Finestre comprimibili con doppio clic sul titolo (la cascata si riduce alla sola barra).
 - L'interfaccia compilata si serve da Aurora (`AURORA_UI_DIR`) anche sulla rete locale, per l'uso da smartphone.
+- Cambio banda: `rig-control` comanda la radio via OmniRig (condiviso con JTDX, che lo usa come CAT), `POST /api/v1/commands/band` con le frequenze FT8 predefinite, mai in trasmissione; barra delle bande cliccabile. Si attiva con `AURORA_RIG=omnirig`. Provato dal vivo (15 m -> 20 m -> 15 m).
 - Simulatore e test senza nominativi reali.
 - Test dell'interfaccia: cartelle temporanee uniche nei test e2e.
 

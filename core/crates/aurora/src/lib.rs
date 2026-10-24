@@ -62,6 +62,8 @@ pub struct Config {
     pub export_udp: Vec<SocketAddr>,
     /// File ADIF a cui aggiungere ogni QSO.
     pub export_file: Option<PathBuf>,
+    /// Comando della radio via OmniRig (la stessa che usa JTDX): cambio banda dall'interfaccia.
+    pub rig_omnirig: bool,
 }
 
 #[derive(Debug)]
@@ -103,6 +105,7 @@ impl Config {
             auto_limits: Limits::default(),
             export_udp: Vec::new(),
             export_file: None,
+            rig_omnirig: false,
         }
     }
 
@@ -188,6 +191,11 @@ impl Config {
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
             export_udp,
+            rig_omnirig: match get("AURORA_RIG").as_deref() {
+                None | Some("none") | Some("") => false,
+                Some("omnirig") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_RIG deve essere none o omnirig, non {other}"))),
+            },
             export_file: get("AURORA_EXPORT_FILE").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
         })
     }
@@ -304,6 +312,7 @@ pub async fn run(
         "udp_listen": config.udp_listen.to_string(),
         "udp_forward": config.udp_forward.iter().map(ToString::to_string).collect::<Vec<_>>(),
         "export_udp": config.export_udp.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        "rig_control": config.rig_omnirig,
         "export_file": config.export_file.as_ref().map(|p| p.display().to_string()),
         "audio_device": config.audio_device,
         "cty_loaded": dxcc_loaded,
@@ -317,6 +326,7 @@ pub async fn run(
     });
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
+        .with_rig_if(config.rig_omnirig.then(|| Arc::new(rig_control::OmniRig) as Arc<dyn rig_control::Rig>))
         .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;

@@ -24,7 +24,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(change_band, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -39,6 +39,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/free-text", post(free_text))
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
+        .route("/api/v1/commands/band", post(change_band))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stream", get(ws::stream))
@@ -299,6 +300,31 @@ async fn call_cq(State(state): State<AppState>, _: Authed, headers: HeaderMap, b
     }
     check_tx_allowed(&state, &headers)?;
     dispatch(&state, Command::CallCq { modifier })
+}
+
+#[derive(Deserialize)]
+struct BandBody {
+    band: String,
+}
+
+/// Porta la radio sulla frequenza FT8 della banda (OmniRig, condiviso con JTDX). Mai durante la trasmissione.
+#[utoipa::path(post, path = "/api/v1/commands/band", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Banda sconosciuta (bad_band)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
+async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<BandBody>) -> Result<Json<Value>, ApiError> {
+    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let hz = rig_control::bands::ft8_frequency(&body.band).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_band"))?;
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    // il comando blocca (PowerShell e COM): fuori dal thread asincrono
+    let done = tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await;
+    match done {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cambio banda fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
 }
 
 #[derive(Deserialize)]

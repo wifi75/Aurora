@@ -77,6 +77,7 @@ export async function putAutomation(change: AutomationChange): Promise<Automatio
 export interface StationInfo {
   engine?: string;
   tx_allowed: boolean;
+  rig_control?: boolean;
   udp_listen: string;
   udp_forward: string[];
   export_udp: string[];
@@ -101,4 +102,8 @@ export async function postCq(modifier: string): Promise<void> {
 
 export async function postTxFrequency(hz: number): Promise<void> {
   await request('/commands/tx-frequency', jsonInit({ hz }));
+}
+
+export async function postBand(band: string): Promise<void> {
+  await request('/commands/band', jsonInit({ band }));
 }

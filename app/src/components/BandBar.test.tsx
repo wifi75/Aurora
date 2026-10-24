@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { BandBar } from './BandBar';
 
 describe('BandBar', () => {
@@ -16,8 +16,20 @@ describe('BandBar', () => {
     expect(screen.getAllByRole('button').every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true);
   });
 
-  it('only shows the band until the radio command is available', () => {
+  it('only shows the band when there is no radio command', () => {
     render(<BandBar dialHz={14_074_000} />);
+    expect(screen.getAllByRole('button').every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
+  });
+
+  it('asks for the band that was clicked when the radio can be controlled', () => {
+    const onPick = vi.fn();
+    render(<BandBar dialHz={14_074_000} onPick={onPick} />);
+    fireEvent.click(screen.getByRole('button', { name: '40' }));
+    expect(onPick).toHaveBeenCalledWith('40m');
+  });
+
+  it('is locked while transmitting', () => {
+    render(<BandBar dialHz={14_074_000} onPick={() => {}} locked />);
     expect(screen.getAllByRole('button').every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
   });
 });

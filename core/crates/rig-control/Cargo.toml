@@ -1,0 +1,9 @@
+[package]
+name = "rig-control"
+description = "Comando della radio (frequenza e banda) condiviso con JTDX tramite OmniRig"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
