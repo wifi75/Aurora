@@ -36,7 +36,8 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\<nominativo>.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
 - [x] Mappa dei QSO e dei CQ (resta: linee verso la stazione scelta e la mappa senza Log4OM2, dal log ADIF)
 - [ ] Trasporti sicuri: HTTPS locale, Tailscale, Cloudflare con Access
-- [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora
+- [x] Controllo delle nuove versioni sul repository con avviso (barra, evento, telefono)
+- [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora e aggiornamento automatico (OTA): scarica e installa la release; serve firma dei pacchetti e un repository leggibile (pubblico o con token)
 - [x] Lista dei desiderati con avvisi (pagina, suono, notifica del browser, telefono via ntfy); resta la notifica push nativa (richiede HTTPS) e la prova con il telefono vero
 - [ ] Licenza del progetto (decisione di Tiziano)
 - [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA

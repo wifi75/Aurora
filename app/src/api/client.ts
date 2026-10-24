@@ -389,6 +389,53 @@ export async function getLog4om(limit: number): Promise<Log4omView> {
   return (await (await request(`/log4om?limit=${limit}`)).json()) as Log4omView;
 }
 
+/** Una versione pubblicata di Aurora sul repository. */
+export interface UpdateRelease {
+  tag: string;
+  version: string;
+  name: string;
+  notes: string;
+  url: string;
+  published_at: string;
+  prerelease: boolean;
+}
+
+/** Stato degli aggiornamenti: versione in uso, impostazioni (senza il token) e ultimo esito. */
+export interface UpdateStatus {
+  current: string;
+  enabled: boolean;
+  repo: string;
+  interval_hours: number;
+  prereleases: boolean;
+  has_token: boolean;
+  checked_at_ms: number;
+  available: UpdateRelease | null;
+  latest: UpdateRelease | null;
+  error: string | null;
+}
+
+/** Le impostazioni che si mandano: `token` assente = lo si lascia, vuoto = lo si toglie. */
+export interface UpdateConfigInput {
+  enabled: boolean;
+  repo: string;
+  interval_hours: number;
+  prereleases: boolean;
+  token?: string;
+}
+
+export async function getUpdate(): Promise<UpdateStatus> {
+  return (await (await request('/update')).json()) as UpdateStatus;
+}
+
+export async function putUpdate(input: UpdateConfigInput): Promise<UpdateStatus> {
+  return (await (await request('/update', { ...jsonInit(input), method: 'PUT' })).json()) as UpdateStatus;
+}
+
+/** Controlla subito se c'e' una versione nuova (serve internet). */
+export async function checkUpdate(): Promise<UpdateStatus> {
+  return (await (await request('/update/check', { method: 'POST' })).json()) as UpdateStatus;
+}
+
 /** La lista dei desiderati e gli ultimi avvisi. */
 export async function getWishlist(): Promise<{ config: Wishlist; recent: WantedAlert[] }> {
   return (await (await request('/wishlist')).json()) as { config: Wishlist; recent: WantedAlert[] };

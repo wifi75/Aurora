@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AuroraEvent, DecodedMessage, StationStatus, WantedAlert } from '../api/schemas';
+import type { AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { bandOf } from '../lib/format';
 import { usePrefs } from '../lib/prefs';
@@ -28,6 +28,8 @@ interface StationState {
   /** L'avviso mostrato nella barra in alto, finche' non si chiude. */
   wantedBanner: WantedAlert | null;
   dismissWanted(): void;
+  /** L'ultima nuova versione comunicata dal core, mostrata subito senza aspettare il controllo periodico della pagina. */
+  updateNotice: UpdateNotice | null;
   /** Cambi comandati (banda, modo) che il motore non ha ancora confermato: finche' non coincidono, hanno la precedenza. */
   pending: Partial<StationStatus>;
   pendingAt: number;
@@ -92,6 +94,7 @@ export const useStation = create<StationState>((set) => ({
   pendingBand: null,
   wanted: [],
   wantedBanner: null,
+  updateNotice: null,
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -130,6 +133,11 @@ export const useStation = create<StationState>((set) => ({
         set((s) => ({ wanted: [alert, ...s.wanted].slice(0, MAX_WANTED), wantedBanner: alert }));
         break;
       }
+      case 'update_available': {
+        const { type: _type, ...notice } = event;
+        set({ updateNotice: notice });
+        break;
+      }
       case 'tx_halted':
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));
         break;
@@ -166,6 +174,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null });
   },
 }));

@@ -8,6 +8,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+pub mod updates;
 pub mod wanted;
 
 use audio_spectrum::run_capture;
@@ -564,6 +565,7 @@ pub async fn run(
     let _clock_task = clock.spawn();
     // DX Cluster: paese degli spot dal file cty.dat; nominativo di JTDX se non ne e' stato scelto uno; parte solo se acceso
     let wishlist = wishlist::WishlistService::open(&config.data_dir.join("wishlist.json"));
+    let updates = updater::UpdateService::open(&config.data_dir.join("update.json"), env!("CARGO_PKG_VERSION"));
     let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
     if let Some((db, _)) = enrichment.as_ref() {
         let db = Arc::clone(db);
@@ -584,6 +586,7 @@ pub async fn run(
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
+        .with_updates(Arc::clone(&updates))
         .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {
             let db = Arc::clone(db);
             Arc::new(move |call: &str| {
@@ -653,6 +656,12 @@ pub async fn run(
 
     // la lista dei desiderati: guarda messaggi e spot e avvisa (anche a pagina chiusa)
     wanted::spawn_watcher(Arc::clone(&wishlist), bus.events(), Some(Arc::clone(&cluster)));
+
+    // le nuove versioni sul repository: un controllo poco dopo l'avvio e poi ogni qualche ora
+    {
+        let phone = Arc::clone(&wishlist);
+        updates::spawn_checker(Arc::clone(&updates), bus.events(), Arc::new(move || phone.config().notify_url), Duration::from_secs(45));
+    }
 
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {

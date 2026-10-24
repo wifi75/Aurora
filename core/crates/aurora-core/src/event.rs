@@ -109,6 +109,15 @@ pub struct WantedAlert {
     pub time_ms: u64,
 }
 
+/// E' uscita una versione di Aurora piu' nuova di quella in uso.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateNotice {
+    pub version: String,
+    pub tag: String,
+    pub notes: String,
+    pub url: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -117,6 +126,7 @@ pub enum Event {
     QsoLogged(QsoRecord),
     TxHalted,
     Wanted(WantedAlert),
+    UpdateAvailable(UpdateNotice),
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

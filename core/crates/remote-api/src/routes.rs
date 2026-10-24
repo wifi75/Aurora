@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -57,6 +57,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/map/worked", get(map_worked))
         .route("/api/v1/wishlist", get(wishlist_get).put(wishlist_put))
         .route("/api/v1/wishlist/test", post(wishlist_test))
+        .route("/api/v1/update", get(update_get).put(update_put))
+        .route("/api/v1/update/check", post(update_check))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
@@ -876,6 +878,50 @@ async fn ui_settings_put(
             ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "ui_settings_write")
         })?;
     Ok(Json(json!({ "ok": true })))
+}
+
+fn update_service(state: &AppState) -> Result<std::sync::Arc<updater::UpdateService>, ApiError> {
+    state.updates.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "update_unavailable"))
+}
+
+/// Versione in uso, impostazioni del controllo e ultima release trovata (il token non si restituisce mai).
+#[utoipa::path(get, path = "/api/v1/update", responses((status = 200, description = "Stato degli aggiornamenti"), (status = 404, description = "Non disponibile (update_unavailable)")))]
+async fn update_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    Ok(Json(json!(update_service(&state)?.status())))
+}
+
+#[derive(Deserialize)]
+struct UpdateBody {
+    enabled: bool,
+    repo: String,
+    interval_hours: u32,
+    #[serde(default)]
+    prereleases: bool,
+    /// Token di sola lettura per un repository privato: assente = si lascia quello che c'e', vuoto = si toglie.
+    token: Option<String>,
+}
+
+/// Cambia le impostazioni del controllo degli aggiornamenti.
+#[utoipa::path(put, path = "/api/v1/update", responses((status = 200, description = "Salvato"), (status = 400, description = "Valore non valido (bad_update)"), (status = 500, description = "Scrittura fallita (update_write)")))]
+async fn update_put(State(state): State<AppState>, _: Authed, Json(body): Json<UpdateBody>) -> Result<Json<Value>, ApiError> {
+    let service = update_service(&state)?;
+    let config = updater::UpdateConfig { enabled: body.enabled, repo: body.repo, interval_hours: body.interval_hours, prereleases: body.prereleases, token: String::new() };
+    let mut check = config.clone();
+    check.token = body.token.clone().unwrap_or_default();
+    check.validate().map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_update"))?;
+    service.set_config(config, body.token).map_err(|e| {
+        tracing::warn!("salvataggio delle impostazioni degli aggiornamenti fallito: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_write")
+    })?;
+    Ok(Json(json!(service.status())))
+}
+
+/// Controlla subito se c'e' una versione nuova (serve internet).
+#[utoipa::path(post, path = "/api/v1/update/check", responses((status = 200, description = "Esito del controllo"), (status = 404, description = "Non disponibile (update_unavailable)")))]
+async fn update_check(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = update_service(&state)?;
+    let status = tokio::task::spawn_blocking(move || service.check()).await.map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_task"))?;
+    Ok(Json(json!(status)))
 }
 
 fn wishlist_service(state: &AppState) -> Result<std::sync::Arc<wishlist::WishlistService>, ApiError> {

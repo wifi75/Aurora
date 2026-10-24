@@ -9,7 +9,7 @@ pub mod version;
 pub use bus::Bus;
 pub use command::Command;
 pub use engine::{Engine, EngineIo};
-pub use event::{DecodeTag, DecodedMessage, Event, QsoRecord, SpectrumRow, StationStatus, WantedAlert};
+pub use event::{DecodeTag, DecodedMessage, Event, QsoRecord, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoreError {
