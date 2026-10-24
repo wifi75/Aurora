@@ -1,0 +1,7 @@
+[package]
+name = "probes"
+description = "Strumenti usa-e-getta per le prove della Fase 0 con JTDX"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+publish = false
