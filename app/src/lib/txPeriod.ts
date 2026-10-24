@@ -1,9 +1,11 @@
 /**
- * Il testo del tasto del periodo di trasmissione: accesa e' il periodo pari, spenta il dispari, e il testo dice a quali
- * secondi si trasmette (FT8: 00/30 o 15/45; FT4, con slot da 7,5 s: 00/15 o 7,5/22,5). Per gli altri modi null.
+ * Il testo del tasto del periodo di trasmissione. Il motore lo cambia da solo con lo stato e col modo («TX 00/30» e «TX 15/45»
+ * in FT8, «TX 00» in FT4...): si usa quello che scrive lui, riscritto «Tx ...». Se non si e' ancora letto, per FT8 si ricostruisce
+ * (acceso = periodo pari); per gli altri modi null.
  */
-export function periodLabel(on: boolean, mode: string | undefined): string | null {
+export function periodLabel(on: boolean, mode: string | undefined, engineLabel = ''): string | null {
+  const label = engineLabel.trim();
+  if (label !== '') return label.replace(/^tx/i, 'Tx');
   if (mode === 'FT8') return on ? 'Tx 00/30' : 'Tx 15/45';
-  if (mode === 'FT4') return on ? 'Tx 00/15' : 'Tx 7,5/22,5';
   return null;
 }

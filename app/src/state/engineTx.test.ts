@@ -4,8 +4,8 @@ import { parseEngineTx } from './engineTx';
 describe('parseEngineTx', () => {
   it('accepts six messages and a selection from 1 to 6', () => {
     const six = ['a', 'b', 'c', 'd', 'e', 'f'];
-    expect(parseEngineTx({ messages: six, selected: 2 })).toEqual({ messages: six, selected: 2 });
-    expect(parseEngineTx({ messages: six, selected: null })).toEqual({ messages: six, selected: null });
+    expect(parseEngineTx({ messages: six, selected: 2, minute: 'TX 15/45' })).toEqual({ messages: six, selected: 2, minute: 'TX 15/45' });
+    expect(parseEngineTx({ messages: six, selected: null })).toEqual({ messages: six, selected: null, minute: '' });
     expect(parseEngineTx({ messages: six, selected: 9 })?.selected).toBeNull();
   });
 
