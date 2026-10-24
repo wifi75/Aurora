@@ -3,7 +3,7 @@
 pub mod message;
 pub mod wire;
 
-pub use message::{decode, Decode, Message, Packet, Status};
+pub use message::{decode, encode_free_text, encode_halt_tx, encode_reply, Decode, Message, Packet, Status};
 
 /// Numero magico all'inizio di ogni datagramma.
 pub const MAGIC: u32 = 0xadbccbda;

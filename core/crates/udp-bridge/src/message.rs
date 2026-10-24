@@ -1,4 +1,4 @@
-use crate::{wire::Reader, Error, MAGIC};
+use crate::{wire::{Reader, Writer}, Error, MAGIC};
 
 pub const HEARTBEAT: u32 = 0;
 pub const STATUS: u32 = 1;
@@ -211,4 +211,42 @@ fn skip_qdatetime(r: &mut Reader) -> Result<(), Error> {
         r.i32()?;
     }
     Ok(())
+}
+
+fn command_header(kind: u32, schema: u32, id: &str) -> Writer {
+    let mut w = Writer::new();
+    w.u32(MAGIC);
+    w.u32(schema);
+    w.u32(kind);
+    w.utf8(Some(id));
+    w
+}
+
+/// Ferma la trasmissione; con `auto_tx_only` disattiva solo la trasmissione automatica.
+pub fn encode_halt_tx(id: &str, schema: u32, auto_tx_only: bool) -> Vec<u8> {
+    let mut w = command_header(HALT_TX, schema, id);
+    w.bool(auto_tx_only);
+    w.into_bytes()
+}
+
+/// Imposta il testo libero; con `send` lo trasmette subito.
+pub fn encode_free_text(id: &str, schema: u32, text: &str, send: bool) -> Vec<u8> {
+    let mut w = command_header(FREE_TEXT, schema, id);
+    w.utf8(Some(text));
+    w.bool(send);
+    w.into_bytes()
+}
+
+/// Risponde a una stazione: rimanda a JTDX il decode originale, come un doppio clic.
+pub fn encode_reply(id: &str, schema: u32, decode: &Decode, modifiers: u8) -> Vec<u8> {
+    let mut w = command_header(REPLY, schema, id);
+    w.u32(decode.time_ms);
+    w.i32(decode.snr);
+    w.f64(decode.delta_time);
+    w.u32(decode.delta_freq);
+    w.utf8(decode.mode.as_deref());
+    w.utf8(decode.message.as_deref());
+    w.bool(decode.low_confidence);
+    w.u8(modifiers);
+    w.into_bytes()
 }

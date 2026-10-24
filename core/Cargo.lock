@@ -5,6 +5,9 @@ version = 4
 [[package]]
 name = "probes"
 version = "0.0.1"
+dependencies = [
+ "udp-bridge",
+]
 
 [[package]]
 name = "udp-bridge"
