@@ -28,6 +28,20 @@ export function GeneralTab() {
         <Check label={t('gen.escStop')} hint={t('tip.gen.escStop')} checked={prefs.escStop} onChange={(v) => set({ escStop: v })} />
         <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
       </div>
+      <label className="set-check" title={t('tip.gen.log4omCount')}>
+        <span>{t('gen.log4omCount')}</span>
+        <input
+          type="number"
+          className="set-number"
+          min={1}
+          max={200}
+          value={prefs.log4omCount}
+          onChange={(e) => {
+            const n = Math.round(Number(e.target.value));
+            if (Number.isFinite(n)) set({ log4omCount: Math.min(200, Math.max(1, n)) });
+          }}
+        />
+      </label>
       <button type="button" className="glass" onClick={() => usePrefs.getState().reset()}>
         {t('set.reset')}
       </button>

@@ -9,6 +9,7 @@ import { DecodeList } from '../components/DecodeList';
 import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
+import { Log4omPanel } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
 import { TxCommands } from '../components/TxCommands';
 import { StatusBar } from '../components/StatusBar';
@@ -110,6 +111,7 @@ export function Live() {
     tx: t('panel.tx'),
     cq: t('panel.cq'),
     all: t('panel.all'),
+    log: t('panel.log'),
   };
 
   const renderPanel = (id: PanelId) => {
@@ -146,6 +148,8 @@ export function Live() {
             emptyText={t('decode.noCq')}
           />
         );
+      case 'log':
+        return <Log4omPanel />;
       case 'all':
         return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
     }

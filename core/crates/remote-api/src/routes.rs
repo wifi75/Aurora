@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(output_level_get, output_level_put, controls_get, control_press, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, change_band, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -51,6 +51,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
+        .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)
@@ -600,6 +601,22 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .await
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
+}
+
+#[derive(Deserialize)]
+struct Log4omQuery {
+    limit: Option<usize>,
+}
+
+#[utoipa::path(get, path = "/api/v1/log4om", responses((status = 200, description = "Ultimi QSO del log di Log4OM2 (sola lettura)"), (status = 404, description = "Log non configurato (log4om_unavailable)"), (status = 502, description = "File non leggibile (log4om_read)")))]
+async fn log4om(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<Log4omQuery>) -> Result<Json<Value>, ApiError> {
+    let read = state.log4om.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "log4om_unavailable"))?;
+    let limit = q.limit.unwrap_or(20).clamp(1, 500);
+    tokio::task::spawn_blocking(move || read(limit))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log4om_task"))?
+        .map(Json)
+        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "log4om_read"))
 }
 
 #[utoipa::path(get, path = "/api/v1/pairing-settings", responses((status = 200, description = "Durata del codice di associazione e limiti")))]

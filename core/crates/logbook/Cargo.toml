@@ -9,3 +9,4 @@ publish = false
 [dependencies]
 aurora-core = { path = "../aurora-core" }
 rusqlite = { workspace = true }
+serde = { workspace = true }

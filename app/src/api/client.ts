@@ -230,6 +230,26 @@ export interface StatsResponse {
   missing_dxcc: string[];
 }
 
+export interface Log4omQso {
+  date: string;
+  call: string;
+  band: string;
+  mode: string;
+  rst_sent: string;
+  rst_rcvd: string;
+  country: string;
+  grid: string;
+}
+
+export interface Log4omView {
+  total: number;
+  qsos: Log4omQso[];
+}
+
+export async function getLog4om(limit: number): Promise<Log4omView> {
+  return (await (await request(`/log4om?limit=${limit}`)).json()) as Log4omView;
+}
+
 export async function getStats(): Promise<StatsResponse> {
   return (await (await request('/stats')).json()) as StatsResponse;
 }

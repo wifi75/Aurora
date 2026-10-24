@@ -21,6 +21,9 @@ if ($Jtdx) {
     $log = Join-Path $env:LOCALAPPDATA 'JTDX\wsjtx_log.adi'
     if (Test-Path $cty) { $engineEnv += "`$env:AURORA_CTY_PATH='$cty'; " }
     if (Test-Path $log) { $engineEnv += "`$env:AURORA_WORKED_ADIF='$log'; " }
+    $engineEnv += "`$env:AURORA_RIG='omnirig'; "
+    $l4o = Get-ChildItem (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'LOG4OM2') -Filter '*.sqlite' -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1
+    if ($l4o) { $engineEnv += "`$env:AURORA_LOG4OM_DB='$($l4o.FullName)'; " }
     if ($Audio) { $engineEnv += "`$env:AURORA_AUDIO_DEVICE='$Audio'; " }
 }
 
@@ -30,6 +33,12 @@ function Test-Port([int]$Port) {
 
 # Il core va per primo: l'interfaccia fa da proxy verso di lui.
 $services = @()
+if (Test-Path "$root\app\dist\index.html") {
+    # L'interfaccia compilata si apre anche dall'indirizzo del core (porta 8787), senza il server di sviluppo.
+    $engineEnv += "`$env:AURORA_UI_DIR='$root\app\dist'; "
+}
+# Accesso senza codice: solo dalla rete di casa, mai da internet o proxy.
+$engineEnv += "`$env:AURORA_OPEN_ACCESS='1'; "
 if (-not (Test-Port 8787)) {
     $services += @{
         Name = 'Aurora core'; Color = '#3fd6c8'; Port = 8787; Dir = "$root\core"

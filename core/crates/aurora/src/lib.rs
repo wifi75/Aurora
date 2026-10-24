@@ -69,6 +69,8 @@ pub struct Config {
     pub pair_ttl_secs: u64,
     /// Accesso senza codice per le prove (solo rete di casa). Spento per impostazione predefinita.
     pub open_access: bool,
+    /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
+    pub log4om_db: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -113,6 +115,7 @@ impl Config {
             rig_omnirig: false,
             pair_ttl_secs: 600,
             open_access: false,
+            log4om_db: None,
         }
     }
 
@@ -197,6 +200,7 @@ impl Config {
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
+            log4om_db: get("AURORA_LOG4OM_DB").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             export_udp,
             open_access: match get("AURORA_OPEN_ACCESS").as_deref() {
                 None | Some("0") => false,
@@ -489,6 +493,13 @@ pub async fn run(
                 let worked = load_worked(Some(&path), &db);
                 serde_json::json!({ "stats": worked.stats(&db), "missing_dxcc": worked.missing_dxcc(&db) })
             }) as Arc<dyn Fn() -> serde_json::Value + Send + Sync>
+        }))
+        .with_log4om_if(config.log4om_db.clone().map(|path| {
+            Arc::new(move |limit: usize| {
+                logbook::log4om::read_recent(&path, limit)
+                    .map(|view| serde_json::json!(view))
+                    .map_err(|e| e.to_string())
+            }) as remote_api::Log4omProvider
         }))
         .with_frequencies(Arc::clone(&frequencies))
         .with_schedule(Arc::clone(&schedule))

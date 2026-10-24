@@ -12,6 +12,8 @@ export interface Prefs {
   doubleClickReply: boolean;
   /** Il tasto Esc ferma la trasmissione e spegne AutoTX e Abilita Tx. */
   escStop: boolean;
+  /** Quanti QSO di Log4OM2 mostra la finestra Log (1-200). */
+  log4omCount: number;
 }
 
 const KEY = 'aurora-prefs';
@@ -20,7 +22,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, log4omCount: 20 };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -33,6 +35,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
+    if (typeof parsed.log4omCount === 'number' && Number.isFinite(parsed.log4omCount)) prefs.log4omCount = Math.min(200, Math.max(1, Math.round(parsed.log4omCount)));
   } catch {
     return defaultPrefs();
   }

@@ -11,7 +11,7 @@ describe('display preferences', () => {
   beforeEach(() => localStorage.clear());
 
   it('start in kilometres with country, flag, distance and DT shown', () => {
-    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true });
+    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, log4omCount: 20 });
     expect(readPrefs(memory())).toEqual(defaultPrefs());
     expect(readPrefs(null)).toEqual(defaultPrefs());
   });
@@ -40,5 +40,15 @@ describe('formatDistance', () => {
     expect(formatDistance(1000, 'km')).toBe('1000 km');
     expect(formatDistance(1000, 'mi')).toBe('621 mi');
     expect(formatDistance(0, 'km')).toBe('0 km');
+  });
+});
+
+describe('log4omCount', () => {
+  it('keeps a saved number inside 1-200 and falls back to 20', () => {
+    const store = (v: unknown) => ({ getItem: () => JSON.stringify({ log4omCount: v }) });
+    expect(readPrefs(store(35)).log4omCount).toBe(35);
+    expect(readPrefs(store(9999)).log4omCount).toBe(200);
+    expect(readPrefs(store(0)).log4omCount).toBe(1);
+    expect(readPrefs(store('x')).log4omCount).toBe(20);
   });
 });

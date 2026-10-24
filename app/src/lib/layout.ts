@@ -1,4 +1,4 @@
-export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all';
+export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log';
 export type Zone = 'left' | 'right';
 
 export interface Layout {
@@ -12,7 +12,7 @@ export interface Layout {
   collapsed: PanelId[];
 }
 
-export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all'];
+export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log'];
 const KEY = 'aurora-layout';
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 2000;
@@ -23,7 +23,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
+  return { left: ['all', 'log', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -55,6 +55,13 @@ export function setSplit(layout: Layout, split: number): Layout {
   return { ...layout, split: clamp(split, MIN_SPLIT, MAX_SPLIT) };
 }
 
+/** Una disposizione salvata prima della finestra Log: la finestra nuova va sotto l'attivita' di banda. */
+function withLogPanel(left: unknown, right: unknown): unknown {
+  if (!Array.isArray(left) || !Array.isArray(right) || [...left, ...right].includes('log')) return left;
+  const at = left.indexOf('all');
+  return at < 0 ? [...left, 'log'] : [...left.slice(0, at + 1), 'log', ...left.slice(at + 1)];
+}
+
 function validPanels(left: unknown, right: unknown): left is PanelId[] {
   if (!Array.isArray(left) || !Array.isArray(right)) return false;
   const all = [...left, ...right];
@@ -66,6 +73,7 @@ export function readLayout(storage: ReadableStorage): Layout {
     const raw = storage?.getItem(KEY);
     if (!raw) return defaultLayout();
     const parsed = JSON.parse(raw) as Record<string, unknown>;
+    parsed.left = withLogPanel(parsed.left, parsed.right);
     if (!validPanels(parsed.left, parsed.right)) return defaultLayout();
     const heights: Layout['heights'] = {};
     if (typeof parsed.heights === 'object' && parsed.heights !== null) {

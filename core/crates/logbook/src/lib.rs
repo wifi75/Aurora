@@ -1,6 +1,7 @@
 //! Log dei QSO su SQLite.
 
 pub mod adif;
+pub mod log4om;
 
 use std::{
     path::Path,

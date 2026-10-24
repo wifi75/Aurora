@@ -463,6 +463,22 @@ export const settingsStrings = {
     'La tecla Esc detiene al instante la transmisión y apaga AutoTX y Activar Tx, como STOP TX. Vale en todas las páginas.',
     'A tecla Esc pára logo a transmissão e desliga AutoTX e Ativar Tx, como o STOP TX. Vale em todas as páginas.',
   ],
+  'gen.log4omCount': [
+    'QSO mostrati nella finestra Log',
+    'QSOs shown in the Log window',
+    'In der Log-Ansicht gezeigte QSOs',
+    'QSO affichés dans la fenêtre Journal',
+    'QSO mostrados en la ventana Log',
+    'QSO mostrados na janela Log',
+  ],
+  'tip.gen.log4omCount': [
+    'Quanti degli ultimi QSO del log di Log4OM2 si vedono nella finestra Log (da 1 a 200). Il log si legge soltanto: Aurora non lo modifica mai.',
+    'How many of the latest Log4OM2 QSOs the Log window shows (1 to 200). The log is read-only: Aurora never changes it.',
+    'Wie viele der letzten Log4OM2-QSOs die Log-Ansicht zeigt (1 bis 200). Das Log wird nur gelesen: Aurora ändert es nie.',
+    'Combien des derniers QSO de Log4OM2 la fenêtre Journal affiche (1 à 200). Lecture seule : Aurora ne le modifie jamais.',
+    'Cuántos de los últimos QSO de Log4OM2 muestra la ventana Log (de 1 a 200). Solo lectura: Aurora nunca lo modifica.',
+    'Quantos dos últimos QSO do Log4OM2 a janela Log mostra (de 1 a 200). Só leitura: o Aurora nunca o altera.',
+  ],
   'gen.dblReply': [
     'Doppio clic: rispondi alla stazione',
     'Double click: answer the station',
