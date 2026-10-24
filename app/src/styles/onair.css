@@ -1410,3 +1410,58 @@
   .cluster-table th:nth-child(5) { width: 20%; }
   .cluster-table th:nth-child(7) { width: 12%; }
 }
+
+/* Interruttori nitidi: niente vetro sfocato, niente bagliore. Acceso = pieno e scuro con testo bianco, spento = contorno netto */
+.cmd-chips button.chip,
+.tx-block .cmd-chips button.chip {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  text-shadow: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1.5px solid var(--text-muted);
+  font-weight: 600;
+}
+
+.cmd-chips button.chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+.cmd-chips button.chip.glass--on,
+.tx-block .cmd-chips button.chip.glass--on {
+  color: #fff;
+  background: #0a6e66;
+  border-color: #0a6e66;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.cmd-chips button.chip.chip--arming.glass--on,
+.tx-block .cmd-chips button.chip.chip--arming.glass--on {
+  color: #fff;
+  background: #c62222;
+  border-color: #c62222;
+  box-shadow: none;
+}
+
+.cmd-chips button.chip:disabled {
+  opacity: 0.5;
+}
+
+.cmd-chips button.chip .chip-led {
+  background: #fff;
+}
+
+:root:not([data-theme='light']) .cmd-chips button.chip.glass--on,
+:root:not([data-theme='light']) .tx-block .cmd-chips button.chip.glass--on {
+  background: #129c90;
+  border-color: #7ae8dc;
+}
+
+:root:not([data-theme='light']) .cmd-chips button.chip.chip--arming.glass--on,
+:root:not([data-theme='light']) .tx-block .cmd-chips button.chip.chip--arming.glass--on {
+  background: #e03a3a;
+  border-color: #ffb0b0;
+}
