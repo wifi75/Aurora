@@ -860,3 +860,42 @@ button.glass.chip.chip--arrow {
 .tx-dx-call {
   font-size: var(--text-base, 1rem);
 }
+
+/* Comandi: righe compatte, senza titoli di sezione */
+.tx-commands .tx-main {
+  gap: var(--space-1);
+}
+
+.cmd-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.cmd-tag {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.cmd-free {
+  flex: 1 1 8rem;
+  min-width: 6rem;
+  min-height: 1.75rem;
+  padding: 0 var(--space-2);
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+
+button.glass.chip.chip--main {
+  min-height: 1.75rem;
+  font-weight: var(--weight-strong);
+}
+
+.tx-commands .macro-chips .glass {
+  min-height: 1.5rem;
+}

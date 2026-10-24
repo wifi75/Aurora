@@ -539,7 +539,16 @@ pub async fn run(
     let mut app = build_router(state.clone()).route("/api/{*rest}", any(|| async { StatusCode::NOT_FOUND }));
     if let Some(ui) = &config.ui_dir {
         let index = ui.join("index.html");
-        app = app.fallback_service(ServeDir::new(ui).fallback(ServeFile::new(index)));
+        // il browser deve ricontrollare la pagina a ogni apertura: senza, dopo un aggiornamento resta quella vecchia
+        app = app.fallback_service(ServeDir::new(ui).fallback(ServeFile::new(index))).layer(axum::middleware::map_response(
+            |mut response: axum::response::Response| async move {
+                response
+                    .headers_mut()
+                    .entry(axum::http::header::CACHE_CONTROL)
+                    .or_insert(axum::http::HeaderValue::from_static("no-cache"));
+                response
+            },
+        ));
     }
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice

@@ -628,3 +628,40 @@
   width: 5rem;
   margin-left: 0.5rem;
 }
+
+/* comandi di ricezione di JTDX e avanzamento del periodo */
+.rx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.period {
+  position: relative;
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  max-width: 16rem;
+  height: 1.25rem;
+  overflow: hidden;
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 999px;
+}
+
+.period-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  opacity: 0.55;
+  transition: width 0.25s linear;
+}
+
+.period-text {
+  position: relative;
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  text-align: center;
+}

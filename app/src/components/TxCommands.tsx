@@ -99,87 +99,84 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
         {!txAllowed && <p className="muted tx-note">{t('tx.closed')}</p>}
         {!reachable && <p className="muted tx-note">{t('ctl.unavailable')}</p>}
 
-        <section className="cmd-sec" aria-label={t('ctl.sec.freq')}>
-          <h3 className="cmd-title">{t('ctl.sec.freq')}</h3>
-          <div className="cmd-freq">
-            <label className="cmd-hz" title={t('tip.ctl.tx')}>
-              <span>{t('ctl.txHz')}</span>
-              <input type="number" min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
-            </label>
-            <div className="cmd-arrows">
-              <button type="button" className="glass chip chip--arrow" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} aria-label={t('ctl.rx_to_tx')} onClick={() => void setControl('rx_to_tx')}>
-                ▲
-              </button>
-              <button type="button" className="glass chip chip--arrow" disabled={!reachable} title={t('tip.ctl.tx_to_rx')} aria-label={t('ctl.tx_to_rx')} onClick={() => void setControl('tx_to_rx')}>
-                ▼
-              </button>
-            </div>
-            <label className="cmd-hz" title={t('tip.ctl.rx')}>
-              <span>{t('ctl.rxHz')}</span>
-              <input type="number" min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
-            </label>
-            {toggle('split')}
-          </div>
-        </section>
-
-        <section className="cmd-sec" aria-label={t('ctl.sec.dx')}>
-          <h3 className="cmd-title">{t('ctl.sec.dx')}</h3>
-          <div className="cmd-dx">
-            <strong className="data">{status?.dx_call || pendingDx || t('ctl.dxNone')}</strong>
-            {status?.dx_grid ? <span className="data muted">{status.dx_grid}</span> : null}
-            {press('clear_dx')}
-            {press('gen_msgs')}
-          </div>
-        </section>
-
-        <section className="cmd-sec" aria-label={t('ctl.sec.send')}>
-          <h3 className="cmd-title">{t('ctl.sec.send')}</h3>
-          <div className="tx-row">
-            <button
-              type="button"
-              className="glass glass--on"
-              disabled={!txAllowed}
-              title={t('tip.tx.cq')}
-              onClick={() => run(dx ? t('tx.cqDxAsked') : t('tx.cqAsked'), () => postCq(dx ? 'DX' : ''))}
-            >
-              {dx ? t('tx.cqDx') : t('tx.cq')}
-            </button>
-            <label className="tx-check">
-              <input type="checkbox" checked={dx} onChange={(e) => setDx(e.target.checked)} /> {t('tx.dxCheck')}
-            </label>
-          </div>
-          <label className="auto-field" title={t('tip.tx.free')}>
-            {t('tx.free')}
-            <input type="text" value={text} maxLength={MAX_TEXT} onChange={(e) => setText(e.target.value.toUpperCase().slice(0, MAX_TEXT))} placeholder="TNX 73" />
+        <div className="cmd-line" role="group" aria-label={t('ctl.sec.freq')}>
+          <label className="cmd-hz" title={t('tip.ctl.tx')}>
+            <span>{t('ctl.txHz')}</span>
+            <input type="number" min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
           </label>
-          <div className="macro-chips" role="group" aria-label={t('macro.chips')}>
-            {macros.map((m) => (
-              <button
-                key={m}
-                type="button"
-                className="glass"
-                title={t('tip.macro.chip')}
-                onClick={() => setText(expandMacro(m, { dx: status?.dx_call ?? '', me: status?.de_call ?? '', report: status?.report ?? '' }))}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <div className="tx-row">
-            <button type="button" className="glass" disabled={text.trim() === ''} title={t('tip.tx.free')} onClick={() => run(t('tx.prepared'), () => postFreeText(text.trim(), false))}>
-              {t('tx.prepare')}
+          <div className="cmd-arrows">
+            <button type="button" className="glass chip chip--arrow" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} aria-label={t('ctl.rx_to_tx')} onClick={() => void setControl('rx_to_tx')}>
+              ▲
             </button>
+            <button type="button" className="glass chip chip--arrow" disabled={!reachable} title={t('tip.ctl.tx_to_rx')} aria-label={t('ctl.tx_to_rx')} onClick={() => void setControl('tx_to_rx')}>
+              ▼
+            </button>
+          </div>
+          <label className="cmd-hz" title={t('tip.ctl.rx')}>
+            <span>{t('ctl.rxHz')}</span>
+            <input type="number" min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
+          </label>
+          {toggle('split')}
+        </div>
+
+        <div className="cmd-line cmd-dx" role="group" aria-label={t('ctl.sec.dx')}>
+          <span className="cmd-tag">DX</span>
+          <strong className="data">{status?.dx_call || pendingDx || t('ctl.dxNone')}</strong>
+          {status?.dx_grid ? <span className="data muted">{status.dx_grid}</span> : null}
+          {press('clear_dx')}
+          {press('gen_msgs')}
+        </div>
+
+        <div className="cmd-line" role="group" aria-label={t('ctl.sec.send')}>
+          <button
+            type="button"
+            className="glass glass--on chip chip--main"
+            disabled={!txAllowed}
+            title={t('tip.tx.cq')}
+            onClick={() => run(dx ? t('tx.cqDxAsked') : t('tx.cqAsked'), () => postCq(dx ? 'DX' : ''))}
+          >
+            {dx ? t('tx.cqDx') : t('tx.cq')}
+          </button>
+          <label className="tx-check">
+            <input type="checkbox" checked={dx} onChange={(e) => setDx(e.target.checked)} /> {t('tx.dxCheck')}
+          </label>
+          <input
+            type="text"
+            className="cmd-free"
+            value={text}
+            maxLength={MAX_TEXT}
+            aria-label={t('tx.free')}
+            title={t('tip.tx.free')}
+            onChange={(e) => setText(e.target.value.toUpperCase().slice(0, MAX_TEXT))}
+            placeholder={t('tx.free')}
+          />
+          <button type="button" className="glass chip" disabled={text.trim() === ''} title={t('tip.tx.free')} onClick={() => run(t('tx.prepared'), () => postFreeText(text.trim(), false))}>
+            {t('tx.prepare')}
+          </button>
+          <button
+            type="button"
+            className="glass glass--on chip"
+            disabled={!txAllowed || text.trim() === ''}
+            title={t('tip.tx.free')}
+            onClick={() => run(t('tx.sent'), () => postFreeText(text.trim(), true))}
+          >
+            {t('tx.send')}
+          </button>
+        </div>
+
+        <div className="macro-chips" role="group" aria-label={t('macro.chips')}>
+          {macros.map((m) => (
             <button
+              key={m}
               type="button"
-              className="glass glass--on"
-              disabled={!txAllowed || text.trim() === ''}
-              title={t('tip.tx.free')}
-              onClick={() => run(t('tx.sent'), () => postFreeText(text.trim(), true))}
+              className="glass"
+              title={t('tip.macro.chip')}
+              onClick={() => setText(expandMacro(m, { dx: status?.dx_call ?? '', me: status?.de_call ?? '', report: status?.report ?? '' }))}
             >
-              {t('tx.send')}
+              {m}
             </button>
-          </div>
-        </section>
+          ))}
+        </div>
         {note ? (
           <p className="live-note" role="status">
             {note}

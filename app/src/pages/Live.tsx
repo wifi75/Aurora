@@ -12,6 +12,7 @@ import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
 import { TxCommands } from '../components/TxCommands';
+import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
 import { TxBanner } from '../components/TxBanner';
@@ -231,6 +232,7 @@ export function Live() {
           onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
         />
       </div>
+      <RxControls mode={status?.mode ?? ''} />
       <Dock layout={layout} onChange={changeLayout} titles={titles} hidden={size === 'hidden' ? ['waterfall'] : []} render={renderPanel} />
       {note ? (
         <p className="live-toast" role="status" aria-live="polite">
