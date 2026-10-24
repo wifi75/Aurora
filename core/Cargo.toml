@@ -8,7 +8,7 @@ resolver = "3"
 edition = "2024"
 version = "0.10.4"
 authors = ["Tiziano Cassone (IU3WJQ)"]
-license = "GPL-3.0-or-later"
+license = "GPL-3.0-only"
 
 [workspace.dependencies]
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "signal", "fs", "io-util"] }
