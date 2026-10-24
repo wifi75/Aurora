@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -66,6 +66,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/wishlist/test", post(wishlist_test))
         .route("/api/v1/update", get(update_get).put(update_put))
         .route("/api/v1/update/check", post(update_check))
+        .route("/api/v1/update/install", post(update_install))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
@@ -1050,7 +1051,16 @@ fn update_service(state: &AppState) -> Result<std::sync::Arc<updater::UpdateServ
 /// Versione in uso, impostazioni del controllo e ultima release trovata (il token non si restituisce mai).
 #[utoipa::path(get, path = "/api/v1/update", responses((status = 200, description = "Stato degli aggiornamenti"), (status = 404, description = "Non disponibile (update_unavailable)")))]
 async fn update_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    Ok(Json(json!(update_service(&state)?.status())))
+    let status = update_service(&state)?.status();
+    Ok(Json(update_json(&state, &status)))
+}
+
+/// Lo stato degli aggiornamenti con `can_install`: vero se questo programma sa installare e la release nuova ha pacchetto e firma.
+fn update_json(state: &AppState, status: &updater::Status) -> Value {
+    let can_install = state.update_installer.is_some() && status.available.as_ref().is_some_and(|r| updater::installer_assets(r).is_some());
+    let mut value = json!(status);
+    value["can_install"] = json!(can_install);
+    value
 }
 
 #[derive(Deserialize)]
@@ -1084,7 +1094,28 @@ async fn update_put(State(state): State<AppState>, _: Authed, Json(body): Json<U
 async fn update_check(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let service = update_service(&state)?;
     let status = tokio::task::spawn_blocking(move || service.check()).await.map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_task"))?;
-    Ok(Json(json!(status)))
+    Ok(Json(update_json(&state, &status)))
+}
+
+/// Installa la versione nuova: la scarica, ne controlla la firma, avvia l'installazione e chiude Aurora, che riparte da sola.
+/// Solo dal PC stesso e mai mentre si trasmette.
+#[utoipa::path(post, path = "/api/v1/update/install", responses((status = 200, description = "Installazione avviata (`version`)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Questo programma non sa installare (install_unavailable)"), (status = 409, description = "Si sta trasmettendo (transmitting)"), (status = 502, description = "Scaricamento o firma non riusciti (install_failed)")))]
+async fn update_install(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let installer = state.update_installer.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "install_unavailable"))?;
+    if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    match tokio::task::spawn_blocking(move || installer.install()).await {
+        Ok(Ok(version)) => Ok(Json(json!({ "ok": true, "version": version }))),
+        Ok(Err(e)) => {
+            tracing::warn!("installazione dell'aggiornamento non riuscita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "install_failed"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_task")),
+    }
 }
 
 fn wishlist_service(state: &AppState) -> Result<std::sync::Arc<wishlist::WishlistService>, ApiError> {

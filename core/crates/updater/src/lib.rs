@@ -62,7 +62,11 @@ impl UpdateConfig {
 pub struct Asset {
     pub name: String,
     pub size: u64,
+    /// Indirizzo pubblico di scaricamento (non funziona per un repository privato).
     pub url: String,
+    /// Indirizzo dell'API di GitHub per lo stesso file: con un token scarica anche da un repository privato.
+    #[serde(skip_serializing)]
+    pub api_url: String,
 }
 
 /// Una versione pubblicata.
@@ -147,7 +151,7 @@ pub fn parse_release(json: &serde_json::Value) -> Option<Release> {
         .map(|list| {
             list.iter()
                 .filter_map(|a| {
-                    Some(Asset { name: a["name"].as_str()?.to_string(), size: a["size"].as_u64().unwrap_or(0), url: a["browser_download_url"].as_str()?.to_string() })
+                    Some(Asset { name: a["name"].as_str()?.to_string(), size: a["size"].as_u64().unwrap_or(0), url: a["browser_download_url"].as_str()?.to_string(), api_url: a["url"].as_str().unwrap_or("").to_string() })
                 })
                 .collect()
         })
@@ -162,6 +166,51 @@ pub fn parse_release(json: &serde_json::Value) -> Option<Release> {
         tag,
         assets,
     })
+}
+
+/// Il pacchetto di installazione di una release (`*-setup.exe`) e la sua firma (`*-setup.exe.sig`), se ci sono tutti e due.
+pub fn installer_assets(release: &Release) -> Option<(&Asset, &Asset)> {
+    let setup = release.assets.iter().find(|a| a.name.ends_with("-setup.exe"))?;
+    let sig = release.assets.iter().find(|a| a.name == format!("{}.sig", setup.name))?;
+    Some((setup, sig))
+}
+
+/// Controlla la firma minisign di un pacchetto. `signature_b64` e `pubkey_b64` sono come li scrive Tauri (testo minisign in base64).
+/// Un pacchetto senza firma valida non si installa mai.
+pub fn verify_signature(data: &[u8], signature_b64: &str, pubkey_b64: &str) -> Result<(), String> {
+    use base64_lite::decode;
+    let key_text = decode(pubkey_b64.trim()).and_then(|b| String::from_utf8(b).ok()).ok_or("chiave pubblica non valida")?;
+    let sig_text = decode(signature_b64.trim()).and_then(|b| String::from_utf8(b).ok()).ok_or("firma non valida")?;
+    let key = minisign_verify::PublicKey::decode(&key_text).map_err(|e| format!("chiave pubblica non valida: {e}"))?;
+    let signature = minisign_verify::Signature::decode(&sig_text).map_err(|e| format!("firma non valida: {e}"))?;
+    key.verify(data, &signature, false).map_err(|_| "la firma del pacchetto non corrisponde: aggiornamento rifiutato".to_string())
+}
+
+/// Base64 standard, quanto basta per le chiavi e le firme (evita una dipendenza per poche righe).
+mod base64_lite {
+    pub fn decode(text: &str) -> Option<Vec<u8>> {
+        let mut out = Vec::with_capacity(text.len() * 3 / 4);
+        let (mut acc, mut bits) = (0u32, 0u32);
+        for c in text.bytes().filter(|c| !c.is_ascii_whitespace()) {
+            let v = match c {
+                b'A'..=b'Z' => c - b'A',
+                b'a'..=b'z' => c - b'a' + 26,
+                b'0'..=b'9' => c - b'0' + 52,
+                b'+' => 62,
+                b'/' => 63,
+                b'=' => break,
+                _ => return None,
+            };
+            acc = (acc << 6) | u32::from(v);
+            bits += 6;
+            if bits >= 8 {
+                bits -= 8;
+                out.push((acc >> bits) as u8);
+                acc &= (1 << bits) - 1;
+            }
+        }
+        Some(out)
+    }
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -288,6 +337,35 @@ impl UpdateService {
         self.status()
     }
 
+    /// La release piu' nuova della versione in uso trovata dall'ultimo controllo, se c'e'.
+    pub fn available(&self) -> Option<Release> {
+        self.status().available
+    }
+
+    /// Scarica un file allegato alla release (al massimo `max_bytes`). Con un token usa l'API di GitHub, che serve per un repository
+    /// privato; senza, l'indirizzo pubblico. Bloccante: da un thread dedicato.
+    pub fn download(&self, asset: &Asset, max_bytes: u64) -> Result<Vec<u8>, String> {
+        let config = self.config();
+        let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(600))).http_status_as_error(false).build().into();
+        let mut request;
+        if !config.token.is_empty() && !asset.api_url.is_empty() {
+            request = agent.get(&asset.api_url).header("Accept", "application/octet-stream").header("Authorization", &format!("Bearer {}", config.token));
+        } else {
+            request = agent.get(&asset.url);
+        }
+        request = request.header("User-Agent", "Aurora-updater");
+        let mut response = request.call().map_err(|e| e.to_string())?;
+        let status = response.status().as_u16();
+        if status != 200 {
+            return Err(match status {
+                401 | 403 | 404 if config.token.is_empty() => "file non scaricabile: se il repository e' privato serve un token".to_string(),
+                401 | 403 => "accesso rifiutato da GitHub (token scaduto o senza accesso)".to_string(),
+                other => format!("GitHub ha risposto {other} scaricando {}", asset.name),
+            });
+        }
+        response.body_mut().with_config().limit(max_bytes).read_to_vec().map_err(|e| format!("scaricamento di {} interrotto: {e}", asset.name))
+    }
+
     fn fetch(&self, config: &UpdateConfig) -> Result<Option<Release>, String> {
         let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(10))).http_status_as_error(false).build().into();
         // con le versioni di prova si guarda l'elenco (la piu' recente per prima); altrimenti basta «latest»
@@ -374,7 +452,7 @@ mod tests {
     fn reads_a_github_release_and_skips_drafts_and_untagged_ones() {
         let r = parse_release(&serde_json::from_str(&release_json("v0.9.1")).unwrap()).unwrap();
         assert_eq!((r.version.as_str(), r.tag.as_str()), ("0.9.1", "v0.9.1"));
-        assert_eq!(r.assets, vec![Asset { name: "Aurora-setup.exe".into(), size: 1234, url: "https://example.test/Aurora-setup.exe".into() }]);
+        assert_eq!(r.assets, vec![Asset { name: "Aurora-setup.exe".into(), size: 1234, url: "https://example.test/Aurora-setup.exe".into(), api_url: String::new() }]);
         assert!(parse_release(&serde_json::json!({ "tag_name": "v1.0.0", "draft": true })).is_none());
         assert!(parse_release(&serde_json::json!({ "name": "senza tag" })).is_none());
         assert!(parse_release(&serde_json::json!({ "tag_name": "nightly" })).is_none());
@@ -489,5 +567,84 @@ mod tests {
         let status = svc.check();
         assert!(status.error.is_some());
         assert!(status.available.is_none());
+    }
+
+
+    // Chiave e firma di prova (non segrete): il file `sample.bin` firmato con una chiave generata solo per questo.
+    const SAMPLE: &[u8] = include_bytes!("../tests/fixtures/sample.bin");
+    const SAMPLE_SIG: &str = include_str!("../tests/fixtures/sample.bin.sig");
+    const TEST_KEY: &str = include_str!("../tests/fixtures/test.key.pub");
+
+    #[test]
+    fn a_package_signed_with_the_right_key_is_accepted() {
+        assert_eq!(verify_signature(SAMPLE, SAMPLE_SIG, TEST_KEY), Ok(()));
+    }
+
+    #[test]
+    fn a_changed_package_is_refused() {
+        let mut data = SAMPLE.to_vec();
+        data[0] ^= 1;
+        assert!(verify_signature(&data, SAMPLE_SIG, TEST_KEY).unwrap_err().contains("non corrisponde"));
+        assert!(verify_signature(b"", SAMPLE_SIG, TEST_KEY).is_err());
+    }
+
+    #[test]
+    fn another_key_or_garbage_is_refused() {
+        // una chiave pubblica valida ma di un'altra coppia (cambia un carattere del corpo)
+        let other = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAwMDAwMDAwMDAwMDAwMDAKUldRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=";
+        assert!(verify_signature(SAMPLE, SAMPLE_SIG, other).is_err());
+        assert!(verify_signature(SAMPLE, "non e' base64 !!", TEST_KEY).is_err());
+        assert!(verify_signature(SAMPLE, SAMPLE_SIG, "").is_err());
+        assert!(verify_signature(SAMPLE, "", TEST_KEY).is_err());
+    }
+
+    fn release_with(names: &[&str]) -> Release {
+        let assets = names.iter().map(|n| Asset { name: (*n).into(), size: 1, url: format!("https://example.test/{n}"), api_url: format!("https://api.example.test/{n}") }).collect();
+        Release { tag: "v1.0.0".into(), version: "1.0.0".into(), name: "x".into(), notes: String::new(), url: String::new(), published_at: String::new(), prerelease: false, assets }
+    }
+
+    #[test]
+    fn finds_the_installer_and_its_signature_only_when_both_are_there() {
+        let both = release_with(&["Aurora_1.0.0_x64-setup.exe", "Aurora_1.0.0_x64-setup.exe.sig", "notes.txt"]);
+        let (setup, sig) = installer_assets(&both).expect("pacchetto e firma");
+        assert_eq!((setup.name.as_str(), sig.name.as_str()), ("Aurora_1.0.0_x64-setup.exe", "Aurora_1.0.0_x64-setup.exe.sig"));
+        assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe"])).is_none(), "senza firma non si installa");
+        assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe.sig"])).is_none());
+        assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe", "Altro-setup.exe.sig"])).is_none(), "la firma deve essere di quel pacchetto");
+    }
+
+    #[test]
+    fn downloads_a_public_asset_without_credentials() {
+        let (base, seen) = serve("200 OK", "contenuto".into());
+        let svc = UpdateService::open(&temp("dl-public"), "0.9.0");
+        let asset = Asset { name: "a".into(), size: 9, url: format!("{base}/a"), api_url: String::new() };
+        assert_eq!(svc.download(&asset, 1000).unwrap(), b"contenuto");
+        let request = seen.recv().unwrap().to_lowercase();
+        assert!(request.starts_with("get /a"), "{request}");
+        assert!(!request.contains("authorization"), "{request}");
+    }
+
+    #[test]
+    fn downloads_from_a_private_repository_with_the_token_through_the_api_address() {
+        let (base, seen) = serve("200 OK", "contenuto".into());
+        let path = temp("dl-private");
+        let svc = UpdateService::open(&path, "0.9.0");
+        svc.set_config(UpdateConfig { repo: "owner/repo".into(), ..UpdateConfig::default() }, Some("ghp_segreto".into())).unwrap();
+        let asset = Asset { name: "a".into(), size: 9, url: "http://127.0.0.1:1/pubblico".into(), api_url: format!("{base}/api/a") };
+        assert_eq!(svc.download(&asset, 1000).unwrap(), b"contenuto");
+        let request = seen.recv().unwrap().to_lowercase();
+        assert!(request.starts_with("get /api/a"), "{request}");
+        assert!(request.contains("authorization: bearer ghp_segreto") && request.contains("accept: application/octet-stream"), "{request}");
+    }
+
+    #[test]
+    fn a_download_over_the_limit_or_refused_is_an_error() {
+        let (base, _) = serve("200 OK", "x".repeat(500));
+        let svc = UpdateService::open(&temp("dl-big"), "0.9.0");
+        let asset = Asset { name: "a".into(), size: 500, url: format!("{base}/a"), api_url: String::new() };
+        assert!(svc.download(&asset, 100).is_err(), "oltre il limite");
+        let (base, _) = serve("404 Not Found", String::new());
+        let asset = Asset { name: "a".into(), size: 0, url: format!("{base}/a"), api_url: String::new() };
+        assert!(svc.download(&asset, 100).unwrap_err().contains("serve un token"));
     }
 }

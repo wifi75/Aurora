@@ -45,6 +45,12 @@ struct Shared {
     status: Option<StationStatus>,
 }
 
+/// Installa la versione nuova trovata dal controllo: la scarica, ne verifica la firma, avvia l'installazione e chiude il programma.
+/// Ritorna la versione che sta installando; e' bloccante.
+pub trait UpdateInstaller: Send + Sync {
+    fn install(&self) -> Result<String, String>;
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub bus: Bus,
@@ -74,6 +80,8 @@ pub struct AppState {
     pub history: Option<Arc<decode_history::HistoryStore>>,
     /// Il controllo delle nuove versioni di Aurora.
     pub updates: Option<Arc<updater::UpdateService>>,
+    /// Chi sa installare un aggiornamento (il programma Windows); senza, l'aggiornamento si scarica a mano.
+    pub update_installer: Option<Arc<dyn UpdateInstaller>>,
     pub engine_config: Option<JtdxConfigProvider>,
     pub engine_apply: Option<JtdxApplier>,
     /// Client NTP: controllo dell'orologio del PC.
@@ -131,7 +139,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -169,6 +177,11 @@ impl AppState {
 
     pub fn with_input_level_if(mut self, service: Option<Arc<input_level::InputLevelService>>) -> AppState {
         self.input_level = service;
+        self
+    }
+
+    pub fn with_update_installer(mut self, installer: Arc<dyn UpdateInstaller>) -> AppState {
+        self.update_installer = Some(installer);
         self
     }
 

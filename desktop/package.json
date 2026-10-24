@@ -1,0 +1,12 @@
+{
+  "name": "aurora-desktop",
+  "private": true,
+  "version": "0.9.0",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
