@@ -2107,3 +2107,30 @@
   background: #1c2b4a;
   border-color: #4f78b5;
 }
+
+/* «Salta Tx1» acceso: la prima riga non viene trasmessa, si vede barrata e smorzata */
+.tx-panel .tx-list li[data-skipped='true'] {
+  opacity: 0.55;
+}
+
+.tx-panel .tx-list li[data-skipped='true'] .tx-msg {
+  text-decoration: line-through;
+}
+
+/* messaggi Tx selezionabili a mano, come i pallini del motore */
+.tx-panel .tx-list li[role='radio'] {
+  cursor: pointer;
+}
+
+.tx-panel .tx-list li[role='radio'][aria-disabled='true'] {
+  cursor: default;
+}
+
+.tx-panel .tx-list li[role='radio']:hover:not([aria-disabled='true']) {
+  filter: brightness(1.15);
+}
+
+.tx-panel .tx-list li[role='radio']:focus-visible {
+  outline: 2px solid #3fd6c8;
+  outline-offset: 1px;
+}

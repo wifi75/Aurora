@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render as rtlRender, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn(), getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined) }));
-import { postCq, postFreeText, postTxFrequency } from '../api/client';
+vi.mock('../api/client', () => ({ ApiError: class ApiError extends Error {}, getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn(), getOutputLevel: vi.fn().mockResolvedValue({ attenuation_db: 0, min_db: 0, max_db: 45 }), putOutputLevel: vi.fn(), postCq: vi.fn().mockResolvedValue(undefined), postFreeText: vi.fn().mockResolvedValue(undefined), postTxFrequency: vi.fn().mockResolvedValue(undefined), postTxMessage: vi.fn().mockResolvedValue(undefined) }));
+import { getControls, postCq, postFreeText, postTxFrequency, postTxMessage } from '../api/client';
+import { useEngineTx } from '../state/engineTx';
 import type { StationStatus } from '../api/schemas';
 import { TxPanel } from './TxPanel';
 
@@ -23,6 +24,9 @@ beforeEach(() => {
   vi.mocked(postCq).mockClear();
   vi.mocked(postFreeText).mockClear();
   vi.mocked(postTxFrequency).mockClear();
+  vi.mocked(postTxMessage).mockReset().mockResolvedValue(undefined);
+  vi.mocked(getControls).mockResolvedValue({});
+  useEngineTx.getState().set(null);
 });
 
 describe('TxPanel', () => {
@@ -42,6 +46,74 @@ describe('TxPanel', () => {
     expect(next).toHaveAttribute('data-next', 'true');
     expect(next).not.toHaveAttribute('aria-current');
     expect(screen.getByText('BB2BB AA1AA FN42').closest('li')).not.toHaveAttribute('data-next');
+  });
+
+  it('with Skip Tx1 on, answering a CQ starts from Tx2 and the first line is shown as skipped', async () => {
+    vi.mocked(getControls).mockResolvedValue({ skip_tx1: true });
+    const quiet = { ...status, transmitting: false, tx_message: null };
+    render(<TxPanel txAllowed status={quiet} decodes={[]} />);
+    await waitFor(() => expect(screen.getByText('BB2BB AA1AA FN42').closest('li')).toHaveAttribute('data-skipped', 'true'));
+    expect(screen.getByText('BB2BB AA1AA -10').closest('li')).toHaveAttribute('data-next', 'true');
+    expect(screen.getByText('BB2BB AA1AA FN42').closest('li')).not.toHaveAttribute('data-next');
+  });
+
+  it('uses the messages and the selection read from the engine window when it already has the station', () => {
+    useEngineTx.getState().set({
+      messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
+      selected: 2,
+    });
+    const quiet = { ...status, transmitting: false, tx_message: null };
+    render(<TxPanel txAllowed status={quiet} decodes={[]} />);
+    expect(screen.getByText('BB2BB AA1AA -07').closest('li')).toHaveAttribute('data-next', 'true');
+    expect(screen.getByText('CQ DX AA1AA FN42')).toBeInTheDocument();
+    expect(screen.queryByText('BB2BB AA1AA -10')).toBeNull();
+  });
+
+  it('a click on a message selects it by hand: it lights at once and the engine is told', async () => {
+    useEngineTx.getState().set({
+      messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
+      selected: 2,
+    });
+    const quiet = { ...status, transmitting: false, tx_message: null };
+    render(<TxPanel txAllowed status={quiet} decodes={[]} />);
+    fireEvent.click(screen.getByText('BB2BB AA1AA R-07'));
+    await waitFor(() => expect(postTxMessage).toHaveBeenCalledWith(3));
+    expect(screen.getByText('BB2BB AA1AA R-07').closest('li')).toHaveAttribute('data-next', 'true');
+    expect(screen.getByText('BB2BB AA1AA -07').closest('li')).not.toHaveAttribute('data-next');
+  });
+
+  it('keeps the old selection and says why when the engine refuses the choice', async () => {
+    vi.mocked(postTxMessage).mockRejectedValue(new Error('x'));
+    useEngineTx.getState().set({
+      messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
+      selected: 2,
+    });
+    const quiet = { ...status, transmitting: false, tx_message: null };
+    render(<TxPanel txAllowed status={quiet} decodes={[]} />);
+    fireEvent.click(screen.getByText('BB2BB AA1AA RR73'));
+    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument());
+    expect(screen.getByText('BB2BB AA1AA -07').closest('li')).toHaveAttribute('data-next', 'true');
+    expect(screen.getByText('BB2BB AA1AA RR73').closest('li')).not.toHaveAttribute('data-next');
+  });
+
+  it('lights the selected message strongly while transmitting and only with a border while waiting', () => {
+    useEngineTx.getState().set({
+      messages: ['BB2BB AA1AA FN42', 'BB2BB AA1AA -07', 'BB2BB AA1AA R-07', 'BB2BB AA1AA RR73', 'BB2BB AA1AA 73', 'CQ DX AA1AA FN42'],
+      selected: 4,
+    });
+    const { unmount } = render(<TxPanel txAllowed status={{ ...status, transmitting: false, tx_message: null }} decodes={[]} />);
+    expect(screen.getByText('BB2BB AA1AA RR73').closest('li')).toHaveAttribute('data-next', 'true');
+    unmount();
+    render(<TxPanel txAllowed status={{ ...status, transmitting: true, tx_message: 'BB2BB AA1AA RR73' }} decodes={[]} />);
+    expect(screen.getByText('BB2BB AA1AA RR73').closest('li')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('does nothing when an empty message is clicked', () => {
+    const quiet = { ...status, transmitting: false, tx_message: null, dx_call: null };
+    render(<TxPanel txAllowed status={quiet} decodes={[]} />);
+    const rows = document.querySelectorAll('.tx-list li');
+    fireEvent.click(rows[0]!);
+    expect(postTxMessage).not.toHaveBeenCalled();
   });
 
   it('prefers the exact message the engine is sending over the predicted phase', () => {

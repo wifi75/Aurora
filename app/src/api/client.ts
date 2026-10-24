@@ -1,5 +1,6 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { HealthSchema, type Health } from './schemas';
+import { parseEngineTx, useEngineTx } from '../state/engineTx';
 
 const BASE = '/api/v1';
 
@@ -98,6 +99,11 @@ export async function postFreeText(text: string, send: boolean): Promise<void> {
 
 export async function postCq(modifier: string): Promise<void> {
   await request('/commands/cq', jsonInit({ modifier }));
+}
+
+/** Sceglie a mano il messaggio Tx (1-6) da cui il motore parte, come il pallino accanto ai messaggi. */
+export async function postTxMessage(n: number): Promise<void> {
+  await request('/commands/tx-message', jsonInit({ n }));
 }
 
 export async function postTxFrequency(hz: number): Promise<void> {
@@ -392,7 +398,9 @@ export type ControlId =
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {
-  const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>> };
+  const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>>; tx?: unknown };
+  // la stessa lettura porta anche i sei messaggi Tx del motore e quello selezionato
+  useEngineTx.getState().set(parseEngineTx(body.tx));
   return body.controls ?? {};
 }
 
