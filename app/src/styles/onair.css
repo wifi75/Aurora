@@ -2425,3 +2425,86 @@
   background: rgb(255 255 255 / 0.55);
   border-color: #0f8f83;
 }
+
+/* Livello dell'audio in ingresso (RX) */
+.in-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 2.25rem;
+}
+
+.in-level-title {
+  font-weight: var(--weight-strong);
+  font-size: var(--text-xs);
+}
+
+.in-level-meter {
+  position: relative;
+  width: 0.5rem;
+  height: 5.5rem;
+  margin: 0.5rem;
+  overflow: hidden;
+  background: var(--glass-lo);
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 999px;
+}
+
+.in-level-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--in-level-color, var(--accent));
+  border-radius: 999px;
+  transition: height 0.2s linear;
+}
+
+.in-level-peak {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--text);
+  opacity: 0.85;
+  transition: bottom 0.2s linear;
+}
+
+.in-level-state {
+  font-size: var(--text-xs);
+  color: var(--in-level-color, var(--text-muted));
+}
+
+.in-level--good {
+  --in-level-color: var(--ok);
+}
+
+.in-level--high,
+.in-level--low {
+  --in-level-color: var(--warn);
+}
+
+.in-level--overdrive {
+  --in-level-color: var(--danger);
+}
+
+.in-level--overdrive .in-level-state {
+  font-weight: var(--weight-strong);
+}
+
+.in-level--silent {
+  --in-level-color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .in-level--overdrive .in-level-meter {
+    animation: in-level-pulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes in-level-pulse {
+  50% {
+    box-shadow: 0 0 10px var(--danger);
+  }
+}

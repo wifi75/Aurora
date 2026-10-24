@@ -88,6 +88,14 @@ export type WantedAlert = z.infer<typeof WantedAlertSchema>;
 export const UpdateNoticeSchema = z.object({ version: z.string(), tag: z.string(), notes: z.string(), url: z.string() });
 export type UpdateNotice = z.infer<typeof UpdateNoticeSchema>;
 
+export const AudioLevelSchema = z.object({
+  peak: z.number(),
+  rms: z.number(),
+  clipped: z.number(),
+  state: z.enum(['silent', 'low', 'good', 'high', 'overdrive']),
+});
+export type AudioLevel = z.infer<typeof AudioLevelSchema>;
+
 export const EventSchema = z.discriminatedUnion('type', [
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
@@ -95,5 +103,6 @@ export const EventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('tx_halted') }),
   WantedAlertSchema.extend({ type: z.literal('wanted') }),
   UpdateNoticeSchema.extend({ type: z.literal('update_available') }),
+  AudioLevelSchema.extend({ type: z.literal('audio_level') }),
 ]);
 export type AuroraEvent = z.infer<typeof EventSchema>;

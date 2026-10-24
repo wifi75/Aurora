@@ -5,6 +5,7 @@ import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
+import { InputLevel } from './InputLevel';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
 import { replyErrorMessage } from '../lib/replyError';
@@ -115,6 +116,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
         </section>
         <QsoSwitches txAllowed={txAllowed} />
       </div>
+      <InputLevel />
       <OutputLevel txAllowed={txAllowed} />
     </div>
   );

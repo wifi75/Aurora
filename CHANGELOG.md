@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Livello RX**: indicatore del livello dell'audio in ingresso accanto al cursore Pwr (valore medio, picco, stato Muto/Basso/Giusto/Alto/Saturo) con avviso di saturazione dopo 3 secondi e di silenzio dopo 8; evento `audio_level` sul flusso. Idea dal confronto con Decodium, scritta da zero.
 - **Licenza**: Aurora e' rilasciata con la GNU GPL versione 3 o successiva (`LICENSE`, `license` nei manifest, badge del README).
 - Studio di Decodium 4.0 (GPL-3.0) e confronto delle funzioni che Aurora non ha: `docs/confronto-decodium.md`.
 - **Aggiornamenti** (Impostazioni → Aggiornamenti): Aurora controlla ogni qualche ora l'ultima release sul repository GitHub (nuovo crate `updater`; repository e intervallo a scelta, anche le versioni di prova, token di sola lettura per un repository privato che non esce mai dal programma) e, se e' piu' nuova di quella in uso, mostra una barra in alto con note e link, la manda con un evento a tutte le pagine aperte e, con l'indirizzo ntfy, anche sul telefono; avvisa una volta sola per versione, anche dopo un riavvio. Rotte `GET/PUT /update` e `POST /update/check`. Non scarica ne' installa nulla: l'installazione automatica spetta al programma Windows (da fare).

@@ -144,6 +144,6 @@ fn handle_event(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, ev
         }
         Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged(&q.call),
         Event::TxHalted => lock(&inner.brain).on_halt(now),
-        Event::Status(_) | Event::Wanted(_) | Event::UpdateAvailable(_) => {}
+        Event::Status(_) | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) => {}
     }
 }

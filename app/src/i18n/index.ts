@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { fill, pick, type Lang } from './core';
 import { useLang } from './lang';
 import { appStrings } from './strings/app';
+import { audioStrings } from './strings/audio';
 import { accessStrings } from './strings/access';
 import { controlStrings } from './strings/controls';
 import { clusterStrings } from './strings/cluster';
@@ -21,7 +22,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

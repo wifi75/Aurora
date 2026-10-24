@@ -687,7 +687,7 @@ pub async fn run(
     }
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
-    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture(Some(hint), bus.spectrum()) {
+    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture(Some(hint), bus.spectrum(), bus.events()) {
         Ok(handle) => Some(handle),
         Err(e) => {
             tracing::warn!("cascata audio non attiva: {e}");

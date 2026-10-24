@@ -65,7 +65,7 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 
 ## Flusso `/stream`
 
-- **Testo (JSON)**: un evento per messaggio, con il campo `type`: `status`, `decode`, `qso_logged`, `tx_halted`.
+- **Testo (JSON)**: un evento per messaggio, con il campo `type`: `status`, `decode`, `qso_logged`, `tx_halted`, `wanted`, `update_available` e `audio_level` (livello dell'ingresso audio ogni 250 ms: `peak`, `rms`, `clipped` da 0 a 1 e `state` = `silent`, `low`, `good`, `high` o `overdrive`; arriva solo se la cascata audio e' attiva).
   Alla connessione arriva subito l'ultimo `status`. Un client in ritardo riceve di nuovo lo stato corrente, non gli arretrati.
   `status` porta anche stazione DX, rapporto, frequenze Tx/Rx, messaggio in trasmissione e continente; `decode` porta paese, continente ed etichetta di novità.
 - **Binario (spettro)**: `[0x01][seq u64][f_min u32][f_max u32][bins…]`, tutto big-endian; bin `u8` (1–4096), oggi 1024 bin su 0–3000 Hz, circa 15 righe al secondo.

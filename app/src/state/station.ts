@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
+import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { bandOf } from '../lib/format';
 import { usePrefs } from '../lib/prefs';
@@ -35,6 +35,9 @@ interface StationState {
   pendingAt: number;
   /** Banda appena scelta con un clic, evidenziata subito anche se la frequenza non e' ancora cambiata. */
   pendingBand: string | null;
+  /** L'ultima misura del livello dell'ingresso audio e quando e' arrivata (ms Unix); senza misure recenti l'indicatore si nasconde. */
+  audioLevel: AudioLevel | null;
+  audioLevelAt: number;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) e lo tiene finche' il motore non lo riporta uguale (o scade). */
   patchStatus(patch: Partial<StationStatus>): void;
@@ -95,6 +98,8 @@ export const useStation = create<StationState>((set) => ({
   wanted: [],
   wantedBanner: null,
   updateNotice: null,
+  audioLevel: null,
+  audioLevelAt: 0,
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -138,6 +143,11 @@ export const useStation = create<StationState>((set) => ({
         set({ updateNotice: notice });
         break;
       }
+      case 'audio_level': {
+        const { type: _type, ...level } = event;
+        set({ audioLevel: level, audioLevelAt: Date.now() });
+        break;
+      }
       case 'tx_halted':
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));
         break;
@@ -174,6 +184,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0 });
   },
 }));
