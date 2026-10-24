@@ -1771,3 +1771,16 @@
 .tx-dx-call {
   font-size: 1.35rem;
 }
+
+/* la pagina cresce con le finestre: niente sbordamento sotto il piede di pagina */
+@media (min-width: 64rem) {
+  .live,
+  .dock,
+  .dock-col {
+    min-height: min-content;
+  }
+
+  .app-main {
+    min-height: min-content;
+  }
+}
