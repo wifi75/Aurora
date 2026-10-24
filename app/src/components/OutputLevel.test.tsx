@@ -23,27 +23,56 @@ describe('OutputLevel', () => {
   it('shows the current level and the attenuation', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
-    await waitFor(() => expect(slider).toHaveValue('50'));
+    await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
     const value = screen.getByText('50%');
     expect(value).toHaveAttribute('title', expect.stringMatching(/50 % · attenuazione 22.5 dB/));
   });
 
-  it('sends the new level only when the slider is released, not on every step', async () => {
+  it('sends the new level only when released, and up means more level', async () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
-    await waitFor(() => expect(slider).toHaveValue('50'));
-    fireEvent.change(slider, { target: { value: '80' } });
-    fireEvent.change(slider, { target: { value: '70' } });
+    await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
+    // binario alto 100 px a partire da y=0: il punto y=20 e' in alto, quindi l'80%
+    slider.getBoundingClientRect = () => ({ top: 0, height: 100, bottom: 100, left: 0, right: 10, width: 10, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(slider, { clientY: 20, pointerId: 1 });
+    expect(slider).toHaveAttribute('aria-valuenow', '80');
+    fireEvent.pointerMove(slider, { clientY: 30, pointerId: 1 });
+    expect(slider).toHaveAttribute('aria-valuenow', '70');
     expect(putOutputLevel).not.toHaveBeenCalled();
-    fireEvent.pointerUp(slider);
+    fireEvent.pointerUp(slider, { pointerId: 1 });
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledTimes(1));
     expect(putOutputLevel).toHaveBeenCalledWith(13.5);
+  });
+
+  it('the top of the track is 100% (no attenuation) and the bottom is 0%', async () => {
+    show();
+    const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
+    await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
+    slider.getBoundingClientRect = () => ({ top: 0, height: 100, bottom: 100, left: 0, right: 10, width: 10, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.pointerDown(slider, { clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(slider, { pointerId: 1 });
+    await waitFor(() => expect(putOutputLevel).toHaveBeenLastCalledWith(0));
+    fireEvent.pointerDown(slider, { clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(slider, { pointerId: 1 });
+    await waitFor(() => expect(putOutputLevel).toHaveBeenLastCalledWith(45));
+  });
+
+  it('works from the keyboard: arrow up raises the level and the value is sent on key up', async () => {
+    show();
+    const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
+    await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
+    fireEvent.keyDown(slider, { key: 'ArrowUp' });
+    expect(slider).toHaveAttribute('aria-valuenow', '51');
+    fireEvent.keyUp(slider, { key: 'ArrowUp' });
+    await waitFor(() => expect(putOutputLevel).toHaveBeenCalledWith(22.1));
   });
 
   it('is locked when transmission is closed and explains why in its tooltip', async () => {
     show(false);
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
-    expect(slider).toBeDisabled();
+    expect(slider).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.keyDown(slider, { key: 'ArrowUp' });
+    expect(slider).toHaveAttribute('aria-valuenow', '50');
     expect(screen.getByTitle(/ALC/)).toBeInTheDocument();
   });
 

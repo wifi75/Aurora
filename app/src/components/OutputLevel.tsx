@@ -4,6 +4,7 @@ import { getOutputLevel, putOutputLevel } from '../api/client';
 import { useT } from '../i18n';
 import { attenuationFromPercent, levelPercent } from '../lib/outputLevel';
 import { replyErrorMessage } from '../lib/replyError';
+import { VerticalSlider } from './VerticalSlider';
 
 interface Props {
   /** Cambiare il livello vale come un comando di trasmissione: serve la trasmissione aperta. */
@@ -26,9 +27,9 @@ export function OutputLevel({ txAllowed }: Props) {
   if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>Pwr –</p>;
   if (pct === null) return null;
 
-  const commit = async () => {
+  const commit = async (value: number) => {
     try {
-      await putOutputLevel(attenuationFromPercent(pct));
+      await putOutputLevel(attenuationFromPercent(value));
       await client.invalidateQueries({ queryKey: ['output-level'] });
       setNote(t('out.saved'));
     } catch (error) {
@@ -39,20 +40,13 @@ export function OutputLevel({ txAllowed }: Props) {
   return (
     <div className="out-level" title={t('tip.out')}>
       <span className="out-level-title">Pwr</span>
-      <span className="out-level-track">
-      <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={pct}
-          disabled={!txAllowed}
-          aria-label={t('out.label')}
-          onChange={(e) => setPct(Number(e.target.value))}
-          onPointerUp={() => void commit()}
-          onKeyUp={() => void commit()}
-        />
-      </span>
+      <VerticalSlider
+        value={pct}
+        label={t('out.label')}
+        disabled={!txAllowed}
+        onChange={setPct}
+        onCommit={(v) => void commit(v)}
+      />
       <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{pct}%</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
