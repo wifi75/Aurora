@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { formatClock } from '../lib/format';
 import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
@@ -26,6 +26,26 @@ function accentOf(tag: DecodeTag | null | undefined): string | null {
   return tag ? (BADGES[tag]?.color ?? null) : null;
 }
 
+function namesCall(text: string, call: string): boolean {
+  const wanted = call.trim().toUpperCase();
+  return wanted !== '' && text.toUpperCase().split(/\s+/).includes(wanted);
+}
+
+/** Il testo del messaggio, con il nominativo chiamato in evidenza. */
+function highlightCall(text: string, call: string): ReactNode {
+  const wanted = call.trim().toUpperCase();
+  if (wanted === '') return text;
+  return text.split(/(\s+)/).map((part, i) =>
+    part.toUpperCase() === wanted ? (
+      <mark key={i} className="dx-call">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
 function distanceOf(mine: { lat: number; lon: number }, text: string): number | null {
   const grid = gridOfMessage(text);
   const theirs = grid ? gridCenter(grid) : null;
@@ -37,11 +57,13 @@ interface Props {
   onReply(decodeId: number): void;
   /** Il proprio locatore, per mostrare la distanza di ogni stazione. */
   myGrid?: string;
+  /** Stazione che si sta chiamando: la sua riga e il suo nominativo si evidenziano. */
+  dxCall?: string | null;
   /** Testo dello stato vuoto (predefinito: invito all'ascolto). */
   emptyText?: string;
 }
 
-export function DecodeList({ decodes, onReply, myGrid, emptyText = 'In ascolto: i messaggi compaiono qui' }: Props) {
+export function DecodeList({ decodes, onReply, myGrid, dxCall, emptyText = 'In ascolto: i messaggi compaiono qui' }: Props) {
   const mine = myGrid ? gridCenter(myGrid) : null;
   if (decodes.length === 0) {
     return (
@@ -58,7 +80,7 @@ export function DecodeList({ decodes, onReply, myGrid, emptyText = 'In ascolto: 
           <button
             type="button"
             key={d.id}
-            className="decode-row"
+            className={`decode-row${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}`}
             style={accentOf(d.tag) ? ({ '--row-accent': `var(--tag-${accentOf(d.tag)})` } as CSSProperties) : undefined}
             onClick={() => onReply(d.id)}
           >
@@ -67,7 +89,7 @@ export function DecodeList({ decodes, onReply, myGrid, emptyText = 'In ascolto: 
             <span className="num muted">{d.delta_time.toFixed(1)}</span>
             <span className="num muted">{d.freq_hz}</span>
             <span className="decode-text">
-              <span className="data">{d.text}</span>
+              <span className="data">{dxCall ? highlightCall(d.text, dxCall) : d.text}</span>
             </span>
             <span className="decode-where">
               {d.country ? <span className="decode-country">{d.country}</span> : null}

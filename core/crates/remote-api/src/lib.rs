@@ -21,6 +21,11 @@ use tokio::sync::{broadcast::error::RecvError, watch};
 pub use frames::encode_spectrum;
 pub use policy::{transport_of, Transport, TxPolicy};
 
+/// Salva le regole dell'automazione quando cambiano.
+pub type RulesSaver = Arc<dyn Fn(&Rules) + Send + Sync>;
+/// Calcola le statistiche del log a ogni richiesta.
+pub type StatsProvider = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
+
 const MAX_KNOWN_DECODES: usize = 500;
 
 #[derive(Default)]
@@ -45,8 +50,8 @@ pub struct AppState {
     pub rig: Option<Arc<dyn Rig>>,
     /// Salva le regole dell'automazione quando cambiano (per ritrovarle al riavvio).
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
-    pub stats: Option<Arc<dyn Fn() -> serde_json::Value + Send + Sync>>,
-    pub rules_saver: Option<Arc<dyn Fn(&Rules) + Send + Sync>>,
+    pub stats: Option<StatsProvider>,
+    pub rules_saver: Option<RulesSaver>,
     shared: Arc<Mutex<Shared>>,
     shutdown: Arc<watch::Sender<bool>>,
 }
@@ -89,19 +94,19 @@ impl AppState {
         AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, rules_saver: None, shared, shutdown: Arc::new(shutdown) }
     }
 
-    pub fn with_stats_if(self, stats: Option<Arc<dyn Fn() -> serde_json::Value + Send + Sync>>) -> AppState {
+    pub fn with_stats_if(self, stats: Option<StatsProvider>) -> AppState {
         match stats {
             Some(s) => self.with_stats(s),
             None => self,
         }
     }
 
-    pub fn with_stats(mut self, stats: Arc<dyn Fn() -> serde_json::Value + Send + Sync>) -> AppState {
+    pub fn with_stats(mut self, stats: StatsProvider) -> AppState {
         self.stats = Some(stats);
         self
     }
 
-    pub fn with_rules_saver(mut self, saver: Arc<dyn Fn(&Rules) + Send + Sync>) -> AppState {
+    pub fn with_rules_saver(mut self, saver: RulesSaver) -> AppState {
         self.rules_saver = Some(saver);
         self
     }

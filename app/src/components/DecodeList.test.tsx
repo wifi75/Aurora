@@ -36,6 +36,33 @@ describe('DecodeList', () => {
     expect(screen.getByText(/\[\d+ km\]/)).toBeInTheDocument();
   });
 
+  it('puts the station being called in evidence in the messages that name it', () => {
+    render(
+      <DecodeList
+        dxCall="BB2BB"
+        decodes={[decode({ id: 1, text: 'AA1AA BB2BB -10' }), decode({ id: 2, text: 'CQ CC3CC FN42' }), decode({ id: 3, text: 'BB2BB DD4DD RR73' })]}
+        onReply={() => {}}
+      />,
+    );
+    const marks = document.querySelectorAll('mark.dx-call');
+    expect(marks).toHaveLength(2);
+    expect(marks[0]).toHaveTextContent('BB2BB');
+    const rows = screen.getAllByRole('button');
+    expect(rows[0]).toHaveClass('decode-row--dx');
+    expect(rows[1]).not.toHaveClass('decode-row--dx');
+    expect(rows[2]).toHaveClass('decode-row--dx');
+  });
+
+  it('matches the station case-insensitively and only as a whole call', () => {
+    render(<DecodeList dxCall="bb2bb" decodes={[decode({ id: 1, text: 'AA1AA BB2BBX -10' }), decode({ id: 2, text: 'AA1AA BB2BB -10' })]} onReply={() => {}} />);
+    expect(document.querySelectorAll('mark.dx-call')).toHaveLength(1);
+  });
+
+  it('highlights nothing without a station being called', () => {
+    render(<DecodeList decodes={[decode({ text: 'AA1AA BB2BB -10' })]} onReply={() => {}} />);
+    expect(document.querySelector('mark.dx-call')).toBeNull();
+  });
+
   it('shows the delta time column', () => {
     render(<DecodeList decodes={[decode({ delta_time: 0.3 })]} onReply={() => {}} />);
     expect(screen.getByText('0.3')).toBeInTheDocument();

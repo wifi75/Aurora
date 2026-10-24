@@ -28,6 +28,12 @@ export function StatusBar({ status, connection }: Props) {
           <span className="pill data muted">
             {status.de_call} {status.de_grid}
           </span>
+          {status.dx_call ? (
+            <span className="pill data pill--dx">
+              <span className="pill-dx-label">DX</span> <strong>{status.dx_call}</strong>
+              {status.dx_grid ? <span className="muted"> {status.dx_grid}</span> : null}
+            </span>
+          ) : null}
         </>
       )}
     </div>

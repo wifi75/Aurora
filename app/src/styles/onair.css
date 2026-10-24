@@ -186,3 +186,35 @@
 .wf-marker:focus-visible .wf-marker-tag {
   box-shadow: 0 0 0 2px var(--accent);
 }
+
+/* Stazione che si sta chiamando: nominativo in evidenza */
+.pill--dx {
+  background: linear-gradient(180deg, #ffe600, #e0b800);
+  border-color: #fff3a0;
+  box-shadow: 0 0 16px -2px #ffe600;
+  color: #1a1400;
+  font-size: var(--text-md);
+}
+
+.pill--dx .muted {
+  color: #4a3d00;
+}
+
+.pill-dx-label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+}
+
+.dx-call {
+  padding: 0 0.3rem;
+  border-radius: 0.3rem;
+  background: #ffe600;
+  color: #1a1400;
+  font-weight: var(--weight-strong);
+  box-shadow: 0 0 10px -1px #ffe600;
+}
+
+.decode-row--dx {
+  outline: 1px solid #ffe600;
+  outline-offset: -1px;
+}

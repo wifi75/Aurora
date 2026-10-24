@@ -384,9 +384,13 @@ button.glass,
   }
 
   .dock-splitter,
-  .dock-resize,
   .dock-grip-dots {
     display: none;
+  }
+
+  /* anche sul telefono ogni finestra si ridimensiona a mano, con il dito, dal bordo in basso */
+  .dock-resize {
+    height: 1.5rem;
   }
 
   .dock-grip {
@@ -396,11 +400,12 @@ button.glass,
 
   .dock-panel {
     flex: none;
-    height: auto !important;
+    height: auto;
   }
 
+  /* altezza di partenza; quella scelta dall'utente (stile in linea) ha la precedenza */
   .dock-panel--waterfall {
-    height: 14rem !important;
+    height: 14rem;
   }
 
   .dock-panel--cq .dock-body,
@@ -586,4 +591,10 @@ button.glass,
 
 .dock-panel {
   min-height: 3rem;
+}
+
+/* Pannello in trascinamento: resta al suo posto, attenuato */
+.dock-panel--flying {
+  opacity: 0.45;
+  outline: 2px dashed var(--accent);
 }

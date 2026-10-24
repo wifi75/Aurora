@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { movePanel, resizePanel, setSplit, toggleCollapsed, type Layout, type PanelId, type Zone } from '../lib/layout';
 
 interface Props {
@@ -20,11 +20,42 @@ interface DropSpot {
  * si ridimensiona dal bordo inferiore, e il divisore sposta la larghezza delle colonne.
  * Su schermi stretti le colonne si impilano e il trascinamento e' spento.
  */
+function capture(el: HTMLElement, pointerId: number): void {
+  try {
+    el.setPointerCapture(pointerId);
+  } catch {
+    // senza cattura il trascinamento funziona lo stesso: lo chiudono gli ascoltatori sulla finestra
+  }
+}
+
 export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
   const columns = useRef<Record<Zone, HTMLDivElement | null>>({ left: null, right: null });
   const root = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState<PanelId | null>(null);
   const [spot, setSpot] = useState<DropSpot | null>(null);
+
+  // Qualunque cosa interrompa il trascinamento (rilascio fuori dalla finestra, Esc, cambio di finestra,
+  // tocco annullato) lo chiude: un pannello non deve restare "in volo" per sempre.
+  useEffect(() => {
+    if (!dragging) return;
+    const end = () => {
+      setDragging(null);
+      setSpot(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') end();
+    };
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+    window.addEventListener('blur', end);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('blur', end);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [dragging]);
 
   const spotAt = (x: number, y: number, dragged: PanelId): DropSpot => {
     const left = columns.current.left?.getBoundingClientRect();
@@ -41,7 +72,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
 
   const startDrag = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e.currentTarget, e.pointerId);
     setDragging(id);
     setSpot(spotAt(e.clientX, e.clientY, id));
   };
@@ -59,7 +90,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
   const startResize = (id: PanelId) => (e: ReactPointerEvent<HTMLElement>) => {
     const panel = e.currentTarget.closest<HTMLElement>('[data-panel]');
     if (!panel) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e.currentTarget, e.pointerId);
     const startY = e.clientY;
     const startHeight = panel.getBoundingClientRect().height;
     const handle = e.currentTarget;
@@ -77,7 +108,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
   const startSplit = (e: ReactPointerEvent<HTMLElement>) => {
     const box = root.current?.getBoundingClientRect();
     if (!box) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e.currentTarget, e.pointerId);
     const handle = e.currentTarget;
     const move = (ev: PointerEvent) => onChange(setSplit(layout, (ev.clientX - box.left) / box.width));
     const stop = () => {
@@ -92,18 +123,22 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
 
   const column = (zone: Zone) => {
     const ids = layout[zone].filter((id) => !hidden.includes(id));
-    const visible = ids.filter((id) => id !== dragging);
     const nodes: ReactNode[] = [];
     const marker = (key: string) => <div key={key} className="dock-drop" aria-hidden="true" />;
-    visible.forEach((id, i) => {
-      if (spot?.zone === zone && spot.index === i) nodes.push(marker(`drop-${i}`));
+    let slot = 0; // posizione tra i pannelli che non si stanno trascinando
+    ids.forEach((id) => {
+      const flying = id === dragging;
+      if (!flying) {
+        if (spot?.zone === zone && spot.index === slot) nodes.push(marker(`drop-${slot}`));
+        slot += 1;
+      }
       const folded = layout.collapsed.includes(id);
       const height = folded ? undefined : layout.heights[id];
       nodes.push(
         <section
           key={id}
           data-panel={id}
-          className={`dock-panel dock-panel--${id}${folded ? ' dock-panel--folded' : ''}`}
+          className={`dock-panel dock-panel--${id}${folded ? ' dock-panel--folded' : ''}${flying ? ' dock-panel--flying' : ''}`}
           style={folded ? { flex: 'none', minHeight: 0 } : height ? { height, flex: 'none' } : undefined}
         >
           <header
@@ -126,8 +161,8 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
         </section>,
       );
     });
-    if (spot?.zone === zone && spot.index >= visible.length) nodes.push(marker('drop-end'));
-    if (visible.length === 0 && !(spot?.zone === zone)) {
+    if (spot?.zone === zone && spot.index >= slot) nodes.push(marker('drop-end'));
+    if (ids.length === 0 && !(spot?.zone === zone)) {
       nodes.push(
         <div key="empty" className="dock-empty">
           Trascina qui un pannello
