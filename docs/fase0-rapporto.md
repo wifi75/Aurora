@@ -45,3 +45,26 @@ Risultati dalla ricerca delle stringhe (123 corrispondenze su UDP, Reply, Messag
 - Altri controlli radio trovati: Ham Radio Deluxe, DX Lab Suite Commander, TCI.
 
 Prossimo passo con REA: trovare la funzione che costruisce e legge i messaggi (xrefs delle stringhe) per confermare l'ordine dei campi.
+
+### Gestore del Reply: `MainWindow::replyToUDP` (decompilato da REA, funzione a 0x4778ab)
+
+Firma recuperata: `replyToUDP(QTime, int, float, unsigned int, QString const&, QString const&, bool, unsigned char)`,
+cioe' **ora, SNR, delta tempo, delta frequenza, modo, messaggio, bassa confidenza, modificatori**: lo stesso ordine di `encode_reply`.
+
+Cosa fa, nell'ordine:
+
+1. Se il log di debug e' attivo scrive in ALL.TXT "UDP Reply request received: ...". Se "Accept UDP requests" e' spento: "ignored: UDP accept option disabled" e termina.
+2. **Filtro per il modo scelto nel menu "Accept UDP Reply messages"**:
+   - 1 = solo CQ: il messaggio deve iniziare con `CQ `, `CQDX ` o `QRZ`;
+   - 2 = CQ e 73: come sopra, oppure testo che finisce con ` 73` o ` RR73`;
+   - 3 = qualsiasi messaggio.
+   Se non passa: "rejecting UDP request to reply as decode is not valid".
+3. **Ritrova il decode nel testo della finestra**: ricostruisce la riga `hhmmss SNR(3) DT(4, 1 decimale) DF(4) modo messaggio` (per i modi lenti l'ora e' `hhmm`) e la cerca con `lastIndexOf`; se manca prova anche la variante con il segno del DT; se non c'e': "decode not found". **Quindi il Reply funziona solo su un decode ancora visibile in JTDX e identico in ora, SNR, DT (a 1 decimale), DF, modo e testo.**
+4. Se trovato: invia a sua volta uno Status UDP (`MessageClient::status_update`), poi, secondo le opzioni, porta la finestra in primo piano ("udpWindowToFront") o la ripristina se minimizzata ("udpWindowRestore").
+5. Chiama **`processMessage` con un flag di "richiesta UDP"**, cioe' la stessa elaborazione del doppio clic sul decode, poi `txwatchdog(false)` e, se previsto, l'avviso dell'applicazione. Se poi parta davvero la trasmissione dipende dalle impostazioni di JTDX (Enable Tx, sequenza automatica).
+
+Conseguenze per Aurora:
+- Mantenere il decode **originale** ricevuto (ora, SNR, DT, DF, modo, testo) e rimandarlo senza modifiche; rispondere finche' il decode e' ancora nella finestra di JTDX (stesso periodo o quello successivo, prima di cancellare l'attivita' di banda).
+- Nelle impostazioni di JTDX: attivare "Accept UDP requests", scegliere il modo di accettazione e **disattivare "porta in primo piano" e "ripristina la finestra"** per non farsi togliere il fuoco a ogni risposta.
+- Per verificare le risposte basta attivare il log di debug di JTDX e leggere ALL.TXT: contiene "UDP Reply request received / processed / ignored".
+- Resta da confermare (decompilando i costruttori dei messaggi) la larghezza dei campi sul filo (`float` o `double`).

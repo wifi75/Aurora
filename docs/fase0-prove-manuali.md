@@ -22,6 +22,8 @@ Con Enable Tx **spento**:
 3. `.\target\debug\udp_send.exe <indirizzo> <status.bin> reply <decode.bin>` — atteso: JTDX compila DX Call e prepara la
    sequenza di risposta alla stazione, come con un doppio clic. Annotare cosa succede e se la trasmissione parte solo con Enable Tx.
 
+Note dal reverse di JTDX (vedi `fase0-rapporto.md`): invia il `reply` **mentre il decode e' ancora visibile** nella finestra di JTDX (il decode viene ritrovato dal testo); scegli nel menu "Accept UDP Reply messages" il modo "qualsiasi"; attiva il log di debug di JTDX e controlla ALL.TXT: devono comparire "UDP Reply request received" e "processed". Se compare "decode not found", il decode non e' piu' in finestra o il formato dell'ora/DT non coincide: annota la riga esatta.
+
 ## Prova 3 — Audio in parallelo (ipotesi H2)
 
 L'unico ingresso audio visto da Aurora è `Microfono (2- USB Audio Device)`.
