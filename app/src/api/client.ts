@@ -536,6 +536,8 @@ export interface UpdateStatus {
   available: UpdateRelease | null;
   latest: UpdateRelease | null;
   error: string | null;
+  /** Il programma Windows sa installare la versione nuova da solo (pacchetto e firma ci sono). */
+  can_install?: boolean;
 }
 
 /** Le impostazioni che si mandano: `token` assente = lo si lascia, vuoto = lo si toglie. */
@@ -556,6 +558,11 @@ export async function putUpdate(input: UpdateConfigInput): Promise<UpdateStatus>
 }
 
 /** Controlla subito se c'e' una versione nuova (serve internet). */
+/** Installa la versione nuova (solo dal PC): scarica, controlla la firma, installa e riapre Aurora. */
+export async function installUpdate(): Promise<{ version: string }> {
+  return (await (await request('/update/install', { method: 'POST' })).json()) as { version: string };
+}
+
 export async function checkUpdate(): Promise<UpdateStatus> {
   return (await (await request('/update/check', { method: 'POST' })).json()) as UpdateStatus;
 }

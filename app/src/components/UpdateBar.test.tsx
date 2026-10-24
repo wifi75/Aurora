@@ -3,8 +3,8 @@ import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getUpdate: vi.fn() }));
-import { getUpdate, type UpdateStatus } from '../api/client';
+vi.mock('../api/client', () => ({ ApiError: class ApiError extends Error { code = 'x'; }, getUpdate: vi.fn(), installUpdate: vi.fn() }));
+import { getUpdate, installUpdate, type UpdateStatus } from '../api/client';
 import { useStation } from '../state/station';
 import { UpdateBar } from './UpdateBar';
 
@@ -53,6 +53,31 @@ describe('UpdateBar', () => {
     vi.mocked(getUpdate).mockResolvedValue(status({ ...release, version: '0.10.1', tag: 'v0.10.1' }));
     render(<UpdateBar />);
     expect(await screen.findByText(/0\.10\.1/)).toBeInTheDocument();
+  });
+
+  it('offers to install only when the program can, and says what is happening', async () => {
+    vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: true });
+    vi.mocked(installUpdate).mockResolvedValue({ version: '0.10.0' });
+    render(<UpdateBar />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Installa ora' }));
+    expect(await screen.findByText(/Aurora si chiuderà e si riaprirà da sola/)).toBeInTheDocument();
+    expect(installUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show the install button when the program cannot install', async () => {
+    vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: false });
+    render(<UpdateBar />);
+    await screen.findByText(/Nuova versione di Aurora/);
+    expect(screen.queryByRole('button', { name: 'Installa ora' })).toBeNull();
+  });
+
+  it('says so when the installation fails and the button comes back', async () => {
+    vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: true });
+    vi.mocked(installUpdate).mockRejectedValue(new Error('boom'));
+    render(<UpdateBar />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Installa ora' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Aggiornamento non riuscito/);
+    expect(screen.getByRole('button', { name: 'Installa ora' })).toBeEnabled();
   });
 
   it('shows the notice sent by the core at once, before the page has checked', async () => {
