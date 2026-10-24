@@ -12,19 +12,33 @@ import './styles/onair.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 
 const queryClient = new QueryClient();
 const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </StrictMode>,
-  );
+
+// le preferenze si portano dal server prima di disegnare (i moduli le leggono all'avvio) e poi si tengono allineate
+async function start() {
+  const kind = deviceKind(window.innerWidth);
+  try {
+    await hydrate(window.localStorage, kind);
+    keepSynced(kind);
+  } catch {
+    // senza archivio del browser l'interfaccia parte con i valori predefiniti
+  }
+  // i moduli che leggono le preferenze all'avvio si caricano solo ora
+  const { App } = await import('./App');
+  if (root) {
+    createRoot(root).render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </StrictMode>,
+    );
+  }
 }
+void start();
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

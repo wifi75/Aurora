@@ -488,6 +488,7 @@ pub async fn run(
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access)
+        .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {
                 let worked = load_worked(Some(&path), &db);

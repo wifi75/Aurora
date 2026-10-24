@@ -899,3 +899,51 @@ button.glass.chip.chip--main {
 .tx-commands .macro-chips .glass {
   min-height: 1.5rem;
 }
+
+/* Attivita' di banda e Log affiancati: due finestre in una riga, la prima il doppio dell'altra */
+.dock-pair {
+  display: flex;
+  gap: var(--space-2);
+  min-height: 0;
+}
+
+.dock-pair > .dock-panel {
+  min-width: 0;
+  height: auto;
+}
+
+.dock-pair > .dock-panel--all {
+  flex: 2 1 0;
+}
+
+.dock-pair > .dock-panel--log {
+  flex: 1 1 0;
+  container-type: inline-size;
+}
+
+.dock-pair .dock-panel--log .dock-resize {
+  display: none;
+}
+
+/* nella finestra Log stretta restano data, nominativo, banda e modo */
+@container (max-width: 28rem) {
+  .log4om-table th:nth-child(n + 5),
+  .log4om-table td:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@container (max-width: 20rem) {
+  .log4om-table th:nth-child(n + 3),
+  .log4om-table td:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+/* schermo stretto: le due finestre una sotto l'altra */
+@media (max-width: 63.99rem) {
+  .dock-pair {
+    flex-direction: column;
+    height: auto !important;
+  }
+}

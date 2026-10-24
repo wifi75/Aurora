@@ -3,6 +3,7 @@
 mod frames;
 mod policy;
 mod routes;
+pub mod ui_settings;
 mod ws;
 
 use std::{
@@ -54,6 +55,8 @@ pub struct AppState {
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
     pub log4om: Option<Log4omProvider>,
+    /// Preferenze dell'interfaccia salvate sul server.
+    pub ui_settings: Option<Arc<ui_settings::UiSettings>>,
     pub rules_saver: Option<RulesSaver>,
     /// Frequenze di lavoro per banda e modo (si cambiano dalle impostazioni).
     pub frequencies: Arc<Mutex<FrequencyTable>>,
@@ -102,7 +105,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
@@ -116,6 +119,11 @@ impl AppState {
             Some(s) => self.with_stats(s),
             None => self,
         }
+    }
+
+    pub fn with_ui_settings(mut self, store: Arc<ui_settings::UiSettings>) -> AppState {
+        self.ui_settings = Some(store);
+        self
     }
 
     pub fn with_log4om_if(mut self, reader: Option<Log4omProvider>) -> AppState {

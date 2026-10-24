@@ -128,20 +128,27 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
     const nodes: ReactNode[] = [];
     const marker = (key: string) => <div key={key} className="dock-drop" aria-hidden="true" />;
     let slot = 0; // posizione tra i pannelli che non si stanno trascinando
-    ids.forEach((id) => {
+    // Attivita' di banda e Log vicini, aperti e non in volo: una riga sola, uno accanto all'altro
+    const paired = (id: PanelId, next?: PanelId) =>
+      id === 'all' && next === 'log' && ![id, next].some((p) => layout.collapsed.includes(p) || p === dragging);
+    let row: ReactNode[] | null = null;
+    ids.forEach((id, at) => {
       const flying = id === dragging;
-      if (!flying) {
+      const inRow = row !== null && id === 'log';
+      if (!flying && !inRow) {
         if (spot?.zone === zone && spot.index === slot) nodes.push(marker(`drop-${slot}`));
         slot += 1;
       }
       const folded = layout.collapsed.includes(id);
       const height = folded ? undefined : layout.heights[id];
-      nodes.push(
+      const startsRow = paired(id, ids[at + 1]);
+      const target = inRow && row ? row : nodes;
+      const section = (
         <section
           key={id}
           data-panel={id}
           className={`dock-panel dock-panel--${id}${folded ? ' dock-panel--folded' : ''}${flying ? ' dock-panel--flying' : ''}`}
-          style={folded ? { flex: 'none', minHeight: 0 } : height ? { height, flex: 'none' } : undefined}
+          style={folded ? { flex: 'none', minHeight: 0 } : inRow || startsRow ? undefined : height ? { height, flex: 'none' } : undefined}
         >
           <header
             className="dock-grip"
@@ -160,8 +167,19 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
           </header>
           {!folded && <div className="dock-body">{render(id)}</div>}
           {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={t('dock.height', { title: titles[id] })} title={t('tip.dock.resize')} onPointerDown={startResize(id)} />}
-        </section>,
+        </section>
       );
+      if (startsRow) {
+        row = [section];
+        nodes.push(
+          <div key="pair" className="dock-pair" style={height ? { height, flex: 'none' } : undefined}>
+            {row}
+          </div>,
+        );
+      } else {
+        target.push(section);
+        if (inRow) row = null;
+      }
     });
     if (spot?.zone === zone && spot.index >= slot) nodes.push(marker('drop-end'));
     if (ids.length === 0 && !(spot?.zone === zone)) {

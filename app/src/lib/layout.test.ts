@@ -10,30 +10,30 @@ const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { thr
 describe('layout', () => {
   it('starts like JTDX: all the stations on the left with the waterfall under them', () => {
     const l = defaultLayout();
-    expect(l.left).toEqual(['all', 'waterfall']);
-    expect(l.right).toEqual(['station', 'tx', 'cq', 'log']);
+    expect(l.left).toEqual(['all', 'log', 'waterfall']);
+    expect(l.right).toEqual(['station', 'tx', 'cq']);
   });
 
   it('moves a panel to another zone at a position, keeping every panel exactly once', () => {
     const l = movePanel(defaultLayout(), 'cq', 'left', 0);
-    expect(l.left).toEqual(['cq', 'all', 'waterfall']);
-    expect(l.right).toEqual(['station', 'tx', 'log']);
+    expect(l.left).toEqual(['cq', 'all', 'log', 'waterfall']);
+    expect(l.right).toEqual(['station', 'tx']);
   });
 
   it('reorders inside the same zone and clamps the position', () => {
-    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['tx', 'cq', 'station', 'log']);
-    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['tx', 'cq', 'log', 'station']);
-    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'station', 'tx', 'cq', 'log']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['tx', 'cq', 'station']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['tx', 'cq', 'station']);
+    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'station', 'tx', 'cq']);
   });
 
   it('puts the waterfall below everything else', () => {
     const l = movePanel(movePanel(defaultLayout(), 'waterfall', 'right', 0), 'waterfall', 'left', 5);
-    expect(l.left).toEqual(['all', 'waterfall']);
+    expect(l.left).toEqual(['all', 'log', 'waterfall']);
   });
 
   it('lets a zone stay empty', () => {
     let l = defaultLayout();
-    for (const id of ['station', 'tx', 'cq', 'log'] as const) l = movePanel(l, id, 'left', 0);
+    for (const id of ['station', 'tx', 'cq'] as const) l = movePanel(l, id, 'left', 0);
     expect(l.right).toEqual([]);
   });
 
@@ -79,10 +79,10 @@ describe('layout', () => {
 });
 
 describe('layout saved before the Log window existed', () => {
-  it('gets the Log window at the bottom of the right column, keeping the rest', () => {
+  it('gets the Log window right next to the band activity, keeping the rest', () => {
     const old = { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
     const l = readLayout(memory({ 'aurora-layout': JSON.stringify(old) }));
-    expect(l.left).toEqual(['all', 'waterfall']);
-    expect(l.right).toEqual(['station', 'tx', 'cq', 'log']);
+    expect(l.left).toEqual(['all', 'log', 'waterfall']);
+    expect(l.right).toEqual(['station', 'tx', 'cq']);
   });
 });
