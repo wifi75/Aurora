@@ -26,7 +26,7 @@ async fn health_is_public_and_has_author() {
     let j = body_json(resp).await;
     assert_eq!(j["status"], "ok");
     assert_eq!(j["name"], "Aurora");
-    assert_eq!(j["author"], "Tiziano Cassone");
+    assert_eq!(j["author"], "Tiziano Cassone (IU3WJQ)");
     assert!(j["version"].as_str().is_some_and(|v| !v.is_empty()));
 }
 

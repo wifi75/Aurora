@@ -34,8 +34,8 @@ Stato al 2026-10-24, versione 0.10.0. Per riprendere il lavoro leggi anche `docs
 - Radio FT-2000 via OmniRig: `SetSimplexMode` la mette in split e sul VFO B. Il cambio banda scrive `Split` spento, aspetta che la radio lo accetti e solo dopo scrive `Freq`; scrivere `Vfo` subito dopo lo split lo fa riaccendere (provato dal vivo).
 - Il doppio clic puo' perdere il periodo perche' Abilita Tx passa da PowerShell e UI Automation (circa 1 s): idea per risolverlo, una sessione PowerShell fissa.
 - Modifica delle impostazioni di JTDX: scrivendo `JTDX.ini` a JTDX chiuso (lo riscrive all'uscita). Core pronto (`ini_edit`, `jtdx_process`), interfaccia da fare.
-- Nessun nominativo o locatore reali nei file del repository: usare dati finti (IU3ABC, IO91wm). Nella cronologia locale ci sono commit con quelli veri: prima di un push serve riscriverla.
-- Giro periodico: ogni 30 minuti si fa un giro completo di git (commit) e documentazione (CHANGELOG, TODO, memory, docs/api, README) senza il push finche' la cronologia non e' ripulita.
+- Il nominativo dell'autore (IU3WJQ) compare come firma: README, licenza, pacchetti, installatore, piede dell'interfaccia. Il **locatore** vero non va mai nei file: usare dati finti (IU3ABC, IO91wm) in prove ed esempi. Prima della pubblicazione la cronologia e' stata riscritta (locatore tolto, email personale sostituita da quella `users.noreply.github.com`).
+- Giro periodico: ogni 30 minuti si fa un giro completo di git (commit) e documentazione (CHANGELOG, TODO, memory, docs/api, README).
 
 ## Sicurezza (non negoziabile)
 - Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.

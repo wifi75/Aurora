@@ -17,7 +17,7 @@
 
 Stazione digitale FT8/FT4 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Usa JTDX come motore di decodifica e trasmissione; Aurora è il cervello e lo schermo.
 
-Progettazione e sviluppo: Tiziano Cassone
+Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
@@ -101,6 +101,6 @@ Sul PC con Aurora accesa, i test del core si lanciano con `--target-dir target/t
 
 ## Licenza
 
-Aurora e' software libero, rilasciato con la **GNU General Public License versione 3 o successiva** (`GPL-3.0-or-later`): testo completo in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone.
+Aurora e' software libero, rilasciato con la **GNU General Public License versione 3 o successiva** (`GPL-3.0-or-later`): testo completo in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone (IU3WJQ). Le librerie di terzi e i loro avvisi sono in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) e [`docs/licenze-terze-parti.md`](docs/licenze-terze-parti.md).
 
 Chi ridistribuisce Aurora, anche modificata, deve farlo con la stessa licenza e rendere disponibili i sorgenti. Le librerie di terzi che l'interfaccia include (`leaflet` per la mappa, licenza BSD-2-Clause, `world-atlas` e `topojson-client`, licenza ISC;  le tessere dello sfondo della mappa sono di Esri e National Geographic, con la loro attribuzione sulla mappa, e le altre dipendenze elencate in `app/package.json` e `core/Cargo.toml`) mantengono le proprie licenze.
