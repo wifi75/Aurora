@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- Stazione DX: la riga Tx in corso si riconosce dal tipo di messaggio (locatore, rapporto, R+rapporto, RR73, 73, CQ) anche se il testo non coincide col modello, e mostra il testo davvero trasmesso.
+- Attivita' di banda: la tacca rossa delle chiamate verso di te non compare piu' sui messaggi di chiusura (RR73 e 73), a QSO concluso.
 - Menu in alto e schede delle Impostazioni: la voce in cui ci si trova e' piena e in grassetto (anche `aria-current`).
 - Tema scuro: pannelli con fondo pieno, senza vetro sfocato dietro al testo, e tabelle del cluster e del log a corpo intero: i nominativi non risultano piu' sfuocati.
 

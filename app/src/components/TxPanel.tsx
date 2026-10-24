@@ -22,6 +22,9 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
     ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: pendingDx || status.dx_call || '', report: status.report ?? '' })
     : [];
   const active = activeTx(messages, status?.tx_message);
+  // la riga in corso mostra il testo che il motore trasmette davvero (rapporto o stazione possono differire dal modello)
+  const sent = status?.tx_message?.trim();
+  if (active >= 0 && sent) messages[active] = sent;
   const next = status && active < 0 ? nextTx(decodes, status.de_call, pendingDx || status.dx_call || '') : -1;
 
   return (

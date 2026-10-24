@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeTx, txMessages } from './txMessages';
+import { activeTx, classifyTx, txMessages } from './txMessages';
 
 describe('txMessages', () => {
   it('builds the six standard FT8 messages for a QSO', () => {
@@ -39,5 +39,27 @@ describe('activeTx', () => {
     expect(activeTx(messages, 'TNX 73')).toBe(-1);
     expect(activeTx(messages, undefined)).toBe(-1);
     expect(activeTx(messages, '')).toBe(-1);
+  });
+});
+
+describe('classifyTx', () => {
+  it('recognises the type of message whatever the calls and the report', () => {
+    expect(classifyTx('KC2NJ IU3ABC JN55')).toBe(0);
+    expect(classifyTx('KC2NJ IU3ABC -18')).toBe(1);
+    expect(classifyTx('KC2NJ IU3ABC +05')).toBe(1);
+    expect(classifyTx('KC2NJ IU3ABC R-19')).toBe(2);
+    expect(classifyTx('KC2NJ IU3ABC RRR')).toBe(3);
+    expect(classifyTx('KC2NJ IU3ABC RR73')).toBe(3);
+    expect(classifyTx('KC2NJ IU3ABC 73')).toBe(4);
+    expect(classifyTx('CQ IU3ABC IO91')).toBe(5);
+    expect(classifyTx('CQ DX IU3ABC IO91')).toBe(5);
+    expect(classifyTx('TNX 73')).toBe(-1);
+    expect(classifyTx('')).toBe(-1);
+  });
+
+  it('lights the right row when the engine sends a report different from the one known', () => {
+    const messages = txMessages({ myCall: 'IU3ABC', myGrid: 'IO91wm', dxCall: 'KC2NJ', report: '-18' });
+    expect(activeTx(messages, 'KC2NJ IU3ABC R-21')).toBe(2);
+    expect(activeTx(messages, 'KC2NJ IU3ABC -07')).toBe(1);
   });
 });
