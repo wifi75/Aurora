@@ -109,6 +109,37 @@ Regole che se ne ricavano (comportamento di AutoSeq; non va riscritto in Aurora)
 - il QSO si chiude e si registra quando arriva RR73/RRR/73 (`AutoQSOLogging=true`, `PromptToLog=false`);
 - dopo il QSO, con «1 QSO», Abilita Tx si spegne.
 
+### AutoSeq: il numero e i contatori (dai testi del programma e da `JTDX.ini`)
+
+Il numero in «AutoSeq n» (qui 3) e' il **livello della sequenza automatica**, da 0 a 7. Dai suggerimenti che JTDX stesso contiene:
+
+- **AutoSeq 0**: sequenza dei messaggi ma **senza scelta automatica** delle stazioni volute (lista dei desiderati non usata);
+- **AutoSeq 1..3**: quando un contatore (sotto) raggiunge il suo valore, JTDX **chiama CQ**;
+- **AutoSeq 4 e oltre**: scelta automatica delle stazioni in base alle priorita' scelte (nominativi, prefissi, paesi, griglie desiderati;
+  l'opzione «chiama prima i nominativi con priorita' alta dei nuovi» e' solo da 4 in su);
+- **AutoSeq 6/7**: cerca tra i messaggi decodificati un CQ o un 73 valido e li chiama; se non ne trova, chiama CQ. Si ferma (Halt Tx) se
+  «1 QSO» e' acceso.
+
+I livelli 4 e 5 non sono descritti nei testi che ho trovato oltre a quanto scritto qui: non si deduce altro.
+
+I **quattro contatori** (scheda AutoSeq di JTDX; ognuno ha un interruttore e un valore massimo) fermano o fanno ripartire la sequenza
+quando una situazione si ripete troppe volte:
+
+| Contatore | Quando conta | Qui |
+|---|---|---|
+| AnswerCQ | ho risposto a un CQ e non risponde nessuno | spento, massimo 5 |
+| AnswerInCall | ho chiamato CQ, ho ricevuto una chiamata e ho risposto | spento, massimo 5 |
+| SentRReport | ho mandato il rapporto rispondendo a un rapporto in arrivo | **acceso**, massimo 5 |
+| SentRR7373 | ho mandato RR73 (73) rispondendo a un RRR (RR73) in arrivo | **acceso**, massimo 5 |
+
+Altre opzioni della stessa scheda: `SingleShotQSO` (il «1 QSO»), `SeqHaltTxReplyOther` (ferma Tx se la stazione chiamata risponde a un altro),
+`StrictDirectionalCQ` (rispetta la direzione del CQ anche per un nuovo DXCC), `CallHigherNewCall`, liste `WantedCall/Prefix/Country/Grid`.
+
+### La casella RRR
+
+Dal suggerimento di JTDX: **senza spunta il Tx4 e' `RR73`, con la spunta e' `RRR`** (`RRR\RR73` nel file delle impostazioni; qui false, quindi RR73).
+Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione.
+
 ### Il periodo (pari/dispari)
 
 - `TxMinuteButton` acceso = periodo **pari**; JTDX lo imposta da solo rispondendo a una stazione (opposto al suo periodo), come dice il
@@ -176,8 +207,11 @@ JTDX continua a girare, quindi tutto il suo stato e' ancora valido; Aurora deve 
 
 ## Da verificare / lacune note
 
-- significato del numero in «AutoSeq n» (e' nel menu AutoSeq di JTDX; non esposto);
-- casella `rrr1CheckBox` (RRR al posto di RR73): non letta;
-- tempo massimo di ritardo con cui JTDX avvia una trasmissione dopo l'inizio del periodo, per modo (FT8, FT4);
-- gestione di Hound (modo DXpedition) e della finestra «Tx 2» e «Tx 3» (schede 2 e 3 dei messaggi): non esposte;
+- **Tempo massimo di avvio dopo l'inizio del periodo** (misurato su `ALL.TXT`, 346 trasmissioni di ottobre): una trasmissione regolare e'
+  registrata a **0,03-0,15 s** dal bordo del periodo (FT8: mediana 0,09 s; FT4: mediana 0,06 s, 95% sotto 0,12 s). Ci sono pero' righe con
+  scarti di 2-12 s (28 su 272 in FT8, 3 su 74 in FT4): non si capisce dal log se sono avvii tardivi o se la riga e' scritta al momento
+  della decisione. **Il limite oltre il quale JTDX non parte piu' non risulta**: serve una prova (Abilita Tx a periodo avviato), che fa il
+  proprietario;
+- casella `rrr1CheckBox` e numero di AutoSeq: risolti sopra; restano i livelli 4 e 5 non descritti;
+- gestione di Hound (modo DXpedition) e delle schede 2 e 3 dei messaggi: non esposte;
 - le prove di selezione del messaggio a mano con la trasmissione accesa le fa il proprietario.

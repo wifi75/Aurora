@@ -30,7 +30,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [ ] Prove con la radio (le fa Tiziano): selezione a mano del messaggio Tx durante un QSO, modo JT, doppio clic sul cluster, applicazione delle impostazioni, svuotamento dell'elenco al cambio banda, barre Rx/Tx in FT8
 - [ ] Verificare il tema chiaro dopo le ultime modifiche grafiche (controllate soprattutto in scuro)
 - [ ] Cascata: dire come la vuole Tiziano (velocita', contrasto, colori) ora che scorre di continuo
-- [ ] Da `docs/logiche-jtdx.md`: significato di «AutoSeq n», casella RRR, tempo massimo di avvio della trasmissione per modo
+- [ ] Da `docs/logiche-jtdx.md`: limite di ritardo con cui JTDX avvia una trasmissione (serve una prova con la radio) e livelli AutoSeq 4-5
 - [ ] Pubblicazione: 9 commit locali non pushati; il nominativo reale resta in due commit gia' su GitHub (`561c576`, `248b7f3`) e nei tag v0.6.0-v0.8.0: riscriverli richiede un force-push (decide Tiziano)
 - [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
 - [ ] Leggere il log di Log4OM2 (`Documents\LOG4OM2\<nominativo>.sqlite`, 36484 QSO contro i 2060 del log di JTDX) per novita' e statistiche: da decidere con Tiziano
