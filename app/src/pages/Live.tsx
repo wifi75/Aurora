@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ApiError, postReply } from '../api/client';
+import { postReply } from '../api/client';
 import { openStream } from '../api/stream';
 import { DecodeList } from '../components/DecodeList';
 import { StatusBar } from '../components/StatusBar';
 import { StopButton } from '../components/StopButton';
 import { Waterfall } from '../components/Waterfall';
+import { replyErrorMessage } from '../lib/replyError';
 import { emitSpectrum, registerSpectrum } from '../lib/spectrumFeed';
 import { useStation } from '../state/station';
-
-function replyMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 403) return 'Da questa connessione non si può trasmettere.';
-    if (error.status === 404) return 'Quel messaggio non è più disponibile.';
-    if (error.status === 401) return 'Dispositivo non associato: associalo di nuovo.';
-  }
-  return 'Risposta non inviata. Controlla la connessione e riprova.';
-}
 
 export function Live() {
   const status = useStation((s) => s.status);
@@ -39,7 +31,7 @@ export function Live() {
       await postReply(id);
       setNote(`Risposta inviata: ${target?.text ?? ''}`);
     } catch (error) {
-      setNote(replyMessage(error));
+      setNote(replyErrorMessage(error));
     }
   }, []);
 

@@ -6,8 +6,8 @@ Progettazione e sviluppo: Tiziano Cassone
 
 ## Stato
 
-Versione 0.2.0: core e interfaccia funzionanti su una **stazione simulata** (cascata, decode, STOP TX, associazione del telefono).
-Il collegamento reale a JTDX è in corso (Fase 0: prove su JTDX 159, vedi `docs/fase0-rapporto.md`).
+Versione 0.3.0: core e interfaccia funzionanti su una **stazione simulata** oppure su **JTDX reale** (decode, stato, STOP TX, associazione del telefono, cascata dall'audio).
+Esiti delle prove con JTDX 159 in `docs/fase0-rapporto.md`.
 
 ## Avvio rapido (Windows)
 
@@ -27,6 +27,11 @@ Con Aurora acceso sul PC:
 
 Mostra un codice di 8 cifre e un QR (valgono 2 minuti). Inquadra il QR con il telefono (stessa rete Wi-Fi), dai un nome al dispositivo e conferma.
 Nessuna password: l'accesso è per dispositivo associato; si revoca dall'elenco dei dispositivi.
+
+### Con JTDX reale
+
+Vedi `docs/guida-collegamento-jtdx.md`: Aurora si mette tra JTDX e GridTracker2 (hub UDP) senza togliere nulla a nessuno dei due,
+e la trasmissione da Aurora e' chiusa finche' non la abiliti (`AURORA_ALLOW_TX=1`, solo con carico fittizio).
 
 ## Documentazione
 

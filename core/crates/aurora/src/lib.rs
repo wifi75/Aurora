@@ -45,6 +45,9 @@ pub struct Config {
     pub allow_tx: bool,
     /// Parte del nome dell'ingresso audio da cui ricavare la cascata (vuoto: nessuna cattura audio).
     pub audio_device: Option<String>,
+    /// Con JTDX: chiede il Replay dei decode correnti appena lo vede. Chi riceve il flusso (GridTracker2) li
+    /// riceve di nuovo, marcati come "non nuovi".
+    pub replay_on_connect: bool,
 }
 
 #[derive(Debug)]
@@ -80,6 +83,7 @@ impl Config {
             udp_forward: Vec::new(),
             allow_tx: false,
             audio_device: None,
+            replay_on_connect: true,
         }
     }
 
@@ -124,6 +128,13 @@ impl Config {
                 return Err(StartError::BadConfig(format!("AURORA_ALLOW_TX deve essere 0 o 1, non {other}")));
             }
         };
+        let replay_on_connect = match get("AURORA_REPLAY_ON_CONNECT").as_deref() {
+            None | Some("1" | "true") => true,
+            Some("0" | "false") => false,
+            Some(other) => {
+                return Err(StartError::BadConfig(format!("AURORA_REPLAY_ON_CONNECT deve essere 0 o 1, non {other}")));
+            }
+        };
         Ok(Config {
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
@@ -135,6 +146,7 @@ impl Config {
             udp_forward,
             allow_tx,
             audio_device: get("AURORA_AUDIO_DEVICE").filter(|d| !d.trim().is_empty()),
+            replay_on_connect,
         })
     }
 }
@@ -186,7 +198,11 @@ pub async fn run(
                     .await
                     .map_err(|e| StartError::Io(e.to_string()))?,
             );
-            let jtdx_config = JtdxConfig { allow_tx: config.allow_tx, ..JtdxConfig::default() };
+            let jtdx_config = JtdxConfig {
+                allow_tx: config.allow_tx,
+                replay_on_connect: config.replay_on_connect,
+                ..JtdxConfig::default()
+            };
             let engine = JtdxEngine::new(Arc::clone(&hub), jtdx_config, Arc::new(EngineClock));
             (tokio::spawn(engine.run(io)), Some(hub))
         }
