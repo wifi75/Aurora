@@ -24,7 +24,8 @@ describe('OutputLevel', () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveValue('50'));
-    expect(screen.getByText(/50 % · attenuazione 22.5 dB/)).toBeInTheDocument();
+    const value = screen.getByText('50%');
+    expect(value).toHaveAttribute('title', expect.stringMatching(/50 % · attenuazione 22.5 dB/));
   });
 
   it('sends the new level only when the slider is released, not on every step', async () => {

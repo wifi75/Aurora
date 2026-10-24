@@ -45,6 +45,7 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
 
   return (
     <div className="tx-panel">
+      <div className="tx-main">
       {status && (
         <>
           <div className="tx-dx">
@@ -70,7 +71,6 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
         </>
       )}
       {!txAllowed && <p className="muted tx-note">{t('tx.closed')}</p>}
-      <OutputLevel txAllowed={txAllowed} />
       <div className="tx-row">
         <button
           type="button"
@@ -142,6 +142,8 @@ export function TxPanel({ txAllowed, initialFrequency = 1500, status = null, dec
       <p className="live-note" role="status">
         {note}
       </p>
+      </div>
+      <OutputLevel txAllowed={txAllowed} />
     </div>
   );
 }

@@ -516,10 +516,18 @@ button.glass,
 
 /* Pannello di trasmissione */
 .tx-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.tx-main {
   display: grid;
+  flex: 1;
+  min-width: 0;
   gap: var(--space-3);
   align-content: start;
-  padding: var(--space-3);
 }
 
 .tx-row {

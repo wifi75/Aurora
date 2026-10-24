@@ -470,13 +470,35 @@
 
 /* Livello audio di uscita */
 .out-level {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 2.5rem;
 }
 
+/* cursore verticale: in alto il massimo, in basso il minimo */
 .out-level input[type='range'] {
-  width: 100%;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 1.5rem;
+  height: 10rem;
   accent-color: var(--accent);
+}
+
+.out-level-title {
+  font-weight: var(--weight-strong);
+  font-size: var(--text-sm);
+}
+
+.out-level-value {
+  font-size: var(--text-sm);
+}
+
+.out-level .live-note {
+  max-width: 3.5rem;
+  text-align: center;
+  font-size: var(--text-xs, var(--text-sm));
 }
 
 /* Un nostro messaggio trasmesso: riga rossa tenue, il testo in evidenza */
