@@ -994,3 +994,13 @@
 .log4om-table th {
   padding: 0.1rem 0.4rem;
 }
+
+/* DX Cluster piu' largo, Comandi piu' stretto (ma mai sotto la larghezza che serve ai suoi campi) */
+.dock-pair > .dock-panel--cluster {
+  flex: 3 1 0;
+}
+
+.dock-pair > .dock-panel--station {
+  flex: 2 1 0;
+  min-width: 15.5rem;
+}
