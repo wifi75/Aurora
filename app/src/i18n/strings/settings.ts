@@ -447,6 +447,22 @@ export const settingsStrings = {
     'Los parámetros de decodificación (intentos, pasadas, intervalo DT, profundidad, modo rápido o profundo, filtros de recepción, ciclos FT8) son del motor de JTDX y no se pueden cambiar desde fuera: JTDX 159 no acepta configuración por UDP. Se ajustan en JTDX, Ajustes → Avanzado y menú Decodificar.',
     'Os parâmetros de descodificação (tentativas, passagens, intervalo DT, profundidade, modo rápido ou profundo, filtros de receção, ciclos FT8) são do motor do JTDX e não se podem mudar de fora: o JTDX 159 não aceita configuração por UDP. Definem-se no JTDX, Definições → Avançado e menu Descodificar.',
   ],
+  'gen.escStop': [
+    'Esc: ferma la trasmissione',
+    'Esc: stop transmitting',
+    'Esc: Senden stoppen',
+    'Échap : arrêter l’émission',
+    'Esc: parar la transmisión',
+    'Esc: parar a transmissão',
+  ],
+  'tip.gen.escStop': [
+    'Il tasto Esc ferma subito la trasmissione e spegne AutoTX e Abilita Tx, come STOP TX. Vale in tutte le pagine.',
+    'The Esc key stops transmitting at once and switches off AutoTX and Enable Tx, like STOP TX. Works on every page.',
+    'Die Esc-Taste stoppt das Senden sofort und schaltet AutoTX und Tx an aus, wie STOP TX. Gilt auf allen Seiten.',
+    'La touche Échap arrête aussitôt l’émission et coupe AutoTX et Activer Tx, comme STOP TX. Valable sur toutes les pages.',
+    'La tecla Esc detiene al instante la transmisión y apaga AutoTX y Activar Tx, como STOP TX. Vale en todas las páginas.',
+    'A tecla Esc pára logo a transmissão e desliga AutoTX e Ativar Tx, como o STOP TX. Vale em todas as páginas.',
+  ],
   'gen.dblReply': [
     'Doppio clic: rispondi alla stazione',
     'Double click: answer the station',

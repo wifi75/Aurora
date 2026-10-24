@@ -25,6 +25,7 @@ export function GeneralTab() {
         <Check label={t('gen.showFlag')} hint={t('tip.gen.flag')} checked={prefs.showFlag} onChange={(v) => set({ showFlag: v })} />
         <Check label={t('gen.showDistance')} hint={t('tip.gen.distance')} checked={prefs.showDistance} onChange={(v) => set({ showDistance: v })} />
         <Check label={t('gen.showDt')} hint={t('tip.gen.dt')} checked={prefs.showDt} onChange={(v) => set({ showDt: v })} />
+        <Check label={t('gen.escStop')} hint={t('tip.gen.escStop')} checked={prefs.escStop} onChange={(v) => set({ escStop: v })} />
         <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
       </div>
       <button type="button" className="glass" onClick={() => usePrefs.getState().reset()}>

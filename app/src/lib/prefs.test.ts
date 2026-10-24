@@ -11,7 +11,7 @@ describe('display preferences', () => {
   beforeEach(() => localStorage.clear());
 
   it('start in kilometres with country, flag, distance and DT shown', () => {
-    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true });
+    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true });
     expect(readPrefs(memory())).toEqual(defaultPrefs());
     expect(readPrefs(null)).toEqual(defaultPrefs());
   });

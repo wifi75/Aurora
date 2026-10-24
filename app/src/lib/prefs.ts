@@ -10,6 +10,8 @@ export interface Prefs {
   showDt: boolean;
   /** Il doppio clic su un messaggio risponde a quella stazione (come in JTDX); spento seleziona soltanto. */
   doubleClickReply: boolean;
+  /** Il tasto Esc ferma la trasmissione e spegne AutoTX e Abilita Tx. */
+  escStop: boolean;
 }
 
 const KEY = 'aurora-prefs';
@@ -18,7 +20,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -28,7 +30,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
   } catch {

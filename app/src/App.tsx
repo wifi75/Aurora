@@ -6,6 +6,7 @@ import { LanguageSelect } from './components/LanguageSelect';
 import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
 import { applyColors, readColors } from './lib/colors';
+import { useEscapeStop } from './lib/escapeStop';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { Automation } from './pages/Automation';
@@ -18,6 +19,7 @@ import { Wiki } from './pages/Wiki';
 export function App() {
   const t = useT();
   const route = useRoute();
+  useEscapeStop();
   const queryClient = useQueryClient();
   useEffect(() => {
     applyColors(document.documentElement, readColors(browserStorage()));
