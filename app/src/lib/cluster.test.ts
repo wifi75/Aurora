@@ -37,10 +37,10 @@ describe('spotAge', () => {
 
 describe('formatKhz', () => {
   it('writes kHz with the thousands dot and the decimal comma', () => {
-    expect(formatKhz(14074)).toBe('14.074,0');
-    expect(formatKhz(28313.2)).toBe('28.313,2');
-    expect(formatKhz(7143.7)).toBe('7.143,7');
-    expect(formatKhz(144310.25)).toBe('144.310,3');
-    expect(formatKhz(1840)).toBe('1.840,0');
+    expect(formatKhz(14074)).toBe('14.074,00');
+    expect(formatKhz(28313.2)).toBe('28.313,20');
+    expect(formatKhz(7143.7)).toBe('7.143,70');
+    expect(formatKhz(144310.25)).toBe('144.310,25');
+    expect(formatKhz(1840)).toBe('1.840,00');
   });
 });

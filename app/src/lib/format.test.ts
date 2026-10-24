@@ -3,8 +3,8 @@ import { bandOf, formatClock, formatMhz } from './format';
 
 describe('format', () => {
   it('formats the dial frequency in MHz', () => {
-    expect(formatMhz(14_074_000)).toBe('14.074 MHz');
-    expect(formatMhz(7_074_000)).toBe('7.074 MHz');
+    expect(formatMhz(14_074_000)).toBe('14.0740 MHz');
+    expect(formatMhz(7_074_000)).toBe('7.0740 MHz');
   });
 
   it('formats milliseconds since midnight as HH:MM:SS', () => {
