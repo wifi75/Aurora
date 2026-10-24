@@ -24,7 +24,7 @@
 
 ## Lavoro automatico completato
 
-- `udp-bridge`: decodifica di Heartbeat, Status, Decode, Clear, QsoLogged, Close e tipi sconosciuti; codifica di HaltTx, FreeText, Reply. 22 test automatici verdi (sintetici); il test sulle catture reali è in attesa dei pacchetti.
+- `udp-bridge`: decodifica di Heartbeat, Status, Decode, Clear, QsoLogged, Close e tipi sconosciuti; codifica di HaltTx, FreeText, Reply. 20 test automatici verdi (sintetici); il test sulle catture reali è in attesa dei pacchetti.
 - `probes`: `udp_capture`, `udp_send` (verificato in locale: il pacchetto di HaltTx arriva con magic, schema e tipo corretti), `audio_tone` (picco di frequenza, 3 test).
 - Inventario delle funzioni: bozza in `fase0-parita-funzioni.md`.
 - Sull'`API` di `cpal 0.18.2`: differisce dalle versioni precedenti (`description()` al posto di `name()`, configurazione passata per valore, errore `cpal::Error`); il probe è già adattato.
