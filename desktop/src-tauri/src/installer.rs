@@ -100,4 +100,23 @@ mod tests {
         let e = verify_package(b"x", "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZQo=").unwrap_err();
         assert!(!e.contains("chiave pubblica non valida"), "{e}");
     }
+
+    /// Se c'e' un pacchetto appena fatto con `scripts/rilascio-windows.ps1`, la sua firma deve tornare con la chiave pubblica incorporata.
+    #[test]
+    fn the_package_built_by_the_release_script_verifies_with_the_embedded_key() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dist-release");
+        let Ok(entries) = std::fs::read_dir(&dir) else { return };
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if !path.to_string_lossy().ends_with("-setup.exe") {
+                continue;
+            }
+            let data = std::fs::read(&path).expect("pacchetto leggibile");
+            let signature = std::fs::read_to_string(format!("{}.sig", path.display())).expect("firma accanto al pacchetto");
+            assert_eq!(verify_package(&data, &signature), Ok(()), "{}", path.display());
+            let mut tampered = data.clone();
+            tampered[data.len() / 2] ^= 0xFF;
+            assert!(verify_package(&tampered, &signature).is_err(), "un pacchetto alterato va rifiutato");
+        }
+    }
 }

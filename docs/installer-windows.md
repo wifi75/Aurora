@@ -8,7 +8,7 @@ Il programma Windows (cartella `desktop/`) e' Tauri 2: dentro c'e' il **core di 
 
 **Primo avvio.** Aurora cerca da sola JTDX (`%LOCALAPPDATA%\JTDX\JTDX.ini`), il suo log, il file dei paesi (`cty.dat`), l'archivio di Log4OM2 e l'ingresso audio scelto in JTDX. Senza JTDX parte con il simulatore. Si mette tra i programmi che partono con Windows (si toglie dal vassoio).
 
-**Trasmissione chiusa.** Come sempre: si apre solo con `AURORA_ALLOW_TX=1`. Le impostazioni si scrivono nel file `aurora.env` (dal vassoio: *Apri la cartella dei dati*; si crea al primo avvio, tutto commentato) e valgono al prossimo avvio. Le variabili d'ambiente `AURORA_*` hanno la precedenza sul file.
+**Trasmissione chiusa.** Come sempre: si apre solo con `AURORA_ALLOW_TX=1`. Le impostazioni si scrivono nel file `aurora.env` (dal vassoio: *Apri la cartella dei dati*; si crea al primo avvio, tutto commentato) e valgono al prossimo avvio. Le variabili d'ambiente `AURORA_*` hanno la precedenza sul file. Due voci utili: `AURORA_AUTOSTART=0` tiene Aurora fuori dai programmi che partono con Windows (al primo avvio ci si mette da sola), `AURORA_DATA_DIR` sceglie un'altra cartella dei dati.
 
 | Dove | Cosa |
 |---|---|
@@ -47,4 +47,10 @@ Per fare una versione nuova:
 - `desktop/src-tauri`: workspace Cargo a parte (le dipendenze di Tauri non appesantiscono `cargo test --workspace` del core), che usa il crate `aurora` come libreria.
 - `settings.rs`: rilevamento di JTDX/Log4OM2 e lettura di `aurora.env` (funzioni pure con prove).
 - `installer.rs`: scarico, verifica della firma e avvio dell'installatore. Il core (`remote-api`) espone `POST /api/v1/update/install` solo da loopback e solo se il guscio gli ha dato un installatore (`can_install`).
-- Prove: `cd desktop\src-tauri; cargo test`.
+- Prove: `cd desktop\src-tauri; cargo test` (comprese la firma del pacchetto appena fatto in `dist-release\` con la chiave incorporata e il rifiuto di un pacchetto alterato).
+
+## Cosa e' stato provato (2026-10-24)
+
+- Installatore da 6,8 MB, firmato; la firma torna con la chiave pubblica incorporata e un pacchetto alterato viene rifiutato.
+- Installazione silenziosa (`/S`) in una cartella a parte: programma, interfaccia e disinstallatore al loro posto; voce nel registro con versione ed editore; il programma installato parte, mostra la finestra «Aurora» e serve l'interfaccia; la seconda copia non apre un secondo core; disinstallazione che toglie cartella, voce di registro e collegamenti.
+- Non provato: l'aggiornamento vero da una versione alla successiva (serve una release con installatore e firma sul repository, e il token per il repository privato) e le voci del vassoio con il clic.

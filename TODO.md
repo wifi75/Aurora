@@ -25,7 +25,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 ## Da fare
 - [ ] Impostazioni del motore modificabili: provare «Applica e riavvia» con la radio (lo fa Tiziano) ed eventualmente aggiungere voci
 - [x] Programma Windows (Tauri 2) con vassoio, avvio automatico, installatore personalizzato e aggiornamento firmato (chiave in `%USERPROFILE%\.aurora-signing`: **copiarla in un posto sicuro**)
-- [ ] Provare l'installatore sul PC (e su un secondo) e un aggiornamento vero da una versione alla successiva; per aggiornarsi dal repository privato serve il token in Impostazioni → Aggiornamenti
+- [ ] Provare l'installatore sul PC vero (provato in una cartella a parte) e un aggiornamento vero da una versione alla successiva: serve pubblicare i tre file in una release (`gh release upload`, vedi `docs/installer-windows.md`); per aggiornarsi dal repository privato serve il token in Impostazioni → Aggiornamenti
 - [x] Mappa come GridTracker2 e pagina Propagazione da cruscotto (da rivedere con il tema chiaro)
 - [ ] Telefono: riviste solo Stazione, testata e pulsanti; da rivedere una per una Storico, Propagazione, Mappa, Impostazioni, Automazioni (e provare sul telefono vero)
 - [ ] Riordino delle pagine delle impostazioni: gruppi, colori, struttura chiara
