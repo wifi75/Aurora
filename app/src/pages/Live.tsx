@@ -1,3 +1,4 @@
+import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getStationInfo, postBand, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
@@ -33,10 +34,16 @@ import { useStation } from '../state/station';
 const F_MIN_HZ = 0;
 const F_MAX_HZ = 3000;
 
+/** Le decodifiche con i nostri Tx in mezzo, in ordine d'orario (le piu' recenti per prime), come nel vecchio programma. */
+function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMessage[] {
+  return txLog.length === 0 ? shown : [...txLog, ...shown].sort((a, b) => b.time_ms - a.time_ms);
+}
+
 export function Live() {
   const t = useT();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
+  const txLog = useStation((s) => s.txLog);
   const connection = useStation((s) => s.connection);
   const chosenBands = useBandFilter((s) => s.bands);
   const filters = useFilters((s) => s.filters);
@@ -134,7 +141,7 @@ export function Live() {
           />
         );
       case 'all':
-        return <DecodeList decodes={shown} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
+        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
     }
   };
 

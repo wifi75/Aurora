@@ -19,6 +19,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/automazioni')).toEqual({ name: 'automation' });
   });
 
+  it('reads the statistics and guide pages', () => {
+    expect(parseRoute('#/statistiche')).toEqual({ name: 'stats' });
+    expect(parseRoute('#/guida')).toEqual({ name: 'guide' });
+  });
+
   it('defaults to the live page', () => {
     expect(parseRoute('')).toEqual({ name: 'live' });
     expect(parseRoute('#/')).toEqual({ name: 'live' });

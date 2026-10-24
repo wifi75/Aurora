@@ -478,3 +478,14 @@
   width: 100%;
   accent-color: var(--accent);
 }
+
+/* Un nostro messaggio trasmesso: riga rossa tenue, il testo in evidenza */
+.decode-row--tx {
+  background: linear-gradient(90deg, rgb(255 70 90 / 0.28), rgb(255 70 90 / 0.1));
+  cursor: default;
+}
+
+.decode-row--tx .c-snr {
+  color: var(--tag-tx, #ff6b7a);
+  font-weight: var(--weight-strong);
+}

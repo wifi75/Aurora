@@ -88,26 +88,27 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
       {decodes.map((d) => {
+        const own = d.id < 0;
         // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque
-        const lit = d.tag && notify.highlight[d.tag] ? d.tag : null;
+        const lit = !own && d.tag && notify.highlight[d.tag] ? d.tag : null;
         const badge = lit ? BADGES[lit] : undefined;
         const accent = accentOf(lit);
         const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
         const code = prefs.showFlag ? flagCode(d.country) : null;
-        const toMe = isCallToMe(d.text, myCall);
+        const toMe = !own && isCallToMe(d.text, myCall);
         return (
           <button
             type="button"
             key={d.id}
-            title={toMe ? t('tip.row.me') : undefined}
-            className={`decode-row${toMe ? ' decode-row--me' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : undefined}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
-            onDoubleClick={() => onReply(d.id)}
+            onDoubleClick={() => (own ? undefined : onReply(d.id))}
           >
             <span className="c-time num muted">{formatClock(d.time_ms)}</span>
-            <span className="c-snr num">{d.snr}</span>
-            {prefs.showDt ? <span className="c-dt num muted">{d.delta_time.toFixed(1)}</span> : null}
+            <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
+            {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
             <span className="decode-text">
               <span className="data">{dxCall ? highlightCall(d.text, dxCall) : d.text}</span>

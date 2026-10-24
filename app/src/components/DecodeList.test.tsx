@@ -165,4 +165,15 @@ describe('DecodeList', () => {
     expect(screen.getByText('-12')).toBeInTheDocument();
     expect(screen.getByText('1500')).toBeInTheDocument();
   });
+
+  it('shows our own transmissions as Tx rows that cannot be replied to', () => {
+    const onReply = vi.fn();
+    render(<DecodeList decodes={[decode({ id: -1, snr: 0, text: 'CQ AA1AA FN42', tag: 'cq' })]} onReply={onReply} myCall="AA1AA" />);
+    const row = screen.getByRole('button', { name: /CQ AA1AA FN42/ });
+    expect(row).toHaveClass('decode-row--tx');
+    expect(row).not.toHaveClass('decode-row--me');
+    expect(screen.getByText('Tx')).toBeInTheDocument();
+    fireEvent.doubleClick(row);
+    expect(onReply).not.toHaveBeenCalled();
+  });
 });

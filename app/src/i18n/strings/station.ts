@@ -161,6 +161,14 @@ export const stationStrings = {
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
   'panel.all': ['Attività di banda', 'Band activity', 'Bandaktivität', 'Activité de la bande', 'Actividad de banda', 'Atividade da banda'],
+  'tip.row.tx': [
+    'Messaggio trasmesso da te.',
+    'Message sent by you.',
+    'Von dir gesendete Nachricht.',
+    'Message émis par toi.',
+    'Mensaje transmitido por ti.',
+    'Mensagem transmitida por ti.',
+  ],
   'tip.row.me': [
     'Questa stazione ti sta chiamando: doppio clic per rispondere.',
     'This station is calling you: double-click to reply.',

@@ -209,3 +209,26 @@ export async function getOutputLevel(): Promise<OutputLevelState> {
 export async function putOutputLevel(attenuationDb: number): Promise<void> {
   await request('/output-level', { ...jsonInit({ attenuation_db: attenuationDb }), method: 'PUT' });
 }
+
+export interface AwardStats {
+  qsos: number;
+  dxcc_worked: number;
+  dxcc_total: number;
+  cq_zones_worked: number;
+  cq_zones_total: number;
+  itu_zones_worked: number;
+  itu_zones_total: number;
+  grids: number;
+  prefixes: number;
+  calls: number;
+  bands: Array<{ band: string; dxcc: number; qsos: number }>;
+}
+
+export interface StatsResponse {
+  stats: AwardStats;
+  missing_dxcc: string[];
+}
+
+export async function getStats(): Promise<StatsResponse> {
+  return (await (await request('/stats')).json()) as StatsResponse;
+}

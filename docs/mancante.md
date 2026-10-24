@@ -32,10 +32,10 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 19 | Tipo `HighlightCallsign` (evidenziare i lavorati dentro JTDX) | B | |
 | 20 | Il bool finale dello `Status` di JTDX: capire che cosa e' | B | |
 
-| 21 | **Wiki in-app** con spiegazioni brevi nelle sei lingue | A | Richiesta da Tiziano; i tooltip ci sono già |
-| 22 | **Pagina Statistiche** nell'interfaccia | M | Vedi voce 13 |
-| 24 | **Versione smartphone da sistemare** | A | Segnalato da Tiziano il 2026-10-24: sul telefono non si vedono i dati, la pagina lampeggia, molte cose da mettere a posto. Da diagnosticare sul telefono vero (flusso WebSocket, ridisegni, layout stretto) |
-| 23 | **Righe Tx nell'elenco** (i propri messaggi trasmessi, come in JTDX) | M | Si ricavano dal messaggio in trasmissione dello stato |
+| 21 | ~~Wiki in-app~~ | fatto | Pagina `#/guida`, 11 argomenti in sei lingue (0.7.0) |
+| 22 | ~~Pagina Statistiche~~ | fatto | Pagina `#/statistiche` da `GET /stats` (0.7.0) |
+| 24 | **Versione smartphone da sistemare** | A | Segnalato il 2026-10-24. Causa dei dati mancanti trovata e corretta (flusso WebSocket chiuso ogni secondo in accesso senza codice); restano da provare sul telefono vero lampeggio e layout stretto |
+| 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 

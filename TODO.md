@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-24, v0.6.0).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-24, v0.7.0).
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
@@ -11,11 +11,10 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Radio: cambio banda (OmniRig), cambio modo FT8/FT4, frequenza Rx
 - [x] Automazioni con prova a vuoto, tetti e dead-man
 - [x] Esportazione dei QSO verso log esterni
+- [x] Guida in-app, pagina Statistiche, righe Tx nell'elenco
 
 ## Da fare
 - [ ] Versione smartphone: flusso dati corretto (2026-10-24), da riprovare sul telefono vero per layout e lampeggio
-- [ ] Wiki in-app con spiegazioni brevi nelle sei lingue
-- [ ] Pagina Statistiche e premi nell'interfaccia (l'API c'è)
 - [ ] Mappa dei QSO e dei CQ
 - [ ] Trasporti sicuri: HTTPS locale, Tailscale, Cloudflare con Access
 - [ ] Programma Windows (Tauri 2) con avvio automatico di Aurora

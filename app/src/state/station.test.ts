@@ -46,4 +46,29 @@ describe('useStation', () => {
     useStation.getState().setConnection('open');
     expect(useStation.getState().connection).toBe('open');
   });
+
+  it('logs what we transmit once per transmission, newest first, with negative ids', () => {
+    const { apply } = useStation.getState();
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'CQ AA1AA FN42', tx_df: 1200 });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'CQ AA1AA FN42', tx_df: 1200 });
+    expect(useStation.getState().txLog).toHaveLength(1);
+    apply({ type: 'status', ...status, transmitting: false, tx_message: 'CQ AA1AA FN42' });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'CQ AA1AA FN42', tx_df: 1200 });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'XY9ZZ AA1AA 73', tx_df: 1200 });
+    const log = useStation.getState().txLog;
+    expect(log.map((d) => d.text)).toEqual(['XY9ZZ AA1AA 73', 'CQ AA1AA FN42', 'CQ AA1AA FN42']);
+    expect(log.every((d) => d.id < 0)).toBe(true);
+    expect(new Set(log.map((d) => d.id)).size).toBe(3);
+    expect(log[0]?.freq_hz).toBe(1200);
+  });
+
+  it('does not log when idle or without a message, and reset clears the log', () => {
+    const { apply } = useStation.getState();
+    apply({ type: 'status', ...status, transmitting: false, tx_message: 'CQ AA1AA FN42' });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: '  ' });
+    expect(useStation.getState().txLog).toHaveLength(0);
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'CQ AA1AA FN42' });
+    useStation.getState().reset();
+    expect(useStation.getState().txLog).toHaveLength(0);
+  });
 });
