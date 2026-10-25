@@ -1,5 +1,6 @@
 //! API HTTP versionata (`/api/v1`) e flusso WebSocket di Aurora.
 
+mod cat;
 mod frames;
 mod policy;
 mod routes;
@@ -68,6 +69,8 @@ pub struct AppState {
     pub station_info: Arc<serde_json::Value>,
     /// La radio comandabile (cambio banda), se disponibile.
     pub rig: Option<Arc<dyn Rig>>,
+    /// Il CAT: configurazione, profili e collegamento della radio (si cambia dalla scheda Radio delle impostazioni).
+    pub cat: Option<Arc<rig_control::cat::CatService>>,
     /// Salva le regole dell'automazione quando cambiano (per ritrovarle al riavvio).
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
@@ -146,7 +149,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -297,6 +300,20 @@ impl AppState {
     pub fn with_rig(mut self, rig: Arc<dyn Rig>) -> AppState {
         self.rig = Some(rig);
         self
+    }
+
+    /// Il servizio CAT. Se la radio e' collegata dalla scheda Radio dopo l'avvio, i comandi (cambio banda...) la usano comunque.
+    pub fn with_cat(mut self, cat: Arc<rig_control::cat::CatService>) -> AppState {
+        self.cat = Some(cat);
+        self
+    }
+
+    /// La radio da comandare adesso: quella scelta all'avvio oppure, se nessuna, il CAT quando ha una radio collegata.
+    pub fn active_rig(&self) -> Option<Arc<dyn Rig>> {
+        if let Some(rig) = &self.rig {
+            return Some(Arc::clone(rig));
+        }
+        self.cat.as_ref().filter(|c| c.is_usable()).map(|c| Arc::clone(c) as Arc<dyn Rig>)
     }
 
     pub fn with_rig_if(self, rig: Option<Arc<dyn Rig>>) -> AppState {

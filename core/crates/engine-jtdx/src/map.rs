@@ -22,6 +22,7 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         tx_message: non_empty(s.tx_message.as_deref()),
         tr_period: s.tr_period,
         own_continent: None,
+        meters: None,
     }
 }
 

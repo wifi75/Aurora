@@ -10,7 +10,7 @@ use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::Mutex,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -133,12 +133,17 @@ pub struct RigctldClient {
 impl RigctldClient {
     /// Si collega a `addr`, riprovando fino a `wait` (il demone impiega un attimo ad aprire la porta).
     pub fn connect(addr: SocketAddr, wait: Duration) -> Result<RigctldClient, RigError> {
+        Self::connect_with_timeout(addr, wait, Duration::from_secs(5))
+    }
+
+    /// Come `connect`, con l'attesa massima di ogni risposta scelta da chi chiama (le prove la accorciano).
+    pub fn connect_with_timeout(addr: SocketAddr, wait: Duration, io_timeout: Duration) -> Result<RigctldClient, RigError> {
         let deadline = Instant::now() + wait;
         loop {
             match TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
                 Ok(stream) => {
-                    stream.set_read_timeout(Some(Duration::from_secs(5))).map_err(|e| RigError(e.to_string()))?;
-                    stream.set_write_timeout(Some(Duration::from_secs(5))).map_err(|e| RigError(e.to_string()))?;
+                    stream.set_read_timeout(Some(io_timeout)).map_err(|e| RigError(e.to_string()))?;
+                    stream.set_write_timeout(Some(io_timeout)).map_err(|e| RigError(e.to_string()))?;
                     let _ = stream.set_nodelay(true);
                     let reader = BufReader::new(stream.try_clone().map_err(|e| RigError(e.to_string()))?);
                     return Ok(RigctldClient { io: Mutex::new((reader, stream)) });
@@ -221,6 +226,11 @@ impl RigctldClient {
         self.ask(&format!("S {} {tx_vfo}", u8::from(on)), 0).map(|_| ())
     }
 
+    /// Frequenza del VFO di trasmissione (Hz), per lo split.
+    pub fn set_split_frequency(&self, hz: u64) -> Result<(), RigError> {
+        self.ask(&format!("I {hz}"), 0).map(|_| ())
+    }
+
     /// Chiede al demone di chiudere la sessione (lo lascia in vita, per altri client).
     pub fn quit(&self) {
         if let Ok(mut io) = self.io.lock() {
@@ -231,9 +241,11 @@ impl RigctldClient {
 
 /// Un `rigctld` lanciato da Aurora: si ferma quando l'oggetto cade (cosi' la porta seriale si libera).
 pub struct Rigctld {
-    child: Child,
+    child: Mutex<Child>,
     pub client: RigctldClient,
     pub addr: SocketAddr,
+    /// Le ultime righe che il demone ha scritto sull'errore standard (il motivo di un'uscita improvvisa).
+    stderr_tail: Arc<Mutex<Vec<String>>>,
 }
 
 impl Rigctld {
@@ -247,7 +259,7 @@ impl Rigctld {
         drop(probe);
         let args = rigctld_args(config, tcp_port)?;
         let mut command = Command::new(&config.exe);
-        command.args(&args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+        command.args(&args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -255,26 +267,142 @@ impl Rigctld {
             command.creation_flags(0x0800_0000);
         }
         let mut child = command.spawn().map_err(|e| RigError(format!("rigctld non avviato: {e}")))?;
+        // l'errore standard si svuota sempre: un demone che scrive molto non deve bloccarsi su una pipe piena
+        let stderr_tail = Arc::new(Mutex::new(Vec::<String>::new()));
+        if let Some(stderr) = child.stderr.take() {
+            let tail = Arc::clone(&stderr_tail);
+            std::thread::spawn(move || {
+                for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+                    if let Ok(mut lines) = tail.lock() {
+                        lines.push(line);
+                        if lines.len() > 8 {
+                            lines.remove(0);
+                        }
+                    }
+                }
+            });
+        }
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, tcp_port));
-        match RigctldClient::connect(addr, Duration::from_secs(6)) {
-            Ok(client) => Ok(Rigctld { child, client, addr }),
+        let deadline = Instant::now() + Duration::from_secs(6);
+        let client = loop {
+            match RigctldClient::connect(addr, Duration::from_millis(250)) {
+                Ok(client) => break Ok(client),
+                Err(e) => {
+                    // il demone esce da solo se la radio non si apre (modello o porta sbagliati, porta occupata)
+                    if let Ok(Some(status)) = child.try_wait() {
+                        std::thread::sleep(Duration::from_millis(150));
+                        let tail = stderr_tail.lock().map(|l| l.join(" | ")).unwrap_or_default();
+                        break Err(RigError(format!("rigctld si e' fermato ({status}): {tail}")));
+                    }
+                    if Instant::now() >= deadline {
+                        break Err(e);
+                    }
+                }
+            }
+        };
+        match client {
+            Ok(client) => Ok(Rigctld { child: Mutex::new(child), client, addr, stderr_tail }),
             Err(e) => {
-                // il demone e' morto subito (modello o porta sbagliati) o non apre la porta
-                let why = child.try_wait().ok().flatten().map(|s| format!(" (uscito con {s}: controlla modello, porta seriale e velocita')")).unwrap_or_default();
                 let _ = child.kill();
                 let _ = child.wait();
-                Err(RigError(format!("{e}{why}")))
+                Err(e)
             }
         }
+    }
+
+    /// Il numero del processo del demone.
+    pub fn pid(&self) -> u32 {
+        self.child.lock().map_or(0, |c| c.id())
+    }
+
+    /// Vero finche' il processo e' vivo.
+    pub fn is_running(&self) -> bool {
+        self.child.lock().map(|mut c| matches!(c.try_wait(), Ok(None))).unwrap_or(false)
+    }
+
+    /// Le ultime righe scritte dal demone sull'errore standard.
+    pub fn stderr_tail(&self) -> String {
+        self.stderr_tail.lock().map(|l| l.join(" | ")).unwrap_or_default()
     }
 }
 
 impl Drop for Rigctld {
     fn drop(&mut self) {
         self.client.quit();
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        if let Ok(child) = self.child.get_mut() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
     }
+}
+
+/// Dove si trova `rigctld`: cartella accanto al programma (e la sua sottocartella `hamlib`), poi la variabile `AURORA_RIGCTLD` (file o cartella),
+/// poi, solo per lo sviluppo, le installazioni di JTDX e WSJT-X gia' presenti sul PC. La distribuzione portera' il suo Hamlib accanto al programma.
+pub fn locate_rigctld() -> Option<PathBuf> {
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)) {
+        dirs.push(dir.join("hamlib"));
+        dirs.push(dir);
+    }
+    let env = std::env::var("AURORA_RIGCTLD").ok().filter(|v| !v.trim().is_empty()).map(PathBuf::from);
+    locate_rigctld_in(&dirs, env.as_deref(), &dev_install_dirs())
+}
+
+/// Le cartelle `bin` di JTDX e WSJT-X (solo sviluppo).
+fn dev_install_dirs() -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    if let Ok(entries) = std::fs::read_dir("C:/JTDX64") {
+        let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).map(|e| e.path().join("bin")).collect();
+        found.sort();
+        // la versione piu' alta per prima
+        out.extend(found.into_iter().rev());
+    }
+    out.push(PathBuf::from("C:/WSJT/wsjtx/bin"));
+    out
+}
+
+/// Il nucleo della ricerca, con gli elenchi passati da fuori (cosi' si prova senza toccare il disco vero).
+pub fn locate_rigctld_in(beside: &[PathBuf], env: Option<&Path>, dev_dirs: &[PathBuf]) -> Option<PathBuf> {
+    if let Some(found) = beside.iter().find_map(|dir| rigctld_in_dir(dir)) {
+        return Some(found);
+    }
+    if let Some(path) = env {
+        if path.is_file() {
+            return Some(path.to_path_buf());
+        }
+        if let Some(found) = rigctld_in_dir(path) {
+            return Some(found);
+        }
+    }
+    dev_dirs.iter().find_map(|dir| rigctld_in_dir(dir))
+}
+
+fn rigctld_in_dir(dir: &Path) -> Option<PathBuf> {
+    let mut found: Vec<PathBuf> = std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| {
+            let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
+            name.starts_with("rigctld") && (name == "rigctld" || name.ends_with(".exe")) && p.is_file()
+        })
+        .collect();
+    found.sort_by_key(|p| p.file_name().map_or(usize::MAX, |n| n.len()));
+    found.into_iter().next()
+}
+
+/// `rigctl` (l'elenco dei modelli) accanto a `rigctld`: stesso nome con `rigctl` al posto di `rigctld`.
+pub fn rigctl_beside(rigctld: &Path) -> Option<PathBuf> {
+    let dir = rigctld.parent()?;
+    let name = rigctld.file_name()?.to_str()?;
+    let exact = dir.join(name.replacen("rigctld", "rigctl", 1));
+    if exact.is_file() {
+        return Some(exact);
+    }
+    std::fs::read_dir(dir).ok()?.filter_map(Result::ok).map(|e| e.path()).find(|p| {
+        let n = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
+        n.starts_with("rigctl") && !n.starts_with("rigctld") && !n.starts_with("rigctlcom") && p.is_file()
+    })
 }
 
 #[cfg(test)]
@@ -397,6 +525,48 @@ mod tests {
         assert!(err.0.contains("timeout"), "{err}");
         let err = client.set_mode("PKT USB", 0).expect_err("modo non valido");
         assert!(err.0.contains("modo"), "{err}");
+    }
+
+    fn temp_bin(name: &str, files: &[&str]) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("aurora-rigctld-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("cartella");
+        for f in files {
+            std::fs::write(dir.join(f), b"x").expect("file");
+        }
+        dir
+    }
+
+    #[test]
+    fn rigctld_is_searched_beside_the_program_then_in_the_variable_then_in_the_dev_installs() {
+        let beside = temp_bin("beside", &["rigctld.exe", "rigctl.exe", "rigctlcom.exe", "altro.txt"]);
+        let env_dir = temp_bin("env", &["rigctld-custom.exe"]);
+        let dev = temp_bin("dev", &["rigctld-jtdx.exe", "rigctl-jtdx.exe", "rigctlcom-jtdx.exe"]);
+        let empty = temp_bin("empty", &["leggimi.txt"]);
+        // accanto al programma vince su tutto
+        let found = locate_rigctld_in(&[empty.clone(), beside.clone()], Some(&env_dir), std::slice::from_ref(&dev)).expect("trovato");
+        assert_eq!(found, beside.join("rigctld.exe"));
+        // poi la variabile, come cartella o come file
+        assert_eq!(locate_rigctld_in(std::slice::from_ref(&empty), Some(&env_dir), std::slice::from_ref(&dev)), Some(env_dir.join("rigctld-custom.exe")));
+        assert_eq!(locate_rigctld_in(&[], Some(&env_dir.join("rigctld-custom.exe")), &[]), Some(env_dir.join("rigctld-custom.exe")));
+        // una variabile che punta nel vuoto non blocca la ricerca
+        assert_eq!(locate_rigctld_in(std::slice::from_ref(&empty), Some(&empty.join("non-esiste")), std::slice::from_ref(&dev)), Some(dev.join("rigctld-jtdx.exe")));
+        // senza niente: nessuna radio da lanciare
+        assert_eq!(locate_rigctld_in(std::slice::from_ref(&empty), None, std::slice::from_ref(&empty)), None);
+        // rigctlcom non e' rigctl: l'elenco dei modelli si legge da quello giusto
+        assert_eq!(rigctl_beside(&dev.join("rigctld-jtdx.exe")), Some(dev.join("rigctl-jtdx.exe")));
+        assert_eq!(rigctl_beside(&beside.join("rigctld.exe")), Some(beside.join("rigctl.exe")));
+        assert_eq!(rigctl_beside(&env_dir.join("rigctld-custom.exe")), None);
+    }
+
+    #[test]
+    fn a_daemon_that_dies_at_once_reports_why() {
+        // un eseguibile che esce subito (qualunque programma che non e' rigctld): l'errore non aspetta i 6 secondi e cita l'uscita
+        let Some(exe) = ["C:/Windows/System32/whoami.exe", "/usr/bin/true"].into_iter().map(PathBuf::from).find(|p| p.is_file()) else { return };
+        let started = Instant::now();
+        let err = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new() }).err().expect("doveva fallire");
+        assert!(err.0.contains("si e' fermato"), "{err}");
+        assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
     }
 
     #[test]
