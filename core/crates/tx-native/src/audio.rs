@@ -8,7 +8,7 @@ use std::{
     f64::consts::PI,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         mpsc,
     },
     thread::JoinHandle,
@@ -29,6 +29,26 @@ pub trait AudioSink: Send {
     fn is_playing(&self) -> bool;
     /// Silenzio subito (con una discesa di pochi millisecondi, senza click).
     fn stop(&mut self);
+    /// Il guadagno lineare (bit di un `f32`) che il dispositivo applica mentre suona: se c'e', il livello (cursore Pwr) segue anche durante la
+    /// trasmissione, come in JTDX; altrimenti l'onda arriva gia' con il livello applicato.
+    fn live_gain(&self) -> Option<Arc<AtomicU32>> {
+        None
+    }
+}
+
+/// Applica il guadagno ai campioni passando in modo lineare da `from` a `to` lungo il blocco (niente scalini, niente click) e limita a +-1.
+pub fn apply_gain_ramp(buf: &mut [f32], from: f32, to: f32) {
+    if buf.is_empty() {
+        return;
+    }
+    if (from - 1.0).abs() < f32::EPSILON && (to - 1.0).abs() < f32::EPSILON {
+        return;
+    }
+    let steps = buf.len() as f32;
+    for (i, s) in buf.iter_mut().enumerate() {
+        let g = from + (to - from) * ((i + 1) as f32 / steps);
+        *s = (*s * g).clamp(-1.0, 1.0);
+    }
 }
 
 /// Lo stato della riproduzione, indipendente dal dispositivo (e quindi provabile).
@@ -107,6 +127,8 @@ struct SinkShared {
     /// Il flusso ha dato errore (dispositivo scollegato...): non si suona piu'.
     failed: AtomicBool,
     errors: AtomicU64,
+    /// Guadagno lineare applicato mentre suona (bit di un `f32`), regolabile anche a trasmissione in corso.
+    gain: Arc<AtomicU32>,
 }
 
 /// Uscita sul dispositivo vero. Il flusso vive in un thread proprio (su alcune piattaforme non e' `Send`).
@@ -121,7 +143,7 @@ pub struct CpalSink {
 /// Discesa su `stop`.
 const STOP_FADE: Duration = Duration::from_millis(5);
 
-fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, channels: usize, data: &mut [T], conv: impl Fn(f32) -> T) {
+fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, prev_gain: &mut f32, channels: usize, data: &mut [T], conv: impl Fn(f32) -> T) {
     let frames = data.len() / channels;
     scratch.clear();
     scratch.resize(frames, 0.0);
@@ -129,6 +151,9 @@ fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, channels: usize,
     if let Ok(mut playback) = shared.playback.try_lock() {
         playback.fill(scratch);
     }
+    let target = f32::from_bits(shared.gain.load(Ordering::Relaxed));
+    apply_gain_ramp(scratch, *prev_gain, target);
+    *prev_gain = target;
     for (frame, &s) in data.chunks_mut(channels).zip(scratch.iter()) {
         for o in frame {
             *o = conv(s);
@@ -158,7 +183,7 @@ impl CpalSink {
         let channels = usize::from(supported.channels()).max(1);
         let format = supported.sample_format();
 
-        let shared = Arc::new(SinkShared { playback: Mutex::new(Playback::new()), failed: AtomicBool::new(false), errors: AtomicU64::new(0) });
+        let shared = Arc::new(SinkShared { playback: Mutex::new(Playback::new()), failed: AtomicBool::new(false), errors: AtomicU64::new(0), gain: Arc::new(AtomicU32::new(1.0f32.to_bits())) });
         let stop_thread = Arc::new(AtomicBool::new(false));
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TxError>>();
         let thread_shared = Arc::clone(&shared);
@@ -175,27 +200,28 @@ impl CpalSink {
                     tracing::warn!("errore del flusso di uscita audio: {e}");
                 };
                 let mut scratch: Vec<f32> = Vec::new();
+                let mut prev_gain = 1.0f32;
                 let cb_shared = Arc::clone(&thread_shared);
                 let config: cpal::StreamConfig = supported.into();
                 let built = match format {
                     cpal::SampleFormat::F32 => {
-                        device.build_output_stream(config, move |data: &mut [f32], _| render(&cb_shared, &mut scratch, channels, data, |s| s), on_error, None)
+                        device.build_output_stream(config, move |data: &mut [f32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| s), on_error, None)
                     }
                     cpal::SampleFormat::I16 => device.build_output_stream(
                         config,
-                        move |data: &mut [i16], _| render(&cb_shared, &mut scratch, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0) as i16),
+                        move |data: &mut [i16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0) as i16),
                         on_error,
                         None,
                     ),
                     cpal::SampleFormat::I32 => device.build_output_stream(
                         config,
-                        move |data: &mut [i32], _| render(&cb_shared, &mut scratch, channels, data, |s| (f64::from(s.clamp(-1.0, 1.0)) * 2_147_483_647.0) as i32),
+                        move |data: &mut [i32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (f64::from(s.clamp(-1.0, 1.0)) * 2_147_483_647.0) as i32),
                         on_error,
                         None,
                     ),
                     cpal::SampleFormat::U16 => device.build_output_stream(
                         config,
-                        move |data: &mut [u16], _| render(&cb_shared, &mut scratch, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0 + 32768.0) as u16),
+                        move |data: &mut [u16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0 + 32768.0) as u16),
                         on_error,
                         None,
                     ),
@@ -260,6 +286,10 @@ impl AudioSink for CpalSink {
         let n = (STOP_FADE.as_secs_f64() * f64::from(self.rate)).round() as usize;
         lock(&self.shared.playback).begin_stop(n);
     }
+
+    fn live_gain(&self) -> Option<Arc<AtomicU32>> {
+        Some(Arc::clone(&self.shared.gain))
+    }
 }
 
 impl Drop for CpalSink {
@@ -283,6 +313,19 @@ mod tests {
             all.extend(buf);
         }
         all
+    }
+
+    #[test]
+    fn the_gain_ramps_without_steps_and_never_clips() {
+        let mut buf = vec![1.0f32; 4];
+        apply_gain_ramp(&mut buf, 1.0, 0.5);
+        assert!((buf[0] - 0.875).abs() < 1e-6 && (buf[3] - 0.5).abs() < 1e-6, "{buf:?}");
+        let mut loud = vec![0.9f32; 3];
+        apply_gain_ramp(&mut loud, 2.0, 2.0);
+        assert!(loud.iter().all(|s| (*s - 1.0).abs() < 1e-6), "limitato a 1: {loud:?}");
+        let mut same = vec![0.3f32; 3];
+        apply_gain_ramp(&mut same, 1.0, 1.0);
+        assert_eq!(same, vec![0.3f32; 3]);
     }
 
     #[test]
