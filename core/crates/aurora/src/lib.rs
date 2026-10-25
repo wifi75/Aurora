@@ -556,6 +556,7 @@ pub async fn run(
     let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
     let bus = Bus::new(4096);
     // con il simulatore trasmettere e' innocuo; con JTDX reale la trasmissione e' chiusa salvo AURORA_ALLOW_TX=1
+    let native_controls = Arc::new(engine_native::NativeControls::default());
     let live_tx = match config.engine {
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
@@ -740,11 +741,18 @@ pub async fn run(
         .with_schedule(Arc::clone(&schedule))
         .with_settings_saver(settings_saver)
         .with_rules_saver(Arc::new(move |rules: &Rules| save_rules(&rules_path, rules)))
-        .with_rig_if(config.rig_omnirig.then(|| {
-            // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
-            rig_control::WindowsRig::keep_warm();
-            Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
-        }))
+        .with_rig_if(match config.engine {
+            // motore proprio: i pulsanti agiscono sul decoder; frequenza e cambio banda vanno alla radio (OmniRig) se c'e'
+            EngineKind::Native => {
+                let radio = config.rig_omnirig.then(|| Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>);
+                Some(Arc::new(engine_native::NativeRig::new(Arc::clone(&native_controls), radio)) as Arc<dyn rig_control::Rig>)
+            }
+            _ => config.rig_omnirig.then(|| {
+                // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
+                rig_control::WindowsRig::keep_warm();
+                Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
+            }),
+        })
         .with_automation(automation);
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
@@ -767,6 +775,7 @@ pub async fn run(
                 de_grid: grid,
                 own_continent,
                 dial_hz: Arc::clone(&dial_hz),
+                controls: Arc::clone(&native_controls),
                 band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),
                 annotate: Arc::new(move |text, band| match &enrich {
                     Some(e) => match e.lock() {

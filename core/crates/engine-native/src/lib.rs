@@ -5,6 +5,7 @@
 
 mod parity;
 mod resample;
+mod rig;
 mod slots;
 mod wav;
 
@@ -22,6 +23,7 @@ use serde_json::{json, Value};
 use tokio::sync::broadcast;
 
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
+pub use rig::{NativeControls, NativeRig};
 
 /// Campioni al secondo del decoder.
 pub const RATE: usize = ft8::SAMPLE_RATE;
@@ -47,6 +49,8 @@ pub struct LiveConfig {
     pub own_continent: Option<String>,
     /// Frequenza della radio in Hz (0 se non si sa): la aggiorna chi legge la radio.
     pub dial_hz: Arc<AtomicU64>,
+    /// Lo stato dei pulsanti (Monitora, frequenza audio...): con Monitora spento non si decodifica.
+    pub controls: Arc<NativeControls>,
     /// La banda («20m») per una frequenza della radio, per le etichette di novita'.
     pub band_of: Arc<dyn Fn(u64) -> Option<String> + Send + Sync>,
     pub annotate: Annotator,
@@ -124,11 +128,11 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 let status = StationStatus {
                     dial_hz: live.dial_hz.load(Ordering::Relaxed),
                     mode: "FT8".to_string(),
-                    decoding: true,
+                    decoding: live.controls.is_monitoring(),
                     de_call: live.de_call.clone(),
                     de_grid: live.de_grid.clone(),
-                    rx_df: Some(1500),
-                    tx_df: Some(1500),
+                    rx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
+                    tx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
                     tr_period: Some(15),
                     own_continent: live.own_continent.clone(),
                     ..StationStatus::default()
@@ -162,6 +166,10 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             };
             let samples = rs.push(&chunk.samples);
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
+                // con Monitora spento il periodo passa senza essere decodificato
+                if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
+                    continue;
+                }
                 if record && let Err(e) = wav::save_slot(&data_dir.join("recordings"), slot.start_unix_ms, &slot.samples) {
                     tracing::warn!("registrazione del periodo non salvata: {e}");
                 }
@@ -236,6 +244,7 @@ mod tests {
             de_grid: "IO91".into(),
             own_continent: Some("EU".into()),
             dial_hz: Arc::new(AtomicU64::new(14_074_000)),
+            controls: Arc::new(NativeControls::default()),
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
