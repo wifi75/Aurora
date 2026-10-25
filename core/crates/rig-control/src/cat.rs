@@ -313,6 +313,13 @@ impl Rig for CatService {
         }
     }
 
+    fn meters(&self) -> Result<crate::meters::Meters, RigError> {
+        match self.backend() {
+            Backend::Hamlib => self.hamlib()?.meters(),
+            Backend::Omnirig => Err(RigError("misuratori non disponibili con OmniRig".into())),
+        }
+    }
+
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_rx_frequency(hz),

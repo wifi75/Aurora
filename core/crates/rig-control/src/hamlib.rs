@@ -59,6 +59,12 @@ pub fn parse_rprt(line: &str) -> Option<Result<(), i32>> {
     Some(if code == 0 { Ok(()) } else { Err(code) })
 }
 
+/// Il codice di Hamlib in coda a un errore di `RigctldClient::ask` («l: funzione non disponibile (-11)»); `None` se l'errore non viene da un `RPRT`.
+pub fn error_code(error: &RigError) -> Option<i32> {
+    let inner = error.0.trim_end().strip_suffix(')')?;
+    inner[inner.rfind('(')? + 1..].parse().ok()
+}
+
 /// Il nome dell'errore di Hamlib piu' comune, per i messaggi.
 pub fn hamlib_error(code: i32) -> &'static str {
     match code {
@@ -213,6 +219,20 @@ impl RigctldClient {
 
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {
         self.ask(&format!("T {}", u8::from(on)), 0).map(|_| ())
+    }
+
+    /// Un livello di Hamlib (`l STRENGTH`, `l SWR`...) come numero.
+    pub fn level(&self, name: &str) -> Result<f32, RigError> {
+        check_token(name, "livello")?;
+        let r = self.ask(&format!("l {name}"), 1)?;
+        r[0].parse::<f32>().map_err(|_| RigError(format!("livello {name} illeggibile: {}", r[0])))
+    }
+
+    /// La potenza in watt che corrisponde alla frazione `fraction` (0..1) della scala di potenza alla frequenza e al modo dati (`\power2mW`).
+    pub fn power_to_watts(&self, fraction: f32, hz: u64, mode: &str) -> Result<f32, RigError> {
+        check_token(mode, "modo")?;
+        let r = self.ask(&format!("\\power2mW {fraction} {hz} {mode}"), 1)?;
+        r[0].parse::<f32>().map(|mw| mw / 1000.0).map_err(|_| RigError(format!("potenza illeggibile: {}", r[0])))
     }
 
     /// Split acceso o spento e VFO di trasmissione.

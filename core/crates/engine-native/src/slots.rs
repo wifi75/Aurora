@@ -1,12 +1,15 @@
-//! Divide il flusso a 12 kHz nei periodi FT8: i periodi iniziano ogni 15 secondi esatti dell'ora UTC (00, 15, 30, 45).
+//! Divide il flusso a 12 kHz nei periodi FT8 (15 secondi) o FT4 (7,5 secondi): i periodi iniziano ad ore UTC esatte (FT8 :00, :15, :30, :45;
+//! FT4 ogni 7,5 s).
 //!
 //! Il flusso non ha un'ora propria: ogni blocco porta l'istante in cui e' arrivato (la fine dei suoi campioni). Si ancora il primo
 //! campione a quell'istante e si segue la scheda correggendo piano piano la deriva; un salto grande (blocco perso) riancora di colpo.
 
+use qso_native::Mode;
+
 use crate::RATE;
 
+/// Durata di un periodo FT8 (usata anche per allineare i messaggi di JTDX, che e' sempre in FT8).
 pub const SLOT_MS: u64 = 15_000;
-const SLOT_SAMPLES: usize = 15 * RATE;
 /// Il periodo si consegna questi millisecondi prima della sua fine (gli ultimi non portano segnale: un messaggio FT8 finisce a 13,1 s):
 /// cosi' la decodifica e la scelta della risposta sono pronte per trasmettere a inizio del periodo dopo.
 pub const EARLY_MS: u64 = 800;
@@ -19,13 +22,15 @@ const SMOOTH: f64 = 0.02;
 /// Un periodo completo di audio.
 #[derive(Debug, Clone)]
 pub struct Slot {
-    /// Inizio del periodo, millisecondi dal 1970 (UTC), multiplo di 15 000.
+    /// Inizio del periodo, millisecondi dal 1970 (UTC), multiplo della durata del periodo (15 000 in FT8, 7 500 in FT4).
     pub start_unix_ms: u64,
     pub samples: Vec<f32>,
 }
 
-#[derive(Default)]
 pub struct SlotAssembler {
+    /// Durata del periodo in ms e in campioni.
+    period_ms: u64,
+    slot_samples: usize,
     /// Istante (ms dal 1970) del campione assoluto 0.
     anchor_ms: Option<f64>,
     buf: Vec<f32>,
@@ -39,7 +44,27 @@ fn time_of(anchor: f64, idx: u64) -> f64 {
     anchor + idx as f64 * 1000.0 / RATE as f64
 }
 
+impl Default for SlotAssembler {
+    fn default() -> Self {
+        SlotAssembler::new(Mode::Ft8)
+    }
+}
+
 impl SlotAssembler {
+    /// Un assemblatore per i periodi del modo dato.
+    pub fn new(mode: Mode) -> SlotAssembler {
+        let period_ms = mode.period_ms();
+        SlotAssembler {
+            period_ms,
+            slot_samples: (period_ms as usize) * RATE / 1000,
+            anchor_ms: None,
+            buf: Vec::new(),
+            first_idx: 0,
+            total: 0,
+            next_slot_ms: None,
+        }
+    }
+
     /// Aggiunge un blocco a 12 kHz arrivato all'istante `end_unix_ms`; restituisce i periodi che si sono completati.
     pub fn push(&mut self, samples: &[f32], end_unix_ms: u64) -> Vec<Slot> {
         if samples.is_empty() {
@@ -67,21 +92,21 @@ impl SlotAssembler {
 
         let mut ready = Vec::new();
         let buf_start_ms = time_of(anchor, self.first_idx);
-        let mut next = *self.next_slot_ms.get_or_insert_with(|| ((buf_start_ms / SLOT_MS as f64).ceil() as u64) * SLOT_MS);
+        let mut next = *self.next_slot_ms.get_or_insert_with(|| ((buf_start_ms / self.period_ms as f64).ceil() as u64) * self.period_ms);
         loop {
-            let slot_end_ms = (next + SLOT_MS - EARLY_MS) as f64;
+            let slot_end_ms = (next + self.period_ms - EARLY_MS) as f64;
             if time_of(anchor, self.total) < slot_end_ms {
                 break;
             }
             let from = ((next as f64 - anchor) * RATE as f64 / 1000.0).round() as i64 - self.first_idx as i64;
-            if from >= 0 && from as usize + SLOT_SAMPLES - EARLY_SAMPLES <= self.buf.len() {
+            if from >= 0 && from as usize + self.slot_samples - EARLY_SAMPLES <= self.buf.len() {
                 let from = from as usize;
-                let end = (from + SLOT_SAMPLES).min(self.buf.len());
+                let end = (from + self.slot_samples).min(self.buf.len());
                 let mut samples = self.buf[from..end].to_vec();
-                samples.resize(SLOT_SAMPLES, 0.0);
+                samples.resize(self.slot_samples, 0.0);
                 ready.push(Slot { start_unix_ms: next, samples });
             }
-            next += SLOT_MS;
+            next += self.period_ms;
         }
         self.next_slot_ms = Some(next);
         // si tiene solo cio' che serve al periodo in corso (e un secondo prima, per il ritardo negativo)
@@ -127,6 +152,17 @@ mod tests {
         let slots = feed(&mut asm, 1_000_000, 40.0, 480, None);
         assert_eq!(slots.iter().map(|s| s.start_unix_ms).collect::<Vec<_>>(), vec![1_005_000, 1_020_000]);
         assert!(slots.iter().all(|s| s.samples.len() == 180_000));
+    }
+
+    #[test]
+    fn ft4_slots_are_seven_and_a_half_seconds_aligned_to_the_utc() {
+        let mut asm = SlotAssembler::new(Mode::Ft4);
+        // si parte a 1 000 000 ms (multiplo di 7 500? no: 1 000 000 / 7 500 = 133,33): il primo periodo intero comincia a 1 005 000
+        let slots = feed(&mut asm, 1_000_000, 30.0, 480, None);
+        let starts: Vec<u64> = slots.iter().map(|s| s.start_unix_ms).collect();
+        assert_eq!(starts, vec![1_005_000, 1_012_500, 1_020_000], "{starts:?}");
+        assert!(starts.iter().all(|s| s % 7_500 == 0));
+        assert!(slots.iter().all(|s| s.samples.len() == 90_000));
     }
 
     #[test]

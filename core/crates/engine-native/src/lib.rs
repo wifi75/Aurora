@@ -1,5 +1,5 @@
 //! Il motore proprio di Aurora, parte di ricezione. Prende l'audio dell'ingresso (lo stesso della cascata), lo porta a 12 kHz, lo divide nei
-//! periodi FT8 di 15 secondi e lo decodifica con il crate `ft8`. Per ora lavora «in ombra» accanto a JTDX: i messaggi si scrivono in
+//! periodi FT8 (15 secondi) o FT4 (7,5 secondi, a scelta con il pulsante del modo) e lo decodifica con il crate `ft8` o `ft4`. Per ora lavora «in ombra» accanto a JTDX: i messaggi si scrivono in
 //! `native-decodes.log` (nella cartella dei dati) e si confrontano con quelli di JTDX (`GET /api/v1/engine/native`), senza toccare l'elenco
 //! che vede l'utente. Quando il confronto e' abbastanza buono il motore proprio prendera' il posto di JTDX.
 
@@ -20,6 +20,7 @@ use std::{
 use audio_spectrum::AudioChunk;
 use aurora_core::{DecodeTag, DecodedMessage, Event, StationStatus};
 use ft8::{decode::Options, message::CallHashes};
+use qso_native::Mode;
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
 
@@ -133,7 +134,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 let selected_text = view.texts.get(usize::from(view.selected).saturating_sub(1)).filter(|t| !t.is_empty() && view.selected > 0).cloned();
                 let status = StationStatus {
                     dial_hz: live.dial_hz.load(Ordering::Relaxed),
-                    mode: "FT8".to_string(),
+                    mode: live.controls.mode().name().to_string(),
                     tx_enabled: view.enabled,
                     transmitting: live.controls.transmitting.load(Ordering::Relaxed),
                     dx_call: view.dx.clone(),
@@ -143,9 +144,14 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     de_call: live.de_call.clone(),
                     de_grid: live.de_grid.clone(),
                     rx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
-                    tx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
-                    tr_period: Some(15),
+                    tx_df: Some(live.controls.tx_df.load(Ordering::Relaxed)),
+                    // FT4 ha periodi di 7,5 s: il campo e' intero, come lo manda JTDX (7)
+                    tr_period: Some(match live.controls.mode() {
+                        Mode::Ft8 => 15,
+                        Mode::Ft4 => 7,
+                    }),
                     own_continent: live.own_continent.clone(),
+                    meters: live.controls.meters(),
                     ..StationStatus::default()
                 };
                 if events.send(Event::Status(status)).is_err() && events.receiver_count() == 0 {
@@ -163,9 +169,15 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let log_path = data_dir.join("native-decodes.log");
         let comparison_path = data_dir.join("native-parity.log");
         let mut resampler: Option<(u32, resample::Resampler)> = None;
-        let mut assembler = slots::SlotAssembler::default();
+        // il modo si sceglie con il pulsante: cambia la durata dei periodi, il decoder e la trasmissione
+        let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
+        let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
-        let options = Options::default();
+        let ft8_options = Options::default();
+        let ft4_options = ft4::decode::Options::default();
+        // l'ultimo periodo (per «Decodifica») e i messaggi che ne sono gia' stati pubblicati
+        let mut last_slot: Option<(u64, Mode, Vec<f32>)> = None;
+        let mut last_texts: Vec<String> = Vec::new();
         // la trasmissione: solo se c'e' la catena audio/PTT
         let (command_tx, command_rx) = mpsc::channel::<TxCommand>();
         let mut driver = live.as_ref().and_then(|l| {
@@ -188,6 +200,33 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     }
                 }
             }
+            // cambio di modo: periodi nuovi, trasmissione ferma, messaggi ricordati svuotati; l'audio continua ad arrivare senza interruzioni
+            if let Some(l) = live.as_ref() {
+                let wanted = l.controls.mode();
+                if wanted != mode {
+                    tracing::info!("motore proprio: modo {}", wanted.name());
+                    mode = wanted;
+                    assembler = slots::SlotAssembler::new(mode);
+                    last_slot = None;
+                    last_texts.clear();
+                    if let Some(d) = driver.as_mut() {
+                        for line in d.set_mode(mode) {
+                            tracing::info!("trasmissione: {line}");
+                        }
+                    }
+                }
+                // «Decodifica»: si rielabora l'ultimo periodo e si pubblica quello che non era ancora uscito
+                if l.controls.redecode.swap(false, Ordering::Relaxed)
+                    && let Some((start, slot_mode, samples)) = &last_slot
+                    && *slot_mode == mode
+                {
+                    let decoded = decode_period(mode, samples, &ft8_options, &ft4_options, &mut hashes);
+                    let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
+                    tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
+                    last_texts.extend(fresh.iter().map(|d| d.text.clone()));
+                    publish(l, driver.as_mut(), &message_events, &next_id, *start, &fresh);
+                }
+            }
             let chunk = match tap.recv_timeout(std::time::Duration::from_millis(100)) {
                 Ok(chunk) => chunk,
                 Err(mpsc::RecvTimeoutError::Timeout) => continue,
@@ -197,7 +236,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 Some((rate, rs)) if *rate == chunk.rate => rs,
                 slot => {
                     // la scheda ha cambiato frequenza: si riparte da capo anche con i periodi
-                    assembler = slots::SlotAssembler::default();
+                    assembler = slots::SlotAssembler::new(mode);
                     &mut slot.insert((chunk.rate, resample::Resampler::new(chunk.rate, RATE as u32))).1
                 }
             };
@@ -218,39 +257,24 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     }
                     continue;
                 }
-                if record && let Err(e) = wav::save_slot(&data_dir.join("recordings"), slot.start_unix_ms, &slot.samples) {
+                // i WAV portano il nome al secondo: i periodi FT4 da 7,5 s si sovrascriverebbero a vicenda, quindi si salva solo FT8
+                if record
+                    && mode == Mode::Ft8
+                    && let Err(e) = wav::save_slot(&data_dir.join("recordings"), slot.start_unix_ms, &slot.samples)
+                {
                     tracing::warn!("registrazione del periodo non salvata: {e}");
                 }
                 let started = Instant::now();
-                let decoded = ft8::decode::decode_slot(&slot.samples, &options, &mut hashes);
+                let decoded = decode_period(mode, &slot.samples, &ft8_options, &ft4_options, &mut hashes);
                 let millis = started.elapsed().as_millis() as u64;
-                tracing::info!("motore proprio: {} messaggi nel periodo {} in {} ms", decoded.len(), slot.start_unix_ms, millis);
+                tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
                 if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
                     for d in &decoded {
                         let _ = file.write_all(format_line(slot.start_unix_ms, d).as_bytes());
                     }
                 }
                 if let Some(live) = &live {
-                    let band = (live.band_of)(live.dial_hz.load(Ordering::Relaxed));
-                    let time_ms = (slot.start_unix_ms % DAY_MS) as u32;
-                    for d in &decoded {
-                        let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
-                        let id = next_id.fetch_add(1, Ordering::Relaxed);
-                        if let Some(driver) = driver.as_mut() {
-                            driver.remember(id, &d.text, d.snr_db, d.freq_hz.round().max(0.0) as u32);
-                        }
-                        let _ = message_events.send(Event::Decode(DecodedMessage {
-                            id,
-                            time_ms,
-                            snr: d.snr_db,
-                            delta_time: d.dt_s,
-                            freq_hz: d.freq_hz.round().max(0.0) as u32,
-                            text: d.text.clone(),
-                            tag,
-                            country,
-                            continent,
-                        }));
-                    }
+                    publish(live, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &decoded);
                 }
                 if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
                     let dial = l.dial_hz.load(Ordering::Relaxed);
@@ -264,10 +288,15 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                         let _ = message_events.send(Event::QsoLogged(qso));
                     }
                 }
-                parity.add_native(slot.start_unix_ms, decoded.iter().map(|d| (d.text.clone(), d.freq_hz.round() as i64)).collect());
+                // il confronto con JTDX e' fatto sui periodi FT8
+                if mode == Mode::Ft8 {
+                    parity.add_native(slot.start_unix_ms, decoded.iter().map(|d| (d.text.clone(), d.freq_hz.round() as i64)).collect());
+                }
                 if let Ok(mut s) = stats.lock() {
                     *s = Stats { last_slot_unix_ms: slot.start_unix_ms, last_count: decoded.len(), last_millis: millis, slots_decoded: s.slots_decoded + 1 };
                 }
+                last_texts = decoded.iter().map(|d| d.text.clone()).collect();
+                last_slot = Some((slot.start_unix_ms, mode, slot.samples));
             }
             for summary in parity.finalize(now_unix_ms()) {
                 tracing::info!(
@@ -288,6 +317,38 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         }
     });
     engine
+}
+
+/// Decodifica un periodo nel modo dato (audio a 12 kHz: 15 s in FT8, 7,5 s in FT4).
+fn decode_period(mode: Mode, samples: &[f32], ft8_options: &Options, ft4_options: &ft4::decode::Options, hashes: &mut CallHashes) -> Vec<ft8::decode::Decoded> {
+    match mode {
+        Mode::Ft8 => ft8::decode::decode_slot(samples, ft8_options, hashes),
+        Mode::Ft4 => ft4::decode::decode_slot(samples, ft4_options, hashes),
+    }
+}
+
+/// Pubblica i messaggi di un periodo sul bus (identici in FT8 e FT4) e li ricorda per il doppio clic.
+fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, events: &broadcast::Sender<Event>, next_id: &AtomicU64, slot_start_ms: u64, decoded: &[ft8::decode::Decoded]) {
+    let band = (live.band_of)(live.dial_hz.load(Ordering::Relaxed));
+    let time_ms = (slot_start_ms % DAY_MS) as u32;
+    for d in decoded {
+        let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
+        let id = next_id.fetch_add(1, Ordering::Relaxed);
+        if let Some(driver) = driver.as_deref_mut() {
+            driver.remember(id, &d.text, d.snr_db, d.freq_hz.round().max(0.0) as u32, slot_start_ms);
+        }
+        let _ = events.send(Event::Decode(DecodedMessage {
+            id,
+            time_ms,
+            snr: d.snr_db,
+            delta_time: d.dt_s,
+            freq_hz: d.freq_hz.round().max(0.0) as u32,
+            text: d.text.clone(),
+            tag,
+            country,
+            continent,
+        }));
+    }
 }
 
 #[cfg(test)]
@@ -335,7 +396,7 @@ mod tests {
             tx.send(AudioChunk { rate: 12_000, samples: chunk.to_vec(), received_unix_ms: end_ms }).expect("invio");
         }
         drop(tx);
-        for _ in 0..200 {
+        for _ in 0..1200 {
             if engine.status()["slots_decoded"].as_u64().unwrap_or(0) >= 2 {
                 break;
             }
@@ -403,7 +464,7 @@ mod tests {
         }
         drop(tx);
         // il thread finisce quando il canale si chiude
-        for _ in 0..200 {
+        for _ in 0..1200 {
             if engine.status()["slots_decoded"].as_u64().unwrap_or(0) >= 2 {
                 break;
             }
@@ -414,6 +475,203 @@ mod tests {
         assert!(std::fs::read_dir(dir.join("recordings")).map(|d| d.count()).unwrap_or(0) >= 2, "i periodi si registrano in WAV");
         let log = std::fs::read_to_string(dir.join("native-decodes.log")).unwrap_or_default();
         assert!(log.contains("CQ K1ABC FN42"), "{log}");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    // ---- FT4 e cambio di modo -------------------------------------------------------------------------------------------------------
+
+    /// Rumore deterministico (uniforme, ampiezza +-0,05).
+    fn noise_audio(len: usize, seed: u64) -> Vec<f32> {
+        let mut s = seed;
+        (0..len)
+            .map(|_| {
+                s = s.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                ((s >> 40) as f32 / (1u64 << 24) as f32 - 0.5) * 0.1
+            })
+            .collect()
+    }
+
+    /// Audio a 12 kHz da `start_ms` per `duration_ms`, con rumore e le onde date: `(istante in cui comincia il periodo in ms, onda, campioni di anticipo
+    /// rispetto a 0,5 s)`: ogni onda sta a 0,5 s dall'inizio del suo periodo.
+    fn synth(start_ms: u64, duration_ms: u64, seed: u64, waves: &[(u64, &[f32], usize)]) -> Vec<f32> {
+        let mut audio = noise_audio((duration_ms as usize) * SAMPLE_RATE / 1000, seed);
+        for (slot_start, wave, lead) in waves {
+            let begin = ((slot_start - start_ms) as usize) * SAMPLE_RATE / 1000 + 6_000 - lead;
+            for (i, w) in wave.iter().enumerate() {
+                if let Some(a) = audio.get_mut(begin + i) {
+                    *a += 0.05 * w;
+                }
+            }
+        }
+        audio
+    }
+
+    /// Manda l'audio al motore a blocchi da 40 ms con l'ora di arrivo giusta.
+    fn feed(tx: &mpsc::Sender<AudioChunk>, start_ms: u64, audio: &[f32]) {
+        for (n, chunk) in audio.chunks(480).enumerate() {
+            let end_ms = start_ms + ((n + 1) * 480 * 1000 / SAMPLE_RATE) as u64;
+            tx.send(AudioChunk { rate: 12_000, samples: chunk.to_vec(), received_unix_ms: end_ms }).expect("invio");
+        }
+    }
+
+    fn live_config(controls: Arc<NativeControls>) -> LiveConfig {
+        LiveConfig {
+            de_call: "IU3ABC".into(),
+            de_grid: "IO91".into(),
+            own_continent: Some("EU".into()),
+            dial_hz: Arc::new(AtomicU64::new(14_074_000)),
+            controls,
+            transmitter: None,
+            band_of: Arc::new(|_| Some("20m".to_string())),
+            annotate: Arc::new(|_, _| (None, None, None)),
+        }
+    }
+
+    /// Aspetta (al massimo `secs` secondi) che sul bus siano comparsi tutti i testi dati; restituisce i messaggi e gli stati letti.
+    fn wait_for_texts(
+        runtime: &tokio::runtime::Runtime,
+        bus: &mut broadcast::Receiver<Event>,
+        wanted: &[&str],
+        secs: u64,
+    ) -> (Vec<DecodedMessage>, Vec<StationStatus>) {
+        let (mut decodes, mut statuses) = (Vec::new(), Vec::new());
+        let deadline = Instant::now() + std::time::Duration::from_secs(secs);
+        while Instant::now() < deadline {
+            runtime.block_on(async {
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                while let Ok(event) = bus.try_recv() {
+                    match event {
+                        Event::Decode(m) => decodes.push(m),
+                        Event::Status(s) => statuses.push(s),
+                        _ => {}
+                    }
+                }
+            });
+            if wanted.iter().all(|w| decodes.iter().any(|d| d.text == *w)) {
+                break;
+            }
+        }
+        (decodes, statuses)
+    }
+
+    /// Un periodo FT4 vero (messaggio sintetico del modulatore ft4 dentro rumore) passato dalla scheda finta fino al bus, con lo stato in FT4.
+    #[test]
+    fn ft4_audio_is_decoded_into_the_same_events_and_the_status_says_ft4() {
+        let (tx, rx) = mpsc::channel();
+        let (events, mut bus) = broadcast::channel(512);
+        let dir = std::env::temp_dir().join(format!("aurora-ft4-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+        let controls = Arc::new(NativeControls::default());
+        let rig = NativeRig::new(Arc::clone(&controls), None);
+        use rig_control::Rig;
+        rig.set_mode("FT4").expect("modo");
+        let engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), true, Some(live_config(Arc::clone(&controls)))) });
+
+        // periodi FT4 allineati a 7,5 s: il messaggio sta nel secondo
+        let t0 = 1_000_005_000u64;
+        let wave = ft4::modem::encode_message("CQ K1ABC FN42", 1500.0, &mut CallHashes::default()).expect("onda");
+        let audio = synth(t0, 3 * 7_500 + 6_800, 21, &[(t0 + 7_500, &wave, ft4::NSPS)]);
+        feed(&tx, t0, &audio);
+        let (decodes, statuses) = wait_for_texts(&runtime, &mut bus, &["CQ K1ABC FN42"], 90);
+        let m = decodes.iter().find(|d| d.text == "CQ K1ABC FN42").expect("il messaggio FT4 sul bus");
+        assert!((m.freq_hz as i64 - 1500).abs() <= 2, "{}", m.freq_hz);
+        assert!(m.id >= 1_000_000_000);
+        assert_eq!(m.time_ms as u64, (t0 + 7_500) % DAY_MS, "il messaggio e' del periodo da 7,5 s in cui e' stato ricevuto");
+        let s = statuses.last().expect("lo stato");
+        assert_eq!((s.mode.as_str(), s.tr_period), ("FT4", Some(7)));
+        assert!(engine.status()["slots_decoded"].as_u64().unwrap_or(0) >= 2);
+        // i periodi FT4 non finiscono nei WAV (il nome al secondo li sovrascriverebbe)
+        assert_eq!(std::fs::read_dir(dir.join("recordings")).map(|d| d.count()).unwrap_or(0), 0);
+        drop(tx);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// FT8 -> FT4 -> FT8 senza fermare l'audio: dopo ogni cambio il motore decodifica nel modo nuovo, lo stato lo dice e i periodi hanno la durata giusta.
+    #[test]
+    fn switching_between_ft8_and_ft4_keeps_decoding_without_losing_the_audio() {
+        let (tx, rx) = mpsc::channel();
+        let (events, mut bus) = broadcast::channel(512);
+        let dir = std::env::temp_dir().join(format!("aurora-switch-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+        let controls = Arc::new(NativeControls::default());
+        let rig = NativeRig::new(Arc::clone(&controls), None);
+        use rig_control::Rig;
+        let _engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live_config(Arc::clone(&controls)))) });
+        let mut all: Vec<DecodedMessage> = Vec::new();
+        let mut modes: Vec<String> = Vec::new();
+
+        // 1) FT8: un periodo da 15 s con il messaggio, poi altri 14,5 s perche' venga consegnato
+        let t0 = 1_000_005_000u64;
+        let w8 = modem::encode_message("CQ K1ABC FN42", 1500.0, &mut CallHashes::default()).expect("onda");
+        feed(&tx, t0, &synth(t0, 30_000, 31, &[(t0, &w8, 0)]));
+        let (d, s) = wait_for_texts(&runtime, &mut bus, &["CQ K1ABC FN42"], 120);
+        assert!(d.iter().any(|m| m.text == "CQ K1ABC FN42"), "FT8 prima del cambio");
+        all.extend(d);
+        modes.extend(s.into_iter().map(|s| s.mode));
+
+        // 2) FT4: il pulsante cambia il modo; l'audio continua dall'istante in cui eravamo arrivati
+        rig.set_mode("FT4").expect("modo");
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let t1 = t0 + 30_000;
+        let first_ft4_slot = t1.div_ceil(7_500) * 7_500 + 7_500;
+        let w4 = ft4::modem::encode_message("CQ K2DEF FN30", 1100.0, &mut CallHashes::default()).expect("onda");
+        feed(&tx, t1, &synth(t1, 30_000, 32, &[(first_ft4_slot, &w4, ft4::NSPS)]));
+        let (d, s) = wait_for_texts(&runtime, &mut bus, &["CQ K2DEF FN30"], 120);
+        assert!(d.iter().any(|m| m.text == "CQ K2DEF FN30" && m.time_ms as u64 == first_ft4_slot % DAY_MS), "FT4 dopo il cambio: {:?}", d.iter().map(|m| (&m.text, m.time_ms)).collect::<Vec<_>>());
+        all.extend(d);
+        modes.extend(s.into_iter().map(|s| s.mode));
+
+        // 3) di nuovo FT8
+        rig.set_mode("FT8").expect("modo");
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let t2 = t1 + 30_000;
+        let first_ft8_slot = t2.div_ceil(15_000) * 15_000;
+        let w8b = modem::encode_message("CQ K3GHI FN20", 1900.0, &mut CallHashes::default()).expect("onda");
+        feed(&tx, t2, &synth(t2, 45_000, 33, &[(first_ft8_slot, &w8b, 0)]));
+        let (d, s) = wait_for_texts(&runtime, &mut bus, &["CQ K3GHI FN20"], 120);
+        assert!(d.iter().any(|m| m.text == "CQ K3GHI FN20"), "FT8 dopo il ritorno");
+        all.extend(d);
+        modes.extend(s.into_iter().map(|s| s.mode));
+        assert!(modes.iter().any(|m| m == "FT4"), "lo stato ha detto FT4: {modes:?}");
+        assert_eq!(modes.last().map(String::as_str), Some("FT8"));
+        drop(tx);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// «Decodifica»: rielabora l'ultimo periodo senza ripubblicare i messaggi gia' usciti e senza errori; la richiesta si consuma.
+    #[test]
+    fn the_decode_button_reprocesses_the_last_period_without_duplicates() {
+        let (tx, rx) = mpsc::channel();
+        let (events, mut bus) = broadcast::channel(512);
+        let dir = std::env::temp_dir().join(format!("aurora-redecode-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+        let controls = Arc::new(NativeControls::default());
+        let rig = NativeRig::new(Arc::clone(&controls), None);
+        use rig_control::Rig;
+        // senza nessun periodo ancora decodificato la richiesta e' accettata senza errore
+        rig.set_control("decode", None).expect("accettato");
+        let _engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live_config(Arc::clone(&controls)))) });
+        let t0 = 1_000_005_000u64;
+        let wave = modem::encode_message("CQ K1ABC FN42", 1500.0, &mut CallHashes::default()).expect("onda");
+        feed(&tx, t0, &synth(t0, 30_000, 41, &[(t0, &wave, 0)]));
+        let (first, _) = wait_for_texts(&runtime, &mut bus, &["CQ K1ABC FN42"], 120);
+        assert_eq!(first.iter().filter(|m| m.text == "CQ K1ABC FN42").count(), 1);
+        // il motore e' fermo in attesa di audio: la richiesta viene raccolta al giro dopo
+        rig.set_control("decode", None).expect("accettato");
+        // il motore puo' essere ancora occupato a decodificare il secondo periodo: si aspetta che raccolga la richiesta
+        for _ in 0..1200 {
+            if !controls.redecode.load(Ordering::Relaxed) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert!(!controls.redecode.load(Ordering::Relaxed), "la richiesta e' stata raccolta");
+        let (more, _) = wait_for_texts(&runtime, &mut bus, &["mai"], 3);
+        assert!(more.iter().all(|m| m.text != "CQ K1ABC FN42"), "nessun doppione: {:?}", more.iter().map(|m| &m.text).collect::<Vec<_>>());
+        drop(tx);
         let _ = std::fs::remove_dir_all(dir);
     }
 }

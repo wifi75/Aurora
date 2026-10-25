@@ -7,6 +7,8 @@ use std::sync::{
     mpsc, Arc, Mutex,
 };
 
+use qso_native::Mode;
+
 use crate::tx::{OptionChange, TxCommand, TxView};
 
 use rig_control::{
@@ -22,6 +24,12 @@ pub struct NativeControls {
     pub monitor: AtomicBool,
     /// Frequenza audio di ricezione, in Hz.
     pub rx_df: AtomicU32,
+    /// Frequenza audio di trasmissione, in Hz. Con «Tx/Rx Split» spento segue la ricezione (e viceversa); con Split acceso sono indipendenti.
+    pub tx_df: AtomicU32,
+    /// Il modo corrente e' FT4 (altrimenti FT8). Lo legge il motore a ogni blocco di audio e cambia periodi e decoder.
+    ft4: AtomicBool,
+    /// «Decodifica»: chiesto di rielaborare l'ultimo periodo (lo raccoglie il motore).
+    pub redecode: AtomicBool,
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB: la usera' la trasmissione.
     pub attenuation: AtomicU32,
     /// Gli altri interruttori, per nome.
@@ -31,6 +39,8 @@ pub struct NativeControls {
     /// Stiamo trasmettendo (lo scrive la catena di trasmissione).
     pub transmitting: AtomicBool,
     sender: Mutex<Option<mpsc::Sender<TxCommand>>>,
+    /// Gli strumenti della radio (S-meter, potenza, ROS...) letti dal CAT; `None` se la radio non li da' (nessuna radio, OmniRig).
+    meters: Mutex<Option<aurora_core::RadioMeters>>,
 }
 
 impl Default for NativeControls {
@@ -38,9 +48,9 @@ impl Default for NativeControls {
         let switches = controls::CONTROLS
             .iter()
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
-            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted")))
+            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), attenuation: AtomicU32::new(0), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(0), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None) }
     }
 }
 
@@ -49,11 +59,20 @@ impl NativeControls {
         self.monitor.load(Ordering::Relaxed)
     }
 
+    /// Il modo corrente (FT8 di base).
+    pub fn mode(&self) -> Mode {
+        if self.ft4.load(Ordering::Relaxed) { Mode::Ft4 } else { Mode::Ft8 }
+    }
+
+    pub fn set_mode(&self, mode: Mode) {
+        self.ft4.store(mode == Mode::Ft4, Ordering::Relaxed);
+    }
+
     pub(crate) fn switch_on(&self, id: &str) -> bool {
         self.switches.lock().map(|all| all.iter().any(|(name, on)| name == id && *on)).unwrap_or(false)
     }
 
-    fn set_switch(&self, id: &str, on: bool) {
+    pub(crate) fn set_switch(&self, id: &str, on: bool) {
         if id == "monitor" {
             self.monitor.store(on, Ordering::Relaxed);
         } else if let Ok(mut all) = self.switches.lock()
@@ -61,6 +80,29 @@ impl NativeControls {
         {
             entry.1 = on;
         }
+    }
+
+    /// Registra gli strumenti letti dalla radio; `None` (o nessuna lettura) li spegne. Li legge `meters()` per lo stato della stazione.
+    pub fn set_meters(&self, meters: Option<rig_control::meters::Meters>) {
+        let converted = meters.map(|m| aurora_core::RadioMeters {
+            s_points: m.s_points,
+            s_over_db: m.s_over_db,
+            power_w: m.power_w,
+            swr: m.swr,
+            alc: m.alc,
+            comp_db: m.comp_db,
+            id_a: m.id_a,
+            vdd_v: m.vdd_v,
+        });
+        // un quadro senza nessuna lettura equivale a nessuno strumento
+        let converted = converted.filter(|m| *m != aurora_core::RadioMeters::default());
+        if let Ok(mut slot) = self.meters.lock() {
+            *slot = converted;
+        }
+    }
+
+    pub fn meters(&self) -> Option<aurora_core::RadioMeters> {
+        self.meters.lock().ok().and_then(|m| m.clone())
     }
 
     /// Chi riceve i comandi di trasmissione (il motore, quando parte).
@@ -111,11 +153,19 @@ impl Rig for NativeRig {
         self.radio()?.frequency()
     }
 
+    fn meters(&self) -> Result<rig_control::meters::Meters, RigError> {
+        self.radio()?.meters()
+    }
+
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError> {
         if !(100..=5000).contains(&hz) {
             return Err(RigError(format!("frequenza audio fuori campo: {hz} Hz")));
         }
         self.controls.rx_df.store(hz, Ordering::Relaxed);
+        // con Tx = Rx (Split spento) la trasmissione segue la ricezione
+        if !self.controls.switch_on("split") {
+            self.controls.tx_df.store(hz, Ordering::Relaxed);
+        }
         Ok(())
     }
 
@@ -130,8 +180,17 @@ impl Rig for NativeRig {
 
     fn set_mode(&self, mode: &str) -> Result<(), RigError> {
         match mode {
-            // la radio va sulla frequenza del modo scelto (lo fa chi chiama); FT4 e JT per ora non hanno ancora il decoder collegato
-            "FT8" | "FT4" | "JT" | "JT65" | "JT9" => Ok(()),
+            // la radio va sulla frequenza del modo scelto (lo fa chi chiama); il motore se ne accorge al blocco di audio dopo e cambia
+            // periodi, decodifica e trasmissione. JT65 e JT9 si accettano ma non hanno decoder: il modo resta quello di prima.
+            "FT8" => {
+                self.controls.set_mode(Mode::Ft8);
+                Ok(())
+            }
+            "FT4" => {
+                self.controls.set_mode(Mode::Ft4);
+                Ok(())
+            }
+            "JT" | "JT65" | "JT9" => Ok(()),
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -143,10 +202,17 @@ impl Rig for NativeRig {
     fn controls_and_tx(&self) -> Result<Reading, RigError> {
         let view = self.controls.tx_view.lock().map(|v| v.clone()).unwrap_or_default();
         let even = self.controls.switch_on("tx_period");
+        // le etichette sono quelle di JTDX (`setMinButton`): in FT4 «TX 00» e «TX 7.5»
+        let minute_label = match (self.controls.mode(), even) {
+            (Mode::Ft8, true) => "TX 00/30",
+            (Mode::Ft8, false) => "TX 15/45",
+            (Mode::Ft4, true) => "TX 00",
+            (Mode::Ft4, false) => "TX 7.5",
+        };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),
             selected: (view.selected > 0).then_some(view.selected),
-            minute_label: if even { "TX 00/30".to_string() } else { "TX 15/45".to_string() },
+            minute_label: minute_label.to_string(),
             autoseq_label: if self.controls.switch_on("autoseq") { "AutoSeq 3".to_string() } else { "AutoSeq".to_string() },
         };
         Ok((self.controls.snapshot(), Some(tx)))
@@ -161,6 +227,10 @@ impl Rig for NativeRig {
         match (control.kind, on) {
             (Kind::Toggle, Some(value)) => {
                 self.controls.set_switch(id, value);
+                // Split spento = Tx e Rx insieme: come `on_pbTxLock_clicked` di JTDX, la trasmissione va sulla frequenza di ricezione
+                if id == "split" && !value {
+                    self.controls.tx_df.store(self.controls.rx_df.load(Ordering::Relaxed), Ordering::Relaxed);
+                }
                 let command = match id {
                     "enable_tx" | "auto_tx" => Some(TxCommand::Enable(value)),
                     "autoseq" => Some(TxCommand::Option(OptionChange::AutoSeq(value))),
@@ -183,12 +253,25 @@ impl Rig for NativeRig {
                 }
             }
             (Kind::Press, None) => {
-                // «Ferma» ferma l'ascolto; Decodifica, Cancella e gli altri per ora non hanno nulla da fare
                 match id {
+                    // «Ferma» ferma l'ascolto
                     "stop_rx" => self.controls.monitor.store(false, Ordering::Relaxed),
                     "clear_dx" => {
                         let _ = self.controls.send(TxCommand::ClearDx);
                     }
+                    // «Gen.Msgs»: rigenera i messaggi per il DX attuale
+                    "gen_msgs" => {
+                        let _ = self.controls.send(TxCommand::GenMsgs);
+                    }
+                    // Rx -> Tx e Tx -> Rx copiano le frequenze (con Split spento sono comunque uguali)
+                    "rx_to_tx" => self.controls.tx_df.store(self.controls.rx_df.load(Ordering::Relaxed), Ordering::Relaxed),
+                    "tx_to_rx" => self.controls.rx_df.store(self.controls.tx_df.load(Ordering::Relaxed), Ordering::Relaxed),
+                    // «Cancella»: svuota i messaggi ricordati per il doppio clic
+                    "erase" => {
+                        let _ = self.controls.send(TxCommand::Erase);
+                    }
+                    // «Decodifica»: rielabora l'ultimo periodo (se non ce n'e' ancora uno, il motore non fa nulla)
+                    "decode" => self.controls.redecode.store(true, Ordering::Relaxed),
                     _ => {}
                 }
                 Ok(())
