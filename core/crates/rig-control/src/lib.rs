@@ -30,6 +30,11 @@ impl std::error::Error for RigError {}
 pub trait Rig: Send + Sync {
     fn set_frequency(&self, hz: u64) -> Result<(), RigError>;
 
+    /// La frequenza di ricezione della radio (Hz), se il comando la sa leggere.
+    fn frequency(&self) -> Result<u64, RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
     /// Imposta la frequenza audio di ricezione di JTDX (Hz).
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError>;
 
