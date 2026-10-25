@@ -77,6 +77,9 @@ impl Exporter {
                             tracing::info!("QSO con {} gia' registrato da poco: non si registra due volte", q.call);
                             continue;
                         }
+                        if q.band.is_empty() {
+                            tracing::warn!("QSO con {}: banda sconosciuta (frequenza della radio non letta), il record ADIF sara' incompleto", q.call);
+                        }
                         if let Err(e) = book.add(&q) {
                             tracing::warn!("QSO non salvato nel log di Aurora: {e}");
                         }
