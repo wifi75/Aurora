@@ -32,20 +32,24 @@ pub struct InputEndpoint {
 }
 
 impl InputEndpoint {
-    /// Trova l'ingresso il cui nome contiene `hint` (senza distinzione di maiuscole).
+    /// Trova l'ingresso per nome: prima quello identico, poi quello che contiene `hint` (senza distinzione di maiuscole).
     pub fn find(hint: &str) -> Result<InputEndpoint, VolumeError> {
         let host = cpal::default_host();
-        let wanted = hint.to_lowercase();
-        let devices = host.input_devices().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
-        for device in devices {
-            let name = device.description().map(|d| d.name().to_string()).unwrap_or_default();
-            if !name.to_lowercase().contains(&wanted) {
-                continue;
-            }
-            let id = device.id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
-            return Ok(InputEndpoint { id: id.id().to_string(), name });
-        }
-        Err(VolumeError::NoDevice(hint.to_string()))
+        let devices: Vec<cpal::Device> = host.input_devices().map_err(|e| VolumeError::Unavailable(e.to_string()))?.collect();
+        let names: Vec<String> = devices.iter().map(|d| d.description().map(|d| d.name().to_string()).unwrap_or_default()).collect();
+        let Some(index) = crate::match_device_name(&names, hint) else {
+            return Err(VolumeError::NoDevice(hint.to_string()));
+        };
+        let id = devices[index].id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
+        Ok(InputEndpoint { id: id.id().to_string(), name: names[index].clone() })
+    }
+
+    /// L'ingresso predefinito del sistema.
+    pub fn find_default() -> Result<InputEndpoint, VolumeError> {
+        let device = cpal::default_host().default_input_device().ok_or_else(|| VolumeError::NoDevice("predefinito".into()))?;
+        let name = device.description().map(|d| d.name().to_string()).unwrap_or_default();
+        let id = device.id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
+        Ok(InputEndpoint { id: id.id().to_string(), name })
     }
 
     pub fn name(&self) -> &str {

@@ -21,7 +21,9 @@ pub mod slot;
 pub mod testing;
 pub mod watchdog;
 
-pub use audio::{AudioSink, CpalSink, list_output_devices};
+pub use audio::{
+    AudioSink, CpalSink, OutputChannel, OutputDeviceInfo, SinkSwitch, SwitchOutcome, SwitchableSink, list_output_devices, list_output_devices_info, match_device_name,
+};
 pub use clock::{Clock, ManualClock, SystemClock};
 pub use error::TxError;
 pub use ptt::{HamlibPtt, NoPtt, OmniRigPtt, Ptt, PttGuard};

@@ -75,11 +75,12 @@ inclusi), la funzione che le legge resta **da verificare con REA** (con `REA_GHI
 | Audio | `SoundInName`, `SoundOutName`, `AudioInputChannel`, `AudioOutputChannel` | dispositivi scelti all'avvio (`AURORA_AUDIO_DEVICE`, `AURORA_AUDIO_OUT_DEVICE`) | nascoste, `audio_start`; da fare la scelta dal programma |
 | | `SaveDir`, `SaveWav` | registrazione dei periodi solo con `AURORA_NATIVE_RECORD` | nascoste, `no_wav_save` |
 | Sequenza | `Seq*Count`, `Seq*CounterValue` (quattro scenari), `SeqHaltTxReplyOther`, `StrictDirectionalCQ` | **scheda Sequenza come in JTDX**: vedi «Scheda Sequenza» sotto | **funzionano** (a caldo) |
-| | `AutoSequence`, `SingleShotQSO`, `SkipTx1`, `AnswerWorkedB4`, `CallPriorityCQ`, `MaxDistance` | sono i pulsanti della finestra principale e le Regole di Aurora (pagina Automazioni) | nascoste, `own_rules` |
+| | `CallPriorityCQ`, `MaxDistance` | «Priorita' ai CQ» e «Priorita' alla distanza maggiore»: `Options.call_prio_cq` e `max_distance` | **funzionano** (a caldo) |
+| | `AutoSequence`, `SingleShotQSO`, `SkipTx1`, `AnswerWorkedB4` | **gli stessi interruttori del pannello QSO** (`autoseq`, `single_qso`, `skip_tx1`, `answer_b4`, ricordati in `controls.json`): la scheda li mostra e li cambia con `GET /controls` e `POST /controls/{id}`, nessuna copia nel file delle impostazioni | **funzionano** (stato unico); nel documento API restano `own_rules` |
 | Notifiche | `newCQZ/ITUZ/DXCC/Grid/Px/Call` (+ `Band`, `BandMode`), `newPotential`, `73RR73Marker` | **scheda Notifiche come in JTDX**: vedi «Scheda Notifiche» sotto | **funzionano** (a caldo) |
 | | `workedColor`, `workedStriked`, `workedUnderlined`, `workedDontShow`, `txtColor`, `OtherStandardMessagesMarker`, `redMarker`, `blueMarker`, `differentBackground`, `highlightDXCall`... | come si disegnano i messaggi: scelte del browser, per dispositivo, valgono subito | nascoste, `own_notify` (nel documento API); **funzionano** nell'interfaccia |
 | | `BeepOn*` | «anche un suono»: i suoni per tipo di messaggio di Aurora | **funzionano** (nel browser) |
-| | `AlertOn*` (e `OB`) | un file audio di avviso a parte: Aurora ha i suoi suoni | nascoste, `own_alerts` |
+| | `AlertOnMyCall`, `AlertOnDXCall`, `AlertOnNewCQZ/ITUZ/DXCC/Grid/Px` e `...OB` («Play alert sound» e «per banda») | l'avviso con il suono scelto: **vivi** nel browser (`alertMyCall`... in `aurora-notify-view`), vedi «Avvisi sonori» sotto | **funzionano**; nel documento API restano `own_alerts` |
 | Avanzate | `NDepth`, `NFT4Depth`, `NFT8Cycles`, `FT8Sensitivity`, ... | il decodificatore di Aurora ha parametri suoi | nascoste, `own_decoder` |
 | Macro TX, Frequenze, Filtri, Programmazione | — | gia' di Aurora (non scrivevano nel `JTDX.ini`) | invariate |
 
@@ -151,8 +152,10 @@ Il valore e' limitato a 1-5 (come in JTDX, che altrimenti torna al valore di fab
 | Evidenzia altri messaggi predefiniti | `newPotential` | **vivo** (Applica) |
 | Sfondo diverso per il mio nominativo (ciano o giallo), evidenzia i messaggi con il nominativo / il locatore DX, suono al primo messaggio | `differentBackground`, `cyanBackground`, `yellowBackground`, `highlightDXCall`, `highlightDXGrid`, `BeepOnFirstMsg` | **vivi** (browser). Il nominativo DX si evidenzia di fabbrica (come Aurora ha sempre fatto) |
 | Marcatori | `OtherStandardMessagesMarker`, `redMarker`, `blueMarker`, `73RR73Marker` | **vivi**: altri messaggi (badge sui messaggi tra altre stazioni), rosso e blu (tacca a destra), 73/RR73 (Applica: `Options.rr73_marker`) |
-| Nascondendo suggerimento | `hidehintMarker` | **spenta** (`no_hint`): il decodificatore di Aurora non produce «suggerimenti» |
-| Avviso sul mio nominativo / sul nominativo DX, riproduci un suono di avviso (anche per banda) | `AlertOnMyCall`, `AlertOnDXCall`, `AlertOnNew*` e `OB` | **spente** (`alert_files`, `alert_dx`): JTDX riproduce un file audio scelto; Aurora ha i suoi suoni (Desiderati, Notifiche) |
+| Nascondendo suggerimento | `hidehintMarker` | **spenta** (`no_hint`): il decodificatore di Aurora non produce «suggerimenti». E' l'**unica** voce della scheda Notifiche che resta spenta |
+| Avviso sul mio nominativo / sul nominativo DX, «Play alert sound» per zona CQ, zona ITU, paese, griglia, prefisso, e «per banda» | `AlertOnMyCall`, `AlertOnDXCall`, `AlertOnNewCQZ/ITUZ/DXCC/Grid/Px` e `OB` | **vivi**: un messaggio nuovo (non nostro) che chiama me, nomina il DX scelto o porta quell'etichetta fa suonare il suono scelto; «per banda» = l'etichetta «nuovo su banda/modo» di quel tipo (la stessa che decide `new*Band`/`new*BandMode`). Il «per banda» vale solo con l'avviso del suo tipo |
+
+**Avvisi sonori** (scheda Notifiche, `lib/alerts.ts`): il pulsante «Avvisi sonori» (come prima) accende tutto e regola il volume; si sceglie il suono (campanelle, campana, pip pip, tromba), c'e' il pulsante «Prova» e «Non suonare mentre trasmetti» (di fabbrica acceso: lo stato `transmitting` dello stato della stazione silenzia anche le note di «anche un suono»). Due canali: «anche un suono» (`BeepOn*`, nota breve per tipo, gia' esistente) e «Play alert sound» (`AlertOn*`, suono scelto); «Suono al primo messaggio» e «Suono per il mio» seguono lo stesso schema. I messaggi gia' visti, le righe Tx e quelli arrivati prima di aprire la pagina non suonano. Il browser chiede un tocco sulla pagina prima di far suonare qualcosa (regola di WebAudio).
 
 Le scelte di disegno (`workedColor`... `highlightDXGrid`) stanno nel browser e si copiano sul server per dispositivo (chiave `aurora-notify-view`): non sono in `settings-motore.json`. Quelle che cambiano le etichette o la sequenza
 (`new*`, `newPotential`, `73RR73Marker`) stanno nel file di Aurora e valgono per tutti i dispositivi.
@@ -169,3 +172,15 @@ per paese e banda ma non per il modo dei decode. Senza modo noto (radio non lett
 5. Nominativo e locatore a caldo (richiede un trasmettitore che li rilegga).
 6. **Scheda Generali**: «La ricezione ritorna sull'ultima frequenza usata» (ricordare la frequenza all'ascolto e riscriverla alla radio), «Scorri la finestra dei messaggi in basso», «Nascondi i msg parzialmente trasmessi», prefisso al posto del nome del paese, allineamento di DXCC/distanza/azimut.
 7. **Scheda Notifiche**: avvisi con un file audio scelto (`AlertOn*`), avviso sul nominativo DX; collegare l'interruttore `highlights` della sequenza (JTDX risponde a chiunque se nessuna evidenziazione di «nuovo» e' accesa) con le evidenziazioni, d'accordo con chi lavora sulla logica di QSO.
+
+## Scheda Audio: stato del lavoro (2026-10-25)
+
+Logica di JTDX letta con REA in `jtdx.exe` 2.2.159 (`SoundInput::start` 0x4e27e0, `Detector::writeData` 0x62f680, `Modulator::readData` 0x63c480, `Configuration::impl::update_audio_channels` 0x53ce70,
+`MainWindow::dataSink` 0x4bfae0, `killFile` 0x4c22d0, `BWFFile::impl::update_header` 0x61a620) e nei sorgenti:
+- **Ingresso**: Mono apre il dispositivo con un canale (somma del mixer), Sinistro/Destro lo aprono in stereo e tengono il primo/secondo campione; Entrambi in ingresso non c'e' (vale Sinistro).
+- **Uscita**: Mono un canale; Sinistro `[onda, 0]`; Destro `[0, onda]`; Entrambi `[onda, onda]`. Voci abilitate solo se il dispositivo ha i canali (Mono con 1, Sinistro/Destro con 2; Entrambi solo in uscita).
+- **File audio**: `SaveWav` 0 Nessuno, 1 Decodificati, 2 Tutti; nome `aammgg_hhmmss.wav` (UTC, inizio periodo) in `SaveDir` (predefinita `<dati>/save`); a fine decodifica il file si cancella salvo Tutti o Decodificati con almeno un messaggio; WAV 12 kHz mono 16 bit con blocco `LIST/INFO` (ISRC, ISFT, ICRD, ICMT).
+- Nella scheda ci sono anche «Aggiorna» l'elenco, «Usa TCI Audio» e la memoria di potenza per banda/modo (Tx, Tune): non fatte (TCI non c'e'; potenza per banda da valutare).
+
+**Fatto (pezzi provati, non ancora collegati)**: `audio-spectrum` (`InputChannel`, `pick_channel`, `run_capture_with`, elenco ingressi con canali, nome identico prima del "contiene"), `tx-native` (`OutputChannel` nel sink, `SwitchableSink`/`SinkSwitch`: cambio uscita tra una trasmissione e l'altra, elenco uscite), `engine-native` (`SaveSettings`, `start_with_save`, WAV di JTDX), `engine_settings.rs` (chiavi `SoundInName`, `SoundOutName`, `AudioInputChannel`, `AudioOutputChannel`, `SaveDir`, `SaveWav` con valori iniziali e validazione, `update_audio`, `AudioValues`).
+**Resta**: rotte `GET /api/v1/audio/devices` e `PUT /api/v1/audio/settings`, il gestore in `aurora` che riapre ingresso/uscita a caldo (con ripristino del dispositivo precedente) e dichiara `Feature::AudioControl`, il livello d'ingresso che segue il dispositivo, la scheda in interfaccia (sei lingue) e `docs/api.md`. Finche' non e' collegato le voci restano non disponibili (motivo `audio_start`) e dispositivi e registratore (`AURORA_NATIVE_RECORD`) funzionano come prima.

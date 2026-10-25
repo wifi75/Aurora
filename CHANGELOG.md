@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.11 - 2026-10-25
+- **Avviso di versione nuova** come piccola icona in testata, prima della lingua (un clic apre Installa ora, Note e download, Piu' tardi), al posto della barra larga.
+- Base della scheda Audio come in JTDX (canali d'ingresso e d'uscita, cambio a caldo dell'uscita, salvataggio dei file audio nel formato di JTDX): pezzi del core pronti e provati, collegamento alla scheda nella versione successiva.
+- **Importazione delle impostazioni da JTDX chiave per chiave**: le voci mancanti nel file di Aurora prendono il valore di `JTDX.ini` (altrimenti quello di fabbrica di JTDX); le scelte gia' salvate non si toccano. Corregge la chiamata fermata da «Ferma la Tx se il DX risponde a un altro», che Aurora aveva acceso mentre in JTDX era spento.
+- **Schede Notifiche, Sequenza e Generali complete come in JTDX**: evidenziazioni «Nuovo» (zona CQ, zona ITU, paese, griglia, prefisso, nominativo, per banda e per modo), «gia' lavorato» (barrato, sottolineato, colorato o nascosto), avvisi e suoni per tipo (4 suoni, volume, prova, non suonare mentre trasmetti), scenari brevi con il numero di volte, priorita' ai CQ e alla distanza maggiore, interruttori uguali a quelli del pannello QSO.
+- **Gia' collegati barrati**: nell'elenco dei messaggi (Attivita' di banda e CQ e novita') la stazione gia' nel log sulla stessa banda e nello stesso modo ha il messaggio barrato, come in JTDX; scheda Notifiche con colore, barra, sottolinea e «non mostrare». «Gia' lavorato» e' cio' che resta quando niente e' nuovo secondo le evidenziazioni accese (zona CQ, ITU, paese, griglia, prefisso, nominativo, «per banda» e «per modo»).
+- **Schede Sequenza, Generali e Notifiche come in JTDX** con il motore proprio: contatori degli scenari brevi, ferma il Tx se il DX risponde a un altro, CQ rigorosa, priorita' ai CQ e alla distanza, interruttori del pannello QSO anche in Impostazioni (stesso stato); filtro del log, periodo di monitoraggio Tx, cambi di frequenza Tx durante la trasmissione, non monitorare all'avvio, riga vuota tra i periodi, azimut; evidenziazioni di «nuovo» a caldo, inverti colori, marcatori, sfondo ciano/giallo, avvisi sonori con suono a scelta, prova e silenzio mentre si trasmette. Voci non realizzabili spente con il motivo (`docs/impostazioni-motore-proprio.md`).
+- Le etichette di novita' seguono l'ordine di JTDX (zona CQ prima del paese) e i valori di fabbrica di JTDX (paese e nominativo accesi, per banda e per modo).
+
 ## 0.11.10 - 2026-10-25
 - **QSO gia' collegati barrati** (stessa banda e stesso modo, dal log interno, `wsjtx_log.adi` e Log4OM2) nelle liste Attivita' di banda e CQ e novita', con le scelte di JTDX: evidenzia, sottolinea o nascondi (Impostazioni -> Notifiche).
 - **Schede Notifiche, Sequenza e Generali come in JTDX** (in corso di completamento: le voci non ancora disponibili sono elencate con il motivo).

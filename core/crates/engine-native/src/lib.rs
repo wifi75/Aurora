@@ -30,6 +30,7 @@ use tokio::sync::broadcast;
 pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
 pub use rig::{NativeControls, NativeRig, SavedControls};
+pub use wav::{jtdx_stem, jtdx_wav_bytes, save_jtdx_style, SaveInfo, SaveMode, SaveSettings};
 pub use tx::{OptionChange, SequenceSettings, TxCommand, TxDriver, TxNote, TxPort, TxView};
 
 /// Campioni al secondo del decoder.
@@ -123,6 +124,29 @@ pub fn slot_of_time_ms(time_ms: u32, now_unix_ms: u64) -> u64 {
     slot
 }
 
+/// Salva un periodo come fa JTDX (`aammgg_hhmmss.wav` con il blocco `INFO`). FT4: JTDX tiene i soli 21 x 3456 campioni della trama.
+fn save_period(dir: &std::path::Path, mode: Mode, slot: &slots::Slot, live: Option<&LiveConfig>) {
+    let (dx_call, dx_grid) = live
+        .map(|l| {
+            let view = tx::view_of(&l.controls);
+            (view.dx.unwrap_or_default(), view.dx_grid.unwrap_or_default())
+        })
+        .unwrap_or_default();
+    let info = SaveInfo {
+        call: live.map(|l| l.de_call.clone()).unwrap_or_default(),
+        grid: live.map(|l| l.de_grid.clone()).unwrap_or_default(),
+        mode: mode.name().to_string(),
+        dial_hz: live.map_or(0, |l| l.dial_hz.load(Ordering::Relaxed)),
+        dx_call,
+        dx_grid,
+        program: format!("Aurora v{}", aurora_core::version::APP_VERSION),
+    };
+    let samples: &[f32] = if mode == Mode::Ft4 { &slot.samples[..slot.samples.len().min(21 * 3456)] } else { &slot.samples };
+    if let Err(e) = wav::save_jtdx_style(dir, slot.start_unix_ms, samples, &info, now_unix_ms()) {
+        tracing::warn!("file audio del periodo non salvato in {}: {e}", dir.display());
+    }
+}
+
 fn format_line(slot_unix_ms: u64, d: &ft8::decode::Decoded) -> String {
     let secs = slot_unix_ms / 1000 % 86_400;
     format!("{:02}{:02}{:02} {:>4} {:>5.1} {:>4} ~  {}\n", secs / 3600, secs / 60 % 60, secs % 60, d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text)
@@ -133,6 +157,19 @@ fn format_line(slot_unix_ms: u64, d: &ft8::decode::Decoded) -> String {
 /// Con `live` il motore proprio fa da unico motore: pubblica anche i messaggi e lo stato sul bus (senza `live` lavora solo in ombra).
 /// Con `record` ogni periodo si salva anche in WAV nella cartella `recordings` dei dati, per provare il decoder sulle stesse registrazioni.
 pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf, record: bool, live: Option<LiveConfig>) -> Arc<NativeEngine> {
+    start_with_save(events, tap, data_dir, record, live, None)
+}
+
+/// Come [`start`], con in piu' il salvataggio dei file audio della scheda Audio (come JTDX: Nessuno / Decodificati / Tutti, in una cartella a scelta).
+/// `save` si puo' cambiare mentre il motore gira (`SaveSettings::set`): vale dal periodo dopo.
+pub fn start_with_save(
+    events: broadcast::Sender<Event>,
+    tap: mpsc::Receiver<AudioChunk>,
+    data_dir: PathBuf,
+    record: bool,
+    live: Option<LiveConfig>,
+    save: Option<Arc<SaveSettings>>,
+) -> Arc<NativeEngine> {
     let engine = Arc::new(NativeEngine { parity: Arc::new(Parity::default()), stats: Arc::new(Mutex::new(Stats::default())) });
 
     // i messaggi di JTDX, per il confronto
@@ -404,6 +441,13 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 let decoded = decode_period(mode, &slot.samples, &ft8_options, &ft4_options, &mut hashes);
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
+                // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
+                if let Some(save) = &save {
+                    let (save_mode, dir) = save.get();
+                    if save_mode.keeps(decoded.len()) {
+                        save_period(&dir, mode, &slot, live.as_ref());
+                    }
+                }
                 if let (Some(a), Some(l)) = (all_txt.as_mut(), live.as_ref()) {
                     let rows: Vec<(i32, f32, i64, &str)> = decoded.iter().map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str())).collect();
                     a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows);
@@ -643,6 +687,53 @@ mod tests {
         let lines: Vec<&str> = all_txt.lines().collect();
         assert!(lines.iter().any(|l| l.ends_with(" 14.074 MHz  FT8") || l.contains(" MHz  FT8 Aurora v")), "{lines:?}");
         assert!(lines.iter().any(|l| l.starts_with("19700112_") && l.contains(" ~ CQ K1ABC FN42")), "{lines:?}");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// «Decodificati»: il file del periodo con il messaggio resta, quelli di solo rumore no; il nome e' quello di JTDX.
+    #[test]
+    fn the_audio_save_mode_keeps_only_the_decoded_periods() {
+        let (tx, rx) = mpsc::channel();
+        let (events, _keep) = broadcast::channel(16);
+        let dir = std::env::temp_dir().join(format!("aurora-savewav-{}", std::process::id()));
+        let save_dir = dir.join("audio");
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::create_dir_all(&dir);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+        let save = Arc::new(SaveSettings::new(SaveMode::Decoded, save_dir.clone()));
+        let engine = runtime.block_on(async { start_with_save(events, rx, dir.clone(), false, None, Some(Arc::clone(&save))) });
+        let t0 = 1_000_005_000u64 - 15_000;
+        let wave = modem::encode_message("CQ K1ABC FN42", 1500.0, &mut CallHashes::default()).expect("onda");
+        let mut audio = vec![0.0f32; 3 * SAMPLE_RATE * 15];
+        let mut seed = 11u64;
+        for a in audio.iter_mut() {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            *a = ((seed >> 40) as f32 / (1u64 << 24) as f32 - 0.5) * 0.1;
+        }
+        let begin = (15_000 + 500 + 300) * SAMPLE_RATE / 1000;
+        for (i, w) in wave.iter().enumerate() {
+            audio[begin + i] += 0.02 * w;
+        }
+        for (n, chunk) in audio.chunks(480).enumerate() {
+            let end_ms = t0 + ((n + 1) * 480 * 1000 / SAMPLE_RATE) as u64;
+            tx.send(AudioChunk { rate: 12_000, samples: chunk.to_vec(), received_unix_ms: end_ms }).expect("invio");
+        }
+        drop(tx);
+        for _ in 0..1200 {
+            if engine.status()["slots_decoded"].as_u64().unwrap_or(0) >= 2 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let names: Vec<String> = std::fs::read_dir(&save_dir).map(|d| d.filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).collect()).unwrap_or_default();
+        let wanted = format!("{}.wav", jtdx_stem(1_000_005_000));
+        assert!(names.contains(&wanted), "il periodo con il messaggio va salvato: {names:?}");
+        assert_eq!(names.len(), 1, "i periodi di solo rumore no: {names:?}");
+        let bytes = std::fs::read(save_dir.join(&wanted)).expect("file");
+        assert_eq!(&bytes[..4], b"RIFF");
+        assert!(String::from_utf8_lossy(&bytes).contains("Mode=FT8"), "il blocco INFO descrive il periodo");
+        assert!(!dir.join("recordings").exists(), "il registratore delle misure e' un'altra cosa");
         let _ = std::fs::remove_dir_all(dir);
     }
 

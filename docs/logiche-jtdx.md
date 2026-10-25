@@ -260,6 +260,16 @@ che resta com'e' per la storia. Tutto cio' che segue vale per JTDX 2.2.159; la s
 Tx1-Tx6 e i testi; pallino «Next» contro pulsante «Now» (quest'ultimo riavvia la trasmissione in corso); ripetizione del messaggio senza risposta e avanzamento con la risposta; regola del periodo opposto; casella RRR (cambia solo il Tx4); «Salta Tx1» (partenza
 da Tx2, con il rapporto che si aggiorna a ogni periodo); `Reply` UDP = stesso percorso del doppio clic (`replyToUDP` -> `processMessage`); i quattro contatori e le loro chiavi; lista nera e «Canc DX».
 
+### Aggiornamento serale del 2026-10-25: evidenziazioni, «gia' lavorato» e schede Sequenza/Generali/Notifiche
+
+Letto in `jtdx.exe` 2.2.159 (simboli presenti) e nei sorgenti; il dettaglio voce per voce, con indirizzi, chiavi e valori di fabbrica, sta in `docs/impostazioni-motore-proprio.md` («Le schede Sequenza, Generali e Notifiche come in JTDX»).
+
+- **«Gia' lavorato» = cio' che resta quando niente e' nuovo**: `DisplayText::displayDecodedText` (0x4eb170) calcola il presupposto «gia' lavorato» solo se almeno una delle sei evidenziazioni di «nuovo» e' accesa, poi controlla zona CQ, ITU, paese, locatore, prefisso, nominativo (in assoluto e poi per banda/modo) e il primo «nuovo» trovato cancella barra e sottolineatura. Il barrato (`workedStriked`, di fabbrica acceso) o la sottolineatura riguardano **solo il testo del messaggio** (da colonna 21/23: `DisplayText::appendText`), non ora e rapporto; il colore «Gia' lavorato» c'e' solo con `workedColor` (di fabbrica spento).
+- **Banda e modo** (`LogBook::match*`): casella «per banda» da sola = stessa banda in qualunque modo; «per modo» da sola = stesso modo su qualunque banda; tutte e due = stessa banda e stesso modo. FT8 e FT4 sono modi diversi. Il log e' `wsjtx_log.adi`, filtrabile (nominativo, griglia, data) dalla scheda Generali (`ADIF::load`).
+- **Sequenza**: i quattro contatori, `SeqHaltTxReplyOther` (di fabbrica acceso) e `StrictDirectionalCQ` sono in `Configuration::read_settings`; `CallPriorityCQ` porta ai livelli 6/7 di AutoSeq (ricerca fra i CQ) e `MaxDistance` fa preferire il piu' lontano a parita' (sez. 2.6 e 3.4 sopra). In Aurora il pannello QSO e la scheda Impostazioni mostrano e cambiano lo **stesso** stato (i controlli `autoseq`, `single_qso`, `skip_tx1`, `answer_b4`), le due priorita' e i contatori stanno in `settings-motore.json` e arrivano alla sequenza a caldo.
+- **Generali**: `TxQSYAllowed` disabilita il campo della frequenza Tx e blocca `setRig` durante la trasmissione; `MonitorOFF` spegne Monitor all'avvio; `MonitorLastUsed` riporta la radio sull'ultima frequenza solo riaccendendo Monitor; `Decode52`, `After73`, `IDint` valgono solo fuori da FT8 e FT4 (letti da `setStopHSym`, dalle azioni JT65/JT9/T10 e da `guiUpdate` dentro `!m_mode.startsWith("FT")`).
+- **Notifiche**: `differentBackground` + `cyanBackground`/`yellowBackground` danno ai messaggi che contengono il mio nominativo lo sfondo ciano o giallo; `highlightDXCall`/`highlightDXGrid` evidenziano il DX; `AlertOn*` (con `OB` = su banda) e `BeepOn*` sono i due canali dei suoni.
+
 ### Da verificare ancora
 
 Esecuzione reale di FIN/S73 con Autolog (letta nel sorgente, non provata in aria); la logica riga per riga di `ft8s`, `ft8sd`, `ft8mf1`, `ft8mfcq`; il modo Hound; il motivo di `count = 1` per i CQ diretti.

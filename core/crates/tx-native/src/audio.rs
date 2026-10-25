@@ -8,7 +8,7 @@ use std::{
     f64::consts::PI,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering},
         mpsc,
     },
     thread::JoinHandle,
@@ -33,6 +33,73 @@ pub trait AudioSink: Send {
     /// trasmissione, come in JTDX; altrimenti l'onda arriva gia' con il livello applicato.
     fn live_gain(&self) -> Option<Arc<AtomicU32>> {
         None
+    }
+}
+
+/// Il canale d'uscita come nella scheda Audio di JTDX (`AudioOutputChannel`). In JTDX (`Modulator::readData`, `SoundOutput::setFormat`):
+/// Mono apre il dispositivo con un solo canale; Sinistro scrive l'onda nel primo canale e silenzio nel secondo; Destro il contrario; Entrambi
+/// la stessa onda nei due. Qui il dispositivo si apre con i suoi canali: Mono e Entrambi riempiono tutti i canali, Sinistro e Destro solo il
+/// primo o il secondo, gli altri restano muti.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum OutputChannel {
+    #[default]
+    Mono,
+    Left,
+    Right,
+    Both,
+}
+
+impl OutputChannel {
+    pub fn parse(text: &str) -> Option<OutputChannel> {
+        match text.trim().to_ascii_lowercase().as_str() {
+            "mono" => Some(OutputChannel::Mono),
+            "left" => Some(OutputChannel::Left),
+            "right" => Some(OutputChannel::Right),
+            "both" => Some(OutputChannel::Both),
+            _ => None,
+        }
+    }
+
+    /// Il nome nel `JTDX.ini`.
+    pub fn name(self) -> &'static str {
+        match self {
+            OutputChannel::Mono => "Mono",
+            OutputChannel::Left => "Left",
+            OutputChannel::Right => "Right",
+            OutputChannel::Both => "Both",
+        }
+    }
+
+    pub fn code(self) -> u8 {
+        match self {
+            OutputChannel::Mono => 0,
+            OutputChannel::Left => 1,
+            OutputChannel::Right => 2,
+            OutputChannel::Both => 3,
+        }
+    }
+
+    pub fn from_code(code: u8) -> OutputChannel {
+        match code {
+            1 => OutputChannel::Left,
+            2 => OutputChannel::Right,
+            3 => OutputChannel::Both,
+            _ => OutputChannel::Mono,
+        }
+    }
+
+    pub fn load(cell: &AtomicU8) -> OutputChannel {
+        OutputChannel::from_code(cell.load(Ordering::Relaxed))
+    }
+
+    /// Il canale `index` (da 0) di un dispositivo con `channels` canali suona l'onda?
+    pub fn plays_on(self, index: usize, channels: usize) -> bool {
+        match self {
+            OutputChannel::Mono | OutputChannel::Both => true,
+            OutputChannel::Left => index == 0,
+            // un dispositivo mono ha un solo canale: Destro non puo' tacere l'unico che c'e'
+            OutputChannel::Right => index == usize::from(channels > 1),
+        }
     }
 }
 
@@ -122,6 +189,37 @@ pub fn list_output_devices() -> Vec<String> {
     cpal::default_host().output_devices().map(|it| it.map(|d| device_name(&d)).collect()).unwrap_or_default()
 }
 
+/// Un'uscita audio del sistema, per la scelta nelle impostazioni.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OutputDeviceInfo {
+    pub name: String,
+    /// Il numero massimo di canali (1 = mono, 2 = stereo).
+    pub channels: u16,
+    /// E' l'uscita predefinita del sistema.
+    pub is_default: bool,
+}
+
+/// Le uscite del sistema con i loro canali e quale e' quella predefinita.
+pub fn list_output_devices_info() -> Vec<OutputDeviceInfo> {
+    let host = cpal::default_host();
+    let default = host.default_output_device().map(|d| device_name(&d));
+    let Ok(devices) = host.output_devices() else { return Vec::new() };
+    devices
+        .map(|d| {
+            let name = device_name(&d);
+            let from_ranges = d.supported_output_configs().ok().and_then(|it| it.map(|c| c.channels()).max());
+            let channels = from_ranges.or_else(|| d.default_output_config().ok().map(|c| c.channels())).unwrap_or(1);
+            OutputDeviceInfo { is_default: default.as_deref() == Some(name.as_str()), name, channels }
+        })
+        .collect()
+}
+
+/// Sceglie un dispositivo per nome: prima il nome identico (senza distinzione di maiuscole), poi quello che lo contiene.
+pub fn match_device_name(names: &[String], hint: &str) -> Option<usize> {
+    let wanted = hint.trim().to_lowercase();
+    names.iter().position(|n| n.to_lowercase() == wanted).or_else(|| names.iter().position(|n| n.to_lowercase().contains(&wanted)))
+}
+
 struct SinkShared {
     playback: Mutex<Playback>,
     /// Il flusso ha dato errore (dispositivo scollegato...): non si suona piu'.
@@ -129,6 +227,8 @@ struct SinkShared {
     errors: AtomicU64,
     /// Guadagno lineare applicato mentre suona (bit di un `f32`), regolabile anche a trasmissione in corso.
     gain: Arc<AtomicU32>,
+    /// Il canale d'uscita (`OutputChannel::code`), cambiabile anche a flusso aperto.
+    channel: Arc<AtomicU8>,
 }
 
 /// Uscita sul dispositivo vero. Il flusso vive in un thread proprio (su alcune piattaforme non e' `Send`).
@@ -154,9 +254,11 @@ fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, prev_gain: &mut 
     let target = f32::from_bits(shared.gain.load(Ordering::Relaxed));
     apply_gain_ramp(scratch, *prev_gain, target);
     *prev_gain = target;
+    let channel = OutputChannel::load(&shared.channel);
+    let silence = conv(0.0);
     for (frame, &s) in data.chunks_mut(channels).zip(scratch.iter()) {
-        for o in frame {
-            *o = conv(s);
+        for (index, o) in frame.iter_mut().enumerate() {
+            *o = if channel.plays_on(index, channels) { conv(s) } else { silence };
         }
     }
 }
@@ -164,10 +266,19 @@ fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, prev_gain: &mut 
 impl CpalSink {
     /// Apre l'uscita (`device_hint` e' una parte del nome, senza distinzione di maiuscole; `None` = predefinita).
     pub fn open(device_hint: Option<&str>) -> Result<CpalSink, TxError> {
+        CpalSink::open_with(device_hint, Arc::new(AtomicU32::new(1.0f32.to_bits())), Arc::new(AtomicU8::new(OutputChannel::Mono.code())))
+    }
+
+    /// Come `open`, con il guadagno e il canale che si tengono fuori dal dispositivo: cosi' sopravvivono al cambio di uscita.
+    pub fn open_with(device_hint: Option<&str>, gain: Arc<AtomicU32>, channel: Arc<AtomicU8>) -> Result<CpalSink, TxError> {
         let host = cpal::default_host();
         let device = match device_hint {
             None => host.default_output_device(),
-            Some(hint) => host.output_devices().ok().and_then(|mut it| it.find(|d| device_name(d).to_lowercase().contains(&hint.to_lowercase()))),
+            Some(hint) => host.output_devices().ok().and_then(|it| {
+                let mut devices: Vec<cpal::Device> = it.collect();
+                let names: Vec<String> = devices.iter().map(device_name).collect();
+                match_device_name(&names, hint).map(|i| devices.swap_remove(i))
+            }),
         };
         let Some(device) = device else {
             let available = list_output_devices();
@@ -183,7 +294,7 @@ impl CpalSink {
         let channels = usize::from(supported.channels()).max(1);
         let format = supported.sample_format();
 
-        let shared = Arc::new(SinkShared { playback: Mutex::new(Playback::new()), failed: AtomicBool::new(false), errors: AtomicU64::new(0), gain: Arc::new(AtomicU32::new(1.0f32.to_bits())) });
+        let shared = Arc::new(SinkShared { playback: Mutex::new(Playback::new()), failed: AtomicBool::new(false), errors: AtomicU64::new(0), gain, channel });
         let stop_thread = Arc::new(AtomicBool::new(false));
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TxError>>();
         let thread_shared = Arc::clone(&shared);
@@ -301,9 +412,182 @@ impl Drop for CpalSink {
     }
 }
 
+/// Com'e' andato un cambio di uscita.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SwitchOutcome {
+    /// La nuova uscita e' gia' quella in uso.
+    Applied,
+    /// C'e' una trasmissione in attesa o in corso: la nuova uscita vale dalla prossima, quella in corso non si tocca.
+    Deferred,
+}
+
+struct SwitchState {
+    current: Box<dyn AudioSink>,
+    pending: Option<Box<dyn AudioSink>>,
+    /// Qualcuno ha chiesto la frequenza dell'uscita e non ha ancora cominciato a suonare: la trasmissione sta preparando i campioni per
+    /// quella frequenza, quindi l'uscita non si cambia (i campioni arriverebbero a una frequenza sbagliata).
+    armed: bool,
+}
+
+impl SwitchState {
+    fn swap_if_possible(&mut self) -> bool {
+        if self.pending.is_some()
+            && !self.armed
+            && !self.current.is_playing()
+            && let Some(next) = self.pending.take()
+        {
+            self.current = next;
+            return true;
+        }
+        false
+    }
+}
+
+/// Un'uscita che si puo' cambiare mentre Aurora e' accesa (scheda Audio): `SinkSwitch` ne porta una nuova gia' aperta e lei la mette al posto
+/// della vecchia **tra una trasmissione e l'altra**. Il guadagno resta quello condiviso (`live_gain`).
+pub struct SwitchableSink {
+    shared: Arc<Mutex<SwitchState>>,
+    gain: Arc<AtomicU32>,
+}
+
+/// Il comando per cambiare l'uscita di un [`SwitchableSink`].
+#[derive(Clone)]
+pub struct SinkSwitch {
+    shared: Arc<Mutex<SwitchState>>,
+}
+
+impl SwitchableSink {
+    pub fn new(first: Box<dyn AudioSink>, gain: Arc<AtomicU32>) -> (SwitchableSink, SinkSwitch) {
+        let shared = Arc::new(Mutex::new(SwitchState { current: first, pending: None, armed: false }));
+        (SwitchableSink { shared: Arc::clone(&shared), gain }, SinkSwitch { shared })
+    }
+}
+
+impl SinkSwitch {
+    /// Mette `next` al posto dell'uscita attuale: subito se non si sta trasmettendo, altrimenti dalla prossima trasmissione. Una richiesta
+    /// ancora in attesa viene sostituita (la vecchia si chiude).
+    pub fn request(&self, next: Box<dyn AudioSink>) -> SwitchOutcome {
+        let mut state = lock(&self.shared);
+        state.pending = Some(next);
+        if state.swap_if_possible() { SwitchOutcome::Applied } else { SwitchOutcome::Deferred }
+    }
+
+    /// C'e' una nuova uscita che aspetta la fine della trasmissione?
+    pub fn has_pending(&self) -> bool {
+        lock(&self.shared).pending.is_some()
+    }
+}
+
+impl AudioSink for SwitchableSink {
+    fn sample_rate(&self) -> u32 {
+        let mut state = lock(&self.shared);
+        state.swap_if_possible();
+        state.armed = true;
+        state.current.sample_rate()
+    }
+
+    fn start(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+        let mut state = lock(&self.shared);
+        state.armed = false;
+        state.current.start(samples)
+    }
+
+    fn is_playing(&self) -> bool {
+        lock(&self.shared).current.is_playing()
+    }
+
+    fn stop(&mut self) {
+        let mut state = lock(&self.shared);
+        state.armed = false;
+        state.current.stop();
+    }
+
+    fn live_gain(&self) -> Option<Arc<AtomicU32>> {
+        Some(Arc::clone(&self.gain))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Un'uscita finta con una frequenza e un nome, per provare il cambio.
+    struct FakeSink {
+        rate: u32,
+        playing: Arc<AtomicBool>,
+        started: Arc<Mutex<Vec<usize>>>,
+    }
+
+    impl AudioSink for FakeSink {
+        fn sample_rate(&self) -> u32 {
+            self.rate
+        }
+        fn start(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+            lock(&self.started).push(samples.len());
+            self.playing.store(true, Ordering::SeqCst);
+            Ok(())
+        }
+        fn is_playing(&self) -> bool {
+            self.playing.load(Ordering::SeqCst)
+        }
+        fn stop(&mut self) {
+            self.playing.store(false, Ordering::SeqCst);
+        }
+    }
+
+    fn fake(rate: u32) -> (Box<dyn AudioSink>, Arc<AtomicBool>, Arc<Mutex<Vec<usize>>>) {
+        let (playing, started) = (Arc::new(AtomicBool::new(false)), Arc::new(Mutex::new(Vec::new())));
+        (Box::new(FakeSink { rate, playing: Arc::clone(&playing), started: Arc::clone(&started) }), playing, started)
+    }
+
+    #[test]
+    fn an_idle_sink_is_replaced_at_once_and_the_new_rate_is_used() {
+        let (first, _, first_started) = fake(48_000);
+        let (mut sink, switch) = SwitchableSink::new(first, Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        let (second, _, second_started) = fake(44_100);
+        assert_eq!(switch.request(second), SwitchOutcome::Applied);
+        assert!(!switch.has_pending());
+        assert_eq!(sink.sample_rate(), 44_100);
+        sink.start(vec![0.0; 10]).expect("avvio");
+        assert!(lock(&first_started).is_empty());
+        assert_eq!(*lock(&second_started), vec![10]);
+    }
+
+    #[test]
+    fn a_change_during_a_transmission_waits_for_the_next_one_and_never_cuts_the_audio() {
+        let (first, first_playing, first_started) = fake(48_000);
+        let (mut sink, switch) = SwitchableSink::new(first, Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        // la trasmissione ha chiesto la frequenza e sta per suonare: l'uscita non si cambia (i campioni sono a 48 kHz)
+        assert_eq!(sink.sample_rate(), 48_000);
+        let (second, _, second_started) = fake(44_100);
+        assert_eq!(switch.request(second), SwitchOutcome::Deferred);
+        assert!(switch.has_pending());
+        sink.start(vec![0.0; 20]).expect("avvio");
+        assert_eq!(*lock(&first_started), vec![20], "la trasmissione finisce sul dispositivo di prima");
+        assert!(sink.is_playing());
+        // ancora in corso: la nuova uscita aspetta
+        assert!(switch.has_pending());
+        first_playing.store(false, Ordering::SeqCst);
+        // finita: la prossima trasmissione trova la nuova uscita, con la sua frequenza
+        assert_eq!(sink.sample_rate(), 44_100);
+        assert!(!switch.has_pending());
+        sink.start(vec![0.0; 5]).expect("avvio");
+        assert_eq!(*lock(&second_started), vec![5]);
+    }
+
+    #[test]
+    fn a_second_request_replaces_the_one_still_waiting() {
+        let (first, _, _) = fake(48_000);
+        let (sink, switch) = SwitchableSink::new(first, Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        assert_eq!(sink.sample_rate(), 48_000);
+        let (a, _, _) = fake(8_000);
+        let (b, _, _) = fake(16_000);
+        switch.request(a);
+        switch.request(b);
+        let mut sink = sink;
+        sink.stop();
+        assert_eq!(sink.sample_rate(), 16_000, "vale l'ultima richiesta");
+    }
 
     fn drain(pb: &mut Playback, total: usize, block: usize) -> Vec<f32> {
         let mut all = Vec::new();
@@ -326,6 +610,60 @@ mod tests {
         let mut same = vec![0.3f32; 3];
         apply_gain_ramp(&mut same, 1.0, 1.0);
         assert_eq!(same, vec![0.3f32; 3]);
+    }
+
+    #[test]
+    fn the_output_channel_decides_where_the_wave_goes() {
+        // (canale, indice, canali) -> suona?
+        for c in [OutputChannel::Mono, OutputChannel::Both] {
+            assert!(c.plays_on(0, 2) && c.plays_on(1, 2), "{c:?}: tutti i canali");
+        }
+        assert!(OutputChannel::Left.plays_on(0, 2) && !OutputChannel::Left.plays_on(1, 2));
+        assert!(!OutputChannel::Right.plays_on(0, 2) && OutputChannel::Right.plays_on(1, 2));
+        assert!(OutputChannel::Right.plays_on(0, 1), "su un dispositivo mono l'unico canale suona");
+        assert!(!OutputChannel::Left.plays_on(2, 4) && !OutputChannel::Right.plays_on(3, 4), "gli altri canali restano muti");
+    }
+
+    fn rendered(channel: OutputChannel, channels: usize) -> Vec<f32> {
+        let shared = SinkShared {
+            playback: Mutex::new(Playback::new()),
+            failed: AtomicBool::new(false),
+            errors: AtomicU64::new(0),
+            gain: Arc::new(AtomicU32::new(1.0f32.to_bits())),
+            channel: Arc::new(AtomicU8::new(channel.code())),
+        };
+        lock(&shared.playback).start(vec![0.5, -0.5, 0.25]);
+        let mut data = vec![9.0f32; 3 * channels];
+        render(&shared, &mut Vec::new(), &mut 1.0, channels, &mut data, |s| s);
+        data
+    }
+
+    #[test]
+    fn the_sink_writes_the_wave_on_the_chosen_channel_and_silence_on_the_other() {
+        assert_eq!(rendered(OutputChannel::Left, 2), vec![0.5, 0.0, -0.5, 0.0, 0.25, 0.0]);
+        assert_eq!(rendered(OutputChannel::Right, 2), vec![0.0, 0.5, 0.0, -0.5, 0.0, 0.25]);
+        assert_eq!(rendered(OutputChannel::Both, 2), vec![0.5, 0.5, -0.5, -0.5, 0.25, 0.25]);
+        assert_eq!(rendered(OutputChannel::Mono, 2), vec![0.5, 0.5, -0.5, -0.5, 0.25, 0.25]);
+        assert_eq!(rendered(OutputChannel::Left, 1), vec![0.5, -0.5, 0.25], "un dispositivo mono suona sempre");
+    }
+
+    #[test]
+    fn the_channel_names_are_the_ones_of_the_jtdx_ini() {
+        for c in [OutputChannel::Mono, OutputChannel::Left, OutputChannel::Right, OutputChannel::Both] {
+            assert_eq!(OutputChannel::parse(c.name()), Some(c));
+            assert_eq!(OutputChannel::from_code(c.code()), c);
+        }
+        assert_eq!(OutputChannel::parse("right"), Some(OutputChannel::Right));
+        assert_eq!(OutputChannel::parse("Centro"), None);
+    }
+
+    #[test]
+    fn an_exact_device_name_wins_over_one_that_contains_it() {
+        let names: Vec<String> = ["Altoparlanti (2- USB Audio Device)", "Altoparlanti (2- USB Audio Device) bis"].iter().map(|s| s.to_string()).collect();
+        assert_eq!(match_device_name(&names, "altoparlanti (2- usb audio device) bis"), Some(1));
+        assert_eq!(match_device_name(&names, "Altoparlanti (2- USB Audio Device)"), Some(0));
+        assert_eq!(match_device_name(&names, "usb audio"), Some(0));
+        assert_eq!(match_device_name(&names, "Cuffie"), None);
     }
 
     #[test]
