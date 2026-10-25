@@ -3838,26 +3838,6 @@
   border-radius: 0.4rem;
 }
 
-.jt-grid {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1.6fr) repeat(5, minmax(5.5rem, 1fr));
-  align-items: center;
-  gap: 0.25rem var(--space-3);
-  font-size: var(--text-sm);
-}
-
-.jt-grid > span.jt-reason {
-  grid-column: 1 / -1;
-}
-
-.jt-preview {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1.6fr) 5rem repeat(2, minmax(6rem, 1fr));
-  align-items: center;
-  gap: 0.25rem var(--space-3);
-  font-size: var(--text-sm);
-}
-
 .jt-sample {
   padding: 0.15rem 0.5rem;
   font-family: var(--font-data);
@@ -3880,4 +3860,19 @@
 
 .jt-reason {
   font-size: var(--text-xs);
+}
+
+/* Log: il numero dei QSO sta a destra, sulla riga del titolo del pannello */
+.dock-panel--log {
+  position: relative;
+}
+
+.dock-panel--log .log4om-total {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.9rem;
+  z-index: 1;
+  margin: 0;
+  font-size: 0.72rem;
+  pointer-events: none;
 }
