@@ -4,6 +4,7 @@ import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { EngineValues } from './EngineValues';
+import { useIsNative } from './NativeSettings';
 import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help, Row } from './common';
 
@@ -13,12 +14,13 @@ export function GeneralTab() {
   const prefs = usePrefs((s) => s.prefs);
   const set = usePrefs.getState().set;
   const status = useStation((s) => s.status);
+  const native = useIsNative();
   return (
     <>
       <h3 className="set-sub">{t('gen.station')}</h3>
       <Row name={t('gen.call')}>{status?.de_call || '—'}</Row>
       <Row name={t('gen.grid')}>{status?.de_grid || '—'}</Row>
-      <Help>{t('gen.fromEngine')}</Help>
+      <Help>{native ? t('ens.gen.help') : t('gen.fromEngine')}</Help>
       <EngineValues group="general" />
 
       <h3 className="set-sub">{t('gen.screen')}</h3>

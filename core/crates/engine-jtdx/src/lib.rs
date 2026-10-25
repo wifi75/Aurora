@@ -120,6 +120,7 @@ fn message_id(m: &Message) -> Option<String> {
         Message::Heartbeat { id, .. }
         | Message::Clear { id }
         | Message::QsoLogged { id, .. }
+        | Message::LoggedAdif { id, .. }
         | Message::Close { id }
         | Message::Unknown { id, .. } => id.clone(),
         Message::Status(s) => s.id.clone(),

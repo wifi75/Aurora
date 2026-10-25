@@ -119,6 +119,22 @@ impl Writer {
         }
     }
 
+    /// `QDateTime` in UTC (come lo scrive JTDX): giorno giuliano (i64), millisecondi del giorno (u32), tipo di fuso 1 (u8).
+    /// `None` e' un `QDateTime` nullo (giorno 0, ora non valida).
+    pub fn qdatetime_utc(&mut self, unix_ms: Option<i64>) {
+        match unix_ms {
+            Some(ms) => {
+                self.i64(ms.div_euclid(86_400_000) + 2_440_588);
+                self.u32(ms.rem_euclid(86_400_000) as u32);
+            }
+            None => {
+                self.i64(0);
+                self.u32(u32::MAX);
+            }
+        }
+        self.u8(1);
+    }
+
     /// Byte grezzi, per costruire pacchetti volutamente malformati nei test.
     pub fn raw(&mut self, bytes: &[u8]) {
         self.buf.extend_from_slice(bytes);

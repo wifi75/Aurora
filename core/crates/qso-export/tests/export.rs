@@ -107,3 +107,24 @@ async fn a_broken_target_is_counted_and_does_not_stop_the_others() {
     assert_eq!((stats.sent, stats.failed), (1, 1));
     assert!(stats.last_error.is_some());
 }
+
+#[tokio::test]
+async fn the_targets_can_be_changed_while_running_and_each_qso_uses_the_list_of_that_moment() {
+    let bus = Bus::new(64);
+    let book = Arc::new(Logbook::open_in_memory().unwrap());
+    let (first, second) = (UdpSocket::bind("127.0.0.1:0").await.unwrap(), UdpSocket::bind("127.0.0.1:0").await.unwrap());
+    let targets = Arc::new(std::sync::RwLock::new(vec![Target::UdpAdif(first.local_addr().unwrap())]));
+    let _exporter = Exporter::spawn_shared(&bus, book, Arc::clone(&targets), station(), Arc::new(|| 1_000_000));
+    let mut buf = vec![0u8; 2048];
+    bus.events().send(Event::QsoLogged(qso("AT1AA"))).unwrap();
+    timeout(Duration::from_secs(1), first.recv_from(&mut buf)).await.unwrap().unwrap();
+    // il destinatario cambia senza riavviare niente
+    *targets.write().unwrap() = vec![Target::UdpAdif(second.local_addr().unwrap())];
+    bus.events().send(Event::QsoLogged(qso("LM1XY"))).unwrap();
+    timeout(Duration::from_secs(1), second.recv_from(&mut buf)).await.unwrap().unwrap();
+    assert!(timeout(Duration::from_millis(300), first.recv_from(&mut buf)).await.is_err(), "il vecchio destinatario non riceve piu' niente");
+    // lista vuota (invio spento): il QSO si salva ma non parte nulla
+    targets.write().unwrap().clear();
+    bus.events().send(Event::QsoLogged(qso("DL1ZZ"))).unwrap();
+    assert!(timeout(Duration::from_millis(300), second.recv_from(&mut buf)).await.is_err());
+}

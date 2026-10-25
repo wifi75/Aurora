@@ -110,7 +110,14 @@ pub struct RigConfig {
     pub poll_secs: u32,
     /// Collega la radio da solo all'avvio di Aurora (spento di base: la trasmissione non parte mai senza che lo si sia scelto).
     pub auto_connect: bool,
+    /// «Condividi la radio»: `rigctld` ascolta (solo su questo PC, 127.0.0.1) sulla porta fissa `share_port` invece che su una a caso,
+    /// cosi' Log4OM2, GridTracker, JTDX e gli altri si collegano ad Aurora come a una radio «Hamlib NET rigctl».
+    pub share_enabled: bool,
+    pub share_port: u16,
 }
+
+/// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
+pub const DEFAULT_SHARE_PORT: u16 = 4532;
 
 impl Default for RigConfig {
     fn default() -> Self {
@@ -132,6 +139,8 @@ impl Default for RigConfig {
             civ_address: 0,
             poll_secs: 2,
             auto_connect: false,
+            share_enabled: false,
+            share_port: DEFAULT_SHARE_PORT,
         }
     }
 }
@@ -187,6 +196,9 @@ impl RigConfig {
         }
         if matches!(self.ptt, PttMethod::Dtr | PttMethod::Rts) && self.port.is_empty() && self.ptt_port.is_empty() {
             return Err("bad_ptt");
+        }
+        if !(1024..=65535).contains(&self.share_port) {
+            return Err("bad_share_port");
         }
         Ok(())
     }
@@ -258,6 +270,7 @@ impl RigConfig {
             port: (!self.port.is_empty()).then(|| hamlib_port(&self.port)),
             baud: (self.baud != 0).then_some(self.baud),
             conf,
+            tcp_port: self.share_enabled.then_some(self.share_port),
         })
     }
 }
@@ -284,7 +297,9 @@ pub fn is_io_failure(message: &str) -> bool {
 pub fn friendly_error(raw: &str) -> String {
     let m = raw.to_lowercase();
     let has = |words: &[&str]| words.iter().any(|w| m.contains(w));
-    if has(&["rigctld non trovato"]) {
+    if has(&["porta di condivisione"]) {
+        raw.to_string()
+    } else if has(&["rigctld non trovato"]) {
         "Manca rigctld (Hamlib): mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.".into()
     } else if has(&["already open", "access denied", "accesso negato", "occupata", "in uso", "sharing violation"]) {
         "La porta seriale e' occupata da un altro programma: chiudilo (o scegli un'altra porta) e riprova.".into()
@@ -549,6 +564,18 @@ mod tests {
     }
 
     #[test]
+    fn sharing_the_radio_fixes_the_rigctld_port_and_old_files_still_load() {
+        let mut c = ft2000();
+        assert_eq!(c.to_rigctld(Path::new("x")).expect("config").tcp_port, None, "senza condivisione la porta e' a caso");
+        c.share_enabled = true;
+        assert_eq!(c.to_rigctld(Path::new("x")).expect("config").tcp_port, Some(4532));
+        c.share_port = 4600;
+        assert_eq!(c.to_rigctld(Path::new("x")).expect("config").tcp_port, Some(4600));
+        let old: RigConfig = serde_json::from_str(r#"{"model":1029,"port":"COM3"}"#).expect("file vecchio");
+        assert!(!old.share_enabled && old.share_port == DEFAULT_SHARE_PORT);
+    }
+
+    #[test]
     fn invalid_values_are_refused_with_a_code() {
         let bad = |edit: fn(&mut RigConfig)| {
             let mut c = ft2000();
@@ -562,6 +589,8 @@ mod tests {
         assert_eq!(bad(|c| c.data_bits = 9), "bad_serial");
         assert_eq!(bad(|c| { c.ptt = PttMethod::Dtr; c.port.clear(); c.ptt_port.clear(); }), "bad_ptt");
         assert_eq!(bad(|c| c.rig_name = "x".repeat(81)), "bad_rig_name");
+        assert_eq!(bad(|c| c.share_port = 80), "bad_share_port");
+        assert_eq!(bad(|c| c.share_port = 0), "bad_share_port");
         assert!(RigConfig::default().to_rigctld(Path::new("x")).is_err(), "senza modello non si collega");
         assert_eq!(ft2000().effective_poll_secs(), 2);
         let mut fast = ft2000();

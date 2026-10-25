@@ -348,9 +348,9 @@ export function CatTab() {
             </button>
           </div>
           <datalist id="cat-ports">
-            {(ports.data ?? []).filter((p) => !p.virtual).map((p) => (
+            {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (
               <option key={p.port} value={p.port}>
-                {p.name}
+                {p.virtual_kind === 'vspe' ? `${t('cat.port.vspe')} — ${p.name}` : p.virtual ? `${t('cat.port.virtual')} — ${p.name}` : p.name}
               </option>
             ))}
           </datalist>
@@ -462,6 +462,29 @@ export function CatTab() {
           </select>
         </label>
       </div>
+      {hamlib ? (
+        <>
+          <h3 className="set-sub">{t('cat.share')}</h3>
+          <Help>{t('cat.share.help')}</Help>
+          <Check label={t('cat.share.on')} hint={t('tip.cat.share')} checked={config.share_enabled} onChange={(v) => set({ share_enabled: v })} />
+          {config.share_enabled ? (
+            <div className="cat-grid">
+              <label className="auto-field" title={t('tip.cat.share.port')}>
+                {t('cat.share.port')}
+                <input type="number" min={1024} max={65535} value={config.share_port} onChange={(e) => set({ share_port: Number(e.target.value) })} />
+              </label>
+            </div>
+          ) : null}
+          {snap.data.status.share ? (
+            <p className="live-note" role="status">
+              {t('cat.share.where', { host: snap.data.status.share.host, port: snap.data.status.share.port })}
+            </p>
+          ) : config.share_enabled ? (
+            <Help>{t('cat.share.later')}</Help>
+          ) : null}
+          <Help>{t('cat.share.com')}</Help>
+        </>
+      ) : null}
       <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => set({ auto_connect: v })} />
 
       <div className="cmd-chips">

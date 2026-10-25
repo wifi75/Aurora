@@ -151,6 +151,7 @@ mod tests {
             mode: Some("FT8".into()),
             report_sent: Some("-08".into()),
             report_received: Some("-12".into()),
+            extra: None,
         };
         let q = to_qso(&m, 45_015_000).unwrap();
         assert_eq!((q.call.as_str(), q.grid.as_str(), q.band.as_str(), q.mode.as_str()), ("AA1AA", "FN42", "20m", "FT8"));

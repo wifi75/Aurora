@@ -12,6 +12,7 @@ import { wishStrings } from './strings/wish';
 import { catStrings } from './strings/cat';
 import { clockStrings } from './strings/clock';
 import { engineConfigStrings } from './strings/engineconfig';
+import { engineSettingsStrings } from './strings/engineset';
 import { diagnosisStrings } from './strings/diagnosis';
 import { historyStrings } from './strings/history';
 import { onlineStrings } from './strings/online';
@@ -28,7 +29,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

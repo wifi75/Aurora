@@ -3638,3 +3638,41 @@
   border-radius: 0.5rem;
   font-size: var(--text-sm);
 }
+
+/* Impostazioni di Aurora (motore proprio): gruppi come nella schermata di JTDX, voci non disponibili spente con il motivo */
+.ens-group {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.ens-group > legend {
+  padding: 0;
+}
+
+.jx-row--off {
+  opacity: 0.75;
+}
+
+.jx-row--off input {
+  cursor: not-allowed;
+}
+
+.ens-reason {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+}
+
+.ens-note {
+  color: var(--text-muted);
+}
+
+.ens-hidden {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.ens-hidden-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}

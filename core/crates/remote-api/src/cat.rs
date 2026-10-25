@@ -139,7 +139,7 @@ pub(crate) async fn cat_ports(_: Authed) -> Result<Json<Value>, CatApiError> {
     let (ports, _) = blocking(detect::read_system)
         .await?
         .map_err(|e| CatApiError { status: StatusCode::BAD_GATEWAY, code: "ports_failed", message: e.0 })?;
-    let list: Vec<Value> = ports.iter().map(|p| json!({ "port": p.port, "name": p.name, "virtual": p.virtual_port })).collect();
+    let list: Vec<Value> = ports.iter().map(|p| json!({ "port": p.port, "name": p.name, "virtual": p.virtual_port, "virtual_kind": p.virtual_kind })).collect();
     Ok(Json(json!({ "ports": list })))
 }
 
