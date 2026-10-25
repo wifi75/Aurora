@@ -7,11 +7,14 @@
 //! - [`message`]: da 77 bit al testo ("CQ DX IU3ABC IO91") e viceversa;
 //! - [`decode`]: mette tutto insieme su un periodo di 15 secondi, con piu' passate e sottrazione dei segnali gia' decodificati.
 
+pub mod ap;
 pub mod crc;
 pub mod decode;
+pub mod filters;
 pub mod ldpc;
 pub mod message;
 pub mod modem;
+pub mod subtract;
 pub mod sync;
 
 /// Campioni al secondo dell'audio: quello che usa JTDX.
