@@ -414,6 +414,14 @@ pub fn start_with_save(
                         let _ = message_events.send(Event::QsoLogged(qso));
                     }
                 }
+                // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
+                while let Ok(command) = command_rx.try_recv() {
+                    if let Some(d) = driver.as_mut() {
+                        for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
+                            tracing::info!("trasmissione: {line}");
+                        }
+                    }
+                }
                 // con Monitora spento il periodo passa senza essere decodificato
                 if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
                     if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
@@ -459,6 +467,14 @@ pub fn start_with_save(
                 }
                 if let Some(live) = &live {
                     publish(live, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &decoded);
+                }
+                // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
+                while let Ok(command) = command_rx.try_recv() {
+                    if let Some(d) = driver.as_mut() {
+                        for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
+                            tracing::info!("trasmissione: {line}");
+                        }
+                    }
                 }
                 if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
                     let dial = l.dial_hz.load(Ordering::Relaxed);
