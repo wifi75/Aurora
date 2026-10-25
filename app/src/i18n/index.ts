@@ -23,6 +23,7 @@ import { settingsStrings } from './strings/settings';
 import { stationStrings } from './strings/station';
 import { dxccStrings } from './strings/dxcc';
 import { dxccSetStrings } from './strings/dxccset';
+import { cqPrefsStrings } from './strings/cqprefs';
 import { statsStrings } from './strings/stats';
 import { wikiStrings } from './strings/wiki';
 import { wikiNewStrings } from './strings/wikinew';
@@ -35,7 +36,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings, ...jtdxTabStrings, ...audioSetStrings, ...layoutStrings, ...soundStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings, ...jtdxTabStrings, ...audioSetStrings, ...layoutStrings, ...soundStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

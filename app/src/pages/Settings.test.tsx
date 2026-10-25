@@ -255,7 +255,7 @@ describe('Filters', () => {
     expect(useFilters.getState().filters.only).toBe('cq');
     fireEvent.click(screen.getByLabelText(it_('fil.nonStandard')));
     expect(useFilters.getState().filters.hideNonStandard).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: it_('set.reset') }));
+    fireEvent.click(screen.getAllByRole('button', { name: it_('set.reset') })[0]!);
     expect(useFilters.getState().filters).toEqual(defaultFilters());
   });
 });

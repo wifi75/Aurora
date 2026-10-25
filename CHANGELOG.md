@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+- **«CQ e novità» personalizzabile** (Impostazioni -> Filtri): scegli i tipi di messaggio elencati, le sole stazioni da elencare (JA*, EA8AA...), quelle da non elencare mai e il numero massimo di righe; le scelte restano al riavvio.
+- **Suoni una volta sola per indicativo**: una stazione fa suonare una notifica la prima volta che entra nelle regole, poi mai piu' (anche se ritrasmette o cambia funzione); una stazione nuova suona di nuovo.
+- **Pannello Comandi compatto**: tutto in un unico flusso, controlli piu' piccoli e spazi minimi.
+- **Attivita' di banda**: la linea verticale prima del blocco etichette e' sottile e uguale anche nelle righe senza etichetta.
+
 ## 0.11.17 - 2026-10-25
 - **Suoni una volta sola per stazione**: una stazione che ha gia' fatto suonare una funzione non la fa suonare di nuovo per 10 minuti, anche se ritrasmette.
 - **QSO gia' lavorati** barrati con una linea unica da bordo a bordo, anche negli spazi vuoti; linee verticali delle colonne a colore pieno, uguali su tutte le righe.

@@ -1,4 +1,5 @@
 import { useT, type Key } from '../i18n';
+import { CQ_TAGS, useCqPrefs } from '../lib/cqPrefs';
 import { CONTINENTS, useFilters, type OnlyMode } from '../lib/filters';
 import { Check, Help } from './common';
 import { Actions, Cells, Field, Group, Notes, Page } from './layout';
@@ -17,6 +18,9 @@ export function FiltersTab() {
   const t = useT();
   const filters = useFilters((s) => s.filters);
   const set = useFilters.getState().set;
+  const cq = useCqPrefs((s) => s.prefs);
+  const setCq = useCqPrefs.getState().set;
+  const csv = (text: string) => text.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
   const toggleContinent = (code: string) =>
     set({ hideContinents: filters.hideContinents.includes(code) ? filters.hideContinents.filter((c) => c !== code) : [...filters.hideContinents, code] });
   return (
@@ -60,6 +64,30 @@ export function FiltersTab() {
             </select>
           </Field>
         </Cells>
+      </Group>
+      <Group title={t('cqp.title')} span={3}>
+        <Cells min={13}>
+          {CQ_TAGS.map((tag) => (
+            <Check key={tag} label={t(`kind.${tag}` as Key)} checked={cq.tags[tag]} onChange={(v) => setCq({ tags: { ...cq.tags, [tag]: v } })} />
+          ))}
+        </Cells>
+        <Cells min={20}>
+          <Field label={t('cqp.only')} stack>
+            <input type="text" value={cq.only.join(', ')} onChange={(e) => setCq({ only: csv(e.target.value) })} />
+          </Field>
+          <Field label={t('cqp.hide')} stack>
+            <input type="text" value={cq.hide.join(', ')} onChange={(e) => setCq({ hide: csv(e.target.value) })} />
+          </Field>
+          <Field label={t('cqp.limit')} stack>
+            <input type="number" min={5} max={200} value={cq.limit} onChange={(e) => setCq({ limit: Math.min(200, Math.max(5, Number(e.target.value) || 40)) })} />
+          </Field>
+        </Cells>
+        <Actions>
+          <button type="button" className="glass" onClick={() => useCqPrefs.getState().reset()}>
+            {t('set.reset')}
+          </button>
+        </Actions>
+        <Help>{t('cqp.help')}</Help>
       </Group>
       <Notes span={3}>
         <Help>{t('fil.help')}</Help>
