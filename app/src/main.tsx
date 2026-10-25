@@ -29,11 +29,8 @@ async function start() {
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }
-  // senza un indirizzo preciso si riparte dall'ultima pagina aperta
-  const { lastPageToRestore } = await import('./lib/lastPage');
-  const { browserStorage } = await import('./lib/theme');
-  const restore = lastPageToRestore(browserStorage(), location.hash);
-  if (restore) history.replaceState(null, '', restore);
+  // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fa eccezione solo il collegamento di associazione del telefono
+  if (!location.hash.startsWith('#/associa') && !location.hash.startsWith('#/pair')) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
   const { Splash } = await import('./components/Splash');
