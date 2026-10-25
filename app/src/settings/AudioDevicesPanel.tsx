@@ -65,7 +65,7 @@ function DeviceSelect({
   const isDefault = value.toLowerCase() === systemDefault.toLowerCase();
   const known = isDefault || value === '' || list.some((d) => d.name.toLowerCase() === value.toLowerCase());
   return (
-    <Field label={label} hint={tip}>
+    <Field label={label} hint={tip} stack>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         {allowUnset && value === '' ? <option value="">{t('aud.unset')}</option> : null}
         <option value={systemDefault}>{defaultName ? t('aud.default', { name: defaultName }) : t('aud.defaultPlain')}</option>
