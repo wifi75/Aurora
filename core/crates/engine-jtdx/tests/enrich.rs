@@ -4,7 +4,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use aurora_core::{Bus, DecodeTag, Engine, EngineIo, Event};
 use dxcc::DxccDb;
-use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock};
+use engine_jtdx::{worked::{HighlightFlags, WorkedLog}, JtdxConfig, JtdxEngine, SystemClock};
 use tokio::{net::UdpSocket, sync::broadcast, time::timeout};
 use udp_bridge::{wire::Writer, MAGIC};
 use udp_hub::{Hub, HubConfig};
@@ -14,6 +14,8 @@ Atlantis:                 14:  27:  EU:   43.00:    -7.00:    -1.0:  AT:
     AT,AU,AT5(15)[30];
 Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
     LM,LMA,LMB;
+Utopia:                   14:  27:  EU:   44.00:    -8.00:    -1.0:  UT:
+    UT;
 ";
 
 struct Rig {
@@ -24,13 +26,17 @@ struct Rig {
 }
 
 async fn rig(adif: &str) -> Rig {
+    rig_flags(adif, HighlightFlags::all_on()).await
+}
+
+async fn rig_flags(adif: &str, flags: HighlightFlags) -> Rig {
     let db = Arc::new(DxccDb::parse(CTY).unwrap());
     let worked = WorkedLog::from_adif(adif, &db);
     let hub = Arc::new(Hub::start(HubConfig { listen: "127.0.0.1:0".parse().unwrap(), forward: vec![] }).await.unwrap());
     let bus = Bus::new(1024);
     let events = bus.subscribe_events();
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands: bus.take_command_rx().unwrap() };
-    let engine = JtdxEngine::new(Arc::clone(&hub), JtdxConfig::default(), Arc::new(SystemClock)).with_enrichment(db, worked);
+    let engine = JtdxEngine::new(Arc::clone(&hub), JtdxConfig::default(), Arc::new(SystemClock)).with_enrichment(db, worked).with_highlight_flags(Arc::new(std::sync::RwLock::new(flags)));
     tokio::spawn(engine.run(io));
     let jtdx = UdpSocket::bind("127.0.0.1:0").await.unwrap();
     // il Rig tiene vivo il bus finche' vive
@@ -119,14 +125,17 @@ const ADIF_ATLANTIS_15M: &str = "<CALL:5>AT3AB<BAND:3>15m<GRIDSQUARE:4>FN42<EOR>
 async fn cq_from_a_never_worked_country_is_new_dxcc_with_country() {
     let mut r = rig(ADIF_ATLANTIS_15M).await;
     r.on_15m().await;
-    let (tag, country) = r.decode("CQ LM1XY KK00", 100).await;
+    // Utopia ha le stesse zone CQ e ITU di Atlantis: resta nuovo il paese (la zona CQ verrebbe prima, come in JTDX)
+    let (tag, country) = r.decode("CQ UT1XY KK00", 100).await;
     assert_eq!(tag, Some(DecodeTag::NewDxcc));
-    assert_eq!(country.as_deref(), Some("Lemuria"));
+    assert_eq!(country.as_deref(), Some("Utopia"));
 }
 
 #[tokio::test]
 async fn same_country_on_another_band_is_new_band() {
-    let mut r = rig("<CALL:5>AT3AB<BAND:3>20m<GRIDSQUARE:4>FN42<EOR>\n").await;
+    // solo il paese (con «per banda»): con le zone accese la zona CQ verrebbe prima, come in JTDX
+    let dxcc = HighlightFlags { dxcc: engine_jtdx::worked::Criterion::new(true, true, false), ..HighlightFlags::none() };
+    let mut r = rig_flags("<CALL:5>AT3AB<BAND:3>20m<GRIDSQUARE:4>FN42<EOR>\n", dxcc).await;
     r.on_15m().await;
     let (tag, country) = r.decode("CQ AT9ZZ FN42", 100).await;
     assert_eq!(tag, Some(DecodeTag::NewDxccBand));
@@ -154,7 +163,7 @@ async fn new_zone_then_new_grid_for_cq_calls() {
 async fn a_reply_between_other_stations_is_tagged_only_for_dxcc_level_news() {
     let mut r = rig(ADIF_ATLANTIS_15M).await;
     r.on_15m().await;
-    assert_eq!(r.decode("BB2BB LM1XY -10", 100).await.0, Some(DecodeTag::NewDxcc), "paese nuovo");
+    assert_eq!(r.decode("BB2BB LM1XY -10", 100).await.0, Some(DecodeTag::NewZone), "zona CQ nuova: viene prima del paese, come in JTDX");
     // nuova griglia, ma e' un messaggio tra altre stazioni: nessuna etichetta
     assert_eq!(r.decode("BB2BB AT9ZZ KK00", 101).await.0, None);
 }
@@ -163,7 +172,7 @@ async fn a_reply_between_other_stations_is_tagged_only_for_dxcc_level_news() {
 async fn a_logged_qso_updates_the_novelty_immediately() {
     let mut r = rig(ADIF_ATLANTIS_15M).await;
     r.on_15m().await;
-    assert_eq!(r.decode("CQ LM1XY KK00", 100).await.0, Some(DecodeTag::NewDxcc));
+    assert_eq!(r.decode("CQ LM1XY KK00", 100).await.0, Some(DecodeTag::NewZone), "zona CQ nuova: viene prima del paese");
     r.send(&qso_packet("LM1XY", "KK00", 21_074_000)).await;
     // aspetta l'evento del QSO
     loop {

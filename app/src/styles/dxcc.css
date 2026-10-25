@@ -276,3 +276,74 @@
     width: 2.4rem;
   }
 }
+
+/* Pannello Log: in alto il log di Log4OM2, sotto la scheda DXCC */
+.log-dxcc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.log-dxcc-top {
+  flex: 1 1 42%;
+  min-height: 9rem;
+  overflow: auto;
+}
+
+.log-dxcc-bottom {
+  flex: 1 1 58%;
+  min-height: 0;
+  overflow: auto;
+  border-top: var(--border-width) solid var(--border);
+}
+
+/* Nel pannello Log, che e' stretto: etichette e matrice in piccolo, senza andare a capo */
+@container (max-width: 34rem) {
+  .dxcc-card--panel {
+    gap: var(--space-2);
+    padding: var(--space-1);
+  }
+
+  .dxcc-card--panel .dxcc-label {
+    padding: 0 var(--space-1);
+    font-size: 0.66rem;
+    white-space: nowrap;
+    line-height: 1.5rem;
+  }
+
+  .dxcc-card--panel .dxcc-caption {
+    font-size: 0.58rem;
+  }
+
+  .dxcc-card--panel .dxcc-grid {
+    border-spacing: 2px;
+  }
+
+  .dxcc-card--panel .dxcc-cell {
+    height: 1.35rem;
+    font-size: 0.62rem;
+  }
+
+  .dxcc-card--panel .dxcc-band {
+    font-size: 0.56rem;
+  }
+
+  .dxcc-card--panel .dxcc-total {
+    width: 2.4rem;
+    font-size: var(--text-sm);
+  }
+
+  .dxcc-card--panel .dxcc-row {
+    font-size: 0.7rem;
+  }
+
+  .dxcc-card--panel .dxcc-legend {
+    display: none;
+  }
+
+  .dxcc-card--panel .dxcc-view .glass {
+    min-height: 1.5rem;
+    padding: 0 var(--space-2);
+  }
+}

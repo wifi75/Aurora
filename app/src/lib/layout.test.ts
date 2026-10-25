@@ -11,19 +11,19 @@ describe('layout', () => {
   it('starts like the old one: all the stations on the left with the waterfall under them', () => {
     const l = defaultLayout();
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
-    expect(l.right).toEqual(['cluster', 'station', 'tx', 'dxcc', 'cq']);
+    expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);
   });
 
   it('moves a panel to another zone at a position, keeping every panel exactly once', () => {
     const l = movePanel(defaultLayout(), 'cq', 'left', 0);
     expect(l.left).toEqual(['cq', 'all', 'log', 'waterfall']);
-    expect(l.right).toEqual(['cluster', 'station', 'tx', 'dxcc']);
+    expect(l.right).toEqual(['cluster', 'station', 'tx']);
   });
 
   it('reorders inside the same zone and clamps the position', () => {
-    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['cluster', 'tx', 'station', 'dxcc', 'cq']);
-    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['cluster', 'tx', 'dxcc', 'cq', 'station']);
-    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'cluster', 'station', 'tx', 'dxcc', 'cq']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 2).right).toEqual(['cluster', 'tx', 'station', 'cq']);
+    expect(movePanel(defaultLayout(), 'station', 'right', 99).right).toEqual(['cluster', 'tx', 'cq', 'station']);
+    expect(movePanel(defaultLayout(), 'all', 'right', -5).right).toEqual(['all', 'cluster', 'station', 'tx', 'cq']);
   });
 
   it('puts the waterfall below everything else', () => {
@@ -33,7 +33,7 @@ describe('layout', () => {
 
   it('lets a zone stay empty', () => {
     let l = defaultLayout();
-    for (const id of ['cluster', 'station', 'tx', 'dxcc', 'cq'] as const) l = movePanel(l, id, 'left', 0);
+    for (const id of ['cluster', 'station', 'tx', 'cq'] as const) l = movePanel(l, id, 'left', 0);
     expect(l.right).toEqual([]);
   });
 
@@ -83,7 +83,7 @@ describe('layout saved before the Log window existed', () => {
     const old = { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
     const l = readLayout(memory({ 'aurora-layout': JSON.stringify(old) }));
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
-    expect(l.right).toEqual(['cluster', 'station', 'tx', 'dxcc', 'cq']);
+    expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);
   });
 });
 
@@ -91,20 +91,20 @@ describe('layout saved before the DX Cluster window existed', () => {
   it('puts the DX Cluster window on the left of the commands, in the same column', () => {
     const old = { left: ['all', 'log', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
     const l = readLayout(memory({ 'aurora-layout': JSON.stringify(old) }));
-    expect(l.right).toEqual(['cluster', 'station', 'tx', 'dxcc', 'cq']);
+    expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
     expect(l.heights.cluster).toBe(340);
   });
 
   it('puts it at the top of the column when the commands were moved elsewhere', () => {
     const old = { left: ['all', 'log', 'waterfall', 'station'], right: ['tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
-    expect(readLayout(memory({ 'aurora-layout': JSON.stringify(old) })).right).toEqual(['cluster', 'tx', 'dxcc', 'cq']);
+    expect(readLayout(memory({ 'aurora-layout': JSON.stringify(old) })).right).toEqual(['cluster', 'tx', 'cq']);
   });
 
   it('adds both new windows to a layout that is older than both', () => {
     const old = { left: ['all', 'waterfall'], right: ['station', 'tx', 'cq'], heights: {}, split: 0.6, collapsed: [] };
     const l = readLayout(memory({ 'aurora-layout': JSON.stringify(old) }));
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
-    expect(l.right).toEqual(['cluster', 'station', 'tx', 'dxcc', 'cq']);
+    expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);
   });
 });

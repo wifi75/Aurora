@@ -103,6 +103,14 @@ impl JtdxEngine {
         self
     }
 
+    /// Le evidenziazioni di «nuovo» (scheda Notifiche) condivise con chi le cambia; senza, valgono quelle di fabbrica di JTDX.
+    pub fn with_highlight_flags(mut self, flags: enrich::SharedFlags) -> Self {
+        if let Some(e) = self.enrichment.take() {
+            self.enrichment = Some(e.with_flags(flags));
+        }
+        self
+    }
+
     /// Come `with_enrichment`, con i QSO gia' fatti condivisi (la scheda DXCC e l'importazione del log li aggiornano).
     pub fn with_shared_enrichment(mut self, db: Arc<DxccDb>, worked: enrich::SharedWorked) -> Self {
         self.enrichment = Some(Enrichment::with_shared(db, worked));
@@ -120,6 +128,8 @@ struct State {
     enrichment: Option<Enrichment>,
     /// Banda corrente, dall'ultima frequenza comunicata da JTDX.
     band: Option<&'static str>,
+    /// Modo corrente (FT8, FT4...), dall'ultimo `Status`: serve alle evidenziazioni «per modo».
+    mode: Option<String>,
 }
 
 fn message_id(m: &Message) -> Option<String> {
@@ -138,7 +148,7 @@ fn message_id(m: &Message) -> Option<String> {
 impl Engine for JtdxEngine {
     async fn run(self, mut io: EngineIo) {
         let JtdxEngine { hub, config, clock, mut datagrams, enrichment } = self;
-        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None, saved_peer: None, enrichment, band: None };
+        let mut state = State { store: DecodeStore::new(), ident: None, last_peer: None, saved_peer: None, enrichment, band: None, mode: None };
         if let Some(path) = &config.peer_cache
             && let Some((addr, id, schema)) = std::fs::read_to_string(path).ok().as_deref().and_then(decode_peer)
         {
@@ -208,6 +218,7 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
         Message::Status(s) => {
             state.band = if s.dial_freq > 0 { band_of(s.dial_freq) } else { None };
             let mut status = to_status(&s);
+            state.mode = Some(status.mode.clone()).filter(|m| !m.trim().is_empty());
             status.own_continent = state.enrichment.as_ref().and_then(|e| e.continent_of(&status.de_call));
             let _ = io.events.send(Event::Status(status));
         }
@@ -219,7 +230,7 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
             let id = state.store.insert(d.clone(), clock.now_ms());
             let mut message = to_decoded(id, &d);
             if let Some(enrichment) = &state.enrichment {
-                let found = enrichment.annotate(&message.text, state.band);
+                let found = enrichment.annotate_in(&message.text, state.band, state.mode.as_deref());
                 message.country = found.country;
                 message.continent = found.continent;
                 message.tag = found.tag;

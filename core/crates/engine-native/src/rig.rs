@@ -52,6 +52,9 @@ impl SavedControls {
     pub const VERSION: u32 = 1;
 }
 
+/// Chi viene avvisato quando cambia l'attenuazione.
+type AttenuationHook = Arc<dyn Fn(u32) + Send + Sync>;
+
 /// Lo stato dei pulsanti: il decoder lo legge a ogni periodo.
 pub struct NativeControls {
     /// Monitora: con ascolto spento non si decodifica (e lo stato dice che non si sta decodificando). Di base acceso.
@@ -82,7 +85,9 @@ pub struct NativeControls {
     /// STOP TX immediato (vedi `set_halt_now`).
     halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
     /// Cosa fare quando il livello di uscita cambia (portarlo subito al dispositivo, anche a trasmissione in corso).
-    attenuation_hook: Mutex<Option<Arc<dyn Fn(u32) + Send + Sync>>>,
+    attenuation_hook: Mutex<Option<AttenuationHook>>,
+    /// Le impostazioni della scheda Sequenza (contatori, «ferma se risponde a un altro», CQ rigoroso, watchdog): le legge la trasmissione quando parte e a ogni cambio.
+    sequence: Mutex<Option<crate::tx::SequenceSettings>>,
 }
 
 /// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
@@ -95,7 +100,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None) }
     }
 }
 
@@ -162,8 +167,22 @@ impl NativeControls {
         self.notify_attenuation(tenths);
     }
 
+    /// Le impostazioni di Sequenza date da Aurora (`None` finche' nessuno le ha date: valgono quelle di fabbrica della sequenza).
+    pub fn sequence(&self) -> Option<crate::tx::SequenceSettings> {
+        self.sequence.lock().ok().and_then(|s| s.clone())
+    }
+
+    /// Cambia le impostazioni di Sequenza: la trasmissione le usa subito (se e' gia' partita) o appena parte.
+    pub fn set_sequence(&self, settings: crate::tx::SequenceSettings) {
+        if let Ok(mut slot) = self.sequence.lock() {
+            *slot = Some(settings.clone());
+        }
+        // senza trasmissione (nessun motore ancora) basta averle ricordate: `TxDriver::with_options` le legge all'avvio
+        let _ = self.send(TxCommand::Option(OptionChange::Sequence(settings)));
+    }
+
     /// Chi porta il livello di uscita al dispositivo (lo imposta chi ha la catena di trasmissione).
-    pub fn set_attenuation_hook(&self, hook: Arc<dyn Fn(u32) + Send + Sync>) {
+    pub fn set_attenuation_hook(&self, hook: AttenuationHook) {
         if let Ok(mut slot) = self.attenuation_hook.lock() {
             *slot = Some(hook);
         }
@@ -194,7 +213,6 @@ impl NativeControls {
                 let level = *level;
                 drop(memory);
                 self.notify_attenuation(level);
-                return;
             }
             None => {
                 memory.levels.insert(key, self.attenuation.load(Ordering::Relaxed));

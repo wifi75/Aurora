@@ -263,3 +263,45 @@ da Tx2, con il rapporto che si aggiorna a ogni periodo); `Reply` UDP = stesso pe
 ### Da verificare ancora
 
 Esecuzione reale di FIN/S73 con Autolog (letta nel sorgente, non provata in aria); la logica riga per riga di `ft8s`, `ft8sd`, `ft8mf1`, `ft8mfcq`; il modo Hound; il motivo di `count = 1` per i CQ diretti.
+
+
+## Verifica del 2026-10-25 (seconda parte): sequenza, contatori, avvio tardivo e banda satura
+
+Il sequenziatore di Aurora (`core/crates/qso-native`) e' stato riscritto come copia fedele di JTDX e verificato punto per punto sul binario 2.2.159 (indirizzi tra parentesi) oltre che sul sorgente pubblico.
+Qui sotto: per ogni regola se **coincide**, e' stata **corretta** o **non e' verificabile**.
+
+### Come e' fatto ora
+
+- `history.rs` e' `QsoHistory` (`qsohistory.cpp`): 17 stati, tabella per nominativo base, `message()` per i messaggi ricevuti (R) e inviati (S), `autoseq_call`/`autoseq_pick` con i tre blocchi A (risposte al mio CQ nell'ultimo
+  periodo), B (entro 300 s dal mio ultimo CQ), C (CQ degli altri, solo AutoSeq 6/7) e i flag 1, 16, 32, 64, 128, 256. Gli orari sono secondi del giorno (u32, `wrapping_sub`).
+- `classify.rs` e' `displayDecodedText` / `displayTransmittedText`; `sequencer.rs` e' `readFromStdout`, `process_Auto` e il pezzo di `guiUpdate` che sceglie e avvia il messaggio.
+- Differenze volute rispetto al sorgente: il continente sconosciuto (`??`) lascia passare i filtri di direzione del CQ; gli orari sono secondi del giorno; la prova della parita' del periodo usa il periodo di decodifica
+  voluto, non l'orario di avvio del decodificatore (nel binario quel confronto si comporta in modo strano); l'ordine di scansione e' quello di una `BTreeMap`.
+
+### Regola per regola
+
+| Regola | Esito | Prova nel binario | Nel codice |
+|---|---|---|---|
+| Registro del QSO al primo 73/RR73 trasmesso; RRR non conta; guardia anti-doppione di 2 periodi | **coincide** | `guiUpdate` `0x4c4350` (`m_sentFirst73`) | `log_qso`, test `scenari.rs` |
+| Autolog: Tx fermo a FIN/S73; senza Autolog il DX e' liberato dopo l'RR73 se `tx == 1` o il DX e' lontano dalla nostra frequenza | **coincide** | `process_Auto` `0x47d3e0` | `auto_stop_tx`, `with_autolog_the_transmission_stops_at_the_end_of_the_qso` |
+| Contatori (AnswerCQ, AnswerInCall, SentRReport, SentRR7373): contano le trasmissioni, la (N+1)-esima non parte | **coincide** | `process_Auto` | `process_auto`; di fabbrica Aurora usa la configurazione del proprietario (spenti, spenti, 5, 5), i valori di fabbrica di JTDX (2/3/5/4) sono `RepeatLimits::jtdx_factory_values()` |
+| AnswerCQ non vale per i desiderati (priorita' 2-4 e da 17) se non c'e' `StrictDirectionalCQ` | **coincide** | `process_Auto` | `regole_jtdx.rs` |
+| Pausa per stazione (`m_counter`) e `calllist` (5 minuti salvo SNR migliore) | **coincide** | `process_Auto` | `history.rs`, `regole_jtdx.rs` |
+| Passaggio automatico a Tx6/CQ quando un contatore libera il DX; `m_reply_other`, `m_reply_me`, `m_reply_CQ73` | **coincide** | `process_Auto` | test dedicati |
+| Livelli AutoSeq 0, 1, 2, 3, 6, 7 (CallMode e CallPriorityCQ) | **coincide** | `process_Auto`, `guiUpdate` | test per i livelli 0/1/3/7 |
+| Banda di guardia (FT8 51 Hz, FT4 84) e Tx fermo se il DX parla con altri entro la banda o sempre con `SeqHaltTxReplyOther` | **coincide** | `readFromStdout` `0x63c0a0` | `halt_tx_reason`, `Options.guard_hz` |
+| Watchdog: conta i minuti UTC solo se l'ultimo Tx e' finito da non oltre 32 s (FT8) / 16 s (FT4); azzerato da un messaggio nuovo, da RCALL/RREPORT e dall'attivita' dell'utente | **coincide** | `txwatchdog`, `eventFilter` | `advance_clock`, test `user_activity` |
+| Avvio tardivo: finestra 13,64 s (FT8) / 6,04 s (FT4); si trasmette la **coda** (`m_ic = (mstr - 500) * 48`); `m_restart` -> «Retransmitting» | **coincide** | `guiUpdate` `0x4c4350`, `Modulator` `0x6401f0`/`0x640050` | `tx-native` (`max_late`, `cut_head`, `Transmitter::replace`), `Tx.retransmit`, riga `Retransmitting` in `ALL.TXT` |
+| Hound (modo DXpedition): oltre 3 ripetizioni di R+rapporto, RRR73 = log e Tx fermo, mai CQ | **coincide** per le parti lette; **non verificabile** il resto | `process_Auto`, `readFromStdout` | `Options.hound`, test dedicato; resta minimo |
+| Scelta di chi chiamare con le priorita' 0-31 e le regole di sorpasso | **coincide** | `displayDecodedText` `0x4eb170`, `autoseq` `0x494220` | `history.rs`; le priorita' arrivano dal registro (`caller_info_provider` in `engine-native/src/lib.rs`, senza LoTW) |
+| Doppio clic con QuickCall (AutoTX) accende Abilita Tx | **coincide** | sez. 11.8 | `TxDriver::handle` |
+| Esc, Invia, AutoSeq con testo libero, `split`/`pbTxLock` | **corretto** | sez. 11.8 di `analisi-jtdx-reverse-rea.md` | vedi la tabella li' |
+| «Best caller first» (Decodium 1.0.711): SNR limitato a [-24, 10] -> (snr+24)*30/34; attesa fino a 90 s -> 0..20; DXCC nuovo +40 o nuovo su banda +25; gia' lavorato su banda -35, altrove -12; fissato = 1000; ordinamento stabile, tolleranza 1e-9 | **coincide** con le costanti del binario 1.0.711 | `analisi-decodium-banda-satura.md` | `score.rs`; scelta per punteggio con `Options.caller_selection = BestCallerFirst` (blocchi A e B; il blocco C resta di JTDX) |
+| Tx in zona libera (regola A) | **non esiste ne' in JTDX ne' in Decodium** (nessuna stringa, nessun confronto con le frequenze sentite) | ricerca di stringhe e riferimenti su entrambi i binari | **funzione nuova** (`freefreq.rs`, `TxDriver::set_free_tx`): spenta di base (variabile `AURORA_FREE_TX=1`), solo con Split acceso, solo all'inizio di un QSO nostro e dopo due trasmissioni senza risposta, mai a QSO avviato |
+
+### Cosa resta
+
+- Regole G (falsi: conferma per ripetizione e per distanza), H (Auto Call su CQ comuni), K (cadenza del CQ), L (Multi Answer Mode e CQ paralleli) di `docs/analisi-decodium-banda-satura.md`: **non realizzate**; non sono comportamenti di JTDX.
+- LoTW nelle priorita' (31, 29, ...): Aurora non lo conosce.
+- La logica riga per riga di `ft8s`, `ft8sd`, `ft8mf1`, `ft8mfcq` e il motivo di `count = 1` per i CQ diretti restano **non verificabili** dall'esterno.
+- La prova in aria (avvio tardivo, ritrasmissione, FIN con Autolog) la fa il proprietario: nei test c'e' un orologio finto, non una radio.

@@ -178,6 +178,8 @@ pub struct Options {
     pub my_prefix: String,
     /// Modo Hound (DXpedition): niente Salta Tx1, niente CQ, la chiusura e' l'RR73 della spedizione.
     pub hound: bool,
+    /// Come si sceglie tra piu' chiamanti.
+    pub caller_selection: CallerSelection,
 }
 
 impl Default for Options {
@@ -211,6 +213,7 @@ impl Default for Options {
             my_continent: String::new(),
             my_prefix: String::new(),
             hound: false,
+            caller_selection: CallerSelection::Jtdx,
         }
     }
 }
@@ -243,6 +246,25 @@ pub struct CallerInfo {
     /// Priorita' 0-31 come `displayDecodedText`: 30-31 nuova zona CQ, 28-29 su banda, 26-27 zona ITU, 24-25 su banda, 22-23 nuovo DXCC, 20-21 su banda,
     /// 15-16 locatore, 13-14 su banda, 11-12 prefisso, 9-10 su banda, 7-8 nominativo, 5-6 su banda; i desiderati valgono 2-4 e 17-19; 0 = niente di nuovo.
     pub priority: u8,
+    /// Il paese non e' mai stato lavorato (per «Best caller first»).
+    pub dxcc_new: bool,
+    /// Il paese e' stato lavorato, ma non su questa banda.
+    pub dxcc_new_band: bool,
+    /// La stazione e' gia' stata lavorata su questa banda.
+    pub worked_band: bool,
+    /// La stazione e' stata lavorata su un'altra banda o in altri giorni.
+    pub worked_elsewhere: bool,
+}
+
+/// Come si sceglie tra piu' chiamanti (blocchi A e B di `QsoHistory::autoseq`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CallerSelection {
+    /// Le regole di JTDX: priorita' 0-31, chi ha chiamato direttamente batte chi manda solo RRR/RR73, poi il segnale migliore.
+    #[default]
+    Jtdx,
+    /// «Best caller first» di Decodium 1.0.711: segnale (0-30 punti), attesa (0-20), DXCC nuovo (+40 o +25), gia' lavorato (-35 o -12); a parita' chi e'
+    /// arrivato prima. Vedi [`crate::score`].
+    BestCallerFirst,
 }
 
 /// A che punto e' la sequenza (le fasi di `m_QSOProgress` di JTDX).
