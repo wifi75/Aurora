@@ -100,6 +100,14 @@ export function DxccTab() {
 
   return (
     <Page>
+      <Group title={t('dxs.guide.title')} span={3}>
+        <ul className="dxs-guide">
+          {(['what', 'labels', 'grid', 'bands', 'colors'] as const).map((k) => (
+            <li key={k}>{t(`dxs.guide.${k}` as Key)}</li>
+          ))}
+        </ul>
+      </Group>
+
       <Group title={t('dxs.preview')} span={2} rows={2}>
         <div className="dxcc-set-preview">
           <div className={`dxcc-card dxcc-card--panel${prefs.compact ? ' dxcc-card--compact' : ''}`}>
