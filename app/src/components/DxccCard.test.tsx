@@ -91,7 +91,7 @@ describe('DxccCard', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Totali' }));
     const grid = screen.getByRole('table', { name: /Scheda DXCC/ });
     expect(within(within(grid).getByRole('row', { name: /FT8/ })).getAllByRole('cell')[5]).toHaveTextContent('250');
-    await userEvent.type(screen.getByRole('textbox', { name: 'Prova un nominativo' }), 'k1abc');
+    await userEvent.type(screen.getByRole('textbox', { name: 'Prova' }), 'k1abc');
     await waitFor(() => expect(vi.mocked(getDxccMatrix)).toHaveBeenCalledWith(expect.objectContaining({ call: 'K1ABC', grid: undefined, compact: true })));
   });
 

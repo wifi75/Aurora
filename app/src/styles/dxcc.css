@@ -92,6 +92,36 @@
   overflow-wrap: anywhere;
 }
 
+.dxcc-card--panel .dxcc-subject {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+}
+
+.dxcc-card--panel .dxcc-subject-call {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dxcc-flag {
+  width: 1.5em;
+  height: 1.1em;
+  margin-right: 0.4rem;
+  border-radius: 2px;
+  vertical-align: -0.1em;
+}
+
+/* nel pannello il campo per provare un nominativo e' piccolo: non deve rubare spazio alla stazione */
+.dxcc-card--panel .dxcc-try {
+  flex: 0 0 6.5rem;
+  width: 6.5rem;
+  min-width: 0;
+  max-width: 6.5rem;
+  min-height: 1.6rem;
+  font-size: 0.8rem;
+}
+
 .dxcc-try {
   flex: 1 1 11rem;
   max-width: 16rem;

@@ -16,6 +16,7 @@ import {
   type DxccQuery,
   type LabelId,
 } from '../lib/dxccCard';
+import { flagCode } from '../lib/flags';
 import { emptyMatrix } from '../lib/dxccSample';
 import { cellStyle, labelStyle, useDxccPrefs } from '../lib/dxccPrefs';
 import { useStation } from '../state/station';
@@ -150,7 +151,9 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
   const subjectRow = (
     <div className="dxcc-subject">
       <span className="data dxcc-subject-call">
-        {t('dxcc.station')}: <strong>{s ? s.call : chosen || t('dxcc.none')}</strong>
+        {panel ? null : <>{t('dxcc.station')}: </>}
+        {s && panel && flagCode(s.country) ? <span className={`fi fi-${flagCode(s.country)} dxcc-flag`} aria-hidden="true" /> : null}
+        <strong>{s ? s.call : chosen || (panel ? '—' : t('dxcc.none'))}</strong>
         {s ? <span className="muted"> · {s.country ?? t('dxcc.unknownCountry')}</span> : null}
       </span>
       {prefs.tryField ? (
