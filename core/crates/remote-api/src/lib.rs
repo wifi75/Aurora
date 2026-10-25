@@ -38,6 +38,22 @@ pub type DxccProvider = Arc<dyn Fn(&str) -> Option<serde_json::Value> + Send + S
 /// Applica modifiche alle impostazioni di JTDX (chiude JTDX, scrive il suo file, lo riavvia).
 pub type JtdxApplier = Arc<dyn Fn(std::collections::BTreeMap<String, String>) -> Result<(), String> + Send + Sync>;
 pub type StatsProvider = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
+/// Di quale stazione la scheda DXCC deve dire le etichette (tutti i campi sono facoltativi).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct MatrixQuery {
+    pub call: Option<String>,
+    pub grid: Option<String>,
+    pub band: Option<String>,
+    pub mode: Option<String>,
+    /// Senza l'elenco dei paesi: per chi vuole solo i totali e le etichette di una stazione.
+    pub compact: bool,
+}
+/// La scheda DXCC (matrice paese x banda x modo, contatori e, per una stazione, le sei etichette) dal log interno e dai log esterni.
+pub type DxccMatrixProvider = Arc<dyn Fn(MatrixQuery) -> Result<serde_json::Value, String> + Send + Sync>;
+/// Nominativo, locatore e potenza di chi opera, per i record ADIF esportati (possono cambiare a programma acceso).
+pub type LogStationProvider = Arc<dyn Fn() -> logbook::adif::Station + Send + Sync>;
+/// Chiamato dopo che il log interno e' cambiato in blocco (importazione): chi tiene in memoria i QSO gia' fatti li rilegge.
+pub type LogChangedHook = Arc<dyn Fn() + Send + Sync>;
 
 const MAX_KNOWN_DECODES: usize = 500;
 
@@ -77,6 +93,9 @@ pub struct AppState {
     pub stats: Option<StatsProvider>,
     pub log4om: Option<Log4omProvider>,
     pub worked_map: Option<WorkedMapProvider>,
+    pub dxcc_matrix: Option<DxccMatrixProvider>,
+    pub log_station: Option<LogStationProvider>,
+    pub log_changed: Option<LogChangedHook>,
     /// La lista dei desiderati, con i suoi avvisi.
     pub wishlist: Option<Arc<wishlist::WishlistService>>,
     /// Il livello dell'ingresso audio (volume di registrazione di Windows, AUTO).
@@ -152,7 +171,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -267,6 +286,21 @@ impl AppState {
 
     pub fn with_log4om_if(mut self, reader: Option<Log4omProvider>) -> AppState {
         self.log4om = reader;
+        self
+    }
+
+    pub fn with_dxcc_matrix_if(mut self, provider: Option<DxccMatrixProvider>) -> AppState {
+        self.dxcc_matrix = provider;
+        self
+    }
+
+    pub fn with_log_station(mut self, provider: LogStationProvider) -> AppState {
+        self.log_station = Some(provider);
+        self
+    }
+
+    pub fn with_log_changed(mut self, hook: LogChangedHook) -> AppState {
+        self.log_changed = Some(hook);
         self
     }
 

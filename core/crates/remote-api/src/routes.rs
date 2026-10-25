@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -61,6 +61,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
+        .route("/api/v1/dxcc-matrix", get(dxcc_matrix))
+        .route("/api/v1/log/export.adi", get(log_export))
+        .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
         .route("/api/v1/wishlist", get(wishlist_get).put(wishlist_put))
@@ -1275,6 +1278,108 @@ async fn map_worked(State(state): State<AppState>, _: Authed) -> Result<Json<Val
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "map_task"))?
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "map_read"))
+}
+
+/// Il file ADIF di un log lungo anni sta in qualche megabyte: il limite ferma solo gli errori.
+const LOG_IMPORT_MAX_BYTES: usize = 64 * 1024 * 1024;
+
+#[derive(Deserialize)]
+struct MatrixParams {
+    call: Option<String>,
+    grid: Option<String>,
+    band: Option<String>,
+    mode: Option<String>,
+    compact: Option<String>,
+}
+
+/// La scheda DXCC: paesi lavorati per banda e modo con i contatori e, se si indica `call`, le etichette NEW ONE / NEW BAND / NEW MODE /
+/// NEW GRID / GRID BAND / GRID MODE per quella stazione sulla banda e nel modo dati (`band`, `mode`, `grid` facoltativi); con `compact=1` senza
+/// l'elenco dei paesi.
+#[utoipa::path(get, path = "/api/v1/dxcc-matrix", responses((status = 200, description = "Matrice DXCC e, con `call`, `subject` con le etichette"), (status = 404, description = "Paesi o log non disponibili (dxcc_matrix_unavailable)"), (status = 502, description = "Log non leggibile (dxcc_matrix_read)")))]
+async fn dxcc_matrix(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<MatrixParams>) -> Result<Json<Value>, ApiError> {
+    let compute = state.dxcc_matrix.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "dxcc_matrix_unavailable"))?;
+    let clean = |v: Option<String>| v.map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    let query = crate::MatrixQuery { call: clean(p.call), grid: clean(p.grid), band: clean(p.band), mode: clean(p.mode), compact: matches!(p.compact.as_deref(), Some("1" | "true")) };
+    // legge e analizza il log: fuori dal thread asincrono
+    tokio::task::spawn_blocking(move || compute(query))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "dxcc_matrix_task"))?
+        .map(Json)
+        .map_err(|e| {
+            tracing::warn!("scheda DXCC non calcolata: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "dxcc_matrix_read")
+        })
+}
+
+#[derive(Deserialize)]
+struct ExportParams {
+    from: Option<String>,
+    to: Option<String>,
+}
+
+/// `AAAAMMGG` o `AAAA-MM-GG` -> `AAAAMMGG`; vuoto = nessun limite; altro = `None` (data non valida).
+fn adif_date(v: Option<&str>) -> Option<Option<String>> {
+    let v = v.map(str::trim).filter(|v| !v.is_empty());
+    let Some(v) = v else { return Some(None) };
+    let digits: String = v.chars().filter(|c| *c != '-').collect();
+    (digits.len() == 8 && aurora_core::adif::unix_ms(&digits, "").is_some()).then_some(Some(digits))
+}
+
+/// Il log interno come file ADIF nel formato di JTDX (`wsjtx_log.adi`), con i QSO tra le date `from` e `to` (estremi compresi, `AAAAMMGG`
+/// o `AAAA-MM-GG`, facoltative). Risponde con un allegato `aurora_log.adi` e `x-aurora-qsos` con il numero di QSO.
+#[utoipa::path(get, path = "/api/v1/log/export.adi", responses((status = 200, description = "File ADIF come allegato"), (status = 400, description = "Data non valida o intervallo rovesciato (bad_range)"), (status = 502, description = "Log non leggibile (log_read)")))]
+async fn log_export(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<ExportParams>) -> Result<Response, ApiError> {
+    let (Some(from), Some(to)) = (adif_date(p.from.as_deref()), adif_date(p.to.as_deref())) else {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_range"));
+    };
+    if let (Some(f), Some(t)) = (&from, &to)
+        && f > t
+    {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_range"));
+    }
+    let station = state.log_station.as_ref().map(|s| s()).unwrap_or_default();
+    let book = state.logbook.clone();
+    let (text, count) = tokio::task::spawn_blocking(move || book.export_jtdx_adif(&station, from.as_deref(), to.as_deref()))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("log non esportato: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_read")
+        })?;
+    let mut resp = text.into_response();
+    let h = resp.headers_mut();
+    h.insert(header::CONTENT_TYPE, HeaderValue::from_static("text/plain; charset=utf-8"));
+    h.insert(header::CONTENT_DISPOSITION, HeaderValue::from_static("attachment; filename=\"aurora_log.adi\""));
+    if let Ok(v) = HeaderValue::from_str(&count.to_string()) {
+        h.insert("x-aurora-qsos", v);
+    }
+    Ok(resp)
+}
+
+/// Aggiunge al log interno i QSO di un file ADIF (corpo della richiesta, per esempio il `wsjtx_log.adi` di JTDX), senza doppioni.
+/// Risponde `{read, added, duplicates, skipped}`. Solo dalla rete di casa.
+#[utoipa::path(post, path = "/api/v1/log/import", responses((status = 200, description = "{read, added, duplicates, skipped}"), (status = 400, description = "Corpo vuoto (empty_file)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 413, description = "File troppo grande"), (status = 502, description = "Scrittura non riuscita (log_write)")))]
+async fn log_import(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: axum::body::Bytes) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    if body.iter().all(u8::is_ascii_whitespace) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "empty_file"));
+    }
+    let book = state.logbook.clone();
+    let report = tokio::task::spawn_blocking(move || book.import_adif(&String::from_utf8_lossy(&body)))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("log non importato: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+        })?;
+    if report.added > 0
+        && let Some(changed) = state.log_changed.clone()
+    {
+        let _ = tokio::task::spawn_blocking(move || changed()).await;
+    }
+    Ok(Json(json!(report)))
 }
 
 #[derive(Deserialize)]

@@ -21,6 +21,8 @@ import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
 import { TxBanner } from '../components/TxBanner';
 import { TxPanel } from '../components/TxPanel';
+import { DxccCard } from '../components/DxccCard';
+import { subjectBand, subjectMode } from '../lib/dxccCard';
 import { Waterfall } from '../components/Waterfall';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
@@ -116,6 +118,7 @@ export function Live() {
     all: t('panel.all'),
     log: t('panel.log'),
     cluster: t('panel.cluster'),
+    dxcc: t('panel.dxcc'),
   };
 
   const renderPanel = (id: PanelId) => {
@@ -156,6 +159,8 @@ export function Live() {
         );
       case 'cluster':
         return <ClusterPanel />;
+      case 'dxcc':
+        return <DxccCard panel call={status?.dx_call ?? ''} grid={status?.dx_grid ?? undefined} band={subjectBand(status?.dial_hz)} mode={subjectMode(status?.mode)} />;
       case 'log':
         return <Log4omPanel />;
       case 'all':

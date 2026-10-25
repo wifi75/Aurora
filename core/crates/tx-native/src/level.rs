@@ -28,6 +28,17 @@ pub fn apply_fade(samples: &mut [f32], n: usize) {
     }
 }
 
+/// La **coda** di un'onda (avvio tardivo): si scartano i primi `skip` campioni e si rimette una rampa di salita di `fade` campioni, perche' il
+/// nuovo inizio cade a meta' di un segnale e senza rampa farebbe un click. Come il `Modulator` di JTDX, che parte da `m_ic = (mstr - 500) * 48`.
+pub fn cut_head(samples: &[f32], skip: usize, fade: usize) -> Vec<f32> {
+    let mut tail: Vec<f32> = samples.iter().skip(skip).copied().collect();
+    let n = fade.min(tail.len());
+    for (i, s) in tail.iter_mut().take(n).enumerate() {
+        *s *= (0.5 * (1.0 - (PI * i as f64 / n as f64).cos())) as f32;
+    }
+    tail
+}
+
 /// Dall'onda a 12 kHz ai campioni pronti per il dispositivo: ricampiona, applica l'attenuazione, limita a +-1 e mette le rampe.
 pub fn prepare_samples(wave: &[f32], device_rate: u32, attenuation_tenths: u32, fade: Duration) -> Result<Vec<f32>, TxError> {
     if attenuation_tenths > MAX_ATTENUATION_TENTHS {
@@ -66,6 +77,18 @@ mod tests {
         assert!(x[100..900].iter().all(|&v| v == 1.0));
         // nessun salto grande tra campioni vicini
         assert!(x.windows(2).all(|w| (w[1] - w[0]).abs() < 0.05));
+    }
+
+    #[test]
+    fn the_tail_of_a_wave_starts_from_the_right_point_with_a_ramp() {
+        let x: Vec<f32> = (0..1000).map(|_| 1.0).collect();
+        let t = cut_head(&x, 300, 50);
+        assert_eq!(t.len(), 700);
+        assert_eq!(t[0], 0.0);
+        assert!(t[..50].windows(2).all(|w| w[1] >= w[0]), "salita non monotona");
+        assert!(t[50..].iter().all(|&v| v == 1.0));
+        assert!(cut_head(&x, 1000, 50).is_empty());
+        assert_eq!(cut_head(&x, 0, 0).len(), 1000);
     }
 
     #[test]

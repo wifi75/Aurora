@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+use aurora_core::adif::AdifQso;
 use rusqlite::{Connection, OpenFlags};
 
 use crate::LogError;
@@ -91,6 +92,62 @@ pub fn worked_squares(path: &Path) -> Result<Vec<WorkedSquare>, LogError> {
     Ok(squares)
 }
 
+/// Le colonne di Log4OM2 che dicono se il QSO e' confermato (QSL cartacea, LoTW, eQSL): quelle che il file ha davvero.
+const CONFIRMATION_COLUMNS: [&str; 6] = ["qslrcvd", "qslreceived", "lotwqslrcvd", "lotwreceived", "eqslqslrcvd", "eqslreceived"];
+
+/// Tutti i QSO del log di Log4OM2 (sola lettura) con banda, modo, locatore, data e, se il file ha le colonne delle conferme, lo stato delle
+/// conferme. Il modo e' quello di `mode`, o di `submode` quando `mode` e' `MFSK`.
+pub fn read_all(path: &Path) -> Result<Vec<AdifQso>, LogError> {
+    let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX)?;
+    conn.busy_timeout(std::time::Duration::from_secs(2))?;
+    let columns: Vec<String> = {
+        let mut stmt = conn.prepare("PRAGMA table_info(Log)")?;
+        let names = stmt.query_map([], |r| r.get::<_, String>(1))?.collect::<Result<Vec<_>, _>>()?;
+        names.into_iter().map(|n| n.to_lowercase()).collect()
+    };
+    let has = |c: &str| columns.iter().any(|x| x == c);
+    let submode = if has("submode") { "COALESCE(submode, '')" } else { "''" };
+    let confirmations: Vec<&str> = CONFIRMATION_COLUMNS.iter().copied().filter(|c| has(c)).collect();
+    let confirmed_cols: String = confirmations.iter().map(|c| format!(", COALESCE({c}, '')")).collect();
+    let sql = format!(
+        "SELECT COALESCE(callsign, ''), COALESCE(band, ''), COALESCE(mode, ''), {submode}, COALESCE(gridsquare, ''), COALESCE(qsodate, ''),
+                COALESCE(rstsent, ''), COALESCE(rstrcvd, ''){confirmed_cols} FROM Log"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let mut rows = stmt.query([])?;
+    let mut out = Vec::new();
+    while let Some(r) = rows.next()? {
+        let call: String = r.get(0)?;
+        let band: String = r.get(1)?;
+        if call.trim().is_empty() || band.trim().is_empty() {
+            continue;
+        }
+        let (mode, submode): (String, String) = (r.get(2)?, r.get(3)?);
+        let when: String = r.get(5)?;
+        let digits: String = when.chars().filter(char::is_ascii_digit).collect();
+        let mut yes = false;
+        for i in 0..confirmations.len() {
+            let v: String = r.get(8 + i)?;
+            yes |= matches!(v.trim().to_uppercase().as_str(), "Y" | "V" | "YES" | "TRUE" | "1");
+        }
+        let mode = mode.trim().to_uppercase();
+        let mode = if mode == "MFSK" && !submode.trim().is_empty() { submode.trim().to_uppercase() } else { mode };
+        out.push(AdifQso {
+            call: call.trim().to_uppercase(),
+            band: band.trim().to_lowercase(),
+            mode,
+            grid: r.get::<_, String>(4)?.trim().to_string(),
+            date: digits.chars().take(8).collect(),
+            time_on: if digits.len() >= 14 { digits[8..14].to_string() } else { String::new() },
+            rst_sent: r.get(6)?,
+            rst_rcvd: r.get(7)?,
+            confirmed: (!confirmations.is_empty()).then_some(yes),
+            ..AdifQso::default()
+        });
+    }
+    Ok(out)
+}
+
 /// Due lettere da A a R e due cifre: «JN45».
 fn is_square(g: &str) -> bool {
     let b = g.as_bytes();
@@ -171,5 +228,42 @@ mod tests {
         let path = std::env::temp_dir().join("aurora-non-esiste-12345.sqlite");
         assert!(read_recent(&path, 5).is_err());
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn read_all_returns_every_qso_with_mode_submode_and_confirmations() {
+        let dir = std::env::temp_dir().join(format!("aurora-log4om-all-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("all.sqlite");
+        let conn = Connection::open(&path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE Log (qsoid INTEGER PRIMARY KEY, callsign TEXT, band TEXT, mode TEXT, submode TEXT, qsodate TEXT, gridsquare TEXT,
+                               rstsent TEXT, rstrcvd TEXT, lotwreceived TEXT, qslrcvd TEXT);
+             INSERT INTO Log VALUES (1, 'aa1aa', '20M', 'FT8', NULL, '2026-10-24 10:00:00Z', 'jn45', '-10', '-12', 'Y', 'N');
+             INSERT INTO Log VALUES (2, 'BB2BB', '15m', 'MFSK', 'FT4', '2026-10-24 11:30:15', NULL, '-05', NULL, 'N', 'N');
+             INSERT INTO Log VALUES (3, 'CC3CC', '', 'SSB', NULL, '2026-10-23 09:00:00Z', 'IN80', '59', '59', NULL, NULL);
+             INSERT INTO Log VALUES (4, NULL, '40m', 'CW', NULL, NULL, NULL, NULL, NULL, NULL, NULL);",
+        )
+        .unwrap();
+        drop(conn);
+        let all = read_all(&path).unwrap();
+        assert_eq!(all.len(), 2, "senza banda o senza nominativo non vale");
+        assert_eq!((all[0].call.as_str(), all[0].band.as_str(), all[0].mode.as_str(), all[0].grid.as_str()), ("AA1AA", "20m", "FT8", "jn45"));
+        assert_eq!((all[0].date.as_str(), all[0].time_on.as_str(), all[0].confirmed), ("20261024", "100000", Some(true)));
+        assert_eq!((all[1].mode.as_str(), all[1].time_on.as_str(), all[1].confirmed), ("FT4", "113015", Some(false)));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn read_all_without_confirmation_columns_says_nothing_about_them() {
+        let dir = std::env::temp_dir().join(format!("aurora-log4om-allnc-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = sample(&dir);
+        let all = read_all(&path).unwrap();
+        assert_eq!(all.len(), 3);
+        assert!(all.iter().all(|q| q.confirmed.is_none()));
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

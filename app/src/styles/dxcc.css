@@ -1,0 +1,278 @@
+/* Scheda DXCC per banda e modo. Colori solo dai token (tokens.css): verde = lavorato, arancio = non confermato, grigio = mai. */
+
+.dxcc-card {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 44rem;
+}
+
+.dxcc-card--panel {
+  max-width: none;
+  padding: var(--space-2);
+}
+
+.dxcc-caption {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dxcc-labels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dxcc-label {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--panel-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  cursor: help;
+}
+
+/* il paese in ambra (evento raro), il locatore in ciano (stato) */
+.dxcc-label[data-on='true'].dxcc-label--country {
+  color: var(--rare-ink);
+  background: var(--rare);
+  border-color: var(--rare);
+}
+
+.dxcc-label[data-on='true'].dxcc-label--grid {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.dxcc-labels--small {
+  grid-template-columns: repeat(6, auto);
+  gap: var(--space-1);
+  justify-content: start;
+}
+
+.dxcc-labels--small .dxcc-label {
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.dxcc-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-block: var(--space-1);
+}
+
+.dxcc-live-country {
+  font-size: var(--text-xs);
+}
+
+.dxcc-subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.dxcc-subject-call {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dxcc-try {
+  flex: 1 1 11rem;
+  max-width: 16rem;
+  min-width: 9rem;
+  min-height: 1.9rem;
+  padding: 0 var(--space-2);
+  color: var(--text);
+  background: var(--panel);
+  border: var(--border-width) solid var(--text-muted);
+  border-radius: var(--radius);
+  font-family: var(--font-data);
+}
+
+.dxcc-view {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.dxcc-view .glass {
+  min-height: 1.9rem;
+  padding: 0 var(--space-3);
+}
+
+.dxcc-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.dxcc-grid th,
+.dxcc-grid td {
+  padding: 0;
+  text-align: center;
+}
+
+.dxcc-total {
+  width: 3.2rem;
+  font-family: var(--font-data);
+  font-size: var(--text-md);
+  color: var(--text);
+}
+
+.dxcc-band {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+}
+
+.dxcc-row {
+  font-family: var(--font-data);
+  font-size: var(--text-sm);
+  text-align: left !important;
+  color: var(--text);
+}
+
+.dxcc-cell {
+  height: 1.7rem;
+  background: var(--dxcc-none);
+  border-radius: 2px;
+}
+
+.dxcc-cell[data-kind='worked'] {
+  color: var(--dxcc-worked-ink);
+  background: var(--dxcc-worked);
+}
+
+.dxcc-cell[data-kind='unconfirmed'] {
+  color: var(--dxcc-unconfirmed-ink);
+  background: var(--dxcc-unconfirmed);
+}
+
+.dxcc-count {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+}
+
+.dxcc-foot,
+.dxcc-legend {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.dxcc-details {
+  margin-top: var(--space-3);
+}
+
+.dxcc-details summary {
+  cursor: pointer;
+  font-weight: var(--weight-strong);
+}
+
+.dxcc-countries-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-block: var(--space-2);
+}
+
+.dxcc-countries-bar input[type='search'] {
+  min-width: 12rem;
+  min-height: 1.9rem;
+  padding: 0 var(--space-2);
+  color: var(--text);
+  background: var(--panel);
+  border: var(--border-width) solid var(--text-muted);
+  border-radius: var(--radius);
+}
+
+.dxcc-countries-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dxcc-countries-wrap {
+  max-height: 28rem;
+  overflow: auto;
+}
+
+.dxcc-grid--countries {
+  table-layout: auto;
+}
+
+.dxcc-grid--countries .dxcc-name {
+  min-width: 11rem;
+  font-weight: var(--weight-regular);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dxcc-grid--countries .dxcc-cell {
+  min-width: 1.4rem;
+  height: 1.2rem;
+}
+
+.log-transfer {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.log-transfer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2) var(--space-4);
+}
+
+.log-transfer-row label {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.log-transfer-row input[type='date'] {
+  min-height: 1.9rem;
+  padding: 0 var(--space-2);
+  color: var(--text);
+  background: var(--panel);
+  border: var(--border-width) solid var(--text-muted);
+  border-radius: var(--radius);
+}
+
+.log-transfer-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0 var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (max-width: 40rem) {
+  .dxcc-labels--small {
+    grid-template-columns: repeat(3, auto);
+  }
+
+  .dxcc-total {
+    width: 2.4rem;
+  }
+}

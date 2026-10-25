@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { defaultLayout, type PanelId } from '../lib/layout';
 import { Dock } from './Dock';
 
-const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', tx: 'Trasmissione', cq: 'CQ', all: 'Tutti', log: 'Log', cluster: 'DX Cluster' };
+const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Stazione', tx: 'Trasmissione', cq: 'CQ', all: 'Tutti', log: 'Log', cluster: 'DX Cluster', dxcc: 'DXCC' };
 
 function show(onChange = vi.fn()) {
   const view = render(<Dock layout={defaultLayout()} onChange={onChange} titles={titles} render={(id) => <p>contenuto {id}</p>} />);

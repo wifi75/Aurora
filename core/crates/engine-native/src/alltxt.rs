@@ -130,6 +130,12 @@ pub fn tx_line(at: &Utc, offset_s: f32, dial_hz: u64, tx_df: u32, mode: &str, te
     format!("{}_{}.{:03}({})  Transmitting {} MHz + {tx_df}Hz  {mode}:  {text:<37}", at.date(), at.time(), at.milli, format_g(f64::from(offset_s), 6), format_mhz(dial_hz))
 }
 
+/// Riga di ritrasmissione (`guiUpdate` di JTDX, `m_restart`): il messaggio e' cambiato dopo l'avvio e la trasmissione riparte. Nota la forma: `+1500Hz`
+/// senza spazio e il messaggio senza riempimento.
+pub fn retransmit_line(at: &Utc, offset_s: f32, dial_hz: u64, tx_df: u32, mode: &str, text: &str) -> String {
+    format!("{}_{}.{:03}({})  Retransmitting {} MHz +{tx_df}Hz  {mode}:  {text}", at.date(), at.time(), at.milli, format_g(f64::from(offset_s), 6), format_mhz(dial_hz))
+}
+
 /// Riga «QSO logged» (anche tutti gli altri messaggi di servizio hanno questa forma: ora con i millisecondi, scarto, due spazi, testo).
 pub fn service_line(at: &Utc, offset_s: f32, text: &str) -> String {
     format!("{}_{}.{:03}({})  {text}", at.date(), at.time(), at.milli, format_g(f64::from(offset_s), 6))
@@ -224,6 +230,12 @@ impl AllTxt {
     pub fn write_tx(&self, now_ms: u64, offset_s: f32, dial_hz: u64, tx_df: u32, mode: &str, text: &str) {
         let at = Utc::from_unix_ms(now_ms);
         self.append(&at, &[tx_line(&at, offset_s, dial_hz, tx_df, mode, text)]);
+    }
+
+    /// Una trasmissione e' ripartita con un messaggio diverso nello stesso periodo.
+    pub fn write_retransmit(&self, now_ms: u64, offset_s: f32, dial_hz: u64, tx_df: u32, mode: &str, text: &str) {
+        let at = Utc::from_unix_ms(now_ms);
+        self.append(&at, &[retransmit_line(&at, offset_s, dial_hz, tx_df, mode, text)]);
     }
 
     /// Un QSO e' stato registrato.

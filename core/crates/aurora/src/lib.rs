@@ -18,7 +18,7 @@ use auth::{DeviceStore, SystemClock};
 use aurora_core::{Bus, Engine, EngineIo, Event, StationStatus};
 use axum::{http::StatusCode, routing::any};
 use dxcc::DxccDb;
-use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
+use engine_jtdx::{enrich::SharedWorked, worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::{adif::Station, Logbook};
 use qso_export::{Exporter, Target};
@@ -475,10 +475,20 @@ async fn start_udp_emitter(settings: &UdpSettings, bus: &Bus, controls: &Arc<eng
 /// Il file ADIF di Aurora, nella cartella dei dati: stesso formato di `wsjtx_log.adi`.
 const OWN_LOG_FILE: &str = "aurora_log.adi";
 
-/// Carica i QSO gia' fatti da uno o piu' file ADIF; un file mancante o illeggibile vale come vuoto (nessuna novita' segnalata).
-fn load_worked(paths: &[PathBuf], db: &DxccDb) -> WorkedLog {
+/// Da dove vengono i QSO gia' fatti: i file ADIF (`wsjtx_log.adi` di JTDX, `aurora_log.adi`), il log interno di Aurora (`logbook.db`) e, se
+/// c'e', il log di Log4OM2 (sola lettura). Lo stesso QSO presente in piu' sorgenti conta una volta sola.
+#[derive(Clone)]
+struct LogSources {
+    files: Vec<PathBuf>,
+    logbook: Arc<Logbook>,
+    log4om: Option<PathBuf>,
+}
+
+/// Carica i QSO gia' fatti da tutte le sorgenti; una sorgente mancante o illeggibile vale come vuota (se ne parla nel registro), cosi' al
+/// peggio non si segnalano novita' invece di fermare il programma.
+fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
     let mut text = String::new();
-    for path in paths {
+    for path in &sources.files {
         match std::fs::read(path) {
             Ok(bytes) => {
                 text.push_str(&String::from_utf8_lossy(&bytes));
@@ -489,9 +499,35 @@ fn load_worked(paths: &[PathBuf], db: &DxccDb) -> WorkedLog {
             Err(e) => tracing::warn!("log dei QSO non letto ({}): {e}", path.display()),
         }
     }
-    let log = WorkedLog::from_adif(&text, db);
+    let mut log = WorkedLog::from_adif(&text, db);
+    match sources.logbook.all_qsos() {
+        Ok(rows) => {
+            for q in &rows {
+                log.add_adif_qso(q, db);
+            }
+        }
+        Err(e) => tracing::warn!("log interno non letto: {e}"),
+    }
+    if let Some(path) = &sources.log4om {
+        match logbook::log4om::read_all(path) {
+            Ok(rows) => {
+                for q in &rows {
+                    log.add_adif_qso(q, db);
+                }
+            }
+            Err(e) => tracing::warn!("log di Log4OM2 non letto ({}): {e}", path.display()),
+        }
+    }
     tracing::info!("log letto: {} QSO", log.len());
     log
+}
+
+/// Rilegge le sorgenti e sostituisce i QSO gia' fatti condivisi (etichette delle decodifiche, scheda DXCC e statistiche guardano gli stessi).
+fn refresh_worked(sources: &LogSources, db: &DxccDb, shared: &SharedWorked) {
+    let fresh = load_worked(sources, db);
+    if let Ok(mut w) = shared.write() {
+        *w = fresh;
+    }
 }
 
 fn unix_secs() -> u64 {
@@ -819,6 +855,17 @@ pub async fn run(
         Some(store) => live_targets(&targets, &config.export_udp, &store.reports()),
         None => targets.clone(),
     }));
+    // il record dei QSO esportati dalla pagina porta nominativo e locatore correnti (con il motore proprio possono cambiare dalle impostazioni)
+    let log_station: remote_api::LogStationProvider = {
+        let (store, call, grid, power) = (engine_settings.clone(), my_call.clone(), my_grid.clone(), config.tx_power.clone().unwrap_or_default());
+        Arc::new(move || match &store {
+            Some(s) => {
+                let r = s.reports();
+                Station { call: r.call, grid: r.grid, tx_power: power.clone() }
+            }
+            None => Station { call: call.clone(), grid: grid.clone(), tx_power: power.clone() },
+        })
+    };
     let _exporter = Exporter::spawn_shared(&bus, Arc::clone(&logbook), Arc::clone(&shared_targets), station, Arc::new(unix_secs));
     if let Some(store) = &engine_settings {
         let (store, shared, base, env_udp) = (Arc::clone(store), Arc::clone(&shared_targets), targets.clone(), config.export_udp.clone());
@@ -833,8 +880,9 @@ pub async fn run(
         });
     }
     // paesi e QSO gia' fatti si leggono una volta sola, prima di avviare il motore
-    let enrichment = load_dxcc(config.cty_path.as_deref()).map(|db| {
-        let worked = load_worked(&worked_paths, &db);
+    let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: config.log4om_db.clone() };
+    let enrichment: Option<(Arc<DxccDb>, SharedWorked)> = load_dxcc(config.cty_path.as_deref()).map(|db| {
+        let worked = Arc::new(std::sync::RwLock::new(load_worked(&log_sources, &db)));
         (db, worked)
     });
     // il continente di chi opera (dal nominativo di JTDX): serve a rispettare i CQ direzionali («CQ NA», «CQ DX»)
@@ -844,9 +892,9 @@ pub async fn run(
     {
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
     }
-    let stats_source = enrichment.as_ref().filter(|_| !worked_paths.is_empty()).map(|(db, _)| (Arc::clone(db), worked_paths.clone()));
+    let live_log = enrichment.as_ref().map(|(db, worked)| (Arc::clone(db), Arc::clone(worked), log_sources.clone()));
     let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
-    let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());
+    let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.read().map_or(0, |w| w.len()));
     let info = serde_json::json!({
         "version": aurora_core::version::APP_VERSION,
         "engine": match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" },
@@ -958,12 +1006,38 @@ pub async fn run(
             }) as remote_api::DxccProvider
         }))
         .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
-        .with_stats_if(stats_source.map(|(db, path)| {
+        .with_stats_if(live_log.clone().map(|(db, worked, sources)| {
             Arc::new(move || {
-                let worked = load_worked(&path, &db);
-                serde_json::json!({ "stats": worked.stats(&db), "missing_dxcc": worked.missing_dxcc(&db) })
+                refresh_worked(&sources, &db, &worked);
+                match worked.read() {
+                    Ok(w) => serde_json::json!({ "stats": w.stats(&db), "missing_dxcc": w.missing_dxcc(&db) }),
+                    Err(_) => serde_json::json!({ "stats": serde_json::Value::Null, "missing_dxcc": [] }),
+                }
             }) as Arc<dyn Fn() -> serde_json::Value + Send + Sync>
         }))
+        .with_dxcc_matrix_if(live_log.clone().map(|(db, worked, sources)| {
+            // la scheda rilegge le sorgenti a ogni richiesta (un QSO fatto in Log4OM2 compare anche senza riavviare Aurora)
+            Arc::new(move |q: remote_api::MatrixQuery| {
+                refresh_worked(&sources, &db, &worked);
+                let w = worked.read().map_err(|_| "QSO gia' fatti non disponibili".to_string())?;
+                let mut out = serde_json::json!(w.matrix(&db));
+                out["subject"] = match &q.call {
+                    Some(call) => serde_json::json!(w.subject(call, q.grid.as_deref(), q.band.as_deref(), q.mode.as_deref(), &db)),
+                    None => serde_json::Value::Null,
+                };
+                if q.compact
+                    && let Some(map) = out.as_object_mut()
+                {
+                    map.remove("countries");
+                }
+                Ok(out)
+            }) as remote_api::DxccMatrixProvider
+        }))
+        .with_log_station(log_station)
+        .with_log_changed(match live_log.clone() {
+            Some((db, worked, sources)) => Arc::new(move || refresh_worked(&sources, &db, &worked)),
+            None => Arc::new(|| {}),
+        })
         .with_log4om_if(config.log4om_db.clone().map(|path| {
             Arc::new(move |limit: usize| {
                 logbook::log4om::read_recent(&path, limit)
@@ -1029,7 +1103,7 @@ pub async fn run(
             // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
             let (call, grid) = (my_call.clone(), my_grid.clone());
             let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
-            let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::new(db, worked))));
+            let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::with_shared(db, worked))));
             // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
             if let Some(enrich) = &enrich {
                 let enrich = Arc::clone(enrich);
@@ -1038,8 +1112,8 @@ pub async fn run(
                     loop {
                         match events.recv().await {
                             Ok(Event::QsoLogged(q)) => {
-                                if let Ok(mut e) = enrich.lock() {
-                                    e.record_qso(&q.call, &q.grid, &q.band);
+                                if let Ok(e) = enrich.lock() {
+                                    e.record_qso(&q.call, &q.grid, &q.band, &q.mode);
                                 }
                             }
                             Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
@@ -1101,7 +1175,7 @@ pub async fn run(
             };
             let mut engine = JtdxEngine::new(Arc::clone(&hub), engine_config, Arc::new(EngineClock));
             if let Some((db, worked)) = enrichment {
-                engine = engine.with_enrichment(db, worked);
+                engine = engine.with_shared_enrichment(db, worked);
             }
             (tokio::spawn(engine.run(io)), Some(hub))
         }

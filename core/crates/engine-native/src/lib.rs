@@ -5,6 +5,7 @@
 
 mod alltxt;
 mod parity;
+mod persist;
 mod resample;
 mod rig;
 mod slots;
@@ -28,7 +29,7 @@ use tokio::sync::broadcast;
 
 pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
-pub use rig::{NativeControls, NativeRig};
+pub use rig::{NativeControls, NativeRig, SavedControls};
 pub use tx::{OptionChange, TxCommand, TxDriver, TxNote, TxPort, TxView};
 
 /// Campioni al secondo del decoder.
@@ -211,6 +212,16 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let mut last_texts: Vec<String> = Vec::new();
         // la trasmissione: solo se c'e' la catena audio/PTT
         let (command_tx, command_rx) = mpsc::channel::<TxCommand>();
+        // lo stato dei pulsanti e dei livelli impostati prima dello spegnimento si rimette com'era
+        let controls_path = data_dir.join("controls.json");
+        let restored = live.as_ref().and_then(|l| {
+            let saved = persist::load(&controls_path)?;
+            l.controls.restore(&saved);
+            tracing::info!("pulsanti e livelli ripristinati da {}", controls_path.display());
+            Some(saved)
+        });
+        let mut last_saved = live.as_ref().map(|l| l.controls.saved());
+        let mut last_save_check = std::time::Instant::now();
         let mut driver = live.as_ref().and_then(|l| {
             let port = l.transmitter.clone()?;
             l.controls.set_sender(command_tx.clone());
@@ -228,7 +239,32 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 }
             }
         });
+        // gli interruttori ricordati arrivano anche alla sequenza (AutoSeq, Salta Tx1, Bypassa...), come se si fossero appena premuti
+        if let (Some(saved), Some(l), Some(_)) = (restored.as_ref(), live.as_ref(), driver.as_ref()) {
+            let rig = rig::NativeRig::new(Arc::clone(&l.controls), None);
+            for (id, on) in &saved.switches {
+                let _ = rig_control::Rig::set_control(&rig, id, Some(*on));
+            }
+            // Abilita Tx come era al riavvio (scelta del proprietario): la sequenza riparte armata, ma non trasmette finche' non c'e' un messaggio da mandare
+            if saved.enable_tx {
+                let _ = rig_control::Rig::set_control(&rig, "enable_tx", Some(true));
+                tracing::info!("Abilita Tx ripristinato acceso, come prima dello spegnimento");
+            }
+        }
         loop {
+            // ogni due secondi, se qualcosa e' cambiato, lo stato dei pulsanti e dei livelli si salva
+            if last_save_check.elapsed() >= std::time::Duration::from_secs(2) {
+                last_save_check = std::time::Instant::now();
+                if let Some(l) = live.as_ref() {
+                    let now_state = l.controls.saved();
+                    if last_saved.as_ref() != Some(&now_state) {
+                        match persist::save(&controls_path, &now_state) {
+                            Ok(()) => last_saved = Some(now_state),
+                            Err(e) => tracing::warn!("stato dei pulsanti non salvato: {e}"),
+                        }
+                    }
+                }
+            }
             // i comandi (doppio clic, CQ, STOP, opzioni) si servono subito, anche senza audio in arrivo
             while let Ok(command) = command_rx.try_recv() {
                 if let Some(d) = driver.as_mut() {
@@ -318,6 +354,20 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 }
             }
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
+                // avvio anticipato (AutoSeq 3): il periodo di trasmissione comincia ora, prima della decodifica di quello appena finito; parte il messaggio
+                // che la sequenza ha adesso e, se la decodifica lo cambia, ripartira' con il nuovo (ritrasmissione)
+                if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
+                    let dial = l.dial_hz.load(Ordering::Relaxed);
+                    let band = (l.band_of)(dial).unwrap_or_default();
+                    let (qsos, log) = d.begin_slot(slot.start_unix_ms, now_unix_ms() as f64 / 1000.0, dial, &band);
+                    for line in log {
+                        tracing::info!("trasmissione: {line}");
+                    }
+                    for qso in qsos {
+                        note_logged(&mut logged_due, &qso, now_unix_ms());
+                        let _ = message_events.send(Event::QsoLogged(qso));
+                    }
+                }
                 // con Monitora spento il periodo passa senza essere decodificato
                 if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
                     if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
@@ -421,7 +471,11 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
     }
     if let Some(driver) = driver {
         for note in driver.due_notes(now_ms) {
-            all_txt.write_tx(now_ms, 0.0, dial, note.tx_df, note.mode.name(), &note.text);
+            if note.retransmit {
+                all_txt.write_retransmit(now_ms, 0.0, dial, note.tx_df, note.mode.name(), &note.text);
+            } else {
+                all_txt.write_tx(now_ms, 0.0, dial, note.tx_df, note.mode.name(), &note.text);
+            }
         }
     }
     let (due, later): (Vec<_>, Vec<_>) = std::mem::take(logged_due).into_iter().partition(|(when, _)| *when <= now_ms);

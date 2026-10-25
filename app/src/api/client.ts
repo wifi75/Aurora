@@ -3,6 +3,7 @@ import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
 import { EngineSettingsSchema, HealthSchema, type EngineSettings, type Health, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
+import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
 const BASE = '/api/v1';
 
@@ -750,6 +751,33 @@ export interface WorkedSquare {
 /** I quadrati locatore gia' lavorati, dal log di Log4OM2 (per la mappa). */
 export async function getWorkedMap(): Promise<{ squares: WorkedSquare[] }> {
   return (await (await request('/map/worked')).json()) as { squares: WorkedSquare[] };
+}
+
+/** La scheda DXCC: paesi lavorati per banda e modo e, con `call`, le etichette NEW ONE / NEW BAND / NEW MODE / NEW GRID / GRID BAND / GRID MODE. */
+export async function getDxccMatrix(query: DxccQuery = {}): Promise<DxccMatrix> {
+  return (await (await request(`/dxcc-matrix${dxccQueryString(query)}`)).json()) as DxccMatrix;
+}
+
+/** Cosa ha fatto l'importazione di un file ADIF nel log interno. */
+export interface LogImportResult {
+  read: number;
+  added: number;
+  duplicates: number;
+  skipped: number;
+}
+
+/** Aggiunge al log interno i QSO di un file ADIF (per esempio `wsjtx_log.adi` di JTDX), senza doppioni. Solo dalla rete di casa. */
+export async function importLog(file: Blob): Promise<LogImportResult> {
+  return (await (await request('/log/import', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: file })).json()) as LogImportResult;
+}
+
+/** L'indirizzo da cui si scarica il log interno come file ADIF (`from` e `to` come `AAAA-MM-GG`, facoltativi). */
+export function logExportUrl(from?: string, to?: string): string {
+  const p = new URLSearchParams();
+  if (from) p.set('from', from);
+  if (to) p.set('to', to);
+  const q = p.toString();
+  return `${BASE}/log/export.adi${q ? `?${q}` : ''}`;
 }
 
 export async function getStats(): Promise<StatsResponse> {

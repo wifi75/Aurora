@@ -1,7 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
+use aurora_core::adif::{self, AdifQso};
 use dxcc::DxccDb;
 use serde::Serialize;
+
+use crate::matrix::{Cell, ModeClass};
 
 /// Che cosa c'e' di nuovo in una stazione rispetto ai QSO gia' fatti, dal piu' raro al meno raro
 /// (come l'ordine dei colori di JTDX).
@@ -33,25 +36,35 @@ pub enum Novelty {
 /// QSO gia' fatti: servono per capire se una stazione e' una novita'.
 #[derive(Default)]
 pub struct WorkedLog {
-    qsos: usize,
+    pub(crate) qsos: usize,
     /// (banda, nominativo) gia' collegati.
     calls: HashSet<(String, String)>,
     /// Nominativi collegati su almeno una banda.
     any_call: HashSet<String>,
     /// Paesi collegati su almeno una banda.
-    entities: HashSet<usize>,
+    pub(crate) entities: HashSet<usize>,
     /// (paese, banda) collegati.
-    entity_bands: HashSet<(usize, String)>,
+    pub(crate) entity_bands: HashSet<(usize, String)>,
     zones: HashSet<u8>,
     zone_bands: HashSet<(u8, String)>,
     itu: HashSet<u8>,
     itu_bands: HashSet<(u8, String)>,
     /// Locatori di 4 caratteri collegati.
-    grids: HashSet<String>,
-    grid_bands: HashSet<(String, String)>,
+    pub(crate) grids: HashSet<String>,
+    pub(crate) grid_bands: HashSet<(String, String)>,
     prefixes: HashSet<String>,
     prefix_bands: HashSet<(String, String)>,
     band_qsos: HashMap<String, usize>,
+    /// (paese, modo) collegati, su qualunque banda: per «nuovo modo».
+    pub(crate) entity_modes: HashSet<(usize, ModeClass)>,
+    /// (locatore a 4 caratteri, modo) collegati.
+    pub(crate) grid_modes: HashSet<(String, ModeClass)>,
+    /// QSO per (paese, banda, modo): la matrice DXCC.
+    pub(crate) cells: HashMap<(usize, String, ModeClass), Cell>,
+    /// QSO per (paese, banda) con qualunque modo, anche non noto.
+    pub(crate) any_cells: HashMap<(usize, String), Cell>,
+    /// Chiavi dei QSO con data gia' contati (stesso QSO letto da due log: conta una volta sola).
+    seen: HashSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -105,31 +118,58 @@ impl WorkedLog {
     /// nominativo o senza banda, o senza `<EOR>` finale, vengono ignorati.
     pub fn from_adif(text: &str, db: &DxccDb) -> Self {
         let mut log = WorkedLog::new();
-        for record in parse_adif(text) {
-            let (Some(call), Some(band)) = (record.get("CALL"), record.get("BAND")) else {
-                continue;
-            };
-            log.add_qso(call, record.get("GRIDSQUARE").map_or("", String::as_str), band, db);
+        for q in adif::parse_qsos(text) {
+            log.add_adif_qso(&q, db);
         }
         log
     }
 
+    /// Aggiunge un QSO senza modo noto: conta per paese, zone, locatore, prefisso e stazione, non per i modi.
     pub fn add_qso(&mut self, call: &str, grid: &str, band: &str, db: &DxccDb) {
-        let call = call.trim().to_uppercase();
-        let band = band.trim().to_lowercase();
+        self.add_qso_mode(call, grid, band, "", db);
+    }
+
+    /// Aggiunge un QSO con il suo modo (`FT8`, `FT4`...; vuoto = non noto).
+    pub fn add_qso_mode(&mut self, call: &str, grid: &str, band: &str, mode: &str, db: &DxccDb) {
+        let q = AdifQso { call: call.to_string(), band: band.to_string(), mode: mode.to_string(), grid: grid.to_string(), ..AdifQso::default() };
+        self.add_adif_qso(&q, db);
+    }
+
+    /// Aggiunge un QSO letto da un log. Se ha data e ora e lo stesso QSO (stessa stazione, banda, modo, giorno e minuto) e' gia' stato aggiunto
+    /// da un'altra sorgente, non lo conta di nuovo. Ritorna `false` per un doppione o un QSO senza nominativo o banda.
+    pub fn add_adif_qso(&mut self, q: &AdifQso, db: &DxccDb) -> bool {
+        let call = q.call.trim().to_uppercase();
+        let band = q.band.trim().to_lowercase();
         if call.is_empty() || band.is_empty() {
-            return;
+            return false;
         }
-        if let Some(found) = db.lookup(&call) {
+        let class = ModeClass::from_adif(&q.mode, "");
+        if !q.date.is_empty() {
+            let minute: String = q.time_on.chars().take(4).collect();
+            let key = format!("{call}|{band}|{}|{}|{minute}", q.mode.trim().to_uppercase(), q.date);
+            if !self.seen.insert(key) {
+                return false;
+            }
+        }
+        let found = db.lookup(&call);
+        if let Some(found) = found {
             self.entities.insert(found.entity);
             self.entity_bands.insert((found.entity, band.clone()));
             self.zones.insert(found.cq_zone);
             self.zone_bands.insert((found.cq_zone, band.clone()));
             self.itu.insert(found.itu_zone);
             self.itu_bands.insert((found.itu_zone, band.clone()));
+            self.any_cells.entry((found.entity, band.clone())).or_default().add(q.confirmed);
+            if let Some(class) = class {
+                self.entity_modes.insert((found.entity, class));
+                self.cells.entry((found.entity, band.clone(), class)).or_default().add(q.confirmed);
+            }
         }
-        if let Some(g) = grid4(grid) {
+        if let Some(g) = grid4(&q.grid) {
             self.grid_bands.insert((g.clone(), band.clone()));
+            if let Some(class) = class {
+                self.grid_modes.insert((g.clone(), class));
+            }
             self.grids.insert(g);
         }
         if let Some(px) = wpx_prefix(&call) {
@@ -140,6 +180,7 @@ impl WorkedLog {
         *self.band_qsos.entry(band.clone()).or_insert(0) += 1;
         self.calls.insert((band, call));
         self.qsos += 1;
+        true
     }
 
     pub fn novelty(&self, call: &str, grid: Option<&str>, band: &str, db: &DxccDb) -> Novelty {
@@ -238,43 +279,6 @@ impl WorkedLog {
 fn band_order(band: &str) -> (usize, String) {
     const ORDER: [&str; 12] = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m"];
     (ORDER.iter().position(|b| *b == band).unwrap_or(ORDER.len()), band.to_string())
-}
-
-/// Record ADIF completi (terminati da `<EOR>`), con i nomi dei campi in maiuscolo.
-/// Le lunghezze sono in byte, quindi si lavora sui byte e non sui caratteri.
-fn parse_adif(text: &str) -> Vec<HashMap<String, String>> {
-    let bytes = text.as_bytes();
-    let mut records = Vec::new();
-    let mut current: HashMap<String, String> = HashMap::new();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] != b'<' {
-            i += 1;
-            continue;
-        }
-        let Some(end) = bytes[i..].iter().position(|b| *b == b'>').map(|p| i + p) else {
-            break;
-        };
-        let tag = String::from_utf8_lossy(&bytes[i + 1..end]).to_uppercase();
-        i = end + 1;
-        match tag.as_str() {
-            "EOH" => current.clear(),
-            "EOR" => records.push(std::mem::take(&mut current)),
-            _ => {
-                let mut parts = tag.split(':');
-                let name = parts.next().unwrap_or_default().trim().to_string();
-                let Some(len) = parts.next().and_then(|l| l.trim().parse::<usize>().ok()) else {
-                    continue;
-                };
-                let Some(value) = bytes.get(i..i + len) else {
-                    break;
-                };
-                current.insert(name, String::from_utf8_lossy(value).trim().to_string());
-                i += len;
-            }
-        }
-    }
-    records
 }
 
 #[cfg(test)]

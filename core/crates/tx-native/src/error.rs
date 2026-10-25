@@ -17,6 +17,8 @@ pub enum TxError {
     TooLong { wave_ms: u64, limit_ms: u64 },
     /// Il periodo richiesto e' quello in corso ma e' troppo tardi per iniziare.
     TooLate { late_ms: u64 },
+    /// Non c'e' una trasmissione in attesa o in corso da sostituire.
+    NotRunning,
     InvalidConfig(String),
     Audio(String),
     Ptt(String),
@@ -33,6 +35,7 @@ impl fmt::Display for TxError {
             TxError::InvalidWave => write!(f, "onda con valori non validi"),
             TxError::TooLong { wave_ms, limit_ms } => write!(f, "onda di {wave_ms} ms, oltre il limite di {limit_ms} ms"),
             TxError::TooLate { late_ms } => write!(f, "troppo tardi per il periodo richiesto ({late_ms} ms di ritardo)"),
+            TxError::NotRunning => write!(f, "nessuna trasmissione in attesa o in corso"),
             TxError::InvalidConfig(e) => write!(f, "impostazioni di trasmissione non valide: {e}"),
             TxError::Audio(e) => write!(f, "uscita audio: {e}"),
             TxError::Ptt(e) => write!(f, "PTT: {e}"),

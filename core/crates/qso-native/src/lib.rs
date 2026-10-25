@@ -21,6 +21,8 @@
 //! lo trasmette. Gli esiti (QSO concluso, cambi di stato, rinunce) si leggono con
 //! [`Sequencer::drain_events`].
 
+pub mod classify;
+pub mod history;
 pub mod message;
 pub mod report;
 pub mod sequencer;
@@ -30,10 +32,10 @@ pub mod types;
 
 pub use message::{Body, Message, base_call, is_std_call, parse, same_station};
 pub use report::{format_r_report, format_report, parse_r_report, parse_report};
-pub use sequencer::Sequencer;
+pub use sequencer::{CallerInfoFn, Sequencer, is_autoseq_73};
 pub use slot::{Mode, Slot};
 pub use stdmsg::{StdMessages, gen_cq, gen_std_msgs};
 pub use types::{
-    AbandonReason, Decoded, Event, Options, Phase, QsoRecord, RepeatLimits, ReportPolicy, SeqError,
+    AbandonReason, CallerInfo, Decoded, Event, Options, Phase, QsoRecord, RepeatLimits, ReportPolicy, SeqError,
     Station, StopReason, Tx,
 };

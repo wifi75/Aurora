@@ -33,6 +33,25 @@ struct BandLevels {
 
 const NO_TX: &str = "la trasmissione non e' disponibile: manca l'ingresso audio o il motore non e' partito";
 
+/// Cio' che si ricorda tra un avvio e l'altro (vedi `persist`): interruttori, frequenze audio, modo e livelli di uscita.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct SavedControls {
+    pub version: u32,
+    pub switches: std::collections::BTreeMap<String, bool>,
+    pub rx_df: u32,
+    pub tx_df: u32,
+    pub ft4: bool,
+    pub attenuation: u32,
+    pub levels: std::collections::BTreeMap<String, u32>,
+    /// Abilita Tx: per scelta del proprietario resta com'era al riavvio. Nei file scritti prima manca (spento).
+    #[serde(default)]
+    pub enable_tx: bool,
+}
+
+impl SavedControls {
+    pub const VERSION: u32 = 1;
+}
+
 /// Lo stato dei pulsanti: il decoder lo legge a ogni periodo.
 pub struct NativeControls {
     /// Monitora: con ascolto spento non si decodifica (e lo stato dice che non si sta decodificando). Di base acceso.
@@ -92,6 +111,43 @@ impl NativeControls {
 
     pub fn set_mode(&self, mode: Mode) {
         self.ft4.store(mode == Mode::Ft4, Ordering::Relaxed);
+    }
+
+    /// Lo stato da ricordare. Monitora non si ricorda (l'ascolto parte sempre acceso); Abilita Tx si'.
+    pub fn saved(&self) -> SavedControls {
+        let switches = self.switches.lock().map(|all| all.iter().filter(|(id, _)| id != "enable_tx" && id != "monitor").map(|(id, on)| (id.clone(), *on)).collect()).unwrap_or_default();
+        let levels = self.levels.lock().map(|m| m.levels.iter().map(|(k, v)| (k.clone(), *v)).collect()).unwrap_or_default();
+        let enable_tx = self.tx_view.lock().map(|v| v.enabled).unwrap_or(false);
+        SavedControls {
+            version: SavedControls::VERSION,
+            enable_tx,
+            switches,
+            rx_df: self.rx_df.load(Ordering::Relaxed),
+            tx_df: self.tx_df.load(Ordering::Relaxed),
+            ft4: self.ft4.load(Ordering::Relaxed),
+            attenuation: self.attenuation.load(Ordering::Relaxed),
+            levels,
+        }
+    }
+
+    /// Rimette lo stato ricordato (all'avvio). Valori fuori campo si scartano.
+    pub fn restore(&self, saved: &SavedControls) {
+        for (id, on) in &saved.switches {
+            if id != "enable_tx" && id != "monitor" {
+                self.set_switch(id, *on);
+            }
+        }
+        if (100..=5000).contains(&saved.rx_df) {
+            self.rx_df.store(saved.rx_df, Ordering::Relaxed);
+        }
+        if (100..=5000).contains(&saved.tx_df) {
+            self.tx_df.store(saved.tx_df, Ordering::Relaxed);
+        }
+        self.ft4.store(saved.ft4, Ordering::Relaxed);
+        self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
+        if let Ok(mut memory) = self.levels.lock() {
+            memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
+        }
     }
 
     /// Il livello di uscita che si sta usando: si ricorda per la banda e il modo correnti (se la banda e' nota), come `on_outAttenuation_valueChanged`.
@@ -490,6 +546,32 @@ mod tests {
         controls.set_mode(Mode::Ft8);
         controls.track_band("40m");
         assert_eq!(rig.output_attenuation().expect("pwr"), 250, "40m in FT8 ha il suo livello");
+    }
+
+    #[test]
+    fn what_the_user_sets_is_saved_and_restored_except_monitor() {
+        let (rig, controls) = rig();
+        rig.set_control("skip_tx1", Some(true)).expect("skip");
+        rig.set_control("rrr", Some(true)).expect("rrr");
+        rig.set_control("autoseq", Some(false)).expect("autoseq");
+        rig.set_control("monitor", Some(false)).expect("monitor");
+        controls.rx_df.store(1138, Ordering::Relaxed);
+        controls.tx_df.store(1749, Ordering::Relaxed);
+        controls.set_mode(Mode::Ft4);
+        rig.set_output_attenuation(100).expect("pwr");
+        let saved = controls.saved();
+        assert!(!saved.switches.contains_key("enable_tx") && !saved.switches.contains_key("monitor"), "Abilita Tx ha il suo campo");
+        assert!(!saved.enable_tx);
+        // un avvio nuovo, con i valori di fabbrica, rimette tutto com'era
+        let fresh = NativeControls::default();
+        assert!(!fresh.switch_on("skip_tx1") && fresh.switch_on("autoseq"));
+        fresh.restore(&saved);
+        assert!(fresh.switch_on("skip_tx1") && fresh.switch_on("rrr") && !fresh.switch_on("autoseq"));
+        assert!(fresh.is_monitoring(), "Monitora parte sempre acceso");
+        assert_eq!((fresh.rx_df.load(Ordering::Relaxed), fresh.tx_df.load(Ordering::Relaxed)), (1138, 1749));
+        assert_eq!(fresh.mode(), Mode::Ft4);
+        assert_eq!(fresh.attenuation.load(Ordering::Relaxed), 100);
+        assert_eq!(fresh.saved(), saved, "stato identico dopo il ripristino");
     }
 
     #[test]

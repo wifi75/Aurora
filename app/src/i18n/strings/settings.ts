@@ -464,12 +464,12 @@ export const settingsStrings = {
     'Esc: parar a transmissão',
   ],
   'tip.gen.escStop': [
-    'Il tasto Esc ferma subito la trasmissione e spegne AutoTX e Abilita Tx, come STOP TX. Vale in tutte le pagine. Premuto due volte di seguito libera anche la stazione da chiamare (come Canc DX).',
-    'The Esc key stops transmitting at once and switches off AutoTX and Enable Tx, like STOP TX. Works on every page. Pressed twice in a row it also clears the station to call (like Clear DX).',
-    'Die Esc-Taste stoppt das Senden sofort und schaltet AutoTX und Tx an aus, wie STOP TX. Gilt auf allen Seiten. Zweimal hintereinander gedrückt löscht sie auch die anzurufende Station (wie DX löschen).',
-    'La touche Échap arrête aussitôt l’émission et coupe AutoTX et Activer Tx, comme STOP TX. Valable sur toutes les pages. Pressée deux fois de suite, elle efface aussi la station à appeler (comme Effacer DX).',
-    'La tecla Esc detiene al instante la transmisión y apaga AutoTX y Activar Tx, como STOP TX. Vale en todas las páginas. Pulsada dos veces seguidas borra también la estación a llamar (como Borrar DX).',
-    'A tecla Esc pára logo a transmissão e desliga AutoTX e Ativar Tx, como o STOP TX. Vale em todas as páginas. Premida duas vezes seguidas limpa também a estação a chamar (como Limpar DX).',
+    'Il tasto Esc ferma subito la trasmissione e spegne Abilita Tx, come in JTDX (AutoTX non si tocca). Vale in tutte le pagine. Premuto due volte di seguito libera anche la stazione da chiamare (come Canc DX).',
+    'The Esc key stops transmitting at once and switches off Enable Tx, like JTDX does (AutoTX is left alone). Works on every page. Pressed twice in a row it also clears the station to call (like Clear DX).',
+    'Die Esc-Taste stoppt das Senden sofort und schaltet Tx an aus, wie in JTDX (AutoTX bleibt unberührt). Gilt auf allen Seiten. Zweimal hintereinander gedrückt löscht sie auch die anzurufende Station (wie DX löschen).',
+    'La touche Échap arrête aussitôt l’émission et coupe Activer Tx, comme dans JTDX (AutoTX n’est pas touché). Valable sur toutes les pages. Pressée deux fois de suite, elle efface aussi la station à appeler (comme Effacer DX).',
+    'La tecla Esc detiene al instante la transmisión y apaga Activar Tx, como en JTDX (AutoTX no se toca). Vale en todas las páginas. Pulsada dos veces seguidas borra también la estación a llamar (como Borrar DX).',
+    'A tecla Esc pára logo a transmissão e desliga Ativar Tx, como no JTDX (o AutoTX não é tocado). Vale em todas as páginas. Premida duas vezes seguidas limpa também a estação a chamar (como Limpar DX).',
   ],
   'gen.log4omCount': [
     'QSO mostrati nella finestra Log',
