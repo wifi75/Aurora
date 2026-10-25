@@ -506,13 +506,13 @@ fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) ->
         tx_power: tx_power.to_string(),
         antenna: String::new(),
         psk: r.psk,
-        dxsummit: false,
+        dxsummit: r.dxsummit,
         tcp: r.tcp,
         eqsl: r.eqsl.then(|| reporting::EqslAccount { user: r.eqsl_user.clone(), nick: r.eqsl_nick.clone() }),
     }
 }
 
-/// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, server TCP, eQSL), la registrazione del log (commento con rapporti e distanza,
+/// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, spot DXSummit a richiesta, server TCP, eQSL), la registrazione del log (commento con rapporti e distanza,
 /// modo) e la scrittura di `ALL.TXT`. Ogni invio ha il suo thread e i suoi tempi massimi: non ferma mai il motore.
 fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>, bus: &Bus, controls: &Arc<engine_native::NativeControls>, data_dir: &Path, tx_power: String) {
     use remote_api::engine_settings::Feature;
@@ -522,6 +522,7 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
     let r = store.reports();
     controls.set_all_txt(r.all_txt, r.all_txt_debug);
     let service = reporting::Service::spawn(bus, store.status(), secrets, reporting::Endpoints::default(), Arc::new(unix_secs), reporting_config(&r, &tx_power));
+    store.set_reporting(Arc::clone(&service));
     {
         let (store, controls) = (Arc::clone(store), Arc::clone(controls));
         let mut changes = store.subscribe();

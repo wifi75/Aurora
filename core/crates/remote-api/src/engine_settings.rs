@@ -126,7 +126,6 @@ pub fn support(key: &str) -> Support {
         // finestra di conferma e registrazione a mano: la pagina non li ha ancora, il QSO si registra sempre da solo
         "PromptToLog" => Support::Hidden("log_prompt"),
         "AutoQSOLogging" => Support::Hidden("log_auto"),
-        "AllowSpotsDXSummit" => Support::Hidden("dxsummit"),
         "ClearCallGridExit" => Support::Hidden("clear_exit"),
         // un invio del record ADIF di ogni QSO al server TCP
         "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Live(Apply::Now),
@@ -134,7 +133,7 @@ pub fn support(key: &str) -> Support {
         "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
         "preventFalseUDPspots" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         // spotting verso internet: PSK Reporter in automatico, DXSummit a richiesta (pulsante), eQSL solo con la protezione dei segreti del sistema
-        "PSKReporter" => Support::Live(Apply::Now),
+        "PSKReporter" | "AllowSpotsDXSummit" => Support::Live(Apply::Now),
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
@@ -314,9 +313,11 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TCPServer", "127.0.0.1"),
         ("TCPServerPort", "52001"),
         ("EnableTCPConnection", "false"),
-        // Servizi di rete: tutto spento senza un JTDX.ini che li accendeva (JTDX: PSKReporter, AllowSpotsDXSummit e EQSLSend spenti)
-        // per scelta del proprietario lo spotting su PSK Reporter e' acceso di base (si spegne dalla scheda Segnalazioni)
+        // Servizi di rete: in JTDX PSKReporter, AllowSpotsDXSummit e EQSLSend sono spenti; per scelta del proprietario lo spotting su PSK Reporter
+        // e su DXSummit e' acceso di base (si spegne dalla scheda Segnalazioni), eQSL resta spento
         ("PSKReporter", "true"),
+        // anche lo spot su DXSummit e' acceso di base (scelta del proprietario): parte solo dal pulsante «Spot DX», mai da solo
+        ("AllowSpotsDXSummit", "true"),
         ("EQSLSend", "false"),
         ("EQSLUser", ""),
         ("EQSLNick", ""),
@@ -561,6 +562,8 @@ pub struct EngineSettingsStore {
     window_control: AtomicBool,
     /// Dove sta la password di eQSL (la protezione dei segreti del sistema); `None` finche' nessuno la collega.
     secrets: Mutex<Option<Arc<dyn SecretStore>>>,
+    /// Il servizio degli invii verso l'esterno (per lo spot su DXSummit a richiesta); `None` finche' nessuno lo collega.
+    reporting: Mutex<Option<Arc<reporting::Service>>>,
     /// Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP).
     status: Arc<ReportStatus>,
 }
@@ -602,7 +605,7 @@ impl EngineSettingsStore {
         }
         values.extend(present);
         let (revision, _) = watch::channel(0);
-        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false), secrets_ready: AtomicBool::new(false), window_control: AtomicBool::new(false), secrets: Mutex::new(None), status: Arc::new(ReportStatus::new()) };
+        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false), secrets_ready: AtomicBool::new(false), window_control: AtomicBool::new(false), secrets: Mutex::new(None), reporting: Mutex::new(None), status: Arc::new(ReportStatus::new()) };
         if missing && let Err(e) = store.write() {
             tracing::warn!("impostazioni del motore non scritte: {e}");
         }
@@ -673,6 +676,15 @@ impl EngineSettingsStore {
         let available = secrets.available();
         *self.secrets.lock().unwrap_or_else(|p| p.into_inner()) = Some(secrets);
         self.set_feature(Feature::Secrets, available);
+    }
+
+    /// Collega il servizio degli invii: da qui parte lo spot su DXSummit (rotta `spot/dxsummit`).
+    pub fn set_reporting(&self, service: Arc<reporting::Service>) {
+        *self.reporting.lock().unwrap_or_else(|p| p.into_inner()) = Some(service);
+    }
+
+    pub fn reporting(&self) -> Option<Arc<reporting::Service>> {
+        self.reporting.lock().unwrap_or_else(|p| p.into_inner()).clone()
     }
 
     fn secret_store(&self) -> Option<Arc<dyn SecretStore>> {
@@ -852,6 +864,11 @@ mod tests {
         let none = import_from_ini(&BTreeMap::new(), addr("127.0.0.1:2334"), &[]);
         assert_eq!(none, defaults());
         let r = interpret(&none);
+        // lo spot su DXSummit e' una voce viva, acceso di base senza JTDX.ini; con un JTDX.ini vale quello che c'e' scritto
+        assert_eq!(support("AllowSpotsDXSummit"), Support::Live(Apply::Now));
+        assert!(r.dxsummit);
+        let off = import_from_ini(&map(&[("AllowSpotsDXSummit", "false")]), addr("127.0.0.1:2334"), &[]);
+        assert!(!interpret(&off).dxsummit);
         assert_eq!((r.primary, r.secondary, r.all_txt), (Some(addr("127.0.0.1:2237")), Some(addr("127.0.0.1:2237")), true), "come la schermata di JTDX");
         // il primo server di JTDX era Aurora stessa e non c'e' un inoltro: primo server vuoto e invio spento
         let own = import_from_ini(&engine_jtdx::ini::parse_shown(INI), addr("127.0.0.1:2334"), &[]);

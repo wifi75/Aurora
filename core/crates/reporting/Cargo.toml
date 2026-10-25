@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 aurora-core = { path = "../aurora-core" }
 logbook = { path = "../logbook" }
+qso-native = { path = "../qso-native" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

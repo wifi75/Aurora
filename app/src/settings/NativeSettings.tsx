@@ -178,6 +178,7 @@ export function NativeReports() {
         })}
         <Notes span={2}>
           <Help>{t('ens.rep.help')}</Help>
+          {doc.items.AllowSpotsDXSummit?.state === 'live' ? <Help>{t('ens.dxsummit.help')}</Help> : null}
           <Help>{t('ens.note', { file: doc.file })}</Help>
         </Notes>
         <Unavailable count={off.length} span={2}>

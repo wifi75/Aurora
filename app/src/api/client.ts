@@ -1,7 +1,7 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { EngineSettingsSchema, HealthSchema, type EngineSettings, type Health, type WantedAlert } from './schemas';
+import { EngineSettingsSchema, HealthSchema, SpotResultSchema, type EngineSettings, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
@@ -643,6 +643,11 @@ export async function applyEngineConfig(changes: Record<string, string>): Promis
 /** Le impostazioni del motore proprio (di Aurora, nel suo file); 404 `engine_settings_unavailable` con il motore JTDX. */
 export async function getEngineSettings(): Promise<EngineSettings> {
   return EngineSettingsSchema.parse(await (await request('/engine-settings')).json());
+}
+
+/** Segnala la stazione su DXSummit (solo dalla rete di casa): frequenza e modo li sa il core, qui servono la stazione, il suo locatore e il testo. */
+export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string }): Promise<SpotResult> {
+  return SpotResultSchema.parse(await (await request('/spot/dxsummit', jsonInit(body))).json());
 }
 
 /** Salva e applica subito le modifiche; restituisce il documento aggiornato. */

@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.16 - 2026-10-25
+- **PSK Reporter e DXSummit accesi di base** (scelta del proprietario; si spengono dalla scheda Segnalazioni). **Pulsante «Spot DX»** nel riquadro DX della pagina Stazione: invia lo spot a DXSummit come JTDX (frequenza dial + Rx, commento con modo e testo), senza bloccare il motore e senza ripetere lo stesso DX per 5 minuti.
+- **QSO messo a log**: tutta la riga lampeggia tre volte, lentamente, in cima al pannello Log, che si aggiorna subito.
+
 ## 0.11.15 - 2026-10-25
 - **Scheda Segnalazioni funzionante** (come JTDX): commento ADIF con rapporto dB e distanza, conversione RTTY, cancellazione dei dati dopo il log, server TCP per il record ADIF, spotting su PSK Reporter (**spento di base**: lo accendi tu dalla scheda; nessun invio verso internet parte da solo), invio a eQSL con la password protetta da Windows, ALL.TXT con e senza debug, stato dell'ultimo invio; scheda riordinata a riquadri.
 - **Suoni per ogni funzione**: banco di 53 suoni sintetizzati (nessun file), menu «Suono» con ▶ in ogni riga della tabella dei colori nelle Notifiche e riquadro «Suoni» in fondo; senza suono assegnato non suona.

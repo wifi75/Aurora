@@ -3,7 +3,10 @@ import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-librar
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client', async (importActual) => ({
+  ApiError: (await importActual<typeof import('../api/client')>()).ApiError,
+  getEngineSettings: vi.fn(),
+  postSpotDxsummit: vi.fn(),
   getControls: vi.fn(),
   postControl: vi.fn().mockResolvedValue(undefined),
   postCq: vi.fn().mockResolvedValue(undefined),
@@ -11,7 +14,8 @@ vi.mock('../api/client', () => ({
   postTxFrequency: vi.fn().mockResolvedValue(undefined),
   postRxFrequency: vi.fn().mockResolvedValue(undefined),
 }));
-import { getControls, postControl, postCq, postFreeText, postRxFrequency, postTxFrequency } from '../api/client';
+import { ApiError, getControls, getEngineSettings, postControl, postCq, postFreeText, postRxFrequency, postSpotDxsummit, postTxFrequency } from '../api/client';
+import type { EngineSettings } from '../api/schemas';
 import type { StationStatus } from '../api/schemas';
 import { TxCommands } from './TxCommands';
 
@@ -20,6 +24,11 @@ const status: StationStatus = {
   de_call: 'AA1AA', de_grid: 'FN42', dx_call: 'BB2BB', dx_grid: 'KK00', report: '-10',
   tx_df: 1500, rx_df: 1200, tx_message: 'BB2BB AA1AA -10', tr_period: 15,
 };
+
+/** Le impostazioni del motore proprio con lo spot su DXSummit acceso o spento. */
+function settingsDoc(on: boolean): EngineSettings {
+  return { version: 1, file: 'settings-motore.json', values: { AllowSpotsDXSummit: on ? 'true' : 'false' }, items: { AllowSpotsDXSummit: { state: 'live', apply: 'now' } } };
+}
 
 /** Il pannello legge lo stato degli interruttori da Aurora: serve il contesto delle query. */
 function render(ui: ReactElement) {
@@ -32,6 +41,8 @@ beforeEach(() => {
   vi.mocked(postTxFrequency).mockClear();
   vi.mocked(postRxFrequency).mockClear();
   vi.mocked(postControl).mockClear();
+  vi.mocked(getEngineSettings).mockReset().mockResolvedValue(settingsDoc(true));
+  vi.mocked(postSpotDxsummit).mockReset().mockResolvedValue({ ok: true, dx_call: 'BB2BB', frequency_hz: 21_075_200, info: 'FT8' });
   vi.mocked(getControls).mockReset().mockResolvedValue({ autoseq: true, single_qso: false, enable_tx: false, auto_tx: false });
 });
 
@@ -119,4 +130,56 @@ describe('TxCommands', () => {
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('tx_to_rx', undefined));
   });
 
+
+  describe('the DX Summit spot button', () => {
+    /** Aspetta che la risposta delle impostazioni sia arrivata e il pannello ridisegnato. */
+    const settled = async () => {
+      await screen.findByRole('button', { name: 'Canc DX' });
+      await waitFor(() => expect(getEngineSettings).toHaveBeenCalled());
+      await Promise.allSettled(vi.mocked(getEngineSettings).mock.results.map((r) => r.value as Promise<unknown>));
+      await new Promise((r) => setTimeout(r, 30));
+    };
+
+    it('is there only with the spotting on and a DX station chosen', async () => {
+      render(<TxCommands txAllowed status={status} />);
+      expect(await screen.findByRole('button', { name: 'Spot DX' })).toBeInTheDocument();
+    });
+
+    it('is hidden when the spotting is off, without a DX station and with the other engine', async () => {
+      vi.mocked(getEngineSettings).mockResolvedValue(settingsDoc(false));
+      const off = render(<TxCommands txAllowed status={status} />);
+      await settled();
+      expect(screen.queryByRole('button', { name: 'Spot DX' })).toBeNull();
+      off.unmount();
+      vi.mocked(getEngineSettings).mockResolvedValue(settingsDoc(true));
+      const none = render(<TxCommands txAllowed status={{ ...status, dx_call: null, dx_grid: null }} />);
+      await settled();
+      expect(screen.queryByRole('button', { name: 'Spot DX' })).toBeNull();
+      none.unmount();
+      vi.mocked(getEngineSettings).mockRejectedValue(new ApiError(404, 'engine_settings_unavailable'));
+      render(<TxCommands txAllowed status={status} />);
+      await settled();
+      expect(screen.queryByRole('button', { name: 'Spot DX' })).toBeNull();
+    });
+
+    it('sends the spot with the DX call, locator and text, says the outcome and does not send twice', async () => {
+      render(<TxCommands txAllowed status={status} />);
+      fireEvent.change(await screen.findByLabelText('Commento spot'), { target: { value: 'bella apertura #D' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Spot DX' }));
+      await waitFor(() => expect(postSpotDxsummit).toHaveBeenCalledWith({ dx_call: 'BB2BB', dx_grid: 'KK00', text: 'bella apertura #D' }));
+      expect(await screen.findByText('Spot inviato a DXSummit: BB2BB su 21075.2 kHz')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Spottato' })).toBeDisabled();
+    });
+
+    it('tells in clear why a spot did not go', async () => {
+      vi.mocked(postSpotDxsummit).mockRejectedValueOnce(new ApiError(409, 'spot_already'));
+      render(<TxCommands txAllowed status={status} />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Spot DX' }));
+      expect(await screen.findByText('Questa stazione è già stata segnalata da poco.')).toBeInTheDocument();
+      vi.mocked(postSpotDxsummit).mockRejectedValueOnce(new ApiError(502, 'spot_failed', undefined, 'DXSummit ha risposto 500'));
+      fireEvent.click(screen.getByRole('button', { name: 'Spot DX' }));
+      expect(await screen.findByText('Spot non inviato: DXSummit ha risposto 500')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Spot DX' })).toBeEnabled();
+    });
+  });
 });

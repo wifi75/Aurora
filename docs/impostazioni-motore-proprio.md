@@ -53,7 +53,7 @@ inclusi), la funzione che le legge resta **da verificare con REA** (con `REA_GHI
 | | Messaggi decodificati e di debug (`WriteDecodedDebugALLTXT`) | righe di debug (priorita', «Wanted Call»...). [REA] stringhe di debug | non scritte | **spenta**, stesso motivo |
 | Servizi di rete | eQSL (`EQSLSend`, `EQSLUser`, `EQSLPasswd`, `EQSLNick`) | invio del QSO a eQSL (`EQSL_QSL_SENT`). [REA] `acceptQSO2` | non realizzato; credenziali mai salvate | **spente**, `eqsl`; da fare |
 | | Spotting PSK Reporter (`PSKReporter`) | JTDX manda le ricezioni (IPFIX su UDP) a PSK Reporter. [ini] [GPL] `psk_reporter.cpp` | invio non realizzato | **spenta**, `psk`; da fare (formato e destinatario da verificare in `jtdx.exe`) |
-| | Spotting DXSummit (`AllowSpotsDXSummit`) | permette gli spot verso DXSummit. [ini] [da verificare] | non realizzato | **spenta**, `dxsummit`; da fare |
+| | Spotting DXSummit (`AllowSpotsDXSummit`) | permette lo spot verso DXSummit, che parte solo dal pulsante «DX Call». [ini] (letto in `jtdx.exe`: `on_pbSpotDXCall_clicked`) | pulsante «Spot DX» e rotta `POST /api/v1/spot/dxsummit` (sezione «Spot su DXSummit» sotto) | **viva**, **accesa di base** |
 | Server UDP primario | Server UDP + Numero porta (`UDPServer`, `UDPServerPort`) | destinatario del flusso WSJT-X: Heartbeat, Status, Decode, Clear, QsoLogged, LoggedADIF. [REA] `MessageClient` | `forward_targets`: il primo server (piu' gli altri indirizzi di `AURORA_UDP_FORWARD`) e' il destinatario dell'emettitore UDP, che si riavvia a ogni modifica | **funziona** (con l'emettitore acceso: `AURORA_UDP_EMIT` non a 0) |
 | | Accetta richieste UDP (`AcceptUDPRequests`) | accetta `Reply`, `HaltTx`, `FreeText`... in ritorno. [REA] `replyToUDP` 0x4778ab | `EmitterConfig.accept_requests`; di fabbrica **spento** (un `Reply` fa trasmettere), si importa da JTDX | **funziona** (emettitore) |
 | | Risposte UDP (Reply) accettate (`AcceptUDPReplyMessages`) | 1 solo CQ, 2 CQ e 73, 3 qualsiasi (menu del programma). [REA] | `EmitterConfig.accept_reply` | **funziona** |
@@ -175,7 +175,7 @@ per paese e banda ma non per il modo dei decode. Senza modo noto (radio non lett
 ## Da fare
 
 1. **ALL.TXT**: collegare `AllTxt` a `EngineSettingsStore::reports().all_txt` (e al debug) e dichiarare `Feature::AllTxt` pronta; oggi l'unico interruttore e' `AURORA_ALL_TXT`.
-2. **PSK Reporter** e **DXSummit**: formato e destinazione da rileggere in `jtdx.exe` con REA prima di scrivere qualsiasi invio; **eQSL** (credenziali da tenere fuori dal repository e dal file).
+2. **eQSL**: credenziali tenute fuori dal repository e dal file (protezione dei segreti del sistema, gia' fatto); PSK Reporter e DXSummit sono fatti (sezione «Scheda Segnalazioni» in fondo).
 3. Opzioni del record ADIF (`toRTTY`, `dBtoComments`, `distanceToComments`), conferma al log (`PromptToLog`), spegnimento del log automatico, pulizia dei dati dopo il log.
 4. Server TCP, filtri di testo sul flusso UDP.
 5. Nominativo e locatore a caldo (richiede un trasmettitore che li rilegga).
@@ -213,7 +213,7 @@ Evidenza: chiavi lette da `Configuration::impl::read_settings` di `jtdx.exe` 2.2
 | `PromptToLog`, `AutoQSOLogging` | **spente** | manca la finestra di conferma/registrazione a mano nella pagina (eventi `QsoCompleted`/`QsoPending` e `PendingQso` gia' nel core); il QSO si registra sempre da solo |
 | `TCPServer`, `TCPServerPort`, `EnableTCPConnection` | **vive** | un messaggio `<command:3>Log <parameters:N> ...` per QSO, attesa 1 s, `NAK` = errore (`reporting::tcp`, test contro server locale) |
 | `PSKReporter` | **viva** | IPFIX identico a JTDX verso `report.pskreporter.info:4739` ogni 5 minuti (`reporting::psk`, test con socket UDP locale). Solo messaggi standard con nominativo e locatore validi, non «ipotizzati» (`hint`), non del periodo del cambio banda. Antenna vuota; programma `Aurora vX` |
-| `AllowSpotsDXSummit` | **spenta** (`dxsummit`) | in JTDX lo spot parte solo dal pulsante «DX Call»; il servizio (`reporting::Service::spot_dxsummit`, test) c'e', manca il pulsante e la rotta |
+| `AllowSpotsDXSummit` | **viva**, di fabbrica **accesa** (scelta del proprietario; con un `JTDX.ini` vale il suo valore) | pulsante «Spot DX» e rotta `POST /api/v1/spot/dxsummit` (sezione «Spot su DXSummit» sotto); l'ultimo invio sta accanto alla voce (`status.dxsummit`) |
 | `EQSLSend`, `EQSLUser`, `EQSLNick`, `EQSLPasswd` | **vive** (con DPAPI) | ADIF di `EQSL::upload` su **https** (JTDX usa http); la password sta in `eqsl.secret` cifrato con DPAPI, mai nel JSON ne' nelle risposte |
 | `ApplyFiltersToUDPmessages` | **spenta** (`udp_filters`) | `aurora_core::UdpFilters` e l'emettitore (`apply_filters`) sono pronti e provati; mancano la copia dei filtri dalla pagina e la rotta |
 | `preventFalseUDPspots` | **viva con nota** | il marcatore `?` esiste solo per JT65/JT9: in FT8/FT4 non esclude niente, come in JTDX. Il bit di bassa fiducia UDP segue ora `hint` |
@@ -221,3 +221,17 @@ Evidenza: chiavi lette da `Configuration::impl::read_settings` di `jtdx.exe` 2.2
 | `WriteDecodedALLTXT`, `...DebugALLTXT` | **vive** | `AllTxtScope`: senza caselle solo i messaggi con il proprio nominativo; debug aggiunge «Decoding finished». Le due caselle si escludono |
 
 Tutti gli invii verso internet partono in un'attivita' a parte con tempo massimo, si spengono dall'interruttore e riportano l'ultimo esito (`status` in `GET /api/v1/engine-settings`).
+
+### Spot su DXSummit
+
+Cosa fa `MainWindow::on_pbSpotDXCall_clicked` in `jtdx.exe` 2.2.159 (letto nell'eseguibile; coincide con i sorgenti):
+
+- **Quando**: solo dal pulsante «DX Call», mai da una decodifica. Non fa niente se lo spotting e' spento (`spot_to_dxsummit`), se la stazione e' gia' stata segnalata (il flag si azzera a ogni cambio del nominativo DX e con «Canc DX»), se il nominativo DX e' vuoto o se manca il proprio.
+- **Cosa invia**: `GET http://www.dxsummit.fi/SendSpot.aspx` con `callSign` (proprio nominativo), `dxCallSign`, `frequency` e `info`.
+- **Frequenza**: (frequenza della radio + valore di **Rx** in Hz) / 1000, in kHz con **un decimale**. E' la frequenza di ricezione (`RxFreqSpinBox`: dove si sente il DX, che JTDX sposta sulla stazione scelta), non quella di trasmissione; Aurora fa lo stesso (radio + `rx_df`).
+- **Commento (`info`)**: l'anteprima della riga di testo dello spot senza il prefisso «info: » (`on_spotLineEdit_textChanged`): il modo (`FT8`), poi la propagazione (campo `propLineEdit`, solo se il testo non ha `#G`), poi il testo con le macro espanse: `#G` = `proprioLocatore<propagazione>locatoreDX`, `#D` = distanza senza spazi (`1234km`), `#R` = rapporto (`-12dB`), `#H` = `F/H` solo in Fox/Hound (in Aurora sparisce). Senza testo ne' propagazione resta il solo modo; con un testo e senza propagazione restano, come nel sorgente, due spazi dopo il modo.
+- **Attesa**: 10 secondi. Se scade o la connessione fallisce: finestra «Can not establish/complete connection to dxsummit server», il flag non si imposta e si puo' riprovare. Se va bene il pulsante diventa «Spotted» fino al prossimo cambio di DX.
+
+Aurora: `reporting::dxsummit` (campi, frequenza, `compose_info`); `reporting::Service::spot_current` / `spot_dxsummit` (frequenza e modo li legge dal motore; guardia: la stessa stazione non due volte in 5 minuti, un invio fallito non conta; invio in un thread a parte con attesa massima di 10 s, il motore non si ferma mai); la rotta `POST /api/v1/spot/dxsummit` (solo rete di casa, vedi `docs/api.md`). Nella pagina Stazione, riquadro Trasmissione, riga DX: il pulsante «Spot DX» (con la casella «Commento spot») compare solo se lo spotting e' acceso e c'e' una stazione DX; dopo l'invio dice «Spottato» finche' resta quella stazione, e l'esito in chiaro (inviato o errore) compare sotto i comandi. L'esito dell'ultimo invio sta anche nella scheda Segnalazioni, accanto alla voce.
+
+Prove: `reporting` (unit e `tests/service.rs`: server HTTP locale, campi, radio + Rx, stessa stazione due volte, errore 500, server che non risponde), `remote-api/tests/spot.rs` (401, 403 da fuori, 404 senza servizio, 200, 409, 400, 502), `app/src/components/TxCommands.test.tsx`, `app/src/settings/NativeSettings.test.tsx`.
