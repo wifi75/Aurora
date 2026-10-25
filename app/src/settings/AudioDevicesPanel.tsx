@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ApiError, getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { Help } from './common';
+import { Actions, Field, Group, Message, Notes, Page } from './layout';
 
 const IN_CHANNELS = ['Mono', 'Left', 'Right'] as const;
 const OUT_CHANNELS = ['Mono', 'Left', 'Right', 'Both'] as const;
@@ -64,8 +65,7 @@ function DeviceSelect({
   const isDefault = value.toLowerCase() === systemDefault.toLowerCase();
   const known = isDefault || value === '' || list.some((d) => d.name.toLowerCase() === value.toLowerCase());
   return (
-    <label className="jx-row" htmlFor={id} title={tip}>
-      <span className="jx-name">{label}</span>
+    <Field label={label} hint={tip}>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         {allowUnset && value === '' ? <option value="">{t('aud.unset')}</option> : null}
         <option value={systemDefault}>{defaultName ? t('aud.default', { name: defaultName }) : t('aud.defaultPlain')}</option>
@@ -76,15 +76,14 @@ function DeviceSelect({
         ))}
         {!known ? <option value={value}>{t('aud.missing', { name: value })}</option> : null}
       </select>
-    </label>
+    </Field>
   );
 }
 
 function ChannelSelect({ id, label, tip, value, options, stereo, onChange }: { id: string; label: string; tip: string; value: string; options: readonly string[]; stereo: boolean; onChange(next: string): void }) {
   const t = useT();
   return (
-    <label className="jx-row" htmlFor={id} title={tip}>
-      <span className="jx-name">{label}</span>
+    <Field label={label} hint={tip}>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
           <option key={o} value={o} disabled={o !== 'Mono' && !stereo}>
@@ -92,7 +91,7 @@ function ChannelSelect({ id, label, tip, value, options, stereo, onChange }: { i
           </option>
         ))}
       </select>
-    </label>
+    </Field>
   );
 }
 
@@ -161,11 +160,8 @@ export function AudioDevicesPanel() {
   const pending = FIELDS.filter((k) => draft[k] !== undefined && draft[k] !== data.values[k] && !(k === 'output' && sameOutput(draft[k] ?? '', data.values[k], sys))).length;
 
   return (
-    <section aria-label={t('tab.audio')}>
-      <Help>{t('aud.intro')}</Help>
-
-      <h3 className="set-sub">{t('aud.input')}</h3>
-      <div className="jx-list">
+    <Page className="aud-page">
+      <Group title={t('aud.input')} span={1}>
         <DeviceSelect
           id="aud-input"
           label={t('aud.input')}
@@ -178,13 +174,10 @@ export function AudioDevicesPanel() {
           onChange={(next) => set({ input: next, ...(channelsOf(data.inputs, next, sys) < 2 && shown.input_channel !== 'Mono' ? { input_channel: 'Mono' } : {}) })}
         />
         <ChannelSelect id="aud-inch" label={t('aud.inch')} tip={t('tip.aud.inch')} value={shown.input_channel} options={IN_CHANNELS} stereo={inStereo} onChange={(next) => set({ input_channel: next })} />
-      </div>
-      <p className={data.input_in_use ? 'live-note' : 'notice'} role="status">
-        {data.input_in_use ? t('aud.nowIn', { name: data.input_in_use }) : t('aud.nowInNone')}
-      </p>
+        <Message kind={data.input_in_use ? 'note' : 'alert'}>{data.input_in_use ? t('aud.nowIn', { name: data.input_in_use }) : t('aud.nowInNone')}</Message>
+      </Group>
 
-      <h3 className="set-sub">{t('aud.output')}</h3>
-      <div className="jx-list">
+      <Group title={t('aud.output')} span={1}>
         <DeviceSelect
           id="aud-output"
           label={t('aud.output')}
@@ -197,16 +190,14 @@ export function AudioDevicesPanel() {
           onChange={(next) => set({ output: next, ...(channelsOf(data.outputs, next, sys) < 2 && shown.output_channel !== 'Mono' ? { output_channel: 'Mono' } : {}) })}
         />
         <ChannelSelect id="aud-outch" label={t('aud.outch')} tip={t('tip.aud.outch')} value={shown.output_channel} options={OUT_CHANNELS} stereo={outStereo} onChange={(next) => set({ output_channel: next })} />
-      </div>
-      <p className={data.output_in_use ? 'live-note' : 'muted'} role="status">
-        {data.output_in_use ? t('aud.nowOut', { name: data.output_in_use }) : t('aud.nowOutNone')}
-        {data.output_pending ? ` ${t('aud.nextOut', { name: data.output_pending })}` : ''}
-      </p>
+        <Message kind={data.output_in_use ? 'note' : 'muted'}>
+          {data.output_in_use ? t('aud.nowOut', { name: data.output_in_use }) : t('aud.nowOutNone')}
+          {data.output_pending ? ` ${t('aud.nextOut', { name: data.output_pending })}` : ''}
+        </Message>
+      </Group>
 
-      <h3 className="set-sub">{t('aud.mode')}</h3>
-      <div className="jx-list">
-        <label className="jx-row" htmlFor="aud-mode" title={t('tip.aud.mode')}>
-          <span className="jx-name">{t('aud.mode')}</span>
+      <Group title={t('aud.mode')} span={1}>
+        <Field label={t('aud.mode')} hint={t('tip.aud.mode')}>
           <select id="aud-mode" value={shown.save_mode} onChange={(e) => set({ save_mode: e.target.value })}>
             {SAVE_MODES.map((m) => (
               <option key={m} value={m}>
@@ -214,34 +205,39 @@ export function AudioDevicesPanel() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="jx-row" htmlFor="aud-dir" title={t('tip.aud.dir')}>
-          <span className="jx-name">{t('aud.dir')}</span>
+        </Field>
+        <Field label={t('aud.dir')} hint={t('tip.aud.dir')} stack>
           <input id="aud-dir" type="text" className="jx-text" maxLength={260} spellCheck={false} autoComplete="off" value={shown.save_dir} placeholder={t('aud.dirPlaceholder', { dir: data.default_save_dir })} onChange={(e) => set({ save_dir: e.target.value })} />
-        </label>
-      </div>
+        </Field>
+      </Group>
 
-      <div className="jx-bar" role="group">
-        <button type="button" className="glass glass--on" disabled={apply.isPending || pending === 0} onClick={() => apply.mutate(data)}>
-          {t('aud.apply')}
-        </button>
-        <button type="button" className="glass" disabled={apply.isPending || pending === 0} onClick={() => { setDraft({}); setLines([]); }}>
-          {t('aud.discard')}
-        </button>
-        <button type="button" className="glass" title={t('tip.aud.refresh')} disabled={devices.isFetching} onClick={() => void devices.refetch()}>
-          {t('aud.refresh')}
-        </button>
-        {pending > 0 ? <strong>{t('aud.pending', { n: pending })}</strong> : null}
-      </div>
-      {lines.length > 0 ? (
-        <div role="status" aria-live="polite">
-          {lines.map((line) => (
-            <p key={line.text} className={line.bad ? 'notice' : 'live-note'}>
-              {line.text}
-            </p>
-          ))}
-        </div>
-      ) : null}
-    </section>
+      <Group title={t('aud.apply')} span={3}>
+        <Actions>
+          <button type="button" className="glass glass--on" disabled={apply.isPending || pending === 0} onClick={() => apply.mutate(data)}>
+            {t('aud.apply')}
+          </button>
+          <button type="button" className="glass" disabled={apply.isPending || pending === 0} onClick={() => { setDraft({}); setLines([]); }}>
+            {t('aud.discard')}
+          </button>
+          <button type="button" className="glass" title={t('tip.aud.refresh')} disabled={devices.isFetching} onClick={() => void devices.refetch()}>
+            {t('aud.refresh')}
+          </button>
+          {pending > 0 ? <strong>{t('aud.pending', { n: pending })}</strong> : null}
+        </Actions>
+        {lines.length > 0 ? (
+          <div role="status" aria-live="polite">
+            {lines.map((line) => (
+              <Message key={line.text} kind={line.bad ? 'alert' : 'note'}>
+                {line.text}
+              </Message>
+            ))}
+          </div>
+        ) : null}
+      </Group>
+
+      <Notes span={3}>
+        <Help>{t('aud.intro')}</Help>
+      </Notes>
+    </Page>
   );
 }
