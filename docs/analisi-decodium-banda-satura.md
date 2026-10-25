@@ -236,6 +236,25 @@ motore proprio (crate `ft8`, trasmissione propria).
 
 Le cinque piu' importanti per la banda satura sono **A, B, C, E+D, F+G**. Il resto si fa dopo.
 
+### Stato al 2026-10-25 (motore proprio, `core/crates/qso-native` e `engine-native`)
+
+| ID | Stato | Dove |
+|---|---|---|
+| A | **realizzata come funzione nuova**, spenta di base (`AURORA_FREE_TX=1`): solo con Split acceso, a inizio QSO e dopo due Tx senza risposta, mai a QSO avviato | `freefreq.rs`, `TxDriver::set_free_tx` |
+| B | **realizzata** come i contatori di JTDX (le trasmissioni dello stesso messaggio) | `process_auto`, `RepeatLimits` |
+| C | **realizzata**: Tx fermo se il DX parla con altri nella banda di guardia (FT8 51 Hz, FT4 84) o sempre con `SeqHaltTxReplyOther`; contatore che libera il DX | `readFromStdout` -> `halt_tx_reason` |
+| D | **realizzata** (`m_counter` e `calllist`, 5 minuti salvo SNR migliore) | `history.rs` |
+| E | **realizzata**: priorita' 0-31 di JTDX oppure «Best caller first» con i pesi del binario 1.0.711 (segnale [-24, 10] -> 0..30, attesa fino a 90 s -> 0..20, DXCC nuovo +40 / su banda +25, gia' lavorato -35 / altrove -12, fissato 1000) | `score.rs`, `Options.caller_selection` |
+| F | **realizzata** (CQ direzionale, `StrictDirectionalCQ`) | `history.rs` |
+| G | non realizzata | |
+| H | non realizzata | |
+| I | **realizzata** (AutoSeq 6/7: i CQ degli altri, anche chi manda 73) | blocco C di `autoseq_pick` |
+| J | **realizzata** (scelta tra piu' chiamanti ai nostri CQ, blocchi A e B) | `autoseq_pick` / `pick_scored` |
+| K | non realizzata | |
+| L | non realizzata | |
+
+Il cambio di banda e di modo azzera il QSO come in JTDX; l'avvio tardivo (13,64 s in FT8, 6,04 s in FT4) e la ritrasmissione sono in `tx-native`.
+
 ### A. Tx in zona libera (`tx_free`)
 
 - **Perche'**: in un doppio clic su un CQ JTDX porta la Tx **sulla frequenza del CQ**: con 20 stazioni che chiamano lo stesso DX si

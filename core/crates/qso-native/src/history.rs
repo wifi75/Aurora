@@ -415,6 +415,13 @@ impl QsoHistory {
     /// `autoseq` senza nominativo: sceglie chi chiamare con i flag `algo`. Restituisce la stazione scelta (stato `None` e nessuna
     /// stazione se non c'e' nessuno). Consuma `as_active`: la scelta si rifa' solo se e' arrivato qualcosa di nuovo.
     pub fn autoseq_pick(&mut self, algo_flags: u32, io: &mut Autoseq) -> Option<Pick> {
+        self.autoseq_pick_with(algo_flags, io, None)
+    }
+
+    /// Come `autoseq_pick`; con `scorer` i blocchi A e B (le risposte al proprio CQ) scelgono il punteggio piu' alto, a parita' chi e' arrivato prima
+    /// (come «Best caller first» di Decodium), al posto delle regole di priorita' di JTDX. I filtri (periodo, stato, direzione del CQ, lista nera)
+    /// restano; non c'e' soglia di priorita'. Il blocco C (i CQ degli altri) resta quello di JTDX.
+    pub fn autoseq_pick_with(&mut self, algo_flags: u32, io: &mut Autoseq, scorer: Option<&dyn Fn(&Qso) -> f64>) -> Option<Pick> {
         if !self.as_active || self.data.is_empty() {
             self.as_active = false;
             return None;
@@ -431,6 +438,13 @@ impl QsoHistory {
 
         // blocco A: risposte al mio CQ nell'ultimo periodo; blocco B: nei 5 minuti dal mio ultimo CQ
         for block in 0..2 {
+            if let Some(scorer) = scorer {
+                if let Some(pick) = self.pick_scored(block, &keys, scorer, io) {
+                    self.as_active = false;
+                    return Some(pick);
+                }
+                continue;
+            }
             let mut priority = a_init;
             let mut rep = "-60".to_string();
             let mut r_rep = "-60".to_string();
@@ -575,6 +589,44 @@ impl QsoHistory {
         }
         self.as_active = false;
         None
+    }
+
+    /// La scelta per punteggio di un blocco (A o B): tra i chiamanti validi vince il punteggio piu' alto, a parita' il primo arrivato (`b_time` piu' basso).
+    fn pick_scored(&self, block: u8, keys: &[String], scorer: &dyn Fn(&Qso) -> f64, io: &Autoseq) -> Option<Pick> {
+        let mut eligible: Vec<&Qso> = Vec::new();
+        for key in keys {
+            let on_black = self.black.get(key).copied().unwrap_or(0);
+            let Some(tt) = self.data.get(key) else { continue };
+            let in_window = if block == 0 {
+                tt.time == self.max_r_time
+            } else {
+                (tt.time.wrapping_sub(self.cq.time) < 300 && tt.time >= 300) || (tt.time < 300 && tt.time.wrapping_sub(self.cq.time.wrapping_sub(86_100)) < 300)
+            };
+            let answering = matches!(tt.status, Status::Rcall | Status::Rreport | Status::Rrreport | Status::Rrr | Status::Rrr73);
+            if on_black != 0 || !in_window || tt.continent.is_empty() || !answering {
+                continue;
+            }
+            let wanted_dir = self.wanted_pass_direction && (tt.priority > 16 || (tt.priority > 1 && tt.priority < 5));
+            let cq_dir = self.cq.tyyp.as_str();
+            let direction_ok = cq_dir.is_empty()
+                || tt.continent == UNKNOWN_CONTINENT
+                || wanted_dir
+                || cq_dir == tt.continent
+                || cq_dir == tt.mpx
+                || tt.call.starts_with(cq_dir)
+                || (cq_dir == "DX" && tt.continent != self.my_continent);
+            if direction_ok {
+                eligible.push(tt);
+            }
+        }
+        eligible.sort_by_key(|t| t.b_time);
+        let scores: Vec<f64> = eligible.iter().map(|t| scorer(t)).collect();
+        let best = crate::score::best_index(&scores)?;
+        let tt = eligible.get(best)?;
+        let mut out = Autoseq { grid: tt.grid.clone(), rep: if tt.s_rep.is_empty() { "-60".to_string() } else { tt.s_rep.clone() }, count: tt.count, prio: tt.priority, time: tt.b_time, ..Autoseq::default() };
+        out.rx = if tt.rx > 0 { tt.rx } else { io.rx };
+        out.tx = if tt.tx > 0 { tt.tx } else { io.tx };
+        Some(Pick { status: tt.status, call: tt.call.clone(), out })
     }
 
     /// `message`: registra un messaggio ricevuto (`R...`, `Rcq`, `Rfin`) o trasmesso (`S...`). `param` e' il locatore o il rapporto del messaggio,
@@ -1016,6 +1068,39 @@ mod tests {
         h.set_own("EU", "IU", "JN55", true);
         h.message("N1XYZ", Status::Rcall, 18, "FN42", "", "NA", "", 100, "-05", 1200);
         assert!(h.autoseq_pick(algo::ANSWER_WORKED, &mut Autoseq::default()).is_none(), "con la direzione rigorosa passano solo i continenti giusti");
+    }
+
+    /// Con il punteggio di Decodium (`scorer`) tra chi mi ha chiamato nell'ultimo periodo vince il punteggio migliore, non la priorita' di JTDX; a parita' chi e' arrivato prima.
+    #[test]
+    fn a_scorer_replaces_the_priority_rules_in_blocks_a_and_b() {
+        let mut h = hist();
+        h.message(ME, Status::Scq, 0, "JN55", "", "", "", 90, "", 1500);
+        h.set_time(100);
+        // JTDX sceglierebbe BB2BB (segnale piu' forte); il punteggio premia il paese nuovo (CC3CC, segnato dal solo nominativo per la prova)
+        rx(&mut h, "AA1AA", Status::Rcall, "FN42", 100, "-15", 0);
+        rx(&mut h, "BB2BB", Status::Rcall, "JN45", 100, "+05", 0);
+        rx(&mut h, "CC3CC", Status::Rcall, "KN23", 100, "-20", 0);
+        let by_jtdx = h.autoseq_pick(algo::ANSWER_WORKED, &mut Autoseq::default()).map(|p| p.call);
+        assert_eq!(by_jtdx.as_deref(), Some("BB2BB"));
+        let mut h2 = hist();
+        h2.message(ME, Status::Scq, 0, "JN55", "", "", "", 90, "", 1500);
+        h2.set_time(100);
+        rx(&mut h2, "AA1AA", Status::Rcall, "FN42", 100, "-15", 0);
+        rx(&mut h2, "BB2BB", Status::Rcall, "JN45", 100, "+05", 0);
+        rx(&mut h2, "CC3CC", Status::Rcall, "KN23", 100, "-20", 0);
+        let scorer = |t: &Qso| if t.call == "CC3CC" { 54.6 } else { 20.0 };
+        let pick = h2.autoseq_pick_with(algo::ANSWER_WORKED, &mut Autoseq::default(), Some(&scorer)).expect("scelto");
+        assert_eq!(pick.call, "CC3CC");
+        // a parita' di punteggio vince chi e' arrivato prima (b_time piu' basso)
+        let mut h3 = hist();
+        h3.message(ME, Status::Scq, 0, "JN55", "", "", "", 90, "", 1500);
+        h3.set_time(100);
+        rx(&mut h3, "ZZ9ZZ", Status::Rcall, "FN42", 100, "-15", 0);
+        h3.message("AA1AA", Status::Rcall, 0, "JN45", "", "EU", "", 100, "-15", 1200);
+        let same = |_: &Qso| 10.0;
+        // lo stesso b_time: vince il primo nell'ordine delle chiavi, ma la stabilita' non cambia niente tra i pari
+        let pick = h3.autoseq_pick_with(algo::ANSWER_WORKED, &mut Autoseq::default(), Some(&same)).expect("scelto");
+        assert_eq!(pick.call, "AA1AA");
     }
 
     /// Lista nera e `remove`.

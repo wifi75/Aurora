@@ -5,7 +5,7 @@ use dxcc::DxccDb;
 
 use crate::{
     text::parse_message,
-    worked::{Novelty, WorkedLog},
+    worked::{HighlightFlags, Novelty, WorkedLog},
 };
 
 /// Esito dell'arricchimento di un messaggio.
@@ -19,20 +19,30 @@ pub struct Annotation {
 /// statistiche guardano gli stessi insiemi.
 pub type SharedWorked = Arc<RwLock<WorkedLog>>;
 
+/// Le evidenziazioni di «nuovo» (scheda Notifiche), condivise: chi le cambia le aggiorna e il prossimo decode le usa.
+pub type SharedFlags = Arc<RwLock<HighlightFlags>>;
+
 /// Paese e novita' di un decode, ricavati da `cty.dat` e dai QSO gia' fatti.
 pub struct Enrichment {
     db: Arc<DxccDb>,
     worked: SharedWorked,
+    flags: SharedFlags,
 }
 
 impl Enrichment {
     pub fn new(db: Arc<DxccDb>, worked: WorkedLog) -> Self {
-        Enrichment { db, worked: Arc::new(RwLock::new(worked)) }
+        Enrichment { db, worked: Arc::new(RwLock::new(worked)), flags: Arc::default() }
     }
 
     /// Come `new`, ma con i QSO gia' fatti condivisi con altri (scheda DXCC, importazione del log).
     pub fn with_shared(db: Arc<DxccDb>, worked: SharedWorked) -> Self {
-        Enrichment { db, worked }
+        Enrichment { db, worked, flags: Arc::default() }
+    }
+
+    /// Le evidenziazioni di «nuovo» condivise con chi le cambia (di base tutte accese, per banda e per modo).
+    pub fn with_flags(mut self, flags: SharedFlags) -> Self {
+        self.flags = flags;
+        self
     }
 
     /// I QSO gia' fatti, da aggiornare quando il log cambia.
@@ -51,6 +61,12 @@ impl Enrichment {
     /// non e' vuoto (altrimenti tutto sarebbe "nuovo") e se la banda e' nota. La nuova griglia conta solo
     /// per i CQ: un messaggio tra altre due stazioni segnala al piu' un paese o una zona nuovi.
     pub fn annotate(&self, text: &str, band: Option<&str>) -> Annotation {
+        self.annotate_in(text, band, None)
+    }
+
+    /// Come `annotate`, con il modo dei decode (`FT8`, `FT4`): serve alle evidenziazioni «per modo». Il «gia' lavorato» e' quello di JTDX: la
+    /// stazione che non e' nuova per nessuna evidenziazione accesa (`WorkedLog::novelty_flags`).
+    pub fn annotate_in(&self, text: &str, band: Option<&str>, mode: Option<&str>) -> Annotation {
         let parsed = parse_message(text);
         let country = parsed
             .sender
@@ -68,8 +84,9 @@ impl Enrichment {
         if worked.is_empty() {
             return Annotation { country, continent, tag: base };
         }
-        let novelty = worked.novelty(sender, parsed.grid.as_deref(), band, &self.db);
-        Annotation { country, continent, tag: tag_for(novelty, parsed.is_cq).or(base) }
+        let flags = self.flags.read().map(|f| *f).unwrap_or_default();
+        let tag = worked.novelty_flags(sender, parsed.grid.as_deref(), band, mode, &flags, &self.db).and_then(|n| tag_for(n, parsed.is_cq || flags.potential));
+        Annotation { country, continent, tag: tag.or(base) }
     }
 
     /// Un QSO appena chiuso: da subito la stazione non e' piu' una novita'.

@@ -57,7 +57,15 @@ pub enum Support {
 
 /// Voci della scheda Segnalazioni di JTDX che non sono in `engine_jtdx::ini::FIELDS` (non si leggono ne' si scrivono nel `JTDX.ini`): in Aurora
 /// si vedono, spente e con la spiegazione. Le credenziali di eQSL non si tengono mai.
-pub const EXTRA_KEYS: &[&str] = &["toRTTY", "dBtoComments", "distanceToComments", "ClearCallGridExit", "EQSLSend", "EQSLUser", "EQSLPasswd", "EQSLNick"];
+/// `Region` e `Type2MsgGen` stanno nel `JTDX.ini` come valori binari (`@Variant`): non si leggono ne' si scrivono, ma la scheda Generali li mostra.
+pub const EXTRA_KEYS: &[&str] = &["toRTTY", "dBtoComments", "distanceToComments", "ClearCallGridExit", "EQSLSend", "EQSLUser", "EQSLPasswd", "EQSLNick", "Region", "Type2MsgGen"];
+
+/// Le voci delle evidenziazioni di «nuovo» (scheda Notifiche): una per criterio, con «per banda» e «per modo».
+const NEW_PREFIXES: [&str; 6] = ["newCQZ", "newITUZ", "newDXCC", "newGrid", "newPx", "newCall"];
+
+fn is_highlight_key(key: &str) -> bool {
+    NEW_PREFIXES.iter().any(|p| key == *p || key.strip_prefix(p).is_some_and(|rest| rest == "Band" || rest == "BandMode"))
+}
 
 /// Tutte le voci di cui Aurora racconta lo stato: quelle di JTDX piu' `EXTRA_KEYS`.
 pub fn all_keys() -> Vec<&'static str> {
@@ -77,6 +85,23 @@ pub fn support(key: &str) -> Support {
         "UDP2Server" | "UDP2ServerPort" | "EnableUDP2adifBroadcast" => Support::Live(Apply::Now),
         "UDPServer" | "UDPServerPort" | "EnableUDP1adifSending" | "AcceptUDPRequests" | "AcceptUDPReplyMessages" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         "WriteDecodedALLTXT" | "WriteDecodedDebugALLTXT" => Support::Needs(Feature::AllTxt, "all_txt_pending", Apply::Now),
+        // scheda Sequenza: i contatori, «ferma se risponde a un altro» e «CQ rigoroso» arrivano alla sequenza a caldo (`engine_native::SequenceSettings`)
+        "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqAnswerInCallCount" | "SeqAnswerInCallCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
+        | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" => Support::Live(Apply::Now),
+        // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
+        "TxWatchdogTimer" | "TxQSYAllowed" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
+        "MonitorOFF" => Support::Live(Apply::Restart),
+        "MonitorLastUsed" => Support::Hidden("monitor_last"),
+        "Region" => Support::Hidden("iaru_region"),
+        "Type2MsgGen" => Support::Hidden("type2_msgs"),
+        "Decode52" => Support::Hidden("decode52"),
+        "After73" | "IDint" => Support::Hidden("cw_id"),
+        "TuneTimer" => Support::Hidden("tune_timer"),
+        "InsertBlank" | "Scroll" | "HideTxMessages" | "Tx2QSO" | "countryPrefix" | "showAzimuth" | "AlignDistanceAzimuth" | "AlignInt" => Support::Hidden("own_screen"),
+        // scheda Notifiche: evidenziazioni di «nuovo» (anche per la sequenza), «gia' lavorato», colori invertiti e marcatori
+        k if is_highlight_key(k) => Support::Live(Apply::Now),
+        "newPotential" | "workedColor" | "workedStriked" | "workedUnderlined" | "workedDontShow" | "txtColor" | "OtherStandardMessagesMarker" | "73RR73Marker" | "redMarker"
+        | "blueMarker" | "hidehintMarker" => Support::Live(Apply::Now),
         "udpWindowToFront" | "udpWindowRestore" => Support::Hidden("udp_window"),
         "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Hidden("tcp"),
         "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
@@ -89,14 +114,10 @@ pub fn support(key: &str) -> Support {
         "toRTTY" | "dBtoComments" | "distanceToComments" => Support::Hidden("adif_options"),
         "ClearCallGrid" | "ClearCallGridExit" => Support::Hidden("clear_dx"),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
-        "TxWatchdogTimer" | "TuneTimer" => Support::Hidden("tx_limits"),
-        "MonitorOFF" | "MonitorLastUsed" => Support::Hidden("own_monitor"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
         "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" => Support::Hidden("audio_start"),
         "SaveDir" | "SaveWav" => Support::Hidden("no_wav_save"),
-        "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" | "CallPriorityCQ" | "MaxDistance" | "StrictDirectionalCQ"
-        | "SeqHaltTxReplyOther" | "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
-        | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" => Support::Hidden("own_rules"),
+        "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" | "CallPriorityCQ" | "MaxDistance" => Support::Hidden("own_rules"),
         k if k.starts_with("AlertOn") || k.starts_with("BeepOn") => Support::Hidden("own_alerts"),
         _ => Support::Hidden("own_decoder"),
     }
@@ -145,6 +166,25 @@ pub struct Reports {
     pub secondary: Option<SocketAddr>,
     /// Scrivi le decodifiche in `ALL.TXT`.
     pub all_txt: bool,
+    /// Le evidenziazioni di «nuovo» (scheda Notifiche): decidono anche chi e' «gia' lavorato» e se la sequenza risponde a chiunque.
+    pub highlights: engine_jtdx::worked::HighlightFlags,
+    /// Contatori della scheda Sequenza: massimo di trasmissioni dello stesso messaggio, `None` = contatore spento.
+    pub seq_answer_cq: Option<u32>,
+    pub seq_answer_in_call: Option<u32>,
+    pub seq_sent_r_report: Option<u32>,
+    pub seq_closing: Option<u32>,
+    /// «Ferma il Tx se l'operatore che stai chiamando ha risposto ad un altro» (`SeqHaltTxReplyOther`).
+    pub seq_halt_reply_other: bool,
+    /// «Operazione CQ rigorosa» (`StrictDirectionalCQ`).
+    pub strict_directional_cq: bool,
+    /// «Periodo monitoraggio Tx» in minuti (`TxWatchdogTimer`, 0 = senza).
+    pub watchdog_min: u32,
+    /// «Consenti cambi di frequenza Tx durante la trasmissione» (`TxQSYAllowed`).
+    pub tx_qsy_allowed: bool,
+    /// Il filtro del log della scheda Generali.
+    pub log_filter: engine_jtdx::worked::LogFilter,
+    /// «Non monitorare all'avvio» (`MonitorOFF`).
+    pub monitor_off_at_start: bool,
 }
 
 fn truthy(value: Option<&String>) -> bool {
@@ -181,6 +221,54 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("EnableUDP2adifBroadcast", "true"),
         ("WriteDecodedALLTXT", "true"),
         ("WriteDecodedDebugALLTXT", "false"),
+        // Sequenza: valori di fabbrica dei contatori di JTDX (2 / 3 / 5 / 4); accesi come la configurazione che Aurora ha sempre avuto (rapporto R e chiusura)
+        ("SeqAnswerCQCount", "false"),
+        ("SeqAnswerCQCounterValue", "2"),
+        ("SeqAnswerInCallCount", "false"),
+        ("SeqAnswerInCallCounterValue", "3"),
+        ("SeqSentRReportCount", "true"),
+        ("SeqSentRReportCounterValue", "5"),
+        ("SeqSentRR7373Count", "true"),
+        ("SeqSentRR7373CounterValue", "5"),
+        ("SeqHaltTxReplyOther", "true"),
+        ("StrictDirectionalCQ", "false"),
+        // Generali
+        ("TxWatchdogTimer", "6"),
+        ("TxQSYAllowed", "true"),
+        ("MonitorOFF", "false"),
+        ("callsignLogFiltering", "false"),
+        ("gridLogFiltering", "false"),
+        ("timeFromLogFiltering", ""),
+        // Notifiche: valori di fabbrica di JTDX (`Configuration::read_settings`)
+        ("newCQZ", "false"),
+        ("newCQZBand", "false"),
+        ("newCQZBandMode", "false"),
+        ("newITUZ", "false"),
+        ("newITUZBand", "false"),
+        ("newITUZBandMode", "false"),
+        ("newDXCC", "true"),
+        ("newDXCCBand", "true"),
+        ("newDXCCBandMode", "true"),
+        ("newGrid", "false"),
+        ("newGridBand", "false"),
+        ("newGridBandMode", "false"),
+        ("newPx", "false"),
+        ("newPxBand", "false"),
+        ("newPxBandMode", "false"),
+        ("newCall", "true"),
+        ("newCallBand", "true"),
+        ("newCallBandMode", "true"),
+        ("newPotential", "false"),
+        ("workedColor", "false"),
+        ("workedStriked", "true"),
+        ("workedUnderlined", "false"),
+        ("workedDontShow", "false"),
+        ("txtColor", "false"),
+        ("OtherStandardMessagesMarker", "true"),
+        ("73RR73Marker", "true"),
+        ("redMarker", "true"),
+        ("blueMarker", "false"),
+        ("hidehintMarker", "false"),
     ]
     .iter()
     .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
@@ -234,13 +322,20 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         return Err(SettingsError::NotAvailable(key.to_string()));
     }
     // il nominativo e il locatore possono essere vuoti (nessuno impostato): gli altri testi anche, gli indirizzi si controllano sotto
-    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server") {
+    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "timeFromLogFiltering") {
         return Ok(());
     }
     engine_jtdx::ini_edit::check_value(key, value).map_err(SettingsError::BadValue)?;
     match key {
         "UDPServer" | "UDP2Server" if parse_host(value).is_none() => Err(SettingsError::BadValue(format!("{key}: serve un indirizzo IP (o localhost)"))),
         "UDPServerPort" | "UDP2ServerPort" if parse_server("127.0.0.1", value).is_none() => Err(SettingsError::BadValue(format!("{key}: la porta va da 1 a 65535"))),
+        k if k.starts_with("Seq") && k.ends_with("CounterValue") && !value.parse::<u32>().is_ok_and(|n| (1..=5).contains(&n)) => {
+            Err(SettingsError::BadValue(format!("{k}: il valore va da 1 a 5")))
+        }
+        "TxWatchdogTimer" if !value.parse::<u32>().is_ok_and(|n| n <= 99) => Err(SettingsError::BadValue("TxWatchdogTimer: i minuti vanno da 0 a 99".into())),
+        "timeFromLogFiltering" if engine_jtdx::worked::LogFilter::parse_from(value).is_none() => {
+            Err(SettingsError::BadValue("timeFromLogFiltering: serve AAAAMMGGHHMMSS (solo cifre, al piu' 14)".into()))
+        }
         "MyCall" if !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') || value.len() > 20 => Err(SettingsError::BadValue("MyCall: nominativo non valido".into())),
         "MyGrid" if !(value.len() == 4 || value.len() == 6 || value.len() == 8) || !value.chars().all(|c| c.is_ascii_alphanumeric()) => {
             Err(SettingsError::BadValue("MyGrid: il locatore ha 4, 6 o 8 caratteri".into()))
@@ -261,7 +356,28 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         accept_reply: get("AcceptUDPReplyMessages").parse().ok().filter(|n| (1..=3).contains(n)).unwrap_or(1),
         secondary: truthy(values.get("EnableUDP2adifBroadcast")).then(|| parse_server(get("UDP2Server"), get("UDP2ServerPort"))).flatten(),
         all_txt: truthy(values.get("WriteDecodedALLTXT")),
+        highlights: engine_jtdx::worked::HighlightFlags::from_lookup(|k| values.get(k).map(|v| v == "true")),
+        seq_answer_cq: counter(values, "SeqAnswerCQCount", "SeqAnswerCQCounterValue", 2),
+        seq_answer_in_call: counter(values, "SeqAnswerInCallCount", "SeqAnswerInCallCounterValue", 3),
+        seq_sent_r_report: counter(values, "SeqSentRReportCount", "SeqSentRReportCounterValue", 5),
+        seq_closing: counter(values, "SeqSentRR7373Count", "SeqSentRR7373CounterValue", 4),
+        // JTDX: `SeqHaltTxReplyOther` vale vero se manca
+        seq_halt_reply_other: values.get("SeqHaltTxReplyOther").is_none_or(|v| v == "true"),
+        strict_directional_cq: truthy(values.get("StrictDirectionalCQ")),
+        watchdog_min: get("TxWatchdogTimer").parse().ok().filter(|n| *n <= 99).unwrap_or(6),
+        tx_qsy_allowed: values.get("TxQSYAllowed").is_none_or(|v| v == "true"),
+        log_filter: engine_jtdx::worked::LogFilter {
+            call: truthy(values.get("callsignLogFiltering")).then(|| get("MyCall").to_uppercase()).filter(|c| !c.is_empty()),
+            grid: truthy(values.get("gridLogFiltering")).then(|| get("MyGrid").to_string()).filter(|g| !g.is_empty()),
+            from: engine_jtdx::worked::LogFilter::parse_from(get("timeFromLogFiltering")),
+        },
+        monitor_off_at_start: truthy(values.get("MonitorOFF")),
     }
+}
+
+/// Un contatore della scheda Sequenza: il valore se la casella e' accesa (1-5), altrimenti `None`.
+fn counter(values: &BTreeMap<String, String>, on: &str, value: &str, default: u32) -> Option<u32> {
+    truthy(values.get(on)).then(|| values.get(value).and_then(|v| v.parse().ok()).filter(|n| (1..=5).contains(n)).unwrap_or(default))
 }
 
 /// Destinatari del record ADIF in UDP: quelli fissi (ambiente) piu' il server secondario, **senza doppioni**.

@@ -16,7 +16,7 @@ use std::{
 
 use aurora_core::QsoRecord;
 use ft8::message::CallHashes;
-use qso_native::{CallerInfo, Decoded as QDecoded, Event as QEvent, Mode, Options, Sequencer, Slot, Station, StopReason};
+use qso_native::{CallerInfoFn, Decoded as QDecoded, Event as QEvent, FreeTxParams, Heard, Mode, Options, Sequencer, Slot, Station, StopReason, choose_free_tx};
 use tx_native::{Parity, Transmitter, TxError, TxRequest};
 
 use crate::rig::NativeControls;
@@ -75,6 +75,29 @@ pub enum OptionChange {
     AnswerWorkedBefore(bool),
     UseRrr(bool),
     TxEven(bool),
+    /// La scheda Sequenza di Aurora (contatori, ferma se risponde a un altro, CQ rigoroso, watchdog).
+    Sequence(SequenceSettings),
+}
+
+/// Le impostazioni della scheda Sequenza che arrivano dalle impostazioni di Aurora (`SeqAnswerCQCount`..., `SeqHaltTxReplyOther`, `StrictDirectionalCQ`,
+/// `TxWatchdogTimer`): stessi nomi e stessi significati di JTDX (`docs/logiche-jtdx.md`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SequenceSettings {
+    pub limits: qso_native::RepeatLimits,
+    pub halt_on_reply_other: bool,
+    pub strict_directional_cq: bool,
+    /// Minuti del controllo della trasmissione (0 = senza).
+    pub watchdog_min: u32,
+}
+
+impl SequenceSettings {
+    /// Le opzioni della sequenza con queste impostazioni.
+    pub fn apply(&self, opts: &mut Options) {
+        opts.limits = self.limits;
+        opts.abandon_if_dx_answers_other = self.halt_on_reply_other;
+        opts.strict_directional_cq = self.strict_directional_cq;
+        opts.watchdog_min = self.watchdog_min;
+    }
 }
 
 /// Cio' che arriva dalla pagina, dall'automazione e dai pulsanti.
@@ -142,7 +165,19 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     notes: Vec<TxNote>,
     /// L'ultima frequenza di ricezione scambiata con la pagina (`RxFreqSpinBox`): serve a capire chi l'ha cambiata.
     rx_published: u32,
+    /// Frequenza di trasmissione libera (regola A): spenta di base. Solo con Split acceso (Tx e Rx indipendenti).
+    free_tx: Option<FreeTxParams>,
+    /// I segnali sentiti di recente: indice del periodo e frequenza.
+    heard: VecDeque<(u64, f32)>,
+    /// Il DX per cui si e' gia' scelta la frequenza e quante trasmissioni c'erano allora (per rifarlo dopo `FREE_TX_MOVE_AFTER` senza risposta).
+    free_for: Option<String>,
+    free_moved_at: u32,
 }
+
+/// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
+const FREE_TX_WINDOW_SLOTS: u64 = 4;
+/// Dopo quante trasmissioni senza risposta si riguarda se la frequenza e' ancora libera.
+const FREE_TX_MOVE_AFTER: u32 = 2;
 
 /// Una trasmissione consegnata alla catena audio/PTT: il periodo in cui parte e che cosa e' stato modulato (per `ALL.TXT`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -172,18 +207,80 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Come `new`, con le opzioni di partenza della sequenza (di base quelle di JTDX: AutoSeq 3, registrazione automatica che ferma a fine QSO...).
     pub fn with_options(call: &str, grid: &str, port: Arc<P>, controls: Arc<NativeControls>, base: Options) -> Result<TxDriver<P>, String> {
         let mode = controls.mode();
-        let opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..base };
+        let mut opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..base };
+        // la scheda Sequenza di Aurora, se gia' data, vale dall'avvio
+        if let Some(settings) = controls.sequence() {
+            settings.apply(&mut opts);
+        }
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published };
+        let mut driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0 };
         driver.seq.set_rx_freq(rx_published);
         driver.publish_view();
         Ok(driver)
     }
 
+    /// Accende o spegne la frequenza di trasmissione libera (regola A di `docs/analisi-decodium-banda-satura.md`): all'inizio di un QSO nostro, e dopo
+    /// due trasmissioni senza risposta, se la frequenza Tx e' occupata da un segnale recente la si sposta nel varco piu' largo. Vale solo con Split acceso
+    /// (con Tx = Rx la trasmissione segue la ricezione) e mai a QSO avviato. Ne' JTDX ne' Decodium lo fanno: e' una funzione nuova, spenta di base.
+    pub fn set_free_tx(&mut self, on: bool) {
+        self.free_tx = on.then(|| FreeTxParams::for_mode(self.mode));
+        self.free_for = None;
+    }
+
+    /// Ricorda i segnali di un periodo decodificato, per la scelta della frequenza libera.
+    fn note_heard(&mut self, slot: Slot, decoded: &[(String, i32, u32)]) {
+        if self.free_tx.is_none() {
+            return;
+        }
+        for (_, _, freq) in decoded {
+            self.heard.push_back((slot.0, *freq as f32));
+        }
+        while self.heard.front().is_some_and(|(s, _)| slot.0.saturating_sub(*s) >= FREE_TX_WINDOW_SLOTS) {
+            self.heard.pop_front();
+        }
+    }
+
+    /// Sposta la frequenza di trasmissione in un varco libero, se serve (vedi `set_free_tx`). Restituisce la riga di registro.
+    fn maybe_move_free_tx(&mut self, slot: Slot) -> Vec<String> {
+        let Some(params) = self.free_tx else { return Vec::new() };
+        if !self.controls.switch_on("split") {
+            return Vec::new();
+        }
+        let Some(dx) = self.seq.dx().map(str::to_string) else {
+            self.free_for = None;
+            return Vec::new();
+        };
+        // mai a QSO avviato: cambiare la Tx a meta' fa perdere l'a-priori del decodificatore del DX
+        if self.seq.dx_has_written() {
+            return Vec::new();
+        }
+        let count = self.seq.dx_tx_count();
+        let fresh = self.free_for.as_deref() != Some(dx.as_str());
+        let stalled = !fresh && count >= self.free_moved_at + FREE_TX_MOVE_AFTER;
+        if !(fresh || stalled) {
+            return Vec::new();
+        }
+        self.free_for = Some(dx.clone());
+        self.free_moved_at = count;
+        let tx_even = self.seq.tx_even();
+        let heard: Vec<Heard> = self.heard.iter().map(|(s, f)| Heard { freq_hz: *f, same_parity: Slot(*s).is_even() == tx_even }).collect();
+        let current = self.controls.tx_df.load(Ordering::Relaxed);
+        let _ = slot;
+        match choose_free_tx(&heard, current, &params) {
+            Some(new) => {
+                self.controls.tx_df.store(new, Ordering::Relaxed);
+                self.opts.tx_freq_hz = new;
+                self.seq.set_options(self.opts.clone());
+                vec![format!("frequenza Tx libera: {new} Hz (erano {current} Hz, occupata da un segnale recente) per chiamare {dx}")]
+            }
+            None => Vec::new(),
+        }
+    }
+
     /// Come riconoscere continente e priorita' (nuovo DXCC, zona, desiderati) delle stazioni: serve alla scelta di chi chiamare (`QsoHistory::autoseq`).
-    pub fn set_caller_info(&mut self, info: Option<Box<dyn Fn(&str) -> CallerInfo + Send>>) {
+    pub fn set_caller_info(&mut self, info: Option<CallerInfoFn>) {
         self.seq.set_caller_info(info);
     }
 
@@ -213,6 +310,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.halt_tx();
         self.seq.set_mode(mode);
         self.mode = mode;
+        if self.free_tx.is_some() {
+            self.free_tx = Some(FreeTxParams::for_mode(mode));
+        }
+        self.heard.clear();
+        self.free_for = None;
         self.recent.clear();
         self.free_text = None;
         self.prepared = None;
@@ -304,6 +406,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                             self.prepared = None;
                             self.free_text = None;
                             self.follow_decode_frequency(freq);
+                            log.extend(self.maybe_move_free_tx(Slot::at(self.mode, now_s)));
                             log.push(if self.auto_tx { format!("risposta a «{text}»: Tx abilitato") } else { format!("risposta a «{text}»: AutoTX spento, Abilita Tx resta com'e'") });
                             // un messaggio gia' pianificato per il periodo in corso o per il prossimo e' superato: si riparte col nuovo (come `m_restart` di JTDX)
                             if self.last_planned.is_some_and(|planned| planned >= Slot::at(self.mode, now_s)) {
@@ -380,6 +483,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     OptionChange::SingleQso(v) => self.opts.single_qso = v,
                     OptionChange::AnswerWorkedBefore(v) => self.opts.answer_worked_before = v,
                     OptionChange::UseRrr(v) => self.opts.use_rrr = v,
+                    OptionChange::Sequence(settings) => settings.apply(&mut self.opts),
                     OptionChange::TxEven(v) => {
                         let changed = self.seq.tx_even() != v;
                         self.opts.tx_even = v;
@@ -457,8 +561,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
         self.sync_rx_from_user();
+        self.note_heard(slot, decoded);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
+        log.extend(self.maybe_move_free_tx(slot.next()));
         log.extend(self.plan(slot.next(), now_s));
         qsos.extend(self.collect_events(slot_start_ms, dial_hz, band, &mut log));
         self.sync_rx_to_user();
@@ -1073,6 +1179,68 @@ mod tests {
         assert_eq!(b.controls.tx_df.load(Ordering::Relaxed), 1300);
     }
 
+    /// Un periodo con la nostra frequenza Tx (1500 Hz) occupata da piu' segnali e il CQ di K1ABC a 1200 Hz.
+    fn busy_band() -> Vec<(String, i32, u32)> {
+        vec![
+            ("CQ K1ABC FN42".to_string(), -10, 1200),
+            ("CQ DL1AAA JO31".to_string(), -5, 1480),
+            ("CQ F4BBB JN18".to_string(), -8, 1500),
+            ("CQ G3CCC IO91".to_string(), -12, 1530),
+        ]
+    }
+
+    /// Regola A (funzione nuova, spenta di base): con la frequenza Tx occupata e Split acceso, al clic su un CQ la trasmissione va in un varco libero.
+    #[test]
+    fn free_tx_moves_a_busy_tx_frequency_when_a_qso_starts_with_split_on() {
+        let mut b = Bench::new();
+        b.press("split", Some(true), BASE);
+        b.d.set_free_tx(true);
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.after_slot(SLOT_MS, &busy_band(), BASE + 14.3, 14_074_000, "20m");
+        let log = b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.5);
+        let tx = b.controls.tx_df.load(Ordering::Relaxed);
+        assert!(log.iter().any(|l| l.contains("frequenza Tx libera")), "{log:?}");
+        assert!(busy_band().iter().all(|(_, _, f)| f.abs_diff(tx) >= 60), "Tx a {tx} Hz e' ancora vicina a un segnale");
+    }
+
+    /// Di fabbrica nessuno sposta la Tx (ne' JTDX ne' Decodium lo fanno).
+    #[test]
+    fn free_tx_is_off_by_default() {
+        let mut b = Bench::new();
+        b.press("split", Some(true), BASE);
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.after_slot(SLOT_MS, &busy_band(), BASE + 14.3, 14_074_000, "20m");
+        b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.5);
+        assert_eq!(b.controls.tx_df.load(Ordering::Relaxed), 1500);
+    }
+
+    /// Con Split spento Tx e Rx vanno insieme: non c'e' nulla da spostare.
+    #[test]
+    fn free_tx_does_nothing_with_split_off() {
+        let mut b = Bench::new();
+        b.controls.set_switch("split", false);
+        b.d.set_free_tx(true);
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.after_slot(SLOT_MS, &busy_band(), BASE + 14.3, 14_074_000, "20m");
+        let log = b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.5);
+        assert!(!log.iter().any(|l| l.contains("frequenza Tx libera")), "{log:?}");
+        // la Tx segue la ricezione (la frequenza del CQ)
+        assert_eq!(b.controls.tx_df.load(Ordering::Relaxed), 1200);
+    }
+
+    /// Con la frequenza gia' libera non si tocca niente.
+    #[test]
+    fn free_tx_leaves_a_clear_frequency_alone() {
+        let mut b = Bench::new();
+        b.press("split", Some(true), BASE);
+        b.d.set_free_tx(true);
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.after_slot(SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        let log = b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.5);
+        assert!(!log.iter().any(|l| l.contains("frequenza Tx libera")), "{log:?}");
+        assert_eq!(b.controls.tx_df.load(Ordering::Relaxed), 1500);
+    }
+
     #[test]
     fn a_double_click_moves_rx_and_with_split_off_tx_to_the_frequency_of_the_message() {
         let mut b = Bench::new();
@@ -1460,5 +1628,31 @@ mod tests {
         b.rig.set_mode("FT8").expect("modo");
         assert_eq!(b.controls.mode(), Mode::Ft8);
         assert!(b.rig.set_mode("SSB").is_err());
+    }
+
+    /// La scheda Sequenza di Aurora arriva alla sequenza: all'avvio (se le impostazioni c'erano gia') e a caldo (`OptionChange::Sequence`).
+    #[test]
+    fn the_sequence_settings_reach_the_sequencer_at_start_and_live() {
+        let settings = SequenceSettings {
+            limits: qso_native::RepeatLimits { answer_cq: Some(2), answer_in_call: Some(3), sent_r_report: None, closing: Some(1) },
+            halt_on_reply_other: false,
+            strict_directional_cq: true,
+            watchdog_min: 9,
+        };
+        // all'avvio
+        let controls = Arc::new(NativeControls::default());
+        controls.set_sequence(settings.clone());
+        let port = Arc::new(FakePort::default());
+        let d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::clone(&controls)).expect("pilota");
+        assert_eq!(d.opts.limits, settings.limits);
+        assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
+        assert_eq!(d.opts.watchdog_min, 9);
+        // a caldo
+        let mut d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::new(NativeControls::default())).expect("pilota");
+        assert!(d.opts.abandon_if_dx_answers_other, "di fabbrica come JTDX: acceso");
+        d.handle(TxCommand::Option(OptionChange::Sequence(settings.clone())), 1.0);
+        assert_eq!(d.opts.limits, settings.limits);
+        assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
+        assert_eq!(d.opts.watchdog_min, 9);
     }
 }

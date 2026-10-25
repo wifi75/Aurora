@@ -820,7 +820,15 @@ Non implementato: con un testo libero che non e' un 73 (`isAutoSeq73`) JTDX speg
 **Corretto** nel motore proprio: `NativeRig::set_control` mandava `auto_tx` e `enable_tx` entrambi a `TxCommand::Enable`, `snapshot` mostrava `auto_tx` uguale a `enabled` e AutoTX partiva spento. Ora: `TxCommand::AutoTx(bool)` distinto
 (solo `TxDriver::auto_tx`, che decide se il doppio clic / `Reply` accende Abilita Tx; `Sequencer::reply_to_with`), interruttore `auto_tx` a se' (di fabbrica acceso), `enable_tx` = stato della sequenza; `TxView.enabled` (cioe' `tx_enabled`
 verso la UI) resta Abilita Tx e lo schema non cambia. Test: `auto_tx_and_enable_tx_are_separate_commands_and_separate_states`, `the_double_click_enables_tx_only_with_auto_tx_on`, `the_initial_state_is_the_one_of_jtdx`.
-**Scelte di Aurora che restano diverse da JTDX** (da decidere): il tasto Esc dell'interfaccia (`useEscapeStop`) spegne anche AutoTX (JTDX no); «CQ» e «Invia» accendono Abilita Tx (in JTDX `txb6` e il pallino del messaggio libero no).
+**Differenze lasciate in sospeso e come si sono chiuse (2026-10-25, con il binario)**
+
+| Differenza | Cosa dice il binario | Decisione |
+|---|---|---|
+| Esc spegne anche AutoTX | `keyPressEvent` -> `haltTx` (`0x4bd4e0`) -> `on_stopTxButton_clicked` (`0x4ac620`): azzera `m_enableTx`, `m_btxok`, `m_bTxTime`, `m_transmitting`, `m_restart`, `m_txNext`; **non scrive `m_autoTx` (+0x368)** | **Adattato**: `useEscapeStop` manda solo Halt e `enable_tx` spento, mai `auto_tx`. Il testo del suggerimento `tip.gen.escStop` (sei lingue) non nomina piu' AutoTX. Test aggiornati |
+| «Invia» del messaggio libero accende Abilita Tx | `on_rbFreeText_clicked` (`0x4a7e70`) e `genStdMsgs` non toccano `m_enableTx`; il consenso a trasmettere e' solo `enableTxButton` | **Adattato**: `FreeText { send }` sceglie il messaggio e lo pubblica, **non** accende Abilita Tx; `tip.tx.free` lo dice. I test del messaggio libero premono `enable_tx` come l'utente |
+| «CQ» accende Abilita Tx | `on_txb6_clicked` sceglie Tx6 senza accendere `m_enableTx` | **Resta diverso, voluto**: il pulsante CQ della pagina e' un'azione in un solo gesto (scegli il CQ e parti, come il tasto «CQ» dei programmi concorrenti). Si puo' spegnere subito con Esc. Non e' un errore di logica: il periodo e il messaggio sono quelli di JTDX |
+| AutoSeq con testo libero diverso da 73 | in `guiUpdate` (`0x4c4350`) un messaggio libero che non e' «73» spegne AutoSeq (`m_autoseq = false`) e il pulsante; il ritorno e' manuale | **Adattato**: `Sequencer::note_free_text` spegne AutoSeq per un testo libero diverso da `73` (`is_autoseq_73`) e `auto_seq_effective` lo pubblica; il testo libero viene pianificato una volta sola per periodo. Test in `regole_jtdx.rs` e in `engine-native/src/tx.rs` |
+| `split` mappato su `pbTxLock` senza inversione | `on_pbTxLock_clicked` (`0x4a4b30`): `pbTxLock` **acceso** = Tx bloccata sulla Rx, cioe' Split **spento** | **Corretto**: `rig-control/src/controls.rs` ha `Control.inverted`; lettura e comando invertono lo stato (`split` = non `pbTxLock`). Test `split_is_the_opposite_of_the_tx_lock_button` |
 
 ## Registrazione dei QSO (REA, 2026-10-25)
 

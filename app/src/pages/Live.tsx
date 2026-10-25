@@ -118,7 +118,6 @@ export function Live() {
     all: t('panel.all'),
     log: t('panel.log'),
     cluster: t('panel.cluster'),
-    dxcc: t('panel.dxcc'),
   };
 
   const renderPanel = (id: PanelId) => {
@@ -159,10 +158,18 @@ export function Live() {
         );
       case 'cluster':
         return <ClusterPanel />;
-      case 'dxcc':
-        return <DxccCard panel call={status?.dx_call ?? ''} grid={status?.dx_grid ?? undefined} band={subjectBand(status?.dial_hz)} mode={subjectMode(status?.mode)} />;
       case 'log':
-        return <Log4omPanel />;
+        // il log in alto e, sotto, la scheda DXCC: lo stesso pannello diviso in due
+        return (
+          <div className="log-dxcc">
+            <div className="log-dxcc-top">
+              <Log4omPanel />
+            </div>
+            <div className="log-dxcc-bottom">
+              <DxccCard panel call={status?.dx_call ?? ''} grid={status?.dx_grid ?? undefined} band={subjectBand(status?.dial_hz)} mode={subjectMode(status?.mode)} />
+            </div>
+          </div>
+        );
       case 'all':
         return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
     }

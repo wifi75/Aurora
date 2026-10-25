@@ -25,14 +25,15 @@
 //!
 //! Nessun orologio e nessun I/O: il chiamante passa i periodi (`Slot`) e i secondi UTC.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::classify::{DisplayState, RxContext, classify_rx, classify_tx, de_call_and_grid, report as decoded_report, words};
-use crate::history::{Autoseq, QsoHistory, Sec, Status, algo};
+use crate::history::{Autoseq, Qso, QsoHistory, Sec, Status, algo};
 use crate::message::{Body, Message, base_call, is_modifier, is_std_call, is_valid_call, is_valid_locator, parse, same_station};
+use crate::score::{CallerFacts, caller_score};
 use crate::slot::{Mode, Slot};
 use crate::stdmsg::{StdMessages, gen_cq, gen_std_msgs};
-use crate::types::{AbandonReason, CallerInfo, Decoded, Event, Options, Phase, QsoRecord, ReportPolicy, SeqError, Station, StopReason, Tx};
+use crate::types::{AbandonReason, CallerInfo, CallerSelection, Decoded, Event, Options, Phase, QsoRecord, ReportPolicy, SeqError, Station, StopReason, Tx};
 
 /// Chi sa dire cosa ricorda il registro di una stazione (continente, priorita'): le evidenziazioni di JTDX.
 pub type CallerInfoFn = Box<dyn Fn(&str) -> CallerInfo + Send>;
@@ -122,6 +123,8 @@ pub struct Sequencer {
 
     worked: HashSet<String>,
     announced: HashSet<String>,
+    /// Cosa il registro dice delle stazioni sentite (per il punteggio di «Best caller first»).
+    info_cache: HashMap<String, CallerInfo>,
     /// AutoSeq spento da un messaggio libero che non e' un 73 (`m_wasAutoSeq`): si riaccende alla generazione dei messaggi successiva.
     auto_seq_suspended: bool,
     events: Vec<Event>,
@@ -187,6 +190,7 @@ impl Sequencer {
             pending_tx_end: None,
             worked: HashSet::new(),
             announced: HashSet::new(),
+            info_cache: HashMap::new(),
             auto_seq_suspended: false,
             events: Vec::new(),
             reported: None,
@@ -243,8 +247,13 @@ impl Sequencer {
         self.note_state();
     }
 
+    /// Quante volte di fila e' stato trasmesso il messaggio corrente al DX (il `count` di `QsoHistory`).
+    pub fn dx_tx_count(&self) -> u32 {
+        self.hist.entry(&self.his_call).map_or(0, |t| t.count.max(0) as u32)
+    }
+
     /// Il DX ha mandato almeno un messaggio che avanza il QSO (rapporto, locatore diretto a noi...).
-    fn dx_has_written(&self) -> bool {
+    pub fn dx_has_written(&self) -> bool {
         self.hist
             .entry(&self.his_call)
             .is_some_and(|t| matches!(t.srx_c, Status::Rcall | Status::Rreport | Status::Rrreport | Status::Rrr | Status::Rrr73 | Status::R73))
@@ -731,6 +740,7 @@ impl Sequencer {
             return;
         }
         let info = self.info_of(&class.check_call);
+        self.info_cache.insert(base_call(&class.check_call), info.clone());
         let status = class.status.unwrap_or(Status::None);
         let continent: String = info.continent.chars().take(2).collect();
         self.hist.message(&class.check_call, status, i32::from(info.priority), &class.param, &class.tyyp, &continent, &info.prefix, c_time, &rpt_text(d.snr.clamp(-50, 49)), d.freq_hz as i32);
@@ -883,7 +893,27 @@ impl Sequencer {
                 flags |= algo::MAX_DISTANCE;
             }
             let mut pick_io = Autoseq { rx: self.rx_hz, tx: self.tx_hz(), ..Autoseq::default() };
-            if let Some(pick) = self.hist.autoseq_pick(flags, &mut pick_io) {
+            let picked = if self.opts.caller_selection == CallerSelection::BestCallerFirst {
+                // «Best caller first» di Decodium: punteggio al posto delle priorita' di JTDX
+                let cache = &self.info_cache;
+                let now = self.ds_max_r_time;
+                let scorer = |t: &Qso| {
+                    let info = cache.get(&base_call(&t.call));
+                    caller_score(&CallerFacts {
+                        snr: t.s_rep.trim().parse().ok(),
+                        waited_s: f64::from(now.saturating_sub(t.b_time)),
+                        dxcc_new: info.is_some_and(|i| i.dxcc_new),
+                        dxcc_new_band: info.is_some_and(|i| i.dxcc_new_band),
+                        worked_band: info.is_some_and(|i| i.worked_band),
+                        worked_elsewhere: info.is_some_and(|i| i.worked_elsewhere),
+                        pinned: false,
+                    })
+                };
+                self.hist.autoseq_pick_with(flags, &mut pick_io, Some(&scorer))
+            } else {
+                self.hist.autoseq_pick(flags, &mut pick_io)
+            };
+            if let Some(pick) = picked {
                 self.status = pick.status;
                 self.his_call = pick.call.clone();
                 his_call = pick.call.clone();

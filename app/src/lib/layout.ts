@@ -1,4 +1,4 @@
-export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log' | 'cluster' | 'dxcc';
+export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log' | 'cluster';
 export type Zone = 'left' | 'right';
 
 export interface Layout {
@@ -12,14 +12,12 @@ export interface Layout {
   collapsed: PanelId[];
 }
 
-export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster', 'dxcc'];
+export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster'];
 const KEY = 'aurora-layout';
 /** Altezza predefinita dell'attivita' di banda: bassa, perche' la cascata resti in vista. */
-const ALL_HEIGHT = 300;
+const ALL_HEIGHT = 620;
 /** Altezza predefinita della riga DX Cluster | Comandi. */
 const CLUSTER_HEIGHT = 340;
-/** Altezza predefinita della scheda DXCC (etichette, matrice e totale). */
-const DXCC_HEIGHT = 420;
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 2000;
 const MIN_SPLIT = 0.25;
@@ -29,7 +27,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'log', 'waterfall'], right: ['cluster', 'station', 'tx', 'dxcc', 'cq'], heights: { all: ALL_HEIGHT, cluster: CLUSTER_HEIGHT, dxcc: DXCC_HEIGHT }, split: 0.5, collapsed: [] };
+  return { left: ['all', 'log', 'waterfall'], right: ['cluster', 'station', 'tx', 'cq'], heights: { all: ALL_HEIGHT, cluster: CLUSTER_HEIGHT }, split: 0.5, collapsed: [] };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -75,10 +73,9 @@ function withNewPanels(left: unknown, right: unknown): { left: unknown; right: u
     const at = r.indexOf('station');
     r = at < 0 ? ['cluster', ...r] : [...r.slice(0, at), 'cluster', ...r.slice(at)];
   }
-  if (!has('dxcc')) {
-    const at = r.indexOf('tx');
-    r = at < 0 ? [...r, 'dxcc'] : [...r.slice(0, at + 1), 'dxcc', ...r.slice(at + 1)];
-  }
+  // la scheda DXCC (0.11.8) stava in un pannello suo: ora sta sotto il log, nello stesso pannello
+  l = l.filter((p) => p !== 'dxcc');
+  r = r.filter((p) => p !== 'dxcc');
   return { left: l, right: r };
 }
 
@@ -104,7 +101,6 @@ export function readLayout(storage: ReadableStorage): Layout {
     }
     // la riga DX Cluster | Comandi ha sempre un'altezza: una disposizione salvata prima non ne aveva
     if (heights.cluster === undefined) heights.cluster = CLUSTER_HEIGHT;
-    if (heights.dxcc === undefined) heights.dxcc = DXCC_HEIGHT;
     const split = typeof parsed.split === 'number' && Number.isFinite(parsed.split) ? clamp(parsed.split, MIN_SPLIT, MAX_SPLIT) : defaultLayout().split;
     const collapsed = Array.isArray(parsed.collapsed) ? ALL_PANELS.filter((p) => (parsed.collapsed as unknown[]).includes(p)) : [];
     return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split, collapsed };

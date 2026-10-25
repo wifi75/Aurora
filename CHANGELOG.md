@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.9 - 2026-10-25
+- **Scheda DXCC sotto il log**: nello stesso pannello, il log di Log4OM2 in alto e la scheda DXCC sotto; il pannello del log e' piu' largo e la scheda si adatta (etichette e matrice in piccolo).
+- **Logiche di QSO verificate nel programma di riferimento**: registrazione al primo 73/RR73, contatori, pausa per stazione, passaggio a Tx6/CQ, banda di guardia, watchdog, scelta di chi chiamare, avvio tardivo (finestra 13,64 s in FT8 e 6,04 s in FT4, si trasmette la coda) e ritrasmissione. Esc spegne solo Abilita Tx; «Invia» del testo libero non accende Abilita Tx; AutoSeq si spegne con un testo libero diverso da 73; `split` e' l'inverso di `pbTxLock`. Tx in zona libera (spenta di base: `AURORA_FREE_TX=1`).
+
 ## 0.11.8 - 2026-10-25
 - **Scheda DXCC nella pagina Stazione**: pannello con le sei etichette (NEW ONE, NEW BAND, NEW MODE, NEW GRID, GRID BAND, GRID MODE) e la matrice dei paesi lavorati per banda (160...4 m e U) con righe FT8, FT4 e DIG; dati dal log interno, da `wsjtx_log.adi` e da Log4OM2. Logica verificata nel programma di riferimento (`docs/scheda-dxcc.md`). Esportazione e importazione ADIF dalla pagina Statistiche.
 - **Tutto cio' che imposti resta impostato al riavvio**: interruttori (AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, RRR, periodo Tx, AutoTX, Split), frequenze Tx e Rx, modo FT8/FT4, livelli Pwr per banda e **Abilita Tx** (scelta del proprietario) si salvano in `controls.json`. Monitora riparte sempre acceso.

@@ -178,6 +178,9 @@ impl Logbook {
                 date_off: r.get(9)?,
                 time_off: r.get(10)?,
                 confirmed: r.get::<_, Option<i64>>(11)?.map(|v| v != 0),
+                // il log interno e' sempre del proprio nominativo: non conserva con quale
+                station_call: String::new(),
+                my_grid: String::new(),
             })
         })?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
