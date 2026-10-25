@@ -127,6 +127,8 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
     // il motore proprio decodifica in ombra accanto a JTDX e si confronta con lui (`AURORA_NATIVE_DECODE=0` lo spegne)
     v.insert("AURORA_NATIVE_DECODE".into(), "1".into());
+    // gli ultimi 400 periodi (circa 144 MB) si tengono in WAV nella cartella dei dati: servono a misurare il motore proprio sulle stesse registrazioni
+    v.insert("AURORA_NATIVE_RECORD".into(), "1".into());
     // trasmissione aperta: la scelta e' del proprietario, STOP e tetti restano; `AURORA_ALLOW_TX=0` la chiude
     v.insert("AURORA_ALLOW_TX".into(), "1".into());
     if let Some(file) = env_file {
