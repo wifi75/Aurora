@@ -3740,15 +3740,27 @@
 }
 
 /* Messaggi gia' lavorati (scheda Notifiche): barrati o sottolineati come nel motore, a colori solo se acceso */
-/* gia' lavorato: barrata TUTTA la riga (ora, rapporto, messaggio, paese, distanza); l'etichetta resta leggibile */
-.decode-row--strike,
-.decode-row--strike .decode-text .data {
-  text-decoration: line-through;
+/* gia' lavorato: una sola linea che barra TUTTA la riga da bordo a bordo, spazi vuoti compresi; l'etichetta resta leggibile sopra la linea */
+.decode-row--strike {
+  position: relative;
+}
+
+.decode-row--strike::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 .decode-row--strike .badge,
 .decode-row--strike .badge-cell {
-  text-decoration: none;
+  position: relative;
+  z-index: 2;
 }
 
 .decode-row--underline .decode-text .data {
