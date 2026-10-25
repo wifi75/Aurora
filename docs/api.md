@@ -96,3 +96,7 @@ Predefinito: i comandi che fanno trasmettere sono ammessi da rete locale e Tails
 
 Vedi `.env.example`. In breve: `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE`, `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`,
 `AURORA_AUDIO_DEVICE` (con il motore proprio vale solo se la scheda Audio non ha scelto un ingresso), `AURORA_AUDIO_OUT_DEVICE` (idem per l'uscita), `AURORA_HISTORY_DAYS` (giorni di storico dei messaggi, predefinito 30, 0 = per sempre), `AURORA_JTDX_INI`, `AURORA_LOG4OM_DB`, `AURORA_REPLAY_ON_CONNECT` (predefinito 0), `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig` o `hamlib`), `AURORA_RIGCTLD` (percorso di `rigctld`, file o cartella), `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL` (il PC entra senza codice; acceso dal programma Windows), `AURORA_AUTO_*`.
+
+### Impostazioni di Segnalazioni (aggiunte 2026-10-25)
+
+`GET/PUT /api/v1/engine-settings` (motore proprio): oltre a `values` e `items` (con `note` per le voci vive che in FT8/FT4 non cambiano niente) il documento ha `secrets` (`{"EQSLPasswd": true|false}`: la password non si restituisce mai) e `status` (per `psk`, `dxsummit`, `eqsl`, `tcp`: `ok`, `at_ms`, `message`, `sent`, `failed`). `PUT` accetta `EQSLPasswd` (salvata con DPAPI, mai nel file; vuota = cancella). `400 bad_setting` anche per `PromptToLog`+`AutoQSOLogging` o le due caselle di ALL.TXT accese insieme, e per eQSL acceso senza utente e password. Evento WebSocket nuovo (core): `qso_completed`, `qso_pending`, `qso_pending_done`.

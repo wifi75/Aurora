@@ -5,7 +5,10 @@ import type { EngineSettings } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { applyColors, defaultColors, inkFor, kindKey, readColors, saveColors, type ColorKey, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
-import { SOUND_NAMES, playNamed, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type SoundName } from '../lib/alerts';
+import { useAlertPrefs } from '../lib/alerts';
+import { eventOfAlert, useSoundAssign, type SoundEvent } from '../lib/soundAssign';
+import { armAudio } from '../lib/soundBank';
+import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
 import { useNotifyView, workedLook, type AlertKey, type NotifyView } from '../lib/notifyView';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { usePrefs, type Prefs } from '../lib/prefs';
@@ -352,7 +355,11 @@ const NEW_ROWS = [
 /** La casella nuda di un avviso di «Play alert sound» (subito, nel browser). */
 function AlertCheck({ k, label, locked = false }: { k: AlertKey; label: string; locked?: boolean }) {
   const view = useNotifyView((s) => s.view);
-  return <input type="checkbox" aria-label={label} data-alert={k} disabled={locked} checked={view[k]} onChange={(e) => useNotifyView.getState().set({ [k]: e.target.checked })} />;
+  return <input type="checkbox" aria-label={label} data-alert={k} disabled={locked} checked={view[k]} onChange={(e) => {
+        useNotifyView.getState().set({ [k]: e.target.checked });
+        if (e.target.checked) useSoundAssign.getState().ensure([eventOfAlert(k)]);
+      }}
+    />;
 }
 
 /** Una cella con la casella di un avviso. */
@@ -364,39 +371,18 @@ function AlertBox({ k, label, locked = false }: { k: AlertKey; label: string; lo
   );
 }
 
-/** Avvisi sonori: accesi/spenti con il volume, il suono a scelta, «Prova» e «non suonare mentre trasmetti». */
+/** Avvisi sonori: acceso/spento con il volume e «non suonare mentre trasmetti». Il suono di ogni funzione si sceglie nella sua riga e nel riquadro Suoni. */
 function AlertOptions() {
   const t = useT();
-  const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
-  const change = (next: AlertPrefs) => {
-    saveAlerts(browserStorage(), next);
-    setAlerts(next);
+  const alerts = useAlertPrefs((s) => s.prefs);
+  const change = (next: typeof alerts) => {
+    if (next.enabled) armAudio();
+    useAlertPrefs.getState().set(next);
   };
   return (
     <>
       <Cell label={t('alert.button')} wide>
         <AlertSwitch value={alerts} onChange={change} />
-      </Cell>
-      <Field label={t('not2.soundPick')}>
-        <select aria-label={t('not2.soundPick')} value={alerts.sound} onChange={(e) => change({ ...alerts, sound: e.target.value as SoundName })}>
-          {SOUND_NAMES.map((n) => (
-            <option key={n} value={n}>
-              {t(`not2.snd.${n}` as Key)}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Cell label={t('not2.test')}>
-        <button
-          type="button"
-          className="glass"
-          onClick={() => {
-            const ctx = webAudioContext();
-            if (ctx) playNamed(alerts.sound, alerts.volume, ctx);
-          }}
-        >
-          {t('not2.test')}
-        </button>
       </Cell>
       <Check label={t('not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
     </>
@@ -413,7 +399,9 @@ function SoundCheck({ kinds, label, disabled }: { kinds: readonly ColorKey[]; la
       disabled={disabled}
       checked={!disabled && kinds.every((k) => sound[k])}
       onChange={(e) => {
-        if (!disabled) for (const k of kinds) useNotify.getState().setFlag('sound', k, e.target.checked);
+        if (disabled) return;
+        for (const k of kinds) useNotify.getState().setFlag('sound', k, e.target.checked);
+        if (e.target.checked) useSoundAssign.getState().ensure(kinds.filter((k): k is Exclude<ColorKey, 'auto'> => k !== 'auto'));
       }}
     />
   );
@@ -446,7 +434,6 @@ export function NativeNotifications() {
   const view = useNotifyView((s) => s.view);
   const setView = useNotifyView.getState().set;
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
-  const notify = useNotify((s) => s.notify);
   const myCall = useStation((s) => s.status?.de_call);
   if (settings.isError || !settings.data) {
     return (
@@ -581,11 +568,7 @@ export function NativeNotifications() {
             const bg = worked && !look.color ? { background: 'var(--panel)', color: 'var(--text)' } : style;
             return (
               <Cell key={key} label={name}>
-                {notify.sound[key] ? (
-                  <span className="jt-note" role="img" aria-label={t('not.sound')} title={t('not.sound')}>
-                    ♪
-                  </span>
-                ) : null}
+                <SoundPicker event={key as SoundEvent} label={name} />
                 <span
                   className={`jt-sample${key.startsWith('new_') ? ' jt-sample--bold' : ''}${worked && look.strike ? ' jt-sample--strike' : ''}${worked && look.underline ? ' jt-sample--underline' : ''}`}
                   style={bg}
@@ -618,7 +601,14 @@ export function NativeNotifications() {
           <AlertBox k="alertMyCall" label={t('not2.alertMy')} />
           <AlertBox k="alertDxCall" label={t('not2.alertDx')} />
           <SoundBox kinds={['my_call']} label={t('not2.soundMy')} />
-          <Check label={t('not2.soundFirst')} checked={view.beepFirst} onChange={(v) => setView({ beepFirst: v })} />
+          <Check
+            label={t('not2.soundFirst')}
+            checked={view.beepFirst}
+            onChange={(v) => {
+              setView({ beepFirst: v });
+              if (v) useSoundAssign.getState().ensure(['first_message']);
+            }}
+          />
         </Cells>
       </Group>
 
@@ -660,7 +650,9 @@ export function NativeNotifications() {
         <Help>{t('not2.intro')}</Help>
         <Help>{t('not2.previewHelp')}</Help>
         <Help>{t('not2.alertHelp')}</Help>
+        <SoundsHelp />
       </Notes>
+      <SoundsGroup />
       <ApplyBar draft={draft} doc={doc} />
     </Page>
   );

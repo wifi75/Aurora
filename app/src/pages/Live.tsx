@@ -1,6 +1,6 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
@@ -26,9 +26,9 @@ import { subjectBand, subjectMode } from '../lib/dxccCard';
 import { Waterfall } from '../components/Waterfall';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
-import { useNotify } from '../lib/notify';
-import { useNotifyView } from '../lib/notifyView';
-import { pickAlert, playAlert, playNamed, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
+import { useAlertPrefs, type AlertPrefs } from '../lib/alerts';
+import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
+import { armAudio, playSound } from '../lib/soundBank';
 import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
@@ -70,42 +70,38 @@ export function Live() {
     return () => clearTimeout(timer);
   }, [note]);
 
-  const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
-  const alertsRef = useRef(alerts);
-  alertsRef.current = alerts;
-  const audioRef = useRef<ToneContext | null>(null);
+  const alerts = useAlertPrefs((s) => s.prefs);
 
   const changeAlerts = (next: AlertPrefs) => {
-    // il contesto audio si crea al primo gesto dell'utente: i browser non lo permettono prima
-    if (next.enabled && !audioRef.current) audioRef.current = webAudioContext();
-    saveAlerts(browserStorage(), next);
-    setAlerts(next);
+    // il contesto audio si prepara al primo gesto dell'utente: i browser non lo permettono prima
+    if (next.enabled) armAudio();
+    useAlertPrefs.getState().set(next);
   };
 
   // avvisi gia' accesi da una visita precedente: l'audio si abilita al primo tocco sulla pagina
   useEffect(() => {
-    if (!alerts.enabled || audioRef.current) return;
-    const arm = () => {
-      audioRef.current ??= webAudioContext();
-    };
-    window.addEventListener('pointerdown', arm, { once: true });
-    return () => window.removeEventListener('pointerdown', arm);
+    if (!alerts.enabled) return;
+    window.addEventListener('pointerdown', armAudio, { once: true });
+    return () => window.removeEventListener('pointerdown', armAudio);
   }, [alerts.enabled]);
 
-  // suona solo per i messaggi arrivati dopo l'apertura della pagina
+  // suona solo per i messaggi arrivati dopo l'apertura della pagina, con il suono assegnato alla funzione (senza suono assegnato tace)
   useEffect(() => {
     let lastId: number | null = null;
+    let lastTx: number | null | undefined;
     return useStation.subscribe((state) => {
-      const picked = pickAlert(state.decodes, lastId, useNotify.getState().notify.sound, useStation.getState().status?.de_call, useNotifyView.getState().view.beepFirst, {
-        flags: useNotifyView.getState().view,
-        dxCall: useStation.getState().status?.dx_call,
-      });
+      const transmitting = state.status?.transmitting ?? false;
+      const st = ringState(transmitting);
+      const picked = pickSoundEvent(state.decodes, lastId, st, state.status?.de_call, state.status?.dx_call);
       lastId = picked.lastId;
-      const prefs = alertsRef.current;
-      // «non suonare mentre trasmetti»: la nota si perde, non si accoda
-      if (prefs.muteWhileTx && useStation.getState().status?.transmitting) return;
-      if (picked.kind && prefs.enabled && audioRef.current) playAlert(picked.kind, prefs.volume, audioRef.current);
-      if (picked.alert && prefs.enabled && audioRef.current) playNamed(prefs.sound, prefs.volume, audioRef.current);
+      if (picked.sound) playSound(picked.sound, st.volume);
+      // «Mio messaggio in trasmissione»: una riga Tx nuova
+      const txTop = state.txLog[0]?.id ?? null;
+      if (lastTx !== undefined && txTop !== null && txTop !== lastTx) {
+        const id = soundFor('tx_msg', st);
+        if (id) playSound(id, st.volume);
+      }
+      lastTx = txTop;
     });
   }, []);
 

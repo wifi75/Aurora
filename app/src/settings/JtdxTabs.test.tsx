@@ -216,17 +216,41 @@ describe('Notifications tab (as in JTDX)', () => {
     expect(useNotifyView.getState().view.alertDxCall).toBe(true);
   });
 
-  it('chooses the sound, the volume and the silence while transmitting, and has a test button', async () => {
+  it('keeps the silence while transmitting and the alert switch; the sound is chosen per row', async () => {
     render(<NativeNotifications />);
-    const pick = await screen.findByLabelText(it_('not2.soundPick'));
-    fireEvent.change(pick, { target: { value: 'horn' } });
-    expect(JSON.parse(localStorage.getItem('aurora-alerts') ?? '{}').sound).toBe('horn');
+    await screen.findByLabelText(it_('not2.cqz'));
+    expect(screen.queryByLabelText(it_('not2.soundPick'))).toBeNull();
     expect(screen.getByLabelText(it_('not2.muteTx'))).toBeChecked();
     fireEvent.click(screen.getByLabelText(it_('not2.muteTx')));
     expect(JSON.parse(localStorage.getItem('aurora-alerts') ?? '{}').muteWhileTx).toBe(false);
-    expect(screen.getByRole('button', { name: it_('not2.test') })).toBeEnabled();
-    expect(screen.getByRole('button', { name: it_('alert.button') })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: it_('alert.button') }).length).toBeGreaterThan(0);
     localStorage.removeItem('aurora-alerts');
+  });
+
+  it('every message type has its sound menu with «none» first, saved at once, and a test button', async () => {
+    render(<NativeNotifications />);
+    await screen.findByLabelText(it_('not2.cqz'));
+    const pick = screen.getByLabelText(it_('snd.choose', { name: it_('kind.new_zone') })) as HTMLSelectElement;
+    expect(pick.value).toBe('');
+    expect(pick.options[0]!.textContent).toBe(it_('snd.none'));
+    expect(pick.querySelectorAll('option').length).toBeGreaterThanOrEqual(35);
+    expect(pick.querySelectorAll('optgroup').length).toBeGreaterThanOrEqual(5);
+    fireEvent.change(pick, { target: { value: 'gong' } });
+    expect(JSON.parse(localStorage.getItem('aurora-sound-assign') ?? '{}').map.new_zone).toBe('gong');
+    expect(useNotify.getState().notify.sound.new_zone).toBe(true);
+    fireEvent.change(pick, { target: { value: '' } });
+    expect(JSON.parse(localStorage.getItem('aurora-sound-assign') ?? '{}').map.new_zone).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Prova il suono:/ }).length).toBeGreaterThanOrEqual(17);
+  });
+
+  it('the Sounds box: assign different sounds, remove them all', async () => {
+    render(<NativeNotifications />);
+    await screen.findByLabelText(it_('not2.cqz'));
+    fireEvent.click(screen.getByRole('button', { name: it_('snd.auto') }));
+    const map = JSON.parse(localStorage.getItem('aurora-sound-assign') ?? '{}').map as Record<string, string>;
+    expect(new Set(Object.values(map)).size).toBe(Object.keys(map).length);
+    fireEvent.click(screen.getByRole('button', { name: it_('snd.clear') }));
+    expect(Object.values(JSON.parse(localStorage.getItem('aurora-sound-assign') ?? '{}').map).every((v) => v === null)).toBe(true);
   });
 
   it('the display choices of the engine tab are real: different background, DX call and grid highlight, sound at the first message', async () => {
