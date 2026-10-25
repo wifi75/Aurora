@@ -104,7 +104,7 @@ pub fn parse_model_list(text: &str) -> Vec<RigModel> {
             Some(RigModel { id, manufacturer: cut(line, mfg, model), model: cut(line, model, version), status: cut(line, status, macro_col) })
         })
         .collect();
-    models.sort_by(|a, b| (a.manufacturer.to_lowercase(), a.model.to_lowercase()).cmp(&(b.manufacturer.to_lowercase(), b.model.to_lowercase())));
+    models.sort_by_key(|m| (m.manufacturer.to_lowercase(), m.model.to_lowercase()));
     models
 }
 

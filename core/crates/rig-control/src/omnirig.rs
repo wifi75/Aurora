@@ -89,6 +89,13 @@ impl WindowsRig {
 }
 
 impl Rig for WindowsRig {
+    fn frequency(&self) -> Result<u64, RigError> {
+        let out = powershell_output(
+            "$o = New-Object -ComObject OmniRig.OmniRigX; $r = $o.Rig1; if ($r.Status -ne 4) { Write-Error 'radio non in linea'; exit 3 }; [int64]$r.GetRxFrequency()",
+        )?;
+        out.trim().parse::<u64>().map_err(|_| RigError(format!("frequenza illeggibile: {out}")))
+    }
+
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
         // OmniRig a volte e' occupato un istante (JTDX che legge la radio): un secondo tentativo basta
         powershell(&script(hz)).or_else(|first| {

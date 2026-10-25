@@ -119,6 +119,8 @@ pub fn detect(places: &Places) -> Values {
 /// la cartella dei dati, quella dell'interfaccia e l'indirizzo, se nessuno li ha scelti.
 pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&str>, process_env: impl IntoIterator<Item = (String, String)>) -> Values {
     let mut v = detect(places);
+    // il motore e' quello proprio di Aurora: ascolta l'ingresso audio e decodifica da solo, senza JTDX (`AURORA_ENGINE=jtdx` per usare JTDX)
+    v.insert("AURORA_ENGINE".into(), "native".into());
     v.insert("AURORA_DATA_DIR".into(), text(data_dir));
     v.insert("AURORA_UI_DIR".into(), text(ui_dir));
     // raggiungibile dal telefono sulla rete di casa; l'accesso richiede comunque il codice di associazione
@@ -258,6 +260,7 @@ mod tests {
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), None, vec![]);
         assert_eq!(v["AURORA_BIND"], "0.0.0.0:8787");
         assert_eq!(v["AURORA_ALLOW_TX"], "1");
+        assert_eq!(v["AURORA_ENGINE"], "native", "il motore proprio, non JTDX");
         assert!(!v.contains_key("AURORA_OPEN_ACCESS"));
         let config = config_from(&v).expect("configurazione valida");
         assert!(config.local_trust && !config.open_access, "il PC entra senza codice, la rete di casa no");
