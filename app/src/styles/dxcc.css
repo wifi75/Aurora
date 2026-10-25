@@ -184,6 +184,8 @@
   height: 1.7rem;
   background: var(--dxcc-none);
   border-radius: 2px;
+  /* contorno sottile sempre presente: una casella resta visibile anche con un colore scelto uguale allo sfondo (es. bianco) */
+  box-shadow: inset 0 0 0 1px var(--col-line);
 }
 
 .dxcc-cell[data-kind='worked'] {
