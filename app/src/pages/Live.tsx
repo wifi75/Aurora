@@ -13,6 +13,7 @@ import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
 import { PhoneTabs } from '../components/PhoneTabs';
+import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
@@ -32,6 +33,7 @@ import { signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone } from '../lib/phone';
+import { useRadioDisplay } from '../lib/radioDisplay';
 import { registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { cqDecodes } from '../state/selectors';
@@ -53,6 +55,7 @@ export function Live() {
   const txLog = useStation((s) => s.txLog);
   const pendingBand = useStation((s) => s.pendingBand);
   const connection = useStation((s) => s.connection);
+  const displayHidden = useRadioDisplay((s) => s.pref.hidden);
   const chosenBands = useBandFilter((s) => s.bands);
   const filters = useFilters((s) => s.filters);
   const shown = applyFilters(decodes, filters, status?.own_continent);
@@ -240,14 +243,28 @@ export function Live() {
             onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
           />
         </div>
-        <StatusBar status={status} connection={connection} />
-        <div className="live-actions">
-          <TxBanner status={status} />
-          {phone ? null : <AlertSwitch value={alerts} onChange={changeAlerts} />}
-          <StopButton variant="compact" />
-        </div>
+        {/* il display sta a destra della riga delle bande, al posto dei controlli che ora sono sulla seconda riga */}
+        <RadioDisplayHeader />
+        <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
+        {phone ? (
+          <div className="live-actions">
+            <TxBanner status={status} />
+          </div>
+        ) : null}
       </div>
-      {phone ? null : <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />}
+      {phone ? null : (
+        <RxControls
+          mode={status?.mode ?? ''}
+          transmitting={status?.transmitting ?? false}
+          trailing={
+            <>
+              <TxBanner status={status} />
+              <AlertSwitch value={alerts} onChange={changeAlerts} />
+              <StopButton variant="compact" />
+            </>
+          }
+        />
+      )}
       <DiagnosisBar />
       {phone ? (
         <PhoneTabs

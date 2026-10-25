@@ -3,6 +3,7 @@ import { useT, type Key } from '../i18n';
 import { rememberTab } from '../lib/lastPage';
 import { browserStorage } from '../lib/theme';
 import { AccessTab } from '../settings/AccessTab';
+import { CatTab } from '../settings/CatTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { FiltersTab } from '../settings/FiltersTab';
@@ -29,6 +30,7 @@ interface TabDef {
 const TABS: readonly TabDef[] = [
   { id: 'general', label: 'tab.general', tip: 'tip.tab.general', render: () => <GeneralTab /> },
   { id: 'radio', label: 'tab.radio', tip: 'tip.tab.radio', render: () => <RadioTab /> },
+  { id: 'cat', label: 'tab.cat', tip: 'tip.tab.cat', render: () => <CatTab /> },
   { id: 'audio', label: 'tab.audio', tip: 'tip.tab.audio', render: () => <AudioTab /> },
   { id: 'sequence', label: 'tab.sequence', tip: 'tip.tab.sequence', render: () => <SequenceTab /> },
   { id: 'macros', label: 'tab.macros', tip: 'tip.tab.macros', render: () => <MacrosTab /> },

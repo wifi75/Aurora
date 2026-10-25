@@ -4,6 +4,7 @@ import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { EngineValues } from './EngineValues';
+import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help, Row } from './common';
 
 /** Scheda Generali: la stazione (letta dal motore), come si mostrano i messaggi, lingua e tema. */
@@ -48,6 +49,8 @@ export function GeneralTab() {
       <button type="button" className="glass" onClick={() => usePrefs.getState().reset()}>
         {t('set.reset')}
       </button>
+
+      <RadioDisplayPicker />
 
       <h3 className="set-sub">{t('gen.language')}</h3>
       <LanguageSelect />

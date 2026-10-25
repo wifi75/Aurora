@@ -8,6 +8,22 @@ export const HealthSchema = z.object({
 });
 export type Health = z.infer<typeof HealthSchema>;
 
+/** Strumenti letti dal CAT della radio: ognuno e' assente se la radio non lo da'. */
+export const RadioMetersSchema = z.object({
+  /** S-meter in punti S, 0-9. */
+  s_points: z.number().optional(),
+  /** Decibel sopra S9, 0-60. */
+  s_over_db: z.number().optional(),
+  power_w: z.number().optional(),
+  swr: z.number().optional(),
+  /** Livello ALC, 0-1. */
+  alc: z.number().optional(),
+  comp_db: z.number().optional(),
+  id_a: z.number().optional(),
+  vdd_v: z.number().optional(),
+});
+export type RadioMeters = z.infer<typeof RadioMetersSchema>;
+
 export const StationStatusSchema = z.object({
   dial_hz: z.number(),
   mode: z.string(),
@@ -24,6 +40,7 @@ export const StationStatusSchema = z.object({
   tx_message: z.string().nullable().optional(),
   tr_period: z.number().nullable().optional(),
   own_continent: z.string().nullable().optional(),
+  meters: RadioMetersSchema.nullable().optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 

@@ -17,6 +17,17 @@ describe('EventSchema', () => {
     if (parsed.type === 'decode') expect(parsed.tag).toBe('new_dxcc');
   });
 
+  it('accepts a status with the CAT meters, with only some of them, or without', () => {
+    const base = { type: 'status', dial_hz: 14074000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'FN42' };
+    const full = EventSchema.safeParse({ ...base, meters: { s_points: 7, s_over_db: 0, power_w: 5, swr: 1.2, alc: 0.3, comp_db: 4, id_a: 1.1, vdd_v: 13.8 } });
+    const some = EventSchema.safeParse({ ...base, meters: { s_points: 3 } });
+    const none = EventSchema.safeParse(base);
+    const nul = EventSchema.safeParse({ ...base, meters: null });
+    expect([full.success, some.success, none.success, nul.success]).toEqual([true, true, true, true]);
+    expect(EventSchema.safeParse({ ...base, meters: { swr: 'alto' } }).success).toBe(false);
+    if (some.success && some.data.type === 'status') expect(some.data.meters?.power_w).toBeUndefined();
+  });
+
   it('accepts the new tags and the country, and a decode without country', () => {
     const base = { type: 'decode', id: 1, time_ms: 0, snr: -1, delta_time: 0, freq_hz: 100, text: 'X' };
     const a = EventSchema.safeParse({ ...base, tag: 'new_dxcc_band', country: 'Giappone' });

@@ -5,7 +5,7 @@
 //! 3. dal rilevamento automatico di JTDX, di Log4OM2 e del file dei paesi.
 //!
 //! Tutto cio' che non si trova resta al valore predefinito del core. La trasmissione nel programma Windows e' **aperta** (scelta del proprietario); per chiuderla
-//! `AURORA_ALLOW_TX=0` nel file. STOP, tetti, dead-man e automazioni spente di default restano.
+//! senza opzioni. STOP, tetti, dead-man e automazioni spente di default restano.
 
 use std::{
     collections::BTreeMap,
@@ -84,6 +84,27 @@ fn text(path: &Path) -> String {
     path.display().to_string()
 }
 
+/// Il metodo del PTT e la porta come li scrive `JTDX.ini` (`PTTMethod=@Variant(...PTT_method_RTS...)`, `PTTport=COM9`).
+pub fn ptt_from_ini(raw: &str) -> (Option<&'static str>, Option<String>) {
+    let value = |key: &str| raw.lines().find_map(|l| l.strip_prefix(key).and_then(|r| r.strip_prefix('='))).map(str::trim);
+    let method = value("PTTMethod").and_then(|v| {
+        let v = v.to_ascii_uppercase();
+        if v.contains("PTT_METHOD_RTS") {
+            Some("rts")
+        } else if v.contains("PTT_METHOD_DTR") {
+            Some("dtr")
+        } else if v.contains("PTT_METHOD_CAT") {
+            Some("omnirig")
+        } else if v.contains("PTT_METHOD_VOX") {
+            Some("vox")
+        } else {
+            None
+        }
+    });
+    let port = value("PTTport").filter(|p| !p.is_empty()).map(str::to_string);
+    (method, port)
+}
+
 /// Cio' che si ricava da JTDX e dagli altri programmi installati. Senza `JTDX.ini` resta il simulatore.
 pub fn detect(places: &Places) -> Values {
     let mut v = Values::new();
@@ -99,6 +120,19 @@ pub fn detect(places: &Places) -> Values {
             let log = local.join("JTDX").join("wsjtx_log.adi");
             if log.is_file() {
                 v.insert("AURORA_WORKED_ADIF".into(), text(&log));
+            }
+            // uscita audio e PTT come li ha impostati JTDX (PTT sulla linea RTS o DTR di una COM, CAT/OmniRig, VOX)
+            if let Ok(raw) = std::fs::read_to_string(&ini) {
+                let (method, port) = ptt_from_ini(&raw);
+                if let Some(method) = method {
+                    v.insert("AURORA_PTT_METHOD".into(), method.into());
+                }
+                if let Some(port) = port {
+                    v.insert("AURORA_PTT_PORT".into(), port);
+                }
+            }
+            if let Some(device) = engine_jtdx::ini::read_shown(&ini).ok().and_then(|m| m.get("SoundOutName").cloned()).filter(|d| !d.trim().is_empty()) {
+                v.insert("AURORA_AUDIO_OUT_DEVICE".into(), device);
             }
             // l'ingresso audio e' quello scelto in JTDX
             if let Some(device) = engine_jtdx::ini::read_shown(&ini).ok().and_then(|m| m.get("SoundInName").cloned()).filter(|d| !d.trim().is_empty()) {
@@ -131,8 +165,6 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_NATIVE_DECODE".into(), "1".into());
     // gli ultimi 400 periodi (circa 144 MB) si tengono in WAV nella cartella dei dati: servono a misurare il motore proprio sulle stesse registrazioni
     v.insert("AURORA_NATIVE_RECORD".into(), "1".into());
-    // trasmissione aperta: la scelta e' del proprietario, STOP e tetti restano; `AURORA_ALLOW_TX=0` la chiude
-    v.insert("AURORA_ALLOW_TX".into(), "1".into());
     if let Some(file) = env_file {
         v.extend(parse_env_file(file));
     }
@@ -148,9 +180,6 @@ pub fn config_from(values: &Values) -> Result<aurora::Config, aurora::StartError
 pub fn sample_env_file() -> &'static str {
     "# Impostazioni di Aurora. Ogni riga e' CHIAVE=valore; le righe con # sono commenti.\n\
      # Si applicano al prossimo avvio. Le variabili d'ambiente AURORA_* hanno la precedenza su questo file.\n\
-     #\n\
-     # La trasmissione e' APERTA (CQ, risposte con doppio clic, automazione in modo reale). Per chiuderla:\n\
-     # AURORA_ALLOW_TX=0\n\
      #\n\
      # Accesso dal telefono sulla rete di casa senza codice di associazione (solo per le prove):\n\
      # AURORA_OPEN_ACCESS=1\n\
@@ -194,7 +223,6 @@ mod tests {
     #[test]
     fn reads_the_env_file_skipping_comments_blank_and_broken_lines() {
         let v = parse_env_file("# commento\n\nAURORA_ALLOW_TX=1\n  AURORA_AUDIO_DEVICE = \"USB Audio\" \nsenza uguale\nBAD KEY=1\n=vuota\nAURORA_X='a=b'\n");
-        assert_eq!(v.get("AURORA_ALLOW_TX").map(String::as_str), Some("1"));
         assert_eq!(v.get("AURORA_AUDIO_DEVICE").map(String::as_str), Some("USB Audio"));
         assert_eq!(v.get("AURORA_X").map(String::as_str), Some("a=b"));
         assert_eq!(v.len(), 3);
@@ -259,7 +287,7 @@ mod tests {
         let p = Places { local_app_data: None, documents: None, jtdx_roots: vec![] };
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), None, vec![]);
         assert_eq!(v["AURORA_BIND"], "0.0.0.0:8787");
-        assert_eq!(v["AURORA_ALLOW_TX"], "1");
+        assert!(!v.contains_key("AURORA_ALLOW_TX"), "la trasmissione non ha opzioni");
         assert_eq!(v["AURORA_ENGINE"], "native", "il motore proprio, non JTDX");
         assert!(!v.contains_key("AURORA_OPEN_ACCESS"));
         let config = config_from(&v).expect("configurazione valida");
@@ -269,9 +297,18 @@ mod tests {
     }
 
     #[test]
+    fn the_ptt_method_and_port_are_read_from_the_jtdx_ini() {
+        let rts = "PTTMethod=@Variant(\0\0\0\x7f\0\0\0\x1eTransceiverFactory::PTTMethod\0\0\0\0\x0fPTT_method_RTS\0)\nPTTport=COM9\n";
+        assert_eq!(ptt_from_ini(rts), (Some("rts"), Some("COM9".to_string())));
+        assert_eq!(ptt_from_ini("PTTMethod=@Variant(xPTT_method_CAT\0)\n").0, Some("omnirig"));
+        assert_eq!(ptt_from_ini("PTTMethod=@Variant(xPTT_method_VOX\0)\n").0, Some("vox"));
+        assert_eq!(ptt_from_ini("niente"), (None, None));
+    }
+
+    #[test]
     fn the_sample_file_changes_nothing_until_edited() {
         assert!(parse_env_file(sample_env_file()).is_empty());
-        assert!(sample_env_file().contains("# AURORA_ALLOW_TX=0"));
+        assert!(!sample_env_file().contains("ALLOW_TX"));
     }
 
     #[test]

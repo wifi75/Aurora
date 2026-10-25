@@ -11,6 +11,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     readonly retryAfterSecs?: number,
+    /** Il testo d'errore gia' tradotto che manda il core, se c'e' (per esempio il CAT). */
+    readonly detail?: string,
   ) {
     super(`${status} ${code}`);
     this.name = 'ApiError';
@@ -21,14 +23,16 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   const response = await fetch(BASE + path, { credentials: 'include', ...init });
   if (!response.ok) {
     let code = 'error';
+    let detail: string | undefined;
     try {
       const body: unknown = await response.json();
       if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') code = body.error;
+      if (body && typeof body === 'object' && 'message' in body && typeof body.message === 'string' && body.message !== '') detail = body.message;
     } catch {
       // corpo assente o non JSON: resta il codice generico
     }
     const retry = Number(response.headers.get('retry-after'));
-    throw new ApiError(response.status, code, Number.isFinite(retry) && retry > 0 ? retry : undefined);
+    throw new ApiError(response.status, code, Number.isFinite(retry) && retry > 0 ? retry : undefined, detail);
   }
   return response;
 }
@@ -481,6 +485,141 @@ export async function checkClock(): Promise<ClockMeasurement> {
 /** Sposta l'ora di Windows dello scarto misurato (serve l'amministratore, solo dal PC di casa). */
 export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
+}
+
+export type CatBackend = 'hamlib' | 'omnirig';
+export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
+export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
+export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';
+export type CatSplit = 'none' | 'rig' | 'emulate';
+export type CatMode = 'none' | 'usb' | 'data';
+
+/** La configurazione del CAT (`radio.json`): solo scelte tecniche, nessun segreto. */
+export interface CatConfig {
+  backend: CatBackend;
+  model: number;
+  rig_name: string;
+  port: string;
+  baud: number;
+  data_bits: number;
+  stop_bits: number;
+  handshake: CatHandshake;
+  force_dtr: boolean | null;
+  force_rts: boolean | null;
+  ptt: CatPtt;
+  ptt_port: string;
+  split: CatSplit;
+  cat_mode: CatMode;
+  civ_address: number;
+  poll_secs: number;
+  auto_connect: boolean;
+}
+
+export interface CatRigStatus {
+  state: CatState;
+  message: string;
+  frequency_hz: number | null;
+  mode: string | null;
+  ptt: boolean;
+  split: boolean | null;
+  failures: number;
+  reconnect_attempt: number;
+  ptt_blocked: boolean;
+  updated_ms: number;
+}
+
+export interface CatStatus {
+  backend: CatBackend;
+  state: CatState;
+  message: string;
+  /** Senza `rigctld` Hamlib non puo' collegare nessuna radio. */
+  rigctld_found: boolean;
+  rig: CatRigStatus | null;
+}
+
+export interface CatProfile {
+  name: string;
+  config: CatConfig;
+}
+
+export interface CatSnapshot {
+  status: CatStatus;
+  config: CatConfig;
+  profiles: CatProfile[];
+  active_profile: string | null;
+}
+
+export interface CatModel {
+  id: number;
+  manufacturer: string;
+  model: string;
+  status: string;
+}
+
+export interface CatPort {
+  port: string;
+  name: string;
+  virtual: boolean;
+}
+
+/** Una radio riconosciuta dal rilevamento passivo (identita' USB e nomi dei dispositivi: nessuna porta aperta). */
+export interface CatCandidate {
+  device_key: string;
+  is_radio: boolean;
+  protocol: string;
+  rig_label: string;
+  rig_token: string;
+  rig_model: number | null;
+  alternatives: string[];
+  cat_port: string;
+  other_ports: string[];
+  baud: number | null;
+  civ_address: number | null;
+  audio_input: string | null;
+  audio_output: string | null;
+  confidence: number;
+  evidence: string;
+}
+
+export interface CatDetection {
+  candidates: CatCandidate[];
+  audio_devices: string[];
+  ports_seen: number;
+}
+
+/** Stato, configurazione e profili del CAT. */
+export async function getCat(): Promise<CatSnapshot> {
+  return (await (await request('/cat')).json()) as CatSnapshot;
+}
+
+/** Salva la configurazione e la applica (solo dal PC). */
+export async function putCat(config: CatConfig): Promise<CatSnapshot> {
+  return (await (await request('/cat', { ...jsonInit(config), method: 'PUT' })).json()) as CatSnapshot;
+}
+
+export async function connectCat(): Promise<CatSnapshot> {
+  return (await (await request('/cat/connect', { method: 'POST' })).json()) as CatSnapshot;
+}
+
+export async function disconnectCat(): Promise<CatSnapshot> {
+  return (await (await request('/cat/disconnect', { method: 'POST' })).json()) as CatSnapshot;
+}
+
+/** Profili con nome: salva, carica (scollega e non collega), nuovo, elimina. */
+export async function catProfile(action: 'save' | 'load' | 'new' | 'delete', name?: string): Promise<CatSnapshot> {
+  return (await (await request('/cat/profiles', jsonInit({ action, name }))).json()) as CatSnapshot;
+}
+
+export async function getCatModels(): Promise<CatModel[]> {
+  return ((await (await request('/cat/models')).json()) as { models: CatModel[] }).models;
+}
+
+export async function getCatPorts(): Promise<CatPort[]> {
+  return ((await (await request('/cat/ports')).json()) as { ports: CatPort[] }).ports;
+}
+
+export async function detectCat(): Promise<CatDetection> {
+  return (await (await request('/cat/detect', { method: 'POST' })).json()) as CatDetection;
 }
 
 /** Le impostazioni del motore, per nome, come testo (dal suo file di configurazione). */
