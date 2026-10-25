@@ -1,7 +1,7 @@
 # Aurora - istruzioni per chi sviluppa
 
 Stazione digitale FT8/FT4 con automazione dei QSO e controllo remoto, per Windows (programma con vassoio e aggiornamenti) e per telefono.
-Oggi JTDX e' il motore; il motore proprio (crate `core/crates/ft8`) lo sta sostituendo: vedi `docs/2026-10-24-aurora-motore-ft8.md`.
+**Aurora e' un'applicazione a se': non deve funzionare con l'ausilio di JTDX ne' di Decodium.** Il motore e' il suo (crate `core/crates/ft8`, `ft4`, `engine-native`): vedi `docs/2026-10-24-aurora-motore-ft8.md`. JTDX resta solo un motore alternativo temporaneo (`AURORA_ENGINE=jtdx`) e un termine di confronto.
 Autore: Tiziano Cassone (IU3WJQ). Licenza: GPL-3.0 (solo). Repository: <https://github.com/wifi75/Aurora> (pubblico).
 
 ## Dove sta
@@ -23,13 +23,14 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza: GPL-3.0 (solo). Repository: <https://
 - Licenze delle dipendenze: `python scripts/licenze-terze-parti.py` (rigenera `docs/licenze-terze-parti.md`).
 
 ## Regole
+- **Per capire e clonare le funzionalita' di JTDX e di Decodium si usa sempre REA** (<https://github.com/morluto/rea>, gia' installato con Ghidra): reverse dei programmi installati (`C:\JTDX64\159`, `C:\Users\Tiziano\AppData\Local\Programs\Decodium`), insieme ai loro sorgenti pubblici GPL 3. Un'analisi REA alla volta (memoria: `-Xmx` alto, timeout lunghi). Come si usa e cosa ha funzionato: `docs/fase0-rapporto.md` e `docs/analisi-decodium-reverse-rea.md`. Le funzioni si riscrivono in Rust/TypeScript in Aurora, citando la fonte; Aurora non dipende da quei programmi.
 - Rust edition 2024. Niente `unwrap()`/`expect()` fuori dai test; errori come `Result`.
 - Nessun segreto nel repository; usare `.env.example`. Mai il locatore vero ne' indirizzi email personali nei file o nei commit: l'email degli autori e' quella `users.noreply.github.com` gia' impostata. Nominativo reale solo come firma d'autore; nei test e negli esempi usare IU3ABC e IO91wm.
 - Nessun riferimento a strumenti di assistenza nel repository, ne' nei messaggi di commit (niente trailer di attribuzione). Il file delle istruzioni si chiama `AGENTS.md`.
 - Commit in italiano, atomici; il push e le release solo su richiesta del proprietario.
 - Le prove manuali con radio e telefono le fa il proprietario; qui si eseguono i test automatici.
 - Specifica e piani in `docs/`.
-- Logiche di QSO, trasmissione e selezione dei messaggi: leggere `docs/logiche-jtdx.md` prima di toccarle. Finche' c'e' JTDX, e' la fonte della verita': Aurora legge il suo stato (UDP, finestra) invece di ricalcolarlo.
+- Logiche di QSO, trasmissione e selezione dei messaggi: leggere `docs/logiche-jtdx.md` prima di toccarle. Quel documento descrive il comportamento di riferimento di JTDX da replicare nel motore proprio; con `AURORA_ENGINE=jtdx` Aurora legge ancora lo stato di JTDX (UDP, finestra), ma non e' piu' la strada principale.
 - Programma Windows: ogni processo figlio (PowerShell, cmd) parte con `CREATE_NO_WINDOW`; l'installatore dell'aggiornamento parte staccato da Aurora (`cmd /C start`) e la riga di chiusura dell'installatore non deve uccidere i processi figli.
 - La trasmissione nel programma Windows e' aperta di default (`AURORA_ALLOW_TX=0` la chiude): STOP TX, tetti, dead-man e automazioni spente di default restano.
 
