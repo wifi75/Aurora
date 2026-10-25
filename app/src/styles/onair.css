@@ -1089,17 +1089,17 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 14rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
   }
 }
 
 @container (min-width: 54.01rem) {
   .decode-list .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 1fr) 15rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
   }
 
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 1fr) 15rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
   }
 }
 
