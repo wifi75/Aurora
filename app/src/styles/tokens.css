@@ -82,6 +82,8 @@
   --row-a: rgb(63 214 200 / 0.14);
   --row-b: rgb(255 255 255 / 0.05);
   --row-line: rgb(255 255 255 / 0.2);
+  /* linee verticali tra le colonne delle liste: piu' marcate, si vedono anche sulle righe colorate */
+  --col-line: rgb(255 255 255 / 0.34);
   --panel-glass: rgb(19 27 40 / 0.92);
   --aurora-a: rgb(63 214 200 / 0.14);
   --aurora-b: rgb(120 90 255 / 0.16);
@@ -124,6 +126,7 @@
   --row-a: #cfe9e5;
   --row-b: #ffffff;
   --row-line: rgb(18 25 42 / 0.3);
+  --col-line: rgb(18 25 42 / 0.55);
   --glass-shine: rgb(255 255 255 / 1);
   --glass-shadow: rgb(30 50 90 / 0.22);
   --glow: rgb(11 127 117 / 0.4);
