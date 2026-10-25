@@ -79,6 +79,52 @@ pub fn hamlib_error(code: i32) -> &'static str {
     }
 }
 
+/// Un modello dell'elenco di Hamlib (`rigctl -l`).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct RigModel {
+    pub id: u32,
+    pub manufacturer: String,
+    pub model: String,
+    pub status: String,
+}
+
+/// Legge l'elenco di `rigctl -l`: colonne a larghezza fissa, che si ricavano dall'intestazione (`Rig #  Mfg  Model  Version  Status  Macro`).
+pub fn parse_model_list(text: &str) -> Vec<RigModel> {
+    let mut lines = text.lines();
+    let Some(header) = lines.find(|l| l.contains("Mfg") && l.contains("Model")) else { return Vec::new() };
+    let (Some(mfg), Some(model), Some(version), Some(status), Some(macro_col)) =
+        (header.find("Mfg"), header.find("Model"), header.find("Version"), header.find("Status"), header.find("Macro"))
+    else {
+        return Vec::new();
+    };
+    let cut = |line: &str, from: usize, to: usize| -> String { line.get(from..to.min(line.len())).unwrap_or("").trim().to_string() };
+    let mut models: Vec<RigModel> = lines
+        .filter_map(|line| {
+            let id = line.get(..mfg)?.trim().parse::<u32>().ok()?;
+            Some(RigModel { id, manufacturer: cut(line, mfg, model), model: cut(line, model, version), status: cut(line, status, macro_col) })
+        })
+        .collect();
+    models.sort_by(|a, b| (a.manufacturer.to_lowercase(), a.model.to_lowercase()).cmp(&(b.manufacturer.to_lowercase(), b.model.to_lowercase())));
+    models
+}
+
+/// L'elenco dei modelli che conosce l'Hamlib di `rigctl` (lo stesso che usa `rigctld`).
+pub fn list_models(rigctl: &Path) -> Result<Vec<RigModel>, RigError> {
+    let mut command = Command::new(rigctl);
+    command.arg("-l").stdin(Stdio::null()).stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x0800_0000);
+    }
+    let out = command.output().map_err(|e| RigError(format!("rigctl non avviato: {e}")))?;
+    let models = parse_model_list(&String::from_utf8_lossy(&out.stdout));
+    if models.is_empty() {
+        return Err(RigError("rigctl non ha dato nessun modello".into()));
+    }
+    Ok(models)
+}
+
 /// Una connessione a un `rigctld` che ascolta (lanciato da noi o gia' esistente).
 pub struct RigctldClient {
     io: Mutex<(BufReader<TcpStream>, TcpStream)>,
@@ -260,6 +306,32 @@ mod tests {
         let mut c = config();
         c.conf.push(("rts_state".into(), "ON; del".into()));
         assert!(rigctld_args(&c, 1).is_err());
+    }
+
+    const SAMPLE_LIST: &str = " Rig #  Mfg                    Model                   Version         Status      Macro
+     1  Hamlib                 Dummy                   20230611.0      Stable      (null)
+  1029  Yaesu                  FT-2000                 20240118.5      Stable      (null)
+  3085  Icom                   IC-7300                 20240113.0      Stable      (null)
+  2014  Kenwood                TS-2000                 20231226.2      Stable      (null)
+";
+
+    #[test]
+    fn the_model_list_is_read_by_columns_and_sorted() {
+        let models = parse_model_list(SAMPLE_LIST);
+        assert_eq!(models.len(), 4);
+        let ft2000 = models.iter().find(|m| m.id == 1029).expect("FT-2000");
+        assert_eq!((ft2000.manufacturer.as_str(), ft2000.model.as_str(), ft2000.status.as_str()), ("Yaesu", "FT-2000", "Stable"));
+        let order: Vec<&str> = models.iter().map(|m| m.manufacturer.as_str()).collect();
+        assert_eq!(order, ["Hamlib", "Icom", "Kenwood", "Yaesu"]);
+        assert!(parse_model_list("niente").is_empty());
+    }
+
+    #[test]
+    fn the_real_model_list_includes_the_yaesu_ft2000() {
+        let Some(exe) = ["C:/JTDX64/159/bin/rigctl-jtdx.exe", "C:/WSJT/wsjtx/bin/rigctl-wsjtx.exe"].into_iter().map(PathBuf::from).find(|p| p.is_file()) else { return };
+        let models = list_models(&exe).expect("elenco");
+        assert!(models.len() > 200, "{}", models.len());
+        assert!(models.iter().any(|m| m.manufacturer == "Yaesu" && m.model == "FT-2000"));
     }
 
     #[test]

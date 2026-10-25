@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **CAT con Hamlib per tutte le radio (fondamenta)**: modulo `rig-control::hamlib` che lancia `rigctld` come processo nascosto e ci parla via TCP (frequenza, modo, PTT, split), con elenco dei modelli (`rigctl -l`, FT-2000 compresa); provato con il modello dummy. Manca ancora la schermata Impostazioni → Radio e il collegamento alla scelta del backend.
+- **Confronto dei modi con Decodium**: `docs/confronto-modi-decodium.md` (FT4, JT65, JT9, JT4, FST4, Q65, MSK144, WSPR, CW, RTTY, SSB, SSTV) con l'ordine di integrazione nel motore proprio.
 
 ## 0.11.0 - 2026-10-25
 - **Automazioni in banda affollata**: pausa per stazione che scade (i tentativi falliti si dimenticano dopo 15 minuti, regolabile), priorita' a punteggio (novita' e segnale insieme) e rispetto dei CQ direzionali («CQ NA» solo dal Nord America, «CQ DX» solo da fuori dal proprio continente, dal nominativo letto da JTDX). Dalle analisi di Decodium (`docs/analisi-decodium-banda-satura.md`, `docs/analisi-decodium-decoder.md`).
