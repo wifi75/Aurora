@@ -117,3 +117,12 @@ p {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* La barra in alto (pagine, lingua, tema) resta sempre ferma e in primo piano quando si scorre la pagina */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--panel);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
+}
