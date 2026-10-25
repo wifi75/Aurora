@@ -10,7 +10,10 @@
 //!
 //! # Differenze dal Fortran
 //!
-//! - Le firme non portano `apmask` (maschera dei bit gia' noti): qui nessun bit e' fissato in partenza.
+//! - `bp_decode` e `osd_decode` non portano `apmask` (nessun bit fissato in partenza); `bp_decode_masked` e `osd_decode_masked` la accettano
+//!   (maschera dei bit gia' noti) e restituiscono anche `nharderrors` e `dmin` ([`Quality`]), che servono ad accettare o scartare la parola.
+//!   In OSD le inversioni che toccano un bit a priori tra i 91 piu' sicuri si saltano; `e2sub` si calcola comunque anche se la prima
+//!   inversione di una serie e' saltata (il Fortran lascia il valore della serie prima).
 //! - Si restituisce un risultato solo se il CRC torna, e mai la parola di tutti zeri: in JTDX quel controllo sta in `ft8b`
 //!   (`count(cw.eq.0).eq.174`), qui sta nel modulo perche' LLR tutti nulli (silenzio) altrimenti "decodificherebbero" il
 //!   messaggio zero, che ha CRC valido.
@@ -105,6 +108,27 @@ fn platanh(x: f32) -> f32 {
 /// modulo). Come `bpdecode174_91`: a ogni iterazione, da 0 a `max_iterations` compresa, controlla se i segni formano un
 /// codeword; se il CRC torna lo restituisce, altrimenti prosegue, con l'uscita anticipata quando i controlli non migliorano.
 pub fn bp_decode(llr: &[f32; 174], max_iterations: usize) -> Option<Decoded> {
+    bp_decode_masked(llr, &[false; N], max_iterations).map(|q| q.decoded)
+}
+
+/// Un codice decodificato con le misure di qualita' che JTDX usa per accettarlo.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Quality {
+    pub decoded: Decoded,
+    /// `nharderrors`: bit della parola trovata che il segnale (LLR passati, a priori compresi) dava dall'altra parte.
+    pub hard_errors: u32,
+    /// `dmin`: somma delle affidabilita' (|LLR|) dei bit diversi: 0 per la propagazione di credenze, la distanza trovata per OSD.
+    pub dmin: f32,
+}
+
+/// Bit della parola `codeword` in cui il segno dell'LLR dice il contrario (`count((2*cw-1)*llr .lt. 0.0)`).
+fn count_hard_errors(codeword: &[u8; N], llr: &[f32; N]) -> u32 {
+    codeword.iter().zip(llr.iter()).filter(|&(&bit, &l)| (bit == 1 && l < 0.0) || (bit == 0 && l > 0.0)).count() as u32
+}
+
+/// Come [`bp_decode`], con la maschera dei bit gia' noti (`apmask` di `bpdecode174_91`): per i bit a `true` l'LLR non viene
+/// aggiornato dai controlli, resta quello a priori. Restituisce anche `nharderror`.
+pub fn bp_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], max_iterations: usize) -> Option<Quality> {
     if llr.iter().any(|v| !v.is_finite()) {
         return None;
     }
@@ -118,8 +142,8 @@ pub fn bp_decode(llr: &[f32; 174], max_iterations: usize) -> Option<Decoded> {
 
     for iter in 0..=max_iterations {
         // LLR aggiornato dei bit (all'iterazione 0 i messaggi sono a zero)
-        for ((z, &l), t) in zn.iter_mut().zip(llr.iter()).zip(tov.iter()) {
-            *z = l + (t[0] + t[1] + t[2]);
+        for (((z, &l), t), &fixed) in zn.iter_mut().zip(llr.iter()).zip(tov.iter()).zip(apmask.iter()) {
+            *z = if fixed { l } else { l + (t[0] + t[1] + t[2]) };
         }
 
         // c'e' un codeword? (si controlla prima di ogni iterazione)
@@ -138,7 +162,8 @@ pub fn bp_decode(llr: &[f32; 174], max_iterations: usize) -> Option<Decoded> {
             // tutti i controlli tornano: se il CRC e' buono e' fatta
             match accept(&cw) {
                 Some(message) => {
-                    return Some(Decoded { codeword: cw, message, iterations: iter });
+                    let decoded = Decoded { codeword: cw, message, iterations: iter };
+                    return Some(Quality { hard_errors: count_hard_errors(&decoded.codeword, llr), dmin: 0.0, decoded });
                 }
                 None if cw.iter().all(|&b| b == 0) => return None,
                 None => {}
@@ -359,6 +384,12 @@ fn key(parity_vec: u128, tau: usize) -> u32 {
 /// piu' sicuri siano il messaggio, e prova le inversioni dei meno sicuri tra quei 91; tiene la parola di distanza minima. Gli
 /// LLR seguono la convenzione del modulo (positivo = bit 1).
 pub fn osd_decode(llr: &[f32; 174], order: usize) -> Option<Decoded> {
+    osd_decode_masked(llr, &[false; N], order).map(|q| q.decoded)
+}
+
+/// Come [`osd_decode`], con la maschera dei bit gia' noti (`apmask` di `osd174_91`): le inversioni che toccherebbero un bit a priori
+/// tra i 91 piu' sicuri si saltano. Restituisce anche `nharderrors` e `dmin`, con cui JTDX accetta o scarta la parola.
+pub fn osd_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], order: usize) -> Option<Quality> {
     if llr.iter().any(|v| !v.is_finite()) {
         return None;
     }
@@ -383,6 +414,14 @@ pub fn osd_decode(llr: &[f32; 174], order: usize) -> Option<Decoded> {
             } else {
                 hpar |= parity_bit(i - K);
             }
+        }
+    }
+
+    // bit a priori tra i K scelti, nell'ordine di affidabilita' (`apmaskr`)
+    let mut ap_pos = 0u128;
+    for (k, &orig) in indices.iter().enumerate().take(K) {
+        if apmask[orig] {
+            ap_pos |= 1u128 << k;
         }
     }
 
@@ -416,6 +455,9 @@ pub fn osd_decode(llr: &[f32; 174], order: usize) -> Option<Decoded> {
                         e2 = e2sub ^ mrb.rows[n1];
                         nd1kpt = (e2 >> (M - OSD_NT)).count_ones() + 2;
                     }
+                    if mi & ap_pos != 0 {
+                        continue;
+                    }
                     if nd1kpt <= OSD_NTHETA {
                         let dd = weight_message(mi, &absrx) + weight_parity(e2, &absrx);
                         if dd < dmin {
@@ -429,7 +471,7 @@ pub fn osd_decode(llr: &[f32; 174], order: usize) -> Option<Decoded> {
         }
 
         if plan.pre2 {
-            osd_second_rule(&plan, &mrb, m0, hpar, &distance, &mut best, &mut dmin);
+            osd_second_rule(&plan, &mrb, m0, hpar, ap_pos, &distance, &mut best, &mut dmin);
         }
     }
 
@@ -441,16 +483,27 @@ pub fn osd_decode(llr: &[f32; 174], order: usize) -> Option<Decoded> {
         codeword[orig] = u8::from(bit);
     }
     let message = accept(&codeword)?;
-    Some(Decoded { codeword, message, iterations: 0 })
+    // nharderrors e dmin: i bit della parola trovata che il segnale smentisce e il loro peso (hdec = LLR >= 0)
+    let mut hard_errors = 0u32;
+    let mut distance_sum = 0.0f32;
+    for (i, (&bit, &l)) in codeword.iter().zip(llr.iter()).enumerate() {
+        if (l >= 0.0) != (bit == 1) {
+            hard_errors += 1;
+            distance_sum += absrx_orig[i];
+        }
+    }
+    Some(Quality { decoded: Decoded { codeword, message, iterations: 0 }, hard_errors, dmin: distance_sum })
 }
 
 /// Seconda regola di pre-elaborazione di OSD (`npre2`): cerca coppie di bit da invertire la cui parita' (primi `tau` bit)
 /// compensa quella degli errori di una inversione di ordine `order`.
+#[allow(clippy::too_many_arguments)]
 fn osd_second_rule(
     plan: &OsdPlan,
     mrb: &Mrb,
     m0: u128,
     hpar: u128,
+    ap_pos: u128,
     distance: &dyn Fn(u128, u128) -> f32,
     best: &mut u128,
     dmin: &mut f32,
@@ -502,7 +555,7 @@ fn osd_second_rule(
                 let Some((in1, in2)) = found else { break };
 
                 let mi = submask | (1u128 << in1) | (1u128 << in2);
-                if (mi.count_ones() as usize) < need {
+                if (mi.count_ones() as usize) < need || mi & ap_pos != 0 {
                     continue 'tau;
                 }
                 let me2 = m0 ^ mi;
@@ -756,6 +809,64 @@ mod tests {
         assert!(osd_ok >= trials / 2);
         // un CRC valido su un messaggio sbagliato e' possibile ma rarissimo (2^-14 per tentativo)
         assert!(wrong <= 1, "messaggi errati accettati: {wrong}");
+    }
+
+    /// LLR a priori: i primi `n` bit al loro valore (o all'opposto, per una prova col nominativo sbagliato), con la maschera relativa.
+    fn with_ap_bits(llr: &[f32; 174], truth: &[u8; 174], n: usize, wrong: bool) -> ([f32; 174], [bool; 174]) {
+        let mag = llr.iter().fold(0.0f32, |m, v| m.max(v.abs())) * 1.01;
+        let (mut z, mut mask) = (*llr, [false; 174]);
+        for i in 0..n {
+            let bit = (truth[i] == 1) != wrong;
+            z[i] = if bit { mag } else { -mag };
+            mask[i] = true;
+        }
+        (z, mask)
+    }
+
+    #[test]
+    fn i_bit_a_priori_giusti_aiutano_e_quelli_sbagliati_non_inventano_messaggi() {
+        let mut rng = Rng::new(77);
+        let sigma = sigma_for_ebn0(0.0);
+        let (mut plain, mut right, mut wrong_ok) = (0, 0, 0);
+        let trials = 120;
+        for _ in 0..trials {
+            let (message, cw) = random_codeword(&mut rng);
+            let llr = noisy_llr(&cw, sigma, &mut rng);
+            let is = |q: Option<Quality>| q.is_some_and(|q| q.decoded.message == message);
+            if is(bp_decode_masked(&llr, &[false; N], 30)) || is(osd_decode_masked(&llr, &[false; N], 3)) {
+                plain += 1;
+            }
+            let (z, mask) = with_ap_bits(&llr, &cw, 29, false);
+            if is(bp_decode_masked(&z, &mask, 30)) || is(osd_decode_masked(&z, &mask, 3)) {
+                right += 1;
+            }
+            let (z, mask) = with_ap_bits(&llr, &cw, 29, true);
+            if is(bp_decode_masked(&z, &mask, 30)) || is(osd_decode_masked(&z, &mask, 3)) {
+                wrong_ok += 1;
+            }
+        }
+        eprintln!("Eb/N0 0 dB: senza AP {plain}/{trials}, con 29 bit giusti {right}/{trials}, con 29 bit sbagliati {wrong_ok}/{trials}");
+        assert!(right > plain, "AP giusto {right} contro {plain}");
+        assert_eq!(wrong_ok, 0, "con i bit a priori sbagliati il messaggio vero non puo' uscire");
+    }
+
+    #[test]
+    fn le_misure_di_qualita_tornano_con_la_parola_trovata() {
+        let mut rng = Rng::new(5);
+        let (message, cw) = random_codeword(&mut rng);
+        // LLR perfetti: nessun bit ribaltato e distanza zero
+        let ideal: [f32; 174] = std::array::from_fn(|i| if cw[i] == 1 { 6.0 } else { -6.0 });
+        let q = bp_decode_masked(&ideal, &[false; N], 30).expect("decodifica");
+        assert_eq!((q.decoded.message, q.hard_errors, q.dmin), (message, 0, 0.0));
+        // tre bit smentiti dal segnale ma corretti dal codice
+        let mut noisy = ideal;
+        for i in [3usize, 40, 120] {
+            noisy[i] = -noisy[i] * 0.5;
+        }
+        let q = osd_decode_masked(&noisy, &[false; N], 2).expect("decodifica");
+        assert_eq!(q.decoded.message, message);
+        assert_eq!(q.hard_errors, 3);
+        assert!((q.dmin - 9.0).abs() < 1e-3, "dmin {}", q.dmin);
     }
 
     #[test]
