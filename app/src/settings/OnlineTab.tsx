@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { getOnline, putOnline, type OnlineSettings } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help } from './common';
+import { Cells, Group, Message, Notes, Page } from './layout';
 
 /** Scheda Servizi online: PSK Reporter e propagazione, spenti finche' non si accendono; ognuno dice cosa vede il sito. */
 export function OnlineTab() {
@@ -26,19 +27,27 @@ export function OnlineTab() {
   const settings = online.data;
 
   return (
-    <>
-      <Help>{t('onl.intro')}</Help>
-      <div className="set-checks set-checks--stack">
-        <Check label={t('onl.psk')} checked={settings.psk} onChange={(psk) => save.mutate({ ...settings, psk })} />
+    <Page>
+      <Group title="PSK Reporter">
+        <Cells min={12}>
+          <Check label={t('onl.psk')} checked={settings.psk} onChange={(psk) => save.mutate({ ...settings, psk })} />
+        </Cells>
         <Help>{t('onl.psk.note')}</Help>
-        <Check label={t('onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
+      </Group>
+      <Group title={t('onl.grpSolar')}>
+        <Cells min={12}>
+          <Check label={t('onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
+        </Cells>
         <Help>{t('onl.solar.note')}</Help>
-      </div>
+      </Group>
+      <Notes>
+        <Help>{t('onl.intro')}</Help>
+      </Notes>
       {note ? (
-        <p className="live-note" role="status">
-          {note}
-        </p>
+        <div className="sx-span-3">
+          <Message>{note}</Message>
+        </div>
       ) : null}
-    </>
+    </Page>
   );
 }

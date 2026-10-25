@@ -15,6 +15,7 @@ fn decode(id: u64) -> Event {
         tag: None,
         country: None,
         continent: None,
+        hint: false,
     })
 }
 

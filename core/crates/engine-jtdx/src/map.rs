@@ -40,6 +40,7 @@ pub fn to_decoded(id: u64, d: &WireDecode) -> DecodedMessage {
         tag: is_cq.then_some(DecodeTag::Cq),
         country: None,
         continent: None,
+        hint: false,
     }
 }
 
@@ -80,6 +81,7 @@ pub fn to_qso(m: &Message, time_ms: u32) -> Option<QsoRecord> {
         // il messaggio di JTDX porta anche inizio e fine, ma Aurora non lo decodifica: con JTDX il log e' il suo
         time_on_unix_ms: 0,
         time_off_unix_ms: 0,
+        ..Default::default()
     })
 }
 

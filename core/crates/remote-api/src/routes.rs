@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -73,6 +73,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/update/install", post(update_install))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
+        .route("/api/v1/audio/devices", get(audio_devices))
+        .route("/api/v1/audio/settings", axum::routing::put(audio_settings_put))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
@@ -1095,6 +1097,115 @@ async fn engine_settings_put(State(state): State<AppState>, _: Authed, Peer(peer
             Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_write"))
         }
         Err(_) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting")),
+    }
+}
+
+fn audio_control(state: &AppState) -> Result<(std::sync::Arc<dyn crate::audio_api::AudioControl>, std::sync::Arc<crate::engine_settings::EngineSettingsStore>), ApiError> {
+    match (state.audio.clone(), state.engine_settings.clone()) {
+        (Some(control), Some(store)) => Ok((control, store)),
+        _ => Err(ApiError::new(StatusCode::NOT_FOUND, "audio_unavailable")),
+    }
+}
+
+fn audio_values_json(v: &crate::engine_settings::AudioValues) -> Value {
+    json!({ "input": v.input, "output": v.output, "input_channel": v.input_channel, "output_channel": v.output_channel, "save_dir": v.save_dir, "save_mode": v.save_mode })
+}
+
+/// Gli ingressi e le uscite del sistema (con i canali e il predefinito), quelli in uso adesso e i valori scelti. Le voci con `name` vuoto o
+/// `Default` valgono «predefinito del sistema».
+#[utoipa::path(get, path = "/api/v1/audio/devices", responses((status = 200, description = "Dispositivi audio, in uso e valori scelti"), (status = 404, description = "Solo con il motore proprio (audio_unavailable)")))]
+async fn audio_devices(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let (control, store) = audio_control(&state)?;
+    let devices = tokio::task::spawn_blocking(move || control.devices()).await.map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "audio_task"))?;
+    Ok(Json(json!({
+        "inputs": devices.inputs,
+        "outputs": devices.outputs,
+        "input_in_use": devices.input_in_use,
+        "output_in_use": devices.output_in_use,
+        "output_pending": devices.output_pending,
+        "default_save_dir": devices.default_save_dir,
+        "system_default": crate::audio_api::SYSTEM_DEFAULT,
+        "values": audio_values_json(&store.audio()),
+    })))
+}
+
+#[derive(Deserialize)]
+struct AudioSettingsBody {
+    input: Option<String>,
+    output: Option<String>,
+    input_channel: Option<String>,
+    output_channel: Option<String>,
+    save_dir: Option<String>,
+    save_mode: Option<u8>,
+}
+
+/// Cambia la scheda Audio: controlla i valori, **apre i dispositivi nuovi e li applica** (l'ingresso a caldo, l'uscita dalla prossima trasmissione)
+/// e solo per le parti riuscite salva nello store. Un dispositivo che non si apre lascia (o rimette) quello di prima. Solo dalla rete di casa.
+#[utoipa::path(put, path = "/api/v1/audio/settings", responses((status = 200, description = "Esito per parte (input, output, save) e valori salvati; `ok` e' falso se una parte non e' riuscita"), (status = 400, description = "Valore non ammesso o corpo vuoto (bad_audio_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (audio_unavailable)"), (status = 500, description = "Scrittura non riuscita (engine_settings_write)")))]
+async fn audio_settings_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<AudioSettingsBody>) -> Result<Json<Value>, ApiError> {
+    use crate::{audio_api as a, engine_settings as es};
+    let (control, store) = audio_control(&state)?;
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let mut asked: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    for (key, value) in [
+        ("SoundInName", body.input),
+        ("SoundOutName", body.output),
+        ("AudioInputChannel", body.input_channel),
+        ("AudioOutputChannel", body.output_channel),
+        ("SaveDir", body.save_dir),
+        ("SaveWav", body.save_mode.map(|m| m.to_string())),
+    ] {
+        if let Some(value) = value {
+            asked.insert(key.to_string(), value.trim().to_string());
+        }
+    }
+    if asked.is_empty() || asked.iter().any(|(k, v)| es::validate(k, v).is_err()) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_audio_setting"));
+    }
+    let result = tokio::task::spawn_blocking(move || {
+        let before = store.audio();
+        let mut wanted = store.values();
+        wanted.extend(asked);
+        let get = |k: &str| wanted.get(k).cloned().unwrap_or_default();
+        let desired = es::AudioValues { input: get("SoundInName"), output: get("SoundOutName"), input_channel: get("AudioInputChannel"), output_channel: get("AudioOutputChannel"), save_dir: get("SaveDir"), save_mode: get("SaveWav") };
+        let outcome = control.apply(&desired);
+        // si salvano solo le parti riuscite; chi e' fallito resta come nel file
+        let mut changes = std::collections::BTreeMap::new();
+        for (part, keys) in [(&outcome.input, a::keys_of_input()), (&outcome.output, a::keys_of_output()), (&outcome.save, a::keys_of_save())] {
+            if part.is_failed() {
+                continue;
+            }
+            for key in keys {
+                let value = get(key);
+                if store.values().get(key).map(String::as_str).unwrap_or("") != value {
+                    changes.insert(key.to_string(), value);
+                }
+            }
+        }
+        let saved = if changes.is_empty() { Ok(()) } else { store.update_audio(&changes) };
+        if saved.is_err() {
+            // il file non si e' scritto: i dispositivi tornano com'erano, cosi' il programma e il file dicono la stessa cosa
+            let _ = control.apply(&before);
+        }
+        (outcome, saved.map(|()| store.audio()))
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "audio_task"))?;
+    match result {
+        (outcome, Ok(values)) => Ok(Json(json!({
+            "ok": !(outcome.input.is_failed() || outcome.output.is_failed() || outcome.save.is_failed()),
+            "input": outcome.input,
+            "output": outcome.output,
+            "save": outcome.save,
+            "values": audio_values_json(&values),
+        }))),
+        (_, Err(crate::engine_settings::SettingsError::Io(e))) => {
+            tracing::warn!("impostazioni audio non salvate: {e}");
+            Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_write"))
+        }
+        (_, Err(_)) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_audio_setting")),
     }
 }
 

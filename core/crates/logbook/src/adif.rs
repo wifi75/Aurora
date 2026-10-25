@@ -89,10 +89,48 @@ fn jtdx_mode(out: &mut String, mode: &str, upper: bool) {
     }
 }
 
+/// Il commento che la finestra di registrazione di JTDX propone (`LogQSO::initLogQSO`): con «Rapporto dB nel commento» il modo e i due rapporti
+/// (`FT8  Sent: -10  Rcvd: -12`, il rapporto vuoto si salta), poi con «Distanza nei commenti» `Distance: <distanza>` (preceduto da due spazi se c'e' gia'
+/// altro). `distance` e' il testo dell'etichetta della distanza come in JTDX (`1234 km` o `1234 mi`, vuoto se il locatore non si sa).
+pub fn log_comment(mode: &str, rst_sent: &str, rst_rcvd: &str, distance: &str, report_in_comments: bool, distance_in_comments: bool) -> String {
+    let mut t = String::new();
+    if report_in_comments {
+        t.push_str(mode);
+        if !rst_sent.is_empty() {
+            t.push_str("  Sent: ");
+            t.push_str(rst_sent);
+        }
+        if !rst_rcvd.is_empty() {
+            t.push_str("  Rcvd: ");
+            t.push_str(rst_rcvd);
+        }
+    }
+    if distance_in_comments {
+        if t.is_empty() {
+            t.push_str("Distance: ");
+        } else {
+            t.push_str("  Distance: ");
+        }
+        t.push_str(distance);
+    }
+    t
+}
+
+/// Il modo che finisce nel record: con «Converti il modo in RTTY» (`toRTTY`) i modi che cominciano per `JT9` diventano `RTTY` (`LogQSO::initLogQSO`,
+/// `log_as_RTTY() and mode.left(3)=="JT9"`). FT8 e FT4 non cambiano mai: l'opzione di JTDX riguarda solo JT9.
+pub fn log_mode(mode: &str, to_rtty: bool) -> String {
+    if to_rtty && mode.starts_with("JT9") { "RTTY".to_string() } else { mode.to_string() }
+}
+
 /// Il record ADIF che JTDX manda al secondo server UDP (`myadif2` di `LogQSO::accept`, quello di Log4OM2): campi in questo ordine,
 /// nomi in maiuscolo, separati da uno spazio, nessuna intestazione, chiuso da `<EOR>` senza andare a capo.
-/// `COMMENT` e `NAME` non ci sono: Aurora non li ha.
+/// `NAME` e `COMMENT` (dopo il locatore) solo se non vuoti; la potenza del QSO vale piu' di quella della stazione.
 pub fn jtdx_record(q: &QsoRecord, station: &Station, fallback_date: &str) -> String {
+    jtdx_record_with(q, station, fallback_date, None)
+}
+
+/// Come [`jtdx_record`]; con `eqsl_date` (`AAAAMMGG`, oggi UTC) aggiunge ` <EQSL_QSL_SENT:1>Y <EQSL_QSLSDATE:8>data` come JTDX con l'invio a eQSL acceso.
+pub fn jtdx_record_with(q: &QsoRecord, station: &Station, fallback_date: &str, eqsl_date: Option<&str>) -> String {
     let (date_on, time_on, date_off, time_off) = qso_times(q, fallback_date);
     let mut r = String::new();
     jtdx_field(&mut r, "BAND", &q.band);
@@ -112,11 +150,22 @@ pub fn jtdx_record(q: &QsoRecord, station: &Station, fallback_date: &str) -> Str
     jtdx_field(&mut r, "TIME_OFF", &time_off);
     jtdx_field(&mut r, "RST_SENT", &q.rst_sent);
     jtdx_field(&mut r, "RST_RCVD", &q.rst_rcvd);
-    if !station.tx_power.is_empty() {
-        jtdx_field(&mut r, "TX_PWR", &station.tx_power);
+    let power = if q.tx_power.is_empty() { &station.tx_power } else { &q.tx_power };
+    if !power.is_empty() {
+        jtdx_field(&mut r, "TX_PWR", power);
     }
     if q.grid.len() > 3 {
         jtdx_field(&mut r, "GRIDSQUARE", &q.grid);
+    }
+    if !q.name.is_empty() {
+        jtdx_field(&mut r, "NAME", &q.name);
+    }
+    if !q.comment.is_empty() {
+        jtdx_field(&mut r, "COMMENT", &q.comment);
+    }
+    if let Some(date) = eqsl_date {
+        r.push_str(" <EQSL_QSL_SENT:1>Y");
+        jtdx_field(&mut r, "EQSL_QSLSDATE", date);
     }
     r.push_str(" <EOR>");
     r.trim().to_string()
@@ -128,6 +177,11 @@ pub const JTDX_FILE_HEADER: &str = "WSJT-X ADIF Export<eoh>\r\n";
 /// La riga che JTDX aggiunge a `wsjtx_log.adi` (`ADIF::addQSOToFile`), con CR LF: nomi in minuscolo, locatore anche se vuoto
 /// (`<gridsquare:0>`), `STATION_CALLSIGN` e `MY_GRIDSQUARE` interi, `TX_PWR` solo se c'e'. Ordine diverso da quello del datagramma UDP.
 pub fn jtdx_file_record(q: &QsoRecord, station: &Station, fallback_date: &str) -> String {
+    jtdx_file_record_with(q, station, fallback_date, false)
+}
+
+/// Come [`jtdx_file_record`]; con `eqsl` aggiunge ` <eqsl_qsl_sent:1>Y` (invio a eQSL acceso).
+pub fn jtdx_file_record_with(q: &QsoRecord, station: &Station, fallback_date: &str, eqsl: bool) -> String {
     let (date_on, time_on, date_off, time_off) = qso_times(q, fallback_date);
     let mut r = String::from("<call:");
     let _ = write!(r, "{}>{}", q.call.len(), q.call);
@@ -143,8 +197,19 @@ pub fn jtdx_file_record(q: &QsoRecord, station: &Station, fallback_date: &str) -
     jtdx_field(&mut r, "freq", &freq_mhz(q.freq_hz));
     jtdx_field(&mut r, "station_callsign", &station.call);
     jtdx_field(&mut r, "my_gridsquare", &station.grid);
-    if !station.tx_power.is_empty() {
-        jtdx_field(&mut r, "tx_pwr", &station.tx_power);
+    let power = if q.tx_power.is_empty() { &station.tx_power } else { &q.tx_power };
+    if !power.is_empty() {
+        jtdx_field(&mut r, "tx_pwr", power);
+    }
+    // `ADIF::addQSOToFile`: prima il commento, poi il nome, poi (con eQSL) `eqsl_qsl_sent`
+    if !q.comment.is_empty() {
+        jtdx_field(&mut r, "comment", &q.comment);
+    }
+    if !q.name.is_empty() {
+        jtdx_field(&mut r, "name", &q.name);
+    }
+    if eqsl {
+        r.push_str(" <eqsl_qsl_sent:1>Y");
     }
     r.push_str(" <eor>\r\n");
     r
@@ -185,6 +250,7 @@ mod tests {
             // 2026-10-24 16:46:45 e 16:47:29 UTC
             time_on_unix_ms: 1_792_860_405_000,
             time_off_unix_ms: 1_792_860_449_000,
+            ..Default::default()
         }
     }
 
@@ -257,6 +323,36 @@ mod tests {
         let r = jtdx_record(&q, &station(), "20261026");
         assert!(r.contains("<QSO_DATE:8>20261026 <TIME_ON:6>123015 <QSO_DATE_OFF:8>20261026 <TIME_OFF:6>123015"), "{r}");
         assert_eq!(utc_datetime(1_792_860_405_000), ("20261024".to_string(), "164645".to_string()));
+    }
+
+    #[test]
+    fn the_comment_follows_the_jtdx_log_dialog() {
+        use super::{log_comment, log_mode};
+        assert_eq!(log_comment("FT8", "-10", "-12", "1234 km", false, false), "");
+        assert_eq!(log_comment("FT8", "-10", "-12", "1234 km", true, false), "FT8  Sent: -10  Rcvd: -12");
+        assert_eq!(log_comment("FT8", "-10", "", "1234 km", true, false), "FT8  Sent: -10", "il rapporto vuoto si salta");
+        assert_eq!(log_comment("FT4", "", "", "1234 km", true, false), "FT4");
+        assert_eq!(log_comment("FT8", "-10", "-12", "1234 km", false, true), "Distance: 1234 km");
+        assert_eq!(log_comment("FT8", "-10", "-12", "1234 km", true, true), "FT8  Sent: -10  Rcvd: -12  Distance: 1234 km");
+        assert_eq!(log_comment("FT8", "-10", "-12", "", false, true), "Distance: ", "senza locatore l'etichetta e' vuota, come in JTDX");
+        assert_eq!(log_mode("JT9", true), "RTTY");
+        assert_eq!(log_mode("JT9H", true), "RTTY");
+        assert_eq!((log_mode("FT8", true).as_str(), log_mode("FT4", true).as_str(), log_mode("JT9", false).as_str()), ("FT8", "FT4", "JT9"));
+    }
+
+    #[test]
+    fn name_comment_power_and_eqsl_go_in_the_record_like_jtdx() {
+        use super::{jtdx_file_record_with, jtdx_record_with};
+        let q = QsoRecord { name: "Mario".into(), comment: "FT8  Sent: -16  Rcvd: -09".into(), tx_power: "20".into(), ..sample("FT8") };
+        let udp = jtdx_record_with(&q, &station(), "20000101", Some("20261025"));
+        assert!(
+            udp.ends_with("<RST_RCVD:3>-09 <TX_PWR:2>20 <GRIDSQUARE:4>FN42 <NAME:5>Mario <COMMENT:25>FT8  Sent: -16  Rcvd: -09 <EQSL_QSL_SENT:1>Y <EQSL_QSLSDATE:8>20261025 <EOR>"),
+            "{udp}"
+        );
+        let file = jtdx_file_record_with(&q, &station(), "20000101", true);
+        assert!(file.ends_with("<tx_pwr:2>20 <comment:25>FT8  Sent: -16  Rcvd: -09 <name:5>Mario <eqsl_qsl_sent:1>Y <eor>\r\n"), "{file}");
+        // senza nome, commento e eQSL il record e' quello di sempre
+        assert!(!jtdx_record(&sample("FT8"), &station(), "20000101").contains("NAME"));
     }
 
     #[test]

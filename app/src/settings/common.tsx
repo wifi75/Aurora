@@ -15,9 +15,9 @@ export function InfoTab({ render }: { render(info: StationInfo): ReactNode }) {
 /** Una riga "nome  valore". */
 export function Row({ name, children, hint }: { name: string; children: ReactNode; hint?: string }) {
   return (
-    <div className="info-row" title={hint}>
-      <span className="muted">{name}</span>
-      <span className="data">{children}</span>
+    <div className="sx-field sx-field--plain" title={hint ?? name}>
+      <span className="sx-label muted">{name}</span>
+      <span className="sx-control data">{children}</span>
     </div>
   );
 }
@@ -25,9 +25,11 @@ export function Row({ name, children, hint }: { name: string; children: ReactNod
 /** Casella con etichetta e suggerimento. */
 export function Check({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange(value: boolean): void }) {
   return (
-    <label className="set-check" title={hint}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span>{label}</span>
+    <label className="set-check sx-field" title={hint ?? label}>
+      <span className="sx-label">{label}</span>
+      <span className="sx-control">
+        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      </span>
     </label>
   );
 }

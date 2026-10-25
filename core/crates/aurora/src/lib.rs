@@ -8,6 +8,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+pub mod audio_control;
 pub mod history;
 pub mod online;
 pub mod updates;
@@ -754,14 +755,7 @@ fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> 
 }
 
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
-fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>) -> Option<Arc<dyn engine_native::TxPort>> {
-    let sink = match tx_native::CpalSink::open(config.audio_out_device.as_deref()) {
-        Ok(sink) => sink,
-        Err(e) => {
-            tracing::warn!("uscita audio per la trasmissione non disponibile: {e}");
-            return None;
-        }
-    };
+fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let ptt: Arc<dyn tx_native::Ptt> = match config.ptt_method.as_str() {
         "rts" | "dtr" => {
@@ -784,7 +778,7 @@ fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeContro
         _ => Arc::new(tx_native::NoPtt::new()),
     };
     let tx_config = tx_native::TxConfig { allow_tx: true, attenuation_tenths: Some(controls.attenuation.load(std::sync::atomic::Ordering::Relaxed)), ..tx_native::TxConfig::default() };
-    match tx_native::Transmitter::new(Arc::new(tx_native::SystemClock), ptt, Box::new(sink), tx_config) {
+    match tx_native::Transmitter::new(Arc::new(tx_native::SystemClock), ptt, sink, tx_config) {
         Ok(transmitter) => {
             let flag = Arc::clone(controls);
             transmitter.set_listener(Some(Arc::new(move |state| {
@@ -987,7 +981,12 @@ pub async fn run(
     let updates = updater::UpdateService::open(&config.data_dir.join("update.json"), env!("CARGO_PKG_VERSION"));
     let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
     // il livello dell'ingresso audio si regola sullo stesso dispositivo da cui viene la cascata
-    let input_level = config.audio_device.as_deref().and_then(|hint| match audio_spectrum::InputEndpoint::find(hint) {
+    // con il motore proprio il dispositivo e' quello della scheda Audio (store, poi ambiente); poi il gestore lo fa seguire a ogni cambio di ingresso
+    let level_hint: Option<Option<String>> = match &engine_settings {
+        Some(store) => audio_control::input_candidates(&store.audio().input, config.audio_device.as_deref()).into_iter().next().map(|(hint, _)| hint),
+        None => config.audio_device.clone().map(Some),
+    };
+    let input_level = level_hint.and_then(|hint| match audio_control::find_endpoint(hint.as_deref()) {
         Ok(endpoint) => {
             let service = input_level::InputLevelService::open(Arc::new(endpoint), &config.data_dir.join("input-level.json"));
             match service.status() {
@@ -1041,7 +1040,7 @@ pub async fn run(
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
         .with_wishlist(Arc::clone(&wishlist))
-        .with_input_level_if(input_level)
+        .with_input_level_if(input_level.clone())
         .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
         .with_online(online)
         .with_history_if(history)
@@ -1130,9 +1129,27 @@ pub async fn run(
         })
         .with_cat(Arc::clone(&cat))
         .with_automation(automation);
-    let state = match &engine_settings {
-        Some(store) => state.with_engine_settings(Arc::clone(store)),
-        None => state,
+    // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
+    let (native_tx, native_rx) = std::sync::mpsc::channel();
+    let audio_manager: Option<Arc<audio_control::AudioManager>> = engine_settings.as_ref().map(|store| {
+        let level = input_level.clone();
+        let hook: audio_control::InputHook = Arc::new(move |name| {
+            if let Some(level) = &level {
+                match audio_control::find_endpoint(Some(name)) {
+                    Ok(endpoint) => level.set_control(Arc::new(endpoint)),
+                    Err(e) => tracing::warn!("livello dell'ingresso audio non regolabile su {name}: {e}"),
+                }
+            }
+        });
+        let backend = Arc::new(audio_control::CpalBackend { rows: bus.spectrum(), events: bus.events() });
+        audio_control::AudioManager::new(backend, native_tx.clone(), store.audio(), config.audio_device.clone(), config.audio_out_device.clone(), &config.data_dir, hook)
+    });
+    let state = match (&engine_settings, &audio_manager) {
+        (Some(store), Some(manager)) => {
+            store.set_feature(remote_api::engine_settings::Feature::AudioControl, true);
+            state.with_engine_settings(Arc::clone(store)).with_audio(Arc::clone(manager) as Arc<dyn remote_api::audio_api::AudioControl>)
+        }
+        _ => state,
     };
 
     // collegamento della radio all'avvio (AURORA_RIG o «collega all'avvio»): in un thread, per non fermare l'avvio se la radio tarda
@@ -1179,7 +1196,13 @@ pub async fn run(
                 own_continent,
                 dial_hz: Arc::clone(&dial_hz),
                 controls: Arc::clone(&native_controls),
-                transmitter: build_transmitter(&config, &native_controls),
+                transmitter: audio_manager.as_ref().and_then(|m| {
+                    let transmitter = build_transmitter(&config, &native_controls, m.build_output()?);
+                    if transmitter.is_none() {
+                        m.output_closed();
+                    }
+                    transmitter
+                }),
                 band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),
                 annotate: Arc::new(move |text, band| match &enrich {
                     Some(e) => match e.lock() {
@@ -1329,21 +1352,36 @@ pub async fn run(
     }
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
-    let (native_tx, native_rx) = std::sync::mpsc::channel();
-    let tap = (config.native_decode || config.engine == EngineKind::Native).then_some(native_tx);
-    let audio = config.audio_device.as_deref().and_then(|hint| match run_capture_tapped(Some(hint), bus.spectrum(), bus.events(), tap) {
-        Ok(handle) => Some(handle),
-        Err(e) => {
-            tracing::warn!("cascata audio non attiva: {e}");
+    // il motore proprio decodifica l'audio della cascata (e in ombra, con `AURORA_NATIVE_DECODE`, si confronta con JTDX)
+    let start_engine = {
+        let (events, dir, record, live, engine_state) = (bus.events(), config.data_dir.clone(), config.native_record, native_live.take(), state.clone());
+        move |save: Option<Arc<engine_native::SaveSettings>>| {
+            let engine = engine_native::start_with_save(events, native_rx, dir, record, live, save);
+            engine_state.set_native_status(Arc::new(move || engine.status()));
+        }
+    };
+    let audio = match &audio_manager {
+        // motore proprio: ingresso, canali e salvataggio vengono dalla scheda Audio e si cambiano a caldo; il decodificatore parte con il primo ingresso aperto
+        Some(manager) => {
+            manager.set_engine_starter(Box::new(move |save| start_engine(Some(save))));
+            manager.open_initial_input();
             None
         }
-    });
-
-    // il motore proprio decodifica in ombra l'audio della cascata e si confronta con JTDX
-    if (config.native_decode || config.engine == EngineKind::Native) && audio.is_some() {
-        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone(), config.native_record, native_live.take());
-        state.set_native_status(Arc::new(move || engine.status()));
-    }
+        None => {
+            let tap = config.native_decode.then(|| native_tx.clone());
+            let handle = config.audio_device.as_deref().and_then(|hint| match run_capture_tapped(Some(hint), bus.spectrum(), bus.events(), tap) {
+                Ok(handle) => Some(handle),
+                Err(e) => {
+                    tracing::warn!("cascata audio non attiva: {e}");
+                    None
+                }
+            });
+            if config.native_decode && handle.is_some() {
+                start_engine(None);
+            }
+            handle
+        }
+    };
 
     let listener = TcpListener::bind(config.bind)
         .await
@@ -1353,6 +1391,7 @@ pub async fn run(
     let closing = state.clone();
     let hub_for_task = hub.clone();
     let cat_for_task = Arc::clone(&cat);
+    let audio_for_task = audio_manager.clone();
     let task = tokio::spawn(async move {
         let served = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
             .with_graceful_shutdown(async move {
@@ -1369,6 +1408,9 @@ pub async fn run(
         }
         if let Some(emitter) = udp_emitter.lock().await.take() {
             emitter.shutdown().await;
+        }
+        if let Some(manager) = &audio_for_task {
+            manager.shutdown();
         }
         drop(audio);
         // alla chiusura il PTT si spegne e la radio si libera

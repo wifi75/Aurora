@@ -166,7 +166,7 @@ mod tests {
     }
 
     fn decode(text: &str, country: Option<&str>) -> DecodedMessage {
-        DecodedMessage { id: 1, time_ms: 0, snr: -12, delta_time: 0.1, freq_hz: 1500, text: text.into(), tag: None, country: country.map(str::to_string), continent: None }
+        DecodedMessage { id: 1, time_ms: 0, snr: -12, delta_time: 0.1, freq_hz: 1500, text: text.into(), tag: None, country: country.map(str::to_string), continent: None, hint: false }
     }
 
     #[test]

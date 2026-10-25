@@ -3,14 +3,15 @@ import { useT, type Key } from '../i18n';
 import { rememberTab } from '../lib/lastPage';
 import { browserStorage } from '../lib/theme';
 import { AccessTab } from '../settings/AccessTab';
-import { CatTab } from '../settings/CatTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { DxccTab } from '../settings/DxccTab';
 import { FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralTab } from '../settings/GeneralTab';
-import { AdvancedTab, AudioTab, RadioTab, ReportsTab } from '../settings/InfoTabs';
+import { AudioTab, ReportsTab } from '../settings/InfoTabs';
+import { AdvancedTab } from '../settings/AdvancedTab';
+import { RadioTab } from '../settings/RadioTab';
 import { MacrosTab } from '../settings/MacrosTab';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
@@ -27,57 +28,89 @@ interface TabDef {
   render(): ReactNode;
 }
 
-/** Le schede, nell'ordine del motore, piu' quelle di Aurora (Finestre e Bande). */
-const TABS: readonly TabDef[] = [
-  { id: 'general', label: 'tab.general', tip: 'tip.tab.general', render: () => <GeneralTab /> },
-  { id: 'radio', label: 'tab.radio', tip: 'tip.tab.radio', render: () => <RadioTab /> },
-  { id: 'cat', label: 'tab.cat', tip: 'tip.tab.cat', render: () => <CatTab /> },
-  { id: 'audio', label: 'tab.audio', tip: 'tip.tab.audio', render: () => <AudioTab /> },
-  { id: 'sequence', label: 'tab.sequence', tip: 'tip.tab.sequence', render: () => <SequenceTab /> },
-  { id: 'macros', label: 'tab.macros', tip: 'tip.tab.macros', render: () => <MacrosTab /> },
-  { id: 'reports', label: 'tab.reports', tip: 'tip.tab.reports', render: () => <ReportsTab /> },
-  { id: 'frequencies', label: 'tab.frequencies', tip: 'tip.tab.frequencies', render: () => <FrequenciesTab /> },
-  { id: 'notifications', label: 'tab.notifications', tip: 'tip.tab.notifications', render: () => <NotificationsTab /> },
-  { id: 'filters', label: 'tab.filters', tip: 'tip.tab.filters', render: () => <FiltersTab /> },
-  { id: 'schedule', label: 'tab.schedule', tip: 'tip.tab.schedule', render: () => <ScheduleTab /> },
-  { id: 'advanced', label: 'tab.advanced', tip: 'tip.tab.advanced', render: () => <AdvancedTab /> },
-  { id: 'cluster', label: 'tab.cluster', tip: 'tip.tab.cluster', render: () => <ClusterTab /> },
-  { id: 'wishlist', label: 'tab.wishlist', tip: 'tip.tab.wishlist', render: () => <WishlistTab /> },
-  { id: 'online', label: 'tab.online', tip: 'tip.tab.online', render: () => <OnlineTab /> },
-  { id: 'updates', label: 'tab.updates', tip: 'tip.tab.updates', render: () => <UpdatesTab /> },
-  { id: 'clock', label: 'tab.clock', tip: 'tip.tab.clock', render: () => <ClockTab /> },
-  { id: 'access', label: 'tab.access', tip: 'tip.tab.access', render: () => <AccessTab /> },
-  { id: 'dxcc', label: 'tab.dxcc', tip: 'tip.tab.dxcc', render: () => <DxccTab /> },
-  { id: 'windows', label: 'tab.windows', tip: 'tip.tab.windows', render: () => <WindowsTab /> },
-  { id: 'bands', label: 'tab.bands', tip: 'tip.tab.bands', render: () => <BandsTab /> },
+const TAB: Record<string, TabDef> = Object.fromEntries(
+  (
+    [
+      ['general', <GeneralTab />],
+      ['radio', <RadioTab />],
+      ['audio', <AudioTab />],
+      ['frequencies', <FrequenciesTab />],
+      ['bands', <BandsTab />],
+      ['sequence', <SequenceTab />],
+      ['macros', <MacrosTab />],
+      ['schedule', <ScheduleTab />],
+      ['filters', <FiltersTab />],
+      ['advanced', <AdvancedTab />],
+      ['notifications', <NotificationsTab />],
+      ['wishlist', <WishlistTab />],
+      ['dxcc', <DxccTab />],
+      ['cluster', <ClusterTab />],
+      ['reports', <ReportsTab />],
+      ['online', <OnlineTab />],
+      ['clock', <ClockTab />],
+      ['updates', <UpdatesTab />],
+      ['access', <AccessTab />],
+      ['windows', <WindowsTab />],
+    ] as const
+  ).map(([id, node]) => [id, { id, label: `tab.${id}` as Key, tip: `tip.tab.${id}` as Key, render: () => node }]),
+);
+
+interface TabRow {
+  id: string;
+  title: Key;
+  tabs: readonly string[];
+}
+
+/** La barra delle schede: due righe ordinate per tipo, dieci schede ciascuna. */
+const ROWS: readonly TabRow[] = [
+  { id: 'station', title: 'tabg.station', tabs: ['general', 'radio', 'audio', 'frequencies', 'bands', 'sequence', 'macros', 'schedule', 'filters', 'advanced'] },
+  { id: 'data', title: 'tabg.data', tabs: ['notifications', 'wishlist', 'dxcc', 'cluster', 'reports', 'online', 'clock', 'updates', 'access', 'windows'] },
 ];
 
-/** Impostazioni: una scheda per ogni funzione di configurazione, come nel motore. */
+const TABS: readonly TabDef[] = ROWS.flatMap((r) => r.tabs.map((id) => TAB[id]!));
+
+/** Le vecchie scelte salvate: «Radio CAT» ora e' dentro «Radio». */
+const RENAMED: Record<string, string> = { cat: 'radio' };
+
+/** Impostazioni: una scheda per ogni funzione di configurazione, in due righe per tipo; ogni scheda e' a riquadri e colonne. */
 export function Settings({ initialTab }: { initialTab?: string }) {
   const t = useT();
-  const [id, setId] = useState(TABS.some((x) => x.id === initialTab) ? (initialTab as string) : TABS[0]!.id);
+  const wanted = initialTab ? (RENAMED[initialTab] ?? initialTab) : undefined;
+  const [id, setId] = useState(TABS.some((x) => x.id === wanted) ? (wanted as string) : TABS[0]!.id);
   const tab = TABS.find((x) => x.id === id) ?? TABS[0]!;
   return (
     <div className="settings">
       <h1 className="page-title">{t('set.title')}</h1>
-      <div className="tabs" role="tablist" aria-label={t('set.title')}>
-        {TABS.map((x) => (
-          <button
-            key={x.id}
-            type="button"
-            role="tab"
-            id={`tab-${x.id}`}
-            aria-selected={tab.id === x.id}
-            aria-controls="settings-panel"
-            title={t(x.tip)}
-            className={`glass${tab.id === x.id ? ' glass--on' : ''}`}
-            onClick={() => {
-              setId(x.id);
-              rememberTab(browserStorage(), x.id);
-            }}
-          >
-            {t(x.label)}
-          </button>
+      <div className="tabs">
+        {ROWS.map((row) => (
+          <div className="tabs-row" key={row.id}>
+            <span className="tabs-row-label" id={`tabs-${row.id}`}>
+              {t(row.title)}
+            </span>
+            <div className="tabs-row-list" role="tablist" aria-labelledby={`tabs-${row.id}`}>
+              {row.tabs.map((tid) => {
+                const x = TAB[tid]!;
+                return (
+                  <button
+                    key={x.id}
+                    type="button"
+                    role="tab"
+                    id={`tab-${x.id}`}
+                    aria-selected={tab.id === x.id}
+                    aria-controls="settings-panel"
+                    title={t(x.tip)}
+                    className={`glass${tab.id === x.id ? ' glass--on' : ''}`}
+                    onClick={() => {
+                      setId(x.id);
+                      rememberTab(browserStorage(), x.id);
+                    }}
+                  >
+                    {t(x.label)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         ))}
       </div>
       <section className="panel settings-block" role="tabpanel" id="settings-panel" aria-label={t(tab.label)}>

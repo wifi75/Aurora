@@ -623,6 +623,7 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
             tag,
             country,
             continent,
+            hint: d.hint,
         }));
     }
 }

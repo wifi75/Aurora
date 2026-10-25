@@ -57,12 +57,12 @@ export const settingsStrings = {
     'Como a Aurora comanda o rádio.',
   ],
   'tip.tab.audio': [
-    "Da dove arriva l'audio della cascata.",
-    'Where the waterfall audio comes from.',
-    'Woher der Audioeingang des Wasserfalls kommt.',
-    "D'où vient l'audio de la cascade.",
-    'De dónde viene el audio de la cascada.',
-    'De onde vem o áudio da cascata.',
+    "Ingresso e uscita audio, canali e salvataggio dei file audio.",
+    'Audio input and output, channels and saving of audio files.',
+    'Audio-Eingang und -Ausgang, Kanäle und Speichern der Audiodateien.',
+    'Entrée et sortie audio, canaux et enregistrement des fichiers audio.',
+    'Entrada y salida de audio, canales y guardado de los archivos de audio.',
+    'Entrada e saída de áudio, canais e gravação dos ficheiros de áudio.',
   ],
   'tip.tab.sequence': [
     'Regole delle risposte automatiche ai CQ.',

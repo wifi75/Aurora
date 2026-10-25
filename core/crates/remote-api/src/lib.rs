@@ -1,5 +1,6 @@
 //! API HTTP versionata (`/api/v1`) e flusso WebSocket di Aurora.
 
+pub mod audio_api;
 mod cat;
 pub mod engine_settings;
 mod frames;
@@ -112,6 +113,8 @@ pub struct AppState {
     pub engine_apply: Option<JtdxApplier>,
     /// Impostazioni di Aurora per il motore proprio (al posto del `JTDX.ini`); solo con `AURORA_ENGINE=native`.
     pub engine_settings: Option<Arc<engine_settings::EngineSettingsStore>>,
+    /// Chi apre e chiude i dispositivi audio (scheda Audio); solo con il motore proprio.
+    pub audio: Option<Arc<dyn audio_api::AudioControl>>,
     /// Client NTP: controllo dell'orologio del PC.
     pub clock: Option<Arc<clock_sync::ClockService>>,
     /// Client DX Cluster: spot dei cluster telnet.
@@ -171,7 +174,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -271,6 +274,11 @@ impl AppState {
 
     pub fn with_engine_settings(mut self, store: Arc<engine_settings::EngineSettingsStore>) -> AppState {
         self.engine_settings = Some(store);
+        self
+    }
+
+    pub fn with_audio(mut self, control: Arc<dyn audio_api::AudioControl>) -> AppState {
+        self.audio = Some(control);
         self
     }
 

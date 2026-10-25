@@ -7,7 +7,10 @@
 use std::{
     net::SocketAddr,
     path::PathBuf,
-    sync::{Arc, Mutex, RwLock},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, RwLock,
+    },
 };
 
 use aurora_core::{Bus, Event};
@@ -69,6 +72,18 @@ impl Exporter {
     /// Come `spawn`, ma i destinatari stanno in una lista condivisa che si puo' cambiare a programma acceso (le impostazioni di Aurora): ogni QSO
     /// usa la lista com'e' in quel momento.
     pub fn spawn_shared(bus: &Bus, book: Arc<Logbook>, targets: Arc<RwLock<Vec<Target>>>, station: Station, now: Arc<dyn Fn() -> u64 + Send + Sync>) -> Exporter {
+        Exporter::spawn_shared_eqsl(bus, book, targets, station, now, Arc::new(AtomicBool::new(false)))
+    }
+
+    /// Come `spawn_shared`; con `eqsl` acceso i record portano i campi `EQSL_QSL_SENT`/`EQSL_QSLSDATE` come in JTDX con l'invio a eQSL acceso.
+    pub fn spawn_shared_eqsl(
+        bus: &Bus,
+        book: Arc<Logbook>,
+        targets: Arc<RwLock<Vec<Target>>>,
+        station: Station,
+        now: Arc<dyn Fn() -> u64 + Send + Sync>,
+        eqsl: Arc<AtomicBool>,
+    ) -> Exporter {
         let stats = Arc::new(Mutex::new(ExportStats::default()));
         let shared = Arc::clone(&stats);
         let mut events = bus.subscribe_events();
@@ -91,10 +106,11 @@ impl Exporter {
                         }
                         let date = adif::utc_date(now());
                         let current = targets.read().map(|t| t.clone()).unwrap_or_default();
+                        let eqsl_on = eqsl.load(Ordering::Relaxed);
                         for target in &current {
                             let record = match target {
-                                Target::UdpAdif(_) => adif::jtdx_record(&q, &station, &date),
-                                Target::File(_) => adif::jtdx_file_record(&q, &station, &date),
+                                Target::UdpAdif(_) => adif::jtdx_record_with(&q, &station, &date, eqsl_on.then_some(date.as_str())),
+                                Target::File(_) => adif::jtdx_file_record_with(&q, &station, &date, eqsl_on),
                             };
                             let result = send(target, socket.as_ref(), &record).await;
                             record_result(&shared, target, result);

@@ -210,6 +210,7 @@ impl Logbook {
                     time_ms: (on / 1000 % 86_400 * 1000) as u32,
                     time_on_unix_ms: on,
                     time_off_unix_ms: off,
+                    ..Default::default()
                 },
                 date,
             ))
@@ -299,6 +300,7 @@ impl Logbook {
                     time_ms: r.get::<_, i64>(7)? as u32,
                     time_on_unix_ms: 0,
                     time_off_unix_ms: 0,
+                    ..Default::default()
                 },
                 r.get::<_, String>(8)?,
             ))

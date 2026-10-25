@@ -81,7 +81,8 @@ struct State {
 }
 
 pub struct InputLevelService {
-    control: Arc<dyn VolumeControl>,
+    /// Il dispositivo regolato: segue l'ingresso scelto nella scheda Audio (`set_control`).
+    control: Mutex<Arc<dyn VolumeControl>>,
     path: PathBuf,
     state: Mutex<State>,
 }
@@ -98,12 +99,22 @@ impl InputLevelService {
     /// Apre il servizio sul dispositivo dato; la scelta AUTO si ricorda in `path`.
     pub fn open(control: Arc<dyn VolumeControl>, path: &Path) -> Arc<InputLevelService> {
         let saved: Saved = std::fs::read_to_string(path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
-        Arc::new(InputLevelService { control, path: path.to_path_buf(), state: Mutex::new(State { auto: saved.auto, gain: AutoGain::new(), transmitting: false }) })
+        Arc::new(InputLevelService { control: Mutex::new(control), path: path.to_path_buf(), state: Mutex::new(State { auto: saved.auto, gain: AutoGain::new(), transmitting: false }) })
+    }
+
+    fn control(&self) -> Arc<dyn VolumeControl> {
+        Arc::clone(&lock(&self.control))
+    }
+
+    /// Da ora il volume regolato e' quello di un altro dispositivo (l'ingresso e' stato cambiato dalla scheda Audio). La regolazione automatica riparte da capo.
+    pub fn set_control(&self, control: Arc<dyn VolumeControl>) {
+        *lock(&self.control) = control;
+        lock(&self.state).gain = AutoGain::new();
     }
 
     pub fn status(&self) -> Result<InputStatus, InputLevelError> {
-        let volume = self.control.volume().map_err(InputLevelError::Device)?;
-        Ok(InputStatus { device: self.control.name(), volume_pct: to_pct(volume), auto: lock(&self.state).auto })
+        let volume = self.control().volume().map_err(InputLevelError::Device)?;
+        Ok(InputStatus { device: self.control().name(), volume_pct: to_pct(volume), auto: lock(&self.state).auto })
     }
 
     /// Imposta il volume a mano (0-100): da quel momento la regolazione automatica e' spenta, come in Decodium.
@@ -111,7 +122,7 @@ impl InputLevelService {
         if !pct.is_finite() || !(0.0..=100.0).contains(&pct) {
             return Err(InputLevelError::BadValue);
         }
-        self.control.set_volume((pct / 100.0) as f32).map_err(InputLevelError::Device)?;
+        self.control().set_volume((pct / 100.0) as f32).map_err(InputLevelError::Device)?;
         self.set_auto(false);
         Ok(())
     }
@@ -138,9 +149,9 @@ impl InputLevelService {
             }
             state.transmitting
         };
-        let volume = self.control.volume().ok()?;
+        let volume = self.control().volume().ok()?;
         let wanted = lock(&self.state).gain.on_level(level, volume, now_ms, transmitting)?;
-        match self.control.set_volume(wanted) {
+        match self.control().set_volume(wanted) {
             Ok(()) => {
                 tracing::info!("livello di ingresso: volume di registrazione {} % -> {} %", to_pct(volume), to_pct(wanted));
                 Some(wanted)

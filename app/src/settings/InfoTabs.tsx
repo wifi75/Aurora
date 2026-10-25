@@ -1,36 +1,27 @@
 import { useT } from '../i18n';
 import { EngineValues } from './EngineValues';
+import { AudioDevicesPanel } from './AudioDevicesPanel';
 import { Help, InfoTab, Row } from './common';
 import { NativeReports, useIsNative } from './NativeSettings';
 
-/** Scheda Radio: come Aurora e il motore condividono la radio. */
-export function RadioTab() {
-  const t = useT();
-  const native = useIsNative();
-  return (
-    <InfoTab
-      render={(info) => (
-        <>
-          <h3 className="set-sub">{t('radio.sharing')}</h3>
-          <Row name={t('radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
-          <Help>{native ? t('ens.radio.help') : t('radio.help')}</Help>
-          <EngineValues group="radio" />
-        </>
-      )}
-    />
-  );
-}
-
-/** Scheda Audio: da dove arriva l'audio della cascata. */
+/** Scheda Audio: con il motore proprio ingresso, uscita, canali e file audio si scelgono qui; con JTDX mostra da dove arriva la cascata. */
 export function AudioTab() {
   const t = useT();
   const native = useIsNative();
+  if (native) {
+    return (
+      <>
+        <AudioDevicesPanel />
+        <Help>{t('ens.audio.help')}</Help>
+      </>
+    );
+  }
   return (
     <InfoTab
       render={(info) => (
         <>
           <Row name={t('audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
-          <Help>{native ? t('ens.audio.help') : t('audio.help')}</Help>
+          <Help>{t('audio.help')}</Help>
           <EngineValues group="audio" />
         </>
       )}
@@ -70,21 +61,6 @@ export function ReportsTab() {
         </>
       )}
     />
-  );
-}
-
-/** Scheda Avanzate: i parametri del decodificatore stanno nel motore. */
-export function AdvancedTab() {
-  const t = useT();
-  const native = useIsNative();
-  return (
-    <>
-      <Help>{native ? t('ens.adv.help') : t('adv.help')}</Help>
-      <EngineValues group="advanced" />
-      <a className="glass glass--link" href="#/guida">
-        {t('adv.wiki')}
-      </a>
-    </>
   );
 }
 

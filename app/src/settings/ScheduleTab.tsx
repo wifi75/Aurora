@@ -4,6 +4,7 @@ import { getSchedule, putSchedule, type ScheduleState } from '../api/client';
 import { useT } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { Check, Help } from './common';
+import { Actions, Cells, Group, Message, Notes, Page } from './layout';
 
 const ROWS = 5;
 
@@ -30,48 +31,56 @@ export function ScheduleTab() {
     setDraft({ ...state, entries: next.filter((x): x is NonNullable<typeof x> => x !== null) });
   };
   return (
-    <>
-      <Help>{t('sch.help')}</Help>
-      <Check label={t('sch.use')} hint={t('tip.sch.use')} checked={state.enabled} onChange={(v) => setDraft({ ...state, enabled: v })} />
-      <table className="freq-table">
-        <thead>
-          <tr>
-            <th>{t('sch.hour')}</th>
-            <th>{t('sch.minute')}</th>
-            <th>{t('sch.band')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {slots.map((row, i) => (
-            <tr key={i}>
-              <td>
-                <input type="number" min={0} max={23} aria-label={`${t('sch.hour')} ${i + 1}`} value={row?.hour ?? ''} placeholder="hh" onChange={(e) => setRow(i, { hour: Number(e.target.value) })} />
-              </td>
-              <td>
-                <input type="number" min={0} max={59} aria-label={`${t('sch.minute')} ${i + 1}`} value={row?.minute ?? ''} placeholder="mm" onChange={(e) => setRow(i, { minute: Number(e.target.value) })} />
-              </td>
-              <td>
-                <select aria-label={`${t('sch.band')} ${i + 1}`} value={row?.band ?? ''} onChange={(e) => setRow(i, e.target.value === '' ? null : { band: e.target.value })}>
-                  <option value="">{t('sch.none')}</option>
-                  {BAND_NAMES.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
-        {t('set.save')}
-      </button>
-      {save.isError ? (
-        <p className="live-note" role="alert">
-          {t('sch.invalid')}
-        </p>
-      ) : null}
-    </>
+    <Page>
+      <Group title={t('tab.schedule')} span={2}>
+        <div className="sx-tablewrap">
+          <table className="sx-table">
+            <thead>
+              <tr>
+                <th scope="col">{t('sch.hour')}</th>
+                <th scope="col">{t('sch.minute')}</th>
+                <th scope="col">{t('sch.band')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slots.map((row, i) => (
+                <tr key={i}>
+                  <td>
+                    <input type="number" min={0} max={23} aria-label={`${t('sch.hour')} ${i + 1}`} value={row?.hour ?? ''} placeholder="hh" onChange={(e) => setRow(i, { hour: Number(e.target.value) })} />
+                  </td>
+                  <td>
+                    <input type="number" min={0} max={59} aria-label={`${t('sch.minute')} ${i + 1}`} value={row?.minute ?? ''} placeholder="mm" onChange={(e) => setRow(i, { minute: Number(e.target.value) })} />
+                  </td>
+                  <td>
+                    <select aria-label={`${t('sch.band')} ${i + 1}`} value={row?.band ?? ''} onChange={(e) => setRow(i, e.target.value === '' ? null : { band: e.target.value })}>
+                      <option value="">{t('sch.none')}</option>
+                      {BAND_NAMES.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Group>
+      <Group title={t('lay.settings')}>
+        <Cells min={12}>
+          <Check label={t('sch.use')} hint={t('tip.sch.use')} checked={state.enabled} onChange={(v) => setDraft({ ...state, enabled: v })} />
+        </Cells>
+        <Actions>
+          <button type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
+            {t('set.save')}
+          </button>
+        </Actions>
+        {save.isError ? <Message kind="alert">{t('sch.invalid')}</Message> : null}
+      </Group>
+      <Notes>
+        <Help>{t('sch.help')}</Help>
+      </Notes>
+    </Page>
   );
 }

@@ -188,6 +188,6 @@ fn handle_event(inner: &Inner, event: Event) {
         Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged(&q.call),
         Event::TxHalted => lock(&inner.brain).on_halt(now),
         Event::Status(s) => lock(&inner.brain).on_dial(s.dial_hz),
-        Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) | Event::BandChanged { .. } => {}
+        Event::QsoCompleted(_) | Event::QsoPending(_) | Event::QsoPendingDone { .. } | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) | Event::BandChanged { .. } => {}
     }
 }
