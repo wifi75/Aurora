@@ -217,6 +217,9 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             // STOP TX (tasto Esc compreso) ferma audio e PTT subito, anche se il ciclo e' occupato a decodificare
             let halting = Arc::clone(&port);
             l.controls.set_halt_now(Arc::new(move || halting.halt()));
+            // il livello (cursore Pwr) arriva al dispositivo subito, anche a trasmissione in corso, come in JTDX
+            let leveling = Arc::clone(&port);
+            l.controls.set_attenuation_hook(Arc::new(move |tenths| leveling.set_attenuation(tenths)));
             match TxDriver::new(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls)) {
                 Ok(d) => Some(d),
                 Err(e) => {
