@@ -315,7 +315,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TCPServerPort", "52001"),
         ("EnableTCPConnection", "false"),
         // Servizi di rete: tutto spento senza un JTDX.ini che li accendeva (JTDX: PSKReporter, AllowSpotsDXSummit e EQSLSend spenti)
-        ("PSKReporter", "false"),
+        // per scelta del proprietario lo spotting su PSK Reporter e' acceso di base (si spegne dalla scheda Segnalazioni)
+        ("PSKReporter", "true"),
         ("EQSLSend", "false"),
         ("EQSLUser", ""),
         ("EQSLNick", ""),
@@ -384,10 +385,6 @@ pub fn defaults() -> BTreeMap<String, String> {
 pub fn import_from_ini(ini: &BTreeMap<String, String>, own_listen: SocketAddr, env_forward: &[SocketAddr]) -> BTreeMap<String, String> {
     let mut out = defaults();
     for key in out.clone().keys() {
-        // gli invii verso internet (spot su PSK Reporter) NON si accendono da soli dal JTDX.ini: l'utente li accende dalla scheda Segnalazioni quando vuole
-        if key == "PSKReporter" {
-            continue;
-        }
         if let Some(value) = ini.get(key)
             && crate::engine_settings::validate(key, value).is_ok()
         {
@@ -843,7 +840,7 @@ mod tests {
         assert_eq!((got["UDPServer"].as_str(), got["UDPServerPort"].as_str()), ("127.0.0.1", "2333"), "2334 e' Aurora stessa: il primo server diventa l'inoltro");
         assert_eq!((got["UDP2Server"].as_str(), got["UDP2ServerPort"].as_str(), got["EnableUDP2adifBroadcast"].as_str()), ("127.0.0.1", "2237", "true"));
         assert_eq!((got["EnableUDP1adifSending"].as_str(), got["WriteDecodedALLTXT"].as_str()), ("true", "true"));
-        assert_eq!((got["PSKReporter"].as_str(), got["EQSLSend"].as_str()), ("false", "false"), "PSK Reporter resta spento anche se il JTDX.ini lo accendeva (invio verso internet: lo accende l'utente); eQSL resta spento senza password");
+        assert_eq!((got["PSKReporter"].as_str(), got["EQSLSend"].as_str()), ("true", "false"), "PSK Reporter acceso di base (e dal JTDX.ini); eQSL resta spento senza password");
         assert!(!got.contains_key("EQSLPasswd"), "la password non si importa mai");
     }
 
