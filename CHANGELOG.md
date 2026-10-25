@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.17 - 2026-10-25
+- **Suoni una volta sola per stazione**: una stazione che ha gia' fatto suonare una funzione non la fa suonare di nuovo per 10 minuti, anche se ritrasmette.
+- **QSO gia' lavorati** barrati con una linea unica da bordo a bordo, anche negli spazi vuoti; linee verticali delle colonne a colore pieno, uguali su tutte le righe.
+- **Pulsante «Installa ora»** anche nella scheda Impostazioni -> Aggiornamenti.
+- **All'avvio si apre sempre la pagina Stazione.**
+- Al posto del titolo «Stazione DX» c'e' l'etichetta gialla con nominativo e paese; Tx e Rx sulla riga del nominativo.
+
 ## 0.11.16 - 2026-10-25
 - **PSK Reporter e DXSummit accesi di base** (scelta del proprietario; si spengono dalla scheda Segnalazioni). **Pulsante «Spot DX»** nel riquadro DX della pagina Stazione: invia lo spot a DXSummit come JTDX (frequenza dial + Rx, commento con modo e testo), senza bloccare il motore e senza ripetere lo stesso DX per 5 minuti.
 - **QSO messo a log**: tutta la riga lampeggia tre volte, lentamente, in cima al pannello Log, che si aggiorna subito.
