@@ -1612,6 +1612,8 @@
 .dock-panel--cq .decode-list .badge-cell {
   padding: 0 0.3rem;
   background: transparent;
+  /* la linea e' quella di .decode-where: senza questo la cella vuota la raddoppia (linea piu' spessa nelle righe senza etichetta) */
+  border-left: 0;
 }
 
 .dock-panel--all .decode-list .badge.badge-cell,
@@ -3942,5 +3944,76 @@
   .log4om-row--flash td {
     animation: none;
     box-shadow: inset 0 0 0 100vmax rgb(255 214 64 / 0.6);
+  }
+}
+
+/* Comandi: tutto in un unico flusso compatto, a capo solo quando la finestra e' stretta; controlli piu' piccoli e spazi minimi */
+@media (pointer: fine) {
+  .tx-commands .tx-main {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.2rem 0.3rem;
+  }
+
+  .tx-commands .cmd-line,
+  .tx-commands .macro-chips {
+    display: contents;
+  }
+
+  .tx-commands .tx-note,
+  .tx-commands .live-note {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+
+  .tx-commands button.chip,
+  .tx-commands .macro-chips .glass,
+  .tx-commands button.glass.chip.chip--main {
+    min-height: 1.35rem;
+    padding: 0 0.4rem;
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  .tx-commands .cmd-hz {
+    gap: 0.2rem;
+    font-size: 0.66rem;
+  }
+
+  .tx-commands .cmd-hz input {
+    width: 3.4rem;
+    min-height: 1.35rem;
+    padding: 0 0.2rem;
+    font-size: 0.72rem;
+  }
+
+  .tx-commands .cmd-arrows {
+    flex-direction: row;
+    gap: 1px;
+  }
+
+  .tx-commands button.glass.chip.chip--arrow {
+    min-height: 1.35rem;
+    padding: 0 0.25rem;
+    font-size: 0.6rem;
+  }
+
+  .tx-commands .cmd-tag,
+  .tx-commands .tx-check {
+    font-size: 0.66rem;
+  }
+
+  .tx-commands .cmd-dx-call,
+  .tx-commands .data {
+    font-size: 0.74rem;
+  }
+
+  .tx-commands .cmd-free {
+    flex: 1 1 5rem;
+    min-width: 4rem;
+    min-height: 1.35rem;
+    padding: 0 0.3rem;
+    font-size: 0.72rem;
   }
 }
