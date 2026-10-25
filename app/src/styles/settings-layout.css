@@ -735,3 +735,102 @@
 .sx-body .jx-row .ens-reason {
   display: none;
 }
+
+/* Suoni per funzione: menu compatto con ▶ accanto all'anteprima di ogni tipo di messaggio */
+.snd-pick {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sx-field .snd-select,
+.snd-select {
+  box-sizing: border-box;
+  width: 6.4rem;
+  height: 1.7rem;
+  padding: 0 0.25rem;
+  background: var(--panel);
+  border: 1px solid var(--sx-edge);
+  border-radius: 0.4rem;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-xs);
+}
+
+.sx-body .snd-pick .snd-try {
+  box-sizing: border-box;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
+  height: 1.7rem;
+  padding: 0 0.3rem;
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+.sx-body .snd-pick .snd-try:disabled {
+  opacity: 0.45;
+}
+
+.sx-table .snd-pick {
+  justify-content: center;
+}
+
+.sx-table .snd-select {
+  width: min(100%, 14rem);
+  height: 2rem;
+}
+
+.sx-table .snd-pick .snd-try {
+  height: 2rem;
+  min-height: 2rem;
+}
+
+.snd-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.snd-top .sx-actions {
+  margin: 0;
+}
+
+.snd-state--ok {
+  color: var(--ok, #2e8b57);
+  font-weight: var(--weight-strong);
+}
+
+.snd-state--off,
+.snd-state--none {
+  color: var(--text-muted);
+}
+
+.snd-bank {
+  margin-top: var(--space-2);
+}
+
+.snd-bank > summary {
+  cursor: pointer;
+  font-weight: var(--weight-strong);
+}
+
+.snd-cat h4 {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.snd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-1);
+}
+
+.snd-grid button {
+  text-align: left;
+  font-size: var(--text-xs);
+}

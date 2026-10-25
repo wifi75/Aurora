@@ -7,7 +7,9 @@ import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { isCq } from '../lib/filters';
 import { useNotifyView, workedLook } from '../lib/notifyView';
 import { useNotify } from '../lib/notify';
+import { isAnswerToMyCall, transmittedTo } from '../lib/answered';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
+import { useStation } from '../state/station';
 import { senderOf, wishReason } from '../lib/wishlist';
 import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
@@ -101,6 +103,9 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
   const wishlist = useWishlist((s) => s.list);
   const view = useNotifyView((s) => s.view);
   const look = workedLook(view);
+  // i nominativi a cui ho trasmesso da poco: un loro messaggio a me e' una risposta alla mia chiamata
+  const txLog = useStation((st) => st.txLog);
+  const sentTo = transmittedTo(txLog);
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -120,6 +125,8 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
         // «Visualizza i tuoi messaggi Tx nella finestra Rx» spento: le righe Tx non si vedono
         if (own && !prefs.showTx) return null;
         const toMe = !own && isCallToMe(d.text, myCall);
+        // un messaggio a me di una stazione a cui avevo trasmesso da poco e' la sua RISPOSTA (linguetta verde); altrimenti mi sta chiamando per prima (rossa)
+        const answered = toMe && isAnswerToMyCall(d.text, d.time_ms, sentTo);
         // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
         const sender = own || !wishlist.enabled ? null : senderOf(d.text);
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
@@ -148,8 +155,8 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
           {gap ? <div className="decode-gap" role="separator" /> : null}
           <button
             type="button"
-            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            title={own ? t('tip.row.tx') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
@@ -181,7 +188,7 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
               <span className="badge-cell" />
             )}
             {toMe && view.redMarker && !isClosingMessage(d.text) ? (
-              <span className={`me-mark${view.blueMarker && dxCall && namesCall(d.text, dxCall) ? ' me-mark--blue' : ''}`} aria-hidden="true" />
+              <span className={`me-mark${answered ? ' me-mark--answer' : view.blueMarker && dxCall && namesCall(d.text, dxCall) ? ' me-mark--blue' : ''}`} aria-hidden="true" />
             ) : null}
           </button>
           </Fragment>

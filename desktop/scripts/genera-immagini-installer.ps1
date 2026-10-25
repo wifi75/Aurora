@@ -1,7 +1,7 @@
 # Disegna le due immagini dell'installatore (intestazione 150x57 e barra laterale 164x314, BMP a 24 bit) con il logo di Aurora.
 # Si lancia a mano quando cambia il logo o la versione; i file prodotti stanno nel repository (desktop/src-tauri/installer).
-#   .\desktop\scripts\genera-immagini-installer.ps1 -Versione 0.11.14
-param([string]$Versione = '0.11.14')
+#   .\desktop\scripts\genera-immagini-installer.ps1 -Versione 0.11.15
+param([string]$Versione = '0.11.15')
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing

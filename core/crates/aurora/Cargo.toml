@@ -35,6 +35,8 @@ engine-native = { path = "../engine-native" }
 tx-native = { path = "../tx-native" }
 udp-hub = { path = "../udp-hub" }
 udp-emitter = { path = "../udp-emitter" }
+reporting = { path = "../reporting" }
+qso-native = { path = "../qso-native" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 remote-api = { path = "../remote-api" }
