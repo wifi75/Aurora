@@ -345,17 +345,17 @@ function eventsOf(d: DecodedMessage, myCall?: string | null, dxCall?: string | n
   return found;
 }
 
-/** Quanto a lungo una stazione gia' segnalata per una funzione non suona di nuovo, anche se ritrasmette (10 minuti). */
-export const NOTIFIED_TTL_MS = 10 * 60_000;
+/** Una stazione fa suonare una notifica una volta sola: poi non suona piu' per tutta la sessione (12 ore), anche se ritrasmette o cambia funzione. */
+export const NOTIFIED_TTL_MS = 12 * 60 * 60_000;
 const notifiedAt = new Map<string, number>();
 
-/** Ha gia' suonato per questa funzione e questa stazione da poco? Allora non suona di nuovo. */
-function alreadyNotified(key: string, now: number): boolean {
-  const at = notifiedAt.get(key);
+/** Questa stazione ha gia' fatto suonare una notifica? Allora non suona di nuovo. */
+function alreadyNotified(sender: string, now: number): boolean {
+  const at = notifiedAt.get(sender);
   return at !== undefined && now - at < NOTIFIED_TTL_MS;
 }
 
-/** Per le prove: si dimentica chi e' gia' stato segnalato. */
+/** Per le prove e per il cambio di banda: si dimentica chi e' gia' stato segnalato. */
 export function resetNotified(): void {
   notifiedAt.clear();
 }
@@ -376,16 +376,16 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
   const fresh = decodes.filter((d) => d.id > lastId && d.id >= 0);
   const now = Date.now();
   const candidates = new Set<SoundEvent>();
-  // la chiave di ogni segnalazione: funzione + stazione che trasmette (il mittente del messaggio)
+  // la chiave e' la stazione che trasmette (il mittente del messaggio): suona solo la prima volta che entra nelle regole
   const keysOf = new Map<SoundEvent, string[]>();
+  const newSenders = new Set<string>();
   for (const d of fresh) {
     const sender = (senderOf(d.text)?.call ?? d.text.trim().split(/\s+/)[1] ?? d.text).toUpperCase();
+    if (alreadyNotified(sender, now)) continue;
+    newSenders.add(sender);
     for (const e of eventsOf(d, myCall, dxCall)) {
-      const key = `${e}|${sender}`;
-      // se questa stazione ha gia' fatto suonare questa funzione da poco, non suona di nuovo ogni volta che ritrasmette
-      if (alreadyNotified(key, now)) continue;
       candidates.add(e);
-      keysOf.set(e, [...(keysOf.get(e) ?? []), key]);
+      keysOf.set(e, [...(keysOf.get(e) ?? []), sender]);
     }
   }
   let event: SoundEvent | null = null;
@@ -396,16 +396,17 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
     if (id) {
       event = e;
       sound = id;
-      // da ora e per un po' questa stazione non fa piu' suonare questa funzione
+      // da ora queste stazioni non fanno piu' suonare nulla
       for (const key of keysOf.get(e) ?? []) notifiedAt.set(key, now);
       break;
     }
   }
-  if (!event && fresh.length > 0) {
+  if (!event && newSenders.size > 0) {
     const id = soundFor('first_message', st);
     if (id) {
       event = 'first_message';
       sound = id;
+      for (const key of newSenders) notifiedAt.set(key, now);
     }
   }
   return { event, sound, lastId: newest === null ? lastId : Math.max(lastId, newest) };

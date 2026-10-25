@@ -39,7 +39,7 @@ import { usePhone } from '../lib/phone';
 import { useRadioDisplay } from '../lib/radioDisplay';
 import { registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
-import { cqDecodes } from '../state/selectors';
+import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation } from '../state/station';
 
 const F_MIN_HZ = 0;
@@ -61,6 +61,7 @@ export function Live() {
   const displayHidden = useRadioDisplay((s) => s.pref.hidden);
   const chosenBands = useBandFilter((s) => s.bands);
   const filters = useFilters((s) => s.filters);
+  const cqPrefs = useCqPrefs((s) => s.prefs);
   const shown = applyFilters(decodes, filters, status?.own_continent);
   const [note, setNote] = useState('');
   // l'esito di un comando appare un attimo sopra la pagina e sparisce: non occupa spazio
@@ -151,7 +152,7 @@ export function Live() {
       case 'cq':
         return (
           <DecodeList
-            decodes={cqDecodes(shown)}
+            decodes={applyCqPrefs(shown, cqPrefs)}
             myGrid={status?.de_grid}
             myCall={status?.de_call}
             dxCall={status?.dx_call}

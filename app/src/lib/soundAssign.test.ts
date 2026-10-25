@@ -128,7 +128,9 @@ describe('pickSoundEvent', () => {
 
   it('plays the sound assigned to the type of the new message, a different one for each', () => {
     const a = pickSoundEvent([decode(9, 'new_dxcc')], 7, all());
+    resetNotified();
     const b = pickSoundEvent([decode(9, 'new_zone')], 7, all());
+    resetNotified();
     const c = pickSoundEvent([decode(9, 'cq')], 7, all());
     expect([a.event, b.event, c.event]).toEqual(['new_dxcc', 'new_zone', 'cq']);
     expect(new Set([a.sound, b.sound, c.sound]).size).toBe(3);
@@ -144,10 +146,20 @@ describe('pickSoundEvent', () => {
     const list = [decode(9, null, 'AA1AA BB2BB -10'), decode(8, 'new_dxcc')];
     expect(pickSoundEvent(list, 7, all(), 'AA1AA').event).toBe('my_call');
     const st = all();
+    resetNotified();
     st.assign.my_call = null;
     expect(pickSoundEvent(list, 7, st, 'AA1AA').event).toBe('alert_my_call');
+    resetNotified();
     st.assign.alert_my_call = null;
     expect(pickSoundEvent(list, 7, st, 'AA1AA').event).toBe('new_dxcc');
+  });
+
+  it('una stazione fa suonare una sola volta, una stazione nuova suona di nuovo', () => {
+    const first = pickSoundEvent([decode(9, 'cq', 'CQ AA1AA FN42')], 7, all());
+    expect(first.event).toBe('cq');
+    expect(pickSoundEvent([decode(10, 'cq', 'CQ AA1AA FN42')], 9, all()).event).toBeNull();
+    expect(pickSoundEvent([decode(11, 'new_dxcc', 'CQ AA1AA FN42')], 10, all()).event).toBeNull();
+    expect(pickSoundEvent([decode(12, 'cq', 'CQ BB2BB FN42')], 11, all()).event).toBe('cq');
   });
 
   it('the chosen DX call has its own sound', () => {

@@ -55,7 +55,7 @@ function isStandard(text: string): boolean {
   return tokens.length >= 2 && isCallToken(tokens[0] ?? '') && isCallToken(tokens[1] ?? '');
 }
 
-function callMatches(call: string | null, pattern: string): boolean {
+export function callMatches(call: string | null, pattern: string): boolean {
   if (!call) return false;
   const p = pattern.trim().toUpperCase();
   return p.endsWith('*') ? call.startsWith(p.slice(0, -1)) : call === p;
