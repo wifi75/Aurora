@@ -3,7 +3,7 @@
 Stato al 2026-10-25, versione 0.11.18. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
-- JTDX 2.2.159 (`C:\JTDX64\159`) resta il motore di decodifica, CAT e TX; Aurora è cervello e interfaccia. JTDX non accetta `Configure` via UDP: le sue impostazioni di decodifica restano in JTDX.
+- Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
 - Core Rust (workspace `core/`, Tokio/Axum), interfaccia React + TypeScript + Vite, cascata WebGPU con ripiego WebGL2, PWA per il telefono. Guscio desktop Tauri 2 ancora da fare. Database SQLite.
 - Nessun login a password: dispositivi associati con un codice monouso (durata scelta dall'operatore, 1-60 minuti, predefinito 10). Per le prove esiste l'accesso senza codice, solo rete di casa, mai da proxy.
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
