@@ -9,16 +9,13 @@ mod window_state;
 use std::{
     error::Error,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Mutex,
     time::{Duration, Instant},
 };
 
 use aurora_core::Event;
 use tauri::{
-    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    webview::NewWindowResponse,
-    AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
+    webview::NewWindowResponse, AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as _};
 use tauri_plugin_notification::NotificationExt;
@@ -29,32 +26,23 @@ struct Core {
     shutdown: Mutex<Option<oneshot::Sender<()>>>,
     /// Assente se il core non e' partito (la finestra dice perche').
     state: Option<remote_api::AppState>,
-    installer: Option<Arc<installer::DesktopInstaller>>,
     data_dir: PathBuf,
 }
 
-/// La voce del vassoio che propone l'aggiornamento: spenta finche' non ce n'e' uno.
-struct UpdateItem(MenuItem<Wry>);
-
 static LAST_WINDOW_SAVE: Mutex<Option<Instant>> = Mutex::new(None);
 
-const FIRST_RUN_MARKER: &str = "desktop-primo-avvio";
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
 
 pub fn run() {
-    // all'accesso di Windows Aurora parte nel vassoio, senza aprire la finestra
-    let hidden = std::env::args().any(|a| a == "--nascosto");
     let built = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))
         .plugin(tauri_plugin_notification::init())
-        .setup(move |app| start(app, hidden))
+        .setup(move |app| start(app))
         .on_window_event(|window, event| match event {
-            // chiudere la finestra la nasconde: Aurora resta nel vassoio, col core acceso
-            WindowEvent::CloseRequested { api, .. } => {
+            // come una normale applicazione: la X chiude la finestra e con lei tutto (il core si ferma all'uscita)
+            WindowEvent::CloseRequested { .. } => {
                 remember_window(window);
-                api.prevent_close();
-                let _ = window.hide();
             }
             // dimensione e posizione si ricordano per il prossimo avvio (senza scrivere a ogni pixel)
             WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
@@ -119,7 +107,7 @@ fn ui_dir(app: &AppHandle) -> PathBuf {
     if dev.join("index.html").is_file() { dev } else { installed }
 }
 
-fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
+fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     let handle = app.handle().clone();
     // di norma %APPDATA%\Aurora; `AURORA_DATA_DIR` nell'ambiente sceglie un'altra cartella (per le prove)
     let data_dir = match std::env::var_os("AURORA_DATA_DIR") {
@@ -155,17 +143,13 @@ fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
             tracing::info!("Aurora {} in ascolto su http://{}", env!("CARGO_PKG_VERSION"), server.addr);
             let page = format!("http://127.0.0.1:{}/", server.addr.port());
             let mut events = server.state.bus.subscribe_events();
-            app.manage(Core { shutdown: Mutex::new(Some(tx)), state: Some(server.state.clone()), installer: Some(installer), data_dir: data_dir.clone() });
+            app.manage(Core { shutdown: Mutex::new(Some(tx)), state: Some(server.state.clone()), data_dir: data_dir.clone() });
             tauri::async_runtime::spawn(async move {
                 server.join().await;
             });
-            // `AURORA_AUTOSTART=0` (nel file o nell'ambiente) tiene Aurora fuori dai programmi che partono con Windows
-            if values.get("AURORA_AUTOSTART").map(String::as_str) != Some("0") {
-                first_run_autostart(&handle, &data_dir);
-            }
-            let update_item = build_tray(&handle)?;
-            app.manage(UpdateItem(update_item));
-            open_window(&handle, &page, !hidden)?;
+            // niente programma residente: l'avvio con Windows e' spento, salvo `AURORA_AUTOSTART=1`
+            apply_autostart_choice(&handle, values.get("AURORA_AUTOSTART").map(String::as_str) == Some("1"));
+            open_window(&handle, &page, true)?;
             // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'
             if values.get("AURORA_MONITOR_ON_START").map(String::as_str) != Some("0") {
                 if let Some(state) = core_state(&handle) {
@@ -187,8 +171,7 @@ fn start(app: &mut tauri::App, hidden: bool) -> Result<(), Box<dyn Error>> {
             tracing::error!("avvio fallito: {message}");
             // la finestra dice cosa non va e il vassoio permette di aprire il file da correggere o uscire
             open_window_app(&handle, &format!("index.html?errore={}", percent_encode(&message)))?;
-            app.manage(Core { shutdown: Mutex::new(None), state: None, installer: None, data_dir });
-            let _ = build_tray(&handle);
+            app.manage(Core { shutdown: Mutex::new(None), state: None, data_dir });
         }
     }
     Ok(())
@@ -300,16 +283,19 @@ fn open_window_app(app: &AppHandle, path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Al primo avvio Aurora si mette tra i programmi che partono con Windows; poi decide l'utente dal vassoio.
-fn first_run_autostart(app: &AppHandle, data_dir: &Path) {
-    let marker = data_dir.join(FIRST_RUN_MARKER);
-    if marker.exists() {
-        return;
+/// Aurora non resta residente: l'avvio con Windows e' spento (e si toglie se una versione vecchia l'aveva acceso). Solo
+/// `AURORA_AUTOSTART=1` nel file delle impostazioni o nell'ambiente lo accende.
+fn apply_autostart_choice(app: &AppHandle, wanted: bool) {
+    let launcher = app.autolaunch();
+    let enabled = launcher.is_enabled().unwrap_or(false);
+    let result = match (wanted, enabled) {
+        (true, false) => launcher.enable(),
+        (false, true) => launcher.disable(),
+        _ => Ok(()),
+    };
+    if let Err(e) = result {
+        tracing::warn!("avvio con Windows non aggiornato: {e}");
     }
-    if let Err(e) = app.autolaunch().enable() {
-        tracing::warn!("avvio con Windows non attivato: {e}");
-    }
-    let _ = std::fs::write(marker, "fatto\n");
 }
 
 fn notify(app: &AppHandle, title: &str, body: &str) {
@@ -318,93 +304,7 @@ fn notify(app: &AppHandle, title: &str, body: &str) {
     }
 }
 
-/// E' uscita una versione nuova: avviso di Windows e la voce del vassoio diventa «Installa Aurora X».
+/// E' uscita una versione nuova: avviso di Windows; l'installazione si avvia dalla barra in alto nella pagina («Installa ora»).
 fn announce_update(app: &AppHandle, version: &str) {
-    if let Some(item) = app.try_state::<UpdateItem>() {
-        let _ = item.0.set_text(format!("Installa Aurora {version}"));
-        let _ = item.0.set_enabled(true);
-    }
-    notify(app, &format!("Aurora {version} disponibile"), "Dal vassoio (icona di Aurora) scegli «Installa» per aggiornare.");
-}
-
-fn build_tray(app: &AppHandle) -> Result<MenuItem<Wry>, Box<dyn Error>> {
-    let open = MenuItem::with_id(app, "open", "Apri Aurora", true, None::<&str>)?;
-    let update = MenuItem::with_id(app, "install", "Nessun aggiornamento", false, None::<&str>)?;
-    let check = MenuItem::with_id(app, "check", "Cerca aggiornamenti", true, None::<&str>)?;
-    let autostart = CheckMenuItem::with_id(app, "autostart", "Avvia con Windows", true, app.autolaunch().is_enabled().unwrap_or(false), None::<&str>)?;
-    let data = MenuItem::with_id(app, "data", "Apri la cartella dei dati", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Esci da Aurora", true, None::<&str>)?;
-    let menu = Menu::with_items(
-        app,
-        &[&open, &PredefinedMenuItem::separator(app)?, &update, &check, &autostart, &data, &PredefinedMenuItem::separator(app)?, &quit],
-    )?;
-    let icon = app.default_window_icon().cloned().ok_or("icona del programma mancante")?;
-    TrayIconBuilder::with_id("aurora")
-        .icon(icon)
-        .tooltip("Aurora")
-        .menu(&menu)
-        .show_menu_on_left_click(false)
-        .on_menu_event(|app, event| match event.id().as_ref() {
-            "open" => show_main(app),
-            "install" => install_from_tray(app),
-            "check" => check_from_tray(app),
-            "autostart" => toggle_autostart(app),
-            "data" => open_data_folder(app),
-            "quit" => app.exit(0),
-            _ => {}
-        })
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
-                show_main(tray.app_handle());
-            }
-        })
-        .build(app)?;
-    Ok(update)
-}
-
-fn toggle_autostart(app: &AppHandle) {
-    let launcher = app.autolaunch();
-    let result = if launcher.is_enabled().unwrap_or(false) { launcher.disable() } else { launcher.enable() };
-    if let Err(e) = result {
-        notify(app, "Avvio con Windows", &format!("Non e' stato possibile cambiarlo: {e}"));
-    }
-}
-
-fn open_data_folder(app: &AppHandle) {
-    if let Some(core) = app.try_state::<Core>() {
-        let _ = std::process::Command::new("explorer").arg(&core.data_dir).spawn();
-    }
-}
-
-fn check_from_tray(app: &AppHandle) {
-    let Some(core) = app.try_state::<Core>() else { return };
-    let Some(updates) = core.state.as_ref().and_then(|s| s.updates.clone()) else { return };
-    let app = app.clone();
-    std::thread::spawn(move || {
-        let status = updates.check();
-        match (status.available, status.error) {
-            (Some(release), _) => announce_update(&app, &release.version),
-            (None, Some(error)) => notify(&app, "Aggiornamenti", &format!("Controllo non riuscito: {error}")),
-            (None, None) => notify(&app, "Aggiornamenti", "Aurora e' gia' all'ultima versione."),
-        }
-    });
-}
-
-fn install_from_tray(app: &AppHandle) {
-    let Some(core) = app.try_state::<Core>() else { return };
-    let Some(state) = core.state.as_ref() else { return };
-    let Some(updates) = state.updates.clone() else { return };
-    if state.current_status().is_some_and(|s| s.transmitting) {
-        notify(app, "Aggiornamento", "Si sta trasmettendo: riprova a fine trasmissione.");
-        return;
-    }
-    let Some(installer) = core.installer.clone() else { return };
-    let app = app.clone();
-    notify(&app, "Aggiornamento", "Scarico e controllo la versione nuova…");
-    std::thread::spawn(move || {
-        use remote_api::UpdateInstaller as _;
-        if let Err(e) = installer.install(updates) {
-            notify(&app, "Aggiornamento non riuscito", &e);
-        }
-    });
+    notify(app, &format!("Aurora {version} disponibile"), "Apri Aurora e premi «Installa ora» nella barra in alto per aggiornare.");
 }

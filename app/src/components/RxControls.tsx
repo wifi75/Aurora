@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { formatClock } from '../lib/format';
 import { periodPosition } from '../lib/period';
 import { getControls, postControl, type ControlId } from '../api/client';
@@ -40,8 +40,8 @@ function PeriodBar({ mode, label, clockLabel, transmitting }: { mode: string; la
   );
 }
 
-/** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo. */
-export function RxControls({ mode, transmitting = false }: { mode: string; transmitting?: boolean }) {
+/** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo; `trailing` sta a destra, sulla stessa riga. */
+export function RxControls({ mode, transmitting = false, trailing }: { mode: string; transmitting?: boolean; trailing?: ReactNode }) {
   const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
@@ -87,6 +87,7 @@ export function RxControls({ mode, transmitting = false }: { mode: string; trans
       </div>
       <PeriodBar mode={mode} label={t('ctl.period')} clockLabel={t('ctl.clock')} transmitting={transmitting} />
       {note ? <span className="live-note" role="status">{note}</span> : null}
+      {trailing ? <div className="rx-trailing">{trailing}</div> : null}
     </div>
   );
 }

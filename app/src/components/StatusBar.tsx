@@ -12,9 +12,11 @@ import { useStation } from '../state/station';
 interface Props {
   status: StationStatus | null;
   connection: ConnectionState;
+  /** La frequenza e' gia' sul display della radio: la pastiglia si toglie per non ripeterla. */
+  hideDial?: boolean;
 }
 
-export function StatusBar({ status, connection }: Props) {
+export function StatusBar({ status, connection, hideDial = false }: Props) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
   const pendingDx = useStation((s) => s.pendingDx);
@@ -33,9 +35,11 @@ export function StatusBar({ status, connection }: Props) {
       </span>
       {status && (
         <>
-          <span className="pill data" title={t('tip.status.freq')}>
-            {formatDial(status.dial_hz)}
-          </span>
+          {hideDial ? null : (
+            <span className="pill data" title={t('tip.status.freq')}>
+              {formatDial(status.dial_hz)}
+            </span>
+          )}
           <ClockPill />
           {dxCall ? (
             <span className="pill data pill--dx" title={t('tip.status.dx')}>
