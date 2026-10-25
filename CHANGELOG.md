@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.0 - 2026-10-25
 - **Automazioni in banda affollata**: pausa per stazione che scade (i tentativi falliti si dimenticano dopo 15 minuti, regolabile), priorita' a punteggio (novita' e segnale insieme) e rispetto dei CQ direzionali («CQ NA» solo dal Nord America, «CQ DX» solo da fuori dal proprio continente, dal nominativo letto da JTDX). Dalle analisi di Decodium (`docs/analisi-decodium-banda-satura.md`, `docs/analisi-decodium-decoder.md`).
 - **Cascata: nero, guadagno, contrasto e velocita'**: quattro regolazioni sul bordo alto della cascata (si vedono passando il mouse, sempre sul telefono) come in Decodium; agiscono sul disegno e quindi su tutta la storia, e restano salvate.
 - **Cascata piu' reattiva**: niente piu' media a 4 righe (mostrava 3,8 righe al secondo); ora scorre a 15 righe al secondo come Decodium, con il doppio di storia. La media si puo' rimettere con la chiave `aurora-wf-rows` (1-4).
