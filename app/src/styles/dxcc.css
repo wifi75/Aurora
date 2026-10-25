@@ -277,7 +277,8 @@
   }
 }
 
-/* Pannello Log: in alto il log di Log4OM2, sotto la scheda DXCC */
+/* Pannello Log: in alto il log di Log4OM2, sotto la scheda DXCC. La scheda prende esattamente l'altezza del suo contenuto
+   (nessun riempimento extra): tutto il resto e' del log. Se la scheda non ci sta, scorre da sola. */
 .log-dxcc {
   display: flex;
   flex-direction: column;
@@ -286,14 +287,15 @@
 }
 
 .log-dxcc-top {
-  flex: 1 1 42%;
+  flex: 1 1 0;
   min-height: 9rem;
   overflow: auto;
 }
 
 .log-dxcc-bottom {
-  flex: 1 1 58%;
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: 70%;
   overflow: auto;
   border-top: var(--border-width) solid var(--border);
 }
@@ -346,4 +348,101 @@
     min-height: 1.5rem;
     padding: 0 var(--space-2);
   }
+}
+
+/* Dimensione compatta (impostazione della scheda DXCC) */
+.dxcc-card.dxcc-card--compact {
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+.dxcc-card--compact .dxcc-labels {
+  gap: var(--space-1);
+}
+
+.dxcc-card--compact .dxcc-label {
+  padding: 0 var(--space-1);
+  font-size: 0.62rem;
+  line-height: 1.3rem;
+  white-space: nowrap;
+}
+
+.dxcc-card--compact .dxcc-caption {
+  font-size: 0.54rem;
+}
+
+.dxcc-card--compact .dxcc-grid {
+  border-spacing: 2px;
+}
+
+.dxcc-card--compact .dxcc-cell {
+  height: 1rem;
+  font-size: 0.56rem;
+}
+
+.dxcc-card--compact .dxcc-band,
+.dxcc-card--compact .dxcc-row {
+  font-size: 0.56rem;
+}
+
+.dxcc-card--compact .dxcc-total {
+  width: 2.2rem;
+  font-size: var(--text-xs);
+}
+
+.dxcc-card--compact .dxcc-try {
+  min-height: 1.5rem;
+}
+
+/* Scheda Impostazioni: DXCC */
+.dxcc-set-preview {
+  max-width: 34rem;
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  container-type: inline-size;
+}
+
+.dxcc-set-colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-3);
+}
+
+.dxcc-set-group {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  margin: 0;
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+}
+
+.dxcc-set-group legend {
+  font-weight: var(--weight-strong);
+}
+
+.dxcc-set-color {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.dxcc-set-color span {
+  flex: 1;
+}
+
+.dxcc-set-color input[type='color'] {
+  width: 2.2rem;
+  height: 1.6rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dxcc-set-color button {
+  min-width: 1.6rem;
+  min-height: 1.6rem;
+  padding: 0;
 }

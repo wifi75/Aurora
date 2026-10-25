@@ -16,6 +16,8 @@ import {
   type DxccQuery,
   type LabelId,
 } from '../lib/dxccCard';
+import { emptyMatrix } from '../lib/dxccSample';
+import { cellStyle, labelStyle, useDxccPrefs } from '../lib/dxccPrefs';
 import { useStation } from '../state/station';
 
 /** La scheda DXCC dal core; si rilegge da sola quando si registra un QSO (evento `qso_logged`). */
@@ -42,22 +44,23 @@ interface LabelsProps {
 /** Le sei etichette: il paese sopra (ambra), il locatore sotto (ciano); accese quelle che valgono per la stazione. */
 export function DxccLabelStrip({ labels, captions, className = '' }: LabelsProps) {
   const t = useT();
+  const prefs = useDxccPrefs((s) => s.prefs);
   return (
     <ul className={`dxcc-labels ${className}`.trim()} aria-label={t('dxcc.labels')}>
       {LABEL_IDS.map((id: LabelId) => {
         const on = labels?.[id] === true;
         return (
-          <li key={id} className={`dxcc-label dxcc-label--${COUNTRY_LABELS.includes(id) ? 'country' : 'grid'}`} data-on={on ? 'true' : 'false'} data-label={id} title={t(`dxcc.tip.${id}` as Key)}>
+          <li key={id} className={`dxcc-label dxcc-label--${COUNTRY_LABELS.includes(id) ? 'country' : 'grid'}`} data-on={on ? 'true' : 'false'} data-label={id} style={labelStyle(prefs, id, on)} title={t(`dxcc.tip.${id}` as Key)}>
             {LABEL_TEXT[id]}
             <span className="visually-hidden">{on ? ' ✓' : ''}</span>
           </li>
         );
       })}
-      {captions?.map((text, i) => (
+      {prefs.captions ? captions?.map((text, i) => (
         <li key={`cap${i}`} className="dxcc-caption" aria-hidden="true" style={{ gridColumn: i + 1, gridRow: 3 }}>
           {text}
         </li>
-      ))}
+      )) : null}
     </ul>
   );
 }
@@ -71,16 +74,18 @@ interface MatrixProps {
 /** La matrice: righe FT8, FT4, DIG; colonne 160...4 e U; in alto a sinistra il totale dei paesi lavorati. */
 export function DxccGrid({ matrix, station }: MatrixProps) {
   const t = useT();
-  // le righe sono i soli modi di Aurora, FT8 e FT4: DIG non serve
-  const rows = matrix.rows.filter((r) => r !== 'DIG');
+  const prefs = useDxccPrefs((s) => s.prefs);
+  // righe e colonne mostrate: quelle scelte nelle impostazioni (di base FT8 e FT4, tutte le bande)
+  const rows = matrix.rows.filter((r) => prefs.rows[r as 'FT8' | 'FT4' | 'DIG'] === true);
+  const bands = matrix.bands.filter((b) => prefs.bands.includes(b));
   return (
     <table className="dxcc-grid" aria-label={t('dxcc.title')}>
       <thead>
         <tr>
           <th className="dxcc-total" scope="col" title={t('dxcc.total', { worked: matrix.worked, total: matrix.total })}>
-            {matrix.worked}
+            {prefs.total ? matrix.worked : null}
           </th>
-          {matrix.bands.map((b) => (
+          {bands.map((b) => (
             <th key={b} scope="col" className="dxcc-band" title={b === 'U' ? t('dxcc.bandU') : b}>
               {bandHeader(b)}
             </th>
@@ -93,13 +98,13 @@ export function DxccGrid({ matrix, station }: MatrixProps) {
             <th scope="row" className="dxcc-row" title={row === 'DIG' ? t('dxcc.rowDig') : t(`dxcc.row.${row}` as Key)}>
               {row}
             </th>
-            {matrix.bands.map((band) => {
+            {bands.map((band) => {
               const total = matrix.totals[row]?.[band];
               const kind = station ? cellKind(station[row]?.[band]) : totalKind(total);
               const text = t(`dxcc.cell.${kind}` as Key);
               const count = !station && total ? total.countries : 0;
               return (
-                <td key={band} className="dxcc-cell" data-kind={kind} title={`${row} ${band}: ${count > 0 ? `${t('dxcc.cell.countries', { n: count })}, ` : ''}${text}`}>
+                <td key={band} className="dxcc-cell" data-kind={kind} data-row={row} style={cellStyle(prefs, row, kind)} title={`${row} ${band}: ${count > 0 ? `${t('dxcc.cell.countries', { n: count })}, ` : ''}${text}`}>
                   {count > 0 ? <span className="dxcc-count">{count}</span> : <span className="visually-hidden">{text}</span>}
                 </td>
               );
@@ -126,10 +131,12 @@ interface CardProps {
 /** La scheda: etichette della stazione, caselle del suo paese (o i totali) e il totale dei paesi lavorati. */
 export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = false }: CardProps) {
   const t = useT();
+  const prefs = useDxccPrefs((s) => s.prefs);
   const [typed, setTyped] = useState('');
   const [view, setView] = useState<'auto' | 'station' | 'totals'>('auto');
   const own = useDxccMatrix({}, given === undefined);
-  const matrix = given ?? own.data;
+  // nel pannello la struttura c'e' sempre: senza dati (lettura in corso o non disponibile) restano caselle grigie
+  const matrix = given ?? own.data ?? (panel ? emptyMatrix() : undefined);
   const chosen = typed.trim() || call.trim();
   // con un nominativo scritto a mano si vale solo il nominativo: banda e modo restano quelli della radio, il locatore no
   const subjectQuery: DxccQuery = { call: chosen, grid: typed.trim() ? undefined : grid, band, mode, compact: true };
@@ -137,17 +144,16 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
   const s = chosen !== '' ? (subject.data?.subject ?? null) : null;
   const showStation = (view === 'auto' ? s?.country != null : view === 'station') && s !== null && s.country !== null;
 
-  if (own.isError && given === undefined) return <p className="notice">{t('dxcc.unavailable')}</p>;
+  if (own.isError && given === undefined && !panel) return <p className="notice">{t('dxcc.unavailable')}</p>;
   if (!matrix) return <p className="muted">{t('set.loading')}</p>;
 
-  // nel pannello della pagina Stazione la scheda si popola solo con un nominativo scelto (doppio clic o scritto qui): senza, resta la riga della stazione
-  const empty = panel && chosen === '';
   const subjectRow = (
     <div className="dxcc-subject">
       <span className="data dxcc-subject-call">
         {t('dxcc.station')}: <strong>{s ? s.call : chosen || t('dxcc.none')}</strong>
         {s ? <span className="muted"> · {s.country ?? t('dxcc.unknownCountry')}</span> : null}
       </span>
+      {prefs.tryField ? (
       <input
         type="text"
         className="dxcc-try"
@@ -159,6 +165,7 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
         spellCheck={false}
         onChange={(e) => setTyped(e.target.value.toUpperCase())}
       />
+      ) : null}
       {panel ? null : (
         <div className="dxcc-view" role="group">
           {(['station', 'totals'] as const).map((v) => (
@@ -170,16 +177,8 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
       )}
     </div>
   );
-  if (empty) {
-    return (
-      <div className="dxcc-card dxcc-card--panel dxcc-card--empty" title={t('dxcc.tip.card')}>
-        {subjectRow}
-      </div>
-    );
-  }
-
   return (
-    <div className={`dxcc-card${panel ? ' dxcc-card--panel' : ''}`} title={t('dxcc.tip.card')}>
+    <div className={`dxcc-card${panel ? ' dxcc-card--panel' : ''}${prefs.compact ? ' dxcc-card--compact' : ''}`} title={t('dxcc.tip.card')}>
       {panel ? subjectRow : null}
       <DxccLabelStrip
         labels={s?.labels}
@@ -190,11 +189,12 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
         ]}
       />
       {panel ? null : subjectRow}
-      <DxccGrid matrix={matrix} station={panel ? (s?.cells ?? null) : showStation && s ? s.cells : null} />
+      <DxccGrid matrix={matrix} station={panel ? (s?.cells ?? {}) : showStation && s ? s.cells : null} />
       {panel ? null : (
         <>
           <p className="muted dxcc-foot">
-            {t('dxcc.total', { worked: matrix.worked, total: matrix.total })} · {t('dxcc.qsos', { n: matrix.qsos })}
+            {prefs.total ? `${t('dxcc.total', { worked: matrix.worked, total: matrix.total })} · ` : null}
+            {t('dxcc.qsos', { n: matrix.qsos })}
           </p>
           <p className="muted dxcc-legend">{t('dxcc.legend')}</p>
         </>

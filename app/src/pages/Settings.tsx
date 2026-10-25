@@ -6,6 +6,7 @@ import { AccessTab } from '../settings/AccessTab';
 import { CatTab } from '../settings/CatTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
+import { DxccTab } from '../settings/DxccTab';
 import { FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralTab } from '../settings/GeneralTab';
@@ -46,6 +47,7 @@ const TABS: readonly TabDef[] = [
   { id: 'updates', label: 'tab.updates', tip: 'tip.tab.updates', render: () => <UpdatesTab /> },
   { id: 'clock', label: 'tab.clock', tip: 'tip.tab.clock', render: () => <ClockTab /> },
   { id: 'access', label: 'tab.access', tip: 'tip.tab.access', render: () => <AccessTab /> },
+  { id: 'dxcc', label: 'tab.dxcc', tip: 'tip.tab.dxcc', render: () => <DxccTab /> },
   { id: 'windows', label: 'tab.windows', tip: 'tip.tab.windows', render: () => <WindowsTab /> },
   { id: 'bands', label: 'tab.bands', tip: 'tip.tab.bands', render: () => <BandsTab /> },
 ];
