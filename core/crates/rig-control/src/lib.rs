@@ -3,6 +3,7 @@
 
 pub mod bands;
 pub mod controls;
+pub mod hamlib;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;
