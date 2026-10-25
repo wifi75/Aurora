@@ -6,6 +6,7 @@
 mod parity;
 mod resample;
 mod slots;
+mod wav;
 
 use std::{
     io::Write,
@@ -78,7 +79,8 @@ fn format_line(slot_unix_ms: u64, d: &ft8::decode::Decoded) -> String {
 
 /// Avvia il motore proprio: `tap` porta l'audio della scheda, `events` e' il bus da cui si leggono i messaggi di JTDX per il confronto.
 /// Va chiamato dentro il runtime di Tokio.
-pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf) -> Arc<NativeEngine> {
+/// Con `record` ogni periodo si salva anche in WAV nella cartella `recordings` dei dati, per provare il decoder sulle stesse registrazioni.
+pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf, record: bool) -> Arc<NativeEngine> {
     let engine = Arc::new(NativeEngine { parity: Arc::new(Parity::default()), stats: Arc::new(Mutex::new(Stats::default())) });
 
     // i messaggi di JTDX, per il confronto
@@ -114,6 +116,9 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             };
             let samples = rs.push(&chunk.samples);
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
+                if record && let Err(e) = wav::save_slot(&data_dir.join("recordings"), slot.start_unix_ms, &slot.samples) {
+                    tracing::warn!("registrazione del periodo non salvata: {e}");
+                }
                 let started = Instant::now();
                 let decoded = ft8::decode::decode_slot(&slot.samples, &options, &mut hashes);
                 let millis = started.elapsed().as_millis() as u64;
@@ -173,7 +178,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("aurora-native-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&dir);
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
-        let engine = runtime.block_on(async { start(events, rx, dir.clone()) });
+        let engine = runtime.block_on(async { start(events, rx, dir.clone(), true) });
 
         // 12 kHz, due periodi interi a partire da un multiplo di 15 s: il messaggio sta nel secondo
         let t0 = 1_000_005_000u64 - 15_000;
@@ -202,6 +207,7 @@ mod tests {
         }
         let status = engine.status();
         assert!(status["slots_decoded"].as_u64().unwrap_or(0) >= 2, "{status}");
+        assert!(std::fs::read_dir(dir.join("recordings")).map(|d| d.count()).unwrap_or(0) >= 2, "i periodi si registrano in WAV");
         let log = std::fs::read_to_string(dir.join("native-decodes.log")).unwrap_or_default();
         assert!(log.contains("CQ K1ABC FN42"), "{log}");
         let _ = std::fs::remove_dir_all(dir);

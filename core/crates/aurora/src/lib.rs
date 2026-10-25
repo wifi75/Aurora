@@ -93,6 +93,8 @@ pub struct Config {
     pub local_trust: bool,
     /// Il motore proprio decodifica in ombra dall'audio e si confronta con JTDX. Dall'ambiente: `AURORA_NATIVE_DECODE=1`.
     pub native_decode: bool,
+    /// Salva ogni periodo in WAV (`recordings` nella cartella dei dati) per provare il decoder. Dall'ambiente: `AURORA_NATIVE_RECORD=1`.
+    pub native_record: bool,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
     /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
@@ -145,6 +147,7 @@ impl Config {
             open_access: false,
             local_trust: false,
             native_decode: false,
+            native_record: false,
             log4om_db: None,
             jtdx_ini: None,
         }
@@ -250,6 +253,11 @@ impl Config {
                 None | Some("0") => false,
                 Some("1") => true,
                 Some(other) => return Err(StartError::BadConfig(format!("AURORA_NATIVE_DECODE deve essere 0 o 1, non {other}"))),
+            },
+            native_record: match get("AURORA_NATIVE_RECORD").as_deref() {
+                None | Some("0") => false,
+                Some("1") => true,
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_NATIVE_RECORD deve essere 0 o 1, non {other}"))),
             },
             pair_ttl_secs: match get("AURORA_PAIR_TTL_SECS") {
                 None => 600,
@@ -803,7 +811,7 @@ pub async fn run(
 
     // il motore proprio decodifica in ombra l'audio della cascata e si confronta con JTDX
     if config.native_decode && audio.is_some() {
-        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone());
+        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone(), config.native_record);
         state.set_native_status(Arc::new(move || engine.status()));
     }
 
