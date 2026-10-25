@@ -507,6 +507,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ft4"
+version = "0.11.0"
+dependencies = [
+ "ft8",
+ "rustfft",
+]
+
+[[package]]
 name = "ft8"
 version = "0.11.0"
 dependencies = [
