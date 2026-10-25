@@ -87,6 +87,8 @@ pub struct Config {
     pub export_file: Option<PathBuf>,
     /// Comando della radio via OmniRig (la stessa che usa JTDX): cambio banda dall'interfaccia.
     pub rig_omnirig: bool,
+    /// Comando della radio via Hamlib (`rigctld`): tutte le radio. Si configura dalla scheda Radio delle impostazioni (`radio.json`).
+    pub rig_hamlib: bool,
     /// Durata del codice di associazione, in secondi (60-3600).
     pub pair_ttl_secs: u64,
     /// Accesso senza codice per le prove (solo rete di casa). Spento per impostazione predefinita.
@@ -97,6 +99,12 @@ pub struct Config {
     pub native_decode: bool,
     /// Salva ogni periodo in WAV (`recordings` nella cartella dei dati) per provare il decoder. Dall'ambiente: `AURORA_NATIVE_RECORD=1`.
     pub native_record: bool,
+    /// Uscita audio per la trasmissione (parte del nome). Dall'ambiente: `AURORA_AUDIO_OUT_DEVICE`.
+    pub audio_out_device: Option<String>,
+    /// Metodo del PTT: `rts`, `dtr`, `omnirig` o `vox` (di base `vox`). Dall'ambiente: `AURORA_PTT_METHOD`.
+    pub ptt_method: String,
+    /// Porta seriale del PTT per `rts` e `dtr` (`COM9`). Dall'ambiente: `AURORA_PTT_PORT`.
+    pub ptt_port: Option<String>,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
     /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
@@ -135,7 +143,7 @@ impl Config {
             secure_cookie: false,
             udp_listen: SocketAddr::from(([127, 0, 0, 1], 2334)),
             udp_forward: Vec::new(),
-            allow_tx: false,
+            allow_tx: true,
             audio_device: None,
             history_days: 30,
             replay_on_connect: false,
@@ -145,11 +153,15 @@ impl Config {
             export_udp: Vec::new(),
             export_file: None,
             rig_omnirig: false,
+            rig_hamlib: false,
             pair_ttl_secs: 600,
             open_access: false,
             local_trust: false,
             native_decode: false,
             native_record: false,
+            audio_out_device: None,
+            ptt_method: "vox".to_string(),
+            ptt_port: None,
             log4om_db: None,
             jtdx_ini: None,
         }
@@ -190,13 +202,6 @@ impl Config {
                     .map_err(|_| StartError::BadConfig(format!("AURORA_UDP_FORWARD contiene un indirizzo non valido: {part}")))?,
             );
         }
-        let allow_tx = match get("AURORA_ALLOW_TX").as_deref() {
-            None | Some("0" | "false") => false,
-            Some("1" | "true") => true,
-            Some(other) => {
-                return Err(StartError::BadConfig(format!("AURORA_ALLOW_TX deve essere 0 o 1, non {other}")));
-            }
-        };
         let replay_on_connect = match get("AURORA_REPLAY_ON_CONNECT").as_deref() {
             None | Some("0" | "false") => false,
             Some("1" | "true") => true,
@@ -232,7 +237,7 @@ impl Config {
             secure_cookie: matches!(get("AURORA_SECURE_COOKIE").as_deref(), Some("1" | "true")),
             udp_listen,
             udp_forward,
-            allow_tx,
+            allow_tx: true,
             audio_device: get("AURORA_AUDIO_DEVICE").filter(|d| !d.trim().is_empty()),
             history_days: get("AURORA_HISTORY_DAYS").and_then(|d| d.trim().parse().ok()).unwrap_or(30),
             replay_on_connect,
@@ -262,6 +267,13 @@ impl Config {
                 Some("1") => true,
                 Some(other) => return Err(StartError::BadConfig(format!("AURORA_NATIVE_RECORD deve essere 0 o 1, non {other}"))),
             },
+            audio_out_device: get("AURORA_AUDIO_OUT_DEVICE").filter(|d| !d.trim().is_empty()),
+            ptt_method: match get("AURORA_PTT_METHOD").as_deref().map(str::to_lowercase).as_deref() {
+                None | Some("") => "vox".to_string(),
+                Some(m @ ("vox" | "rts" | "dtr" | "omnirig")) => m.to_string(),
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_PTT_METHOD sconosciuto: {other} (vox, rts, dtr, omnirig)"))),
+            },
+            ptt_port: get("AURORA_PTT_PORT").filter(|p| !p.trim().is_empty()),
             pair_ttl_secs: match get("AURORA_PAIR_TTL_SECS") {
                 None => 600,
                 Some(v) => v
@@ -272,10 +284,11 @@ impl Config {
                     .ok_or_else(|| StartError::BadConfig(format!("AURORA_PAIR_TTL_SECS deve essere tra 60 e 3600, non {v}")))?,
             },
             rig_omnirig: match get("AURORA_RIG").as_deref() {
-                None | Some("none") | Some("") => false,
+                None | Some("none") | Some("") | Some("hamlib") => false,
                 Some("omnirig") => true,
-                Some(other) => return Err(StartError::BadConfig(format!("AURORA_RIG deve essere none o omnirig, non {other}"))),
+                Some(other) => return Err(StartError::BadConfig(format!("AURORA_RIG deve essere none, omnirig o hamlib, non {other}"))),
             },
+            rig_hamlib: get("AURORA_RIG").as_deref() == Some("hamlib"),
             export_file: get("AURORA_EXPORT_FILE").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
         })
     }
@@ -468,6 +481,7 @@ fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str,
         tx_message: None,
         tr_period: None,
         own_continent: None,
+        meters: None,
     }
 }
 
@@ -547,6 +561,53 @@ fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> 
     }
 }
 
+/// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
+fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>) -> Option<Arc<dyn engine_native::TxPort>> {
+    let sink = match tx_native::CpalSink::open(config.audio_out_device.as_deref()) {
+        Ok(sink) => sink,
+        Err(e) => {
+            tracing::warn!("uscita audio per la trasmissione non disponibile: {e}");
+            return None;
+        }
+    };
+    let port = config.ptt_port.clone().unwrap_or_default();
+    let ptt: Arc<dyn tx_native::Ptt> = match config.ptt_method.as_str() {
+        "rts" | "dtr" => {
+            let line = if config.ptt_method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
+            match tx_native::SerialLinePtt::open(&port, line) {
+                Ok(ptt) => Arc::new(ptt),
+                Err(e) => {
+                    tracing::error!("PTT sulla seriale non attivo ({e}): niente trasmissione, per non rischiare una radio senza comando");
+                    return None;
+                }
+            }
+        }
+        "omnirig" => match tx_native::OmniRigPtt::new(1) {
+            Ok(ptt) => Arc::new(ptt),
+            Err(e) => {
+                tracing::error!("PTT con OmniRig non attivo ({e}): niente trasmissione");
+                return None;
+            }
+        },
+        _ => Arc::new(tx_native::NoPtt::new()),
+    };
+    let tx_config = tx_native::TxConfig { allow_tx: true, attenuation_tenths: Some(controls.attenuation.load(std::sync::atomic::Ordering::Relaxed)), ..tx_native::TxConfig::default() };
+    match tx_native::Transmitter::new(Arc::new(tx_native::SystemClock), ptt, Box::new(sink), tx_config) {
+        Ok(transmitter) => {
+            let flag = Arc::clone(controls);
+            transmitter.set_listener(Some(Arc::new(move |state| {
+                flag.transmitting.store(state == tx_native::TxState::Transmitting, std::sync::atomic::Ordering::Relaxed);
+            })));
+            tracing::info!("trasmissione pronta: PTT {}{}", config.ptt_method, config.ptt_port.as_deref().map(|p| format!(" su {p}")).unwrap_or_default());
+            Some(Arc::new(transmitter))
+        }
+        Err(e) => {
+            tracing::error!("trasmissione non attiva: {e}");
+            None
+        }
+    }
+}
+
 /// Avvia il server e ritorna subito; si ferma quando `shutdown` si completa.
 pub async fn run(
     config: Config,
@@ -554,14 +615,28 @@ pub async fn run(
 ) -> Result<RunningServer, StartError> {
     let pair_ttl = load_pair_ttl(&config.data_dir.join("pairing.json"), config.pair_ttl_secs);
     let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
+    // il CAT: configurazione e profili in radio.json; la scelta salvata con «collega all'avvio» vale come AURORA_RIG
+    let cat = rig_control::cat::CatService::open(&config.data_dir.join("radio.json"));
+    let mut config = config;
+    let stored = cat.config();
+    if !config.rig_omnirig && !config.rig_hamlib && stored.auto_connect {
+        match stored.backend {
+            rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
+            rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
+        }
+    }
+    if config.rig_hamlib {
+        cat.adopt_backend(rig_control::cat_config::Backend::Hamlib);
+    } else if config.rig_omnirig {
+        cat.adopt_backend(rig_control::cat_config::Backend::Omnirig);
+    }
     let bus = Bus::new(4096);
-    // con il simulatore trasmettere e' innocuo; con JTDX reale la trasmissione e' chiusa salvo AURORA_ALLOW_TX=1
+    // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
     let live_tx = match config.engine {
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
-        // la trasmissione del motore proprio non c'e' ancora: i comandi di trasmissione restano chiusi
-        EngineKind::Native => false,
+        EngineKind::Native => true,
     };
     let frequencies = Arc::new(Mutex::new(load_frequencies(&config.data_dir.join("frequencies.json"))));
     let schedule = Arc::new(Mutex::new(load_schedule(&config.data_dir.join("schedule.json"))));
@@ -607,7 +682,7 @@ pub async fn run(
         "udp_listen": config.udp_listen.to_string(),
         "udp_forward": config.udp_forward.iter().map(ToString::to_string).collect::<Vec<_>>(),
         "export_udp": config.export_udp.iter().map(ToString::to_string).collect::<Vec<_>>(),
-        "rig_control": config.rig_omnirig,
+        "rig_control": config.rig_omnirig || config.rig_hamlib,
         "export_file": config.export_file.as_ref().map(|p| p.display().to_string()),
         "audio_device": config.audio_device,
         "cty_loaded": dxcc_loaded,
@@ -744,16 +819,30 @@ pub async fn run(
         .with_rig_if(match config.engine {
             // motore proprio: i pulsanti agiscono sul decoder; frequenza e cambio banda vanno alla radio (OmniRig) se c'e'
             EngineKind::Native => {
-                let radio = config.rig_omnirig.then(|| Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>);
+                // la radio e' il servizio CAT (Hamlib o OmniRig, scelto e collegato dalla scheda Radio, anche dopo l'avvio)
+                let radio = Some(Arc::clone(&cat) as Arc<dyn rig_control::Rig>);
                 Some(Arc::new(engine_native::NativeRig::new(Arc::clone(&native_controls), radio)) as Arc<dyn rig_control::Rig>)
             }
-            _ => config.rig_omnirig.then(|| {
-                // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
-                rig_control::WindowsRig::keep_warm();
-                Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
-            }),
+            _ => config
+                .rig_omnirig
+                .then(|| {
+                    // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
+                    rig_control::WindowsRig::keep_warm();
+                    Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
+                })
+                .or_else(|| config.rig_hamlib.then(|| Arc::clone(&cat) as Arc<dyn rig_control::Rig>)),
         })
+        .with_cat(Arc::clone(&cat))
         .with_automation(automation);
+
+    // collegamento della radio all'avvio (AURORA_RIG o «collega all'avvio»): in un thread, per non fermare l'avvio se la radio tarda
+    {
+        let forced = config.rig_hamlib || (config.rig_omnirig && config.engine == EngineKind::Native);
+        let cat = Arc::clone(&cat);
+        std::thread::spawn(move || {
+            cat.start_up(forced);
+        });
+    }
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };
@@ -776,6 +865,7 @@ pub async fn run(
                 own_continent,
                 dial_hz: Arc::clone(&dial_hz),
                 controls: Arc::clone(&native_controls),
+                transmitter: build_transmitter(&config, &native_controls),
                 band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),
                 annotate: Arc::new(move |text, band| match &enrich {
                     Some(e) => match e.lock() {
@@ -788,11 +878,21 @@ pub async fn run(
                     None => (None, None, None),
                 }),
             });
-            // i comandi di trasmissione non sono ancora dell'engine proprio: si leggono e si dice perche' non partono
+            // i comandi della pagina e dell'automazione (doppio clic, CQ, STOP, frequenza Tx) arrivano al motore proprio
             let mut commands = io.commands;
+            let controls = Arc::clone(&native_controls);
             let task = tokio::spawn(async move {
                 while let Some(command) = commands.recv().await {
-                    tracing::warn!("comando {command:?} ignorato: la trasmissione del motore proprio non e' ancora pronta");
+                    let mapped = match command {
+                        aurora_core::Command::HaltTx => engine_native::TxCommand::Halt,
+                        aurora_core::Command::Reply { decode_id } => engine_native::TxCommand::Reply { decode_id },
+                        aurora_core::Command::SendFreeText { text, send } => engine_native::TxCommand::FreeText { text, send },
+                        aurora_core::Command::CallCq { modifier } => engine_native::TxCommand::CallCq { modifier: Some(modifier).filter(|m| !m.trim().is_empty()) },
+                        aurora_core::Command::SetTxFrequency { hz } => engine_native::TxCommand::SetTxFreq(hz),
+                    };
+                    if let Err(e) = controls.send(mapped) {
+                        tracing::warn!("comando di trasmissione non consegnato: {e}");
+                    }
                 }
             });
             (task, None)
@@ -889,6 +989,7 @@ pub async fn run(
 
     let closing = state.clone();
     let hub_for_task = hub.clone();
+    let cat_for_task = Arc::clone(&cat);
     let task = tokio::spawn(async move {
         let served = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
             .with_graceful_shutdown(async move {
@@ -904,6 +1005,8 @@ pub async fn run(
             hub.stop();
         }
         drop(audio);
+        // alla chiusura il PTT si spegne e la radio si libera
+        let _ = tokio::task::spawn_blocking(move || cat_for_task.shutdown()).await;
     });
     Ok(RunningServer { addr, state, hub, task })
 }

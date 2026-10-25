@@ -7,6 +7,10 @@ use crate::RATE;
 
 pub const SLOT_MS: u64 = 15_000;
 const SLOT_SAMPLES: usize = 15 * RATE;
+/// Il periodo si consegna questi millisecondi prima della sua fine (gli ultimi non portano segnale: un messaggio FT8 finisce a 13,1 s):
+/// cosi' la decodifica e la scelta della risposta sono pronte per trasmettere a inizio del periodo dopo.
+pub const EARLY_MS: u64 = 800;
+const EARLY_SAMPLES: usize = (EARLY_MS as usize) * RATE / 1000;
 /// Oltre questo scarto tra l'ora attesa e quella vera si riancora di colpo.
 const JUMP_MS: f64 = 200.0;
 /// Correzione graduale dello scarto (frazione per blocco).
@@ -65,14 +69,17 @@ impl SlotAssembler {
         let buf_start_ms = time_of(anchor, self.first_idx);
         let mut next = *self.next_slot_ms.get_or_insert_with(|| ((buf_start_ms / SLOT_MS as f64).ceil() as u64) * SLOT_MS);
         loop {
-            let slot_end_ms = (next + SLOT_MS) as f64;
+            let slot_end_ms = (next + SLOT_MS - EARLY_MS) as f64;
             if time_of(anchor, self.total) < slot_end_ms {
                 break;
             }
             let from = ((next as f64 - anchor) * RATE as f64 / 1000.0).round() as i64 - self.first_idx as i64;
-            if from >= 0 && from as usize + SLOT_SAMPLES <= self.buf.len() {
+            if from >= 0 && from as usize + SLOT_SAMPLES - EARLY_SAMPLES <= self.buf.len() {
                 let from = from as usize;
-                ready.push(Slot { start_unix_ms: next, samples: self.buf[from..from + SLOT_SAMPLES].to_vec() });
+                let end = (from + SLOT_SAMPLES).min(self.buf.len());
+                let mut samples = self.buf[from..end].to_vec();
+                samples.resize(SLOT_SAMPLES, 0.0);
+                ready.push(Slot { start_unix_ms: next, samples });
             }
             next += SLOT_MS;
         }

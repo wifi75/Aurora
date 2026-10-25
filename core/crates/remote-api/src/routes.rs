@@ -78,6 +78,13 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/clock/check", post(clock_check))
         .route("/api/v1/clock/correct", post(clock_correct))
         .route("/api/v1/ui-settings/{kind}", get(ui_settings_get).put(ui_settings_put))
+        .route("/api/v1/cat", get(crate::cat::cat_get).put(crate::cat::cat_put))
+        .route("/api/v1/cat/connect", post(crate::cat::cat_connect))
+        .route("/api/v1/cat/disconnect", post(crate::cat::cat_disconnect))
+        .route("/api/v1/cat/profiles", post(crate::cat::cat_profiles))
+        .route("/api/v1/cat/models", get(crate::cat::cat_models))
+        .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
+        .route("/api/v1/cat/detect", post(crate::cat::cat_detect))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)
@@ -90,7 +97,7 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    fn new(status: StatusCode, code: &'static str) -> Self {
+    pub(crate) fn new(status: StatusCode, code: &'static str) -> Self {
         ApiError { status, code, retry_after: None }
     }
 }
@@ -110,7 +117,7 @@ impl IntoResponse for ApiError {
 /// Un proxy (Vite, cloudflared, Tailscale serve) apre la connessione dal PC stesso, quindi per il core la
 /// richiesta sembra locale: le sue intestazioni la tradiscono. Il codice di associazione si chiede solo
 /// con una connessione diretta.
-fn is_proxied(headers: &HeaderMap) -> bool {
+pub(crate) fn is_proxied(headers: &HeaderMap) -> bool {
     ["x-forwarded-for", "x-forwarded-host", "forwarded", "x-real-ip", "cf-connecting-ip", "cf-ray", "tailscale-user-login", "tailscale-user-name"]
         .iter()
         .any(|name| headers.contains_key(*name))
@@ -164,7 +171,7 @@ impl FromRequestParts<AppState> for Authed {
 }
 
 /// Indirizzo del client, se il server e' avviato con `ConnectInfo`.
-struct Peer(Option<SocketAddr>);
+pub(crate) struct Peer(pub(crate) Option<SocketAddr>);
 
 impl<S: Send + Sync> FromRequestParts<S> for Peer {
     type Rejection = std::convert::Infallible;
@@ -372,7 +379,7 @@ struct BandBody {
 /// Porta la radio sulla frequenza FT8 della banda (OmniRig, condiviso con JTDX). Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/band", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Banda sconosciuta (bad_band)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
 async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<BandBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     let mode = body.mode.clone().unwrap_or_else(|| state.current_mode());
     // il blocco chiude il lock prima di qualunque attesa
     let found = {
@@ -405,7 +412,7 @@ struct FrequencyBody {
 /// Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/frequency", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Fuori dalle bande dei radioamatori (bad_frequency)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
 async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<FrequencyBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     if rig_control::bands::amateur_band(body.hz).is_none() {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
     }
@@ -428,7 +435,7 @@ const MAX_ATTENUATION_DB: f64 = 45.0;
 /// Livello audio di uscita di JTDX (cursore Pwr) come attenuazione in dB: 0 = livello massimo.
 #[utoipa::path(get, path = "/api/v1/output-level", responses((status = 200, description = "Attenuazione in dB e limiti"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn output_level_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     match tokio::task::spawn_blocking(move || rig.output_attenuation()).await {
         Ok(Ok(tenths)) => Ok(Json(json!({ "attenuation_db": f64::from(tenths) / 10.0, "min_db": 0.0, "max_db": MAX_ATTENUATION_DB }))),
         Ok(Err(e)) => {
@@ -450,7 +457,7 @@ async fn output_level_put(State(state): State<AppState>, _: Authed, headers: Hea
     if !state.policy.allows(transport_of(&headers)) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_not_allowed_on_transport"));
     }
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     if !body.attenuation_db.is_finite() || !(0.0..=MAX_ATTENUATION_DB).contains(&body.attenuation_db) {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_level"));
     }
@@ -631,7 +638,7 @@ async fn input_level_put(State(state): State<AppState>, _: Authed, Json(body): J
 /// Stato degli interruttori di JTDX (AutoSeq, 1 QSO, Abilita Tx...).
 #[utoipa::path(get, path = "/api/v1/controls", responses((status = 200, description = "Stato di ogni interruttore"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     match tokio::task::spawn_blocking(move || rig.controls_and_tx()).await {
         Ok(Ok((list, tx))) => {
             let map: serde_json::Map<String, Value> = list.into_iter().map(|(id, on)| (id, Value::Bool(on))).collect();
@@ -665,7 +672,7 @@ async fn control_press(State(state): State<AppState>, _: Authed, headers: Header
     if control.tx && body.on == Some(true) {
         check_tx_allowed(&state, &headers)?;
     }
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     let (id, on) = (control.id, body.on);
     match tokio::task::spawn_blocking(move || rig.set_control(id, on)).await {
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "id": id }))),
@@ -690,7 +697,7 @@ async fn tx_message(State(state): State<AppState>, _: Authed, Json(body): Json<T
     if !(1..=6).contains(&body.n) {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_message"));
     }
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     let n = body.n;
     match tokio::task::spawn_blocking(move || rig.select_tx_message(n)).await {
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "n": n }))),
@@ -710,7 +717,7 @@ struct RxFrequencyBody {
 /// Sposta la frequenza di ricezione (barra verde). Non fa trasmettere, quindi vale anche in trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/rx-frequency", responses((status = 200, description = "Frequenza Rx impostata"), (status = 400, description = "Fuori dalla banda audio (100-3000 Hz)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn rx_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<RxFrequencyBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     if !(100..=3000).contains(&body.hz) {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
     }
@@ -733,7 +740,7 @@ struct ModeBody {
 /// Porta JTDX in FT8 o FT4 (preme il suo pulsante). Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<ModeBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.rig.clone().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     if rig_control::modes::button_id(&body.mode).is_none() {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_mode"));
     }
@@ -744,19 +751,25 @@ async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<
     let shown = mode.clone();
     // JTDX al cambio di modo salta all'ultima frequenza che aveva in quel modo, anche su un'altra banda:
     // si resta nella banda di prima, sulla frequenza che la tabella indica per il nuovo modo
-    let dial = {
-        let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
-        state.current_status().filter(|s| s.dial_hz > 0).and_then(|s| table.band_of(s.dial_hz)).and_then(|band| table.frequency(&band, &mode))
-    };
-    let work = move || -> Result<(), rig_control::RigError> {
+    // la frequenza di adesso si rilegge dalla radio (dopo lo spot di un cluster lo stato della pagina puo' essere indietro); se la radio
+    // non risponde si usa l'ultima nota. La banda si cerca nella tabella e, fuori da quella, tra le bande dei radioamatori.
+    let status_dial = state.current_status().filter(|s| s.dial_hz > 0).map(|s| s.dial_hz);
+    let frequencies = std::sync::Arc::clone(&state.frequencies);
+    let work = move || -> Result<Option<u64>, rig_control::RigError> {
         rig.set_mode(&mode)?;
-        if let Some(hz) = dial {
+        let current = rig.frequency().ok().filter(|hz| *hz > 0).or(status_dial);
+        let target = current.and_then(|now| {
+            let table = frequencies.lock().unwrap_or_else(|p| p.into_inner());
+            let band = table.band_of(now).or_else(|| rig_control::bands::amateur_band(now).map(str::to_string))?;
+            table.frequency(&band, &mode)
+        });
+        if let Some(hz) = target {
             rig.set_frequency(hz)?;
         }
-        Ok(())
+        Ok(target)
     };
     match tokio::task::spawn_blocking(work).await {
-        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "mode": shown, "dial_hz": dial }))),
+        Ok(Ok(dial)) => Ok(Json(json!({ "ok": true, "mode": shown, "dial_hz": dial }))),
         Ok(Err(e)) => {
             tracing::warn!("cambio modo fallito: {e}");
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
@@ -843,7 +856,14 @@ async fn automation_put(
 
 #[utoipa::path(get, path = "/api/v1/station-info", responses((status = 200, description = "Come e' avviata la stazione (sola lettura)")))]
 async fn station_info(State(state): State<AppState>, _: Authed) -> Json<Value> {
-    Json((*state.station_info).clone())
+    let mut info = (*state.station_info).clone();
+    // la radio collegata dalla scheda Radio dopo l'avvio conta: la schermata principale ne mostra i comandi
+    if state.cat.as_ref().is_some_and(|c| c.is_usable())
+        && let Some(map) = info.as_object_mut()
+    {
+        map.insert("rig_control".into(), Value::Bool(true));
+    }
+    Json(info)
 }
 
 #[utoipa::path(get, path = "/api/v1/stats", responses((status = 200, description = "Avanzamento nei premi e paesi mancanti"), (status = 404, description = "Log non disponibile (stats_unavailable)")))]

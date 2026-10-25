@@ -1,0 +1,16 @@
+[package]
+name = "tx-native"
+description = "Catena di trasmissione del motore proprio di Aurora: uscita audio, PTT, pianificatore dei periodi e sicurezze"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+rig-control = { path = "../rig-control" }
+tracing = { workspace = true }
+cpal = "0.18.2"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Devices_Communication", "Win32_Storage_FileSystem", "Win32_Security"] }
