@@ -34,11 +34,13 @@ async function start() {
   if (restore) history.replaceState(null, '', restore);
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
+  const { Splash } = await import('./components/Splash');
   if (root) {
     createRoot(root).render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
           <App />
+          <Splash />
         </QueryClientProvider>
       </StrictMode>,
     );
