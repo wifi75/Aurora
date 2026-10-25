@@ -1596,7 +1596,8 @@
 
 .dock-panel--all .decode-where .w-km,
 .dock-panel--cq .decode-where .w-km {
-  justify-content: flex-end;
+  justify-content: flex-start;
+  text-align: left;
   font-size: 0.74rem;
 }
 

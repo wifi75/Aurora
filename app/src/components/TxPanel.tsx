@@ -1,3 +1,4 @@
+import { DxPill } from './DxPill';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getControls, postTxMessage } from '../api/client';
@@ -73,12 +74,10 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
     <div className="tx-panel">
       <div className="tx-main tx-split">
         <section className="tx-left tx-block" aria-label={t('ctl.sec.dx')}>
-      <h3 className="cmd-title">{t('ctl.sec.dx')}</h3>
       {status && (
         <>
           <div className="tx-dx">
-            <strong className="data tx-dx-call">{pendingDx || status.dx_call || '—'}</strong>
-            {status.dx_grid && !pendingDx ? <span className="data muted">{status.dx_grid}</span> : null}
+            {pendingDx || status.dx_call ? <DxPill status={status} /> : <strong className="data tx-dx-call">—</strong>}
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>

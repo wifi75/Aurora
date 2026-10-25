@@ -27,6 +27,8 @@ export function useEscapeStop(): void {
         void postControl('clear_dx').catch(() => undefined);
         useStation.getState().setPendingDx(null);
       }
+      // la pagina mostra subito che la trasmissione e' ferma e Abilita Tx spento, senza aspettare lo stato del motore (arriva dopo un attimo)
+      useStation.getState().patchStatus({ transmitting: false, tx_enabled: false });
       void postHalt().catch(() => undefined);
       void postControl('enable_tx', false).catch(() => undefined);
     };
