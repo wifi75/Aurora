@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -73,6 +73,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/update/install", post(update_install))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
+        .route("/api/v1/spot/dxsummit", post(spot_dxsummit))
         .route("/api/v1/audio/devices", get(audio_devices))
         .route("/api/v1/audio/settings", axum::routing::put(audio_settings_put))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
@@ -100,17 +101,28 @@ pub struct ApiError {
     status: StatusCode,
     code: &'static str,
     retry_after: Option<u64>,
+    /// Il perche' in chiaro (italiano), per i casi in cui il solo codice non basta (per esempio la risposta di un server esterno).
+    message: Option<String>,
 }
 
 impl ApiError {
     pub(crate) fn new(status: StatusCode, code: &'static str) -> Self {
-        ApiError { status, code, retry_after: None }
+        ApiError { status, code, retry_after: None, message: None }
+    }
+
+    pub(crate) fn with_message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
     }
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let mut resp = (self.status, Json(json!({ "error": self.code }))).into_response();
+        let body = match &self.message {
+            Some(message) => json!({ "error": self.code, "message": message }),
+            None => json!({ "error": self.code }),
+        };
+        let mut resp = (self.status, Json(body)).into_response();
         if let Some(secs) = self.retry_after
             && let Ok(v) = HeaderValue::from_str(&secs.to_string())
         {
@@ -1097,6 +1109,46 @@ async fn engine_settings_put(State(state): State<AppState>, _: Authed, Peer(peer
             Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_write"))
         }
         Err(_) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting")),
+    }
+}
+
+#[derive(Deserialize)]
+struct SpotDxsummitBody {
+    dx_call: String,
+    /// Il locatore del DX, se si conosce (serve alle macro `#G` e `#D` del testo).
+    #[serde(default)]
+    dx_grid: String,
+    /// Il testo dello spot, con le macro `#G`, `#D`, `#R` come nella riga di testo di JTDX.
+    #[serde(default)]
+    text: String,
+    /// La propagazione (`Es`, `F2`...), come il campo di JTDX.
+    #[serde(default)]
+    prop: String,
+}
+
+/// Segnala la stazione scelta su DXSummit, come il pulsante «DX Call» di JTDX: frequenza = radio piu' frequenza di ricezione, `info` = modo e testo.
+/// Non blocca il motore (richiesta HTTP a parte, attesa massima 10 s) e non segnala due volte la stessa stazione in breve tempo. Solo dalla rete di casa.
+#[utoipa::path(post, path = "/api/v1/spot/dxsummit", responses((status = 200, description = "Spot inviato: `{ok, dx_call, frequency_hz, info}`"), (status = 400, description = "Nominativo o testo non validi (bad_spot)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (spot_unavailable)"), (status = 409, description = "Spotting spento (spot_off), manca il nominativo (spot_no_call), stazione gia' segnalata (spot_already), frequenza non nota (spot_no_frequency)"), (status = 502, description = "DXSummit non ha risposto o ha dato errore (spot_failed, con `message`)")))]
+async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<SpotDxsummitBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let service = state.engine_settings.as_ref().and_then(|s| s.reporting()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "spot_unavailable"))?;
+    if body.text.chars().count() > 120 || body.prop.chars().count() > 10 || body.dx_grid.chars().count() > 8 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot"));
+    }
+    let params = reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop };
+    match service.spot_current(params).await {
+        Ok(done) => Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info }))),
+        Err(e) => {
+            use reporting::SpotError;
+            let status = match e {
+                SpotError::BadDxCall => StatusCode::BAD_REQUEST,
+                SpotError::Failed(_) => StatusCode::BAD_GATEWAY,
+                SpotError::Off | SpotError::NoOwnCall | SpotError::Already | SpotError::NoFrequency => StatusCode::CONFLICT,
+            };
+            Err(ApiError::new(status, e.code()).with_message(e.to_string()))
+        }
     }
 }
 

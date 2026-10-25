@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getControls, postControl, postCq, postFreeText, postRxFrequency, postTxFrequency, type ControlId } from '../api/client';
+import { ApiError, getControls, getEngineSettings, postControl, postCq, postFreeText, postRxFrequency, postSpotDxsummit, postTxFrequency, type ControlId } from '../api/client';
 import type { StationStatus } from '../api/schemas';
-import { useT, type Key } from '../i18n';
+import { useT, type Key, type T } from '../i18n';
 import { expandMacro, useMacros } from '../lib/macros';
 import { replyErrorMessage } from '../lib/replyError';
 import { useStation } from '../state/station';
@@ -17,6 +17,32 @@ interface Props {
 }
 
 const MAX_TEXT = 13;
+const MAX_SPOT_TEXT = 60;
+
+/** Perche' lo spot non e' partito, nella lingua scelta. */
+function spotErrorMessage(error: unknown, t: T): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case 'spot_off':
+        return t('err.spot.off');
+      case 'spot_no_call':
+        return t('err.spot.noCall');
+      case 'spot_bad_call':
+        return t('err.spot.badCall');
+      case 'spot_already':
+        return t('err.spot.already');
+      case 'spot_no_frequency':
+        return t('err.spot.noFreq');
+      case 'bad_spot':
+        return t('err.spot.badText');
+      case 'spot_failed':
+        return t('err.spot.failed', { reason: error.detail ?? '—' });
+      case 'local_only':
+        return t('err.spot.local');
+    }
+  }
+  return replyErrorMessage(error, t);
+}
 
 /** Pannello comandi come quello del motore, ma raccolto: QSO, frequenze, stazione DX, CQ e messaggio libero. */
 export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }: Props) {
@@ -32,6 +58,14 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   const [txHz, setTxHz] = useState(String(status?.tx_df ?? initialFrequency));
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
   const [note, setNote] = useState('');
+  const [spotText, setSpotText] = useState('');
+  const [spotting, setSpotting] = useState(false);
+  // la stazione gia' segnalata: finche' resta quella scelta il pulsante dice «Spottato» (come in JTDX, torna normale se si cambia stazione)
+  const [spottedDx, setSpottedDx] = useState('');
+  // lo spot si offre solo se acceso nelle impostazioni (motore proprio: con JTDX la rotta non c'e')
+  const settings = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false });
+  const spotOn = settings.data?.values.AllowSpotsDXSummit === 'true' && settings.data.items.AllowSpotsDXSummit?.state === 'live';
+  const dxCall = (pendingDx || status?.dx_call || '').trim();
 
   // la frequenza vera e' quella del motore: quando cambia lì si aggiorna anche qui
   useEffect(() => {
@@ -81,6 +115,20 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
     </button>
   );
 
+  const spot = async () => {
+    setSpotting(true);
+    try {
+      const done = await postSpotDxsummit({ dx_call: dxCall, dx_grid: pendingDx ? '' : (status?.dx_grid ?? ''), text: spotText.trim() });
+      setSpottedDx(dxCall);
+      setNote(t('ctl.spotOk', { call: done.dx_call, khz: (done.frequency_hz / 1000).toFixed(1) }));
+      await client.invalidateQueries({ queryKey: ['engine-settings'] });
+    } catch (error) {
+      setNote(spotErrorMessage(error, t));
+    } finally {
+      setSpotting(false);
+    }
+  };
+
   const applyTx = () => {
     const hz = Number(txHz);
     if (Number.isFinite(hz)) void run(t('tx.freqSet'), () => postTxFrequency(hz));
@@ -125,6 +173,23 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
           {status?.dx_grid && !pendingDx ? <span className="data muted">{status.dx_grid}</span> : null}
           {press('clear_dx')}
           {press('gen_msgs')}
+          {spotOn && dxCall !== '' ? (
+            <>
+              <input
+                type="text"
+                className="cmd-free cmd-spot-text"
+                value={spotText}
+                maxLength={MAX_SPOT_TEXT}
+                aria-label={t('ctl.spotText')}
+                title={t('tip.ctl.spotText')}
+                placeholder={t('ctl.spotText')}
+                onChange={(e) => setSpotText(e.target.value)}
+              />
+              <button type="button" className="glass chip" disabled={spotting || spottedDx === dxCall} title={t('tip.ctl.spot')} onClick={() => void spot()}>
+                {spotting ? t('ctl.spotSending') : spottedDx === dxCall ? t('ctl.spotted') : t('ctl.spot')}
+              </button>
+            </>
+          ) : null}
         </div>
 
         <div className="cmd-line" role="group" aria-label={t('ctl.sec.send')}>

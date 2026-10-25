@@ -32,7 +32,9 @@ async fn reads_values_and_the_state_of_every_item() {
     let doc = body_json(resp).await;
     assert_eq!(doc["version"], 1);
     assert_eq!(doc["items"]["UDP2Server"]["state"], "live");
-    assert_eq!(doc["items"]["TCPServer"]["state"], "unavailable");
+    assert_eq!(doc["items"]["Rig"]["state"], "unavailable");
+    assert_eq!(doc["items"]["AllowSpotsDXSummit"]["state"], "live", "lo spot su DXSummit e' una voce viva");
+    assert_eq!(doc["values"]["AllowSpotsDXSummit"], "true", "e acceso di base");
     assert_eq!(doc["values"]["UDP2ServerPort"], "2237");
 }
 
@@ -52,7 +54,7 @@ async fn refuses_bad_values_unavailable_items_empty_bodies_and_remote_peers() {
     let (s, store) = with_store("refuse");
     let cookie = cookie_for(&s);
     let before: BTreeMap<String, String> = store.values();
-    for body in [r#"{"changes":{"UDP2ServerPort":"99999"}}"#, r#"{"changes":{"TCPServerPort":"4000"}}"#, r#"{"changes":{"PSKReporter":"true"}}"#, r#"{"changes":{}}"#] {
+    for body in [r#"{"changes":{"UDP2ServerPort":"99999"}}"#, r#"{"changes":{"Rig":"x"}}"#, r#"{"changes":{"udpWindowToFront":"true"}}"#, r#"{"changes":{}}"#] {
         let resp = call(&router(&s), req(Method::PUT, "/api/v1/engine-settings").cookie(&cookie).json(body)).await;
         status_is(&resp, StatusCode::BAD_REQUEST);
         assert_eq!(body_json(resp).await["error"], "bad_setting", "{body}");
