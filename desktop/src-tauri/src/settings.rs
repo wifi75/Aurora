@@ -318,6 +318,29 @@ mod tests {
     }
 
     #[test]
+    fn with_the_native_engine_the_qsos_go_where_jtdx_sent_them_and_with_jtdx_they_do_not() {
+        let local = temp("udp2-local");
+        touch(
+            &local.join("JTDX").join("JTDX.ini"),
+            "[Configuration]
+UDPServer=127.0.0.1
+UDPServerPort=2334
+UDP2Server=127.0.0.1
+UDP2ServerPort=2237
+EnableUDP1adifSending=true
+EnableUDP2adifBroadcast=true
+",
+        );
+        let p = Places { local_app_data: Some(local), documents: None, jtdx_roots: vec![] };
+        let native = build(&p, Path::new("d"), Path::new("u"), None, vec![]);
+        assert_eq!(native["AURORA_EXPORT_UDP"], "127.0.0.1:2237", "il secondo server UDP di JTDX, non il primo (2334 e' Aurora)");
+        let own = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_EXPORT_UDP".to_string(), "127.0.0.1:2240".to_string())]);
+        assert_eq!(own["AURORA_EXPORT_UDP"], "127.0.0.1:2240", "quello scelto dall'ambiente vince");
+        let jtdx = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_ENGINE".to_string(), "jtdx".to_string())]);
+        assert!(!jtdx.contains_key("AURORA_EXPORT_UDP"), "con JTDX e' lui a mandare il QSO a Log4OM2: niente doppioni");
+    }
+
+    #[test]
     fn the_second_udp_server_of_jtdx_becomes_the_qso_export_target() {
         let on = "EnableUDP2adifBroadcast=true
 UDP2Server=127.0.0.1
