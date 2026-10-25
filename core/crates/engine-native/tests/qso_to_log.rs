@@ -19,7 +19,7 @@ impl TxPort for FakePort {
     fn halt(&self) {}
 }
 
-// 99 999 990 s dall'epoca: un periodo FT8 pari (2573-... non importa la data, conta che i calcoli siano coerenti)
+// 99 999 990 s dall'epoca: un periodo FT8 pari (1973-03-03 09:46:30 UTC)
 const SLOT_MS: u64 = 99_999_990_000;
 
 #[tokio::test]

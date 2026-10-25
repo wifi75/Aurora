@@ -821,3 +821,76 @@ Non implementato: con un testo libero che non e' un 73 (`isAutoSeq73`) JTDX speg
 (solo `TxDriver::auto_tx`, che decide se il doppio clic / `Reply` accende Abilita Tx; `Sequencer::reply_to_with`), interruttore `auto_tx` a se' (di fabbrica acceso), `enable_tx` = stato della sequenza; `TxView.enabled` (cioe' `tx_enabled`
 verso la UI) resta Abilita Tx e lo schema non cambia. Test: `auto_tx_and_enable_tx_are_separate_commands_and_separate_states`, `the_double_click_enables_tx_only_with_auto_tx_on`, `the_initial_state_is_the_one_of_jtdx`.
 **Scelte di Aurora che restano diverse da JTDX** (da decidere): il tasto Esc dell'interfaccia (`useEscapeStop`) spegne anche AutoTX (JTDX no); «CQ» e «Invia» accendono Abilita Tx (in JTDX `txb6` e il pallino del messaggio libero no).
+
+## Registrazione dei QSO (REA, 2026-10-25)
+
+Richiesta urgente del proprietario: con il motore proprio (`AURORA_ENGINE=native`, senza JTDX) i QSO registrati non arrivavano piu' a Log4OM2. Letto nei sorgenti (`mainwindow.cpp`, `logqso.cpp`,
+`qsohistory.cpp`, `Logbook/adif.cpp`, ramo `master`) e verificato in `jtdx.exe` 2.2.159 con REA (pseudocodice; nomi di funzione = simboli veri). I sorgenti coincidono con l'eseguibile in tutti i punti sotto.
+
+### Perche' Log4OM2 non riceveva piu' niente
+
+Con JTDX, a mandare il record a Log4OM2 era JTDX stesso (secondo server UDP, `127.0.0.1:2237` su questo PC); Aurora ne era solo spettatrice e il suo esportatore non aveva destinatari. Con il motore proprio
+JTDX non c'e' piu' e **nessuno** mandava il QSO a Log4OM2: l'evento `QsoLogged` arrivava solo al log SQLite interno di Aurora. In piu' il record che l'esportatore sapeva fare non era quello di JTDX
+(campi mancanti, `MODE` di FT4, data presa dall'ora di arrivo dell'evento, fine QSO assente, nessun nominativo/locatore propri).
+
+### 1. Quando JTDX registra (`MainWindow::guiUpdate`, `REA 0x4c4350`; `on_logQSOButton_clicked`, `REA 0x4ab440`; `acceptQSO2`, `REA 0x472db0`)
+
+- **Momento**: quando **comincia a trasmettere** un messaggio che e' un 73 (`message_is_73`: contiene «73» o «RR73»; `RRR` no), a patto che `m_QSOProgress >= ROGER_REPORT` (o `m_ntx` valga 4 o 5), che l'ultimo DX registrato sia diverso
+  e che il messaggio precedente non fosse gia' un 73 per questo DX. Confermato nel binario (`REA 0x4c4350`, righe 1090-1150: `m_sentFirst73`, `prompt_to_log() || autolog()`, `!m_tune`, `QTimer::start(0)` su `logQSOTimer`).
+  Non conta se il DX ha mandato il suo 73: nessun controllo sul messaggio ricevuto. Il rapporto ricevuto **non e' obbligatorio**: `log_data` (`REA 0x4dded0`) restituisce lo stato e i rapporti della cronologia, e se mancano si usano `m_rptSent`/`m_rptRcvd` (anche vuoti).
+- **Guardia contro i doppioni**: `m_lastloggedcall != m_hisCall` **oppure** sono passati piu' di `int(periodo) * 2000` ms (30 s FT8, 14 s FT4) dall'ultima registrazione (`m_lastloggedtime`). Nel ramo Hound (`RRR73`, process_Auto) il tetto e' `periodo * 7000` ms.
+- **Con «Prompt me to log QSO»** (`PromptToLog`) si apre la finestra di conferma, con `AutoQSOLogging` (`autolog()`) il dialogo si accetta da solo (`initLogQSO(..., autologging)` chiama `accept()` subito). Su questo PC: `PromptToLog=false`, `AutoQSOLogging=true`.
+- **Orari**: `QSO_DATE_OFF`/`TIME_OFF` = ora attuale (UTC) **+ 14 s** in FT8, **+ 7 s** in FT4, **+ 50 s** negli altri modi (`on_logQSOButton_clicked`, costanti `0xe`, `7`, `0x32` nel binario). `QSO_DATE`/`TIME_ON` = ora di inizio dalla cronologia (`QsoHistory::log_data` -> `b_time`, secondi del giorno
+  del primo messaggio del QSO, cioe' l'inizio del periodo), con un giorno in meno se supera la fine. Verifica su `wsjtx_log.adi` reale: inizio `164645`, fine `164729` (periodo di trasmissione `164715` + 14); FT4 `162500` / `162522` (`162515` + 7).
+- **Dopo la registrazione** (`acceptQSO2`): `m_lastloggedcall`/`m_lastloggedtime`, riga `QSO logged: <nominativo>` in `ALL.TXT`, etichetta «Logd», `countQSOs`. Il DX viene azzerato da `logClearDXTimer` (periodo meno secondi trascorsi, in ms) **solo** con «Clear DX» e se non c'e' AutoTX/AutoSeq
+  (`!m_autoTx && !m_autoseq`): con AutoSeq acceso la sequenza passa da sola al chiamante dopo.
+
+### 2. Cosa manda JTDX (`MainWindow::acceptQSO2`, `REA 0x472db0`)
+
+In quest'ordine, per ogni QSO registrato:
+1. `LogBook::addAsWorked` (lista dei lavorati in memoria).
+2. `MessageClient::qso_logged` (`REA 0x569b60`): messaggio **WSJT-X tipo 5** al **primo** server UDP (qui `127.0.0.1:2334`), campi: ora di fine, nominativo, locatore, frequenza (u64), modo, rapporto inviato, rapporto ricevuto, potenza, commento, nome, ora di inizio, nominativo operatore, nominativo stazione, locatore proprio.
+3. Se `EnableUDP1adifSending`: `MessageClient::logged_ADIF` (`REA 0x56a6d0`): messaggio **tipo 12** allo stesso server, con il testo `"\n<adif_ver:5>3.1.0\n<programid:4>JTDX\n<EOH>\n"` + il record ADIF.
+4. Se `EnableUDP2adifBroadcast` e secondo server valido: **un datagramma UDP con il solo record ADIF (`myadif2`)** a `UDP2Server:UDP2ServerPort` (qui `127.0.0.1:2237` = Log4OM2). Un solo invio per QSO.
+5. eQSL (se acceso), `ALL.TXT`.
+Il file `wsjtx_log.adi` e il `wsjtx.log` li scrive il dialogo del log (`LogQSO::accept`, `REA 0x60be60`) **prima** di emettere `acceptQSO`; la connessione TCP (`EnableTCPConnection`, comando `Log`) e' un altro percorso, spento qui.
+
+### 3. Il record ADIF (`LogQSO::accept`, `REA 0x60be60`)
+
+Datagramma per Log4OM2 (`myadif2`), campi nomi in **maiuscolo**, separati da **uno spazio**, `.trimmed()` (nessun «a capo», nessuno spazio finale), senza intestazione, chiuso da `<EOR>`. Ordine verificato nel binario:
+`BAND`, `STATION_CALLSIGN`, `MY_GRIDSQUARE` (8 caratteri se il locatore ne ha almeno 8, intero se almeno 4, altrimenti assente), `CALL`, `FREQ` (MHz con **6 decimali**, `QString::number(f/1e6,'f',6)`, frequenza di dial + frequenza Tx audio),
+`MODE` (per FT4: `<MODE:4>MFSK <SUBMODE:3>FT4`), `QSO_DATE`, `TIME_ON`, `QSO_DATE_OFF`, `TIME_OFF`, `RST_SENT`, `RST_RCVD` (**sempre**, anche vuoti: `<RST_RCVD:0>`), `TX_PWR` (solo se non vuota), `GRIDSQUARE` (solo se il locatore del DX ha piu' di 3 caratteri),
+`NAME` e `COMMENT` (**`COMMENT`, non `COMMENTS`**; solo se non vuoti), per eQSL `EQSL_QSL_SENT:1>Y <EQSL_QSLSDATE:8>`. Niente `OPERATOR`, niente `SUBMODE` per FT8, niente `TIME_OFF` diverso da quello sopra.
+Esempio (inventato): `<BAND:3>20m <STATION_CALLSIGN:6>IU3ABC <MY_GRIDSQUARE:6>IO91wm <CALL:5>K1ABC <FREQ:9>14.075084 <MODE:3>FT8 <QSO_DATE:8>20261024 <TIME_ON:6>164645 <QSO_DATE_OFF:8>20261024 <TIME_OFF:6>164729 <RST_SENT:3>-16 <RST_RCVD:3>-09 <GRIDSQUARE:4>FN42 <EOR>`.
+
+### 4. I file (`ADIF::addQSOToFile`, `REA 0x5ec2c0`; `LogQSO::accept`)
+
+- `wsjtx_log.adi` nella cartella dati di JTDX: aperto in aggiunta e testo (CR LF); se vuoto, prima riga `WSJT-X ADIF Export<eoh>`. Riga: `call`, `gridsquare` (**anche vuoto**, `<gridsquare:0>`), `mode` (+ `submode`), `rst_sent`, `rst_rcvd`, `qso_date`, `time_on`, `qso_date_off`, `time_off`, `band`, `freq`, `station_callsign`,
+  `my_gridsquare` (intero), `tx_pwr`, `comment`, `name` (gli ultimi tre solo se non vuoti), `eqsl_qsl_sent`, `<eor>`; **nomi in minuscolo, ordine diverso dal datagramma**.
+- `wsjtx.log` (CSV: `aaaa-mm-gg,hh:mm:ss,` inizio, fine, nominativo, locatore, frequenza, modo, rapporti, potenza, commento, nome).
+- `ALL.TXT`: riga `QSO logged: <nominativo>` (e `Transmitting ... RR73` sei millisecondi prima, per l'ordine).
+
+### 5. Cosa non coincideva in Aurora e cosa e' stato corretto
+
+| Punto | Prima | Ora |
+|---|---|---|
+| Destinatario Log4OM2 con il motore proprio | nessuno | **secondo server UDP di JTDX** letto da `JTDX.ini` (`EnableUDP2adifBroadcast`, `UDP2Server`, `UDP2ServerPort`) in `desktop/src-tauri/src/settings.rs::udp2_from_ini`; con motore JTDX niente (lo fa lui: niente doppioni). `AURORA_EXPORT_UDP` dall'ambiente vince |
+| Record ADIF | `CALL, GRIDSQUARE, BAND, MODE, FREQ, RST_*, QSO_DATE, TIME_ON`, a campi senza spazi, con «a capo», data = ora in cui arrivava l'evento | `logbook::adif::jtdx_record`: stessi campi, ordine, spazi, `MFSK`+`SUBMODE FT4`, `QSO_DATE_OFF`/`TIME_OFF`, `STATION_CALLSIGN`, `MY_GRIDSQUARE`, `TX_PWR`, `<EOR>` senza «a capo»; test su record campione |
+| Orari | solo ora del giorno di fine, data di oggi | `QsoRecord::time_on_unix_ms` / `time_off_unix_ms`: inizio = primo periodo del QSO, fine = trasmissione del 73 + 14 s (FT8) o + 7 s (FT4), come JTDX; due date a cavallo della mezzanotte |
+| File | `aurora_log` non esisteva; formato generico | `aurora_log.adi` nella cartella dei dati con il motore proprio (`Target::File`, `jtdx_file_record`): intestazione `WSJT-X ADIF Export<eoh>`, CR LF, campi minuscoli come `wsjtx_log.adi`; `AURORA_EXPORT_FILE` aggiunge un secondo file. Non si tocca mai il file di JTDX |
+| Lavorati | solo `AURORA_WORKED_ADIF` (file di JTDX) | legge anche `aurora_log.adi`; nel motore proprio un QSO appena registrato non e' piu' una novita' (`record_qso`) |
+| Doppioni | `Logbook::add` a ogni evento | guardia come JTDX nell'esportatore: stesso nominativo entro 2 periodi (30 s FT8, 14 s FT4) = non e' un altro QSO; un solo datagramma per QSO |
+| QSO senza rapporto ricevuto | non si registrava mai | si registra quando si comincia a trasmettere RR73/73 (`Tx4` non-RRR / `Tx5`), con `RST_RCVD` vuoto, come JTDX (in ricezione serve ancora il rapporto) |
+| Banda sconosciuta | record muto | avviso nel registro (radio non letta) |
+
+Test: `logbook` (`adif::tests`, record UDP e riga del file su un campione, FT4, mezzanotte, locatore corto/lungo, rapporto vuoto), `qso-export` (datagramma esatto su un socket locale, un solo invio, guardia doppioni, file con una sola intestazione),
+`engine-native/tests/qso_to_log.rs` (un QSO chiuso dalla sequenza con `TxDriver` + finto trasmettitore -> `Exporter` -> datagramma UDP e riga di file), `aurora` (`export_targets`), `desktop` (`settings`, il secondo server UDP diventa destinatario solo con il motore proprio), `qso-native/tests/scenari.rs` (73 senza rapporto).
+
+### 6. Differenze volute e cosa resta
+
+- **Momento in ricezione**: se il QSO si chiude perche' il DX manda RR73/RRR, la sequenza di Aurora lo registra gia' alla ricezione (JTDX aspetta di cominciare a trasmettere il 73). Il QSO e' lo stesso, registrato una volta sola, e `TIME_OFF` e' calcolato come se il 73 partisse nel periodo dopo
+  (+14 s): il record e' identico a quello di JTDX. Se la trasmissione venisse spenta prima del 73, Aurora registra comunque (JTDX no).
+- **`NAME` e `COMMENT`** non ci sono (Aurora non ha la rubrica ne' le opzioni «distanza/rapporti nei commenti»); `TX_PWR` solo con `AURORA_TX_POWER` (watt). Niente eQSL, niente `wsjtx.log` (CSV), niente riga `QSO logged` in un `ALL.TXT` (Aurora ha il suo registro).
+- **Da fare per GridTracker**: il flusso WSJT-X tipo 5 (`QsoLogged`) e tipo 12 (`LoggedADIF`) verso il primo server UDP: formato letto in `REA 0x569b60` e `0x56a6d0` (campi sopra). Il decoder c'e' in `udp-bridge`, mancano gli encoder `encode_qso_logged`/`encode_logged_adif`
+  **e soprattutto** un'uscita UDP del motore proprio: oggi con `AURORA_ENGINE=native` Aurora non manda a GridTracker nessun pacchetto WSJT-X (ne' `Heartbeat`, `Status`, `Decode`), quindi i due tipi si aggiungono insieme al resto del flusso; non implementato qui.
+- Prima del primo QSO, se la radio non e' ancora stata letta (`dial_hz == 0`), banda e frequenza del record sono vuote: l'avviso nel registro lo segnala; non si inventa una frequenza.
