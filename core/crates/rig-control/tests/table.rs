@@ -16,7 +16,7 @@ fn the_default_table_has_ft8_and_ft4_on_the_usual_bands() {
 #[test]
 fn a_user_table_replaces_the_default_and_is_validated() {
     let mut t = FrequencyTable::default();
-    t.set(vec![Entry { band: "20m".into(), mode: "FT8".into(), hz: 14_075_000 }]).unwrap();
+    t.set(vec![Entry::new("20m", "FT8", 14_075_000)]).unwrap();
     assert_eq!(t.frequency("20m", "FT8"), Some(14_075_000));
     assert_eq!(t.frequency("40m", "FT8"), None);
 }
@@ -27,11 +27,11 @@ fn invalid_tables_are_refused() {
     let before = t.entries().to_vec();
     for bad in [
         vec![],
-        vec![Entry { band: "13m".into(), mode: "FT8".into(), hz: 14_074_000 }],
-        vec![Entry { band: "20m".into(), mode: "JT65".into(), hz: 14_074_000 }],
-        vec![Entry { band: "20m".into(), mode: "FT8".into(), hz: 5 }],
-        vec![Entry { band: "20m".into(), mode: "FT8".into(), hz: 9_000_000_000 }],
-        vec![Entry { band: "20m".into(), mode: "FT8".into(), hz: 14_074_000 }, Entry { band: "20M".into(), mode: "ft8".into(), hz: 14_075_000 }],
+        vec![Entry::new("13m", "FT8", 14_074_000)],
+        vec![Entry::new("20m", "JT65", 14_074_000)],
+        vec![Entry::new("20m", "FT8", 5)],
+        vec![Entry::new("20m", "FT8", 9_000_000_000)],
+        vec![Entry::new("20m", "FT8", 14_074_000), Entry::new("20M", "ft8", 14_074_000)],
     ] {
         assert!(t.set(bad).is_err());
     }
@@ -41,7 +41,7 @@ fn invalid_tables_are_refused() {
 #[test]
 fn a_frequency_must_belong_to_its_band() {
     let mut t = FrequencyTable::default();
-    assert!(t.set(vec![Entry { band: "20m".into(), mode: "FT8".into(), hz: 7_074_000 }]).is_err(), "7 MHz non e' 20 m");
+    assert!(t.set(vec![Entry::new("20m", "FT8", 7_074_000)]).is_err(), "7 MHz non e' 20 m");
 }
 
 #[test]

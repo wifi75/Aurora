@@ -66,3 +66,25 @@ async fn refuses_bad_values_unavailable_items_empty_bodies_and_remote_peers() {
     status_is(&resp, StatusCode::FORBIDDEN);
     assert_eq!(body_json(resp).await["error"], "local_only");
 }
+
+#[tokio::test]
+async fn region_and_type2_messages_are_live_settings_with_their_own_values() {
+    let (s, store) = with_store("region");
+    let cookie = cookie_for(&s);
+    let doc = body_json(call(&router(&s), req(Method::GET, "/api/v1/engine-settings").cookie(&cookie)).await).await;
+    assert_eq!((doc["values"]["Region"].as_str(), doc["values"]["Type2MsgGen"].as_str()), (Some("ALL"), Some("type_2_msg_3_full")), "valori di fabbrica di JTDX");
+    assert_eq!((doc["items"]["Region"]["state"].as_str(), doc["items"]["Type2MsgGen"]["state"].as_str()), (Some("live"), Some("live")));
+    assert_eq!(doc["items"]["Type2MsgGen"]["note"], "jt_only", "in FT8 e FT4 JTDX non lo legge: la pagina lo dice");
+    assert!(doc["items"]["Region"].get("note").is_none());
+    let body = r#"{"changes":{"Region":"R1","Type2MsgGen":"type_2_msg_5_only"}}"#;
+    status_is(&call(&router(&s), req(Method::PUT, "/api/v1/engine-settings").cookie(&cookie).json(body)).await, StatusCode::OK);
+    let r = store.reports();
+    assert_eq!((r.region, r.type2_msg_gen), (rig_control::table::Region::R1, remote_api::engine_settings::Type2MsgGen::Tx5Only));
+    assert_eq!(s.frequency_region(), rig_control::table::Region::R1, "la tabella delle frequenze la legge subito");
+    for bad in [r#"{"changes":{"Region":"R4"}}"#, r#"{"changes":{"Region":"Region 1"}}"#, r#"{"changes":{"Type2MsgGen":"type_2_msg_2_full"}}"#] {
+        let resp = call(&router(&s), req(Method::PUT, "/api/v1/engine-settings").cookie(&cookie).json(bad)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], "bad_setting", "{bad}");
+    }
+    assert_eq!(store.values()["Region"], "R1", "un valore rifiutato non cambia niente");
+}

@@ -79,6 +79,17 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
         ))}
       </select>
     );
+  } else if (row.kind === 'choice') {
+    control = (
+      <select id={id} aria-label={label} disabled={!live || locked} value={live ? value : ''} onChange={(e) => change(e.target.value)}>
+        {!live ? <option value="" /> : null}
+        {(row.options ?? []).map((o) => (
+          <option key={o.value} value={o.value}>
+            {t(o.label)}
+          </option>
+        ))}
+      </select>
+    );
   } else {
     // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
     control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} placeholder={row.kind === 'secret' && doc.secrets?.[row.key] ? t('ens.pw.saved') : undefined} autoComplete="off" onChange={(e) => change(e.target.value)} />;

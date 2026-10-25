@@ -135,14 +135,26 @@ export async function postRxFrequency(hz: number): Promise<void> {
   await request('/commands/rx-frequency', jsonInit({ hz }));
 }
 
+/** Regione IARU di una riga della tabella delle frequenze (come in JTDX). */
+export type IaruRegion = 'ALL' | 'R1' | 'R2' | 'R3';
+
 export interface FrequencyEntry {
   band: string;
   mode: string;
   hz: number;
+  /** Dove vale la riga: tutte le regioni (`ALL`) o una sola. */
+  region: IaruRegion;
+  /** Riga `predefinita`: quella che la banda sceglie da sola; le altre sono alternative. */
+  preferred: boolean;
 }
 
 export async function getFrequencies(): Promise<FrequencyEntry[]> {
   return (await (await request('/frequencies')).json()) as FrequencyEntry[];
+}
+
+/** La tabella iniziale di JTDX (FT8 e FT4), con le righe di ogni regione. */
+export async function getFrequencyDefaults(): Promise<FrequencyEntry[]> {
+  return (await (await request('/frequencies/defaults')).json()) as FrequencyEntry[];
 }
 
 export async function putFrequencies(entries: FrequencyEntry[]): Promise<void> {

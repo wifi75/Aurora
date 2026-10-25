@@ -69,7 +69,7 @@ inclusi), la funzione che le legge resta **da verificare con REA** (con `REA_GHI
 | Generali | `MyCall`, `MyGrid` | nominativo e locatore di Aurora: record ADIF, flusso UDP, trasmissione, DX Cluster, continente per i CQ direzionali | **funzionano** (dal prossimo avvio) |
 | | `Language`, `Miles`, `showDistance`, `countryName`, `UseDarkStyle` | sono nella sezione Schermo, tema e lingua di Aurora | nascoste, `own_screen` |
 | | `TxWatchdogTimer`, `TxQSYAllowed`, `MonitorOFF`, `callsignLogFiltering`, `gridLogFiltering`, `timeFromLogFiltering` | **schede Generali come in JTDX**: vedi «Scheda Generali» sotto | **funzionano** (a caldo; `MonitorOFF` al prossimo avvio) |
-| | `Region`, `Type2MsgGen`, `Decode52`, `After73`, `IDint`, `TuneTimer`, `MonitorLastUsed`, `Scroll`, `HideTxMessages`, `countryPrefix`, `AlignDistanceAzimuth` | visibili e spente con il motivo (vedi sotto) | spente |
+| | `Decode52`, `After73`, `IDint`, `TuneTimer`, `MonitorLastUsed`, `Scroll`, `HideTxMessages`, `countryPrefix`, `AlignDistanceAzimuth` | visibili e spente con il motivo (vedi sotto) | spente |
 | | `InsertBlank`, `Tx2QSO`, `showAzimuth` | opzioni dello schermo, nel browser (valgono subito) | **funzionano** |
 | Radio | `Rig`, `PTTport`, `CATSerialPort`, `CATSerialRate`, `Polling`, `CATForceDTR/RTS`, `TCIAudio` | la radio e il PTT stanno nella scheda CAT | nascoste, `radio_cat` |
 | Audio | `SoundInName`, `SoundOutName`, `AudioInputChannel`, `AudioOutputChannel`, `SaveDir`, `SaveWav` | ingresso e uscita scelti nella scheda Audio; senza scelta valgono `AURORA_AUDIO_DEVICE` e `AURORA_AUDIO_OUT_DEVICE` | vive, a caldo; si cambiano solo da `PUT /api/v1/audio/settings` (apre i dispositivi, poi salva) |
@@ -105,13 +105,25 @@ Dalle impostazioni la modifica arriva alla sequenza **a caldo** (`NativeControls
 Valori di partenza di Aurora (file nuovo): il rapporto R e la chiusura **accesi a 5**, i primi due spenti con i valori 2 e 3: e' la configurazione che Aurora ha sempre avuto e quella del proprietario; da un `JTDX.ini` si importano i valori veri una volta.
 Il valore e' limitato a 1-5 (come in JTDX, che altrimenti torna al valore di fabbrica). La semantica completa dei contatori e' in `docs/logiche-jtdx.md`, sezione 2.5.
 
+### Regione IARU e tabella delle frequenze (2026-10-25)
+
+La tabella delle frequenze (`frequencies.json`, scheda Frequenze, `GET/PUT /api/v1/frequencies`) ha ora la tabella iniziale di JTDX per FT8 e FT4 (41 righe, 160 m-2 m) con, per ogni riga, la **regione IARU** (`ALL`, `R1`, `R2`, `R3`) e se e' «predefinita» (`preferred`). La voce `Region` di Generali (valori `ALL`, `R1`, `R2`, `R3`, a caldo, valore iniziale dal `JTDX.ini` o `ALL`) decide quali righe valgono:
+
+- una riga si vede con `ALL`, se e' valida ovunque o se e' della regione scelta (stesso filtro di JTDX); le righe nascoste restano nella tabella e nella scheda, attenuate;
+- cambio di banda e programmazione (`FrequencyTable::frequency_in`): riga predefinita, poi quella della regione scelta (con `ALL` una valida ovunque), poi la frequenza piu' bassa. Con `ALL` e `R2` ogni banda ha il valore di sempre; con `R1` i 160 m vanno su 1,810 MHz e con `R3` gli 80 m in FT4 su 3,568 MHz;
+- cambio di modo (`FrequencyTable::best_working`): come `switch_mode` di JTDX, resta sul dial se e' una riga del nuovo modo, altrimenti la riga predefinita piu' vicina della banda;
+- `GET /api/v1/frequencies/defaults` restituisce la tabella iniziale (tasto «Frequenze iniziali di JTDX»: la mette nella bozza, si salva con «Salva»);
+- una tabella salvata dalle versioni precedenti (una riga per banda e modo, uguale alla vecchia tabella di Aurora) passa da sola alla tabella di JTDX; una tabella modificata dall'utente non si tocca.
+
+Resta fuori: le righe di 8 m (40,680 MHz), 4 m (70 MHz) e 70 cm (Aurora non ha quelle bande) e le alternative non predefinite non si scelgono da una tendina.
+
 ### Scheda Generali
 
 | Voce | Chiave | Funzione che la legge | In Aurora |
 |---|---|---|---|
 | Mio nominativo, Mio locatore | `MyCall`, `MyGrid` | `Configuration::read_settings` [GPL 2169-2170] | **vivi**, dal prossimo avvio |
-| Regione IARU | `Region` ([ini] valore binario `@Variant(IARURegions::Region)`) | `Configuration::region` [GPL 2455]: sceglie la tabella delle frequenze per regione | **spenta** (`iaru_region`): Aurora ha le sue frequenze |
-| Generazione dei messaggi per nominativi composti di tipo 2 | `Type2MsgGen` ([ini] `@Variant`, valori «Nom completo in Tx1/Tx3/Tx5») | `Configuration::type_2_msg_gen`; il suggerimento di JTDX dice che riguarda JT65 e JT9 [GPL `Configuration.ui`] | **spenta** (`type2_msgs`): FT8 e FT4 trasportano i nominativi composti in un altro modo |
+| Regione IARU | `Region` ([ini] `@Variant(IARURegions::Region)`: `ALL`, `R1`, `R2`, `R3`; fabbrica `ALL`) | `switch_mode` `REA 0x47b130` -> `FrequencyList_v2::filter` `REA 0x5a61d0` / `filterAcceptsRow` `REA 0x654aa0`, `best_working_frequency` `REA 0x654ca0` [**binario**]: filtra le righe della tabella delle frequenze (sezione «Regione IARU» di `docs/analisi-jtdx-reverse-rea.md`) | **viva**, a caldo: `FrequencyTable::frequency_in` / `best_working` (cambio di banda, di modo, programmazione) e righe attenuate nella scheda Frequenze |
+| Generazione dei messaggi per nominativi composti di tipo 2 | `Type2MsgGen` ([ini] `@Variant`: `type_2_msg_1_full`, `type_2_msg_3_full` (fabbrica), `type_2_msg_5_only`) | un solo chiamante, `genStdMsgs` `REA 0x474800`, **solo nel ramo dei modi che non cominciano per «FT»** (JT65, JT9, T10) [**binario**] | **viva come voce** (salvata, importata dal `JTDX.ini`, `Reports.type2_msg_gen`) ma **non cambia mai niente** in FT8 e FT4, come in JTDX: la pagina lo scrive sotto la voce (`note: jt_only`). I nominativi composti di FT8/FT4 sono in `qso-native::stdmsg` |
 | Usa questo nominativo / questa griglia / filtra il LOG a partire dalla data/ora | `callsignLogFiltering`, `gridLogFiltering`, `timeFromLogFiltering` | `ADIF::load(mycall, mygrid, mydate)` [GPL adif.cpp 106-108; **binario** `ADIF::load` 0x5f01c0: confronto `STATION_CALLSIGN` uguale, `MY_GRIDSQUARE` primi 4 caratteri, `mydate <= QSO_DATE+TIME_ON` con l'ora completata a 14 cifre] | **vivi**, a caldo: il log (interno, `wsjtx_log.adi`, Log4OM2) si rilegge col filtro. Il log interno e Log4OM2 non dicono con quale nominativo/griglia si e' operato: per quelli il filtro vale solo per la data |
 | Riga vuota tra i periodi di decodifica | `InsertBlank` | `readFromStdout`, `p1ReadFromStdout` [**binario** 0x494220, 0x49d680; GPL mainwindow.cpp 3792] | **viva** (schermo, `insertBlank`): uno spazio tra un periodo e il successivo |
 | Usa il tema scuro | `UseDarkStyle` | `Configuration::useDarkStyle` | il tema di Aurora (pulsante tema, nella stessa sezione) |

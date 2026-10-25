@@ -383,6 +383,11 @@
   background: color-mix(in srgb, var(--text) 7%, transparent);
 }
 
+/* riga della tabella delle frequenze nascosta dalla regione IARU scelta: resta nella tabella ma non si usa */
+.sx-table tr.sx-row-hidden td {
+  opacity: 0.5;
+}
+
 .sx-table .sx-first-letter {
   display: inline-block;
 }

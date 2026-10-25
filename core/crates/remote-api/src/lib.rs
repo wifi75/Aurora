@@ -347,6 +347,11 @@ impl AppState {
         self.current_status().map(|s| s.mode).filter(|m| !m.is_empty()).unwrap_or_else(|| "FT8".into())
     }
 
+    /// La regione IARU delle impostazioni Generali (`ALL` senza impostazioni del motore, cioe' con JTDX): decide quali righe della tabella delle frequenze valgono.
+    pub fn frequency_region(&self) -> rig_control::table::Region {
+        self.engine_settings.as_ref().map_or_else(Default::default, |s| s.region())
+    }
+
     pub fn with_rig(mut self, rig: Arc<dyn Rig>) -> AppState {
         self.rig = Some(rig);
         self

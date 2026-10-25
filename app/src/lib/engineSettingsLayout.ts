@@ -1,7 +1,7 @@
 import type { Key } from '../i18n';
 
 /** Come si disegna una voce delle impostazioni del motore proprio. */
-export type SettingKind = 'bool' | 'text' | 'num' | 'secret' | 'reply';
+export type SettingKind = 'bool' | 'text' | 'num' | 'secret' | 'reply' | 'choice';
 
 export interface SettingRow {
   key: string;
@@ -9,6 +9,8 @@ export interface SettingRow {
   /** Intervallo dei numeri (di base le porte, 1-65535). */
   min?: number;
   max?: number;
+  /** Le scelte di una voce `choice`: il valore che si salva e l'etichetta. */
+  options?: readonly { value: string; label: Key }[];
 }
 
 export interface SettingGroup {

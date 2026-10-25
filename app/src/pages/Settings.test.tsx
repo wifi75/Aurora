@@ -28,7 +28,12 @@ vi.mock('../api/client', () => ({
   getCatPorts: vi.fn().mockResolvedValue([]),
   getClock: vi.fn().mockResolvedValue({ config: { enabled: true, servers: ['it.pool.ntp.org'], interval_secs: 900, warn_ms: 200, auto_correct: false }, last: null }),
   getEngineConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
-  getFrequencies: vi.fn().mockResolvedValue([{ band: '20m', mode: 'FT8', hz: 14_074_000 }]),
+  getFrequencies: vi.fn().mockResolvedValue([
+    { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true },
+    { band: '160m', mode: 'FT8', hz: 1_810_000, region: 'R1', preferred: true },
+  ]),
+  getFrequencyDefaults: vi.fn().mockResolvedValue([{ band: '40m', mode: 'FT8', hz: 7_074_000, region: 'ALL', preferred: true }]),
+  getEngineSettings: vi.fn().mockResolvedValue({ version: 1, file: 'settings-motore.json', values: { Region: 'R2' }, items: { Region: { state: 'live', apply: 'now' } } }),
   putFrequencies: vi.fn().mockResolvedValue(undefined),
   getSchedule: vi.fn().mockResolvedValue({ enabled: false, entries: [] }),
   putSchedule: vi.fn().mockResolvedValue(undefined),
@@ -201,11 +206,31 @@ describe('Frequencies', () => {
   it('lists the table and saves a change', async () => {
     open();
     goTo('Frequenze');
-    const mhz = await screen.findByLabelText(it_('freq.mhz'));
+    const mhz = (await screen.findAllByLabelText(it_('freq.mhz')))[0] as HTMLElement;
     expect(mhz).toHaveValue(14.074);
     fireEvent.change(mhz, { target: { value: '14.075' } });
     fireEvent.click(screen.getByRole('button', { name: it_('set.save') }));
-    await waitFor(() => expect(api.putFrequencies).toHaveBeenCalledWith([{ band: '20m', mode: 'FT8', hz: 14_075_000 }]));
+    await waitFor(() =>
+      expect(api.putFrequencies).toHaveBeenCalledWith([
+        { band: '20m', mode: 'FT8', hz: 14_075_000, region: 'ALL', preferred: true },
+        { band: '160m', mode: 'FT8', hz: 1_810_000, region: 'R1', preferred: true },
+      ]),
+    );
+  });
+
+  it('dims the rows the chosen IARU region does not see, and loads the JTDX initial table into the draft', async () => {
+    open();
+    goTo('Frequenze');
+    await screen.findAllByLabelText(it_('freq.mhz'));
+    // regione 2 (dalle impostazioni del motore): la riga della regione 1 e' nascosta, quella valida ovunque no
+    await waitFor(() => expect(document.querySelectorAll('tr.sx-row-hidden')).toHaveLength(1));
+    expect(document.querySelector('tr.sx-row-hidden')).toHaveAttribute('title', it_('freq.hidden'));
+    expect(screen.getAllByLabelText(it_('freq.region'))[1]).toHaveValue('R1');
+    // il tasto delle frequenze iniziali mette la tabella di JTDX nella bozza (si salva solo con «Salva»)
+    fireEvent.click(screen.getByRole('button', { name: it_('freq.reset') }));
+    await waitFor(() => expect(screen.getAllByLabelText(it_('freq.mhz'))).toHaveLength(1));
+    expect(screen.getByLabelText(it_('freq.mhz'))).toHaveValue(7.074);
+    expect(api.putFrequencies).not.toHaveBeenCalled();
   });
 });
 
