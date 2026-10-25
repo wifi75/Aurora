@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
+import { Logo } from './components/Logo';
 import { LanguageSelect } from './components/LanguageSelect';
 import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -103,6 +104,7 @@ export function App() {
         </nav>
         <LanguageSelect />
         <ThemeToggle />
+        <a className="app-logo-link" href="#/" aria-label="Aurora"><Logo size={36} animated /></a>
       </header>
       {session.data ? <WantedBar /> : null}
       {session.data ? <UpdateBar /> : null}

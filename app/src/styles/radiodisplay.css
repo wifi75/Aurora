@@ -245,3 +245,92 @@
   position: relative;
   z-index: var(--layer-overlay);
 }
+
+/* Logo: la cascata scorre di quattro righe ogni giro, senza stacchi (il disegno si ripete ogni quattro righe) */
+.logo {
+  display: inline-block;
+  line-height: 0;
+}
+
+.logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.app-logo-link {
+  display: inline-flex;
+  margin-left: auto;
+  order: 99;
+}
+
+.logo--animated .logo-scroll {
+  animation: logo-scroll 1.6s steps(4, end) infinite;
+}
+
+@keyframes logo-scroll {
+  from { transform: translateY(-23.33px); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo--animated .logo-scroll { animation: none; }
+}
+
+/* Schermata di avvio */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: radial-gradient(circle at 50% 38%, #10213a 0%, #050910 70%);
+  color: #e6edf3;
+  text-align: center;
+  padding: 1rem;
+  animation: splash-in 0.45s ease-out both;
+}
+
+.splash--fade {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+  pointer-events: none;
+}
+
+.splash-logo {
+  filter: drop-shadow(0 0 28px rgb(44 245 164 / 0.35));
+}
+
+.splash-name {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-data);
+  font-size: 2.4rem;
+  letter-spacing: 0.4em;
+  padding-left: 0.4em;
+  background: linear-gradient(100deg, #2cf5a4, #27a0f5 55%, #8e7bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.splash-motto {
+  margin: 0;
+  max-width: 34rem;
+  color: #aab6c4;
+  font-size: 1.05rem;
+}
+
+.splash-version {
+  margin: 0.4rem 0 0;
+  min-height: 1.2em;
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  color: #6b7a8c;
+}
+
+@keyframes splash-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}

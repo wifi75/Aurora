@@ -17,6 +17,14 @@ export const appStrings = {
     'No consigo conectar con Aurora. Comprueba que esté en marcha en el PC y que la red sea accesible.',
     'Não consigo contactar a Aurora. Verifica se está ligado no PC e se a rede está acessível.',
   ],
+  'splash.motto': [
+    'Stazione digitale FT8 e FT4: ascolta, decodifica e trasmette per te',
+    'Digital FT8 and FT4 station: it listens, decodes and transmits for you',
+    'Digitale FT8- und FT4-Station: hört, dekodiert und sendet für dich',
+    'Station numérique FT8 et FT4 : elle écoute, décode et émet pour toi',
+    'Estación digital FT8 y FT4: escucha, decodifica y transmite por ti',
+    'Estação digital FT8 e FT4: escuta, descodifica e transmite por ti',
+  ],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
     '{name} v{version} — Progettazione e sviluppo: {author}',
