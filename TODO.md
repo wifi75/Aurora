@@ -23,6 +23,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Analisi delle logiche di JTDX (`docs/logiche-jtdx.md`)
 
 ## Da fare
+- [ ] **Scheda DXCC per banda e modo** (richiesta del proprietario, da fare dopo il porting in corso): matrice paesi DXCC lavorati per banda (160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 6, 4 m e U) con righe FT8, FT4 (e DIG), senza PH e CW, e la parte alta con NEW ONE, NEW BAND, NEW MODE e le varianti GRID (NEW GRID, GRID BAND, GRID MODE); senza la parte cerchiata QSL/EQSL/LOTW/QRZCOM. Documentare il significato di ogni etichetta (la logica). I dati vengono dal log interno di Aurora (`logbook.db` e `aurora_log.adi`); con un log esterno (Log4OM2, ecc.) si analizza il record ADIF che arriva via UDP. Verificare l'export del file ADIF dal log interno.
 - [ ] Impostazioni del motore modificabili: provare «Applica e riavvia» con la radio (lo fa Tiziano) ed eventualmente aggiungere voci
 - [x] Programma Windows (Tauri 2) con vassoio, avvio automatico, installatore personalizzato e aggiornamento firmato (chiave in `%USERPROFILE%\.aurora-signing`: **copiarla in un posto sicuro**)
 - [ ] Provare l'installatore sul PC vero (provato in una cartella a parte) e un aggiornamento vero da una versione alla successiva: serve pubblicare i tre file in una release (`gh release upload`, vedi `docs/installer-windows.md`); per aggiornarsi dal repository privato serve il token in Impostazioni → Aggiornamenti
