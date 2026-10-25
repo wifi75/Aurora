@@ -48,8 +48,10 @@ function doc(values: Record<string, string> = {}): EngineSettings {
   items.MyCall = { state: 'live', apply: 'restart' };
   items.MyGrid = { state: 'live', apply: 'restart' };
   items.MonitorOFF = { state: 'live', apply: 'restart' };
+  items.Region = { state: 'live', apply: 'now' };
+  items.Type2MsgGen = { state: 'live', apply: 'now', note: 'jt_only' };
   const base: Record<string, string> = {
-    MyCall: 'IU3ABC', MyGrid: 'IO91wm', MonitorOFF: 'false',
+    MyCall: 'IU3ABC', MyGrid: 'IO91wm', MonitorOFF: 'false', Region: 'ALL', Type2MsgGen: 'type_2_msg_3_full',
     SeqAnswerCQCount: 'false', SeqAnswerCQCounterValue: '2', SeqAnswerInCallCount: 'false', SeqAnswerInCallCounterValue: '3',
     SeqSentRReportCount: 'true', SeqSentRReportCounterValue: '5', SeqSentRR7373Count: 'true', SeqSentRR7373CounterValue: '5',
     SeqHaltTxReplyOther: 'true', StrictDirectionalCQ: 'false', TxWatchdogTimer: '6', TxQSYAllowed: 'true',
@@ -318,11 +320,30 @@ describe('General tab (as in JTDX)', () => {
     render(<NativeGeneral />);
     expect(await screen.findByLabelText(it_('gen2.call'))).toHaveValue('IU3ABC');
     for (const legend of ['gen2.station', 'gen2.logFilter', 'gen2.screen', 'gen2.operation'] as const) expect(screen.getByText(it_(legend))).toBeInTheDocument();
-    for (const label of ['gen2.region', 'gen2.type2', 'gen2.decode52', 'gen2.lastFreq', 'gen2.cwId', 'gen2.tune', 'gen2.cwInt'] as const) {
+    for (const label of ['gen2.decode52', 'gen2.lastFreq', 'gen2.cwId', 'gen2.tune', 'gen2.cwInt'] as const) {
       expect(screen.getByLabelText(it_(label))).toBeDisabled();
     }
     expect(screen.getAllByText(it_('ens.r.cw_id')).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(it_('gen2.watchdog'))).toHaveValue(6);
+  });
+
+  it('the IARU region and the type 2 message generation are real choices, saved with their JTDX names', async () => {
+    vi.mocked(api.putEngineSettings).mockResolvedValue(doc());
+    render(<NativeGeneral />);
+    const region = await screen.findByLabelText(it_('gen2.region'));
+    const type2 = screen.getByLabelText(it_('gen2.type2'));
+    expect(region).toBeEnabled();
+    expect(type2).toBeEnabled();
+    expect(region).toHaveValue('ALL');
+    expect(type2).toHaveValue('type_2_msg_3_full');
+    expect([...(region as HTMLSelectElement).options].map((o) => o.value)).toEqual(['ALL', 'R1', 'R2', 'R3']);
+    expect([...(type2 as HTMLSelectElement).options].map((o) => o.value)).toEqual(['type_2_msg_1_full', 'type_2_msg_3_full', 'type_2_msg_5_only']);
+    // in FT8 e FT4 la seconda non cambia niente: la pagina lo dice sotto la voce
+    expect(screen.getByText(it_('ens.n.jt_only'))).toBeInTheDocument();
+    fireEvent.change(region, { target: { value: 'R1' } });
+    fireEvent.change(type2, { target: { value: 'type_2_msg_5_only' } });
+    fireEvent.click(screen.getByRole('button', { name: it_('ens.apply') }));
+    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ Region: 'R1', Type2MsgGen: 'type_2_msg_5_only' }));
   });
 
   it('the grid filter needs the callsign filter; the options are sent with Apply', async () => {

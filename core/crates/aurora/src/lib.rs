@@ -614,7 +614,8 @@ fn unix_secs() -> u64 {
 fn load_frequencies(path: &Path) -> FrequencyTable {
     let mut table = FrequencyTable::default();
     if let Ok(text) = std::fs::read_to_string(path) {
-        let loaded = serde_json::from_str::<Vec<rig_control::table::Entry>>(&text).map_err(|e| e.to_string()).and_then(|entries| table.set(entries).map_err(String::from));
+        // una tabella salvata prima delle regioni (una riga per banda e modo, quelle di allora) passa alla tabella di JTDX; una modificata dall'utente resta com'e'
+        let loaded = serde_json::from_str::<Vec<rig_control::table::Entry>>(&text).map_err(|e| e.to_string()).and_then(|entries| table.set(FrequencyTable::upgraded(entries)).map_err(String::from));
         if loaded.is_err() {
             tracing::warn!("frequenze non valide in {}: uso quelle predefinite", path.display());
         }
@@ -753,7 +754,7 @@ fn spawn_scheduler(state: AppState, rig: Arc<dyn Rig>) {
             }
             let found = {
                 let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
-                table.frequency(&band, &state.current_mode())
+                table.frequency_in(state.frequency_region(), &band, &state.current_mode())
             };
             if let Some(hz) = found {
                 let rig = Arc::clone(&rig);

@@ -16,6 +16,7 @@ import { browserStorage } from '../lib/theme';
 import { LanguageSelect } from '../components/LanguageSelect';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useStation } from '../state/station';
+import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help } from './common';
@@ -79,6 +80,19 @@ function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'showTx' | 
   const prefs = usePrefs((s) => s.prefs);
   return <Check label={label} checked={prefs[k]} onChange={(v) => usePrefs.getState().set({ [k]: v })} />;
 }
+
+/** Le scelte della regione IARU (i nomi di JTDX) e dei messaggi per i nominativi composti di tipo 2. */
+const REGION_OPTIONS: SettingRow['options'] = [
+  { value: 'ALL', label: 'gen2.regionAll' },
+  { value: 'R1', label: 'gen2.region1' },
+  { value: 'R2', label: 'gen2.region2' },
+  { value: 'R3', label: 'gen2.region3' },
+];
+const TYPE2_OPTIONS: SettingRow['options'] = [
+  { value: 'type_2_msg_1_full', label: 'gen2.type2Tx1' },
+  { value: 'type_2_msg_3_full', label: 'gen2.type2Full' },
+  { value: 'type_2_msg_5_only', label: 'gen2.type2Tx5' },
+];
 
 function useDoc() {
   const settings = useSettings();
@@ -265,8 +279,8 @@ export function NativeGeneral() {
     );
   }
   const doc = settings.data;
-  const field = (key: string, kind: 'bool' | 'text' | 'num', label: Key, extra: { min?: number; max?: number; locked?: boolean } = {}) => (
-    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
+  const field = (key: string, kind: 'bool' | 'text' | 'num' | 'choice', label: Key, extra: { min?: number; max?: number; locked?: boolean; options?: SettingRow['options'] } = {}) => (
+    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, options: extra.options }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
   );
   return (
     <Page>
@@ -297,6 +311,13 @@ export function NativeGeneral() {
         </Cells>
       </Group>
 
+      <Group title={t('gen2.iaru')}>
+        <Cells min={18}>
+          {field('Region', 'choice', 'gen2.region', { options: REGION_OPTIONS })}
+          {field('Type2MsgGen', 'choice', 'gen2.type2', { options: TYPE2_OPTIONS })}
+        </Cells>
+      </Group>
+
       <Group title={t('gen2.screen')} span={2} rows={2}>
         <Cells min={15}>
           <PrefCheck k="insertBlank" label={t('gen2.blank')} />
@@ -320,9 +341,7 @@ export function NativeGeneral() {
         <RadioDisplayPicker />
       </Group>
 
-      <Unavailable count={13}>
-        <OffRow label={t('gen2.region')} reason="ens.r.iaru_region" kind="select" suffix={t('gen2.regionAll')} />
-        <OffRow label={t('gen2.type2')} reason="ens.r.type2_msgs" kind="select" suffix={t('gen2.type2Full')} />
+      <Unavailable count={11}>
         <OffRow label={t('gen2.scroll')} reason="ens.r.screen_off" />
         <OffRow label={t('gen2.hidePartial')} reason="ens.r.screen_off" />
         <OffRow label={t('gen2.prefix')} reason="ens.r.screen_off" />
@@ -335,6 +354,9 @@ export function NativeGeneral() {
         <OffRow label={t('gen2.cwInt')} reason="ens.r.cw_id" kind="number" />
         <OffRow label={t('gen2.tune')} reason="ens.r.tune_timer" kind="number" />
       </Unavailable>
+      <Notes>
+        <Help>{t('gen2.iaruHelp')}</Help>
+      </Notes>
       <ApplyBar draft={draft} doc={doc} />
     </Page>
   );

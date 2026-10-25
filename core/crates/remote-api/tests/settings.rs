@@ -128,3 +128,20 @@ async fn an_invalid_schedule_is_refused() {
     assert_eq!(body_json(resp).await["error"], "bad_schedule");
     assert_eq!(saved.load(Ordering::SeqCst), 0);
 }
+
+#[tokio::test]
+async fn the_default_table_has_the_jtdx_rows_with_their_regions_and_a_saved_table_keeps_them() {
+    let s = state_with(None, Arc::default());
+    status_is(&call(&router(&s), req(Method::GET, "/api/v1/frequencies/defaults")).await, StatusCode::UNAUTHORIZED);
+    let list = body_json(send(&s, Method::GET, "/api/v1/frequencies/defaults", None).await).await;
+    let rows = list.as_array().unwrap();
+    assert_eq!(rows.len(), 41, "le righe FT8 e FT4 di JTDX delle bande che Aurora conosce");
+    assert!(rows.iter().any(|e| e["band"] == "160m" && e["hz"] == 1_810_000 && e["region"] == "R1" && e["preferred"] == true));
+    assert!(rows.iter().any(|e| e["band"] == "80m" && e["mode"] == "FT4" && e["hz"] == 3_568_000 && e["region"] == "R3"));
+    assert!(rows.iter().any(|e| e["hz"] == 14_090_000 && e["preferred"] == false), "le alternative non sono predefinite");
+    // la tabella intera si rimanda cosi' com'e' e si rilegge uguale
+    let put = serde_json::to_string(&list).unwrap();
+    status_is(&send(&s, Method::PUT, "/api/v1/frequencies", Some(&put)).await, StatusCode::OK);
+    let back = body_json(send(&s, Method::GET, "/api/v1/frequencies", None).await).await;
+    assert_eq!(back, list);
+}

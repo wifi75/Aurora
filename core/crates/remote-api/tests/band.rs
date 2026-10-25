@@ -256,3 +256,39 @@ async fn the_frequency_is_never_changed_while_transmitting_and_failures_are_repo
     let (s, _) = state_with_rig(true);
     status_is(&frequency(&s, r#"{"hz":14074000}"#).await, StatusCode::BAD_GATEWAY);
 }
+
+fn with_region(s: AppState, name: &str, region: &str) -> AppState {
+    use remote_api::engine_settings::EngineSettingsStore;
+    let dir = std::env::temp_dir().join(format!("aurora-band-region-{name}-{}", std::process::id()));
+    std::fs::remove_dir_all(&dir).ok();
+    let store = Arc::new(EngineSettingsStore::open(&dir.join("settings-motore.json"), remote_api::engine_settings::defaults));
+    store.update(&[("Region".to_string(), region.to_string())].into_iter().collect()).unwrap();
+    s.with_engine_settings(store)
+}
+
+#[tokio::test]
+async fn the_iaru_region_chooses_the_dial_frequency_of_a_band() {
+    // regione 2: 160 m resta su 1,840; regione 1: la riga di 1,810 passa avanti (JTDX: tabella iniziale per regione)
+    let (s, rig) = state_with_rig(false);
+    let s = with_region(s, "r2", "R2");
+    status_is(&band(&s, r#"{"band":"160m"}"#).await, StatusCode::OK);
+    let (s, rig1) = state_with_rig(false);
+    let s = with_region(s, "r1", "R1");
+    status_is(&band(&s, r#"{"band":"160m"}"#).await, StatusCode::OK);
+    assert_eq!(*rig.calls.lock().unwrap(), vec![1_840_000]);
+    assert_eq!(*rig1.calls.lock().unwrap(), vec![1_810_000]);
+    // regione 3: 80 m in FT4 sulla riga della regione 3
+    let (s, rig3) = state_with_rig(false);
+    let s = with_region(s, "r3", "R3");
+    status_is(&band(&s, r#"{"band":"80m","mode":"FT4"}"#).await, StatusCode::OK);
+    assert_eq!(*rig3.calls.lock().unwrap(), vec![3_568_000]);
+}
+
+#[tokio::test]
+async fn changing_mode_stays_on_a_row_of_the_new_mode_like_jtdx_switch_mode() {
+    // dial su 14,090 (riga alternativa di FT8): l'FT8 non cambia frequenza, l'FT4 va sull'unica riga della banda
+    let (s, rig) = state_with_rig(false);
+    publish_status(&s, 14_090_000, "FT4").await;
+    status_is(&mode(&s, r#"{"mode":"FT8"}"#).await, StatusCode::OK);
+    assert_eq!(*rig.calls.lock().unwrap(), vec![14_090_000]);
+}

@@ -46,7 +46,8 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | Rotta | Descrizione |
 |---|---|
 | `GET /station-info` | Come è avviata la stazione (sola lettura) |
-| `GET/PUT /frequencies` | Frequenze di lavoro `[ {band, mode, hz} ]`; `400 bad_frequencies` |
+| `GET/PUT /frequencies` | Frequenze di lavoro `[ {band, mode, hz, region, preferred} ]` (`region`: `ALL`, `R1`, `R2`, `R3`; senza i due campi: `ALL` e `true`); piu' righe per banda e modo, ma non la stessa frequenza due volte; `400 bad_frequencies` |
+| `GET /frequencies/defaults` | La tabella iniziale di JTDX (FT8 e FT4, con le regioni) |
 | `GET/PUT /schedule` | Programmazione delle bande `{enabled, entries:[{hour, minute, band}]}`, al massimo 5 righe; `400 bad_schedule` |
 | `GET/PUT /automation` | Stato, regole, limiti e registro; dal telefono solo prova a vuoto o spegnimento. `403 local_only`, `403 tx_disabled`, `400 bad_rules`/`notice_required`. Le regole hanno anche `reply_to_wanted` (predefinito `false`): risponde ai CQ della lista dei desiderati, con le stesse salvaguardie; e `prefer` (`rarity` predefinito o `snr`): con piu' CQ interessanti nello stesso ciclo si risponde a uno solo, la novita' piu' rara o il segnale piu' forte. Prima di rispondere a un CQ l'automazione scarta i falsi decode: messaggio segnato «?» dal motore, nominativo senza la forma di un nominativo, segnale sotto -23 dB di una stazione mai sentita nella sessione |
 | `GET /stats` | Premi (DXCC, zone CQ e ITU, griglie, prefissi) e paesi mancanti, dal log ADIF |
