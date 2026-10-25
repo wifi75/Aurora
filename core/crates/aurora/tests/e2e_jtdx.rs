@@ -68,7 +68,7 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     let c = Config::from_lookup(none).unwrap();
     assert_eq!(c.udp_listen, "127.0.0.1:2334".parse::<SocketAddr>().unwrap());
     assert!(c.udp_forward.is_empty());
-    assert!(!c.allow_tx, "la trasmissione e' chiusa per impostazione predefinita");
+    assert!(c.allow_tx, "la trasmissione e' sempre abilitata");
     assert!(c.audio_device.is_none());
     assert!(!c.replay_on_connect, "il Replay all'avvio e' spento: aprendo Aurora non si rivedono le stazioni di prima");
     assert!(c.cty_path.is_none() && c.worked_adif.is_none());
@@ -83,7 +83,6 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
         "AURORA_ENGINE" => Some("jtdx".to_string()),
         "AURORA_UDP_LISTEN" => Some("127.0.0.1:2340".to_string()),
         "AURORA_UDP_FORWARD" => Some("127.0.0.1:2333, 127.0.0.1:2335".to_string()),
-        "AURORA_ALLOW_TX" => Some("1".to_string()),
         "AURORA_AUDIO_DEVICE" => Some("USB Audio".to_string()),
         "AURORA_REPLAY_ON_CONNECT" => Some("1".to_string()),
         "AURORA_CTY_PATH" => Some("dati/cty.dat".to_string()),
@@ -120,15 +119,15 @@ fn config_reads_jtdx_variables_and_rejects_bad_ones() {
     let bad = |name: &'static str, value: &'static str| move |k: &str| (k == name).then(|| value.to_string());
     assert!(Config::from_lookup(bad("AURORA_UDP_LISTEN", "non-un-indirizzo")).is_err());
     assert!(Config::from_lookup(bad("AURORA_UDP_FORWARD", "127.0.0.1:2333,xyz")).is_err());
-    assert!(Config::from_lookup(bad("AURORA_ALLOW_TX", "2")).is_err());
-    assert!(Config::from_lookup(bad("AURORA_ALLOW_TX", "forse")).is_err());
     assert!(Config::from_lookup(bad("AURORA_REPLAY_ON_CONNECT", "boh")).is_err());
     assert!(Config::from_lookup(bad("AURORA_AUTO_MAX_CYCLES", "0")).is_err(), "un tetto a zero bloccherebbe tutto: si rifiuta");
     assert!(Config::from_lookup(bad("AURORA_AUTO_MAX_PER_DAY", "molte")).is_err());
     assert!(Config::from_lookup(bad("AURORA_AUTO_DEAD_MAN_SECS", "-5")).is_err());
     assert!(Config::from_lookup(bad("AURORA_AUTO_UNATTENDED", "si")).is_err());
     assert!(Config::from_lookup(bad("AURORA_EXPORT_UDP", "127.0.0.1:2239,xyz")).is_err());
-    assert!(Config::from_lookup(bad("AURORA_RIG", "hamlib")).is_err());
+    assert!(Config::from_lookup(bad("AURORA_RIG", "tci")).is_err());
+    let hamlib = Config::from_lookup(bad("AURORA_RIG", "hamlib")).unwrap();
+    assert!(hamlib.rig_hamlib && !hamlib.rig_omnirig, "AURORA_RIG=hamlib sceglie Hamlib e non OmniRig");
     assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "10")).is_err(), "meno di un minuto non e' ammesso");
     assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "7200")).is_err(), "piu' di un'ora non e' ammesso");
     assert!(Config::from_lookup(bad("AURORA_PAIR_TTL_SECS", "tanto")).is_err());
@@ -511,4 +510,35 @@ async fn e2e_command_from_forward_target_reaches_jtdx() {
     target.send_to(&command, hub_side).await.unwrap();
     let got = r.received(500).await;
     assert!(got.contains(&command), "il comando di GridTracker2 deve arrivare a JTDX");
+}
+
+#[tokio::test]
+async fn e2e_the_cat_service_is_always_there_and_hamlib_is_chosen_by_aurora_rig() {
+    // senza scelta: il servizio c'e' (la scheda Radio funziona) ma non collega nulla e non c'e' radio per i comandi dell'avvio
+    let r = rig(false, vec![]).await;
+    let cat = r.server.state.cat.clone().expect("servizio CAT");
+    assert_eq!(cat.status().state, rig_control::hamlib_rig::LinkState::Disconnected);
+    assert!(r.server.state.rig.is_none());
+    drop(r);
+
+    // AURORA_RIG=hamlib: la radio per i comandi e' il CAT; senza modello scelto il collegamento non parte ma Aurora si avvia
+    let (tx, rx) = oneshot::channel::<()>();
+    let config = Config {
+        bind: "127.0.0.1:0".parse().unwrap(),
+        data_dir: temp_dir("hamlib"),
+        engine: EngineKind::Jtdx,
+        udp_listen: "127.0.0.1:0".parse().unwrap(),
+        rig_hamlib: true,
+        ..Config::defaults()
+    };
+    let server = run(config, async move {
+        let _ = rx.await;
+    })
+    .await
+    .unwrap();
+    assert!(server.state.rig.is_some());
+    let cat = server.state.cat.clone().expect("servizio CAT");
+    assert_eq!(cat.backend(), rig_control::cat_config::Backend::Hamlib);
+    assert_eq!(cat.status().state, rig_control::hamlib_rig::LinkState::Disconnected);
+    drop(tx);
 }

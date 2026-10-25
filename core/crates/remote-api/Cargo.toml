@@ -33,3 +33,4 @@ tracing = { workspace = true }
 tower = { workspace = true }
 tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }
+rig-control = { path = "../rig-control", features = ["testing"] }

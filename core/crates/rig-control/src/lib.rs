@@ -2,8 +2,14 @@
 //! quindi Aurora puo' cambiare frequenza senza togliere la radio a JTDX.
 
 pub mod bands;
+pub mod cat;
+pub mod cat_config;
 pub mod controls;
+pub mod detect;
+#[cfg(any(test, feature = "testing"))]
+pub mod fake_rigctld;
 pub mod hamlib;
+pub mod hamlib_rig;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;

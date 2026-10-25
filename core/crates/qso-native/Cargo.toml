@@ -1,0 +1,10 @@
+[package]
+name = "qso-native"
+description = "Sequenza automatica dei QSO nativa di Aurora: i sei messaggi Tx1-Tx6, AutoSeq, ripetizioni, chiusura e registrazione (logica pura, senza audio ne' orologio)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]

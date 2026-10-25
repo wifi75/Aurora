@@ -12,6 +12,8 @@ aurora-core = { path = "../aurora-core" }
 audio-spectrum = { path = "../audio-spectrum" }
 ft8 = { path = "../ft8" }
 rig-control = { path = "../rig-control" }
+qso-native = { path = "../qso-native" }
+tx-native = { path = "../tx-native" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

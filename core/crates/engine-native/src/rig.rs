@@ -4,15 +4,17 @@
 
 use std::sync::{
     atomic::{AtomicBool, AtomicU32, Ordering},
-    Arc, Mutex,
+    mpsc, Arc, Mutex,
 };
+
+use crate::tx::{OptionChange, TxCommand, TxView};
 
 use rig_control::{
     controls::{self, Kind, Reading},
     Rig, RigError,
 };
 
-const NOT_YET_TX: &str = "la trasmissione del motore proprio non e' ancora pronta";
+const NO_TX: &str = "la trasmissione non e' disponibile: manca l'ingresso audio o il motore non e' partito";
 
 /// Lo stato dei pulsanti: il decoder lo legge a ogni periodo.
 pub struct NativeControls {
@@ -24,6 +26,11 @@ pub struct NativeControls {
     pub attenuation: AtomicU32,
     /// Gli altri interruttori, per nome.
     switches: Mutex<Vec<(String, bool)>>,
+    /// Cio' che la pagina mostra della trasmissione (i sei messaggi, il DX, se la sequenza e' accesa): lo scrive il motore.
+    pub tx_view: Mutex<TxView>,
+    /// Stiamo trasmettendo (lo scrive la catena di trasmissione).
+    pub transmitting: AtomicBool,
+    sender: Mutex<Option<mpsc::Sender<TxCommand>>>,
 }
 
 impl Default for NativeControls {
@@ -33,13 +40,17 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), attenuation: AtomicU32::new(0), switches: Mutex::new(switches) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), attenuation: AtomicU32::new(0), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None) }
     }
 }
 
 impl NativeControls {
     pub fn is_monitoring(&self) -> bool {
         self.monitor.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn switch_on(&self, id: &str) -> bool {
+        self.switches.lock().map(|all| all.iter().any(|(name, on)| name == id && *on)).unwrap_or(false)
     }
 
     fn set_switch(&self, id: &str, on: bool) {
@@ -52,10 +63,24 @@ impl NativeControls {
         }
     }
 
+    /// Chi riceve i comandi di trasmissione (il motore, quando parte).
+    pub fn set_sender(&self, sender: mpsc::Sender<TxCommand>) {
+        if let Ok(mut slot) = self.sender.lock() {
+            *slot = Some(sender);
+        }
+    }
+
+    /// Manda un comando di trasmissione al motore.
+    pub fn send(&self, command: TxCommand) -> Result<(), RigError> {
+        let sender = self.sender.lock().map_err(|_| RigError(NO_TX.into()))?;
+        sender.as_ref().ok_or_else(|| RigError(NO_TX.into()))?.send(command).map_err(|_| RigError(NO_TX.into()))
+    }
+
     fn snapshot(&self) -> Vec<(String, bool)> {
+        let enabled = self.tx_view.lock().map(|v| v.enabled).unwrap_or(false);
         let mut out = vec![("monitor".to_string(), self.is_monitoring())];
         if let Ok(all) = self.switches.lock() {
-            out.extend(all.iter().cloned());
+            out.extend(all.iter().map(|(id, on)| (id.clone(), if matches!(id.as_str(), "enable_tx" | "auto_tx") { enabled } else { *on })));
         }
         out
     }
@@ -105,8 +130,8 @@ impl Rig for NativeRig {
 
     fn set_mode(&self, mode: &str) -> Result<(), RigError> {
         match mode {
-            "FT8" => Ok(()),
-            "FT4" => Err(RigError("FT4 non e' ancora collegato all'ingresso audio del motore proprio".into())),
+            // la radio va sulla frequenza del modo scelto (lo fa chi chiama); FT4 e JT per ora non hanno ancora il decoder collegato
+            "FT8" | "FT4" | "JT" | "JT65" | "JT9" => Ok(()),
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -116,27 +141,55 @@ impl Rig for NativeRig {
     }
 
     fn controls_and_tx(&self) -> Result<Reading, RigError> {
-        Ok((self.controls.snapshot(), None))
+        let view = self.controls.tx_view.lock().map(|v| v.clone()).unwrap_or_default();
+        let even = self.controls.switch_on("tx_period");
+        let tx = controls::TxState {
+            messages: view.texts.to_vec(),
+            selected: (view.selected > 0).then_some(view.selected),
+            minute_label: if even { "TX 00/30".to_string() } else { "TX 15/45".to_string() },
+            autoseq_label: if self.controls.switch_on("autoseq") { "AutoSeq 3".to_string() } else { "AutoSeq".to_string() },
+        };
+        Ok((self.controls.snapshot(), Some(tx)))
     }
 
-    fn select_tx_message(&self, _n: u8) -> Result<(), RigError> {
-        Err(RigError(NOT_YET_TX.into()))
+    fn select_tx_message(&self, n: u8) -> Result<(), RigError> {
+        self.controls.send(TxCommand::SelectTx(n))
     }
 
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         let control = controls::find(id).ok_or_else(|| RigError(format!("comando sconosciuto: {id}")))?;
         match (control.kind, on) {
             (Kind::Toggle, Some(value)) => {
-                if control.tx && value {
-                    return Err(RigError(NOT_YET_TX.into()));
-                }
                 self.controls.set_switch(id, value);
-                Ok(())
+                let command = match id {
+                    "enable_tx" | "auto_tx" => Some(TxCommand::Enable(value)),
+                    "autoseq" => Some(TxCommand::Option(OptionChange::AutoSeq(value))),
+                    "skip_tx1" => Some(TxCommand::Option(OptionChange::SkipTx1(value))),
+                    "bypass" => Some(TxCommand::Option(OptionChange::Bypass(value))),
+                    "single_qso" => Some(TxCommand::Option(OptionChange::SingleQso(value))),
+                    "answer_b4" => Some(TxCommand::Option(OptionChange::AnswerWorkedBefore(value))),
+                    "rrr" => Some(TxCommand::Option(OptionChange::UseRrr(value))),
+                    "tx_period" => Some(TxCommand::Option(OptionChange::TxEven(value))),
+                    _ => None,
+                };
+                match command {
+                    // abilitare la trasmissione senza motore e' un errore chiaro; le altre opzioni si ricordano comunque
+                    Some(c @ TxCommand::Enable(_)) => self.controls.send(c),
+                    Some(c) => {
+                        let _ = self.controls.send(c);
+                        Ok(())
+                    }
+                    None => Ok(()),
+                }
             }
             (Kind::Press, None) => {
                 // «Ferma» ferma l'ascolto; Decodifica, Cancella e gli altri per ora non hanno nulla da fare
-                if id == "stop_rx" {
-                    self.controls.monitor.store(false, Ordering::Relaxed);
+                match id {
+                    "stop_rx" => self.controls.monitor.store(false, Ordering::Relaxed),
+                    "clear_dx" => {
+                        let _ = self.controls.send(TxCommand::ClearDx);
+                    }
+                    _ => {}
                 }
                 Ok(())
             }
@@ -179,14 +232,22 @@ mod tests {
     }
 
     #[test]
-    fn transmission_controls_are_refused_for_now_with_a_clear_reason() {
-        let (rig, _) = rig();
-        for id in ["enable_tx", "auto_tx"] {
-            let err = rig.set_control(id, Some(true)).expect_err("non ancora");
-            assert!(err.0.contains("trasmissione"), "{err}");
-            rig.set_control(id, Some(false)).expect("spegnere si puo'");
-        }
+    fn transmission_controls_say_so_when_there_is_no_engine_and_pass_commands_when_there_is() {
+        let (rig, controls) = rig();
+        let err = rig.set_control("enable_tx", Some(true)).expect_err("senza motore");
+        assert!(err.0.contains("trasmissione"), "{err}");
         assert!(rig.select_tx_message(2).is_err());
+        let (tx, rx) = mpsc::channel();
+        controls.set_sender(tx);
+        rig.set_control("enable_tx", Some(true)).expect("con il motore");
+        rig.set_control("skip_tx1", Some(true)).expect("opzione");
+        rig.select_tx_message(3).expect("Tx3");
+        rig.set_control("clear_dx", None).expect("Canc DX");
+        let got: Vec<TxCommand> = rx.try_iter().collect();
+        assert_eq!(
+            got,
+            vec![TxCommand::Enable(true), TxCommand::Option(OptionChange::SkipTx1(true)), TxCommand::SelectTx(3), TxCommand::ClearDx]
+        );
     }
 
     #[test]
@@ -207,7 +268,8 @@ mod tests {
         rig.set_output_attenuation(120).expect("pwr");
         assert_eq!(rig.output_attenuation().expect("pwr"), 120);
         assert!(rig.set_mode("FT8").is_ok());
-        assert!(rig.set_mode("FT4").is_err());
+        assert!(rig.set_mode("FT4").is_ok());
+        assert!(rig.set_mode("SSB").is_err());
     }
 
     #[test]

@@ -7,6 +7,7 @@ mod parity;
 mod resample;
 mod rig;
 mod slots;
+mod tx;
 mod wav;
 
 use std::{
@@ -24,6 +25,7 @@ use tokio::sync::broadcast;
 
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
 pub use rig::{NativeControls, NativeRig};
+pub use tx::{OptionChange, TxCommand, TxDriver, TxPort, TxView};
 
 /// Campioni al secondo del decoder.
 pub const RATE: usize = ft8::SAMPLE_RATE;
@@ -54,6 +56,8 @@ pub struct LiveConfig {
     /// La banda («20m») per una frequenza della radio, per le etichette di novita'.
     pub band_of: Arc<dyn Fn(u64) -> Option<String> + Send + Sync>,
     pub annotate: Annotator,
+    /// La catena di trasmissione (audio in uscita e PTT); senza, il motore riceve soltanto.
+    pub transmitter: Option<Arc<dyn TxPort>>,
 }
 
 /// Il motore proprio in funzione: il confronto con JTDX e le ultime misure.
@@ -125,9 +129,16 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             let mut tick = tokio::time::interval(std::time::Duration::from_secs(1));
             loop {
                 tick.tick().await;
+                let view = tx::view_of(&live.controls);
+                let selected_text = view.texts.get(usize::from(view.selected).saturating_sub(1)).filter(|t| !t.is_empty() && view.selected > 0).cloned();
                 let status = StationStatus {
                     dial_hz: live.dial_hz.load(Ordering::Relaxed),
                     mode: "FT8".to_string(),
+                    tx_enabled: view.enabled,
+                    transmitting: live.controls.transmitting.load(Ordering::Relaxed),
+                    dx_call: view.dx.clone(),
+                    dx_grid: view.dx_grid.clone(),
+                    tx_message: selected_text,
                     decoding: live.controls.is_monitoring(),
                     de_call: live.de_call.clone(),
                     de_grid: live.de_grid.clone(),
@@ -155,7 +166,33 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let mut assembler = slots::SlotAssembler::default();
         let mut hashes = CallHashes::default();
         let options = Options::default();
-        while let Ok(chunk) = tap.recv() {
+        // la trasmissione: solo se c'e' la catena audio/PTT
+        let (command_tx, command_rx) = mpsc::channel::<TxCommand>();
+        let mut driver = live.as_ref().and_then(|l| {
+            let port = l.transmitter.clone()?;
+            l.controls.set_sender(command_tx.clone());
+            match TxDriver::new(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls)) {
+                Ok(d) => Some(d),
+                Err(e) => {
+                    tracing::error!("trasmissione non attiva: nominativo o locatore non validi ({e})");
+                    None
+                }
+            }
+        });
+        loop {
+            // i comandi (doppio clic, CQ, STOP, opzioni) si servono subito, anche senza audio in arrivo
+            while let Ok(command) = command_rx.try_recv() {
+                if let Some(d) = driver.as_mut() {
+                    for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
+                        tracing::info!("trasmissione: {line}");
+                    }
+                }
+            }
+            let chunk = match tap.recv_timeout(std::time::Duration::from_millis(100)) {
+                Ok(chunk) => chunk,
+                Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            };
             let rs = match &mut resampler {
                 Some((rate, rs)) if *rate == chunk.rate => rs,
                 slot => {
@@ -168,6 +205,17 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
                 // con Monitora spento il periodo passa senza essere decodificato
                 if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
+                    if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
+                        let dial = l.dial_hz.load(Ordering::Relaxed);
+                        let band = (l.band_of)(dial).unwrap_or_default();
+                        let (qsos, log) = d.after_slot(slot.start_unix_ms, &[], now_unix_ms() as f64 / 1000.0, dial, &band);
+                        for line in log {
+                            tracing::info!("trasmissione: {line}");
+                        }
+                        for qso in qsos {
+                            let _ = message_events.send(Event::QsoLogged(qso));
+                        }
+                    }
                     continue;
                 }
                 if record && let Err(e) = wav::save_slot(&data_dir.join("recordings"), slot.start_unix_ms, &slot.samples) {
@@ -187,8 +235,12 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     let time_ms = (slot.start_unix_ms % DAY_MS) as u32;
                     for d in &decoded {
                         let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
+                        let id = next_id.fetch_add(1, Ordering::Relaxed);
+                        if let Some(driver) = driver.as_mut() {
+                            driver.remember(id, &d.text, d.snr_db, d.freq_hz.round().max(0.0) as u32);
+                        }
                         let _ = message_events.send(Event::Decode(DecodedMessage {
-                            id: next_id.fetch_add(1, Ordering::Relaxed),
+                            id,
                             time_ms,
                             snr: d.snr_db,
                             delta_time: d.dt_s,
@@ -198,6 +250,18 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                             country,
                             continent,
                         }));
+                    }
+                }
+                if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
+                    let dial = l.dial_hz.load(Ordering::Relaxed);
+                    let band = (l.band_of)(dial).unwrap_or_default();
+                    let list: Vec<(String, i32, u32)> = decoded.iter().map(|x| (x.text.clone(), x.snr_db, x.freq_hz.round().max(0.0) as u32)).collect();
+                    let (qsos, log) = d.after_slot(slot.start_unix_ms, &list, now_unix_ms() as f64 / 1000.0, dial, &band);
+                    for line in log {
+                        tracing::info!("trasmissione: {line}");
+                    }
+                    for qso in qsos {
+                        let _ = message_events.send(Event::QsoLogged(qso));
                     }
                 }
                 parity.add_native(slot.start_unix_ms, decoded.iter().map(|d| (d.text.clone(), d.freq_hz.round() as i64)).collect());
@@ -245,6 +309,7 @@ mod tests {
             own_continent: Some("EU".into()),
             dial_hz: Arc::new(AtomicU64::new(14_074_000)),
             controls: Arc::new(NativeControls::default()),
+            transmitter: None,
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
