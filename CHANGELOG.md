@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Notifiche, «Colori e anteprima» compatta**: ogni voce occupa un solo rigo (nome, suono, prova, anteprima e colore).
 
 ## 0.11.20 - 2026-10-25
 - **Barra in alto fissa**: i pulsanti accanto al logo restano fermi quando si scorre la pagina (un vecchio stile li rimetteva in flusso).

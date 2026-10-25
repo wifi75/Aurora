@@ -839,3 +839,53 @@
   text-align: left;
   font-size: var(--text-xs);
 }
+
+/* Colori e anteprima (Notifiche): ogni voce su un solo rigo — nome, suono, prova, anteprima e colore, senza andare a capo */
+.jt-colors > .sx-field {
+  min-height: 1.8rem;
+  padding-block: 0.05rem;
+  gap: 0.3rem;
+}
+
+.jt-colors > .sx-field--plain .sx-control {
+  flex-wrap: nowrap;
+  max-width: none;
+  gap: 0.25rem;
+}
+
+.jt-colors .sx-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+}
+
+.jt-colors .snd-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.jt-colors .snd-select {
+  width: 6.2rem;
+  min-height: 1.4rem;
+  font-size: 0.7rem;
+}
+
+.jt-colors .snd-pick button {
+  min-height: 1.4rem;
+  padding: 0 0.3rem;
+}
+
+.jt-colors .jt-sample {
+  min-width: 4.2rem;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.72rem;
+}
+
+.jt-colors input[type='color'] {
+  width: 1.8rem;
+  height: 1.4rem;
+  padding: 0;
+}
