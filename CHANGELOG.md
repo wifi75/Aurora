@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Barra in alto fissa**: i pulsanti accanto al logo restano fermi quando si scorre la pagina (un vecchio stile li rimetteva in flusso).
 
 ## 0.11.19 - 2026-10-25
 - **Scheda Audio sul layout comune** a riquadri (Ingresso, Uscita, File audio, Applica).

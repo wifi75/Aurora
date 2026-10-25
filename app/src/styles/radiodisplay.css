@@ -240,10 +240,11 @@
   }
 }
 
-/* il menu della lingua si apre sopra il contenuto della pagina */
+/* il menu della lingua si apre sopra il contenuto della pagina; la barra resta ferma (sticky) quando si scorre */
 .app-header {
-  position: relative;
-  z-index: var(--layer-overlay);
+  position: sticky;
+  top: 0;
+  z-index: max(var(--layer-overlay), 1000);
 }
 
 /* Logo: la cascata scorre di quattro righe ogni giro, senza stacchi (il disegno si ripete ogni quattro righe) */
