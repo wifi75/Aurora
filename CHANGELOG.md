@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.4 - 2026-10-25
+- **Nuovo logo**: la cascata con le tracce dei segnali FT8, in tutte le icone di Windows, nella favicon e nell'app per telefono.
+- **Logo animato in alto a destra**: la cascata scorre (si ferma con il movimento ridotto del sistema).
+- **Schermata di avvio**: logo grande, nome, motto nelle sei lingue e versione, con un breve saluto a otto toni (se il sistema permette l'audio); si chiude da sola o con un clic.
+
 ## 0.11.3 - 2026-10-25
 - **Trasmissione del motore proprio**: doppio clic su un messaggio, CQ, messaggio libero, frequenza Tx e STOP TX arrivano al motore di Aurora (sequenza dei sei messaggi con AutoSeq, audio in uscita, PTT sulla linea RTS o DTR di una porta COM, via OmniRig oppure VOX; uscita audio e PTT si leggono da `JTDX.ini` se c'e'). Il livello segue il cursore Pwr. Il QSO a fine sequenza finisce nel log.
 - **Trasmissione sempre abilitata, nessuna opzione**: tolto `AURORA_ALLOW_TX` e il messaggio «Trasmissione chiusa». Restano STOP TX, i tetti e le automazioni spente di base.
