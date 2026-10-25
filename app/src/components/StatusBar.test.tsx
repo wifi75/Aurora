@@ -3,7 +3,6 @@ import { render as plainRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { StationStatus } from '../api/schemas';
-import { useStation } from '../state/station';
 import { StatusBar } from './StatusBar';
 
 /** La barra di stato interroga l'API dell'orologio: serve un QueryClient (le chiamate falliscono e l'indicatore sta nascosto). */
