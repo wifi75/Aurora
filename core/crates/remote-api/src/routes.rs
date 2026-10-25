@@ -285,6 +285,18 @@ fn dispatch(state: &AppState, command: Command) -> Result<Json<Value>, ApiError>
         .map_err(|_| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "engine_unavailable"))
 }
 
+/// Un cambio di banda comandato ferma subito la trasmissione (come lo STOP, senza spegnere l'automazione), senza aspettare che la radio
+/// confermi la nuova frequenza: il motore azzera poi anche la stazione DX appena vede la banda nuova. Nessun effetto se la banda e' la stessa
+/// (per esempio uno spostamento di pochi kHz dentro la banda).
+fn halt_for_band_change(state: &AppState, target_hz: u64) {
+    let current = state.current_status().filter(|s| s.dial_hz > 0).map(|s| s.dial_hz);
+    let target_band = rig_control::bands::amateur_band(target_hz);
+    let same = current.is_some_and(|now| target_band.is_some() && rig_control::bands::amateur_band(now) == target_band);
+    if !same && state.bus.commands().try_send(Command::HaltTx).is_err() {
+        tracing::warn!("cambio di banda: l'arresto della trasmissione non e' stato consegnato al motore");
+    }
+}
+
 /// Fermare la trasmissione e' sempre permesso, da qualunque via.
 #[utoipa::path(post, path = "/api/v1/commands/halt-tx", responses((status = 200, description = "Comando inviato (idempotente)")))]
 async fn halt_tx(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
@@ -390,6 +402,7 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
     if state.current_status().is_some_and(|s| s.transmitting) {
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
+    halt_for_band_change(&state, hz);
     // il comando blocca (PowerShell e COM): fuori dal thread asincrono
     let done = tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await;
     match done {
@@ -420,6 +433,7 @@ async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): 
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
     let hz = body.hz;
+    halt_for_band_change(&state, hz);
     match tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await {
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
         Ok(Err(e)) => {

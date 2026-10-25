@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-25, v0.11.4).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-25, v0.11.5).
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)

@@ -179,6 +179,27 @@ impl Sequencer {
         self.note_state();
     }
 
+    /// Cambio di banda: ferma la trasmissione e le serie di CQ (Abilita Tx spento), libera la stazione DX e svuota i chiamanti in coda
+    /// e i messaggi ricordati della sequenza (come `clearDX` e `QsoHistory::init` di JTDX). Le impostazioni e la lista dei lavorati restano.
+    pub fn band_changed(&mut self) {
+        if let Some(old) = self.dx.take() {
+            self.events.push(Event::Abandoned {
+                call: old.call,
+                reason: AbandonReason::Cleared,
+            });
+        }
+        if self.enabled || self.cq_run.is_some() {
+            self.stop(StopReason::Halt);
+        }
+        self.queue.clear();
+        self.last_tx = None;
+        self.last_text = None;
+        self.watchdog_ref = None;
+        self.first_tx_pending = false;
+        self.ntx = 6;
+        self.note_state();
+    }
+
     /// Cambia il modo (FT8 <-> FT4): i periodi hanno un'altra durata, quindi il QSO in corso, i chiamanti in coda e la trasmissione si
     /// fermano e si riparte da capo. Le impostazioni e la lista dei lavorati restano.
     pub fn set_mode(&mut self, mode: Mode) {
@@ -209,10 +230,11 @@ impl Sequencer {
     /// come `genStdMsgs` di JTDX. Senza DX non c'e' nulla da rigenerare. I testi si compongono sempre dal DX e dal rapporto correnti.
     pub fn regen_messages(&mut self) {
         let skip = self.opts.skip_tx1;
+        // `m_txGenerated = m_txFirst` sta in cima a `genStdMsgs`, prima del controllo sul DX (verificato in `jtdx.exe` a 0x474800)
+        self.tx_generated = self.tx_even;
         if let Some(dx) = self.dx.as_mut() {
             dx.repeats = 0;
             self.ntx = if skip { 2 } else { 1 };
-            self.tx_generated = self.tx_even;
         }
         self.note_state();
     }
@@ -304,6 +326,12 @@ impl Sequencer {
     /// messaggio altrui) Tx1, o Tx2 con «Salta Tx1»; da un messaggio diretto a noi, in base a cio' che
     /// contiene (locatore Tx2, rapporto Tx3, R+rapporto Tx4, RRR/RR73/73 Tx5).
     pub fn reply_to(&mut self, slot: Slot, decode: &Decoded) -> Result<(), SeqError> {
+        self.reply_to_with(slot, decode, true)
+    }
+
+    /// Come `reply_to`, ma con `enable` falso non accende «Abilita Tx»: e' il doppio clic con «AutoTX» spento (`doubleClickOnCall` di JTDX accende
+    /// Enable Tx solo se `m_autoTx`). Il DX e il messaggio di partenza si scelgono comunque; la trasmissione parte quando Enable Tx si accende.
+    pub fn reply_to_with(&mut self, slot: Slot, decode: &Decoded, enable: bool) -> Result<(), SeqError> {
         self.cur_slot = self.cur_slot.max(slot);
         let (call, grid, rcvd, directed, role) = match parse(&decode.text) {
             Message::Cq { call, grid, .. } => (call, grid, None, None, Role::Answering),
@@ -367,7 +395,9 @@ impl Sequencer {
         self.ntx = ntx;
         self.tx_even = !slot.is_even();
         self.tx_generated = self.tx_even;
-        self.enabled = true;
+        if enable {
+            self.enabled = true;
+        }
         self.first_tx_pending = true;
         self.watchdog_ref = None;
         self.note_state();

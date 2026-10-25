@@ -105,6 +105,19 @@ pub fn ptt_from_ini(raw: &str) -> (Option<&'static str>, Option<String>) {
     (method, port)
 }
 
+/// Il secondo server UDP di JTDX (`UDP2Server`, `UDP2ServerPort`) se e' acceso (`EnableUDP2adifBroadcast`): e' dove JTDX manda a Log4OM2 il record ADIF
+/// di ogni QSO registrato. Senza JTDX, con il motore proprio, e' Aurora a mandarlo li'.
+pub fn udp2_from_ini(raw: &str) -> Option<String> {
+    let value = |key: &str| raw.lines().find_map(|l| l.strip_prefix(key).and_then(|r| r.strip_prefix('='))).map(str::trim);
+    if !value("EnableUDP2adifBroadcast").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
+        return None;
+    }
+    let host = value("UDP2Server").filter(|h| !h.is_empty())?;
+    let port: u16 = value("UDP2ServerPort")?.parse().ok().filter(|p| *p > 0)?;
+    // gli indirizzi si scrivono come numeri (127.0.0.1): un nome di macchina non e' un indirizzo di socket
+    host.parse::<std::net::IpAddr>().ok().map(|ip| std::net::SocketAddr::new(ip, port).to_string())
+}
+
 /// Cio' che si ricava da JTDX e dagli altri programmi installati. Senza `JTDX.ini` resta il simulatore.
 pub fn detect(places: &Places) -> Values {
     let mut v = Values::new();
@@ -169,6 +182,14 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
         v.extend(parse_env_file(file));
     }
     v.extend(process_env.into_iter().filter(|(k, _)| k.starts_with("AURORA_")));
+    // con il motore proprio non c'e' JTDX a mandare i QSO registrati a Log4OM2: lo fa Aurora, allo stesso indirizzo del secondo server UDP di JTDX.
+    // Con il motore JTDX no, per non registrare ogni QSO due volte.
+    if v.get("AURORA_ENGINE").is_some_and(|e| e == "native") && !v.contains_key("AURORA_EXPORT_UDP") {
+        let target = v.get("AURORA_JTDX_INI").and_then(|ini| std::fs::read_to_string(ini).ok()).and_then(|raw| udp2_from_ini(&raw));
+        if let Some(target) = target {
+            v.insert("AURORA_EXPORT_UDP".into(), target);
+        }
+    }
     v
 }
 
@@ -294,6 +315,26 @@ mod tests {
         assert!(config.local_trust && !config.open_access, "il PC entra senza codice, la rete di casa no");
         assert!(config.allow_tx);
         assert_eq!(config.bind.port(), 8787);
+    }
+
+    #[test]
+    fn the_second_udp_server_of_jtdx_becomes_the_qso_export_target() {
+        let on = "EnableUDP2adifBroadcast=true
+UDP2Server=127.0.0.1
+UDP2ServerPort=2237
+";
+        assert_eq!(udp2_from_ini(on), Some("127.0.0.1:2237".to_string()));
+        assert_eq!(udp2_from_ini("EnableUDP2adifBroadcast=false
+UDP2Server=127.0.0.1
+UDP2ServerPort=2237
+"), None);
+        assert_eq!(udp2_from_ini("UDP2Server=127.0.0.1
+UDP2ServerPort=2237
+"), None);
+        assert_eq!(udp2_from_ini("EnableUDP2adifBroadcast=true
+UDP2Server=pc-log
+UDP2ServerPort=2237
+"), None);
     }
 
     #[test]

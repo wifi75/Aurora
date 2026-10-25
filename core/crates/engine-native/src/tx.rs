@@ -71,8 +71,11 @@ pub enum TxCommand {
     /// Messaggio libero: con testo lo prepara (come scriverlo nel campo Tx5), con `send` lo trasmette una volta; `send` senza testo
     /// trasmette quello preparato; senza testo e senza `send` lo svuota.
     FreeText { text: String, send: bool },
-    /// Abilita Tx / AutoTX.
+    /// «Abilita Tx» (`m_enableTx`): permette di trasmettere. Spento, non parte niente.
     Enable(bool),
+    /// «AutoTX» (`m_autoTx`, impostazione `QuickCall`, di fabbrica acceso): serve solo al doppio clic (e alla risposta via comando), che accende
+    /// «Abilita Tx». Da solo non fa trasmettere e non lo spegne nessun altro comando (verificato in `jtdx.exe`: `on_AutoTxButton_clicked` 0x4aa4d0).
+    AutoTx(bool),
     Option(OptionChange),
     SelectTx(u8),
     ClearDx,
@@ -109,6 +112,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     recent: VecDeque<Recent>,
     /// Messaggio libero in coda per la prossima trasmissione.
     free_text: Option<String>,
+    /// «AutoTX» acceso: il doppio clic accende anche «Abilita Tx».
+    auto_tx: bool,
     /// Messaggio libero preparato (campo Tx5): lo mostra la pagina, «Invia» senza testo lo trasmette.
     prepared: Option<String>,
     hashes: CallHashes,
@@ -128,7 +133,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mode = controls.mode();
         let opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..Options::default() };
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
-        let driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None };
+        let auto_tx = controls.switch_on("auto_tx");
+        let driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx };
         driver.publish_view();
         Ok(driver)
     }
@@ -152,6 +158,20 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.last_planned = None;
         self.publish_view();
         vec![format!("modo {}: trasmissione ferma e messaggi ricordati svuotati", mode.name())]
+    }
+
+    /// Cambio di banda (da qualunque causa: pagina, radio, spot, modo che sposta la frequenza): ferma sempre la trasmissione (PTT spento, audio
+    /// fermo), spegne Abilita Tx/AutoTx, azzera la stazione DX con i messaggi di sequenza e svuota i messaggi ricordati per il doppio clic.
+    /// JTDX (`band_changed`, `clearDX`, `QsoHistory::init`) azzera il DX e la memoria della sequenza e ferma solo nel «QSY cieco»; qui si ferma sempre.
+    pub fn band_changed(&mut self) -> Vec<String> {
+        self.port.halt();
+        self.seq.band_changed();
+        self.recent.clear();
+        self.free_text = None;
+        self.prepared = None;
+        self.last_planned = None;
+        self.publish_view();
+        vec!["cambio di banda: trasmissione ferma, Tx spento, DX e messaggi ricordati azzerati".to_string()]
     }
 
     /// Ricorda un messaggio decodificato, per il doppio clic (arriva solo l'identificativo). `slot_start_ms` e' l'inizio del periodo in cui e' arrivato.
@@ -192,12 +212,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let slot = Slot(r.slot_start_ms / self.mode.period_ms());
                     let (text, freq) = (r.text.clone(), r.freq_hz);
                     let decode = QDecoded::new(&r.text, r.snr, r.freq_hz);
-                    match self.seq.reply_to(slot, &decode) {
+                    match self.seq.reply_to_with(slot, &decode, self.auto_tx) {
                         Ok(()) => {
-                            self.seq.set_enabled(true);
                             self.prepared = None;
+                            self.free_text = None;
                             self.follow_decode_frequency(freq);
-                            log.push(format!("risposta a «{text}»: Tx abilitato"));
+                            log.push(if self.auto_tx { format!("risposta a «{text}»: Tx abilitato") } else { format!("risposta a «{text}»: AutoTX spento, Abilita Tx resta com'e'") });
                             // un messaggio gia' pianificato per il periodo in corso o per il prossimo e' superato: si riparte col nuovo (come `m_restart` di JTDX)
                             if self.last_planned.is_some_and(|planned| planned >= Slot::at(self.mode, now_s)) {
                                 self.port.halt();
@@ -212,6 +232,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             },
             TxCommand::CallCq { modifier } => match self.seq.call_cq(modifier.as_deref()) {
                 Ok(()) => {
+                    self.free_text = None;
                     self.seq.set_enabled(true);
                     log.push("CQ: Tx abilitato".to_string());
                     log.extend(self.start_now(now_s));
@@ -254,6 +275,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     }
                 }
             }
+            TxCommand::AutoTx(on) => self.auto_tx = on,
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
                 if on {
@@ -286,6 +308,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 self.seq.set_options(self.opts.clone());
             }
             TxCommand::SelectTx(n) => {
+                self.free_text = None;
                 if let Err(e) = self.seq.select_tx(n) {
                     log.push(format!("Tx{n} non selezionabile: {e:?}"));
                 }
@@ -296,6 +319,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::GenMsgs => {
                 self.seq.regen_messages();
+                self.free_text = None;
                 self.prepared = None;
                 log.push("messaggi rigenerati".to_string());
             }
@@ -367,8 +391,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
         let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
         // il messaggio libero prende il posto della sequenza nel suo periodo (JTDX: il campo Tx5 diventa il messaggio scelto)
-        let planned = if self.free_text.is_some() && slot.is_even() == self.seq.tx_even() {
-            self.free_text.take().map(|text| (text, self.opts.tx_freq_hz, 0u8))
+        // JTDX non lo toglie dopo l'invio (`m_ntx` resta 8, `guiUpdate` non lo cambia): si ripete a ogni periodo di trasmissione finche' Abilita Tx
+        // e' acceso e non si sceglie un altro messaggio
+        let planned = if self.free_text.is_some() && self.seq.is_enabled() && slot.is_even() == self.seq.tx_even() {
+            self.free_text.clone().map(|text| (text, self.opts.tx_freq_hz, 0u8))
         } else {
             self.seq.next_tx(slot, now_s).map(|tx| (tx.text, tx.freq_hz, tx.n))
         };
@@ -610,6 +636,33 @@ mod tests {
         assert_eq!(last_text(&b.port), vec!["K1ABC IU3ABC -10".to_string()]);
     }
 
+    /// Cambio di banda con una risposta in corso: Halt, DX e messaggi azzerati, Abilita Tx spento, messaggi ricordati svuotati.
+    #[test]
+    fn a_band_change_halts_clears_the_dx_and_switches_tx_off() {
+        let (mut d, port, controls) = driver();
+        d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        d.after_slot(SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 15.5);
+        let before = view_of(&controls);
+        assert!(before.enabled, "{before:?}");
+        assert_eq!(before.dx.as_deref(), Some("K1ABC"));
+        let halts_before = *port.halts.lock().expect("halt");
+        let log = d.band_changed();
+        assert!(log[0].contains("cambio di banda"), "{log:?}");
+        assert_eq!(*port.halts.lock().expect("halt"), halts_before + 1, "il trasmettitore va fermato subito");
+        let after = view_of(&controls);
+        assert!(!after.enabled, "Abilita Tx deve restare spento");
+        assert_eq!((after.dx, after.dx_grid), (None, None));
+        assert_eq!(after.selected, 0, "nessun messaggio selezionato senza DX");
+        // i messaggi ricordati non sono piu' rispondibili
+        let log = d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 16.0);
+        assert!(log[0].contains("non piu' in memoria"), "{log:?}");
+        // e dopo il cambio non parte niente nel periodo successivo
+        let sent = port.requests.lock().expect("richieste").len();
+        d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
+        assert_eq!(port.requests.lock().expect("richieste").len(), sent);
+    }
+
     #[test]
     fn nothing_is_sent_without_a_dx_or_a_cq() {
         let (mut d, port, _) = driver();
@@ -655,20 +708,62 @@ mod tests {
         assert!(port.requests.lock().expect("richieste").is_empty());
     }
 
+    /// JTDX non toglie il messaggio libero dopo l'invio (`m_ntx` resta 8 in `guiUpdate`): si ripete a ogni periodo di trasmissione, nella parita'
+    /// scelta, finche' Abilita Tx e' acceso e non si sceglie un altro messaggio.
     #[test]
-    fn a_free_text_is_sent_once_in_the_chosen_parity() {
+    fn a_free_text_repeats_every_period_of_the_chosen_parity_until_halted() {
         let (mut d, port, _) = driver();
         d.handle(TxCommand::Option(OptionChange::TxEven(true)), 1.0);
         d.handle(TxCommand::FreeText { text: "TNX 73".into(), send: true }, 1.0);
-        // il periodo che comincia dopo SLOT_MS e' dispari: non si trasmette; dopo il successivo (pari) si
+        let count = |p: &Arc<FakePort>| p.requests.lock().expect("richieste").len();
+        let first = count(&port);
+        // dopo un periodo pari si pianifica il dispari (niente); dopo il dispari, il pari (si trasmette); e cosi' via
         d.after_slot(SLOT_MS, &[], BASE + 14.3, 14_074_000, "20m");
-        let before = port.requests.lock().expect("richieste").len();
+        assert_eq!(count(&port), first, "il periodo che comincia e' dispari");
         d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
-        let after = port.requests.lock().expect("richieste").len();
-        assert!(before + after >= 1 && after <= 1 + before, "una volta sola: {before} {after}");
+        let second = count(&port);
+        assert_eq!(second, first + 1, "il pari successivo ripete il messaggio libero");
         d.after_slot(SLOT_MS + 30_000, &[], BASE + 44.3, 14_074_000, "20m");
         d.after_slot(SLOT_MS + 45_000, &[], BASE + 59.3, 14_074_000, "20m");
-        assert!(port.requests.lock().expect("richieste").len() <= 1, "il messaggio libero non si ripete");
+        assert_eq!(count(&port), second + 1, "e ancora al pari dopo");
+        assert_eq!(last_text(&port), vec!["TNX 73".to_string()]);
+        // «Ferma Tx» lo toglie
+        d.handle(TxCommand::Halt, BASE + 60.0);
+        let halted = count(&port);
+        d.after_slot(SLOT_MS + 60_000, &[], BASE + 74.3, 14_074_000, "20m");
+        d.after_slot(SLOT_MS + 75_000, &[], BASE + 89.3, 14_074_000, "20m");
+        assert_eq!(count(&port), halted, "dopo Ferma Tx non si ripete");
+    }
+
+    /// `doubleClickOnCall`: il doppio clic accende «Abilita Tx» solo se «AutoTX» e' acceso; con AutoTX spento sceglie il DX e il messaggio ma non
+    /// fa trasmettere. Abilita Tx e AutoTX non si influenzano (ne' lo spegne «Ferma Tx»).
+    #[test]
+    fn the_double_click_enables_tx_only_with_auto_tx_on() {
+        // AutoTX acceso (di fabbrica): il doppio clic accende Abilita Tx e si trasmette
+        let mut b = Bench::new();
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 16.0);
+        assert!(view_of(&b.controls).enabled);
+        assert!(!b.requests().is_empty());
+        // AutoTX spento: scelto il DX, Abilita Tx resta spento e non parte niente
+        let mut b = Bench::new();
+        b.press("auto_tx", Some(false), 1.0);
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        let log = b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 16.0);
+        let view = view_of(&b.controls);
+        assert!(!view.enabled, "{log:?}");
+        assert_eq!(view.dx.as_deref(), Some("K1ABC"), "il DX e' scelto lo stesso");
+        assert!(b.requests().is_empty(), "senza Abilita Tx non si trasmette");
+        // Abilita Tx a mano: parte, e AutoTX resta com'era
+        b.press("enable_tx", Some(true), BASE + 17.0);
+        assert!(view_of(&b.controls).enabled);
+        assert!(!b.controls.switch_on("auto_tx"));
+        assert!(!b.requests().is_empty(), "con Abilita Tx acceso la risposta parte");
+        // Ferma Tx spegne Abilita Tx e lascia AutoTX
+        b.press("auto_tx", Some(true), BASE + 18.0);
+        b.d.handle(TxCommand::Halt, BASE + 18.0);
+        assert!(!view_of(&b.controls).enabled);
+        assert!(b.controls.switch_on("auto_tx"), "Ferma Tx non tocca AutoTX");
     }
 
     #[test]
@@ -728,7 +823,8 @@ mod tests {
     #[test]
     fn set_tx_freq_changes_the_transmitted_audio_frequency_and_follows_the_split_switch() {
         let mut b = Bench::new();
-        // Split spento: Tx e Rx insieme
+        // di fabbrica Split e' acceso (`LockTxFreq` falso); spento, Tx e Rx vanno insieme
+        b.controls.set_switch("split", false);
         b.d.handle(TxCommand::SetTxFreq(1800), BASE + 1.0);
         assert_eq!((b.controls.tx_df.load(Ordering::Relaxed), b.controls.rx_df.load(Ordering::Relaxed)), (1800, 1800));
         b.d.handle(TxCommand::FreeText { text: "73".into(), send: true }, BASE + 1.0);
@@ -777,6 +873,7 @@ mod tests {
     #[test]
     fn a_double_click_moves_rx_and_with_split_off_tx_to_the_frequency_of_the_message() {
         let mut b = Bench::new();
+        b.controls.set_switch("split", false);
         b.d.remember(1, "CQ K1ABC FN42", -10, 1234, SLOT_MS);
         b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 16.0);
         assert_eq!((b.controls.rx_df.load(Ordering::Relaxed), b.controls.tx_df.load(Ordering::Relaxed)), (1234, 1234));
