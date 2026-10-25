@@ -1007,7 +1007,8 @@ impl Sequencer {
             let call = self.his_call.clone();
             self.hist.remove(&call);
         }
-        if self.opts.autolog && !self.his_call.is_empty() && !self.opts.hound {
+        // `autoStopTx`: `(clear_DX || autolog) && !m_hisCall.isEmpty() && !m_houndMode`
+        if (self.opts.autolog || self.opts.clear_dx) && !self.his_call.is_empty() && !self.opts.hound {
             self.clear_dx_inner();
         }
     }

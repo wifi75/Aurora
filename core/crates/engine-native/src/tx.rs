@@ -96,6 +96,10 @@ pub struct SequenceSettings {
     pub call_prio_cq: bool,
     /// «Priorita' alla distanza maggiore» (`MaxDistance`): a parita' si sceglie il piu' lontano.
     pub max_distance: bool,
+    /// «Messa a log automatica del QSO» (`AutoQSOLogging`): a fine QSO la trasmissione si ferma e il DX si libera.
+    pub autolog: bool,
+    /// «Cancella i dati dopo aver loggato il QSO» (`ClearCallGrid`).
+    pub clear_dx: bool,
 }
 
 impl SequenceSettings {
@@ -103,7 +107,7 @@ impl SequenceSettings {
     /// `counters` sono, nell'ordine, «risposta al CQ», «chiamata CQ e risposta», «rapporto R» e «RR73/73».
     pub fn new(counters: [Option<u32>; 4], halt_on_reply_other: bool, strict_directional_cq: bool, watchdog_min: u32, tx_qsy_allowed: bool) -> SequenceSettings {
         let [answer_cq, answer_in_call, sent_r_report, closing] = counters;
-        SequenceSettings { limits: qso_native::RepeatLimits { answer_cq, answer_in_call, sent_r_report, closing }, halt_on_reply_other, strict_directional_cq, watchdog_min, tx_qsy_allowed, rr73_marker: true, call_prio_cq: false, max_distance: false }
+        SequenceSettings { limits: qso_native::RepeatLimits { answer_cq, answer_in_call, sent_r_report, closing }, halt_on_reply_other, strict_directional_cq, watchdog_min, tx_qsy_allowed, rr73_marker: true, call_prio_cq: false, max_distance: false, autolog: true, clear_dx: false }
     }
 
     /// Le opzioni della sequenza con queste impostazioni.
@@ -115,6 +119,8 @@ impl SequenceSettings {
         opts.rr73_marker = self.rr73_marker;
         opts.call_prio_cq = self.call_prio_cq;
         opts.max_distance = self.max_distance;
+        opts.autolog = self.autolog;
+        opts.clear_dx = self.clear_dx;
     }
 }
 
@@ -192,6 +198,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     /// Il DX per cui si e' gia' scelta la frequenza e quante trasmissioni c'erano allora (per rifarlo dopo `FREE_TX_MOVE_AFTER` senza risposta).
     free_for: Option<String>,
     free_moved_at: u32,
+    /// `logClearDXTimer`: a fine periodo, dopo un QSO registrato senza AutoSeq ne AutoTX, il DX (se e' ancora quello) si libera.
+    clear_dx_due: Option<(f64, String)>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -235,7 +243,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0 };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
         driver.seq.set_rx_freq(rx_published);
         driver.publish_view();
         Ok(driver)
@@ -572,9 +580,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             return (Vec::new(), log);
         }
         let slot = Slot(rx_slot_start_ms / self.mode.period_ms()).next();
+        self.fire_clear_dx(now_s, &mut log);
         self.sync_rx_from_user();
         log.extend(self.plan(slot, now_s));
         let qsos = self.collect_events(rx_slot_start_ms, dial_hz, band, &mut log);
+        self.arm_clear_dx(&qsos, now_s);
         self.sync_rx_to_user();
         self.publish_view();
         (qsos, log)
@@ -586,6 +596,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mut log = Vec::new();
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
+        self.fire_clear_dx(now_s, &mut log);
         self.sync_rx_from_user();
         self.note_heard(slot, decoded);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
@@ -593,9 +604,34 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         log.extend(self.maybe_move_free_tx(slot.next()));
         log.extend(self.plan(slot.next(), now_s));
         qsos.extend(self.collect_events(slot_start_ms, dial_hz, band, &mut log));
+        self.arm_clear_dx(&qsos, now_s);
         self.sync_rx_to_user();
         self.publish_view();
         (qsos, log)
+    }
+
+    /// `acceptQSO2`: con «Cancella i dati dopo aver loggato» acceso e senza AutoTX ne AutoSeq si avvia il timer di fine periodo (`logClearDXTimer`,
+    /// `|periodo - secondi trascorsi|`), se non e' gia' attivo.
+    fn arm_clear_dx(&mut self, qsos: &[QsoRecord], now_s: f64) {
+        let Some(last) = qsos.last() else { return };
+        if !self.opts.clear_dx || self.auto_tx || self.opts.auto_seq || self.clear_dx_due.is_some() {
+            return;
+        }
+        let period = self.mode.period_ms() as f64 / 1000.0;
+        self.clear_dx_due = Some(((now_s / period).floor() * period + period, last.call.clone()));
+    }
+
+    /// `logClearDX`: scaduto il timer il DX si libera (solo se e' ancora la stazione del QSO: se nel frattempo si e' cambiato, non si tocca).
+    fn fire_clear_dx(&mut self, now_s: f64, log: &mut Vec<String>) {
+        let Some((due, call)) = self.clear_dx_due.clone() else { return };
+        if now_s + 0.5 < due {
+            return;
+        }
+        self.clear_dx_due = None;
+        if self.seq.dx().is_some_and(|d| d.eq_ignore_ascii_case(&call)) {
+            self.seq.clear_dx();
+            log.push(format!("DX {call} azzerato a fine periodo dopo il log (logClearDXTimer)"));
+        }
     }
 
     /// Gli esiti della sequenza: i QSO conclusi (da registrare), le rinunce e gli arresti. Un arresto causato dalla decodifica o dal watchdog (DX che
@@ -1449,6 +1485,49 @@ mod tests {
         assert!(!view_of(&b.controls).enabled, "ferma a fine QSO");
     }
 
+    /// `logClearDXTimer` (`acceptQSO2` + `logClearDX`): con «Cancella i dati dopo aver loggato» acceso e senza AutoTX ne AutoSeq, a fine periodo dopo
+    /// il log il DX si libera, ma solo se e' ancora quello del QSO; con AutoSeq o AutoTX acceso il timer non parte.
+    #[test]
+    fn clear_dx_after_the_log_frees_the_dx_at_the_end_of_the_period_only_without_autoseq_and_autotx() {
+        let qso = |call: &str| aurora_core::QsoRecord { call: call.into(), ..Default::default() };
+        let mut b = Bench::new();
+        b.d = TxDriver::with_options("IU3ABC", "IO91", Arc::clone(&b.port), Arc::clone(&b.controls), Options { autolog: false, clear_dx: true, auto_seq: false, ..Options::default() }).expect("pilota");
+        b.d.auto_tx = false;
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 1.0);
+        assert_eq!(b.d.seq.dx(), Some("K1ABC"));
+        // il QSO e' registrato a 20,3 s: il timer scade alla fine del periodo (30 s)
+        b.d.arm_clear_dx(&[qso("K1ABC")], BASE + 20.3);
+        assert_eq!(b.d.clear_dx_due.as_ref().map(|(t, _)| *t), Some(BASE + 30.0));
+        let mut log = Vec::new();
+        b.d.fire_clear_dx(BASE + 25.0, &mut log);
+        assert_eq!(b.d.seq.dx(), Some("K1ABC"), "prima della fine del periodo il DX resta");
+        b.d.fire_clear_dx(BASE + 29.7, &mut log);
+        assert_eq!(b.d.seq.dx(), None, "a fine periodo il DX e' libero");
+        assert!(b.d.clear_dx_due.is_none() && log.iter().any(|l| l.contains("logClearDXTimer")), "{log:?}");
+        // se nel frattempo il DX e' cambiato non si tocca
+        b.d.remember(2, "CQ DL1ABC JO62", -10, 1300, SLOT_MS + 30_000);
+        b.d.handle(TxCommand::Reply { decode_id: 2 }, BASE + 31.0);
+        b.d.arm_clear_dx(&[qso("K1ABC")], BASE + 33.0);
+        b.d.fire_clear_dx(BASE + 59.9, &mut log);
+        assert_eq!(b.d.seq.dx(), Some("DL1ABC"), "il DX di adesso non e' quello del QSO");
+        // con AutoTX acceso il timer non parte
+        b.d.clear_dx_due = None;
+        b.d.auto_tx = true;
+        b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
+        assert!(b.d.clear_dx_due.is_none());
+        // con AutoSeq acceso neppure
+        b.d.auto_tx = false;
+        b.d.opts.auto_seq = true;
+        b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
+        assert!(b.d.clear_dx_due.is_none());
+        // spenta l'opzione, niente
+        b.d.opts.auto_seq = false;
+        b.d.opts.clear_dx = false;
+        b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
+        assert!(b.d.clear_dx_due.is_none());
+    }
+
     #[test]
     fn answer_b4_toggle_decides_whether_a_worked_station_is_answered() {
         for answer in [true, false] {
@@ -1669,6 +1748,8 @@ mod tests {
             rr73_marker: false,
             call_prio_cq: true,
             max_distance: true,
+            autolog: false,
+            clear_dx: true,
         };
         // all'avvio
         let controls = Arc::new(NativeControls::default());
@@ -1679,6 +1760,7 @@ mod tests {
         assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
         assert_eq!(d.opts.watchdog_min, 9);
         assert!(!d.tx_qsy_allowed && !d.opts.rr73_marker && d.opts.call_prio_cq && d.opts.max_distance);
+        assert!(!d.opts.autolog && d.opts.clear_dx);
         // a caldo
         let mut d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::new(NativeControls::default())).expect("pilota");
         assert!(d.opts.abandon_if_dx_answers_other && d.tx_qsy_allowed, "di fabbrica come JTDX: acceso");

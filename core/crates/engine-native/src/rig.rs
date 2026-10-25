@@ -5,7 +5,7 @@
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicBool, AtomicU32, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering},
         mpsc, Arc, Mutex,
     },
 };
@@ -82,12 +82,16 @@ pub struct NativeControls {
     meters: Mutex<Option<aurora_core::RadioMeters>>,
     /// L'S-meter stimato dall'audio in ingresso e quando e' stato calcolato (vedi `smeter`).
     s_estimate: Mutex<Option<(crate::smeter::SEstimate, std::time::Instant)>>,
+    /// Memoria del livello Pwr per banda e modo (`pwrBandTxMemory` di JTDX): spenta di fabbrica come in JTDX; spenta, il livello e' uno solo per tutte le bande.
+    band_memory: AtomicBool,
     /// STOP TX immediato (vedi `set_halt_now`).
     halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
     /// Cosa fare quando il livello di uscita cambia (portarlo subito al dispositivo, anche a trasmissione in corso).
     attenuation_hook: Mutex<Option<AttenuationHook>>,
     /// Le impostazioni della scheda Sequenza (contatori, «ferma se risponde a un altro», CQ rigoroso, watchdog): le legge la trasmissione quando parte e a ogni cambio.
     sequence: Mutex<Option<crate::tx::SequenceSettings>>,
+    /// `ALL.TXT`: 0 = solo i messaggi con il proprio nominativo, 1 = tutti i decodificati, 2 = anche le righe di debug (vedi `AllTxtScope`).
+    all_txt: AtomicU8,
 }
 
 /// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
@@ -100,7 +104,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
     }
 }
 
@@ -167,6 +171,20 @@ impl NativeControls {
         self.notify_attenuation(tenths);
     }
 
+    /// Cosa scrivere in `ALL.TXT` delle decodifiche: lo cambiano le impostazioni di Aurora, vale subito.
+    pub fn set_all_txt(&self, decoded: bool, debug: bool) {
+        let scope = crate::alltxt::AllTxtScope::from_flags(decoded, debug);
+        self.all_txt.store(scope as u8, Ordering::Relaxed);
+    }
+
+    pub fn all_txt_scope(&self) -> crate::alltxt::AllTxtScope {
+        match self.all_txt.load(Ordering::Relaxed) {
+            0 => crate::alltxt::AllTxtScope::Calls,
+            2 => crate::alltxt::AllTxtScope::Debug,
+            _ => crate::alltxt::AllTxtScope::Decoded,
+        }
+    }
+
     /// Le impostazioni di Sequenza date da Aurora (`None` finche' nessuno le ha date: valgono quelle di fabbrica della sequenza).
     pub fn sequence(&self) -> Option<crate::tx::SequenceSettings> {
         self.sequence.lock().ok().and_then(|s| s.clone())
@@ -179,6 +197,11 @@ impl NativeControls {
         }
         // senza trasmissione (nessun motore ancora) basta averle ricordate: `TxDriver::with_options` le legge all'avvio
         let _ = self.send(TxCommand::Option(OptionChange::Sequence(settings)));
+    }
+
+    /// Accende o spegne la memoria del livello per banda e modo.
+    pub fn set_band_memory(&self, on: bool) {
+        self.band_memory.store(on, Ordering::Relaxed);
     }
 
     /// Chi porta il livello di uscita al dispositivo (lo imposta chi ha la catena di trasmissione).
@@ -206,6 +229,10 @@ impl NativeControls {
             return;
         }
         memory.band = Some(band.to_string());
+        // senza la memoria per banda (di fabbrica, come in JTDX) il livello resta quello del cursore su tutte le bande
+        if !self.band_memory.load(Ordering::Relaxed) {
+            return;
+        }
         let key = self.level_key(band);
         match memory.levels.get(&key) {
             Some(level) => {
@@ -537,6 +564,7 @@ mod tests {
     #[test]
     fn the_output_level_is_remembered_per_band_and_restored_on_a_band_change() {
         let (rig, controls) = rig();
+        controls.set_band_memory(true);
         // prima lettura della banda: niente di ricordato, si ricorda il livello attuale (225)
         controls.track_band("20m");
         rig.set_output_attenuation(100).expect("pwr");
@@ -564,6 +592,20 @@ mod tests {
         controls.set_mode(Mode::Ft8);
         controls.track_band("40m");
         assert_eq!(rig.output_attenuation().expect("pwr"), 250, "40m in FT8 ha il suo livello");
+    }
+
+    #[test]
+    fn without_the_band_memory_the_output_level_is_the_same_on_every_band() {
+        let (rig, controls) = rig();
+        controls.track_band("20m");
+        rig.set_output_attenuation(0).expect("pwr");
+        controls.track_band("40m");
+        rig.set_output_attenuation(300).expect("pwr");
+        // di fabbrica (come in JTDX) il livello e' uno solo: tornare su 20 m non ripristina niente
+        controls.track_band("20m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 300);
+        controls.track_band("15m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 300);
     }
 
     #[test]

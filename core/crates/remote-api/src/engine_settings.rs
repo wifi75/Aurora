@@ -36,6 +36,10 @@ pub enum Feature {
     AllTxt,
     /// Chi apre e chiude gli ingressi e le uscite audio e salva i file audio (scheda Audio): vedi `audio_api`.
     AudioControl,
+    /// La protezione dei segreti del sistema (su Windows DPAPI): senza, la password di eQSL non si puo' salvare e l'invio resta spento.
+    Secrets,
+    /// La finestra del programma risponde ai comandi UDP (primo piano e ripristino): solo il programma Windows con la sua finestra.
+    WindowControl,
 }
 
 /// Quando ha effetto una voce viva.
@@ -57,10 +61,13 @@ pub enum Support {
     Hidden(&'static str),
 }
 
-/// Voci della scheda Segnalazioni di JTDX che non sono in `engine_jtdx::ini::FIELDS` (non si leggono ne' si scrivono nel `JTDX.ini`): in Aurora
-/// si vedono, spente e con la spiegazione. Le credenziali di eQSL non si tengono mai.
+/// Voci della scheda Segnalazioni di JTDX che non sono in `engine_jtdx::ini::FIELDS` (non si leggono ne' si scrivono nel `JTDX.ini`).
+/// `EQSLPasswd`: la password di eQSL **non si legge mai dal `JTDX.ini`** e non sta nel file delle impostazioni: si salva solo nella protezione dei segreti del sistema (`SECRET_KEYS`).
 /// `Region` e `Type2MsgGen` stanno nel `JTDX.ini` come valori binari (`@Variant`): non si leggono ne' si scrivono, ma la scheda Generali li mostra.
-pub const EXTRA_KEYS: &[&str] = &["toRTTY", "dBtoComments", "distanceToComments", "ClearCallGridExit", "EQSLSend", "EQSLUser", "EQSLPasswd", "EQSLNick", "Region", "Type2MsgGen"];
+pub const EXTRA_KEYS: &[&str] = &["EQSLPasswd", "Region", "Type2MsgGen"];
+
+/// Le voci che non finiscono mai nel file delle impostazioni ne' nelle risposte dell'API: hanno un posto protetto (`SecretStore`).
+pub const SECRET_KEYS: &[&str] = &["EQSLPasswd"];
 
 /// Le voci della scheda Audio: stanno nel file ma si cambiano solo dalla rotta `audio/settings` (apre i dispositivi, poi salva).
 pub const AUDIO_KEYS: &[&str] = &["SoundInName", "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav"];
@@ -110,17 +117,18 @@ pub fn support(key: &str) -> Support {
         "workedColor" | "workedStriked" | "workedUnderlined" | "workedDontShow" | "txtColor" | "OtherStandardMessagesMarker" | "redMarker" | "blueMarker" | "hidehintMarker" => {
             Support::Hidden("own_notify")
         }
-        "udpWindowToFront" | "udpWindowRestore" => Support::Hidden("udp_window"),
-        "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Hidden("tcp"),
-        "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
-        "preventFalseUDPspots" => Support::Hidden("false_spots"),
-        "PSKReporter" => Support::Hidden("psk"),
-        "AllowSpotsDXSummit" => Support::Hidden("dxsummit"),
-        "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Hidden("eqsl"),
-        "PromptToLog" => Support::Hidden("log_prompt"),
-        "AutoQSOLogging" => Support::Hidden("log_auto"),
-        "toRTTY" | "dBtoComments" | "distanceToComments" => Support::Hidden("adif_options"),
-        "ClearCallGrid" | "ClearCallGridExit" => Support::Hidden("clear_dx"),
+        // porta in primo piano / ripristina la finestra a un comando UDP: serve la finestra del programma Windows
+        "udpWindowToFront" | "udpWindowRestore" => Support::Needs(Feature::WindowControl, "udp_window", Apply::Now),
+        // registrazione del log: finestra di conferma, log automatico, record ADIF (modo, commento) e pulizia del DX
+        "PromptToLog" | "AutoQSOLogging" | "toRTTY" | "dBtoComments" | "distanceToComments" | "ClearCallGrid" => Support::Live(Apply::Now),
+        "ClearCallGridExit" => Support::Hidden("clear_exit"),
+        // un invio del record ADIF di ogni QSO al server TCP
+        "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Live(Apply::Now),
+        // filtri di testo e falsi decode sul flusso UDP: li applica l'emettitore
+        "ApplyFiltersToUDPmessages" | "preventFalseUDPspots" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
+        // spotting verso internet: PSK Reporter in automatico, DXSummit a richiesta (pulsante), eQSL solo con la protezione dei segreti del sistema
+        "PSKReporter" | "AllowSpotsDXSummit" => Support::Live(Apply::Now),
+        "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
         // scheda Audio: si cambiano solo dalla rotta `audio/settings`, che apre i dispositivi prima di salvare
@@ -134,6 +142,22 @@ pub fn support(key: &str) -> Support {
 /// Le voci che il motore proprio tiene davvero nel file (vive o in attesa di un componente).
 pub fn is_stored(key: &str) -> bool {
     matches!(support(key), Support::Live(_) | Support::Needs(..))
+}
+
+/// Le voci che stanno nel file `settings-motore.json` (tutte le tenute, tranne i segreti).
+pub fn in_file(key: &str) -> bool {
+    is_stored(key) && !SECRET_KEYS.contains(&key)
+}
+
+/// Una voce viva che, nel motore proprio, vale come in JTDX ma per FT8 e FT4 non cambia mai niente: la pagina lo dice sotto la voce.
+pub fn note_of(key: &str) -> Option<&'static str> {
+    match key {
+        // JTDX converte in RTTY solo i modi che cominciano per JT9 (`log_as_RTTY() and mode.left(3)=="JT9"`)
+        "toRTTY" => Some("jt9_only"),
+        // il marcatore di decodifica errata (`?`) esiste solo per JT65 e JT9: FT8 e FT4 non lo producono mai
+        "preventFalseUDPspots" => Some("jt_marker_only"),
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

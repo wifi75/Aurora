@@ -26,7 +26,7 @@ pub const SHOWN: &[&str] = &[
     "AlertOnNewITUZ", "AlertOnNewGrid", "AlertOnNewPx", "AlertOnNewCQZOB", "AlertOnNewDXCCOB", "AlertOnNewITUZOB", "AlertOnNewGridOB",
     "AlertOnNewPxOB", "callsignLogFiltering", "gridLogFiltering", "InsertBlank", "Scroll", "HideTxMessages", "Tx2QSO", "countryPrefix",
     "showAzimuth", "AlignDistanceAzimuth", "Decode52", "TxQSYAllowed", "After73", "SeqAnswerInCallCounterValue", "AlignInt", "IDint",
-    "timeFromLogFiltering",
+    "timeFromLogFiltering", "toRTTY", "dBtoComments", "distanceToComments", "ClearCallGridExit", "EQSLSend", "EQSLUser", "EQSLNick",
 ];
 
 /// Il tipo di ogni voce: bool, text, num oppure enum:<nome> (valori ammessi in `ini_edit`).
@@ -75,6 +75,13 @@ pub const FIELDS: &[(&str, &str)] = &[
     ("ApplyFiltersToUDPmessages", "bool"),
     ("preventFalseUDPspots", "bool"),
     ("PSKReporter", "bool"),
+    ("toRTTY", "bool"),
+    ("dBtoComments", "bool"),
+    ("distanceToComments", "bool"),
+    ("ClearCallGridExit", "bool"),
+    ("EQSLSend", "bool"),
+    ("EQSLUser", "text"),
+    ("EQSLNick", "text"),
     ("AllowSpotsDXSummit", "bool"),
     ("WriteDecodedALLTXT", "bool"),
     ("WriteDecodedDebugALLTXT", "bool"),

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getOutputLevel, putOutputLevel } from '../api/client';
 import { useT } from '../i18n';
 import { attenuationFromPercent, levelPercent } from '../lib/outputLevel';
@@ -15,14 +15,15 @@ interface Props {
 export function OutputLevel(_: Props) {
   const t = useT();
   const client = useQueryClient();
-  const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 15_000) });
+  const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 2000) });
   const [pct, setPct] = useState<number | null>(null);
+  const dragging = useRef(false);
   const [note, setNote] = useState('');
 
-  // il valore del motore vince quando non si sta trascinando
+  // il valore del motore vince quando non si sta trascinando: se cambia da solo (cambio banda con la memoria per banda) il cursore lo segue
   useEffect(() => {
-    if (level.data && pct === null) setPct(levelPercent(level.data.attenuation_db));
-  }, [level.data, pct]);
+    if (level.data && !dragging.current) setPct(levelPercent(level.data.attenuation_db));
+  }, [level.data]);
 
   if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>Pwr –</p>;
   if (pct === null) return null;
@@ -41,7 +42,18 @@ export function OutputLevel(_: Props) {
     <div className="out-level" title={t('tip.out')}>
       <span className="out-level-title">Pwr</span>
       {/* come in JTDX (attenuazione = (450 - valore) / 10 dB, verificato nel programma): in alto 0 dB (potenza massima), in basso 45 dB (minima) */}
-      <VerticalSlider value={pct} label={t('out.label')} onChange={setPct} onCommit={(v) => void commit(v)} />
+      <VerticalSlider
+        value={pct}
+        label={t('out.label')}
+        onChange={(v) => {
+          dragging.current = true;
+          setPct(v);
+        }}
+        onCommit={(v) => {
+          dragging.current = false;
+          void commit(v);
+        }}
+      />
       <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{pct}%</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>

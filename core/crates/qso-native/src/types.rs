@@ -159,6 +159,9 @@ pub struct Options {
     /// Registrazione automatica del QSO (`AutoQSOLogging`): a fine QSO (FIN, 73 inviato) JTDX **ferma la trasmissione**. Spento, passa da solo al
     /// prossimo chiamante o al CQ.
     pub autolog: bool,
+    /// «Cancella i dati dopo aver loggato il QSO» (`ClearCallGrid`): a fine QSO (`autoStopTx`) il DX si libera anche senza registrazione automatica; senza
+    /// AutoSeq ne AutoTX lo libera anche il timer di fine periodo dopo il log (`logClearDXTimer`).
+    pub clear_dx: bool,
     /// Periodo di trasmissione di partenza: pari (`TxMinuteButton` acceso) o dispari. Dopo la
     /// scelta di un DX segue quello opposto al suo.
     pub tx_even: bool,
@@ -204,6 +207,7 @@ impl Default for Options {
             watchdog_min: 6,
             abandon_if_dx_answers_other: true,
             autolog: true,
+            clear_dx: false,
             tx_even: true,
             tx_freq_hz: 1500,
             follow_dx_freq: false,
