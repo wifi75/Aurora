@@ -90,6 +90,78 @@ pub struct Service {
     endpoints: Endpoints,
     now: Arc<dyn Fn() -> u64 + Send + Sync>,
     last_spot: Mutex<Option<(String, Instant)>>,
+    /// Quello che il motore dice adesso (frequenza, modo, rapporto): serve a comporre lo spot come lo comporrebbe JTDX.
+    live: Mutex<Live>,
+}
+
+/// Lo stato del motore che serve allo spot.
+#[derive(Clone, Debug, Default)]
+struct Live {
+    dial_hz: u64,
+    rx_df: Option<u32>,
+    mode: String,
+    report: String,
+}
+
+/// Perche' uno spot non e' partito (o non e' riuscito).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SpotError {
+    /// Lo spotting su DXSummit e' spento nelle impostazioni.
+    Off,
+    NoOwnCall,
+    BadDxCall,
+    /// La stessa stazione e' stata segnalata da poco.
+    Already,
+    /// Non si conosce ancora la frequenza della radio.
+    NoFrequency,
+    /// La richiesta e' partita ma e' fallita (rete, tempo scaduto, risposta d'errore).
+    Failed(String),
+}
+
+impl SpotError {
+    /// Il codice per l'API.
+    pub fn code(&self) -> &'static str {
+        match self {
+            SpotError::Off => "spot_off",
+            SpotError::NoOwnCall => "spot_no_call",
+            SpotError::BadDxCall => "spot_bad_call",
+            SpotError::Already => "spot_already",
+            SpotError::NoFrequency => "spot_no_frequency",
+            SpotError::Failed(_) => "spot_failed",
+        }
+    }
+}
+
+impl std::fmt::Display for SpotError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SpotError::Off => f.write_str("lo spotting su DXSummit e' spento"),
+            SpotError::NoOwnCall => f.write_str("manca il tuo nominativo"),
+            SpotError::BadDxCall => f.write_str("nominativo da segnalare non valido"),
+            SpotError::Already => f.write_str("questa stazione e' gia' stata segnalata da poco"),
+            SpotError::NoFrequency => f.write_str("la frequenza della radio non e' ancora nota"),
+            SpotError::Failed(e) => f.write_str(e),
+        }
+    }
+}
+
+/// Cosa serve per segnalare la stazione scelta: il resto (frequenza, modo, rapporto) lo sa il servizio.
+#[derive(Clone, Debug, Default)]
+pub struct SpotParams {
+    pub dx_call: String,
+    pub dx_grid: String,
+    /// Il testo dello spot (con le macro `#G`, `#D`, `#R`), come la riga di testo di JTDX.
+    pub text: String,
+    /// La propagazione (`Es`, `F2`...), come il campo di JTDX.
+    pub prop: String,
+}
+
+/// Lo spot partito: quello che si e' mandato.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpotDone {
+    pub dx_call: String,
+    pub freq_hz: u64,
+    pub info: String,
 }
 
 /// La guardia contro i doppioni dei QSO (come quella dell'esportatore): lo stesso nominativo entro due periodi non e' un altro QSO.
@@ -134,7 +206,7 @@ impl Service {
         initial: Config,
     ) -> Arc<Service> {
         let (config, rx) = watch::channel(initial);
-        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None) });
+        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()) });
         let events = bus.subscribe_events();
         tokio::spawn(run(Arc::clone(&service), events, rx));
         service
@@ -155,40 +227,71 @@ impl Service {
         });
     }
 
-    /// Spot di una stazione su DXSummit (pulsante «DX Call»): solo con lo spotting acceso, una volta per stazione ogni 5 minuti, con un thread a parte e
-    /// attesa massima di 10 s. Restituisce l'esito, che finisce anche nello stato.
-    pub async fn spot_dxsummit(&self, dx_call: &str, freq_hz: u64, info: &str) -> Result<(), String> {
+    fn set_live(&self, change: impl FnOnce(&mut Live)) {
+        change(&mut self.live.lock().unwrap_or_else(|p| p.into_inner()));
+    }
+
+    /// Spot di una stazione su DXSummit (pulsante «Spot DX», come `on_pbSpotDXCall_clicked` di JTDX): solo con lo spotting acceso, una volta per
+    /// stazione ogni 5 minuti, con un thread a parte e attesa massima di 10 s. La frequenza e' quella della radio piu' la frequenza di ricezione
+    /// (dove si sente il DX), il campo `info` e' il modo con il testo (macro espanse) come lo compone JTDX. L'esito finisce anche nello stato.
+    pub async fn spot_current(&self, params: SpotParams) -> Result<SpotDone, SpotError> {
+        let live = self.live.lock().unwrap_or_else(|p| p.into_inner()).clone();
+        let config_grid = self.config.borrow().grid.clone();
+        let freq_hz = match live.rx_df {
+            Some(df) if live.dial_hz > 0 => live.dial_hz + u64::from(df),
+            _ => return Err(SpotError::NoFrequency),
+        };
+        let dx_grid = params.dx_grid.trim().to_uppercase();
+        let macros = dxsummit::Macros {
+            my_grid: &config_grid,
+            dx_grid: &dx_grid,
+            distance_km: qso_native::history::grid_distance_km(&config_grid, &dx_grid),
+            report: live.report.trim(),
+        };
+        let mode = if live.mode.is_empty() { "FT8" } else { live.mode.as_str() };
+        let info: String = dxsummit::compose_info(mode, params.text.trim(), &params.prop, macros).chars().take(200).collect();
+        let dx_call = params.dx_call.trim().to_uppercase();
+        self.spot_dxsummit(&dx_call, freq_hz, &info).await?;
+        Ok(SpotDone { dx_call, freq_hz, info })
+    }
+
+    /// Lo spot vero e proprio, con frequenza e `info` gia' pronti (vedi [`Service::spot_current`]).
+    pub async fn spot_dxsummit(&self, dx_call: &str, freq_hz: u64, info: &str) -> Result<(), SpotError> {
         let config = self.config.borrow().clone();
         if !config.dxsummit {
-            return Err("lo spotting su DXSummit e' spento".into());
+            return Err(SpotError::Off);
         }
         if config.call.is_empty() {
-            return Err("manca il tuo nominativo".into());
+            return Err(SpotError::NoOwnCall);
         }
         let dx_call = dx_call.trim().to_uppercase();
         if dx_call.is_empty() || !dx_call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') || dx_call.len() > 20 {
-            return Err("nominativo da segnalare non valido".into());
+            return Err(SpotError::BadDxCall);
         }
         {
             let mut last = self.last_spot.lock().unwrap_or_else(|p| p.into_inner());
             if last.as_ref().is_some_and(|(c, at)| *c == dx_call && at.elapsed() < Duration::from_secs(300)) {
-                return Err("questa stazione e' gia' stata segnalata da poco".into());
+                return Err(SpotError::Already);
             }
             *last = Some((dx_call.clone(), Instant::now()));
         }
-        let request = dxsummit::SpotRequest { my_call: config.call, dx_call, freq_hz, info: info.trim().chars().take(100).collect() };
+        let request = dxsummit::SpotRequest { my_call: config.call, dx_call: dx_call.clone(), freq_hz, info: info.trim().chars().take(200).collect() };
         let (url, timeout) = (self.endpoints.dxsummit_url.clone(), self.endpoints.dxsummit_timeout);
         let result = tokio::task::spawn_blocking(move || dxsummit::send(&url, &request, timeout)).await.unwrap_or_else(|e| Err(format!("invio interrotto: {e}")));
-        match &result {
-            Ok(()) => self.status.ok("dxsummit", "spot inviato"),
+        match result {
+            Ok(()) => {
+                self.status.ok("dxsummit", format!("spot inviato: {dx_call} su {} kHz", dxsummit::frequency_khz(freq_hz)));
+                Ok(())
+            }
             Err(e) => {
                 // un invio fallito non conta: si puo' riprovare subito
                 *self.last_spot.lock().unwrap_or_else(|p| p.into_inner()) = None;
                 self.status.fail("dxsummit", e.clone());
+                Err(SpotError::Failed(e))
             }
         }
-        result
     }
+
 }
 
 async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver<Event>, mut config_rx: watch::Receiver<Config>) {
@@ -212,9 +315,18 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                         flush_psk(&service, &mut packetizer, &mut queue).await;
                     }
                     dial_hz = s.dial_hz;
+                    service.set_live(|l| {
+                        l.dial_hz = s.dial_hz;
+                        l.rx_df = s.rx_df;
+                        if !s.mode.is_empty() {
+                            l.mode.clone_from(&s.mode);
+                        }
+                        l.report = s.report.clone().unwrap_or_default();
+                    });
                 }
                 Ok(Event::BandChanged { dial_hz: hz, .. }) => {
                     flush_psk(&service, &mut packetizer, &mut queue).await;
+                    service.set_live(|l| l.dial_hz = hz);
                     dial_hz = hz;
                     blocked_until_ms = ((service.now)() * 1000) / period_ms(&mode) * period_ms(&mode);
                 }

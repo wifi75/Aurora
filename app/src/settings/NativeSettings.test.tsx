@@ -34,7 +34,8 @@ function doc(): EngineSettings {
   return {
     version: 1,
     file: 'settings-motore.json',
-    values: { MyCall: 'IU3ABC', MyGrid: 'IO91wm', UDP2Server: '127.0.0.1', UDP2ServerPort: '2237', EnableUDP2adifBroadcast: 'true' },
+    values: { MyCall: 'IU3ABC', MyGrid: 'IO91wm', UDP2Server: '127.0.0.1', UDP2ServerPort: '2237', EnableUDP2adifBroadcast: 'true', AllowSpotsDXSummit: 'true' },
+    status: { dxsummit: { ok: true, at_ms: 1_792_860_405_000, message: 'spot inviato: DL1ABC su 14075.5 kHz', sent: 1, failed: 0 } },
     items: {
       MyCall: { state: 'live', apply: 'restart' },
       MyGrid: { state: 'live', apply: 'restart' },
@@ -45,7 +46,7 @@ function doc(): EngineSettings {
       TCPServerPort: off('tcp'),
       EnableTCPConnection: off('tcp'),
       PSKReporter: off('psk'),
-      AllowSpotsDXSummit: off('dxsummit'),
+      AllowSpotsDXSummit: live,
       EQSLSend: off('eqsl'),
       EQSLUser: off('eqsl'),
       EQSLPasswd: off('eqsl'),
@@ -95,6 +96,15 @@ describe('Reports tab with the built-in engine', () => {
     expect(screen.queryByText(/riavvia il motore/i)).toBeNull();
     expect(screen.queryByText(/AURORA_EXPORT_UDP/)).toBeNull();
     expect(api.getEngineConfig).not.toHaveBeenCalled();
+  });
+
+  it('has the DXSummit spotting as a working voice, on, with the last send and the way to spot', async () => {
+    render(<ReportsTab />);
+    const box = await screen.findByLabelText(it_('ens.k.AllowSpotsDXSummit'));
+    expect(box).toBeEnabled();
+    expect(box).toBeChecked();
+    expect(screen.getByTestId('status-dxsummit')).toHaveTextContent(/spot inviato: DL1ABC su 14075.5 kHz/);
+    expect(screen.getByText(it_('ens.dxsummit.help'))).toBeInTheDocument();
   });
 
   it('shows what Aurora cannot do yet as switched off, with the reason, and never as a working control', async () => {

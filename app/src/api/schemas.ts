@@ -153,3 +153,7 @@ export const EngineSettingsSchema = z.object({
   status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number() })).optional(),
 });
 export type EngineSettings = z.infer<typeof EngineSettingsSchema>;
+
+/** Esito dello spot su DXSummit (`POST /api/v1/spot/dxsummit`): chi, su che frequenza (Hz) e con che testo. */
+export const SpotResultSchema = z.object({ ok: z.boolean(), dx_call: z.string(), frequency_hz: z.number(), info: z.string() });
+export type SpotResult = z.infer<typeof SpotResultSchema>;

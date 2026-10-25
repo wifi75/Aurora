@@ -3,7 +3,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use aurora_core::{Bus, DecodedMessage, Event, QsoRecord, StationStatus};
-use reporting::{secret::MemorySecrets, secret::SecretStore, status::ReportStatus, Config, Endpoints, EqslAccount, Service, EQSL_SECRET};
+use reporting::{secret::MemorySecrets, secret::SecretStore, status::ReportStatus, Config, Endpoints, EqslAccount, Service, SpotError, SpotParams, EQSL_SECRET};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, UdpSocket},
@@ -321,12 +321,12 @@ async fn dxsummit_spots_a_station_only_when_asked_with_the_parameters_of_jtdx() 
     }
     assert_eq!(r.status.get("dxsummit").ok, Some(true));
     // la stessa stazione subito dopo: no (una volta per stazione)
-    assert!(r.service.spot_dxsummit("DL1ABC", 14_074_500, "FT8").await.unwrap_err().contains("gia'"));
+    assert!(r.service.spot_dxsummit("DL1ABC", 14_074_500, "FT8").await == Err(SpotError::Already));
     // un'altra si
     assert!(r.service.spot_dxsummit("K1ABC", 14_074_500, "FT8 test").await.is_ok());
     // spento: rifiutato
     r.service.set_config(config());
-    assert!(r.service.spot_dxsummit("EA1ABC", 14_074_500, "FT8").await.unwrap_err().contains("spento"));
+    assert!(r.service.spot_dxsummit("EA1ABC", 14_074_500, "FT8").await == Err(SpotError::Off));
     // nominativo non valido
     r.service.set_config(Config { dxsummit: true, ..config() });
     assert!(r.service.spot_dxsummit("A B", 1, "FT8").await.is_err());
@@ -337,11 +337,62 @@ async fn dxsummit_errors_are_reported_and_a_failed_spot_can_be_retried() {
     let (url, _r) = http_server("500 Internal Server Error", "boom").await;
     let endpoints = Endpoints { dxsummit_url: format!("{url}/SendSpot.aspx"), dxsummit_timeout: Duration::from_secs(5), ..Endpoints::default() };
     let r = rig(endpoints, Config { dxsummit: true, ..config() });
-    let e = r.service.spot_dxsummit("DL1ABC", 14_074_000, "FT8").await.unwrap_err();
+    let e = r.service.spot_dxsummit("DL1ABC", 14_074_000, "FT8").await.unwrap_err().to_string();
     assert!(e.contains("500"), "{e}");
     assert_eq!(r.status.get("dxsummit").ok, Some(false));
     let again = r.service.spot_dxsummit("DL1ABC", 14_074_000, "FT8").await.unwrap_err();
-    assert!(!again.contains("gia'"), "un invio fallito non conta come segnalato: {again}");
+    assert_ne!(again, SpotError::Already, "un invio fallito non conta come segnalato");
+}
+
+#[tokio::test]
+async fn the_spot_button_sends_dial_plus_rx_frequency_and_the_info_like_jtdx() {
+    let (url, mut requests) = http_server("200 OK", "ok").await;
+    let endpoints = Endpoints { dxsummit_url: format!("{url}/SendSpot.aspx"), dxsummit_timeout: Duration::from_secs(5), ..Endpoints::default() };
+    let r = rig(endpoints, Config { dxsummit: true, ..config() });
+    let params = |call: &str| SpotParams { dx_call: call.into(), dx_grid: "JO62".into(), text: "bella apertura #R".into(), prop: "Es".into() };
+    // senza la frequenza della radio non si segnala niente
+    assert_eq!(r.service.spot_current(params("DL1ABC")).await, Err(SpotError::NoFrequency));
+    r.bus.events().send(Event::Status(StationStatus { dial_hz: 14_074_000, mode: "FT8".into(), rx_df: Some(1500), tx_df: Some(900), report: Some("-12".into()), ..StationStatus::default() })).unwrap();
+    settle().await;
+    let done = r.service.spot_current(params("dl1abc")).await.expect("spot");
+    // la frequenza e' radio piu' ricezione (1500 Hz), non trasmissione (900 Hz)
+    assert_eq!((done.dx_call.as_str(), done.freq_hz), ("DL1ABC", 14_075_500));
+    let line = percent_decode(&requests.recv().await.unwrap());
+    for part in ["callSign=IU3ABC", "dxCallSign=DL1ABC", "frequency=14075.5", "info=FT8 Es bella apertura -12dB"] {
+        assert!(line.contains(part), "{part} in {line}");
+    }
+    assert!(r.status.get("dxsummit").message.contains("DL1ABC"), "{}", r.status.get("dxsummit").message);
+    // la stessa stazione subito dopo: no
+    assert_eq!(r.service.spot_current(params("DL1ABC")).await, Err(SpotError::Already));
+    assert_eq!(r.service.spot_current(params("DL1ABC")).await.unwrap_err().code(), "spot_already");
+}
+
+#[tokio::test]
+async fn a_slow_dxsummit_server_times_out_without_blocking_the_engine() {
+    // un server che accetta e non risponde mai
+    let hang = TcpListener::bind("127.0.0.1:0").await.expect("server");
+    let hang_addr = hang.local_addr().unwrap();
+    tokio::spawn(async move {
+        let mut keep = Vec::new();
+        while let Ok((s, _)) = hang.accept().await {
+            keep.push(s);
+        }
+    });
+    let endpoints = Endpoints { dxsummit_url: format!("http://{hang_addr}/SendSpot.aspx"), dxsummit_timeout: Duration::from_secs(1), ..Endpoints::default() };
+    let r = rig(endpoints, Config { dxsummit: true, ..config() });
+    let started = std::time::Instant::now();
+    let spot = tokio::spawn({
+        let service = Arc::clone(&r.service);
+        async move { service.spot_dxsummit("DL1ABC", 14_074_000, "FT8").await }
+    });
+    // mentre lo spot aspetta, il servizio continua ad ascoltare il bus e a rispondere
+    r.bus.events().send(status(14_074_000)).unwrap();
+    settle().await;
+    r.service.set_config(Config { dxsummit: true, call: "IU3XYZ".into(), ..config() });
+    let error = spot.await.unwrap().unwrap_err();
+    assert!(matches!(error, SpotError::Failed(_)), "{error:?}");
+    assert!(started.elapsed() < Duration::from_secs(5), "il tempo massimo non e' stato rispettato");
+    assert_eq!(r.status.get("dxsummit").ok, Some(false));
 }
 
 fn percent_decode(s: &str) -> String {
