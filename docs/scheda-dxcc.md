@@ -151,6 +151,41 @@ banda, locatori e locatori per banda, ora anche paesi per modo e locatori per mo
 blocco della Stazione DX. Se un giorno servira' il colore «per modo» sulla riga basta chiamare `WorkedLog::labels` per ogni decode (e' un calcolo su insiemi
 in memoria, microsecondi).
 
+## Impostazioni
+
+La scheda **DXCC** del menu Impostazioni (`app/src/settings/DxccTab.tsx`) personalizza la scheda; vale per tutte le sue presenze (pannello sotto il log
+della pagina Stazione e pagina Statistiche). Le scelte si applicano subito e sono salvate nel browser o nella finestra del programma (chiave
+`aurora-dxcc-card` in `localStorage`, come le altre preferenze di visualizzazione): restano al riavvio. Un colore non scelto vuol dire «di fabbrica»,
+cioe' il token del tema (`--dxcc-worked`, `--dxcc-unconfirmed`, `--dxcc-none`, `--rare`, `--accent`, `--panel-raised`...), quindi segue il tema chiaro o scuro.
+
+| Opzione | Effetto | Di base |
+|---|---|---|
+| Bande da mostrare | una casella per 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 6, 4 e U; ne serve almeno una | tutte |
+| Righe (modi) | FT8, FT4 e DIG; almeno una | FT8 e FT4 si, DIG no |
+| Colori delle caselle | per ogni modo (FT8, FT4, DIG) tre colori: lavorato/confermato, lavorato non confermato, mai lavorato; il testo del conteggio si adegua da solo (nero o bianco) | token del tema |
+| Colori delle etichette | per ciascuna delle sei (NEW ONE, NEW BAND, NEW MODE, NEW GRID, GRID BAND, GRID MODE): sfondo e testo da accesa, sfondo e testo da spenta | ambra (paese), ciano (locatore), grigio da spenta |
+| Didascalie | le tre righe in piccolo sotto le etichette | si |
+| Totale dei paesi lavorati | numero nell'angolo della matrice e riga in fondo (pagina Statistiche) | si |
+| Campo «Prova un nominativo» | il campo dove scrivere un nominativo di prova | si |
+| Dimensione compatta | caselle, etichette e spazi piu' piccoli | no (normale) |
+
+La scheda ha anche un'**anteprima viva** con dati d'esempio (FT8 e FT4 con caselle diverse, alcune etichette accese), un tasto «Ripristina i colori di fabbrica»
+(toglie solo i colori; bande, righe e aspetto restano) e un tasto ↺ accanto a ogni colore. Colori per modo: dato che FT8 e FT4 sono modi distinti, ciascuno
+puo' avere i suoi verde/arancio/grigio e si vede a colpo d'occhio dove manca la conferma in un modo e non nell'altro.
+
+### Aspetto del pannello
+
+Nel pannello sotto il log la scheda e' **sempre intera** (sei etichette spente, didascalie, matrice): senza dati o senza stazione le etichette restano grigie
+e le caselle sono tutte grigie («mai lavorato»); con un nominativo si accendono le etichette e si colorano le caselle del suo paese. Il pannello prende
+esattamente l'altezza del contenuto (nessun riempimento extra): il resto e' del log, anche con meno bande o righe o in dimensione compatta.
+
+### Verifica della logica delle etichette
+
+La logica e' quella gia' descritta sopra e controllata dai test del core (`engine-jtdx/src/matrix.rs`, `worked.rs`): `NEW ONE` = paese mai lavorato e accende anche
+`NEW BAND` e `NEW MODE`; `NEW BAND` = paese mai lavorato su questa banda (qualunque modo); `NEW MODE` = mai lavorato in questo modo (FT8, FT4, DIG) su nessuna banda;
+`NEW GRID`, `GRID BAND`, `GRID MODE` lo stesso per il locatore a 4 caratteri. Il test dell'interfaccia (`app/src/settings/DxccTab.test.tsx`) controlla che i
+colori scelti arrivino alle etichette (accese e spente) e alle caselle di ogni modo, e che bande, righe e totale scelti si rispettino.
+
 ## API
 
 `GET /api/v1/dxcc-matrix` (vedi `docs/api.md`): paesi lavorati per banda e modo, contatori e, con `call` (e facoltativi `grid`, `band`, `mode`), `subject` con le
