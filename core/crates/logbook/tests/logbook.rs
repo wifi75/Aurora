@@ -11,6 +11,8 @@ fn qso(call: &str, band: &str, mode: &str) -> QsoRecord {
         rst_sent: "-08".to_string(),
         rst_rcvd: "-12".to_string(),
         time_ms: 45_015_000,
+        time_on_unix_ms: 0,
+        time_off_unix_ms: 0,
     }
 }
 

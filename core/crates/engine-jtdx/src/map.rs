@@ -77,6 +77,9 @@ pub fn to_qso(m: &Message, time_ms: u32) -> Option<QsoRecord> {
         rst_sent: report_sent.clone().unwrap_or_default(),
         rst_rcvd: report_received.clone().unwrap_or_default(),
         time_ms,
+        // il messaggio di JTDX porta anche inizio e fine, ma Aurora non lo decodifica: con JTDX il log e' il suo
+        time_on_unix_ms: 0,
+        time_off_unix_ms: 0,
     })
 }
 

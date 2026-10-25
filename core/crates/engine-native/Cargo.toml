@@ -19,3 +19,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+logbook = { path = "../logbook" }
+qso-export = { path = "../qso-export" }
