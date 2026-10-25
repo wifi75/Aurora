@@ -87,7 +87,7 @@ pub fn support(key: &str) -> Support {
         "WriteDecodedALLTXT" | "WriteDecodedDebugALLTXT" => Support::Needs(Feature::AllTxt, "all_txt_pending", Apply::Now),
         // scheda Sequenza: i contatori, «ferma se risponde a un altro» e «CQ rigoroso» arrivano alla sequenza a caldo (`engine_native::SequenceSettings`)
         "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqAnswerInCallCount" | "SeqAnswerInCallCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
-        | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" => Support::Live(Apply::Now),
+        | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" | "CallPriorityCQ" | "MaxDistance" => Support::Live(Apply::Now),
         // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
         "TxWatchdogTimer" | "TxQSYAllowed" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
@@ -100,8 +100,11 @@ pub fn support(key: &str) -> Support {
         "InsertBlank" | "Scroll" | "HideTxMessages" | "Tx2QSO" | "countryPrefix" | "showAzimuth" | "AlignDistanceAzimuth" | "AlignInt" => Support::Hidden("own_screen"),
         // scheda Notifiche: evidenziazioni di «nuovo» (anche per la sequenza), «gia' lavorato», colori invertiti e marcatori
         k if is_highlight_key(k) => Support::Live(Apply::Now),
-        "newPotential" | "workedColor" | "workedStriked" | "workedUnderlined" | "workedDontShow" | "txtColor" | "OtherStandardMessagesMarker" | "73RR73Marker" | "redMarker"
-        | "blueMarker" | "hidehintMarker" => Support::Live(Apply::Now),
+        "newPotential" | "73RR73Marker" => Support::Live(Apply::Now),
+        // come si disegnano i messaggi (barrato, colori invertiti, marcatori): scelte dell'interfaccia, per dispositivo (scheda Notifiche)
+        "workedColor" | "workedStriked" | "workedUnderlined" | "workedDontShow" | "txtColor" | "OtherStandardMessagesMarker" | "redMarker" | "blueMarker" | "hidehintMarker" => {
+            Support::Hidden("own_notify")
+        }
         "udpWindowToFront" | "udpWindowRestore" => Support::Hidden("udp_window"),
         "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Hidden("tcp"),
         "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
@@ -117,7 +120,7 @@ pub fn support(key: &str) -> Support {
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
         "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" => Support::Hidden("audio_start"),
         "SaveDir" | "SaveWav" => Support::Hidden("no_wav_save"),
-        "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" | "CallPriorityCQ" | "MaxDistance" => Support::Hidden("own_rules"),
+        "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" => Support::Hidden("own_rules"),
         k if k.starts_with("AlertOn") || k.starts_with("BeepOn") => Support::Hidden("own_alerts"),
         _ => Support::Hidden("own_decoder"),
     }
@@ -185,6 +188,11 @@ pub struct Reports {
     pub log_filter: engine_jtdx::worked::LogFilter,
     /// «Non monitorare all'avvio» (`MonitorOFF`).
     pub monitor_off_at_start: bool,
+    /// Marcatore dei messaggi di chiusura fra altre stazioni (`73RR73Marker`): fanno entrare la stazione tra i candidati della sequenza.
+    pub rr73_marker: bool,
+    /// «Priorita' ai CQ» (`CallPriorityCQ`) e «Priorita' alla distanza maggiore» (`MaxDistance`).
+    pub call_prio_cq: bool,
+    pub max_distance: bool,
 }
 
 fn truthy(value: Option<&String>) -> bool {
@@ -232,6 +240,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("SeqSentRR7373CounterValue", "5"),
         ("SeqHaltTxReplyOther", "true"),
         ("StrictDirectionalCQ", "false"),
+        ("CallPriorityCQ", "false"),
+        ("MaxDistance", "false"),
         // Generali
         ("TxWatchdogTimer", "6"),
         ("TxQSYAllowed", "true"),
@@ -259,16 +269,7 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("newCallBand", "true"),
         ("newCallBandMode", "true"),
         ("newPotential", "false"),
-        ("workedColor", "false"),
-        ("workedStriked", "true"),
-        ("workedUnderlined", "false"),
-        ("workedDontShow", "false"),
-        ("txtColor", "false"),
-        ("OtherStandardMessagesMarker", "true"),
         ("73RR73Marker", "true"),
-        ("redMarker", "true"),
-        ("blueMarker", "false"),
-        ("hidehintMarker", "false"),
     ]
     .iter()
     .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
@@ -372,6 +373,9 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
             from: engine_jtdx::worked::LogFilter::parse_from(get("timeFromLogFiltering")),
         },
         monitor_off_at_start: truthy(values.get("MonitorOFF")),
+        rr73_marker: values.get("73RR73Marker").is_none_or(|v| v == "true"),
+        call_prio_cq: truthy(values.get("CallPriorityCQ")),
+        max_distance: truthy(values.get("MaxDistance")),
     }
 }
 
@@ -753,5 +757,93 @@ mod tests {
         assert_eq!(parse_server("", "2237"), None);
         assert_eq!(parse_server("127.0.0.1", "0"), None);
         assert_eq!(parse_server("127.0.0.1", "65536"), None);
+    }
+
+    #[test]
+    fn the_sequence_tab_has_live_counters_with_the_owner_values_as_default() {
+        let r = interpret(&defaults());
+        // di fabbrica: rapporto R e chiusura accesi a 5 (la configurazione che Aurora ha sempre avuto), gli altri spenti
+        assert_eq!((r.seq_answer_cq, r.seq_answer_in_call, r.seq_sent_r_report, r.seq_closing), (None, None, Some(5), Some(5)));
+        assert!(r.seq_halt_reply_other && !r.strict_directional_cq && !r.call_prio_cq && !r.max_distance);
+        let prio = interpret(&map(&[("CallPriorityCQ", "true"), ("MaxDistance", "true")]));
+        assert!(prio.call_prio_cq && prio.max_distance);
+        let on = interpret(&map(&[
+            ("SeqAnswerCQCount", "true"),
+            ("SeqAnswerCQCounterValue", "2"),
+            ("SeqAnswerInCallCount", "true"),
+            ("SeqAnswerInCallCounterValue", "3"),
+            ("SeqSentRReportCount", "false"),
+            ("SeqSentRR7373Count", "true"),
+            ("SeqSentRR7373CounterValue", "4"),
+            ("SeqHaltTxReplyOther", "false"),
+            ("StrictDirectionalCQ", "true"),
+        ]));
+        assert_eq!((on.seq_answer_cq, on.seq_answer_in_call, on.seq_sent_r_report, on.seq_closing), (Some(2), Some(3), None, Some(4)));
+        assert!(!on.seq_halt_reply_other && on.strict_directional_cq);
+        let store = EngineSettingsStore::open(&temp("seq"), defaults);
+        for key in ["SeqAnswerCQCount", "SeqAnswerInCallCounterValue", "SeqHaltTxReplyOther", "StrictDirectionalCQ", "CallPriorityCQ", "MaxDistance", "TxWatchdogTimer", "TxQSYAllowed", "newDXCC", "newCallBandMode", "newPotential", "73RR73Marker", "callsignLogFiltering", "timeFromLogFiltering"] {
+            assert_eq!(store.state_of(key), Ok(Apply::Now), "{key} e' viva");
+        }
+        assert_eq!(store.state_of("MonitorOFF"), Ok(Apply::Restart));
+        for (key, why) in [("Region", "iaru_region"), ("Type2MsgGen", "type2_msgs"), ("Decode52", "decode52"), ("After73", "cw_id"), ("TuneTimer", "tune_timer"), ("MonitorLastUsed", "monitor_last"), ("workedStriked", "own_notify"), ("InsertBlank", "own_screen")] {
+            assert_eq!(store.state_of(key), Err(why), "{key}");
+        }
+    }
+
+    #[test]
+    fn the_counters_the_watchdog_and_the_log_date_are_validated() {
+        assert!(validate("SeqAnswerCQCounterValue", "5").is_ok());
+        assert!(validate("SeqSentRReportCounterValue", "0").is_err());
+        assert!(validate("SeqSentRR7373CounterValue", "6").is_err());
+        assert!(validate("SeqAnswerInCallCounterValue", "x").is_err());
+        assert!(validate("TxWatchdogTimer", "0").is_ok() && validate("TxWatchdogTimer", "99").is_ok());
+        assert!(validate("TxWatchdogTimer", "100").is_err());
+        assert!(validate("timeFromLogFiltering", "").is_ok());
+        assert!(validate("timeFromLogFiltering", "20240315101500").is_ok());
+        assert!(validate("timeFromLogFiltering", "2024-03-15").is_err());
+        assert!(validate("timeFromLogFiltering", "202403151015001").is_err());
+        // le voci che Aurora non tiene non si accettano
+        assert!(matches!(validate("Decode52", "true"), Err(SettingsError::NotAvailable(_))));
+    }
+
+    #[test]
+    fn the_notification_flags_become_jtdx_highlights_and_a_bad_value_changes_nothing() {
+        let r = interpret(&defaults());
+        assert_eq!(r.highlights, engine_jtdx::worked::HighlightFlags::jtdx_defaults(), "come i valori di fabbrica di JTDX");
+        let store = EngineSettingsStore::open(&temp("flags"), defaults);
+        let before = store.reports();
+        store.update(&map(&[("newCQZ", "true"), ("newCQZBand", "true"), ("newDXCCBandMode", "false"), ("newPotential", "true")])).unwrap();
+        let h = store.reports().highlights;
+        assert!(h.cqz.on && h.cqz.band && !h.cqz.band_mode && h.potential);
+        assert!(h.dxcc.on && h.dxcc.band && !h.dxcc.band_mode);
+        // un valore non valido rifiuta tutto, anche le voci buone della stessa richiesta
+        assert!(store.update(&map(&[("newGrid", "true"), ("SeqSentRReportCounterValue", "9")])).is_err());
+        assert!(!store.reports().highlights.grid.on);
+        assert_ne!(before.highlights, store.reports().highlights);
+    }
+
+    #[test]
+    fn the_log_filter_and_the_general_options_reach_the_reports() {
+        let store = EngineSettingsStore::open(&temp("filter"), defaults);
+        assert!(store.reports().log_filter.is_off());
+        store.update(&map(&[("MyCall", "IU3ABC"), ("MyGrid", "IO91wm"), ("callsignLogFiltering", "true"), ("gridLogFiltering", "true"), ("timeFromLogFiltering", "2024")])).unwrap();
+        let f = store.reports().log_filter;
+        assert_eq!((f.call.as_deref(), f.grid.as_deref(), f.from), (Some("IU3ABC"), Some("IO91wm"), Some(20_240_000_000_000)));
+        // senza nominativo impostato il filtro per nominativo non puo' valere
+        store.update(&map(&[("MyCall", "")])).unwrap();
+        assert_eq!(store.reports().log_filter.call, None);
+        store.update(&map(&[("TxWatchdogTimer", "9"), ("TxQSYAllowed", "false"), ("MonitorOFF", "true"), ("73RR73Marker", "false")])).unwrap();
+        let r = store.reports();
+        assert_eq!((r.watchdog_min, r.tx_qsy_allowed, r.monitor_off_at_start, r.rr73_marker), (9, false, true, false));
+    }
+
+    #[test]
+    fn the_first_import_takes_the_sequence_and_notification_choices_from_the_ini() {
+        let ini = engine_jtdx::ini::parse_shown("[Configuration]\nSeqAnswerCQCount=true\nSeqAnswerCQCounterValue=4\nnewCQZ=true\nnewCQZBand=false\nnewDXCCBandMode=false\nSeqHaltTxReplyOther=false\nTxQSYAllowed=true\nworkedStriked=true\nRegion=@Variant(\\0\\0)\n");
+        let got = import_from_ini(&ini, addr("127.0.0.1:2334"), &[]);
+        assert_eq!((got["SeqAnswerCQCount"].as_str(), got["SeqAnswerCQCounterValue"].as_str()), ("true", "4"));
+        assert_eq!((got["newCQZ"].as_str(), got["newCQZBand"].as_str(), got["newDXCCBandMode"].as_str()), ("true", "false", "false"));
+        assert_eq!(got["SeqHaltTxReplyOther"], "false");
+        assert!(!got.contains_key("workedStriked") && !got.contains_key("Region"), "scelte di schermo e valori binari non si importano");
     }
 }

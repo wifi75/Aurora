@@ -3690,3 +3690,151 @@
   margin: 0.4rem 0 0;
   padding-left: 1.1rem;
 }
+
+/* Messaggi gia' lavorati (scheda Notifiche): barrati o sottolineati come nel motore, a colori solo se acceso */
+.decode-row--strike .decode-text .data {
+  text-decoration: line-through;
+}
+
+.decode-row--underline .decode-text .data {
+  text-decoration: underline;
+}
+
+.badge--quiet {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.decode-gap {
+  height: 0.6rem;
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+/* «Inverti colore sfondo/testo»: il colore del tipo di messaggio va sul testo, lo sfondo resta quello di tutti */
+.decode-list--invert .decode-row {
+  background: transparent;
+}
+
+.decode-list--invert .decode-row .decode-text .data {
+  color: var(--row-accent, inherit);
+  font-weight: 700;
+}
+
+.me-mark--blue {
+  background: #1f4fff;
+  box-shadow: 0 0 10px 1px #1f4fff;
+}
+
+/* «Sfondo diverso per il mio nominativo nel messaggio» (ciano o giallo come nel motore) */
+.decode-row--me.decode-row--me-cyan {
+  background: #00ffff !important;
+  animation: none;
+}
+
+.decode-row--me.decode-row--me-yellow {
+  background: #ffff00 !important;
+  animation: none;
+}
+
+.decode-row--me-cyan,
+.decode-row--me-yellow,
+.decode-row--me-cyan .data,
+.decode-row--me-yellow .data,
+.decode-row--me-cyan .decode-where,
+.decode-row--me-yellow .decode-where,
+.decode-row--me-cyan .w-km,
+.decode-row--me-yellow .w-km {
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+.dx-grid {
+  background: #00e0ff;
+  box-shadow: 0 0 10px -1px #00e0ff;
+}
+
+/* Schede Sequenza, Generali e Notifiche come nel motore */
+.jt-group {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.jt-group > legend {
+  padding: 0 var(--space-2);
+  font-weight: var(--weight-strong);
+}
+
+.jt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.25rem 0;
+  font-size: var(--text-sm);
+}
+
+.jt-row--off {
+  opacity: 0.55;
+}
+
+.jt-row input[type='number'] {
+  width: 4.5rem;
+}
+
+.jt-row input[type='text'],
+.jt-row select {
+  min-width: 10rem;
+  min-height: 1.8rem;
+  padding: 0 0.5rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--text-muted);
+  border-radius: 0.4rem;
+}
+
+.jt-grid {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.6fr) repeat(5, minmax(5.5rem, 1fr));
+  align-items: center;
+  gap: 0.25rem var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.jt-grid > span.jt-reason {
+  grid-column: 1 / -1;
+}
+
+.jt-preview {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.6fr) 5rem repeat(2, minmax(6rem, 1fr));
+  align-items: center;
+  gap: 0.25rem var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.jt-sample {
+  padding: 0.15rem 0.5rem;
+  font-family: var(--font-data);
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+}
+
+.jt-sample--bold {
+  font-weight: 700;
+}
+
+.jt-sample--strike {
+  text-decoration: line-through;
+}
+
+.jt-sample--underline {
+  text-decoration: underline;
+}
+
+.jt-reason {
+  font-size: var(--text-xs);
+}

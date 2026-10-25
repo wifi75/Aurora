@@ -71,7 +71,8 @@ interface MatrixProps {
 /** La matrice: righe FT8, FT4, DIG; colonne 160...4 e U; in alto a sinistra il totale dei paesi lavorati. */
 export function DxccGrid({ matrix, station }: MatrixProps) {
   const t = useT();
-  const rows = matrix.rows;
+  // le righe sono i soli modi di Aurora, FT8 e FT4: DIG non serve
+  const rows = matrix.rows.filter((r) => r !== 'DIG');
   return (
     <table className="dxcc-grid" aria-label={t('dxcc.title')}>
       <thead>
@@ -139,8 +140,47 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
   if (own.isError && given === undefined) return <p className="notice">{t('dxcc.unavailable')}</p>;
   if (!matrix) return <p className="muted">{t('set.loading')}</p>;
 
+  // nel pannello della pagina Stazione la scheda si popola solo con un nominativo scelto (doppio clic o scritto qui): senza, resta la riga della stazione
+  const empty = panel && chosen === '';
+  const subjectRow = (
+    <div className="dxcc-subject">
+      <span className="data dxcc-subject-call">
+        {t('dxcc.station')}: <strong>{s ? s.call : chosen || t('dxcc.none')}</strong>
+        {s ? <span className="muted"> · {s.country ?? t('dxcc.unknownCountry')}</span> : null}
+      </span>
+      <input
+        type="text"
+        className="dxcc-try"
+        value={typed}
+        placeholder={t('dxcc.tryCall')}
+        aria-label={t('dxcc.tryCall')}
+        maxLength={20}
+        autoCapitalize="characters"
+        spellCheck={false}
+        onChange={(e) => setTyped(e.target.value.toUpperCase())}
+      />
+      {panel ? null : (
+        <div className="dxcc-view" role="group">
+          {(['station', 'totals'] as const).map((v) => (
+            <button key={v} type="button" className={`glass${(showStation ? 'station' : 'totals') === v ? ' glass--on' : ''}`} aria-pressed={(showStation ? 'station' : 'totals') === v} disabled={v === 'station' && !(s && s.country)} onClick={() => setView(v)}>
+              {t(`dxcc.view.${v}` as Key)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+  if (empty) {
+    return (
+      <div className="dxcc-card dxcc-card--panel dxcc-card--empty" title={t('dxcc.tip.card')}>
+        {subjectRow}
+      </div>
+    );
+  }
+
   return (
     <div className={`dxcc-card${panel ? ' dxcc-card--panel' : ''}`} title={t('dxcc.tip.card')}>
+      {panel ? subjectRow : null}
       <DxccLabelStrip
         labels={s?.labels}
         captions={[
@@ -149,35 +189,16 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
           `${mode ?? t('dxcc.cap.mode')} - ${(s?.call ?? chosen) || t('dxcc.cap.call')}`,
         ]}
       />
-      <div className="dxcc-subject">
-        <span className="data dxcc-subject-call">
-          {t('dxcc.station')}: <strong>{s ? s.call : chosen || t('dxcc.none')}</strong>
-          {s ? <span className="muted"> · {s.country ?? t('dxcc.unknownCountry')}</span> : null}
-        </span>
-        <input
-          type="text"
-          className="dxcc-try"
-          value={typed}
-          placeholder={t('dxcc.tryCall')}
-          aria-label={t('dxcc.tryCall')}
-          maxLength={20}
-          autoCapitalize="characters"
-          spellCheck={false}
-          onChange={(e) => setTyped(e.target.value.toUpperCase())}
-        />
-        <div className="dxcc-view" role="group">
-          {(['station', 'totals'] as const).map((v) => (
-            <button key={v} type="button" className={`glass${(showStation ? 'station' : 'totals') === v ? ' glass--on' : ''}`} aria-pressed={(showStation ? 'station' : 'totals') === v} disabled={v === 'station' && !(s && s.country)} onClick={() => setView(v)}>
-              {t(`dxcc.view.${v}` as Key)}
-            </button>
-          ))}
-        </div>
-      </div>
-      <DxccGrid matrix={matrix} station={showStation && s ? s.cells : null} />
-      <p className="muted dxcc-foot">
-        {t('dxcc.total', { worked: matrix.worked, total: matrix.total })} · {t('dxcc.qsos', { n: matrix.qsos })}
-      </p>
-      <p className="muted dxcc-legend">{t('dxcc.legend')}</p>
+      {panel ? null : subjectRow}
+      <DxccGrid matrix={matrix} station={panel ? (s?.cells ?? null) : showStation && s ? s.cells : null} />
+      {panel ? null : (
+        <>
+          <p className="muted dxcc-foot">
+            {t('dxcc.total', { worked: matrix.worked, total: matrix.total })} · {t('dxcc.qsos', { n: matrix.qsos })}
+          </p>
+          <p className="muted dxcc-legend">{t('dxcc.legend')}</p>
+        </>
+      )}
     </div>
   );
 }

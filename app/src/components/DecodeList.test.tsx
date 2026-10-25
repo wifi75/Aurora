@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
 import { usePrefs } from '../lib/prefs';
+import { useNotifyView } from '../lib/notifyView';
 import { DecodeList } from './DecodeList';
 
 const decode = (over: Partial<DecodedMessage> = {}): DecodedMessage => ({
@@ -198,6 +199,119 @@ describe('DecodeList', () => {
     render(<DecodeList decodes={[decode()]} onReply={onReply} />);
     fireEvent.doubleClick(screen.getByRole('button', { name: /JA1XYZ/ }));
     expect(onReply).not.toHaveBeenCalled();
+    usePrefs.getState().reset();
+  });
+
+  describe('stations already worked (same band and mode, from the log)', () => {
+    const worked = (over: Partial<DecodedMessage> = {}) => decode({ id: 11, text: 'CQ K1ABC FN42', tag: 'worked_call', ...over });
+    afterEach(() => {
+      useNotifyView.getState().reset();
+      usePrefs.getState().reset();
+    });
+
+    it('strikes the message by default, without the green colour', () => {
+      render(<DecodeList decodes={[worked()]} onReply={() => {}} />);
+      const row = screen.getByRole('button', { name: /K1ABC/ });
+      expect(row).toHaveClass('decode-row--worked', 'decode-row--strike');
+      expect(row).not.toHaveClass('decode-row--underline');
+      expect(row).not.toHaveClass('decode-row--worked-color');
+      // l'etichetta resta, ma neutra: il verde c'e' solo con «evidenzia gia' lavorati»
+      expect(screen.getByText('GIÀ LAVORATA')).toHaveClass('badge--quiet');
+      expect(row.style.getPropertyValue('--row-accent')).toBe('');
+    });
+
+    it('underlines instead of striking when asked', () => {
+      useNotifyView.getState().set({ workedStriked: false, workedUnderlined: true });
+      render(<DecodeList decodes={[worked()]} onReply={() => {}} />);
+      const row = screen.getByRole('button', { name: /K1ABC/ });
+      expect(row).toHaveClass('decode-row--underline');
+      expect(row).not.toHaveClass('decode-row--strike');
+    });
+
+    it('with the colour option the green label and bar come back', () => {
+      useNotifyView.getState().set({ workedColor: true });
+      render(<DecodeList decodes={[worked()]} onReply={() => {}} />);
+      const row = screen.getByRole('button', { name: /K1ABC/ });
+      expect(row).toHaveClass('decode-row--worked-color');
+      expect(screen.getByText('GIÀ LAVORATA')).not.toHaveClass('badge--quiet');
+      expect(row.style.getPropertyValue('--row-accent')).toBe('var(--tag-worked-call)');
+    });
+
+    it('does not show them at all with «non mostrare», except calls to me and own Tx rows', () => {
+      useNotifyView.getState().set({ workedDontShow: true });
+      render(
+        <DecodeList
+          myCall="AA1AA"
+          decodes={[worked({ id: 1 }), worked({ id: 2, text: 'AA1AA K1ABC -10' }), worked({ id: 3, text: 'CQ DX D2EFG KO10', tag: 'new_call' }), worked({ id: -4, text: 'AA1AA K1ABC RR73', tag: 'worked_call' })]}
+          onReply={() => {}}
+        />,
+      );
+      expect(screen.queryByRole('button', { name: /^.*CQ K1ABC FN42/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /AA1AA K1ABC -10/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /D2EFG/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /RR73/ })).toBeInTheDocument();
+    });
+
+    it('leaves a message with something new alone: no strike', () => {
+      render(<DecodeList decodes={[worked({ tag: 'new_grid' })]} onReply={() => {}} />);
+      expect(screen.getByRole('button', { name: /K1ABC/ })).not.toHaveClass('decode-row--strike');
+    });
+  });
+
+  it('gives the calls to me a cyan or yellow background when asked, and highlights the DX call and grid only when asked', () => {
+    const rows = [decode({ id: 1, text: 'AA1AA BB2BB -10', tag: null }), decode({ id: 2, text: 'CQ DD4DD JO31', tag: null })];
+    useNotifyView.getState().set({ differentBackground: true });
+    const { rerender } = render(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" dxGrid="JO31" onReply={() => {}} />);
+    expect(screen.getByRole('button', { name: /AA1AA BB2BB/ })).toHaveClass('decode-row--me-cyan');
+    useNotifyView.getState().set({ diffYellow: true });
+    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" dxGrid="JO31" onReply={() => {}} />);
+    expect(screen.getByRole('button', { name: /AA1AA BB2BB/ })).toHaveClass('decode-row--me-yellow');
+    // di base si evidenzia il nominativo DX (come Aurora ha sempre fatto) e non il locatore
+    expect(document.querySelectorAll('mark.dx-call')).toHaveLength(1);
+    expect(document.querySelectorAll('mark.dx-grid')).toHaveLength(0);
+    useNotifyView.getState().set({ highlightDxGrid: true });
+    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" dxGrid="JO31" onReply={() => {}} />);
+    expect(document.querySelectorAll('mark.dx-grid')).toHaveLength(1);
+    useNotifyView.getState().set({ highlightDxCall: false });
+    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" dxGrid="JO31" onReply={() => {}} />);
+    expect(document.querySelectorAll('mark.dx-call:not(.dx-grid)')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: /AA1AA BB2BB/ })).not.toHaveClass('decode-row--dx');
+    useNotifyView.getState().reset();
+  });
+
+  it('inverts the colours when asked (text coloured, neutral background)', () => {
+    useNotifyView.getState().set({ invert: true });
+    render(<DecodeList decodes={[decode({ tag: 'new_dxcc' })]} onReply={() => {}} />);
+    expect(screen.getByRole('region')).toHaveClass('decode-list--invert');
+    useNotifyView.getState().reset();
+  });
+
+  it('marks the calls to me in red, in blue for the station being called, and not at all with the markers off', () => {
+    const rows = [decode({ id: 1, text: 'AA1AA BB2BB -10', tag: null }), decode({ id: 2, text: 'AA1AA CC3CC -10', tag: null })];
+    const { container, rerender } = render(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
+    expect(container.querySelectorAll('.me-mark')).toHaveLength(2);
+    expect(container.querySelectorAll('.me-mark--blue')).toHaveLength(0);
+    useNotifyView.getState().set({ blueMarker: true });
+    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
+    expect(container.querySelectorAll('.me-mark--blue')).toHaveLength(1);
+    useNotifyView.getState().set({ redMarker: false });
+    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
+    expect(container.querySelectorAll('.me-mark')).toHaveLength(0);
+    useNotifyView.getState().reset();
+  });
+
+  it('puts a blank line between periods, shows the azimuth and can hide the own Tx rows', () => {
+    usePrefs.getState().set({ insertBlank: true, showAzimuth: true, showTx: false });
+    render(
+      <DecodeList
+        myGrid="JN45"
+        decodes={[decode({ id: 1, time_ms: 45_030_000 }), decode({ id: 2, time_ms: 45_030_000 }), decode({ id: 3, time_ms: 45_015_000 }), decode({ id: -5, time_ms: 45_015_000, text: 'CQ AA1AA JN45' })]}
+        onReply={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    expect(screen.getAllByText(/^\d+ km \d+°$/).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Tx')).not.toBeInTheDocument();
     usePrefs.getState().reset();
   });
 });

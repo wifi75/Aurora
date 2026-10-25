@@ -482,6 +482,17 @@ struct LogSources {
     files: Vec<PathBuf>,
     logbook: Arc<Logbook>,
     log4om: Option<PathBuf>,
+    /// Il filtro del log della scheda Generali (nominativo, griglia, data di partenza): cambia a caldo con le impostazioni.
+    filter: Arc<std::sync::RwLock<engine_jtdx::worked::LogFilter>>,
+}
+
+/// Le impostazioni della scheda Sequenza come le vuole la sequenza dei QSO del motore proprio.
+fn sequence_settings(r: &remote_api::engine_settings::Reports) -> engine_native::SequenceSettings {
+    let mut s = engine_native::SequenceSettings::new([r.seq_answer_cq, r.seq_answer_in_call, r.seq_sent_r_report, r.seq_closing], r.seq_halt_reply_other, r.strict_directional_cq, r.watchdog_min, r.tx_qsy_allowed);
+    s.rr73_marker = r.rr73_marker;
+    s.call_prio_cq = r.call_prio_cq;
+    s.max_distance = r.max_distance;
+    s
 }
 
 /// Carica i QSO gia' fatti da tutte le sorgenti; una sorgente mancante o illeggibile vale come vuota (se ne parla nel registro), cosi' al
@@ -499,10 +510,14 @@ fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
             Err(e) => tracing::warn!("log dei QSO non letto ({}): {e}", path.display()),
         }
     }
-    let mut log = WorkedLog::from_adif(&text, db);
+    let filter = sources.filter.read().map(|f| f.clone()).unwrap_or_default();
+    let mut log = WorkedLog::new();
+    for q in aurora_core::adif::parse_qsos(&text).iter().filter(|q| filter.accepts(q)) {
+        log.add_adif_qso(q, db);
+    }
     match sources.logbook.all_qsos() {
         Ok(rows) => {
-            for q in &rows {
+            for q in rows.iter().filter(|q| filter.accepts(q)) {
                 log.add_adif_qso(q, db);
             }
         }
@@ -511,7 +526,7 @@ fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
     if let Some(path) = &sources.log4om {
         match logbook::log4om::read_all(path) {
             Ok(rows) => {
-                for q in &rows {
+                for q in rows.iter().filter(|q| filter.accepts(q)) {
                     log.add_adif_qso(q, db);
                 }
             }
@@ -880,7 +895,10 @@ pub async fn run(
         });
     }
     // paesi e QSO gia' fatti si leggono una volta sola, prima di avviare il motore
-    let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: config.log4om_db.clone() };
+    let log_filter = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| s.reports().log_filter).unwrap_or_default()));
+    // le evidenziazioni di «nuovo» (scheda Notifiche): decidono le etichette delle decodifiche, anche «gia' lavorato»; cambiano a caldo
+    let highlight_flags: engine_jtdx::enrich::SharedFlags = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| s.reports().highlights).unwrap_or_default()));
+    let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: config.log4om_db.clone(), filter: Arc::clone(&log_filter) };
     let enrichment: Option<(Arc<DxccDb>, SharedWorked)> = load_dxcc(config.cty_path.as_deref()).map(|db| {
         let worked = Arc::new(std::sync::RwLock::new(load_worked(&log_sources, &db)));
         (db, worked)
@@ -893,6 +911,38 @@ pub async fn run(
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
     }
     let live_log = enrichment.as_ref().map(|(db, worked)| (Arc::clone(db), Arc::clone(worked), log_sources.clone()));
+    // le schede Sequenza, Generali e Notifiche del motore proprio: dalle impostazioni di Aurora alla sequenza, alle etichette e al log
+    if let Some(store) = &engine_settings {
+        let r = store.reports();
+        native_controls.monitor.store(!r.monitor_off_at_start, std::sync::atomic::Ordering::Relaxed);
+        native_controls.set_sequence(sequence_settings(&r));
+        let (store, flags, filter, controls, live) = (Arc::clone(store), Arc::clone(&highlight_flags), Arc::clone(&log_filter), Arc::clone(&native_controls), live_log.clone());
+        let mut changes = store.subscribe();
+        tokio::spawn(async move {
+            let (mut last_sequence, mut last_filter) = (sequence_settings(&r), r.log_filter);
+            while changes.changed().await.is_ok() {
+                let r = store.reports();
+                if let Ok(mut f) = flags.write() {
+                    *f = r.highlights;
+                }
+                let sequence = sequence_settings(&r);
+                if sequence != last_sequence {
+                    controls.set_sequence(sequence.clone());
+                    last_sequence = sequence;
+                }
+                if r.log_filter != last_filter {
+                    if let Ok(mut f) = filter.write() {
+                        *f = r.log_filter.clone();
+                    }
+                    last_filter = r.log_filter;
+                    // il log si rilegge col filtro nuovo (fuori dal thread asincrono: legge file e basi di dati)
+                    if let Some((db, worked, sources)) = live.clone() {
+                        let _ = tokio::task::spawn_blocking(move || refresh_worked(&sources, &db, &worked)).await;
+                    }
+                }
+            }
+        });
+    }
     let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.read().map_or(0, |w| w.len()));
     let info = serde_json::json!({
@@ -1103,7 +1153,8 @@ pub async fn run(
             // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
             let (call, grid) = (my_call.clone(), my_grid.clone());
             let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
-            let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::with_shared(db, worked))));
+            let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::with_shared(db, worked).with_flags(Arc::clone(&highlight_flags)))));
+            let mode_controls = Arc::clone(&native_controls);
             // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
             if let Some(enrich) = &enrich {
                 let enrich = Arc::clone(enrich);
@@ -1133,7 +1184,7 @@ pub async fn run(
                 annotate: Arc::new(move |text, band| match &enrich {
                     Some(e) => match e.lock() {
                         Ok(e) => {
-                            let a = e.annotate(text, band);
+                            let a = e.annotate_in(text, band, Some(mode_controls.mode().name()));
                             (a.country, a.continent, a.tag)
                         }
                         Err(_) => (None, None, None),
@@ -1175,7 +1226,7 @@ pub async fn run(
             };
             let mut engine = JtdxEngine::new(Arc::clone(&hub), engine_config, Arc::new(EngineClock));
             if let Some((db, worked)) = enrichment {
-                engine = engine.with_shared_enrichment(db, worked);
+                engine = engine.with_shared_enrichment(db, worked).with_highlight_flags(Arc::clone(&highlight_flags));
             }
             (tokio::spawn(engine.run(io)), Some(hub))
         }

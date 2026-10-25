@@ -27,7 +27,8 @@ import { Waterfall } from '../components/Waterfall';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useNotify } from '../lib/notify';
-import { pickAlert, playAlert, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
+import { useNotifyView } from '../lib/notifyView';
+import { pickAlert, playAlert, playNamed, readAlerts, saveAlerts, webAudioContext, type AlertPrefs, type ToneContext } from '../lib/alerts';
 import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
@@ -95,10 +96,16 @@ export function Live() {
   useEffect(() => {
     let lastId: number | null = null;
     return useStation.subscribe((state) => {
-      const picked = pickAlert(state.decodes, lastId, useNotify.getState().notify.sound, useStation.getState().status?.de_call);
+      const picked = pickAlert(state.decodes, lastId, useNotify.getState().notify.sound, useStation.getState().status?.de_call, useNotifyView.getState().view.beepFirst, {
+        flags: useNotifyView.getState().view,
+        dxCall: useStation.getState().status?.dx_call,
+      });
       lastId = picked.lastId;
       const prefs = alertsRef.current;
+      // «non suonare mentre trasmetti»: la nota si perde, non si accoda
+      if (prefs.muteWhileTx && useStation.getState().status?.transmitting) return;
       if (picked.kind && prefs.enabled && audioRef.current) playAlert(picked.kind, prefs.volume, audioRef.current);
+      if (picked.alert && prefs.enabled && audioRef.current) playNamed(prefs.sound, prefs.volume, audioRef.current);
     });
   }, []);
 
@@ -152,6 +159,7 @@ export function Live() {
             myGrid={status?.de_grid}
             myCall={status?.de_call}
             dxCall={status?.dx_call}
+            dxGrid={status?.dx_grid}
             onReply={onReply}
             emptyText={t('decode.noCq')}
           />
@@ -171,7 +179,7 @@ export function Live() {
           </div>
         );
       case 'all':
-        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} onReply={onReply} />;
+        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} />;
     }
   };
 

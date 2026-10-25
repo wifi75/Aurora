@@ -46,7 +46,7 @@ export function callOf(text: string): string | null {
   return second && isCallToken(second) ? second : null;
 }
 
-const isCq = (text: string) => CQ_WORDS.includes(text.trim().toUpperCase().split(/\s+/)[0] ?? '');
+export const isCq = (text: string) => CQ_WORDS.includes(text.trim().toUpperCase().split(/\s+/)[0] ?? '');
 
 function isStandard(text: string): boolean {
   if (text.includes('<')) return false;

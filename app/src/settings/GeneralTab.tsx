@@ -4,12 +4,18 @@ import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { EngineValues } from './EngineValues';
+import { NativeGeneral } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
 import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help, Row } from './common';
 
 /** Scheda Generali: la stazione (letta dal motore), come si mostrano i messaggi, lingua e tema. */
 export function GeneralTab() {
+  const native = useIsNative();
+  return native ? <NativeGeneral /> : <JtdxGeneralTab />;
+}
+
+function JtdxGeneralTab() {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   const set = usePrefs.getState().set;
