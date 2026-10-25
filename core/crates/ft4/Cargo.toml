@@ -1,0 +1,12 @@
+[package]
+name = "ft4"
+description = "Motore FT4 di Aurora: toni, onda GFSK, sincronismo e decodifica del periodo di 7,5 s (algoritmi di JTDX, GPL 3); messaggi, CRC e LDPC sono quelli del crate ft8"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+ft8 = { path = "../ft8" }
+rustfft = "6.4.1"
