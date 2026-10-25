@@ -27,7 +27,7 @@ use qso_native::{CallerInfo, CallerInfoFn, Mode, Options as SeqOptions};
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
 
-pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, Utc};
+pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, AllTxtScope, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
 pub use rig::{NativeControls, NativeRig, SavedControls};
 pub use wav::{jtdx_stem, jtdx_wav_bytes, save_jtdx_style, SaveInfo, SaveMode, SaveSettings};
@@ -251,6 +251,10 @@ pub fn start_with_save(
         let (command_tx, command_rx) = mpsc::channel::<TxCommand>();
         // lo stato dei pulsanti e dei livelli impostati prima dello spegnimento si rimette com'era
         let controls_path = data_dir.join("controls.json");
+        // memoria del livello Pwr per banda: spenta di fabbrica come in JTDX (`AURORA_PWR_BAND_MEMORY=1` la accende)
+        if let Some(l) = live.as_ref() {
+            l.controls.set_band_memory(std::env::var("AURORA_PWR_BAND_MEMORY").is_ok_and(|v| v == "1"));
+        }
         let restored = live.as_ref().and_then(|l| {
             let saved = persist::load(&controls_path)?;
             l.controls.restore(&saved);
@@ -411,7 +415,7 @@ pub fn start_with_save(
                     }
                     for qso in qsos {
                         note_logged(&mut logged_due, &qso, now_unix_ms());
-                        let _ = message_events.send(Event::QsoLogged(qso));
+                        let _ = message_events.send(Event::QsoCompleted(qso));
                     }
                 }
                 // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
@@ -433,7 +437,7 @@ pub fn start_with_save(
                         }
                         for qso in qsos {
                             note_logged(&mut logged_due, &qso, now_unix_ms());
-                            let _ = message_events.send(Event::QsoLogged(qso));
+                            let _ = message_events.send(Event::QsoCompleted(qso));
                         }
                     }
                     continue;
@@ -457,8 +461,13 @@ pub fn start_with_save(
                     }
                 }
                 if let (Some(a), Some(l)) = (all_txt.as_mut(), live.as_ref()) {
-                    let rows: Vec<(i32, f32, i64, &str)> = decoded.iter().map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str())).collect();
+                    // le caselle «decodificati» e «e di debug» (impostazioni): senza, solo i messaggi che nominano la propria stazione
+                    let scope = l.controls.all_txt_scope();
+                    let rows: Vec<(i32, f32, i64, &str)> = decoded.iter().filter(|d| scope.keeps(&d.text, &l.de_call)).map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str())).collect();
                     a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows);
+                    if scope == AllTxtScope::Debug {
+                        a.write_debug(now_unix_ms(), "Decoding finished");
+                    }
                 }
                 if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
                     for d in &decoded {
@@ -486,7 +495,7 @@ pub fn start_with_save(
                     }
                     for qso in qsos {
                         note_logged(&mut logged_due, &qso, now_unix_ms());
-                        let _ = message_events.send(Event::QsoLogged(qso));
+                        let _ = message_events.send(Event::QsoCompleted(qso));
                     }
                 }
                 // il confronto con JTDX e' fatto sui periodi FT8

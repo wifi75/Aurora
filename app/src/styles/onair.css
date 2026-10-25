@@ -1602,10 +1602,15 @@
 }
 
 /* etichette colorate: grandi, una riga sola, bordo arrotondato, testo bianco o scuro a seconda del colore */
+/* la linea che chiude le colonne paese/distanza e' del blocco stesso, cosi' c'e' anche nelle righe con l'etichetta colorata (che non ha bordo) */
+.dock-panel--all .decode-where,
+.dock-panel--cq .decode-where {
+  border-right: var(--border-width) solid var(--col-line);
+}
+
 .dock-panel--all .decode-list .badge-cell,
 .dock-panel--cq .decode-list .badge-cell {
   padding: 0 0.3rem;
-  border-left: var(--border-width) solid var(--col-line);
   background: transparent;
 }
 
