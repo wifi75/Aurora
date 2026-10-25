@@ -105,6 +105,8 @@ pub struct Sequencer {
     watchdog_ref: Option<f64>,
     last_text: Option<String>,
     first_tx_pending: bool,
+    /// Il periodo (pari o dispari) per cui sono stati generati gli ultimi messaggi (`m_txGenerated` di JTDX).
+    tx_generated: bool,
     cur_slot: Slot,
     reported: Option<(Phase, Option<String>, u8)>,
 }
@@ -134,6 +136,7 @@ impl Sequencer {
             watchdog_ref: None,
             last_text: None,
             first_tx_pending: false,
+            tx_generated: tx_even,
             cur_slot: Slot(0),
             reported: None,
         })
@@ -154,7 +157,63 @@ impl Sequencer {
     }
 
     pub fn set_options(&mut self, opts: Options) {
+        let skip_changed = opts.skip_tx1 != self.opts.skip_tx1;
+        let skip = opts.skip_tx1;
         self.opts = opts;
+        // come `on_skipTx1_clicked` di JTDX: se il messaggio scelto e' ancora quello di partenza, accendere «Salta Tx1» porta da Tx1 a Tx2
+        // e spegnerlo da Tx2 a Tx1. Se il DX ci ha gia' scritto, Tx2 e' un avanzamento vero del QSO e non si tocca.
+        if skip_changed
+            && let Some(dx) = self.dx.as_mut()
+            && !dx.contacted
+        {
+            let to = match (skip, self.ntx) {
+                (true, 1) => Some(2),
+                (false, 2) => Some(1),
+                _ => None,
+            };
+            if let Some(n) = to {
+                self.ntx = n;
+                dx.repeats = 0;
+            }
+        }
+        self.note_state();
+    }
+
+    /// Cambia il modo (FT8 <-> FT4): i periodi hanno un'altra durata, quindi il QSO in corso, i chiamanti in coda e la trasmissione si
+    /// fermano e si riparte da capo. Le impostazioni e la lista dei lavorati restano.
+    pub fn set_mode(&mut self, mode: Mode) {
+        if mode == self.mode {
+            return;
+        }
+        self.mode = mode;
+        if let Some(old) = self.dx.take() {
+            self.events.push(Event::Abandoned {
+                call: old.call,
+                reason: AbandonReason::Cleared,
+            });
+        }
+        if self.enabled || self.cq_run.is_some() {
+            self.stop(StopReason::Halt);
+        }
+        self.queue.clear();
+        self.last_tx = None;
+        self.last_text = None;
+        self.watchdog_ref = None;
+        self.first_tx_pending = false;
+        self.cur_slot = Slot(0);
+        self.ntx = 6;
+        self.note_state();
+    }
+
+    /// «Gen.Msgs»: rigenera i messaggi Tx1-Tx5 per il DX in collegamento e rimette il messaggio di partenza (Tx1, o Tx2 con «Salta Tx1»),
+    /// come `genStdMsgs` di JTDX. Senza DX non c'e' nulla da rigenerare. I testi si compongono sempre dal DX e dal rapporto correnti.
+    pub fn regen_messages(&mut self) {
+        let skip = self.opts.skip_tx1;
+        if let Some(dx) = self.dx.as_mut() {
+            dx.repeats = 0;
+            self.ntx = if skip { 2 } else { 1 };
+            self.tx_generated = self.tx_even;
+        }
         self.note_state();
     }
 
@@ -167,9 +226,15 @@ impl Sequencer {
         self.tx_even
     }
 
-    /// Cambio a mano del periodo (`TxMinuteButton`).
+    /// Cambio a mano del periodo (`TxMinuteButton`). Come in JTDX (`on_TxMinuteButton_clicked`): con Abilita Tx e AutoSeq accesi, se il
+    /// periodo e' diverso da quello per cui sono stati generati i messaggi il DX viene liberato.
     pub fn set_tx_even(&mut self, even: bool) {
         self.tx_even = even;
+        if self.tx_generated != even && self.enabled && self.opts.auto_seq {
+            self.clear_dx();
+        }
+        // il periodo e' cambiato: l'eventuale trasmissione gia' pianificata in questo periodo non vale piu'
+        self.last_tx = None;
     }
 
     /// Il DX in collegamento.
@@ -301,6 +366,7 @@ impl Sequencer {
         });
         self.ntx = ntx;
         self.tx_even = !slot.is_even();
+        self.tx_generated = self.tx_even;
         self.enabled = true;
         self.first_tx_pending = true;
         self.watchdog_ref = None;
@@ -641,6 +707,7 @@ impl Sequencer {
         });
         self.ntx = c.start_ntx;
         self.tx_even = !c.rx_even;
+        self.tx_generated = self.tx_even;
         self.first_tx_pending = true;
         self.watchdog_ref = None;
         true

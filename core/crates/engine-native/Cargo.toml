@@ -1,6 +1,6 @@
 [package]
 name = "engine-native"
-description = "Motore proprio di Aurora in ricezione: porta l'audio a 12 kHz, lo divide nei periodi FT8 di 15 secondi, lo decodifica con il crate ft8 e lo confronta con JTDX"
+description = "Motore proprio di Aurora in ricezione: porta l'audio a 12 kHz, lo divide nei periodi FT8 (15 s) o FT4 (7,5 s), lo decodifica con i crate ft8 e ft4 e lo confronta con JTDX"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -11,6 +11,7 @@ publish = false
 aurora-core = { path = "../aurora-core" }
 audio-spectrum = { path = "../audio-spectrum" }
 ft8 = { path = "../ft8" }
+ft4 = { path = "../ft4" }
 rig-control = { path = "../rig-control" }
 qso-native = { path = "../qso-native" }
 tx-native = { path = "../tx-native" }

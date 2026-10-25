@@ -10,6 +10,7 @@ pub mod detect;
 pub mod fake_rigctld;
 pub mod hamlib;
 pub mod hamlib_rig;
+pub mod meters;
 pub mod modes;
 pub mod omnirig;
 pub mod schedule;
@@ -38,6 +39,11 @@ pub trait Rig: Send + Sync {
 
     /// La frequenza di ricezione della radio (Hz), se il comando la sa leggere.
     fn frequency(&self) -> Result<u64, RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
+    /// I misuratori della radio (S-meter in ricezione; potenza, ROS, ALC... in trasmissione), se il comando li sa leggere.
+    fn meters(&self) -> Result<meters::Meters, RigError> {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 

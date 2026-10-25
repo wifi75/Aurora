@@ -443,6 +443,7 @@ version = "0.11.4"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
+ "ft4",
  "ft8",
  "qso-native",
  "rig-control",

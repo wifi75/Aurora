@@ -29,6 +29,10 @@ pub struct FakeState {
     /// `F` riporta il modo a USB (la radio che richiama il modo memorizzato per banda).
     recall_mode: AtomicBool,
     stop: AtomicBool,
+    /// I livelli che la finta radio sa dare (`STRENGTH`, `SWR`...): valore come lo scrive rigctld. Gli altri rispondono `RPRT -11`.
+    levels: Mutex<Vec<(String, String)>>,
+    /// Potenza di fondo scala in mW per `\power2mW` (0 = non supportato).
+    full_power_mw: AtomicU64,
 }
 
 pub struct FakeRigctld {
@@ -49,6 +53,8 @@ impl FakeRigctld {
             hang_up: AtomicBool::new(false),
             recall_mode: AtomicBool::new(false),
             stop: AtomicBool::new(false),
+            levels: Mutex::new(Vec::new()),
+            full_power_mw: AtomicU64::new(0),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -118,6 +124,26 @@ impl FakeRigctld {
 
     pub fn hang_up(&self, on: bool) {
         self.state.hang_up.store(on, Ordering::SeqCst);
+    }
+
+    /// La finta radio da' (o cambia) questo livello, ad esempio `set_level("STRENGTH", "-12")`.
+    pub fn set_level(&self, name: &str, value: &str) {
+        if let Ok(mut levels) = self.state.levels.lock() {
+            match levels.iter_mut().find(|(n, _)| n == name) {
+                Some(entry) => entry.1 = value.to_string(),
+                None => levels.push((name.to_string(), value.to_string())),
+            }
+        }
+    }
+
+    /// Il fondo scala della potenza (mW) per `\power2mW`.
+    pub fn set_full_power_mw(&self, mw: u64) {
+        self.state.full_power_mw.store(mw, Ordering::SeqCst);
+    }
+
+    /// Quante volte e' arrivato questo comando (testo esatto).
+    pub fn count(&self, command: &str) -> usize {
+        self.commands().iter().filter(|c| *c == command).count()
     }
 
     pub fn recall_mode_on_qsy(&self, on: bool) {
@@ -196,6 +222,14 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     "RPRT 0\n".into()
                 }
                 "I" => "RPRT 0\n".into(),
+                "l" => {
+                    let value = state.levels.lock().ok().and_then(|l| l.iter().find(|(n, _)| n == arg).map(|(_, v)| v.clone()));
+                    value.map_or_else(|| "RPRT -11\n".to_string(), |v| format!("{v}\n"))
+                }
+                "\\power2mW" => match (state.full_power_mw.load(Ordering::SeqCst), arg.parse::<f64>()) {
+                    (0, _) | (_, Err(_)) => "RPRT -11\n".into(),
+                    (mw, Ok(fraction)) => format!("{}\n", (mw as f64 * fraction).round() as u64),
+                },
                 _ => "RPRT -11\n".into(),
             }
         };
