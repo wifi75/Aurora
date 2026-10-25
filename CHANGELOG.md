@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.14 - 2026-10-25
+- **Bug del livello Pwr al cambio di banda corretto**: il cursore mostrava il massimo ma si trasmetteva al minimo, perche' la memoria del livello per banda ripristinava un livello vecchio senza che il cursore lo seguisse. Ora la memoria per banda e' spenta di fabbrica come in JTDX (un solo livello su tutte le bande; `AURORA_PWR_BAND_MEMORY=1` la accende) e il cursore segue sempre il valore del motore (ogni 2 secondi).
+- Linea verticale che chiude la colonna paese e distanza presente anche nelle righe con l'etichetta colorata; frequenza Tx e Rx sulla riga del nominativo DX, a destra.
+
 ## 0.11.13 - 2026-10-25
 - **Impostazioni riordinate**: pagine larghe a riquadri con cornice e celle a colonne, barra delle schede in due righe per tipo, scheda Notifiche come tabella vera con intestazioni, **schede Radio e Radio CAT unite**; anteprime dei colori con il nominativo dell'utente.
 - **Scheda Audio funzionante**: ingresso e uscita a menu, canali, cambio a caldo con ripristino del dispositivo precedente se non si apre, salvataggio dei file audio nel formato di JTDX (Nessuno/Decodificati/Tutti).

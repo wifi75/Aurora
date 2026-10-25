@@ -141,6 +141,42 @@ pub fn service_line(at: &Utc, offset_s: f32, text: &str) -> String {
     format!("{}_{}.{:03}({})  {text}", at.date(), at.time(), at.milli, format_g(f64::from(offset_s), 6))
 }
 
+/// Cosa si scrive di cio' che si decodifica (`WriteDecodedALLTXT`, `WriteDecodedDebugALLTXT`; `Configuration::read_settings` e `MainWindow::readFromStdout`).
+/// Le righe di trasmissione e dei QSO registrati si scrivono sempre.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum AllTxtScope {
+    /// Nessuna delle due caselle: solo i messaggi che contengono il proprio nominativo (JTDX: `t.indexOf(m_baseCall) >= 0`).
+    Calls,
+    /// «Messaggi decodificati»: tutti i messaggi.
+    #[default]
+    Decoded,
+    /// «Messaggi decodificati e di debug»: tutti, piu' le righe di debug.
+    Debug,
+}
+
+impl AllTxtScope {
+    pub fn from_flags(decoded: bool, debug: bool) -> AllTxtScope {
+        if debug {
+            AllTxtScope::Debug
+        } else if decoded {
+            AllTxtScope::Decoded
+        } else {
+            AllTxtScope::Calls
+        }
+    }
+
+    /// Il messaggio si scrive? `my_call`: il proprio nominativo (si cerca la sua parte base, senza `/P`).
+    pub fn keeps(self, text: &str, my_call: &str) -> bool {
+        match self {
+            AllTxtScope::Decoded | AllTxtScope::Debug => true,
+            AllTxtScope::Calls => {
+                let base = qso_native::base_call(my_call);
+                !base.is_empty() && text.contains(base.as_str())
+            }
+        }
+    }
+}
+
 /// Il registro: un file al mese in `dir`, aperto e chiuso a ogni scrittura.
 pub struct AllTxt {
     dir: PathBuf,
@@ -238,6 +274,12 @@ impl AllTxt {
         self.append(&at, &[retransmit_line(&at, offset_s, dial_hz, tx_df, mode, text)]);
     }
 
+    /// Una riga di debug (solo con «Messaggi decodificati e di debug»): `writeToALLTXT` di JTDX, con data, ora e scarto dell'orologio.
+    pub fn write_debug(&self, now_ms: u64, text: &str) {
+        let at = Utc::from_unix_ms(now_ms);
+        self.append(&at, &[service_line(&at, 0.0, text)]);
+    }
+
     /// Un QSO e' stato registrato.
     pub fn write_qso_logged(&self, now_ms: u64, offset_s: f32, call: &str) {
         let at = Utc::from_unix_ms(now_ms);
@@ -251,6 +293,19 @@ mod tests {
 
     // 2026-10-18 04:36:00 UTC
     const T: u64 = 1_792_298_160_000;
+
+    #[test]
+    fn the_scope_decides_which_decodes_are_written() {
+        assert_eq!(AllTxtScope::from_flags(true, false), AllTxtScope::Decoded);
+        assert_eq!(AllTxtScope::from_flags(false, true), AllTxtScope::Debug);
+        assert_eq!(AllTxtScope::from_flags(true, true), AllTxtScope::Debug);
+        assert_eq!(AllTxtScope::from_flags(false, false), AllTxtScope::Calls);
+        assert!(AllTxtScope::Decoded.keeps("CQ K1ABC FN42", "IU3ABC") && AllTxtScope::Debug.keeps("CQ K1ABC FN42", "IU3ABC"));
+        assert!(!AllTxtScope::Calls.keeps("CQ K1ABC FN42", "IU3ABC"), "un CQ di altri non si scrive senza le caselle");
+        assert!(AllTxtScope::Calls.keeps("IU3ABC K1ABC -10", "IU3ABC") && AllTxtScope::Calls.keeps("K1ABC IU3ABC RR73", "IU3ABC"));
+        assert!(AllTxtScope::Calls.keeps("K1ABC IU3ABC RR73", "IU3ABC/P"), "con /P conta la parte base");
+        assert!(!AllTxtScope::Calls.keeps("CQ K1ABC FN42", ""), "senza nominativo proprio non c'e' niente da cercare");
+    }
 
     #[test]
     fn utc_from_unix_ms_is_the_civil_date() {
