@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.20 - 2026-10-25
 - **Barra in alto fissa**: i pulsanti accanto al logo restano fermi quando si scorre la pagina (un vecchio stile li rimetteva in flusso).
 
 ## 0.11.19 - 2026-10-25
