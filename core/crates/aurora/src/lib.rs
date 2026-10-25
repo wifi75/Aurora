@@ -20,7 +20,7 @@ use axum::{http::StatusCode, routing::any};
 use dxcc::DxccDb;
 use engine_jtdx::{worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
 use engine_sim::{SimConfig, SimEngine};
-use logbook::Logbook;
+use logbook::{adif::Station, Logbook};
 use qso_export::{Exporter, Target};
 use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use qso_engine::{Automation, AutomationConfig, Limits, Rules};
@@ -83,8 +83,10 @@ pub struct Config {
     pub auto_limits: Limits,
     /// Log esterni che ricevono ogni QSO come ADIF su UDP (attenzione ai doppioni con il server UDP secondario di JTDX).
     pub export_udp: Vec<SocketAddr>,
-    /// File ADIF a cui aggiungere ogni QSO.
+    /// File ADIF a cui aggiungere ogni QSO (oltre a `aurora_log.adi` nella cartella dei dati, che il motore proprio scrive sempre).
     pub export_file: Option<PathBuf>,
+    /// Potenza in watt da scrivere in `TX_PWR` di ogni QSO (`AURORA_TX_POWER`); vuota come in JTDX con «Save Tx power» spento.
+    pub tx_power: Option<String>,
     /// Comando della radio via OmniRig (la stessa che usa JTDX): cambio banda dall'interfaccia.
     pub rig_omnirig: bool,
     /// Comando della radio via Hamlib (`rigctld`): tutte le radio. Si configura dalla scheda Radio delle impostazioni (`radio.json`).
@@ -152,6 +154,7 @@ impl Config {
             auto_limits: Limits::default(),
             export_udp: Vec::new(),
             export_file: None,
+            tx_power: None,
             rig_omnirig: false,
             rig_hamlib: false,
             pair_ttl_secs: 600,
@@ -290,6 +293,7 @@ impl Config {
             },
             rig_hamlib: get("AURORA_RIG").as_deref() == Some("hamlib"),
             export_file: get("AURORA_EXPORT_FILE").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
+            tx_power: get("AURORA_TX_POWER").map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
         })
     }
 }
@@ -347,20 +351,49 @@ fn load_dxcc(path: Option<&Path>) -> Option<Arc<DxccDb>> {
     }
 }
 
-/// Carica i QSO gia' fatti; un file mancante o illeggibile vale come log vuoto (nessuna novita' segnalata).
-fn load_worked(path: Option<&Path>, db: &DxccDb) -> WorkedLog {
-    let Some(path) = path else { return WorkedLog::new() };
-    match std::fs::read(path) {
-        Ok(bytes) => {
-            let log = WorkedLog::from_adif(&String::from_utf8_lossy(&bytes), db);
-            tracing::info!("log letto: {} QSO", log.len());
-            log
-        }
-        Err(e) => {
-            tracing::warn!("log dei QSO non letto ({}): {e}", path.display());
-            WorkedLog::new()
+/// Dove vanno i QSO registrati e da dove si leggono quelli gia' fatti.
+///
+/// Destinatari: i server UDP di `AURORA_EXPORT_UDP`, il file di `AURORA_EXPORT_FILE` e, con il motore proprio, `aurora_log.adi` nella cartella
+/// dei dati (senza JTDX non c'e' il suo `wsjtx_log.adi`, che Aurora non tocca mai). Lista dei lavorati: `AURORA_WORKED_ADIF` (di norma
+/// `wsjtx_log.adi` di JTDX) e il file di Aurora, se c'e'.
+fn export_targets(config: &Config) -> (Vec<Target>, Vec<PathBuf>) {
+    let own = config.data_dir.join(OWN_LOG_FILE);
+    let mut targets: Vec<Target> = config.export_udp.iter().map(|a| Target::UdpAdif(*a)).collect();
+    if config.engine == EngineKind::Native {
+        targets.push(Target::File(own.clone()));
+    }
+    if let Some(file) = &config.export_file
+        && !targets.contains(&Target::File(file.clone()))
+    {
+        targets.push(Target::File(file.clone()));
+    }
+    let mut worked: Vec<PathBuf> = config.worked_adif.iter().cloned().collect();
+    if (config.engine == EngineKind::Native || own.is_file()) && !worked.contains(&own) {
+        worked.push(own);
+    }
+    (targets, worked)
+}
+
+/// Il file ADIF di Aurora, nella cartella dei dati: stesso formato di `wsjtx_log.adi`.
+const OWN_LOG_FILE: &str = "aurora_log.adi";
+
+/// Carica i QSO gia' fatti da uno o piu' file ADIF; un file mancante o illeggibile vale come vuoto (nessuna novita' segnalata).
+fn load_worked(paths: &[PathBuf], db: &DxccDb) -> WorkedLog {
+    let mut text = String::new();
+    for path in paths {
+        match std::fs::read(path) {
+            Ok(bytes) => {
+                text.push_str(&String::from_utf8_lossy(&bytes));
+                text.push('\n');
+            }
+            // il file di Aurora non c'e' finche' non si registra il primo QSO: non e' un problema
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound && path.file_name().is_some_and(|n| n == OWN_LOG_FILE) => {}
+            Err(e) => tracing::warn!("log dei QSO non letto ({}): {e}", path.display()),
         }
     }
+    let log = WorkedLog::from_adif(&text, db);
+    tracing::info!("log letto: {} QSO", log.len());
+    log
 }
 
 fn unix_secs() -> u64 {
@@ -656,13 +689,21 @@ pub async fn run(
             now: Arc::new(unix_secs),
         },
     );
-    let mut targets: Vec<Target> = config.export_udp.iter().map(|a| Target::UdpAdif(*a)).collect();
-    targets.extend(config.export_file.clone().map(Target::File));
+    let (targets, worked_paths) = export_targets(&config);
+    // nominativo e locatore come li ha impostati JTDX: finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
+    let station = {
+        let shown = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
+        Station {
+            call: shown.get("MyCall").cloned().unwrap_or_default(),
+            grid: shown.get("MyGrid").cloned().unwrap_or_default(),
+            tx_power: config.tx_power.clone().unwrap_or_default(),
+        }
+    };
     // il log di Aurora si riempie sempre; i log esterni solo se configurati
-    let _exporter = Exporter::spawn(&bus, Arc::clone(&logbook), targets, Arc::new(unix_secs));
+    let _exporter = Exporter::spawn(&bus, Arc::clone(&logbook), targets, station, Arc::new(unix_secs));
     // paesi e QSO gia' fatti si leggono una volta sola, prima di avviare il motore
     let enrichment = load_dxcc(config.cty_path.as_deref()).map(|db| {
-        let worked = load_worked(config.worked_adif.as_deref(), &db);
+        let worked = load_worked(&worked_paths, &db);
         (db, worked)
     });
     // il continente di chi opera (dal nominativo di JTDX): serve a rispettare i CQ direzionali («CQ NA», «CQ DX»)
@@ -672,7 +713,7 @@ pub async fn run(
     {
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
     }
-    let stats_source = enrichment.as_ref().zip(config.worked_adif.clone()).map(|((db, _), path)| (Arc::clone(db), path));
+    let stats_source = enrichment.as_ref().filter(|_| !worked_paths.is_empty()).map(|(db, _)| (Arc::clone(db), worked_paths.clone()));
     let dxcc_loaded = enrichment.as_ref().map_or(0, |(db, _)| db.len());
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());
     let info = serde_json::json!({
@@ -788,7 +829,7 @@ pub async fn run(
         .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
         .with_stats_if(stats_source.map(|(db, path)| {
             Arc::new(move || {
-                let worked = load_worked(Some(&path), &db);
+                let worked = load_worked(&path, &db);
                 serde_json::json!({ "stats": worked.stats(&db), "missing_dxcc": worked.missing_dxcc(&db) })
             }) as Arc<dyn Fn() -> serde_json::Value + Send + Sync>
         }))
@@ -859,6 +900,24 @@ pub async fn run(
                 .unwrap_or_default();
             let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
             let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::new(db, worked))));
+            // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
+            if let Some(enrich) = &enrich {
+                let enrich = Arc::clone(enrich);
+                let mut events = bus.subscribe_events();
+                tokio::spawn(async move {
+                    loop {
+                        match events.recv().await {
+                            Ok(Event::QsoLogged(q)) => {
+                                if let Ok(mut e) = enrich.lock() {
+                                    e.record_qso(&q.call, &q.grid, &q.band);
+                                }
+                            }
+                            Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                            Err(broadcast::error::RecvError::Closed) => break,
+                        }
+                    }
+                });
+            }
             native_live = Some(engine_native::LiveConfig {
                 de_call: call,
                 de_grid: grid,
@@ -1032,6 +1091,32 @@ pub async fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn config_for(engine: EngineKind) -> Config {
+        let mut c = Config::defaults();
+        c.engine = engine;
+        c.data_dir = PathBuf::from("dati");
+        c.worked_adif = Some(PathBuf::from("jtdx/wsjtx_log.adi"));
+        c.export_udp = vec!["127.0.0.1:2237".parse().expect("indirizzo")];
+        c
+    }
+
+    #[test]
+    fn with_the_native_engine_the_qso_goes_once_to_the_udp_target_and_to_the_own_adif_file() {
+        let (targets, worked) = export_targets(&config_for(EngineKind::Native));
+        assert_eq!(targets, vec![Target::UdpAdif("127.0.0.1:2237".parse().expect("indirizzo")), Target::File(PathBuf::from("dati").join("aurora_log.adi"))]);
+        assert_eq!(worked, vec![PathBuf::from("jtdx/wsjtx_log.adi"), PathBuf::from("dati").join("aurora_log.adi")], "i lavorati leggono anche il file di Aurora");
+    }
+
+    #[test]
+    fn with_jtdx_aurora_writes_no_file_of_its_own_and_an_explicit_file_is_not_duplicated() {
+        let (targets, worked) = export_targets(&config_for(EngineKind::Jtdx));
+        assert_eq!(targets.len(), 1, "il file di JTDX non si tocca e non se ne crea un altro");
+        assert_eq!(worked, vec![PathBuf::from("jtdx/wsjtx_log.adi")]);
+        let mut c = config_for(EngineKind::Native);
+        c.export_file = Some(PathBuf::from("dati").join("aurora_log.adi"));
+        assert_eq!(export_targets(&c).0.len(), 2, "lo stesso file non va due volte");
+    }
 
     #[test]
     fn the_status_read_from_the_jtdx_window_fills_the_page_until_the_real_one_arrives() {

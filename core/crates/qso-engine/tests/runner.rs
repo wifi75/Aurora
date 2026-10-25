@@ -113,6 +113,8 @@ async fn a_logged_qso_frees_the_next_reply() {
             rst_sent: "-10".into(),
             rst_rcvd: "-12".into(),
             time_ms: 0,
+            time_on_unix_ms: 0,
+            time_off_unix_ms: 0,
         }))
         .unwrap();
     settle().await;
