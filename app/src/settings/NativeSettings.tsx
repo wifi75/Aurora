@@ -14,7 +14,7 @@ export function useIsNative(): boolean | undefined {
   return info.data ? info.data.engine === 'native' : undefined;
 }
 
-function useSettings() {
+export function useSettings() {
   return useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false });
 }
 
@@ -26,12 +26,12 @@ function errorText(error: unknown, t: T): string {
   return t('ens.err.failed');
 }
 
-interface Draft {
+export interface Draft {
   changes: Record<string, string>;
   set(key: string, value: string, current: string | undefined): void;
 }
 
-function useDraft(): Draft & { clear(): void } {
+export function useDraft(): Draft & { clear(): void } {
   const [changes, setChanges] = useState<Record<string, string>>({});
   return {
     changes,
@@ -48,7 +48,7 @@ function useDraft(): Draft & { clear(): void } {
 }
 
 /** Una voce: viva (si modifica) o non disponibile (spenta, con il motivo). */
-function SettingField({ row, label, doc, draft }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft }) {
+export function SettingField({ row, label, doc, draft, locked = false }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
   const t = useT();
   const item = doc.items[row.key];
   const live = item?.state === 'live';
@@ -59,12 +59,12 @@ function SettingField({ row, label, doc, draft }: { row: SettingRow; label: stri
   const change = (next: string) => draft.set(row.key, next, current);
   let control;
   if (row.kind === 'bool') {
-    control = <input id={id} aria-label={label} type="checkbox" disabled={!live} checked={live && value === 'true'} onChange={(e) => change(e.target.checked ? 'true' : 'false')} />;
+    control = <input id={id} aria-label={label} type="checkbox" disabled={!live || locked} checked={live && value === 'true'} onChange={(e) => change(e.target.checked ? 'true' : 'false')} />;
   } else if (row.kind === 'num') {
-    control = <input id={id} aria-label={label} type="number" min={1} max={65535} disabled={!live} className="set-number" value={live ? value : ''} onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type="number" min={row.min ?? 1} max={row.max ?? 65535} disabled={!live || locked} className="set-number" value={live ? value : ''} onChange={(e) => change(e.target.value)} />;
   } else if (row.kind === 'reply') {
     control = (
-      <select id={id} aria-label={label} disabled={!live} value={live ? value : ''} onChange={(e) => change(e.target.value)}>
+      <select id={id} aria-label={label} disabled={!live || locked} value={live ? value : ''} onChange={(e) => change(e.target.value)}>
         {!live ? <option value="" /> : null}
         {['1', '2', '3'].map((o) => (
           <option key={o} value={o}>
@@ -75,7 +75,7 @@ function SettingField({ row, label, doc, draft }: { row: SettingRow; label: stri
     );
   } else {
     // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
-    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live} maxLength={200} value={live ? value : ''} autoComplete="off" onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} autoComplete="off" onChange={(e) => change(e.target.value)} />;
   }
   const note = live ? (item?.apply === 'restart' ? t('ens.restart') : '') : t(`ens.r.${item?.reason ?? 'own_decoder'}` as Key);
   return (
@@ -91,7 +91,7 @@ function SettingField({ row, label, doc, draft }: { row: SettingRow; label: stri
 }
 
 /** Barra in fondo: quante modifiche aspettano, con «Applica» (subito, niente riavvii) e «Annulla». */
-function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc: EngineSettings }) {
+export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc: EngineSettings }) {
   const t = useT();
   const client = useQueryClient();
   const [note, setNote] = useState('');

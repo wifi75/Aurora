@@ -6,10 +6,17 @@ import { COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors
 import { useNotify } from '../lib/notify';
 import { browserStorage } from '../lib/theme';
 import { EngineValues } from './EngineValues';
+import { NativeNotifications } from './JtdxTabs';
+import { useIsNative } from './NativeSettings';
 import { Help } from './common';
 
-/** Scheda Notifiche: per ogni tipo di messaggio colore, evidenziazione e suono, come nel motore. */
+/** Scheda Notifiche: con il motore proprio come nel motore (evidenziazioni, gia' lavorati, colori e marcatori); con JTDX colore, evidenziazione e suono per tipo. */
 export function NotificationsTab() {
+  const native = useIsNative();
+  return native ? <NativeNotifications /> : <JtdxNotificationsTab />;
+}
+
+function JtdxNotificationsTab() {
   const t = useT();
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
   const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));

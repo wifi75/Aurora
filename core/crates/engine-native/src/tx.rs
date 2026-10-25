@@ -88,15 +88,33 @@ pub struct SequenceSettings {
     pub strict_directional_cq: bool,
     /// Minuti del controllo della trasmissione (0 = senza).
     pub watchdog_min: u32,
+    /// «Consenti cambi di frequenza Tx durante la trasmissione» (`TxQSYAllowed`): spento, un nuovo valore della frequenza Tx non si accetta mentre si trasmette.
+    pub tx_qsy_allowed: bool,
+    /// «73/RR73» (`73RR73Marker`, di fabbrica acceso): i messaggi di chiusura fra altre stazioni fanno entrare la stazione tra i candidati.
+    pub rr73_marker: bool,
+    /// «Priorita' ai CQ» (`CallPriorityCQ`): AutoSeq 6 e 7, ricerca fra i CQ degli altri.
+    pub call_prio_cq: bool,
+    /// «Priorita' alla distanza maggiore» (`MaxDistance`): a parita' si sceglie il piu' lontano.
+    pub max_distance: bool,
 }
 
 impl SequenceSettings {
+    /// Dai numeri delle impostazioni: i quattro contatori (`None` = spento), «ferma se risponde a un altro», CQ rigoroso e minuti del watchdog.
+    /// `counters` sono, nell'ordine, «risposta al CQ», «chiamata CQ e risposta», «rapporto R» e «RR73/73».
+    pub fn new(counters: [Option<u32>; 4], halt_on_reply_other: bool, strict_directional_cq: bool, watchdog_min: u32, tx_qsy_allowed: bool) -> SequenceSettings {
+        let [answer_cq, answer_in_call, sent_r_report, closing] = counters;
+        SequenceSettings { limits: qso_native::RepeatLimits { answer_cq, answer_in_call, sent_r_report, closing }, halt_on_reply_other, strict_directional_cq, watchdog_min, tx_qsy_allowed, rr73_marker: true, call_prio_cq: false, max_distance: false }
+    }
+
     /// Le opzioni della sequenza con queste impostazioni.
     pub fn apply(&self, opts: &mut Options) {
         opts.limits = self.limits;
         opts.abandon_if_dx_answers_other = self.halt_on_reply_other;
         opts.strict_directional_cq = self.strict_directional_cq;
         opts.watchdog_min = self.watchdog_min;
+        opts.rr73_marker = self.rr73_marker;
+        opts.call_prio_cq = self.call_prio_cq;
+        opts.max_distance = self.max_distance;
     }
 }
 
@@ -151,6 +169,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     port: Arc<P>,
     controls: Arc<NativeControls>,
     recent: VecDeque<Recent>,
+    /// «Consenti cambi di frequenza Tx durante la trasmissione» (scheda Generali, `TxQSYAllowed`); di base si'.
+    tx_qsy_allowed: bool,
     /// Messaggio libero in coda per la prossima trasmissione.
     free_text: Option<String>,
     /// «AutoTX» acceso: il doppio clic accende anche «Abilita Tx».
@@ -215,7 +235,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0 };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0 };
         driver.seq.set_rx_freq(rx_published);
         driver.publish_view();
         Ok(driver)
@@ -429,6 +449,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 Err(e) => log.push(format!("CQ non possibile: {e:?}")),
             },
+            TxCommand::SetTxFreq(_) if !self.tx_qsy_allowed && self.controls.transmitting.load(Ordering::Relaxed) => {
+                log.push("frequenza Tx non cambiata: si sta trasmettendo e «cambi di frequenza Tx durante la trasmissione» e' spento".to_string());
+            }
             TxCommand::SetTxFreq(hz) => {
                 if (100..=5000).contains(&hz) {
                     self.controls.tx_df.store(hz, Ordering::Relaxed);
@@ -483,7 +506,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     OptionChange::SingleQso(v) => self.opts.single_qso = v,
                     OptionChange::AnswerWorkedBefore(v) => self.opts.answer_worked_before = v,
                     OptionChange::UseRrr(v) => self.opts.use_rrr = v,
-                    OptionChange::Sequence(settings) => settings.apply(&mut self.opts),
+                    OptionChange::Sequence(settings) => {
+                        self.tx_qsy_allowed = settings.tx_qsy_allowed;
+                        settings.apply(&mut self.opts);
+                    }
                     OptionChange::TxEven(v) => {
                         let changed = self.seq.tx_even() != v;
                         self.opts.tx_even = v;
@@ -1638,6 +1664,10 @@ mod tests {
             halt_on_reply_other: false,
             strict_directional_cq: true,
             watchdog_min: 9,
+            tx_qsy_allowed: false,
+            rr73_marker: false,
+            call_prio_cq: true,
+            max_distance: true,
         };
         // all'avvio
         let controls = Arc::new(NativeControls::default());
@@ -1647,9 +1677,10 @@ mod tests {
         assert_eq!(d.opts.limits, settings.limits);
         assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
         assert_eq!(d.opts.watchdog_min, 9);
+        assert!(!d.tx_qsy_allowed && !d.opts.rr73_marker && d.opts.call_prio_cq && d.opts.max_distance);
         // a caldo
         let mut d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::new(NativeControls::default())).expect("pilota");
-        assert!(d.opts.abandon_if_dx_answers_other, "di fabbrica come JTDX: acceso");
+        assert!(d.opts.abandon_if_dx_answers_other && d.tx_qsy_allowed, "di fabbrica come JTDX: acceso");
         d.handle(TxCommand::Option(OptionChange::Sequence(settings.clone())), 1.0);
         assert_eq!(d.opts.limits, settings.limits);
         assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
