@@ -4,7 +4,7 @@ import type { PanelId } from '../lib/layout';
 import { PHONE_TABS, readPhoneTab, savePhoneTab } from '../lib/phone';
 import { PhoneTabs } from './PhoneTabs';
 
-const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Comandi', tx: 'Trasmissione', cq: 'CQ e novità', all: 'Attività di banda', log: 'Log', cluster: 'DX Cluster' };
+const titles: Record<PanelId, string> = { waterfall: 'Cascata', station: 'Comandi', tx: 'Trasmissione', cq: 'CQ e novità', all: 'Attività di banda', log: 'Log', cluster: 'DX Cluster', dxcc: 'DXCC' };
 
 beforeEach(() => localStorage.clear());
 

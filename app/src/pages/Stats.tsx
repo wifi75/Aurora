@@ -1,15 +1,58 @@
 import { useQuery } from '@tanstack/react-query';
-import { getStats } from '../api/client';
+import { getStats, type StatsResponse } from '../api/client';
+import { DxccCard, useDxccMatrix } from '../components/DxccCard';
+import { DxccCountries } from '../components/DxccCountries';
+import { LogTransfer } from '../components/LogTransfer';
 import { useT } from '../i18n';
+import { subjectBand, subjectMode } from '../lib/dxccCard';
+import { useStation } from '../state/station';
 
 /** Avanzamento nei premi dal log dei QSO e paesi che mancano. */
 export function Stats() {
   const t = useT();
   const query = useQuery({ queryKey: ['stats'], queryFn: getStats, retry: false });
+  // la scheda DXCC segue la stazione DX attuale (o quella scelta con un doppio clic), sulla banda e nel modo della radio
+  const status = useStation((st) => st.status);
+  const pendingDx = useStation((st) => st.pendingDx);
+  const matrix = useDxccMatrix({});
 
-  if (query.isError) return <p className="notice">{t('stats.unavailable')}</p>;
-  if (!query.data) return <p className="muted">{t('set.loading')}</p>;
-  const { stats: s, missing_dxcc: missing } = query.data;
+  return (
+    <div className="settings">
+      <h1 className="page-title">{t('stats.title')}</h1>
+      <section className="panel settings-block dxcc-section" title={t('dxcc.tip.card')}>
+        <h2 className="panel-title">{t('dxcc.title')}</h2>
+        {matrix.isError ? (
+          <p className="notice">{t('dxcc.unavailable')}</p>
+        ) : (
+          <>
+            <DxccCard
+              call={pendingDx || status?.dx_call || ''}
+              grid={pendingDx ? undefined : (status?.dx_grid ?? undefined)}
+              band={subjectBand(status?.dial_hz)}
+              mode={subjectMode(status?.mode)}
+              matrix={matrix.data}
+            />
+            {matrix.data ? (
+              <details className="dxcc-details">
+                <summary>{t('dxcc.countries.title')}</summary>
+                <DxccCountries matrix={matrix.data} />
+              </details>
+            ) : null}
+          </>
+        )}
+      </section>
+      {query.isError ? <p className="notice">{t('stats.unavailable')}</p> : query.data ? <StatsBlocks data={query.data} /> : <p className="muted">{t('set.loading')}</p>}
+      <section className="panel settings-block">
+        <h2 className="panel-title">{t('logio.title')}</h2>
+        <LogTransfer />
+      </section>
+    </div>
+  );
+}
+
+function StatsBlocks({ data }: { data: StatsResponse }) {
+  const t = useT();
+  const { stats: s, missing_dxcc: missing } = data;
 
   const rows: Array<[string, string]> = [
     [t('stats.dxcc'), t('stats.of', { n: s.dxcc_worked, total: s.dxcc_total })],
@@ -22,8 +65,7 @@ export function Stats() {
   ];
 
   return (
-    <div className="settings">
-      <h1 className="page-title">{t('stats.title')}</h1>
+    <>
       <section className="panel settings-block" title={t('tip.stats.award')}>
         <h2 className="panel-title">{t('stats.awards')}</h2>
         <dl className="kv">
@@ -70,6 +112,6 @@ export function Stats() {
           </ul>
         )}
       </section>
-    </div>
+    </>
   );
 }

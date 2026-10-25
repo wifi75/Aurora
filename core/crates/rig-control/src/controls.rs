@@ -19,18 +19,26 @@ pub struct Control {
     pub kind: Kind,
     /// Accenderlo puo' far trasmettere: serve la trasmissione aperta.
     pub tx: bool,
+    /// Il nome nell'API e il controllo di JTDX hanno il senso contrario: acceso nell'API = spento in JTDX (`split` e `pbTxLock`).
+    pub inverted: bool,
 }
 
 const fn toggle(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Toggle, tx: false }
+    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: false }
 }
 
 const fn arming(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Toggle, tx: true }
+    Control { id, ui_id, kind: Kind::Toggle, tx: true, inverted: false }
 }
 
 const fn press(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Press, tx: false }
+    Control { id, ui_id, kind: Kind::Press, tx: false, inverted: false }
+}
+
+/// Interruttore dal senso contrario a quello di JTDX. `pbTxLock` e' «Lockd Tx=Rx» quando e' acceso e «Tx/Rx Split» quando e' spento
+/// (`on_pbTxLock_clicked`, `REA 0x4a4b30`: `m_lockTxFreq = checked`): lo «Split» dell'API e' **acceso quando il blocco e' spento**.
+const fn inverted(id: &'static str, ui_id: &'static str) -> Control {
+    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: true }
 }
 
 pub const CONTROLS: &[Control] = &[
@@ -41,7 +49,7 @@ pub const CONTROLS: &[Control] = &[
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
     toggle("rrr", "rrr1CheckBox"),
-    toggle("split", "pbTxLock"),
+    inverted("split", "pbTxLock"),
     toggle("show_wanted", "cbShowWanted"),
     toggle("hound", "HoundButton"),
     toggle("jt", "jtButton"),
@@ -128,11 +136,12 @@ pub fn parse_reading(text: &str) -> Reading {
 /// Script che stampa `nome=1` o `nome=0` per ogni interruttore trovato in JTDX, poi i sei messaggi Tx (`txmsg1=...`) e il
 /// numero di quello selezionato (`txsel=2`), tutto nella stessa lettura (ogni lettura costa circa un secondo).
 pub fn read_script() -> String {
-    let pairs: Vec<String> = CONTROLS.iter().filter(|c| c.kind == Kind::Toggle).map(|c| format!("@('{}','{}')", c.id, c.ui_id)).collect();
+    let pairs: Vec<String> = CONTROLS.iter().filter(|c| c.kind == Kind::Toggle).map(|c| format!("@('{}','{}',{})", c.id, c.ui_id, u8::from(c.inverted))).collect();
     format!(
         "{HEAD}foreach ($pair in @({})) {{ \
          $el = $all | Where-Object {{ $_.Current.AutomationId -like ('*.' + $pair[1]) }} | Select-Object -First 1; \
          if ($el) {{ $on = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -eq 'On'; \
+         if ($pair[2] -eq 1) {{ $on = -not $on }}; \
          Write-Output ($pair[0] + '=' + [int]$on) }} }}; \
          foreach ($n in 1..6) {{ \
          $m = $all | Where-Object {{ $_.Current.AutomationId -like ('*.tx' + $n) }} | Select-Object -First 1; \
@@ -170,7 +179,8 @@ pub fn set_script(control: &Control, on: Option<bool>) -> String {
     let invoke = "$el.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()";
     match (control.kind, on) {
         (Kind::Toggle, Some(want)) => {
-            let want = if want { "$true" } else { "$false" };
+            // nell'API e in JTDX lo stato puo' avere il senso contrario (`split` e `pbTxLock`)
+            let want = if want != control.inverted { "$true" } else { "$false" };
             format!(
                 "{find}$now = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -eq 'On'; \
                  if ($now -ne {want}) {{ {invoke} }}"
@@ -196,6 +206,21 @@ mod tests {
         assert_eq!(tx.messages[5], "CQ DX IU3ABC IO91");
         assert_eq!(tx.minute_label, "TX 15/45");
         assert_eq!(tx.autoseq_label, "AutoSeq 3");
+    }
+
+    /// `split` e' acceso quando `pbTxLock` (Tx = Rx) e' spento: la lettura e il comando invertono lo stato.
+    #[test]
+    fn split_is_the_opposite_of_the_tx_lock_button() {
+        let split = find("split").expect("controllo");
+        assert!(split.inverted);
+        assert_eq!(split.ui_id, "pbTxLock");
+        assert!(read_script().contains("@('split','pbTxLock',1)"), "{}", read_script());
+        assert!(read_script().contains("@('autoseq','AutoSeqButton',0)"));
+        // Split acceso nell'API = blocco spento in JTDX: se il blocco e' acceso ($now vero) si preme; se vogliamo Split spento il blocco deve essere acceso
+        assert!(set_script(split, Some(true)).contains("-ne $false"));
+        assert!(set_script(split, Some(false)).contains("-ne $true"));
+        let autoseq = find("autoseq").expect("controllo");
+        assert!(set_script(autoseq, Some(true)).contains("-ne $true"));
     }
 
     #[test]

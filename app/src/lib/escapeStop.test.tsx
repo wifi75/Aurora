@@ -21,12 +21,12 @@ beforeEach(() => {
 });
 
 describe('useEscapeStop', () => {
-  it('on Escape halts the transmission and switches off AutoTX and Enable Tx', () => {
+  it('on Escape halts the transmission and switches Enable Tx off, like JTDX, and leaves AutoTX alone', () => {
     render(<Probe />);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(postHalt).toHaveBeenCalledTimes(1);
-    expect(postControl).toHaveBeenCalledWith('auto_tx', false);
     expect(postControl).toHaveBeenCalledWith('enable_tx', false);
+    expect(postControl).not.toHaveBeenCalledWith('auto_tx', expect.anything());
   });
 
   it('ignores every other key', () => {
@@ -49,7 +49,7 @@ describe('useEscapeStop', () => {
     render(<Probe />);
     fireEvent.keyDown(window, { key: 'Escape' });
     await Promise.resolve();
-    expect(postControl).toHaveBeenCalledWith('auto_tx', false);
+    expect(postControl).toHaveBeenCalledWith('enable_tx', false);
   });
 
   it('a single Escape does not clear the station being called', () => {

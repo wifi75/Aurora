@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.8 - 2026-10-25
+- **Scheda DXCC nella pagina Stazione**: pannello con le sei etichette (NEW ONE, NEW BAND, NEW MODE, NEW GRID, GRID BAND, GRID MODE) e la matrice dei paesi lavorati per banda (160...4 m e U) con righe FT8, FT4 e DIG; dati dal log interno, da `wsjtx_log.adi` e da Log4OM2. Logica verificata nel programma di riferimento (`docs/scheda-dxcc.md`). Esportazione e importazione ADIF dalla pagina Statistiche.
+- **Tutto cio' che imposti resta impostato al riavvio**: interruttori (AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, RRR, periodo Tx, AutoTX, Split), frequenze Tx e Rx, modo FT8/FT4, livelli Pwr per banda e **Abilita Tx** (scelta del proprietario) si salvano in `controls.json`. Monitora riparte sempre acceso.
+- Logiche di banda satura e di QSO riverificate con il programma di riferimento (in corso).
+- **Scheda DXCC per banda e modo**: nella pagina Statistiche (e in piccolo nel blocco Stazione DX) le sei etichette NEW ONE, NEW BAND, NEW MODE, NEW GRID, GRID BAND, GRID MODE per la stazione DX e la matrice dei paesi lavorati (righe FT8, FT4, DIG; colonne 160...4 m e U) con il totale, i colori verde/arancio/grigio, il tema chiaro e scuro e i suggerimenti in sei lingue. Dati dal log interno, dai file ADIF e da Log4OM2 (sola lettura), uniti senza doppioni; si aggiorna a ogni QSO. Logica in `docs/scheda-dxcc.md` (verificata nell'eseguibile di JTDX e in Decodium). Nuova rotta `GET /api/v1/dxcc-matrix`.
+- **Log interno: esportazione e importazione ADIF**: `GET /api/v1/log/export.adi` (formato di JTDX, intervallo di date) e `POST /api/v1/log/import` (senza doppioni, per ripartire dal proprio storico, per esempio `wsjtx_log.adi`), con i pulsanti nella pagina Statistiche. Il log interno (`logbook.db`) passa alla versione 2: ora di inizio e di fine e stato delle conferme.
+
 ## 0.11.7 - 2026-10-25
 - **Cursore Pwr come in JTDX**: potenza massima in alto (0 dB), minima in basso; verificato nel programma e nel sorgente (`attenuazione = (450 - valore) / 10`). Prima era invertito.
 - **Il livello Pwr agisce anche durante la trasmissione**: il guadagno lo applica il dispositivo audio mentre suona, con una rampa senza click, e il cursore lo aggiorna subito (anche al cambio banda con la memoria per banda).

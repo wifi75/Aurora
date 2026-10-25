@@ -1,15 +1,19 @@
 //! Scenari completi della sequenza dei QSO, periodo per periodo.
 //!
-//! Ogni prova dichiara a quale regola di JTDX si riferisce:
+//! Ogni prova dichiara a quale regola di JTDX 2.2.159 si riferisce:
 //! - `processMessage`: doppio clic su una riga (`mainwindow.cpp`, scelta del Tx di partenza);
-//! - `process_Auto`: avanzamento con AutoSeq a fine decodifica (`mainwindow.cpp`, `switch (m_status)`);
+//! - `process_Auto`: avanzamento con AutoSeq a fine decodifica (`mainwindow.cpp`, `switch (m_status)`, contatori);
 //! - `QsoHistory`: lo stato per stazione (`qsohistory.cpp`, `message()` e `autoseq()`);
 //! - `genStdMsgs`/`genCQMsg`: i testi;
 //! - `txwatchdog`, `autoStopTx`, `readFromStdout`: watchdog, arresto, DX che risponde a un altro;
 //! - «docs»: `docs/logiche-jtdx.md`, sequenza osservata in ALL.TXT.
 //!
-//! Convenzione: il nostro nominativo e' IU3ABC (JN55). In FT8 il periodo `n` comincia a `15*n` s;
-//! la trasmissione si chiede a 0,4 s dall'inizio. Con `tx_even` vero si trasmette nei periodi pari.
+//! Convenzione: il nostro nominativo e' IU3ABC (JN55). Il periodo `n` delle prove e' `n` periodi dopo le 12:00:00 UTC (in FT8 il periodo `n`
+//! comincia a `12:00:00 + 15 n` s); la trasmissione si chiede a 0,4 s dall'inizio. Con `tx_even` vero si trasmette nei periodi pari. Le prove
+//! partono a mezzogiorno e non a mezzanotte perche' JTDX usa i secondi del giorno senza segno e vicino a mezzanotte i confronti sui 300 s cambiano.
+//!
+//! Di base `autolog` e' spento: dopo un QSO si passa al prossimo chiamante o al CQ. Con la registrazione automatica accesa (come il `JTDX.ini` del
+//! proprietario) JTDX ferma la trasmissione a fine QSO: vedi le prove `autolog_*`.
 
 use qso_native::*;
 
@@ -18,19 +22,30 @@ const ME: &str = "IU3ABC";
 struct Bench {
     seq: Sequencer,
     mode: Mode,
+    base: u64,
     events: Vec<Event>,
 }
 
+/// Opzioni di base delle prove (vedi l'intestazione del file).
 fn opts() -> Options {
-    Options::default()
+    Options {
+        autolog: false,
+        ..Options::default()
+    }
 }
 
 impl Bench {
     fn new(mode: Mode, opts: Options) -> Self {
         let seq = Sequencer::new(mode, Station::new(ME, "JN55rk"), opts).expect("stazione valida");
+        // le 12:00:00 UTC sono un periodo pari in tutti e due i modi
+        let base = match mode {
+            Mode::Ft8 => 2880,
+            Mode::Ft4 => 5760,
+        };
         Bench {
             seq,
             mode,
+            base,
             events: Vec::new(),
         }
     }
@@ -39,19 +54,35 @@ impl Bench {
         Bench::new(Mode::Ft8, opts)
     }
 
+    fn slot(&self, n: u64) -> Slot {
+        Slot(self.base + n)
+    }
+
+    /// Inizio del periodo `n` in millisecondi UTC, troncato al secondo come i secondi del giorno di JTDX.
+    fn ms(&self, n: u64) -> u64 {
+        self.slot(n).start_ms(self.mode) / 1000 * 1000
+    }
+
     fn collect(&mut self) {
         let mut ev = self.seq.drain_events();
         self.events.append(&mut ev);
     }
 
-    /// Messaggi decodificati a fine del periodo `slot`.
+    /// Messaggi decodificati a fine del periodo `slot` (la decodifica finisce 0,3 s dopo l'inizio del successivo).
     fn rx(&mut self, slot: u64, msgs: &[(&str, i32)]) {
         let decodes: Vec<Decoded> = msgs
             .iter()
             .map(|(t, s)| Decoded::new(t, *s, 1200))
             .collect();
-        self.seq.on_decodes(Slot(slot), &decodes);
+        let now = self.slot(slot + 1).start_s(self.mode) + 0.3;
+        let s = self.slot(slot);
+        self.seq.on_decodes_at(s, &decodes, Some(now));
         self.collect();
+    }
+
+    /// Un periodo senza messaggi: la decodifica finisce comunque e `process_Auto` gira (contatori, watchdog).
+    fn idle(&mut self, slot: u64) {
+        self.rx(slot, &[]);
     }
 
     /// Cosa si trasmette nel periodo `slot` (richiesta a 0,4 s dall'inizio).
@@ -60,15 +91,17 @@ impl Bench {
     }
 
     fn tx_at(&mut self, slot: u64, delay_s: f64) -> Option<Tx> {
-        let now = Slot(slot).start_s(self.mode) + delay_s;
-        let tx = self.seq.next_tx(Slot(slot), now);
+        let s = self.slot(slot);
+        let now = s.start_s(self.mode) + delay_s;
+        let tx = self.seq.next_tx(s, now);
         self.collect();
         tx
     }
 
     fn reply(&mut self, slot: u64, text: &str, snr: i32) {
+        let s = self.slot(slot);
         self.seq
-            .reply_to(Slot(slot), &Decoded::new(text, snr, 1200))
+            .reply_to(s, &Decoded::new(text, snr, 1200))
             .expect("risposta possibile");
         self.collect();
     }
@@ -138,7 +171,7 @@ fn full_qso_calling_cq() {
     assert_eq!(
         b.tx(6).as_deref(),
         Some("CQ IU3ABC JN55"),
-        "dopo il QSO si torna al CQ"
+        "dopo il QSO (senza registrazione automatica) si torna al CQ"
     );
 
     let recs = b.records();
@@ -150,11 +183,13 @@ fn full_qso_calling_cq() {
     assert_eq!(r.rst_rcvd, "-10");
     assert_eq!(r.mode, Mode::Ft8);
     assert_eq!(
-        r.time_on_ms, 15_000,
+        r.time_on_ms,
+        b.ms(1),
         "il primo periodo e' quello della risposta al CQ"
     );
     assert_eq!(
-        r.time_off_ms, 60_000,
+        r.time_off_ms,
+        b.ms(4),
         "concluso quando e' partito l'RR73 (periodo 4)"
     );
     assert_eq!(r.rx_freq_hz, 1200);
@@ -184,15 +219,19 @@ fn full_qso_answering_cq_skip_tx1_as_in_all_txt() {
     assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
     assert_eq!(b.records().len(), 1, "registrato quando parte l'RR73");
     b.rx(7, &[("IU3ABC LZ2KSQ 73", -10)]);
-    assert_eq!(b.tx(8), None);
     let r = b.records()[0].clone();
     assert_eq!((r.rst_sent.as_str(), r.rst_rcvd.as_str()), ("-12", "-10"));
     assert_eq!(r.grid, "KN23");
-    assert_eq!(b.stops(), vec![StopReason::NothingToDo]);
+    assert!(b.stops().is_empty());
+    assert_eq!(
+        b.tx(8).as_deref(),
+        Some("CQ IU3ABC JN55"),
+        "senza registrazione automatica e con la stazione che non usa la nostra frequenza si prosegue con il CQ (`process_Auto`: clearDX + `on_txb6_clicked`)"
+    );
 }
 
 /// `process_Auto` RCQ -> Tx1 (senza «Salta Tx1»); RREPORT -> Tx3; RRR73 -> Tx5; `qsohistory.cpp`
-/// `case RRR73`. Il QSO si registra alla ricezione dell'RR73 e il 73 parte una volta sola.
+/// `case RRR73`. Il QSO si registra quando parte il 73 (`m_sentFirst73`), non alla ricezione dell'RR73.
 #[test]
 fn full_qso_answering_cq_with_tx1() {
     let mut b = Bench::ft8(opts());
@@ -206,16 +245,28 @@ fn full_qso_answering_cq_with_tx1() {
         "il rapporto e' l'SNR dell'ultimo messaggio del DX"
     );
     b.rx(5, &[("IU3ABC LZ2KSQ RR73", -9)]);
-    assert_eq!(b.records().len(), 1);
+    assert_eq!(b.seq.ntx(), 5);
+    assert_eq!(b.records().len(), 0, "alla ricezione dell'RR73 non si registra ancora");
     assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"));
+    assert_eq!(b.records().len(), 1, "si registra quando comincia a partire il 73");
+    b.idle(7);
+    assert_eq!(
+        b.tx(8).as_deref(),
+        Some("CQ IU3ABC JN55"),
+        "il 73 si manda una volta: poi (FIN) si prosegue con il CQ"
+    );
     assert_eq!(b.records().len(), 1, "nessuna seconda registrazione");
-    assert_eq!(b.tx(8), None, "il 73 si manda una volta, poi si smette");
     let r = b.records()[0].clone();
     assert_eq!((r.rst_sent.as_str(), r.rst_rcvd.as_str()), ("-09", "-07"));
-    assert_eq!(r.time_on_ms, 15_000);
     assert_eq!(
-        r.time_off_ms, 75_000,
-        "concluso alla ricezione dell'RR73 (periodo 5)"
+        r.time_on_ms,
+        b.ms(2),
+        "se la chiamata e' nostra l'inizio del QSO e' la prima trasmissione (`b_time` di SCALL), non il CQ"
+    );
+    assert_eq!(
+        r.time_off_ms,
+        b.ms(6),
+        "concluso quando parte il 73 (periodo 6)"
     );
 }
 
@@ -234,23 +285,29 @@ fn full_qso_in_ft4() {
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
     let r = b.records()[0].clone();
     assert_eq!(r.mode, Mode::Ft4);
-    assert_eq!(r.time_on_ms, 7_500);
-    assert_eq!(r.time_off_ms, 30_000);
-    // oltre il limite di avvio dell'FT4 (1 s) non si parte
+    assert_eq!(r.time_on_ms, b.ms(1), "secondi interi, come l'ora del giorno di JTDX");
+    assert_eq!(r.time_off_ms, b.slot(4).start_ms(Mode::Ft4));
     b.rx(5, &[("IU3ABC LZ2KSQ 73", -5)]);
-    assert_eq!(b.tx_at(6, 1.3), None);
-    assert_eq!(b.tx_at(6, 0.9).map(|t| t.n), Some(6));
+    // la finestra di avvio dell'FT4 e' la durata del messaggio: 6,04 s
+    assert_eq!(b.tx_at(6, 6.1), None);
+    assert_eq!(b.tx_at(6, 5.9).map(|t| t.n), Some(6));
 }
 
 // ---------------------------------------------------------------------------------------
 // Il DX non risponde, risponde a un altro, cambia stato
 // ---------------------------------------------------------------------------------------
 
-/// `AnswerCQ` (contatore, massimo 5): si manda 5 volte Tx1, la sesta non parte; `process_Auto`
-/// pulisce il DX. Senza una serie di CQ in corso ci si ferma (Aurora non chiama CQ da sola).
+/// `AnswerCQ` (contatore acceso, massimo 5): si manda 5 volte Tx1, la sesta non parte; `process_Auto`
+/// pulisce il DX e, con AutoSeq 1-3, passa al CQ (`on_txb6_clicked`).
 #[test]
-fn dx_does_not_answer_repeats_then_gives_up() {
-    let mut b = Bench::ft8(opts());
+fn dx_does_not_answer_repeats_then_gives_up_and_calls_cq() {
+    let mut b = Bench::ft8(Options {
+        limits: RepeatLimits {
+            answer_cq: Some(5),
+            ..RepeatLimits::default()
+        },
+        ..opts()
+    });
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     for slot in [2, 4, 6, 8, 10] {
         assert_eq!(
@@ -258,25 +315,47 @@ fn dx_does_not_answer_repeats_then_gives_up() {
             Some("LZ2KSQ IU3ABC JN55"),
             "periodo {slot}"
         );
+        b.idle(slot + 1);
     }
-    assert_eq!(b.tx(12), None);
+    assert_eq!(b.tx(12).as_deref(), Some("CQ IU3ABC JN55"), "la sesta non parte: si chiama CQ");
     assert_eq!(b.abandons(), vec![AbandonReason::NoReply]);
-    assert_eq!(b.stops(), vec![StopReason::NothingToDo]);
-    assert!(!b.seq.is_enabled());
+    assert!(b.stops().is_empty());
     assert_eq!(b.seq.dx(), None);
     assert!(b.records().is_empty());
+}
+
+/// Con il contatore `AnswerCQ` spento (di fabbrica) JTDX insiste fino al watchdog.
+#[test]
+fn without_counters_the_call_is_repeated_until_the_watchdog() {
+    let mut b = Bench::ft8(Options {
+        limits: RepeatLimits::off(),
+        ..opts()
+    });
+    b.reply(1, "CQ LZ2KSQ KN23", -12);
+    for slot in (2..=20).step_by(2) {
+        assert_eq!(b.tx(slot).as_deref(), Some("LZ2KSQ IU3ABC JN55"), "periodo {slot}");
+        b.idle(slot + 1);
+    }
+    assert!(b.abandons().is_empty());
 }
 
 /// `AnswerInCall`: durante una serie di CQ, un chiamante che non risponde al Tx2 viene lasciato e
 /// si torna al CQ nello stesso periodo (`process_Auto`: DX vuoto e contatori -> Tx6).
 #[test]
 fn caller_vanishes_and_cq_resumes() {
-    let mut b = Bench::ft8(opts());
+    let mut b = Bench::ft8(Options {
+        limits: RepeatLimits {
+            answer_in_call: Some(5),
+            ..RepeatLimits::default()
+        },
+        ..opts()
+    });
     b.seq.call_cq(None).expect("cq");
     assert_eq!(b.tx(0).as_deref(), Some("CQ IU3ABC JN55"));
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
     for slot in [2, 4, 6, 8, 10] {
         assert_eq!(b.tx(slot).as_deref(), Some("LZ2KSQ IU3ABC -12"));
+        b.idle(slot + 1);
     }
     assert_eq!(b.tx(12).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.abandons(), vec![AbandonReason::NoReply]);
@@ -284,7 +363,7 @@ fn caller_vanishes_and_cq_resumes() {
     assert_eq!(b.seq.phase(), Phase::Cq);
 }
 
-/// `SentRReport` (massimo 5): R+rapporto ripetuto senza chiusura.
+/// `SentRReport` (acceso, massimo 5): R+rapporto ripetuto senza chiusura, poi si lascia la stazione e si chiama CQ.
 #[test]
 fn r_report_repeats_are_capped() {
     let mut b = Bench::ft8(opts());
@@ -293,25 +372,44 @@ fn r_report_repeats_are_capped() {
     b.rx(3, &[("IU3ABC LZ2KSQ -07", -9)]);
     for slot in [4, 6, 8, 10, 12] {
         assert_eq!(b.tx(slot).as_deref(), Some("LZ2KSQ IU3ABC R-09"));
+        b.idle(slot + 1);
     }
-    assert_eq!(b.tx(14), None);
+    assert_eq!(b.tx(14).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.abandons(), vec![AbandonReason::NoReply]);
 }
 
-/// `readFromStdout` («reply other», `SeqHaltTxReplyOther`) e `process_Auto` con `m_reply_other`:
-/// il DX, non ancora in contatto con noi, risponde a un altro: si lascia subito.
+/// `readFromStdout` (`SeqHaltTxReplyOther`): il DX risponde a un altro: si ferma la trasmissione (Abilita Tx si spegne) ma il DX resta
+/// impostato; `m_reply_other` libera il DX solo se il contatore e' acceso (prova seguente).
 #[test]
 fn dx_answers_someone_else() {
     let mut b = Bench::ft8(opts());
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     assert!(b.tx(2).is_some());
     b.rx(3, &[("AA1AA LZ2KSQ -10", -12)]);
-    assert_eq!(b.abandons(), vec![AbandonReason::DxAnsweredOther]);
-    assert_eq!(b.seq.dx(), None);
+    assert_eq!(b.stops(), vec![StopReason::ReplyOther]);
+    assert_eq!(b.seq.dx(), Some("LZ2KSQ"), "il DX resta: lo libera il contatore, non l'arresto");
+    assert!(b.abandons().is_empty());
     assert_eq!(b.tx(4), None);
 }
 
-/// Con l'opzione spenta (`SeqHaltTxReplyOther` false) si insiste fino ai tetti.
+/// `process_Auto` con `m_reply_other` e `AnswerCQ` acceso: il DX si libera subito, senza aspettare il valore del contatore.
+#[test]
+fn dx_answers_someone_else_with_the_counter_on_frees_the_dx() {
+    let mut b = Bench::ft8(Options {
+        limits: RepeatLimits {
+            answer_cq: Some(5),
+            ..RepeatLimits::default()
+        },
+        ..opts()
+    });
+    b.reply(1, "CQ LZ2KSQ KN23", -12);
+    assert!(b.tx(2).is_some());
+    b.rx(3, &[("AA1AA LZ2KSQ -10", -12)]);
+    assert_eq!(b.abandons(), vec![AbandonReason::DxAnsweredOther]);
+    assert_eq!(b.seq.dx(), None);
+}
+
+/// Con l'opzione spenta (`SeqHaltTxReplyOther` false) e il DX lontano dalla nostra frequenza (oltre la banda di guardia di 51 Hz) si insiste.
 #[test]
 fn dx_answers_someone_else_option_off_keeps_trying() {
     let mut b = Bench::ft8(Options {
@@ -323,13 +421,17 @@ fn dx_answers_someone_else_option_off_keeps_trying() {
     b.rx(3, &[("AA1AA LZ2KSQ -10", -12)]);
     assert_eq!(b.seq.dx(), Some("LZ2KSQ"));
     assert!(b.tx(4).is_some());
+    assert!(b.stops().is_empty());
 }
 
-/// Dopo che il DX ci ha scritto, un suo messaggio a un altro non fa rinunciare (contano i tetti):
-/// `m_reply_other` riguarda solo la fase RCQ/SCALL/SREPORT.
+/// Dopo che il DX ci ha scritto, un suo messaggio a un altro con l'opzione spenta non cambia nulla; con l'opzione accesa (di fabbrica) ferma
+/// comunque la trasmissione (`readFromStdout` non guarda se il QSO e' avviato).
 #[test]
-fn dx_talking_to_others_after_contact_is_ignored() {
-    let mut b = Bench::ft8(opts());
+fn dx_talking_to_others_after_contact_is_ignored_with_the_option_off() {
+    let mut b = Bench::ft8(Options {
+        abandon_if_dx_answers_other: false,
+        ..opts()
+    });
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     b.tx(2);
     b.rx(3, &[("IU3ABC LZ2KSQ -07", -9)]);
@@ -337,10 +439,44 @@ fn dx_talking_to_others_after_contact_is_ignored() {
     b.rx(5, &[("AA1AA LZ2KSQ -10", -9)]);
     assert_eq!(b.seq.dx(), Some("LZ2KSQ"));
     assert!(b.abandons().is_empty());
+    assert!(b.stops().is_empty());
+}
+
+/// La banda di guardia: con l'opzione spenta il DX che parla con un altro entro 51 Hz dalla nostra Tx (FT8) ferma lo stesso la trasmissione;
+/// in FT4 la banda e' di 84 Hz.
+#[test]
+fn the_guard_band_stops_the_transmission_even_with_the_option_off() {
+    for (freq, halts) in [(1500 + 50, true), (1500 + 52, false), (1500 - 50, true)] {
+        let mut b = Bench::ft8(Options {
+            abandon_if_dx_answers_other: false,
+            ..opts()
+        });
+        b.reply(1, "CQ LZ2KSQ KN23", -12);
+        b.tx(2);
+        let s = b.slot(3);
+        b.seq.on_decodes(s, &[Decoded::new("AA1AA LZ2KSQ -10", -12, freq)]);
+        b.collect();
+        assert_eq!(b.stops() == vec![StopReason::ReplyOther], halts, "DX a {freq} Hz");
+    }
+    for (freq, halts) in [(1500 + 83, true), (1500 + 85, false)] {
+        let mut b = Bench::new(
+            Mode::Ft4,
+            Options {
+                abandon_if_dx_answers_other: false,
+                ..opts()
+            },
+        );
+        b.reply(1, "CQ LZ2KSQ KN23", -12);
+        b.tx(2);
+        let s = b.slot(3);
+        b.seq.on_decodes(s, &[Decoded::new("AA1AA LZ2KSQ -10", -12, freq)]);
+        b.collect();
+        assert_eq!(b.stops() == vec![StopReason::ReplyOther], halts, "FT4, DX a {freq} Hz");
+    }
 }
 
 /// `qsohistory.cpp` `message()`: lo stato e' l'ultimo messaggio ricevuto; il DX che ripete il
-/// locatore mentre siamo al Tx2 non ci sposta, e che risponde col rapporto a un Tx1 ci porta al Tx3.
+/// locatore mentre siamo al Tx2 non ci sposta, e un rapporto semplice dopo il nostro vale R+rapporto.
 #[test]
 fn partner_changes_state_follows_last_message() {
     let mut b = Bench::ft8(opts());
@@ -357,20 +493,45 @@ fn partner_changes_state_follows_last_message() {
     assert_eq!(
         b.seq.ntx(),
         3,
-        "un rapporto semplice vuole il nostro R-rapporto"
+        "un rapporto semplice quando lo stato e' gia' RRREPORT vale RREPORT: si risponde con R+rapporto"
     );
 }
 
-/// `qsohistory.cpp` `RRREPORT` richiede di aver mandato un rapporto (`t.stx_c >= SREPORT`): senza,
-/// l'R-rapporto del DX non porta alla chiusura, si manda prima il nostro rapporto (Tx3).
+/// `qsohistory.cpp` `case RREPORT`: se lo stato e' SREPORT (abbiamo mandato il rapporto) un rapporto semplice del DX vale R+rapporto
+/// (`t.status == SREPORT -> RRREPORT`): si chiude con l'RR73.
 #[test]
-fn r_report_before_our_report_goes_to_tx3() {
+fn a_plain_report_after_our_report_counts_as_r_report() {
+    let mut b = Bench::ft8(opts());
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC -12"));
+    b.rx(3, &[("IU3ABC LZ2KSQ -10", -12)]);
+    assert_eq!(b.seq.ntx(), 4);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+}
+
+/// Il rapporto semplice del DX dopo il nostro Tx1 vale RREPORT: si risponde con R+rapporto (Tx3).
+#[test]
+fn a_plain_report_after_tx1_goes_to_tx3() {
+    let mut b = Bench::ft8(opts());
+    b.reply(1, "CQ LZ2KSQ KN23", -12);
+    assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC JN55"));
+    b.rx(3, &[("IU3ABC LZ2KSQ -10", -8)]);
+    assert_eq!(b.seq.ntx(), 3);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC R-08"));
+}
+
+/// `qsohistory.cpp` `RRREPORT` richiede di aver mandato un rapporto (`t.stx_c >= SREPORT`): un R-rapporto in risposta al nostro Tx1 non
+/// avanza e JTDX resta sul messaggio corrente (qui il Tx1, ripetuto).
+#[test]
+fn r_report_before_our_report_does_not_advance() {
     let mut b = Bench::ft8(opts());
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC JN55"));
     b.rx(3, &[("IU3ABC LZ2KSQ R-10", -8)]);
-    assert_eq!(b.seq.ntx(), 3);
-    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC R-08"));
+    assert_eq!(b.seq.ntx(), 1);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC JN55"));
 }
 
 /// `qsohistory.cpp` `case RRR/RRR73/R73`: la chiusura vale solo se i due rapporti sono stati scambiati.
@@ -392,7 +553,7 @@ fn closing_without_reports_is_ignored() {
 // RRR, 73 duplicati, chiusure
 // ---------------------------------------------------------------------------------------
 
-/// `process_Auto` `case RRR` -> Tx5: il DX chiude con RRR invece di RR73.
+/// `process_Auto` `case RRR` -> Tx5: il DX chiude con RRR invece di RR73. Si registra quando parte il 73.
 #[test]
 fn partner_sends_rrr_instead_of_rr73() {
     let mut b = Bench::ft8(opts());
@@ -401,14 +562,14 @@ fn partner_sends_rrr_instead_of_rr73() {
     b.rx(3, &[("IU3ABC LZ2KSQ -07", -9)]);
     b.tx(4);
     b.rx(5, &[("IU3ABC LZ2KSQ RRR", -9)]);
-    assert_eq!(b.records().len(), 1);
     assert_eq!(b.seq.ntx(), 5);
+    assert_eq!(b.records().len(), 0);
     assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"));
     assert_eq!(b.records().len(), 1);
 }
 
 /// Casella RRR (`rrr1CheckBox`): il Tx4 e' RRR, non si registra alla partenza (non e' un 73); il
-/// 73 del DX chiude e il nostro 73 parte una volta (`case R73` -> Tx5).
+/// 73 del DX chiude e il nostro 73 parte una volta, e il QSO si registra li' (`case R73` -> Tx5).
 #[test]
 fn our_rrr_closes_when_partner_sends_73() {
     let mut b = Bench::ft8(Options {
@@ -423,8 +584,10 @@ fn our_rrr_closes_when_partner_sends_73() {
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RRR"));
     assert!(b.records().is_empty(), "RRR non e' ancora la chiusura");
     b.rx(5, &[("IU3ABC LZ2KSQ 73", -12)]);
-    assert_eq!(b.records().len(), 1);
+    assert!(b.records().is_empty());
     assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"));
+    assert_eq!(b.records().len(), 1, "con la casella RRR si registra al Tx5");
+    b.idle(7);
     assert_eq!(b.tx(8).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.records().len(), 1);
 }
@@ -460,14 +623,22 @@ fn duplicate_rr73_in_one_slot_logs_once() {
         5,
         &[("IU3ABC LZ2KSQ RR73", -9), ("IU3ABC LZ2KSQ RR73", -10)],
     );
+    b.tx(6);
     assert_eq!(b.records().len(), 1);
 }
 
-/// `SentRR7373` (qui 3): l'RR73 si ripete se il 73 non arriva, poi il QSO (gia' registrato alla
+/// `SentRR7373` (qui 3) con la registrazione automatica: l'RR73 si ripete se il 73 non arriva (JTDX non si ferma: aspetta), poi il QSO (gia' registrato alla
 /// prima partenza) si chiude senza segnalare una rinuncia e si torna al CQ.
 #[test]
 fn rr73_repeats_without_73_then_closes() {
-    let mut b = Bench::ft8(opts());
+    let mut b = Bench::ft8(Options {
+        autolog: true,
+        limits: RepeatLimits {
+            closing: Some(3),
+            ..RepeatLimits::default()
+        },
+        ..opts()
+    });
     b.seq.call_cq(None).expect("cq");
     b.tx(0);
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
@@ -479,10 +650,52 @@ fn rr73_repeats_without_73_then_closes() {
             Some("LZ2KSQ IU3ABC RR73"),
             "periodo {slot}"
         );
+        b.idle(slot + 1);
     }
     assert_eq!(b.tx(10).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.records().len(), 1);
     assert!(b.abandons().is_empty());
+}
+
+/// Senza registrazione automatica, dopo l'RR73 (registrato) e con la stazione sulla nostra frequenza di CQ, JTDX non aspetta il 73: libera il DX
+/// al primo fine decodifica e passa al CQ o al prossimo (`process_Auto`, primo ramo).
+#[test]
+fn without_autolog_the_dx_is_freed_right_after_our_rr73() {
+    let mut b = Bench::ft8(opts());
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    b.tx(2);
+    b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+    b.idle(5);
+    assert_eq!(b.seq.dx(), None);
+    assert_eq!(b.tx(6).as_deref(), Some("CQ IU3ABC JN55"));
+    assert_eq!(b.records().len(), 1);
+}
+
+/// Con la registrazione automatica (`AutoQSOLogging`) JTDX ferma la trasmissione a fine QSO (FIN, `autoStopTx`): chi vuole continuare deve
+/// riarmarla.
+#[test]
+fn autolog_stops_the_transmission_at_the_end_of_the_qso() {
+    let mut b = Bench::ft8(Options {
+        autolog: true,
+        ..opts()
+    });
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    b.tx(2);
+    b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+    b.idle(5);
+    assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC RR73"), "ancora in attesa del 73");
+    b.rx(7, &[("IU3ABC LZ2KSQ 73", -12)]);
+    assert_eq!(b.stops(), vec![StopReason::QsoFinished]);
+    assert_eq!(b.tx(8), None);
+    assert_eq!(b.seq.dx(), None);
+    assert!(!b.seq.is_enabled());
+    assert_eq!(b.records().len(), 1);
 }
 
 /// Se il DX ripete l'R-rapporto (non ha sentito l'RR73) si rimanda l'RR73 e il contatore non riparte.
@@ -501,11 +714,11 @@ fn partner_repeats_r_report_after_rr73() {
 }
 
 // ---------------------------------------------------------------------------------------
-// Due chiamanti, coda
+// Due chiamanti, scelta di chi chiamare
 // ---------------------------------------------------------------------------------------
 
-/// `autoseq()` (priorita' pari: vince il rapporto migliore) e coda (Decodium: `m_callerQueue`):
-/// due chiamanti insieme, si serve il piu' forte, l'altro aspetta e viene servito dopo.
+/// `autoseq()` blocco A (priorita' pari: vince il rapporto migliore dell'ultimo periodo): due chiamanti insieme, si serve il piu' forte,
+/// l'altro aspetta e viene servito dopo.
 #[test]
 fn two_callers_one_served_other_queued() {
     let mut b = Bench::ft8(opts());
@@ -534,7 +747,7 @@ fn two_callers_one_served_other_queued() {
     assert_eq!(calls, vec!["BB2BB", "AA1AA"]);
 }
 
-/// Un terzo che ci chiama mentre siamo in QSO entra in coda e non disturba il QSO in corso.
+/// Un terzo che ci chiama mentre siamo in QSO resta in attesa e non disturba il QSO in corso.
 #[test]
 fn third_caller_during_qso_waits() {
     let mut b = Bench::ft8(opts());
@@ -548,13 +761,11 @@ fn third_caller_during_qso_waits() {
     assert_eq!(b.seq.ntx(), 4);
 }
 
-/// Un chiamante in coda che smette di chiamare scade (nel QSO successivo non viene servito).
+/// Blocco B: chi ha chiamato nei 5 minuti dopo il nostro ultimo CQ viene servito a fine QSO anche se non si e' piu' sentito nell'ultimo periodo
+/// (JTDX non ha una scadenza propria: conta solo l'orario del nostro CQ).
 #[test]
-fn queued_caller_expires_when_not_heard() {
-    let mut b = Bench::ft8(Options {
-        queue_ttl_s: 60.0,
-        ..opts()
-    });
+fn a_caller_heard_after_our_cq_is_served_when_the_qso_ends_even_much_later() {
+    let mut b = Bench::ft8(opts());
     b.seq.call_cq(None).expect("cq");
     b.tx(0);
     b.rx(1, &[("IU3ABC AA1AA FN42", -10), ("IU3ABC BB2BB KN23", -20)]);
@@ -565,15 +776,14 @@ fn queued_caller_expires_when_not_heard() {
     b.rx(9, &[("IU3ABC AA1AA 73", -10)]);
     assert_eq!(
         b.seq.dx(),
-        None,
-        "BB2BB non si sente da 8 periodi (60 s): scaduto"
+        Some("BB2BB"),
+        "BB2BB e' a 120 s dal nostro CQ (meno di 300 s): vale ancora"
     );
-    assert_eq!(b.tx(10).as_deref(), Some("CQ IU3ABC JN55"));
 }
 
-/// Un chiamante piu' vecchio in coda passa prima di uno nuovo piu' forte (ordine di arrivo).
+/// Blocco A: tra due chiamanti dello stesso periodo con la stessa priorita' si sceglie il segnale migliore, non l'ordine di arrivo.
 #[test]
-fn queue_serves_oldest_first() {
+fn queue_picks_the_best_signal_of_the_last_period() {
     let mut b = Bench::ft8(opts());
     b.seq.call_cq(None).expect("cq");
     b.tx(0);
@@ -589,8 +799,8 @@ fn queue_serves_oldest_first() {
             ("IU3ABC CC3CC JN45", -3),
         ],
     );
-    assert_eq!(b.seq.dx(), Some("BB2BB"));
-    assert_eq!(b.seq.queued(), vec!["CC3CC".to_string()]);
+    assert_eq!(b.seq.dx(), Some("CC3CC"), "-3 dB batte -20 dB nello stesso periodo");
+    assert_eq!(b.seq.queued(), vec!["BB2BB".to_string()]);
 }
 
 /// «Risp B4» spento (`m_answerWorkedB4`): chi si e' gia' lavorato non viene richiamato; acceso, si'.
@@ -624,25 +834,42 @@ fn already_worked_caller_is_ignored_unless_answer_b4() {
 // Watchdog, halt, 1 QSO
 // ---------------------------------------------------------------------------------------
 
-/// `txwatchdog` (`TxWatchdogTimer`, qui 6 minuti): una serie di CQ senza risposta si ferma.
+/// `txwatchdog` (`TxWatchdogTimer`, qui 6 minuti): una serie di CQ senza risposta si ferma. Il watchdog conta i minuti UTC con una trasmissione
+/// negli ultimi 32 s (`on_the_minute`): qui si trasmette a ogni periodo pari.
 #[test]
 fn watchdog_stops_cq_after_six_minutes() {
     let mut b = Bench::ft8(opts());
     b.seq.call_cq(None).expect("cq");
-    assert!(b.tx(0).is_some());
-    assert!(b.tx(22).is_some(), "330 s: ancora in tempo");
-    assert_eq!(b.tx(24), None, "360 s: scaduto");
+    for slot in (0..24).step_by(2) {
+        assert!(b.tx(slot).is_some(), "periodo {slot}");
+        b.idle(slot + 1);
+    }
+    assert_eq!(b.tx(24), None, "360 s: sei minuti con trasmissione, scaduto");
     assert_eq!(b.stops(), vec![StopReason::Watchdog]);
     assert!(!b.seq.is_enabled());
     assert_eq!(b.tx(26), None);
 }
 
-/// `txwatchdog(false)`: il watchdog riparte quando si trasmette un messaggio diverso o arriva un progresso.
+/// I minuti senza trasmissione non contano: con la trasmissione ferma per piu' di 32 s il watchdog non avanza.
+#[test]
+fn watchdog_does_not_count_minutes_without_recent_transmissions() {
+    let mut b = Bench::ft8(opts());
+    b.seq.call_cq(None).expect("cq");
+    assert!(b.tx(0).is_some());
+    // un'ora di sola ricezione: nessun minuto contato
+    assert!(b.tx(240).is_some(), "il watchdog non e' avanzato");
+    assert!(b.stops().is_empty());
+}
+
+/// `txwatchdog(false)`: il watchdog riparte quando si trasmette un messaggio diverso o arriva un progresso (RCALL/RREPORT con AutoSeq).
 #[test]
 fn watchdog_restarts_on_progress() {
     let mut b = Bench::ft8(opts());
     b.seq.call_cq(None).expect("cq");
-    assert!(b.tx(0).is_some());
+    for slot in (0..20).step_by(2) {
+        assert!(b.tx(slot).is_some());
+        b.idle(slot + 1);
+    }
     b.rx(21, &[("IU3ABC LZ2KSQ KN23", -12)]);
     assert!(b.tx(22).is_some());
     b.rx(23, &[("IU3ABC LZ2KSQ R-10", -12)]);
@@ -661,7 +888,10 @@ fn watchdog_can_be_disabled() {
         ..opts()
     });
     b.seq.call_cq(None).expect("cq");
-    assert!(b.tx(0).is_some());
+    for slot in (0..40).step_by(2) {
+        assert!(b.tx(slot).is_some());
+        b.idle(slot + 1);
+    }
     assert!(b.tx(200).is_some());
 }
 
@@ -684,10 +914,13 @@ fn halt_midway_keeps_the_qso() {
     assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC R-09"));
 }
 
-/// Fermata a meta' di una serie di CQ: dopo il QSO in corso non si riprende il CQ.
+/// Fermata a meta' di una serie di CQ: con la registrazione automatica, dopo il QSO in corso non si riprende il CQ.
 #[test]
 fn halt_ends_cq_run() {
-    let mut b = Bench::ft8(opts());
+    let mut b = Bench::ft8(Options {
+        autolog: true,
+        ..opts()
+    });
     b.seq.call_cq(None).expect("cq");
     b.tx(0);
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
@@ -720,7 +953,6 @@ fn single_qso_stops_after_the_qso() {
     b.rx(5, &[("IU3ABC LZ2KSQ 73", -12)]);
     assert_eq!(b.stops(), vec![StopReason::SingleQso]);
     assert_eq!(b.tx(6), None);
-    assert!(b.seq.queued().is_empty());
 }
 
 /// «1 QSO»: vale anche per un tentativo fallito (`counters = false` con `m_singleshot`).
@@ -728,6 +960,10 @@ fn single_qso_stops_after_the_qso() {
 fn single_qso_stops_after_a_failed_attempt() {
     let mut b = Bench::ft8(Options {
         single_qso: true,
+        limits: RepeatLimits {
+            answer_in_call: Some(5),
+            ..RepeatLimits::default()
+        },
         ..opts()
     });
     b.seq.call_cq(None).expect("cq");
@@ -735,6 +971,7 @@ fn single_qso_stops_after_a_failed_attempt() {
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
     for slot in [2, 4, 6, 8, 10] {
         assert!(b.tx(slot).is_some());
+        b.idle(slot + 1);
     }
     assert_eq!(b.tx(12), None);
     assert_eq!(b.stops(), vec![StopReason::SingleQso]);
@@ -775,23 +1012,23 @@ fn cq_uses_the_configured_period() {
     assert!(b.tx(2).is_some());
 }
 
-/// Un chiamante che ci risponde nel periodo «sbagliato» (quello nostro) ci fa cambiare periodo
-/// (`processMessage` segue il periodo del messaggio).
+/// AutoSeq **non cambia mai il periodo di trasmissione**: lo cambiano solo `processMessage` (doppio clic) e `TxMinuteButton`. Un chiamante nel
+/// periodo «sbagliato» (impossibile in pratica, perche' li' trasmettiamo noi) non sposta niente.
 #[test]
-fn caller_in_unexpected_period_moves_our_period() {
+fn autoseq_never_changes_the_tx_period() {
     let mut b = Bench::ft8(opts());
     b.seq.call_cq(None).expect("cq");
     b.tx(0);
     b.rx(2, &[("IU3ABC LZ2KSQ KN23", -12)]);
-    assert!(!b.seq.tx_even());
-    assert_eq!(b.tx(4), None);
-    assert_eq!(b.tx(3).as_deref(), Some("LZ2KSQ IU3ABC -12"));
+    assert!(b.seq.tx_even());
+    assert_eq!(b.tx(3), None);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC -12"));
 }
 
-/// docs («Da verificare»): il limite di avvio tardivo non e' documentato in JTDX; Aurora usa 2 s
-/// in FT8 e 1 s in FT4, modificabili. Una richiesta tardiva non parte e non conta come invio.
+/// `guiUpdate`: una trasmissione puo' partire in qualunque istante dei primi 13,64 s (FT8) del periodo (`txDuration`, «Allow late starts»); oltre non
+/// parte piu' e non conta come invio. Il messaggio ripartira' dalla coda (la catena di trasmissione salta i campioni gia' trascorsi).
 #[test]
-fn late_request_does_not_transmit_nor_count() {
+fn late_start_is_allowed_for_the_whole_message_duration() {
     let mut b = Bench::ft8(Options {
         limits: RepeatLimits {
             answer_cq: Some(2),
@@ -800,28 +1037,13 @@ fn late_request_does_not_transmit_nor_count() {
         ..opts()
     });
     b.reply(1, "CQ LZ2KSQ KN23", -12);
-    assert!(b.tx_at(2, 2.5).is_none());
-    assert!(b.tx_at(2, 1.9).is_some());
+    assert!(b.tx_at(2, 13.7).is_none(), "oltre i 13,64 s non resta niente da trasmettere");
+    assert!(b.tx_at(2, 13.5).is_some(), "13,5 s: parte la coda");
+    b.idle(3);
     assert!(b.tx_at(4, 0.2).is_some());
-    assert_eq!(b.tx_at(6, 0.2), None, "due invii fatti, tetto 2");
+    b.idle(5);
+    assert_eq!(b.tx_at(6, 0.2).map(|t| t.n), Some(6), "due invii fatti, tetto 2: si chiama CQ");
     assert_eq!(b.abandons(), vec![AbandonReason::NoReply]);
-}
-
-/// «Bypassa Tx1» (Decodium, TX immediato al click): la prima trasmissione puo' partire fino ai tre
-/// quarti del periodo, le successive no.
-#[test]
-fn bypass_tx1_allows_a_late_first_transmission_only() {
-    let mut b = Bench::ft8(Options {
-        bypass_tx1: true,
-        ..opts()
-    });
-    b.reply(1, "CQ LZ2KSQ KN23", -12);
-    assert!(b.tx_at(2, 9.0).is_some());
-    assert!(
-        b.tx_at(2, 9.0).is_some(),
-        "stesso periodo: stesso messaggio"
-    );
-    assert!(b.tx_at(4, 9.0).is_none(), "la seconda non e' piu' la prima");
 }
 
 /// Una sola chiamata per periodo: la stessa richiesta due volte da' lo stesso messaggio, contato una volta.
@@ -838,8 +1060,52 @@ fn next_tx_is_idempotent_within_a_slot() {
     let a = b.tx_at(2, 0.4).expect("tx");
     let c = b.tx_at(2, 0.9).expect("tx");
     assert_eq!(a, c);
+    b.idle(3);
     assert!(b.tx(4).is_some(), "il secondo invio e' ancora permesso");
-    assert_eq!(b.tx(6), None);
+    b.idle(5);
+    assert_eq!(b.tx(6).as_deref(), Some("CQ IU3ABC JN55"));
+}
+
+/// `m_restart`: se la decodifica (arrivata dopo l'inizio della trasmissione) cambia il messaggio, la trasmissione riparte con il nuovo
+/// (`Retransmitting` in `ALL.TXT`); se resta lo stesso non cambia nulla.
+#[test]
+fn a_message_changed_by_the_decode_after_the_start_is_retransmitted() {
+    let mut b = Bench::ft8(opts());
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC -12"));
+    // il periodo 3 e' decodificato mentre il periodo 4 e' gia' cominciato con il messaggio vecchio (Tx2)
+    let started = b.tx_at(4, 0.4).expect("avvio anticipato con il messaggio vecchio");
+    assert_eq!((started.n, started.retransmit), (2, false));
+    let s = b.slot(3);
+    let now = b.slot(4).start_s(Mode::Ft8) + 1.6;
+    b.seq.on_decodes_at(s, &[Decoded::new("IU3ABC LZ2KSQ R-10", -11, 1200)], Some(now));
+    b.collect();
+    let again = b.tx_at(4, 1.6).expect("ritrasmissione");
+    assert_eq!((again.n, again.text.as_str(), again.retransmit), (4, "LZ2KSQ IU3ABC RR73", true));
+    // chiedere ancora nello stesso periodo da' lo stesso messaggio, senza altre ritrasmissioni
+    let same = b.tx_at(4, 1.8).expect("stesso");
+    assert_eq!(same, again);
+    assert_eq!(b.records().len(), 1, "l'RR73 e' partito una volta sola: un solo QSO registrato");
+}
+
+/// Con il DX che ripete lo stesso messaggio la decodifica tardiva non fa ripartire niente.
+#[test]
+fn a_decode_that_does_not_change_the_message_does_not_restart_it() {
+    let mut b = Bench::ft8(opts());
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    b.tx(2);
+    let started = b.tx_at(4, 0.4).expect("avvio anticipato");
+    let s = b.slot(3);
+    let now = b.slot(4).start_s(Mode::Ft8) + 1.6;
+    b.seq.on_decodes_at(s, &[Decoded::new("IU3ABC LZ2KSQ KN23", -12, 1200)], Some(now));
+    b.collect();
+    let after = b.tx_at(4, 1.6).expect("stesso periodo");
+    assert_eq!(after, started);
+    assert!(!after.retransmit);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -971,6 +1237,7 @@ fn portable_partner() {
     );
     assert_eq!(b.tx(4).as_deref(), Some("AA1AA/P IU3ABC R-09"));
     b.rx(5, &[("IU3ABC AA1AA/P RR73", -9)]);
+    assert_eq!(b.tx(6).as_deref(), Some("AA1AA/P IU3ABC 73"));
     assert_eq!(b.records().len(), 1);
     assert_eq!(b.records()[0].call, "AA1AA/P");
 }
@@ -996,6 +1263,7 @@ fn messages_to_our_base_call_with_suffix_are_ours() {
     let mut b = Bench {
         seq,
         mode: Mode::Ft8,
+        base: 2880,
         events: Vec::new(),
     };
     b.seq.call_cq(None).expect("cq");
@@ -1034,13 +1302,15 @@ fn follow_dx_frequency_option() {
         follow_dx_freq: true,
         ..opts()
     });
+    let s = b.slot(1);
     b.seq
-        .reply_to(Slot(1), &Decoded::new("CQ LZ2KSQ KN23", -12, 2100))
+        .reply_to(s, &Decoded::new("CQ LZ2KSQ KN23", -12, 2100))
         .expect("ok");
     assert_eq!(b.tx_at(2, 0.4).map(|t| t.freq_hz), Some(2100));
     let mut b = Bench::ft8(opts());
+    let s = b.slot(1);
     b.seq
-        .reply_to(Slot(1), &Decoded::new("CQ LZ2KSQ KN23", -12, 2100))
+        .reply_to(s, &Decoded::new("CQ LZ2KSQ KN23", -12, 2100))
         .expect("ok");
     assert_eq!(b.tx_at(2, 0.4).map(|t| t.freq_hz), Some(1500));
 }
@@ -1074,7 +1344,7 @@ fn manual_selection_restarts_repeat_count() {
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC -12"));
 }
 
-/// `clearDX`: Canc DX libera la stazione e, in una serie di CQ, si torna al CQ.
+/// `clearDX`: Canc DX libera la stazione e, con AutoSeq, si torna al CQ (la direzione del CQ resta quella impostata).
 #[test]
 fn clear_dx_returns_to_cq() {
     let mut b = Bench::ft8(opts());
@@ -1125,14 +1395,15 @@ fn texts_without_dx_only_cq() {
     assert_eq!(t[5], "CQ IU3ABC JN55");
 }
 
-/// Con la trasmissione chiusa non si da' mai nulla, e un chiamante non apre un QSO.
+/// Con la trasmissione chiusa non si da' mai nulla; un chiamante, come in JTDX, viene comunque scelto (il campo DX si riempie) ma non parte niente.
 #[test]
-fn disabled_sequencer_never_transmits_nor_takes_callers() {
+fn disabled_sequencer_never_transmits() {
     let mut b = Bench::ft8(opts());
     assert_eq!(b.tx(0), None);
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
-    assert_eq!(b.seq.dx(), None);
+    assert_eq!(b.seq.dx(), Some("LZ2KSQ"));
     assert_eq!(b.tx(2), None);
+    assert!(!b.seq.is_enabled());
 }
 
 #[test]
@@ -1155,13 +1426,13 @@ fn errors_are_reported_not_panicked() {
         Err(SeqError::InvalidModifier(_))
     ));
     assert!(b.seq.call_cq(Some("")).is_ok());
+    let s = b.slot(1);
     assert!(matches!(
-        b.seq.reply_to(Slot(1), &Decoded::new("HELLO", 0, 1000)),
+        b.seq.reply_to(s, &Decoded::new("HELLO", 0, 1000)),
         Err(SeqError::NotReplyable(_))
     ));
     assert_eq!(
-        b.seq
-            .reply_to(Slot(1), &Decoded::new("CQ IU3ABC/P JN55", 0, 1000)),
+        b.seq.reply_to(s, &Decoded::new("CQ IU3ABC/P JN55", 0, 1000)),
         Err(SeqError::OwnCall)
     );
     assert_eq!(b.seq.select_tx(7), Err(SeqError::InvalidTxNumber(7)));

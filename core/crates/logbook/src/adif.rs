@@ -58,7 +58,7 @@ pub fn utc_datetime(unix_ms: u64) -> (String, String) {
 
 /// Inizio e fine del QSO come `(QSO_DATE, TIME_ON, QSO_DATE_OFF, TIME_OFF)`. Senza gli istanti completi si usa l'ora del giorno di `time_ms`
 /// con la data `fallback_date`, per inizio e fine.
-fn qso_times(q: &QsoRecord, fallback_date: &str) -> (String, String, String, String) {
+pub(crate) fn qso_times(q: &QsoRecord, fallback_date: &str) -> (String, String, String, String) {
     if q.time_on_unix_ms == 0 {
         let secs = q.time_ms / 1000;
         let time = format!("{:02}{:02}{:02}", secs / 3600 % 24, secs / 60 % 60, secs % 60);

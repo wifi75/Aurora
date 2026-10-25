@@ -19,7 +19,7 @@ use crate::{
     audio::AudioSink,
     clock::Clock,
     error::TxError,
-    level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, prepare_samples},
+    level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, cut_head, prepare_samples},
     lock,
     ptt::{Ptt, PttGuard, release_ptt},
     slot::{Mode, Parity, choose_slot},
@@ -41,8 +41,9 @@ pub struct TxConfig {
     pub ptt_tail: Duration,
     /// Anticipo dell'audio per la latenza del dispositivo: l'audio parte a inizio periodo + 0,5 s - anticipo.
     pub latency_advance: Duration,
-    /// Ritardo massimo accettato sull'inizio nominale dell'audio, quando si chiede il periodo in corso.
-    pub max_late: Duration,
+    /// Ritardo massimo accettato sull'inizio nominale dell'audio, quando si chiede il periodo in corso. `None`: la finestra di JTDX
+    /// (`Mode::tx_window`: si puo' partire in qualunque istante dei primi 13,64 s dell'FT8 o 6,04 s dell'FT4 del periodo e si emette la coda dell'onda).
+    pub max_late: Option<Duration>,
     /// Durata massima di un'onda.
     pub max_duration: Duration,
     /// Margine oltre la durata prevista, dopo il quale il `watchdog` spegne il PTT.
@@ -59,7 +60,7 @@ impl Default for TxConfig {
             ptt_lead: Duration::from_millis(100),
             ptt_tail: Duration::from_millis(50),
             latency_advance: Duration::from_millis(30),
-            max_late: Duration::from_millis(1000),
+            max_late: None,
             max_duration: Duration::from_secs(15),
             watchdog_grace: Duration::from_secs(2),
             fade: Duration::from_millis(5),
@@ -82,8 +83,8 @@ impl TxConfig {
         if self.latency_advance > Duration::from_millis(500) {
             return bad("anticipo per la latenza oltre 500 ms");
         }
-        if self.max_late > Duration::from_millis(3000) {
-            return bad("ritardo massimo oltre 3000 ms");
+        if self.max_late.is_some_and(|d| d > Duration::from_secs(15)) {
+            return bad("ritardo massimo oltre 15 s");
         }
         if self.max_duration.is_zero() || self.max_duration > Duration::from_secs(30) {
             return bad("durata massima fuori da 0-30 s");
@@ -110,6 +111,8 @@ pub struct TxPlan {
     pub ptt_on: Duration,
     pub audio_start: Duration,
     pub wave_len: Duration,
+    /// Quanto dell'inizio dell'onda e' gia' passato al momento della richiesta (avvio tardivo): chi trasmette parte da li'.
+    pub late: Duration,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,6 +154,8 @@ struct Inner {
     watchdog: Watchdog,
     listener: Mutex<Option<Listener>>,
     worker: Mutex<Option<JoinHandle<()>>>,
+    /// Un'onda che sostituisce quella in attesa o in corso (ritrasmissione, `m_restart` di JTDX): il thread la prende al primo passo.
+    replacement: Mutex<Option<Vec<f32>>>,
 }
 
 impl Inner {
@@ -229,6 +234,7 @@ impl Transmitter {
             watchdog,
             listener: Mutex::new(None),
             worker: Mutex::new(None),
+            replacement: Mutex::new(None),
         };
         Ok(Transmitter { inner: Arc::new(inner) })
     }
@@ -296,9 +302,39 @@ impl Transmitter {
         }
     }
 
+    /// Sostituisce l'onda della trasmissione in attesa o in corso con un'altra (ritrasmissione: la decodifica ha cambiato il messaggio dopo
+    /// l'inizio). Il PTT resta com'e': se l'audio sta gia' suonando si ferma con una discesa di pochi ms e riparte dall'istante giusto del
+    /// nuovo messaggio, cioe' dalla sua coda. `Err(NotRunning)` se non c'e' niente da sostituire (si chiede allora una trasmissione nuova).
+    pub fn replace(&self, wave: Vec<f32>) -> Result<(), TxError> {
+        if !matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
+            return Err(TxError::NotRunning);
+        }
+        let cfg = self.config();
+        if !cfg.allow_tx {
+            return Err(TxError::NotAllowed);
+        }
+        if wave.is_empty() {
+            return Err(TxError::EmptyWave);
+        }
+        if wave.iter().any(|v| !v.is_finite()) {
+            return Err(TxError::InvalidWave);
+        }
+        let wave_len = Duration::from_secs_f64(wave.len() as f64 / f64::from(WAVE_RATE));
+        if wave_len > cfg.max_duration {
+            return Err(TxError::TooLong { wave_ms: wave_len.as_millis() as u64, limit_ms: cfg.max_duration.as_millis() as u64 });
+        }
+        *lock(&self.inner.replacement) = Some(wave);
+        self.inner.clock.wake();
+        Ok(())
+    }
+
     /// Accetta una trasmissione e la fa partire al momento giusto, in un thread proprio.
     pub fn schedule(&self, request: TxRequest) -> Result<TxPlan, TxError> {
         let inner = &self.inner;
+        // dopo un `halt` il thread ha bisogno di qualche millisecondo per fermarsi: chi riparte subito (ritrasmissione, nuovo doppio clic) lo aspetta
+        if self.inner.halt.load(Ordering::SeqCst) && matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
+            let _ = self.wait_idle(Duration::from_millis(300));
+        }
         if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
             return Err(TxError::Busy);
         }
@@ -323,6 +359,11 @@ impl Transmitter {
         let slot_start = choose_slot(now, request.mode, request.parity, cfg.max_late)?;
         let audio_at = (slot_start + request.mode.tx_delay()).saturating_sub(cfg.latency_advance);
         let ptt_at = audio_at.saturating_sub(cfg.ptt_lead);
+        // avvio tardivo: la parte dell'onda gia' trascorsa non si trasmette; se e' passata tutta non c'e' piu' niente da fare
+        let late = now.saturating_sub(audio_at);
+        if late >= wave_len {
+            return Err(TxError::TooLate { late_ms: now.saturating_sub(slot_start + request.mode.tx_delay()).as_millis() as u64 });
+        }
 
         {
             let mut st = lock(&inner.status);
@@ -333,6 +374,7 @@ impl Transmitter {
             st.outcome = None;
         }
         inner.halt.store(false, Ordering::SeqCst);
+        *lock(&inner.replacement) = None;
         // il thread della trasmissione precedente e' finito (o sta per finire): lo si raccoglie
         if let Some(old) = lock(&inner.worker).take() {
             let _ = old.join();
@@ -356,7 +398,7 @@ impl Transmitter {
             }
         }
         inner.notify(TxState::Waiting);
-        Ok(TxPlan { slot_start, ptt_on: ptt_at, audio_start: audio_at, wave_len })
+        Ok(TxPlan { slot_start, ptt_on: ptt_at, audio_start: audio_at, wave_len, late })
     }
 }
 
@@ -373,8 +415,9 @@ impl Drop for Transmitter {
     }
 }
 
-/// Attende l'ora `target`. `Ok(false)` se e' arrivato `halt`; con `check_allowed` errore se `allow_tx` e' diventato falso.
-fn wait_until(inner: &Inner, target: Duration, check_allowed: bool) -> Result<bool, TxError> {
+/// Attende l'ora `target`. `Ok(false)` se e' arrivato `halt`; con `check_allowed` errore se `allow_tx` e' diventato falso. A ogni passo chiama
+/// `on_poll` (per prendere un'eventuale onda sostitutiva).
+fn wait_until(inner: &Inner, target: Duration, check_allowed: bool, on_poll: &mut dyn FnMut() -> Result<(), TxError>) -> Result<bool, TxError> {
     loop {
         if inner.halt.load(Ordering::SeqCst) {
             return Ok(false);
@@ -382,6 +425,7 @@ fn wait_until(inner: &Inner, target: Duration, check_allowed: bool) -> Result<bo
         if check_allowed && !lock(&inner.config).allow_tx {
             return Err(TxError::NotAllowed);
         }
+        on_poll()?;
         let now = inner.clock.now();
         if now >= target {
             return Ok(true);
@@ -424,30 +468,72 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
 
 fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
     let rate = lock(&inner.sink).sample_rate();
+    let fade_samples = (job.fade.as_secs_f64() * f64::from(rate)).round() as usize;
     // con il guadagno dal vivo il livello lo applica il dispositivo (e si puo' cambiare mentre si trasmette): l'onda parte a livello pieno
     let attenuation = if inner.live_gain.is_some() { 0 } else { job.attenuation_tenths };
-    let samples = prepare_samples(&job.wave, rate, attenuation, job.fade)?;
+    let mut samples = prepare_samples(&job.wave, rate, attenuation, job.fade)?;
     let audio_len = Duration::from_secs_f64(samples.len() as f64 / f64::from(rate.max(1)));
+    // un'onda sostitutiva (ritrasmissione) prende il posto di quella in attesa
+    let take_replacement = |samples: &mut Vec<f32>| -> Result<bool, TxError> {
+        match lock(&inner.replacement).take() {
+            Some(w) => {
+                *samples = prepare_samples(&w, rate, attenuation, job.fade)?;
+                Ok(true)
+            }
+            None => Ok(false),
+        }
+    };
 
-    if !wait_until(inner, job.ptt_at, true)? {
+    if !wait_until(inner, job.ptt_at, true, &mut || take_replacement(&mut samples).map(|_| ()))? {
         return Ok(TxOutcome::Halted);
     }
     // la scadenza si arma prima di accendere: se il comando si blocca, il controllo a tempo scatta lo stesso
     inner.watchdog.arm(Instant::now() + job.lead + audio_len + job.tail + job.grace);
     let mut guard = PttGuard::engage(Arc::clone(&inner.ptt))?;
 
-    if !wait_until(inner, job.audio_at, true)? {
+    if !wait_until(inner, job.audio_at, true, &mut || take_replacement(&mut samples).map(|_| ()))? {
         guard.release()?;
         return Ok(TxOutcome::Halted);
     }
+    // Avvio (anche tardivo): si parte dal punto dell'onda che a quest'ora sarebbe gia' arrivato (`Modulator`: `m_ic = (mstr - 500) * 48`)
+    let play = |samples: &[f32]| -> Result<Option<Duration>, TxError> {
+        // i passi di attesa sono da 10 ms: un avvio con meno di 20 ms di scarto e' in orario e non taglia niente
+        let late = inner.clock.now().saturating_sub(job.audio_at);
+        let late = if late < CHUNK * 2 { Duration::ZERO } else { late };
+        let skip = (late.as_secs_f64() * f64::from(rate)).round() as usize;
+        if skip >= samples.len() {
+            return Ok(None);
+        }
+        let tail = if skip == 0 { samples.to_vec() } else { cut_head(samples, skip, fade_samples) };
+        let len = Duration::from_secs_f64(tail.len() as f64 / f64::from(rate.max(1)));
+        lock(&inner.sink).start(tail)?;
+        Ok(Some(len))
+    };
     inner.set_state(TxState::Transmitting);
-    lock(&inner.sink).start(samples)?;
+    let Some(mut tail_len) = play(&samples)? else {
+        // l'orologio ha superato la fine dell'onda mentre si aspettava il PTT
+        guard.release()?;
+        return Ok(TxOutcome::Completed);
+    };
 
-    let started = inner.clock.now();
-    let limit = audio_len + Duration::from_secs(2);
+    let mut started = inner.clock.now();
+    let mut limit = tail_len + Duration::from_secs(2);
     let halted = loop {
         if inner.halt.load(Ordering::SeqCst) || !lock(&inner.config).allow_tx {
             break true;
+        }
+        if take_replacement(&mut samples)? {
+            // ritrasmissione: si ferma l'audio con la sua discesa e si riparte con il messaggio nuovo, dal punto giusto, senza toccare il PTT
+            lock(&inner.sink).stop();
+            std::thread::sleep(job.fade.max(Duration::from_millis(5)));
+            match play(&samples)? {
+                Some(len) => {
+                    tail_len = len;
+                    started = inner.clock.now();
+                    limit = tail_len + Duration::from_secs(2);
+                }
+                None => break false,
+            }
         }
         if !lock(&inner.sink).is_playing() {
             break false;
@@ -463,7 +549,7 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
         // la discesa dell'audio avviene sul dispositivo, in tempo vero: si aspetta che finisca prima di togliere il PTT
         std::thread::sleep(job.fade.max(Duration::from_millis(5)));
     } else {
-        wait_until(inner, inner.clock.now() + job.tail, false)?;
+        wait_until(inner, inner.clock.now() + job.tail, false, &mut || Ok(()))?;
     }
     guard.release()?;
     Ok(if halted { TxOutcome::Halted } else { TxOutcome::Completed })
@@ -835,28 +921,122 @@ mod tests {
         assert!(b.rec.time_of(&TxEventKind::AudioStop).is_some());
     }
 
+    /// Il primo evento di inizio audio registrato, con la lunghezza dell'onda consegnata al dispositivo.
+    fn audio_starts(b: &Bench) -> Vec<usize> {
+        b.rec.events().into_iter().filter_map(|(_, k)| if let TxEventKind::AudioStart(n) = k { Some(n) } else { None }).collect()
+    }
+
+    /// Porta avanti l'orologio a passi di 5 ms finche' `done` e' vero (al massimo 2 s di tempo vero).
+    fn advance_until(b: &Bench, done: impl Fn(&Bench) -> bool) {
+        let limit = Instant::now() + Duration::from_secs(2);
+        while !done(b) && Instant::now() < limit {
+            b.clock.advance(ms(5));
+        }
+    }
+
+    /// Avvio tardivo come il `Modulator` di JTDX (`m_ic = (mstr - 500) * 48`): si trasmette la **coda** dell'onda, dal punto in cui sarebbe a quest'ora,
+    /// non da capo. Qui 0,7 s dopo l'inizio del periodo: l'audio nominale (0,47 s) e' partito 0,23 s fa e dell'onda da 0,3 s restano 0,07 s.
     #[test]
-    fn a_slightly_late_request_starts_at_once_and_a_very_late_one_is_refused() {
+    fn a_slightly_late_request_transmits_the_tail_of_the_wave() {
         let b = bench(config());
-        // 0,7 s dopo l'inizio del periodo pari: l'audio nominale (0,47 s) e' gia' passato di poco
         b.clock.advance_nowait(ms(1200));
         let plan = b.tx.schedule(request(0.3)).expect("pianificata in ritardo");
         assert_eq!(plan.slot_start, base());
-        let audio_start = TxEventKind::AudioStart((0.3 * f64::from(RATE)) as usize);
-        let limit = Instant::now() + Duration::from_secs(2);
-        while b.rec.time_of(&audio_start).is_none() && Instant::now() < limit {
-            b.clock.advance(ms(5));
-        }
-        assert!(b.rec.time_of(&audio_start).is_some(), "l'audio in ritardo non e' partito");
+        assert!(plan.late >= ms(225) && plan.late <= ms(235), "{:?}", plan.late);
+        advance_until(&b, |b| !audio_starts(b).is_empty());
+        let started = audio_starts(&b);
+        assert_eq!(started.len(), 1, "l'audio in ritardo non e' partito");
+        let expected = ((0.3 - 0.23) * f64::from(RATE)) as usize;
+        assert!(started[0].abs_diff(expected) < (0.02 * f64::from(RATE)) as usize, "coda di {} campioni, attesi circa {expected}", started[0]);
+        // la coda comincia con una rampa (nessun click) e il PTT e' gia' acceso
+        let first = b.sink.samples.lock().expect("campioni")[0];
+        assert_eq!(first, 0.0);
         let on = b.rec.time_of(&TxEventKind::PttOn).expect("PTT acceso");
         assert!(on <= base() + ms(720), "{on:?}");
         b.tx.halt();
         assert!(b.tx.wait_idle(Duration::from_secs(2)));
+    }
 
-        // 2,5 s dopo l'inizio dello stesso periodo: troppo tardi
-        b.clock.advance_nowait(ms(1800));
-        let err = b.tx.schedule(request(0.3)).expect_err("troppo tardi");
+    /// Una trasmissione in orario non taglia niente: l'avvio con pochi ms di scarto parte da capo.
+    #[test]
+    fn an_on_time_request_is_not_cut() {
+        let b = bench(config());
+        b.tx.schedule(request(1.0)).expect("pianificata");
+        b.run_to(base() + ms(700));
+        assert_eq!(audio_starts(&b), vec![RATE as usize]);
+    }
+
+    /// La finestra di avvio e' la durata del messaggio di JTDX (13,64 s in FT8): a 12 s dall'inizio un'onda da 12,64 s ha ancora 1 s da trasmettere,
+    /// oltre la fine dell'onda o la finestra non si parte (`TooLate`), perche' non resterebbe niente.
+    #[test]
+    fn the_start_window_is_the_message_duration() {
+        let b = bench(config());
+        b.clock.advance_nowait(ms(12_500));
+        let plan = b.tx.schedule(request(12.64)).expect("a 12 s dall'inizio resta 1 s di messaggio");
+        assert!(plan.late > Duration::from_secs(11) && plan.late < Duration::from_secs(12));
+        advance_until(&b, |b| !audio_starts(b).is_empty());
+        let len = audio_starts(&b)[0] as f64 / f64::from(RATE);
+        assert!(len > 0.5 && len < 1.5, "coda di {len} s");
+        b.tx.halt();
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        // 13,5 s: dell'onda da 12,64 s non resta niente
+        b.clock.advance_nowait(ms(1_500));
+        let err = b.tx.schedule(request(12.64)).expect_err("niente da trasmettere");
         assert!(matches!(err, TxError::TooLate { .. }), "{err}");
+        // oltre i 13,64 s della finestra: troppo tardi anche per un'onda piu' corta
+        b.clock.advance_nowait(ms(500));
+        let err = b.tx.schedule(request(1.0)).expect_err("fuori finestra");
+        assert!(matches!(err, TxError::TooLate { .. }), "{err}");
+    }
+
+    /// Un tetto esplicito (`max_late`) restringe la finestra: oltre 1 s dall'inizio nominale dell'audio non si parte.
+    #[test]
+    fn an_explicit_cap_refuses_late_requests() {
+        let mut c = config();
+        c.max_late = Some(ms(1000));
+        let b = bench(c);
+        b.clock.advance_nowait(ms(2000));
+        let err = b.tx.schedule(request(0.3)).expect_err("oltre il tetto");
+        assert!(matches!(err, TxError::TooLate { .. }), "{err}");
+    }
+
+    /// Ritrasmissione (`m_restart`): se il messaggio cambia mentre si aspetta, parte quello nuovo.
+    #[test]
+    fn a_replacement_before_the_start_changes_the_wave() {
+        let b = bench(config());
+        b.tx.schedule(request(1.0)).expect("pianificata");
+        b.run_to(base() + ms(200));
+        b.tx.replace(tone(2.0)).expect("sostituita");
+        b.run_to(base() + ms(700));
+        assert_eq!(audio_starts(&b), vec![2 * RATE as usize], "e' partita l'onda nuova");
+        b.tx.halt();
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        // senza niente in corso non c'e' niente da sostituire
+        assert_eq!(b.tx.replace(tone(1.0)), Err(TxError::NotRunning));
+    }
+
+    /// Ritrasmissione a meta' trasmissione: l'audio si ferma con la sua discesa e riparte con il messaggio nuovo dalla coda, **senza togliere il PTT**.
+    #[test]
+    fn a_replacement_while_transmitting_restarts_the_audio_from_the_tail_without_dropping_the_ptt() {
+        let b = bench(config());
+        b.tx.schedule(request(3.0)).expect("pianificata");
+        b.run_to(base() + ms(1500));
+        assert_eq!(b.tx.state(), TxState::Transmitting);
+        b.tx.replace(tone(3.0)).expect("sostituita");
+        advance_until(&b, |b| audio_starts(b).len() >= 2);
+        let started = audio_starts(&b);
+        assert_eq!(started.len(), 2, "{started:?}");
+        assert_eq!(started[0], 3 * RATE as usize);
+        // a 1,5 s dall'inizio dell'audio nominale (0,47 s) sono passati circa 1,03 s: restano circa 1,97 s
+        let tail = started[1] as f64 / f64::from(RATE);
+        assert!(tail > 1.8 && tail < 2.1, "coda di {tail} s");
+        assert!(b.ptt.is_on(), "il PTT non si e' mai spento");
+        let kinds: Vec<TxEventKind> = b.rec.events().into_iter().map(|(_, k)| k).collect();
+        assert_eq!(kinds.iter().filter(|k| **k == TxEventKind::PttOn).count(), 1);
+        assert!(!kinds.contains(&TxEventKind::PttOff));
+        b.tx.halt();
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(!b.ptt.is_on());
     }
 
     #[test]

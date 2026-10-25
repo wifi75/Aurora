@@ -1,5 +1,6 @@
 //! Tipi di dominio, bus di eventi e trait `Engine` di Aurora.
 
+pub mod adif;
 pub mod bus;
 pub mod command;
 pub mod engine;

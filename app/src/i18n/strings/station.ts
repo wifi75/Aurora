@@ -353,12 +353,12 @@ export const stationStrings = {
     'Chama CQ (com DX: só para contactos distantes). Transmite: a transmissão tem de estar ativa no PC.',
   ],
   'tip.tx.free': [
-    'Fino a 13 caratteri: lettere, cifre e + - . / ? Prepara lo mette in Aurora senza trasmettere; Invia lo trasmette.',
-    'Up to 13 characters: letters, digits and + - . / ? Prepare puts it in Aurora without transmitting; Send transmits it.',
-    'Bis zu 13 Zeichen: Buchstaben, Ziffern und + - . / ? Vorbereiten legt ihn in Aurora ab, ohne zu senden; Senden sendet ihn.',
-    "Jusqu'à 13 caractères : lettres, chiffres et + - . / ? Préparer le place dans Aurora sans émettre ; Envoyer l'émet.",
-    'Hasta 13 caracteres: letras, cifras y + - . / ? Preparar lo deja en Aurora sin transmitir; Enviar lo transmite.',
-    'Até 13 caracteres: letras, dígitos e + - . / ? Preparar coloca-o na Aurora sem transmitir; Enviar transmite-o.',
+    'Fino a 13 caratteri: lettere, cifre e + - . / ? Prepara lo mette in Aurora senza trasmettere; Invia lo sceglie come messaggio da trasmettere (come in JTDX non accende Abilita Tx: parte se Abilita Tx e’ acceso).',
+    'Up to 13 characters: letters, digits and + - . / ? Prepare puts it in Aurora without transmitting; Send selects it as the message to transmit (as in JTDX it does not switch Enable Tx on: it goes out if Enable Tx is on).',
+    'Bis zu 13 Zeichen: Buchstaben, Ziffern und + - . / ? Vorbereiten legt ihn in Aurora ab, ohne zu senden; Senden wählt ihn als Sendenachricht (wie in JTDX schaltet es Tx an nicht ein: er geht raus, wenn Tx an eingeschaltet ist).',
+    "Jusqu'à 13 caractères : lettres, chiffres et + - . / ? Préparer le place dans Aurora sans émettre ; Envoyer le choisit comme message à émettre (comme dans JTDX il n'active pas Activer Tx : il part si Activer Tx est actif).",
+    'Hasta 13 caracteres: letras, cifras y + - . / ? Preparar lo deja en Aurora sin transmitir; Enviar lo elige como mensaje a transmitir (como en JTDX no activa Activar Tx: sale si Activar Tx está activo).',
+    'Até 13 caracteres: letras, dígitos e + - . / ? Preparar coloca-o na Aurora sem transmitir; Enviar escolhe-o como mensagem a transmitir (como no JTDX não liga Ativar Tx: sai se Ativar Tx estiver ligado).',
   ],
   'tip.tx.freq': [
     'Frequenza audio di trasmissione (200-3000 Hz). Non fa trasmettere. Si cambia anche trascinando la barra rossa sulla cascata.',

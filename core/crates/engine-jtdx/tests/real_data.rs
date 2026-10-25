@@ -21,7 +21,18 @@ fn real_adif_is_read_completely_and_quickly() {
     let elapsed = started.elapsed();
 
     assert!(records > 0);
-    assert_eq!(log.len(), records, "ogni record completo deve essere letto");
+    // lo stesso QSO registrato due volte nello stesso minuto (JTDX lo fa) conta una volta sola: al piu' un record su cinquanta
+    assert!(log.len() <= records && records - log.len() <= records / 50, "record {records}, QSO letti {}", log.len());
     assert!(elapsed.as_millis() < 2000, "lettura troppo lenta: {elapsed:?}");
-    eprintln!("QSO letti: {} in {elapsed:?}", log.len());
+    eprintln!("QSO letti: {} su {records} record in {elapsed:?}", log.len());
+    let started = Instant::now();
+    let matrix = log.matrix(&db);
+    eprintln!(
+        "scheda DXCC in {:?}: {} paesi lavorati su {}; per riga {:?}",
+        started.elapsed(),
+        matrix.worked,
+        matrix.total,
+        matrix.row_worked
+    );
+    assert_eq!(matrix.worked, log.stats(&db).dxcc_worked, "la scheda e le statistiche contano gli stessi paesi");
 }
