@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -55,6 +55,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/control", post(control_press))
         .route("/api/v1/commands/tx-message", post(tx_message))
         .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
+        .route("/api/v1/frequencies/defaults", get(frequencies_defaults))
         .route("/api/v1/pairing-settings", get(pairing_get).put(pairing_put))
         .route("/api/v1/access", get(access_get).put(access_put))
         .route("/api/v1/schedule", get(schedule_get).put(schedule_put))
@@ -412,9 +413,10 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
     let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
     let mode = body.mode.clone().unwrap_or_else(|| state.current_mode());
     // il blocco chiude il lock prima di qualunque attesa
+    let region = state.frequency_region();
     let found = {
         let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
-        table.frequency(&body.band, &mode)
+        table.frequency_in(region, &body.band, &mode)
     };
     let hz = found.ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_band"))?;
     if state.current_status().is_some_and(|s| s.transmitting) {
@@ -787,13 +789,18 @@ async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<
     // non risponde si usa l'ultima nota. La banda si cerca nella tabella e, fuori da quella, tra le bande dei radioamatori.
     let status_dial = state.current_status().filter(|s| s.dial_hz > 0).map(|s| s.dial_hz);
     let frequencies = std::sync::Arc::clone(&state.frequencies);
+    let region = state.frequency_region();
     let work = move || -> Result<Option<u64>, rig_control::RigError> {
         rig.set_mode(&mode)?;
         let current = rig.frequency().ok().filter(|hz| *hz > 0).or(status_dial);
         let target = current.and_then(|now| {
             let table = frequencies.lock().unwrap_or_else(|p| p.into_inner());
-            let band = table.band_of(now).or_else(|| rig_control::bands::amateur_band(now).map(str::to_string))?;
-            table.frequency(&band, &mode)
+            // come `MainWindow::switch_mode` di JTDX: resta sulla riga del nuovo modo se il dial e' gia' una riga, altrimenti la predefinita piu' vicina
+            // della banda del dial; fuori dalle bande della tabella si cerca la banda tra quelle dei radioamatori
+            table.best_working(region, &mode, now).or_else(|| {
+                let band = rig_control::bands::amateur_band(now)?;
+                table.frequency_in(region, band, &mode)
+            })
         });
         if let Some(hz) = target {
             rig.set_frequency(hz)?;
@@ -1618,6 +1625,12 @@ fn saved(state: &AppState) {
 async fn frequencies_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
     let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
     Json(serde_json::to_value(table.entries()).unwrap_or(Value::Null))
+}
+
+/// La tabella iniziale di JTDX (FT8 e FT4), con le righe di ogni regione IARU: serve al tasto «Frequenze iniziali» della scheda Frequenze.
+#[utoipa::path(get, path = "/api/v1/frequencies/defaults", responses((status = 200, description = "Tabella iniziale delle frequenze, con regione e riga predefinita")))]
+async fn frequencies_defaults(_: Authed) -> Json<Value> {
+    Json(json!(rig_control::table::FrequencyTable::default().entries()))
 }
 
 #[utoipa::path(put, path = "/api/v1/frequencies", responses((status = 200, description = "Tabella sostituita"), (status = 400, description = "Tabella non valida (bad_frequencies)")))]

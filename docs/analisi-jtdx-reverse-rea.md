@@ -1015,3 +1015,55 @@ Test: `udp-bridge/tests/emit.rs` (ogni encoder si rilegge con `decode`/`decode_r
 - `NAME` e `COMMENT` mancano nel QSO Logged e nell'ADIF, come per il secondo server.
 - Comandi: «HaltTx solo Abilita Tx» ferma comunque la trasmissione (Aurora ha un solo STOP); TriggerCQ non cambia il periodo di Tx.
 - Non provato dal vivo con GridTracker2 e Log4OM2: serve una prova del proprietario (nominativo in chiamata nella finestra di Log4OM2, Reply da GridTracker).
+
+## Regione IARU e nominativi composti di tipo 2 (REA, 2026-10-25)
+
+Letti in `jtdx.exe` 2.2.159 (stessa ricetta della sezione 1: una sola istanza Ghidra, importazione e analisi in 91 s grazie ai simboli, chiusa a fine lavoro) e nei sorgenti GPL (`Configuration.cpp`, `Configuration.hpp`, `Configuration.ui`, `FrequencyList.cpp`, `IARURegions.cpp`, `mainwindow.cpp`, ramo `master`). Le due voci stanno in Impostazioni -> Generali («IARU Region» e «Message generation for type 2 compound callsign holders»).
+
+### R.1 Regione IARU (`Region`)
+
+| Cosa | Dove | Evidenza |
+|---|---|---|
+| Valori | `IARURegions::Region` = `ALL`, `R1`, `R2`, `R3` (testi «All», «Region 1», «Region 2», «Region 3»); un testo sconosciuto vale `ALL` | `IARURegions::value` `REA 0x4f5000` [GPL IARURegions.cpp] |
+| Salvataggio | chiave `Region` di `JTDX.ini` come `@Variant(...IARURegions::Region...)` con il **nome** del valore in chiaro dentro il blocco binario; valore di fabbrica `ALL` (0) | `Configuration::read_settings` `REA 0x50b240`: `QSettings::value("Region", QVariant(IARURegions::Region 0))`, conversione fallita = 0; riga `Region=` del `JTDX.ini` dell'installazione |
+| Chi la legge | **solo** `MainWindow::switch_mode` (`REA 0x47b130`) e il costruttore di `WSPRBandHopping` (non FT8) | `procedure_callers` di `Configuration::region` `REA 0x652d00` = `0x47b130`, `0x5a3bf0`, `0x641e00` (questi ultimi due sono il WSPR) |
+| Cosa fa | `switch_mode` (a ogni cambio di modo e all'avvio) chiama `FrequencyList_v2::filter(region, mode)` (`REA 0x5a61d0`) e poi `best_working_frequency(dial)` (`REA 0x654ca0`): **filtra l'elenco delle frequenze che alimenta la tendina delle bande** e sceglie la riga | `procedure_callers` di `filter` e di `best_working_frequency(ulonglong)` = `0x47b130` |
+| Filtro | `FrequencyList_v2::filterAcceptsRow` (`REA 0x654aa0`): con regione scelta `ALL` passano **tutte** le righe; altrimenti passa la riga se la sua regione e' `ALL` o uguale alla scelta; poi lo stesso per il modo (riga con modo `ALL` o uguale) | decompilazione: `filtro_regione == 0 \|\| riga.regione == 0 \|\| filtro == riga.regione`, poi `filtro_modo == 0 \|\| riga.modo == 0 \|\| uguali` |
+| Scelta della riga | `best_working_frequency(dial)` (`REA 0x654ca0`): tra le righe visibili **nella banda del dial** la piu' vicina al dial; se il dial **e'** gia' una riga resta li'; altrimenti vince la riga «predefinita» piu' vicina e, se nessuna lo e', la piu' vicina. Il sovraccarico per nome di banda (`REA 0x654af0`) prende la prima riga predefinita dell'elenco ordinato per frequenza ed e' usato solo dalla programmazione del WSPR (`0x5a2870`) | decompilazione dei due sovraccarichi |
+| Quando si applica | `Configuration::impl::accept` copia la scelta in `region_`; il filtro si rifa' al **prossimo** `switch_mode` (cambio di modo, riavvio) | [GPL Configuration.cpp 3480; mainwindow.cpp 6252] |
+
+**La tabella iniziale.** `FrequencyList_v2::reset_to_defaults` (`REA 0x5a48a0`; la chiamano il «Reset» della scheda Frequenze, `REA 0x52e960`, e `read_settings` quando `FrequenciesForModes` manca) copia `default_frequency_list`, una `QList` globale (`REA 0x69eae0`) riempita da `_GLOBAL__sub_I_operator<<` (`REA 0x670d60`) da un vettore di **115 righe di 24 byte** a `REA 0x13eca00` (frequenza `u64`, modo `i32`, regione `i32`, «predefinita» `u8`; modi: ALL, JT65, JT9, T10, FT8, FT4, WSPR). Le 115 righe coincidono con `default_frequency_list` del sorgente pubblico e (stesse regioni, stessi flag) con la tabella `FrequenciesForModes` salvata nel `JTDX.ini` dell'installazione. Le righe FT8 e FT4 sono 45: 39 valide per tutte le regioni e 6 di una regione sola:
+
+| Banda | Modo | MHz | Regione | Predefinita |
+|---|---|---|---|---|
+| 160 m | FT8 | 1,810 | R1 | si |
+| 160 m | FT8 | 1,908 | R1 | si |
+| 80 m | FT4 | 3,568 | R3 | si |
+| 8 m (40 MHz) | FT8 | 40,680 | R1 | si |
+| 4 m (70 MHz) | FT8 | 70,100 | R1 | no |
+| 4 m (70 MHz) | FT8 | 70,154 | R1 | si |
+
+Le 39 righe `ALL` (in corsivo qui le non predefinite): FT8 1,840; 3,567 *no*; 3,573; 3,585 *no*; 5,357; 7,056 *no*; 7,071 *no*; 7,074; 7,080 *no*; 10,131 *no*; 10,133 *no*; 10,136; 10,143 *no*; 14,071 *no*; 14,074; 14,090 *no*; 18,095 *no*; 18,100; 21,074; 21,091 *no*; 24,911 *no*; 24,915; 28,074; 28,095 *no*; 50,310 *no*; 50,313; 50,323; 144,174; 432,174; FT4 3,575; 7,047,5; 10,140; 14,080; 18,104; 21,140; 24,919; 28,180; 50,318; 144,170. JTDX **non ha righe FT4 per 160 m e 60 m**. Le righe di JT65, JT9, T10 e WSPR non servono ad Aurora.
+
+**Effetto, in sintesi:** la regione non cambia la frequenza di una banda che ha una riga sola; cambia **quali righe di una banda si vedono**. Con `ALL` si vedono anche le righe delle regioni 1 e 3; con `R2` quelle di R1 e R3 spariscono; con `R1` restano le righe `ALL` piu' 1,810, 1,908, 40,680 e 70 MHz; con `R3` le `ALL` piu' 3,568 FT4.
+
+### R.2 «Generazione dei messaggi per nominativi composti di tipo 2» (`Type2MsgGen`)
+
+| Cosa | Dove | Evidenza |
+|---|---|---|
+| Valori | `type_2_msg_1_full` («Full call in Tx1»), `type_2_msg_3_full` («Full call in Tx3», **fabbrica**), `type_2_msg_5_only` («Full call in Tx5 only») | [GPL Configuration.hpp 70, Configuration.ui 140-175]; fabbrica: `read_settings` `REA 0x50b240` carica `QVariant(Type2MsgGen 1)` |
+| Salvataggio | `Type2MsgGen=@Variant(...Configuration::Type2MsgGen...type_2_msg_3_full...)` nel `JTDX.ini` (il nome in chiaro dentro il blocco binario) | riga `Type2MsgGen=` del `JTDX.ini` dell'installazione e `read_settings` |
+| Chi lo legge | **un solo chiamante**: `MainWindow::genStdMsgs` (`REA 0x474800`), in due punti | `procedure_callers` di `Configuration::type_2_msg_gen` `REA 0x652370` = `[0x474800]` |
+| Dove | **solo nel ramo dei modi che NON cominciano per «FT»**: `genStdMsgs` verifica `m_mode.startsWith("FT")`; con FT scrive Tx1-Tx6 con i nominativi tra `<...>` ed **esce** prima degli `switch (type_2_msg_gen)`; con JT65, JT9 e T10 usa i messaggi a due nominativi e li legge | decompilazione `REA 0x474800`: le due chiamate stanno nel blocco `startsWith("FT") == false` (righe 204-531 dello pseudocodice, che si chiude con un `return`), il ramo FT e' quello dopo; [GPL mainwindow.cpp 5343-5520] |
+| Cosa fa nei JT | con il **proprio** nominativo composto di tipo 2 (prefisso o suffisso non nell'elenco corto, `shortList`): valore 1: Tx1 = `DE MIO locatore`, Tx3 = `DX MIOBASE R-rapporto`; valore 3 (fabbrica): Tx1 = `DX MIOBASE locatore`, Tx3 = `DE MIO R-rapporto`; valore 5: Tx1 e Tx3 con il nominativo di base; in tutti i casi Tx5 e Tx6 hanno il nominativo completo, e con 1 e 3 anche Tx5 con il nominativo completo del DX | [GPL mainwindow.cpp 5485-5527] (tutto il blocco e' sotto il ramo non-FT) |
+
+**Conclusione:** in FT8 e FT4 `Type2MsgGen` **non cambia mai nessun messaggio** (verificato nell'eseguibile). I nominativi composti in FT8/FT4 li gestisce il ramo `FT`: se un nominativo non e' standard (`stdCall` falso) o i due sono composti, il messaggio porta l'altro nominativo con l'hash tra parentesi angolari (`<DX> MIO ...`, `DX <MIO> RR73`), come fa gia' `qso-native::stdmsg::gen_std_msgs`. Aurora (solo FT8 e FT4) tiene quindi la voce, la salva e la rilegge come JTDX, ma **non c'e' niente da generare**.
+
+### R.3 Differenze volute in Aurora
+
+- La tabella di Aurora e' quella di JTDX **solo per FT8 e FT4** e per le bande che Aurora conosce (160 m-2 m): 41 righe sulle 45; mancano 40,680 (8 m), 70,100 e 70,154 (4 m) e 432,174 (70 cm) perche' Aurora non ha ancora quelle bande (`rig_control::bands`).
+- JTDX fa scegliere la riga all'operatore dalla tendina; Aurora cambia banda **per nome** (pulsanti e programmazione), quindi serve una regola (`FrequencyTable::frequency_in`): **riga predefinita; con `ALL` una riga valida ovunque, con una regione una riga di quella regione; poi la frequenza piu' bassa**. Con `ALL` e con `R2` il valore di ogni banda e' quello di sempre (1,840 in 160 m, 3,575 in FT4 su 80 m...); con `R1` i 160 m vanno su 1,810 e con `R3` gli 80 m in FT4 su 3,568.
+- Il cambio di modo (`POST /commands/mode`) usa l'algoritmo di `switch_mode` (`FrequencyTable::best_working`): resta sul dial se e' gia' una riga del nuovo modo, altrimenti la riga predefinita piu' vicina della stessa banda.
+- La regione si applica **subito** (JTDX al prossimo cambio di modo).
+- Le righe alternative (non predefinite) restano nella tabella e nella scheda Frequenze; Aurora non ha una tendina per sceglierle, oggi non servono per cambiare banda.
+- 160 m e 60 m non hanno piu' una riga FT4 (JTDX non la ha: quella di Aurora era inventata); il cambio di modo su quelle bande lascia il dial com'e'.

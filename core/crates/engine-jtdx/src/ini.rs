@@ -192,6 +192,46 @@ pub fn read_shown(path: &Path) -> Result<BTreeMap<String, String>, String> {
     Ok(parse_shown(&text))
 }
 
+/// Le voci che JTDX salva come `@Variant` di un'enumerazione Qt, col nome del tipo e i nomi ammessi (`Region=@Variant(...IARURegions::Region...ALL)`):
+/// il nome del valore sta in chiaro dentro il blocco binario. Non si scrivono mai nel `JTDX.ini` (non sono in `SHOWN`): si leggono e basta.
+pub const ENUM_VARIANTS: &[(&str, &str, &[&str])] = &[
+    ("Region", "IARURegions::Region", &["ALL", "R1", "R2", "R3"]),
+    ("Type2MsgGen", "Configuration::Type2MsgGen", &["type_2_msg_1_full", "type_2_msg_3_full", "type_2_msg_5_only"]),
+];
+
+/// Toglie le sequenze di escape di QSettings (barra rovesciata con `0` o `xHH`) da un blocco `@Variant`.
+fn unescape_variant(value: &str) -> String {
+    let mut out = String::new();
+    let mut chars = value.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('x') => {
+                let mut hex = String::new();
+                while hex.len() < 2 && chars.peek().is_some_and(char::is_ascii_hexdigit) {
+                    hex.extend(chars.next());
+                }
+                out.push(u8::from_str_radix(&hex, 16).map_or('?', char::from));
+            }
+            Some('0') => out.push('\u{0}'),
+            Some(other) => out.push(other),
+            None => {}
+        }
+    }
+    out
+}
+
+/// Il nome dell'enumerazione scritto in un `@Variant` di JTDX: cio' che segue il nome del tipo, se e' uno dei nomi ammessi.
+fn enum_variant_name(value: &str, type_name: &str, allowed: &[&str]) -> Option<String> {
+    let plain = unescape_variant(value);
+    let rest = &plain[plain.find(type_name)? + type_name.len()..];
+    let name = rest.trim_end_matches([')', '\u{0}', '"']);
+    allowed.iter().find(|a| name.ends_with(**a)).map(|a| (*a).to_string())
+}
+
 pub fn parse_shown(text: &str) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
     let mut inside = false;
@@ -208,6 +248,10 @@ pub fn parse_shown(text: &str) -> BTreeMap<String, String> {
         let (key, value) = (key.trim(), unquote(value.trim()));
         if SHOWN.contains(&key) && !value.starts_with('@') {
             out.insert(key.to_string(), value.to_string());
+        } else if let Some((_, type_name, allowed)) = ENUM_VARIANTS.iter().find(|(k, _, _)| *k == key)
+            && let Some(name) = enum_variant_name(value, type_name, allowed)
+        {
+            out.insert(key.to_string(), name);
         }
     }
     out
@@ -216,6 +260,27 @@ pub fn parse_shown(text: &str) -> BTreeMap<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn region_and_type2_enums_are_read_from_the_binary_variants() {
+        // i blocchi come li scrive QSettings in `JTDX.ini` (la «A» di «ALL» e la «C» di «Configuration» sono scritte come `\x41` e `\x43`)
+        let ini = r"[Configuration]
+Region=@Variant(\0\0\0\x7f\0\0\0\x14IARURegions::Region\0\0\0\0\x4\x41LL\0)
+Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x12type_2_msg_5_only\0)
+";
+        let got = parse_shown(ini);
+        assert_eq!((got["Region"].as_str(), got["Type2MsgGen"].as_str()), ("ALL", "type_2_msg_5_only"));
+        let r1 = parse_shown(r"[Configuration]
+Region=@Variant(\0\0\0\x7f\0\0\0\x14IARURegions::Region\0\0\0\0\x3R1\0)
+");
+        assert_eq!(r1["Region"], "R1");
+        // un blocco senza il nome del tipo o con un nome sconosciuto non si legge
+        let odd = parse_shown(r"[Configuration]
+Region=@Variant(\0\0)
+Type2MsgGen=@Variant(\0\0\0\x7fConfiguration::Type2MsgGen\0\0\0\0\x2zz\0)
+");
+        assert!(!odd.contains_key("Region") && !odd.contains_key("Type2MsgGen"));
+    }
 
     const INI: &str = "[MainWindow]\nRxFreq = 1\n[Common]\nMode = FT8\nNDepth = 3\nSWLMode = false\n[Configuration]\nUDPServer = 127.0.0.1\nUDPServerPort = 2334\nEQSLPasswd = segreta\nSoundInName = \"Microfono (2- USB Audio Device)\"\nPTTMethod = @Variant(\\0\\0)\nMyCall = AA1AA\n[LogQSO]\nMyCall = FUORI\n";
 

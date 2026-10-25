@@ -106,8 +106,8 @@ pub fn support(key: &str) -> Support {
         "TxWatchdogTimer" | "TxQSYAllowed" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
-        "Region" => Support::Hidden("iaru_region"),
-        "Type2MsgGen" => Support::Hidden("type2_msgs"),
+        // regione IARU: filtra la tabella delle frequenze (scheda Frequenze, cambio di banda e di modo); messaggi con il nominativo composto di tipo 2: tenuto, ma vale solo per JT65/JT9
+        "Region" | "Type2MsgGen" => Support::Live(Apply::Now),
         "Decode52" => Support::Hidden("decode52"),
         "After73" | "IDint" => Support::Hidden("cw_id"),
         "TuneTimer" => Support::Hidden("tune_timer"),
@@ -162,6 +162,8 @@ pub fn note_of(key: &str) -> Option<&'static str> {
         "toRTTY" => Some("jt9_only"),
         // il marcatore di decodifica errata (`?`) esiste solo per JT65 e JT9: FT8 e FT4 non lo producono mai
         "preventFalseUDPspots" => Some("jt_marker_only"),
+        // `genStdMsgs` di JTDX legge `Type2MsgGen` solo nel ramo dei modi che non cominciano per «FT» (JT65, JT9, T10): in FT8 e FT4 non conta mai
+        "Type2MsgGen" => Some("jt_only"),
         _ => None,
     }
 }
@@ -186,6 +188,38 @@ impl std::fmt::Display for SettingsError {
 }
 
 impl std::error::Error for SettingsError {}
+
+/// «Messaggi per i nominativi composti di tipo 2» (`Configuration::Type2MsgGen`): in quale messaggio JT65 e JT9 mettono il nominativo completo dell'operatore.
+/// Il valore di fabbrica di JTDX e' «Tx3» (`type_2_msg_3_full`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Type2MsgGen {
+    /// `type_2_msg_1_full`: nominativo completo in Tx1 (e in Tx5).
+    Tx1,
+    /// `type_2_msg_3_full`: nominativo completo in Tx3 (e in Tx5).
+    #[default]
+    Tx3,
+    /// `type_2_msg_5_only`: nominativo completo solo in Tx5.
+    Tx5Only,
+}
+
+impl Type2MsgGen {
+    /// Dal nome di JTDX; un nome sconosciuto vale il valore di fabbrica.
+    pub fn parse(name: &str) -> Type2MsgGen {
+        match name {
+            "type_2_msg_1_full" => Type2MsgGen::Tx1,
+            "type_2_msg_5_only" => Type2MsgGen::Tx5Only,
+            _ => Type2MsgGen::Tx3,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Type2MsgGen::Tx1 => "type_2_msg_1_full",
+            Type2MsgGen::Tx3 => "type_2_msg_3_full",
+            Type2MsgGen::Tx5Only => "type_2_msg_5_only",
+        }
+    }
+}
 
 /// Quello che il resto del programma deve sapere, gia' interpretato (indirizzi veri, niente testo).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -223,6 +257,10 @@ pub struct Reports {
     pub log_filter: engine_jtdx::worked::LogFilter,
     /// «Non monitorare all'avvio» (`MonitorOFF`).
     pub monitor_off_at_start: bool,
+    /// Regione IARU (`Region`): quali righe della tabella delle frequenze si vedono e quale sceglie la banda (`rig_control::table`).
+    pub region: rig_control::table::Region,
+    /// Generazione dei messaggi per i nominativi composti di tipo 2 (`Type2MsgGen`): dove va il nominativo completo. Vale solo per JT65 e JT9, non per FT8 e FT4.
+    pub type2_msg_gen: Type2MsgGen,
     /// Marcatore dei messaggi di chiusura fra altre stazioni (`73RR73Marker`): fanno entrare la stazione tra i candidati della sequenza.
     pub rr73_marker: bool,
     /// «Priorita' ai CQ» (`CallPriorityCQ`) e «Priorita' alla distanza maggiore» (`MaxDistance`).
@@ -348,6 +386,9 @@ pub fn defaults() -> BTreeMap<String, String> {
         // Generali
         ("TxWatchdogTimer", "6"),
         ("TxQSYAllowed", "true"),
+        // regione IARU (`ALL`, `R1`, `R2`, `R3`) e generazione dei messaggi per i nominativi composti di tipo 2: valori di fabbrica di JTDX (`read_settings`: `ALL` e `type_2_msg_3_full`)
+        ("Region", "ALL"),
+        ("Type2MsgGen", "type_2_msg_3_full"),
         ("MonitorOFF", "false"),
         ("callsignLogFiltering", "false"),
         ("gridLogFiltering", "false"),
@@ -431,6 +472,10 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir") {
         return Ok(());
     }
+    // le due voci che JTDX salva come enumerazioni Qt: non sono tra quelle del `JTDX.ini` che Aurora scrive, hanno un elenco di nomi ammessi
+    if let Some((_, _, allowed)) = engine_jtdx::ini::ENUM_VARIANTS.iter().find(|(k, _, _)| *k == key) {
+        return if allowed.contains(&value) { Ok(()) } else { Err(SettingsError::BadValue(format!("{key}: valore non ammesso"))) };
+    }
     engine_jtdx::ini_edit::check_value(key, value).map_err(SettingsError::BadValue)?;
     match key {
         "SoundInName" | "SoundOutName" if value.chars().count() > 200 || value.chars().any(char::is_control) => Err(SettingsError::BadValue(format!("{key}: nome del dispositivo non valido"))),
@@ -485,6 +530,8 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
             from: engine_jtdx::worked::LogFilter::parse_from(get("timeFromLogFiltering")),
         },
         monitor_off_at_start: truthy(values.get("MonitorOFF")),
+        region: rig_control::table::Region::parse(get("Region")),
+        type2_msg_gen: Type2MsgGen::parse(get("Type2MsgGen")),
         rr73_marker: values.get("73RR73Marker").is_none_or(|v| v == "true"),
         call_prio_cq: truthy(values.get("CallPriorityCQ")),
         max_distance: truthy(values.get("MaxDistance")),
@@ -618,6 +665,11 @@ impl EngineSettingsStore {
 
     pub fn values(&self) -> BTreeMap<String, String> {
         self.lock().clone()
+    }
+
+    /// La regione IARU scelta (`Region`).
+    pub fn region(&self) -> rig_control::table::Region {
+        rig_control::table::Region::parse(self.lock().get("Region").map_or("", String::as_str))
     }
 
     pub fn reports(&self) -> Reports {
@@ -857,6 +909,30 @@ mod tests {
     }
 
     #[test]
+    fn region_and_type2_come_from_the_binary_variants_of_the_ini_and_default_to_jtdx_values() {
+        let ini = engine_jtdx::ini::parse_shown(
+            r"[Configuration]
+Region=@Variant(\0\0\0\x7f\0\0\0\x14IARURegions::Region\0\0\0\0\x3R2\0)
+Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x12type_2_msg_1_full\0)
+",
+        );
+        let got = import_from_ini(&ini, addr("127.0.0.1:2334"), &[]);
+        assert_eq!((got["Region"].as_str(), got["Type2MsgGen"].as_str()), ("R2", "type_2_msg_1_full"));
+        let r = interpret(&got);
+        assert_eq!((r.region, r.type2_msg_gen), (rig_control::table::Region::R2, Type2MsgGen::Tx1));
+        // senza JTDX.ini: i valori di fabbrica di JTDX (`read_settings`)
+        let none = interpret(&import_from_ini(&BTreeMap::new(), addr("127.0.0.1:2334"), &[]));
+        assert_eq!((none.region, none.type2_msg_gen), (rig_control::table::Region::All, Type2MsgGen::Tx3));
+        for name in ["type_2_msg_1_full", "type_2_msg_3_full", "type_2_msg_5_only"] {
+            assert_eq!(Type2MsgGen::parse(name).as_str(), name);
+        }
+        assert!(validate("Region", "R3").is_ok() && validate("Region", "r3").is_err() && validate("Region", "").is_err());
+        assert!(validate("Type2MsgGen", "type_2_msg_5_only").is_ok() && validate("Type2MsgGen", "Tx3").is_err());
+        assert_eq!(note_of("Type2MsgGen"), Some("jt_only"));
+        assert_eq!(note_of("Region"), None);
+    }
+
+    #[test]
     fn an_external_primary_server_is_kept_and_no_ini_means_defaults() {
         let ini = engine_jtdx::ini::parse_shown("[Configuration]\nUDPServer=192.168.1.20\nUDPServerPort=2333\n");
         let got = import_from_ini(&ini, addr("127.0.0.1:2334"), &[]);
@@ -1046,7 +1122,7 @@ mod tests {
             assert_eq!(store.state_of(key), Ok(Apply::Now), "{key} e' viva");
         }
         assert_eq!(store.state_of("MonitorOFF"), Ok(Apply::Restart));
-        for (key, why) in [("Region", "iaru_region"), ("Type2MsgGen", "type2_msgs"), ("Decode52", "decode52"), ("After73", "cw_id"), ("TuneTimer", "tune_timer"), ("MonitorLastUsed", "monitor_last"), ("workedStriked", "own_notify"), ("InsertBlank", "own_screen")] {
+        for (key, why) in [("Decode52", "decode52"), ("After73", "cw_id"), ("TuneTimer", "tune_timer"), ("MonitorLastUsed", "monitor_last"), ("workedStriked", "own_notify"), ("InsertBlank", "own_screen")] {
             assert_eq!(store.state_of(key), Err(why), "{key}");
         }
     }
@@ -1105,7 +1181,8 @@ mod tests {
         assert_eq!((got["SeqAnswerCQCount"].as_str(), got["SeqAnswerCQCounterValue"].as_str()), ("true", "4"));
         assert_eq!((got["newCQZ"].as_str(), got["newCQZBand"].as_str(), got["newDXCCBandMode"].as_str()), ("true", "false", "false"));
         assert_eq!(got["SeqHaltTxReplyOther"], "false");
-        assert!(!got.contains_key("workedStriked") && !got.contains_key("Region"), "scelte di schermo e valori binari non si importano");
+        assert!(!got.contains_key("workedStriked"), "le scelte di schermo non si importano");
+        assert_eq!(got["Region"], "ALL", "un blocco binario che non si riesce a leggere lascia il valore di fabbrica");
     }
 
     #[test]
