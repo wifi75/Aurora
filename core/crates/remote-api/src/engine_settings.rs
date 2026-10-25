@@ -34,6 +34,8 @@ pub enum Feature {
     UdpEmitter,
     /// La scrittura di `ALL.TXT` del motore proprio.
     AllTxt,
+    /// Chi apre e chiude gli ingressi e le uscite audio e salva i file audio (scheda Audio): vedi `audio_api`.
+    AudioControl,
 }
 
 /// Quando ha effetto una voce viva.
@@ -59,6 +61,9 @@ pub enum Support {
 /// si vedono, spente e con la spiegazione. Le credenziali di eQSL non si tengono mai.
 /// `Region` e `Type2MsgGen` stanno nel `JTDX.ini` come valori binari (`@Variant`): non si leggono ne' si scrivono, ma la scheda Generali li mostra.
 pub const EXTRA_KEYS: &[&str] = &["toRTTY", "dBtoComments", "distanceToComments", "ClearCallGridExit", "EQSLSend", "EQSLUser", "EQSLPasswd", "EQSLNick", "Region", "Type2MsgGen"];
+
+/// Le voci della scheda Audio: stanno nel file ma si cambiano solo dalla rotta `audio/settings` (apre i dispositivi, poi salva).
+pub const AUDIO_KEYS: &[&str] = &["SoundInName", "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav"];
 
 /// Le voci delle evidenziazioni di «nuovo» (scheda Notifiche): una per criterio, con «per banda» e «per modo».
 const NEW_PREFIXES: [&str; 6] = ["newCQZ", "newITUZ", "newDXCC", "newGrid", "newPx", "newCall"];
@@ -118,8 +123,8 @@ pub fn support(key: &str) -> Support {
         "ClearCallGrid" | "ClearCallGridExit" => Support::Hidden("clear_dx"),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
-        "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" => Support::Hidden("audio_start"),
-        "SaveDir" | "SaveWav" => Support::Hidden("no_wav_save"),
+        // scheda Audio: si cambiano solo dalla rotta `audio/settings`, che apre i dispositivi prima di salvare
+        "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" | "SaveDir" | "SaveWav" => Support::Needs(Feature::AudioControl, "audio_start", Apply::Now),
         "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" => Support::Hidden("own_rules"),
         k if k.starts_with("AlertOn") || k.starts_with("BeepOn") => Support::Hidden("own_alerts"),
         _ => Support::Hidden("own_decoder"),
@@ -195,6 +200,17 @@ pub struct Reports {
     pub max_distance: bool,
 }
 
+/// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AudioValues {
+    pub input: String,
+    pub output: String,
+    pub input_channel: String,
+    pub output_channel: String,
+    pub save_dir: String,
+    pub save_mode: String,
+}
+
 fn truthy(value: Option<&String>) -> bool {
     value.is_some_and(|v| v == "true")
 }
@@ -229,6 +245,13 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("EnableUDP2adifBroadcast", "true"),
         ("WriteDecodedALLTXT", "true"),
         ("WriteDecodedDebugALLTXT", "false"),
+        // Audio: dispositivi predefiniti del sistema (nome vuoto), canale Mono, nessun file audio, cartella `save` dei dati
+        ("SoundInName", ""),
+        ("SoundOutName", ""),
+        ("AudioInputChannel", "Mono"),
+        ("AudioOutputChannel", "Mono"),
+        ("SaveDir", ""),
+        ("SaveWav", "0"),
         // Sequenza: valori di fabbrica dei contatori di JTDX (2 / 3 / 5 / 4); accesi come la configurazione che Aurora ha sempre avuto (rapporto R e chiusura)
         ("SeqAnswerCQCount", "false"),
         ("SeqAnswerCQCounterValue", "2"),
@@ -323,11 +346,17 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         return Err(SettingsError::NotAvailable(key.to_string()));
     }
     // il nominativo e il locatore possono essere vuoti (nessuno impostato): gli altri testi anche, gli indirizzi si controllano sotto
-    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "timeFromLogFiltering") {
+    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir") {
         return Ok(());
     }
     engine_jtdx::ini_edit::check_value(key, value).map_err(SettingsError::BadValue)?;
     match key {
+        "SoundInName" | "SoundOutName" if value.chars().count() > 200 || value.chars().any(char::is_control) => Err(SettingsError::BadValue(format!("{key}: nome del dispositivo non valido"))),
+        "AudioInputChannel" if !matches!(value, "Mono" | "Left" | "Right") => Err(SettingsError::BadValue("AudioInputChannel: Mono, Left o Right".into())),
+        "AudioOutputChannel" if !matches!(value, "Mono" | "Left" | "Right" | "Both") => Err(SettingsError::BadValue("AudioOutputChannel: Mono, Left, Right o Both".into())),
+        "SaveDir" if value.chars().count() > 260 || value.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) => {
+            Err(SettingsError::BadValue("SaveDir: percorso non valido".into()))
+        }
         "UDPServer" | "UDP2Server" if parse_host(value).is_none() => Err(SettingsError::BadValue(format!("{key}: serve un indirizzo IP (o localhost)"))),
         "UDPServerPort" | "UDP2ServerPort" if parse_server("127.0.0.1", value).is_none() => Err(SettingsError::BadValue(format!("{key}: la porta va da 1 a 65535"))),
         k if k.starts_with("Seq") && k.ends_with("CounterValue") && !value.parse::<u32>().is_ok_and(|n| (1..=5).contains(&n)) => {
@@ -426,6 +455,7 @@ pub struct EngineSettingsStore {
     revision: watch::Sender<u64>,
     udp_emitter: AtomicBool,
     all_txt: AtomicBool,
+    audio_control: AtomicBool,
 }
 
 fn read_file(path: &Path) -> Option<BTreeMap<String, String>> {
@@ -450,17 +480,23 @@ impl EngineSettingsStore {
             }
             backup
         });
-        let fresh = loaded.is_none();
+        // un valore non piu' valido o di una voce che non si tiene piu' si scarta: vale come se mancasse
+        let present: BTreeMap<String, String> = loaded.unwrap_or_default().into_iter().filter(|(k, v)| validate(k, v).is_ok()).collect();
         let mut values = defaults();
-        for (k, v) in loaded.unwrap_or_else(seed) {
-            // un valore non piu' valido o di una voce che non si tiene piu' si scarta: resta quello iniziale
-            if validate(&k, &v).is_ok() {
-                values.insert(k, v);
+        // **per singola voce**: ogni voce che nel file manca (file nuovo, o scritto prima che la voce esistesse, anche in futuro) parte dal valore
+        // del `JTDX.ini` se c'e' (`seed`), altrimenti da quello di fabbrica; le voci gia' nel file non si toccano mai
+        let missing = values.keys().any(|k| !present.contains_key(k));
+        if missing {
+            for (k, v) in seed() {
+                if !present.contains_key(&k) && validate(&k, &v).is_ok() {
+                    values.insert(k, v);
+                }
             }
         }
+        values.extend(present);
         let (revision, _) = watch::channel(0);
-        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false) };
-        if fresh && let Err(e) = store.write() {
+        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false) };
+        if missing && let Err(e) = store.write() {
             tracing::warn!("impostazioni del motore non scritte: {e}");
         }
         store
@@ -478,6 +514,20 @@ impl EngineSettingsStore {
         interpret(&self.lock())
     }
 
+    /// Le voci della scheda Audio come sono adesso nel file.
+    pub fn audio(&self) -> AudioValues {
+        let values = self.lock();
+        let get = |k: &str| values.get(k).cloned().unwrap_or_default();
+        AudioValues {
+            input: get("SoundInName"),
+            output: get("SoundOutName"),
+            input_channel: get("AudioInputChannel"),
+            output_channel: get("AudioOutputChannel"),
+            save_dir: get("SaveDir"),
+            save_mode: get("SaveWav"),
+        }
+    }
+
     /// Cambia a ogni modifica dei valori o dei componenti pronti: chi si iscrive rilegge `reports()`.
     pub fn subscribe(&self) -> watch::Receiver<u64> {
         self.revision.subscribe()
@@ -492,6 +542,7 @@ impl EngineSettingsStore {
         let flag = match feature {
             Feature::UdpEmitter => &self.udp_emitter,
             Feature::AllTxt => &self.all_txt,
+            Feature::AudioControl => &self.audio_control,
         };
         if flag.swap(ready, Ordering::SeqCst) != ready {
             self.bump();
@@ -502,6 +553,7 @@ impl EngineSettingsStore {
         match feature {
             Feature::UdpEmitter => self.udp_emitter.load(Ordering::SeqCst),
             Feature::AllTxt => self.all_txt.load(Ordering::SeqCst),
+            Feature::AudioControl => self.audio_control.load(Ordering::SeqCst),
         }
     }
 
@@ -517,6 +569,22 @@ impl EngineSettingsStore {
     /// Applica le modifiche: controlla tutto prima, poi scrive il file (copia di sicurezza e scrittura atomica) e avvisa chi si e' iscritto.
     /// Se qualcosa non va non cambia niente.
     pub fn update(&self, changes: &BTreeMap<String, String>) -> Result<(), SettingsError> {
+        // le voci della scheda Audio passano da `update_audio`: aprono i dispositivi prima di salvare
+        if let Some(key) = changes.keys().find(|k| AUDIO_KEYS.contains(&k.as_str())) {
+            return Err(SettingsError::NotAvailable(key.clone()));
+        }
+        self.update_checked(changes)
+    }
+
+    /// Salva le voci della scheda Audio, dopo che il chiamante ha aperto i dispositivi (o scelto di tenere i vecchi).
+    pub fn update_audio(&self, changes: &BTreeMap<String, String>) -> Result<(), SettingsError> {
+        if let Some(key) = changes.keys().find(|k| !AUDIO_KEYS.contains(&k.as_str())) {
+            return Err(SettingsError::NotAvailable(key.clone()));
+        }
+        self.update_checked(changes)
+    }
+
+    fn update_checked(&self, changes: &BTreeMap<String, String>) -> Result<(), SettingsError> {
         for (key, value) in changes {
             if self.state_of(key).is_err() {
                 return Err(SettingsError::NotAvailable(key.clone()));
@@ -845,5 +913,82 @@ mod tests {
         assert_eq!((got["newCQZ"].as_str(), got["newCQZBand"].as_str(), got["newDXCCBandMode"].as_str()), ("true", "false", "false"));
         assert_eq!(got["SeqHaltTxReplyOther"], "false");
         assert!(!got.contains_key("workedStriked") && !got.contains_key("Region"), "scelte di schermo e valori binari non si importano");
+    }
+
+    #[test]
+    fn an_old_file_gets_each_missing_key_from_the_ini_and_keeps_the_keys_it_has() {
+        let path = temp("oldfile");
+        // un file scritto prima che esistessero le voci di Sequenza, Generali e Notifiche: solo alcune voci, una con un valore scelto dal proprietario
+        let old = r#"{"version":1,"values":{"MyCall":"IU3ABC","MyGrid":"IO91wm","UDPServer":"192.168.1.20","UDPServerPort":"2333","EnableUDP1adifSending":"true","UDP2Server":"127.0.0.1","UDP2ServerPort":"2237","EnableUDP2adifBroadcast":"true","AcceptUDPRequests":"false","AcceptUDPReplyMessages":"1","WriteDecodedALLTXT":"true","WriteDecodedDebugALLTXT":"false"}}"#;
+        std::fs::write(&path, old).unwrap();
+        let ini = "[Configuration]
+MyCall=IU3ZZZ
+SeqHaltTxReplyOther=false
+SeqAnswerCQCount=false
+StrictDirectionalCQ=false
+SeqSentRReportCounterValue=3
+newCQZ=true
+newDXCCBandMode=false
+TxWatchdogTimer=9
+";
+        let store = EngineSettingsStore::open(&path, || import_from_ini(&engine_jtdx::ini::parse_shown(ini), addr("127.0.0.1:2334"), &[]));
+        let v = store.values();
+        // le voci nuove vengono dal JTDX.ini...
+        assert_eq!(v["SeqHaltTxReplyOther"], "false", "il valore del JTDX.ini, non quello di fabbrica (acceso)");
+        assert_eq!((v["SeqAnswerCQCount"].as_str(), v["StrictDirectionalCQ"].as_str(), v["SeqSentRReportCounterValue"].as_str()), ("false", "false", "3"));
+        assert_eq!((v["newCQZ"].as_str(), v["newDXCCBandMode"].as_str(), v["TxWatchdogTimer"].as_str()), ("true", "false", "9"));
+        // ...quelle che mancano anche dal JTDX.ini, dai valori di fabbrica
+        assert_eq!(v["TxQSYAllowed"], "true");
+        assert_eq!(v["newCall"], "true");
+        // ...e le voci gia' nel file non si sovrascrivono mai
+        assert_eq!((v["MyCall"].as_str(), v["UDPServer"].as_str()), ("IU3ABC", "192.168.1.20"));
+        assert!(!store.reports().seq_halt_reply_other);
+        // il file e' riscritto completo: al prossimo avvio il JTDX.ini non serve piu' e una modifica a mano non si perde
+        store.update(&map(&[("SeqHaltTxReplyOther", "true")])).unwrap();
+        let again = EngineSettingsStore::open(&path, || panic!("il file e' completo: il JTDX.ini non si legge"));
+        assert_eq!(again.values()["SeqHaltTxReplyOther"], "true");
+    }
+    #[test]
+    fn the_audio_entries_are_kept_validated_and_changed_only_by_the_audio_route() {
+        let path = temp("audio");
+        let store = EngineSettingsStore::open(&path, defaults);
+        assert_eq!(store.audio(), AudioValues { input: "".into(), output: "".into(), input_channel: "Mono".into(), output_channel: "Mono".into(), save_dir: "".into(), save_mode: "0".into() });
+        // finche' il componente audio non e' pronto le voci non sono vive
+        assert!(store.state_of("SoundInName").is_err());
+        store.set_feature(Feature::AudioControl, true);
+        assert_eq!(store.state_of("AudioOutputChannel"), Ok(Apply::Now));
+        // la rotta generica non le tocca: aprirebbe il file senza aprire i dispositivi
+        assert!(matches!(store.update(&map(&[("SoundInName", "Altro")])), Err(SettingsError::NotAvailable(_))));
+        store.update_audio(&map(&[("SoundInName", "Microfono (2- USB Audio Device)"), ("AudioInputChannel", "Right"), ("SaveWav", "1"), ("SaveDir", "D:/audio/ft8")])).expect("salvataggio");
+        assert_eq!(store.audio().input, "Microfono (2- USB Audio Device)");
+        assert_eq!((store.audio().input_channel.as_str(), store.audio().save_mode.as_str(), store.audio().save_dir.as_str()), ("Right", "1", "D:/audio/ft8"));
+        // e la rotta audio non tocca le altre voci
+        assert!(matches!(store.update_audio(&map(&[("MyCall", "IU3ABC")])), Err(SettingsError::NotAvailable(_))));
+        // valori non ammessi: Entrambi non esiste in ingresso, il modo di salvataggio e' 0, 1 o 2, la cartella non ha caratteri di controllo
+        for (k, v) in [("AudioInputChannel", "Both"), ("AudioOutputChannel", "Centro"), ("SaveWav", "3"), ("SaveDir", "D:/a|b"), ("SoundOutName", "uno
+due")] {
+            assert!(matches!(store.update_audio(&map(&[(k, v)])), Err(SettingsError::BadValue(_))), "{k}={v}");
+        }
+        assert_eq!(store.audio().input_channel, "Right", "un rifiuto non cambia niente");
+        // restano al riavvio
+        let again = EngineSettingsStore::open(&path, defaults);
+        assert_eq!(again.audio(), store.audio());
+        let doc = again.document();
+        assert_eq!(doc["items"]["SoundInName"]["state"], "unavailable", "senza componente audio pronto");
+    }
+
+    #[test]
+    fn the_audio_entries_come_from_the_ini_once() {
+        let ini = engine_jtdx::ini::parse_shown("[Configuration]
+SoundInName=Microfono (2- USB Audio Device)
+SoundOutName=Altoparlanti (2- USB Audio Device)
+AudioInputChannel=Left
+AudioOutputChannel=Both
+SaveDir=C:/Users/x/save
+SaveWav=2
+");
+        let got = import_from_ini(&ini, addr("127.0.0.1:2334"), &[]);
+        assert_eq!((got["SoundInName"].as_str(), got["SoundOutName"].as_str()), ("Microfono (2- USB Audio Device)", "Altoparlanti (2- USB Audio Device)"));
+        assert_eq!((got["AudioInputChannel"].as_str(), got["AudioOutputChannel"].as_str(), got["SaveWav"].as_str(), got["SaveDir"].as_str()), ("Left", "Both", "2", "C:/Users/x/save"));
     }
 }
