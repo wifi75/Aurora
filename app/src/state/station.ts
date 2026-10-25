@@ -49,6 +49,8 @@ interface StationState {
   clearedBand: string | null;
   /** Il chiamante appena azzerato: per un attimo lo stato in arrivo che lo riporta ancora (ritardo del motore) non lo fa ricomparire. */
   clearedDx: { call: string; until: number } | null;
+  /** Quanti QSO sono stati registrati da quando la pagina e' aperta: chi mostra dati del log (scheda DXCC) li rilegge quando cambia. */
+  qsosLogged: number;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) e lo tiene finche' il motore non lo riporta uguale (o scade). */
   patchStatus(patch: Partial<StationStatus>): void;
@@ -141,6 +143,7 @@ export const useStation = create<StationState>((set) => ({
   sessionStartAt: null,
   clearedBand: null,
   clearedDx: null,
+  qsosLogged: 0,
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -207,6 +210,7 @@ export const useStation = create<StationState>((set) => ({
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));
         break;
       case 'qso_logged':
+        set((s) => ({ qsosLogged: s.qsosLogged + 1 }));
         break;
     }
   },

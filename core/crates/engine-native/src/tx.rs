@@ -3,6 +3,11 @@
 //! comincia; il messaggio diventa un'onda e parte a inizio periodo (+0,5 s). Il doppio clic su un messaggio, il CQ, STOP e le opzioni arrivano
 //! come [`TxCommand`]. Il doppio clic, il CQ e il messaggio libero, se il periodo in corso e' quello giusto e non e' troppo tardi, partono subito
 //! senza aspettare la fine del periodo (come JTDX, che ammette gli avvii tardivi).
+//!
+//! **Avvio anticipato e ritrasmissione** (AutoSeq 3, il livello di fabbrica di JTDX): [`TxDriver::begin_slot`] viene chiamato all'inizio del periodo di
+//! trasmissione, **prima** che la decodifica del periodo appena finito sia pronta, e fa partire il messaggio che la sequenza ha in quel momento;
+//! quando la decodifica arriva ([`TxDriver::after_slot`]) e cambia il messaggio, la trasmissione in corso viene sostituita con il nuovo, dalla sua coda
+//! (`m_restart` e `Retransmitting` in `ALL.TXT`). Un messaggio che non cambia non si tocca. Con AutoSeq 2 la trasmissione aspetta la decodifica.
 
 use std::{
     collections::VecDeque,
@@ -11,8 +16,8 @@ use std::{
 
 use aurora_core::QsoRecord;
 use ft8::message::CallHashes;
-use qso_native::{Decoded as QDecoded, Event as QEvent, Mode, Options, Sequencer, Slot, Station};
-use tx_native::{Parity, Transmitter, TxRequest};
+use qso_native::{CallerInfo, Decoded as QDecoded, Event as QEvent, Mode, Options, Sequencer, Slot, Station, StopReason};
+use tx_native::{Parity, Transmitter, TxError, TxRequest};
 
 use crate::rig::NativeControls;
 
@@ -27,6 +32,11 @@ pub const FREE_TEXT_MAX: usize = 13;
 pub trait TxPort: Send + Sync {
     fn schedule(&self, request: TxRequest) -> Result<(), String>;
     fn halt(&self);
+    /// Sostituisce la trasmissione in attesa o in corso con un'altra (ritrasmissione). `Ok(false)` se non c'e' niente in corso: si chiede allora una
+    /// trasmissione nuova con `schedule`.
+    fn replace(&self, _request: TxRequest) -> Result<bool, String> {
+        Ok(false)
+    }
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB, da usare per le prossime trasmissioni.
     fn set_attenuation(&self, _tenths: u32) {}
 }
@@ -38,6 +48,14 @@ impl TxPort for Transmitter {
 
     fn halt(&self) {
         Transmitter::halt(self);
+    }
+
+    fn replace(&self, request: TxRequest) -> Result<bool, String> {
+        match Transmitter::replace(self, request.wave) {
+            Ok(()) => Ok(true),
+            Err(TxError::NotRunning) => Ok(false),
+            Err(e) => Err(e.to_string()),
+        }
     }
 
     fn set_attenuation(&self, tenths: u32) {
@@ -122,6 +140,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     last_planned: Option<Slot>,
     /// Le trasmissioni consegnate alla catena e non ancora cominciate: servono a scrivere la riga di `ALL.TXT` quando partono davvero.
     notes: Vec<TxNote>,
+    /// L'ultima frequenza di ricezione scambiata con la pagina (`RxFreqSpinBox`): serve a capire chi l'ha cambiata.
+    rx_published: u32,
 }
 
 /// Una trasmissione consegnata alla catena audio/PTT: il periodo in cui parte e che cosa e' stato modulato (per `ALL.TXT`).
@@ -134,6 +154,8 @@ pub struct TxNote {
     pub tx_df: u32,
     /// Il messaggio davvero inviato (dopo l'eventuale taglio del testo libero).
     pub text: String,
+    /// E' una ritrasmissione (`Retransmitting` in `ALL.TXT`): un messaggio che sostituisce quello gia' partito nello stesso periodo.
+    pub retransmit: bool,
 }
 
 /// Testo di un messaggio come lo accetta JTDX: maiuscolo, spazi singoli, solo l'alfabeto dei messaggi, al massimo 37 caratteri.
@@ -144,13 +166,25 @@ pub fn clean_message(text: &str) -> String {
 
 impl<P: TxPort + ?Sized> TxDriver<P> {
     pub fn new(call: &str, grid: &str, port: Arc<P>, controls: Arc<NativeControls>) -> Result<TxDriver<P>, String> {
+        TxDriver::with_options(call, grid, port, controls, Options::default())
+    }
+
+    /// Come `new`, con le opzioni di partenza della sequenza (di base quelle di JTDX: AutoSeq 3, registrazione automatica che ferma a fine QSO...).
+    pub fn with_options(call: &str, grid: &str, port: Arc<P>, controls: Arc<NativeControls>, base: Options) -> Result<TxDriver<P>, String> {
         let mode = controls.mode();
-        let opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..Options::default() };
+        let opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..base };
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
-        let driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new() };
+        let rx_published = controls.rx_df.load(Ordering::Relaxed);
+        let mut driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published };
+        driver.seq.set_rx_freq(rx_published);
         driver.publish_view();
         Ok(driver)
+    }
+
+    /// Come riconoscere continente e priorita' (nuovo DXCC, zona, desiderati) delle stazioni: serve alla scelta di chi chiamare (`QsoHistory::autoseq`).
+    pub fn set_caller_info(&mut self, info: Option<Box<dyn Fn(&str) -> CallerInfo + Send>>) {
+        self.seq.set_caller_info(info);
     }
 
     /// Ferma la catena e dimentica le trasmissioni annunciate e non ancora partite.
@@ -226,11 +260,37 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
         // il periodo lo cambia anche il doppio clic (opposto a quello della riga): il pulsante deve mostrarlo
         self.controls.set_switch("tx_period", self.seq.tx_even());
+        // un messaggio libero che non e' un 73 spegne AutoSeq e il pulsante lo mostra; alla generazione dei messaggi successiva si riaccende
+        self.controls.set_switch("autoseq", self.seq.auto_seq_effective());
+    }
+
+    /// La frequenza di ricezione cambiata dalla pagina arriva alla sequenza.
+    fn sync_rx_from_user(&mut self) {
+        let user = self.controls.rx_df.load(Ordering::Relaxed);
+        if user != self.rx_published {
+            self.seq.set_rx_freq(user);
+            self.rx_published = user;
+        }
+    }
+
+    /// La frequenza di ricezione scelta dalla sequenza (segue il DX, `process_Auto`) arriva alla pagina; con Tx = Rx (Split spento) trascina la trasmissione.
+    fn sync_rx_to_user(&mut self) {
+        let seq = self.seq.rx_freq();
+        if seq != self.rx_published && (100..=5000).contains(&seq) {
+            self.controls.rx_df.store(seq, Ordering::Relaxed);
+            if !self.controls.switch_on("split") {
+                self.controls.tx_df.store(seq, Ordering::Relaxed);
+            }
+            self.rx_published = seq;
+        }
     }
 
     /// Un comando. Restituisce le righe da scrivere nel registro (cosa e' successo e perche' non e' partito). `now_s` sono i secondi UTC attuali.
     pub fn handle(&mut self, command: TxCommand, now_s: f64) -> Vec<String> {
         let mut log = Vec::new();
+        // ogni intervento dell'operatore azzera il watchdog (`eventFilter`/`txwatchdog(false)` di JTDX)
+        self.seq.user_activity();
+        self.sync_rx_from_user();
         match command {
             TxCommand::Reply { decode_id } => match self.recent.iter().find(|r| r.id == decode_id) {
                 Some(r) => {
@@ -293,9 +353,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 if send {
                     match self.prepared.clone() {
                         Some(t) => {
+                            // come JTDX (`MessageClient::free_text`: preme solo il messaggio libero): non accende Abilita Tx; se e' gia' acceso parte
                             log.push(format!("messaggio libero «{t}» in coda per il prossimo periodo"));
                             self.free_text = Some(t);
-                            self.seq.set_enabled(true);
                             log.extend(self.start_now(now_s));
                         }
                         None => log.push("messaggio libero: nessun testo da inviare".to_string()),
@@ -352,6 +412,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::Erase => self.recent.clear(),
         }
+        self.sync_rx_to_user();
         self.publish_view();
         log
     }
@@ -372,14 +433,42 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.plan(slot, now_s)
     }
 
+    /// Comincia il periodo di trasmissione che segue il periodo `rx_slot_start_ms`, **prima** che la sua decodifica sia pronta (avvio anticipato, AutoSeq 3):
+    /// parte il messaggio che la sequenza ha in questo momento; se la decodifica lo cambia, [`TxDriver::after_slot`] lo sostituisce con la ritrasmissione.
+    /// Con AutoSeq 2 non fa niente: si aspetta la decodifica (`process_Auto` all'inizio della trasmissione).
+    pub fn begin_slot(&mut self, rx_slot_start_ms: u64, now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
+        let mut log = Vec::new();
+        if self.opts.call_mode == 2 {
+            return (Vec::new(), log);
+        }
+        let slot = Slot(rx_slot_start_ms / self.mode.period_ms()).next();
+        self.sync_rx_from_user();
+        log.extend(self.plan(slot, now_s));
+        let qsos = self.collect_events(rx_slot_start_ms, dial_hz, band, &mut log);
+        self.sync_rx_to_user();
+        self.publish_view();
+        (qsos, log)
+    }
+
     /// Un periodo e' stato decodificato (o saltato: elenco vuoto). `slot_start_ms` e' l'inizio di quel periodo. Fa avanzare la sequenza e,
-    /// se serve, prepara la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
+    /// se serve, prepara (o sostituisce) la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
-        self.seq.on_decodes(slot, &list);
+        self.sync_rx_from_user();
+        self.seq.on_decodes_at(slot, &list, Some(now_s));
+        let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
+        log.extend(self.plan(slot.next(), now_s));
+        qsos.extend(self.collect_events(slot_start_ms, dial_hz, band, &mut log));
+        self.sync_rx_to_user();
+        self.publish_view();
+        (qsos, log)
+    }
 
+    /// Gli esiti della sequenza: i QSO conclusi (da registrare), le rinunce e gli arresti. Un arresto causato dalla decodifica o dal watchdog (DX che
+    /// risponde a un altro, fine QSO, 1 QSO, watchdog) ferma anche la trasmissione in corso (`haltTx`); `Halt` viene da un comando che l'ha gia' fermata.
+    fn collect_events(&mut self, slot_start_ms: u64, dial_hz: u64, band: &str, log: &mut Vec<String>) -> Vec<QsoRecord> {
         let mut qsos = Vec::new();
         for event in self.seq.drain_events() {
             match event {
@@ -402,22 +491,24 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     });
                 }
                 QEvent::Abandoned { call, reason } => log.push(format!("QSO con {call} abbandonato: {reason:?}")),
-                QEvent::Stopped(reason) => log.push(format!("trasmissione automatica ferma: {reason:?}")),
+                QEvent::Stopped(reason) => {
+                    log.push(format!("trasmissione automatica ferma: {reason:?}"));
+                    if !matches!(reason, StopReason::Halt) {
+                        self.halt_tx();
+                        self.last_planned = None;
+                    }
+                }
                 QEvent::StateChanged { .. } | QEvent::CallerQueued { .. } | QEvent::CallerIgnored { .. } => {}
             }
         }
-
-        log.extend(self.plan(slot.next(), now_s));
-        self.publish_view();
-        (qsos, log)
+        qsos
     }
 
-    /// Prepara la trasmissione del periodo `slot` (se tocca a lui): sceglie il messaggio, lo modula nel modo corrente e lo consegna alla catena.
+    /// Prepara la trasmissione del periodo `slot` (se tocca a lui): sceglie il messaggio, lo modula nel modo corrente e lo consegna alla catena. Se per
+    /// questo periodo era gia' partito un messaggio e la sequenza ne da' uno diverso (ritrasmissione) sostituisce quello in corso.
     fn plan(&mut self, slot: Slot, now_s: f64) -> Vec<String> {
         let mut log = Vec::new();
-        if self.last_planned == Some(slot) {
-            return log;
-        }
+        let already = self.last_planned == Some(slot);
         // la frequenza Tx e' quella dei comandi (Tx -> Rx, Rx -> Tx, barra della cascata, Split): la sequenza la legge qui
         let tx_df = self.controls.tx_df.load(Ordering::Relaxed);
         if self.opts.tx_freq_hz != tx_df {
@@ -429,29 +520,56 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         // JTDX non lo toglie dopo l'invio (`m_ntx` resta 8, `guiUpdate` non lo cambia): si ripete a ogni periodo di trasmissione finche' Abilita Tx
         // e' acceso e non si sceglie un altro messaggio
         let planned = if self.free_text.is_some() && self.seq.is_enabled() && slot.is_even() == self.seq.tx_even() {
-            self.free_text.clone().map(|text| (text, self.opts.tx_freq_hz, 0u8))
+            if already {
+                return log;
+            }
+            let text = self.free_text.clone().unwrap_or_default();
+            // con AutoSeq acceso un messaggio libero che non e' un 73 lo spegne fino alla generazione dei messaggi successiva
+            self.seq.note_free_text(&text);
+            Some((text, self.opts.tx_freq_hz, 0u8, false))
         } else {
-            self.seq.next_tx(slot, now_s).map(|tx| (tx.text, tx.freq_hz, tx.n))
+            self.seq.next_tx(slot, now_s).map(|tx| (tx.text, tx.freq_hz, tx.n, tx.retransmit))
         };
-        if let Some((text, freq, n)) = planned {
-            self.last_planned = Some(slot);
-            self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
-            match self.encode(&text, freq, n == 0) {
-                Ok((wave, sent)) => {
-                    let mode = match self.mode {
-                        Mode::Ft8 => tx_native::Mode::Ft8,
-                        Mode::Ft4 => tx_native::Mode::Ft4,
-                    };
-                    match self.port.schedule(TxRequest { wave, mode, parity }) {
-                        Ok(()) => {
-                            self.notes.push(TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone() });
-                            log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()))
+        let Some((text, freq, n, retransmit)) = planned else {
+            return log;
+        };
+        if already && !retransmit {
+            return log;
+        }
+        self.last_planned = Some(slot);
+        self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
+        match self.encode(&text, freq, n == 0) {
+            Ok((wave, sent)) => {
+                let mode = match self.mode {
+                    Mode::Ft8 => tx_native::Mode::Ft8,
+                    Mode::Ft4 => tx_native::Mode::Ft4,
+                };
+                let request = TxRequest { wave, mode, parity };
+                let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
+                if already {
+                    // ritrasmissione: il messaggio e' cambiato dopo l'avvio
+                    match self.port.replace(request.clone()) {
+                        Ok(true) => {
+                            self.notes.push(note);
+                            log.push(format!("ritrasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()));
+                            return log;
                         }
-                        Err(e) => log.push(format!("trasmissione non partita: {e}")),
+                        Ok(false) => {}
+                        Err(e) => {
+                            log.push(format!("ritrasmissione non partita: {e}"));
+                            return log;
+                        }
                     }
                 }
-                Err(e) => log.push(format!("messaggio non codificabile «{text}»: {e}")),
+                match self.port.schedule(request) {
+                    Ok(()) => {
+                        self.notes.push(TxNote { retransmit: false, ..note });
+                        log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()))
+                    }
+                    Err(e) => log.push(format!("trasmissione non partita: {e}")),
+                }
             }
+            Err(e) => log.push(format!("messaggio non codificabile «{text}»: {e}")),
         }
         log
     }
@@ -493,16 +611,30 @@ mod tests {
     #[derive(Default)]
     struct FakePort {
         requests: StdMutex<Vec<TxRequest>>,
+        /// Le onde che hanno sostituito una trasmissione in corso (ritrasmissioni).
+        replaced: StdMutex<Vec<TxRequest>>,
+        /// Se vero c'e' una trasmissione «in corso» e `replace` la sostituisce; se falso `replace` dice che non c'e' niente.
+        running: std::sync::atomic::AtomicBool,
         halts: StdMutex<u32>,
     }
 
     impl TxPort for FakePort {
         fn schedule(&self, request: TxRequest) -> Result<(), String> {
             self.requests.lock().map_err(|_| "avvelenato".to_string())?.push(request);
+            self.running.store(true, Ordering::Relaxed);
             Ok(())
         }
 
+        fn replace(&self, request: TxRequest) -> Result<bool, String> {
+            if !self.running.load(Ordering::Relaxed) {
+                return Ok(false);
+            }
+            self.replaced.lock().map_err(|_| "avvelenato".to_string())?.push(request);
+            Ok(true)
+        }
+
         fn halt(&self) {
+            self.running.store(false, Ordering::Relaxed);
             if let Ok(mut h) = self.halts.lock() {
                 *h += 1;
             }
@@ -775,6 +907,9 @@ mod tests {
         let (mut d, port, _) = driver();
         d.handle(TxCommand::Option(OptionChange::TxEven(true)), 1.0);
         d.handle(TxCommand::FreeText { text: "TNX 73".into(), send: true }, 1.0);
+        // come in JTDX il comando non accende Abilita Tx: parte quando lo si accende
+        assert!(port.requests.lock().expect("richieste").is_empty());
+        d.handle(TxCommand::Enable(true), 1.0);
         let count = |p: &Arc<FakePort>| p.requests.lock().expect("richieste").len();
         let first = count(&port);
         // dopo un periodo pari si pianifica il dispari (niente); dopo il dispari, il pari (si trasmette); e cosi' via
@@ -833,13 +968,17 @@ mod tests {
         b.d.handle(TxCommand::FreeText { text: "tnx   73  gl".into(), send: false }, BASE + 1.0);
         assert_eq!(b.texts()[4], "TNX 73 GL");
         assert!(b.requests().is_empty(), "preparare non trasmette");
-        // «Invia» senza testo manda quello preparato (periodo pari, in corso: parte subito)
+        // «Invia» senza testo manda quello preparato; non accende Abilita Tx (come il comando UDP di JTDX): con Abilita Tx acceso (periodo pari, in corso) parte subito
         let log = b.d.handle(TxCommand::FreeText { text: String::new(), send: true }, BASE + 1.0);
         assert!(log.iter().any(|l| l.contains("TNX 73 GL")), "{log:?}");
+        assert!(b.requests().is_empty(), "senza Abilita Tx non si trasmette");
+        b.press("enable_tx", Some(true), BASE + 1.0);
         assert_eq!(last_text(&b.port), vec!["TNX 73 GL".to_string()]);
         // «Invia» con testo nuovo
         let mut b = Bench::new();
+        // il messaggio si sceglie e poi si accende Abilita Tx (se fosse gia' acceso partirebbe il CQ, che e' il messaggio di partenza)
         b.d.handle(TxCommand::FreeText { text: "CQ TEST".into(), send: true }, BASE + 1.0);
+        b.press("enable_tx", Some(true), BASE + 1.0);
         assert_eq!(last_text(&b.port), vec!["CQ TEST".to_string()]);
         // senza niente da inviare lo dice
         let mut b = Bench::new();
@@ -856,7 +995,8 @@ mod tests {
     #[test]
     fn a_free_text_longer_than_13_characters_goes_out_truncated_like_in_jtdx() {
         let mut b = Bench::new();
-        let log = b.d.handle(TxCommand::FreeText { text: "GRAZIE PER IL QSO E BUONA SERATA".into(), send: true }, BASE + 1.0);
+        let mut log = b.d.handle(TxCommand::FreeText { text: "GRAZIE PER IL QSO E BUONA SERATA".into(), send: true }, BASE + 1.0);
+        log.extend(b.press("enable_tx", Some(true), BASE + 1.0));
         assert!(log.iter().any(|l| l.contains("trasmetto")), "{log:?}");
         assert_eq!(last_text(&b.port), vec!["GRAZIE PER IL".to_string()]);
         // il campo non supera i 37 caratteri
@@ -872,11 +1012,13 @@ mod tests {
         for (text, expected) in cases {
             let mut b = Bench::new();
             b.d.handle(TxCommand::FreeText { text: text.into(), send: true }, BASE + 1.0);
+            b.press("enable_tx", Some(true), BASE + 1.0);
             assert_eq!(last_text(&b.port), vec![expected.to_string()], "macro {text}");
         }
         // la coda che l'interfaccia taglia a 13 caratteri passa anche cosi'
         let mut b = Bench::new();
         b.d.handle(TxCommand::FreeText { text: "TU DAVIDE 73".into(), send: true }, BASE + 1.0);
+        b.press("enable_tx", Some(true), BASE + 1.0);
         assert_eq!(last_text(&b.port), vec!["TU DAVIDE 73".to_string()]);
     }
 
@@ -887,6 +1029,7 @@ mod tests {
         b.controls.set_switch("split", false);
         b.d.handle(TxCommand::SetTxFreq(1800), BASE + 1.0);
         assert_eq!((b.controls.tx_df.load(Ordering::Relaxed), b.controls.rx_df.load(Ordering::Relaxed)), (1800, 1800));
+        b.press("enable_tx", Some(true), BASE + 1.0);
         b.d.handle(TxCommand::FreeText { text: "73".into(), send: true }, BASE + 1.0);
         let freq = {
             let requests = b.port.requests.lock().expect("richieste");
@@ -1048,17 +1191,24 @@ mod tests {
         assert_eq!(b.texts()[3], "K1ABC IU3ABC RR73");
     }
 
+    /// L'avvio tardivo e' sempre ammesso entro la durata del messaggio (13,64 s in FT8): «Bypassa» non c'entra (in JTDX e' il filtro dei testi).
     #[test]
-    fn bypass_toggle_lets_the_first_transmission_start_late() {
+    fn a_click_late_in_the_period_starts_the_tail_whatever_bypass_says() {
         for bypass in [true, false] {
             let mut b = Bench::new();
             b.press("bypass", Some(bypass), BASE);
             b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
             b.d.after_slot(SLOT_MS, &[], BASE + 14.3, 14_074_000, "20m");
-            // clic 8 s dopo l'inizio del periodo dispari: oltre i 2 s normali, dentro i 3/4 del periodo con «Bypassa»
+            // clic 8 s dopo l'inizio del periodo dispari: si trasmette la coda del messaggio
             b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 15.0 + 8.0);
-            assert_eq!(b.requests().len(), usize::from(bypass), "bypass {bypass}");
+            assert_eq!(b.requests().len(), 1, "bypass {bypass}");
         }
+        // oltre i 13,64 s non resta niente da trasmettere: aspetta il periodo giusto successivo
+        let mut b = Bench::new();
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.after_slot(SLOT_MS, &[], BASE + 14.3, 14_074_000, "20m");
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 15.0 + 13.8);
+        assert!(b.requests().is_empty());
     }
 
     /// Un QSO intero in modalita' CQ: «1 QSO» ferma la trasmissione a QSO fatto, senza torna al CQ; «Risp B4» decide se si risponde a chi e' gia' stato lavorato.
@@ -1084,6 +1234,8 @@ mod tests {
     fn single_qso_toggle_stops_after_the_qso_and_without_it_the_cq_goes_on() {
         for single in [true, false] {
             let mut b = Bench::new();
+            // senza registrazione automatica (con quella JTDX ferma comunque a fine QSO, prova seguente)
+            b.d = TxDriver::with_options("IU3ABC", "IO91", Arc::clone(&b.port), Arc::clone(&b.controls), Options { autolog: false, ..Options::default() }).expect("pilota");
             b.press("single_qso", Some(single), BASE);
             let qsos = run_cq_qso(&mut b);
             assert_eq!(qsos.len(), 1, "single {single}");
@@ -1091,6 +1243,15 @@ mod tests {
             assert_eq!(qsos[0].mode, "FT8");
             assert_eq!(view_of(&b.controls).enabled, !single, "single {single}");
         }
+    }
+
+    /// Con la registrazione automatica (di fabbrica, come il `JTDX.ini` del proprietario) a fine QSO la trasmissione si ferma (`autoStopTx`).
+    #[test]
+    fn with_autolog_the_transmission_stops_at_the_end_of_the_qso() {
+        let mut b = Bench::new();
+        let qsos = run_cq_qso(&mut b);
+        assert_eq!(qsos.len(), 1);
+        assert!(!view_of(&b.controls).enabled, "ferma a fine QSO");
     }
 
     #[test]
@@ -1204,6 +1365,83 @@ mod tests {
         }
         assert_eq!(qsos.len(), 1);
         assert_eq!(qsos[0].mode, "FT4");
+    }
+
+    fn replaced_text(port: &FakePort, index: usize) -> Vec<String> {
+        let replaced = port.replaced.lock().expect("sostituzioni");
+        replaced.get(index).map(decode_request).unwrap_or_default()
+    }
+
+    /// Avvio anticipato (AutoSeq 3): all'inizio del periodo di trasmissione parte il messaggio che c'e' (qui il CQ); la decodifica arriva dopo, trova un
+    /// chiamante e il messaggio cambia: la trasmissione in corso e' sostituita (ritrasmissione) con il rapporto, e `ALL.TXT` avra' una riga `Retransmitting`.
+    #[test]
+    fn an_early_start_is_replaced_when_the_decode_changes_the_message() {
+        let mut b = Bench::new();
+        // il CQ viene chiesto troppo tardi per il periodo in corso (oltre i 13,64 s): non parte
+        b.d.handle(TxCommand::CallCq { modifier: None }, BASE + 14.9);
+        assert!(b.requests().is_empty());
+        // periodo dispari: non e' il nostro
+        let (_, log) = b.d.begin_slot(SLOT_MS, BASE + 15.1, 14_074_000, "20m");
+        assert!(b.requests().is_empty(), "{log:?}");
+        b.d.after_slot(SLOT_MS, &[], BASE + 16.5, 14_074_000, "20m");
+        assert!(b.requests().is_empty());
+        // comincia il periodo pari (SLOT_MS + 30 s): il CQ parte subito, prima della decodifica del periodo dispari appena finito
+        let (_, log) = b.d.begin_slot(SLOT_MS + 15_000, BASE + 30.1, 14_074_000, "20m");
+        assert_eq!(b.requests().len(), 1, "{log:?}");
+        assert_eq!(last_text(&b.port), vec!["CQ IU3ABC IO91".to_string()]);
+        // la decodifica (1,5 s dopo) porta il chiamante: Tx2 al posto del CQ
+        let (_, log) = b.d.after_slot(SLOT_MS + 15_000, &[("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 31.5, 14_074_000, "20m");
+        assert!(log.iter().any(|l| l.contains("ritrasmetto (Tx2)") && l.contains("K1ABC IU3ABC -10")), "{log:?}");
+        assert_eq!(b.requests().len(), 1, "non e' una trasmissione nuova ma la sostituzione di quella in corso");
+        assert_eq!(replaced_text(&b.port, 0), vec!["K1ABC IU3ABC -10".to_string()]);
+        // per ALL.TXT: la riga del CQ e poi quella della ritrasmissione
+        let notes = b.d.due_notes(SLOT_MS + 32_000);
+        assert_eq!(notes.iter().map(|n| (n.text.as_str(), n.retransmit)).collect::<Vec<_>>(), vec![("CQ IU3ABC IO91", false), ("K1ABC IU3ABC -10", true)]);
+    }
+
+    /// Una decodifica che non cambia il messaggio non fa ripartire niente.
+    #[test]
+    fn a_decode_that_keeps_the_message_does_not_replace_the_transmission() {
+        let mut b = Bench::new();
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS + 15_000);
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 40.0);
+        let before = b.requests().len();
+        // il periodo di trasmissione e' quello pari delle SLOT_MS + 60 s: parte il Tx1 e la decodifica non porta niente di nuovo
+        b.d.begin_slot(SLOT_MS + 45_000, BASE + 60.1, 14_074_000, "20m");
+        assert_eq!(b.requests().len(), before + 1);
+        b.d.after_slot(SLOT_MS + 45_000, &[], BASE + 61.5, 14_074_000, "20m");
+        assert!(b.port.replaced.lock().expect("sostituzioni").is_empty());
+        assert_eq!(b.requests().len(), before + 1);
+    }
+
+    /// Il DX che risponde a un altro entro la banda di guardia ferma la trasmissione **in corso** (non solo le prossime).
+    #[test]
+    fn a_dx_answering_someone_else_halts_the_transmission_in_progress() {
+        let mut b = Bench::new();
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1500, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 15.5);
+        let halts = *b.port.halts.lock().expect("halt");
+        b.d.begin_slot(SLOT_MS + 15_000, BASE + 30.1, 14_074_000, "20m");
+        b.d.after_slot(SLOT_MS + 15_000, &[("G3AAA K1ABC -05".to_string(), -10, 1500)], BASE + 31.5, 14_074_000, "20m");
+        assert_eq!(*b.port.halts.lock().expect("halt"), halts + 1, "audio e PTT fermati subito");
+        assert!(!view_of(&b.controls).enabled, "Abilita Tx spento");
+    }
+
+    /// Un messaggio libero che non e' un 73 spegne AutoSeq (e il pulsante lo mostra); alla generazione dei messaggi successiva si riaccende.
+    #[test]
+    fn a_free_text_that_is_not_a_73_switches_autoseq_off_until_the_messages_are_generated_again() {
+        let mut b = Bench::new();
+        assert!(b.controls.switch_on("autoseq"));
+        b.d.handle(TxCommand::FreeText { text: "CQ TEST".into(), send: true }, BASE + 1.0);
+        b.press("enable_tx", Some(true), BASE + 1.0);
+        assert!(!b.controls.switch_on("autoseq"), "AutoSeq e' spento dal messaggio libero");
+        b.d.handle(TxCommand::GenMsgs, BASE + 2.0);
+        assert!(b.controls.switch_on("autoseq"), "Gen.Msgs lo riaccende");
+        // un 73 non lo spegne
+        let mut b = Bench::new();
+        b.d.handle(TxCommand::FreeText { text: "TNX 73".into(), send: true }, BASE + 1.0);
+        b.press("enable_tx", Some(true), BASE + 1.0);
+        assert!(b.controls.switch_on("autoseq"));
     }
 
     #[test]

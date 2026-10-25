@@ -7,6 +7,7 @@ pub mod enrich;
 pub mod ini;
 pub mod ini_edit;
 pub mod map;
+pub mod matrix;
 pub mod text;
 pub mod worked;
 pub mod store;
@@ -99,6 +100,12 @@ impl JtdxEngine {
     /// Aggiunge paese e novita' (nuovo DXCC, zona, griglia) ai decode.
     pub fn with_enrichment(mut self, db: Arc<DxccDb>, worked: WorkedLog) -> Self {
         self.enrichment = Some(Enrichment::new(db, worked));
+        self
+    }
+
+    /// Come `with_enrichment`, con i QSO gia' fatti condivisi (la scheda DXCC e l'importazione del log li aggiornano).
+    pub fn with_shared_enrichment(mut self, db: Arc<DxccDb>, worked: enrich::SharedWorked) -> Self {
+        self.enrichment = Some(Enrichment::with_shared(db, worked));
         self
     }
 }
@@ -223,8 +230,8 @@ async fn on_datagram(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Eng
         ref m @ Message::QsoLogged { .. } => {
             let time_ms = (clock.now_ms() % DAY_MS) as u32;
             if let Some(qso) = to_qso(m, time_ms) {
-                if let Some(enrichment) = &mut state.enrichment {
-                    enrichment.record_qso(&qso.call, &qso.grid, &qso.band);
+                if let Some(enrichment) = &state.enrichment {
+                    enrichment.record_qso(&qso.call, &qso.grid, &qso.band, &qso.mode);
                 }
                 let _ = io.events.send(Event::QsoLogged(qso));
             }

@@ -1,113 +1,130 @@
 //! La macchina a stati della sequenza dei QSO.
 //!
-//! Riscrive, in forma pura, quello che JTDX fa con `processMessage` (doppio clic su una riga),
-//! `process_Auto` (avanzamento con AutoSeq a fine decodifica) e `QsoHistory` (stato per stazione).
-//! Il principio e' lo stesso: **lo stato del QSO e' dato dall'ultimo messaggio ricevuto dal DX**,
-//! e a ogni messaggio ricevuto corrisponde il messaggio Tx da cui parte la trasmissione dopo:
+//! E' il porting della logica di QSO di JTDX 2.2.159, letta nei sorgenti pubblici e verificata nell'eseguibile (`docs/analisi-jtdx-reverse-rea.md`):
 //!
-//! | ricevuto dal DX | prossimo Tx |
+//! | JTDX | Qui |
 //! |---|---|
-//! | locatore (risposta al nostro CQ) | Tx2 `DX MIA -07` |
-//! | rapporto `-07` | Tx3 `DX MIA R-07` |
-//! | rapporto con conferma `R-07` | Tx4 `DX MIA RR73` |
-//! | `RRR`, `RR73`, `73` (con i due rapporti scambiati) | Tx5 `DX MIA 73` |
+//! | `QsoHistory` (stato per stazione) | [`crate::history::QsoHistory`] |
+//! | `DisplayText::displayDecodedText` / `displayTransmittedText` | [`crate::classify`] |
+//! | `MainWindow::readFromStdout` (riga per riga, guardia di frequenza, `reply_other`) | [`Sequencer::on_decodes`] |
+//! | `MainWindow::process_Auto` (contatori, scelta di chi chiamare, messaggio dallo stato) | `process_auto` |
+//! | `MainWindow::processMessage` (doppio clic) | [`Sequencer::reply_to`] |
+//! | `MainWindow::guiUpdate` (avvio, ritrasmissione, registrazione al 73, watchdog) | [`Sequencer::next_tx`] |
+//!
+//! Il principio e' quello di JTDX: **lo stato del QSO e' dato da cio' che si e' ricevuto e trasmesso con quella stazione** (la tabella
+//! `QsoHistory`) e a ogni stato corrisponde il messaggio Tx da cui parte la trasmissione successiva (`process_Auto`):
+//!
+//! | stato letto | prossimo Tx |
+//! |---|---|
+//! | RFIN, RCQ | Tx1 (Tx2 con «Salta Tx1») |
+//! | RCALL | Tx2 `DX MIA -07` |
+//! | RREPORT | Tx3 `DX MIA R-07` |
+//! | RRREPORT | Tx4 `DX MIA RR73` |
+//! | RRR, RRR73, R73 | Tx5 `DX MIA 73` |
+//! | SRR73 / S73 / FIN | niente: si ferma (con la registrazione automatica) |
 //!
 //! Nessun orologio e nessun I/O: il chiamante passa i periodi (`Slot`) e i secondi UTC.
 
 use std::collections::HashSet;
 
-use crate::message::{
-    Body, Message, base_call, is_modifier, is_std_call, is_valid_call, is_valid_locator, parse,
-    same_station,
-};
-use crate::report::format_report;
+use crate::classify::{DisplayState, RxContext, classify_rx, classify_tx, de_call_and_grid, report as decoded_report, words};
+use crate::history::{Autoseq, QsoHistory, Sec, Status, algo};
+use crate::message::{Body, Message, base_call, is_modifier, is_std_call, is_valid_call, is_valid_locator, parse, same_station};
 use crate::slot::{Mode, Slot};
 use crate::stdmsg::{StdMessages, gen_cq, gen_std_msgs};
-use crate::types::{
-    AbandonReason, Decoded, Event, Options, Phase, QsoRecord, ReportPolicy, SeqError, Station,
-    StopReason, Tx,
-};
+use crate::types::{AbandonReason, CallerInfo, Decoded, Event, Options, Phase, QsoRecord, ReportPolicy, SeqError, Station, StopReason, Tx};
 
-/// Chi ha cominciato il QSO: cambia il contatore che conta le ripetizioni del Tx2.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Role {
-    /// Abbiamo risposto a un CQ o a un messaggio altrui.
-    Answering,
-    /// Ci ha chiamati lui (risposta al nostro CQ, o messaggio diretto a noi).
-    Called,
+/// Chi sa dire cosa ricorda il registro di una stazione (continente, priorita'): le evidenziazioni di JTDX.
+pub type CallerInfoFn = Box<dyn Fn(&str) -> CallerInfo + Send>;
+
+/// Un rapporto come lo scrive JTDX (`%+2.2d`): `-07`, `+05`.
+fn rpt_text(n: i32) -> String {
+    format!("{n:+03}")
 }
 
-/// La stazione in collegamento (il «DX» di JTDX).
-#[derive(Clone, Debug)]
-struct Dx {
-    call: String,
-    grid: Option<String>,
-    freq_hz: u32,
-    /// SNR dell'ultimo messaggio ricevuto da lui: e' il rapporto che gli mandiamo.
-    snr: i32,
-    role: Role,
-    /// Ci ha mandato almeno un messaggio diretto a noi in questo QSO.
-    contacted: bool,
-    /// L'ultimo rapporto che abbiamo mandato (Tx2 o Tx3), come scritto («-07»).
-    sent_report: Option<String>,
-    /// Il rapporto che ci ha mandato («-10»).
-    rcvd_report: Option<String>,
-    /// Il Tx4 mandato era `RR73` (non `RRR`).
-    sent_rr73: bool,
-    logged: bool,
-    first_slot: Slot,
-    last_heard: Slot,
-    /// Quante volte di fila e' stato mandato il messaggio corrente.
-    repeats: u32,
+/// I secondi del giorno di un istante UTC.
+fn day_secs(utc_s: f64) -> Sec {
+    (utc_s.max(0.0).floor() as u64 % 86_400) as Sec
 }
 
-/// Un chiamante che aspetta il suo turno.
-#[derive(Clone, Debug)]
-struct Caller {
-    call: String,
-    grid: Option<String>,
-    rcvd_report: Option<String>,
-    snr: i32,
-    freq_hz: u32,
-    start_ntx: u8,
-    first_heard: Slot,
-    last_heard: Slot,
-    rx_even: bool,
-    announced: bool,
-}
-
-/// Cosa fare dopo aver letto un messaggio del DX.
-enum Step {
-    Nothing,
-    Goto(u8),
-    CompleteThenGoto(u8),
-    CompleteThenFinish,
-    Abandon(AbandonReason),
+/// Quel che serve a scrivere il QSO nel registro.
+#[derive(Clone, Debug, Default)]
+struct QsoLogInfo {
+    /// Secondi del giorno in cui e' cominciato il QSO (`m_dateTimeQSOOn`).
+    on_sec: Sec,
 }
 
 /// La sequenza automatica dei QSO.
 pub struct Sequencer {
     mode: Mode,
     my: Station,
+    my_base: String,
     opts: Options,
-    /// «Abilita Tx»: senza, `next_tx` non da' mai nulla.
+    hist: QsoHistory,
+    ds: DisplayState,
+    ds_max_r_time: Sec,
+    caller_info: Option<CallerInfoFn>,
+
+    // la finestra principale di JTDX
+    /// «Abilita Tx» (`m_enableTx`).
     enabled: bool,
-    /// Si sta facendo una serie di CQ (con il modificatore, se c'e').
-    cq_run: Option<Option<String>>,
-    /// Il messaggio da cui parte la prossima trasmissione (il pallino «Next» di JTDX).
+    /// Il DX in collegamento (`m_hisCall`, vuoto = nessuno) e il suo locatore.
+    his_call: String,
+    his_grid: String,
+    /// Il rapporto che si manda (`rptSpinBox`) come numero e come testo (`m_rpt`).
+    rpt: i32,
+    rpt_text: String,
+    /// Il messaggio da cui parte la prossima trasmissione (`m_ntx`, 1..=6).
     ntx: u8,
     tx_even: bool,
-    dx: Option<Dx>,
-    queue: Vec<Caller>,
-    worked: HashSet<String>,
-    events: Vec<Event>,
-    last_tx: Option<(Slot, Tx)>,
-    watchdog_ref: Option<f64>,
-    last_text: Option<String>,
-    first_tx_pending: bool,
-    /// Il periodo (pari o dispari) per cui sono stati generati gli ultimi messaggi (`m_txGenerated` di JTDX).
+    /// Il periodo per cui sono stati generati gli ultimi messaggi (`m_txGenerated`).
     tx_generated: bool,
+    /// Lo stato letto da `process_Auto` (`m_status`).
+    status: Status,
+    /// Frequenza di ricezione (`RxFreqSpinBox`).
+    rx_hz: i32,
+    last_calling_freq: i32,
+
+    // letture della decodifica in corso
+    reply_me: bool,
+    reply_other: bool,
+    reply_cq73: bool,
+    process_auto_done: bool,
+    call_first_73: bool,
+    decode_started_for: Option<Slot>,
+    /// Cooldown dopo una rinuncia: per tanti periodi non si cercano altri CQ (`m_counter`).
+    counter: u32,
+    used_freq: i32,
+
+    // trasmissione
+    last_tx: Option<(Slot, Tx)>,
+    /// `m_restart`: il messaggio e' cambiato mentre si trasmetteva.
+    restart: bool,
+    /// Si sta trasmettendo il periodo che segue quello che si sta decodificando.
+    rx_transmitting: bool,
+    /// Il messaggio con cui e' cominciata l'ultima trasmissione (`m_transmittedQSOProgress`).
+    transmitted_ntx: u8,
     cur_slot: Slot,
+    current_message: String,
+    last_message_sent: String,
+    msg_sent0: String,
+    rpt_sent: String,
+    rpt_rcvd: String,
+    last_logged: Option<(String, f64)>,
+    qso_log: QsoLogInfo,
+
+    // watchdog
+    idle_minutes: u32,
+    watchdog_expired: bool,
+    last_minute: Option<i64>,
+    sec_tx_stopped: f64,
+    pending_tx_end: Option<f64>,
+
+    worked: HashSet<String>,
+    announced: HashSet<String>,
+    /// AutoSeq spento da un messaggio libero che non e' un 73 (`m_wasAutoSeq`): si riaccende alla generazione dei messaggi successiva.
+    auto_seq_suspended: bool,
+    events: Vec<Event>,
     reported: Option<(Phase, Option<String>, u8)>,
 }
 
@@ -120,24 +137,58 @@ impl Sequencer {
             return Err(SeqError::InvalidGrid(my.grid));
         }
         let tx_even = opts.tx_even;
+        let mut hist = QsoHistory::new();
+        hist.set_own(&opts.my_continent, &opts.my_prefix, &my.grid, opts.strict_directional_cq);
+        let tx_hz = opts.tx_freq_hz as i32;
         Ok(Sequencer {
             mode,
+            my_base: base_call(&my.call),
             my,
             opts,
+            hist,
+            ds: DisplayState::default(),
+            ds_max_r_time: 0,
+            caller_info: None,
             enabled: false,
-            cq_run: None,
+            his_call: String::new(),
+            his_grid: String::new(),
+            rpt: 0,
+            rpt_text: rpt_text(0),
             ntx: 6,
             tx_even,
-            dx: None,
-            queue: Vec::new(),
-            worked: HashSet::new(),
-            events: Vec::new(),
-            last_tx: None,
-            watchdog_ref: None,
-            last_text: None,
-            first_tx_pending: false,
             tx_generated: tx_even,
+            status: Status::None,
+            rx_hz: tx_hz,
+            last_calling_freq: tx_hz,
+            reply_me: false,
+            reply_other: false,
+            reply_cq73: false,
+            process_auto_done: false,
+            call_first_73: false,
+            decode_started_for: None,
+            counter: 0,
+            used_freq: 0,
+            last_tx: None,
+            restart: false,
+            rx_transmitting: false,
+            transmitted_ntx: 6,
             cur_slot: Slot(0),
+            current_message: String::new(),
+            last_message_sent: String::new(),
+            msg_sent0: String::new(),
+            rpt_sent: String::new(),
+            rpt_rcvd: String::new(),
+            last_logged: None,
+            qso_log: QsoLogInfo::default(),
+            idle_minutes: 0,
+            watchdog_expired: false,
+            last_minute: None,
+            sec_tx_stopped: 0.0,
+            pending_tx_end: None,
+            worked: HashSet::new(),
+            announced: HashSet::new(),
+            auto_seq_suspended: false,
+            events: Vec::new(),
             reported: None,
         })
     }
@@ -156,16 +207,27 @@ impl Sequencer {
         &self.opts
     }
 
+    /// Chi sa dire continente e priorita' di una stazione (registro, `cty.dat`, desiderati). Senza, ogni stazione ha continente ignoto e priorita' 0.
+    pub fn set_caller_info(&mut self, info: Option<CallerInfoFn>) {
+        self.caller_info = info;
+    }
+
     pub fn set_options(&mut self, opts: Options) {
         let skip_changed = opts.skip_tx1 != self.opts.skip_tx1;
         let skip = opts.skip_tx1;
+        let auto_seq_changed = opts.auto_seq != self.opts.auto_seq;
+        let strict_changed = opts.strict_directional_cq != self.opts.strict_directional_cq || opts.my_continent != self.opts.my_continent || opts.my_prefix != self.opts.my_prefix;
         self.opts = opts;
+        if strict_changed {
+            self.hist.set_own(&self.opts.my_continent, &self.opts.my_prefix, &self.my.grid, self.opts.strict_directional_cq);
+        }
+        if auto_seq_changed {
+            // l'utente che preme AutoSeq annulla l'eventuale spegnimento da messaggio libero (`on_AutoSeqButton_clicked`)
+            self.auto_seq_suspended = false;
+        }
         // come `on_skipTx1_clicked` di JTDX: se il messaggio scelto e' ancora quello di partenza, accendere «Salta Tx1» porta da Tx1 a Tx2
         // e spegnerlo da Tx2 a Tx1. Se il DX ci ha gia' scritto, Tx2 e' un avanzamento vero del QSO e non si tocca.
-        if skip_changed
-            && let Some(dx) = self.dx.as_mut()
-            && !dx.contacted
-        {
+        if skip_changed && !self.his_call.is_empty() && !self.dx_has_written() {
             let to = match (skip, self.ntx) {
                 (true, 1) => Some(2),
                 (false, 2) => Some(1),
@@ -173,68 +235,72 @@ impl Sequencer {
             };
             if let Some(n) = to {
                 self.ntx = n;
-                dx.repeats = 0;
+                if self.transmitting_now() {
+                    self.restart = true;
+                }
             }
         }
         self.note_state();
     }
 
-    /// Cambio di banda: ferma la trasmissione e le serie di CQ (Abilita Tx spento), libera la stazione DX e svuota i chiamanti in coda
-    /// e i messaggi ricordati della sequenza (come `clearDX` e `QsoHistory::init` di JTDX). Le impostazioni e la lista dei lavorati restano.
-    pub fn band_changed(&mut self) {
-        if let Some(old) = self.dx.take() {
-            self.events.push(Event::Abandoned {
-                call: old.call,
-                reason: AbandonReason::Cleared,
-            });
-        }
-        if self.enabled || self.cq_run.is_some() {
-            self.stop(StopReason::Halt);
-        }
-        self.queue.clear();
-        self.last_tx = None;
-        self.last_text = None;
-        self.watchdog_ref = None;
-        self.first_tx_pending = false;
-        self.ntx = 6;
-        self.note_state();
+    /// Il DX ha mandato almeno un messaggio che avanza il QSO (rapporto, locatore diretto a noi...).
+    fn dx_has_written(&self) -> bool {
+        self.hist
+            .entry(&self.his_call)
+            .is_some_and(|t| matches!(t.srx_c, Status::Rcall | Status::Rreport | Status::Rrreport | Status::Rrr | Status::Rrr73 | Status::R73))
     }
 
-    /// Cambia il modo (FT8 <-> FT4): i periodi hanno un'altra durata, quindi il QSO in corso, i chiamanti in coda e la trasmissione si
-    /// fermano e si riparte da capo. Le impostazioni e la lista dei lavorati restano.
+    /// Cambio di banda: ferma la trasmissione (Abilita Tx spento), libera la stazione DX e svuota la memoria della sequenza
+    /// (`clearDX` e `QsoHistory::init` di JTDX). Le impostazioni e la lista dei lavorati restano.
+    pub fn band_changed(&mut self) {
+        self.reset_all(true);
+    }
+
+    /// Cambia il modo (FT8 <-> FT4): i periodi hanno un'altra durata, quindi il QSO in corso e la trasmissione si fermano e si riparte da capo
+    /// (`switch_mode`: `QsoHistory::init`). Le impostazioni e la lista dei lavorati restano.
     pub fn set_mode(&mut self, mode: Mode) {
         if mode == self.mode {
             return;
         }
         self.mode = mode;
-        if let Some(old) = self.dx.take() {
-            self.events.push(Event::Abandoned {
-                call: old.call,
-                reason: AbandonReason::Cleared,
-            });
+        self.cur_slot = Slot(0);
+        self.reset_all(true);
+    }
+
+    fn reset_all(&mut self, stop: bool) {
+        if !self.his_call.is_empty() {
+            let old = std::mem::take(&mut self.his_call);
+            self.events.push(Event::Abandoned { call: old, reason: AbandonReason::Cleared });
         }
-        if self.enabled || self.cq_run.is_some() {
+        self.his_grid.clear();
+        if stop && self.enabled {
             self.stop(StopReason::Halt);
         }
-        self.queue.clear();
+        self.hist.init();
+        self.ds = DisplayState::default();
+        self.announced.clear();
         self.last_tx = None;
-        self.last_text = None;
-        self.watchdog_ref = None;
-        self.first_tx_pending = false;
-        self.cur_slot = Slot(0);
+        self.restart = false;
+        self.current_message.clear();
+        self.last_message_sent.clear();
+        self.status = Status::None;
+        self.counter = 0;
+        self.process_auto_done = false;
+        self.decode_started_for = None;
         self.ntx = 6;
+        self.tx_generated = self.tx_even;
+        self.rx_hz = self.tx_hz();
         self.note_state();
     }
 
     /// «Gen.Msgs»: rigenera i messaggi Tx1-Tx5 per il DX in collegamento e rimette il messaggio di partenza (Tx1, o Tx2 con «Salta Tx1»),
     /// come `genStdMsgs` di JTDX. Senza DX non c'e' nulla da rigenerare. I testi si compongono sempre dal DX e dal rapporto correnti.
     pub fn regen_messages(&mut self) {
-        let skip = self.opts.skip_tx1;
         // `m_txGenerated = m_txFirst` sta in cima a `genStdMsgs`, prima del controllo sul DX (verificato in `jtdx.exe` a 0x474800)
         self.tx_generated = self.tx_even;
-        if let Some(dx) = self.dx.as_mut() {
-            dx.repeats = 0;
-            self.ntx = if skip { 2 } else { 1 };
+        self.restore_auto_seq();
+        if !self.his_call.is_empty() {
+            self.ntx = self.start_ntx();
         }
         self.note_state();
     }
@@ -252,20 +318,36 @@ impl Sequencer {
     /// periodo e' diverso da quello per cui sono stati generati i messaggi il DX viene liberato.
     pub fn set_tx_even(&mut self, even: bool) {
         self.tx_even = even;
-        if self.tx_generated != even && self.enabled && self.opts.auto_seq {
+        if self.tx_generated != even && self.enabled && self.auto_seq_effective() {
             self.clear_dx();
         }
         // il periodo e' cambiato: l'eventuale trasmissione gia' pianificata in questo periodo non vale piu'
         self.last_tx = None;
+        self.restart = false;
+    }
+
+    /// AutoSeq e' acceso e non e' stato spento da un messaggio libero.
+    pub fn auto_seq_effective(&self) -> bool {
+        self.opts.auto_seq && !self.auto_seq_suspended
     }
 
     /// Il DX in collegamento.
     pub fn dx(&self) -> Option<&str> {
-        self.dx.as_ref().map(|d| d.call.as_str())
+        (!self.his_call.is_empty()).then_some(self.his_call.as_str())
     }
 
     pub fn dx_grid(&self) -> Option<&str> {
-        self.dx.as_ref().and_then(|d| d.grid.as_deref())
+        (!self.his_grid.is_empty()).then_some(self.his_grid.as_str())
+    }
+
+    /// La frequenza di ricezione che la sequenza ha scelto (segue il DX, come `process_Auto`).
+    pub fn rx_freq(&self) -> u32 {
+        self.rx_hz.max(0) as u32
+    }
+
+    /// Un cambio di frequenza di ricezione fatto dall'utente (cursore Rx).
+    pub fn set_rx_freq(&mut self, hz: u32) {
+        self.rx_hz = hz as i32;
     }
 
     /// Il numero del messaggio da cui parte la prossima trasmissione (6 = CQ, 0 = nessuno).
@@ -274,25 +356,41 @@ impl Sequencer {
     }
 
     pub fn phase(&self) -> Phase {
-        if self.dx.is_some() {
+        if !self.his_call.is_empty() {
             Phase::from_ntx(self.ntx)
-        } else if self.enabled && self.cq_run.is_some() {
+        } else if self.enabled && self.ntx == 6 {
             Phase::Cq
         } else {
             Phase::Idle
         }
     }
 
-    /// I chiamanti in coda, nell'ordine di arrivo.
+    /// I chiamanti che aspettano: stazioni che ci hanno scritto nei 5 minuti dopo il nostro ultimo CQ (o nell'ultimo periodo) e che non sono il DX.
     pub fn queued(&self) -> Vec<String> {
-        self.queue.iter().map(|c| c.call.clone()).collect()
+        self.hist_callers().into_iter().map(|(call, _)| call).collect()
+    }
+
+    fn hist_callers(&self) -> Vec<(String, Sec)> {
+        let mut out: Vec<(String, Sec)> = Vec::new();
+        for call in &self.announced {
+            if same_station(call, &self.his_call) {
+                continue;
+            }
+            if let Some(t) = self.hist.entry(call)
+                && matches!(t.status, Status::Rcall | Status::Rreport | Status::Rrreport)
+            {
+                out.push((t.call.clone(), t.b_time));
+            }
+        }
+        out.sort_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.cmp(&b.0)));
+        out
     }
 
     /// I sei testi Tx1..Tx6 correnti (vuoti quelli che non si possono comporre senza DX).
     pub fn tx_texts(&self) -> [String; 6] {
         let mut out: [String; 6] = Default::default();
-        if let Some(dx) = &self.dx {
-            let m = self.std_msgs(dx);
+        if !self.his_call.is_empty() {
+            let m = self.std_msgs();
             for (i, slot) in out.iter_mut().take(5).enumerate() {
                 if let Some(t) = m.get(i as u8 + 1) {
                     *slot = t.to_string();
@@ -317,7 +415,17 @@ impl Sequencer {
         std::mem::take(&mut self.events)
     }
 
+    /// Il registro delle stazioni (per le prove e per chi vuole mostrare lo stato).
+    pub fn history(&self) -> &QsoHistory {
+        &self.hist
+    }
+
     // ---- comandi -------------------------------------------------------------------------
+
+    /// Un intervento dell'operatore (clic, tasto, comando): azzera il watchdog come `eventFilter` e `txwatchdog(false)` di JTDX.
+    pub fn user_activity(&mut self) {
+        self.txwatchdog(false);
+    }
 
     /// Doppio clic su una riga decodificata, o risposta automatica a un CQ: imposta il DX, compone
     /// i sei messaggi, sceglie il periodo opposto al suo e abilita la trasmissione.
@@ -333,78 +441,70 @@ impl Sequencer {
     /// Enable Tx solo se `m_autoTx`). Il DX e il messaggio di partenza si scelgono comunque; la trasmissione parte quando Enable Tx si accende.
     pub fn reply_to_with(&mut self, slot: Slot, decode: &Decoded, enable: bool) -> Result<(), SeqError> {
         self.cur_slot = self.cur_slot.max(slot);
-        let (call, grid, rcvd, directed, role) = match parse(&decode.text) {
-            Message::Cq { call, grid, .. } => (call, grid, None, None, Role::Answering),
+        let (call, grid, directed) = match parse(&decode.text) {
+            Message::Cq { call, grid, .. } => (call, grid, None),
             Message::Directed { to, from, body } => {
                 let to_me = same_station(&to, &self.my.call);
-                let grid = if let Body::Grid(g) = &body {
-                    Some(g.clone())
-                } else {
-                    None
-                };
-                let rcvd = match &body {
-                    Body::Report(n) | Body::RReport(n) => Some(format_report(*n)),
-                    _ => None,
-                };
-                if to_me {
-                    (from, grid, rcvd, Some(body), Role::Called)
-                } else {
-                    (from, grid, rcvd, None, Role::Answering)
-                }
+                let grid = if let Body::Grid(g) = &body { Some(g.clone()) } else { None };
+                (from, grid, to_me.then_some(body))
             }
             Message::Other => return Err(SeqError::NotReplyable(decode.text.clone())),
         };
         if same_station(&call, &self.my.call) {
             return Err(SeqError::OwnCall);
         }
+        self.txwatchdog(false);
         let ntx = match &directed {
             Some(Body::Grid(_)) | Some(Body::Other) => 2,
             Some(Body::Report(_)) => 3,
             Some(Body::RReport(_)) => 4,
             Some(Body::Rrr) | Some(Body::Rr73) | Some(Body::Bye) => 5,
-            None => {
-                if self.opts.skip_tx1 {
-                    2
-                } else {
-                    1
-                }
-            }
+            None => self.start_ntx(),
         };
-        if let Some(old) = self.dx.take() {
-            self.events.push(Event::Abandoned {
-                call: old.call,
-                reason: AbandonReason::Replaced,
-            });
+        // la riga cliccata entra nella memoria se non c'era ancora (di norma e' gia' stata letta a fine decodifica)
+        let slot_sec = day_secs(slot.start_s(self.mode));
+        let known = self.hist.entry(&call).is_some_and(|t| t.time >= slot_sec);
+        if !known {
+            self.record_rx(slot, decode, true);
         }
-        self.queue.retain(|c| !same_station(&c.call, &call));
-        self.dx = Some(Dx {
-            call,
-            grid,
-            freq_hz: decode.freq_hz,
-            snr: decode.snr,
-            role,
-            contacted: directed.is_some(),
-            sent_report: None,
-            rcvd_report: rcvd,
-            sent_rr73: false,
-            logged: false,
-            first_slot: slot,
-            last_heard: slot,
-            repeats: 0,
-        });
-        self.ntx = ntx;
+        // un altro DX sostituisce il precedente
+        let call_changed = base_call(&call) != base_call(&self.his_call) || call != self.his_call;
+        if call_changed && !self.his_call.is_empty() {
+            let old = std::mem::take(&mut self.his_call);
+            self.events.push(Event::Abandoned { call: old, reason: AbandonReason::Replaced });
+        }
         self.tx_even = !slot.is_even();
-        self.tx_generated = self.tx_even;
+        self.rx_hz = decode.freq_hz as i32;
+        if call_changed {
+            self.his_grid.clear();
+            self.hist.reset_count(&call, Status::None);
+            self.his_call = call.clone();
+            self.rpt_rcvd.clear();
+        }
+        if let Some(g) = grid {
+            self.his_grid = g;
+        }
+        self.gen_std_msgs(decode.snr);
+        self.ntx = ntx;
+        if directed.is_none() && self.opts.skip_tx1 && !self.opts.hound && call_changed {
+            // evita che i valori vecchi della memoria rompano la sequenza (`m_qsoHistory.remove(hiscall)`)
+            self.hist.remove(&call);
+        }
+        let b_time = self.hist.entry(&call).map_or(slot_sec, |t| t.b_time);
+        self.qso_log.on_sec = b_time;
+        self.announced.remove(&call);
+        self.last_tx = None;
+        self.restart = false;
         if enable {
             self.enabled = true;
         }
-        self.first_tx_pending = true;
-        self.watchdog_ref = None;
         self.note_state();
         Ok(())
     }
 
     /// Comincia a chiamare CQ, con un modificatore se si vuole («DX», «NA», «POTA», «000»).
+    ///
+    /// E' il comando `TriggerCQ` con l'invio (`MainWindow`, connessione `trigger_CQ`): preme il Tx6 e poi, se non e' gia' acceso, «Abilita Tx».
     pub fn call_cq(&mut self, modifier: Option<&str>) -> Result<(), SeqError> {
         let modifier = match modifier.map(str::trim).filter(|m| !m.is_empty()) {
             Some(m) => {
@@ -416,19 +516,10 @@ impl Sequencer {
             }
             None => None,
         };
-        if let Some(old) = self.dx.take() {
-            self.events.push(Event::Abandoned {
-                call: old.call,
-                reason: AbandonReason::Cleared,
-            });
-        }
-        self.cq_run = Some(modifier);
-        self.ntx = 6;
+        self.txwatchdog(false);
+        self.opts.cq_modifier = modifier;
+        self.txb(6);
         self.enabled = true;
-        self.first_tx_pending = false;
-        self.watchdog_ref = None;
-        self.start_next_caller();
-        self.announce_queue();
         self.note_state();
         Ok(())
     }
@@ -436,8 +527,10 @@ impl Sequencer {
     /// «Ferma Tx»: ferma la trasmissione e le serie di CQ. Il DX resta impostato, come in JTDX:
     /// `set_enabled(true)` riprende da dove si era.
     pub fn halt(&mut self) {
-        if self.enabled || self.cq_run.is_some() {
+        if self.enabled {
             self.stop(StopReason::Halt);
+        } else {
+            self.halt_housekeeping();
         }
         self.note_state();
     }
@@ -446,22 +539,18 @@ impl Sequencer {
     pub fn set_enabled(&mut self, on: bool) {
         if on {
             self.enabled = true;
-            self.watchdog_ref = None;
             self.note_state();
         } else {
             self.halt();
         }
     }
 
-    /// «Canc DX»: libera la stazione; se si chiamava CQ si torna al CQ.
+    /// «Canc DX»: libera la stazione; si torna al messaggio CQ.
     pub fn clear_dx(&mut self) {
-        if let Some(old) = self.dx.take() {
-            self.events.push(Event::Abandoned {
-                call: old.call,
-                reason: AbandonReason::Cleared,
-            });
-            self.first_tx_pending = false;
-            self.ntx = 6;
+        let old = self.his_call.clone();
+        self.clear_dx_inner();
+        if !old.is_empty() {
+            self.events.push(Event::Abandoned { call: old, reason: AbandonReason::Cleared });
         }
         self.note_state();
     }
@@ -471,521 +560,769 @@ impl Sequencer {
         if !(1..=6).contains(&n) {
             return Err(SeqError::InvalidTxNumber(n));
         }
-        if n != 6 && self.dx.is_none() {
+        if n != 6 && self.his_call.is_empty() {
             return Err(SeqError::NoDx);
         }
-        if n != self.ntx {
+        if n == 6 {
+            self.restore_auto_seq();
+            self.ntx = 6;
+        } else {
             self.ntx = n;
-            if let Some(dx) = self.dx.as_mut() {
-                dx.repeats = 0;
-            }
         }
         self.note_state();
         Ok(())
     }
 
-    // ---- ricezione -----------------------------------------------------------------------
-
-    /// I messaggi decodificati al termine del periodo `slot`.
-    ///
-    /// Con AutoSeq acceso fa avanzare il QSO in corso, poi sceglie fra i chiamanti nuovi (uno solo
-    /// in collegamento, gli altri in coda). Con AutoSeq spento non fa nulla.
-    pub fn on_decodes(&mut self, slot: Slot, decodes: &[Decoded]) {
-        self.cur_slot = self.cur_slot.max(slot);
-        if !self.opts.auto_seq {
-            return;
+    /// Un messaggio libero e' partito (o sta per partire): con AutoSeq acceso e un testo che non e' un 73 (nessuna delle prime quattro parole
+    /// e' `73`, `TNX`, `TKS` o `TU`) JTDX spegne AutoSeq e lo riaccende alla generazione dei messaggi successiva (`m_FTsetAutoSeqOff`,
+    /// `m_wasAutoSeq`, `isAutoSeq73`).
+    pub fn note_free_text(&mut self, text: &str) {
+        if self.opts.auto_seq && !self.auto_seq_suspended && !is_autoseq_73(text) {
+            self.auto_seq_suspended = true;
         }
-        let parsed: Vec<(&Decoded, Message)> =
-            decodes.iter().map(|d| (d, parse(&d.text))).collect();
-        for (d, m) in &parsed {
-            if self.dx.is_none() {
-                break;
-            }
-            self.handle_dx_message(slot, d, m);
-        }
-        if self.enabled {
-            self.collect_callers(slot, &parsed);
-        }
-        self.prune_queue();
-        if self.dx.is_none() && self.enabled {
-            self.start_next_caller();
-        }
-        // il DX appena preso dalla coda puo' aver parlato anche in questo periodo: si leggono
-        // ora i suoi messaggi (rapporto aggiornato, locatore)
-        if self.dx.as_ref().is_some_and(|dx| dx.last_heard < slot) {
-            for (d, m) in &parsed {
-                self.handle_dx_message(slot, d, m);
-            }
-        }
-        self.announce_queue();
         self.note_state();
     }
 
-    fn handle_dx_message(&mut self, slot: Slot, d: &Decoded, m: &Message) {
-        let Message::Directed { to, from, body } = m else {
+    /// Dopo la generazione dei messaggi (`genStdMsgs`, `on_txb6_clicked`) AutoSeq torna com'era.
+    fn restore_auto_seq(&mut self) {
+        self.auto_seq_suspended = false;
+    }
+
+    // ---- ricezione -----------------------------------------------------------------------
+
+    /// I messaggi decodificati al termine del periodo `slot` (senza l'orologio: vale il periodo successivo come periodo in trasmissione).
+    pub fn on_decodes(&mut self, slot: Slot, decodes: &[Decoded]) {
+        self.on_decodes_at(slot, decodes, None);
+    }
+
+    /// Come `on_decodes`, con l'ora attuale (secondi UTC), che serve al watchdog.
+    ///
+    /// Equivale a `readFromStdout` di JTDX: ogni riga aggiorna la memoria della sequenza (anche con AutoSeq spento), il DX che risponde a un altro
+    /// ferma la trasmissione, e a fine decodifica (o subito, a seconda del livello di AutoSeq) gira `process_Auto`. Se si sta gia' trasmettendo il
+    /// periodo successivo (avvio anticipato) e il messaggio cambia, [`Sequencer::next_tx`] restituisce la ritrasmissione.
+    pub fn on_decodes_at(&mut self, slot: Slot, decodes: &[Decoded], now: Option<f64>) {
+        self.cur_slot = self.cur_slot.max(slot);
+        if let Some(now) = now {
+            self.advance_clock(now);
+        }
+        self.start_decode_if_needed(slot);
+        self.rx_transmitting = self.last_tx.as_ref().is_some_and(|(s, _)| s.0 == slot.0 + 1);
+        for d in decodes {
+            self.read_line(slot, d);
+        }
+        // `<DecodeFinished>`
+        if self.auto_seq_effective() && !self.process_auto_done {
+            self.process_auto_done = true;
+            self.process_auto();
+        }
+        self.rx_transmitting = false;
+        self.note_state();
+    }
+
+    /// Il periodo `slot` comincia a essere decodificato: si azzerano le letture (`decode()`: `m_reply_me`, `m_processAuto_done`...).
+    fn start_decode_if_needed(&mut self, slot: Slot) {
+        if self.decode_started_for == Some(slot) {
             return;
-        };
-        let my_call = self.my.call.clone();
-        let abandon_other = self.opts.abandon_if_dx_answers_other;
-        let step = {
-            let Some(dx) = self.dx.as_mut() else {
-                return;
-            };
-            if !same_station(from, &dx.call) {
-                return;
+        }
+        self.decode_started_for = Some(slot);
+        self.reply_me = false;
+        self.reply_other = false;
+        self.reply_cq73 = false;
+        self.process_auto_done = false;
+        self.call_first_73 = false;
+        self.used_freq = 0;
+    }
+
+    /// Una riga decodificata (`readFromStdout`, ramo della riga).
+    fn read_line(&mut self, slot: Slot, d: &Decoded) {
+        let msg = words(&d.text).join(" ");
+        let freq = d.freq_hz as i32;
+        let my_base = self.my_base.clone();
+        let his_base = base_call(&self.his_call);
+        let (to_call, _) = first_word_call(&d.text);
+        let mycallinmsg = !my_base.is_empty() && base_call(&to_call) == my_base;
+        let (de_call, _grid) = de_call_and_grid(&d.text);
+        let de_is_his = !de_call.is_empty() && !self.his_call.is_empty() && base_call(&de_call) == his_base;
+        if de_is_his {
+            self.rx_hz = freq;
+        }
+        if !de_call.is_empty() && !self.reply_me && base_call(&de_call) == his_base {
+            if mycallinmsg {
+                self.reply_me = true;
+                self.reply_other = false;
+            } else if msg.contains("73") || msg.starts_with("CQ") {
+                self.reply_other = false;
+                self.reply_cq73 = true;
+            } else if !self.reply_cq73 {
+                self.reply_other = true;
             }
-            if same_station(to, &my_call) {
-                dx.contacted = true;
-                dx.snr = d.snr;
-                dx.freq_hz = d.freq_hz;
-                dx.last_heard = slot;
-                if from != &dx.call && from.contains('/') {
-                    // lo stesso operatore con un nominativo piu' qualificato (/P, prefisso): come
-                    // JTDX (`base_call != hiscall`) lo si adotta; il nominativo di base non sostituisce
-                    // uno qualificato
-                    dx.call = from.clone();
+        }
+        // il rapporto che il DX ci manda (`m_rptRcvd`)
+        let (_, rep) = decoded_report(&d.text, &my_base, &his_base);
+        if let Some((r, _)) = rep.filter(|(r, _)| !r.is_empty()) {
+            self.rpt_rcvd = r;
+        }
+        // la memoria della sequenza (`displayDecodedText`)
+        self.record_rx(slot, d, false);
+
+        if mycallinmsg {
+            if de_is_his {
+                let has73 = msg.contains(" 73");
+                let has_rr73 = msg.contains("RR73");
+                if self.auto_seq_effective()
+                    && !self.process_auto_done
+                    && ((!has73 && !has_rr73)
+                        || (has73 && self.status == Status::Rrreport && self.opts.use_rrr)
+                        || (has_rr73 && self.status == Status::Rreport)
+                        || self.opts.call_mode == 0
+                        || self.opts.single_qso
+                        || self.opts.hound)
+                {
+                    self.process_auto_done = true;
+                    self.process_auto();
+                } else if (has73 || has_rr73) && self.opts.call_mode <= 1 {
+                    self.call_first_73 = true;
                 }
-                match body {
-                    Body::Grid(g) => {
-                        dx.grid = Some(g.clone());
-                        Step::Goto(2)
+            } else if self.opts.call_mode == 1 && !self.process_auto_done && self.auto_seq_effective() && self.his_call.is_empty() {
+                self.process_auto_done = true;
+                self.process_auto();
+            }
+        } else if de_is_his && !msg.starts_with("CQ ") && !msg.starts_with("DE ") && !msg.starts_with("QRZ ") && !msg.contains(" 73") && !msg.contains(" RR73") && !msg.contains(" RRR") {
+            // il DX parla con un altro: se e' vicino alla nostra frequenza (o sempre, con `SeqHaltTxReplyOther`) si ferma la trasmissione
+            self.used_freq = freq;
+            if self.enabled && !self.reply_me && !self.opts.hound && ((self.used_freq - self.tx_hz()).abs() < self.opts.guard_hz(self.mode) || self.opts.abandon_if_dx_answers_other) {
+                self.halt_tx_reason(StopReason::ReplyOther);
+            }
+        }
+    }
+
+    /// `displayDecodedText`: lo stato della riga e, se c'e', la registrazione in `QsoHistory`. `forced` vale per il doppio clic.
+    fn record_rx(&mut self, slot: Slot, d: &Decoded, forced: bool) {
+        let c_time = day_secs(slot.start_s(self.mode));
+        let his_base = base_call(&self.his_call);
+        if c_time != 0 && c_time != self.ds_max_r_time {
+            self.ds_max_r_time = c_time;
+            self.hist.set_time(c_time);
+            if !his_base.is_empty() {
+                let (st, g) = self.hist.status(&his_base);
+                self.ds.mystatus = Some(st);
+                self.ds.mygrid = if g.is_empty() { self.his_grid.chars().take(4).collect() } else { g };
+                self.ds.myhiscall = his_base.clone();
+            }
+        }
+        let his_grid4: String = self.his_grid.chars().take(4).collect();
+        let ctx = RxContext { my_base: &self.my_base, his_base: &his_base, his_grid4: &his_grid4, rx_freq: self.rx_hz, rr73_marker: self.opts.rr73_marker };
+        let class = classify_rx(&d.text, &ctx, &mut self.ds, &self.hist, d.freq_hz as i32);
+        if class.check_call.is_empty() {
+            return;
+        }
+        let relevant = matches!(class.std_type, 1 | 2 | 4) || (class.std_type == 3 && !class.param.is_empty());
+        if !relevant {
+            return;
+        }
+        // un chiamante gia' lavorato non entra tra i candidati se «Risp B4» e' spento (non il DX attuale)
+        if class.status == Some(Status::Rcall)
+            && !forced
+            && !self.opts.answer_worked_before
+            && self.is_worked(&class.check_call)
+            && !same_station(&class.check_call, &self.his_call)
+        {
+            self.events.push(Event::CallerIgnored { call: class.check_call.clone() });
+            return;
+        }
+        let info = self.info_of(&class.check_call);
+        let status = class.status.unwrap_or(Status::None);
+        let continent: String = info.continent.chars().take(2).collect();
+        self.hist.message(&class.check_call, status, i32::from(info.priority), &class.param, &class.tyyp, &continent, &info.prefix, c_time, &rpt_text(d.snr.clamp(-50, 49)), d.freq_hz as i32);
+        if status == Status::Rcall && !same_station(&class.check_call, &self.his_call) && self.announced.insert(class.check_call.clone()) {
+            self.events.push(Event::CallerQueued { call: class.check_call.clone() });
+        }
+    }
+
+    fn info_of(&self, call: &str) -> CallerInfo {
+        let mut info = self.caller_info.as_ref().map(|f| f(call)).unwrap_or_default();
+        if info.continent.trim().is_empty() {
+            // JTDX non sceglie mai una stazione senza continente: senza registro nessuna lo ha, quindi vale «??»
+            info.continent = crate::history::UNKNOWN_CONTINENT.to_string();
+        }
+        info
+    }
+
+    // ---- process_Auto --------------------------------------------------------------------
+
+    /// `MainWindow::process_Auto` (`REA 0x47d3e0`): legge lo stato della stazione in collegamento, applica i contatori di rinuncia, sceglie il
+    /// prossimo chiamante o il CQ e il messaggio da trasmettere.
+    fn process_auto(&mut self) {
+        let hound = self.opts.hound;
+        let mut counters = true;
+        let mut counters2 = true;
+        self.status = Status::None;
+        let mut his_call = self.his_call.clone();
+        let mut io = Autoseq { grid: self.his_grid.clone(), rep: self.rpt_text.clone(), rx: self.rx_hz, tx: self.tx_hz(), time: 0, count: 0, prio: 0 };
+        if !his_call.is_empty() {
+            io.count = if hound { -1 } else { 0 };
+            self.status = self.hist.autoseq_call(&his_call, &mut io, hound);
+            if self.rx_transmitting {
+                io.count -= 1;
+            }
+            let count = io.count;
+            let prio = io.prio;
+            let limits = self.opts.limits;
+            let guard = self.opts.guard_hz(self.mode);
+            let st = self.status;
+            if hound {
+                // WSJT-X Fox lascia cadere il QSO se l'R+rapporto del Hound non e' decodificato dopo tre trasmissioni
+                if matches!(st, Status::Srreport | Status::Rreport) && count > 3 {
+                    self.halt_tx_reason(StopReason::Halt);
+                    self.hist.reset_count(&his_call, Status::Rcq);
+                    self.opts.tx_freq_hz = self.last_calling_freq.max(0) as u32;
+                    self.status = Status::Rcq;
+                }
+            } else if (st == Status::Srr73 || st >= Status::S73)
+                && !self.opts.single_qso
+                && !self.opts.autolog
+                && self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call)
+                && !self.opts.follow_dx_freq
+                && (io.tx == 1 || (io.rx - self.tx_hz()).abs() > guard)
+            {
+                // fine QSO senza registrazione automatica: si passa al prossimo senza fermarsi
+                self.clear_dx_inner();
+                his_call.clear();
+                io.grid.clear();
+                self.status = Status::None;
+            } else if (st == Status::Rcq || st == Status::Scall || (st == Status::Sreport && self.opts.skip_tx1 && !hound))
+                && let Some(limit) = limits.answer_cq
+                && ((prio > 4 && prio < 17) || prio < 2 || self.opts.strict_directional_cq)
+                && (limit as i32 <= count || self.reply_other)
+            {
+                let old = his_call.clone();
+                self.clear_dx_inner();
+                self.events.push(Event::Abandoned { call: old.clone(), reason: if self.reply_other { AbandonReason::DxAnsweredOther } else { AbandonReason::NoReply } });
+                if self.reply_other {
+                    counters2 = false;
+                } else {
+                    self.counter = limit;
+                    self.hist.calllist(&old, io.rep.trim().parse().unwrap_or(0), io.time);
+                }
+                self.hist.reset_count(&old, Status::None);
+                his_call.clear();
+                io.grid.clear();
+                self.status = Status::None;
+                if self.opts.single_qso {
+                    counters = false;
+                }
+            } else if (st == Status::Rcall || (st == Status::Sreport && !self.opts.skip_tx1))
+                && let Some(limit) = limits.answer_in_call
+                && (limit as i32 <= count || self.reply_other)
+            {
+                let old = his_call.clone();
+                self.clear_dx_inner();
+                self.events.push(Event::Abandoned { call: old.clone(), reason: if self.reply_other { AbandonReason::DxAnsweredOther } else { AbandonReason::NoReply } });
+                self.hist.calllist(&old, io.rep.trim().parse().unwrap_or(0), io.time);
+                self.hist.reset_count(&old, Status::None);
+                his_call.clear();
+                io.grid.clear();
+                self.status = Status::None;
+                counters2 = false;
+                if self.opts.single_qso {
+                    counters = false;
+                }
+            } else if matches!(st, Status::Rreport | Status::Srreport) && let Some(limit) = limits.sent_r_report && limit as i32 <= count {
+                let old = his_call.clone();
+                self.clear_dx_inner();
+                self.events.push(Event::Abandoned { call: old.clone(), reason: AbandonReason::NoReply });
+                self.hist.reset_count(&old, Status::None);
+                his_call.clear();
+                io.grid.clear();
+                self.status = Status::None;
+                counters2 = false;
+                if self.opts.single_qso {
+                    counters = false;
+                }
+            } else if matches!(st, Status::Rrr | Status::Rrr73 | Status::R73 | Status::Srr73 | Status::S73) && let Some(limit) = limits.closing && limit as i32 <= count {
+                let old = his_call.clone();
+                // un QSO chiuso da noi (RR73/73 inviato) che non riceve il 73 e' comunque concluso: non e' un tentativo fallito
+                let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
+                self.clear_dx_inner();
+                if !logged {
+                    self.events.push(Event::Abandoned { call: old.clone(), reason: AbandonReason::NoReply });
+                }
+                self.hist.reset_count(&old, Status::None);
+                his_call.clear();
+                io.grid.clear();
+                self.status = Status::None;
+                counters2 = false;
+                if self.opts.single_qso {
+                    counters = false;
+                }
+            }
+        }
+
+        if his_call.is_empty() && counters && !hound && self.opts.call_mode != 0 {
+            // la ricerca tra i CQ degli altri vale solo se il prossimo periodo di trasmissione e' quello che segue il periodo decodificato
+            let decoded_even = self.decode_started_for.is_some_and(|s| s.is_even());
+            let next_is_ours = self.tx_even != decoded_even;
+            let mut flags: u32 = 0;
+            if self.opts.call_prio_cq && !self.opts.follow_dx_freq && counters2 && self.counter == 0 && next_is_ours {
+                flags = algo::CQ_SEARCH;
+            } else if self.counter > 0 {
+                self.counter -= 1;
+            }
+            if !self.opts.highlights || self.opts.answer_worked_before {
+                flags |= algo::ANSWER_WORKED;
+            }
+            if !self.opts.highlights || self.opts.call_worked_before {
+                flags |= algo::CALL_WORKED;
+            } else if self.opts.call_higher_new_call {
+                flags |= algo::HIGHER_NEW_CALL;
+            }
+            if self.opts.report_priority {
+                flags |= algo::REPORT_PRIORITY;
+            }
+            if self.opts.max_distance {
+                flags |= algo::MAX_DISTANCE;
+            }
+            let mut pick_io = Autoseq { rx: self.rx_hz, tx: self.tx_hz(), ..Autoseq::default() };
+            if let Some(pick) = self.hist.autoseq_pick(flags, &mut pick_io) {
+                self.status = pick.status;
+                self.his_call = pick.call.clone();
+                his_call = pick.call.clone();
+                io = pick.out;
+                if !io.rep.is_empty() && io.rep == self.rpt_text {
+                    // forza la rigenerazione dei messaggi (`m_rpt = "-60"`)
+                    self.rpt_text = "-60".to_string();
+                }
+                self.announced.remove(&his_call);
+            } else if self.transmitted_ntx != 6 {
+                self.txb(6);
+            }
+        }
+
+        if io.rx > 0 && io.rx != self.rx_hz {
+            self.rx_hz = io.rx;
+        }
+        if self.status > Status::None {
+            if !io.grid.is_empty() && self.his_grid.chars().take(4).collect::<String>() != io.grid {
+                self.his_grid = io.grid.clone();
+            }
+            if io.time < 86_400 && self.status < Status::R73 {
+                self.qso_log.on_sec = io.time;
+            }
+            if !io.rep.is_empty() && io.rep != self.rpt_text {
+                let n: i32 = io.rep.trim().parse().unwrap_or(0);
+                if self.status == Status::Sreport {
+                    self.status = if self.opts.skip_tx1 && !hound { Status::Rcq } else { Status::Rreport };
+                }
+                self.gen_std_msgs(n);
+            }
+            let skip = self.opts.skip_tx1 && !hound;
+            match self.status {
+                Status::Rfin | Status::Rcq => self.txb(if skip { 2 } else { 1 }),
+                Status::Rcall => {
+                    if self.enabled && self.auto_seq_effective() && self.opts.call_mode > 0 {
+                        self.txwatchdog(false);
                     }
-                    Body::Report(n) => {
-                        dx.rcvd_report = Some(format_report(*n));
-                        Step::Goto(3)
+                    self.txb(2);
+                }
+                Status::Rreport => {
+                    if self.enabled && self.auto_seq_effective() && self.opts.call_mode > 0 {
+                        self.txwatchdog(false);
                     }
-                    Body::RReport(n) => {
-                        dx.rcvd_report = Some(format_report(*n));
-                        // senza un nostro rapporto gia' mandato lo diamo ora (Tx3), non si chiude
-                        Step::Goto(if dx.sent_report.is_some() { 4 } else { 3 })
-                    }
-                    Body::Rrr | Body::Rr73 | Body::Bye => {
-                        if dx.rcvd_report.is_none() || dx.sent_report.is_none() {
-                            Step::Nothing
-                        } else if matches!(body, Body::Rr73 | Body::Bye) && dx.sent_rr73 {
-                            Step::CompleteThenFinish
-                        } else {
-                            Step::CompleteThenGoto(5)
+                    self.txb(3);
+                }
+                Status::Rrreport => self.txb(4),
+                Status::Rrr => self.txb(5),
+                Status::Rrr73 => {
+                    if !hound {
+                        self.txb(5);
+                    } else {
+                        // fine di un QSO con una spedizione: si registra e si ferma
+                        self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                        if self.enabled || self.rx_transmitting {
+                            self.halt_tx_reason(StopReason::QsoFinished);
                         }
                     }
-                    Body::Other => Step::Nothing,
                 }
-            } else {
-                let closing = matches!(body, Body::Rrr | Body::Rr73 | Body::Bye);
-                if abandon_other && !dx.contacted && !closing {
-                    Step::Abandon(AbandonReason::DxAnsweredOther)
-                } else {
-                    Step::Nothing
+                Status::Srr73 => {
+                    if !self.opts.single_qso && !self.opts.autolog && self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call) {
+                        self.auto_stop_tx(StopReason::QsoFinished, false);
+                    }
                 }
-            }
-        };
-        match step {
-            Step::Nothing => {}
-            Step::Goto(n) => {
-                self.progress(slot);
-                self.goto(n);
-            }
-            Step::CompleteThenGoto(n) => {
-                self.progress(slot);
-                self.complete(true);
-                self.goto(n);
-            }
-            Step::CompleteThenFinish => {
-                self.complete(true);
-                self.end_qso();
-            }
-            Step::Abandon(reason) => {
-                if let Some(dx) = &self.dx {
-                    self.events.push(Event::Abandoned {
-                        call: dx.call.clone(),
-                        reason,
-                    });
+                Status::R73 => self.txb(5),
+                Status::S73 => self.auto_stop_tx(StopReason::QsoFinished, false),
+                Status::Fin => {
+                    // tutti i rami di JTDX (1 QSO, registrazione automatica, non registrato, non titolare della frequenza) fermano la trasmissione
+                    let reason = if self.opts.single_qso { StopReason::SingleQso } else { StopReason::QsoFinished };
+                    self.auto_stop_tx(reason, false);
                 }
-                self.end_qso();
+                _ => {}
+            }
+        } else {
+            if self.enabled && self.his_call.is_empty() {
+                self.rx_hz = self.tx_hz();
+            }
+            if !counters && self.opts.single_qso {
+                self.auto_stop_tx(StopReason::SingleQso, true);
             }
         }
     }
 
-    /// Un messaggio del DX che fa progredire il QSO azzera il watchdog.
-    fn progress(&mut self, slot: Slot) {
-        self.watchdog_ref = Some(slot.next().start_s(self.mode));
-    }
-
-    fn goto(&mut self, n: u8) {
-        if n != self.ntx {
-            self.ntx = n;
-            if let Some(dx) = self.dx.as_mut() {
-                dx.repeats = 0;
-            }
+    /// `autoStopTx`: ferma la trasmissione e, con la registrazione automatica, libera il DX.
+    fn auto_stop_tx(&mut self, reason: StopReason, counter_triggered: bool) {
+        if self.enabled || self.rx_transmitting {
+            self.halt_tx_reason(reason);
+        }
+        if self.opts.skip_tx1 && counter_triggered && self.ntx == 2 && !self.his_call.is_empty() {
+            // evita che la memoria rompa il prossimo tentativo con questa stazione
+            let call = self.his_call.clone();
+            self.hist.remove(&call);
+        }
+        if self.opts.autolog && !self.his_call.is_empty() && !self.opts.hound {
+            self.clear_dx_inner();
         }
     }
 
-    /// I messaggi diretti a noi da stazioni che non sono il DX in collegamento.
-    fn collect_callers(&mut self, slot: Slot, parsed: &[(&Decoded, Message)]) {
-        for (d, m) in parsed {
-            let Message::Directed { to, from, body } = m else {
-                continue;
-            };
-            if !same_station(to, &self.my.call) || same_station(from, &self.my.call) {
-                continue;
-            }
-            if self
-                .dx
-                .as_ref()
-                .is_some_and(|dx| same_station(from, &dx.call))
-            {
-                continue;
-            }
-            let (start_ntx, grid, rcvd) = match body {
-                Body::Grid(g) => (2, Some(g.clone()), None),
-                Body::Report(n) | Body::RReport(n) => (3, None, Some(format_report(*n))),
-                // la chiusura di un QSO che non e' in corso non apre un QSO
-                _ => continue,
-            };
-            if matches!(body, Body::Grid(_))
-                && !self.opts.answer_worked_before
-                && self.is_worked(from)
-            {
-                self.events
-                    .push(Event::CallerIgnored { call: from.clone() });
-                continue;
-            }
-            let rx_even = slot.is_even();
-            if let Some(c) = self.queue.iter_mut().find(|c| same_station(&c.call, from)) {
-                c.snr = d.snr;
-                c.freq_hz = d.freq_hz;
-                c.last_heard = slot;
-                c.rx_even = rx_even;
-                c.start_ntx = start_ntx;
-                if grid.is_some() {
-                    c.grid = grid;
-                }
-                if rcvd.is_some() {
-                    c.rcvd_report = rcvd;
-                }
-            } else if self.queue.len() < self.opts.queue_max {
-                self.queue.push(Caller {
-                    call: from.clone(),
-                    grid,
-                    rcvd_report: rcvd,
-                    snr: d.snr,
-                    freq_hz: d.freq_hz,
-                    start_ntx,
-                    first_heard: slot,
-                    last_heard: slot,
-                    rx_even,
-                    announced: false,
-                });
+    /// `on_txbN_clicked`: sceglie il messaggio; se si sta trasmettendo il messaggio riparte (`m_restart`).
+    fn txb(&mut self, n: u8) {
+        if n == 6 {
+            // `on_txb6_clicked`: svuota il DX, riaccende AutoSeq
+            self.restore_auto_seq();
+            if !self.his_call.is_empty() {
+                self.his_call.clear();
+                self.his_grid.clear();
             }
         }
-    }
-
-    fn ttl_slots(&self) -> u64 {
-        let ms = (self.opts.queue_ttl_s.max(0.0) * 1000.0).ceil() as u64;
-        ms.div_ceil(self.mode.period_ms())
-    }
-
-    fn prune_queue(&mut self) {
-        let ttl = self.ttl_slots();
-        let now = self.cur_slot;
-        self.queue.retain(|c| now.since(c.last_heard) <= ttl);
-    }
-
-    fn announce_queue(&mut self) {
-        for c in self.queue.iter_mut().filter(|c| !c.announced) {
-            c.announced = true;
-            self.events.push(Event::CallerQueued {
-                call: c.call.clone(),
-            });
+        self.ntx = n;
+        if self.rx_transmitting {
+            self.restart = true;
         }
-    }
-
-    /// Prende dalla coda il chiamante da servire: il piu' vecchio, a parita' il piu' forte.
-    fn start_next_caller(&mut self) -> bool {
-        self.prune_queue();
-        let mut best: Option<usize> = None;
-        for (i, c) in self.queue.iter().enumerate() {
-            let better = match best.and_then(|b| self.queue.get(b)) {
-                None => true,
-                Some(b) => {
-                    (c.first_heard, std::cmp::Reverse(c.snr))
-                        < (b.first_heard, std::cmp::Reverse(b.snr))
-                }
-            };
-            if better {
-                best = Some(i);
-            }
-        }
-        let Some(idx) = best else {
-            return false;
-        };
-        let c = self.queue.remove(idx);
-        self.dx = Some(Dx {
-            call: c.call,
-            grid: c.grid,
-            freq_hz: c.freq_hz,
-            snr: c.snr,
-            role: Role::Called,
-            contacted: true,
-            sent_report: None,
-            rcvd_report: c.rcvd_report,
-            sent_rr73: false,
-            logged: false,
-            first_slot: c.first_heard,
-            last_heard: c.last_heard,
-            repeats: 0,
-        });
-        self.ntx = c.start_ntx;
-        self.tx_even = !c.rx_even;
-        self.tx_generated = self.tx_even;
-        self.first_tx_pending = true;
-        self.watchdog_ref = None;
-        true
     }
 
     // ---- trasmissione --------------------------------------------------------------------
 
-    /// Cosa trasmettere nel periodo `slot`, se ne tocca a noi. `now` sono i secondi UTC attuali:
-    /// servono a non partire troppo tardi nel periodo e al watchdog.
+    /// Cosa trasmettere nel periodo `slot`, se ne tocca a noi. `now` sono i secondi UTC attuali: servono alla finestra di avvio e al watchdog.
     ///
-    /// Una chiamata per periodo: la stessa chiamata ripetuta nello stesso periodo da' lo stesso
-    /// messaggio senza contarlo due volte. Ogni trasmissione ripetuta conta verso i tetti di
-    /// ripetizione; raggiunto il tetto il tentativo si chiude e si passa al chiamante in coda, al
-    /// CQ o all'arresto.
+    /// Si puo' partire in qualunque istante dei primi 13,64 s (FT8) o 6,04 s (FT4) del periodo: chi trasmette emette la **coda** del
+    /// messaggio dal punto giusto (avvio tardivo). La stessa chiamata ripetuta nello stesso periodo da' lo stesso messaggio senza contarlo due
+    /// volte; se nel frattempo la decodifica ha cambiato il messaggio (`m_restart`) da' il nuovo con `retransmit` vero.
+    /// Ogni trasmissione ripetuta conta verso i contatori di rinuncia.
     pub fn next_tx(&mut self, slot: Slot, now: f64) -> Option<Tx> {
         self.cur_slot = self.cur_slot.max(slot);
+        self.advance_clock(now);
+        self.start_decode_if_needed(Slot(slot.0.saturating_sub(1)));
         if !self.enabled {
             return None;
         }
-        if let Some((s, tx)) = &self.last_tx
-            && *s == slot
-        {
-            return Some(tx.clone());
-        }
-        if self.opts.watchdog_min > 0 {
-            let reference = *self.watchdog_ref.get_or_insert(now);
-            if now - reference >= f64::from(self.opts.watchdog_min) * 60.0 {
-                self.stop(StopReason::Watchdog);
-                self.note_state();
-                return None;
-            }
+        let in_progress = self.last_tx.as_ref().is_some_and(|(s, _)| *s == slot);
+        if self.opts.watchdog_min > 0 && self.idle_minutes >= self.opts.watchdog_min && !in_progress {
+            self.txwatchdog(true);
+            self.stop(StopReason::Watchdog);
+            self.note_state();
+            return None;
         }
         if slot.is_even() != self.tx_even {
             return None;
         }
-        // i tetti di ripetizione: puo' chiudere il tentativo e far partire il prossimo
-        let mut guard = 0;
-        let n = loop {
-            guard += 1;
-            if guard > 4 {
-                return None;
+        if let Some((s, old)) = self.last_tx.clone()
+            && s == slot
+        {
+            if !self.restart {
+                return Some(old);
             }
-            let n = match &self.dx {
-                Some(_) => self.ntx,
-                None if self.cq_run.is_some() => 6,
-                None => return None,
-            };
-            let give_up = self
-                .dx
-                .as_ref()
-                .is_some_and(|dx| self.limit_for(n, dx.role).is_some_and(|l| dx.repeats >= l));
-            if !give_up {
-                break n;
+            self.restart = false;
+            let tx = self.emit_tx(slot, now, true)?;
+            self.note_state();
+            if tx.text == old.text && tx.freq_hz == old.freq_hz {
+                // stesso messaggio: JTDX lo riconta ma l'audio e' lo stesso
+                return Some(old);
             }
-            let (call, logged) = self
-                .dx
-                .as_ref()
-                .map(|d| (d.call.clone(), d.logged))
-                .unwrap_or_default();
-            if !logged {
-                self.events.push(Event::Abandoned {
-                    call,
-                    reason: AbandonReason::NoReply,
-                });
-            }
-            self.end_qso();
+            return Some(tx);
+        }
+        if now - slot.start_s(self.mode) > self.opts.late_limit_s(self.mode) {
+            self.note_state();
+            return None;
+        }
+        // livello 2 (e 0/1 con un 73): `process_Auto` all'inizio della trasmissione, con quanto e' stato decodificato fin qui
+        if self.auto_seq_effective()
+            && !self.process_auto_done
+            && (self.opts.call_mode == 2 || (self.opts.call_mode <= 1 && (self.call_first_73 || self.status >= Status::Rrr73)))
+        {
+            self.process_auto_done = true;
+            self.process_auto();
             if !self.enabled {
                 self.note_state();
                 return None;
             }
-        };
-        if slot.is_even() != self.tx_even {
-            self.note_state();
-            return None;
         }
-        let late = if self.first_tx_pending && self.opts.bypass_tx1 {
-            self.mode.period_s() * 0.75
-        } else {
-            self.opts.late_limit_s(self.mode)
-        };
-        if now - slot.start_s(self.mode) > late {
-            self.note_state();
-            return None;
-        }
+        let tx = self.emit_tx(slot, now, false);
+        self.note_state();
+        tx
+    }
 
+    /// L'inizio (o la ripartenza) di una trasmissione nel periodo `slot`: genera il messaggio, lo registra nella memoria (`displayTransmittedText`),
+    /// registra il QSO se e' il primo 73 e aggiorna i contatori. `None` se non c'e' niente da trasmettere.
+    fn emit_tx(&mut self, slot: Slot, now: f64, restart: bool) -> Option<Tx> {
+        let n = if self.ntx == 0 { 6 } else { self.ntx };
         let text = self.text_for(n);
-        let freq_hz = match (&self.dx, self.opts.follow_dx_freq, n) {
-            (Some(dx), true, 1..=5) => dx.freq_hz,
-            _ => self.opts.tx_freq_hz,
-        };
-        let report = self
-            .dx
-            .as_ref()
-            .map(|d| format_report(self.report_value(d)));
-        let use_rrr = self.opts.use_rrr;
-        if n != 6
-            && let Some(dx) = self.dx.as_mut()
-        {
-            dx.repeats += 1;
-            match n {
-                2 | 3 => dx.sent_report = report,
-                4 => dx.sent_rr73 = !use_rrr,
-                _ => {}
+        if text.trim().is_empty() {
+            // «Transmission of the empty message is not allowed»
+            self.halt_tx_reason(StopReason::Halt);
+            return None;
+        }
+        if self.opts.hound && n == 6 {
+            // «Transmission of CQ message is not allowed in the Hound mode»
+            self.halt_tx_reason(StopReason::Halt);
+            return None;
+        }
+        // in FT8/FT4 JTDX toglie le parentesi `<>` dal testo trasmesso (`m_curMsgTx`) prima di registrarlo
+        let plain = text.replace(['<', '>'], "");
+        let parts: Vec<&str> = plain.split_whitespace().collect();
+        let progress_roger = (3..=5).contains(&n);
+        let is_73 = progress_roger && (parts.contains(&"73") || parts.contains(&"RR73"));
+        let last_parts: Vec<&str> = self.current_message.split_whitespace().collect();
+        let last_is_73 = last_parts.contains(&"73") || last_parts.contains(&"RR73");
+        self.last_message_sent = std::mem::take(&mut self.current_message);
+        self.current_message = plain.clone();
+        let sent_first_73 = is_73
+            && self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call)
+            && (!last_is_73 || !self.last_message_sent.contains(self.his_call.as_str()));
+        if sent_first_73 && !self.his_call.is_empty() {
+            let period = self.mode.period_s();
+            if self.last_logged.as_ref().is_none_or(|(c, t)| *c != self.his_call || (now - *t).abs() > period.floor() * 2.0) {
+                self.log_qso(slot, now);
             }
         }
-        if self.last_text.as_deref() != Some(text.as_str()) {
-            self.watchdog_ref = Some(now);
-            self.last_text = Some(text.clone());
+        // il rapporto che abbiamo mandato (`m_rptSent`)
+        if parts.len() >= 3 && (parts[1] == self.my.call || parts[1] == self.my_base) {
+            let r = parts[2];
+            if let Ok(v) = r.parse::<i32>()
+                && (-50..50).contains(&v)
+            {
+                self.rpt_sent = r.to_string();
+            } else if let Some(rest) = r.strip_prefix('R')
+                && let Ok(v) = rest.parse::<i32>()
+                && (-50..50).contains(&v)
+            {
+                self.rpt_sent = rest.to_string();
+            }
         }
-        self.first_tx_pending = false;
-        let tx = Tx {
-            n,
-            text,
-            freq_hz,
-            even_slot: self.tx_even,
-        };
+        // la memoria della sequenza (`displayTransmittedText`)
+        let ttime = day_secs(now);
+        let tx_hz = self.tx_hz();
+        let skip_mark = self.opts.skip_tx1 && !self.opts.hound;
+        if let Some((call, status, param, tyyp)) = classify_tx(&plain, &self.my_base, &self.his_call, skip_mark) {
+            self.hist.message(&call, status, 0, &param, &tyyp, "", "", ttime, "", tx_hz);
+        }
+        if !restart {
+            if self.opts.watchdog_min > 0 && plain != self.msg_sent0 {
+                // un messaggio nuovo azzera il watchdog; ripetere lo stesso no
+                self.txwatchdog(false);
+                self.msg_sent0 = plain.clone();
+            }
+            if self.auto_seq_effective() && n == 6 && !self.his_call.is_empty() {
+                // il campo del DX deve restare vuoto mentre si trasmette il CQ sotto AutoSeq
+                self.his_call.clear();
+                self.his_grid.clear();
+            }
+            if self.opts.hound && n == 1 {
+                self.last_calling_freq = tx_hz;
+            }
+            self.transmitted_ntx = n;
+            self.pending_tx_end = Some(slot.start_s(self.mode) + self.opts.late_limit_s(self.mode) - 0.5);
+        }
+        let tx = Tx { n, text, freq_hz: tx_hz.max(0) as u32, even_slot: self.tx_even, retransmit: restart };
         self.last_tx = Some((slot, tx.clone()));
-        // come JTDX: il QSO si registra quando si manda RR73 o 73 avendo il rapporto del DX
-        // (anche senza il rapporto del DX: JTDX registra quando `m_QSOProgress >= ROGER_REPORT` o si manda il Tx4/Tx5, e scrive `RST_RCVD` vuoto)
-        if (n == 4 && !use_rrr) || n == 5 {
-            self.complete(false);
-        }
-        if n == 5 {
-            self.end_qso();
-        }
-        self.note_state();
         Some(tx)
     }
 
-    fn limit_for(&self, n: u8, role: Role) -> Option<u32> {
-        let l = &self.opts.limits;
-        match n {
-            1 => l.answer_cq,
-            2 => match role {
-                Role::Answering => l.answer_cq,
-                Role::Called => l.answer_in_call,
-            },
-            3 => l.sent_r_report,
-            4 | 5 => l.closing,
-            _ => None,
+    /// Il QSO si registra (`logQSOTimer`): rapporto inviato e ricevuto dalla memoria della sequenza (`log_data`), come in `on_logQSOButton_clicked`.
+    fn log_qso(&mut self, slot: Slot, now: f64) {
+        if self.his_call.is_empty() {
+            return;
+        }
+        let (status, b_time, r_rep, s_rep) = self.hist.log_data(&self.his_call);
+        let (mut rst_sent, mut rst_rcvd, on_sec) = if status > Status::Sreport {
+            (s_rep, r_rep, b_time)
+        } else {
+            (String::new(), String::new(), self.qso_log.on_sec)
+        };
+        if rst_rcvd.is_empty() {
+            rst_rcvd = self.rpt_rcvd.clone();
+        }
+        if rst_sent.is_empty() {
+            rst_sent = self.rpt_sent.clone();
+        }
+        if rst_sent.is_empty() {
+            rst_sent = rpt_text(self.rpt_value());
+        }
+        let off_ms = slot.start_ms(self.mode);
+        let day_ms = (off_ms / 86_400_000) * 86_400_000;
+        let mut on_ms = day_ms + u64::from(on_sec) * 1000;
+        if on_ms > off_ms {
+            on_ms = on_ms.saturating_sub(86_400_000);
+        }
+        // un QSO lungo piu' di 10 periodi non e' credibile: si prende l'ora di fine (`10 * periodo`)
+        if off_ms.abs_diff(on_ms) > (self.mode.period_s() as u64) * 10_000 {
+            on_ms = off_ms;
+        }
+        let record = QsoRecord {
+            call: self.his_call.clone(),
+            grid: self.his_grid.chars().take(4).collect(),
+            rst_sent,
+            rst_rcvd,
+            mode: self.mode,
+            time_on_ms: on_ms,
+            time_off_ms: off_ms,
+            tx_freq_hz: self.tx_hz().max(0) as u32,
+            rx_freq_hz: self.hist.entry(&self.his_call).map_or(self.rx_hz, |t| t.rx).max(0) as u32,
+        };
+        self.worked.insert(base_call(&self.his_call));
+        self.last_logged = Some((self.his_call.clone(), now));
+        self.events.push(Event::QsoComplete(record));
+    }
+
+    // ---- stato e messaggi ------------------------------------------------------------------
+
+    /// La frequenza di trasmissione (con Tx = Rx e' quella di ricezione).
+    fn tx_hz(&self) -> i32 {
+        if self.opts.follow_dx_freq && !self.his_call.is_empty() {
+            self.rx_hz
+        } else {
+            self.opts.tx_freq_hz as i32
         }
     }
 
-    fn report_value(&self, dx: &Dx) -> i32 {
+    fn start_ntx(&self) -> u8 {
+        if self.opts.skip_tx1 && !self.opts.hound { 2 } else { 1 }
+    }
+
+    fn rpt_value(&self) -> i32 {
         match self.opts.report {
-            ReportPolicy::Measured => dx.snr,
+            ReportPolicy::Measured => self.rpt,
             ReportPolicy::Fixed(n) => n,
         }
     }
 
-    fn std_msgs(&self, dx: &Dx) -> StdMessages {
-        gen_std_msgs(
-            &self.my.call,
-            &self.my.grid,
-            &dx.call,
-            self.report_value(dx),
-            self.opts.use_rrr,
-        )
+    /// `genStdMsgs(rpt)`: aggiorna il rapporto e rimette il messaggio di partenza (i testi si compongono a richiesta).
+    fn gen_std_msgs(&mut self, rpt: i32) {
+        self.restore_auto_seq();
+        self.tx_generated = self.tx_even;
+        self.rpt = rpt.clamp(-50, 49);
+        self.rpt_text = rpt_text(self.rpt_value());
+        if !self.his_call.is_empty() {
+            self.ntx = self.start_ntx();
+        }
+    }
+
+    fn std_msgs(&self) -> StdMessages {
+        gen_std_msgs(&self.my.call, &self.my.grid, &self.his_call, self.rpt_value(), self.opts.use_rrr)
     }
 
     fn cq_text(&self) -> String {
-        let modifier = self.cq_run.as_ref().and_then(|m| m.as_deref());
-        gen_cq(&self.my.call, &self.my.grid, modifier)
+        gen_cq(&self.my.call, &self.my.grid, self.opts.cq_modifier.as_deref())
     }
 
     fn text_for(&self, n: u8) -> String {
         if n == 6 {
             return self.cq_text();
         }
-        self.dx
-            .as_ref()
-            .and_then(|dx| self.std_msgs(dx).get(n).map(str::to_string))
-            .unwrap_or_default()
+        if self.his_call.is_empty() {
+            return String::new();
+        }
+        self.std_msgs().get(n).map(str::to_string).unwrap_or_default()
     }
 
-    // ---- chiusura ------------------------------------------------------------------------
-
-    /// Registra il QSO (una sola volta). In ricezione serve il rapporto del DX (`need_report`); quando si comincia a trasmettere RR73 o 73 si registra
-    /// comunque, come JTDX, con il rapporto ricevuto vuoto se non c'e'.
-    fn complete(&mut self, need_report: bool) {
-        let fallback = self
-            .dx
-            .as_ref()
-            .map(|d| format_report(self.report_value(d)));
-        let Some(dx) = self.dx.as_mut() else {
-            return;
-        };
-        if dx.logged {
-            return;
-        }
-        let rst_rcvd = match dx.rcvd_report.clone() {
-            Some(r) => r,
-            None if !need_report => String::new(),
-            None => return,
-        };
-        dx.logged = true;
-        let rst_sent = dx.sent_report.clone().or(fallback).unwrap_or_default();
-        let record = QsoRecord {
-            call: dx.call.clone(),
-            grid: dx.grid.clone().unwrap_or_default(),
-            rst_sent,
-            rst_rcvd,
-            mode: self.mode,
-            time_on_ms: dx.first_slot.start_ms(self.mode),
-            time_off_ms: self.cur_slot.start_ms(self.mode),
-            tx_freq_hz: self.opts.tx_freq_hz,
-            rx_freq_hz: dx.freq_hz,
-        };
-        self.worked.insert(base_call(&dx.call));
-        self.events.push(Event::QsoComplete(record));
+    /// `clearDX` senza evento: libera la stazione e rimette il messaggio CQ.
+    fn clear_dx_inner(&mut self) {
+        self.his_call.clear();
+        self.his_grid.clear();
+        self.tx_generated = self.tx_even;
+        self.rx_hz = self.tx_hz();
+        self.ntx = 6;
+        self.restore_auto_seq();
     }
 
-    /// Il QSO (riuscito o no) e' finito: si libera il DX e si decide cosa fare dopo.
-    ///
-    /// «1 QSO» ferma la trasmissione; altrimenti si serve il prossimo chiamante in coda, poi si
-    /// torna al CQ se si stava chiamando CQ, altrimenti ci si ferma.
-    fn end_qso(&mut self) {
-        self.dx = None;
-        self.first_tx_pending = false;
-        if self.opts.single_qso {
-            self.stop(StopReason::SingleQso);
-            return;
-        }
-        if !self.enabled {
-            self.ntx = 6;
-            return;
-        }
-        if self.start_next_caller() {
-            return;
-        }
-        if self.cq_run.is_some() {
-            self.ntx = 6;
+    fn transmitting_now(&self) -> bool {
+        self.rx_transmitting
+    }
+
+    /// `haltTx` per una causa interna: Abilita Tx si spegne e la trasmissione in corso si ferma.
+    fn halt_tx_reason(&mut self, reason: StopReason) {
+        if self.enabled {
+            self.stop(reason);
         } else {
-            self.stop(StopReason::NothingToDo);
+            self.halt_housekeeping();
         }
     }
 
     fn stop(&mut self, reason: StopReason) {
         self.enabled = false;
-        self.cq_run = None;
-        self.queue.clear();
+        self.halt_housekeeping();
         self.events.push(Event::Stopped(reason));
     }
 
+    /// Quanto fa `on_stopTxButton_clicked` oltre a spegnere Abilita Tx.
+    fn halt_housekeeping(&mut self) {
+        if self.last_tx.is_some() || self.rx_transmitting {
+            if self.opts.skip_tx1 && !self.his_call.is_empty() && self.ntx == 2 {
+                let call = self.his_call.clone();
+                self.hist.remove(&call);
+            }
+            self.sec_tx_stopped = self.sec_tx_stopped.max(0.0);
+        }
+        self.last_tx = None;
+        self.restart = false;
+        self.pending_tx_end = None;
+    }
+
+    // ---- watchdog ---------------------------------------------------------------------------
+
+    /// `txwatchdog`: con `false` azzera i minuti di inattivita'; con `true` il watchdog e' scaduto.
+    fn txwatchdog(&mut self, triggered: bool) {
+        self.watchdog_expired = triggered;
+        if !triggered {
+            self.idle_minutes = 0;
+        }
+    }
+
+    /// `on_the_minute`: a ogni minuto UTC si somma un minuto di inattivita' solo se si e' trasmesso negli ultimi 32 s (FT8) o 16 s (FT4).
+    fn advance_clock(&mut self, now: f64) {
+        let cur_min = (now / 60.0).floor() as i64;
+        let last = *self.last_minute.get_or_insert(cur_min);
+        let limit = match self.mode {
+            Mode::Ft8 => 32.0,
+            Mode::Ft4 => 16.0,
+        };
+        for m in (last + 1)..=cur_min {
+            let t = m as f64 * 60.0;
+            if let Some(end) = self.pending_tx_end
+                && end <= t
+            {
+                self.sec_tx_stopped = end;
+                self.pending_tx_end = None;
+            }
+            if self.opts.watchdog_min == 0 {
+                self.idle_minutes = 0;
+                continue;
+            }
+            let update = self.watchdog_expired || t - self.sec_tx_stopped <= limit;
+            if update && self.idle_minutes < self.opts.watchdog_min {
+                self.idle_minutes += 1;
+            }
+        }
+        self.last_minute = Some(cur_min);
+        if let Some(end) = self.pending_tx_end
+            && end <= now
+        {
+            self.sec_tx_stopped = end;
+            self.pending_tx_end = None;
+        }
+    }
+
     fn shown_ntx(&self) -> u8 {
-        if self.dx.is_some() {
+        if !self.his_call.is_empty() {
             self.ntx
-        } else if self.cq_run.is_some() {
+        } else if self.enabled && self.ntx == 6 {
             6
         } else {
             0
@@ -993,17 +1330,9 @@ impl Sequencer {
     }
 
     fn note_state(&mut self) {
-        let key = (
-            self.phase(),
-            self.dx.as_ref().map(|d| d.call.clone()),
-            self.shown_ntx(),
-        );
+        let key = (self.phase(), (!self.his_call.is_empty()).then(|| self.his_call.clone()), self.shown_ntx());
         if self.reported.as_ref() != Some(&key) {
-            self.events.push(Event::StateChanged {
-                phase: key.0,
-                dx: key.1.clone(),
-                ntx: key.2,
-            });
+            self.events.push(Event::StateChanged { phase: key.0, dx: key.1.clone(), ntx: key.2 });
             self.reported = Some(key);
         }
     }
@@ -1012,4 +1341,17 @@ impl Sequencer {
     pub fn my_call_is_standard(&self) -> bool {
         is_std_call(&self.my.call)
     }
+}
+
+/// `isAutoSeq73`: una delle prime quattro parole e' `73`, `TNX`, `TKS` o `TU`.
+pub fn is_autoseq_73(text: &str) -> bool {
+    text.split_whitespace().take(4).any(|w| matches!(w, "73" | "TNX" | "TKS" | "TU"))
+}
+
+/// La prima parola di un messaggio se e' un nominativo (`DecodedText::call`), con il testo normalizzato.
+fn first_word_call(text: &str) -> (String, String) {
+    let w = words(text);
+    let first = w.first().cloned().unwrap_or_default();
+    let is_call = matches!(parse(&format!("{first} X1ABC")), Message::Directed { .. });
+    (if is_call && !matches!(first.as_str(), "CQ" | "DE" | "QRZ") { first } else { String::new() }, w.join(" "))
 }

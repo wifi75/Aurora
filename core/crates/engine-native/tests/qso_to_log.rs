@@ -57,11 +57,11 @@ async fn a_qso_closed_by_the_sequence_reaches_the_second_udp_server_once() {
     let (n, _) = timeout(Duration::from_secs(2), log4om.recv_from(&mut buf)).await.expect("datagramma").unwrap();
     let text = String::from_utf8_lossy(&buf[..n]).to_string();
 
-    // 99 999 990 s = 1973-03-03 09:46:30 UTC: il QSO comincia nel periodo del primo messaggio di K1ABC (09:46:45); il suo RR73 arriva nel periodo
-    // delle 09:47:45, il 73 parte in quello delle 09:48:00 e JTDX scrive la fine 14 s dopo l'inizio della trasmissione (09:48:14)
+    // 99 999 990 s = 1973-03-03 09:46:30 UTC: il QSO comincia nel periodo del primo messaggio di K1ABC (09:46:45); il suo rapporto (09:47:15) fa partire
+    // il nostro RR73 nel periodo delle 09:47:30 e JTDX registra quando comincia a trasmettere RR73 o 73, scrivendo la fine 14 s dopo (09:47:44)
     assert_eq!(
         text,
-        "<BAND:3>20m <STATION_CALLSIGN:6>IU3ABC <MY_GRIDSQUARE:6>IO91wm <CALL:5>K1ABC <FREQ:9>14.075500 <MODE:3>FT8 <QSO_DATE:8>19730303 <TIME_ON:6>094645 <QSO_DATE_OFF:8>19730303 <TIME_OFF:6>094814 <RST_SENT:3>-10 <RST_RCVD:3>-07 <GRIDSQUARE:4>FN42 <EOR>"
+        "<BAND:3>20m <STATION_CALLSIGN:6>IU3ABC <MY_GRIDSQUARE:6>IO91wm <CALL:5>K1ABC <FREQ:9>14.075500 <MODE:3>FT8 <QSO_DATE:8>19730303 <TIME_ON:6>094645 <QSO_DATE_OFF:8>19730303 <TIME_OFF:6>094744 <RST_SENT:3>-10 <RST_RCVD:3>-07 <GRIDSQUARE:4>FN42 <EOR>"
     );
     assert_eq!(book.count().unwrap(), 1);
     assert!(timeout(Duration::from_millis(300), log4om.recv_from(&mut buf)).await.is_err(), "un solo datagramma per QSO");

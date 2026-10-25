@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use aurora_core::DecodeTag;
 use dxcc::DxccDb;
@@ -15,15 +15,29 @@ pub struct Annotation {
     pub tag: Option<DecodeTag>,
 }
 
+/// I QSO gia' fatti, condivisi: chi registra un QSO o importa un log li aggiorna e le etichette delle decodifiche, la scheda DXCC e le
+/// statistiche guardano gli stessi insiemi.
+pub type SharedWorked = Arc<RwLock<WorkedLog>>;
+
 /// Paese e novita' di un decode, ricavati da `cty.dat` e dai QSO gia' fatti.
 pub struct Enrichment {
     db: Arc<DxccDb>,
-    worked: WorkedLog,
+    worked: SharedWorked,
 }
 
 impl Enrichment {
     pub fn new(db: Arc<DxccDb>, worked: WorkedLog) -> Self {
+        Enrichment { db, worked: Arc::new(RwLock::new(worked)) }
+    }
+
+    /// Come `new`, ma con i QSO gia' fatti condivisi con altri (scheda DXCC, importazione del log).
+    pub fn with_shared(db: Arc<DxccDb>, worked: SharedWorked) -> Self {
         Enrichment { db, worked }
+    }
+
+    /// I QSO gia' fatti, da aggiornare quando il log cambia.
+    pub fn shared_worked(&self) -> SharedWorked {
+        Arc::clone(&self.worked)
     }
 
     /// Continente di un nominativo (`AF`, `EU`, `NA`...), se `cty.dat` lo riconosce.
@@ -48,16 +62,21 @@ impl Enrichment {
         let (Some(sender), Some(band)) = (parsed.sender.as_deref(), band) else {
             return Annotation { country, continent, tag: base };
         };
-        if self.worked.is_empty() {
+        let Ok(worked) = self.worked.read() else {
+            return Annotation { country, continent, tag: base };
+        };
+        if worked.is_empty() {
             return Annotation { country, continent, tag: base };
         }
-        let novelty = self.worked.novelty(sender, parsed.grid.as_deref(), band, &self.db);
+        let novelty = worked.novelty(sender, parsed.grid.as_deref(), band, &self.db);
         Annotation { country, continent, tag: tag_for(novelty, parsed.is_cq).or(base) }
     }
 
     /// Un QSO appena chiuso: da subito la stazione non e' piu' una novita'.
-    pub fn record_qso(&mut self, call: &str, grid: &str, band: &str) {
-        self.worked.add_qso(call, grid, band, &self.db);
+    pub fn record_qso(&self, call: &str, grid: &str, band: &str, mode: &str) {
+        if let Ok(mut worked) = self.worked.write() {
+            worked.add_qso_mode(call, grid, band, mode, &self.db);
+        }
     }
 }
 

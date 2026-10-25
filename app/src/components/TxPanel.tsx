@@ -5,6 +5,7 @@ import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
+import { DxccLive } from './DxccCard';
 import { InputLevel } from './InputLevel';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
@@ -83,6 +84,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
           </div>
+          <DxccLive call={pendingDx || status.dx_call || ''} grid={pendingDx ? undefined : status.dx_grid} dialHz={status.dial_hz} mode={status.mode} />
           <ol className="tx-list" role="radiogroup" aria-label={t('tx.list')} title={t('tip.tx.list')}>
             {messages.map((m, i) => (
               <li
