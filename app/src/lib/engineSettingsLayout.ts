@@ -6,6 +6,9 @@ export type SettingKind = 'bool' | 'text' | 'num' | 'secret' | 'reply';
 export interface SettingRow {
   key: string;
   kind: SettingKind;
+  /** Intervallo dei numeri (di base le porte, 1-65535). */
+  min?: number;
+  max?: number;
 }
 
 export interface SettingGroup {

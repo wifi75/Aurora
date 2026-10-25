@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.10 - 2026-10-25
+- **QSO gia' collegati barrati** (stessa banda e stesso modo, dal log interno, `wsjtx_log.adi` e Log4OM2) nelle liste Attivita' di banda e CQ e novita', con le scelte di JTDX: evidenzia, sottolinea o nascondi (Impostazioni -> Notifiche).
+- **Schede Notifiche, Sequenza e Generali come in JTDX** (in corso di completamento: le voci non ancora disponibili sono elencate con il motivo).
+- **Scheda DXCC compatta**: senza DIG, senza i numeri per banda e modo e senza i pulsanti Paese/Totali; si popola solo con un nominativo scelto e prende meno spazio, cosi' il log ne ha di piu'.
+
 ## 0.11.9 - 2026-10-25
 - **Scheda DXCC sotto il log**: nello stesso pannello, il log di Log4OM2 in alto e la scheda DXCC sotto; il pannello del log e' piu' largo e la scheda si adatta (etichette e matrice in piccolo).
 - **Logiche di QSO verificate nel programma di riferimento**: registrazione al primo 73/RR73, contatori, pausa per stazione, passaggio a Tx6/CQ, banda di guardia, watchdog, scelta di chi chiamare, avvio tardivo (finestra 13,64 s in FT8 e 6,04 s in FT4, si trasmette la coda) e ritrasmissione. Esc spegne solo Abilita Tx; «Invia» del testo libero non accende Abilita Tx; AutoSeq si spegne con un testo libero diverso da 73; `split` e' l'inverso di `pbTxLock`. Tx in zona libera (spenta di base: `AURORA_FREE_TX=1`).

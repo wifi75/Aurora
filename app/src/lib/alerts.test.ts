@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
-import { alertKind, pickAlert, playAlert, readAlerts, saveAlerts, type ToneContext } from './alerts';
+import { alertKind, pickAlert, playAlert, playNamed, readAlerts, saveAlerts, type ToneContext } from './alerts';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -62,6 +62,18 @@ describe('alertKind with the per-kind sound flags', () => {
     expect(pickAlert(list, 7, { new_dxcc: false })).toEqual({ kind: 'news', lastId: 9 });
     expect(pickAlert(list, 7, { new_dxcc: false, new_zone: false })).toEqual({ kind: null, lastId: 9 });
   });
+
+  it('with «sound at the first decoded message» a new batch rings one note, but only when nothing better rang and never for the first look', () => {
+    const plain = [decode(9, null, 'CQ CC3CC FN42'), decode(8, null, 'CQ DD4DD JO31')];
+    expect(pickAlert(plain, 7, undefined, null)).toEqual({ kind: null, lastId: 9 });
+    expect(pickAlert(plain, 7, undefined, null, true)).toEqual({ kind: 'news', lastId: 9 });
+    // niente di nuovo dall'ultima volta, e le righe Tx (identificativo negativo) non contano
+    expect(pickAlert(plain, 9, undefined, null, true)).toEqual({ kind: null, lastId: 9 });
+    expect(pickAlert([decode(-1, null, 'CQ AA1AA JN45')], 0, undefined, null, true).kind).toBeNull();
+    expect(pickAlert(plain, null, undefined, null, true)).toEqual({ kind: null, lastId: 9 });
+    // un paese nuovo suona come prima, non una nota sola in piu'
+    expect(pickAlert([decode(9, 'new_dxcc')], 7, undefined, null, true).kind).toBe('dxcc');
+  });
 });
 
 describe('a call addressed to me', () => {
@@ -93,26 +105,26 @@ describe('a call addressed to me', () => {
 
 describe('preferences', () => {
   it('start silent at half volume', () => {
-    expect(readAlerts(memory())).toEqual({ enabled: false, volume: 0.5 });
-    expect(readAlerts(null)).toEqual({ enabled: false, volume: 0.5 });
+    expect(readAlerts(memory())).toEqual({ enabled: false, volume: 0.5, sound: 'chime', muteWhileTx: true });
+    expect(readAlerts(null)).toEqual({ enabled: false, volume: 0.5, sound: 'chime', muteWhileTx: true });
   });
 
   it('remember what was saved', () => {
     const store = memory();
-    saveAlerts(store, { enabled: true, volume: 0.8 });
-    expect(readAlerts(store)).toEqual({ enabled: true, volume: 0.8 });
+    saveAlerts(store, { enabled: true, volume: 0.8, sound: 'chime', muteWhileTx: true });
+    expect(readAlerts(store)).toEqual({ enabled: true, volume: 0.8, sound: 'chime', muteWhileTx: true });
   });
 
   it('ignore garbage and clamp the volume', () => {
-    expect(readAlerts(memory({ 'aurora-alerts': 'non json' }))).toEqual({ enabled: false, volume: 0.5 });
-    expect(readAlerts(memory({ 'aurora-alerts': '{"enabled":true,"volume":7}' }))).toEqual({ enabled: true, volume: 1 });
-    expect(readAlerts(memory({ 'aurora-alerts': '{"enabled":"si","volume":"alto"}' }))).toEqual({ enabled: false, volume: 0.5 });
+    expect(readAlerts(memory({ 'aurora-alerts': 'non json' }))).toEqual({ enabled: false, volume: 0.5, sound: 'chime', muteWhileTx: true });
+    expect(readAlerts(memory({ 'aurora-alerts': '{"enabled":true,"volume":7}' }))).toEqual({ enabled: true, volume: 1, sound: 'chime', muteWhileTx: true });
+    expect(readAlerts(memory({ 'aurora-alerts': '{"enabled":"si","volume":"alto"}' }))).toEqual({ enabled: false, volume: 0.5, sound: 'chime', muteWhileTx: true });
   });
 
   it('survive a missing or broken storage', () => {
-    expect(readAlerts(broken)).toEqual({ enabled: false, volume: 0.5 });
-    expect(() => saveAlerts(broken, { enabled: true, volume: 1 })).not.toThrow();
-    expect(() => saveAlerts(null, { enabled: true, volume: 1 })).not.toThrow();
+    expect(readAlerts(broken)).toEqual({ enabled: false, volume: 0.5, sound: 'chime', muteWhileTx: true });
+    expect(() => saveAlerts(broken, { enabled: true, volume: 1, sound: 'chime', muteWhileTx: true })).not.toThrow();
+    expect(() => saveAlerts(null, { enabled: true, volume: 1, sound: 'chime', muteWhileTx: true })).not.toThrow();
   });
 });
 
@@ -162,5 +174,49 @@ describe('playAlert', () => {
     const b = fakeContext();
     playAlert('dxcc', 0, b.ctx);
     expect(b.tones).toHaveLength(0);
+  });
+
+  it('the JTDX alerts: call to me, the DX call, and each «new» type with its «per band» variant', () => {
+    const flags = { alertMyCall: false, alertDxCall: false, alertCqz: false, alertItu: false, alertDxcc: false, alertGrid: false, alertPx: false, alertCqzOb: false, alertItuOb: false, alertDxccOb: false, alertGridOb: false, alertPxOb: false };
+    const run = (list: DecodedMessage[], f: Partial<typeof flags>, dx?: string) => pickAlert(list, 0, undefined, 'AA1AA', false, { flags: { ...flags, ...f }, dxCall: dx }).alert;
+    expect(run([decode(1, 'new_dxcc')], {})).toBe(false);
+    expect(run([decode(1, 'new_dxcc')], { alertDxcc: true })).toBe(true);
+    // «per banda»: il nuovo su banda ha il suo flag, separato
+    expect(run([decode(1, 'new_dxcc_band')], { alertDxcc: true })).toBe(false);
+    expect(run([decode(1, 'new_dxcc_band')], { alertDxccOb: true })).toBe(true);
+    expect(run([decode(1, 'new_zone')], { alertCqz: true })).toBe(true);
+    expect(run([decode(1, 'new_itu_band')], { alertItuOb: true })).toBe(true);
+    expect(run([decode(1, 'new_grid')], { alertGrid: true })).toBe(true);
+    expect(run([decode(1, 'new_px_band')], { alertPxOb: true })).toBe(true);
+    expect(run([decode(1, 'new_call')], { alertDxcc: true, alertGrid: true })).toBe(false);
+    expect(run([decode(1, null, 'AA1AA BB2BB -10')], { alertMyCall: true })).toBe(true);
+    expect(run([decode(1, null, 'AA1AA BB2BB -10')], {})).toBe(false);
+    expect(run([decode(1, null, 'CQ BB2BB FN42')], { alertDxCall: true }, 'bb2bb')).toBe(true);
+    expect(run([decode(1, null, 'CQ BB2BBX FN42')], { alertDxCall: true }, 'BB2BB')).toBe(false);
+    // le righe Tx (identificativo negativo) e i messaggi gia' visti non suonano
+    expect(run([decode(-1, 'new_dxcc')], { alertDxcc: true })).toBe(false);
+    expect(pickAlert([decode(5, 'new_dxcc')], 5, undefined, null, false, { flags: { ...flags, alertDxcc: true } }).alert).toBe(false);
+  });
+
+  it('plays the chosen sound, each one different, and nothing at zero volume', () => {
+    const lengths = new Set<string>();
+    for (const name of ['chime', 'bell', 'pip', 'horn'] as const) {
+      const a = fakeContext();
+      playNamed(name, 0.5, a.ctx);
+      expect(a.tones.length).toBeGreaterThan(1);
+      lengths.add(JSON.stringify(a.tones.map((t) => t.hz)));
+    }
+    expect(lengths.size).toBe(4);
+    const z = fakeContext();
+    playNamed('bell', 0, z.ctx);
+    expect(z.tones).toHaveLength(0);
+  });
+
+  it('remembers the sound and the silence while transmitting', () => {
+    const store = memory();
+    saveAlerts(store, { enabled: true, volume: 0.3, sound: 'horn', muteWhileTx: false });
+    expect(readAlerts(store)).toEqual({ enabled: true, volume: 0.3, sound: 'horn', muteWhileTx: false });
+    expect(readAlerts(memory({ 'aurora-alerts': '{"enabled":true,"sound":"boh"}' })).sound).toBe('chime');
+    expect(readAlerts(memory()).muteWhileTx).toBe(true);
   });
 });

@@ -25,12 +25,13 @@ import { dxccStrings } from './strings/dxcc';
 import { statsStrings } from './strings/stats';
 import { wikiStrings } from './strings/wiki';
 import { wikiNewStrings } from './strings/wikinew';
+import { jtdxTabStrings } from './strings/jtdxtabs';
 
 export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...wikiNewStrings, ...jtdxTabStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

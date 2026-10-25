@@ -1,9 +1,11 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { formatClock } from '../lib/format';
-import { distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
+import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
+import { isCq } from '../lib/filters';
+import { useNotifyView, workedLook } from '../lib/notifyView';
 import { useNotify } from '../lib/notify';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
 import { senderOf, wishReason } from '../lib/wishlist';
@@ -39,25 +41,42 @@ function namesCall(text: string, call: string): boolean {
   return wanted !== '' && text.toUpperCase().split(/\s+/).includes(wanted);
 }
 
-/** Il testo del messaggio, con il nominativo chiamato in evidenza. */
-function highlightCall(text: string, call: string): ReactNode {
+/** Il testo del messaggio, con il nominativo chiamato e il suo locatore (se si evidenziano) in rilievo. */
+function highlightCall(text: string, call: string, grid: string): ReactNode {
   const wanted = call.trim().toUpperCase();
-  if (wanted === '') return text;
-  return text.split(/(\s+)/).map((part, i) =>
-    part.toUpperCase() === wanted ? (
-      <mark key={i} className="dx-call">
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
+  const wantedGrid = grid.trim().toUpperCase().slice(0, 4);
+  if (wanted === '' && wantedGrid.length < 4) return text;
+  return text.split(/(\s+)/).map((part, i) => {
+    const up = part.toUpperCase();
+    if (wanted !== '' && up === wanted) {
+      return (
+        <mark key={i} className="dx-call">
+          {part}
+        </mark>
+      );
+    }
+    if (wantedGrid.length === 4 && up.slice(0, 4) === wantedGrid && /^[A-R]{2}\d{2}([A-X]{2})?$/.test(up)) {
+      return (
+        <mark key={i} className="dx-call dx-grid">
+          {part}
+        </mark>
+      );
+    }
+    return part;
+  });
 }
 
 function distanceOf(mine: { lat: number; lon: number }, text: string): number | null {
   const grid = gridOfMessage(text);
   const theirs = grid ? gridCenter(grid) : null;
   return theirs ? distanceKm(mine, theirs) : null;
+}
+
+/** L'azimut verso la stazione, in gradi, se il messaggio ha un locatore. */
+function bearingOf(mine: { lat: number; lon: number }, text: string): number | null {
+  const grid = gridOfMessage(text);
+  const theirs = grid ? gridCenter(grid) : null;
+  return theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null;
 }
 
 interface Props {
@@ -69,18 +88,24 @@ interface Props {
   myCall?: string | null;
   /** Stazione che si sta chiamando: la sua riga e il suo nominativo si evidenziano. */
   dxCall?: string | null;
+  /** Il locatore di quella stazione: si evidenzia nei messaggi se la scheda Notifiche lo chiede. */
+  dxGrid?: string | null;
   /** Testo dello stato vuoto (predefinito: invito all'ascolto). */
   emptyText?: string;
 }
 
-export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText }: Props) {
+export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, emptyText }: Props) {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
   const wishlist = useWishlist((s) => s.list);
+  const view = useNotifyView((s) => s.view);
+  const look = workedLook(view);
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
+  // il periodo della riga mostrata prima: serve alla «riga vuota tra i periodi»
+  let previousTime: number | null = null;
   if (decodes.length === 0) {
     return (
       <section className="decode-list decode-list--empty" aria-label={t('decode.aria')}>
@@ -89,25 +114,42 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
     );
   }
   return (
-    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
       {decodes.map((d) => {
         const own = d.id < 0;
-        // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque
-        const lit = !own && d.tag && notify.highlight[d.tag] ? d.tag : null;
-        const badge = lit ? BADGES[lit] : undefined;
-        const accent = accentOf(lit);
-        const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
-        const code = prefs.showFlag ? flagCode(d.country) : null;
+        // «Visualizza i tuoi messaggi Tx nella finestra Rx» spento: le righe Tx non si vedono
+        if (own && !prefs.showTx) return null;
         const toMe = !own && isCallToMe(d.text, myCall);
         // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
         const sender = own || !wishlist.enabled ? null : senderOf(d.text);
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
+        // «gia' lavorato» come nel motore: barrato (o sottolineato, o colorato); «non mostrare» lo nasconde, salvo i messaggi a me e i desiderati
+        const worked = !own && d.tag === 'worked_call';
+        if (worked && view.workedDontShow && !toMe && !wanted) return null;
+        // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque; un messaggio tra altre stazioni senza «altri messaggi predefiniti» non ha marcatori
+        const between = !own && !toMe && !isCq(d.text);
+        const lit = !own && d.tag && notify.highlight[d.tag] && !(between && !view.otherMarker) ? d.tag : null;
+        const badge = lit ? BADGES[lit] : undefined;
+        // il verde dei gia' lavorati compare solo con «Evidenzia gia' lavorati»; di base il messaggio e' barrato e senza colore
+        const quiet = worked && !look.color;
+        const accent = quiet ? null : accentOf(lit);
+        const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
+        const azimuth = prefs.showAzimuth && mine ? bearingOf(mine, d.text) : null;
+        const code = prefs.showFlag ? flagCode(d.country) : null;
+        const gap = prefs.insertBlank && previousTime !== null && previousTime !== d.time_ms;
+        previousTime = d.time_ms;
+        // «Evidenzia i messaggi con il nominativo DX»: spento, la stazione chiamata non si distingue dagli altri messaggi
+        const named = view.highlightDxCall && dxCall && namesCall(d.text, dxCall);
+        // «sfondo diverso per il mio nominativo nel messaggio»: ciano o giallo, come nel motore
+        const myBackground = toMe && view.differentBackground ? (view.diffYellow ? ' decode-row--me-yellow' : ' decode-row--me-cyan') : '';
+        const workedClass = worked ? ` decode-row--worked${look.strike ? ' decode-row--strike' : ''}${look.underline ? ' decode-row--underline' : ''}${look.color ? ' decode-row--worked-color' : ''}` : '';
         return (
+          <Fragment key={d.id}>
+          {gap ? <div className="decode-gap" role="separator" /> : null}
           <button
             type="button"
-            key={d.id}
-            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : undefined}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${wanted ? ' decode-row--wanted' : ''}${dxCall && namesCall(d.text, dxCall) ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            title={own ? t('tip.row.tx') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
@@ -117,22 +159,32 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, emptyText
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
             <span className="decode-text">
-              <span className="data">{dxCall ? highlightCall(d.text, dxCall) : d.text}</span>
+              <span className="data">{view.highlightDxCall || view.highlightDxGrid ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '') : d.text}</span>
             </span>
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">{prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}</span>
-              <span className="w-km num muted">{km !== null ? formatDistance(km, prefs.distanceUnit) : ''}</span>
+              <span className="w-km num muted">
+                {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
+                {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
+              </span>
             </span>
             {badge ? (
-              <span className="badge badge--tag badge-cell" title={t(`kind.${lit}` as Key)} style={{ background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}>
+              <span
+                className={`badge badge--tag badge-cell${quiet ? ' badge--quiet' : ''}`}
+                title={t(`kind.${lit}` as Key)}
+                style={quiet ? undefined : { background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
+              >
                 {t(badge.label)}
               </span>
             ) : (
               <span className="badge-cell" />
             )}
-            {toMe && !isClosingMessage(d.text) ? <span className="me-mark" aria-hidden="true" /> : null}
+            {toMe && view.redMarker && !isClosingMessage(d.text) ? (
+              <span className={`me-mark${view.blueMarker && dxCall && namesCall(d.text, dxCall) ? ' me-mark--blue' : ''}`} aria-hidden="true" />
+            ) : null}
           </button>
+          </Fragment>
         );
       })}
     </section>
