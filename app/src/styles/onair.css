@@ -1557,7 +1557,7 @@
   align-items: center;
   min-width: 0;
   padding: 0 0.45rem;
-  border-left: var(--border-width) solid var(--row-line);
+  border-left: var(--border-width) solid var(--col-line);
 }
 
 .dock-panel--all .decode-row > .c-time,
@@ -1591,7 +1591,7 @@
 
 .dock-panel--all .decode-where > * + *,
 .dock-panel--cq .decode-where > * + * {
-  border-left: var(--border-width) solid var(--row-line);
+  border-left: var(--border-width) solid var(--col-line);
 }
 
 .dock-panel--all .decode-where .w-km,
@@ -1605,7 +1605,7 @@
 .dock-panel--all .decode-list .badge-cell,
 .dock-panel--cq .decode-list .badge-cell {
   padding: 0 0.3rem;
-  border-left: var(--border-width) solid var(--row-line);
+  border-left: var(--border-width) solid var(--col-line);
   background: transparent;
 }
 
