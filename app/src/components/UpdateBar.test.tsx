@@ -23,6 +23,9 @@ beforeEach(() => {
   vi.mocked(getUpdate).mockReset();
 });
 
+/** L'icona in testata: un clic apre il pannello con le azioni. */
+const openPanel = async () => fireEvent.click(await screen.findByRole('button', { name: /Nuova versione di Aurora/ }));
+
 describe('UpdateBar', () => {
   it('shows nothing when Aurora is up to date', async () => {
     vi.mocked(getUpdate).mockResolvedValue(status(null));
@@ -34,6 +37,7 @@ describe('UpdateBar', () => {
   it('shows the new version with a link to the release', async () => {
     vi.mocked(getUpdate).mockResolvedValue(status(release));
     render(<UpdateBar />);
+    await openPanel();
     expect(await screen.findByText(/Nuova versione di Aurora: 0\.10\.0 \(in uso 0\.9\.0\)/)).toBeInTheDocument();
     const link = screen.getByRole('link', { name: 'Note e download' });
     expect(link).toHaveAttribute('href', release.url);
@@ -43,6 +47,7 @@ describe('UpdateBar', () => {
   it('hides for this version after Later and comes back for the next one', async () => {
     vi.mocked(getUpdate).mockResolvedValue(status(release));
     const { unmount } = render(<UpdateBar />);
+    await openPanel();
     fireEvent.click(await screen.findByRole('button', { name: 'Più tardi' }));
     expect(screen.queryByRole('status')).toBeNull();
     unmount();
@@ -52,13 +57,14 @@ describe('UpdateBar', () => {
     unmount();
     vi.mocked(getUpdate).mockResolvedValue(status({ ...release, version: '0.10.1', tag: 'v0.10.1' }));
     render(<UpdateBar />);
-    expect(await screen.findByText(/0\.10\.1/)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /0\.10\.1/ })).toBeInTheDocument();
   });
 
   it('offers to install only when the program can, and says what is happening', async () => {
     vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: true });
     vi.mocked(installUpdate).mockResolvedValue({ version: '0.10.0' });
     render(<UpdateBar />);
+    await openPanel();
     fireEvent.click(await screen.findByRole('button', { name: 'Installa ora' }));
     expect(await screen.findByText(/Aurora si chiuderà e si riaprirà da sola/)).toBeInTheDocument();
     expect(installUpdate).toHaveBeenCalledTimes(1);
@@ -67,6 +73,7 @@ describe('UpdateBar', () => {
   it('does not show the install button when the program cannot install', async () => {
     vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: false });
     render(<UpdateBar />);
+    await openPanel();
     await screen.findByText(/Nuova versione di Aurora/);
     expect(screen.queryByRole('button', { name: 'Installa ora' })).toBeNull();
   });
@@ -75,6 +82,7 @@ describe('UpdateBar', () => {
     vi.mocked(getUpdate).mockResolvedValue({ ...status(release), can_install: true });
     vi.mocked(installUpdate).mockRejectedValue(new Error('boom'));
     render(<UpdateBar />);
+    await openPanel();
     fireEvent.click(await screen.findByRole('button', { name: 'Installa ora' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Aggiornamento non riuscito/);
     expect(screen.getByRole('button', { name: 'Installa ora' })).toBeEnabled();
@@ -84,6 +92,6 @@ describe('UpdateBar', () => {
     vi.mocked(getUpdate).mockResolvedValue(status(null));
     useStation.getState().apply({ type: 'update_available', version: '0.11.0', tag: 'v0.11.0', notes: '', url: 'https://example.test/r' });
     render(<UpdateBar />);
-    expect(await screen.findByText(/0\.11\.0/)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /0.11.0/ })).toBeInTheDocument();
   });
 });

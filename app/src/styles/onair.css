@@ -2503,24 +2503,66 @@
   font-size: 0.85rem;
 }
 
-/* Nuova versione di Aurora sul repository */
-.update-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.9rem;
-  padding: 0.4rem 0.9rem;
-  color: #04201c;
-  background: #3fd6c8;
-  border-bottom: 2px solid #0f8f83;
-  font-size: 0.9rem;
+/* Nuova versione di Aurora sul repository: una piccola icona in testata, prima della lingua; il pannello si apre al clic */
+.update-badge {
+  position: relative;
+  display: inline-flex;
 }
 
-.update-bar .muted {
+.update-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  color: #04201c;
+  background: #3fd6c8;
+  border: 1px solid #0f8f83;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.update-icon:hover {
+  background: #66e4d8;
+}
+
+.update-dot {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: #e5141b;
+  border: 1px solid #fff;
+  border-radius: 50%;
+}
+
+.update-pop {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  min-width: 16rem;
+  padding: 0.7rem 0.8rem;
+  color: #04201c;
+  background: #3fd6c8;
+  border: 1px solid #0f8f83;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  font-size: 0.85rem;
+}
+
+.update-pop .muted {
   color: #0a4a43;
 }
 
-.update-bar .glass {
+.update-pop .glass {
   color: #04201c;
   background: rgb(255 255 255 / 0.55);
   border-color: #0f8f83;

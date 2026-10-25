@@ -102,12 +102,12 @@ export function App() {
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
         </nav>
+        {session.data ? <UpdateBar /> : null}
         <LanguageSelect />
         <ThemeToggle />
         <a className="app-logo-link" href="#/" aria-label="Aurora"><Logo size={36} animated /></a>
       </header>
       {session.data ? <WantedBar /> : null}
-      {session.data ? <UpdateBar /> : null}
       <main className="app-main">{content}</main>
       <Footer />
     </div>
