@@ -46,21 +46,21 @@
 //!
 //! # Differenze rispetto al Fortran
 //!
-//! - `sync8` e' il ramo senza compensazione AGC (`lagcc` spento), passata 1 (spettro in modulo, `ipass = 1`), con `nfqso` assente
-//!   (nessun trattamento di favore per la frequenza di QSO), senza il diradamento dei candidati (`ncandthin`) e senza l'indicatore di
-//!   candidato "CQ" (`candidate(4,:)`), che qui non ha un posto nella struttura. L'intervallo di ricerca del ritardo e' fisso
-//!   (-62..62 passi di 0,04 s, scarto medio 0), con i candidati scartati fuori da -2,0..3,0 s.
+//! - `sync8` e' il ramo senza compensazione AGC (`lagcc` spento). Le tre forme dello spettro (ampiezza, potenza, somma degli assoluti)
+//!   si scelgono con [`Spectrum`] e `find_candidates_ex`, che restituisce anche l'indicatore di candidato "CQ" (`candidate(4,:)`) e
+//!   accetta la finestra del ritardo (`jzb`, `jzt`, che JTDX sposta di `avexdt * 25`). Mancano `nfqso` (nessun trattamento di favore
+//!   per la frequenza di QSO), i candidati virtuali sul QSO e il diradamento (`ncandthin`). I candidati fuori da -2,0..3,0 s sono scartati.
 //! - `ft8_downsample`: tutte e due le varianti dei ritocchi ai bordi del filtro (`lhighsens` falso e vero); la FFT dell'intero periodo
-//!   e' calcolata una volta in [`Downsampler::new`] invece di essere tenuta in una variabile con `save`. Mancano `c2`/`c3` (le versioni
-//!   mediate per il QSO in corso) e la ricostruzione dopo la sottrazione.
-//! - `sync8d` e `refine`: solo il ramo di `ipass = 1` (somma dei moduli dei 21 simboli di Costas) per `iqso = 1`; il riferimento di
-//!   Costas e' un'onda GFSK come in JTDX, ma generata con il messaggio di Costas seguito da un ottavo simbolo uguale all'ultimo (JTDX
-//!   usa il messaggio "CQ 2E0DLA IO92": cambia solo l'ultimo decimo del settimo simbolo di Costas). Il ritardo e' cercato prima della
-//!   frequenza come in `ft8b`, senza ripeterlo dopo.
-//! - `bit_metrics`: solo la prima sotto-passata di `ft8b` (`isubp1 = 1`: simboli letti da 1, 2 e 3 alla volta, senza la variante con il
-//!   tempo invertito ne' le medie con i segnali ricevuti prima); `bmetd` omessa. Il controllo di sincronismo e' soltanto quello di base
-//!   (almeno 7 simboli di Costas su 21 con il tono piu' forte al posto giusto, `nsync >= 7`); i filtri sui falsi (`nsyncscore`,
-//!   `scoreratio`) appartengono al decoder.
+//!   e' calcolata una volta in [`Downsampler::new`] invece di essere tenuta in una variabile con `save`: dopo una sottrazione il chiamante
+//!   ne costruisce una nuova (JTDX lo fa quando un candidato e' entro 50 Hz da un segnale tolto). Mancano `c2`/`c3` (le versioni mediate
+//!   per il QSO in corso).
+//! - `sync8d` e `refine_ex`: le tre forme della somma dei 21 simboli di Costas (`SyncKind`, secondo la passata) e, per i candidati CQ,
+//!   gli otto simboli di dati di un CQ nella ricerca in frequenza. I riferimenti (Costas e CQ) si ricavano dall'onda GFSK di "CQ 2E0DLA
+//!   IO92" come in `cwfilter.f90`. Il ritardo e' cercato prima della frequenza come in `ft8b`, senza ripeterlo dopo. Mancano i
+//!   riferimenti per il QSO (`csynce`, `csyncsd`, `csyncsdcq`).
+//! - `bit_metrics_ex`: le quattro serie `llra`, `llrb`, `llrc`, `llrd`, la lettura a tempo invertito (`lreverse`) e la seconda lettura
+//!   (`isubp1 = 2`); mancano le medie con i segnali ricevuti nel periodo prima (`isubp1` 3-11). `bit_metrics` e' la versione di prima
+//!   (tre serie, `nsync >= 7`). I filtri sui falsi (`nsyncscore`, `scoreratio`) stanno in `filters`.
 
 use std::f64::consts::PI;
 use std::sync::{Arc, OnceLock};
@@ -128,8 +128,53 @@ fn fft_plan(n: usize, inverse: bool) -> Arc<dyn Fft<f32>> {
 // ---------------------------------------------------------------------------------------------------------------------
 // sync8: ricerca dei candidati
 
-/// Spettrogramma in modulo: per ogni colonna `j` (0..372) i bin 1..=1920 a 3,125 Hz; `s[j * (NH1 + 1) + i]`.
-fn spectrogram(dd: &[f32]) -> Vec<f32> {
+/// Forma dello spettrogramma di `sync8`: JTDX la fa ruotare con le passate (1, 4, 7: ampiezza; 2, 5, 8: potenza; 3, 6, 9: somma dei
+/// valori assoluti di parte reale e immaginaria), cosi' ogni passata vede i segnali deboli in modo un po' diverso.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Spectrum {
+    /// `sqrt(re^2 + im^2)`.
+    Amplitude,
+    /// `re^2 + im^2`.
+    Power,
+    /// `|re| + |im|`.
+    AbsSum,
+}
+
+impl Spectrum {
+    /// La forma della passata `ipass` (da 1), come in `sync8.f90`.
+    pub fn for_pass(ipass: usize) -> Spectrum {
+        match ipass.saturating_sub(1) % 3 {
+            0 => Spectrum::Amplitude,
+            1 => Spectrum::Power,
+            _ => Spectrum::AbsSum,
+        }
+    }
+}
+
+/// Forma della somma dei simboli di Costas in `sync8d`, secondo la passata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SyncKind {
+    /// Somma dei moduli delle correlazioni.
+    Magnitude,
+    /// Somma delle potenze.
+    Power,
+    /// Media di simboli adiacenti, poi somma dei valori assoluti di parte reale e immaginaria.
+    AvgAbs,
+}
+
+impl SyncKind {
+    /// La forma della passata `ipass` (da 1), come in `sync8d.f90` (1, 5, 9: modulo; 2, 6, 7: potenza; le altre: media a coppie).
+    pub fn for_pass(ipass: usize) -> SyncKind {
+        match ipass {
+            1 | 5 | 9 => SyncKind::Magnitude,
+            2 | 6 | 7 => SyncKind::Power,
+            _ => SyncKind::AvgAbs,
+        }
+    }
+}
+
+/// Spettrogramma: per ogni colonna `j` (0..372) i bin 1..=1920 a 3,125 Hz; `s[j * (NH1 + 1) + i]`.
+fn spectrogram(dd: &[f32], shape: Spectrum) -> Vec<f32> {
     let facx = 1.0f32 / 300.0;
     let mut windowx = [0.0f32; 201];
     for (i, w) in windowx.iter_mut().enumerate() {
@@ -160,7 +205,11 @@ fn spectrogram(dd: &[f32]) -> Vec<f32> {
         plan.process_with_scratch(&mut buf, &mut scratch);
         let row = &mut s[j * (NH1 + 1)..(j + 1) * (NH1 + 1)];
         for i in 1..=NH1 {
-            row[i] = buf[i].norm();
+            row[i] = match shape {
+                Spectrum::Amplitude => buf[i].norm(),
+                Spectrum::Power => buf[i].norm_sqr(),
+                Spectrum::AbsSum => buf[i].re.abs() + buf[i].im.abs(),
+            };
         }
     }
     s
@@ -172,14 +221,37 @@ fn spectrogram(dd: &[f32]) -> Vec<f32> {
 /// candidati restituiti. L'elenco e' in ordine di sincronismo decrescente; i quasi-doppioni (meno di 4 Hz e 0,1 s) sono ridotti al migliore.
 /// La stima e' grossolana (3,125 Hz e 0,04 s, con uno scarto sistematico del ritardo di circa +0,02 s come in JTDX): la precisa [`refine`].
 pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32, max: usize) -> Vec<Candidate> {
-    if samples.is_empty() || max == 0 || f_low_hz.is_nan() || f_high_hz.is_nan() || f_high_hz <= f_low_hz {
+    find_candidates_ex(samples, f_low_hz, f_high_hz, min_sync, max, Spectrum::Amplitude, (JZB, JZT)).into_iter().map(|c| c.candidate).collect()
+}
+
+/// Un candidato di [`find_candidates_ex`]: il candidato e l'indicatore "CQ" di `sync8` (`candidate(4,:)`), acceso quando i simboli
+/// 8-16 (dove un CQ ha sempre il tono 0) rendono piu' dei tre simboli di Costas da soli.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PassCandidate {
+    pub candidate: Candidate,
+    pub cq: bool,
+}
+
+/// Come [`find_candidates`], con la forma dello spettrogramma della passata (`ipass` di `sync8`) e la finestra del ritardo
+/// `window = (jzb, jzt)` in passi di 0,04 s (JTDX: -62..62, spostata di `avexdt*25` per seguire l'orologio medio delle stazioni).
+/// Restituisce anche l'indicatore di CQ di ogni candidato.
+pub fn find_candidates_ex(
+    samples: &[f32],
+    f_low_hz: f32,
+    f_high_hz: f32,
+    min_sync: f32,
+    max: usize,
+    shape: Spectrum,
+    window: (i32, i32),
+) -> Vec<PassCandidate> {
+    if samples.is_empty() || max == 0 || f_low_hz.is_nan() || f_high_hz.is_nan() || f_high_hz <= f_low_hz || window.1 < window.0 {
         return Vec::new();
     }
     let mut dd = vec![0.0f32; SLOT_SAMPLES];
     let n = samples.len().min(SLOT_SAMPLES);
     dd[..n].copy_from_slice(&samples[..n]);
 
-    let s = spectrogram(&dd);
+    let s = spectrogram(&dd, shape);
     let col = |k: i32| -> &[f32] {
         let j = (k - 1) as usize;
         &s[j * (NH1 + 1)..(j + 1) * (NH1 + 1)]
@@ -213,7 +285,8 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
     let mut red = vec![0.0f32; NH1 + 1];
     let mut jpeak = vec![0i32; NH1 + 1];
     let mut best = vec![f32::NEG_INFINITY; NH1 + 1];
-    for j in JZB..=JZT {
+    let mut best_cq = vec![false; NH1 + 1];
+    for j in window.0..=window.1 {
         for i in ia..=ib {
             let (mut ta, mut tb, mut tc, mut tcq) = (0.0f32, 0.0f32, 0.0f32, 0.0f32);
             let (mut t0a, mut t0b, mut t0c, mut t0cq) = (0.0f32, 0.0f32, 0.0f32, 0.0f32);
@@ -247,7 +320,7 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
                     }
                 }
             }
-            let sync_of = |t1: f32, t01: f32, t0cq_: f32, d1: f32, d2: f32| -> f32 {
+            let sync_of = |t1: f32, t01: f32, t0cq_: f32, d1: f32, d2: f32| -> (f32, bool) {
                 let t2 = t1 + tcq;
                 let t02 = t01 + t0cq_;
                 let mut a = (t01 - t1 * 2.0) / d1;
@@ -260,14 +333,16 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
                 }
                 let sync01 = t1 / (7.0 * a);
                 let sync02 = (t1 / 7.0 + tcq / 9.0) / b;
-                sync01.max(sync02)
+                (sync01.max(sync02), sync02 > sync01)
             };
-            let syncf = sync_of(ta + tb + tc, t0a + t0b + t0c, t0cq, 42.0, 60.0);
-            let syncs = sync_of(tb + tc, t0b + t0c, t0cq, 28.0, 46.0);
+            let (syncf, cq_f) = sync_of(ta + tb + tc, t0a + t0b + t0c, t0cq, 42.0, 60.0);
+            let (syncs, cq_s) = sync_of(tb + tc, t0b + t0c, t0cq, 28.0, 46.0);
             let v = syncf.max(syncs);
             if v > best[i] {
                 best[i] = v;
                 jpeak[i] = j;
+                // l'indicatore di CQ e' quello della forma che ha vinto (`if(syncf.gt.syncs)` in sync8)
+                best_cq[i] = if syncf > syncs { cq_f } else { cq_s };
             }
         }
     }
@@ -290,6 +365,7 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
     let mut order: Vec<usize> = (ia..=ib).collect();
     order.sort_by(|&a, &b| red[b].total_cmp(&red[a]));
     let mut c0: Vec<Candidate> = Vec::new();
+    let mut c0_cq: Vec<bool> = Vec::new();
     for &i in &order {
         if red[i] < min_sync {
             continue;
@@ -301,6 +377,7 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
             break;
         }
         c0.push(Candidate { freq_hz: i as f32 * DF_SPEC, dt_s: (jpeak[i] - 1) as f32 * TSTEP, sync: red[i] });
+        c0_cq.push(best_cq[i]);
     }
 
     // Quasi-doppioni: resta il migliore (come nel Fortran, i gia' azzerati partecipano ancora ai confronti).
@@ -324,7 +401,7 @@ pub fn find_candidates(samples: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync:
     let mut out = Vec::new();
     for j in idx {
         if sync_v[j] > 0.0 && sync_v[j] >= min_sync {
-            out.push(Candidate { sync: sync_v[j], ..c0[j] });
+            out.push(PassCandidate { candidate: Candidate { sync: sync_v[j], ..c0[j] }, cq: c0_cq[j] });
             if out.len() >= max.min(460) {
                 break;
             }
@@ -431,6 +508,7 @@ pub fn shift_frequency(cd: &mut [Complex], shift_hz: f32) {
 // ---------------------------------------------------------------------------------------------------------------------
 // sync8d: sincronismo fine
 
+#[cfg(test)]
 /// erf con l'approssimazione 7.1.26 di Abramowitz-Stegun (errore massimo 1,5e-7).
 fn erf(x: f64) -> f64 {
     let t = 1.0 / (1.0 + 0.327_591_1 * x.abs());
@@ -441,52 +519,52 @@ fn erf(x: f64) -> f64 {
     if x >= 0.0 { y } else { -y }
 }
 
+#[cfg(test)]
 /// Impulso di frequenza gaussiano di `gfsk_pulse` (BT = `b`).
 fn gfsk_pulse(b: f64, t: f64) -> f64 {
     let c = PI * (2.0 / std::f64::consts::LN_2).sqrt();
     0.5 * (erf(c * b * (t + 0.5)) - erf(c * b * (t - 0.5)))
 }
 
-/// Riferimenti di Costas a 200 Hz: per ciascuno dei 7 toni i 32 campioni di un simbolo di onda GFSK (BT = 2) con frequenza di base 0.
-fn costas_reference() -> &'static [[Complex; SYM200]; 7] {
-    static TABLE: OnceLock<[[Complex; SYM200]; 7]> = OnceLock::new();
+/// Riferimenti di sincronismo a 200 Hz, ricavati dall'onda GFSK (BT = 2, frequenza di base 0) di "CQ 2E0DLA IO92" come in
+/// `cwfilter.f90` di JTDX: `costas[j]` e' il simbolo `j` dei 7 di Costas, `cq[j]` il simbolo `7 + j` (i primi otto simboli di dati di
+/// un CQ, tutti sul tono 0 tranne l'ultimo), ognuno di 32 campioni.
+struct SyncTables {
+    costas: [[Complex; SYM200]; 7],
+    cq: [[Complex; SYM200]; 8],
+}
+
+fn sync_tables() -> &'static SyncTables {
+    static TABLE: OnceLock<SyncTables> = OnceLock::new();
     TABLE.get_or_init(|| {
-        // Come `gen_ft8wave`: simboli di Costas piu' un ottavo uguale all'ultimo.
-        let mut tones: Vec<f64> = COSTAS.iter().map(|&t| t as f64).collect();
-        tones.push(tones[6]);
-        let nsym = tones.len();
-        let nsps = NSPS;
-        let pulse: Vec<f64> = (1..=3 * nsps).map(|i| gfsk_pulse(2.0, (i as f64 - 1.5 * nsps as f64) / nsps as f64)).collect();
-        let peak = 2.0 * PI / nsps as f64;
-        let mut dphi = vec![0.0f64; (nsym + 2) * nsps];
-        for (j, &t) in tones.iter().enumerate() {
-            for (m, p) in pulse.iter().enumerate() {
-                dphi[j * nsps + m] += peak * p * t;
-            }
-        }
-        for m in 0..2 * nsps {
-            dphi[m] += peak * tones[0] * pulse[nsps + m];
-            dphi[nsym * nsps + m] += peak * tones[nsym - 1] * pulse[m];
-        }
-        let nwave = nsym * nsps;
-        let mut wave = vec![ZERO; nwave];
-        let mut phi = 0.0f64;
-        for (k, w) in wave.iter_mut().enumerate() {
-            *w = Complex::new(phi.cos() as f32, phi.sin() as f32);
-            phi = (phi + dphi[nsps + k]) % (2.0 * PI);
-        }
-        // Rampa di salita sui primi nsps/8 campioni.
-        let nramp = nsps / 8;
-        for (i, w) in wave.iter_mut().take(nramp).enumerate() {
-            *w *= ((1.0 - (2.0 * PI * i as f64 / (2.0 * nramp as f64)).cos()) / 2.0) as f32;
-        }
-        let mut table = [[ZERO; SYM200]; 7];
-        for (j, row) in table.iter_mut().enumerate() {
+        // toni del messaggio di riferimento; se per qualunque motivo non si impacchettasse, restano i soli Costas
+        let tones: [u8; NN] = crate::message::pack("CQ 2E0DLA IO92", &mut crate::message::CallHashes::default())
+            .map(|bits| crate::modem::tones_from_codeword(&crate::ldpc::encode(&crate::crc::append_crc(&bits))))
+            .unwrap_or_else(|_| {
+                let mut t = [0u8; NN];
+                for start in [0usize, 36, 72] {
+                    t[start..start + 7].copy_from_slice(&COSTAS);
+                }
+                t
+            });
+        let (sin, cos) = crate::modem::gfsk_iq(&tones, 0.0, crate::modem::GFSK_BT);
+        let sample = |symbol: usize, k: usize| -> Complex {
+            let at = symbol * NSPS + 60 * k;
+            Complex::new(cos[at], sin[at])
+        };
+        let mut costas = [[ZERO; SYM200]; 7];
+        let mut cq = [[ZERO; SYM200]; 8];
+        for (j, row) in costas.iter_mut().enumerate() {
             for (k, v) in row.iter_mut().enumerate() {
-                *v = wave[j * nsps + 60 * k];
+                *v = sample(j, k);
             }
         }
-        table
+        for (j, row) in cq.iter_mut().enumerate() {
+            for (k, v) in row.iter_mut().enumerate() {
+                *v = sample(7 + j, k);
+            }
+        }
+        SyncTables { costas, cq }
     })
 }
 
@@ -502,27 +580,75 @@ fn freq_tweak(delf_hz: f32) -> [Complex; SYM200] {
 }
 
 /// Campione di `cd` con zeri fuori dall'intervallo.
-fn cd_at(cd: &[Complex], idx: i64) -> Complex {
+pub(crate) fn cd_at(cd: &[Complex], idx: i64) -> Complex {
     if idx >= 0 && (idx as usize) < cd.len() { cd[idx as usize] } else { ZERO }
 }
 
-/// Potenza di sincronismo di `sync8d` (ramo `ipass = 1`, `iqso = 1`): somma dei moduli delle correlazioni con i 21 simboli di Costas.
+/// Contributo di una correlazione `z` alla somma di `sync8d` secondo la forma.
+fn sync_term(z: Complex, kind: SyncKind) -> f32 {
+    match kind {
+        SyncKind::Magnitude => z.norm(),
+        SyncKind::Power => z.norm_sqr(),
+        SyncKind::AvgAbs => z.re.abs() + z.im.abs(),
+    }
+}
+
+/// Potenza di sincronismo di `sync8d` (`iqso = 1`): le correlazioni con i 21 simboli di Costas, sommate nella forma `kind` (per
+/// `AvgAbs` ogni simbolo e' la media di se stesso e del successivo, e l'ultimo riusa il valore del sesto, come nel Fortran).
+/// Con `cq` (e solo nella ricerca in frequenza, cioe' con `tweak`) si aggiungono gli otto simboli di dati di un CQ.
 /// `i0` e' il campione (a 200 Hz) in cui comincia il primo simbolo; `tweak` sposta il riferimento in frequenza.
-fn sync8d(cd: &[Complex], i0: i64, tweak: Option<&[Complex; SYM200]>) -> f32 {
-    let reference = costas_reference();
-    let mut sync = 0.0f32;
-    for (i, row) in reference.iter().enumerate() {
+fn sync8d(cd: &[Complex], i0: i64, tweak: Option<&[Complex; SYM200]>, kind: SyncKind, cq: bool) -> f32 {
+    let tables = sync_tables();
+    let correlate = |start: i64, row: &[Complex; SYM200]| -> Complex {
+        let mut z = ZERO;
+        for (n, r) in row.iter().enumerate() {
+            let r = match tweak {
+                Some(t) => *r * t[n],
+                None => *r,
+            };
+            z += cd_at(cd, start + n as i64) * r.conj();
+        }
+        z
+    };
+    let mut zt = [[ZERO; 7]; 3];
+    for (i, row) in tables.costas.iter().enumerate() {
         let i1 = i0 + (i * SYM200) as i64;
-        for start in [i1, i1 + 1152, i1 + 2304] {
-            let mut z = ZERO;
-            for (n, r) in row.iter().enumerate() {
-                let r = match tweak {
-                    Some(t) => *r * t[n],
-                    None => *r,
-                };
-                z += cd_at(cd, start + n as i64) * r.conj();
+        zt[0][i] = correlate(i1, row);
+        zt[1][i] = correlate(i1 + 1152, row);
+        zt[2][i] = correlate(i1 + 2304, row);
+    }
+    let mut sync = 0.0f32;
+    if kind == SyncKind::AvgAbs {
+        let mut avg = [ZERO; 3];
+        for i in 0..7 {
+            if i < 6 {
+                for (a, z) in avg.iter_mut().zip(zt.iter()) {
+                    *a = (z[i] + z[i + 1]) / 2.0;
+                }
             }
-            sync += z.norm();
+            for a in &avg {
+                sync += sync_term(*a, kind);
+            }
+        }
+    } else {
+        for z in zt.iter().flatten() {
+            sync += sync_term(*z, kind);
+        }
+    }
+
+    if cq && tweak.is_some() {
+        let mut zt4 = [ZERO; 8];
+        for (i, row) in tables.cq.iter().enumerate() {
+            zt4[i] = correlate(i0 + ((i + 7) * SYM200) as i64, row);
+        }
+        let mut z4 = ZERO;
+        for i in 0..8 {
+            z4 = if kind == SyncKind::AvgAbs {
+                if i < 7 { (zt4[i] + zt4[i + 1]) / 2.0 } else { z4 }
+            } else {
+                zt4[i]
+            };
+            sync += sync_term(z4, kind);
         }
     }
     sync
@@ -533,6 +659,12 @@ fn sync8d(cd: &[Complex], i0: i64, tweak: Option<&[Complex; SYM200]>) -> f32 {
 /// `cd` deve essere stato costruito (con [`downsample`] o [`Downsampler::run`]) alla frequenza di `candidate`; vedi la convenzione nel modulo.
 /// Cerca il ritardo a passi di 5 ms entro +-40 ms, poi la frequenza a passi di 0,5 Hz entro +-2,5 Hz. `sync` resta quello di `sync8`.
 pub fn refine(cd: &[Complex], candidate: Candidate) -> Candidate {
+    refine_ex(cd, candidate, SyncKind::Magnitude, false)
+}
+
+/// Come [`refine`], con la forma della somma di `sync8d` della passata e, per un candidato CQ, il sincronismo dei simboli di dati del
+/// CQ nella ricerca in frequenza (`lcqcand` di `ft8b`).
+pub fn refine_ex(cd: &[Complex], candidate: Candidate, kind: SyncKind, cq: bool) -> Candidate {
     if cd.len() < NCD / 2 {
         return candidate;
     }
@@ -540,7 +672,7 @@ pub fn refine(cd: &[Complex], candidate: Candidate) -> Candidate {
     let mut smax = 0.0f32;
     let mut ibest = None;
     for idt in i0 - 8..=i0 + 8 {
-        let s = sync8d(cd, idt, None);
+        let s = sync8d(cd, idt, None, kind, false);
         if s > smax {
             smax = s;
             ibest = Some(idt);
@@ -551,7 +683,7 @@ pub fn refine(cd: &[Complex], candidate: Candidate) -> Candidate {
     let mut delfbest = 0.0f32;
     for ifr in -5..=5 {
         let delf = ifr as f32 * 0.5;
-        let s = sync8d(cd, ibest, Some(&freq_tweak(delf)));
+        let s = sync8d(cd, ibest, Some(&freq_tweak(delf)), kind, cq);
         if s > smax {
             smax = s;
             delfbest = delf;
@@ -586,16 +718,57 @@ fn normalize_llr(bmet: &mut [f32; 174]) -> Option<()> {
     Some(())
 }
 
+/// Come leggere i simboli in [`bit_metrics_ex`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MetricsMode {
+    /// `lreverse` di `ft8b`: i simboli si leggono a tempo invertito (coniugato e rovesciato), quindi anche `s8`.
+    pub reverse: bool,
+    /// Seconda sotto-passata (`isubp1 = 2`, solo con la sensibilita' alta): `cs = csr`, cioe' la lettura a tempo invertito, con la
+    /// trasformazione `(0,5 x)^3` al posto di quella dei segnali deboli.
+    pub second: bool,
+}
+
+/// Le serie di LLR e le grandezze che servono ai controlli di `ft8b` per un segnale allineato.
+#[derive(Debug, Clone)]
+pub struct Metrics {
+    /// `llra`, `llrb`, `llrc` (simboli letti da 1, 2 e 3 alla volta) e `llrd` (1 simbolo, bit normalizzati per il massimo): LLR
+    /// positivo = bit 1, radice del valore quadratico medio 2,83.
+    pub llr: [[f32; 174]; 4],
+    /// Ampiezze degli 8 toni nei 79 simboli (`s8`), dopo le correzioni di `ft8b` (equalizzazione dei toni).
+    pub s8: [[f32; 8]; NN],
+    /// `srr`: rapporto tra i toni di Costas del secondo blocco e il rumore.
+    pub srr: f32,
+    /// `syncav`: media su 21 simboli di Costas del rapporto tono giusto / media degli altri sette, sul segnale non ritoccato.
+    pub syncav: f32,
+    /// `nsync`: simboli di Costas (su 21) con il tono piu' forte al posto giusto.
+    pub nsync: u32,
+}
+
+fn plan32() -> &'static Arc<dyn Fft<f32>> {
+    static PLAN: OnceLock<Arc<dyn Fft<f32>>> = OnceLock::new();
+    PLAN.get_or_init(|| fft_plan(SYM200, false))
+}
+
 /// Le tre serie di LLR (simboli letti da 1, 2 e 3 alla volta) dei 174 bit del segnale allineato; `None` se il sincronismo non regge.
 ///
 /// `cd` e' il segnale a 200 Hz centrato (a meno di mezzo hertz) sulla frequenza del segnale; del candidato si usa solo `dt_s`.
 /// Convenzione: LLR positivo = bit 1; vedi il modulo per l'ordine dei bit e la scala.
 pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 3]> {
-    if cd.len() < NCD / 2 || !candidate.dt_s.is_finite() {
+    let m = bit_metrics_ex(cd, candidate.dt_s, MetricsMode::default())?;
+    if m.nsync < 7 {
         return None;
     }
-    let ibest = nint((candidate.dt_s + 0.5) * 200.0);
-    let fft32 = fft_plan(SYM200, false);
+    Some([m.llr[0], m.llr[1], m.llr[2]])
+}
+
+/// Il cuore di `ft8b` che precede la decodifica: spettri dei 79 simboli, equalizzazione, e le quattro serie di LLR. Non scarta il
+/// segnale se il sincronismo e' basso (`nsync`): i controlli stanno nel chiamante, perche' per i candidati CQ JTDX ne usa di piu' larghi.
+pub fn bit_metrics_ex(cd: &[Complex], dt_s: f32, mode: MetricsMode) -> Option<Metrics> {
+    if cd.len() < NCD / 2 || !dt_s.is_finite() {
+        return None;
+    }
+    let ibest = nint((dt_s + 0.5) * 200.0);
+    let fft32 = plan32();
     let mut scratch = vec![ZERO; fft32.get_inplace_scratch_len()];
 
     let symbol = |k: usize| -> [Complex; SYM200] {
@@ -620,9 +793,10 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
     }
     let syncav = snr_sum / 21.0;
 
-    // Spettri degli 79 simboli: cs (diviso 1000) e s8 (moduli).
+    // Spettri degli 79 simboli: cs (diviso 1000), csr (la lettura a tempo invertito) e s8 (moduli di quella che si usa per la sincronia).
     let mut cs = vec![[ZERO; 8]; NN];
-    let mut s8 = vec![[0.0f32; 8]; NN];
+    let mut csr = vec![[ZERO; 8]; NN];
+    let mut s8 = [[0.0f32; 8]; NN];
     for k in 0..NN {
         let mut c = symbol(k);
         if syncav < 2.5 {
@@ -638,10 +812,20 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
                 }
             }
         }
-        fft32.process_with_scratch(&mut c, &mut scratch);
+        // csymbr(i) = conjg(csymb(33-i))
+        let mut rev = [ZERO; SYM200];
+        for (i, v) in rev.iter_mut().enumerate() {
+            let src = c[SYM200 - 1 - i];
+            *v = Complex::new(src.re, -src.im);
+        }
+        let (mut direct, mut reversed) = (c, rev);
+        fft32.process_with_scratch(&mut direct, &mut scratch);
+        fft32.process_with_scratch(&mut reversed, &mut scratch);
+        let (read, other) = if mode.reverse { (&reversed, &reversed) } else { (&direct, &reversed) };
         for t in 0..8 {
-            cs[k][t] = c[t] / 1e3;
-            s8[k][t] = c[t].norm();
+            cs[k][t] = read[t] / 1e3;
+            csr[k][t] = other[t] / 1e3;
+            s8[k][t] = read[t].norm();
         }
     }
 
@@ -667,6 +851,7 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
                 for k in 0..NN {
                     s8[k][kb] /= spr;
                     cs[k][kb] /= sq;
+                    csr[k][kb] /= sq;
                 }
             }
         }
@@ -681,9 +866,6 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
             }
         }
     }
-    if nsync < 7 {
-        return None;
-    }
 
     // Rapporto segnale/rumore sul secondo blocco di Costas.
     let synclev: f32 = (0..7).map(|k| s8[k + 36][COSTAS[k] as usize]).sum();
@@ -694,7 +876,9 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
     }
     let srr = synclev / snoiselev;
 
-    let mut bm = [[0.0f32; 174]; 3];
+    let chosen: &Vec<[Complex; 8]> = if mode.second { &csr } else { &cs };
+    // bm[0..3] = a, b, c; la quarta serie e' bmetd
+    let mut bm = [[0.0f32; 174]; 4];
     let mut s2 = [0.0f32; 512];
     for nsym in 1..=3usize {
         let nt = (1usize << (3 * nsym)) - 1;
@@ -712,11 +896,15 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
                     let i2 = (i & 63) / 8;
                     let i3 = i & 7;
                     let mut x = match nsym {
-                        1 => cs[ks][GRAY_MAP[i3]].norm(),
-                        2 => (cs[ks][GRAY_MAP[i2]] + cs[ks + 1][GRAY_MAP[i3]]).norm(),
-                        _ => (cs[ks][GRAY_MAP[i1]] + cs[ks + 1][GRAY_MAP[i2]] + cs[ks + 2][GRAY_MAP[i3]]).norm(),
+                        1 => chosen[ks][GRAY_MAP[i3]].norm(),
+                        2 => (chosen[ks][GRAY_MAP[i2]] + chosen[ks + 1][GRAY_MAP[i3]]).norm(),
+                        _ => (chosen[ks][GRAY_MAP[i1]] + chosen[ks + 1][GRAY_MAP[i2]] + chosen[ks + 2][GRAY_MAP[i3]]).norm(),
                     };
-                    if srr < 2.5 {
+                    if mode.second {
+                        if srr < 2.5 {
+                            x = (0.5 * x).powi(3);
+                        }
+                    } else if srr < 2.5 {
                         if srr > 2.3 {
                             x *= x;
                         } else if x < 5.77 {
@@ -727,7 +915,7 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
                     }
                     *v = x;
                 }
-                // Primo bit (1-based) di questo gruppo.
+                // Primo bit di questo gruppo (da 0).
                 let i32_ = (k - 1) * 3 + ihalf * 87;
                 for ib in 0..=ibmax {
                     let pos = i32_ + ib;
@@ -745,6 +933,11 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
                         }
                     }
                     bm[nsym - 1][pos] = m1 - m0;
+                    if nsym == 1 {
+                        // bmetd: la differenza normalizzata per il massimo dei due
+                        let den = m1.max(m0);
+                        bm[3][pos] = if den > 0.0 { (m1 - m0) / den } else { 0.0 };
+                    }
                 }
             }
         }
@@ -752,7 +945,7 @@ pub fn bit_metrics(cd: &[Complex], candidate: Candidate) -> Option<[[f32; 174]; 
     for set in bm.iter_mut() {
         normalize_llr(set)?;
     }
-    Some(bm)
+    Some(Metrics { llr: bm, s8, srr, syncav, nsync })
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1099,5 +1292,94 @@ mod tests {
             t_per
         );
         assert!(t_find.as_secs_f32() < 10.0);
+    }
+
+    #[test]
+    fn le_tre_forme_dello_spettro_trovano_i_due_segnali() {
+        let (audio, _, _) = two_signal_slot(-6.0);
+        for shape in [Spectrum::Amplitude, Spectrum::Power, Spectrum::AbsSum] {
+            let cands: Vec<Candidate> = find_candidates_ex(&audio, 200.0, 4000.0, 1.5, 100, shape, (JZB, JZT)).into_iter().map(|c| c.candidate).collect();
+            for (f, dt) in [(1500.0f32, 0.3f32), (1800.0, -0.2)] {
+                let c = nearest(&cands, f, dt).unwrap_or_else(|| panic!("{shape:?}: segnale a {f} Hz non trovato"));
+                assert!((c.freq_hz - f).abs() <= 2.0 && (c.dt_s - dt).abs() <= 0.05, "{shape:?}: {c:?}");
+            }
+        }
+        // la forma segue la passata come in sync8.f90
+        assert_eq!([1, 2, 3, 4, 5, 6, 7, 8, 9].map(Spectrum::for_pass).iter().filter(|s| **s == Spectrum::Power).count(), 3);
+        assert_eq!(SyncKind::for_pass(1), SyncKind::Magnitude);
+        assert_eq!(SyncKind::for_pass(7), SyncKind::Power);
+        assert_eq!(SyncKind::for_pass(8), SyncKind::AvgAbs);
+    }
+
+    #[test]
+    fn una_finestra_del_ritardo_spostata_non_trova_cio_che_sta_fuori() {
+        let (audio, _, _) = two_signal_slot(0.0);
+        // il segnale a +0,3 s sta a 7 passi di 0,04 s dal centro: una finestra tutta a sinistra non lo vede
+        let left = find_candidates_ex(&audio, 200.0, 4000.0, 1.5, 100, Spectrum::Amplitude, (-62, -20));
+        assert!(left.iter().all(|c| (c.candidate.dt_s - 0.3).abs() > 0.1 || c.candidate.sync < 3.0), "{left:?}");
+        assert!(find_candidates_ex(&audio, 200.0, 4000.0, 1.5, 100, Spectrum::Amplitude, (10, -10)).is_empty());
+    }
+
+    /// Un periodo con un solo messaggio vero (testo dato) alla frequenza e al ritardo dati.
+    fn real_message_slot(text: &str, f0: f32, dt: f32, snr_db: f64, seed: u64) -> Vec<f32> {
+        let mut audio = noise(SIGMA, seed);
+        let wave = crate::modem::encode_message(text, f0, &mut crate::message::CallHashes::default()).expect("messaggio valido");
+        let amp = amp_for_snr(snr_db, SIGMA) as f32;
+        let start = ((0.5 + f64::from(dt)) * SAMPLE_RATE as f64).round() as usize;
+        for (i, &w) in wave.iter().enumerate() {
+            audio[start + i] += amp * w;
+        }
+        audio
+    }
+
+    #[test]
+    fn l_indicatore_cq_si_accende_sui_cq_e_non_sugli_altri() {
+        let mut on = 0;
+        let mut off = 0;
+        for seed in 0..4u64 {
+            let cq = real_message_slot("CQ K1ABC FN42", 1400.0 + 200.0 * seed as f32, 0.2, -10.0, 10 + seed);
+            let other = real_message_slot("W9XYZ K1ABC -12", 1400.0 + 200.0 * seed as f32, 0.2, -10.0, 20 + seed);
+            let top = |a: &[f32]| find_candidates_ex(a, 200.0, 4000.0, 1.5, 100, Spectrum::Amplitude, (JZB, JZT)).into_iter().next();
+            if top(&cq).is_some_and(|c| c.cq) {
+                on += 1;
+            }
+            if top(&other).is_some_and(|c| c.cq) {
+                off += 1;
+            }
+        }
+        assert!(on >= 3 && off <= 1, "CQ riconosciuti {on}/4, altri scambiati per CQ {off}/4");
+    }
+
+    #[test]
+    fn la_rifinitura_con_ogni_forma_resta_vicina_al_segnale() {
+        let audio = real_message_slot("CQ K1ABC FN42", 1500.0, 0.3, -8.0, 3);
+        let cands = find_candidates(&audio, 200.0, 4000.0, 1.5, 100);
+        let c = nearest(&cands, 1500.0, 0.3).expect("candidato");
+        let down = Downsampler::new(&audio);
+        for kind in [SyncKind::Magnitude, SyncKind::Power, SyncKind::AvgAbs] {
+            for cq in [false, true] {
+                let r = refine_ex(&down.run(c.freq_hz, false), c, kind, cq);
+                assert!((r.freq_hz - 1500.0).abs() <= 1.0 && (r.dt_s - 0.3).abs() <= 0.02, "{kind:?} cq {cq}: {r:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn le_quattro_serie_di_llr_e_la_lettura_a_tempo_invertito_vanno_d_accordo_col_segnale() {
+        let (audio, a, _) = two_signal_slot(0.0);
+        let cands = find_candidates(&audio, 200.0, 4000.0, 1.5, 100);
+        let down = Downsampler::new(&audio);
+        let c = nearest(&cands, 1500.0, 0.3).expect("candidato");
+        let r = refine(&down.run(c.freq_hz, false), c);
+        let mut cd = down.run(c.freq_hz, false);
+        shift_frequency(&mut cd, -(r.freq_hz - c.freq_hz));
+        for mode in [MetricsMode::default(), MetricsMode { reverse: true, second: false }, MetricsMode { reverse: false, second: true }] {
+            let m = bit_metrics_ex(&cd, r.dt_s, mode).expect("metriche");
+            assert!(m.nsync >= 15, "{mode:?}: nsync {}", m.nsync);
+            for (n, set) in m.llr.iter().enumerate() {
+                let agree = sign_agreement(set, &a.bits);
+                assert!(agree >= 0.95, "{mode:?} serie {n}: {agree}");
+            }
+        }
     }
 }
