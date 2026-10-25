@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
 import { SOUNDS, hasSound } from './soundBank';
-import { AUTO_SOUNDS, SOUND_EVENTS, emptyAssign, eventOfAlert, gateOn, migrateLegacy, pickSoundEvent, readAssign, saveAssign, soundFor, type Assign, type RingState } from './soundAssign';
+import { AUTO_SOUNDS, SOUND_EVENTS, emptyAssign, resetNotified, eventOfAlert, gateOn, migrateLegacy, pickSoundEvent, readAssign, saveAssign, soundFor, type Assign, type RingState } from './soundAssign';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -16,6 +16,8 @@ const NO_ALERTS = { alertMyCall: false, alertDxCall: false, alertCqz: false, ale
 function state(assign: Partial<Assign>, over: Partial<RingState> = {}): RingState {
   return { assign: { ...emptyAssign(), ...assign }, sound: {}, view: NO_ALERTS, enabled: true, muteWhileTx: true, transmitting: false, volume: 0.5, ...over };
 }
+
+beforeEach(() => resetNotified());
 
 describe('the assignment', () => {
   it('has a different automatic sound for every function, all in the bank', () => {
@@ -170,5 +172,18 @@ describe('pickSoundEvent', () => {
 
   it('is silent while transmitting', () => {
     expect(pickSoundEvent([decode(9, 'new_dxcc')], 7, all({ transmitting: true })).event).toBeNull();
+  });
+});
+
+describe('a station rings only the first time', () => {
+  it('the same station retransmitting does not ring again for the same function', () => {
+    const st = state({ my_call: 'chime' }, { sound: { my_call: true } });
+    const first = pickSoundEvent([decode(1, null, 'AA1AA BB2BB -10')], null, st, 'AA1AA');
+    const again = pickSoundEvent([decode(1, null, 'AA1AA BB2BB -10'), decode(2, null, 'AA1AA BB2BB -10')], first.lastId, st, 'AA1AA');
+    expect(again.event).toBe('my_call');
+    const third = pickSoundEvent([decode(1, null, 'x'), decode(2, null, 'x'), decode(3, null, 'AA1AA BB2BB -10')], again.lastId, st, 'AA1AA');
+    expect(third.event).toBeNull();
+    const other = pickSoundEvent([decode(4, null, 'AA1AA CC3CC -10')], third.lastId, st, 'AA1AA');
+    expect(other.event).toBe('my_call');
   });
 });
