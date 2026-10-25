@@ -111,6 +111,15 @@ pub struct Config {
     pub log4om_db: Option<PathBuf>,
     /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
     pub jtdx_ini: Option<PathBuf>,
+    /// Con il motore proprio: Aurora manda a `udp_forward` il flusso WSJT-X che mandava JTDX (Heartbeat, Status, Decode, QSO Logged...).
+    /// Di base acceso; `AURORA_UDP_EMIT=0` lo spegne. Con il motore JTDX non serve: l'hub inoltra i pacchetti di JTDX.
+    pub udp_emit: bool,
+    /// `AcceptUDPRequests` di JTDX: i comandi di GridTracker (Reply, HaltTx, FreeText...) arrivano ad Aurora. `AURORA_UDP_ACCEPT=1`.
+    pub udp_accept_requests: bool,
+    /// `AcceptUDPReplyMessages` di JTDX: 1 solo CQ, 2 CQ e 73, 3 tutti. `AURORA_UDP_ACCEPT_REPLY`.
+    pub udp_accept_reply: u8,
+    /// `EnableUDP1adifSending` di JTDX: dopo il QSO Logged manda anche il Logged ADIF. `AURORA_UDP_ADIF=1`.
+    pub udp_adif: bool,
 }
 
 #[derive(Debug)]
@@ -167,6 +176,10 @@ impl Config {
             ptt_port: None,
             log4om_db: None,
             jtdx_ini: None,
+            udp_emit: true,
+            udp_accept_requests: false,
+            udp_accept_reply: 1,
+            udp_adif: false,
         }
     }
 
@@ -294,6 +307,17 @@ impl Config {
             rig_hamlib: get("AURORA_RIG").as_deref() == Some("hamlib"),
             export_file: get("AURORA_EXPORT_FILE").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             tx_power: get("AURORA_TX_POWER").map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
+            udp_emit: flag(&get, "AURORA_UDP_EMIT", true)?,
+            udp_accept_requests: flag(&get, "AURORA_UDP_ACCEPT", false)?,
+            udp_accept_reply: match get("AURORA_UDP_ACCEPT_REPLY").as_deref().map(str::trim) {
+                None | Some("") => 1,
+                Some(v) => v
+                    .parse::<u8>()
+                    .ok()
+                    .filter(|n| (1..=3).contains(n))
+                    .ok_or_else(|| StartError::BadConfig(format!("AURORA_UDP_ACCEPT_REPLY deve essere 1, 2 o 3, non {v}")))?,
+            },
+            udp_adif: flag(&get, "AURORA_UDP_ADIF", false)?,
         })
     }
 }
@@ -372,6 +396,80 @@ fn export_targets(config: &Config) -> (Vec<Target>, Vec<PathBuf>) {
         worked.push(own);
     }
     (targets, worked)
+}
+
+/// Apre le impostazioni del motore proprio. Se il file di Aurora non c'e' ancora, i valori iniziali vengono dal `JTDX.ini` (una volta sola) e,
+/// per il primo server UDP, da `AURORA_UDP_FORWARD` quando JTDX puntava all'ascolto di Aurora (vedi `engine_settings::import_from_ini`).
+fn open_engine_settings(config: &Config) -> Arc<remote_api::engine_settings::EngineSettingsStore> {
+    use remote_api::engine_settings::{import_from_ini, EngineSettingsStore, FILE_NAME};
+    let (ini, listen, forward) = (config.jtdx_ini.clone(), config.udp_listen, config.udp_forward.clone());
+    Arc::new(EngineSettingsStore::open(&config.data_dir.join(FILE_NAME), move || {
+        let shown = ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
+        import_from_ini(&shown, listen, &forward)
+    }))
+}
+
+/// I destinatari del QSO adesso: i file e le altre uscite fisse di `base`, piu' i server UDP dell'ambiente e il secondo server delle
+/// impostazioni, senza doppioni (regola anti-doppione di `engine_settings::export_udp_targets`).
+fn live_targets(base: &[Target], env_udp: &[SocketAddr], reports: &remote_api::engine_settings::Reports) -> Vec<Target> {
+    let mut out: Vec<Target> = remote_api::engine_settings::export_udp_targets(env_udp, reports).into_iter().map(Target::UdpAdif).collect();
+    out.extend(base.iter().filter(|t| !matches!(t, Target::UdpAdif(_))).cloned());
+    out
+}
+
+/// Cosa serve all'emettitore UDP: tutto cio' che, se cambia, lo fa riavviare.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct UdpSettings {
+    targets: Vec<SocketAddr>,
+    call: String,
+    grid: String,
+    tx_power: String,
+    accept_requests: bool,
+    accept_reply: u8,
+    send_adif: bool,
+}
+
+/// Con il motore proprio vale il primo server delle impostazioni (piu' gli indirizzi di `AURORA_UDP_FORWARD` oltre il primo); senza impostazioni
+/// (non succede con il motore proprio) valgono i valori dell'ambiente.
+fn udp_settings(config: &Config, store: Option<&remote_api::engine_settings::EngineSettingsStore>, call: &str, grid: &str) -> UdpSettings {
+    let base = UdpSettings {
+        targets: config.udp_forward.clone(),
+        call: call.to_string(),
+        grid: grid.to_string(),
+        tx_power: config.tx_power.clone().unwrap_or_default(),
+        accept_requests: config.udp_accept_requests,
+        accept_reply: config.udp_accept_reply,
+        send_adif: config.udp_adif,
+    };
+    match store {
+        Some(store) => {
+            let r = store.reports();
+            UdpSettings { targets: remote_api::engine_settings::forward_targets(&config.udp_forward, &r), accept_requests: r.accept_requests, accept_reply: r.accept_reply, send_adif: r.adif_to_primary, ..base }
+        }
+        None => base,
+    }
+}
+
+/// Avvia l'emettitore; senza destinatari (primo server vuoto) non parte nulla.
+async fn start_udp_emitter(settings: &UdpSettings, bus: &Bus, controls: &Arc<engine_native::NativeControls>) -> Option<udp_emitter::Emitter> {
+    if settings.targets.is_empty() {
+        return None;
+    }
+    let mut emitter_config = udp_emitter::EmitterConfig::jtdx(settings.targets.clone());
+    emitter_config.de_call = settings.call.clone();
+    emitter_config.de_grid = settings.grid.clone();
+    emitter_config.tx_power = settings.tx_power.clone();
+    emitter_config.accept_requests = settings.accept_requests;
+    emitter_config.accept_reply = settings.accept_reply;
+    emitter_config.send_adif = settings.send_adif;
+    let controls = Arc::clone(controls);
+    match udp_emitter::Emitter::start(emitter_config, bus.subscribe_events(), bus.commands(), Arc::new(move || controls.tx_first())).await {
+        Ok(emitter) => Some(emitter),
+        Err(e) => {
+            tracing::warn!("flusso UDP verso GridTracker non attivo: {e}");
+            None
+        }
+    }
 }
 
 /// Il file ADIF di Aurora, nella cartella dei dati: stesso formato di `wsjtx_log.adi`.
@@ -582,6 +680,16 @@ fn save_rules(path: &Path, rules: &Rules) {
 }
 
 /// Numero intero maggiore di zero da una variabile; un tetto a zero bloccherebbe tutto e si rifiuta.
+/// Un interruttore 0/1 dell'ambiente (`default` se manca o e' vuoto).
+fn flag(get: &impl Fn(&str) -> Option<String>, name: &str, default: bool) -> Result<bool, StartError> {
+    match get(name).as_deref().map(str::trim) {
+        None | Some("") => Ok(default),
+        Some("0" | "false") => Ok(false),
+        Some("1" | "true") => Ok(true),
+        Some(other) => Err(StartError::BadConfig(format!("{name} deve essere 0 o 1, non {other}"))),
+    }
+}
+
 fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> Result<u32, StartError> {
     match get(name) {
         None => Ok(default),
@@ -690,17 +798,40 @@ pub async fn run(
         },
     );
     let (targets, worked_paths) = export_targets(&config);
-    // nominativo e locatore come li ha impostati JTDX: finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
-    let station = {
-        let shown = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
-        Station {
-            call: shown.get("MyCall").cloned().unwrap_or_default(),
-            grid: shown.get("MyGrid").cloned().unwrap_or_default(),
-            tx_power: config.tx_power.clone().unwrap_or_default(),
+    // motore proprio: le impostazioni sono di Aurora (`settings-motore.json`); il `JTDX.ini` serve solo come valori iniziali, una volta
+    let engine_settings = (config.engine == EngineKind::Native).then(|| open_engine_settings(&config));
+    // nominativo e locatore: con il motore proprio quelli delle impostazioni di Aurora, con JTDX quelli del suo file
+    let (my_call, my_grid) = match &engine_settings {
+        Some(store) => {
+            let r = store.reports();
+            (r.call, r.grid)
+        }
+        None => {
+            let shown = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
+            (shown.get("MyCall").cloned().unwrap_or_default(), shown.get("MyGrid").cloned().unwrap_or_default())
         }
     };
-    // il log di Aurora si riempie sempre; i log esterni solo se configurati
-    let _exporter = Exporter::spawn(&bus, Arc::clone(&logbook), targets, station, Arc::new(unix_secs));
+    // finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
+    let station = Station { call: my_call.clone(), grid: my_grid.clone(), tx_power: config.tx_power.clone().unwrap_or_default() };
+    // il log di Aurora si riempie sempre; i log esterni solo se configurati. Con il motore proprio il server UDP secondario delle impostazioni
+    // si cambia a programma acceso: l'esportatore rilegge la lista a ogni QSO.
+    let shared_targets = Arc::new(std::sync::RwLock::new(match &engine_settings {
+        Some(store) => live_targets(&targets, &config.export_udp, &store.reports()),
+        None => targets.clone(),
+    }));
+    let _exporter = Exporter::spawn_shared(&bus, Arc::clone(&logbook), Arc::clone(&shared_targets), station, Arc::new(unix_secs));
+    if let Some(store) = &engine_settings {
+        let (store, shared, base, env_udp) = (Arc::clone(store), Arc::clone(&shared_targets), targets.clone(), config.export_udp.clone());
+        let mut changes = store.subscribe();
+        tokio::spawn(async move {
+            while changes.changed().await.is_ok() {
+                let next = live_targets(&base, &env_udp, &store.reports());
+                if let Ok(mut current) = shared.write() {
+                    *current = next;
+                }
+            }
+        });
+    }
     // paesi e QSO gia' fatti si leggono una volta sola, prima di avviare il motore
     let enrichment = load_dxcc(config.cty_path.as_deref()).map(|db| {
         let worked = load_worked(&worked_paths, &db);
@@ -708,8 +839,8 @@ pub async fn run(
     });
     // il continente di chi opera (dal nominativo di JTDX): serve a rispettare i CQ direzionali («CQ NA», «CQ DX»)
     if let Some((db, _)) = &enrichment
-        && let Some(call) = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).and_then(|m| m.get("MyCall").cloned())
-        && let Some(hit) = db.lookup(&call)
+        && !my_call.is_empty()
+        && let Some(hit) = db.lookup(&my_call)
     {
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
     }
@@ -801,8 +932,8 @@ pub async fn run(
             })
         }));
     }
-    if let Some(call) = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).and_then(|m| m.get("MyCall").cloned()) {
-        cluster.default_callsign(&call);
+    if !my_call.is_empty() {
+        cluster.default_callsign(&my_call);
     }
     cluster.restart();
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
@@ -875,6 +1006,10 @@ pub async fn run(
         })
         .with_cat(Arc::clone(&cat))
         .with_automation(automation);
+    let state = match &engine_settings {
+        Some(store) => state.with_engine_settings(Arc::clone(store)),
+        None => state,
+    };
 
     // collegamento della radio all'avvio (AURORA_RIG o «collega all'avvio»): in un thread, per non fermare l'avvio se la radio tarda
     {
@@ -892,12 +1027,7 @@ pub async fn run(
     let (engine_task, hub) = match config.engine {
         EngineKind::Native => {
             // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
-            let (call, grid) = config
-                .jtdx_ini
-                .as_deref()
-                .and_then(|p| engine_jtdx::ini::read_shown(p).ok())
-                .map(|m| (m.get("MyCall").cloned().unwrap_or_default(), m.get("MyGrid").cloned().unwrap_or_default()))
-                .unwrap_or_default();
+            let (call, grid) = (my_call.clone(), my_grid.clone());
             let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
             let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::new(db, worked))));
             // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
@@ -976,6 +1106,37 @@ pub async fn run(
             (tokio::spawn(engine.run(io)), Some(hub))
         }
     };
+
+    // con il motore proprio non c'e' JTDX a parlare il protocollo UDP di WSJT-X con GridTracker (e, tramite lui, Log4OM2): lo fa Aurora.
+    // Destinatari, invio dell'ADIF e comandi accettati vengono dalle impostazioni di Aurora (il primo server UDP); a ogni modifica si riavvia
+    // solo l'emettitore (qualche istante, senza toccare il resto).
+    let udp_emitter: Arc<tokio::sync::Mutex<Option<udp_emitter::Emitter>>> = Arc::new(tokio::sync::Mutex::new(None));
+    if config.engine == EngineKind::Native && config.udp_emit {
+        let wanted = udp_settings(&config, engine_settings.as_deref(), &my_call, &my_grid);
+        if let Some(store) = &engine_settings {
+            store.set_feature(remote_api::engine_settings::Feature::UdpEmitter, true);
+        }
+        *udp_emitter.lock().await = start_udp_emitter(&wanted, &bus, &native_controls).await;
+        if let Some(store) = engine_settings.clone() {
+            let (slot, config, bus, controls, call, grid) = (Arc::clone(&udp_emitter), config.clone(), bus.clone(), Arc::clone(&native_controls), my_call.clone(), my_grid.clone());
+            let mut changes = store.subscribe();
+            let mut running = wanted;
+            tokio::spawn(async move {
+                while changes.changed().await.is_ok() {
+                    let next = udp_settings(&config, Some(&store), &call, &grid);
+                    if next == running {
+                        continue;
+                    }
+                    let mut slot = slot.lock().await;
+                    if let Some(old) = slot.take() {
+                        old.shutdown().await;
+                    }
+                    *slot = start_udp_emitter(&next, &bus, &controls).await;
+                    running = next;
+                }
+            });
+        }
+    }
 
     // la lista dei desiderati: guarda messaggi e spot e avvisa (anche a pagina chiusa)
     wanted::spawn_watcher(Arc::clone(&wishlist), bus.events(), Some(Arc::clone(&cluster)));
@@ -1081,6 +1242,9 @@ pub async fn run(
         if let Some(hub) = hub_for_task {
             hub.stop();
         }
+        if let Some(emitter) = udp_emitter.lock().await.take() {
+            emitter.shutdown().await;
+        }
         drop(audio);
         // alla chiusura il PTT si spegne e la radio si libera
         let _ = tokio::task::spawn_blocking(move || cat_for_task.shutdown()).await;
@@ -1109,6 +1273,46 @@ mod tests {
     }
 
     #[test]
+    fn the_secondary_server_of_the_settings_joins_the_fixed_targets_without_duplicates() {
+        use remote_api::engine_settings::Reports;
+        let (targets, _) = export_targets(&config_for(EngineKind::Native));
+        let env: Vec<SocketAddr> = vec!["127.0.0.1:2237".parse().expect("indirizzo")];
+        let own_file = Target::File(PathBuf::from("dati").join("aurora_log.adi"));
+        let off = Reports::default();
+        assert_eq!(live_targets(&targets, &env, &off), vec![Target::UdpAdif(env[0]), own_file.clone()], "secondo server spento: resta l'ambiente");
+        let same = Reports { secondary: Some(env[0]), ..Reports::default() };
+        assert_eq!(live_targets(&targets, &env, &same).len(), 2, "uguale all'ambiente: un solo invio");
+        let other = Reports { secondary: Some("192.168.1.9:2240".parse().expect("indirizzo")), ..Reports::default() };
+        let got = live_targets(&targets, &env, &other);
+        assert_eq!(got.len(), 3);
+        assert!(got.contains(&own_file), "il file di Aurora c'e' sempre");
+        assert_eq!(live_targets(&targets, &[], &off), vec![own_file], "senza ambiente e senza secondo server: solo il file");
+    }
+
+    #[test]
+    fn the_udp_emitter_follows_the_primary_server_of_the_settings() {
+        use remote_api::engine_settings::{EngineSettingsStore, Feature};
+        let dir = std::env::temp_dir().join(format!("aurora-udpset-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
+        let store = EngineSettingsStore::open(&dir.join("settings-motore.json"), remote_api::engine_settings::defaults);
+        store.set_feature(Feature::UdpEmitter, true);
+        let mut c = config_for(EngineKind::Native);
+        c.udp_forward = vec!["127.0.0.1:2333".parse().expect("indirizzo"), "127.0.0.1:2400".parse().expect("indirizzo")];
+        let first = udp_settings(&c, Some(&store), "IU3ABC", "IO91wm");
+        assert_eq!(first.targets, vec!["127.0.0.1:2237".parse().expect("indirizzo"), "127.0.0.1:2400".parse().expect("indirizzo")], "primo server delle impostazioni + gli altri dell'ambiente");
+        assert!(first.send_adif && !first.accept_requests, "ADIF al primo server acceso, comandi UDP spenti di fabbrica");
+        let changes: std::collections::BTreeMap<String, String> =
+            [("UDPServerPort", "2333"), ("EnableUDP1adifSending", "false"), ("AcceptUDPRequests", "true")].iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect();
+        store.update(&changes).expect("valido");
+        let next = udp_settings(&c, Some(&store), "IU3ABC", "IO91wm");
+        assert_ne!(first, next, "una modifica fa riavviare l'emettitore");
+        assert_eq!(next.targets[0], "127.0.0.1:2333".parse().expect("indirizzo"));
+        assert!(!next.send_adif && next.accept_requests);
+        assert_eq!(udp_settings(&c, Some(&store), "IU3ABC", "IO91wm"), next, "senza modifiche non cambia: niente riavvii inutili");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn with_jtdx_aurora_writes_no_file_of_its_own_and_an_explicit_file_is_not_duplicated() {
         let (targets, worked) = export_targets(&config_for(EngineKind::Jtdx));
         assert_eq!(targets.len(), 1, "il file di JTDX non si tocca e non se ne crea un altro");
@@ -1116,6 +1320,24 @@ mod tests {
         let mut c = config_for(EngineKind::Native);
         c.export_file = Some(PathBuf::from("dati").join("aurora_log.adi"));
         assert_eq!(export_targets(&c).0.len(), 2, "lo stesso file non va due volte");
+    }
+
+    #[test]
+    fn the_udp_flow_options_come_from_the_environment_with_jtdx_defaults() {
+        let none = Config::from_lookup(|_| None).expect("configurazione di fabbrica");
+        // acceso di base (serve solo con il motore proprio e un destinatario), comandi e ADIF come in JTDX: spenti
+        assert_eq!((none.udp_emit, none.udp_accept_requests, none.udp_accept_reply, none.udp_adif), (true, false, 1, false));
+        let env = |key: &str| match key {
+            "AURORA_UDP_EMIT" => Some("0".to_string()),
+            "AURORA_UDP_ACCEPT" => Some("1".to_string()),
+            "AURORA_UDP_ACCEPT_REPLY" => Some("3".to_string()),
+            "AURORA_UDP_ADIF" => Some("1".to_string()),
+            _ => None,
+        };
+        let set = Config::from_lookup(env).expect("configurazione");
+        assert_eq!((set.udp_emit, set.udp_accept_requests, set.udp_accept_reply, set.udp_adif), (false, true, 3, true));
+        assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ACCEPT_REPLY").then(|| "4".to_string())).is_err());
+        assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ADIF").then(|| "si".to_string())).is_err());
     }
 
     #[test]

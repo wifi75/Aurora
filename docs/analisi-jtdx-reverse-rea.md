@@ -891,6 +891,119 @@ Test: `logbook` (`adif::tests`, record UDP e riga del file su un campione, FT4, 
 - **Momento in ricezione**: se il QSO si chiude perche' il DX manda RR73/RRR, la sequenza di Aurora lo registra gia' alla ricezione (JTDX aspetta di cominciare a trasmettere il 73). Il QSO e' lo stesso, registrato una volta sola, e `TIME_OFF` e' calcolato come se il 73 partisse nel periodo dopo
   (+14 s): il record e' identico a quello di JTDX. Se la trasmissione venisse spenta prima del 73, Aurora registra comunque (JTDX no).
 - **`NAME` e `COMMENT`** non ci sono (Aurora non ha la rubrica ne' le opzioni «distanza/rapporti nei commenti»); `TX_PWR` solo con `AURORA_TX_POWER` (watt). Niente eQSL, niente `wsjtx.log` (CSV), niente riga `QSO logged` in un `ALL.TXT` (Aurora ha il suo registro).
-- **Da fare per GridTracker**: il flusso WSJT-X tipo 5 (`QsoLogged`) e tipo 12 (`LoggedADIF`) verso il primo server UDP: formato letto in `REA 0x569b60` e `0x56a6d0` (campi sopra). Il decoder c'e' in `udp-bridge`, mancano gli encoder `encode_qso_logged`/`encode_logged_adif`
-  **e soprattutto** un'uscita UDP del motore proprio: oggi con `AURORA_ENGINE=native` Aurora non manda a GridTracker nessun pacchetto WSJT-X (ne' `Heartbeat`, `Status`, `Decode`), quindi i due tipi si aggiungono insieme al resto del flusso; non implementato qui.
+- **GridTracker** (QSO Logged tipo 5, Logged ADIF tipo 12, Heartbeat, Status, Decode): fatto, vedi la sezione «Flusso UDP WSJT-X verso GridTracker e Log4OM (REA, 2026-10-25)» (crate `udp-emitter`).
 - Prima del primo QSO, se la radio non e' ancora stata letta (`dial_hz == 0`), banda e frequenza del record sono vuote: l'avviso nel registro lo segnala; non si inventa una frequenza.
+
+## Flusso UDP WSJT-X verso GridTracker e Log4OM (REA, 2026-10-25)
+
+Richiesta urgente del proprietario: con il motore proprio «il call in chiamata non arriva piu' al log di Log4OM2». Il percorso, quando c'era JTDX: JTDX parla il protocollo UDP di WSJT-X al suo **primo** server UDP (qui `127.0.0.1:2334` = hub di Aurora),
+l'hub inoltra gli stessi datagrammi a GridTracker2 (`AURORA_UDP_FORWARD`, `127.0.0.1:2333`), GridTracker inoltra a Log4OM2, che cosi' mostra il nominativo in chiamata (e gli spot). Con `AURORA_ENGINE=native` nessun pacchetto WSJT-X partiva piu' verso la 2333:
+ne' Heartbeat, ne' Status, ne' Decode, ne' QSO Logged. Letto nei sorgenti (`MessageClient.cpp`, `NetworkMessage.hpp`, `mainwindow.cpp`, `Configuration.cpp`, ramo `master`) e verificato in `jtdx.exe` 2.2.159 con REA (pseudocodice dei simboli veri
+`MessageClient::...`, `MainWindow::statusUpdate`, `MainWindow::postDecode`). I sorgenti coincidono con l'eseguibile in tutti i punti sotto.
+
+### 1. Indirizzi (REA)
+
+| Funzione | `REA` | Note |
+|---|---|---|
+| `MessageClient::MessageClient` | `0x56e800` | costruttore: schema iniziale **2** (`impl+0x40 = 2`), `QTimer` del Heartbeat a **15000 ms**, `bind` su porta effimera (0), `QHostInfo::lookupHost` del server |
+| `MessageClient::impl::host_info_results` | `0x56d1b0` | a risoluzione finita: primo indirizzo, se non e' bloccato; manda **subito un Heartbeat** e poi svuota la coda dei messaggi accodati prima |
+| `MessageClient::impl::heartbeat` | `0x56dd80` | tipo 0; scrive lo schema massimo (**3**, costante `Builder::schema_number` con Qt >= 5.4) e la **versione**; non passa dal filtro dei doppioni |
+| `MessageClient::status_update` | `0x56abc0` | tipo 1 |
+| `MessageClient::decode` | `0x56e420` | tipo 2 |
+| `MessageClient::clear_decodes` | `0x56aa20` | tipo 3, solo l'intestazione; chiamanti: `0x4a8ce0` (`on_EraseButton_clicked`) e `0x49af50` (clic destro su Erase) |
+| `MessageClient::qso_logged` | `0x569b60` | tipo 5 |
+| `MessageClient::logged_ADIF` | `0x56a6d0` | tipo 12 |
+| `MessageClient::impl::closedown` | `0x56dc70` | tipo 6; lo chiama il distruttore (`0x56df00`/`0x56e130`) |
+| `MessageClient::impl::send_message` | `0x56c0d0` (`.part.28` `0x56c220`) | filtro dei doppioni e coda |
+| `MessageClient::impl::parse_message` | `0x56c360` | legge i comandi di ritorno |
+| `MainWindow::statusUpdate` | `0x64d4c0` | raccoglie i campi dello Status dalla finestra; chiamanti `0x474610` (`decodeBusy`), `0x478b70` (`txwatchdog`) e altri 11 |
+| `MainWindow::postDecode` | `0x477540` | spezza la riga del decoder e chiama `MessageClient::decode`; chiamanti `0x494220` (`readFromStdout`) e `0x48af80` (replay) |
+| `MainWindow::replyToUDP` | `0x477860` | comando Reply (e Status forzato) |
+
+### 2. Formato esatto
+
+Tutto big-endian, `QDataStream` di Qt. Intestazione di ogni datagramma: `magic u32 = 0xadbccbda`, `schema u32`, `tipo u32`, `id` (stringa Qt: `u32` lunghezza + byte UTF-8, `0xFFFFFFFF` = nulla). Lo schema **parte da 2** e sale a quello del server (massimo 3) quando
+arriva un datagramma con **lo stesso id** e schema piu' alto (`parse_message`); la versione di `QDataStream` cambia solo per il `QDateTime` (Qt 5.2/5.4), che JTDX scrive in UTC: `giorno giuliano i64`, `millisecondi del giorno u32`, `tipo di fuso u8 = 1`.
+Il Builder rifiuta schemi oltre il 3.
+
+**Identificativo di istanza**: `QApplication::applicationName()`, impostato in `main()` a **`JTDX`** (`a.setApplicationName("JTDX")`; con `--rig-name nome` diventa `JTDX - nome`, e il file delle impostazioni `JTDX - nome.ini`). **Non** `WSJT-X`. Su questo PC il file e' `JTDX.ini`, quindi l'id e' `JTDX`.
+I datagrammi di ritorno si leggono solo se portano lo stesso id (`id_ == in.id()`): per questo i comandi devono riconoscere `JTDX`.
+
+| Tipo | Campi, nell'ordine |
+|---|---|
+| 0 Heartbeat | `schema massimo u32` (3), `versione` (stringa, `2.2.159`). **Niente revisione** (WSJT-X la manda) |
+| 1 Status | `frequenza di dial u64`, `modo` (`FT8`/`FT4`), `DX call`, `rapporto` (testo del `rptSpinBox`, es. `-15`), `modo Tx` (uguale al modo), `Tx abilitato bool`, `trasmette bool`, `decodifica bool` (`m_decoderBusy`), `Rx DF i32`, `Tx DF i32`, `mio nominativo`, `mio locatore`, `locatore DX`, `watchdog Tx bool`, `sottomodo` (**nullo**: `QChar submode {0}`), `fast_mode bool` (sempre `false`), e **un solo byte finale `tx_first`** (`m_txFirst`: il periodo di trasmissione e' il primo, quello pari). |
+| 2 Decode | `nuovo bool`, `ora u32` (`QTime`: millisecondi dalla mezzanotte; l'ora e' quella del periodo, `hhmmss` in FT8/FT4), `SNR i32`, `dt` (`float` scritto come **double**), `frequenza audio u32`, `carattere del modo` (**`~` per FT8, `:` per FT4**, come in `ALL.TXT`), `messaggio`, `bassa confidenza bool`, `off air bool` (`m_diskData`: file WAV) |
+| 3 Clear | solo intestazione |
+| 5 QSO Logged | `ora di fine QDateTime`, `nominativo DX`, `locatore DX`, `frequenza u64` (**dial + frequenza Tx audio**: `m_freqNominal + TxFreqSpinBox`), `modo`, `rapporto inviato`, `rapporto ricevuto`, `potenza Tx`, `commento`, `nome`, `ora di inizio QDateTime`, `nominativo operatore`, `nominativo stazione`, `locatore proprio` (operatore e stazione sono il nominativo di `MyCall`) |
+| 6 Close | solo intestazione |
+| 12 Logged ADIF | una sola stringa: `"\n<adif_ver:5>3.1.0\n<programid:4>JTDX\n<EOH>\n"` + il record ADIF del QSO (`myadif2`, lo stesso che va a Log4OM2, sezione precedente) |
+
+**FT8 e FT4 non cambiano il formato.** JTDX **non manda** i campi che WSJT-X aggiunge dopo `fast_mode` (`special_op_mode`, `frequency_tolerance`, `tr_period`, `config_name`, `tx_message`): c'e' un solo byte, `tx_first`, che il decoder di `udp-bridge` legge
+come `special_op_mode`. Cambiano solo `modo`/`modo Tx` (`FT8` o `FT4`) e il carattere del modo nel Decode (`~`/`:`); la durata del periodo non viaggia. Un client WSJT-X che leggesse quel byte come «modalita' operativa speciale» vedrebbe `1` (NA VHF)
+quando JTDX trasmette per primo: e' il comportamento reale di JTDX e Aurora lo ripete identico.
+
+### 3. Quando JTDX manda cosa
+
+- **Heartbeat**: appena il server e' risolto (`host_info_results`) e poi **ogni 15 s** (`QTimer`, `NetworkMessage::pulse`). Se `UDPServerPort` e' 0 o il server e' vuoto non parte nulla (nemmeno il Heartbeat). Un indirizzo bloccato (`add_blocked_destination`) si scarta.
+- **Filtro dei doppioni** (`send_message`): un datagramma **uguale byte per byte all'ultimo mandato** (di qualunque tipo: Status, Decode, Clear, QSO Logged, ADIF) **non si rimanda**; Heartbeat e Close non passano da li'. Uno Status identico al precedente non esce; ma se tra due Status uguali e' uscito un Decode, il secondo esce di nuovo.
+  Il flag `force` (`status_update(..., force = true)`) lo salta: lo mette il comando Reply (`replyToUDP`) quando il decode indicato contiene il DX call corrente (interazione JTAlert/Log4OM: «il call in chiamata»).
+- **Status** (`MainWindow::statusUpdate`, `REA 0x64d4c0`): 13 chiamanti nell'eseguibile (`procedure_callers`); nei sorgenti: cambio di DX call (`on_dxCallEntry_textChanged`), locatore DX (`on_dxGridEntry_textChanged`), rapporto (`on_rptSpinBox_valueChanged`), Rx e Tx DF (`on_RxFreqSpinBox_valueChanged`, `on_TxFreqSpinBox_valueChanged`),
+  Abilita Tx (`on_enableTxButton_clicked`), modo (`commonActions`, `on_pbTxMode_clicked`), frequenza o modo letti dalla radio (`handle_transceiver_update`), inizio trasmissione (`guiUpdate`), fine (`stopTx`, `stopTx2`), inizio e fine della decodifica (`decodeBusy`, `0x474610`),
+  watchdog (`txwatchdog`, `0x478b70`), e `statusChanged` (che scrive anche `wsjtx_status.txt`). Sono molte chiamate, ma per il filtro dei doppioni escono solo gli Status diversi dall'ultimo datagramma.
+- **Decode**: uno per ogni riga che `readFromStdout` (`REA 0x494220`) mostra, con `nuovo = true`, dopo averla elaborata; filtri: con `preventFalseUDPspots` non escono le righe marcate `?` (`isWrong`); con `ApplyFiltersToUDPmessages` (`filterUDP`) solo quelle che i filtri di visualizzazione lasciano vedere.
+  `postDecode` (`REA 0x477540`) spezza la riga: ora (`hhmmss`, o `hhmm` se la prima colonna e' corta), SNR, dt, frequenza, carattere del modo, **messaggio = 23 caratteri dalla colonna 23** (21 con `hhmm`), bassa confidenza se il carattere dopo il messaggio e' `*` o `^`. Il **Replay** (`replayDecodes`, `REA 0x48af80`)
+  rimanda tutta la finestra Band Activity con `nuovo = false` e poi lo Status; il Replay si accetta **anche con `AcceptUDPRequests` spento**.
+- **Clear**: solo quando l'operatore preme **Erase** (`on_EraseButton_clicked`, `REA 0x4a8ce0`; e il clic destro sul pulsante, `REA 0x49af50`) e **una volta all'avvio** (il costruttore chiama `on_EraseButton_clicked`: il Clear resta in coda finche' il server non e' risolto, quindi parte subito dopo il primo Heartbeat). **Non** parte al cambio di banda
+  (`band_changed` svuota solo le finestre di testo) e non parte in WSPR.
+- **QSO Logged** e **Logged ADIF**: alla registrazione (`acceptQSO2`, sezione precedente): QSO Logged sempre, Logged ADIF solo con `EnableUDP1adifSending`.
+- **Close**: alla distruzione del client (chiusura di JTDX).
+
+### 4. I server UDP e le opzioni di `JTDX.ini`
+
+| Chiave | Predefinito | Cosa fa |
+|---|---|---|
+| `UDPServer`, `UDPServerPort` | `127.0.0.1`, `2237` | **primo** server: l'unico a ricevere il protocollo WSJT-X (Heartbeat, Status, Decode, Clear, QSO Logged, Logged ADIF, Close) e a mandare i comandi di ritorno; ammesso anche un indirizzo multicast. Qui `127.0.0.1:2334` (Aurora) |
+| `EnableUDP1adifSending` | `false` | dopo il QSO Logged manda anche il Logged ADIF al primo server |
+| `UDP2Server`, `UDP2ServerPort`, `EnableUDP2adifBroadcast` | `127.0.0.1`, `2333`, `false` | **secondo** server: un `QUdpSocket` nuovo a ogni QSO manda **un solo datagramma con il record ADIF grezzo**, senza protocollo WSJT-X; nessun Heartbeat, nessuno Status. Qui `127.0.0.1:2237` = Log4OM2 «WSJT-X DIRECT» |
+| `AcceptUDPRequests` | `false` | senza, i comandi HaltTx, FreeText, SetTxFreq, TriggerCQ e Reply si ignorano (il Replay no) |
+| `AcceptUDPReplyMessages` | `1` | quali messaggi un Reply puo' far rispondere: 1 solo `CQ `/`CQDX `/`QRZ`, 2 anche i `73`/`RR73`, 3 qualsiasi (`m_acceptUDP`, menu «Accept UDP»); fuori da 1-3 torna a 1 |
+| `ApplyFiltersToUDPmessages`, `preventFalseUDPspots` | `false`, `true` | filtri dei Decode (sopra) |
+| `udpWindowToFront`, `udpWindowRestore` | `false` | dopo un Reply la finestra di JTDX passa in primo piano o si ripristina |
+
+Piu' destinatari: JTDX ne ha **uno solo** (il primo server). A fare «piu' destinatari» era l'hub di Aurora (`AURORA_UDP_FORWARD`): riceve da JTDX e rimanda identico a ognuno.
+
+### 5. Comandi di ritorno (`parse_message`, `REA 0x56c360`; gestori in `MainWindow`)
+
+Il client riceve sulla **stessa porta effimera** da cui scrive (`bind()`), quindi GridTracker risponde all'indirizzo sorgente del flusso. Leggibili: Reply (4), Replay (7), HaltTx (8: `solo Abilita Tx`), FreeText (9: testo, invio), SetTxDeltaFreq (50: `u32`), TriggerCQ (51: direzione, invio).
+Con `AcceptUDPRequests` spento passa solo il Replay. Reply: `replyToUDP` ricostruisce la riga dai campi (ora, SNR, dt, frequenza, modo, messaggio), la cerca nella finestra Band Activity e, se la trova e il messaggio e' accettato da `AcceptUDPReplyMessages`, chiama `processMessage` come un doppio clic.
+HaltTx con `solo Abilita Tx` spegne solo Abilita Tx, altrimenti `haltTx`; SetTxFreq vale solo tra l'inizio e la fine della cascata; TriggerCQ con invio preme CQ (`txb6`).
+
+### 6. Cosa fa ora Aurora con il motore proprio
+
+| Punto | Prima | Ora |
+|---|---|---|
+| Datagrammi verso GridTracker | nessuno | crate `udp-emitter` (`core/crates/udp-emitter`), avviato da `aurora::run` con `AURORA_ENGINE=native` quando `AURORA_UDP_FORWARD` non e' vuoto e `AURORA_UDP_EMIT` non e' 0: stessi datagrammi di JTDX a tutti i destinatari di `AURORA_UDP_FORWARD`. Con `AURORA_ENGINE=jtdx` non parte (l'hub inoltra gia' i pacchetti di JTDX: niente doppioni) |
+| Encoder | solo comandi | `udp-bridge::emit`: `encode_heartbeat`, `encode_status`, `encode_decode`, `encode_clear`, `encode_close`, `encode_qso_logged`, `encode_logged_adif`; il decoder legge anche la coda del QSO Logged (`QsoExtra`) e il tipo 12 (`Message::LoggedAdif`); `udp-bridge::request` legge i comandi di ritorno |
+| Identificativo | - | `JTDX` (versione `2.2.159`, schema 2 che sale a quello del client) |
+| Heartbeat | - | alla partenza e ogni 15 s, seguito subito dal Clear |
+| Status | - | da `Event::Status` (il motore proprio lo pubblica ogni secondo): campi come in JTDX; **DX call e locatore DX** sono quelli scelti da Aurora (doppio clic, Canc DX, cambio banda: il motore proprio azzera il DX); uno identico al precedente non si rimanda; byte finale `tx_first` dall'interruttore del periodo di Tx |
+| Decode | - | da `Event::Decode`: `nuovo = true`, `ora = time_ms` (inizio periodo), `snr`, `dt`, `frequenza`, carattere del modo dal modo dell'ultimo Status (`~` FT8, `:` FT4), testo del messaggio |
+| QSO Logged / ADIF | - | da `Event::QsoLogged`: stessi campi (ora di inizio e di fine come nel record ADIF, nominativo e locatore propri da `MyCall`/`MyGrid` di `JTDX.ini`), guardia contro i doppioni (stesso nominativo entro 2 periodi); Logged ADIF con `AURORA_UDP_ADIF=1` |
+| Comandi di ritorno | persi | l'emettitore ascolta sulla stessa porta da cui scrive: Reply (cerca il messaggio tra gli ultimi 300 decode per ora, frequenza e testo), HaltTx, FreeText, SetTxFreq e TriggerCQ diventano `Command` per il motore proprio; solo con `AURORA_UDP_ACCEPT=1`, il Reply filtrato da `AURORA_UDP_ACCEPT_REPLY`; il Replay e' sempre accettato |
+| Close | - | alla chiusura di Aurora |
+| Opzioni da `JTDX.ini` | - | `desktop/src-tauri/src/settings.rs::udp1_options_from_ini` imposta `AURORA_UDP_ACCEPT`, `AURORA_UDP_ACCEPT_REPLY`, `AURORA_UDP_ADIF`; `AURORA_UDP_FORWARD=127.0.0.1:2333` era gia' rilevato |
+
+Test: `udp-bridge/tests/emit.rs` (ogni encoder si rilegge con `decode`/`decode_request`: Heartbeat senza revisione, Status con il solo byte `tx_first` e con la coda WSJT-X, stringa nulla e vuota, Decode, Clear, Close, QSO Logged con le due date, Logged ADIF con l'intestazione, comandi di ritorno),
+`udp-emitter/tests/flow.rs` (bus con eventi finti e socket locale: Heartbeat e Clear, Status con il DX scelto e Canc DX, Status identico non rimandato, Decode FT8 e FT4, QSO Logged e ADIF e doppione, Reply/HaltTx/FreeText che arrivano come `Command`, comandi ignorati senza `AcceptUDPRequests`, Replay, Close),
+`desktop` (`settings`: opzioni del primo server UDP).
+
+### 7. Differenze volute e cosa resta
+
+- `decodifica` nello Status di Aurora e' «in ascolto» (monitor acceso): JTDX lo alza solo mentre decodifica (pochi secondi a fine periodo).
+- `rapporto` nello Status: il motore proprio non pubblica ancora il rapporto da inviare (`rptSpinBox`), va vuoto. Il DX, il locatore e la frequenza ci sono.
+- `bassa confidenza` e `off air` nei Decode: sempre `false` (il bus non porta la confidenza del decoder).
+- Il Clear non parte quando l'operatore svuota l'attivita' nell'interfaccia di Aurora (non c'e' un evento): parte solo all'avvio.
+- `NAME` e `COMMENT` mancano nel QSO Logged e nell'ADIF, come per il secondo server.
+- Comandi: «HaltTx solo Abilita Tx» ferma comunque la trasmissione (Aurora ha un solo STOP); TriggerCQ non cambia il periodo di Tx.
+- Non provato dal vivo con GridTracker2 e Log4OM2: serve una prova del proprietario (nominativo in chiamata nella finestra di Log4OM2, Reply da GridTracker).

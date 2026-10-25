@@ -270,6 +270,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tx-native",
+ "udp-emitter",
  "udp-hub",
  "updater",
  "wishlist",
@@ -5126,6 +5127,17 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 [[package]]
 name = "udp-bridge"
 version = "0.11.5"
+
+[[package]]
+name = "udp-emitter"
+version = "0.11.5"
+dependencies = [
+ "aurora-core",
+ "logbook",
+ "tokio",
+ "tracing",
+ "udp-bridge",
+]
 
 [[package]]
 name = "udp-hub"

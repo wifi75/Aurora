@@ -22,6 +22,8 @@ export const DEFAULT_CAT: CatConfig = {
   civ_address: 0,
   poll_secs: 2,
   auto_connect: false,
+  share_enabled: false,
+  share_port: 4532,
 };
 
 /** Una porta seriale (COM3, /dev/ttyUSB0) e non un indirizzo di rete (host:porta). */
@@ -43,6 +45,7 @@ export function catIssue(c: CatConfig): string | null {
   if (![0, 7, 8].includes(c.data_bits) || ![0, 1, 2].includes(c.stop_bits)) return 'bad_serial';
   if (!Number.isInteger(c.poll_secs) || c.poll_secs < 1 || c.poll_secs > 99) return 'bad_poll';
   if ((c.ptt === 'dtr' || c.ptt === 'rts') && c.port === '' && c.ptt_port === '') return 'bad_ptt';
+  if (!Number.isInteger(c.share_port) || c.share_port < 1024 || c.share_port > 65535) return 'bad_share_port';
   if (!Number.isInteger(c.civ_address) || c.civ_address < 0 || c.civ_address > 255) return 'bad_civ';
   return null;
 }

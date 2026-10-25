@@ -21,6 +21,8 @@ export const RadioMetersSchema = z.object({
   comp_db: z.number().optional(),
   id_a: z.number().optional(),
   vdd_v: z.number().optional(),
+  /** `true`: s_points e s_over_db non vengono dalla radio ma sono stimati dal livello dell'audio in ingresso. */
+  estimated: z.boolean().optional(),
 });
 export type RadioMeters = z.infer<typeof RadioMetersSchema>;
 
@@ -128,3 +130,20 @@ export const EventSchema = z.discriminatedUnion('type', [
   BandChangedSchema.extend({ type: z.literal('band_changed') }),
 ]);
 export type AuroraEvent = z.infer<typeof EventSchema>;
+
+/** Impostazioni del motore proprio (`GET/PUT /api/v1/engine-settings`): valori e, per ogni voce, se e' viva o non disponibile (con il motivo). */
+export const EngineSettingsItemSchema = z.object({
+  state: z.enum(['live', 'unavailable']),
+  /** `now`: ha effetto subito; `restart`: dal prossimo avvio di Aurora. */
+  apply: z.enum(['now', 'restart']).optional(),
+  reason: z.string().optional(),
+});
+export type EngineSettingsItem = z.infer<typeof EngineSettingsItemSchema>;
+
+export const EngineSettingsSchema = z.object({
+  version: z.number(),
+  file: z.string(),
+  values: z.record(z.string(), z.string()),
+  items: z.record(z.string(), EngineSettingsItemSchema),
+});
+export type EngineSettings = z.infer<typeof EngineSettingsSchema>;

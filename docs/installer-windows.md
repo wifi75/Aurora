@@ -44,6 +44,12 @@ Per fare una versione nuova:
 
 `.\scripts\rilascio-windows.ps1 -SoloControllo` verifica soltanto le versioni.
 
+**Hamlib incluso.** L'installatore porta anche Hamlib (`rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`, licenze e `VERSIONE.txt`) nella cartella `hamlib` accanto ad `aurora-desktop.exe` (per utente: `%LOCALAPPDATA%\Aurora\hamlib\`): Impostazioni -> Radio CAT funziona senza installare altro. Dettagli, licenza (Hamlib LGPL-2.1+/GPL-2.0+) e uso con la FT-2000 in `docs/cat-radio.md`.
+- Chi rilascia: `scripts/rilascio-windows.ps1` esegue per primo `scripts/prepara-hamlib.ps1`, che **copia** (non scarica) i file da una cartella locale: parametro `-Hamlib <cartella>` o variabile `AURORA_HAMLIB_SRC`, di base l'ultima versione di JTDX in `C:\JTDX64\<versione>in`, poi WSJT-X in `C:\WSJT\wsjtxin`. Ricava le DLL necessarie dalle importazioni dei due eseguibili e si ferma con un messaggio chiaro se ne manca una, se non c'e' nessuna sorgente o se il pacchetto non parte / non conosce FT-2000 e FT-DX. `-SoloHamlib` prepara solo questo.
+- I file stanno in `desktop/src-tauri/hamlib-bundle/` (nel `.gitignore`: i binari non si committano; resta solo `.gitkeep`), `tauri.conf.json` li include in `bundle.resources` come cartella `hamlib`. I testi delle licenze in `desktop/src-tauri/hamlib-licenze/` si committano.
+- Aggiornamento: `installer/hooks.nsh` ferma il `rigctld` di quella cartella e la cancella prima di copiare (niente file vecchi); la disinstallazione fa lo stesso.
+- Non ancora provato: l'installatore completo con la cartella `hamlib` (la build di rilascio la fa il coordinatore); provati lo script, la ricerca di `rigctld` accanto al programma e la sintassi dell'hook NSIS.
+
 ## Come e' fatto
 
 - `desktop/src-tauri`: workspace Cargo a parte (le dipendenze di Tauri non appesantiscono `cargo test --workspace` del core), che usa il crate `aurora` come libreria.

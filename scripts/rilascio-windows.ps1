@@ -8,7 +8,10 @@
 # comando per creare la release, da lanciare a mano.
 param(
     [string]$Chiave = (Join-Path $env:USERPROFILE '.aurora-signing\aurora.key'),
-    [switch]$SoloControllo
+    [switch]$SoloControllo,
+    # cartella locale con Hamlib da includere (rigctld, rigctl e le DLL): di base AURORA_HAMLIB_SRC, poi JTDX o WSJT-X installati
+    [string]$Hamlib = $env:AURORA_HAMLIB_SRC,
+    [switch]$SoloHamlib
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,6 +38,11 @@ $pubConf = (Get-Content "$root\desktop\src-tauri\tauri.conf.json" -Raw | Convert
 $pubFile = (Get-Content "$root\desktop\updater.pub" -Raw).Trim()
 if ($pubConf -ne $pubFile) { throw 'La chiave pubblica in tauri.conf.json non coincide con desktop\updater.pub' }
 if ($SoloControllo) { Write-Host 'Versioni allineate.'; return }
+
+Write-Host '0/3 Hamlib (rigctld per la radio CAT, incluso nell''installatore)...'
+& "$PSScriptRoot\prepara-hamlib.ps1" -Hamlib $Hamlib
+if (-not $?) { throw 'Preparazione di Hamlib fallita: senza non si fa l''installatore (vedi il messaggio sopra).' }
+if ($SoloHamlib) { return }
 
 if (-not (Test-Path $Chiave)) { throw "Chiave di firma non trovata: $Chiave" }
 

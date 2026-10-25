@@ -120,6 +120,20 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     mode: Mode,
     /// L'ultimo periodo per cui si e' chiesta una trasmissione (non si chiede due volte).
     last_planned: Option<Slot>,
+    /// Le trasmissioni consegnate alla catena e non ancora cominciate: servono a scrivere la riga di `ALL.TXT` quando partono davvero.
+    notes: Vec<TxNote>,
+}
+
+/// Una trasmissione consegnata alla catena audio/PTT: il periodo in cui parte e che cosa e' stato modulato (per `ALL.TXT`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TxNote {
+    /// Inizio del periodo di trasmissione (ms dal 1970).
+    pub start_ms: u64,
+    pub mode: Mode,
+    /// Frequenza audio (Hz) della trasmissione.
+    pub tx_df: u32,
+    /// Il messaggio davvero inviato (dopo l'eventuale taglio del testo libero).
+    pub text: String,
 }
 
 /// Testo di un messaggio come lo accetta JTDX: maiuscolo, spazi singoli, solo l'alfabeto dei messaggi, al massimo 37 caratteri.
@@ -134,9 +148,22 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..Options::default() };
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
-        let driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx };
+        let driver = TxDriver { seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new() };
         driver.publish_view();
         Ok(driver)
+    }
+
+    /// Ferma la catena e dimentica le trasmissioni annunciate e non ancora partite.
+    fn halt_tx(&mut self) {
+        self.port.halt();
+        self.notes.clear();
+    }
+
+    /// Le trasmissioni il cui periodo e' cominciato entro `now_ms`: si tolgono dall'elenco e si restituiscono (per scriverle in `ALL.TXT`).
+    pub fn due_notes(&mut self, now_ms: u64) -> Vec<TxNote> {
+        let (due, later): (Vec<TxNote>, Vec<TxNote>) = std::mem::take(&mut self.notes).into_iter().partition(|n| n.start_ms <= now_ms);
+        self.notes = later;
+        due
     }
 
     /// Il modo in cui lavora la trasmissione.
@@ -149,7 +176,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if mode == self.mode {
             return Vec::new();
         }
-        self.port.halt();
+        self.halt_tx();
         self.seq.set_mode(mode);
         self.mode = mode;
         self.recent.clear();
@@ -164,7 +191,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// fermo), spegne Abilita Tx/AutoTx, azzera la stazione DX con i messaggi di sequenza e svuota i messaggi ricordati per il doppio clic.
     /// JTDX (`band_changed`, `clearDX`, `QsoHistory::init`) azzera il DX e la memoria della sequenza e ferma solo nel «QSY cieco»; qui si ferma sempre.
     pub fn band_changed(&mut self) -> Vec<String> {
-        self.port.halt();
+        self.halt_tx();
         self.seq.band_changed();
         self.recent.clear();
         self.free_text = None;
@@ -220,7 +247,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                             log.push(if self.auto_tx { format!("risposta a «{text}»: Tx abilitato") } else { format!("risposta a «{text}»: AutoTX spento, Abilita Tx resta com'e'") });
                             // un messaggio gia' pianificato per il periodo in corso o per il prossimo e' superato: si riparte col nuovo (come `m_restart` di JTDX)
                             if self.last_planned.is_some_and(|planned| planned >= Slot::at(self.mode, now_s)) {
-                                self.port.halt();
+                                self.halt_tx();
                                 self.last_planned = None;
                             }
                             log.extend(self.start_now(now_s));
@@ -251,7 +278,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
             }
             TxCommand::Halt => {
-                self.port.halt();
+                self.halt_tx();
                 self.seq.halt();
                 self.free_text = None;
                 log.push("STOP TX".to_string());
@@ -281,7 +308,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 if on {
                     log.extend(self.start_now(now_s));
                 } else {
-                    self.port.halt();
+                    self.halt_tx();
                     self.free_text = None;
                 }
             }
@@ -299,7 +326,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.seq.set_tx_even(v);
                         // cambiare periodo con una trasmissione in corso la ferma (JTDX: «Tx halted: period changed»)
                         if changed && self.controls.transmitting.load(Ordering::Relaxed) {
-                            self.port.halt();
+                            self.halt_tx();
                             log.push("periodo di trasmissione cambiato: trasmissione ferma".to_string());
                         }
                         self.last_planned = None;
@@ -416,7 +443,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         Mode::Ft4 => tx_native::Mode::Ft4,
                     };
                     match self.port.schedule(TxRequest { wave, mode, parity }) {
-                        Ok(()) => log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name())),
+                        Ok(()) => {
+                            self.notes.push(TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone() });
+                            log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()))
+                        }
                         Err(e) => log.push(format!("trasmissione non partita: {e}")),
                     }
                 }
@@ -586,6 +616,28 @@ mod tests {
         assert_eq!(requests[0].mode, tx_native::Mode::Ft8);
         // il CQ e' arrivato in un periodo pari: si risponde nei dispari
         assert_eq!(requests[0].parity, Parity::Odd);
+    }
+
+    /// Per `ALL.TXT`: una trasmissione consegnata alla catena si annuncia con il suo periodo e il testo davvero modulato, esce una volta sola quando
+    /// il periodo comincia, e un STOP la cancella prima che parta.
+    #[test]
+    fn a_planned_transmission_is_announced_for_the_log_once_when_its_slot_starts_and_stop_cancels_it() {
+        let (mut d, _port, _) = driver();
+        d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        d.after_slot(SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        // il periodo di trasmissione e' il successivo: prima che cominci non c'e' niente da scrivere
+        assert!(d.due_notes(SLOT_MS + 14_999).is_empty());
+        let notes = d.due_notes(SLOT_MS + 15_100);
+        assert_eq!(notes.len(), 1, "{notes:?}");
+        assert_eq!((notes[0].start_ms, notes[0].mode, notes[0].text.as_str()), (SLOT_MS + 15_000, Mode::Ft8, "K1ABC IU3ABC IO91"));
+        assert!(d.due_notes(SLOT_MS + 16_000).is_empty(), "una volta sola");
+        // una trasmissione annunciata e fermata prima di partire non si scrive
+        d.remember(8, "CQ K1ABC FN42", -10, 1200, SLOT_MS + 30_000);
+        d.handle(TxCommand::Reply { decode_id: 8 }, BASE + 44.0);
+        d.after_slot(SLOT_MS + 30_000, &[("CQ K1ABC FN42".to_string(), -10, 1200)], BASE + 44.3, 14_074_000, "20m");
+        d.handle(TxCommand::Halt, BASE + 44.5);
+        assert!(d.due_notes(SLOT_MS + 90_000).is_empty());
     }
 
     /// Il doppio clic arriva quasi sempre quando e' gia' cominciato il periodo dopo quello del CQ: la parita' va presa dal periodo del messaggio

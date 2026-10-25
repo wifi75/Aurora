@@ -11,7 +11,7 @@ export function Wiki() {
       {WIKI_TOPICS.map((id) => (
         <section key={id} id={`guida-${id}`} className="panel settings-block">
           <h2 className="panel-title">{t(`wiki.${id}.t`)}</h2>
-          <p>{t(`wiki.${id}.b`)}</p>
+          <p style={{ whiteSpace: 'pre-line' }}>{t(`wiki.${id}.b`)}</p>
         </section>
       ))}
     </div>

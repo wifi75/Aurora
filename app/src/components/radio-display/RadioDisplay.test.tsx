@@ -31,6 +31,19 @@ describe('RadioDisplay', () => {
     }
   });
 
+  it.each(RADIO_DISPLAY_STYLES)('marks the estimated S-meter in the %s style, in the drawing and in the text alternative', (style) => {
+    const model = { ...DEMO_MODEL, meters: { s_points: 6, s_over_db: 0, estimated: true } };
+    const { container } = render(<RadioDisplay model={model} style={style} size="full" />);
+    expect(screen.getByRole('img').getAttribute('aria-label')).toContain("S-meter stimato dall'audio S6");
+    expect(container.textContent).toContain('~S6');
+  });
+
+  it('shows no estimate mark with the real meters of the radio', () => {
+    const { container } = render(<RadioDisplay model={DEMO_MODEL} style="analog" size="full" />);
+    expect(container.textContent).not.toContain('~S');
+    expect(screen.getByRole('img').getAttribute('aria-label')).not.toContain('stimato');
+  });
+
   it('says the meters are not available instead of inventing them', () => {
     render(<RadioDisplay model={NO_METERS} style="analog" />);
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('strumenti non disponibili');

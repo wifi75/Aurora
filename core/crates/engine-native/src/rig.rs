@@ -58,7 +58,14 @@ pub struct NativeControls {
     sender: Mutex<Option<mpsc::Sender<TxCommand>>>,
     /// Gli strumenti della radio (S-meter, potenza, ROS...) letti dal CAT; `None` se la radio non li da' (nessuna radio, OmniRig).
     meters: Mutex<Option<aurora_core::RadioMeters>>,
+    /// L'S-meter stimato dall'audio in ingresso e quando e' stato calcolato (vedi `smeter`).
+    s_estimate: Mutex<Option<(crate::smeter::SEstimate, std::time::Instant)>>,
+    /// STOP TX immediato (vedi `set_halt_now`).
+    halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
 }
+
+/// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
+const ESTIMATE_MAX_AGE: std::time::Duration = std::time::Duration::from_secs(2);
 
 impl Default for NativeControls {
     fn default() -> Self {
@@ -67,7 +74,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None) }
     }
 }
 
@@ -120,6 +127,11 @@ impl NativeControls {
         format!("{band}{}", self.mode().name())
     }
 
+    /// Tocca a noi il primo periodo (interruttore «Tx 1st/even»): lo Status UDP lo manda come `tx_first`, come JTDX.
+    pub fn tx_first(&self) -> bool {
+        self.switch_on("tx_period")
+    }
+
     pub(crate) fn switch_on(&self, id: &str) -> bool {
         self.switches.lock().map(|all| all.iter().any(|(name, on)| name == id && *on)).unwrap_or(false)
     }
@@ -145,6 +157,7 @@ impl NativeControls {
             comp_db: m.comp_db,
             id_a: m.id_a,
             vdd_v: m.vdd_v,
+            estimated: false,
         });
         // un quadro senza nessuna lettura equivale a nessuno strumento
         let converted = converted.filter(|m| *m != aurora_core::RadioMeters::default());
@@ -157,6 +170,27 @@ impl NativeControls {
         self.meters.lock().ok().and_then(|m| m.clone())
     }
 
+    /// Registra (o toglie, con `None`) lo S-meter stimato dall'audio in ingresso.
+    pub(crate) fn set_s_estimate(&self, estimate: Option<crate::smeter::SEstimate>) {
+        if let Ok(mut slot) = self.s_estimate.lock() {
+            *slot = estimate.map(|e| (e, std::time::Instant::now()));
+        }
+    }
+
+    /// I misuratori da pubblicare nello stato: quelli veri della radio, se danno l'S-meter; altrimenti l'S-meter stimato dall'audio
+    /// (aggiunto alle altre letture vere, se ce ne sono, con `estimated: true`). Una stima piu' vecchia di 2 s (audio fermo) non conta.
+    pub fn published_meters(&self) -> Option<aurora_core::RadioMeters> {
+        let real = self.meters();
+        if real.as_ref().is_some_and(|m| m.s_points.is_some()) {
+            return real;
+        }
+        let estimate = self.s_estimate.lock().ok().and_then(|s| *s).filter(|(_, at)| at.elapsed() < ESTIMATE_MAX_AGE).map(|(e, _)| e);
+        match (real, estimate) {
+            (real, Some(e)) => Some(aurora_core::RadioMeters { s_points: Some(e.s_points), s_over_db: Some(e.s_over_db), estimated: true, ..real.unwrap_or_default() }),
+            (real, None) => real,
+        }
+    }
+
     /// Chi riceve i comandi di trasmissione (il motore, quando parte).
     pub fn set_sender(&self, sender: mpsc::Sender<TxCommand>) {
         if let Ok(mut slot) = self.sender.lock() {
@@ -164,8 +198,22 @@ impl NativeControls {
         }
     }
 
-    /// Manda un comando di trasmissione al motore.
+    /// Cosa fare SUBITO per fermare la trasmissione (audio e PTT), senza aspettare il ciclo del motore: lo imposta chi ha la catena di trasmissione.
+    pub fn set_halt_now(&self, halt: Arc<dyn Fn() + Send + Sync>) {
+        if let Ok(mut slot) = self.halt_now.lock() {
+            *slot = Some(halt);
+        }
+    }
+
+    /// Manda un comando di trasmissione al motore. STOP TX (Halt) ferma prima l'audio e il PTT dal thread di chi chiama: il ciclo del motore puo'
+    /// essere occupato a decodificare un periodo per secondi, e il tasto Esc deve annullare la trasmissione all'istante.
     pub fn send(&self, command: TxCommand) -> Result<(), RigError> {
+        if matches!(command, TxCommand::Halt) {
+            let halt = self.halt_now.lock().ok().and_then(|slot| slot.clone());
+            if let Some(halt) = halt {
+                halt();
+            }
+        }
         let sender = self.sender.lock().map_err(|_| RigError(NO_TX.into()))?;
         sender.as_ref().ok_or_else(|| RigError(NO_TX.into()))?.send(command).map_err(|_| RigError(NO_TX.into()))
     }
@@ -478,5 +526,40 @@ mod tests {
         let (rig, _) = rig();
         assert!(rig.set_frequency(14_074_000).expect_err("nessuna radio").0.contains("nessuna radio"));
         assert!(rig.frequency().is_err());
+    }
+
+    fn estimate(s: f32) -> crate::smeter::SEstimate {
+        crate::smeter::SEstimate { s_points: s, s_over_db: 0.0 }
+    }
+
+    #[test]
+    fn without_real_meters_the_estimated_s_meter_is_published_and_marked() {
+        let controls = NativeControls::default();
+        assert_eq!(controls.published_meters(), None);
+        controls.set_s_estimate(Some(estimate(5.0)));
+        let m = controls.published_meters().expect("stima");
+        assert_eq!((m.s_points, m.s_over_db, m.estimated), (Some(5.0), Some(0.0), true));
+        assert_eq!((m.power_w, m.swr, m.alc), (None, None, None));
+        // in trasmissione (o ascolto spento) la stima viene tolta
+        controls.set_s_estimate(None);
+        assert_eq!(controls.published_meters(), None);
+    }
+
+    #[test]
+    fn real_s_meter_wins_over_the_estimate() {
+        let controls = NativeControls::default();
+        controls.set_meters(Some(rig_control::meters::Meters { s_points: Some(7.0), s_over_db: Some(0.0), ..Default::default() }));
+        controls.set_s_estimate(Some(estimate(3.0)));
+        let m = controls.published_meters().expect("misuratori veri");
+        assert_eq!((m.s_points, m.estimated), (Some(7.0), false));
+    }
+
+    #[test]
+    fn real_meters_without_s_meter_get_the_estimate_beside_them() {
+        let controls = NativeControls::default();
+        controls.set_meters(Some(rig_control::meters::Meters { power_w: Some(10.0), ..Default::default() }));
+        controls.set_s_estimate(Some(estimate(4.0)));
+        let m = controls.published_meters().expect("misuratori");
+        assert_eq!((m.power_w, m.s_points, m.estimated), (Some(10.0), Some(4.0), true));
     }
 }

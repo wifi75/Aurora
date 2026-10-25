@@ -74,3 +74,26 @@ In ogni caso Aurora deve copiare l'**identificativo** dei pacchetti di JTDX nei 
 - Il collegamento diretto JTDX → Log4OM2 sulla 2237: e' quello che salva i QSO.
 - La porta 2333 di GridTracker2: durante la prova del 2026-10-24 l'ho tenuta occupata io per alcuni minuti (GridTracker2 poteva non ricevere dati); ora e' libera.
 - Le salvaguardie di trasmissione: un Reply UDP fa trasmettere (vedi `fase0-rapporto.md`).
+
+## Con il motore proprio (senza JTDX)
+
+Con `AURORA_ENGINE=native` JTDX non c'e' e nessuno manda piu' il flusso del server primario. Lo manda **Aurora** (crate `udp-emitter`, avviato da `aurora::run`): a ogni destinatario di `AURORA_UDP_FORWARD` (qui GridTracker2 su `127.0.0.1:2333`)
+arrivano gli stessi datagrammi che mandava JTDX, con lo stesso identificativo `JTDX` (formato e momenti letti in `jtdx.exe` con REA: `docs/analisi-jtdx-reverse-rea.md`, sezione «Flusso UDP WSJT-X verso GridTracker e Log4OM»).
+GridTracker2 li inoltra a Log4OM2 come prima, quindi il nominativo in chiamata torna nella finestra del log.
+
+| Datagramma | Quando | Da cosa |
+|---|---|---|
+| Heartbeat | alla partenza e ogni 15 s | - |
+| Clear | alla partenza (come il costruttore di JTDX) | - |
+| Status | a ogni cambiamento (non si rimanda uno identico al precedente): DX call e locatore scelti da Aurora, frequenza, modo, Abilita Tx, trasmissione, Rx/Tx DF, periodo Tx | `Event::Status` |
+| Decode | uno per messaggio, `nuovo = true`, modo `~` (FT8) o `:` (FT4) | `Event::Decode` |
+| QSO Logged (tipo 5) | alla registrazione del QSO | `Event::QsoLogged` |
+| Logged ADIF (tipo 12) | dopo il QSO Logged, solo con `AURORA_UDP_ADIF=1` | `Event::QsoLogged` |
+| Close | alla chiusura di Aurora | - |
+
+Il secondo server (`127.0.0.1:2237`, record ADIF grezzo per Log4OM2) resta a carico dell'esportatore dei QSO (`AURORA_EXPORT_UDP`): sono due flussi distinti, come in JTDX.
+
+**Canale di ritorno**: l'emettitore scrive e ascolta sulla stessa porta (effimera), quindi i comandi di GridTracker (Reply, HaltTx, FreeText, SetTxFreq, TriggerCQ) arrivano a lui: li gira al motore proprio solo con `AURORA_UDP_ACCEPT=1` (da `AcceptUDPRequests` di `JTDX.ini`),
+il Reply solo per i messaggi ammessi da `AURORA_UDP_ACCEPT_REPLY` (da `AcceptUDPReplyMessages`); il Replay (richiesta dei decode correnti) e' sempre accettato. Con il motore JTDX niente di tutto questo: l'hub inoltra i pacchetti di JTDX e i comandi a JTDX.
+
+Impostazioni: `AURORA_UDP_FORWARD`, `AURORA_UDP_EMIT` (0 spegne), `AURORA_UDP_ACCEPT`, `AURORA_UDP_ACCEPT_REPLY`, `AURORA_UDP_ADIF` (vedi `.env.example`); il programma Windows ricava forward e opzioni da `JTDX.ini`.

@@ -67,6 +67,20 @@ pub struct Status {
     pub tx_message: Option<String>,
 }
 
+/// La coda di un `QsoLogged`, dopo i rapporti. Gli istanti sono millisecondi Unix UTC.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct QsoExtra {
+    /// Ora di fine del QSO: e' il primo campo del pacchetto (prima del nominativo).
+    pub time_off_ms: Option<i64>,
+    pub tx_power: Option<String>,
+    pub comments: Option<String>,
+    pub name: Option<String>,
+    pub time_on_ms: Option<i64>,
+    pub operator_call: Option<String>,
+    pub my_call: Option<String>,
+    pub my_grid: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Message {
     Heartbeat {
@@ -88,6 +102,13 @@ pub enum Message {
         mode: Option<String>,
         report_sent: Option<String>,
         report_received: Option<String>,
+        /// I campi che seguono i rapporti (potenza, commento, nome, ora di inizio, nominativi e locatore propri): mancano nei pacchetti troncati.
+        extra: Option<QsoExtra>,
+    },
+    /// Il record ADIF del QSO registrato (tipo 12): in JTDX preceduto da una breve intestazione ADIF.
+    LoggedAdif {
+        id: Option<String>,
+        adif: Option<String>,
     },
     Close {
         id: Option<String>,
@@ -121,6 +142,7 @@ pub fn decode(datagram: &[u8]) -> Result<Packet, Error> {
         DECODE => Message::Decode(read_decode(&mut r)?),
         CLEAR => Message::Clear { id: r.utf8()? },
         QSO_LOGGED => read_qso_logged(&mut r)?,
+        LOGGED_ADIF => Message::LoggedAdif { id: r.utf8()?, adif: r.utf8()? },
         CLOSE => Message::Close { id: r.utf8()? },
         _ => Message::Unknown {
             kind,
@@ -196,30 +218,48 @@ fn read_status(r: &mut Reader) -> Result<Status, Error> {
 
 fn read_qso_logged(r: &mut Reader) -> Result<Message, Error> {
     let id = r.utf8()?;
-    skip_qdatetime(r)?;
-    Ok(Message::QsoLogged {
-        id,
-        dx_call: r.utf8()?,
-        dx_grid: r.utf8()?,
-        tx_freq: r.u64()?,
-        mode: r.utf8()?,
-        report_sent: r.utf8()?,
-        report_received: r.utf8()?,
-    })
+    let time_off_ms = read_qdatetime(r)?;
+    let dx_call = r.utf8()?;
+    let dx_grid = r.utf8()?;
+    let tx_freq = r.u64()?;
+    let mode = r.utf8()?;
+    let report_sent = r.utf8()?;
+    let report_received = r.utf8()?;
+    let extra = if r.is_empty() {
+        None
+    } else {
+        let tx_power = r.utf8()?;
+        let comments = r.utf8()?;
+        let name = r.utf8()?;
+        let time_on_ms = read_qdatetime(r)?;
+        let operator_call = r.utf8()?;
+        let my_call = r.utf8()?;
+        let my_grid = r.utf8()?;
+        Some(QsoExtra { time_off_ms, tx_power, comments, name, time_on_ms, operator_call, my_call, my_grid })
+    };
+    Ok(Message::QsoLogged { id, dx_call, dx_grid, tx_freq, mode, report_sent, report_received, extra })
 }
 
+/// Giorno giuliano del 1970-01-01 (la data zero di `QDate`).
+const UNIX_EPOCH_JULIAN_DAY: i64 = 2_440_588;
+
 /// `QDateTime`: giorno giuliano (i64), millisecondi (u32), tipo di fuso (u8),
-/// piu' lo scostamento (i32) se il fuso e' "OffsetFromUTC" (2).
-fn skip_qdatetime(r: &mut Reader) -> Result<(), Error> {
-    r.i64()?;
-    r.u32()?;
+/// piu' lo scostamento (i32) se il fuso e' "OffsetFromUTC" (2). Restituisce i millisecondi Unix
+/// (senza tener conto dello scostamento: JTDX manda sempre UTC); `None` se la data e' nulla.
+fn read_qdatetime(r: &mut Reader) -> Result<Option<i64>, Error> {
+    let julian_day = r.i64()?;
+    let ms = r.u32()?;
     if r.u8()? == 2 {
         r.i32()?;
     }
-    Ok(())
+    // `QDateTime` nullo: giorno 0 (e ora non valida)
+    if julian_day == 0 || ms == u32::MAX {
+        return Ok(None);
+    }
+    Ok(julian_day.checked_sub(UNIX_EPOCH_JULIAN_DAY).and_then(|d| d.checked_mul(86_400_000)).and_then(|d| d.checked_add(i64::from(ms))))
 }
 
-fn command_header(kind: u32, schema: u32, id: &str) -> Writer {
+pub(crate) fn command_header(kind: u32, schema: u32, id: &str) -> Writer {
     let mut w = Writer::new();
     w.u32(MAGIC);
     w.u32(schema);

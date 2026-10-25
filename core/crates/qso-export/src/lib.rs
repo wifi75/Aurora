@@ -7,7 +7,7 @@
 use std::{
     net::SocketAddr,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, RwLock},
 };
 
 use aurora_core::{Bus, Event};
@@ -63,6 +63,12 @@ impl DupeGuard {
 impl Exporter {
     /// Va chiamato dentro un runtime Tokio. `now` = secondi Unix. `station`: nominativo, locatore e potenza che JTDX scrive in ogni record.
     pub fn spawn(bus: &Bus, book: Arc<Logbook>, targets: Vec<Target>, station: Station, now: Arc<dyn Fn() -> u64 + Send + Sync>) -> Exporter {
+        Exporter::spawn_shared(bus, book, Arc::new(RwLock::new(targets)), station, now)
+    }
+
+    /// Come `spawn`, ma i destinatari stanno in una lista condivisa che si puo' cambiare a programma acceso (le impostazioni di Aurora): ogni QSO
+    /// usa la lista com'e' in quel momento.
+    pub fn spawn_shared(bus: &Bus, book: Arc<Logbook>, targets: Arc<RwLock<Vec<Target>>>, station: Station, now: Arc<dyn Fn() -> u64 + Send + Sync>) -> Exporter {
         let stats = Arc::new(Mutex::new(ExportStats::default()));
         let shared = Arc::clone(&stats);
         let mut events = bus.subscribe_events();
@@ -84,7 +90,8 @@ impl Exporter {
                             tracing::warn!("QSO non salvato nel log di Aurora: {e}");
                         }
                         let date = adif::utc_date(now());
-                        for target in &targets {
+                        let current = targets.read().map(|t| t.clone()).unwrap_or_default();
+                        for target in &current {
                             let record = match target {
                                 Target::UdpAdif(_) => adif::jtdx_record(&q, &station, &date),
                                 Target::File(_) => adif::jtdx_file_record(&q, &station, &date),

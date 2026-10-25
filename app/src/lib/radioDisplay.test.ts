@@ -14,7 +14,9 @@ import {
   saveRadioDisplay,
   S_TICKS,
   sFraction,
+  sIsEstimated,
   sLabel,
+  sValue,
   swrFraction,
 } from './radioDisplay';
 
@@ -108,9 +110,23 @@ describe('main meter and readouts', () => {
     expect(mainMeter(displayModel({ ...base, transmitting: true, meters }))).toMatchObject({ kind: 'PO', label: '20 W', fraction: 0.2 });
   });
 
+  it('marks the S-meter estimated from the audio with a tilde, never the real one or the power', () => {
+    const est = { s_points: 5, s_over_db: 0, estimated: true };
+    expect(sIsEstimated(est)).toBe(true);
+    expect(sLabel(est)).toBe('~S5');
+    expect(sValue(est)).toBe('S5');
+    expect(sLabel({ s_points: 9, s_over_db: 20, estimated: true })).toBe('~S9+20');
+    expect(mainMeter(displayModel({ ...base, meters: est }))).toMatchObject({ kind: 'S', label: '~S5', estimated: true });
+    expect(mainMeter(displayModel({ ...base, meters: { s_points: 5 } }))).toMatchObject({ label: 'S5', estimated: false });
+    expect(mainMeter(displayModel({ ...base, transmitting: true, meters: { ...est, power_w: 20 } }))).toMatchObject({ kind: 'PO', label: '20 W', estimated: false });
+    // senza S-meter la bandierina da sola non disegna niente
+    expect(sIsEstimated({ estimated: true })).toBe(false);
+    expect(sLabel({ estimated: true })).toBeNull();
+  });
+
   it('leaves the meter off when the radio does not give it', () => {
-    expect(mainMeter(displayModel({ ...base }))).toEqual({ kind: 'S', fraction: null, label: null });
-    expect(mainMeter(displayModel({ ...base, transmitting: true, meters: { s_points: 5 } }))).toEqual({ kind: 'PO', fraction: null, label: null });
+    expect(mainMeter(displayModel({ ...base }))).toEqual({ kind: 'S', fraction: null, label: null, estimated: false });
+    expect(mainMeter(displayModel({ ...base, transmitting: true, meters: { s_points: 5 } }))).toEqual({ kind: 'PO', fraction: null, label: null, estimated: false });
   });
 
   it('lists only the readings that exist', () => {

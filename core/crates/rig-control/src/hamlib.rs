@@ -27,6 +27,8 @@ pub struct RigctldConfig {
     pub baud: Option<u32>,
     /// Altre impostazioni `--set-conf` (`data_bits=8`, `stop_bits=1`, `serial_handshake=None`, `rts_state=OFF`, `ptt_type=RIG`...).
     pub conf: Vec<(String, String)>,
+    /// Porta TCP fissa su cui ascoltare (condivisione con altri programmi); `None` = una libera a caso.
+    pub tcp_port: Option<u16>,
 }
 
 /// Gli argomenti di `rigctld` per questa configurazione, con la porta TCP su cui ascoltare. Solo valori ricavati da numeri e da nomi
@@ -274,7 +276,10 @@ impl Rigctld {
             return Err(RigError(format!("rigctld non trovato: {}", config.exe.display())));
         }
         // una porta libera: si apre e si chiude subito, il demone la riprende (la gara e' improbabile e si vedrebbe come errore di connessione)
-        let probe = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).map_err(|e| RigError(format!("nessuna porta libera: {e}")))?;
+        let wanted = config.tcp_port.unwrap_or(0);
+        let probe = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted)).map_err(|e| {
+            if wanted == 0 { RigError(format!("nessuna porta libera: {e}")) } else { RigError(format!("la porta {wanted} e' occupata (un altro rigctld o programma la usa): cambia la porta di condivisione o chiudi l'altro programma. ({e})")) }
+        })?;
         let tcp_port = probe.local_addr().map_err(|e| RigError(e.to_string()))?.port();
         drop(probe);
         let args = rigctld_args(config, tcp_port)?;
@@ -435,7 +440,7 @@ mod tests {
     };
 
     fn config() -> RigctldConfig {
-        RigctldConfig { exe: "rigctld.exe".into(), model: 1049, port: Some("COM3".into()), baud: Some(38400), conf: vec![("data_bits".into(), "8".into()), ("ptt_type".into(), "RIG".into())] }
+        RigctldConfig { exe: "rigctld.exe".into(), model: 1049, port: Some("COM3".into()), baud: Some(38400), conf: vec![("data_bits".into(), "8".into()), ("ptt_type".into(), "RIG".into())], tcp_port: None }
     }
 
     #[test]
@@ -580,11 +585,30 @@ mod tests {
     }
 
     #[test]
+    fn the_installed_layout_finds_the_bundled_hamlib_folder_before_anything_else() {
+        // come dopo l'installazione: <programma>\aurora-desktop.exe e <programma>\hamlib\{rigctld,rigctl,...}
+        let app = temp_bin("installed", &["aurora-desktop.exe"]);
+        let hamlib = app.join("hamlib");
+        std::fs::create_dir_all(&hamlib).expect("cartella hamlib");
+        for f in ["rigctld.exe", "rigctl.exe", "libhamlib-4.dll", "libusb-1.0.dll", "libwinpthread-1.dll"] {
+            std::fs::write(hamlib.join(f), b"x").expect("file");
+        }
+        let dev = temp_bin("installed-dev", &["rigctld-jtdx.exe", "rigctl-jtdx.exe"]);
+        let dirs = [hamlib.clone(), app.clone()];
+        let found = locate_rigctld_in(&dirs, None, std::slice::from_ref(&dev)).expect("trovato");
+        assert_eq!(found, hamlib.join("rigctld.exe"));
+        assert_eq!(rigctl_beside(&found), Some(hamlib.join("rigctl.exe")));
+        // anche con i nomi originali del pacchetto di JTDX (rigctld-jtdx.exe) accanto al programma
+        let jtdx_names = temp_bin("installed-names", &["rigctld-jtdx.exe", "rigctl-jtdx.exe", "rigctlcom-jtdx.exe"]);
+        assert_eq!(locate_rigctld_in(std::slice::from_ref(&jtdx_names), None, &[]), Some(jtdx_names.join("rigctld-jtdx.exe")));
+    }
+
+    #[test]
     fn a_daemon_that_dies_at_once_reports_why() {
         // un eseguibile che esce subito (qualunque programma che non e' rigctld): l'errore non aspetta i 6 secondi e cita l'uscita
         let Some(exe) = ["C:/Windows/System32/whoami.exe", "/usr/bin/true"].into_iter().map(PathBuf::from).find(|p| p.is_file()) else { return };
         let started = Instant::now();
-        let err = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new() }).err().expect("doveva fallire");
+        let err = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None }).err().expect("doveva fallire");
         assert!(err.0.contains("si e' fermato"), "{err}");
         assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
     }
@@ -598,12 +622,31 @@ mod tests {
         assert!(RigctldClient::connect(closed, Duration::from_millis(300)).is_err());
     }
 
+    /// La porta di condivisione e' quella chiesta (un altro programma ci si collega), solo su 127.0.0.1; se e' occupata l'errore lo dice.
+    #[test]
+    fn a_shared_rigctld_listens_on_the_fixed_port_and_a_busy_port_is_explained() {
+        let exe = ["C:/JTDX64/159/bin/rigctld-jtdx.exe", "C:/WSJT/wsjtx/bin/rigctld-wsjtx.exe"].into_iter().map(PathBuf::from).find(|p| p.is_file());
+        let Some(exe) = exe else { return };
+        let free = TcpListener::bind("127.0.0.1:0").expect("porta").local_addr().expect("indirizzo").port();
+        let config = RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: Some(free) };
+        let rig = Rigctld::start(&config).expect("rigctld dummy");
+        assert_eq!(rig.addr.port(), free);
+        // un secondo programma (come Log4OM2) si collega alla stessa porta e legge la stessa radio
+        let other = RigctldClient::connect(SocketAddr::from((Ipv4Addr::LOCALHOST, free)), Duration::from_secs(2)).expect("secondo client");
+        rig.client.set_frequency(7_074_000).expect("F");
+        assert_eq!(other.frequency().expect("f"), 7_074_000);
+        other.quit();
+        // con la porta occupata Aurora lo dice in chiaro
+        let err = Rigctld::start(&config).err().expect("porta occupata");
+        assert!(err.0.contains("occupata") && err.0.contains(&free.to_string()), "{err}");
+    }
+
     /// Con un rigctld vero e il modello «dummy» (nessuna radio): frequenza, modo e PTT tornano come scritti. Si salta se non c'e' rigctld.
     #[test]
     fn a_real_dummy_rig_round_trips() {
         let exe = ["C:/JTDX64/159/bin/rigctld-jtdx.exe", "C:/WSJT/wsjtx/bin/rigctld-wsjtx.exe"].into_iter().map(PathBuf::from).find(|p| p.is_file());
         let Some(exe) = exe else { return };
-        let rig = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new() }).expect("rigctld dummy");
+        let rig = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None }).expect("rigctld dummy");
         rig.client.set_frequency(14_074_000).expect("F");
         assert_eq!(rig.client.frequency().expect("f"), 14_074_000);
         rig.client.set_mode("USB", 0).expect("M");

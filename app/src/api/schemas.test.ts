@@ -28,6 +28,16 @@ describe('EventSchema', () => {
     if (some.success && some.data.type === 'status') expect(some.data.meters?.power_w).toBeUndefined();
   });
 
+  it('accepts the estimated flag on the S-meter, optional and boolean only', () => {
+    const base = { type: 'status', dial_hz: 14074000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'FN42' };
+    const est = EventSchema.safeParse({ ...base, meters: { s_points: 4, s_over_db: 0, estimated: true } });
+    expect(est.success).toBe(true);
+    if (est.success && est.data.type === 'status') expect(est.data.meters?.estimated).toBe(true);
+    const real = EventSchema.safeParse({ ...base, meters: { s_points: 4 } });
+    if (real.success && real.data.type === 'status') expect(real.data.meters?.estimated).toBeUndefined();
+    expect(EventSchema.safeParse({ ...base, meters: { estimated: 'si' } }).success).toBe(false);
+  });
+
   it('accepts the new tags and the country, and a decode without country', () => {
     const base = { type: 'decode', id: 1, time_ms: 0, snr: -1, delta_time: 0, freq_hz: 100, text: 'X' };
     const a = EventSchema.safeParse({ ...base, tag: 'new_dxcc_band', country: 'Giappone' });

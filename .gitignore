@@ -7,3 +7,6 @@ node_modules/
 dist/
 desktop/src-tauri/gen/
 dist-release/
+# Hamlib incluso nell'installatore: i binari li copia scripts/rilascio-windows.ps1 da una cartella locale, non si committano
+desktop/src-tauri/hamlib-bundle/*
+!desktop/src-tauri/hamlib-bundle/.gitkeep

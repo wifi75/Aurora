@@ -244,4 +244,21 @@ describe('CatTab', () => {
     expect(await screen.findByText(/Un valore non va/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Applica' })).toBeDisabled();
   });
+
+  it('shows where to connect the other programs only when sharing is on and the radio is connected', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...connected, config: { ...DEFAULT_CAT, model: 1029, share_enabled: true }, status: { ...connected.status, share: { host: '127.0.0.1', port: 4532 } } });
+    render(<CatTab />);
+    expect(await screen.findByText(/127\.0\.0\.1:4532/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Porta di condivisione')).toHaveValue(4532);
+    fireEvent.change(screen.getByLabelText('Porta di condivisione'), { target: { value: '80' } });
+    expect(await screen.findByText(/Un valore non va/)).toBeInTheDocument();
+  });
+
+  it('explains sharing and the COM port rule even before connecting', async () => {
+    render(<CatTab />);
+    await screen.findByText('Non collegata');
+    expect(screen.getByText(/Condividi la radio con altri programmi/)).toBeInTheDocument();
+    expect(screen.getByText(/porta occupata/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Porta di condivisione')).toBeNull();
+  });
 });

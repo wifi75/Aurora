@@ -26,6 +26,8 @@ pub struct SerialPortInfo {
     pub manufacturer: String,
     /// Porta virtuale (com0com, Bluetooth...): non e' una radio.
     pub virtual_port: bool,
+    /// Di che porta virtuale si tratta, se riconoscibile: `vspe` (Eterlogic VSPE e il suo motore ELTIMA), `com0com`, `bluetooth`.
+    pub virtual_kind: Option<String>,
 }
 
 /// Un candidato: una radio (o un'interfaccia) riconosciuta dalle identita' del sistema.
@@ -360,6 +362,18 @@ pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), Ri
         let pnp = p.pnp.unwrap_or_default();
         let upper = pnp.to_ascii_uppercase();
         let virtual_port = ["ROOT\\", "COM0COM", "VSP", "VIRTUAL", "BTHENUM"].iter().any(|k| upper.starts_with(k) || upper.contains(k)) || full.to_ascii_lowercase().contains("virtual");
+        let all = format!("{upper} {} {}", full.to_ascii_uppercase(), p.manufacturer.as_deref().unwrap_or_default().to_ascii_uppercase());
+        let virtual_kind = if !virtual_port {
+            None
+        } else if ["ETERLOGIC", "VSBC", "ELTIMA"].iter().any(|k| all.contains(k)) {
+            Some("vspe".to_string())
+        } else if all.contains("COM0COM") {
+            Some("com0com".to_string())
+        } else if all.contains("BTHENUM") || all.contains("BLUETOOTH") {
+            Some("bluetooth".to_string())
+        } else {
+            None
+        };
         ports.push(SerialPortInfo {
             port,
             name: full[..open].trim().to_string(),
@@ -369,6 +383,7 @@ pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), Ri
             manufacturer: p.manufacturer.unwrap_or_default(),
             instance_id: pnp,
             virtual_port,
+            virtual_kind,
         });
     }
     ports.sort_by_key(|p| com_number(&p.port));
@@ -416,6 +431,7 @@ mod tests {
             serial: serial_of(pnp),
             manufacturer: String::new(),
             virtual_port: false,
+            virtual_kind: None,
         }
     }
 
@@ -424,6 +440,8 @@ mod tests {
         {"Name":"Silicon Labs Dual CP210x USB to UART Bridge: Standard COM Port (COM6)","PNPDeviceID":"USB\\VID_10C4&PID_EA70&MI_01\\7&2A8AB6E4&0&0001","Manufacturer":"Silicon Labs"},
         {"Name":"USB Serial Port (COM3)","PNPDeviceID":"FTDIBUS\\VID_0403+PID_6001+A50285BIA\\0000","Manufacturer":"FTDI"},
         {"Name":"com0com - serial port emulator (COM20)","PNPDeviceID":"COM0COM\\PORT\\CNCA0","Manufacturer":"com0com"},
+        {"Name":"Eterlogic Virtual Serial Port (COM11)","PNPDeviceID":"ETERLOGIC_VSPE\\ETERLOGIC_VSPE_PORT\\COM11","Manufacturer":"Eterlogic Software"},
+        {"Name":"ELTIMA Virtual Serial Port (COM12)","PNPDeviceID":"VSBC7\\DEVICES\\0002","Manufacturer":"ELTIMA Software"},
         {"Name":"Standard Serial over Bluetooth link (COM7)","PNPDeviceID":"BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG&0000\\7&1&0&000000000000_00000000","Manufacturer":"Microsoft"}
       ],
       "audio":[{"Name":"USB Audio CODEC"},{"Name":"VB-Audio Virtual Cable"},{"Name":"Realtek High Definition Audio"}]}"#;
@@ -431,7 +449,7 @@ mod tests {
     #[test]
     fn it_reads_the_windows_answer() {
         let (ports, audio) = parse_system(SAMPLE).expect("lettura");
-        assert_eq!(ports.len(), 5);
+        assert_eq!(ports.len(), 7);
         let enhanced = &ports[1];
         assert_eq!((enhanced.port.as_str(), enhanced.vid, enhanced.pid), ("COM5", Some(0x10C4), Some(0xEA70)));
         assert!(enhanced.name.contains("Enhanced") && !enhanced.name.contains("COM5"));
@@ -439,6 +457,11 @@ mod tests {
         assert_eq!(ftdi.serial.as_deref(), Some("A50285BI"));
         assert!(ports.iter().find(|p| p.port == "COM20").expect("com0com").virtual_port);
         assert!(ports.iter().find(|p| p.port == "COM7").expect("bluetooth").virtual_port);
+        // le porte virtuali di VSPE si riconoscono (il suo motore si chiama ELTIMA), com0com e Bluetooth anche; una porta vera non ha etichetta
+        let kind = |c: &str| ports.iter().find(|p| p.port == c).and_then(|p| p.virtual_kind.clone());
+        assert_eq!((kind("COM11").as_deref(), kind("COM12").as_deref()), (Some("vspe"), Some("vspe")));
+        assert_eq!((kind("COM20").as_deref(), kind("COM7").as_deref(), kind("COM3")), (Some("com0com"), Some("bluetooth"), None));
+        assert!(ports.iter().find(|p| p.port == "COM11").expect("vspe").virtual_port);
         assert_eq!(audio, ["USB Audio CODEC", "VB-Audio Virtual Cable", "Realtek High Definition Audio"]);
     }
 

@@ -99,6 +99,8 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
       attributionControl: true,
       minZoom: 1,
       maxZoom: 10,
+      // niente animazione dello zoom: con l'animazione di Leaflet i pulsanti +, - e la rotella non cambiavano il livello
+      zoomAnimation: false,
       zoomSnap: 0.25,
       zoomDelta: 0.5,
       wheelPxPerZoomLevel: 100,

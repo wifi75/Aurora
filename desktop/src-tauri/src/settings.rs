@@ -105,17 +105,13 @@ pub fn ptt_from_ini(raw: &str) -> (Option<&'static str>, Option<String>) {
     (method, port)
 }
 
-/// Il secondo server UDP di JTDX (`UDP2Server`, `UDP2ServerPort`) se e' acceso (`EnableUDP2adifBroadcast`): e' dove JTDX manda a Log4OM2 il record ADIF
-/// di ogni QSO registrato. Senza JTDX, con il motore proprio, e' Aurora a mandarlo li'.
-pub fn udp2_from_ini(raw: &str) -> Option<String> {
+/// Le opzioni del primo server UDP di JTDX che contano per il flusso verso GridTracker: `AcceptUDPRequests`, `AcceptUDPReplyMessages` (1-3, di fabbrica 1)
+/// e `EnableUDP1adifSending`. Con il motore proprio le usa l'emettitore UDP di Aurora (`AURORA_UDP_ACCEPT`, `AURORA_UDP_ACCEPT_REPLY`, `AURORA_UDP_ADIF`).
+pub fn udp1_options_from_ini(raw: &str) -> (bool, u8, bool) {
     let value = |key: &str| raw.lines().find_map(|l| l.strip_prefix(key).and_then(|r| r.strip_prefix('='))).map(str::trim);
-    if !value("EnableUDP2adifBroadcast").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
-        return None;
-    }
-    let host = value("UDP2Server").filter(|h| !h.is_empty())?;
-    let port: u16 = value("UDP2ServerPort")?.parse().ok().filter(|p| *p > 0)?;
-    // gli indirizzi si scrivono come numeri (127.0.0.1): un nome di macchina non e' un indirizzo di socket
-    host.parse::<std::net::IpAddr>().ok().map(|ip| std::net::SocketAddr::new(ip, port).to_string())
+    let on = |key: &str| value(key).is_some_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
+    let reply = value("AcceptUDPReplyMessages").and_then(|v| v.parse::<u8>().ok()).filter(|n| (1..=3).contains(n)).unwrap_or(1);
+    (on("AcceptUDPRequests"), reply, on("EnableUDP1adifSending"))
 }
 
 /// Cio' che si ricava da JTDX e dagli altri programmi installati. Senza `JTDX.ini` resta il simulatore.
@@ -136,6 +132,10 @@ pub fn detect(places: &Places) -> Values {
             }
             // uscita audio e PTT come li ha impostati JTDX (PTT sulla linea RTS o DTR di una COM, CAT/OmniRig, VOX)
             if let Ok(raw) = std::fs::read_to_string(&ini) {
+                let (accept, reply, adif) = udp1_options_from_ini(&raw);
+                v.insert("AURORA_UDP_ACCEPT".into(), u8::from(accept).to_string());
+                v.insert("AURORA_UDP_ACCEPT_REPLY".into(), reply.to_string());
+                v.insert("AURORA_UDP_ADIF".into(), u8::from(adif).to_string());
                 let (method, port) = ptt_from_ini(&raw);
                 if let Some(method) = method {
                     v.insert("AURORA_PTT_METHOD".into(), method.into());
@@ -182,14 +182,8 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
         v.extend(parse_env_file(file));
     }
     v.extend(process_env.into_iter().filter(|(k, _)| k.starts_with("AURORA_")));
-    // con il motore proprio non c'e' JTDX a mandare i QSO registrati a Log4OM2: lo fa Aurora, allo stesso indirizzo del secondo server UDP di JTDX.
-    // Con il motore JTDX no, per non registrare ogni QSO due volte.
-    if v.get("AURORA_ENGINE").is_some_and(|e| e == "native") && !v.contains_key("AURORA_EXPORT_UDP") {
-        let target = v.get("AURORA_JTDX_INI").and_then(|ini| std::fs::read_to_string(ini).ok()).and_then(|raw| udp2_from_ini(&raw));
-        if let Some(target) = target {
-            v.insert("AURORA_EXPORT_UDP".into(), target);
-        }
-    }
+    // il secondo server UDP (Log4OM2) non si decide piu' qui: con il motore proprio e' una impostazione di Aurora (`settings-motore.json`),
+    // importata una volta dal `JTDX.ini`; `AURORA_EXPORT_UDP` resta solo per destinatari in piu'.
     v
 }
 
@@ -318,46 +312,28 @@ mod tests {
     }
 
     #[test]
-    fn with_the_native_engine_the_qsos_go_where_jtdx_sent_them_and_with_jtdx_they_do_not() {
+    fn the_second_udp_server_is_not_injected_from_the_ini_any_more() {
         let local = temp("udp2-local");
-        touch(
-            &local.join("JTDX").join("JTDX.ini"),
-            "[Configuration]
-UDPServer=127.0.0.1
-UDPServerPort=2334
-UDP2Server=127.0.0.1
-UDP2ServerPort=2237
-EnableUDP1adifSending=true
-EnableUDP2adifBroadcast=true
-",
-        );
+        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nUDP2Server=127.0.0.1\nUDP2ServerPort=2237\nEnableUDP2adifBroadcast=true\n");
         let p = Places { local_app_data: Some(local), documents: None, jtdx_roots: vec![] };
         let native = build(&p, Path::new("d"), Path::new("u"), None, vec![]);
-        assert_eq!(native["AURORA_EXPORT_UDP"], "127.0.0.1:2237", "il secondo server UDP di JTDX, non il primo (2334 e' Aurora)");
+        assert!(!native.contains_key("AURORA_EXPORT_UDP"), "il secondo server e' una impostazione di Aurora: si puo' spegnere dalla scheda Segnalazioni");
         let own = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_EXPORT_UDP".to_string(), "127.0.0.1:2240".to_string())]);
-        assert_eq!(own["AURORA_EXPORT_UDP"], "127.0.0.1:2240", "quello scelto dall'ambiente vince");
-        let jtdx = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_ENGINE".to_string(), "jtdx".to_string())]);
-        assert!(!jtdx.contains_key("AURORA_EXPORT_UDP"), "con JTDX e' lui a mandare il QSO a Log4OM2: niente doppioni");
+        assert_eq!(own["AURORA_EXPORT_UDP"], "127.0.0.1:2240", "un destinatario in piu' scelto dall'ambiente resta valido");
     }
 
     #[test]
-    fn the_second_udp_server_of_jtdx_becomes_the_qso_export_target() {
-        let on = "EnableUDP2adifBroadcast=true
-UDP2Server=127.0.0.1
-UDP2ServerPort=2237
+    fn the_first_udp_server_options_of_jtdx_drive_the_gridtracker_flow() {
+        let ini = "AcceptUDPReplyMessages=2
+AcceptUDPRequests=true
+EnableUDP1adifSending=true
 ";
-        assert_eq!(udp2_from_ini(on), Some("127.0.0.1:2237".to_string()));
-        assert_eq!(udp2_from_ini("EnableUDP2adifBroadcast=false
-UDP2Server=127.0.0.1
-UDP2ServerPort=2237
-"), None);
-        assert_eq!(udp2_from_ini("UDP2Server=127.0.0.1
-UDP2ServerPort=2237
-"), None);
-        assert_eq!(udp2_from_ini("EnableUDP2adifBroadcast=true
-UDP2Server=pc-log
-UDP2ServerPort=2237
-"), None);
+        assert_eq!(udp1_options_from_ini(ini), (true, 2, true));
+        // di fabbrica: niente comandi, solo CQ, niente ADIF; un valore fuori scala torna a 1
+        assert_eq!(udp1_options_from_ini(""), (false, 1, false));
+        assert_eq!(udp1_options_from_ini("AcceptUDPReplyMessages=9
+AcceptUDPRequests=false
+"), (false, 1, false));
     }
 
     #[test]

@@ -66,6 +66,9 @@ pub struct RadioMeters {
     /// Tensione di alimentazione, in volt.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vdd_v: Option<f32>,
+    /// `true` se `s_points`/`s_over_db` non vengono dalla radio ma sono stimati dal livello dell'audio in ingresso (le altre letture, se ci sono, sono vere).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub estimated: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -232,5 +235,13 @@ mod tests {
         assert_eq!(json, serde_json::json!({ "s_points": 7.0, "s_over_db": 0.0 }));
         let back: RadioMeters = serde_json::from_value(json).expect("lettura");
         assert_eq!(back, m);
+    }
+
+    #[test]
+    fn estimated_flag_is_only_serialised_when_true() {
+        let m = RadioMeters { s_points: Some(4.0), estimated: true, ..RadioMeters::default() };
+        let json = serde_json::to_value(&m).expect("json");
+        assert_eq!(json, serde_json::json!({ "s_points": 4.0, "estimated": true }));
+        assert_eq!(serde_json::from_value::<RadioMeters>(json).expect("lettura"), m);
     }
 }

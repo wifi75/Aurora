@@ -99,13 +99,24 @@ export function sFraction(m: RadioMeters | null | undefined): number | null {
   return clamp01(S9_FRACTION + clamp01(overDb / 60) * (1 - S9_FRACTION));
 }
 
-/** Lettura dell'S-meter: `S7`, `S9+20`; `null` senza dato. */
-export function sLabel(m: RadioMeters | null | undefined): string | null {
+/** Lettura dell'S-meter senza contrassegni: `S7`, `S9+20`; `null` senza dato. */
+export function sValue(m: RadioMeters | null | undefined): string | null {
   if (sFraction(m) === null || !m) return null;
   const points = Math.round(m.s_points ?? 9);
   const over = Math.round(m.s_over_db ?? 0);
   if (points >= 9 && over > 0) return `S9+${over}`;
   return `S${Math.max(0, Math.min(9, points))}`;
+}
+
+/** L'S-meter e' una stima dal livello dell'audio, non una lettura della radio. */
+export function sIsEstimated(m: RadioMeters | null | undefined): boolean {
+  return m?.estimated === true && sFraction(m) !== null;
+}
+
+/** Lettura dell'S-meter per il disegno: `S7`, `S9+20`, con la tilde davanti se e' stimato (`~S7`); `null` senza dato. */
+export function sLabel(m: RadioMeters | null | undefined): string | null {
+  const value = sValue(m);
+  return value !== null && sIsEstimated(m) ? `~${value}` : value;
 }
 
 export function powerFraction(m: RadioMeters | null | undefined): number | null {
@@ -204,6 +215,8 @@ export interface MainMeter {
   fraction: number | null;
   /** Lettura a parole (`S7`, `25 W`); `null` senza dato. */
   label: string | null;
+  /** S-meter stimato dall'audio (il disegno mostra il contrassegno «stima»); sempre falso per la potenza. */
+  estimated: boolean;
 }
 
 const trimNumber = (n: number, digits: number) => String(Number(n.toFixed(digits)));
@@ -213,9 +226,9 @@ export function mainMeter(model: DisplayModel): MainMeter {
   if (model.transmitting) {
     const fraction = powerFraction(model.meters);
     const w = model.meters?.power_w;
-    return { kind: 'PO', fraction, label: fraction === null || w === undefined ? null : `${trimNumber(w, w < 10 ? 1 : 0)} W` };
+    return { kind: 'PO', fraction, label: fraction === null || w === undefined ? null : `${trimNumber(w, w < 10 ? 1 : 0)} W`, estimated: false };
   }
-  return { kind: 'S', fraction: sFraction(model.meters), label: sLabel(model.meters) };
+  return { kind: 'S', fraction: sFraction(model.meters), label: sLabel(model.meters), estimated: sIsEstimated(model.meters) };
 }
 
 /** Le letture numeriche presenti (solo quelle che la radio da'), per le righe di testo dei display grandi. */
