@@ -2,6 +2,17 @@
 
 ## Non rilasciato
 
+## 0.11.3 - 2026-10-25
+- **Trasmissione del motore proprio**: doppio clic su un messaggio, CQ, messaggio libero, frequenza Tx e STOP TX arrivano al motore di Aurora (sequenza dei sei messaggi con AutoSeq, audio in uscita, PTT sulla linea RTS o DTR di una porta COM, via OmniRig oppure VOX; uscita audio e PTT si leggono da `JTDX.ini` se c'e'). Il livello segue il cursore Pwr. Il QSO a fine sequenza finisce nel log.
+- **Trasmissione sempre abilitata, nessuna opzione**: tolto `AURORA_ALLOW_TX` e il messaggio «Trasmissione chiusa». Restano STOP TX, i tetti e le automazioni spente di base.
+- **Decodifica piu' sensibile**: sottrazione dei segnali decodificati, filtri e aiuto a priori (AP); sensibilita' sintetica dall'83% al 93%.
+- **CAT per tutte le radio**: scheda Impostazioni -> Radio CAT con Hamlib (`rigctld`), elenco dei modelli, rilevamento della radio, profili con nome, riconnessione automatica e PTT che si spegne alla chiusura (`docs/cat-radio.md`).
+- **Display della radio**: cinque stili (VFD, strumento analogico, TFT, LCD ambra, LED) a scelta nelle Impostazioni, piccolo in testata, alimentati dal CAT; STOP TX e gli altri controlli spostati accanto.
+- **Lingua con le bandiere** e **tabella dell'attivita' di banda** con bandiere piu' grandi, distanza stretta a sinistra e etichette piu' larghe.
+- **Niente vassoio di sistema**: la X chiude tutto come una normale applicazione.
+- **Il cambio modo porta la radio sulla frequenza di quel modo** nella banda in uso, come nelle Impostazioni -> Frequenze.
+- Analisi con REA di JTDX e Decodium in `docs/analisi-*.md`.
+
 ## 0.11.2 - 2026-10-25
 - **Pulsanti del motore proprio**: con Aurora da sola, Monitora (parte **sempre acceso** all'avvio), Ferma, Hound, Modo SWL, Sinc, AGCc, Filtro e gli altri non cercano piu' JTDX: lo stato sta in Aurora e Monitora agisce sul decoder (spento = non si decodifica). La frequenza e il cambio banda passano dalla radio (OmniRig). Abilita Tx, AutoTX e FT4 restano chiusi finche' non sono collegati.
 
