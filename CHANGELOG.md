@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.12 - 2026-10-25
+- **Scheda Impostazioni «DXCC»**: scegli le bande e i modi da mostrare, i colori delle caselle per modo (lavorato/confermato, non confermato, mai lavorato) e dei sei NEW ONE/BAND/MODE e GRID, e le opzioni di aspetto; anteprima viva e ripristino dei colori di fabbrica.
+- **Scheda DXCC sempre presente**, anche senza stazione (etichette e caselle grigie), senza spazio vuoto sotto.
+- **Stazione DX** (etichetta gialla con nominativo, locatore, bandiera e paese) nel riquadro Trasmissione al posto del nominativo; titolo tolto e pastiglia tolta dalla barra.
+- **Distanza a sinistra** nella colonna Attivita' di banda.
+- **Esc piu' reattivo**: i comandi arrivati mentre si decodifica (STOP TX, Esc, Abilita Tx) valgono prima di decidere cosa trasmettere, e la pagina mostra subito la trasmissione ferma.
+
 ## 0.11.11 - 2026-10-25
 - **Avviso di versione nuova** come piccola icona in testata, prima della lingua (un clic apre Installa ora, Note e download, Piu' tardi), al posto della barra larga.
 - Base della scheda Audio come in JTDX (canali d'ingresso e d'uscita, cambio a caldo dell'uscita, salvataggio dei file audio nel formato di JTDX): pezzi del core pronti e provati, collegamento alla scheda nella versione successiva.
