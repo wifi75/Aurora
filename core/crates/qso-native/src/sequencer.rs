@@ -587,11 +587,11 @@ impl Sequencer {
             }
             Step::CompleteThenGoto(n) => {
                 self.progress(slot);
-                self.complete();
+                self.complete(true);
                 self.goto(n);
             }
             Step::CompleteThenFinish => {
-                self.complete();
+                self.complete(true);
                 self.end_qso();
             }
             Step::Abandon(reason) => {
@@ -856,8 +856,9 @@ impl Sequencer {
         };
         self.last_tx = Some((slot, tx.clone()));
         // come JTDX: il QSO si registra quando si manda RR73 o 73 avendo il rapporto del DX
+        // (anche senza il rapporto del DX: JTDX registra quando `m_QSOProgress >= ROGER_REPORT` o si manda il Tx4/Tx5, e scrive `RST_RCVD` vuoto)
         if (n == 4 && !use_rrr) || n == 5 {
-            self.complete();
+            self.complete(false);
         }
         if n == 5 {
             self.end_qso();
@@ -914,8 +915,9 @@ impl Sequencer {
 
     // ---- chiusura ------------------------------------------------------------------------
 
-    /// Registra il QSO (una sola volta) se si ha il rapporto del DX.
-    fn complete(&mut self) {
+    /// Registra il QSO (una sola volta). In ricezione serve il rapporto del DX (`need_report`); quando si comincia a trasmettere RR73 o 73 si registra
+    /// comunque, come JTDX, con il rapporto ricevuto vuoto se non c'e'.
+    fn complete(&mut self, need_report: bool) {
         let fallback = self
             .dx
             .as_ref()
@@ -926,8 +928,10 @@ impl Sequencer {
         if dx.logged {
             return;
         }
-        let Some(rst_rcvd) = dx.rcvd_report.clone() else {
-            return;
+        let rst_rcvd = match dx.rcvd_report.clone() {
+            Some(r) => r,
+            None if !need_report => String::new(),
+            None => return,
         };
         dx.logged = true;
         let rst_sent = dx.sent_report.clone().or(fallback).unwrap_or_default();

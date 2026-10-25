@@ -79,6 +79,8 @@ impl Logbook {
 
     pub fn add(&self, q: &QsoRecord) -> Result<i64, LogError> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
+        // la data e' quella dell'inizio del QSO (JTDX: `QSO_DATE`), se nota
+        let date = if q.time_on_unix_ms > 0 { adif::utc_date(q.time_on_unix_ms / 1000) } else { adif::utc_date(now) };
         let conn = self.conn()?;
         conn.execute(
             "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date)
@@ -92,7 +94,7 @@ impl Logbook {
                 q.rst_sent,
                 q.rst_rcvd,
                 q.time_ms as i64,
-                adif::utc_date(now)
+                date
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -128,6 +130,8 @@ impl Logbook {
                     rst_sent: r.get(5)?,
                     rst_rcvd: r.get(6)?,
                     time_ms: r.get::<_, i64>(7)? as u32,
+                    time_on_unix_ms: 0,
+                    time_off_unix_ms: 0,
                 },
                 r.get::<_, String>(8)?,
             ))

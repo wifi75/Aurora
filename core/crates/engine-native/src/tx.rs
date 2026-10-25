@@ -356,16 +356,24 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mut qsos = Vec::new();
         for event in self.seq.drain_events() {
             match event {
-                QEvent::QsoComplete(rec) => qsos.push(QsoRecord {
-                    call: rec.call.clone(),
-                    grid: rec.grid.clone(),
-                    band: band.to_string(),
-                    mode: self.mode.name().to_string(),
-                    freq_hz: dial_hz + u64::from(rec.tx_freq_hz),
-                    rst_sent: rec.rst_sent.clone(),
-                    rst_rcvd: rec.rst_rcvd.clone(),
-                    time_ms: (rec.time_off_ms % DAY_MS) as u32,
-                }),
+                QEvent::QsoComplete(rec) => {
+                    // come JTDX (`on_logQSOButton_clicked`): l'inizio e' il primo periodo del QSO, la fine e' l'istante in cui comincia a trasmettere
+                    // RR73 o 73 (il periodo dopo l'ultima ricezione, se il QSO si chiude in ricezione) piu' 14 s in FT8 e 7 s in FT4
+                    let tx_slot_ms = rec.time_off_ms.max(slot_start_ms + self.mode.period_ms());
+                    let tail_ms = if self.mode.name() == "FT4" { 7_000 } else { 14_000 };
+                    qsos.push(QsoRecord {
+                        call: rec.call.clone(),
+                        grid: rec.grid.clone(),
+                        band: band.to_string(),
+                        mode: self.mode.name().to_string(),
+                        freq_hz: dial_hz + u64::from(rec.tx_freq_hz),
+                        rst_sent: rec.rst_sent.clone(),
+                        rst_rcvd: rec.rst_rcvd.clone(),
+                        time_ms: (rec.time_on_ms % DAY_MS) as u32,
+                        time_on_unix_ms: rec.time_on_ms,
+                        time_off_unix_ms: tx_slot_ms + tail_ms,
+                    });
+                }
                 QEvent::Abandoned { call, reason } => log.push(format!("QSO con {call} abbandonato: {reason:?}")),
                 QEvent::Stopped(reason) => log.push(format!("trasmissione automatica ferma: {reason:?}")),
                 QEvent::StateChanged { .. } | QEvent::CallerQueued { .. } | QEvent::CallerIgnored { .. } => {}
