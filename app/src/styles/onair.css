@@ -466,6 +466,15 @@
   text-shadow: 0 0 6px rgb(255 240 0 / 0.8);
 }
 
+/* tema chiaro: scritte scure sul giallo, il bianco non si legge */
+:root[data-theme='light'] .decode-row--me,
+:root[data-theme='light'] .decode-row--me .data,
+:root[data-theme='light'] .decode-row--me .decode-where,
+:root[data-theme='light'] .decode-row--me .w-km {
+  color: #1e2600;
+  text-shadow: none;
+}
+
 .me-mark {
   position: absolute;
   top: 0;
