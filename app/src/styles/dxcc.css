@@ -478,3 +478,14 @@
   min-height: 1.6rem;
   padding: 0;
 }
+
+/* guida in testa alla scheda Impostazioni DXCC */
+.dxs-guide {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+}
