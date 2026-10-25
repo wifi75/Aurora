@@ -380,7 +380,11 @@ impl WorkedLog {
             return None;
         }
         // banda e modo insieme, solo banda, solo modo: gli argomenti con cui JTDX chiama `match*`
+        // Per paese e zone (non per locatore, prefisso e nominativo) «banda» vince su «banda+modo»: se il paese e' gia' stato collegato su questa
+        // banda, anche in RTTY o SSB, non e' «nuovo su banda» (scelta del proprietario; JTDX con tutte e due le caselle guarda banda e modo insieme).
+        let by_area = matches!(crit, Crit::Dxcc | Crit::Cqz | Crit::Ituz);
         let (b, m) = match (c.band, c.band_mode) {
+            (true, true) if by_area => (band, None),
             (true, true) => (band, class),
             (true, false) => (band, None),
             _ => ("", class),
@@ -715,6 +719,18 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         assert_eq!(at("40m", "FT8"), Some(Novelty::NewCallBand), "altra banda, stesso modo: nuovo per banda");
         assert_eq!(at("40m", "FT4"), Some(Novelty::NewCallBand));
         assert_eq!(log.novelty_flags("AT9ZZ", None, "20m", Some("FT8"), &flags, &db), Some(Novelty::NewCall), "mai collegato");
+    }
+
+    #[test]
+    fn a_country_worked_on_the_band_in_any_mode_is_not_new_on_the_band() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        // un altro nominativo dello stesso paese, sulla stessa banda ma in RTTY
+        log.add_adif_qso(&qso("AT3AB", "20m", "RTTY"), &db);
+        let flags = HighlightFlags { dxcc: Criterion::new(true, true, true), ..HighlightFlags::none() };
+        let n = log.novelty_flags("AT7XY", None, "20m", Some("FT8"), &flags, &db);
+        assert_ne!(n, Some(Novelty::NewDxccBand), "stessa banda, altro modo e altro nominativo: il paese non e' nuovo su banda");
+        assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("FT8"), &flags, &db), Some(Novelty::NewDxccBand), "altra banda: nuovo su banda");
     }
 
     #[test]
