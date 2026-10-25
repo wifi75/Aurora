@@ -13,6 +13,7 @@ fn qso(call: &str, band: &str, mode: &str) -> QsoRecord {
         time_ms: 45_015_000,
         time_on_unix_ms: 0,
         time_off_unix_ms: 0,
+        ..Default::default()
     }
 }
 

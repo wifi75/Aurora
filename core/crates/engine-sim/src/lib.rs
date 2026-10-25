@@ -160,6 +160,7 @@ impl State {
             tag,
             country: None,
             continent: None,
+            hint: false,
         }
     }
 

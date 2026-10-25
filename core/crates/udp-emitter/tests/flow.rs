@@ -44,7 +44,7 @@ fn status(dx: Option<&str>) -> StationStatus {
 }
 
 fn message(id: u64, text: &str, freq: u32) -> DecodedMessage {
-    DecodedMessage { id, time_ms: 45_015_000, snr: -12, delta_time: 0.3, freq_hz: freq, text: text.into(), tag: None, country: None, continent: None }
+    DecodedMessage { id, time_ms: 45_015_000, snr: -12, delta_time: 0.3, freq_hz: freq, text: text.into(), tag: None, country: None, continent: None, hint: false }
 }
 
 struct Rig {
@@ -148,6 +148,7 @@ async fn a_logged_qso_goes_as_qso_logged_and_then_logged_adif() {
         time_ms: 45_015_000,
         time_on_unix_ms: 1_792_860_405_000,
         time_off_unix_ms: 1_792_860_449_000,
+        ..Default::default()
     };
     rig.events.send(Event::QsoLogged(qso.clone())).expect("evento");
     let Message::QsoLogged { id, dx_call, dx_grid, tx_freq, mode, report_sent, report_received, extra } = next(&rig.gridtracker).await.message else {
@@ -214,4 +215,102 @@ async fn commands_are_ignored_when_the_requests_are_not_accepted_but_replay_stil
     assert_eq!((again.is_new, again.message.as_deref()), (false, Some("CQ K1ABC FN42")));
     let Message::Status(s) = next(&rig.gridtracker).await.message else { panic!("atteso Status") };
     assert_eq!(s.dx_call.as_deref(), Some("K1ABC"));
+}
+
+async fn rig_with(accept: bool, apply_filters: bool, filters: aurora_core::UdpFilters, accepted: Arc<std::sync::atomic::AtomicUsize>) -> Rig {
+    let (gridtracker, addr) = listener().await;
+    let (events, rx) = broadcast::channel(64);
+    let (cmd_tx, commands) = mpsc::channel(16);
+    let mut config = EmitterConfig::jtdx(vec![addr]);
+    config.de_call = "IU3ABC".into();
+    config.accept_requests = accept;
+    config.accept_reply = 3;
+    config.apply_filters = apply_filters;
+    let hooks = udp_emitter::EmitterHooks {
+        filters: Some(Arc::new(std::sync::RwLock::new(filters))),
+        own_continent: Some("EU".into()),
+        on_reply_accepted: Some(Arc::new(move || {
+            accepted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        })),
+    };
+    let emitter = Emitter::start_with(config, rx, cmd_tx, Arc::new(|| true), hooks).await.expect("emettitore");
+    Rig { gridtracker, emitter, events, commands }
+}
+
+#[tokio::test]
+async fn with_the_text_filters_applied_hidden_rows_do_not_leave_and_cannot_be_replied_to() {
+    let filters = aurora_core::UdpFilters { hide_continents: vec!["NA".into()], hide_own_continent: true, ..Default::default() };
+    let mut rig = rig_with(true, true, filters, Arc::new(std::sync::atomic::AtomicUsize::new(0))).await;
+    next(&rig.gridtracker).await;
+    next(&rig.gridtracker).await;
+    let with = |id: u64, text: &str, continent: &str| DecodedMessage { continent: Some(continent.into()), ..message(id, text, 1200 + id as u32) };
+    rig.events.send(Event::Decode(with(1, "CQ K1ABC FN42", "NA"))).expect("evento");
+    rig.events.send(Event::Decode(with(2, "CQ DL1ABC JO62", "EU"))).expect("evento");
+    rig.events.send(Event::Decode(with(3, "CQ JA1ABC PM95", "AS"))).expect("evento");
+    let Message::Decode(shown) = next(&rig.gridtracker).await.message else { panic!("atteso Decode") };
+    assert_eq!(shown.message.as_deref(), Some("CQ JA1ABC PM95"), "il Nord America e il proprio continente sono nascosti");
+    silence(&rig.gridtracker).await;
+    // un Reply a una riga che non e' uscita non fa partire niente
+    let hidden = Decode { message: Some("CQ K1ABC FN42".into()), delta_freq: 1201, ..shown.clone() };
+    rig.gridtracker.send_to(&encode_reply("JTDX", 3, &hidden, 0), rig.emitter.local_addr()).await.expect("invio");
+    assert!(tokio::time::timeout(Duration::from_millis(400), rig.commands.recv()).await.is_err());
+}
+
+#[tokio::test]
+async fn without_the_option_the_filters_do_not_touch_the_udp_flow() {
+    let filters = aurora_core::UdpFilters { hide_continents: vec!["NA".into()], ..Default::default() };
+    let rig = rig_with(false, false, filters, Arc::new(std::sync::atomic::AtomicUsize::new(0))).await;
+    next(&rig.gridtracker).await;
+    next(&rig.gridtracker).await;
+    let na = DecodedMessage { continent: Some("NA".into()), ..message(1, "CQ K1ABC FN42", 1200) };
+    rig.events.send(Event::Decode(na)).expect("evento");
+    let Message::Decode(d) = next(&rig.gridtracker).await.message else { panic!("atteso Decode") };
+    assert_eq!(d.message.as_deref(), Some("CQ K1ABC FN42"));
+}
+
+#[tokio::test]
+async fn an_accepted_reply_notifies_the_window_hook_and_other_requests_do_not() {
+    let counter = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let mut rig = rig_with(true, false, aurora_core::UdpFilters::default(), Arc::clone(&counter)).await;
+    next(&rig.gridtracker).await;
+    next(&rig.gridtracker).await;
+    rig.events.send(Event::Decode(message(9, "CQ K1ABC FN42", 1234))).expect("evento");
+    let Message::Decode(d) = next(&rig.gridtracker).await.message else { panic!("atteso Decode") };
+    let to = rig.emitter.local_addr();
+    rig.gridtracker.send_to(&encode_halt_tx("JTDX", 3, false), to).await.expect("invio");
+    assert_eq!(tokio::time::timeout(Duration::from_secs(3), rig.commands.recv()).await.expect("comando").expect("canale"), Command::HaltTx);
+    assert_eq!(counter.load(std::sync::atomic::Ordering::SeqCst), 0, "HaltTx non porta la finestra in primo piano");
+    let unknown = Decode { message: Some("CQ ZZ9ZZ AA00".into()), ..d.clone() };
+    rig.gridtracker.send_to(&encode_reply("JTDX", 3, &unknown, 0), to).await.expect("invio");
+    rig.gridtracker.send_to(&encode_reply("JTDX", 3, &d, 0), to).await.expect("invio");
+    assert_eq!(tokio::time::timeout(Duration::from_secs(3), rig.commands.recv()).await.expect("comando").expect("canale"), Command::Reply { decode_id: 9 });
+    assert_eq!(counter.load(std::sync::atomic::Ordering::SeqCst), 1, "solo il Reply trovato e accettato");
+}
+
+#[tokio::test]
+async fn the_comment_name_and_power_of_the_qso_travel_in_the_udp_qso_logged() {
+    let rig = rig(false, true).await;
+    next(&rig.gridtracker).await;
+    next(&rig.gridtracker).await;
+    let qso = QsoRecord {
+        call: "K1ABC".into(),
+        grid: "FN42".into(),
+        band: "20m".into(),
+        mode: "FT8".into(),
+        freq_hz: 14_075_084,
+        rst_sent: "-16".into(),
+        rst_rcvd: "-09".into(),
+        time_off_unix_ms: 1_792_860_449_000,
+        time_on_unix_ms: 1_792_860_405_000,
+        name: "Mario".into(),
+        comment: "Distance: 6000 km".into(),
+        tx_power: "50".into(),
+        ..Default::default()
+    };
+    rig.events.send(Event::QsoLogged(qso)).expect("evento");
+    let Message::QsoLogged { extra, .. } = next(&rig.gridtracker).await.message else { panic!("atteso QsoLogged") };
+    let extra = extra.expect("coda");
+    assert_eq!((extra.name.as_deref(), extra.comments.as_deref(), extra.tx_power.as_deref()), (Some("Mario"), Some("Distance: 6000 km"), Some("50")));
+    let Message::LoggedAdif { adif, .. } = next(&rig.gridtracker).await.message else { panic!("atteso LoggedAdif") };
+    assert!(adif.expect("adif").contains("<NAME:5>Mario <COMMENT:17>Distance: 6000 km"));
 }

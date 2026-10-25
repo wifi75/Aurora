@@ -5,12 +5,14 @@ pub mod bus;
 pub mod command;
 pub mod engine;
 pub mod event;
+pub mod filters;
 pub mod version;
 
 pub use bus::Bus;
 pub use command::Command;
 pub use engine::{Engine, EngineIo};
-pub use event::{AudioLevel, DecodeTag, DecodedMessage, Event, LevelState, QsoRecord, RadioMeters, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};
+pub use filters::{SharedUdpFilters, UdpFilters};
+pub use event::{AudioLevel, DecodeTag, DecodedMessage, Event, LevelState, PendingQso, QsoRecord, RadioMeters, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoreError {

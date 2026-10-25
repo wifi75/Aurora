@@ -1,0 +1,737 @@
+/*
+ * Sistema di layout delle schede delle Impostazioni (componenti in src/settings/layout).
+ * Pagina larga a colonne (3 / 2 / 1), riquadri con cornice e titolo, celle di altezza uguale
+ * con l'etichetta a sinistra e il controllo a destra.
+ */
+.settings {
+  --sx-edge: color-mix(in srgb, var(--text) 42%, transparent);
+  --sx-line: color-mix(in srgb, var(--text) 24%, transparent);
+  --sx-cell: color-mix(in srgb, var(--text) 5%, transparent);
+  --sx-head: color-mix(in srgb, var(--accent) 16%, transparent);
+  --sx-cell-h: 2.75rem;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
+:root[data-theme='light'] .settings {
+  --sx-edge: color-mix(in srgb, var(--text) 55%, transparent);
+  --sx-line: color-mix(in srgb, var(--text) 32%, transparent);
+  --sx-cell: #f3f6fb;
+  --sx-head: color-mix(in srgb, var(--accent) 14%, #ffffff);
+}
+
+/* Barra delle schede: due righe ordinate per tipo, dieci schede per riga */
+.settings .tabs {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tabs-row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1.5px solid var(--sx-edge);
+  border-radius: 0.7rem;
+}
+
+.tabs-row-label {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.tabs-row-list {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.tabs-row-list > .glass {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* La scheda aperta: riquadro unico, il contenuto a colonne */
+.settings-block {
+  min-height: 28rem;
+}
+
+.sx-page {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.sx-group {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  border: 1.5px solid var(--sx-edge);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.sx-span-1 {
+  grid-column: span 1;
+}
+
+.sx-span-2 {
+  grid-column: span 2;
+}
+
+.sx-span-3 {
+  grid-column: 1 / -1;
+}
+
+.sx-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0.4rem var(--space-3);
+  background: var(--sx-head);
+  border-bottom: 1.5px solid var(--sx-edge);
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.sx-aside {
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sx-body {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+/* I titoli che i componenti dei dati mettono da soli diventano inutili dentro un riquadro con titolo */
+.sx-body > section > .set-sub,
+.sx-body > .set-sub {
+  display: none;
+}
+
+.sx-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--sx-min, 16rem)), 1fr));
+  gap: var(--space-1) var(--space-2);
+}
+
+/* La cella: etichetta a sinistra, controllo a destra, perimetro sottile, stessa altezza per tutte */
+.sx-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: var(--sx-cell-h);
+  margin: 0;
+  padding: 0.25rem var(--space-3);
+  background: var(--sx-cell);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.sx-field--wide {
+  grid-column: 1 / -1;
+}
+
+.sx-label {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.sx-control {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  max-width: 62%;
+  min-width: 0;
+}
+
+.sx-field input[type='checkbox'],
+.sx-field input[type='radio'] {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+}
+
+.sx-field input[type='text'],
+.sx-field input[type='search'],
+.sx-field input[type='password'],
+.sx-field input[type='url'],
+.sx-field input[type='number'],
+.sx-field input[type='color'],
+.sx-field select,
+.sx-field textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 2rem;
+  margin: 0;
+  padding: 0 var(--space-2);
+  background: var(--panel);
+  border: 1px solid var(--sx-edge);
+  border-radius: 0.4rem;
+  color: var(--text);
+  font: inherit;
+}
+
+.sx-field input[type='text'],
+.sx-field input[type='search'],
+.sx-field input[type='password'],
+.sx-field input[type='url'],
+.sx-field select {
+  width: var(--sx-ctl, 10rem);
+}
+
+.sx-field input[type='number'] {
+  width: 5rem;
+}
+
+.sx-field input[type='color'] {
+  width: 2.75rem;
+  padding: 1px;
+}
+
+.sx-field textarea {
+  width: 100%;
+  height: auto;
+  padding: var(--space-1) var(--space-2);
+  resize: vertical;
+}
+
+.sx-field input:disabled,
+.sx-field select:disabled {
+  opacity: 0.55;
+}
+
+.sx-field--stack {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+}
+
+.sx-field--stack .sx-control {
+  display: block;
+  max-width: none;
+}
+
+.sx-field--stack input[type='text'],
+.sx-field--stack input[type='url'],
+.sx-field--stack select {
+  width: 100%;
+}
+
+.sx-field--plain .sx-control {
+  flex-wrap: wrap;
+  max-width: 70%;
+  text-align: right;
+}
+
+.sx-field--changed {
+  box-shadow: inset 4px 0 0 #e0a100;
+  background: color-mix(in srgb, #e0a100 16%, var(--sx-cell));
+}
+
+.sx-field--off {
+  opacity: 0.75;
+}
+
+.sx-field--off input {
+  cursor: not-allowed;
+}
+
+.sx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sx-message {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.sx-notes > summary,
+.sx-off > summary {
+  cursor: pointer;
+  border-bottom: 0;
+}
+
+.sx-notes[open] > summary,
+.sx-off[open] > summary {
+  border-bottom: 1.5px solid var(--sx-edge);
+}
+
+.sx-notes-body p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.sx-off-body .jt-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.1rem var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.4rem;
+  background: var(--sx-cell);
+}
+
+.sx-off-body .jt-row .jt-reason {
+  grid-column: 1 / -1;
+}
+
+.sx-off-body .jt-row--off {
+  opacity: 1;
+}
+
+/* Tabelle vere: intestazioni fisse, ogni cella col suo perimetro */
+.sx-tablewrap {
+  overflow-x: auto;
+}
+
+.sx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  table-layout: fixed;
+}
+
+.sx-table th,
+.sx-table td {
+  height: var(--sx-cell-h);
+  padding: 0.2rem var(--space-2);
+  border: 1px solid var(--sx-line);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sx-table thead th {
+  height: auto;
+  padding-block: 0.4rem;
+  background: var(--sx-head);
+  border-color: var(--sx-edge);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sx-table tbody th {
+  background: var(--sx-cell);
+  font-weight: var(--weight-strong);
+  text-align: left;
+}
+
+.sx-table td > label,
+.sx-table td > .sx-cellbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+}
+
+.sx-table input[type='checkbox'] {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+}
+
+.sx-table td.sx-na {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.sx-table .sx-first-letter {
+  display: inline-block;
+}
+
+.sx-table .sx-first-letter::first-letter {
+  text-transform: uppercase;
+}
+
+/* Elenco di righe (macro, dispositivi, avvisi recenti) dentro un riquadro */
+.sx-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sx-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 2.4rem;
+  padding: 0.2rem var(--space-3);
+  background: var(--sx-cell);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+  font-size: var(--text-sm);
+}
+
+.sx-list--scroll {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+/* Moduli di altre parti dentro i riquadri: stesso aspetto delle celle */
+.sx-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-1) var(--space-2);
+}
+
+.sx-rules > .auto-field,
+.sx-rules > .auto-wanted {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  max-width: none;
+  min-height: var(--sx-cell-h);
+  padding: 0.25rem var(--space-3);
+  background: var(--sx-cell);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+  font-size: var(--text-sm);
+}
+
+.sx-rules > .auto-wanted {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.sx-rules > .auto-field input,
+.sx-rules > .auto-field select {
+  box-sizing: border-box;
+  width: 9rem;
+  min-height: 2rem;
+  height: 2rem;
+}
+
+.sx-rules > .auto-field input[type='number'] {
+  width: 5rem;
+}
+
+.sx-rules > fieldset.auto-tags {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+}
+
+.sx-rules > fieldset.auto-tags > legend {
+  grid-column: 1 / -1;
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.sx-rules > button {
+  justify-self: start;
+}
+
+/* Medio: due colonne; telefono: una */
+@media (max-width: 1199px) {
+  .sx-page {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabs-row-list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 759px) {
+  .sx-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sx-span-2,
+  .sx-span-3 {
+    grid-column: 1 / -1;
+  }
+
+  .sx-group[style] {
+    grid-row: auto !important;
+  }
+
+  .tabs-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tabs-row-label {
+    padding-block: 0;
+  }
+
+  /* telefono: ogni riga di schede e' una fascia che scorre di lato */
+  .tabs-row-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+    scroll-snap-type: x proximity;
+  }
+
+  .tabs-row-list > .glass {
+    flex: 0 0 auto;
+    min-width: 6.5rem;
+    min-height: 2.75rem;
+    padding-inline: var(--space-3);
+    scroll-snap-align: start;
+  }
+
+  .settings-block {
+    min-height: 0;
+  }
+
+  .sx-control {
+    max-width: 58%;
+  }
+
+  .sx-tablewrap > .sx-table {
+    min-width: 32rem;
+  }
+
+  .sx-field input[type='text'],
+  .sx-field input[type='search'],
+  .sx-field input[type='password'],
+  .sx-field input[type='url'],
+  .sx-field select {
+    width: 8.5rem;
+  }
+}
+
+/* Tabelle lunghe: altezza fissa con scorrimento interno e intestazione ferma */
+.sx-tablewrap--scroll {
+  max-height: 27rem;
+  overflow-y: auto;
+}
+
+.sx-tablewrap--scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sx-table td select,
+.sx-table td input[type='number'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 12rem;
+  height: 2rem;
+  padding: 0 var(--space-2);
+  background: var(--panel);
+  border: 1px solid var(--sx-edge);
+  border-radius: 0.4rem;
+  color: var(--text);
+  font: inherit;
+}
+
+.sx-table td input[type='checkbox'] {
+  cursor: pointer;
+}
+
+.sx-table td input[type='color'] {
+  width: 2.75rem;
+  height: 2rem;
+  padding: 1px;
+}
+
+/* Voci del motore (SettingField) e liste dentro i riquadri: stesso aspetto delle celle, in colonne */
+.sx-body .jx-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.sx-body .jx-row,
+.sx-cells > .jx-row {
+  box-sizing: border-box;
+  min-height: var(--sx-cell-h);
+  padding: 0.25rem var(--space-3);
+  background: var(--sx-cell);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+  font-size: var(--text-sm);
+}
+
+.sx-body .jx-row:nth-child(odd),
+.sx-body .jx-row:nth-child(even),
+.sx-cells > .jx-row:nth-child(odd),
+.sx-cells > .jx-row:nth-child(even) {
+  background: var(--sx-cell);
+}
+
+.sx-body .jx-row.jx-row--changed,
+.sx-cells > .jx-row.jx-row--changed {
+  box-shadow: inset 4px 0 0 #e0a100;
+  background: color-mix(in srgb, #e0a100 16%, var(--sx-cell));
+}
+
+.sx-body .jx-row input[type='text'],
+.sx-body .jx-row input[type='number'],
+.sx-body .jx-row select {
+  border-color: var(--sx-edge);
+}
+
+.sx-page > .jx-bar {
+  grid-column: 1 / -1;
+}
+
+.sx-page > p {
+  margin: 0;
+}
+
+.sx-page > .sx-span-3 {
+  grid-column: 1 / -1;
+}
+
+/* Anteprima dei colori: nominativo di esempio, colore e nota del suono nella stessa cella */
+.jt-note {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.sx-field .jt-sample {
+  min-width: 5.5rem;
+  white-space: nowrap;
+}
+
+/* Righe con campi e pulsanti (cluster, comandi) dentro un riquadro */
+.sx-body .cmd-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sx-body .cmd-line select,
+.sx-body .cmd-line input[type='text'] {
+  flex: 1 1 8rem;
+  min-width: 0;
+  min-height: 2rem;
+}
+
+.sx-field.cluster-server {
+  flex-wrap: nowrap;
+}
+
+.sx-field.cluster-server .sx-label {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+
+.sx-field.cluster-server .sx-control {
+  max-width: none;
+}
+
+/* Scelte semplici in una cella di una tabella o di un riquadro */
+.sx-body .set-add {
+  display: flex;
+}
+
+.sx-body .band-choice {
+  grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+}
+
+.sx-body .alert-switch {
+  margin: 0;
+}
+
+.sx-body .offer {
+  margin: 0;
+}
+
+.sx-cells--tight > .sx-field {
+  min-height: 2.35rem;
+  padding-block: 0.1rem;
+}
+
+/* SettingField (voci del motore) dentro una cella: nome a sinistra, controllo a destra */
+.sx-body .jx-row,
+.sx-cells > .jx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sx-body .jx-name {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.sx-body .jx-row input[type='text'],
+.sx-body .jx-row select {
+  flex: none;
+  width: 9rem;
+}
+
+.sx-body .jx-row input[type='number'] {
+  flex: none;
+  width: 5rem;
+}
+
+.sx-body .jx-row input[type='checkbox'] {
+  flex: none;
+}
+
+.sx-body .jx-row .ens-reason {
+  display: none;
+}

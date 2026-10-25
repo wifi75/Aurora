@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ApiError, getClusterCatalog, getClusterSpots, putCluster, sendClusterCommand, testClusterServer, type ClusterConfig, type ClusterServer } from '../api/client';
 import { useT, type T } from '../i18n';
 import { Check, Help } from './common';
+import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 const MAX_SERVERS = 8;
@@ -147,98 +148,110 @@ export function ClusterTab() {
   const connected = state.data.servers.filter((s) => s.state === 'connected');
 
   return (
-    <>
-      <Help>{t('cluster.intro')}</Help>
-      <Check label={t('cluster.enabled')} hint={t('tip.cluster.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-      <label className="auto-field" title={t('tip.cluster.callsign')}>
-        {t('cluster.callsign')}
-        <input type="text" value={shown.callsign} maxLength={16} onChange={(e) => set({ callsign: e.target.value.toUpperCase() })} />
-      </label>
+    <Page>
+      <Group title={t('cluster.servers')} span={2} aside={<span className="muted">{shown.servers.length}/{MAX_SERVERS}</span>}>
+        <div className="sx-list" title={t('tip.cluster.server')}>
+          {shown.servers.map((s, i) => (
+            <div className="sx-field cluster-server" key={`${s.host}:${s.port}`}>
+              <LedLight led={leds[`${s.host}:${s.port}`]} t={t} />
+              <span className="sx-label">
+                <strong>{s.name}</strong> <span className="data muted">{s.host}:{s.port}</span>
+              </span>
+              <span className="sx-control">
+                <label className="set-check">
+                  <input type="checkbox" checked={s.enabled} onChange={(e) => changeServer(i, { enabled: e.target.checked })} />
+                  <span>{t('cluster.server.on')}</span>
+                </label>
+                <button type="button" className="glass chip" onClick={() => { setNote(t('cluster.removed')); set({ servers: shown.servers.filter((_, k) => k !== i) }); }}>
+                  {t('cluster.server.remove')}
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+        <Actions>
+          <button type="button" className="glass chip" title={t('tip.cluster.test')} onClick={() => shown.servers.forEach(probe)}>
+            {t('cluster.test')}
+          </button>
+        </Actions>
+      </Group>
 
-      <h3 className="set-sub">{t('cluster.servers')}</h3>
-      <div className="cluster-servers" title={t('tip.cluster.server')}>
-        {shown.servers.map((s, i) => (
-          <div className="cluster-server" key={`${s.host}:${s.port}`}>
-            <LedLight led={leds[`${s.host}:${s.port}`]} t={t} />
-            <Check label={t('cluster.server.on')} checked={s.enabled} onChange={(v) => changeServer(i, { enabled: v })} />
-            <strong>{s.name}</strong>
-            <span className="data muted">
-              {s.host}:{s.port}
-            </span>
-            <button type="button" className="glass chip" onClick={() => { setNote(t('cluster.removed')); set({ servers: shown.servers.filter((_, k) => k !== i) }); }}>
-              {t('cluster.server.remove')}
-            </button>
-          </div>
+      <Group title={t('lay.settings')}>
+        <Cells min={13}>
+          <Check label={t('cluster.enabled')} hint={t('tip.cluster.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Field label={t('cluster.callsign')} hint={t('tip.cluster.callsign')}>
+            <input type="text" value={shown.callsign} maxLength={16} onChange={(e) => set({ callsign: e.target.value.toUpperCase() })} />
+          </Field>
+          <Field label={t('cluster.max')} hint={t('tip.cluster.max')}>
+            <input type="number" className="set-number" min={50} max={2000} value={shown.maxSpots} onChange={(e) => set({ maxSpots: e.target.value })} />
+          </Field>
+          <Field label={t('cluster.age')} hint={t('tip.cluster.age')}>
+            <input type="number" className="set-number" min={5} max={1440} value={shown.maxAge} onChange={(e) => set({ maxAge: e.target.value })} />
+          </Field>
+          <Field label={t('cluster.login')} hint={t('tip.cluster.login')} stack>
+            <textarea rows={3} value={shown.login} spellCheck={false} onChange={(e) => set({ login: e.target.value })} />
+          </Field>
+        </Cells>
+        {!parsed ? <Message kind="alert">{t('cluster.invalid')}</Message> : <Message kind="muted">{t('cluster.autosave')}</Message>}
+        {note ? <Message>{note}</Message> : null}
+      </Group>
+
+      <Group title={t('cluster.add.heading')} span={2}>
+        <div className="cmd-line" title={t('tip.cluster.catalog')}>
+          <select aria-label={t('cluster.add.catalog')} value={pick} onChange={(e) => setPick(e.target.value)}>
+            <option value="">{t('cluster.add.choose')}</option>
+            {(catalog.data ?? []).map((c) => (
+              <option key={`${c.host}:${c.port}`} value={`${c.host}:${c.port}`}>
+                {c.name} — {c.software}, {c.place} ({c.host}:{c.port})
+              </option>
+            ))}
+          </select>
+          <button type="button" className="glass" disabled={pick === ''} onClick={addPublic}>
+            {t('cluster.add.button')}
+          </button>
+        </div>
+        {pick ? <Message kind="muted">{catalog.data?.find((c) => `${c.host}:${c.port}` === pick)?.note ?? ''}</Message> : null}
+        <div className="cmd-line">
+          <strong>{t('cluster.add.custom')}</strong>
+          <input type="text" aria-label={t('cluster.add.name')} placeholder={t('cluster.add.name')} value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} />
+          <input type="text" aria-label={t('cluster.add.host')} placeholder={t('cluster.add.host')} value={custom.host} onChange={(e) => setCustom({ ...custom, host: e.target.value })} />
+          <input type="number" className="set-number" aria-label={t('cluster.add.port')} min={1} max={65535} value={custom.port} onChange={(e) => setCustom({ ...custom, port: e.target.value })} />
+          <button type="button" className="glass" disabled={!HOST.test(custom.host.trim()) || !(Number(custom.port) >= 1 && Number(custom.port) <= 65535)} onClick={addCustom}>
+            {t('cluster.add.button')}
+          </button>
+        </div>
+      </Group>
+
+      <Group title={t('cluster.state')}>
+        {state.data.servers.length === 0 ? <Message kind="muted">{t('cluster.state.none')}</Message> : null}
+        {state.data.servers.map((s) => (
+          <p key={s.key} className={`sx-message ${s.state === 'error' ? 'notice' : 'muted'}`}>
+            <span className={`led led--${s.state === 'connected' ? 'ok' : s.state === 'error' ? 'fail' : 'testing'}`} aria-hidden="true" /> <strong>{s.name}</strong> —{' '}
+            {t(`cluster.state.${s.state}` as 'cluster.state.error', { n: s.spots, detail: s.detail ?? '' })}
+          </p>
         ))}
-      </div>
-      <button type="button" className="glass chip" title={t('tip.cluster.test')} onClick={() => shown.servers.forEach(probe)}>
-        {t('cluster.test')}
-      </button>
+      </Group>
 
-      <h3 className="set-sub">{t('cluster.add.heading')}</h3>
-      <div className="cmd-line" title={t('tip.cluster.catalog')}>
-        <select aria-label={t('cluster.add.catalog')} value={pick} onChange={(e) => setPick(e.target.value)}>
-          <option value="">{t('cluster.add.choose')}</option>
-          {(catalog.data ?? []).map((c) => (
-            <option key={`${c.host}:${c.port}`} value={`${c.host}:${c.port}`}>
-              {c.name} — {c.software}, {c.place} ({c.host}:{c.port})
-            </option>
-          ))}
-        </select>
-        <button type="button" className="glass" disabled={pick === ''} onClick={addPublic}>
-          {t('cluster.add.button')}
-        </button>
-      </div>
-      <p className="muted settings-hint">{pick ? (catalog.data?.find((c) => `${c.host}:${c.port}` === pick)?.note ?? '') : ''}</p>
-      <div className="cmd-line">
-        <strong>{t('cluster.add.custom')}</strong>
-        <input type="text" aria-label={t('cluster.add.name')} placeholder={t('cluster.add.name')} value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} />
-        <input type="text" aria-label={t('cluster.add.host')} placeholder={t('cluster.add.host')} value={custom.host} onChange={(e) => setCustom({ ...custom, host: e.target.value })} />
-        <input type="number" className="set-number" aria-label={t('cluster.add.port')} min={1} max={65535} value={custom.port} onChange={(e) => setCustom({ ...custom, port: e.target.value })} />
-        <button type="button" className="glass" disabled={!HOST.test(custom.host.trim()) || !(Number(custom.port) >= 1 && Number(custom.port) <= 65535)} onClick={addCustom}>
-          {t('cluster.add.button')}
-        </button>
-      </div>
+      <Group title={t('cluster.command')} span={2}>
+        <div className="cmd-line" title={t('tip.cluster.command')}>
+          <select aria-label={t('cluster.command.server')} value={command.server} onChange={(e) => setCommand({ ...command, server: e.target.value })}>
+            <option value="">{t('cluster.command.server')}</option>
+            {connected.map((s) => (
+              <option key={s.key} value={s.key}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <input type="text" aria-label={t('cluster.command')} placeholder="sh/dx 20" maxLength={80} value={command.text} onChange={(e) => setCommand({ ...command, text: e.target.value })} />
+          <button type="button" className="glass" disabled={command.server === '' || command.text.trim() === '' || send.isPending} onClick={() => send.mutate()}>
+            {t('cluster.command.send')}
+          </button>
+        </div>
+      </Group>
 
-      <label className="auto-field" title={t('tip.cluster.login')}>
-        {t('cluster.login')}
-        <textarea rows={3} value={shown.login} spellCheck={false} onChange={(e) => set({ login: e.target.value })} />
-      </label>
-      <label className="set-check" title={t('tip.cluster.max')}>
-        <span>{t('cluster.max')}</span>
-        <input type="number" className="set-number" min={50} max={2000} value={shown.maxSpots} onChange={(e) => set({ maxSpots: e.target.value })} />
-      </label>
-      <label className="set-check" title={t('tip.cluster.age')}>
-        <span>{t('cluster.age')}</span>
-        <input type="number" className="set-number" min={5} max={1440} value={shown.maxAge} onChange={(e) => set({ maxAge: e.target.value })} />
-      </label>
-      {!parsed ? <p className="notice">{t('cluster.invalid')}</p> : <Help>{t('cluster.autosave')}</Help>}
-      {note ? <p className="live-note" role="status">{note}</p> : null}
-
-      <h3 className="set-sub">{t('cluster.state')}</h3>
-      {state.data.servers.length === 0 ? <p className="muted">{t('cluster.state.none')}</p> : null}
-      {state.data.servers.map((s) => (
-        <p key={s.key} className={s.state === 'error' ? 'notice' : 'muted'}>
-          <span className={`led led--${s.state === 'connected' ? 'ok' : s.state === 'error' ? 'fail' : 'testing'}`} aria-hidden="true" /> <strong>{s.name}</strong> —{' '}
-          {t(`cluster.state.${s.state}` as 'cluster.state.error', { n: s.spots, detail: s.detail ?? '' })}
-        </p>
-      ))}
-
-      <h3 className="set-sub">{t('cluster.command')}</h3>
-      <div className="cmd-line" title={t('tip.cluster.command')}>
-        <select aria-label={t('cluster.command.server')} value={command.server} onChange={(e) => setCommand({ ...command, server: e.target.value })}>
-          <option value="">{t('cluster.command.server')}</option>
-          {connected.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <input type="text" aria-label={t('cluster.command')} placeholder="sh/dx 20" maxLength={80} value={command.text} onChange={(e) => setCommand({ ...command, text: e.target.value })} />
-        <button type="button" className="glass" disabled={command.server === '' || command.text.trim() === '' || send.isPending} onClick={() => send.mutate()}>
-          {t('cluster.command.send')}
-        </button>
-      </div>
-    </>
+      <Notes>
+        <Help>{t('cluster.intro')}</Help>
+      </Notes>
+    </Page>
   );
 }

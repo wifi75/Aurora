@@ -14,7 +14,7 @@ use std::{
     time::Duration,
 };
 
-use aurora_core::{Command, DecodedMessage, Event, QsoRecord, StationStatus};
+use aurora_core::{Command, DecodedMessage, Event, QsoRecord, SharedUdpFilters, StationStatus};
 use logbook::adif;
 use tokio::{
     net::UdpSocket,
@@ -51,6 +51,10 @@ pub struct EmitterConfig {
     pub accept_reply: u8,
     /// `EnableUDP1adifSending`: dopo ogni QSO Logged manda anche il Logged ADIF.
     pub send_adif: bool,
+    /// L'invio a eQSL e' acceso: il record ADIF porta `EQSL_QSL_SENT` come in JTDX.
+    pub eqsl_sent: bool,
+    /// `ApplyFiltersToUDPmessages`: solo i messaggi che i filtri di testo lasciano vedere escono via UDP.
+    pub apply_filters: bool,
     pub heartbeat: Duration,
 }
 
@@ -67,6 +71,8 @@ impl EmitterConfig {
             accept_requests: false,
             accept_reply: 1,
             send_adif: false,
+            eqsl_sent: false,
+            apply_filters: false,
             heartbeat: Duration::from_secs(HEARTBEAT_SECS),
         }
     }
@@ -80,6 +86,7 @@ struct Recent {
     snr: i32,
     delta_time: f32,
     text: String,
+    hint: bool,
 }
 
 /// Il cuore dell'emettitore, senza rete: trasforma eventi in datagrammi e datagrammi in comandi.
@@ -94,12 +101,17 @@ pub struct Session {
     last_status: Option<StationStatus>,
     recent: VecDeque<Recent>,
     last_qso: Option<(String, i64)>,
+    /// I filtri della scheda Filtri (copia mandata dalla pagina) e il continente di chi opera: servono con `apply_filters`.
+    filters: Option<SharedUdpFilters>,
+    own_continent: Option<String>,
 }
 
 /// Cosa fare dopo un datagramma ricevuto.
 #[derive(Debug, Default)]
 pub struct Handled {
     pub commands: Vec<Command>,
+    /// Una richiesta `Reply` e' stata accettata: chi vuole puo' portare la finestra in primo piano (`udpWindowToFront`, `udpWindowRestore`).
+    pub reply_accepted: bool,
     /// Datagrammi da rimandare ai destinatari (il Replay rimanda i decode correnti).
     pub datagrams: Vec<Vec<u8>>,
 }
@@ -123,7 +135,22 @@ pub fn reply_accepted(accept_reply: u8, text: &str) -> bool {
 
 impl Session {
     pub fn new(config: EmitterConfig) -> Session {
-        Session { config, schema: INITIAL_SCHEMA, last: None, mode: "FT8".to_string(), last_status: None, recent: VecDeque::new(), last_qso: None }
+        Session { config, schema: INITIAL_SCHEMA, last: None, mode: "FT8".to_string(), last_status: None, recent: VecDeque::new(), last_qso: None, filters: None, own_continent: None }
+    }
+
+    /// I filtri di testo e il continente proprio, per `apply_filters`.
+    pub fn set_filters(&mut self, filters: Option<SharedUdpFilters>, own_continent: Option<String>) {
+        self.filters = filters;
+        self.own_continent = own_continent;
+    }
+
+    /// Vero se il messaggio puo' uscire via UDP: con `apply_filters` solo se i filtri di testo lo lasciano vedere (`readFromStdout`: `!filterUDP || notified & 2`).
+    fn passes_filters(&self, m: &DecodedMessage) -> bool {
+        if !self.config.apply_filters {
+            return true;
+        }
+        let Some(filters) = &self.filters else { return true };
+        filters.read().map_or(true, |f| f.allows(m, self.own_continent.as_deref()))
     }
 
     pub fn schema(&self) -> u32 {
@@ -201,7 +228,8 @@ impl Session {
                 delta_freq: m.freq_hz,
                 mode: Some(mode_char(&self.mode).to_string()),
                 message: Some(m.text.trim().to_string()),
-                low_confidence: false,
+                // JTDX: `postDecode` passa il marcatore `*` o `^` della riga come bit di bassa fiducia
+                low_confidence: m.hint,
                 off_air: false,
             },
         )
@@ -219,18 +247,22 @@ impl Session {
                 self.send(datagram).into_iter().collect()
             }
             Event::Decode(m) => {
+                // il Reply e il Replay di GridTracker usano solo cio' che e' uscito: una riga nascosta dai filtri non si ricorda nemmeno
+                if !self.passes_filters(m) {
+                    return Vec::new();
+                }
                 let recent = self.remember(m);
                 let datagram = self.decode_datagram(&recent, true);
                 self.push_recent(recent);
                 self.send(datagram).into_iter().collect()
             }
             Event::QsoLogged(q) => self.on_qso(q, now_unix_ms),
-            Event::TxHalted | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) | Event::BandChanged { .. } => Vec::new(),
+            Event::QsoCompleted(_) | Event::QsoPending(_) | Event::QsoPendingDone { .. } | Event::TxHalted | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) | Event::BandChanged { .. } => Vec::new(),
         }
     }
 
     fn remember(&self, m: &DecodedMessage) -> Recent {
-        Recent { id: m.id, time_ms: m.time_ms, freq_hz: m.freq_hz, snr: m.snr, delta_time: m.delta_time, text: m.text.clone() }
+        Recent { id: m.id, time_ms: m.time_ms, freq_hz: m.freq_hz, snr: m.snr, delta_time: m.delta_time, text: m.text.clone(), hint: m.hint }
     }
 
     fn push_recent(&mut self, recent: Recent) {
@@ -257,9 +289,9 @@ impl Session {
             mode: q.mode.clone(),
             report_sent: q.rst_sent.clone(),
             report_received: q.rst_rcvd.clone(),
-            tx_power: self.config.tx_power.clone(),
-            comments: String::new(),
-            name: String::new(),
+            tx_power: if q.tx_power.is_empty() { self.config.tx_power.clone() } else { q.tx_power.clone() },
+            comments: q.comment.clone(),
+            name: q.name.clone(),
             time_on_ms: instant(q.time_on_unix_ms),
             operator_call: self.config.de_call.clone(),
             my_call: self.config.de_call.clone(),
@@ -268,7 +300,8 @@ impl Session {
         let mut out: Vec<Vec<u8>> = self.send(encode_qso_logged(&self.config.id, self.schema, &data)).into_iter().collect();
         if self.config.send_adif {
             let station = adif::Station { call: self.config.de_call.clone(), grid: self.config.de_grid.clone(), tx_power: self.config.tx_power.clone() };
-            let record = adif::jtdx_record(q, &station, &adif::utc_date(now_unix_ms / 1000));
+            let today = adif::utc_date(now_unix_ms / 1000);
+            let record = adif::jtdx_record_with(q, &station, &today, self.config.eqsl_sent.then_some(today.as_str()));
             out.extend(self.send(encode_logged_adif(&self.config.id, self.schema, &record)));
         }
         out
@@ -310,7 +343,10 @@ impl Session {
                 let exact = self.recent.iter().rev().find(|r| r.text.trim() == text.trim() && r.freq_hz == decode.delta_freq && r.time_ms == decode.time_ms);
                 let found = exact.or_else(|| self.recent.iter().rev().find(|r| r.text.trim() == text.trim() && r.freq_hz == decode.delta_freq));
                 match found {
-                    Some(r) => handled.commands.push(Command::Reply { decode_id: r.id }),
+                    Some(r) => {
+                        handled.commands.push(Command::Reply { decode_id: r.id });
+                        handled.reply_accepted = true;
+                    }
                     None => tracing::debug!("Reply UDP ignorato, messaggio non trovato tra i recenti: {text}"),
                 }
             }
@@ -337,6 +373,17 @@ fn now_unix_ms() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
+/// Cio' che l'emettitore riceve da chi lo costruisce oltre alla configurazione.
+#[derive(Clone, Default)]
+pub struct EmitterHooks {
+    /// I filtri di testo (con `apply_filters`).
+    pub filters: Option<SharedUdpFilters>,
+    /// Il continente di chi opera (filtro «nascondi il proprio continente»).
+    pub own_continent: Option<String>,
+    /// Chiamata quando una richiesta `Reply` e' accettata: la finestra del programma si porta in primo piano o si ripristina.
+    pub on_reply_accepted: Option<Arc<dyn Fn() + Send + Sync>>,
+}
+
 /// L'emettitore in esecuzione: un socket UDP da cui partono i datagrammi e su cui tornano i comandi.
 pub struct Emitter {
     local: SocketAddr,
@@ -348,11 +395,17 @@ pub struct Emitter {
 
 impl Emitter {
     /// Avvia l'emettitore (dentro un runtime Tokio). `tx_first` dice se tocca a noi il primo periodo (byte `tx_first` dello Status).
-    pub async fn start(
+    pub async fn start(config: EmitterConfig, events: broadcast::Receiver<Event>, commands: mpsc::Sender<Command>, tx_first: Arc<dyn Fn() -> bool + Send + Sync>) -> std::io::Result<Emitter> {
+        Emitter::start_with(config, events, commands, tx_first, EmitterHooks::default()).await
+    }
+
+    /// Come `start`, con i filtri di testo e la notifica delle richieste accettate.
+    pub async fn start_with(
         config: EmitterConfig,
         mut events: broadcast::Receiver<Event>,
         commands: mpsc::Sender<Command>,
         tx_first: Arc<dyn Fn() -> bool + Send + Sync>,
+        hooks: EmitterHooks,
     ) -> std::io::Result<Emitter> {
         // un solo socket per tutti i destinatari: i comandi tornano all'indirizzo da cui e' partito il flusso (come con JTDX)
         let loopback = config.targets.iter().all(|t| t.ip().is_loopback());
@@ -367,7 +420,10 @@ impl Emitter {
         let local = socket.local_addr()?;
         let targets = config.targets.clone();
         let heartbeat = config.heartbeat;
-        let session = Arc::new(Mutex::new(Session::new(config)));
+        let mut first_session = Session::new(config);
+        first_session.set_filters(hooks.filters.clone(), hooks.own_continent.clone());
+        let session = Arc::new(Mutex::new(first_session));
+        let on_accepted = hooks.on_reply_accepted.clone();
 
         let first = lock(&session).map(|mut s| s.start()).unwrap_or_default();
         send_all(&socket, &targets, &first).await;
@@ -397,6 +453,11 @@ impl Emitter {
                         received = socket.recv_from(&mut buf) => match received {
                             Ok((n, _from)) => {
                                 let handled = lock(&session).map(|mut s| s.on_datagram(&buf[..n], tx_first())).unwrap_or_default();
+                                if handled.reply_accepted
+                                    && let Some(hook) = &on_accepted
+                                {
+                                    hook();
+                                }
                                 for command in handled.commands {
                                     if commands.send(command).await.is_err() {
                                         tracing::debug!("comando UDP non consegnato: canale chiuso");

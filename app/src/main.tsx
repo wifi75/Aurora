@@ -10,6 +10,7 @@ import './styles/glass.css';
 import './styles/onair.css';
 import './styles/radiodisplay.css';
 import './styles/dxcc.css';
+import './styles/settings-layout.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';

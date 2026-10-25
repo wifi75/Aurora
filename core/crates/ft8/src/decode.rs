@@ -45,6 +45,8 @@ pub struct Decoded {
     /// Rapporto segnale/rumore in 2500 Hz (dB, intero come nell'elenco dei messaggi).
     pub snr_db: i32,
     pub text: String,
+    /// Trovato con un'analisi a priori (`ap_type` diverso da 0): il marcatore `*` di JTDX.
+    pub hint: bool,
 }
 
 /// Un messaggio decodificato con le grandezze con cui e' stato accettato (per le misure e per tarare i filtri).
@@ -594,7 +596,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
 
             return Some(Hit {
                 info: DecodedInfo {
-                    decoded: Decoded { freq_hz: refined.freq_hz, dt_s: refined.dt_s, snr_db: xsnr.round() as i32, text },
+                    decoded: Decoded { freq_hz: refined.freq_hz, dt_s: refined.dt_s, snr_db: xsnr.round() as i32, text, hint: aptype != 0 },
                     pass: ipass,
                     ap_type: aptype,
                     hard_errors: quality.hard_errors,

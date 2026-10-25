@@ -20,6 +20,7 @@ fn qso(call: &str) -> QsoRecord {
         time_ms: 0,
         time_on_unix_ms: ON_MS,
         time_off_unix_ms: ON_MS + 44_000,
+        ..Default::default()
     }
 }
 

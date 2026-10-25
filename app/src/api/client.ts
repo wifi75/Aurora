@@ -651,6 +651,64 @@ export async function putEngineSettings(changes: Record<string, string>): Promis
   return EngineSettingsSchema.parse(await (await request('/engine-settings', init)).json());
 }
 
+/** Un dispositivo audio del sistema (scheda Audio). */
+export interface AudioDevice {
+  name: string;
+  /** Il numero massimo di canali: 1 mono, 2 stereo. */
+  channels: number;
+  is_default: boolean;
+}
+
+export interface AudioValues {
+  input: string;
+  output: string;
+  input_channel: string;
+  output_channel: string;
+  save_dir: string;
+  /** «0» Nessuno, «1» Decodificati, «2» Tutti. */
+  save_mode: string;
+}
+
+export interface AudioDevices {
+  inputs: AudioDevice[];
+  outputs: AudioDevice[];
+  input_in_use: string | null;
+  output_in_use: string | null;
+  /** Un'uscita nuova gia' aperta che subentra alla fine della trasmissione in corso. */
+  output_pending: string | null;
+  default_save_dir: string;
+  /** Il valore che vuol dire «predefinito del sistema». */
+  system_default: string;
+  values: AudioValues;
+}
+
+export type AudioPartStatus = 'unchanged' | 'applied' | 'deferred' | 'saved_only' | 'failed';
+
+export interface AudioPart {
+  status: AudioPartStatus;
+  in_use: string | null;
+  /** Il dispositivo nuovo non si e' aperto e quello di prima e' in uso (di nuovo). */
+  restored: boolean;
+  message: string | null;
+}
+
+export interface AudioResult {
+  ok: boolean;
+  input: AudioPart;
+  output: AudioPart;
+  save: AudioPart;
+  values: AudioValues;
+}
+
+export async function getAudioDevices(): Promise<AudioDevices> {
+  return (await (await request('/audio/devices')).json()) as AudioDevices;
+}
+
+/** Apre i dispositivi nuovi, li applica e salva solo cio' che e' riuscito. */
+export async function putAudioSettings(change: Partial<Omit<AudioValues, 'save_mode'>> & { save_mode?: number }): Promise<AudioResult> {
+  return (await (await request('/audio/settings', { ...jsonInit(change), method: 'PUT' })).json()) as AudioResult;
+}
+
 export interface Log4omQso {
   date: string;
   call: string;
