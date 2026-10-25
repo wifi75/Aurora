@@ -3876,3 +3876,18 @@
   font-size: 0.72rem;
   pointer-events: none;
 }
+
+/* Riquadro Trasmissione: la frequenza Tx e Rx sta sulla stessa riga del nominativo DX, a destra */
+.tx-dx {
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.8rem;
+}
+
+.tx-dx .tx-freqs {
+  flex: 0 0 auto;
+  flex-basis: auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
