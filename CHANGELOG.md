@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **«DXCC BANDA» (e zone CQ/ITU su banda) corretta**: un paese gia' collegato su quella banda, in qualunque modo (anche RTTY, SSB, PSK31) e con qualunque nominativo, non e' piu' «nuovo su banda»; prima, con le caselle «Banda» e «Banda+Modo» accese, una stazione slovacca in FT8 su 20 m si illuminava anche avendo gia' la Slovacchia su 20 m in altri modi. Locatore, prefisso e nominativo restano come in JTDX.
 - **Scheda Audio**: le tendine di ingresso e uscita sono a tutta larghezza, il nome del dispositivo si legge intero.
 - **Notifiche, «Colori e anteprima» compatta**: ogni voce occupa un solo rigo (nome, suono, prova, anteprima e colore).
 

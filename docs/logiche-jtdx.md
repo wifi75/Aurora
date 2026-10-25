@@ -315,3 +315,7 @@ Qui sotto: per ogni regola se **coincide**, e' stata **corretta** o **non e' ver
 - LoTW nelle priorita' (31, 29, ...): Aurora non lo conosce.
 - La logica riga per riga di `ft8s`, `ft8sd`, `ft8mf1`, `ft8mfcq` e il motivo di `count = 1` per i CQ diretti restano **non verificabili** dall'esterno.
 - La prova in aria (avvio tardivo, ritrasmissione, FIN con Autolog) la fa il proprietario: nei test c'e' un orologio finto, non una radio.
+
+## Scelta del proprietario: «nuovo su banda» per paese e zone
+
+Per paese (DXCC) e zone CQ/ITU, se la casella «Banda» e' accesa vale la sola banda in qualunque modo anche quando e' accesa «Banda+Modo» (JTDX in quel caso guarda banda e modo insieme). Un paese gia' collegato su quella banda, con qualunque nominativo e in qualunque modo, non da' «DXCC BANDA». Locatore, prefisso e nominativo restano come JTDX (`criterion_news` in `engine-jtdx/src/worked.rs`).
