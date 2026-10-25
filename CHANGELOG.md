@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.18 - 2026-10-25
 - **«CQ e novità» personalizzabile** (Impostazioni -> Filtri): scegli i tipi di messaggio elencati, le sole stazioni da elencare (JA*, EA8AA...), quelle da non elencare mai e il numero massimo di righe; le scelte restano al riavvio.
 - **Suoni una volta sola per indicativo**: una stazione fa suonare una notifica la prima volta che entra nelle regole, poi mai piu' (anche se ritrasmette o cambia funzione); una stazione nuova suona di nuovo.
 - **Pannello Comandi compatto**: tutto in un unico flusso, controlli piu' piccoli e spazi minimi.
