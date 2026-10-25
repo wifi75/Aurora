@@ -83,6 +83,28 @@ impl NativeEngine {
     }
 }
 
+/// Segue la banda della radio: dice quando cambia (da qualunque causa: pagina, radio, spot, modo che sposta la frequenza).
+#[derive(Default)]
+struct BandWatch {
+    band: Option<String>,
+    epoch: u64,
+}
+
+impl BandWatch {
+    /// Una lettura della banda. Senza banda (radio muta, frequenza fuori dalle bande dei radioamatori) la lettura non conta: come JTDX con una
+    /// risposta persa della radio (`displayDialFrequency` guarda solo bande note). La prima lettura non e' un cambio. Restituisce il nuovo
+    /// `epoch` quando la banda e' diversa da quella nota; spostamenti dentro la stessa banda non fanno niente.
+    fn observe(&mut self, band: Option<String>) -> Option<u64> {
+        let band = band.filter(|b| !b.is_empty())?;
+        let changed = self.band.as_deref().is_some_and(|old| old != band);
+        self.band = Some(band);
+        changed.then(|| {
+            self.epoch += 1;
+            self.epoch
+        })
+    }
+}
+
 fn now_unix_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
 }
@@ -173,6 +195,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
+        let mut band_watch = BandWatch::default();
         let ft8_options = Options::default();
         let ft4_options = ft4::decode::Options::default();
         // l'ultimo periodo (per «Decodifica») e i messaggi che ne sono gia' stati pubblicati
@@ -198,6 +221,31 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
                         tracing::info!("trasmissione: {line}");
                     }
+                }
+            }
+            // cambio di banda (da qualunque causa): trasmissione ferma subito, Tx spento, DX e messaggi azzerati, periodo in corso scartato
+            // (mescola le due bande) e un evento per l'interfaccia
+            if let Some(l) = live.as_ref() {
+                let dial = l.dial_hz.load(Ordering::Relaxed);
+                // il livello di uscita e' ricordato per banda: con la banda nuova si ripristina quello suo (o si ricorda l'attuale)
+                if dial > 0
+                    && let Some(band) = (l.band_of)(dial)
+                {
+                    l.controls.track_band(&band);
+                }
+                if dial > 0
+                    && let Some(epoch) = band_watch.observe((l.band_of)(dial))
+                {
+                    tracing::info!("motore proprio: cambio di banda ({}), epoca {epoch}", band_watch.band.as_deref().unwrap_or_default());
+                    if let Some(d) = driver.as_mut() {
+                        for line in d.band_changed() {
+                            tracing::info!("trasmissione: {line}");
+                        }
+                    }
+                    assembler = slots::SlotAssembler::new(mode);
+                    last_slot = None;
+                    last_texts.clear();
+                    let _ = message_events.send(Event::BandChanged { band: band_watch.band.clone(), dial_hz: dial, epoch });
                 }
             }
             // cambio di modo: periodi nuovi, trasmissione ferma, messaggi ricordati svuotati; l'audio continua ad arrivare senza interruzioni
@@ -637,6 +685,102 @@ mod tests {
         assert!(modes.iter().any(|m| m == "FT4"), "lo stato ha detto FT4: {modes:?}");
         assert_eq!(modes.last().map(String::as_str), Some("FT8"));
         drop(tx);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn the_band_watch_ignores_unknown_readings_and_moves_inside_a_band() {
+        let mut w = BandWatch::default();
+        assert_eq!(w.observe(None), None, "senza banda la lettura non conta");
+        assert_eq!(w.observe(Some("20m".into())), None, "la prima lettura non e' un cambio");
+        assert_eq!(w.observe(Some("20m".into())), None, "stessa banda");
+        assert_eq!(w.observe(None), None, "una risposta persa della radio non e' un cambio");
+        assert_eq!(w.observe(Some("20m".into())), None);
+        assert_eq!(w.observe(Some("40m".into())), Some(1));
+        assert_eq!(w.observe(Some("40m".into())), None);
+        assert_eq!(w.observe(Some("20m".into())), Some(2));
+    }
+
+    /// Un trasmettitore finto: conta gli arresti.
+    #[derive(Default)]
+    struct CountingPort {
+        halts: std::sync::atomic::AtomicU32,
+    }
+
+    impl TxPort for CountingPort {
+        fn schedule(&self, _request: tx_native::TxRequest) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn halt(&self) {
+            self.halts.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Cambio di banda con Tx abilitato: arresto subito, Tx spento, evento sul bus; uno spostamento dentro la banda non fa niente.
+    #[test]
+    fn a_band_change_halts_tx_switches_it_off_and_publishes_the_event() {
+        let (_audio, rx) = mpsc::channel();
+        let (events, mut bus) = broadcast::channel(512);
+        let dir = std::env::temp_dir().join(format!("aurora-bandchange-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+        let controls = Arc::new(NativeControls::default());
+        let port = Arc::new(CountingPort::default());
+        let mut live = live_config(Arc::clone(&controls));
+        live.band_of = Arc::new(|hz| Some(if hz < 10_000_000 { "40m" } else { "20m" }.to_string()));
+        live.transmitter = Some(Arc::clone(&port) as Arc<dyn TxPort>);
+        let dial = Arc::clone(&live.dial_hz);
+        let _engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live)) });
+        let wait = |what: &str, cond: &dyn Fn() -> bool| {
+            for _ in 0..200 {
+                if cond() {
+                    return;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            panic!("{what}");
+        };
+        // il motore legge la banda iniziale (20m) e il pilota prende i comandi
+        std::thread::sleep(std::time::Duration::from_millis(400));
+        wait("CQ non consegnato", &|| controls.send(TxCommand::CallCq { modifier: None }).is_ok());
+        wait("Tx non abilitato", &|| tx::view_of(&controls).enabled);
+        let halts = port.halts.load(Ordering::Relaxed);
+
+        // dentro la banda: niente
+        dial.store(14_080_000, Ordering::Relaxed);
+        std::thread::sleep(std::time::Duration::from_millis(600));
+        assert!(tx::view_of(&controls).enabled, "uno spostamento dentro la banda non spegne il Tx");
+        assert_eq!(port.halts.load(Ordering::Relaxed), halts);
+        let mut seen = Vec::new();
+        runtime.block_on(async {
+            while let Ok(event) = bus.try_recv() {
+                seen.push(event);
+            }
+        });
+        assert!(!seen.iter().any(|e| matches!(e, Event::BandChanged { .. })), "nessun evento: {seen:?}");
+
+        // altra banda
+        dial.store(7_074_000, Ordering::Relaxed);
+        wait("Tx ancora abilitato dopo il cambio di banda", &|| !tx::view_of(&controls).enabled);
+        assert!(port.halts.load(Ordering::Relaxed) > halts, "la trasmissione va fermata");
+        let view = tx::view_of(&controls);
+        assert_eq!((view.dx, view.dx_grid), (None, None));
+        let mut band_event = None;
+        for _ in 0..40 {
+            runtime.block_on(async {
+                while let Ok(event) = bus.try_recv() {
+                    if let Event::BandChanged { band, dial_hz, epoch } = event {
+                        band_event = Some((band, dial_hz, epoch));
+                    }
+                }
+            });
+            if band_event.is_some() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert_eq!(band_event, Some((Some("40m".to_string()), 7_074_000, 1)));
         let _ = std::fs::remove_dir_all(dir);
     }
 

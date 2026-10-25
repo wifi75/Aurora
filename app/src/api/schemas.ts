@@ -113,6 +113,10 @@ export const AudioLevelSchema = z.object({
 });
 export type AudioLevel = z.infer<typeof AudioLevelSchema>;
 
+/** La banda della radio e' cambiata: il motore ha gia' fermato la trasmissione e azzerato il DX; l'interfaccia svuota le liste. */
+export const BandChangedSchema = z.object({ band: z.string().nullable(), dial_hz: z.number(), epoch: z.number() });
+export type BandChanged = z.infer<typeof BandChangedSchema>;
+
 export const EventSchema = z.discriminatedUnion('type', [
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
@@ -121,5 +125,6 @@ export const EventSchema = z.discriminatedUnion('type', [
   WantedAlertSchema.extend({ type: z.literal('wanted') }),
   UpdateNoticeSchema.extend({ type: z.literal('update_available') }),
   AudioLevelSchema.extend({ type: z.literal('audio_level') }),
+  BandChangedSchema.extend({ type: z.literal('band_changed') }),
 ]);
 export type AuroraEvent = z.infer<typeof EventSchema>;

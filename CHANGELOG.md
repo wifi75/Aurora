@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.5 - 2026-10-25
+- **QSO verso Log4OM2 con il motore proprio**: Aurora manda il record ADIF di ogni QSO registrato all'indirizzo del secondo server UDP di JTDX (`UDP2Server`, `UDP2ServerPort`, letto da `JTDX.ini`); prima, senza JTDX, non arrivava piu' niente.
+- **FT4 nel motore proprio**: il pulsante FT4 porta davvero il motore in FT4 (periodi da 7,5 s, decodifica e trasmissione).
+- **Salta Tx1 e periodo di risposta**: la risposta va nel periodo opposto a quello del DX e Salta Tx1 agisce subito; il pulsante del periodo Tx vale.
+- **Comandi della pagina**: Gen.Msgs, Split, copie di frequenza Rx/Tx, Prepara e Invia del messaggio libero (13 caratteri come JTDX).
+- **Cambio di banda come JTDX** (verificato con il programma): ferma la trasmissione, azzera la Stazione DX e svuota Attivita' di banda e CQ e novita'; vale anche quando la banda la cambia la radio.
+- **Misuratori della radio** letti da Hamlib (S-meter, potenza, ROS, ALC) e passati al display.
+- **Tabella dell'attivita' di banda** compatta e tema chiaro leggibile sulle righe che mi chiamano.
+
 ## 0.11.4 - 2026-10-25
 - **Nuovo logo**: la cascata con le tracce dei segnali FT8, in tutte le icone di Windows, nella favicon e nell'app per telefono.
 - **Logo animato in alto a destra**: la cascata scorre (si ferma con il movimento ridotto del sistema).

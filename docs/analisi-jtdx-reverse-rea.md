@@ -676,6 +676,7 @@ Il crate e' gia' un porting fedele (sync8 con le tre forme, sync8d con i suoi ra
 | `0x473f90` | `MainWindow::autoStopTx` |
 | `0x4bd4e0` | `MainWindow::haltTx` |
 | `0x4be1b0` | `MainWindow::clearDX` |
+| `0x47c050`, `0x4a56c0`, `0x4ad430`, `0x47b130`, `0x4ac620`, `0x489560`, `0x4a8ce0`, `0x4d6e30` | `band_changed`, `displayDialFrequency`, `handle_transceiver_update`, `switch_mode`, `on_stopTxButton_clicked`, `clearDXfields`, `on_EraseButton_clicked`, `QsoHistory::init` (sezione 10) |
 | `0x4ae8b0` | `MainWindow::on_TxMinuteButton_clicked` |
 | `0x4ac7f0` | `MainWindow::on_AutoSeqButton_clicked` |
 | `0x4a0b50`, `0x4a1060` | `doubleClickOnCall`, `doubleClickOnCall2` |
@@ -704,3 +705,119 @@ Il crate e' gia' un porting fedele (sync8 con le tre forme, sync8d con i suoi ra
 | `0x423930` | `__ft4_decode_MOD_decode` |
 | `0x46ad60`, `0x4c1a30` | `getcandidates4_`, `sync4d_` |
 | `0x4024e0` | `jt9a_` |
+
+## 10. Cambio di banda (REA, 2026-10-25)
+
+Richiesta del proprietario: al cambio di banda si interrompe sempre la trasmissione, si svuota l'attivita' di banda e si cancella la stazione chiamante (Stazione DX).
+Letto nei sorgenti (`mainwindow.cpp`, ramo `master`) e verificato in `jtdx.exe` 2.2.159 con REA (pseudocodice di ogni funzione sotto; i nomi sono i simboli veri).
+
+### 10.1 Le funzioni (`REA 0x...`)
+
+| Indirizzo | Funzione | Cosa fa al cambio di banda |
+|---|---|---|
+| `0x47c050` | `MainWindow::band_changed(Frequency)` | punto d'arrivo di ogni cambio **comandato** (combo banda, cambio modo, scheduler, doppio clic su una frequenza) |
+| `0x4af1f0` | `on_bandComboBox_activated(int)` | imposta `m_bandEdited = true` e chiama `band_changed` (scrive «Band changed from bandComboBox» in `ALL.TXT`) |
+| `0x47b130` | `switch_mode(Mode)` | se il modo e' cambiato: `QsoHistory::init()` (`REA 0x4d6e30`), poi `best_working_frequency` e `on_bandComboBox_activated` (quindi il cambio modo che sposta la frequenza passa da `band_changed`) |
+| `0x4a56c0` | `displayDialFrequency()` | punto d'arrivo del cambio **dalla radio** (`handle_transceiver_update`, `REA 0x4ad430`, aggiorna `m_freqNominal` e poi chiama questa): se la banda e' cambiata (e non e' l'avvio) fa `QsoHistory::init()`; con l'opzione «Erase windows at band change» (`m_autoEraseBC`, predefinito **true**: `QSettings("EraseWindowsAtBandChange", QVariant(true))` in `readSettings`, `REA 0x47fa20`) svuota le due finestre e chiama `clearDX` |
+| `0x4bd4e0` | `haltTx(QString)` | scrive l'evento e chiama `on_stopTxButton_clicked` |
+| `0x4ac620` | `on_stopTxButton_clicked()` | `stop_tuning` se si sta accordando; `enableTx_mode(false)` (spegne «Abilita Tx», `m_enableTx`; «AutoTX», `m_autoTx`, e' un'altra cosa e non si tocca: sezione 11.8); `m_nlasttx = 0`; `m_haltTrans` se il PTT e' attivo; azzera `m_bTxTime`, `m_tx_when_ready`, `m_transmitting`, `m_restart`, `m_txNext`; con «Salta Tx1» e trasmissione in corso toglie il DX da `QsoHistory` |
+| `0x48a230`, `0x4af3c0` | `enableTx_mode(bool)`, `on_enableTxButton_clicked(bool)` | spegne il pulsante e riallinea le variabili di Tx |
+| `0x4be1b0` | `MainWindow::clearDX(QString)` (= pulsante «Erase» del DX, `on_ClearDxButton_clicked`, `REA 0x4acbf0`) | `clearDXfields` (`0x489560`: svuota nominativo e locatore del DX, azzera il nome), `genStdMsgs("")` (messaggi Tx rigenerati senza DX), `RxFreqSpinBox = TxFreqSpinBox`, seleziona Tx6 (CQ) o Tx7 (messaggio libero), `m_QSOProgress = CALLING`, `m_nlasttx = 6`, azzera il pulsante di spot DX |
+| `0x4a8ce0` | `on_EraseButton_clicked()` | svuota la finestra Band Activity (`decodedTextBrowser`), il testo del QSO e `MessageClient::clear_decodes` (UDP); Rx Frequency solo col doppio clic entro 500 ms |
+| `0x4d6e30` | `QsoHistory::init()` | scarta le tabelle dei QSO per nominativo e dei contatori (stato per stazione, rinunce): la «memoria» della sequenza |
+
+### 10.2 Cosa succede, in ordine
+
+1. **Cambio comandato** (`band_changed`, pseudocodice `REA 0x47c050`, righe `m_bandEdited`, `0x2b54` = `m_transmitting`, `0x31f` = `m_autoEraseBC`):
+   a. «QSY cieco» (la nuova frequenza fa uscire dalla cascata la frequenza Tx): `haltTx("band changed ")` **solo se** si sta trasmettendo o il PTT e' attivo (`g_iptt == 1`), poi `enableTx_mode(false)`. **Non** e' incondizionato: un salto che lascia la frequenza Tx dentro la cascata non ferma niente. Con i salti di banda la frequenza e' sempre fuori dalla cascata, quindi in pratica si ferma.
+   b. se cambia la banda (`Bands::find(nuova) != Bands::find(ultima monitorata)`) **o** il modo: `clearDX(...)` **sempre**, poi, con `m_autoEraseBC`, `decodedTextBrowser->clear()` e `decodedTextBrowser2->clear()` (Band Activity e Rx Frequency).
+   c. se la nuova e la vecchia frequenza distano piu' di 1 MHz (`REA`: `1000000 < |diff|`): `QsoHistory::init()`, di nuovo `clearDX` e, se non l'ha gia' fatto, svuotamento delle finestre; poi la potenza per banda (`pwrBandTxMemory`).
+2. **Cambio dalla radio** (`displayDialFrequency`, `REA 0x4a56c0`): nessun `haltTx` ne' `enableTx_mode`. Se la banda letta e' diversa da `m_lastBand` e dalla banda del combo, e non e' l'avvio: svuota le due finestre e `clearDX` (con l'opzione), `QsoHistory::init()` (sempre), potenza per banda. Nota: quindi con la radio che cambia banda a mano JTDX **non** ferma una trasmissione in corso (lo fa solo il PTT che cade: `handle_transceiver_update` fa `haltTx("Halt Tx from rig detected ")` se il PTT della radio si spegne mentre si trasmetteva).
+3. **Cambio di modo** (`switch_mode`): `QsoHistory::init()` quando il modo cambia e, se la frequenza di lavoro del nuovo modo e' su un'altra banda, `on_bandComboBox_activated` -> `band_changed` (punto 1, con `clearDX` perche' `m_oldmode != m_mode`).
+4. **Doppio clic su uno spot del cluster**: JTDX non ha un cluster; nel mondo reale la frequenza arriva dal CAT, cioe' dal punto 2. In Aurora e' il comando `/api/v1/commands/frequency`.
+5. **Non** vengono toccati dal cambio di banda: l'AutoSeq (`m_autoseq` resta com'e'), la cache degli hash dei nominativi del decoder, la lista dei QSO di sessione per il log (`QsoHistory::init` azzera solo la memoria della sequenza), la lista dei messaggi gia' trasmessi.
+
+### 10.3 Differenza voluta in Aurora
+
+JTDX ferma la trasmissione al cambio di banda solo nel ramo «QSY cieco» (a) e solo se il cambio e' comandato dal programma. Il proprietario chiede di **fermare sempre**, da qualunque causa (pagina, radio, spot, cambio modo che sposta la frequenza): Aurora e' quindi piu' severo di JTDX nella sola parte di Halt e uguale per il resto (`clearDX` + `QsoHistory::init` + finestre svuotate). Le soglie: cambio di banda = `band_of(dial)` diverso dal precedente (con il precedente noto); uno spostamento di pochi Hz o kHz dentro la banda non fa niente.
+
+## 11. Verifica con REA del 2026-10-25
+
+Controllo sull'eseguibile `jtdx.exe` 2.2.159 (REA/Ghidra, pseudocodice delle funzioni; i nomi sono i simboli veri) di cio' che il motore proprio aveva copiato dai soli sorgenti.
+Esito per punto: **coincide**, **corretto** (il binario faceva altro e il codice e' stato cambiato, con test) o **non verificabile**. Campi di `MainWindow` letti nel pseudocodice: `+0x311` `m_txFirst`,
+`+0x312` `m_txGenerated`, `+0x314` `m_enableTx`, `+0x360` `m_lockTxFreq`, `+0x361` `m_skipTx1`, `+0x368` `m_autoTx`, `+0x369` `m_autoseq`, `+0x264` `m_ntx`, `+0x2b54` `m_transmitting`.
+
+### 11.1 Salta Tx1 (`on_skipTx1_clicked`, `REA 0x4a1950`; `on_skipGrid_clicked`, `0x4a54a0`) - coincide
+Imposta `m_skipTx1` e il gemello `skipGrid`. Acceso: se Tx1 e' il messaggio scelto passa a Tx2 (`m_ntx = m_QSOProgress = m_nlasttx = 2`, pallino Tx2, e `m_restart = true` se si trasmette) e,
+se il campo del messaggio generato e' uguale a Tx1, lo porta a Tx2. Spento: il simmetrico da Tx2 a Tx1. Il motore proprio lo fa (`Sequencer::set_options`). **Differenza dichiarata**: JTDX, spegnendo «Salta Tx1» su Tx2,
+torna a Tx1 anche se il DX ci aveva gia' scritto (con AutoSeq acceso il periodo dopo `process_Auto` rimette il messaggio giusto dallo stato); Aurora non lo fa per un QSO avviato (`!contacted`) perche' non ricalcola il
+messaggio dallo stato a ogni periodo. Non implementato: il riavvio della trasmissione in corso (`m_restart`).
+
+### 11.2 Pulsante periodo Tx (`on_TxMinuteButton_clicked`, `REA 0x4ae8b0`; `setMinButton`, `0x486f70`) - coincide
+`m_txFirst = checked`; se si trasmette scrive «Tx halted: period changed via TX period button»; se `m_txGenerated != checked` **e** Abilita Tx **e** AutoSeq sono accesi, `clearDX(" cleared, Tx Minute button clicked")`.
+Le etichette: «TX 00/30» / «TX 15/45» (FT8), «TX 00» / «TX 7.5» (FT4), «TX Even»/«TX Odd» (modi a minuto). Il motore proprio ha lo stesso comportamento (`Sequencer::set_tx_even`, `NativeRig::controls_and_tx`).
+
+### 11.3 Doppio clic e periodo di risposta (`doubleClickOnCall` `0x4a0b50`, `doubleClickOnCall2` `0x4a1060`, `processMessage` `0x490db0`) - coincide, un punto corretto
+`doubleClickOnCall` azzera il watchdog (`txwatchdog(false)`), prende la riga selezionata dalla finestra di destra o di sinistra (`doubleClickOnCall2` mette solo un flag, `+0x32a`, e richiama la prima) e chiama `processMessage`.
+In `processMessage` il periodo e' `nmod = fmod(timeInSeconds, 2 * periodo)`: se `m_txFirst != (nmod != 0)` e la riga non e' una nostra trasmissione si pone `m_txFirst = (nmod != 0)` e si preme `TxMinuteButton` se serve
+(quindi risposta nel periodo **opposto**: riga a :15/:45 -> TX 00/30). Il primo messaggio: se il messaggio non e' diretto a noi, Tx1, o Tx2 se `m_skipTx1` e non Hound (`m_ntx = 2`, `m_QSOProgress = 2`); se contiene
+il nostro nominativo Tx2/Tx3/Tx4/Tx5 secondo il contenuto. Il motore proprio lo fa (`Sequencer::reply_to`).
+**Corretto**: alla fine del doppio clic, con `m_autoTx` acceso e senza Alt, JTDX preme «Abilita Tx» (se non e' gia' acceso); con `m_autoTx` spento no. Il motore proprio accendeva sempre Abilita Tx: ora il doppio clic
+lo accende solo con AutoTX acceso (sezione 11.8).
+
+### 11.4 Gen.Msgs (`genStdMsgs`, `REA 0x474800`; `on_genStdMsgsPushButton_clicked`, `0x4b7690`) - coincide, un dettaglio corretto
+In cima `m_txGenerated = m_txFirst` (`+0x312 = +0x311`, **prima** del controllo sul DX); senza DX svuota Tx1-Tx5 e il messaggio generato e ritorna; con il DX scrive i sei messaggi e rimette il messaggio di
+partenza: con `m_skipTx1` (e non Hound) `m_ntx = m_nlasttx = 2`, altrimenti 1. **Corretto**: `Sequencer::regen_messages` impostava `tx_generated` solo con un DX; ora lo fa sempre (il caso senza DX ha effetto solo
+sul successivo cambio di periodo, per questo non c'e' un test dedicato).
+
+### 11.5 Rx->Tx, Tx->Rx e Split (`on_pbR2T_clicked` `0x49d600`, `on_pbT2R_clicked` `0x49d640`, `on_pbTxLock_clicked` `0x4a4b30`) - coincide, un valore iniziale corretto
+`pbR2T`: `TxFreqSpinBox.setValue(RxFreqSpinBox.value())` solo se la casella Tx e' abilitata; `pbT2R` il contrario. `pbTxLock`: `m_lockTxFreq = checked` (+0x360), scritte «Lockd Tx=Rx» (acceso) / «Tx/Rx Split» (spento),
+`WideGraph::setLockTxFreq`, e se acceso richiama `on_pbR2T_clicked`. Quindi **acceso = bloccato (Tx = Rx), spento = Split**; il motore proprio usa l'id `split` con il senso della scritta (acceso = Split) e spegnerlo
+porta Tx = Rx come JTDX. Le sorgenti aggiungono che con il blocco acceso Rx trascina Tx e Tx trascina Rx (`on_RxFreqSpinBox_valueChanged`, `on_TxFreqSpinBox_valueChanged`): fatto.
+**Corretto**: di fabbrica `LockTxFreq` e' **falso** (`MainWindow::readSettings`, `REA 0x47fa20`: `value("LockTxFreq", false)`), cioe' Split **acceso**; il motore proprio partiva con Split spento. Ora parte acceso.
+Nota per `engine-jtdx` (non toccato): li' `split` e' mappato su `pbTxLock` senza inversione, quindi pigiare «Split» accenderebbe il blocco.
+
+### 11.6 Messaggio libero a 13 caratteri e ripetizione (`pack77` `0x4244f0`, `packtext77` `0x41c300` / `0x41af00`, `on_rbFreeText_clicked` `0x4a7e70`, `guiUpdate` `0x4c4350`) - 13 caratteri coincide, ripetizione corretta
+`pack77` prova i tipi standard e, se nessuno va, chiama `packtext77` con **13 caratteri** (`param_3 = 13`, `adjustr`, alfabeto di 42 simboli): il testo libero e' tagliato ai primi 13. Coincide. Il campo accetta fino a 37 caratteri
+(`character*37`). Il messaggio libero e' `m_ntx = 8` (`on_rbFreeText_clicked`: `m_ntx = m_nlasttx = 8`, `m_QSOProgress = SIGNOFF`, riavvio se si trasmette); in `guiUpdate` l'unica scrittura di `m_ntx` e' il ripiego a 7
+(`REA 0x4c4350`, riga 1235, a Abilita Tx spento dopo il primo 73): **il messaggio libero non viene tolto dopo l'invio e si ripete a ogni periodo di trasmissione** finche' Abilita Tx e' acceso. **Corretto**: il motore proprio lo
+mandava una volta sola; ora lo ripete (nella parita' scelta) fino a «Ferma Tx», spegnimento di Abilita Tx, scelta di un altro messaggio, doppio clic, CQ o Gen.Msgs (test `a_free_text_repeats_every_period_of_the_chosen_parity_until_halted`).
+Non implementato: con un testo libero che non e' un 73 (`isAutoSeq73`) JTDX spegne AutoSeq (`m_FTsetAutoSeqOff`) e lo riaccende dopo. Scelta di Aurora, non verificabile come comportamento di JTDX: «Invia» accende anche Abilita Tx
+(in JTDX il comando `send` dell'UDP preme solo il pallino del messaggio libero).
+
+### 11.7 Livello di uscita, cursore Pwr (`on_outAttenuation_valueChanged` `0x4b69c0`, `setupUi` `0x579570`, `readSettings` `0x47fa20`, `band_changed` `0x47c050`) - coincide, memoria per banda aggiunta
+- Cursore: `QSlider` **verticale** (orientamento 2), minimo 0, massimo 450 (`0x1c2`), **non invertito** (`setInvertedAppearance(false)`), valore iniziale della finestra **1**. L'attenuazione e' `(450 - valore) / 10` dB
+  (`0x1c2 - param_2`), cioe' valore 450 = 0 dB (massima potenza), valore 0 = 45 dB; in un `QSlider` verticale classico il massimo sta in basso: **0 dB in basso**, come nell'interfaccia di Aurora (e nella schermata e in
+  `JTDX.ini` del proprietario, `OutAttenuation=450`). In Aurora l'attenuazione e' in decimi di dB e **coincide col valore del cursore di JTDX** (`attenuazione = 450 - valore`, quindi 225 e' 225).
+- Valore di fabbrica: `OutAttenuation` letto solo se in 0..450, predefinito **225** (`0xe1`), cioe' 22,5 dB. **Corretto**: il motore proprio partiva da 0 dB; ora 225.
+- Il caso `value == 1` (`band_changed`, riga 138 del pseudocodice; `mainwindow.cpp:6587`): il cursore nasce a 1 come segnaposto; alla **prima** `band_changed`, se vale 1 e `m_outAttenuation != 1`, si imposta il valore salvato
+  (`m_outAttenuation`, 225 di fabbrica) e `m_outAttenuation = 1` perche' non si ripeta. E' un artificio dell'avvio: in Aurora basta partire dal valore iniziale.
+- Memoria per banda (`m_pwrBandTxMemory`, `QHash<banda+modo, valore>`, nella `band_changed` e in `displayDialFrequency`): con l'opzione `pwrBandTxMemory` (di fabbrica **falso**: `Configuration::read_settings`, `REA 0x50b240`, campo
+  `+0x9c0`; nel `JTDX.ini` del proprietario `pwrBandTxMemory=false`) e non in accordatura, se la banda cambia (oltre 1 MHz) **e la chiave c'e'** il cursore prende il valore ricordato (con `m_PwrBandSetOK = false` per non
+  riscriverlo), **altrimenti** si ricorda il valore attuale per quella chiave. Ogni cambio del cursore lo riscrive per la banda e il modo correnti (`on_outAttenuation_valueChanged`, solo con `m_PwrBandSetOK`).
+  **Aggiunto** nel motore proprio (`NativeControls::track_band` e `set_attenuation`, chiamate da `engine-native/src/lib.rs` a ogni lettura della banda): sempre attiva, come chiesto (JTDX la ha spenta di fabbrica), con chiave
+  banda + modo; la prima banda vista ricorda il valore attuale. Non persiste tra un avvio e l'altro (JTDX la salva in `pwrBandTxMemory` delle impostazioni). Test: `the_output_level_is_remembered_per_band_and_restored_on_a_band_change`.
+
+### 11.8 «AutoTX» e «Abilita Tx» sono due cose diverse - corretto
+| | **Abilita Tx** (`enableTxButton`, `m_enableTx` `+0x314`) | **AutoTX** (`AutoTxButton`, `m_autoTx` `+0x368`, chiave `QuickCall`) |
+|---|---|---|
+| Cosa e' | il consenso a trasmettere: la finestra `m_bTxTime` e l'avvio del PTT in `guiUpdate` richiedono `m_transmitting`, `m_enableTx` o `m_tune` | solo «il doppio clic accende Abilita Tx» (e `Reply` UDP, che passa da `doubleClickOnCall2`) |
+| Funzione (`REA`) | `on_enableTxButton_clicked` `0x4af3c0`: imposta `m_enableTx`; spento e senza trasmissione azzera `m_bTxTime`, `m_tx_when_ready`, `m_restart`, `m_txNext` | `on_AutoTxButton_clicked` `0x4aa4d0`: imposta **solo** `m_autoTx` (e lo stile del pulsante) |
+| Stato iniziale | spento (`m_enableTx{false}`) | **acceso** (`value("QuickCall", true)`, `readSettings` `0x47fa20`) |
+| Chi lo cambia | l'utente, il doppio clic con AutoTX, Halt Tx, watchdog, QSY cieco, fine QSO | solo l'utente |
+
+- **Avvio al periodo giusto**: Abilita Tx non parte da solo a inizio periodo: `m_bTxTime = (t2p >= tx1) && (t2p < tx2)` (finestra dei primi 13,64 s) e `guiUpdate` fa partire la trasmissione appena la finestra e' aperta, anche in ritardo (2.9).
+  AutoTX non partecipa: serve soltanto al doppio clic: `if (m_autoTx && !alt) { se Abilita Tx non e' acceso, click }`; con Alt e Abilita Tx acceso, `haltTx("ALT modifier is used at double click")`.
+- **Halt Tx e Esc** (`haltTx` `0x4bd4e0` -> `on_stopTxButton_clicked` `0x4ac620`; `keyPressEvent`: Esc = `haltTx("TX halted via Escape button")`, Alt+H = `on_stopTxButton_clicked`): spegne **solo** Abilita Tx
+  (`enableTx_mode(false)` se `!m_tuneup`) e azzera `m_btxok`, `m_nlasttx = 0`, `m_bTxTime`, `m_transmitting`, `m_restart`, `m_txNext`, spegne il filtro automatico; **non tocca `m_autoTx` (+0x368) ne' AutoSeq (+0x369)**.
+- **AutoSeq**: nessuna dipendenza di stato; `on_AutoSeqButton_clicked` cambia solo lo stile (rosso) di AutoTX quando AutoSeq e' acceso e AutoTX spento, per il caso «Abilita Tx a mano sotto AutoSeq». `m_enableTx && m_autoseq` insieme
+  contano per `clearDX` al cambio periodo (11.2), per il watchdog e per `autoStopTx`.
+- **Fine QSO**: con AutoSeq, `autoStopTx` -> `haltTx` (2.4); senza AutoSeq, se «Disable Tx after sending 73» e' acceso (`m_disable_TX_on_73`) un timer di 100 ms chiama `enableTxButton_off` (`enableTx_mode(false)`) dopo il 73 inviato.
+  AutoTX non c'entra. Dopo il log, `clear_DX` libera il DX con un timer **solo se AutoTX e AutoSeq sono entrambi spenti** (`mainwindow.cpp:6069`).
+- **Altri spegnimenti di Abilita Tx**: watchdog (`txwatchdog`: «Tx watchdog expired»), frequenza Tx in una sottobanda WSPR, cambio di impostazioni audio, QSY cieco; mai di AutoTX.
+- **`tx_status_label`**: solo barra di stato: «Tx: <messaggio>» giallo mentre si trasmette (`m_transmitting`), «Tx: TUNE», verde quando e' vuoto/in attesa, «Tx watchdog expired» rosso; non mostra AutoTX.
+
+**Corretto** nel motore proprio: `NativeRig::set_control` mandava `auto_tx` e `enable_tx` entrambi a `TxCommand::Enable`, `snapshot` mostrava `auto_tx` uguale a `enabled` e AutoTX partiva spento. Ora: `TxCommand::AutoTx(bool)` distinto
+(solo `TxDriver::auto_tx`, che decide se il doppio clic / `Reply` accende Abilita Tx; `Sequencer::reply_to_with`), interruttore `auto_tx` a se' (di fabbrica acceso), `enable_tx` = stato della sequenza; `TxView.enabled` (cioe' `tx_enabled`
+verso la UI) resta Abilita Tx e lo schema non cambia. Test: `auto_tx_and_enable_tx_are_separate_commands_and_separate_states`, `the_double_click_enables_tx_only_with_auto_tx_on`, `the_initial_state_is_the_one_of_jtdx`.
+**Scelte di Aurora che restano diverse da JTDX** (da decidere): il tasto Esc dell'interfaccia (`useEscapeStop`) spegne anche AutoTX (JTDX no); «CQ» e «Invia» accendono Abilita Tx (in JTDX `txb6` e il pallino del messaggio libero no).
