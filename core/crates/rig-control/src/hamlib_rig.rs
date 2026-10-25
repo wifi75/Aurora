@@ -18,8 +18,9 @@ use std::{
 use serde::Serialize;
 
 use crate::{
-    cat_config::{friendly_error, is_io_failure, split_tx_dial_hz, PttMethod, RigConfig, SplitMode},
+    cat_config::{friendly_error, is_io_failure, is_serial_port, split_tx_dial_hz, PttMethod, RigConfig, SplitMode},
     hamlib::{Rigctld, RigctldClient},
+    meters::{self, Level, LevelMemory, Meters, TX_LEVELS},
     Rig, RigError,
 };
 
@@ -164,6 +165,39 @@ struct Inner {
     emulate_restore: Mutex<Option<u64>>,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
+    /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
+    meter: Mutex<MeterPoll>,
+}
+
+/// Ogni quanto si legge il misuratore in ricezione e in trasmissione.
+const METER_RX_EVERY: Duration = Duration::from_millis(250);
+const METER_TX_EVERY: Duration = Duration::from_millis(200);
+
+/// Lo stato della lettura dei misuratori (vedi `HamlibRig::meters`).
+#[derive(Default)]
+struct MeterPoll {
+    memory: LevelMemory,
+    cache: Meters,
+    last: Option<Instant>,
+    /// Ultimo stato letto: al cambio tra ricezione e trasmissione si buttano le letture dell'altro stato.
+    was_tx: bool,
+    /// Prossimo livello da leggere sulle seriali lente (un comando per giro).
+    turn: usize,
+    /// Fondo scala della potenza in watt, con i MHz a cui e' stato letto, per convertire `RFPOWER_METER`.
+    full_scale: Option<(u64, f32)>,
+    full_scale_tries: u8,
+}
+
+/// Seriali a 9600 baud o meno (o con la velocita' del modello, che puo' essere bassa): una raffica di comandi toglierebbe tempo al PTT.
+fn slow_port(config: &RigConfig) -> bool {
+    is_serial_port(&config.port) && (config.baud == 0 || config.baud <= 9600)
+}
+
+/// I passi di lettura in trasmissione: la potenza (per prima: e' la lettura principale) e poi i livelli di `TX_LEVELS`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Step {
+    Power,
+    Level(Level),
 }
 
 impl Inner {
@@ -261,6 +295,10 @@ impl Inner {
             *until = Some(Instant::now() + self.timing.startup_block);
         }
         self.rx_dial.store(freq, Ordering::SeqCst);
+        if let Ok(mut meter) = self.meter.lock() {
+            // un collegamento nuovo puo' essere un'altra radio: si riprova a chiedere tutti i livelli
+            *meter = MeterPoll::default();
+        }
         if let Ok(mut slot) = self.link.lock() {
             *slot = Some(link);
         }
@@ -408,6 +446,118 @@ impl Inner {
         }
     }
 
+    /// Un livello letto e registrato; gli esiti negativi finiscono nella memoria dei livelli (senza errori per chi chiama).
+    fn read_level(&self, client: &RigctldClient, poll: &mut MeterPoll, level: Level) -> Option<f32> {
+        match client.level(level.name()) {
+            Ok(v) => {
+                poll.memory.ok(level);
+                Some(v)
+            }
+            Err(e) => {
+                if poll.memory.failed(level, &e) {
+                    tracing::debug!("livello {} non letto, non si chiede piu': {e}", level.name());
+                }
+                None
+            }
+        }
+    }
+
+    /// La potenza in watt: `RFPOWER_METER_WATTS` se la radio lo da', altrimenti `RFPOWER_METER` (frazione) per il fondo scala di Hamlib.
+    fn read_power(&self, client: &RigctldClient, poll: &mut MeterPoll) {
+        if poll.memory.supported(Level::PowerWatts) {
+            if let Some(w) = self.read_level(client, poll, Level::PowerWatts) {
+                meters::store(&mut poll.cache, Level::PowerWatts, w);
+                return;
+            }
+            if poll.memory.supported(Level::PowerWatts) {
+                return;
+            }
+        }
+        if !poll.memory.supported(Level::PowerFraction) {
+            return;
+        }
+        let Some(fraction) = self.read_level(client, poll, Level::PowerFraction) else { return };
+        let (hz, mode) = {
+            let s = self.snapshot();
+            (s.frequency_hz.unwrap_or_else(|| self.rx_dial.load(Ordering::SeqCst)), s.mode.unwrap_or_else(|| "USB".into()))
+        };
+        let mhz = hz / 1_000_000;
+        let full = match poll.full_scale {
+            Some((m, w)) if m == mhz => Some(w),
+            _ if poll.full_scale_tries >= 3 => poll.full_scale.map(|(_, w)| w),
+            _ => {
+                poll.full_scale_tries += 1;
+                match client.power_to_watts(1.0, hz.max(1), &mode) {
+                    Ok(w) if w > 0.0 => {
+                        poll.full_scale = Some((mhz, w));
+                        poll.full_scale_tries = 0;
+                        Some(w)
+                    }
+                    _ => poll.full_scale.map(|(_, w)| w),
+                }
+            }
+        };
+        match full {
+            Some(w) => poll.cache.power_w = Some((fraction.clamp(0.0, 1.0) * w).max(0.0)),
+            // senza il fondo scala la frazione non si puo' dire in watt: non si inventa
+            None if poll.full_scale_tries >= 3 => poll.memory.mark_unsupported(Level::PowerFraction),
+            None => {}
+        }
+    }
+
+    /// I misuratori. In ricezione solo `STRENGTH`; in trasmissione solo i livelli di trasmissione. Ogni livello che la radio non da' si ricorda e non
+    /// si chiede piu'. Sulle seriali lente (9600 baud o meno) un solo comando per chiamata, a turno.
+    fn read_meters(&self) -> Result<Meters, RigError> {
+        let link = self.connected_link()?;
+        let tx = self.transmitting();
+        let mut poll = self.meter.lock().map_err(|_| RigError("misuratori: stato avvelenato".into()))?;
+        if tx != poll.was_tx {
+            poll.was_tx = tx;
+            poll.last = None;
+            poll.turn = 0;
+            if tx {
+                poll.cache.s_points = None;
+                poll.cache.s_over_db = None;
+            } else {
+                poll.cache = Meters { s_points: None, s_over_db: None, ..Meters::default() };
+            }
+        }
+        let every = if tx { METER_TX_EVERY } else { METER_RX_EVERY };
+        if poll.last.is_some_and(|t| t.elapsed() < every) {
+            return Ok(poll.cache);
+        }
+        poll.last = Some(Instant::now());
+        let client = link.client();
+        let mut steps: Vec<Step> = Vec::new();
+        if tx {
+            if poll.memory.supported(Level::PowerWatts) || poll.memory.supported(Level::PowerFraction) {
+                steps.push(Step::Power);
+            }
+            steps.extend(TX_LEVELS.iter().filter(|l| poll.memory.supported(**l)).map(|l| Step::Level(*l)));
+        } else if poll.memory.supported(Level::Strength) {
+            steps.push(Step::Level(Level::Strength));
+        }
+        if steps.is_empty() {
+            return Ok(poll.cache);
+        }
+        if slow_port(&self.config) {
+            let pick = steps[poll.turn % steps.len()];
+            poll.turn = poll.turn.wrapping_add(1);
+            steps = vec![pick];
+        }
+        for step in steps {
+            match step {
+                Step::Power => self.read_power(client, &mut poll),
+                Step::Level(level) => {
+                    if let Some(v) = self.read_level(client, &mut poll, level) {
+                        meters::store(&mut poll.cache, level, v);
+                    }
+                }
+            }
+        }
+        Ok(poll.cache)
+    }
+
     /// Porta la radio sulla frequenza del VFO di trasmissione per lo split vero, poi accende lo split (per ultimo: alcune radio escono
     /// dallo split quando cambia il VFO di ricezione).
     fn apply_split(&self, link: &Link) -> Result<(), RigError> {
@@ -471,6 +621,7 @@ impl HamlibRig {
             rx_dial: AtomicU64::new(0),
             emulate_restore: Mutex::new(None),
             epoch: AtomicU64::new(0),
+            meter: Mutex::new(MeterPoll::default()),
         });
         let worker = Arc::clone(&inner);
         let handle = std::thread::Builder::new().name("aurora-cat".into()).spawn(move || worker.run()).ok();
@@ -671,6 +822,11 @@ impl Rig for HamlibRig {
             (LinkState::Connected, Some(hz)) => Ok(hz),
             _ => Err(RigError("radio non collegata".into())),
         }
+    }
+
+    /// I misuratori letti con i livelli di Hamlib (`STRENGTH` in ricezione; potenza, SWR, ALC... in trasmissione).
+    fn meters(&self) -> Result<Meters, RigError> {
+        self.inner.read_meters()
     }
 
     fn set_rx_frequency(&self, _hz: u32) -> Result<(), RigError> {
@@ -959,6 +1115,144 @@ mod tests {
         fake.clear_commands();
         rig.set_ptt(true).expect("VOX");
         assert!(!fake.commands().iter().any(|c| c.starts_with("T ")));
+    }
+
+    fn level_commands(fake: &FakeRigctld) -> Vec<String> {
+        fake.commands().into_iter().filter(|c| c.starts_with("l ")).collect()
+    }
+
+    fn tx_rig(fake: &FakeRigctld, config: RigConfig) -> HamlibRig {
+        let rig = start(fake, config);
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("PTT");
+        std::thread::sleep(Duration::from_millis(210));
+        rig
+    }
+
+    #[test]
+    fn in_receive_only_the_strength_is_read_and_converted_to_s_points() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("STRENGTH", "-12");
+        let rig = start(&fake, RigConfig::default());
+        let m = rig.meters().expect("misuratori");
+        assert_eq!((m.s_points, m.s_over_db, m.power_w, m.swr), (Some(7.0), Some(0.0), None, None));
+        std::thread::sleep(Duration::from_millis(260));
+        fake.set_level("STRENGTH", "27");
+        let m = rig.meters().expect("misuratori");
+        assert_eq!((m.s_points, m.s_over_db), (Some(9.0), Some(27.0)));
+        assert!(level_commands(&fake).iter().all(|c| c == "l STRENGTH"), "in ricezione solo STRENGTH: {:?}", level_commands(&fake));
+    }
+
+    #[test]
+    fn a_call_inside_the_interval_does_not_ask_the_radio_again() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("STRENGTH", "-6");
+        let rig = start(&fake, RigConfig::default());
+        let _ = rig.meters().expect("misuratori");
+        let _ = rig.meters().expect("misuratori");
+        assert_eq!(fake.count("l STRENGTH"), 1);
+    }
+
+    #[test]
+    fn an_unsupported_level_stays_none_and_is_not_asked_again() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        for _ in 0..4 {
+            let m = rig.meters().expect("nessun errore per un livello non supportato");
+            assert_eq!((m.s_points, m.s_over_db), (None, None));
+            std::thread::sleep(Duration::from_millis(260));
+        }
+        assert_eq!(fake.count("l STRENGTH"), 1, "la richiesta non si ripete");
+    }
+
+    #[test]
+    fn in_transmit_only_the_tx_levels_are_read_and_missing_ones_are_asked_once() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("STRENGTH", "-12");
+        fake.set_level("RFPOWER_METER_WATTS", "20.5");
+        fake.set_level("SWR", "1.5");
+        fake.set_level("ALC", "0.3");
+        fake.set_level("COMP_METER", "6");
+        fake.set_level("VD_METER", "13.8");
+        let rig = tx_rig(&fake, RigConfig::default());
+        fake.clear_commands();
+        let mut last = Meters::default();
+        for _ in 0..3 {
+            last = rig.meters().expect("misuratori");
+            std::thread::sleep(Duration::from_millis(210));
+        }
+        assert_eq!((last.power_w, last.swr, last.alc, last.comp_db, last.vdd_v), (Some(20.5), Some(1.5), Some(0.3), Some(6.0), Some(13.8)));
+        assert_eq!((last.id_a, last.s_points), (None, None));
+        let asked = level_commands(&fake);
+        assert!(!asked.iter().any(|c| c == "l STRENGTH"), "in trasmissione niente STRENGTH: {asked:?}");
+        assert_eq!(fake.count("l ID_METER"), 1, "ID non supportato: una sola richiesta");
+        // di nuovo in ricezione: i dati di trasmissione spariscono e torna lo S-meter
+        rig.set_ptt(false).expect("PTT spento");
+        std::thread::sleep(Duration::from_millis(260));
+        let m = rig.meters().expect("misuratori");
+        assert_eq!((m.power_w, m.swr, m.s_points), (None, None, Some(7.0)));
+    }
+
+    #[test]
+    fn power_falls_back_to_the_fraction_times_the_full_scale() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER_METER", "0.25");
+        fake.set_full_power_mw(100_000);
+        let rig = tx_rig(&fake, RigConfig::default());
+        let m = rig.meters().expect("misuratori");
+        assert_eq!(m.power_w, Some(25.0));
+        assert_eq!(fake.count("l RFPOWER_METER_WATTS"), 1, "i watt diretti non ci sono: una sola richiesta");
+    }
+
+    #[test]
+    fn a_fraction_without_a_known_full_scale_gives_no_power() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER_METER", "0.25");
+        let rig = tx_rig(&fake, RigConfig::default());
+        for _ in 0..5 {
+            let m = rig.meters().expect("misuratori");
+            assert_eq!(m.power_w, None, "senza fondo scala non si inventano i watt");
+            std::thread::sleep(Duration::from_millis(210));
+        }
+    }
+
+    #[test]
+    fn a_slow_serial_port_gets_one_meter_command_per_call() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER_METER_WATTS", "10");
+        fake.set_level("SWR", "1.2");
+        let config = RigConfig { port: "COM3".into(), baud: 9600, ..RigConfig::default() };
+        let rig = tx_rig(&fake, config);
+        fake.clear_commands();
+        let m = rig.meters().expect("misuratori");
+        assert_eq!(level_commands(&fake).len(), 1, "un comando per giro: {:?}", level_commands(&fake));
+        assert_eq!(m.power_w, Some(10.0));
+        std::thread::sleep(Duration::from_millis(210));
+        let m = rig.meters().expect("misuratori");
+        assert_eq!((m.power_w, m.swr), (Some(10.0), Some(1.2)));
+    }
+
+    #[test]
+    fn the_default_rig_has_no_meters() {
+        struct Plain;
+        impl Rig for Plain {
+            fn set_frequency(&self, _: u64) -> Result<(), RigError> {
+                Ok(())
+            }
+            fn set_rx_frequency(&self, _: u32) -> Result<(), RigError> {
+                Ok(())
+            }
+            fn output_attenuation(&self) -> Result<u32, RigError> {
+                Ok(0)
+            }
+            fn set_output_attenuation(&self, _: u32) -> Result<(), RigError> {
+                Ok(())
+            }
+            fn set_mode(&self, _: &str) -> Result<(), RigError> {
+                Ok(())
+            }
+        }
+        assert!(Plain.meters().is_err());
     }
 
     fn real_rigctld() -> Option<std::path::PathBuf> {

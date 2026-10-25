@@ -40,31 +40,31 @@ pub struct StationStatus {
     pub meters: Option<RadioMeters>,
 }
 
-/// Gli strumenti della radio, ognuno presente solo se il CAT sa leggerlo. Le unita' sono quelle del pannello della radio.
+/// Gli strumenti della radio, ognuno presente solo se il CAT sa leggerlo (se manca, il campo non compare nel JSON: l'interfaccia non accetta `null`). Le unita' sono quelle del pannello della radio.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RadioMeters {
     /// S-meter in punti S (0-9) e oltre in dB sopra S9 (9 + dB/6 non si usa: sono due numeri distinti): `s_points` 0..=9, `s_over_db` 0..=60.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub s_points: Option<f32>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub s_over_db: Option<f32>,
     /// Potenza in uscita, in watt.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub power_w: Option<f32>,
     /// Rapporto d'onda stazionaria (1.0 e oltre).
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub swr: Option<f32>,
     /// ALC, 0.0-1.0 della scala.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alc: Option<f32>,
     /// Compressione del processore vocale, in dB.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comp_db: Option<f32>,
     /// Corrente dello stadio finale, in ampere.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id_a: Option<f32>,
     /// Tensione di alimentazione, in volt.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vdd_v: Option<f32>,
 }
 
@@ -209,5 +209,19 @@ impl SpectrumRow {
             return Err(CoreError::InvalidSpectrum("intervallo di frequenza invertito"));
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn missing_meters_are_left_out_of_the_json_not_null() {
+        let m = RadioMeters { s_points: Some(7.0), s_over_db: Some(0.0), ..RadioMeters::default() };
+        let json = serde_json::to_value(&m).expect("json");
+        assert_eq!(json, serde_json::json!({ "s_points": 7.0, "s_over_db": 0.0 }));
+        let back: RadioMeters = serde_json::from_value(json).expect("lettura");
+        assert_eq!(back, m);
     }
 }

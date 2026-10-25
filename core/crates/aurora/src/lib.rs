@@ -940,6 +940,24 @@ pub async fn run(
                 std::thread::sleep(Duration::from_secs(3));
             }
         });
+        // gli strumenti della radio (S-meter in ricezione; potenza, ROS, ALC in trasmissione) letti dal CAT Hamlib: il CAT limita da solo il ritmo
+        // delle letture (250 ms in ricezione, 200 ms in trasmissione, un comando per giro sulle seriali lente); con OmniRig o senza radio restano spenti
+        let cat = Arc::clone(&cat);
+        let controls = Arc::clone(&native_controls);
+        std::thread::spawn(move || {
+            loop {
+                match rig_control::Rig::meters(cat.as_ref()) {
+                    Ok(meters) => {
+                        controls.set_meters(Some(meters));
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    Err(_) => {
+                        controls.set_meters(None);
+                        std::thread::sleep(Duration::from_secs(1));
+                    }
+                }
+            }
+        });
     }
 
     // la programmazione delle bande ha senso solo se la radio e' comandabile
