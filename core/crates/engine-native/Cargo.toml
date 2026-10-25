@@ -11,6 +11,7 @@ publish = false
 aurora-core = { path = "../aurora-core" }
 audio-spectrum = { path = "../audio-spectrum" }
 ft8 = { path = "../ft8" }
+rig-control = { path = "../rig-control" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
