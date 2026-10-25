@@ -16,6 +16,8 @@ due versioni che divergono. Quindi:
 
 Prima di toccare una logica di QSO, di trasmissione o di selezione dei messaggi, leggere questo file.
 
+> **Aggiornamento del 2026-10-25**: la sezione in fondo a questo file («Aggiornamento del 2026-10-25: reverse di JTDX 2.2.159») corregge alcuni punti (livelli AutoSeq, momento della registrazione, limite di avvio, `NDepth`) e ne aggiunge molti; ha la precedenza sul testo sottostante.
+
 ## Come si parla con JTDX
 
 | Canale | Cosa passa | Note |
@@ -216,3 +218,48 @@ JTDX continua a girare, quindi tutto il suo stato e' ancora valido; Aurora deve 
 - casella `rrr1CheckBox` e numero di AutoSeq: risolti sopra; restano i livelli 4 e 5 non descritti;
 - gestione di Hound (modo DXpedition) e delle schede 2 e 3 dei messaggi: non esposte;
 - le prove di selezione del messaggio a mano con la trasmissione accesa le fa il proprietario.
+
+
+## Aggiornamento del 2026-10-25: reverse di JTDX 2.2.159 (sorgenti pubblici e REA)
+
+Analisi completa in `docs/analisi-jtdx-reverse-rea.md` (indirizzi, tabelle, confronto con il sorgente). Il sorgente pubblico (ramo `master` di `jtdx-project/jtdx`, 2.2.159, ultimo commit 2022-03-01)
+e' stato confrontato con `jtdx.exe` e `jtdxjt9.exe` (REA + Ghidra, che hanno i simboli) nei punti che contano: **coincidono**. Le correzioni qui sotto **hanno la precedenza** sul testo precedente di questo file,
+che resta com'e' per la storia. Tutto cio' che segue vale per JTDX 2.2.159; la sigla «sez.» rimanda al documento di analisi.
+
+### Cose sbagliate nel testo precedente
+
+| Dove (sopra) | Cosa diceva | Com'e' |
+|---|---|---|
+| «AutoSeq: il numero» | livello da 0 a 7; «AutoSeq 4 e oltre» sceglie con le priorita'; i livelli 4 e 5 non descritti | i livelli sono **0, 1, 2, 3, 6, 7**; **4 e 5 non esistono**. Le liste dei desiderati valgono da 1 a 7. Cio' che cambia fra i livelli e' **quando** gira `process_Auto` (0: subito, nessuna scelta di chi chiamare; 1: subito, prende il primo che chiama; 2/6: all'inizio del periodo di trasmissione; 3/7: a fine decodifica, con la trasmissione che riparte se il messaggio cambia) e la **ricerca nei CQ** altrui (solo 6/7) (sez. 2.6) |
+| «Sequenza osservata» | il QSO si chiude e si registra quando arriva RR73/RRR/73 | **si registra quando JTDX comincia a trasmettere RR73 o 73** (RRR non conta: con la casella RRR si registra al Tx5); il FIN richiede anche la chiusura del DX. Prova: `ALL.TXT`, «Transmitting ... RR73» e «QSO logged» a 6 ms (sez. 2.8) |
+| `AutoQSOLogging` | «registra da solo a QSO chiuso» | registra all'**invio** del primo 73/RR73; con Autolog acceso JTDX **ferma Tx** a S73/FIN (senza Autolog, con «1 QSO» spento e se il QSO era sulla frequenza del proprio CQ, passa da solo al prossimo chiamante o al CQ) (sez. 2.4) |
+| «Il periodo»: «una trasmissione parte all'inizio del periodo scelto, o subito se conviene» e «Da verificare: il limite non risulta» | limite non documentato | si puo' partire in qualunque istante dei primi **13,64 s (FT8) / 6,04 s (FT4)** del periodo (`fTR < 99` e' sempre vero: «Allow late starts»); l'avvio tardivo trasmette la **coda** del messaggio dall'istante giusto; se AutoSeq cambia messaggio dopo l'avvio c'e' una **ritrasmissione** (`Retransmitting` in `ALL.TXT`, fino a 13,3 s in FT8, 4,1 s in FT4) (sez. 2.9) |
+| `TxMinuteButton` | FT4: «TX 00» | acceso «TX 00», **spento «TX 7.5»** |
+| `NDepth` | profondita' di decodifica | **non conta in FT8 ne' in FT4**: in FT8 contano `NFT8Cycles` (3, 6, 9 passate), `FT8Sensitivity` (0, 1 soglie basse, 2 sottopassate) e `NFT8QSORXfreqSensitivity`; in FT4 `NFT4Depth` (sez. 5.1) |
+| `AutoTxButton` «AutoTX» | trasmissione automatica | e' l'impostazione `QuickCall`: il doppio clic (o il `Reply`) **accende Enable Tx** |
+| Contatori «massimo 5» | valore massimo 5 | il valore e' il **numero di trasmissioni** dello stesso messaggio (la successiva non parte); di fabbrica 2 / 3 / 5 / 4 e tutti spenti (sez. 2.5) |
+
+### Cose nuove
+
+- **Il cervello della sequenza e' `QsoHistory`** (17 stati, tabella per stazione), alimentato da `displayDecodedText` (ricevuto) e `displayTransmittedText` (inviato) e letto da `process_Auto`: stati, classificazione dei messaggi e transizioni
+  completi in sez. 2.1-2.4. FIN solo se le due chiusure si sono incrociate; RR73/73 senza rapporto ricevuto non fanno niente.
+- **Contatori** (sez. 2.5): AnswerCQ **non vale per le stazioni volute (priorita' 2-4 e 17-19) ne' per i nuovi DXCC**; `reply_other` libera il DX solo se il contatore e' acceso, ma `readFromStdout` **ferma Tx** quando il DX parla con un altro entro la
+  **banda di guardia (FT8 51 Hz, FT4 84)** o sempre con `SeqHaltTxReplyOther`; cooldown dopo una rinuncia; CQ diretto a un'altra zona = `count 1`; «1 QSO» ferma anche quando un contatore libera il DX.
+- **Watchdog** (sez. 2.7): conta **minuti con trasmissione recente** (32 s FT8, 16 s FT4), si azzera con un messaggio **diverso dal precedente** e con RCALL/RREPORT.
+- **Scelta di chi chiamare** (sez. 3): priorita' 0-31 (nuovo CQZ 30-31, ITUZ 26-27, DXCC 22-23 e su banda 20-21, locatore 15-16 e 13-14, prefisso 11-12 e 9-10, nominativo 7-8 e 5-6, desiderati 2-4 e 17-19), tre blocchi (risposte al mio CQ
+  nell'ultimo periodo; nei 5 minuti; CQ degli altri con AutoSeq 6/7) e le regole di sorpasso; senza evidenziazioni di «nuovo» JTDX risponde a chiunque, con evidenziazioni e «Risp B4» spento ignora chi ha priorita' 0. **I filtri di visualizzazione
+  nascondono le righe a `QsoHistory`** (e a UDP con `filterUDP`).
+- **Periodo**: opposto a quello della riga cliccata; **AutoSeq non lo cambia mai**; con AutoSeq 6/7 si cercano CQ solo nel periodo che segue quello decodificato (sez. 3.1).
+- **Il doppio clic sceglie il messaggio dal testo della riga** (Tx2, Tx3, Tx4 o Tx5 se contiene il mio nominativo; Tx1/Tx2 se e' un CQ) (sez. 2.10). Con AutoSeq acceso i sei pallini `txrb` sono **disattivati** (`enableTab1TXRB(false)`).
+- **Decoder** (sez. 4 e 5): i filtri sui falsi sono una catena (sincronismo duro `nsync >= 7`, punteggi di sincronismo, BP 30 iterazioni e OSD con `nharderrors + dmin < 60`, plausibilita' del testo con `chkfalse8` + `chkflscall` +
+  `chkgrid`, duplicati a 45 Hz) basata anche su `ALLCALL7.TXT` (100 515 nominativi) e su una tabella geografica locatore-prefisso; in FT8 si decodifica con cicli, sensibilita', thread a fette di banda, **cronologia dei periodi** (somma
+  dei simboli dell'ultimo periodo per CQ e chiamate a noi), analisi a priori guidate dallo stato del QSO e il decoder dedicato `ft8s` sul canale del QSO.
+
+### Cosa e' confermato
+
+Tx1-Tx6 e i testi; pallino «Next» contro pulsante «Now» (quest'ultimo riavvia la trasmissione in corso); ripetizione del messaggio senza risposta e avanzamento con la risposta; regola del periodo opposto; casella RRR (cambia solo il Tx4); «Salta Tx1» (partenza
+da Tx2, con il rapporto che si aggiorna a ogni periodo); `Reply` UDP = stesso percorso del doppio clic (`replyToUDP` -> `processMessage`); i quattro contatori e le loro chiavi; lista nera e «Canc DX».
+
+### Da verificare ancora
+
+Esecuzione reale di FIN/S73 con Autolog (letta nel sorgente, non provata in aria); la logica riga per riga di `ft8s`, `ft8sd`, `ft8mf1`, `ft8mfcq`; il modo Hound; il motivo di `count = 1` per i CQ diretti.
