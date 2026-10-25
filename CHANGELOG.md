@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.19 - 2026-10-25
 - **Scheda Audio sul layout comune** a riquadri (Ingresso, Uscita, File audio, Applica).
 - **Regione IARU funzionante** (Impostazioni -> Generali): la tabella delle frequenze e' ora quella iniziale di JTDX per FT8 e FT4 (letta con REA da `jtdx.exe`), con la regione e la riga predefinita di ogni frequenza; la regione scelta decide quali righe valgono (in regione 1 i 160 m vanno su 1,810 MHz, in regione 3 gli 80 m in FT4 su 3,568 MHz; con «Tutte» e regione 2 resta tutto com'era). Vale subito per cambio di banda, cambio di modo (come JTDX: resta sulla frequenza se e' gia' una riga del nuovo modo) e programmazione. Scheda Frequenze con regione e riga predefinita, righe nascoste attenuate e tasto «Frequenze iniziali di JTDX»; il valore iniziale si legge dal `JTDX.ini`.
 - **«Generazione dei messaggi per nominativi composti di tipo 2»** (Impostazioni -> Generali): ora si sceglie, si salva e si legge dal `JTDX.ini`. Come in JTDX (verificato nell'eseguibile) riguarda solo JT65, JT9 e T10: in FT8 e FT4 non cambia nessun messaggio, e la pagina lo dice sotto la voce.
