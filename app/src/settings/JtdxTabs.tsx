@@ -16,6 +16,7 @@ import { useStation } from '../state/station';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help } from './common';
+import { Cell, Cells, Field, Group, Message, Notes, Page, Unavailable } from './layout';
 
 /** Il valore di una voce adesso: la modifica non ancora applicata, o quello salvato. */
 function valueOf(doc: EngineSettings, draft: Draft, key: string): string {
@@ -26,26 +27,31 @@ function isOn(doc: EngineSettings, draft: Draft, key: string): boolean {
   return valueOf(doc, draft, key) === 'true';
 }
 
-/** Una casella di una voce del motore proprio: viva si modifica (con Applica), altrimenti e' spenta. */
-function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
+/** La casella nuda di una voce del motore proprio: viva si modifica (con Applica), altrimenti e' spenta. */
+function EngineCheck({ k, label, doc, draft, locked = false }: { k: string; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
   const live = doc.items[k]?.state === 'live';
-  const changed = draft.changes[k] !== undefined;
   return (
-    <label className={`set-check${changed ? ' jx-row--changed' : ''}`}>
-      <input
-        type="checkbox"
-        aria-label={label}
-        data-setting={k}
-        disabled={!live || locked}
-        checked={live && isOn(doc, draft, k)}
-        onChange={(e) => draft.set(k, e.target.checked ? 'true' : 'false', doc.values[k])}
-      />
-      <span>{label}</span>
-    </label>
+    <input
+      type="checkbox"
+      aria-label={label}
+      data-setting={k}
+      disabled={!live || locked}
+      checked={live && isOn(doc, draft, k)}
+      onChange={(e) => draft.set(k, e.target.checked ? 'true' : 'false', doc.values[k])}
+    />
   );
 }
 
-/** Una voce che Aurora non ha: si vede spenta, con il motivo. */
+/** Una cella con la casella di una voce del motore proprio. */
+function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
+  return (
+    <Field label={label} changed={draft.changes[k] !== undefined}>
+      <EngineCheck k={k} label={label} doc={doc} draft={draft} locked={locked} />
+    </Field>
+  );
+}
+
+/** Una voce che Aurora non ha: si vede spenta, con il motivo (va dentro un riquadro «Non disponibili»). */
 function OffRow({ label, reason, kind = 'check', suffix }: { label: string; reason: Key; kind?: 'check' | 'select' | 'text' | 'button' | 'number'; suffix?: string }) {
   const t = useT();
   const why = t(reason);
@@ -77,6 +83,12 @@ function useDoc() {
   return { settings, draft };
 }
 
+/** «Non ho potuto leggere le impostazioni» o «sto leggendo»: un messaggio a tutta larghezza. */
+function Waiting({ error }: { error: boolean }) {
+  const t = useT();
+  return <p className={`sx-span-3 ${error ? 'notice' : 'muted'}`}>{error ? t('ens.unavailable') : t('set.loading')}</p>;
+}
+
 /* ---------------------------------------------------------------- Sequenza */
 
 const SCENARIOS = [
@@ -92,7 +104,7 @@ function ControlBox({ id, label }: { id: ControlId; label: string }) {
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const on = controls.data?.[id] === true;
   return (
-    <label className="set-check">
+    <Field label={label}>
       <input
         type="checkbox"
         aria-label={label}
@@ -108,151 +120,112 @@ function ControlBox({ id, label }: { id: ControlId; label: string }) {
           }
         }}
       />
-      <span>{label}</span>
-    </label>
+    </Field>
   );
 }
 
-/** La scheda Sequenza come nel motore: i quattro scenari brevi con il numero di volte, «ferma il Tx se...» e «operazione CQ rigorosa». */
-export function NativeSequence() {
+/**
+ * La scheda Sequenza come nel motore: i quattro scenari brevi con il numero di volte, «ferma il Tx se...» e «operazione CQ rigorosa».
+ * `extra` sono altri riquadri (le regole di Aurora) che finiscono nella stessa griglia.
+ */
+export function NativeSequence({ extra }: { extra?: ReactNode }) {
   const t = useT();
   const { settings, draft } = useDoc();
-  if (settings.isError) return <p className="muted">{t('ens.unavailable')}</p>;
-  if (!settings.data) return <p className="muted">{t('set.loading')}</p>;
+  if (settings.isError || !settings.data) {
+    return (
+      <Page>
+        <Waiting error={settings.isError} />
+        {extra}
+      </Page>
+    );
+  }
   const doc = settings.data;
   return (
-    <section aria-label={t('seq2.title')}>
-      <h3 className="set-sub">{t('seq2.title')}</h3>
-      <fieldset className="jt-group">
-        <legend>{t('seq2.switches')}</legend>
-        <div className="jt-row">
+    <Page>
+      <Group title={t('seq2.switches')}>
+        <Cells min={13}>
           <ControlBox id="autoseq" label={t('seq2.autoseq')} />
           <ControlBox id="single_qso" label={t('seq2.single')} />
           <ControlBox id="skip_tx1" label={t('seq2.skipTx1')} />
           <ControlBox id="answer_b4" label={t('seq2.answerB4')} />
-        </div>
-        <div className="jt-row">
           <EngineBox k="CallPriorityCQ" label={t('seq2.prioCq')} doc={doc} draft={draft} />
           <EngineBox k="MaxDistance" label={t('seq2.maxDist')} doc={doc} draft={draft} />
-        </div>
+        </Cells>
+      </Group>
+      <Group title={t('seq2.group')}>
+        <Cells min={20}>
+          {SCENARIOS.map((s) => {
+            const id = `seq-${s.on}`;
+            return (
+              <Cell
+                key={s.on}
+                label={<label htmlFor={id}>{t(s.label)}</label>}
+                className={draft.changes[s.on] !== undefined || draft.changes[s.value] !== undefined ? 'sx-field--changed' : ''}
+              >
+                <input
+                  type="number"
+                  className="set-number"
+                  min={1}
+                  max={5}
+                  aria-label={`${t(s.label)} (${t('seq2.times')})`}
+                  disabled={doc.items[s.value]?.state !== 'live' || !isOn(doc, draft, s.on)}
+                  value={valueOf(doc, draft, s.value)}
+                  onChange={(e) => draft.set(s.value, e.target.value, doc.values[s.value])}
+                />
+                <span className="muted">{t('seq2.times')}</span>
+                <EngineCheckWithId id={id} k={s.on} label={t(s.label)} doc={doc} draft={draft} />
+              </Cell>
+            );
+          })}
+        </Cells>
+      </Group>
+      <Group title={t('seq2.stop')}>
+        <Cells min={13}>
+          <EngineBox k="SeqHaltTxReplyOther" label={t('seq2.haltReplyOther')} doc={doc} draft={draft} />
+          <EngineBox k="StrictDirectionalCQ" label={t('seq2.strictCq')} doc={doc} draft={draft} />
+        </Cells>
+      </Group>
+      {extra}
+      <Notes span={2}>
         <Help>{t('seq2.switchHelp')}</Help>
-      </fieldset>
-      <fieldset className="jt-group">
-        <legend>{t('seq2.group')}</legend>
-        {SCENARIOS.map((s) => (
-          <div className="jt-row" key={s.on}>
-            <EngineBox k={s.on} label={t(s.label)} doc={doc} draft={draft} />
-            <input
-              type="number"
-              className="set-number"
-              min={1}
-              max={5}
-              aria-label={`${t(s.label)} (${t('seq2.times')})`}
-              disabled={doc.items[s.value]?.state !== 'live' || !isOn(doc, draft, s.on)}
-              value={valueOf(doc, draft, s.value)}
-              onChange={(e) => draft.set(s.value, e.target.value, doc.values[s.value])}
-            />
-            <span className="muted">{t('seq2.times')}</span>
-          </div>
-        ))}
-      </fieldset>
-      <div className="jt-row">
-        <EngineBox k="SeqHaltTxReplyOther" label={t('seq2.haltReplyOther')} doc={doc} draft={draft} />
-      </div>
-      <div className="jt-row">
-        <EngineBox k="StrictDirectionalCQ" label={t('seq2.strictCq')} doc={doc} draft={draft} />
-      </div>
-      <Help>{t('seq2.help')}</Help>
+        <Help>{t('seq2.help')}</Help>
+      </Notes>
       <ApplyBar draft={draft} doc={doc} />
-    </section>
+    </Page>
+  );
+}
+
+/** La casella di uno scenario, con un id per l'etichetta accanto. */
+function EngineCheckWithId({ id, k, label, doc, draft }: { id: string; k: string; label: string; doc: EngineSettings; draft: Draft }) {
+  const live = doc.items[k]?.state === 'live';
+  return (
+    <input
+      id={id}
+      type="checkbox"
+      aria-label={label}
+      data-setting={k}
+      disabled={!live}
+      checked={live && isOn(doc, draft, k)}
+      onChange={(e) => draft.set(k, e.target.checked ? 'true' : 'false', doc.values[k])}
+    />
   );
 }
 
 /* ---------------------------------------------------------------- Generali */
 
-/** La scheda Generali come nel motore: stazione, filtro del log, schermo e funzionamento; le voci che Aurora non ha sono spente, con il motivo. */
-export function NativeGeneral() {
+/** Il resto dello schermo (del browser): bandiera, DT, ESC, svuota al cambio, doppio clic, righe di Log4OM2, ripristino. */
+function ScreenExtras() {
   const t = useT();
-  const { settings, draft } = useDoc();
-  const status = useStation((s) => s.status);
   const prefs = usePrefs((s) => s.prefs);
   const set = usePrefs.getState().set;
-  if (settings.isError) return <p className="muted">{t('ens.unavailable')}</p>;
-  if (!settings.data) return <p className="muted">{t('set.loading')}</p>;
-  const doc = settings.data;
-  const field = (key: string, kind: 'bool' | 'text' | 'num', label: Key, extra: { min?: number; max?: number; locked?: boolean } = {}) => (
-    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
-  );
   return (
     <>
-      <fieldset className="jt-group">
-        <legend>{t('gen2.station')}</legend>
-        <div className="jx-list">
-          {field('MyCall', 'text', 'gen2.call')}
-          {field('MyGrid', 'text', 'gen2.grid')}
-        </div>
-        <p className="muted settings-hint">
-          {status?.de_call || '—'} · {status?.de_grid || '—'}
-        </p>
-        <OffRow label={t('gen2.region')} reason="ens.r.iaru_region" kind="select" suffix={t('gen2.regionAll')} />
-        <OffRow label={t('gen2.type2')} reason="ens.r.type2_msgs" kind="select" suffix={t('gen2.type2Full')} />
-      </fieldset>
-
-      <fieldset className="jt-group">
-        <legend>{t('gen2.logFilter')}</legend>
-        <div className="jx-list">
-          {field('callsignLogFiltering', 'bool', 'gen2.useCall')}
-          {field('gridLogFiltering', 'bool', 'gen2.useGrid', { locked: !isOn(doc, draft, 'callsignLogFiltering') })}
-          {field('timeFromLogFiltering', 'text', 'gen2.fromDate')}
-        </div>
-        <Help>{t('gen2.logHelp')}</Help>
-      </fieldset>
-
-      <fieldset className="jt-group">
-        <legend>{t('gen2.screen')}</legend>
-        <div className="set-checks">
-          <PrefCheck k="insertBlank" label={t('gen2.blank')} />
-          <Check label={t('gen.miles')} hint={t('tip.gen.miles')} checked={prefs.distanceUnit === 'mi'} onChange={(v) => set({ distanceUnit: v ? 'mi' : 'km' })} />
-          <PrefCheck k="showTx" label={t('gen2.showTx')} />
-          <PrefCheck k="showCountry" label={t('gen.showCountry')} />
-          <PrefCheck k="showDistance" label={t('gen.showDistance')} />
-          <PrefCheck k="showAzimuth" label={t('gen2.azimuth')} />
-        </div>
-        <OffRow label={t('gen2.scroll')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.hidePartial')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.prefix')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.align')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.fontApp')} reason="ens.r.screen_off" kind="button" />
-        <OffRow label={t('gen2.fontRx')} reason="ens.r.screen_off" kind="button" />
-        <h4 className="set-sub">{t('gen.theme')}</h4>
-        <ThemeToggle />
-      </fieldset>
-
-      <fieldset className="jt-group">
-        <legend>{t('gen2.operation')}</legend>
-        <div className="jx-list">
-          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
-          {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
-          {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
-        </div>
-        <OffRow label={t('gen2.decode52')} reason="ens.r.decode52" />
-        <OffRow label={t('gen2.lastFreq')} reason="ens.r.monitor_last" />
-        <OffRow label={t('gen2.cwId')} reason="ens.r.cw_id" />
-        <OffRow label={t('gen2.cwInt')} reason="ens.r.cw_id" kind="number" />
-        <OffRow label={t('gen2.tune')} reason="ens.r.tune_timer" kind="number" />
-      </fieldset>
-      <ApplyBar draft={draft} doc={doc} />
-
-      <h3 className="set-sub">{t('gen2.other')}</h3>
-      <div className="set-checks">
-        <Check label={t('gen.showFlag')} hint={t('tip.gen.flag')} checked={prefs.showFlag} onChange={(v) => set({ showFlag: v })} />
-        <Check label={t('gen.showDt')} hint={t('tip.gen.dt')} checked={prefs.showDt} onChange={(v) => set({ showDt: v })} />
-        <Check label={t('gen.escStop')} hint={t('tip.gen.escStop')} checked={prefs.escStop} onChange={(v) => set({ escStop: v })} />
-        <Check label={t('gen.clearOnChange')} hint={t('tip.gen.clearOnChange')} checked={prefs.clearOnChange} onChange={(v) => set({ clearOnChange: v })} />
-        <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
-      </div>
-      <label className="set-check" title={t('tip.gen.log4omCount')}>
-        <span>{t('gen.log4omCount')}</span>
+      <Check label={t('gen.showFlag')} hint={t('tip.gen.flag')} checked={prefs.showFlag} onChange={(v) => set({ showFlag: v })} />
+      <Check label={t('gen.showDt')} hint={t('tip.gen.dt')} checked={prefs.showDt} onChange={(v) => set({ showDt: v })} />
+      <Check label={t('gen.escStop')} hint={t('tip.gen.escStop')} checked={prefs.escStop} onChange={(v) => set({ escStop: v })} />
+      <Check label={t('gen.clearOnChange')} hint={t('tip.gen.clearOnChange')} checked={prefs.clearOnChange} onChange={(v) => set({ clearOnChange: v })} />
+      <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
+      <Field label={t('gen.log4omCount')} hint={t('tip.gen.log4omCount')}>
         <input
           type="number"
           className="set-number"
@@ -264,14 +237,103 @@ export function NativeGeneral() {
             if (Number.isFinite(n)) set({ log4omCount: Math.min(200, Math.max(1, n)) });
           }}
         />
-      </label>
-      <button type="button" className="glass" onClick={() => usePrefs.getState().reset()}>
-        {t('set.reset')}
-      </button>
-      <RadioDisplayPicker />
-      <h3 className="set-sub">{t('gen.language')}</h3>
-      <LanguageSelect />
+      </Field>
+      <Cell>
+        <button type="button" className="glass" onClick={() => usePrefs.getState().reset()}>
+          {t('set.reset')}
+        </button>
+      </Cell>
     </>
+  );
+}
+
+/** La scheda Generali come nel motore: stazione, filtro del log, schermo e funzionamento; le voci che Aurora non ha stanno nel riquadro «Non disponibili», con il motivo. */
+export function NativeGeneral() {
+  const t = useT();
+  const { settings, draft } = useDoc();
+  const status = useStation((s) => s.status);
+  const prefs = usePrefs((s) => s.prefs);
+  const set = usePrefs.getState().set;
+  if (settings.isError || !settings.data) {
+    return (
+      <Page>
+        <Waiting error={settings.isError} />
+      </Page>
+    );
+  }
+  const doc = settings.data;
+  const field = (key: string, kind: 'bool' | 'text' | 'num', label: Key, extra: { min?: number; max?: number; locked?: boolean } = {}) => (
+    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
+  );
+  return (
+    <Page>
+      <Group title={t('gen2.station')}>
+        <Cells min={18}>
+          {field('MyCall', 'text', 'gen2.call')}
+          {field('MyGrid', 'text', 'gen2.grid')}
+        </Cells>
+        <Message kind="muted">
+          {status?.de_call || '—'} · {status?.de_grid || '—'}
+        </Message>
+      </Group>
+
+      <Group title={t('gen2.logFilter')}>
+        <Cells min={13}>
+          {field('callsignLogFiltering', 'bool', 'gen2.useCall')}
+          {field('gridLogFiltering', 'bool', 'gen2.useGrid', { locked: !isOn(doc, draft, 'callsignLogFiltering') })}
+          {field('timeFromLogFiltering', 'text', 'gen2.fromDate')}
+        </Cells>
+        <Message kind="muted">{t('gen2.logHelp')}</Message>
+      </Group>
+
+      <Group title={t('gen2.operation')}>
+        <Cells min={13}>
+          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
+          {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
+          {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.screen')} span={2} rows={2}>
+        <Cells min={15}>
+          <PrefCheck k="insertBlank" label={t('gen2.blank')} />
+          <Check label={t('gen.miles')} hint={t('tip.gen.miles')} checked={prefs.distanceUnit === 'mi'} onChange={(v) => set({ distanceUnit: v ? 'mi' : 'km' })} />
+          <PrefCheck k="showTx" label={t('gen2.showTx')} />
+          <PrefCheck k="showCountry" label={t('gen.showCountry')} />
+          <PrefCheck k="showDistance" label={t('gen.showDistance')} />
+          <PrefCheck k="showAzimuth" label={t('gen2.azimuth')} />
+          <ScreenExtras />
+        </Cells>
+      </Group>
+
+      <Group title={t('gen.language')}>
+        <LanguageSelect />
+      </Group>
+      <Group title={t('gen.theme')}>
+        <ThemeToggle />
+      </Group>
+
+      <Group title={t('rd.title')} span={3}>
+        <RadioDisplayPicker />
+      </Group>
+
+      <Unavailable count={13}>
+        <OffRow label={t('gen2.region')} reason="ens.r.iaru_region" kind="select" suffix={t('gen2.regionAll')} />
+        <OffRow label={t('gen2.type2')} reason="ens.r.type2_msgs" kind="select" suffix={t('gen2.type2Full')} />
+        <OffRow label={t('gen2.scroll')} reason="ens.r.screen_off" />
+        <OffRow label={t('gen2.hidePartial')} reason="ens.r.screen_off" />
+        <OffRow label={t('gen2.prefix')} reason="ens.r.screen_off" />
+        <OffRow label={t('gen2.align')} reason="ens.r.screen_off" />
+        <OffRow label={t('gen2.fontApp')} reason="ens.r.screen_off" kind="button" />
+        <OffRow label={t('gen2.fontRx')} reason="ens.r.screen_off" kind="button" />
+        <OffRow label={t('gen2.decode52')} reason="ens.r.decode52" />
+        <OffRow label={t('gen2.lastFreq')} reason="ens.r.monitor_last" />
+        <OffRow label={t('gen2.cwId')} reason="ens.r.cw_id" />
+        <OffRow label={t('gen2.cwInt')} reason="ens.r.cw_id" kind="number" />
+        <OffRow label={t('gen2.tune')} reason="ens.r.tune_timer" kind="number" />
+      </Unavailable>
+      <ApplyBar draft={draft} doc={doc} />
+    </Page>
   );
 }
 
@@ -279,22 +341,26 @@ export function NativeGeneral() {
 
 /** Le sei evidenziazioni di «nuovo», con le etichette di Aurora che coprono ognuna (in ordine di priorita' come nel motore). */
 const NEW_ROWS = [
-  { key: 'newCQZ', label: 'not2.cqz', kinds: ['new_zone', 'new_zone_band'], alert: ['alertCqz', 'alertCqzOb'] },
-  { key: 'newITUZ', label: 'not2.itu', kinds: ['new_itu', 'new_itu_band'], alert: ['alertItu', 'alertItuOb'] },
-  { key: 'newDXCC', label: 'not2.dxcc', kinds: ['new_dxcc', 'new_dxcc_band'], alert: ['alertDxcc', 'alertDxccOb'] },
-  { key: 'newGrid', label: 'not2.grid', kinds: ['new_grid', 'new_grid_band'], alert: ['alertGrid', 'alertGridOb'] },
-  { key: 'newPx', label: 'not2.px', kinds: ['new_px', 'new_px_band'], alert: ['alertPx', 'alertPxOb'] },
-  { key: 'newCall', label: 'not2.call', kinds: ['new_call', 'new_call_band'], alert: null },
-] as const satisfies readonly { key: string; label: Key; kinds: readonly ColorKey[]; alert: readonly [AlertKey, AlertKey] | null }[];
+  { key: 'newCQZ', label: 'not2.cqz', name: 'not2.n.cqz', kinds: ['new_zone', 'new_zone_band'], alert: ['alertCqz', 'alertCqzOb'] },
+  { key: 'newITUZ', label: 'not2.itu', name: 'not2.n.itu', kinds: ['new_itu', 'new_itu_band'], alert: ['alertItu', 'alertItuOb'] },
+  { key: 'newDXCC', label: 'not2.dxcc', name: 'not2.n.dxcc', kinds: ['new_dxcc', 'new_dxcc_band'], alert: ['alertDxcc', 'alertDxccOb'] },
+  { key: 'newGrid', label: 'not2.grid', name: 'not2.n.grid', kinds: ['new_grid', 'new_grid_band'], alert: ['alertGrid', 'alertGridOb'] },
+  { key: 'newPx', label: 'not2.px', name: 'not2.n.px', kinds: ['new_px', 'new_px_band'], alert: ['alertPx', 'alertPxOb'] },
+  { key: 'newCall', label: 'not2.call', name: 'not2.n.call', kinds: ['new_call', 'new_call_band'], alert: null },
+] as const satisfies readonly { key: string; label: Key; name: Key; kinds: readonly ColorKey[]; alert: readonly [AlertKey, AlertKey] | null }[];
 
-/** Una casella degli avvisi di «Play alert sound» (subito, nel browser). */
-function AlertBox({ k, label, locked = false }: { k: AlertKey; label: string; locked?: boolean }) {
+/** La casella nuda di un avviso di «Play alert sound» (subito, nel browser). */
+function AlertCheck({ k, label, locked = false }: { k: AlertKey; label: string; locked?: boolean }) {
   const view = useNotifyView((s) => s.view);
+  return <input type="checkbox" aria-label={label} data-alert={k} disabled={locked} checked={view[k]} onChange={(e) => useNotifyView.getState().set({ [k]: e.target.checked })} />;
+}
+
+/** Una cella con la casella di un avviso. */
+function AlertBox({ k, label, locked = false }: { k: AlertKey; label: string; locked?: boolean }) {
   return (
-    <label className="set-check">
-      <input type="checkbox" aria-label={label} data-alert={k} disabled={locked} checked={view[k]} onChange={(e) => useNotifyView.getState().set({ [k]: e.target.checked })} />
-      <span>{label}</span>
-    </label>
+    <Field label={label}>
+      <AlertCheck k={k} label={label} locked={locked} />
+    </Field>
   );
 }
 
@@ -307,20 +373,20 @@ function AlertOptions() {
     setAlerts(next);
   };
   return (
-    <fieldset className="jt-group">
-      <legend>{t('not2.playAlert')}</legend>
-      <AlertSwitch value={alerts} onChange={change} />
-      <div className="jt-row">
-        <label className="set-check">
-          <span>{t('not2.soundPick')}</span>
-          <select aria-label={t('not2.soundPick')} value={alerts.sound} onChange={(e) => change({ ...alerts, sound: e.target.value as SoundName })}>
-            {SOUND_NAMES.map((n) => (
-              <option key={n} value={n}>
-                {t(`not2.snd.${n}` as Key)}
-              </option>
-            ))}
-          </select>
-        </label>
+    <>
+      <Cell label={t('alert.button')} wide>
+        <AlertSwitch value={alerts} onChange={change} />
+      </Cell>
+      <Field label={t('not2.soundPick')}>
+        <select aria-label={t('not2.soundPick')} value={alerts.sound} onChange={(e) => change({ ...alerts, sound: e.target.value as SoundName })}>
+          {SOUND_NAMES.map((n) => (
+            <option key={n} value={n}>
+              {t(`not2.snd.${n}` as Key)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Cell label={t('not2.test')}>
         <button
           type="button"
           className="glass"
@@ -331,24 +397,34 @@ function AlertOptions() {
         >
           {t('not2.test')}
         </button>
-        <Check label={t('not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
-      </div>
-      <Help>{t('not2.alertHelp')}</Help>
-    </fieldset>
+      </Cell>
+      <Check label={t('not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
+    </>
   );
 }
 
-/** «Anche un suono»: i suoni dei due tipi di messaggio della riga (nuovo e nuovo su banda/modo), come gli avvisi di Aurora. */
-function SoundBox({ kinds, label, disabled }: { kinds: readonly ColorKey[]; label: string; disabled?: boolean }) {
+/** «Anche un suono»: la casella nuda dei suoni dei due tipi di messaggio della riga (nuovo e nuovo su banda/modo). */
+function SoundCheck({ kinds, label, disabled }: { kinds: readonly ColorKey[]; label: string; disabled?: boolean }) {
   const sound = useNotify((s) => s.notify.sound);
   return (
-    <Check
-      label={label}
+    <input
+      type="checkbox"
+      aria-label={label}
+      disabled={disabled}
       checked={!disabled && kinds.every((k) => sound[k])}
-      onChange={(v) => {
-        if (!disabled) for (const k of kinds) useNotify.getState().setFlag('sound', k, v);
+      onChange={(e) => {
+        if (!disabled) for (const k of kinds) useNotify.getState().setFlag('sound', k, e.target.checked);
       }}
     />
+  );
+}
+
+/** Una cella con la casella dei suoni. */
+function SoundBox({ kinds, label, disabled }: { kinds: readonly ColorKey[]; label: string; disabled?: boolean }) {
+  return (
+    <Field label={label}>
+      <SoundCheck kinds={kinds} label={label} disabled={disabled} />
+    </Field>
   );
 }
 
@@ -361,6 +437,9 @@ function sampleStyle(bg: string, view: NotifyView): CSSProperties {
 /** Le righe dell'anteprima, nell'ordine della schermata del motore: prima i tipi di base, poi le novita' e in fondo «gia' lavorato». */
 const PREVIEW_ROWS: readonly ColorKey[] = ['tx_msg', 'cq', 'my_call', 'standard_call', 'new_zone', 'new_zone_band', 'new_itu', 'new_itu_band', 'new_dxcc', 'new_dxcc_band', 'new_grid', 'new_grid_band', 'new_px', 'new_px_band', 'new_call', 'new_call_band', 'worked_call'];
 
+/** Il nominativo mostrato nelle anteprime: quello della stazione, finche' non e' noto un nominativo di prova. */
+const SAMPLE_FALLBACK = 'K1ABC';
+
 export function NativeNotifications() {
   const t = useT();
   const { settings, draft } = useDoc();
@@ -368,8 +447,14 @@ export function NativeNotifications() {
   const setView = useNotifyView.getState().set;
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
   const notify = useNotify((s) => s.notify);
-  if (settings.isError) return <p className="muted">{t('ens.unavailable')}</p>;
-  if (!settings.data) return <p className="muted">{t('set.loading')}</p>;
+  const myCall = useStation((s) => s.status?.de_call);
+  if (settings.isError || !settings.data) {
+    return (
+      <Page>
+        <Waiting error={settings.isError} />
+      </Page>
+    );
+  }
   const doc = settings.data;
   const commit = (next: TagColors) => {
     setColors(next);
@@ -379,113 +464,204 @@ export function NativeNotifications() {
   // «gia' lavorato» esiste solo se almeno una evidenziazione di «nuovo» e' accesa (come nel motore)
   const anyNew = NEW_ROWS.some((r) => isOn(doc, draft, r.key));
   const look = workedLook(view);
+  const sample = myCall && myCall.trim() !== '' ? myCall : SAMPLE_FALLBACK;
+  const na = <td className="sx-na" aria-hidden="true">—</td>;
   return (
-    <section aria-label={t('tab.notifications')}>
-      <Help>{t('not2.help')}</Help>
-      <h3 className="set-sub">{t('not2.intro')}</h3>
-      <div className="jt-grid">
-        {NEW_ROWS.map((r) => {
-          const main = isOn(doc, draft, r.key);
-          return (
-            <div key={r.key} style={{ display: 'contents' }}>
-              <EngineBox k={r.key} label={t(r.label)} doc={doc} draft={draft} />
-              <EngineBox k={`${r.key}Band`} label={t('not2.perBand')} doc={doc} draft={draft} locked={!main} />
-              <EngineBox k={`${r.key}BandMode`} label={t('not2.perMode')} doc={doc} draft={draft} locked={!main} />
-              <SoundBox kinds={r.kinds} label={t('not2.alsoSound')} disabled={!main} />
-              {r.alert ? <AlertBox k={r.alert[0]} label={t('not2.playAlert')} /> : <span />}
-              {r.alert ? <AlertBox k={r.alert[1]} label={t('not2.perBand')} locked={!view[r.alert[0]]} /> : <span />}
-            </div>
-          );
-        })}
+    <Page>
+      <Group title={t('not2.grpTable')} span={2}>
+        <div className="sx-tablewrap">
+          <table className="sx-table jt-grid">
+            <colgroup>
+              <col style={{ width: '19%' }} />
+              <col />
+              <col />
+              <col />
+              <col />
+              <col />
+              <col />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">{t('not2.colKind')}</th>
+                <th scope="col">{t('not2.colHighlight')}</th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perMode')}</span></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.alsoSound')}</span></th>
+                <th scope="col">{t('not2.colAlert')}</th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {NEW_ROWS.map((r) => {
+                const main = isOn(doc, draft, r.key);
+                return (
+                  <tr key={r.key}>
+                    <th scope="row">{t(r.name)}</th>
+                    <td title={t(r.label)}>
+                      <span className="sx-cellbox">
+                        <EngineCheck k={r.key} label={t(r.label)} doc={doc} draft={draft} />
+                      </span>
+                    </td>
+                    <td>
+                      <span className="sx-cellbox">
+                        <EngineCheck k={`${r.key}Band`} label={t('not2.perBand')} doc={doc} draft={draft} locked={!main} />
+                      </span>
+                    </td>
+                    <td>
+                      <span className="sx-cellbox">
+                        <EngineCheck k={`${r.key}BandMode`} label={t('not2.perMode')} doc={doc} draft={draft} locked={!main} />
+                      </span>
+                    </td>
+                    <td>
+                      <span className="sx-cellbox">
+                        <SoundCheck kinds={r.kinds} label={t('not2.alsoSound')} disabled={!main} />
+                      </span>
+                    </td>
+                    {r.alert ? (
+                      <>
+                        <td>
+                          <span className="sx-cellbox">
+                            <AlertCheck k={r.alert[0]} label={t('not2.playAlert')} />
+                          </span>
+                        </td>
+                        <td>
+                          <span className="sx-cellbox">
+                            <AlertCheck k={r.alert[1]} label={t('not2.perBand')} locked={!view[r.alert[0]]} />
+                          </span>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        {na}
+                        {na}
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+              <tr>
+                <th scope="row">{t('not2.n.worked')}</th>
+                <td title={t('not2.worked')}>
+                  <span className="sx-cellbox">
+                    <input type="checkbox" aria-label={t('not2.worked')} checked={anyNew && view.workedColor} onChange={(e) => setView({ workedColor: e.target.checked })} />
+                  </span>
+                </td>
+                {na}
+                {na}
+                {na}
+                {na}
+                {na}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Group>
 
-        <Check label={t('not2.worked')} checked={anyNew && view.workedColor} onChange={(v) => setView({ workedColor: v })} />
-        <label className="set-check">
-          <input type="checkbox" disabled={!anyNew || view.workedUnderlined} checked={anyNew && view.workedStriked} onChange={(e) => setView({ workedStriked: e.target.checked })} />
-          <span>{t('not2.strike')}</span>
-        </label>
-        <label className="set-check">
-          <input type="checkbox" disabled={!anyNew || view.workedStriked} checked={anyNew && view.workedUnderlined} onChange={(e) => setView({ workedUnderlined: e.target.checked })} />
-          <span>{t('not2.underline')}</span>
-        </label>
-        <Check label={t('not2.hide')} checked={anyNew && view.workedDontShow} onChange={(v) => setView({ workedDontShow: v })} />
+      <Group title={t('not2.grpWorked')}>
+        <Cells min={16}>
+          <Field label={t('not2.strike')}>
+            <input type="checkbox" aria-label={t('not2.strike')} disabled={!anyNew || view.workedUnderlined} checked={anyNew && view.workedStriked} onChange={(e) => setView({ workedStriked: e.target.checked })} />
+          </Field>
+          <Field label={t('not2.underline')}>
+            <input type="checkbox" aria-label={t('not2.underline')} disabled={!anyNew || view.workedStriked} checked={anyNew && view.workedUnderlined} onChange={(e) => setView({ workedUnderlined: e.target.checked })} />
+          </Field>
+          <Check label={t('not2.hide')} checked={anyNew && view.workedDontShow} onChange={(v) => setView({ workedDontShow: v })} />
+          <Check label={t('not2.invert')} checked={view.invert} onChange={(v) => setView({ invert: v })} />
+          <EngineBox k="newPotential" label={t('not2.potential')} doc={doc} draft={draft} />
+        </Cells>
+      </Group>
 
-        <Check label={t('not2.invert')} checked={view.invert} onChange={(v) => setView({ invert: v })} />
-        <EngineBox k="newPotential" label={t('not2.potential')} doc={doc} draft={draft} />
-        <SoundBox kinds={['my_call']} label={t('not2.soundMy')} />
-      </div>
-      <div className="jt-row">
-        <Check label={t('not2.diffBg')} checked={view.differentBackground} onChange={(v) => setView({ differentBackground: v })} />
-        <label className="set-check">
-          <input type="radio" name="diff-bg" disabled={!view.differentBackground} checked={!view.diffYellow} onChange={() => setView({ diffYellow: false })} />
-          <span>{t('not2.cyan')}</span>
-        </label>
-        <label className="set-check">
-          <input type="radio" name="diff-bg" disabled={!view.differentBackground} checked={view.diffYellow} onChange={() => setView({ diffYellow: true })} />
-          <span>{t('not2.yellow')}</span>
-        </label>
-      </div>
-      <div className="jt-row">
-        <Check label={t('not2.soundFirst')} checked={view.beepFirst} onChange={(v) => setView({ beepFirst: v })} />
-        <Check label={t('not2.hlDxCall')} checked={view.highlightDxCall} onChange={(v) => setView({ highlightDxCall: v })} />
-        <Check label={t('not2.hlDxGrid')} checked={view.highlightDxGrid} onChange={(v) => setView({ highlightDxGrid: v })} />
-      </div>
-      <div className="jt-row">
-        <AlertBox k="alertMyCall" label={t('not2.alertMy')} />
-        <AlertBox k="alertDxCall" label={t('not2.alertDx')} />
-      </div>
-      <AlertOptions />
+      <Group title={t('not2.grpColors')} span={2} rows={2}>
+        <Cells min={21} className="sx-cells--tight">
+          {PREVIEW_ROWS.map((key) => {
+            const name = t(kindKey(key));
+            const style = sampleStyle(colors[key], view);
+            const worked = key === 'worked_call';
+            // «gia' lavorato»: senza il suo colore e' un messaggio qualunque (sfondo neutro), con barra o sottolineatura
+            const bg = worked && !look.color ? { background: 'var(--panel)', color: 'var(--text)' } : style;
+            return (
+              <Cell key={key} label={name}>
+                {notify.sound[key] ? (
+                  <span className="jt-note" role="img" aria-label={t('not.sound')} title={t('not.sound')}>
+                    ♪
+                  </span>
+                ) : null}
+                <span
+                  className={`jt-sample${key.startsWith('new_') ? ' jt-sample--bold' : ''}${worked && look.strike ? ' jt-sample--strike' : ''}${worked && look.underline ? ' jt-sample--underline' : ''}`}
+                  style={bg}
+                >
+                  {sample}
+                </span>
+                <input type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
+              </Cell>
+            );
+          })}
+          <Cell wide>
+            <button
+              type="button"
+              className="glass"
+              onClick={() => {
+                commit(defaultColors());
+                useNotify.getState().reset();
+                useNotifyView.getState().reset();
+              }}
+            >
+              {t('not.restoreColors')}
+            </button>
+          </Cell>
+        </Cells>
+      </Group>
 
-      <fieldset className="jt-group">
-        <legend>{t('not2.markers')}</legend>
-        <div className="jt-row">
+      <Group title={t('not2.grpAlerts')}>
+        <Cells min={14}>
+          <AlertOptions />
+          <AlertBox k="alertMyCall" label={t('not2.alertMy')} />
+          <AlertBox k="alertDxCall" label={t('not2.alertDx')} />
+          <SoundBox kinds={['my_call']} label={t('not2.soundMy')} />
+          <Check label={t('not2.soundFirst')} checked={view.beepFirst} onChange={(v) => setView({ beepFirst: v })} />
+        </Cells>
+      </Group>
+
+      <Group title={t('not2.grpDisplay')}>
+        <Cells min={14}>
+          <Check label={t('not2.diffBg')} checked={view.differentBackground} onChange={(v) => setView({ differentBackground: v })} />
+          <Cell>
+            <label className="set-check">
+              <input type="radio" name="diff-bg" disabled={!view.differentBackground} checked={!view.diffYellow} onChange={() => setView({ diffYellow: false })} />
+              <span>{t('not2.cyan')}</span>
+            </label>
+            <label className="set-check">
+              <input type="radio" name="diff-bg" disabled={!view.differentBackground} checked={view.diffYellow} onChange={() => setView({ diffYellow: true })} />
+              <span>{t('not2.yellow')}</span>
+            </label>
+          </Cell>
+          <Check label={t('not2.hlDxCall')} checked={view.highlightDxCall} onChange={(v) => setView({ highlightDxCall: v })} />
+          <Check label={t('not2.hlDxGrid')} checked={view.highlightDxGrid} onChange={(v) => setView({ highlightDxGrid: v })} />
+        </Cells>
+      </Group>
+
+      <Group title={t('not2.markers')}>
+        <Cells min={14}>
           <Check label={t('not2.markOther')} checked={view.otherMarker} onChange={(v) => setView({ otherMarker: v })} />
           <Check label={t('not2.markRed')} checked={view.redMarker} onChange={(v) => setView({ redMarker: v })} />
-          <label className="set-check">
-            <input type="checkbox" disabled={!view.redMarker} checked={view.redMarker && view.blueMarker} onChange={(e) => setView({ blueMarker: e.target.checked })} />
-            <span>{t('not2.markBlue')}</span>
-          </label>
+          <Field label={t('not2.markBlue')}>
+            <input type="checkbox" aria-label={t('not2.markBlue')} disabled={!view.redMarker} checked={view.redMarker && view.blueMarker} onChange={(e) => setView({ blueMarker: e.target.checked })} />
+          </Field>
           <EngineBox k="73RR73Marker" label={t('not2.mark7373')} doc={doc} draft={draft} />
-        </div>
-        <OffRow label={t('not2.markHint')} reason="ens.r.no_hint" />
-      </fieldset>
-      <ApplyBar draft={draft} doc={doc} />
+        </Cells>
+      </Group>
 
-      <h3 className="set-sub">{t('not2.preview')}</h3>
-      <Help>{t('not2.previewHelp')}</Help>
-      <div className="jt-preview">
-        {PREVIEW_ROWS.map((key) => {
-          const name = t(kindKey(key));
-          const style = sampleStyle(colors[key], view);
-          const worked = key === 'worked_call';
-          // «gia' lavorato»: senza il suo colore e' un messaggio qualunque (sfondo neutro), con barra o sottolineatura
-          const bg = worked && !look.color ? { background: 'var(--panel)', color: 'var(--text)' } : style;
-          return (
-            <div key={key} style={{ display: 'contents' }}>
-              <span>{name}</span>
-              <input type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
-              <span
-                className={`jt-sample${key.startsWith('new_') ? ' jt-sample--bold' : ''}${worked && look.strike ? ' jt-sample--strike' : ''}${worked && look.underline ? ' jt-sample--underline' : ''}`}
-                style={bg}
-              >
-                K1ABC
-              </span>
-              <span className="muted jt-reason">{notify.sound[key] ? t('not.sound') : ''}</span>
-            </div>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        className="glass"
-        onClick={() => {
-          commit(defaultColors());
-          useNotify.getState().reset();
-          useNotifyView.getState().reset();
-        }}
-      >
-        {t('not.restoreColors')}
-      </button>
-    </section>
+      <Unavailable count={1}>
+        <OffRow label={t('not2.markHint')} reason="ens.r.no_hint" />
+      </Unavailable>
+
+      <Notes>
+        <Help>{t('not2.help')}</Help>
+        <Help>{t('not2.intro')}</Help>
+        <Help>{t('not2.previewHelp')}</Help>
+        <Help>{t('not2.alertHelp')}</Help>
+      </Notes>
+      <ApplyBar draft={draft} doc={doc} />
+    </Page>
   );
 }
-

@@ -143,8 +143,6 @@ button.glass,
 .settings {
   display: grid;
   gap: var(--space-4);
-  max-width: 56rem;
-  margin: 0 auto;
 }
 
 .page-title {

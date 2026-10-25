@@ -94,7 +94,7 @@ pub enum DecodeTag {
     Auto,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct DecodedMessage {
     pub id: u64,
     /// Millisecondi dalla mezzanotte UTC.
@@ -110,9 +110,13 @@ pub struct DecodedMessage {
     /// Continente di chi trasmette (AF, AN, AS, EU, NA, OC, SA), se il paese e' noto.
     #[serde(default)]
     pub continent: Option<String>,
+    /// Decodifica «ipotizzata» (con informazioni a priori, il marcatore `*` di JTDX): meno sicura delle altre. Non va ai servizi pubblici di spotting e
+    /// nel flusso UDP porta il bit di bassa fiducia (`low_confidence`).
+    #[serde(default)]
+    pub hint: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct QsoRecord {
     pub call: String,
     pub grid: String,
@@ -128,6 +132,31 @@ pub struct QsoRecord {
     /// Fine del QSO come la scrive JTDX (istante dell'invio di RR73/73 + 14 s in FT8, + 7 s in FT4): `QSO_DATE_OFF` e `TIME_OFF`. 0 = non noto.
     #[serde(default)]
     pub time_off_unix_ms: u64,
+    /// Nome dell'operatore (campo `NAME` del log; si scrive nella finestra di conferma del log).
+    #[serde(default)]
+    pub name: String,
+    /// Potenza in watt scritta nel QSO (`TX_PWR`); vuota = quella della stazione.
+    #[serde(default)]
+    pub tx_power: String,
+    /// Commento (campo `COMMENT`): rapporti e distanza se `dBtoComments` e `distanceToComments` sono accesi, piu' quello scritto a mano.
+    #[serde(default)]
+    pub comment: String,
+    /// Messaggio per eQSL (`QSLMSG`): serve solo all'invio a eQSL, non entra nel log.
+    #[serde(default)]
+    pub eqsl_comment: String,
+}
+
+/// Un QSO concluso che aspetta di essere registrato.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PendingQso {
+    pub id: u64,
+    /// `true`: la finestra di conferma si apre da sola (`PromptToLog`); `false`: il QSO resta in attesa del pulsante «Registra QSO».
+    pub prompt: bool,
+    /// I campi come li proporrebbe JTDX; chi conferma puo' cambiarli.
+    pub record: QsoRecord,
+    /// Con eQSL acceso la finestra mostra anche il messaggio per eQSL.
+    #[serde(default)]
+    pub eqsl: bool,
 }
 
 /// Una stazione della lista dei desiderati e' stata vista, in un messaggio decodificato o in uno spot del cluster.
@@ -191,6 +220,12 @@ pub enum Event {
     Status(StationStatus),
     Decode(DecodedMessage),
     QsoLogged(QsoRecord),
+    /// Il motore ha concluso un QSO: non e' ancora nel log. Chi decide se e come registrarlo (`PromptToLog`, `AutoQSOLogging`) lo trasforma in `QsoLogged`.
+    QsoCompleted(QsoRecord),
+    /// Un QSO aspetta la conferma o la registrazione a mano (finestra di registrazione del log).
+    QsoPending(PendingQso),
+    /// Il QSO in attesa e' stato registrato o scartato: la finestra si chiude.
+    QsoPendingDone { id: u64 },
     TxHalted,
     Wanted(WantedAlert),
     UpdateAvailable(UpdateNotice),

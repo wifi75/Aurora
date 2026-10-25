@@ -620,6 +620,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         time_ms: (rec.time_on_ms % DAY_MS) as u32,
                         time_on_unix_ms: rec.time_on_ms,
                         time_off_unix_ms: tx_slot_ms + tail_ms,
+                        ..Default::default()
                     });
                 }
                 QEvent::Abandoned { call, reason } => log.push(format!("QSO con {call} abbandonato: {reason:?}")),

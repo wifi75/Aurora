@@ -6,6 +6,7 @@ import { EngineValues } from './EngineValues';
 import { NativeSequence } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
 import { Help } from './common';
+import { Actions, Group, Notes, Page } from './layout';
 
 /** Scheda Sequenza: le regole con cui Aurora risponde da sola ai CQ (le stesse della pagina Automazioni). */
 export function SequenceTab() {
@@ -17,18 +18,47 @@ export function SequenceTab() {
     mutationFn: (rules: Parameters<typeof putAutomation>[0]['rules']) => putAutomation({ rules }),
     onSuccess: (next) => client.setQueryData(['automation'], next),
   });
-  if (state.isError) return <p className="notice">{t('auto.unavailable')}</p>;
-  if (!state.data) return <p className="muted">{t('set.loading')}</p>;
+  const rules = (
+    <Group title={native ? t('seq2.rules') : t('tab.sequence')} span={2}>
+      {state.isError ? (
+        <p className="notice">{t('auto.unavailable')}</p>
+      ) : !state.data ? (
+        <p className="muted">{t('set.loading')}</p>
+      ) : (
+        <div className="sx-rules">
+          <AutomationRulesForm rules={state.data.rules} onSave={(r) => save.mutate(r)} error={save.isError} />
+        </div>
+      )}
+      <Actions>
+        <a className="glass glass--link" href="#/automazioni">
+          {t('seq.link')}
+        </a>
+      </Actions>
+    </Group>
+  );
+  if (native) {
+    return (
+      <NativeSequence
+        extra={
+          <>
+            {rules}
+            <Notes>
+              <Help>{t('seq.intro')}</Help>
+            </Notes>
+          </>
+        }
+      />
+    );
+  }
   return (
-    <>
-      {native ? <NativeSequence /> : null}
-      {native ? <h3 className="set-sub">{t('seq2.rules')}</h3> : null}
-      <Help>{t('seq.intro')}</Help>
-      <AutomationRulesForm rules={state.data.rules} onSave={(rules) => save.mutate(rules)} error={save.isError} />
-      {native ? null : <EngineValues group="sequence" />}
-      <a className="glass glass--link" href="#/automazioni">
-        {t('seq.link')}
-      </a>
-    </>
+    <Page>
+      {rules}
+      <Group title={t('jx.title')}>
+        <EngineValues group="sequence" />
+      </Group>
+      <Notes span={3}>
+        <Help>{t('seq.intro')}</Help>
+      </Notes>
+    </Page>
   );
 }

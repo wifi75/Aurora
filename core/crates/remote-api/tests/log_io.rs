@@ -22,6 +22,7 @@ fn qso(call: &str, mode: &str, on_ms: u64) -> QsoRecord {
         time_ms: (on_ms % 86_400_000) as u32,
         time_on_unix_ms: on_ms,
         time_off_unix_ms: on_ms + 44_000,
+        ..Default::default()
     }
 }
 

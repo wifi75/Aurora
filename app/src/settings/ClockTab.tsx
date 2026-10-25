@@ -4,6 +4,7 @@ import { ApiError, checkClock, correctClock, getClock, putClock, type ClockConfi
 import { useT, type T } from '../i18n';
 import { clockInTolerance, offsetLabel } from '../lib/clock';
 import { Check, Help, Row } from './common';
+import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 interface Draft {
@@ -49,11 +50,13 @@ function Status({ last, warnMs }: { last: ClockMeasurement | null; warnMs: numbe
       <p className={good ? 'live-note' : 'notice'} role="status">
         {good ? t('clock.good') : t('clock.bad')}
       </p>
-      <Row name={t('clock.offset')}>{t(behind ? 'clock.behind' : 'clock.ahead', { ms })}</Row>
-      <Row name={t('clock.delay')}>{last.delay_ms === null ? '—' : `${Math.round(last.delay_ms)} ms`}</Row>
-      <Row name={t('clock.server')}>{last.server ?? '—'}</Row>
-      <Row name={t('clock.answered')}>{t('clock.of', { ok: last.servers_ok, n: last.servers_tried })}</Row>
-      <Row name={t('clock.when')}>{new Date(last.at_ms).toLocaleTimeString()}</Row>
+      <Cells min={13}>
+        <Row name={t('clock.offset')}>{t(behind ? 'clock.behind' : 'clock.ahead', { ms })}</Row>
+        <Row name={t('clock.delay')}>{last.delay_ms === null ? '—' : `${Math.round(last.delay_ms)} ms`}</Row>
+        <Row name={t('clock.server')}>{last.server ?? '—'}</Row>
+        <Row name={t('clock.answered')}>{t('clock.of', { ok: last.servers_ok, n: last.servers_tried })}</Row>
+        <Row name={t('clock.when')}>{new Date(last.at_ms).toLocaleTimeString()}</Row>
+      </Cells>
       {last.corrected ? <p className="live-note">{t('clock.corrected')}</p> : null}
     </>
   );
@@ -108,37 +111,40 @@ export function ClockTab() {
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
 
   return (
-    <>
-      <Help>{t('clock.intro')}</Help>
+    <Page>
+      <Group title={t('clock.state')}>
+        <Status last={clock.data.last} warnMs={clock.data.config.warn_ms} />
+        <Actions>
+          <button type="button" className="glass" title={t('tip.clock.check')} disabled={measure.isPending} onClick={() => measure.mutate()}>
+            {t('clock.check')}
+          </button>
+          <button type="button" className="glass" title={t('tip.clock.correct')} disabled={correct.isPending} onClick={() => correct.mutate()}>
+            {t('clock.correct')}
+          </button>
+        </Actions>
+      </Group>
 
-      <h3 className="set-sub">{t('clock.state')}</h3>
-      <Status last={clock.data.last} warnMs={clock.data.config.warn_ms} />
-      <div className="cmd-chips">
-        <button type="button" className="glass" title={t('tip.clock.check')} disabled={measure.isPending} onClick={() => measure.mutate()}>
-          {t('clock.check')}
-        </button>
-        <button type="button" className="glass" title={t('tip.clock.correct')} disabled={correct.isPending} onClick={() => correct.mutate()}>
-          {t('clock.correct')}
-        </button>
-      </div>
+      <Group title={t('lay.settings')} span={2}>
+        <Cells min={17}>
+          <Check label={t('clock.enabled')} hint={t('tip.clock.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Check label={t('clock.auto')} hint={t('tip.clock.auto')} checked={shown.auto} onChange={(v) => set({ auto: v })} />
+          <Field label={t('clock.interval')} hint={t('tip.clock.interval')}>
+            <input type="number" className="set-number" min={1} max={1440} value={shown.minutes} onChange={(e) => set({ minutes: e.target.value })} />
+          </Field>
+          <Field label={t('clock.warn')} hint={t('tip.clock.warn')}>
+            <input type="number" className="set-number" min={10} max={5000} value={shown.warn} onChange={(e) => set({ warn: e.target.value })} />
+          </Field>
+          <Field label={t('clock.servers')} hint={t('tip.clock.servers')} stack wide>
+            <textarea rows={4} value={shown.servers} spellCheck={false} onChange={(e) => set({ servers: e.target.value })} />
+          </Field>
+        </Cells>
+        {!parsed ? <Message kind="alert">{t('clock.invalid')}</Message> : <Message kind="muted">{t('clock.autosave')}</Message>}
+        {note ? <Message>{note}</Message> : null}
+      </Group>
 
-      <h3 className="set-sub">{t('tab.clock')}</h3>
-      <Check label={t('clock.enabled')} hint={t('tip.clock.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-      <label className="auto-field" title={t('tip.clock.servers')}>
-        {t('clock.servers')}
-        <textarea rows={4} value={shown.servers} spellCheck={false} onChange={(e) => set({ servers: e.target.value })} />
-      </label>
-      <label className="set-check" title={t('tip.clock.interval')}>
-        <span>{t('clock.interval')}</span>
-        <input type="number" className="set-number" min={1} max={1440} value={shown.minutes} onChange={(e) => set({ minutes: e.target.value })} />
-      </label>
-      <label className="set-check" title={t('tip.clock.warn')}>
-        <span>{t('clock.warn')}</span>
-        <input type="number" className="set-number" min={10} max={5000} value={shown.warn} onChange={(e) => set({ warn: e.target.value })} />
-      </label>
-      <Check label={t('clock.auto')} hint={t('tip.clock.auto')} checked={shown.auto} onChange={(v) => set({ auto: v })} />
-      {!parsed ? <p className="notice">{t('clock.invalid')}</p> : <Help>{t('clock.autosave')}</Help>}
-      {note ? <p className="live-note" role="status">{note}</p> : null}
-    </>
+      <Notes>
+        <Help>{t('clock.intro')}</Help>
+      </Notes>
+    </Page>
   );
 }

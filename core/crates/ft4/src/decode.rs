@@ -184,7 +184,7 @@ fn try_candidate(ds: &Downsampler, tables: &SyncTables, cand: Candidate, options
             let snr = sync_to_snr(cand.sync);
             let dt = al.start as f32 / DOWN_RATE - 0.5;
             let tones = modem::tones_from_codeword(&codeword);
-            return Some(Hit { decoded: Decoded { freq_hz: f1, dt_s: dt, snr_db: snr, text }, tones, start: al.start });
+            return Some(Hit { decoded: Decoded { freq_hz: f1, dt_s: dt, snr_db: snr, text, hint: false }, tones, start: al.start });
         }
     }
     None

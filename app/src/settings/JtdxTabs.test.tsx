@@ -28,6 +28,8 @@ import { translate } from '../i18n';
 import { useNotify } from '../lib/notify';
 import { useNotifyView } from '../lib/notifyView';
 import { usePrefs } from '../lib/prefs';
+import { useStation } from '../state/station';
+import type { StationStatus } from '../api/schemas';
 import { NativeGeneral, NativeNotifications, NativeSequence } from './JtdxTabs';
 
 const it_ = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate('it', key, vars);
@@ -254,6 +256,36 @@ describe('Notifications tab (as in JTDX)', () => {
     expect(useNotify.getState().notify.sound).toMatchObject({ new_dxcc: false, new_dxcc_band: false, new_call: false });
     fireEvent.click(sounds[2]!);
     expect(useNotify.getState().notify.sound).toMatchObject({ new_dxcc: true, new_dxcc_band: true });
+  });
+});
+
+describe('Notifications table', () => {
+  it('is a real table: fixed column headers, one row per kind and «already worked» last', async () => {
+    render(<NativeNotifications />);
+    await screen.findByLabelText(it_('not2.cqz'));
+    const table = document.querySelector('.jt-grid') as HTMLElement;
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+      it_('not2.colKind'), it_('not2.colHighlight'), it_('not2.perBand'), it_('not2.perMode'), it_('not2.alsoSound'), it_('not2.colAlert'), it_('not2.perBand'),
+    ]);
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows.map((r) => within(r).getByRole('rowheader').textContent)).toEqual(
+      (['not2.n.cqz', 'not2.n.itu', 'not2.n.dxcc', 'not2.n.grid', 'not2.n.px', 'not2.n.call', 'not2.n.worked'] as const).map((k) => it_(k)),
+    );
+  });
+
+  it('shows the callsign of the station in every preview, K1ABC while it is not known', async () => {
+    useStation.setState({ status: null });
+    const { unmount } = render(<NativeNotifications />);
+    await screen.findByLabelText(it_('not2.cqz'));
+    expect([...document.querySelectorAll('.jt-sample')].every((e) => e.textContent === 'K1ABC')).toBe(true);
+    unmount();
+    useStation.setState({ status: { de_call: 'IU3ABC' } as StationStatus });
+    render(<NativeNotifications />);
+    await screen.findByLabelText(it_('not2.cqz'));
+    const samples = [...document.querySelectorAll('.jt-sample')];
+    expect(samples).toHaveLength(17);
+    expect(samples.every((e) => e.textContent === 'IU3ABC')).toBe(true);
+    useStation.setState({ status: null });
   });
 });
 

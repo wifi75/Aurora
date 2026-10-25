@@ -15,6 +15,7 @@ import {
 } from '../lib/dxccPrefs';
 import { sampleLabels, sampleMatrix, sampleStationCells } from '../lib/dxccSample';
 import { Check, Help } from './common';
+import { Cells, Group, Notes, Page } from './layout';
 
 /** Token del tema (chiaro o scuro) che danno il colore di fabbrica di ogni voce. */
 const CELL_TOKEN: Record<CellKindKey, string> = { worked: '--dxcc-worked', unconfirmed: '--dxcc-unconfirmed', none: '--dxcc-none' };
@@ -98,82 +99,92 @@ export function DxccTab() {
   const stateName = (field: LabelField) => t(field.startsWith('on') ? 'dxs.on' : 'dxs.off');
 
   return (
-    <>
-      <Help>{t('dxs.intro')}</Help>
-
-      <h3 className="panel-title">{t('dxs.preview')}</h3>
-      <div className="dxcc-set-preview">
-        <div className={`dxcc-card dxcc-card--panel${prefs.compact ? ' dxcc-card--compact' : ''}`}>
-          <DxccLabelStrip labels={sampleLabels()} captions={[`${t('dxcc.cap.country')} - IU3ABC`, `20m - IU3ABC`, `FT8 - IU3ABC`]} />
-          <DxccGrid matrix={sampleMatrix()} station={sampleStationCells()} />
+    <Page>
+      <Group title={t('dxs.preview')} span={2} rows={2}>
+        <div className="dxcc-set-preview">
+          <div className={`dxcc-card dxcc-card--panel${prefs.compact ? ' dxcc-card--compact' : ''}`}>
+            <DxccLabelStrip labels={sampleLabels()} captions={[`${t('dxcc.cap.country')} - IU3ABC`, `20m - IU3ABC`, `FT8 - IU3ABC`]} />
+            <DxccGrid matrix={sampleMatrix()} station={sampleStationCells()} />
+          </div>
         </div>
-      </div>
+      </Group>
 
-      <h3 className="panel-title" title={t('dxs.bandsTip')}>
-        {t('dxs.bands')}
-      </h3>
-      <div className="set-checks set-checks--row">
-        {DXCC_BANDS.map((b) => (
-          <Check key={b} label={b === 'U' ? 'U' : b} hint={t('dxs.bandsTip')} checked={prefs.bands.includes(b)} onChange={(on) => toggleBand(b, on)} />
-        ))}
-      </div>
+      <Group title={t('dxs.look')}>
+        <Cells min={13}>
+          <Check label={t('dxs.captions')} hint={t('dxs.captionsTip')} checked={prefs.captions} onChange={(captions) => set({ captions })} />
+          <Check label={t('dxs.total')} hint={t('dxs.totalTip')} checked={prefs.total} onChange={(total) => set({ total })} />
+          <Check label={t('dxs.tryField')} hint={t('dxs.tryFieldTip')} checked={prefs.tryField} onChange={(tryField) => set({ tryField })} />
+          <Check label={t('dxs.compact')} hint={t('dxs.compactTip')} checked={prefs.compact} onChange={(compact) => set({ compact })} />
+        </Cells>
+      </Group>
 
-      <h3 className="panel-title" title={t('dxs.rowsTip')}>
-        {t('dxs.rows')}
-      </h3>
-      <div className="set-checks set-checks--row">
-        {DXCC_ROWS.map((r) => (
-          <Check key={r} label={r} hint={t('dxs.rowsTip')} checked={prefs.rows[r]} onChange={(on) => toggleRow(r, on)} />
-        ))}
-      </div>
-
-      <h3 className="panel-title">{t('dxs.colors')}</h3>
-      <Help>{t('dxs.colorsHelp')}</Help>
-      <div className="dxcc-set-colors">
-        {DXCC_ROWS.map((row) => (
-          <fieldset key={row} className="dxcc-set-group">
-            <legend>{t('dxs.cellsOf', { mode: row })}</legend>
-            {CELL_KINDS.map((kind) => (
-              <ColorField
-                key={kind}
-                label={t(`dxcc.cell.${kind}` as Key)}
-                tip={t('dxs.cellTip', { kind: t(`dxcc.cell.${kind}` as Key), mode: row })}
-                value={prefs.cells[row][kind]}
-                token={CELL_TOKEN[kind]}
-                onChange={(v) => setCell(row, kind, v)}
-              />
+      <Group title={t('dxs.rows')}>
+        <div title={t('dxs.rowsTip')}>
+          <Cells min={7}>
+            {DXCC_ROWS.map((r) => (
+              <Check key={r} label={r} hint={t('dxs.rowsTip')} checked={prefs.rows[r]} onChange={(on) => toggleRow(r, on)} />
             ))}
-          </fieldset>
-        ))}
-        {LABEL_IDS.map((id) => (
-          <fieldset key={id} className="dxcc-set-group">
-            <legend>{t('dxs.labelsOf', { label: LABEL_TEXT[id] })}</legend>
-            {LABEL_FIELDS.map((field) => (
-              <ColorField
-                key={field}
-                label={`${partName(field)}, ${stateName(field)}`}
-                tip={t('dxs.labelTip', { part: partName(field), label: LABEL_TEXT[id], state: stateName(field) })}
-                value={prefs.labels[id][field]}
-                token={labelToken(id, field)}
-                onChange={(v) => setLabel(id, field, v)}
-              />
-            ))}
-          </fieldset>
-        ))}
-      </div>
-      <p>
-        <button type="button" className="glass" disabled={!hasCustomColors(prefs)} title={t('dxs.resetColorsTip')} onClick={resetColors}>
-          {t('dxs.resetColors')}
-        </button>
-      </p>
+          </Cells>
+        </div>
+      </Group>
 
-      <h3 className="panel-title">{t('dxs.look')}</h3>
-      <div className="set-checks">
-        <Check label={t('dxs.captions')} hint={t('dxs.captionsTip')} checked={prefs.captions} onChange={(captions) => set({ captions })} />
-        <Check label={t('dxs.total')} hint={t('dxs.totalTip')} checked={prefs.total} onChange={(total) => set({ total })} />
-        <Check label={t('dxs.tryField')} hint={t('dxs.tryFieldTip')} checked={prefs.tryField} onChange={(tryField) => set({ tryField })} />
-        <Check label={t('dxs.compact')} hint={t('dxs.compactTip')} checked={prefs.compact} onChange={(compact) => set({ compact })} />
-      </div>
-    </>
+      <Group title={t('dxs.bands')} span={3}>
+        <div title={t('dxs.bandsTip')}>
+          <Cells min={7}>
+            {DXCC_BANDS.map((b) => (
+              <Check key={b} label={b === 'U' ? 'U' : b} hint={t('dxs.bandsTip')} checked={prefs.bands.includes(b)} onChange={(on) => toggleBand(b, on)} />
+            ))}
+          </Cells>
+        </div>
+      </Group>
+
+      <Group
+        title={t('dxs.colors')}
+        span={3}
+        aside={
+          <button type="button" className="glass" disabled={!hasCustomColors(prefs)} title={t('dxs.resetColorsTip')} onClick={resetColors}>
+            {t('dxs.resetColors')}
+          </button>
+        }
+      >
+        <div className="dxcc-set-colors">
+          {DXCC_ROWS.map((row) => (
+            <fieldset key={row} className="dxcc-set-group">
+              <legend>{t('dxs.cellsOf', { mode: row })}</legend>
+              {CELL_KINDS.map((kind) => (
+                <ColorField
+                  key={kind}
+                  label={t(`dxcc.cell.${kind}` as Key)}
+                  tip={t('dxs.cellTip', { kind: t(`dxcc.cell.${kind}` as Key), mode: row })}
+                  value={prefs.cells[row][kind]}
+                  token={CELL_TOKEN[kind]}
+                  onChange={(v) => setCell(row, kind, v)}
+                />
+              ))}
+            </fieldset>
+          ))}
+          {LABEL_IDS.map((id) => (
+            <fieldset key={id} className="dxcc-set-group">
+              <legend>{t('dxs.labelsOf', { label: LABEL_TEXT[id] })}</legend>
+              {LABEL_FIELDS.map((field) => (
+                <ColorField
+                  key={field}
+                  label={`${partName(field)}, ${stateName(field)}`}
+                  tip={t('dxs.labelTip', { part: partName(field), label: LABEL_TEXT[id], state: stateName(field) })}
+                  value={prefs.labels[id][field]}
+                  token={labelToken(id, field)}
+                  onChange={(v) => setLabel(id, field, v)}
+                />
+              ))}
+            </fieldset>
+          ))}
+        </div>
+      </Group>
+
+      <Notes span={3}>
+        <Help>{t('dxs.intro')}</Help>
+        <Help>{t('dxs.colorsHelp')}</Help>
+      </Notes>
+    </Page>
   );
 }

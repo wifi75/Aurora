@@ -5,6 +5,7 @@ import { useT, type Key } from '../i18n';
 import { formatKhz } from '../lib/format';
 import { parseLines, type Wishlist } from '../lib/wishlist';
 import { Check, Help } from './common';
+import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 interface Draft {
@@ -105,62 +106,74 @@ export function WishlistTab() {
   if (!wishlist.data || !shown) return <p className="muted">{t('set.loading')}</p>;
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
   const area = (key: 'calls' | 'prefixes' | 'countries' | 'grids', label: Key, hint: Key) => (
-    <label className="auto-field" title={t(hint)}>
-      {t(label)}
+    <Field label={t(label)} hint={t(hint)} stack>
       <textarea rows={4} value={shown[key]} spellCheck={false} onChange={(e) => set({ [key]: e.target.value } as Partial<Draft>)} />
-    </label>
+    </Field>
   );
 
   return (
-    <>
-      <Help>{t('wish.intro')}</Help>
-      <Check label={t('wish.enabled')} hint={t('tip.wish.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-      <div className="wish-grid">
-        {area('calls', 'wish.calls', 'tip.wish.calls')}
-        {area('prefixes', 'wish.prefixes', 'tip.wish.prefixes')}
-        {area('countries', 'wish.countries', 'tip.wish.countries')}
-        {area('grids', 'wish.grids', 'tip.wish.grids')}
-      </div>
-      <label className="set-check" title={t('tip.wish.bands')}>
-        <span>{t('wish.bands')}</span>
-        <input type="text" className="jx-text" value={shown.bands} placeholder="20m, 15m" onChange={(e) => set({ bands: e.target.value })} />
-      </label>
-      <label className="set-check" title={t('tip.wish.cooldown')}>
-        <span>{t('wish.cooldown')}</span>
-        <input type="number" className="set-number" min={1} max={240} value={shown.cooldown} onChange={(e) => set({ cooldown: e.target.value })} />
-      </label>
-      <Check label={t('wish.fromDecodes')} checked={shown.fromDecodes} onChange={(v) => set({ fromDecodes: v })} />
-      <Check label={t('wish.fromCluster')} checked={shown.fromCluster} onChange={(v) => set({ fromCluster: v })} />
+    <Page>
+      <Group title={t('lay.lists')} span={2}>
+        <Cells min={16}>
+          {area('calls', 'wish.calls', 'tip.wish.calls')}
+          {area('prefixes', 'wish.prefixes', 'tip.wish.prefixes')}
+          {area('countries', 'wish.countries', 'tip.wish.countries')}
+          {area('grids', 'wish.grids', 'tip.wish.grids')}
+        </Cells>
+      </Group>
 
-      <h3 className="set-sub">{t('wish.notifyUrl')}</h3>
-      <label className="auto-field" title={t('tip.wish.notifyUrl')}>
-        <input type="url" className="jx-text" value={shown.notifyUrl} placeholder="https://ntfy.sh/…" spellCheck={false} onChange={(e) => set({ notifyUrl: e.target.value })} />
-      </label>
-      <Help>{t('tip.wish.notifyUrl')}</Help>
-      <div className="cmd-chips">
-        <button type="button" className="glass" disabled={test.isPending || draft !== null} onClick={() => test.mutate()}>
-          {t('wish.test')}
-        </button>
-      </div>
-      {!parsed ? <p className="notice">{t('wish.invalid')}</p> : <Help>{t('wish.autosave')}</Help>}
-      {note ? <p className="live-note" role="status">{note}</p> : null}
+      <Group title={t('lay.options')}>
+        <Cells min={13}>
+          <Check label={t('wish.enabled')} hint={t('tip.wish.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Check label={t('wish.fromDecodes')} checked={shown.fromDecodes} onChange={(v) => set({ fromDecodes: v })} />
+          <Check label={t('wish.fromCluster')} checked={shown.fromCluster} onChange={(v) => set({ fromCluster: v })} />
+          <Field label={t('wish.bands')} hint={t('tip.wish.bands')}>
+            <input type="text" className="jx-text" value={shown.bands} placeholder="20m, 15m" onChange={(e) => set({ bands: e.target.value })} />
+          </Field>
+          <Field label={t('wish.cooldown')} hint={t('tip.wish.cooldown')}>
+            <input type="number" className="set-number" min={1} max={240} value={shown.cooldown} onChange={(e) => set({ cooldown: e.target.value })} />
+          </Field>
+        </Cells>
+        {!parsed ? <Message kind="alert">{t('wish.invalid')}</Message> : <Message kind="muted">{t('wish.autosave')}</Message>}
+        {note ? <Message>{note}</Message> : null}
+      </Group>
 
-      <h3 className="set-sub">{t('wish.recent')}</h3>
-      {wishlist.data.recent.length === 0 ? (
-        <p className="muted">{t('wish.none')}</p>
-      ) : (
-        <ul className="wish-recent">
-          {wishlist.data.recent.slice(0, 12).map((a) => (
-            <li key={`${a.time_ms}-${a.call}`}>
-              <strong className="data">{a.call}</strong> <span className="muted">{t(`wish.reason.${a.reason}` as Key)} · {t(`wish.source.${a.source}` as Key)}</span>
-              {a.band ? ` · ${a.band}` : ''}
-              {a.freq_hz ? ` · ${formatKhz(a.freq_hz / 1000)} kHz` : ''}
-              <span className="muted"> · {new Date(a.time_ms).toLocaleTimeString()}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+      <Group title={t('wish.notifyUrl')}>
+        <Cells min={16}>
+          <Field label={t('wish.notifyUrl')} hint={t('tip.wish.notifyUrl')} stack>
+            <input type="url" className="jx-text" value={shown.notifyUrl} placeholder="https://ntfy.sh/…" spellCheck={false} onChange={(e) => set({ notifyUrl: e.target.value })} />
+          </Field>
+        </Cells>
+        <Actions>
+          <button type="button" className="glass" disabled={test.isPending || draft !== null} onClick={() => test.mutate()}>
+            {t('wish.test')}
+          </button>
+        </Actions>
+      </Group>
+
+      <Group title={t('wish.recent')} span={2}>
+        {wishlist.data.recent.length === 0 ? (
+          <Message kind="muted">{t('wish.none')}</Message>
+        ) : (
+          <ul className="sx-list sx-list--scroll wish-recent">
+            {wishlist.data.recent.slice(0, 12).map((a) => (
+              <li key={`${a.time_ms}-${a.call}`}>
+                <span>
+                  <strong className="data">{a.call}</strong> <span className="muted">{t(`wish.reason.${a.reason}` as Key)} · {t(`wish.source.${a.source}` as Key)}</span>
+                  {a.band ? ` · ${a.band}` : ''}
+                  {a.freq_hz ? ` · ${formatKhz(a.freq_hz / 1000)} kHz` : ''}
+                  <span className="muted"> · {new Date(a.time_ms).toLocaleTimeString()}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Group>
+
+      <Notes>
+        <Help>{t('wish.intro')}</Help>
+        <Help>{t('tip.wish.notifyUrl')}</Help>
+      </Notes>
+    </Page>
   );
 }
-

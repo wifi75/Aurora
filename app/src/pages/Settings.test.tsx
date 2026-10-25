@@ -23,6 +23,9 @@ vi.mock('../api/client', () => ({
     worked_qsos: 2056,
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
   }),
+  getCat: vi.fn().mockRejectedValue(new Error('offline')),
+  getCatModels: vi.fn().mockResolvedValue([]),
+  getCatPorts: vi.fn().mockResolvedValue([]),
   getClock: vi.fn().mockResolvedValue({ config: { enabled: true, servers: ['it.pool.ntp.org'], interval_secs: 900, warn_ms: 200, auto_correct: false }, last: null }),
   getEngineConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
   getFrequencies: vi.fn().mockResolvedValue([{ band: '20m', mode: 'FT8', hz: 14_074_000 }]),
@@ -87,14 +90,26 @@ describe('Settings tabs', () => {
   it('has a separate tab for each configuration function, in the usual order, and shows one at a time', () => {
     open();
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
+    // due righe ordinate per tipo; Radio CAT e' dentro Radio
     expect(names).toEqual([
-      'Generali', 'Radio', 'Radio CAT', 'Audio', 'Sequenza', 'Macro TX', 'Segnalazioni', 'Frequenze', 'Notifiche', 'Filtri',
-      'Programmazione', 'Avanzate', 'DX Cluster', 'Desiderati', 'Servizi online', 'Aggiornamenti', 'Orologio', 'Accesso', 'DXCC', 'Finestre', 'Bande',
+      'Generali', 'Radio', 'Audio', 'Frequenze', 'Bande', 'Sequenza', 'Macro TX', 'Programmazione', 'Filtri', 'Avanzate',
+      'Notifiche', 'Desiderati', 'DXCC', 'DX Cluster', 'Segnalazioni', 'Servizi online', 'Orologio', 'Aggiornamenti', 'Accesso', 'Finestre',
     ]);
+    expect(screen.getAllByRole('tablist')).toHaveLength(2);
     expect(screen.getByRole('tab', { name: 'Generali' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Generali');
     goTo('Finestre');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Finestre');
+  });
+
+  it('opens the merged Radio tab from the old «cat» link', () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Settings initialTab="cat" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole('tab', { name: 'Radio' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Radio CAT' })).toBeNull();
   });
 
   it('gives every tab a tooltip', () => {

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { checkUpdate, getUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help, Row } from './common';
+import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 interface Draft {
@@ -71,63 +72,70 @@ export function UpdatesTab() {
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
 
   return (
-    <>
-      <Help>{t('upd.intro')}</Help>
-      <Row name={t('upd.current')}>{status.current}</Row>
-      <Row name={t('upd.latest')}>{status.latest ? status.latest.version : '—'}</Row>
-      <Row name={t('upd.lastCheck')}>{status.checked_at_ms > 0 ? new Date(status.checked_at_ms).toLocaleString() : t('upd.never')}</Row>
-      {status.available ? (
-        <p className="live-note" role="status">
-          {t('upd.available', { version: status.available.version })}{' '}
-          {status.available.url ? (
-            <a href={status.available.url} target="_blank" rel="noreferrer noopener">
-              {t('upd.open')}
-            </a>
-          ) : null}
-        </p>
-      ) : status.latest ? (
-        <p className="muted">{t('upd.uptodate')}</p>
-      ) : null}
-      {status.error ? <p className="notice">{t('upd.offline', { message: status.error })}</p> : null}
-      <div className="cmd-chips">
-        <button type="button" className="glass" disabled={check.isPending || draft !== null} onClick={() => check.mutate()}>
-          {t('upd.check')}
-        </button>
-      </div>
-
-      <Check label={t('upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-      <label className="set-check" title={t('tip.upd.repo')}>
-        <span>{t('upd.repo')}</span>
-        <input type="text" className="jx-text" value={shown.repo} spellCheck={false} onChange={(e) => set({ repo: e.target.value })} />
-      </label>
-      <label className="set-check">
-        <span>{t('upd.interval')}</span>
-        <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
-      </label>
-      <Check label={t('upd.prereleases')} hint={t('tip.upd.prereleases')} checked={shown.prereleases} onChange={(v) => set({ prereleases: v })} />
-      <label className="set-check" title={t('tip.upd.token')}>
-        <span>{t('upd.token')}</span>
-        <input
-          type="password"
-          className="jx-text"
-          value={shown.token}
-          autoComplete="off"
-          spellCheck={false}
-          placeholder={status.has_token ? t('upd.tokenPlaceholder') : ''}
-          onChange={(e) => set({ token: e.target.value, removeToken: false })}
-        />
-      </label>
-      {status.has_token ? (
-        <p className="muted">
-          {t('upd.tokenSaved')}{' '}
-          <button type="button" className="glass" onClick={() => set({ token: '', removeToken: true })}>
-            {t('upd.tokenRemove')}
+    <Page>
+      <Group title={t('lay.status')}>
+        <Cells min={17}>
+          <Row name={t('upd.current')}>{status.current}</Row>
+          <Row name={t('upd.latest')}>{status.latest ? status.latest.version : '—'}</Row>
+          <Row name={t('upd.lastCheck')}>{status.checked_at_ms > 0 ? new Date(status.checked_at_ms).toLocaleString() : t('upd.never')}</Row>
+        </Cells>
+        {status.available ? (
+          <p className="live-note sx-message" role="status">
+            {t('upd.available', { version: status.available.version })}{' '}
+            {status.available.url ? (
+              <a href={status.available.url} target="_blank" rel="noreferrer noopener">
+                {t('upd.open')}
+              </a>
+            ) : null}
+          </p>
+        ) : status.latest ? (
+          <Message kind="muted">{t('upd.uptodate')}</Message>
+        ) : null}
+        {status.error ? <Message kind="alert">{t('upd.offline', { message: status.error })}</Message> : null}
+        <Actions>
+          <button type="button" className="glass" disabled={check.isPending || draft !== null} onClick={() => check.mutate()}>
+            {t('upd.check')}
           </button>
-        </p>
-      ) : null}
-      <Help>{t('tip.upd.token')}</Help>
-      {!parsed ? <p className="notice">{t('upd.invalid')}</p> : <Help>{t('upd.autosave')}</Help>}
-      {note ? <p className="live-note" role="status">{note}</p> : null}
-    </>
+        </Actions>
+      </Group>
+
+      <Group title={t('lay.settings')} span={2}>
+        <Cells min={17}>
+          <Check label={t('upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Check label={t('upd.prereleases')} hint={t('tip.upd.prereleases')} checked={shown.prereleases} onChange={(v) => set({ prereleases: v })} />
+          <Field label={t('upd.repo')} hint={t('tip.upd.repo')}>
+            <input type="text" className="jx-text" value={shown.repo} spellCheck={false} onChange={(e) => set({ repo: e.target.value })} />
+          </Field>
+          <Field label={t('upd.interval')}>
+            <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
+          </Field>
+          <Field label={t('upd.token')} hint={t('tip.upd.token')}>
+            <input
+              type="password"
+              className="jx-text"
+              value={shown.token}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={status.has_token ? t('upd.tokenPlaceholder') : ''}
+              onChange={(e) => set({ token: e.target.value, removeToken: false })}
+            />
+          </Field>
+          {status.has_token ? (
+            <Cell label={t('upd.tokenSaved')}>
+              <button type="button" className="glass" onClick={() => set({ token: '', removeToken: true })}>
+                {t('upd.tokenRemove')}
+              </button>
+            </Cell>
+          ) : null}
+        </Cells>
+        {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : <Message kind="muted">{t('upd.autosave')}</Message>}
+        {note ? <Message>{note}</Message> : null}
+      </Group>
+
+      <Notes>
+        <Help>{t('upd.intro')}</Help>
+        <Help>{t('tip.upd.token')}</Help>
+      </Notes>
+    </Page>
   );
 }

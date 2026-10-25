@@ -145,3 +145,15 @@ fn auto_stays_still_while_the_station_transmits() {
     assert_eq!(*fake.0.lock().unwrap(), 0.9);
     std::fs::remove_file(path).ok();
 }
+
+#[test]
+fn the_service_follows_the_device_when_the_input_is_changed() {
+    let (service, first, _) = service("follows", 0.4);
+    assert_eq!(service.status().expect("stato").volume_pct, 40);
+    let second = Arc::new(FakeVolume(Mutex::new(0.8)));
+    service.set_control(second.clone());
+    assert_eq!(service.status().expect("stato").volume_pct, 80, "ora legge il dispositivo nuovo");
+    service.set_volume_pct(30.0).expect("volume");
+    assert!((*second.0.lock().unwrap() - 0.3).abs() < 1e-6);
+    assert!((*first.0.lock().unwrap() - 0.4).abs() < 1e-6, "il vecchio non si tocca piu'");
+}

@@ -62,6 +62,7 @@ async fn ws_receives_json_event_and_binary_spectrum_frame_with_expected_layout()
             tag: None,
             country: None,
             continent: None,
+            hint: false,
         }))
         .unwrap();
     s.bus.spectrum().send(row(0x0102_0304_0506_0708)).unwrap();

@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.13 - 2026-10-25
+- **Impostazioni riordinate**: pagine larghe a riquadri con cornice e celle a colonne, barra delle schede in due righe per tipo, scheda Notifiche come tabella vera con intestazioni, **schede Radio e Radio CAT unite**; anteprime dei colori con il nominativo dell'utente.
+- **Scheda Audio funzionante**: ingresso e uscita a menu, canali, cambio a caldo con ripristino del dispositivo precedente se non si apre, salvataggio dei file audio nel formato di JTDX (Nessuno/Decodificati/Tutti).
+- **Scheda DXCC**: stazione su una riga con bandiera e paese, campo di prova piccolo, numero dei QSO del log a destra del titolo, linee verticali piu' marcate nelle liste.
+
 ## 0.11.12 - 2026-10-25
 - **Scheda Impostazioni «DXCC»**: scegli le bande e i modi da mostrare, i colori delle caselle per modo (lavorato/confermato, non confermato, mai lavorato) e dei sei NEW ONE/BAND/MODE e GRID, e le opzioni di aspetto; anteprima viva e ripristino dei colori di fabbrica.
 - **Scheda DXCC sempre presente**, anche senza stazione (etichette e caselle grigie), senza spazio vuoto sotto.
