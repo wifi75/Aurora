@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.7 - 2026-10-25
+- **Cursore Pwr come in JTDX**: potenza massima in alto (0 dB), minima in basso; verificato nel programma e nel sorgente (`attenuazione = (450 - valore) / 10`). Prima era invertito.
+- **Il livello Pwr agisce anche durante la trasmissione**: il guadagno lo applica il dispositivo audio mentre suona, con una rampa senza click, e il cursore lo aggiorna subito (anche al cambio banda con la memoria per banda).
+- **Tx/Rx Split acceso si vede acceso** nel pannello Comandi (prima restava senza evidenza). Con Split acceso le barre Tx e Rx della cascata sono indipendenti; spento, Tx segue Rx.
+
 ## 0.11.6 - 2026-10-25
 - **Flusso WSJT-X verso GridTracker e Log4OM2 con il motore proprio**: Aurora manda gli stessi messaggi UDP di JTDX (Heartbeat, Stato con il nominativo in chiamata, Decodifiche, Clear, QSO registrato, ADIF, Close), copiati dal programma con il reverse; GridTracker li gira a Log4OM2. I comandi di ritorno (Reply, Halt, testo libero, frequenza) si accettano solo se acceso `AURORA_UDP_ACCEPT=1`.
 - **Impostazioni di Aurora** (scheda Segnalazioni come in JTDX, salvate in `settings-motore.json`): server UDP primario e secondario, invio ADIF, richieste UDP; le voci non ancora disponibili sono visibili e spente, con il motivo.

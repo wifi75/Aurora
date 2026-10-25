@@ -62,6 +62,8 @@ pub struct NativeControls {
     s_estimate: Mutex<Option<(crate::smeter::SEstimate, std::time::Instant)>>,
     /// STOP TX immediato (vedi `set_halt_now`).
     halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    /// Cosa fare quando il livello di uscita cambia (portarlo subito al dispositivo, anche a trasmissione in corso).
+    attenuation_hook: Mutex<Option<Arc<dyn Fn(u32) + Send + Sync>>>,
 }
 
 /// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
@@ -74,7 +76,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None) }
     }
 }
 
@@ -101,6 +103,21 @@ impl NativeControls {
         {
             memory.levels.insert(self.level_key(&band), tenths);
         }
+        self.notify_attenuation(tenths);
+    }
+
+    /// Chi porta il livello di uscita al dispositivo (lo imposta chi ha la catena di trasmissione).
+    pub fn set_attenuation_hook(&self, hook: Arc<dyn Fn(u32) + Send + Sync>) {
+        if let Ok(mut slot) = self.attenuation_hook.lock() {
+            *slot = Some(hook);
+        }
+    }
+
+    fn notify_attenuation(&self, tenths: u32) {
+        let hook = self.attenuation_hook.lock().ok().and_then(|slot| slot.clone());
+        if let Some(hook) = hook {
+            hook(tenths);
+        }
     }
 
     /// La banda della radio (letta di continuo): al primo ingresso e a ogni cambio, come `band_changed` di JTDX, se per la nuova banda c'e' un livello
@@ -116,7 +133,13 @@ impl NativeControls {
         memory.band = Some(band.to_string());
         let key = self.level_key(band);
         match memory.levels.get(&key) {
-            Some(level) => self.attenuation.store(*level, Ordering::Relaxed),
+            Some(level) => {
+                self.attenuation.store(*level, Ordering::Relaxed);
+                let level = *level;
+                drop(memory);
+                self.notify_attenuation(level);
+                return;
+            }
             None => {
                 memory.levels.insert(key, self.attenuation.load(Ordering::Relaxed));
             }

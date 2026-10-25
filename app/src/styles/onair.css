@@ -1469,6 +1469,20 @@
   box-shadow: none;
 }
 
+/* pannello Comandi: Tx/Rx Split e gli altri interruttori accesi si vedono accesi come quelli del pannello QSO */
+.tx-commands button.chip.glass--on {
+  color: #fff;
+  background: #0a6e66;
+  border-color: #0a6e66;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+:root:not([data-theme='light']) .tx-commands button.chip.glass--on {
+  background: #129c90;
+  border-color: #7ae8dc;
+}
+
 .cmd-chips button.chip:disabled {
   opacity: 0.5;
 }

@@ -8,7 +8,7 @@ use std::{
     panic::{AssertUnwindSafe, catch_unwind},
     sync::{
         Arc, Condvar, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
     },
     thread::JoinHandle,
     time::{Duration, Instant},
@@ -19,7 +19,7 @@ use crate::{
     audio::AudioSink,
     clock::Clock,
     error::TxError,
-    level::{MAX_ATTENUATION_TENTHS, prepare_samples},
+    level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, prepare_samples},
     lock,
     ptt::{Ptt, PttGuard, release_ptt},
     slot::{Mode, Parity, choose_slot},
@@ -142,6 +142,8 @@ struct Inner {
     clock: Arc<dyn Clock>,
     ptt: Arc<dyn Ptt>,
     sink: SharedSink,
+    /// Il guadagno che il dispositivo applica mentre suona, se lo sa fare: cosi' il cursore Pwr agisce anche a trasmissione in corso.
+    live_gain: Option<Arc<AtomicU32>>,
     config: Mutex<TxConfig>,
     status: Mutex<Status>,
     changed: Condvar,
@@ -197,6 +199,10 @@ impl Transmitter {
     /// `clock` e' l'ora UTC, `ptt` il comando di trasmissione (`NoPtt` per il VOX), `sink` l'uscita audio.
     pub fn new(clock: Arc<dyn Clock>, ptt: Arc<dyn Ptt>, sink: Box<dyn AudioSink>, config: TxConfig) -> Result<Transmitter, TxError> {
         config.validate()?;
+        let live_gain = sink.live_gain();
+        if let (Some(gain), Some(tenths)) = (&live_gain, config.attenuation_tenths) {
+            gain.store(attenuation_to_gain(tenths).to_bits(), Ordering::Relaxed);
+        }
         let sink: SharedSink = Arc::new(Mutex::new(sink));
         let halt = Arc::new(AtomicBool::new(false));
         let trip_halt = Arc::clone(&halt);
@@ -215,6 +221,7 @@ impl Transmitter {
             clock,
             ptt,
             sink,
+            live_gain,
             config: Mutex::new(config),
             status: Mutex::new(Status { state: TxState::Idle, outcome: None }),
             changed: Condvar::new(),
@@ -233,6 +240,9 @@ impl Transmitter {
     /// Cambia le impostazioni (valgono dalla prossima richiesta; `allow_tx` vale subito).
     pub fn set_config(&self, config: TxConfig) -> Result<(), TxError> {
         config.validate()?;
+        if let (Some(gain), Some(tenths)) = (&self.inner.live_gain, config.attenuation_tenths) {
+            gain.store(attenuation_to_gain(tenths).to_bits(), Ordering::Relaxed);
+        }
         *lock(&self.inner.config) = config;
         Ok(())
     }
@@ -414,7 +424,9 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
 
 fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
     let rate = lock(&inner.sink).sample_rate();
-    let samples = prepare_samples(&job.wave, rate, job.attenuation_tenths, job.fade)?;
+    // con il guadagno dal vivo il livello lo applica il dispositivo (e si puo' cambiare mentre si trasmette): l'onda parte a livello pieno
+    let attenuation = if inner.live_gain.is_some() { 0 } else { job.attenuation_tenths };
+    let samples = prepare_samples(&job.wave, rate, attenuation, job.fade)?;
     let audio_len = Duration::from_secs_f64(samples.len() as f64 / f64::from(rate.max(1)));
 
     if !wait_until(inner, job.ptt_at, true)? {
@@ -524,6 +536,56 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Un dispositivo finto che sa applicare il livello dal vivo, come quello vero.
+    struct LiveGainSink {
+        inner: RecordingSink,
+        gain: Arc<AtomicU32>,
+    }
+
+    impl AudioSink for LiveGainSink {
+        fn sample_rate(&self) -> u32 {
+            self.inner.sample_rate()
+        }
+        fn start(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+            self.inner.start(samples)
+        }
+        fn is_playing(&self) -> bool {
+            self.inner.is_playing()
+        }
+        fn stop(&mut self) {
+            self.inner.stop()
+        }
+        fn live_gain(&self) -> Option<Arc<AtomicU32>> {
+            Some(Arc::clone(&self.gain))
+        }
+    }
+
+    #[test]
+    fn the_level_follows_the_slider_even_while_transmitting() {
+        let gain = Arc::new(AtomicU32::new(1.0f32.to_bits()));
+        let shared = Arc::clone(&gain);
+        let b = bench_with(config(), move |s| Box::new(LiveGainSink { inner: s, gain: shared }));
+        // il livello iniziale della configurazione e' gia' nel dispositivo
+        assert!((f32::from_bits(gain.load(Ordering::SeqCst)) - attenuation_to_gain(100)).abs() < 1e-6);
+        b.tx.schedule(request(1.0)).expect("pianificata");
+        b.run_to(base() + ms(800));
+        assert_eq!(b.tx.state(), TxState::Transmitting);
+        // l'onda e' consegnata a livello pieno: il livello lo applica il dispositivo
+        let peak = lock(&b.sink.samples).iter().fold(0.0f32, |m, s| m.max(s.abs()));
+        assert!(peak > 0.85, "picco {peak}");
+        // il cursore si muove in trasmissione: il guadagno cambia subito
+        let mut louder = config();
+        louder.attenuation_tenths = Some(0);
+        b.tx.set_config(louder).expect("config");
+        assert!((f32::from_bits(gain.load(Ordering::SeqCst)) - 1.0).abs() < 1e-6);
+        let mut quieter = config();
+        quieter.attenuation_tenths = Some(200);
+        b.tx.set_config(quieter).expect("config");
+        assert!((f32::from_bits(gain.load(Ordering::SeqCst)) - 0.1).abs() < 1e-6);
+        b.tx.halt();
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
     }
 
     #[test]
