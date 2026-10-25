@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Scheda Audio**: le tendine di ingresso e uscita sono a tutta larghezza, il nome del dispositivo si legge intero.
 - **Notifiche, «Colori e anteprima» compatta**: ogni voce occupa un solo rigo (nome, suono, prova, anteprima e colore).
 
 ## 0.11.20 - 2026-10-25
