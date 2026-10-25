@@ -2,9 +2,12 @@
 //! non c'e' nessun altro programma da comandare, quindi lo stato sta qui e agisce sul decoder. La frequenza e il cambio banda passano dalla
 //! radio (OmniRig o Hamlib) se c'e'. Monitora **parte sempre acceso** all'avvio.
 
-use std::sync::{
-    atomic::{AtomicBool, AtomicU32, Ordering},
-    mpsc, Arc, Mutex,
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicBool, AtomicU32, Ordering},
+        mpsc, Arc, Mutex,
+    },
 };
 
 use qso_native::Mode;
@@ -15,6 +18,18 @@ use rig_control::{
     controls::{self, Kind, Reading},
     Rig, RigError,
 };
+
+/// Livello di uscita di fabbrica (cursore Pwr): `OutAttenuation` di JTDX vale 225 su 0..450 e l'attenuazione e' `(450 - valore) / 10` dB;
+/// in decimi di dB i due numeri coincidono (verificato in `jtdx.exe`, `MainWindow::readSettings` e `on_outAttenuation_valueChanged`).
+pub const DEFAULT_ATTENUATION_TENTHS: u32 = 225;
+
+/// Il livello di uscita ricordato per banda (`m_pwrBandTxMemory` di JTDX, chiave «banda + modo»).
+#[derive(Default)]
+struct BandLevels {
+    /// L'ultima banda vista.
+    band: Option<String>,
+    levels: HashMap<String, u32>,
+}
 
 const NO_TX: &str = "la trasmissione non e' disponibile: manca l'ingresso audio o il motore non e' partito";
 
@@ -32,6 +47,8 @@ pub struct NativeControls {
     pub redecode: AtomicBool,
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB: la usera' la trasmissione.
     pub attenuation: AtomicU32,
+    /// Il livello di uscita di ogni banda e modo: al cambio di banda si ripristina quello della nuova banda.
+    levels: Mutex<BandLevels>,
     /// Gli altri interruttori, per nome.
     switches: Mutex<Vec<(String, bool)>>,
     /// Cio' che la pagina mostra della trasmissione (i sei messaggi, il DX, se la sequenza e' accesa): lo scrive il motore.
@@ -48,9 +65,9 @@ impl Default for NativeControls {
         let switches = controls::CONTROLS
             .iter()
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
-            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period")))
+            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(0), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None) }
     }
 }
 
@@ -66,6 +83,41 @@ impl NativeControls {
 
     pub fn set_mode(&self, mode: Mode) {
         self.ft4.store(mode == Mode::Ft4, Ordering::Relaxed);
+    }
+
+    /// Il livello di uscita che si sta usando: si ricorda per la banda e il modo correnti (se la banda e' nota), come `on_outAttenuation_valueChanged`.
+    pub fn set_attenuation(&self, tenths: u32) {
+        let tenths = tenths.min(450);
+        self.attenuation.store(tenths, Ordering::Relaxed);
+        if let Ok(mut memory) = self.levels.lock()
+            && let Some(band) = memory.band.clone()
+        {
+            memory.levels.insert(self.level_key(&band), tenths);
+        }
+    }
+
+    /// La banda della radio (letta di continuo): al primo ingresso e a ogni cambio, come `band_changed` di JTDX, se per la nuova banda c'e' un livello
+    /// ricordato lo si ripristina, altrimenti si ricorda quello attuale. Con la stessa banda non fa niente.
+    pub fn track_band(&self, band: &str) {
+        if band.is_empty() {
+            return;
+        }
+        let Ok(mut memory) = self.levels.lock() else { return };
+        if memory.band.as_deref() == Some(band) {
+            return;
+        }
+        memory.band = Some(band.to_string());
+        let key = self.level_key(band);
+        match memory.levels.get(&key) {
+            Some(level) => self.attenuation.store(*level, Ordering::Relaxed),
+            None => {
+                memory.levels.insert(key, self.attenuation.load(Ordering::Relaxed));
+            }
+        }
+    }
+
+    fn level_key(&self, band: &str) -> String {
+        format!("{band}{}", self.mode().name())
     }
 
     pub(crate) fn switch_on(&self, id: &str) -> bool {
@@ -122,7 +174,7 @@ impl NativeControls {
         let enabled = self.tx_view.lock().map(|v| v.enabled).unwrap_or(false);
         let mut out = vec![("monitor".to_string(), self.is_monitoring())];
         if let Ok(all) = self.switches.lock() {
-            out.extend(all.iter().map(|(id, on)| (id.clone(), if matches!(id.as_str(), "enable_tx" | "auto_tx") { enabled } else { *on })));
+            out.extend(all.iter().map(|(id, on)| (id.clone(), if id == "enable_tx" { enabled } else { *on })));
         }
         out
     }
@@ -174,7 +226,7 @@ impl Rig for NativeRig {
     }
 
     fn set_output_attenuation(&self, tenths: u32) -> Result<(), RigError> {
-        self.controls.attenuation.store(tenths.min(450), Ordering::Relaxed);
+        self.controls.set_attenuation(tenths);
         Ok(())
     }
 
@@ -232,7 +284,9 @@ impl Rig for NativeRig {
                     self.controls.tx_df.store(self.controls.rx_df.load(Ordering::Relaxed), Ordering::Relaxed);
                 }
                 let command = match id {
-                    "enable_tx" | "auto_tx" => Some(TxCommand::Enable(value)),
+                    // «Abilita Tx» e «AutoTX» sono due cose: il primo permette di trasmettere, il secondo fa accendere il primo al doppio clic
+                    "enable_tx" => Some(TxCommand::Enable(value)),
+                    "auto_tx" => Some(TxCommand::AutoTx(value)),
                     "autoseq" => Some(TxCommand::Option(OptionChange::AutoSeq(value))),
                     "skip_tx1" => Some(TxCommand::Option(OptionChange::SkipTx1(value))),
                     "bypass" => Some(TxCommand::Option(OptionChange::Bypass(value))),
@@ -301,6 +355,70 @@ mod tests {
         rig.set_control("monitor", Some(true)).expect("accende");
         rig.set_control("stop_rx", None).expect("ferma");
         assert!(!controls.is_monitoring(), "Ferma ferma l'ascolto");
+    }
+
+    /// Valori iniziali di JTDX: `OutAttenuation` 225, `LockTxFreq` falso (Split acceso), `QuickCall` vero (AutoTX acceso), Abilita Tx spento.
+    #[test]
+    fn the_initial_state_is_the_one_of_jtdx() {
+        let (rig, controls) = rig();
+        assert_eq!(rig.output_attenuation().expect("pwr"), 225);
+        let reading = rig.controls().expect("lettura");
+        assert!(reading.contains(&("split".to_string(), true)), "Split e' acceso di fabbrica");
+        assert!(reading.contains(&("auto_tx".to_string(), true)), "AutoTX e' acceso di fabbrica");
+        assert!(reading.contains(&("enable_tx".to_string(), false)), "Abilita Tx e' spento");
+        assert!(controls.switch_on("split") && controls.switch_on("auto_tx"));
+    }
+
+    /// «AutoTX» e «Abilita Tx» sono due comandi diversi: il primo non accende il secondo e non si confonde con lui nello stato.
+    #[test]
+    fn auto_tx_and_enable_tx_are_separate_commands_and_separate_states() {
+        let (rig, controls) = rig();
+        let (tx, rx) = mpsc::channel();
+        controls.set_sender(tx);
+        rig.set_control("auto_tx", Some(false)).expect("auto_tx");
+        assert_eq!(rx.try_recv().expect("comando"), TxCommand::AutoTx(false));
+        rig.set_control("enable_tx", Some(true)).expect("enable_tx");
+        assert_eq!(rx.try_recv().expect("comando"), TxCommand::Enable(true));
+        // lo stato: auto_tx e' il suo interruttore, enable_tx quello che dice la sequenza
+        let reading = rig.controls().expect("lettura");
+        assert!(reading.contains(&("auto_tx".to_string(), false)), "{reading:?}");
+        controls.tx_view.lock().expect("vista").enabled = true;
+        let reading = rig.controls().expect("lettura");
+        assert!(reading.contains(&("enable_tx".to_string(), true)) && reading.contains(&("auto_tx".to_string(), false)), "{reading:?}");
+    }
+
+    /// `m_pwrBandTxMemory` di JTDX: il livello e' ricordato per banda (e modo); al cambio di banda si ripristina quello della nuova, se mai impostato
+    /// si ricorda quello attuale.
+    #[test]
+    fn the_output_level_is_remembered_per_band_and_restored_on_a_band_change() {
+        let (rig, controls) = rig();
+        // prima lettura della banda: niente di ricordato, si ricorda il livello attuale (225)
+        controls.track_band("20m");
+        rig.set_output_attenuation(100).expect("pwr");
+        // 40m mai vista: tiene il livello attuale (100) e lo ricorda per se'
+        controls.track_band("40m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 100);
+        rig.set_output_attenuation(300).expect("pwr");
+        // ritorno su 20m: il suo livello e' quello impostato prima
+        controls.track_band("20m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 100);
+        controls.track_band("40m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 300);
+        // la stessa banda riletta non cambia niente, nemmeno un livello cambiato a mano
+        rig.set_output_attenuation(250).expect("pwr");
+        controls.track_band("40m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 250);
+        // una banda senza nome non conta
+        controls.track_band("");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 250);
+        // la chiave comprende il modo: in FT4 la stessa banda ha il suo livello
+        controls.set_mode(Mode::Ft4);
+        rig.set_output_attenuation(50).expect("pwr");
+        controls.track_band("20m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 50, "20m in FT4 non e' mai stata vista: tiene il livello attuale");
+        controls.set_mode(Mode::Ft8);
+        controls.track_band("40m");
+        assert_eq!(rig.output_attenuation().expect("pwr"), 250, "40m in FT8 ha il suo livello");
     }
 
     #[test]

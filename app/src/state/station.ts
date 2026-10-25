@@ -11,6 +11,10 @@ const MAX_WANTED = 20;
 const PENDING_MS = 20_000;
 /** Quanto vale un cambio comandato (banda, modo) prima che il motore lo confermi: oltre, vince lo stato del motore. */
 const PATCH_MS = 8_000;
+/** Dopo un cambio di banda uno stato in ritardo con il vecchio chiamante si ignora per questo tempo. */
+const STALE_DX_MS = 3_000;
+/** Cio' che mostra la Stazione DX quando e' azzerata. */
+const DX_CLEARED = { dx_call: null, dx_grid: null, report: null } as const;
 
 interface StationState {
   status: StationStatus | null;
@@ -41,6 +45,10 @@ interface StationState {
   /** Quando e' arrivato l'ultimo messaggio decodificato e il primo stato del motore (ms Unix): servono alla diagnosi. */
   lastDecodeAt: number | null;
   sessionStartAt: number | null;
+  /** La banda per cui si e' gia' svuotato tutto (stato o evento del motore): il secondo avviso per lo stesso cambio non svuota di nuovo. */
+  clearedBand: string | null;
+  /** Il chiamante appena azzerato: per un attimo lo stato in arrivo che lo riporta ancora (ritardo del motore) non lo fa ricomparire. */
+  clearedDx: { call: string; until: number } | null;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) e lo tiene finche' il motore non lo riporta uguale (o scade). */
   patchStatus(patch: Partial<StationStatus>): void;
@@ -75,17 +83,43 @@ function withPending(s: { pending: Partial<StationStatus>; pendingAt: number }, 
   return { status: merged as unknown as StationStatus, pending: pending as Partial<StationStatus> };
 }
 
-/** Banda o modo diversi da prima (e prima noti): si svuota l'attivita' di banda, se l'opzione e' accesa. */
-export function bandOrModeChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
-  if (!before || !after) return false;
-  const band = (s: StationStatus) => (s.dial_hz > 0 ? bandOf(s.dial_hz) : null);
-  const bandChanged = band(before) !== null && band(after) !== null && band(before) !== band(after);
-  const modeChanged = before.mode !== '' && after.mode !== '' && before.mode !== after.mode;
-  return bandChanged || modeChanged;
+function bandOfStatus(s: StationStatus | null | undefined): string | null {
+  return s && s.dial_hz > 0 ? bandOf(s.dial_hz) : null;
 }
 
-function clearedOnChange(before: StationStatus | null | undefined, after: StationStatus | null | undefined): { decodes: DecodedMessage[]; txLog: DecodedMessage[] } | Record<string, never> {
-  return usePrefs.getState().prefs.clearOnChange && bandOrModeChanged(before, after) ? { decodes: [], txLog: [] } : {};
+/** La banda e' diversa da prima (e prima era nota): al cambio di banda si svuota sempre tutto, come JTDX. */
+export function bandChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
+  const b = bandOfStatus(before);
+  const a = bandOfStatus(after);
+  return b !== null && a !== null && b !== a;
+}
+
+/** Banda o modo diversi da prima (e prima noti). */
+export function bandOrModeChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
+  if (!before || !after) return false;
+  const modeChanged = before.mode !== '' && after.mode !== '' && before.mode !== after.mode;
+  return bandChanged(before, after) || modeChanged;
+}
+
+type Cleared = { decodes: DecodedMessage[]; txLog: DecodedMessage[] } & Partial<Pick<StationState, 'pendingDx' | 'pendingSince' | 'clearedBand' | 'clearedDx'>>;
+
+/** Il cambio di banda svuota attivita' di banda, CQ e novita' (le stesse decodifiche), il registro dei nostri messaggi e la Stazione DX;
+ *  lo storico dei 30 giorni non si tocca. Il cambio di solo modo svuota le liste solo con l'opzione «svuota al cambio». */
+function clearedOnChange(s: { clearedBand: string | null }, before: StationStatus | null | undefined, after: StationStatus | null | undefined): Cleared | Record<string, never> {
+  if (bandChanged(before, after) && s.clearedBand !== bandOfStatus(after)) {
+    const call = before?.dx_call?.toUpperCase() ?? '';
+    return { ...clearedForBand(bandOfStatus(after)), clearedDx: call ? { call, until: Date.now() + STALE_DX_MS } : null };
+  }
+  return usePrefs.getState().prefs.clearOnChange && bandOrModeChanged(before, after) && !bandChanged(before, after) ? { decodes: [], txLog: [] } : {};
+}
+
+function clearedForBand(band: string | null): Cleared {
+  return { decodes: [], txLog: [], pendingDx: null, pendingSince: 0, clearedBand: band };
+}
+
+/** Lo stato con la Stazione DX azzerata (nominativo, locatore, rapporto). */
+function withoutDx(status: StationStatus): StationStatus {
+  return { ...status, ...DX_CLEARED };
 }
 
 export const useStation = create<StationState>((set) => ({
@@ -105,6 +139,8 @@ export const useStation = create<StationState>((set) => ({
   audioLevelAt: 0,
   lastDecodeAt: null,
   sessionStartAt: null,
+  clearedBand: null,
+  clearedDx: null,
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -113,12 +149,16 @@ export const useStation = create<StationState>((set) => ({
       case 'status': {
         const { type: _type, ...reported } = event;
         set((s) => {
-          const { status, pending } = withPending(s, reported);
+          const { status: shown, pending } = withPending(s, reported);
+          const cleared = clearedOnChange(s, s.status, shown);
+          const band = bandChanged(s.status, shown) && 'clearedBand' in cleared;
+          const stale = s.clearedDx !== null && Date.now() < s.clearedDx.until && (shown.dx_call ?? '').toUpperCase() === s.clearedDx.call;
+          // il motore azzera il DX da solo al cambio di banda: se il suo stato porta ancora quello di prima, e' in ritardo
+          const status = band || stale ? withoutDx(shown) : shown;
           // la banda scelta resta evidenziata finche' lo stato del motore non e' su quella banda
           const keep = { pending, pendingBand: s.pendingBand !== null && bandOf(status.dial_hz) === s.pendingBand ? null : s.pendingBand };
           const message = status.tx_message?.trim() ?? '';
           const starts = status.transmitting && message !== '' && (!s.status?.transmitting || s.status.tx_message !== status.tx_message);
-          const cleared = clearedOnChange(s.status, status);
           const session = { sessionStartAt: s.sessionStartAt ?? Date.now() };
           if (!starts) return { status, ...session, ...cleared, ...keep, ...settledPending(s, status.dx_call) };
           const row: DecodedMessage = {
@@ -131,6 +171,15 @@ export const useStation = create<StationState>((set) => ({
             tag: null,
           };
           return { status, ...session, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
+        });
+        break;
+      }
+      case 'band_changed': {
+        // la banda e' cambiata (avviso del motore, anche dalla radio o da uno spot): se lo stato non l'ha gia' fatto, si svuota tutto
+        set((s) => {
+          if (event.band !== null && s.clearedBand === event.band) return s;
+          const call = s.status?.dx_call?.toUpperCase() ?? '';
+          return { ...clearedForBand(event.band), clearedDx: call ? { call, until: Date.now() + STALE_DX_MS } : null, ...(s.status ? { status: withoutDx(s.status) } : {}) };
         });
         break;
       }
@@ -164,8 +213,10 @@ export const useStation = create<StationState>((set) => ({
   patchStatus(patch) {
     set((s) => {
       if (!s.status) return s;
-      const status = { ...s.status, ...patch };
-      return { status, ...clearedOnChange(s.status, status), pending: { ...s.pending, ...patch }, pendingAt: Date.now() };
+      const moved = { ...s.status, ...patch };
+      const cleared = clearedOnChange(s, s.status, moved);
+      const status = bandChanged(s.status, moved) && 'clearedBand' in cleared ? withoutDx(moved) : moved;
+      return { status, ...cleared, pending: { ...s.pending, ...patch }, pendingAt: Date.now() };
     });
   },
   revertStatus(keys, previous) {
@@ -173,7 +224,7 @@ export const useStation = create<StationState>((set) => ({
       if (!s.status) return s;
       const pending = { ...s.pending } as Record<string, unknown>;
       for (const key of keys) delete pending[key];
-      return { status: { ...s.status, ...previous }, pending: pending as Partial<StationStatus>, pendingBand: null };
+      return { status: { ...s.status, ...previous }, pending: pending as Partial<StationStatus>, pendingBand: null, clearedBand: null };
     });
   },
   setPendingBand(band) {
@@ -190,6 +241,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null, clearedBand: null, clearedDx: null });
   },
 }));

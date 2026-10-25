@@ -136,3 +136,19 @@ fn changing_mode_clears_the_qso_and_stops_the_transmission() {
     let tx = s.next_tx(Slot(101), 757.9).expect("CQ in FT4");
     assert_eq!(tx.text, "CQ IU3ABC JN55");
 }
+
+#[test]
+fn a_double_click_with_auto_tx_off_picks_the_dx_but_does_not_enable_tx() {
+    // `doubleClickOnCall`: «Abilita Tx» si accende solo se «AutoTX» e' acceso
+    let mut s = seq(Options::default());
+    s.reply_to_with(Slot(10), &cq(), false).expect("risposta");
+    assert_eq!((s.dx(), s.ntx(), s.is_enabled()), (Some("K1ABC"), 1, false));
+    assert!(s.next_tx(Slot(11), 11.0 * 15.0 + 0.4).is_none(), "spento, non si trasmette");
+    s.set_enabled(true);
+    let tx = s.next_tx(Slot(11), 11.0 * 15.0 + 0.4).expect("acceso, parte il messaggio di partenza");
+    assert_eq!((tx.n, tx.text.as_str()), (1, "K1ABC IU3ABC JN55"));
+    // con AutoTX acceso (`reply_to`) si accende da solo
+    let mut on = seq(Options::default());
+    on.reply_to(Slot(10), &cq()).expect("risposta");
+    assert!(on.is_enabled());
+}

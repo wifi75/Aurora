@@ -119,6 +119,12 @@ pub struct QsoRecord {
     pub rst_sent: String,
     pub rst_rcvd: String,
     pub time_ms: u32,
+    /// Inizio del QSO (millisecondi UTC dall'epoca UNIX): `QSO_DATE` e `TIME_ON` del log. 0 = non noto (si usa `time_ms` con la data di oggi).
+    #[serde(default)]
+    pub time_on_unix_ms: u64,
+    /// Fine del QSO come la scrive JTDX (istante dell'invio di RR73/73 + 14 s in FT8, + 7 s in FT4): `QSO_DATE_OFF` e `TIME_OFF`. 0 = non noto.
+    #[serde(default)]
+    pub time_off_unix_ms: u64,
 }
 
 /// Una stazione della lista dei desiderati e' stata vista, in un messaggio decodificato o in uno spot del cluster.
@@ -186,6 +192,9 @@ pub enum Event {
     Wanted(WantedAlert),
     UpdateAvailable(UpdateNotice),
     AudioLevel(AudioLevel),
+    /// La banda della radio e' cambiata (da qualunque causa): il motore ha gia' fermato la trasmissione e azzerato la stazione DX;
+    /// l'interfaccia svuota attivita' di banda, CQ e novita' e i campi del chiamante. `epoch` cresce a ogni cambio.
+    BandChanged { band: Option<String>, dial_hz: u64, epoch: u64 },
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.
