@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.2 - 2026-10-25
+- **Pulsanti del motore proprio**: con Aurora da sola, Monitora (parte **sempre acceso** all'avvio), Ferma, Hound, Modo SWL, Sinc, AGCc, Filtro e gli altri non cercano piu' JTDX: lo stato sta in Aurora e Monitora agisce sul decoder (spento = non si decodifica). La frequenza e il cambio banda passano dalla radio (OmniRig). Abilita Tx, AutoTX e FT4 restano chiusi finche' non sono collegati.
+
 ## 0.11.1 - 2026-10-25
 - **Aurora funziona da sola, senza JTDX**: nel programma Windows il motore e' quello proprio (`AURORA_ENGINE=native`): ascolta l'ingresso audio (lo stesso della cascata), decodifica FT8 e pubblica messaggi, paese e novita' e lo stato della stazione (frequenza letta da OmniRig). Per ora **solo ricezione**: la trasmissione del motore proprio non c'e' ancora e i comandi di trasmissione restano chiusi. `AURORA_ENGINE=jtdx` rimette JTDX.
 - **FT4 nel motore proprio** (crate `ft4`: modulazione, sincronismo, decoder con sottrazione; non ancora collegato all'ingresso audio).
