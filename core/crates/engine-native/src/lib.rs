@@ -23,14 +23,14 @@ use std::{
 use audio_spectrum::AudioChunk;
 use aurora_core::{DecodeTag, DecodedMessage, Event, StationStatus};
 use ft8::{decode::Options, message::CallHashes};
-use qso_native::Mode;
+use qso_native::{CallerInfo, CallerInfoFn, Mode, Options as SeqOptions};
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
 
 pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
 pub use rig::{NativeControls, NativeRig, SavedControls};
-pub use tx::{OptionChange, TxCommand, TxDriver, TxNote, TxPort, TxView};
+pub use tx::{OptionChange, SequenceSettings, TxCommand, TxDriver, TxNote, TxPort, TxView};
 
 /// Campioni al secondo del decoder.
 pub const RATE: usize = ft8::SAMPLE_RATE;
@@ -231,8 +231,17 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
             // il livello (cursore Pwr) arriva al dispositivo subito, anche a trasmissione in corso, come in JTDX
             let leveling = Arc::clone(&port);
             l.controls.set_attenuation_hook(Arc::new(move |tenths| leveling.set_attenuation(tenths)));
-            match TxDriver::new(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls)) {
-                Ok(d) => Some(d),
+            let base = SeqOptions { my_continent: l.own_continent.clone().unwrap_or_default(), ..SeqOptions::default() };
+            match TxDriver::with_options(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls), base) {
+                Ok(mut d) => {
+                    // continente e novita' delle stazioni per la scelta di chi chiamare (priorita' di JTDX, punteggio di Decodium)
+                    d.set_caller_info(Some(caller_info_provider(l)));
+                    // frequenza Tx libera (regola A): funzione nuova, spenta di base
+                    if std::env::var("AURORA_FREE_TX").is_ok_and(|v| matches!(v.trim(), "1" | "true" | "on")) {
+                        d.set_free_tx(true);
+                    }
+                    Some(d)
+                }
                 Err(e) => {
                     tracing::error!("trasmissione non attiva: nominativo o locatore non validi ({e})");
                     None
@@ -449,6 +458,47 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         }
     });
     engine
+}
+
+/// La priorita' di una stazione come la calcola `displayDecodedText` di JTDX (`REA 0x4eb170`) dalle evidenziazioni di «nuovo»: nuova zona CQ 30, su banda 28,
+/// zona ITU 26 e 24, DXCC 22 e su banda 20, locatore 15 e 13, prefisso 11 e 9, nominativo 7 e 5 (con LoTW 31, 29, 27, 25, 23, 21, 16, 14, 12, 10, 8, 6: Aurora non
+/// conosce LoTW). I desiderati (2-4 e 17-19) li aggiunge chi ha la lista. Nessuna etichetta: 0.
+fn priority_of(tag: Option<DecodeTag>) -> u8 {
+    match tag {
+        Some(DecodeTag::NewZone) => 30,
+        Some(DecodeTag::NewZoneBand) => 28,
+        Some(DecodeTag::NewItu) => 26,
+        Some(DecodeTag::NewItuBand) => 24,
+        Some(DecodeTag::NewDxcc) => 22,
+        Some(DecodeTag::NewDxccBand) => 20,
+        Some(DecodeTag::NewGrid) => 15,
+        Some(DecodeTag::NewGridBand) => 13,
+        Some(DecodeTag::NewPx) => 11,
+        Some(DecodeTag::NewPxBand) => 9,
+        Some(DecodeTag::NewCall) => 7,
+        Some(DecodeTag::NewCallBand) => 5,
+        _ => 0,
+    }
+}
+
+/// Chi dice alla sequenza continente e novita' di una stazione: l'annotatore del registro, interrogato con un CQ della stessa stazione sulla banda attuale.
+fn caller_info_provider(live: &LiveConfig) -> CallerInfoFn {
+    let annotate = Arc::clone(&live.annotate);
+    let band_of = Arc::clone(&live.band_of);
+    let dial = Arc::clone(&live.dial_hz);
+    Box::new(move |call| {
+        let band = band_of(dial.load(Ordering::Relaxed));
+        let (_country, continent, tag) = annotate(&format!("CQ {call}"), band.as_deref());
+        CallerInfo {
+            continent: continent.unwrap_or_default(),
+            prefix: String::new(),
+            priority: priority_of(tag),
+            dxcc_new: tag == Some(DecodeTag::NewDxcc),
+            dxcc_new_band: tag == Some(DecodeTag::NewDxccBand),
+            worked_band: tag == Some(DecodeTag::WorkedCall),
+            worked_elsewhere: tag == Some(DecodeTag::NewCallBand),
+        }
+    })
 }
 
 /// Un QSO registrato: JTDX scrive «QSO logged» quando comincia a trasmettere RR73 o 73 (pochi millisecondi dopo la riga «Transmitting»). Qui la

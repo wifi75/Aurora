@@ -22,20 +22,24 @@
 //! [`Sequencer::drain_events`].
 
 pub mod classify;
+pub mod freefreq;
 pub mod history;
 pub mod message;
 pub mod report;
+pub mod score;
 pub mod sequencer;
 pub mod slot;
 pub mod stdmsg;
 pub mod types;
 
+pub use freefreq::{FreeTxParams, Heard, choose_free_tx};
 pub use message::{Body, Message, base_call, is_std_call, parse, same_station};
+pub use score::{CallerFacts, best_index, caller_score};
 pub use report::{format_r_report, format_report, parse_r_report, parse_report};
 pub use sequencer::{CallerInfoFn, Sequencer, is_autoseq_73};
 pub use slot::{Mode, Slot};
 pub use stdmsg::{StdMessages, gen_cq, gen_std_msgs};
 pub use types::{
-    AbandonReason, CallerInfo, Decoded, Event, Options, Phase, QsoRecord, RepeatLimits, ReportPolicy, SeqError,
+    AbandonReason, CallerInfo, CallerSelection, Decoded, Event, Options, Phase, QsoRecord, RepeatLimits, ReportPolicy, SeqError,
     Station, StopReason, Tx,
 };

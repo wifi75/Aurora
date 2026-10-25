@@ -27,6 +27,10 @@ pub struct AdifQso {
     /// `None` = il record non dice nulla sulle conferme (log di Aurora, `wsjtx_log.adi`); `Some(true)` = almeno una conferma (QSL cartacea,
     /// LoTW, eQSL); `Some(false)` = il record ha i campi delle conferme e nessuno e' confermato.
     pub confirmed: Option<bool>,
+    /// `STATION_CALLSIGN`, in maiuscolo: con quale nominativo e' stato fatto il QSO (vuoto se il log non lo dice).
+    pub station_call: String,
+    /// `MY_GRIDSQUARE`: il locatore da cui si e' operato (vuoto se il log non lo dice).
+    pub my_grid: String,
 }
 
 /// Record ADIF completi (terminati da `<EOR>`), con i nomi dei campi in maiuscolo. Quello che segue l'ultimo `<EOR>` si ignora.
@@ -125,6 +129,8 @@ impl AdifQso {
             rst_sent: get("RST_SENT").trim().to_string(),
             rst_rcvd: get("RST_RCVD").trim().to_string(),
             confirmed,
+            station_call: get("STATION_CALLSIGN").trim().to_uppercase(),
+            my_grid: get("MY_GRIDSQUARE").trim().to_string(),
         })
     }
 }
