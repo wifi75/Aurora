@@ -20,7 +20,7 @@ export const dxccStrings = {
   'panel.dxcc': ['DXCC', 'DXCC', 'DXCC', 'DXCC', 'DXCC', 'DXCC'],
   'dxcc.none': ['nessuna', 'none', 'keine', 'aucune', 'ninguna', 'nenhuma'],
   'dxcc.unknownCountry': ['paese non riconosciuto', 'country not recognised', 'Land nicht erkannt', 'pays non reconnu', 'país no reconocido', 'país não reconhecido'],
-  'dxcc.tryCall': ['Prova un nominativo', 'Try a callsign', 'Rufzeichen ausprobieren', 'Essaie un indicatif', 'Prueba un indicativo', 'Experimenta um indicativo'],
+  'dxcc.tryCall': ['Prova', 'Try', 'Testen', 'Essai', 'Probar', 'Testar'],
   'dxcc.view.station': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
   'dxcc.view.totals': ['Totali', 'Totals', 'Summen', 'Totaux', 'Totales', 'Totais'],
   'dxcc.total': ['{worked} paesi lavorati su {total}', '{worked} countries worked of {total}', '{worked} Länder gearbeitet von {total}', '{worked} pays contactés sur {total}', '{worked} países trabajados de {total}', '{worked} países trabalhados de {total}'],
