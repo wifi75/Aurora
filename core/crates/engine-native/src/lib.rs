@@ -3,10 +3,12 @@
 //! `native-decodes.log` (nella cartella dei dati) e si confrontano con quelli di JTDX (`GET /api/v1/engine/native`), senza toccare l'elenco
 //! che vede l'utente. Quando il confronto e' abbastanza buono il motore proprio prendera' il posto di JTDX.
 
+mod alltxt;
 mod parity;
 mod resample;
 mod rig;
 mod slots;
+mod smeter;
 mod tx;
 mod wav;
 
@@ -24,9 +26,10 @@ use qso_native::Mode;
 use serde_json::{json, Value};
 use tokio::sync::broadcast;
 
+pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
 pub use rig::{NativeControls, NativeRig};
-pub use tx::{OptionChange, TxCommand, TxDriver, TxPort, TxView};
+pub use tx::{OptionChange, TxCommand, TxDriver, TxNote, TxPort, TxView};
 
 /// Campioni al secondo del decoder.
 pub const RATE: usize = ft8::SAMPLE_RATE;
@@ -173,7 +176,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                         Mode::Ft4 => 7,
                     }),
                     own_continent: live.own_continent.clone(),
-                    meters: live.controls.meters(),
+                    meters: live.controls.published_meters(),
                     ..StationStatus::default()
                 };
                 if events.send(Event::Status(status)).is_err() && events.receiver_count() == 0 {
@@ -196,6 +199,11 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
         let mut band_watch = BandWatch::default();
+        // S-meter stimato dall'audio in ingresso (per le radio senza misuratori); taratura con AURORA_SMETER_S9_DB
+        let mut s_meter = smeter::SMeter::new(smeter::s9_db_from_env());
+        // `ALL.TXT` come JTDX, solo quando il motore proprio e' l'unico: i QSO registrati aspettano l'inizio della trasmissione che li chiude
+        let mut all_txt = live.as_ref().map(|_| AllTxt::from_env(&data_dir, &format!("Aurora v{}", aurora_core::version::APP_VERSION)));
+        let mut logged_due: Vec<(u64, String)> = Vec::new();
         let ft8_options = Options::default();
         let ft4_options = ft4::decode::Options::default();
         // l'ultimo periodo (per «Decodifica») e i messaggi che ne sono gia' stati pubblicati
@@ -206,6 +214,9 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         let mut driver = live.as_ref().and_then(|l| {
             let port = l.transmitter.clone()?;
             l.controls.set_sender(command_tx.clone());
+            // STOP TX (tasto Esc compreso) ferma audio e PTT subito, anche se il ciclo e' occupato a decodificare
+            let halting = Arc::clone(&port);
+            l.controls.set_halt_now(Arc::new(move || halting.halt()));
             match TxDriver::new(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls)) {
                 Ok(d) => Some(d),
                 Err(e) => {
@@ -275,6 +286,10 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                     publish(l, driver.as_mut(), &message_events, &next_id, *start, &fresh);
                 }
             }
+            // `ALL.TXT`: frequenza cambiata, trasmissioni cominciate, QSO registrati
+            if let (Some(a), Some(l)) = (all_txt.as_mut(), live.as_ref()) {
+                write_traffic_log(a, driver.as_mut().map(|d| d as &mut TxDriver<dyn TxPort>), &mut logged_due, l, mode, now_unix_ms());
+            }
             let chunk = match tap.recv_timeout(std::time::Duration::from_millis(100)) {
                 Ok(chunk) => chunk,
                 Err(mpsc::RecvTimeoutError::Timeout) => continue,
@@ -289,6 +304,16 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 }
             };
             let samples = rs.push(&chunk.samples);
+            // lo S-meter si stima solo in ricezione con l'ascolto acceso; in trasmissione (o con Monitora spento) si ferma
+            if let Some(l) = live.as_ref() {
+                if l.controls.is_monitoring() && !l.controls.transmitting.load(Ordering::Relaxed) {
+                    let estimate = s_meter.push(&samples);
+                    l.controls.set_s_estimate(estimate);
+                } else {
+                    s_meter.pause();
+                    l.controls.set_s_estimate(None);
+                }
+            }
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
                 // con Monitora spento il periodo passa senza essere decodificato
                 if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
@@ -300,6 +325,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                             tracing::info!("trasmissione: {line}");
                         }
                         for qso in qsos {
+                            note_logged(&mut logged_due, &qso, now_unix_ms());
                             let _ = message_events.send(Event::QsoLogged(qso));
                         }
                     }
@@ -316,6 +342,10 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                 let decoded = decode_period(mode, &slot.samples, &ft8_options, &ft4_options, &mut hashes);
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
+                if let (Some(a), Some(l)) = (all_txt.as_mut(), live.as_ref()) {
+                    let rows: Vec<(i32, f32, i64, &str)> = decoded.iter().map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str())).collect();
+                    a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows);
+                }
                 if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
                     for d in &decoded {
                         let _ = file.write_all(format_line(slot.start_unix_ms, d).as_bytes());
@@ -333,6 +363,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
                         tracing::info!("trasmissione: {line}");
                     }
                     for qso in qsos {
+                        note_logged(&mut logged_due, &qso, now_unix_ms());
                         let _ = message_events.send(Event::QsoLogged(qso));
                     }
                 }
@@ -365,6 +396,36 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
         }
     });
     engine
+}
+
+/// Un QSO registrato: JTDX scrive «QSO logged» quando comincia a trasmettere RR73 o 73 (pochi millisecondi dopo la riga «Transmitting»). Qui la
+/// sequenza lo chiude un periodo prima: la riga aspetta l'inizio di quel periodo di trasmissione (fine QSO meno la coda di 14 s in FT8, 7 in FT4).
+fn note_logged(due: &mut Vec<(u64, String)>, qso: &aurora_core::QsoRecord, now_ms: u64) {
+    let tail = if qso.mode == "FT4" { 7_000 } else { 14_000 };
+    let when = if qso.time_off_unix_ms > 0 { qso.time_off_unix_ms.saturating_sub(tail) } else { now_ms };
+    due.push((when, qso.call.clone()));
+}
+
+/// Scrive in `ALL.TXT` quello che e' successo dall'ultima volta: la frequenza della radio cambiata (a trasmissione ferma), le trasmissioni il
+/// cui periodo e' cominciato, i QSO registrati (dopo la riga di trasmissione che li chiude).
+fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPort>>, logged_due: &mut Vec<(u64, String)>, live: &LiveConfig, mode: Mode, now_ms: u64) {
+    if !all_txt.is_enabled() {
+        return;
+    }
+    let dial = live.dial_hz.load(Ordering::Relaxed);
+    if !live.controls.transmitting.load(Ordering::Relaxed) {
+        all_txt.write_frequency_change(now_ms, dial, mode.name());
+    }
+    if let Some(driver) = driver {
+        for note in driver.due_notes(now_ms) {
+            all_txt.write_tx(now_ms, 0.0, dial, note.tx_df, note.mode.name(), &note.text);
+        }
+    }
+    let (due, later): (Vec<_>, Vec<_>) = std::mem::take(logged_due).into_iter().partition(|(when, _)| *when <= now_ms);
+    *logged_due = later;
+    for (_, call) in due {
+        all_txt.write_qso_logged(now_ms, 0.0, &call);
+    }
 }
 
 /// Decodifica un periodo nel modo dato (audio a 12 kHz: 15 s in FT8, 7,5 s in FT4).
@@ -469,6 +530,12 @@ mod tests {
         assert!(m.id >= 1_000_000_000, "gli id del motore proprio sono alti");
         let s = status.expect("lo stato sul bus");
         assert_eq!((s.dial_hz, s.mode.as_str(), s.de_call.as_str(), s.tr_period), (14_074_000, "FT8", "IU3ABC", Some(15)));
+        // `ALL.TXT` come JTDX: un file al mese nella cartella dei dati, CR LF, riga di frequenza e riga di decodifica
+        let all_txt = std::fs::read_to_string(dir.join("197001_ALL.TXT")).expect("ALL.TXT del mese");
+        assert!(all_txt.ends_with("\r\n") && !all_txt.replace("\r\n", "").contains('\n'), "{all_txt:?}");
+        let lines: Vec<&str> = all_txt.lines().collect();
+        assert!(lines.iter().any(|l| l.ends_with(" 14.074 MHz  FT8") || l.contains(" MHz  FT8 Aurora v")), "{lines:?}");
+        assert!(lines.iter().any(|l| l.starts_with("19700112_") && l.contains(" ~ CQ K1ABC FN42")), "{lines:?}");
         let _ = std::fs::remove_dir_all(dir);
     }
 

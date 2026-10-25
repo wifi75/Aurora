@@ -5,6 +5,7 @@ import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup, type EngineItem } from '../lib/engineGroups';
 import { useEngineDraft } from '../lib/engineDraft';
 import { Help } from './common';
+import { NativeValues, useIsNative } from './NativeSettings';
 
 /** I valori ammessi per le voci a scelta (come li scrive il file del motore). */
 const CHOICES: Record<string, readonly string[]> = { 'enum:save': ['0', '1', '2'], 'enum:reply': ['1', '2', '3'], 'enum:depth': ['1', '2', '3'] };
@@ -104,8 +105,15 @@ function ApplyBar() {
   );
 }
 
-/** Le impostazioni del motore (il motore) di un gruppo, lette dal suo file e modificabili qui. */
+/** Le impostazioni di un gruppo: con il motore proprio sono di Aurora (salvate da lei e applicate subito), con JTDX si leggono dal suo file. */
 export function EngineValues({ group, title }: { group: EngineGroup; title?: string }) {
+  const native = useIsNative();
+  if (native === undefined) return null;
+  return native ? <NativeValues group={group} title={title} /> : <JtdxValues group={group} title={title} />;
+}
+
+/** Le impostazioni del motore JTDX di un gruppo, lette dal suo file e modificabili qui. */
+function JtdxValues({ group, title }: { group: EngineGroup; title?: string }) {
   const t = useT();
   const config = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, refetchInterval: 15_000 });
   const changes = useEngineDraft((s) => s.changes);

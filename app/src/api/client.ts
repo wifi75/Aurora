@@ -1,7 +1,7 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { HealthSchema, type Health, type WantedAlert } from './schemas';
+import { EngineSettingsSchema, HealthSchema, type EngineSettings, type Health, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 
 const BASE = '/api/v1';
@@ -513,6 +513,9 @@ export interface CatConfig {
   civ_address: number;
   poll_secs: number;
   auto_connect: boolean;
+  /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
+  share_enabled: boolean;
+  share_port: number;
 }
 
 export interface CatRigStatus {
@@ -535,6 +538,8 @@ export interface CatStatus {
   /** Senza `rigctld` Hamlib non puo' collegare nessuna radio. */
   rigctld_found: boolean;
   rig: CatRigStatus | null;
+  /** Dove collegare gli altri programmi, se la condivisione e' accesa e la radio e' collegata con Hamlib. */
+  share?: { host: string; port: number } | null;
 }
 
 export interface CatProfile {
@@ -560,6 +565,8 @@ export interface CatPort {
   port: string;
   name: string;
   virtual: boolean;
+  /** `vspe`, `com0com`, `bluetooth` o nulla se non riconoscibile. */
+  virtual_kind?: string | null;
 }
 
 /** Una radio riconosciuta dal rilevamento passivo (identita' USB e nomi dei dispositivi: nessuna porta aperta). */
@@ -630,6 +637,17 @@ export async function getEngineConfig(): Promise<Record<string, string>> {
 /** Applica modifiche alle impostazioni del motore: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. */
 export async function applyEngineConfig(changes: Record<string, string>): Promise<void> {
   await request('/engine-config', jsonInit({ changes }));
+}
+
+/** Le impostazioni del motore proprio (di Aurora, nel suo file); 404 `engine_settings_unavailable` con il motore JTDX. */
+export async function getEngineSettings(): Promise<EngineSettings> {
+  return EngineSettingsSchema.parse(await (await request('/engine-settings')).json());
+}
+
+/** Salva e applica subito le modifiche; restituisce il documento aggiornato. */
+export async function putEngineSettings(changes: Record<string, string>): Promise<EngineSettings> {
+  const init = { ...jsonInit({ changes }), method: 'PUT' };
+  return EngineSettingsSchema.parse(await (await request('/engine-settings', init)).json());
 }
 
 export interface Log4omQso {

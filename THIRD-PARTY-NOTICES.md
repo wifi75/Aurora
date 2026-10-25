@@ -17,6 +17,20 @@ Aurora (© 2026 Tiziano Cassone, IU3WJQ) e' software libero: si puo' ridistribui
 | [flag-icons](https://github.com/lipis/flag-icons) | MIT | le bandiere dei paesi |
 | [IBM Plex Sans](https://github.com/IBM/plex) e [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (pacchetti `@fontsource`) | SIL Open Font License 1.1 | i caratteri dell'interfaccia (© IBM Corp.; © The JetBrains Mono Project Authors) |
 
+## Hamlib e DLL incluse nell'installatore di Windows
+
+Nella cartella `hamlib` accanto al programma l'installatore porta, **non modificati**, i file di Hamlib copiati dall'installazione di JTDX o WSJT-X (nessun download): `rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`. Versione e SHA-256 sono in `hamlib\VERSIONE.txt`.
+
+| Componente | Licenza | Sorgenti |
+|---|---|---|
+| [Hamlib](https://hamlib.github.io), libreria (`libhamlib-4.dll`, driver delle radio) | GNU LGPL 2.1 o successiva | https://github.com/Hamlib/Hamlib (stessa versione/commit di `VERSIONE.txt`) |
+| Hamlib, programmi (`rigctld`, `rigctl`) | GNU GPL 2.0 o successiva (ridistribuiti secondo la GPL-3.0 di Aurora) | idem |
+| [libusb](https://libusb.info) (`libusb-1.0.dll`) | GNU LGPL 2.1 o successiva | https://github.com/libusb/libusb |
+| libwinpthread (MinGW-w64) | licenza permissiva in stile MIT, © 2011 mingw-w64 project | https://www.mingw-w64.org |
+
+Aurora lancia `rigctld` come programma a parte e gli parla su TCP. Si possono sostituire i file con altre versioni compatibili (LGPL). I testi delle licenze (`LGPL-2.1.txt`, `GPL-3.0.txt`, `libwinpthread-licenza.txt`) e `LEGGIMI-HAMLIB.txt` sono nella stessa cartella; dettagli in `docs/cat-radio.md`.
+**VSPE** (Eterlogic) e i suoi driver sono software di terzi con licenza propria: Aurora non li include ne' li modifica.
+
 ## Dati e servizi esterni
 
 - **Sfondo della mappa** (facoltativo, si spegne con «Sfondo reale»): tessere *National Geographic World Map* di **Esri** (`server.arcgisonline.com`), con l'attribuzione «© Esri — National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC» mostrata sulla mappa. Le tessere restano soggette ai termini di Esri; non sono incluse nel programma.

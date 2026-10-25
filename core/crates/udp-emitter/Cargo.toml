@@ -1,0 +1,15 @@
+[package]
+name = "udp-emitter"
+description = "Emettitore UDP del motore proprio: manda a GridTracker (e ai programmi collegati) lo stesso flusso WSJT-X che mandava JTDX"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+udp-bridge = { path = "../udp-bridge" }
+logbook = { path = "../logbook" }
+tokio = { workspace = true }
+tracing = { workspace = true }

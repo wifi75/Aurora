@@ -1,0 +1,31 @@
+HAMLIB incluso in Aurora
+========================
+
+Questa cartella contiene Hamlib (https://hamlib.github.io), la libreria libera che parla con
+centinaia di radio (CAT). Aurora lancia "rigctld.exe" come programma a parte e gli parla su TCP in locale:
+serve per la scheda Impostazioni -> Radio CAT, cosi' funziona senza installare altro.
+
+File
+----
+rigctld.exe, rigctl.exe     i programmi di Hamlib (rigctld e' il demone, rigctl serve per l'elenco dei modelli)
+libhamlib-4.dll             la libreria Hamlib con i driver delle radio
+libusb-1.0.dll              libusb (accesso USB)
+libwinpthread-1.dll         runtime MinGW-w64 dei thread
+VERSIONE.txt                versione di Hamlib, origine dei file e SHA-256 (scritto dallo script di rilascio)
+
+Licenze
+-------
+- Hamlib, libreria (libhamlib-4.dll e i driver): GNU LGPL versione 2.1 o successiva. Testo: LGPL-2.1.txt.
+- Hamlib, programmi (rigctld, rigctl): GNU GPL versione 2 o successiva, quindi ridistribuibili con la GPL-3.0 di Aurora. Testo della GPL-3.0: GPL-3.0.txt.
+- libusb: GNU LGPL versione 2.1 o successiva. Testo: LGPL-2.1.txt.
+- libwinpthread (MinGW-w64): licenza permissiva in stile MIT. Testo: libwinpthread-licenza.txt.
+
+Sorgenti
+--------
+Il codice sorgente di Hamlib e' pubblico: https://github.com/Hamlib/Hamlib (la versione e il commit sono scritti in VERSIONE.txt).
+Sorgenti di libusb: https://github.com/libusb/libusb. Sorgenti di MinGW-w64: https://www.mingw-w64.org.
+I file sono copiati senza modifiche dall'installazione di JTDX o di WSJT-X (che compilano Hamlib per conto loro, per i sorgenti vedi anche
+http://www.jtdx.tech e https://wsjt.sourceforge.io): si possono sostituire con una versione diversa
+mettendo i propri file al loro posto (LGPL).
+
+Aurora: https://github.com/wifi75/Aurora (GPL-3.0).

@@ -2,6 +2,16 @@
 
 ## Non rilasciato
 
+## 0.11.6 - 2026-10-25
+- **Flusso WSJT-X verso GridTracker e Log4OM2 con il motore proprio**: Aurora manda gli stessi messaggi UDP di JTDX (Heartbeat, Stato con il nominativo in chiamata, Decodifiche, Clear, QSO registrato, ADIF, Close), copiati dal programma con il reverse; GridTracker li gira a Log4OM2. I comandi di ritorno (Reply, Halt, testo libero, frequenza) si accettano solo se acceso `AURORA_UDP_ACCEPT=1`.
+- **Impostazioni di Aurora** (scheda Segnalazioni come in JTDX, salvate in `settings-motore.json`): server UDP primario e secondario, invio ADIF, richieste UDP; le voci non ancora disponibili sono visibili e spente, con il motivo.
+- **ALL.TXT** scritto dal motore proprio nel formato di JTDX (mensile, decodifiche, righe `Transmitting`, `QSO logged`); `AURORA_ALL_TXT=0` lo spegne. Studio con REA di JTDX e Decodium in `docs/analisi-all-txt-e-aggiornamenti.md`.
+- **Hamlib incluso nell'installatore** (`rigctld` e DLL nella cartella `hamlib`), condivisione della radio con altri programmi (porta 4532), porte virtuali VSPE riconosciute e guida passo per passo sulle porte COM nella Guida in sei lingue.
+- **STOP TX e tasto Esc immediati**: l'arresto di audio e PTT non aspetta piu' il ciclo del motore, che puo' essere occupato a decodificare.
+- **Mappa**: i pulsanti +, - e casa funzionano (zoom senza animazione).
+- **S-meter stimato dall'audio** per le radio senza misuratori (per esempio con OmniRig).
+- **S-meter stimato dall'audio** (radio senza misuratori, per esempio con OmniRig): il motore proprio misura il livello RMS dell'audio a 12 kHz a finestre di 150 ms e lo converte in punti S (6 dB per punto, oltre S9 si contano i dB). Il riferimento e' relativo: il pavimento di rumore e' il 10° percentile degli ultimi 30 s (inseguito lentamente), S9 sta a 40 dB sopra (il rumore cade a circa S2); attacco rapido e rilascio di circa 400 ms. Si ferma in trasmissione e con Monitora spento. Taratura: `AURORA_SMETER_S9_DB` (dB tra pavimento e S9, da 20 a 70, di base 40). Nello stato la stima esce in `meters` con `estimated: true` e solo `s_points`/`s_over_db`; con i misuratori veri della radio si usano quelli. Il display mostra `~S6` e il testo alternativo dice «S-meter stimato dall'audio» (6 lingue).
+
 ## 0.11.5 - 2026-10-25
 - **QSO verso Log4OM2 con il motore proprio**: Aurora manda il record ADIF di ogni QSO registrato all'indirizzo del secondo server UDP di JTDX (`UDP2Server`, `UDP2ServerPort`, letto da `JTDX.ini`); prima, senza JTDX, non arrivava piu' niente.
 - **FT4 nel motore proprio**: il pulsante FT4 porta davvero il motore in FT4 (periodi da 7,5 s, decodifica e trasmissione).

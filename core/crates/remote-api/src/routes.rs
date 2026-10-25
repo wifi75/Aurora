@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, schedule_get, schedule_put, stats, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -69,6 +69,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/update/check", post(update_check))
         .route("/api/v1/update/install", post(update_install))
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
+        .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
@@ -1057,6 +1058,41 @@ async fn engine_config(State(state): State<AppState>, _: Authed) -> Result<Json<
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_config_task"))?
         .map(Json)
         .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "engine_config_read"))
+}
+
+#[utoipa::path(get, path = "/api/v1/engine-settings", responses((status = 200, description = "Impostazioni di Aurora per il motore proprio: valori e, per ogni voce, se e' viva o non disponibile (con il motivo)"), (status = 404, description = "Solo con il motore proprio (engine_settings_unavailable)")))]
+async fn engine_settings_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let store = state.engine_settings.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_settings_unavailable"))?;
+    Ok(Json(store.document()))
+}
+
+#[derive(Deserialize)]
+struct EngineSettingsBody {
+    changes: std::collections::BTreeMap<String, String>,
+}
+
+/// Cambia le impostazioni del motore proprio: Aurora le salva nel suo file e le applica subito (nessun riavvio). Solo dalla rete di casa:
+/// cambiano a chi Aurora manda i QSO.
+#[utoipa::path(put, path = "/api/v1/engine-settings", responses((status = 200, description = "Salvate e applicate; restituisce il documento aggiornato"), (status = 400, description = "Voce o valore non ammessi (bad_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (engine_settings_unavailable)"), (status = 500, description = "Scrittura non riuscita (engine_settings_write)")))]
+async fn engine_settings_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<EngineSettingsBody>) -> Result<Json<Value>, ApiError> {
+    let store = state.engine_settings.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_settings_unavailable"))?;
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    if body.changes.is_empty() || body.changes.len() > 50 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting"));
+    }
+    let doc = tokio::task::spawn_blocking(move || store.update(&body.changes).map(|()| store.document()))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_task"))?;
+    match doc {
+        Ok(doc) => Ok(Json(doc)),
+        Err(crate::engine_settings::SettingsError::Io(e)) => {
+            tracing::warn!("impostazioni del motore non salvate: {e}");
+            Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_write"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting")),
+    }
 }
 
 #[utoipa::path(get, path = "/api/v1/ui-settings/{kind}", responses((status = 200, description = "Preferenze dell'interfaccia per tipo di dispositivo (desktop o mobile)"), (status = 400, description = "Tipo non valido (bad_kind)")))]
