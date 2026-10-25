@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { checkUpdate, getUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
+import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help, Row } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
@@ -37,6 +37,18 @@ export function UpdatesTab() {
   const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [note, setNote] = useState('');
+  const [installing, setInstalling] = useState(false);
+  const [installFailure, setInstallFailure] = useState('');
+  const install = async () => {
+    setInstalling(true);
+    setInstallFailure('');
+    try {
+      await installUpdate();
+    } catch (error) {
+      setInstalling(false);
+      setInstallFailure(t('upd.installFailed', { message: error instanceof ApiError ? error.code : '—' }));
+    }
+  };
 
   const status = update.data;
   const shown: Draft | null = draft ?? (status ? { enabled: status.enabled, repo: status.repo, hours: String(status.interval_hours), prereleases: status.prereleases, token: '', removeToken: false } : null);
@@ -92,7 +104,14 @@ export function UpdatesTab() {
           <Message kind="muted">{t('upd.uptodate')}</Message>
         ) : null}
         {status.error ? <Message kind="alert">{t('upd.offline', { message: status.error })}</Message> : null}
+        {installing ? <Message kind="muted">{t('upd.installing')}</Message> : null}
+        {installFailure ? <Message kind="alert">{installFailure}</Message> : null}
         <Actions>
+          {status.available && status.can_install ? (
+            <button type="button" className="glass glass--on" disabled={installing} onClick={() => void install()}>
+              {t('upd.install')}
+            </button>
+          ) : null}
           <button type="button" className="glass" disabled={check.isPending || draft !== null} onClick={() => check.mutate()}>
             {t('upd.check')}
           </button>

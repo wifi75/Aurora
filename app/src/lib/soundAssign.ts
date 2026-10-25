@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import type { Key } from '../i18n';
 import { ALERTS_KEY, readAlerts, useAlertPrefs } from './alerts';
+import { senderOf } from './wishlist';
 import { type ColorKey } from './colors';
 import { isCallToMe } from './mycall';
 import { readNotify, useNotify } from './notify';
@@ -344,6 +345,21 @@ function eventsOf(d: DecodedMessage, myCall?: string | null, dxCall?: string | n
   return found;
 }
 
+/** Quanto a lungo una stazione gia' segnalata per una funzione non suona di nuovo, anche se ritrasmette (10 minuti). */
+export const NOTIFIED_TTL_MS = 10 * 60_000;
+const notifiedAt = new Map<string, number>();
+
+/** Ha gia' suonato per questa funzione e questa stazione da poco? Allora non suona di nuovo. */
+function alreadyNotified(key: string, now: number): boolean {
+  const at = notifiedAt.get(key);
+  return at !== undefined && now - at < NOTIFIED_TTL_MS;
+}
+
+/** Per le prove: si dimentica chi e' gia' stato segnalato. */
+export function resetNotified(): void {
+  notifiedAt.clear();
+}
+
 export interface Picked {
   event: SoundEvent | null;
   sound: string | null;
@@ -358,8 +374,20 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
   const newest = decodes.reduce<number | null>((max, d) => (max === null || d.id > max ? d.id : max), null);
   if (lastId === null) return { event: null, sound: null, lastId: newest };
   const fresh = decodes.filter((d) => d.id > lastId && d.id >= 0);
+  const now = Date.now();
   const candidates = new Set<SoundEvent>();
-  for (const d of fresh) for (const e of eventsOf(d, myCall, dxCall)) candidates.add(e);
+  // la chiave di ogni segnalazione: funzione + stazione che trasmette (il mittente del messaggio)
+  const keysOf = new Map<SoundEvent, string[]>();
+  for (const d of fresh) {
+    const sender = (senderOf(d.text)?.call ?? d.text.trim().split(/\s+/)[1] ?? d.text).toUpperCase();
+    for (const e of eventsOf(d, myCall, dxCall)) {
+      const key = `${e}|${sender}`;
+      // se questa stazione ha gia' fatto suonare questa funzione da poco, non suona di nuovo ogni volta che ritrasmette
+      if (alreadyNotified(key, now)) continue;
+      candidates.add(e);
+      keysOf.set(e, [...(keysOf.get(e) ?? []), key]);
+    }
+  }
   let event: SoundEvent | null = null;
   let sound: string | null = null;
   for (const e of PRIORITY) {
@@ -368,6 +396,8 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
     if (id) {
       event = e;
       sound = id;
+      // da ora e per un po' questa stazione non fa piu' suonare questa funzione
+      for (const key of keysOf.get(e) ?? []) notifiedAt.set(key, now);
       break;
     }
   }
