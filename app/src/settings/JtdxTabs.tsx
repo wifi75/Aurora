@@ -581,7 +581,7 @@ export function NativeNotifications() {
       </Group>
 
       <Group title={t('not2.grpColors')} span={2} rows={2}>
-        <Cells min={21} className="sx-cells--tight">
+        <Cells min={22} className="sx-cells--tight jt-colors">
           {PREVIEW_ROWS.map((key) => {
             const name = t(kindKey(key));
             const style = sampleStyle(colors[key], view);
