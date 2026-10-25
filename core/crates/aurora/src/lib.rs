@@ -35,6 +35,8 @@ pub enum EngineKind {
     Sim,
     /// JTDX reale, tramite l'hub UDP.
     Jtdx,
+    /// Il motore proprio di Aurora (crate `ft8`): ascolta l'ingresso audio e decodifica da solo, senza JTDX. Per ora in sola ricezione.
+    Native,
 }
 
 /// Chi sa installare un aggiornamento (il programma Windows lo da' alla partenza).
@@ -166,6 +168,7 @@ impl Config {
         let engine = match get("AURORA_ENGINE").as_deref() {
             None | Some("sim") => EngineKind::Sim,
             Some("jtdx") => EngineKind::Jtdx,
+            Some("native") => EngineKind::Native,
             Some(other) => return Err(StartError::BadConfig(format!("AURORA_ENGINE sconosciuto: {other}"))),
         };
         let cycle_ms = match get("AURORA_SIM_CYCLE_MS") {
@@ -556,6 +559,8 @@ pub async fn run(
     let live_tx = match config.engine {
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
+        // la trasmissione del motore proprio non c'e' ancora: i comandi di trasmissione restano chiusi
+        EngineKind::Native => false,
     };
     let frequencies = Arc::new(Mutex::new(load_frequencies(&config.data_dir.join("frequencies.json"))));
     let schedule = Arc::new(Mutex::new(load_schedule(&config.data_dir.join("schedule.json"))));
@@ -596,7 +601,7 @@ pub async fn run(
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.len());
     let info = serde_json::json!({
         "version": aurora_core::version::APP_VERSION,
-        "engine": if config.engine == EngineKind::Jtdx { "jtdx" } else { "sim" },
+        "engine": match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" },
         "tx_allowed": live_tx,
         "udp_listen": config.udp_listen.to_string(),
         "udp_forward": config.udp_forward.iter().map(ToString::to_string).collect::<Vec<_>>(),
@@ -744,7 +749,45 @@ pub async fn run(
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };
+    let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let mut native_live: Option<engine_native::LiveConfig> = None;
     let (engine_task, hub) = match config.engine {
+        EngineKind::Native => {
+            // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
+            let (call, grid) = config
+                .jtdx_ini
+                .as_deref()
+                .and_then(|p| engine_jtdx::ini::read_shown(p).ok())
+                .map(|m| (m.get("MyCall").cloned().unwrap_or_default(), m.get("MyGrid").cloned().unwrap_or_default()))
+                .unwrap_or_default();
+            let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
+            let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::new(db, worked))));
+            native_live = Some(engine_native::LiveConfig {
+                de_call: call,
+                de_grid: grid,
+                own_continent,
+                dial_hz: Arc::clone(&dial_hz),
+                band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),
+                annotate: Arc::new(move |text, band| match &enrich {
+                    Some(e) => match e.lock() {
+                        Ok(e) => {
+                            let a = e.annotate(text, band);
+                            (a.country, a.continent, a.tag)
+                        }
+                        Err(_) => (None, None, None),
+                    },
+                    None => (None, None, None),
+                }),
+            });
+            // i comandi di trasmissione non sono ancora dell'engine proprio: si leggono e si dice perche' non partono
+            let mut commands = io.commands;
+            let task = tokio::spawn(async move {
+                while let Some(command) = commands.recv().await {
+                    tracing::warn!("comando {command:?} ignorato: la trasmissione del motore proprio non e' ancora pronta");
+                }
+            });
+            (task, None)
+        }
         EngineKind::Sim => (tokio::spawn(SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io)), None),
         EngineKind::Jtdx => {
             let hub = Arc::new(
@@ -775,6 +818,21 @@ pub async fn run(
         updates::spawn_checker(Arc::clone(&updates), bus.events(), Arc::new(move || phone.config().notify_url), Duration::from_secs(45));
     }
 
+    // la frequenza della radio per il motore proprio: si legge da OmniRig ogni pochi secondi
+    if config.engine == EngineKind::Native
+        && let Some(rig) = state.rig.clone()
+    {
+        let dial = Arc::clone(&dial_hz);
+        std::thread::spawn(move || {
+            loop {
+                if let Ok(hz) = rig.frequency() {
+                    dial.store(hz, std::sync::atomic::Ordering::Relaxed);
+                }
+                std::thread::sleep(Duration::from_secs(3));
+            }
+        });
+    }
+
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {
         spawn_scheduler(state.clone(), rig.clone());
@@ -800,7 +858,7 @@ pub async fn run(
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
     let (native_tx, native_rx) = std::sync::mpsc::channel();
-    let tap = config.native_decode.then_some(native_tx);
+    let tap = (config.native_decode || config.engine == EngineKind::Native).then_some(native_tx);
     let audio = config.audio_device.as_deref().and_then(|hint| match run_capture_tapped(Some(hint), bus.spectrum(), bus.events(), tap) {
         Ok(handle) => Some(handle),
         Err(e) => {
@@ -810,8 +868,8 @@ pub async fn run(
     });
 
     // il motore proprio decodifica in ombra l'audio della cascata e si confronta con JTDX
-    if config.native_decode && audio.is_some() {
-        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone(), config.native_record);
+    if (config.native_decode || config.engine == EngineKind::Native) && audio.is_some() {
+        let engine = engine_native::start(bus.events(), native_rx, config.data_dir.clone(), config.native_record, native_live.take());
         state.set_native_status(Arc::new(move || engine.status()));
     }
 
