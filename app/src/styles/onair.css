@@ -3740,8 +3740,15 @@
 }
 
 /* Messaggi gia' lavorati (scheda Notifiche): barrati o sottolineati come nel motore, a colori solo se acceso */
+/* gia' lavorato: barrata TUTTA la riga (ora, rapporto, messaggio, paese, distanza); l'etichetta resta leggibile */
+.decode-row--strike,
 .decode-row--strike .decode-text .data {
   text-decoration: line-through;
+}
+
+.decode-row--strike .badge,
+.decode-row--strike .badge-cell {
+  text-decoration: none;
 }
 
 .decode-row--underline .decode-text .data {
@@ -3895,4 +3902,10 @@
   flex-basis: auto;
   margin-left: auto;
   white-space: nowrap;
+}
+
+/* messaggio a me che e' la RISPOSTA alla mia chiamata: linguetta verde al posto di quella rossa */
+.me-mark--answer {
+  background: #1aa34a;
+  box-shadow: 0 0 10px 1px #1aa34a;
 }

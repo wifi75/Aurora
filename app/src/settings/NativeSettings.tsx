@@ -6,6 +6,7 @@ import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup } from '../lib/engineGroups';
 import { REPORT_GROUPS, type SettingRow } from '../lib/engineSettingsLayout';
 import { Help } from './common';
+import { Cells, Group, Notes, Page, Unavailable } from './layout';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
 export function useIsNative(): boolean | undefined {
@@ -56,7 +57,12 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
   const changed = draft.changes[row.key];
   const value = changed ?? current ?? '';
   const id = `ens-${row.key}`;
-  const change = (next: string) => draft.set(row.key, next, current);
+  const change = (next: string) => {
+    draft.set(row.key, next, current);
+    // in JTDX le due caselle di ALL.TXT si escludono: accenderne una spegne l'altra
+    const other = row.key === 'WriteDecodedALLTXT' ? 'WriteDecodedDebugALLTXT' : row.key === 'WriteDecodedDebugALLTXT' ? 'WriteDecodedALLTXT' : null;
+    if (other && next === 'true') draft.set(other, 'false', doc.values[other]);
+  };
   let control;
   if (row.kind === 'bool') {
     control = <input id={id} aria-label={label} type="checkbox" disabled={!live || locked} checked={live && value === 'true'} onChange={(e) => change(e.target.checked ? 'true' : 'false')} />;
@@ -75,9 +81,10 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
     );
   } else {
     // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
-    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} autoComplete="off" onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} placeholder={row.kind === 'secret' && doc.secrets?.[row.key] ? t('ens.pw.saved') : undefined} autoComplete="off" onChange={(e) => change(e.target.value)} />;
   }
   const note = live ? (item?.apply === 'restart' ? t('ens.restart') : '') : t(`ens.r.${item?.reason ?? 'own_decoder'}` as Key);
+  const liveNote = live && item?.note ? t(`ens.n.${item.note}` as Key) : '';
   return (
     <label className={`jx-row${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
       <span className="jx-name">
@@ -86,6 +93,7 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
       </span>
       {control}
       {!live ? <span className="ens-reason muted">{note}</span> : null}
+      {liveNote ? <span className="ens-reason muted">{liveNote}</span> : null}
     </label>
   );
 }
@@ -126,7 +134,21 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
   );
 }
 
-/** La scheda Segnalazioni come in JTDX: cinque gruppi con le stesse voci; le voci che Aurora non ha ancora si vedono spente, con il motivo. */
+const STATUS_OF: Record<string, string> = { PSKReporter: 'psk', EQSLSend: 'eqsl', EnableTCPConnection: 'tcp', AllowSpotsDXSummit: 'dxsummit' };
+
+/** L'esito dell'ultimo invio di un servizio (ok o errore, e quando). */
+function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
+  const t = useT();
+  const st = doc.status?.[kind];
+  const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
+  return (
+    <p className={`ens-reason ${st?.ok === false ? 'live-note' : 'muted'}`} role="status" data-testid={`status-${kind}`}>
+      {t('ens.st.title')}: {text}
+    </p>
+  );
+}
+
+/** La scheda Segnalazioni come in JTDX, nel sistema di layout delle schede: cinque riquadri a tutta larghezza, voci in celle, aiuti in «Note», voci spente in un riquadro chiuso. */
 export function NativeReports() {
   const t = useT();
   const settings = useSettings();
@@ -134,20 +156,38 @@ export function NativeReports() {
   if (settings.isError) return <p className="muted">{t('ens.unavailable')}</p>;
   if (!settings.data) return <p className="muted">{t('set.loading')}</p>;
   const doc = settings.data;
+  const off = REPORT_GROUPS.flatMap((g) => g.rows).filter((r) => doc.items[r.key]?.state !== 'live');
   return (
     <section aria-label={t('ens.title')}>
-      <Help>{t('ens.rep.help')}</Help>
-      {REPORT_GROUPS.map((group) => (
-        <fieldset key={group.title} className="ens-group">
-          <legend className="set-sub">{t(group.title)}</legend>
-          <div className="jx-list">
-            {group.rows.map((row) => (
+      <Page>
+        {REPORT_GROUPS.map((group) => {
+          const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
+          const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
+          return (
+            <Group key={group.title} title={t(group.title)} span={group.title === 'ens.g.net' || group.title === 'ens.g.udp' ? 2 : 1}>
+              <Cells min={15}>
+                {rows.map((row) => (
+                  <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
+                ))}
+              </Cells>
+              {kinds.map((k) => (
+                <SendStatus key={k} doc={doc} kind={k} />
+              ))}
+            </Group>
+          );
+        })}
+        <Notes span={2}>
+          <Help>{t('ens.rep.help')}</Help>
+          <Help>{t('ens.note', { file: doc.file })}</Help>
+        </Notes>
+        <Unavailable count={off.length} span={2}>
+          <Cells min={15}>
+            {off.map((row) => (
               <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
             ))}
-          </div>
-        </fieldset>
-      ))}
-      <Help>{t('ens.note', { file: doc.file })}</Help>
+          </Cells>
+        </Unavailable>
+      </Page>
       <ApplyBar draft={draft} doc={doc} />
     </section>
   );

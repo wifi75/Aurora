@@ -137,6 +137,8 @@ export const EngineSettingsItemSchema = z.object({
   /** `now`: ha effetto subito; `restart`: dal prossimo avvio di Aurora. */
   apply: z.enum(['now', 'restart']).optional(),
   reason: z.string().optional(),
+  /** Una nota per le voci vive che in FT8 e FT4 non cambiano niente (come in JTDX). */
+  note: z.string().optional(),
 });
 export type EngineSettingsItem = z.infer<typeof EngineSettingsItemSchema>;
 
@@ -145,5 +147,9 @@ export const EngineSettingsSchema = z.object({
   file: z.string(),
   values: z.record(z.string(), z.string()),
   items: z.record(z.string(), EngineSettingsItemSchema),
+  /** Segreti: solo se ci sono (mai il valore). */
+  secrets: z.record(z.string(), z.boolean()).optional(),
+  /** Esito dell'ultimo invio di ogni servizio. */
+  status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number() })).optional(),
 });
 export type EngineSettings = z.infer<typeof EngineSettingsSchema>;

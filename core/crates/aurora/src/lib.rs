@@ -493,7 +493,66 @@ fn sequence_settings(r: &remote_api::engine_settings::Reports) -> engine_native:
     s.rr73_marker = r.rr73_marker;
     s.call_prio_cq = r.call_prio_cq;
     s.max_distance = r.max_distance;
+    s.autolog = r.autolog;
+    s.clear_dx = r.clear_dx;
     s
+}
+
+/// Cio' che i servizi di rete devono sapere adesso.
+fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) -> reporting::Config {
+    reporting::Config {
+        call: r.call.clone(),
+        grid: r.grid.clone(),
+        tx_power: tx_power.to_string(),
+        antenna: String::new(),
+        psk: r.psk,
+        dxsummit: false,
+        tcp: r.tcp,
+        eqsl: r.eqsl.then(|| reporting::EqslAccount { user: r.eqsl_user.clone(), nick: r.eqsl_nick.clone() }),
+    }
+}
+
+/// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, server TCP, eQSL), la registrazione del log (commento con rapporti e distanza,
+/// modo) e la scrittura di `ALL.TXT`. Ogni invio ha il suo thread e i suoi tempi massimi: non ferma mai il motore.
+fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>, bus: &Bus, controls: &Arc<engine_native::NativeControls>, data_dir: &Path, tx_power: String) {
+    use remote_api::engine_settings::Feature;
+    let secrets: Arc<dyn reporting::secret::SecretStore> = Arc::new(reporting::secret::ProtectedFiles::new(data_dir));
+    store.set_secrets(Arc::clone(&secrets));
+    store.set_feature(Feature::AllTxt, true);
+    let r = store.reports();
+    controls.set_all_txt(r.all_txt, r.all_txt_debug);
+    let service = reporting::Service::spawn(bus, store.status(), secrets, reporting::Endpoints::default(), Arc::new(unix_secs), reporting_config(&r, &tx_power));
+    {
+        let (store, controls) = (Arc::clone(store), Arc::clone(controls));
+        let mut changes = store.subscribe();
+        tokio::spawn(async move {
+            while changes.changed().await.is_ok() {
+                let r = store.reports();
+                controls.set_all_txt(r.all_txt, r.all_txt_debug);
+                service.set_config(reporting_config(&r, &tx_power));
+            }
+        });
+    }
+    // un QSO concluso dal motore diventa un QSO registrato, con modo e commento come la finestra di registrazione di JTDX
+    let (store, events, mut completed) = (Arc::clone(store), bus.events(), bus.subscribe_events());
+    tokio::spawn(async move {
+        loop {
+            match completed.recv().await {
+                Ok(Event::QsoCompleted(mut q)) => {
+                    let r = store.reports();
+                    let distance = match qso_native::history::grid_distance_km(&r.grid, &q.grid) {
+                        0 => String::new(),
+                        km => format!("{km} km"),
+                    };
+                    q.comment = logbook::adif::log_comment(&q.mode, &q.rst_sent, &q.rst_rcvd, &distance, r.report_in_comments, r.distance_in_comments);
+                    q.mode = logbook::adif::log_mode(&q.mode, r.to_rtty);
+                    let _ = events.send(Event::QsoLogged(q));
+                }
+                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    });
 }
 
 /// Carica i QSO gia' fatti da tutte le sorgenti; una sorgente mancante o illeggibile vale come vuota (se ne parla nel registro), cosi' al
@@ -1284,6 +1343,10 @@ pub async fn run(
                 }
             });
         }
+    }
+
+    if let Some(store) = &engine_settings {
+        wire_reporting(store, &bus, &native_controls, &config.data_dir, config.tx_power.clone().unwrap_or_default());
     }
 
     // la lista dei desiderati: guarda messaggi e spot e avvisa (anche a pagina chiusa)

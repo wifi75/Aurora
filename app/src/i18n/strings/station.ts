@@ -186,6 +186,14 @@ export const stationStrings = {
     'Mensaje transmitido por ti.',
     'Mensagem transmitida por ti.',
   ],
+  'tip.row.answered': [
+    'Questa stazione ti ha risposto: doppio clic per continuare il QSO.',
+    'This station has answered you: double-click to continue the QSO.',
+    'Diese Station hat dir geantwortet: Doppelklick, um das QSO fortzusetzen.',
+    'Cette station vous a répondu : double-clic pour continuer le QSO.',
+    'Esta estación te ha respondido: doble clic para continuar el QSO.',
+    'Esta estação respondeu-te: duplo clique para continuar o QSO.',
+  ],
   'tip.row.me': [
     'Questa stazione ti sta chiamando: doppio clic per rispondere.',
     'This station is calling you: double-click to reply.',

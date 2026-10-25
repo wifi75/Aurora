@@ -14,9 +14,11 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
-        Mutex,
+        Arc, Mutex,
     },
 };
+
+use reporting::{secret::SecretStore, status::ReportStatus};
 
 use engine_jtdx::ini::FIELDS;
 use serde_json::{json, Value};
@@ -120,14 +122,19 @@ pub fn support(key: &str) -> Support {
         // porta in primo piano / ripristina la finestra a un comando UDP: serve la finestra del programma Windows
         "udpWindowToFront" | "udpWindowRestore" => Support::Needs(Feature::WindowControl, "udp_window", Apply::Now),
         // registrazione del log: finestra di conferma, log automatico, record ADIF (modo, commento) e pulizia del DX
-        "PromptToLog" | "AutoQSOLogging" | "toRTTY" | "dBtoComments" | "distanceToComments" | "ClearCallGrid" => Support::Live(Apply::Now),
+        "toRTTY" | "dBtoComments" | "distanceToComments" | "ClearCallGrid" => Support::Live(Apply::Now),
+        // finestra di conferma e registrazione a mano: la pagina non li ha ancora, il QSO si registra sempre da solo
+        "PromptToLog" => Support::Hidden("log_prompt"),
+        "AutoQSOLogging" => Support::Hidden("log_auto"),
+        "AllowSpotsDXSummit" => Support::Hidden("dxsummit"),
         "ClearCallGridExit" => Support::Hidden("clear_exit"),
         // un invio del record ADIF di ogni QSO al server TCP
         "TCPServer" | "TCPServerPort" | "EnableTCPConnection" => Support::Live(Apply::Now),
         // filtri di testo e falsi decode sul flusso UDP: li applica l'emettitore
-        "ApplyFiltersToUDPmessages" | "preventFalseUDPspots" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
+        "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
+        "preventFalseUDPspots" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         // spotting verso internet: PSK Reporter in automatico, DXSummit a richiesta (pulsante), eQSL solo con la protezione dei segreti del sistema
-        "PSKReporter" | "AllowSpotsDXSummit" => Support::Live(Apply::Now),
+        "PSKReporter" => Support::Live(Apply::Now),
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
@@ -222,6 +229,35 @@ pub struct Reports {
     /// «Priorita' ai CQ» (`CallPriorityCQ`) e «Priorita' alla distanza maggiore» (`MaxDistance`).
     pub call_prio_cq: bool,
     pub max_distance: bool,
+    /// «Richiedimi di loggare il QSO» (`PromptToLog`): finestra di conferma prima di registrare. Esclude `autolog`.
+    pub prompt_to_log: bool,
+    /// «Messa a log automatica del QSO» (`AutoQSOLogging`): il QSO si registra da solo e a fine QSO la trasmissione si ferma. Senza questa e senza la
+    /// conferma il QSO si registra solo dal pulsante «Registra QSO».
+    pub autolog: bool,
+    /// «Converti il modo in RTTY» (`toRTTY`): vale solo per JT9, come in JTDX.
+    pub to_rtty: bool,
+    /// «Rapporto dB nel commento» (`dBtoComments`) e «Distanza nei commenti» (`distanceToComments`).
+    pub report_in_comments: bool,
+    pub distance_in_comments: bool,
+    /// «Cancella i dati dopo aver loggato il QSO» (`ClearCallGrid`).
+    pub clear_dx: bool,
+    /// Server TCP che riceve il record ADIF di ogni QSO: `Some` solo se `EnableTCPConnection` e' acceso e l'indirizzo e' valido.
+    pub tcp: Option<SocketAddr>,
+    /// Spotting su PSK Reporter (`PSKReporter`) e pulsante di spot su DXSummit (`AllowSpotsDXSummit`).
+    pub psk: bool,
+    pub dxsummit: bool,
+    /// Invio a eQSL: acceso (`EQSLSend`), utente e nickname; la password sta nella protezione dei segreti.
+    pub eqsl: bool,
+    pub eqsl_user: String,
+    pub eqsl_nick: String,
+    /// «Applica filtri di testo alla trasmissione dei messaggi UDP» e «Prevenire ... nominativi non confermati» (`ApplyFiltersToUDPmessages`, `preventFalseUDPspots`).
+    pub udp_apply_filters: bool,
+    pub udp_prevent_false: bool,
+    /// «Notifica dell'accettazione della richiesta UDP» e «Finestra di ripristino richieste UDP accettate» (`udpWindowToFront`, `udpWindowRestore`).
+    pub udp_window_to_front: bool,
+    pub udp_window_restore: bool,
+    /// «Messaggi decodificati e di debug» (`WriteDecodedDebugALLTXT`).
+    pub all_txt_debug: bool,
 }
 
 /// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
@@ -269,6 +305,24 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("EnableUDP2adifBroadcast", "true"),
         ("WriteDecodedALLTXT", "true"),
         ("WriteDecodedDebugALLTXT", "false"),
+        // Registrazione del log: di fabbrica come Aurora ha sempre fatto (il QSO si registra da solo); i valori di JTDX di fabbrica sono prompt acceso e log automatico spento
+        ("toRTTY", "false"),
+        ("dBtoComments", "false"),
+        ("distanceToComments", "false"),
+        ("ClearCallGrid", "false"),
+        // Server TCP (JTDX: 127.0.0.1, porta 52001, spento)
+        ("TCPServer", "127.0.0.1"),
+        ("TCPServerPort", "52001"),
+        ("EnableTCPConnection", "false"),
+        // Servizi di rete: tutto spento senza un JTDX.ini che li accendeva (JTDX: PSKReporter, AllowSpotsDXSummit e EQSLSend spenti)
+        ("PSKReporter", "false"),
+        ("EQSLSend", "false"),
+        ("EQSLUser", ""),
+        ("EQSLNick", ""),
+        // Server UDP primario (JTDX: `preventFalseUDPspots` acceso, il resto spento)
+        ("preventFalseUDPspots", "true"),
+        ("udpWindowToFront", "false"),
+        ("udpWindowRestore", "false"),
         // Audio: dispositivi predefiniti del sistema (nome vuoto), canale Mono, nessun file audio, cartella `save` dei dati
         ("SoundInName", ""),
         ("SoundOutName", ""),
@@ -330,6 +384,10 @@ pub fn defaults() -> BTreeMap<String, String> {
 pub fn import_from_ini(ini: &BTreeMap<String, String>, own_listen: SocketAddr, env_forward: &[SocketAddr]) -> BTreeMap<String, String> {
     let mut out = defaults();
     for key in out.clone().keys() {
+        // gli invii verso internet (spot su PSK Reporter) NON si accendono da soli dal JTDX.ini: l'utente li accende dalla scheda Segnalazioni quando vuole
+        if key == "PSKReporter" {
+            continue;
+        }
         if let Some(value) = ini.get(key)
             && crate::engine_settings::validate(key, value).is_ok()
         {
@@ -347,6 +405,8 @@ pub fn import_from_ini(ini: &BTreeMap<String, String>, own_listen: SocketAddr, e
         // nessun JTDX.ini: valori di fabbrica, salvo un inoltro scelto con AURORA_UDP_FORWARD
         None => seed.or(Some(addr_default())),
     };
+    // la password di eQSL non si importa mai: senza, l'invio resta spento finche' non la si imposta in Aurora
+    out.insert("EQSLSend".into(), "false".into());
     match primary {
         Some(a) => {
             out.insert("UDPServer".into(), a.ip().to_string());
@@ -370,7 +430,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         return Err(SettingsError::NotAvailable(key.to_string()));
     }
     // il nominativo e il locatore possono essere vuoti (nessuno impostato): gli altri testi anche, gli indirizzi si controllano sotto
-    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir") {
+    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir") {
         return Ok(());
     }
     engine_jtdx::ini_edit::check_value(key, value).map_err(SettingsError::BadValue)?;
@@ -381,8 +441,9 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         "SaveDir" if value.chars().count() > 260 || value.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) => {
             Err(SettingsError::BadValue("SaveDir: percorso non valido".into()))
         }
-        "UDPServer" | "UDP2Server" if parse_host(value).is_none() => Err(SettingsError::BadValue(format!("{key}: serve un indirizzo IP (o localhost)"))),
-        "UDPServerPort" | "UDP2ServerPort" if parse_server("127.0.0.1", value).is_none() => Err(SettingsError::BadValue(format!("{key}: la porta va da 1 a 65535"))),
+        "UDPServer" | "UDP2Server" | "TCPServer" if parse_host(value).is_none() => Err(SettingsError::BadValue(format!("{key}: serve un indirizzo IP (o localhost)"))),
+        "UDPServerPort" | "UDP2ServerPort" | "TCPServerPort" if parse_server("127.0.0.1", value).is_none() => Err(SettingsError::BadValue(format!("{key}: la porta va da 1 a 65535"))),
+        "EQSLUser" | "EQSLNick" if value.chars().count() > 40 => Err(SettingsError::BadValue(format!("{key}: al piu' 40 caratteri"))),
         k if k.starts_with("Seq") && k.ends_with("CounterValue") && !value.parse::<u32>().is_ok_and(|n| (1..=5).contains(&n)) => {
             Err(SettingsError::BadValue(format!("{k}: il valore va da 1 a 5")))
         }
@@ -429,6 +490,25 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         rr73_marker: values.get("73RR73Marker").is_none_or(|v| v == "true"),
         call_prio_cq: truthy(values.get("CallPriorityCQ")),
         max_distance: truthy(values.get("MaxDistance")),
+        prompt_to_log: truthy(values.get("PromptToLog")),
+        // JTDX: `AutoQSOLogging` vale falso se manca; Aurora ha sempre registrato da sola, quindi senza la voce vale vero
+        autolog: values.get("AutoQSOLogging").is_none_or(|v| v == "true"),
+        to_rtty: truthy(values.get("toRTTY")),
+        report_in_comments: truthy(values.get("dBtoComments")),
+        distance_in_comments: truthy(values.get("distanceToComments")),
+        clear_dx: truthy(values.get("ClearCallGrid")),
+        tcp: truthy(values.get("EnableTCPConnection")).then(|| parse_server(get("TCPServer"), get("TCPServerPort"))).flatten(),
+        psk: truthy(values.get("PSKReporter")),
+        dxsummit: truthy(values.get("AllowSpotsDXSummit")),
+        eqsl: truthy(values.get("EQSLSend")) && !get("EQSLUser").is_empty(),
+        eqsl_user: get("EQSLUser").to_string(),
+        eqsl_nick: get("EQSLNick").to_string(),
+        udp_apply_filters: truthy(values.get("ApplyFiltersToUDPmessages")),
+        // JTDX: `preventFalseUDPspots` vale vero se manca
+        udp_prevent_false: values.get("preventFalseUDPspots").is_none_or(|v| v == "true"),
+        udp_window_to_front: truthy(values.get("udpWindowToFront")),
+        udp_window_restore: truthy(values.get("udpWindowRestore")),
+        all_txt_debug: truthy(values.get("WriteDecodedDebugALLTXT")),
     }
 }
 
@@ -480,6 +560,12 @@ pub struct EngineSettingsStore {
     udp_emitter: AtomicBool,
     all_txt: AtomicBool,
     audio_control: AtomicBool,
+    secrets_ready: AtomicBool,
+    window_control: AtomicBool,
+    /// Dove sta la password di eQSL (la protezione dei segreti del sistema); `None` finche' nessuno la collega.
+    secrets: Mutex<Option<Arc<dyn SecretStore>>>,
+    /// Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP).
+    status: Arc<ReportStatus>,
 }
 
 fn read_file(path: &Path) -> Option<BTreeMap<String, String>> {
@@ -519,7 +605,7 @@ impl EngineSettingsStore {
         }
         values.extend(present);
         let (revision, _) = watch::channel(0);
-        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false) };
+        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false), secrets_ready: AtomicBool::new(false), window_control: AtomicBool::new(false), secrets: Mutex::new(None), status: Arc::new(ReportStatus::new()) };
         if missing && let Err(e) = store.write() {
             tracing::warn!("impostazioni del motore non scritte: {e}");
         }
@@ -567,6 +653,8 @@ impl EngineSettingsStore {
             Feature::UdpEmitter => &self.udp_emitter,
             Feature::AllTxt => &self.all_txt,
             Feature::AudioControl => &self.audio_control,
+            Feature::Secrets => &self.secrets_ready,
+            Feature::WindowControl => &self.window_control,
         };
         if flag.swap(ready, Ordering::SeqCst) != ready {
             self.bump();
@@ -578,7 +666,30 @@ impl EngineSettingsStore {
             Feature::UdpEmitter => self.udp_emitter.load(Ordering::SeqCst),
             Feature::AllTxt => self.all_txt.load(Ordering::SeqCst),
             Feature::AudioControl => self.audio_control.load(Ordering::SeqCst),
+            Feature::Secrets => self.secrets_ready.load(Ordering::SeqCst),
+            Feature::WindowControl => self.window_control.load(Ordering::SeqCst),
         }
+    }
+
+    /// Collega la protezione dei segreti (la password di eQSL): le voci di eQSL diventano vive se il sistema la offre.
+    pub fn set_secrets(&self, secrets: Arc<dyn SecretStore>) {
+        let available = secrets.available();
+        *self.secrets.lock().unwrap_or_else(|p| p.into_inner()) = Some(secrets);
+        self.set_feature(Feature::Secrets, available);
+    }
+
+    fn secret_store(&self) -> Option<Arc<dyn SecretStore>> {
+        self.secrets.lock().unwrap_or_else(|p| p.into_inner()).clone()
+    }
+
+    /// C'e' una password di eQSL salvata (senza leggerla).
+    pub fn eqsl_password_saved(&self) -> bool {
+        self.secret_store().is_some_and(|s| s.has(reporting::EQSL_SECRET))
+    }
+
+    /// Lo stato degli invii: lo scrivono i servizi, lo legge l'API.
+    pub fn status(&self) -> Arc<ReportStatus> {
+        Arc::clone(&self.status)
     }
 
     /// Stato di una voce adesso: `Ok(apply)` se e' viva, `Err(motivo)` se non e' disponibile.
@@ -613,12 +724,43 @@ impl EngineSettingsStore {
             if self.state_of(key).is_err() {
                 return Err(SettingsError::NotAvailable(key.clone()));
             }
+            if SECRET_KEYS.contains(&key.as_str()) {
+                if value.chars().count() > 100 || value.chars().any(char::is_control) {
+                    return Err(SettingsError::BadValue(format!("{key}: valore non valido")));
+                }
+                continue;
+            }
             validate(key, value)?;
         }
+        let secret_change = changes.get("EQSLPasswd");
         let mut next = self.values();
-        next.extend(changes.iter().map(|(k, v)| (k.clone(), v.clone())));
+        next.extend(changes.iter().filter(|(k, _)| !SECRET_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())));
+        // le caselle che in JTDX si escludono a vicenda (cliccare una toglie l'altra)
+        if truthy(next.get("PromptToLog")) && truthy(next.get("AutoQSOLogging")) {
+            return Err(SettingsError::BadValue("PromptToLog e AutoQSOLogging si escludono: ne va accesa una sola".into()));
+        }
+        if truthy(next.get("WriteDecodedALLTXT")) && truthy(next.get("WriteDecodedDebugALLTXT")) {
+            return Err(SettingsError::BadValue("WriteDecodedALLTXT e WriteDecodedDebugALLTXT si escludono: ne va accesa una sola".into()));
+        }
         // un invio acceso senza un indirizzo valido non avrebbe effetto: si rifiuta, non si finge
         let r = interpret(&next);
+        if truthy(next.get("EnableTCPConnection")) && r.tcp.is_none() {
+            return Err(SettingsError::BadValue("TCPServer: serve un indirizzo e una porta validi per accendere l'invio".into()));
+        }
+        if truthy(next.get("EQSLSend")) {
+            let has_password = match secret_change {
+                Some(v) => !v.is_empty(),
+                None => self.eqsl_password_saved(),
+            };
+            if next.get("EQSLUser").is_none_or(String::is_empty) || !has_password {
+                return Err(SettingsError::BadValue("EQSLSend: servono utente e password di eQSL per accendere l'invio".into()));
+            }
+        }
+        // la password si salva nella protezione del sistema, mai nel file
+        if let Some(value) = secret_change {
+            let store = self.secret_store().ok_or_else(|| SettingsError::NotAvailable("EQSLPasswd".into()))?;
+            store.set(reporting::EQSL_SECRET, value).map_err(SettingsError::Io)?;
+        }
         if truthy(next.get("EnableUDP2adifBroadcast")) && r.secondary.is_none() {
             return Err(SettingsError::BadValue("UDP2Server: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
@@ -659,7 +801,15 @@ impl EngineSettingsStore {
             items.insert(key.to_string(), item);
         }
         let values: BTreeMap<String, String> = self.values().into_iter().filter(|(k, _)| self.state_of(k).is_ok()).collect();
-        json!({ "version": FILE_VERSION, "file": FILE_NAME, "values": values, "items": items })
+        // una nota per le voci vive che per FT8 e FT4 non cambiano niente (come in JTDX)
+        for (key, item) in &mut items {
+            if let (Some(note), Some(obj)) = (note_of(key), item.as_object_mut()) {
+                obj.insert("note".into(), json!(note));
+            }
+        }
+        // i segreti non si restituiscono mai: si dice solo se ci sono
+        let secrets: BTreeMap<&str, bool> = SECRET_KEYS.iter().map(|k| (*k, self.eqsl_password_saved())).collect();
+        json!({ "version": FILE_VERSION, "file": FILE_NAME, "values": values, "items": items, "secrets": secrets, "status": self.status.snapshot() })
     }
 }
 
@@ -693,7 +843,8 @@ mod tests {
         assert_eq!((got["UDPServer"].as_str(), got["UDPServerPort"].as_str()), ("127.0.0.1", "2333"), "2334 e' Aurora stessa: il primo server diventa l'inoltro");
         assert_eq!((got["UDP2Server"].as_str(), got["UDP2ServerPort"].as_str(), got["EnableUDP2adifBroadcast"].as_str()), ("127.0.0.1", "2237", "true"));
         assert_eq!((got["EnableUDP1adifSending"].as_str(), got["WriteDecodedALLTXT"].as_str()), ("true", "true"));
-        assert!(!got.contains_key("PSKReporter") && !got.contains_key("EQSLPasswd"), "solo le voci che il motore proprio tiene");
+        assert_eq!((got["PSKReporter"].as_str(), got["EQSLSend"].as_str()), ("false", "false"), "PSK Reporter resta spento anche se il JTDX.ini lo accendeva (invio verso internet: lo accende l'utente); eQSL resta spento senza password");
+        assert!(!got.contains_key("EQSLPasswd"), "la password non si importa mai");
     }
 
     #[test]
@@ -746,10 +897,11 @@ mod tests {
             ("MyGrid", "XX"),
             ("MyCall", "A B"),
             ("EnableUDP2adifBroadcast", "si"),
-            ("PSKReporter", "true"),
-            ("TCPServerPort", "4000"),
+            ("PSKReporter", "si"),
+            ("TCPServerPort", "0"),
             ("NDepth", "3"),
-            ("WriteDecodedALLTXT", "true"),
+            ("PromptToLog", "true"),
+            ("EQSLSend", "true"),
         ] {
             assert!(store.update(&map(&[(k, v)])).is_err(), "{k}={v}");
         }
@@ -770,7 +922,9 @@ mod tests {
         assert_eq!(store.state_of("WriteDecodedALLTXT"), Err("all_txt_pending"));
         assert_eq!(store.state_of("UDP2Server"), Ok(Apply::Now));
         assert_eq!(store.state_of("MyCall"), Ok(Apply::Restart));
-        assert_eq!(store.state_of("PSKReporter"), Err("psk"));
+        assert_eq!(store.state_of("PSKReporter"), Ok(Apply::Now));
+        assert_eq!(store.state_of("EQSLUser"), Err("eqsl"));
+        assert_eq!(store.state_of("udpWindowToFront"), Err("udp_window"));
         store.set_feature(Feature::UdpEmitter, true);
         store.update(&map(&[("UDPServer", "127.0.0.1"), ("UDPServerPort", "2333"), ("EnableUDP1adifSending", "true")])).unwrap();
         assert_eq!(store.reports().primary, Some(addr("127.0.0.1:2333")));
@@ -800,9 +954,10 @@ mod tests {
         assert_eq!(doc["items"]["EQSLPasswd"]["reason"], "eqsl");
         assert_eq!(doc["items"]["UDP2Server"]["state"], "live");
         assert_eq!(doc["items"]["MyCall"]["apply"], "restart");
-        assert_eq!(doc["items"]["TCPServer"], json!({ "state": "unavailable", "reason": "tcp" }));
+        assert_eq!(doc["items"]["TCPServer"], json!({ "state": "live", "apply": "now" }));
+        assert_eq!(doc["items"]["toRTTY"]["note"], "jt9_only");
         assert_eq!(doc["items"]["UDPServer"]["reason"], "emitter_pending");
-        assert!(doc["values"].get("UDP2Server").is_some() && doc["values"].get("UDPServer").is_none() && doc["values"].get("PSKReporter").is_none());
+        assert!(doc["values"].get("UDP2Server").is_some() && doc["values"].get("UDPServer").is_none() && doc["values"].get("PSKReporter").is_some());
     }
 
     #[test]
@@ -812,7 +967,7 @@ mod tests {
                 assert!(!reason.is_empty(), "{key}");
             }
         }
-        assert!(all_keys().into_iter().filter(|k| is_stored(k)).count() == defaults().len(), "le voci tenute nel file sono quelle dichiarate");
+        assert!(all_keys().into_iter().filter(|k| is_stored(k)).count() == defaults().len() + SECRET_KEYS.len(), "le voci tenute nel file sono quelle dichiarate");
         for key in defaults().keys() {
             assert!(is_stored(key), "{key}: il valore iniziale esiste ma la voce non e' tenuta");
         }

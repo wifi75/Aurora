@@ -21,6 +21,7 @@ updater = { path = "../updater" }
 input-level = { path = "../input-level" }
 decode-history = { path = "../decode-history" }
 online-info = { path = "../online-info" }
+reporting = { path = "../reporting" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }

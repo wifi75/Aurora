@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { useT } from '../i18n';
-import { readAlerts, saveAlerts, type AlertPrefs } from '../lib/alerts';
+import { useAlertPrefs } from '../lib/alerts';
+import { armAudio } from '../lib/soundBank';
+import { useSoundAssign } from '../lib/soundAssign';
 import { COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
 import { browserStorage } from '../lib/theme';
@@ -9,6 +11,7 @@ import { EngineValues } from './EngineValues';
 import { NativeNotifications } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
 import { Help } from './common';
+import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
 import { Actions, Cell, Group, Notes, Page } from './layout';
 
 /** Scheda Notifiche: con il motore proprio come nel motore (evidenziazioni, gia' lavorati, colori e marcatori); con JTDX colore, evidenziazione e suono per tipo. */
@@ -20,7 +23,7 @@ export function NotificationsTab() {
 function JtdxNotificationsTab() {
   const t = useT();
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
-  const [alerts, setAlerts] = useState<AlertPrefs>(() => readAlerts(browserStorage()));
+  const alerts = useAlertPrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
 
   const commit = (next: TagColors) => {
@@ -36,8 +39,8 @@ function JtdxNotificationsTab() {
           <AlertSwitch
             value={alerts}
             onChange={(next) => {
-              saveAlerts(browserStorage(), next);
-              setAlerts(next);
+              if (next.enabled) armAudio();
+              useAlertPrefs.getState().set(next);
             }}
           />
         </Cell>
@@ -94,8 +97,12 @@ function JtdxNotificationsTab() {
                           type="checkbox"
                           aria-label={`${t('not.sound')}: ${name}`}
                           checked={notify.sound[key]}
-                          onChange={(e) => useNotify.getState().setFlag('sound', key, e.target.checked)}
+                          onChange={(e) => {
+                            useNotify.getState().setFlag('sound', key, e.target.checked);
+                            if (e.target.checked && key !== 'auto') useSoundAssign.getState().ensure([key]);
+                          }}
                         />
+                        {key !== 'auto' ? <SoundPicker event={key} label={name} /> : null}
                       </span>
                     </td>
                   </tr>
@@ -111,7 +118,9 @@ function JtdxNotificationsTab() {
       <Notes span={3}>
         <Help>{t('not.intro')}</Help>
         <Help>{t('not.soundHelp')}</Help>
+        <SoundsHelp />
       </Notes>
+      <SoundsGroup />
     </Page>
   );
 }

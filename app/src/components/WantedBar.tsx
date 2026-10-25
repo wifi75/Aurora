@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { getWishlist, postFrequency } from '../api/client';
 import { useT, type Key } from '../i18n';
-import { playAlert, readAlerts, webAudioContext, type ToneContext } from '../lib/alerts';
 import { formatKhz } from '../lib/format';
-import { browserStorage } from '../lib/theme';
+import { ringState, soundFor } from '../lib/soundAssign';
+import { playSound } from '../lib/soundBank';
 import { useStation } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 
@@ -20,7 +20,6 @@ export function WantedBar() {
   const banner = useStation((s) => s.wantedBanner);
   const dismiss = useStation((s) => s.dismissWanted);
   const setList = useWishlist((s) => s.set);
-  const audio = useRef<ToneContext | null>(null);
 
   const wishlist = useQuery({ queryKey: ['wishlist'], queryFn: getWishlist, retry: false, refetchInterval: 30_000 });
   useEffect(() => {
@@ -30,15 +29,9 @@ export function WantedBar() {
   const key = banner ? `${banner.time_ms}-${banner.call}` : '';
   useEffect(() => {
     if (!banner) return;
-    const prefs = readAlerts(browserStorage());
-    if (prefs.enabled) {
-      try {
-        audio.current ??= webAudioContext();
-        if (audio.current) playAlert('wanted', prefs.volume, audio.current);
-      } catch {
-        // senza audio resta l'avviso a video
-      }
-    }
+    const st = ringState(useStation.getState().status?.transmitting ?? false);
+    const sound = soundFor('wanted', st);
+    if (sound) playSound(sound, st.volume);
     try {
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification(`${banner.call}`, { body: banner.text, tag: `wanted-${banner.call}` });

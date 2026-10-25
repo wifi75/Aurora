@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.15 - 2026-10-25
+- **Scheda Segnalazioni funzionante** (come JTDX): commento ADIF con rapporto dB e distanza, conversione RTTY, cancellazione dei dati dopo il log, server TCP per il record ADIF, spotting su PSK Reporter (**spento di base**: lo accendi tu dalla scheda; nessun invio verso internet parte da solo), invio a eQSL con la password protetta da Windows, ALL.TXT con e senza debug, stato dell'ultimo invio; scheda riordinata a riquadri.
+- **Suoni per ogni funzione**: banco di 53 suoni sintetizzati (nessun file), menu «Suono» con ▶ in ogni riga della tabella dei colori nelle Notifiche e riquadro «Suoni» in fondo; senza suono assegnato non suona.
+- **Livello Pwr**: memoria per banda spenta di fabbrica (come JTDX) e cursore sempre allineato al motore: corregge la potenza al minimo dopo un cambio di banda.
+- **Messaggi a me**: se la stazione ha risposto alla tua chiamata compare la linguetta **verde** («ti ha risposto»); se ti chiama per prima resta quella rossa. **Gia' lavorati**: barrata tutta la riga.
+- Barra in alto fissa in primo piano, guida visibile nelle impostazioni DXCC, caselle DXCC sempre con contorno.
+
 ## 0.11.14 - 2026-10-25
 - **Bug del livello Pwr al cambio di banda corretto**: il cursore mostrava il massimo ma si trasmetteva al minimo, perche' la memoria del livello per banda ripristinava un livello vecchio senza che il cursore lo seguisse. Ora la memoria per banda e' spenta di fabbrica come in JTDX (un solo livello su tutte le bande; `AURORA_PWR_BAND_MEMORY=1` la accende) e il cursore segue sempre il valore del motore (ogni 2 secondi).
 - Linea verticale che chiude la colonna paese e distanza presente anche nelle righe con l'etichetta colorata; frequenza Tx e Rx sulla riga del nominativo DX, a destra.
