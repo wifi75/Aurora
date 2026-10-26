@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { ModeSwitch } from './ModeSwitch';
 
 describe('ModeSwitch', () => {
-  it('offers FT8, FT4 and JT and marks the current mode', () => {
+  it('offers FT8, FT4, JT65 and JT9 and marks the current mode', () => {
     render(<ModeSwitch mode="FT8" onPick={() => {}} />);
-    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT']);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9']);
     expect(screen.getByRole('button', { name: 'FT8' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'FT4' })).toHaveAttribute('aria-pressed', 'false');
   });
@@ -31,10 +31,13 @@ describe('ModeSwitch', () => {
     expect(screen.getAllByRole('button').every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
   });
 
-  it('shows JT as active for JT65, JT9 and JT65+JT9', () => {
-    for (const mode of ['JT65', 'JT9', 'JT9+JT65']) {
+  it('lights the JT mode in use, both for JT65+JT9 and JT65 for the old name JT', () => {
+    const cases: [string, string[]][] = [['JT65', ['JT65']], ['JT9', ['JT9']], ['JT9+JT65', ['JT65', 'JT9']], ['JT', ['JT65']]];
+    for (const [mode, on] of cases) {
       const { unmount } = render(<ModeSwitch mode={mode} onPick={() => {}} />);
-      expect(screen.getByRole('button', { name: 'JT' })).toHaveAttribute('aria-pressed', 'true');
+      for (const m of ['JT65', 'JT9']) {
+        expect(screen.getByRole('button', { name: m })).toHaveAttribute('aria-pressed', String(on.includes(m)));
+      }
       expect(screen.getByRole('button', { name: 'FT8' })).toHaveAttribute('aria-pressed', 'false');
       unmount();
     }

@@ -7,7 +7,7 @@ import { Help } from './common';
 import { Actions, Group, Message, Notes, Page } from './layout';
 import { useSettings } from './NativeSettings';
 
-const MODES = ['FT8', 'FT4'] as const;
+const MODES = ['FT8', 'FT4', 'JT65', 'JT9'] as const;
 const REGIONS: readonly { value: IaruRegion; label: Key }[] = [
   { value: 'ALL', label: 'gen2.regionAll' },
   { value: 'R1', label: 'gen2.region1' },
