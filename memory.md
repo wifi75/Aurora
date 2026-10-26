@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-26, versione 0.11.23. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-26, versione 0.11.24. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -53,12 +53,13 @@ Stato al 2026-10-26, versione 0.11.23. Per riprendere il lavoro leggi anche `doc
 - Il test del core con troppi lavori in parallelo puo' fallire in collegamento (`LNK1102`, memoria insufficiente): `cargo test --workspace -j 2`.
 - Novita' DXCC/zone su banda: «Banda» vince su «Banda+Modo» solo con la banda nota (scelta del proprietario, diversa da JTDX); con la banda ignota si controlla il modo.
 
-## Coda delle stazioni, Rispondi a tutti, JT65/JT9 (2026-10-26, 0.11.23)
+## Coda delle stazioni, Rispondi a tutti, JT65/JT9 (2026-10-26, 0.11.24)
 
 - **Coda** (`engine-native/src/tx.rs`, `TxCommand::QueueReply`, `POST /api/v1/commands/queue-reply`): tasto destro su una riga = in coda (max 8); a QSO registrato e a trasmissione di chiusura conclusa (`queue_gate`, `after_slot`) si risponde alla prima con l'ultimo messaggio sentito da lei, accendendo Abilita Tx; senza QSO in corso risponde subito; STOP TX, cambio banda e modo svuotano la coda. Solo motore proprio: con JTDX il comando e' ignorato. La coda arriva alla pagina in `StationStatus.queue`.
 - **«Risp. a tutti»** = controllo `answer_all` (solo motore proprio: `Control.own` in `rig-control`, mai letto ne' premuto in JTDX); i chiamanti diretti vanno in coda da soli. Spento di fabbrica.
 - **Viola/rosso**: chi risponde alla mia chiamata (o e' la stazione DX in corso) ha etichetta e linguetta viola, tooltip «Ti ha risposto»; la linguetta rossa solo per chi chiama per primo. Il vecchio marcatore blu del DX e' assorbito dal viola.
-- **JT65/JT9** (`core/crates/jt`, `docs/2026-10-26-jt65-jt9.md`): crate fuori dal programma; trasmissione e ricezione provate con segnali sintetici e con i vettori della guida di WSJT-X. Letti con REA in `jtdxjt9.exe` i limiti di Fano e le soglie per profondita' e la tabella delle metriche (uguale). **Da fare**: integrare nel motore (periodi da 60 s, modulatore, cascata, sequenza a messaggi JT), parita' con JTDX sul segnale debole (afc, subtract, avg65, dynhint).
+- **JT65/JT9** (`core/crates/jt`, `docs/2026-10-26-jt65-jt9.md`): dalla 0.11.24 nel motore proprio (modi `Jt65`/`Jt9`, minuto intero, RRR al posto di RR73, righe di frequenza di JTDX lette con REA da `jtdx.exe` `0x13eca00`). Letti con REA in `jtdxjt9.exe` i limiti di Fano e le soglie per profondita' e la tabella delle metriche (uguale). **Da fare**: parita' con JTDX sul segnale debole (afc, subtract di JT9, avg65, dynhint), JT65+JT9 insieme, sottomodi.
+- **Filtro**: spento di fabbrica; `SavedControls.filter_wired` evita di ripristinare il vecchio «acceso» che non faceva niente. **Stato della pagina**: si pubblica ogni 250 ms e la frequenza si rilegge ogni 250 ms con il CAT (prima 1 s e 3 s).
 - **clippy**: `cargo clippy --workspace --all-targets -- -D warnings` passa (con il Rust 1.98 le prove dell'audio avevano un tipo troppo complesso).
 
 ## Sicurezza (non negoziabile)
