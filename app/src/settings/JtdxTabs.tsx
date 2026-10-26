@@ -163,6 +163,7 @@ export function NativeSequence({ extra }: { extra?: ReactNode }) {
         <Cells min={13}>
           <ControlBox id="autoseq" label={t('seq2.autoseq')} />
           <ControlBox id="single_qso" label={t('seq2.single')} />
+          <ControlBox id="answer_all" label={t('seq2.answerAll')} />
           <ControlBox id="skip_tx1" label={t('seq2.skipTx1')} />
           <ControlBox id="answer_b4" label={t('seq2.answerB4')} />
           <EngineBox k="CallPriorityCQ" label={t('seq2.prioCq')} doc={doc} draft={draft} />
