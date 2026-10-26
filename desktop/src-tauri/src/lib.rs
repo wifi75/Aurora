@@ -1,6 +1,7 @@
 //! Aurora per Windows: il core gira dentro questo programma e la finestra mostra la sua pagina (la stessa che si apre dal telefono).
 //! Il vassoio tiene Aurora a portata di mano, parte con Windows e si aggiorna da sola quando esce una versione nuova.
 
+mod health;
 mod installer;
 mod links;
 mod settings;
@@ -116,6 +117,8 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     };
     std::fs::create_dir_all(&data_dir)?;
     init_logging(&data_dir);
+    health::install_panic_hook();
+    health::spawn_monitor();
     let env_path = data_dir.join("aurora.env");
     if !env_path.exists() {
         let _ = std::fs::write(&env_path, settings::sample_env_file());
