@@ -54,6 +54,8 @@ pub const CONTROLS: &[Control] = &[
     toggle("single_qso", "singleQSOButton"),
     // «Rispondi a tutti»: ogni stazione che mi chiama entra in coda da sola (senza, solo quelle scelte con il tasto destro)
     own_toggle("answer_all"),
+    // «JT65+JT9»: in uno dei due modi JT si decodifica nello stesso minuto anche l'altro (la trasmissione resta nel modo scelto)
+    own_toggle("jt_both"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
