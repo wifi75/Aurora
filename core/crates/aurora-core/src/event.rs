@@ -38,6 +38,9 @@ pub struct StationStatus {
     /// Gli strumenti della radio letti dal CAT (S-meter, potenza, ROS, ALC...), se la radio li da'.
     #[serde(default)]
     pub meters: Option<RadioMeters>,
+    /// Le stazioni in coda per il prossimo QSO (tasto destro o «Rispondi a tutti»), nell'ordine in cui si risponde.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub queue: Vec<String>,
 }
 
 /// Gli strumenti della radio, ognuno presente solo se il CAT sa leggerlo (se manca, il campo non compare nel JSON: l'interfaccia non accetta `null`). Le unita' sono quelle del pannello della radio.

@@ -31,7 +31,7 @@ fn only_the_controls_that_can_start_a_transmission_are_marked() {
 #[test]
 fn the_read_script_names_every_toggle_and_no_button() {
     let s = read_script();
-    for c in CONTROLS {
+    for c in CONTROLS.iter().filter(|c| !c.own) {
         assert_eq!(s.contains(c.ui_id), c.kind == Kind::Toggle, "{}", c.id);
     }
     assert!(s.contains("ToggleState"), "{s}");

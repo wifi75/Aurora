@@ -23,6 +23,7 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         tr_period: s.tr_period,
         own_continent: None,
         meters: None,
+        queue: Vec::new(),
     }
 }
 
