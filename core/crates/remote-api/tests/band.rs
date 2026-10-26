@@ -135,10 +135,20 @@ async fn a_known_mode_is_handed_to_the_rig_uppercase() {
 #[tokio::test]
 async fn an_unknown_mode_is_refused() {
     let (s, rig) = state_with_rig(false);
-    let resp = mode(&s, r#"{"mode":"JT65"}"#).await;
+    let resp = mode(&s, r#"{"mode":"JT4"}"#).await;
     status_is(&resp, StatusCode::BAD_REQUEST);
     assert_eq!(body_json(resp).await["error"], "bad_mode");
     assert!(rig.modes.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn jt65_and_jt9_are_known_modes() {
+    let (s, rig) = state_with_rig(false);
+    for m in ["JT65", "JT9"] {
+        let resp = mode(&s, &format!(r#"{{"mode":"{m}"}}"#)).await;
+        status_is(&resp, StatusCode::OK);
+    }
+    assert_eq!(*rig.modes.lock().unwrap(), vec!["JT65".to_string(), "JT9".to_string()]);
 }
 
 #[tokio::test]

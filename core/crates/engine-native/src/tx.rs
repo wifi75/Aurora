@@ -241,6 +241,11 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     free_moved_at: u32,
     /// `logClearDXTimer`: a fine periodo, dopo un QSO registrato senza AutoSeq ne AutoTX, il DX (se e' ancora quello) si libera.
     clear_dx_due: Option<(f64, String)>,
+    /// Hound con salti di frequenza: quante volte di fila si e' mandato l'R+rapporto alla stessa spedizione e la frequenza da cui si chiamava.
+    hound_r_count: u32,
+    hound_calling_hz: Option<u32>,
+    /// L'ultima frequenza della radio che il motore ha visto (serve a sapere se si e' su una frequenza comune dell'FT8).
+    last_dial_hz: u64,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -285,7 +290,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0 };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -705,6 +710,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// se serve, prepara (o sostituisce) la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
+        self.last_dial_hz = dial_hz;
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
         self.fire_clear_dx(now_s, &mut log);
@@ -790,6 +796,13 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 QEvent::Abandoned { call, reason } => {
                     log.push(format!("QSO con {call} abbandonato: {reason:?}"));
+                    // Hound: a QSO perso si torna alla frequenza da cui si chiamava (`m_lastCallingFreq`)
+                    if self.opts.hound
+                        && let Some(hz) = self.hound_calling_hz.take()
+                    {
+                        self.controls.tx_df.store(hz, Ordering::Relaxed);
+                        self.hound_r_count = 0;
+                    }
                     // una rinuncia (contatori, DX che risponde a un altro) libera il turno; una sostituzione fatta dall'operatore no
                     if !matches!(reason, qso_native::AbandonReason::Replaced) && !self.queue.is_empty() {
                         self.queue_gate = Some(slot.next());
@@ -861,6 +874,39 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
     }
 
+    /// Hound con salti di frequenza (`m_houndTXfreqJumps` di JTDX, `mainwindow.cpp` `process_Auto`): serve Split e una frequenza che non sia una delle comuni
+    /// dell'FT8. Con la frequenza di ricezione tra 200 e 999 Hz (quella della spedizione) il primo R+rapporto va su di essa, i successivi 300 Hz piu' su
+    /// (o piu' giu' se la spedizione sta sopra i 600 Hz): chi chiama in coda alla spedizione cambia frequenza a ogni tentativo. Con CQ o Tx1 si ricorda
+    /// la frequenza da cui si chiamava.
+    fn hound_hop(&mut self, freq: u32, n: u8, already_planned: bool) -> u32 {
+        if !self.opts.hound || self.mode != Mode::Ft8 {
+            self.hound_r_count = 0;
+            return freq;
+        }
+        if n == 1 {
+            self.hound_calling_hz = Some(freq);
+        }
+        if n != 3 {
+            self.hound_r_count = 0;
+            return freq;
+        }
+        let common = rig_control::table::FrequencyTable::default().entries().iter().any(|e| e.mode == "FT8" && e.hz == self.last_dial_hz);
+        let rx = self.controls.rx_df.load(Ordering::Relaxed);
+        if !self.controls.switch_on("split") || common || !(200..1000).contains(&rx) {
+            return freq;
+        }
+        if !already_planned {
+            self.hound_r_count += 1;
+        }
+        let hopped = match self.hound_r_count {
+            0 | 1 => rx,
+            _ if rx < 600 => rx + 300,
+            _ => rx - 300,
+        };
+        self.controls.tx_df.store(hopped, Ordering::Relaxed);
+        hopped
+    }
+
     /// Prepara la trasmissione del periodo `slot` (se tocca a lui): sceglie il messaggio, lo modula nel modo corrente e lo consegna alla catena. Se per
     /// questo periodo era gia' partito un messaggio e la sequenza ne da' uno diverso (ritrasmissione) sostituisce quello in corso.
     fn plan(&mut self, slot: Slot, now_s: f64) -> Vec<String> {
@@ -893,6 +939,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if already && !retransmit {
             return log;
         }
+        let freq = self.hound_hop(freq, n, already);
         self.last_planned = Some(slot);
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         match self.encode(&text, freq, n == 0) {
@@ -1273,6 +1320,37 @@ mod tests {
         let log = d.handle(TxCommand::CallCq { modifier: Some("QUESTO E TROPPO".into()) }, BASE + 1.0);
         assert!(log.iter().any(|l| l.contains("CQ non possibile")), "{log:?}");
         assert!(port.requests.lock().expect("richieste").is_empty());
+    }
+
+    /// Hound con salti di frequenza: il primo R+rapporto va sulla frequenza della spedizione, i successivi 300 Hz piu' su; fuori da Hound, con Split spento o su
+    /// una frequenza comune dell'FT8 non salta.
+    #[test]
+    fn hound_hops_the_r_report_around_the_fox_frequency() {
+        let hop = |hound: bool, split: bool, dial: u64| -> Vec<u32> {
+            let mut b = Bench::new();
+            b.controls.set_switch("hound", hound);
+            b.controls.set_switch("split", split);
+            b.d.handle(TxCommand::Option(OptionChange::Hound(hound)), BASE);
+            // la spedizione (Fox) trasmette a 500 Hz e ci manda il rapporto
+            b.d.remember(7, "IU3ABC K1ABC -10", -10, 500, SLOT_MS);
+            b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+            let mut freqs = Vec::new();
+            for k in 0..3u64 {
+                let slot = SLOT_MS + k * 30_000;
+                let msgs: Vec<(String, i32, u32)> = if k == 0 { vec![("IU3ABC K1ABC -10".to_string(), -10, 500)] } else { Vec::new() };
+                b.d.after_slot(slot, &msgs, slot as f64 / 1000.0 + 14.3, dial, "20m");
+                freqs.extend(b.d.due_notes(slot + 15_100).into_iter().filter(|n| n.text.contains(" R-")).map(|n| n.tx_df));
+                b.d.after_slot(slot + 15_000, &[], (slot + 15_000) as f64 / 1000.0 + 14.3, dial, "20m");
+            }
+            freqs
+        };
+        let hopped = hop(true, true, 14_000_100);
+        assert!(hopped.len() >= 2, "almeno due R+rapporto di seguito: {hopped:?}");
+        assert_eq!(hopped.first(), Some(&500), "il primo R+rapporto sulla frequenza della spedizione: {hopped:?}");
+        assert!(hopped.iter().skip(1).all(|f| *f == 800), "poi 300 Hz piu' su: {hopped:?}");
+        assert!(hop(false, true, 14_000_100).iter().all(|f| *f == 500 || *f == 1500), "senza Hound non salta");
+        assert!(hop(true, false, 14_000_100).iter().all(|f| *f != 800), "con Split spento non salta");
+        assert!(hop(true, true, 14_074_000).iter().all(|f| *f != 800), "su una frequenza comune dell'FT8 non salta");
     }
 
     /// «Canc DX»: la stazione si libera e la trasmissione gia' pianificata verso di lei si ferma subito (prima partiva lo stesso).

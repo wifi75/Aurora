@@ -455,7 +455,22 @@ pub fn start_with_save(
                 let started = Instant::now();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
                 let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls));
-                let decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes);
+                let mut decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes);
+                // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
+                let other_mode = match mode {
+                    Mode::Jt65 => Some(Mode::Jt9),
+                    Mode::Jt9 => Some(Mode::Jt65),
+                    _ => None,
+                };
+                let mut other_texts: Vec<String> = Vec::new();
+                if let Some(other) = other_mode.filter(|_| live.as_ref().is_some_and(|l| l.controls.switch_on("jt_both"))) {
+                    for d in decode_period(other, &slot.samples, &options, &ft4_options, &mut hashes) {
+                        if !decoded.iter().any(|x| x.text == d.text) {
+                            other_texts.push(d.text.clone());
+                            decoded.push(d);
+                        }
+                    }
+                }
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
                 // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
@@ -468,8 +483,17 @@ pub fn start_with_save(
                 if let (Some(a), Some(l)) = (all_txt.as_mut(), live.as_ref()) {
                     // le caselle «decodificati» e «e di debug» (impostazioni): senza, solo i messaggi che nominano la propria stazione
                     let scope = l.controls.all_txt_scope();
-                    let rows: Vec<(i32, f32, i64, &str)> = decoded.iter().filter(|d| scope.keeps(&d.text, &l.de_call)).map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str())).collect();
-                    a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows);
+                    let rows_of = |from_other: bool| -> Vec<(i32, f32, i64, &str)> {
+                        decoded
+                            .iter()
+                            .filter(|d| other_texts.contains(&d.text) == from_other && scope.keeps(&d.text, &l.de_call))
+                            .map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str()))
+                            .collect()
+                    };
+                    a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows_of(false));
+                    if let Some(other) = other_mode.filter(|_| !other_texts.is_empty()) {
+                        a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), other.name(), &rows_of(true));
+                    }
                     if scope == AllTxtScope::Debug {
                         a.write_debug(now_unix_ms(), "Decoding finished");
                     }
@@ -830,6 +854,73 @@ mod tests {
             assert_eq!((s.mode.as_str(), s.tr_period), (mode.name(), Some(tr)));
             let all_txt = std::fs::read_to_string(dir.join("197001_ALL.TXT")).expect("ALL.TXT del mese");
             assert!(all_txt.lines().any(|l| l.contains(symbol) && l.contains("CQ K1ABC FN42")), "{}: {all_txt:?}", mode.name());
+            let _ = std::fs::remove_dir_all(dir);
+        }
+    }
+
+    /// «JT65+JT9»: in JT65 un messaggio JT9 si decodifica solo con l'interruttore acceso, e in `ALL.TXT` ha il segno di JT9.
+    #[test]
+    fn jt_both_decodes_the_other_jt_mode_in_the_same_minute() {
+        for both in [false, true] {
+            let (tx, rx) = mpsc::channel();
+            let (events, mut bus) = broadcast::channel(256);
+            let dir = std::env::temp_dir().join(format!("aurora-live-jtboth-{both}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            let _ = std::fs::create_dir_all(&dir);
+            let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().expect("runtime");
+            let controls = Arc::new(NativeControls::default());
+            controls.set_mode(Mode::Jt65);
+            controls.set_switch("jt_both", both);
+            let live = LiveConfig {
+                de_call: "IU3ABC".into(),
+                de_grid: "IO91".into(),
+                own_continent: None,
+                dial_hz: Arc::new(AtomicU64::new(14_076_000)),
+                controls,
+                transmitter: None,
+                band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
+                annotate: Arc::new(|_, _| (None, None, None)),
+            };
+            let engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live)) });
+            let t0 = 1_000_020_000u64 - 60_000;
+            let wave = jt::jt9::modulate(&jt::jt9::tones("CQ K1ABC FN42"), 1500.0, 1.0);
+            let mut audio = vec![0.0f32; 3 * 60 * SAMPLE_RATE];
+            let mut seed = 31u64;
+            for a in audio.iter_mut() {
+                seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                *a = ((seed >> 40) as f32 / (1u64 << 24) as f32 - 0.5) * 0.1;
+            }
+            let begin = (60_000 + 1_000 + 300) * SAMPLE_RATE / 1000;
+            for (i, w) in wave.iter().enumerate() {
+                audio[begin + i] += 0.02 * w;
+            }
+            for (n, chunk) in audio.chunks(480).enumerate() {
+                let end_ms = t0 + ((n + 1) * 480 * 1000 / SAMPLE_RATE) as u64;
+                tx.send(AudioChunk { rate: 12_000, samples: chunk.to_vec(), received_unix_ms: end_ms }).expect("invio");
+            }
+            drop(tx);
+            for _ in 0..2400 {
+                if engine.status()["slots_decoded"].as_u64().unwrap_or(0) >= 2 {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            let mut texts = Vec::new();
+            runtime.block_on(async {
+                tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                while let Ok(event) = bus.try_recv() {
+                    if let Event::Decode(m) = event {
+                        texts.push(m.text);
+                    }
+                }
+            });
+            let all_txt = std::fs::read_to_string(dir.join("197001_ALL.TXT")).unwrap_or_default();
+            if both {
+                assert_eq!(texts, vec!["CQ K1ABC FN42".to_string()], "con l'interruttore si decodifica anche JT9");
+                assert!(all_txt.lines().any(|l| l.contains(" @ ") && l.contains("CQ K1ABC FN42")), "{all_txt:?}");
+            } else {
+                assert!(texts.is_empty(), "in JT65 un messaggio JT9 non si decodifica: {texts:?}");
+            }
             let _ = std::fs::remove_dir_all(dir);
         }
     }
