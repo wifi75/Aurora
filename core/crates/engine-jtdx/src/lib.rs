@@ -280,6 +280,8 @@ async fn on_command(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Engi
         Command::SetTxFrequency { hz } => {
             send_to_jtdx(hub, encode_set_tx_freq(&id, schema, i32::try_from(hz).unwrap_or(1500)), "SetTxFreq").await;
         }
+        // la coda di risposta e' una funzione del motore proprio: JTDX decide da se' chi chiamare
+        Command::QueueReply { .. } => tracing::warn!("coda di risposta ignorata: esiste solo nel motore proprio di Aurora"),
         Command::Reply { decode_id } => {
             if !config.allow_tx {
                 tracing::warn!("Reply respinto: la trasmissione non e' abilitata (un Reply fa trasmettere JTDX)");

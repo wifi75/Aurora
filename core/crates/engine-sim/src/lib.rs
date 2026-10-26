@@ -196,7 +196,7 @@ impl State {
                 }
             }
             // il simulatore non ha un motore di messaggi: questi comandi non hanno effetto
-            Command::SendFreeText { .. } | Command::CallCq { .. } | Command::SetTxFrequency { .. } => {}
+            Command::SendFreeText { .. } | Command::CallCq { .. } | Command::SetTxFrequency { .. } | Command::QueueReply { .. } => {}
         }
     }
 }
