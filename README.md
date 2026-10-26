@@ -9,13 +9,13 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1350%20Rust%20%C2%B7%20737%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1350%20Rust%20%C2%B7%20738%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
 [![Licenza](https://img.shields.io/badge/Licenza-GPL--3.0-blue)](LICENSE)
 
-Stazione digitale FT8/FT4 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8 (JTDX resta un confronto facoltativo); Aurora è cervello, motore e schermo.
+Stazione digitale FT8, FT4, JT65 e JT9 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8 (JTDX resta un confronto facoltativo); Aurora è cervello, motore e schermo.
 
 Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
@@ -24,6 +24,8 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 Versione 0.11.25: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
+- **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.
+- **Modi**: FT8, FT4, JT65 e JT9 dal selettore (JT65 e JT9 decodificano a fine minuto: dopo il cambio di modo servono da uno a due minuti); interruttore «JT65+JT9» per decodificarli insieme; Hound con salti di frequenza e «Filtro»; Modo SWL come JTDX. Stato e parita' con JTDX in `docs/2026-10-26-jt65-jt9.md`.
 - **Comandi come JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, frequenze Tx/Rx con copia, Canc DX, Gen.Msgs; il doppio clic su un messaggio imposta il DX e JTDX lo chiama al momento giusto (opzione in Impostazioni → Generali).
 - **Trasmissione**: CQ, messaggio libero, frequenza Tx, livello Pwr verticale, STOP TX sempre attivo (discreto a riposo, pieno in trasmissione); il tasto Esc fa lo stesso e spegne AutoTX e Abilita Tx. Non ha opzioni: è sempre abilitata (restano STOP TX, i tetti e le automazioni spente di base).
 - **Automazioni**: risposte ai CQ con novità, partono spente e in prova a vuoto, con tetti, dead-man e STOP.
