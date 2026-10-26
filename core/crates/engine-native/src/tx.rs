@@ -75,6 +75,8 @@ pub enum OptionChange {
     AnswerWorkedBefore(bool),
     UseRrr(bool),
     TxEven(bool),
+    /// Modo Hound (DXpedition): niente CQ, niente Salta Tx1, la chiusura e' l'RR73 della spedizione (`Options::hound` del sequenziatore).
+    Hound(bool),
     /// La scheda Sequenza di Aurora (contatori, ferma se risponde a un altro, CQ rigoroso, watchdog).
     Sequence(SequenceSettings),
 }
@@ -514,6 +516,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     OptionChange::SingleQso(v) => self.opts.single_qso = v,
                     OptionChange::AnswerWorkedBefore(v) => self.opts.answer_worked_before = v,
                     OptionChange::UseRrr(v) => self.opts.use_rrr = v,
+                    OptionChange::Hound(v) => self.opts.hound = v,
                     OptionChange::Sequence(settings) => {
                         self.tx_qsy_allowed = settings.tx_qsy_allowed;
                         settings.apply(&mut self.opts);
@@ -1067,6 +1070,24 @@ mod tests {
         let log = d.handle(TxCommand::CallCq { modifier: Some("QUESTO E TROPPO".into()) }, BASE + 1.0);
         assert!(log.iter().any(|l| l.contains("CQ non possibile")), "{log:?}");
         assert!(port.requests.lock().expect("richieste").is_empty());
+    }
+
+    /// Modo Hound: la trasmissione di un CQ non e' permessa («Transmission of CQ message is not allowed in the Hound mode»).
+    #[test]
+    fn the_hound_mode_never_transmits_a_cq() {
+        let (mut cq, port_cq, _) = driver();
+        cq.handle(TxCommand::Option(OptionChange::TxEven(true)), 1.0);
+        cq.handle(TxCommand::Enable(true), 1.0);
+        cq.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
+        let normal = port_cq.requests.lock().expect("richieste").len();
+        assert!(normal > 0, "senza Hound il CQ parte");
+
+        let (mut hound, port_hound, _) = driver();
+        hound.handle(TxCommand::Option(OptionChange::Hound(true)), 1.0);
+        hound.handle(TxCommand::Option(OptionChange::TxEven(true)), 1.0);
+        hound.handle(TxCommand::Enable(true), 1.0);
+        hound.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
+        assert!(port_hound.requests.lock().expect("richieste").is_empty(), "con Hound nessun CQ");
     }
 
     /// JTDX non toglie il messaggio libero dopo l'invio (`m_ntx` resta 8 in `guiUpdate`): si ripete a ogni periodo di trasmissione, nella parita'

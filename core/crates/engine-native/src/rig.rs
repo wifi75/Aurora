@@ -466,6 +466,7 @@ impl Rig for NativeRig {
                     "answer_b4" => Some(TxCommand::Option(OptionChange::AnswerWorkedBefore(value))),
                     "rrr" => Some(TxCommand::Option(OptionChange::UseRrr(value))),
                     "tx_period" => Some(TxCommand::Option(OptionChange::TxEven(value))),
+                    "hound" => Some(TxCommand::Option(OptionChange::Hound(value))),
                     _ => None,
                 };
                 match command {

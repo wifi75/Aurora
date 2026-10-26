@@ -368,7 +368,7 @@ pub fn start_with_save(
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &ft8_options, &ft4_options, &mut hashes);
+                    let decoded = decode_period(mode, samples, &Options { swl: l.controls.switch_on("swl"), ..ft8_options.clone() }, &ft4_options, &mut hashes);
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -450,7 +450,9 @@ pub fn start_with_save(
                     tracing::warn!("registrazione del periodo non salvata: {e}");
                 }
                 let started = Instant::now();
-                let decoded = decode_period(mode, &slot.samples, &ft8_options, &ft4_options, &mut hashes);
+                // «Modo SWL»: finestra di ricerca piu' ampia e soglie basse per chi ascolta soltanto (solo FT8)
+                let swl = live.as_ref().is_some_and(|l| l.controls.switch_on("swl"));
+                let decoded = decode_period(mode, &slot.samples, &Options { swl, ..ft8_options.clone() }, &ft4_options, &mut hashes);
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
                 // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
