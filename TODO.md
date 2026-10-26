@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-26, v0.11.24).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-26, v0.11.25).
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
@@ -23,11 +23,11 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Analisi delle logiche di JTDX (`docs/logiche-jtdx.md`)
 
 ## Da fare
-- [x] **Coda delle stazioni che chiamano** (tasto destro) e **Rispondi a tutti** (fatti il 2026-10-26, 0.11.24): vedi `memory.md`. Da provare con la radio.
+- [x] **Coda delle stazioni che chiamano** (tasto destro) e **Rispondi a tutti** (fatti il 2026-10-26, 0.11.23): vedi `memory.md`. Da provare con la radio.
 - [x] **Hound e modo SWL nel motore proprio** (2026-10-26): Hound senza CQ, SWL con finestra, soglie e passate come JTDX (quarta sottopassata di SWL non portata, filtro +-290 Hz e salti di Hound non portati).
 - [x] **JT65 e JT9 nel motore proprio** (0.11.24): selettore, ricezione, trasmissione, sequenza con RRR, frequenze di JTDX, `ALL.TXT`; da provare con la radio.
 - [ ] **JT65 e JT9: parita' con JTDX sul segnale debole** e il resto (`docs/2026-10-26-jt65-jt9.md`): afc, subtract di JT9, avg65, dynhint, JT65+JT9 insieme, sottomodi B/C e JT9 veloci, messaggi brevi RO/RRR/73.
-- [ ] **Hound**: sensibilita' fissa a 1 (`NFT8QSORXfreqSensitivity`) e salti di frequenza del protocollo DXpedition (il filtro +-290 Hz e' fatto, 0.11.24).
+- [x] **Hound**: filtro +-290 Hz (0.11.24) e salti di frequenza dell'R+rapporto (0.11.25). Resta la sensibilita' fissa a 1, che riguarda `ft8s` (non portato).
 - [ ] **SWL**: filtro lungo della sottrazione (`NFILT2`) e avvio anticipato del decoder (`ldeepsync`).
 - [ ] **Causa dell'arresto del 2026-10-26 (0.11.21)**: non trovata; dalla 0.11.22 il log ha i panic e le risorse del processo (`health.rs`): al prossimo arresto leggere `%APPDATA%\Aurora\logs\aurora.log`.
 - [x] **Generali: Regione IARU e «Generazione dei messaggi per nominativi composti di tipo 2» funzionanti** (fatte il 2026-10-25, lette con REA in `jtdx.exe`: `docs/analisi-jtdx-reverse-rea.md`, sezione «Regione IARU e nominativi composti di tipo 2»): la regione filtra la tabella iniziale di JTDX (FT8 e FT4) e sceglie la riga di banda, cambio di modo e programmazione; il tipo 2 si salva e si legge ma, come in JTDX, vale solo per JT65/JT9/T10 e in FT8/FT4 non cambia nessun messaggio.

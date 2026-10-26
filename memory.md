@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-26, versione 0.11.24. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-26, versione 0.11.25. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -53,7 +53,7 @@ Stato al 2026-10-26, versione 0.11.24. Per riprendere il lavoro leggi anche `doc
 - Il test del core con troppi lavori in parallelo puo' fallire in collegamento (`LNK1102`, memoria insufficiente): `cargo test --workspace -j 2`.
 - Novita' DXCC/zone su banda: «Banda» vince su «Banda+Modo» solo con la banda nota (scelta del proprietario, diversa da JTDX); con la banda ignota si controlla il modo.
 
-## Coda delle stazioni, Rispondi a tutti, JT65/JT9 (2026-10-26, 0.11.24)
+## Coda delle stazioni, Rispondi a tutti, JT65/JT9 (2026-10-26, 0.11.23-0.11.25)
 
 - **Coda** (`engine-native/src/tx.rs`, `TxCommand::QueueReply`, `POST /api/v1/commands/queue-reply`): tasto destro su una riga = in coda (max 8); a QSO registrato e a trasmissione di chiusura conclusa (`queue_gate`, `after_slot`) si risponde alla prima con l'ultimo messaggio sentito da lei, accendendo Abilita Tx; senza QSO in corso risponde subito; STOP TX, cambio banda e modo svuotano la coda. Solo motore proprio: con JTDX il comando e' ignorato. La coda arriva alla pagina in `StationStatus.queue`.
 - **«Risp. a tutti»** = controllo `answer_all` (solo motore proprio: `Control.own` in `rig-control`, mai letto ne' premuto in JTDX); i chiamanti diretti vanno in coda da soli. Spento di fabbrica.
