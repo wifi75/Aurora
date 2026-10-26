@@ -20,6 +20,8 @@ const DF_BIN: f64 = FS / NFFT as f64;
 /// Distanza tra i toni in hertz.
 const TONE_DF: f64 = 11_025.0 / 4096.0;
 const MAX_QSYM: usize = 600;
+/// Energia media minima dei toni previsti dalla parola decodificata, in unita' di rumore mediano (un segnale a -27 dB ne ha circa 4,6).
+const MIN_TONE_ENERGY: f32 = 3.2;
 const LAG1: i32 = -32;
 const LAG2: i32 = 82;
 
@@ -37,6 +39,9 @@ pub struct Decoded {
     pub sync: f32,
     /// Simboli di cui il decodificatore ha dovuto cambiare il valore (distanza dura).
     pub hard_errors: u32,
+    /// Distanza totale (dura piu' soffice) dal messaggio ricevuto e `pp2 / pp1`: gli stessi due numeri con cui `extract` accetta o scarta.
+    pub total_distance: i32,
+    pub rtt: f32,
 }
 
 /// Come si cerca.
@@ -514,16 +519,120 @@ fn estimate_snr(s3: &[[f32; 64]], tones: &[u8; NN]) -> i32 {
     (10.0 * ratio.log10() - 29.7).round() as i32
 }
 
-/// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto).
+/// Il tono (0 = sincronismo, da 2 a 65 = dati) di ognuno dei 126 simboli, dalla parola di canale.
+fn all_tones(channel: &[u8; NN]) -> [u8; NSYM] {
+    let mut tones = [0u8; NSYM];
+    let mut k = 0usize;
+    for (t, &p) in tones.iter_mut().zip(SYNC_PATTERN.iter()) {
+        if p == 0 {
+            *t = channel[k] + 2;
+            k += 1;
+        }
+    }
+    tones
+}
+
+/// L'ampiezza e la fase (come coseno e seno) del tono `freq` nella finestra di un simbolo; `count` sono i campioni dentro l'audio.
+fn demodulate(audio: &[f32], start: i64, freq: f64) -> (f64, f64, usize) {
+    let (mut re, mut im) = (0.0f64, 0.0f64);
+    let mut count = 0usize;
+    let step = std::f64::consts::TAU * freq / FS;
+    let (wr, wi) = (step.cos(), step.sin());
+    let (mut cr, mut ci) = (1.0f64, 0.0f64);
+    for n in 0..WINDOW {
+        let idx = start + n as i64;
+        if idx >= 0 && (idx as usize) < audio.len() {
+            let x = f64::from(audio[idx as usize]);
+            re += x * cr;
+            im -= x * ci;
+            count += 1;
+        }
+        let nr = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = nr;
+    }
+    (re, im, count)
+}
+
+/// Quanta energia il segnale ricostruito (frequenza `f`, ritardo `dt`) trova nell'audio: serve a rifinire f e dt sul messaggio gia' noto.
+fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64) -> f64 {
+    let mut total = 0.0f64;
+    for (k, &tone) in tones.iter().enumerate() {
+        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), f + f64::from(tone) * TONE_DF);
+        if count >= WINDOW / 2 {
+            total += re * re + im * im;
+        }
+    }
+    total
+}
+
+/// `subtract65`: toglie dall'audio un segnale decodificato. Prima si rifinisce frequenza e ritardo sul messaggio noto (un errore di un decimo di
+/// hertz lascerebbe un residuo di -18 dB), poi per ogni simbolo si stima ampiezza e fase del suo tono e si sottrae l'onda ricostruita; senza questo
+/// un segnale forte lascia ai vicini tanta energia da far «decodificare» messaggi inesistenti.
+fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64) {
+    let tones = all_tones(channel);
+    let (mut f, mut dt) = (f0, dt0);
+    let mut best = tone_fit(audio, &tones, f, dt);
+    for d in -6i32..=6 {
+        let ff = f0 + f64::from(d) * 0.04;
+        let fit = tone_fit(audio, &tones, ff, dt);
+        if fit > best {
+            best = fit;
+            f = ff;
+        }
+    }
+    let dt_center = dt0;
+    for d in -6i32..=6 {
+        let t = dt_center + f64::from(d) * 8.0;
+        let fit = tone_fit(audio, &tones, f, t);
+        if fit > best {
+            best = fit;
+            dt = t;
+        }
+    }
+    for (k, &tone) in tones.iter().enumerate() {
+        let freq = f + f64::from(tone) * TONE_DF;
+        let start = symbol_start(dt, k);
+        let (re, im, count) = demodulate(audio, start, freq);
+        if count < WINDOW / 2 {
+            continue;
+        }
+        // x ~ a cos(wt + phi): le somme valgono (a N / 2) (cos phi, sin phi)
+        let scale = 2.0 / count as f64;
+        let (a_cos, a_sin) = (re * scale, im * scale);
+        let step = std::f64::consts::TAU * freq / FS;
+        let (wr, wi) = (step.cos(), step.sin());
+        let (mut cr, mut ci) = (1.0f64, 0.0f64);
+        for n in 0..WINDOW {
+            let idx = start + n as i64;
+            if idx >= 0 && (idx as usize) < audio.len() {
+                // a cos(wt + phi) = a_cos cos(wt) - a_sin sin(wt)
+                audio[idx as usize] -= (a_cos * cr - a_sin * ci) as f32;
+            }
+            let nr = cr * wr - ci * wi;
+            ci = cr * wi + ci * wr;
+            cr = nr;
+        }
+    }
+}
+
+/// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto). Ogni messaggio trovato si toglie dall'audio prima di provare
+/// il candidato successivo (`subtract65`).
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     let codec = Codec::new();
     let (ss, nq) = symbol_spectra(samples);
     let candidates = find_candidates(&ss, nq, options);
     drop(ss);
+    let mut audio = samples.to_vec();
     let mut out: Vec<Decoded> = Vec::new();
     for c in &candidates {
-        let (f, dt) = refine(samples, c);
-        let s3 = tone_matrix(samples, f, dt);
+        // un candidato sul segnale gia' trovato (stessa frequenza del tono di sincronismo, entro 3 Hz) non serve
+        let bin_hz = c.bin as f64 * DF_BIN;
+        if out.iter().any(|o| (f64::from(o.freq_hz) - bin_hz).abs() < 3.0) {
+            continue;
+        }
+        let (f, dt) = refine(&audio, c);
+        let s3 = tone_matrix(&audio, f, dt);
         if s3.len() != NN {
             continue;
         }
@@ -541,6 +650,13 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         if !accepted {
             continue;
         }
+        // l'energia media dei toni che la parola prevede, rispetto al rumore: un messaggio vero ne ha molta, uno inventato dal decodificatore
+        // a cancellazioni casuali ne ha poca (di sicuro vale solo la meta' dei simboli) e si scarta
+        let predicted = channel_tones(&res.word);
+        let pp = predicted.iter().enumerate().map(|(j, &t)| s3_norm[j][t as usize]).sum::<f32>() / NN as f32;
+        if pp < MIN_TONE_ENERGY {
+            continue;
+        }
         // i 12 simboli di dati dalla parola di Karn: l'ordine e' inverso
         let mut dat = [0u8; DATA];
         for (i, d) in dat.iter_mut().enumerate() {
@@ -551,6 +667,7 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
             continue;
         }
         let tones = channel_tones(&res.word);
+        subtract(&mut audio, &tones, f, dt);
         out.push(Decoded {
             text,
             freq_hz: f as f32,
@@ -558,6 +675,8 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
             snr_db: estimate_snr(&s3, &tones),
             sync: c.sync,
             hard_errors: res.nhard.max(0) as u32,
+            total_distance: res.ntotal,
+            rtt: res.rtt,
         });
     }
     out
@@ -625,6 +744,7 @@ mod tests {
     fn a_weak_signal_at_minus_twenty_one_db_still_decodes() {
         let audio = minute(&[("K1ABC IU3ABC -15", 1200.0, 0.0, -21.0)], 5);
         let out = decode(&audio, &Options::default());
+        eprintln!("WEAK {out:?}");
         assert!(out.iter().any(|d| d.text == "K1ABC IU3ABC -15"), "{out:?}");
     }
 
