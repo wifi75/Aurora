@@ -336,16 +336,111 @@ fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> ([i8; 207], f32, i3
     (soft, schk, snr)
 }
 
+/// L'ampiezza e la fase (coseno e seno) del tono `freq` nella finestra di un simbolo; `count` sono i campioni dentro l'audio.
+fn demodulate(audio: &[f32], start: i64, freq: f64) -> (f64, f64, usize) {
+    let (mut re, mut im) = (0.0f64, 0.0f64);
+    let mut count = 0usize;
+    let step = std::f64::consts::TAU * freq / FS;
+    let (wr, wi) = (step.cos(), step.sin());
+    let (mut cr, mut ci) = (1.0f64, 0.0f64);
+    for n in 0..NSPS {
+        let idx = start + n as i64;
+        if idx >= 0 && (idx as usize) < audio.len() {
+            let x = f64::from(audio[idx as usize]);
+            re += x * cr;
+            im -= x * ci;
+            count += 1;
+        }
+        let nr = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = nr;
+    }
+    (re, im, count)
+}
+
+/// Quanta energia il segnale ricostruito (frequenza `f`, ritardo `dt`) trova nell'audio: rifinisce f e dt sul messaggio gia' noto.
+fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64) -> f64 {
+    let mut total = 0.0f64;
+    for (k, &tone) in tones.iter().enumerate() {
+        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), f + f64::from(tone) * TONE_SPACING_HZ);
+        if count >= NSPS / 2 {
+            total += re * re + im * im;
+        }
+    }
+    total
+}
+
+/// `subtract9`: toglie dall'audio un segnale JT9 decodificato (frequenza e ritardo rifiniti sul messaggio noto, poi ampiezza e fase di ogni simbolo):
+/// senza, un segnale forte lascia ai vicini tanta energia da far uscire messaggi che non esistono.
+fn subtract(audio: &mut [f32], tones: &[u8; NSYM], f0: f64, dt0: f64) {
+    let (mut f, mut dt) = (f0, dt0);
+    let mut best = tone_fit(audio, tones, f, dt);
+    for d in -6i32..=6 {
+        let ff = f0 + f64::from(d) * 0.04;
+        let fit = tone_fit(audio, tones, ff, dt);
+        if fit > best {
+            best = fit;
+            f = ff;
+        }
+    }
+    let center = dt0;
+    for d in -6i32..=6 {
+        let t = center + f64::from(d) * 12.0;
+        let fit = tone_fit(audio, tones, f, t);
+        if fit > best {
+            best = fit;
+            dt = t;
+        }
+    }
+    for (k, &tone) in tones.iter().enumerate() {
+        let freq = f + f64::from(tone) * TONE_SPACING_HZ;
+        let start = symbol_start(dt, k);
+        let (re, im, count) = demodulate(audio, start, freq);
+        if count < NSPS / 2 {
+            continue;
+        }
+        let scale = 2.0 / count as f64;
+        let (a_cos, a_sin) = (re * scale, im * scale);
+        let step = std::f64::consts::TAU * freq / FS;
+        let (wr, wi) = (step.cos(), step.sin());
+        let (mut cr, mut ci) = (1.0f64, 0.0f64);
+        for n in 0..NSPS {
+            let idx = start + n as i64;
+            if idx >= 0 && (idx as usize) < audio.len() {
+                audio[idx as usize] -= (a_cos * cr - a_sin * ci) as f32;
+            }
+            let nr = cr * wr - ci * wi;
+            ci = cr * wi + ci * wr;
+            cr = nr;
+        }
+    }
+}
+
 /// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto).
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
-    let (ss, nz) = half_symbol_spectra(samples);
+    let mut audio = samples.to_vec();
+    let mut out: Vec<Decoded> = Vec::new();
+    // fino a tre passate: tolti i segnali decodificati si cerca di nuovo, perche' i deboli nascosti dai forti compaiono solo allora
+    for _pass in 0..3 {
+        let before = out.len();
+        decode_pass(&mut audio, options, &mut out);
+        if out.len() == before {
+            break;
+        }
+    }
+    out
+}
+
+/// Una passata: spettri, candidati e decodifica; ogni messaggio trovato si toglie dall'audio.
+fn decode_pass(audio: &mut [f32], options: &Options, out: &mut Vec<Decoded>) {
+    let (ss, nz) = half_symbol_spectra(audio);
     if nz == 0 {
-        return Vec::new();
+        return;
     }
     let ia = ((f64::from(options.f_low_hz) / DF3).round() as usize).max(12);
     let ib = ((f64::from(options.f_high_hz) / DF3).round() as usize).min(NSMAX - 26);
     if ia + 22 >= ib {
-        return Vec::new();
+        return;
     }
     let map = sync9(&ss, nz, ia, ib);
     drop(ss);
@@ -364,7 +459,6 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     }
     candidates.sort_by(|&a, &b| map.ccfred[b].total_cmp(&map.ccfred[a]));
     candidates.truncate(options.max_candidates);
-    let mut out: Vec<Decoded> = Vec::new();
     let mut tried: Vec<f64> = Vec::new();
     for i in candidates {
         let f_bin = (i - 1) as f64 * DF3;
@@ -374,8 +468,8 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         tried.push(f_bin);
         // il simbolo 1 comincia a `lag * mezzo simbolo - 8192` campioni (la finestra dello spettro e' centrata sul simbolo)
         let dt0 = f64::from(map.lag[i]) * HSTEP as f64 - 8192.0;
-        let (f, dt) = refine(samples, f_bin, dt0);
-        let (soft_scrambled, schk, snr) = soft_symbols(samples, f, dt);
+        let (f, dt) = refine(audio, f_bin, dt0);
+        let (soft_scrambled, schk, snr) = soft_symbols(audio, f, dt);
         if schk < 1.0 {
             continue;
         }
@@ -393,9 +487,10 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         if out.iter().any(|o| o.text == text) {
             continue;
         }
+        // il messaggio trasmesso si ricostruisce dal testo (stesso pacchetto di 72 bit) e si toglie dall'audio
+        subtract(audio, &crate::jt9::tones(&text), f, dt);
         out.push(Decoded { text, freq_hz: f as f32, dt_s: (dt / FS - 1.0) as f32, snr_db: snr, sync: map.ccfred[i] });
     }
-    out
 }
 
 /// La distanza tra i toni di JT9, per chi deve disegnare la banda occupata.
@@ -466,5 +561,14 @@ mod tests {
         for seed in [1, 2] {
             assert!(decode(&minute(&[], seed), &Options::default()).is_empty(), "il rumore non deve dare messaggi");
         }
+    }
+    #[test]
+    fn a_strong_signal_is_subtracted_so_it_does_not_hide_or_invent_neighbours() {
+        let audio = minute(&[("CQ IU3ABC JN55", 1500.0, 0.1, 8.0), ("K1ABC IU3ABC -15", 1530.0, 0.2, -17.0)], 3);
+        let out = decode(&audio, &Options::default());
+        let texts: Vec<&str> = out.iter().map(|d| d.text.as_str()).collect();
+        assert!(texts.contains(&"CQ IU3ABC JN55"), "{out:?}");
+        assert!(texts.contains(&"K1ABC IU3ABC -15"), "{out:?}");
+        assert_eq!(out.len(), 2, "nessun messaggio inventato vicino al segnale forte: {out:?}");
     }
 }
