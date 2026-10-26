@@ -244,6 +244,22 @@ pub fn find_candidates_ex(
     shape: Spectrum,
     window: (i32, i32),
 ) -> Vec<PassCandidate> {
+    find_candidates_swl(samples, f_low_hz, f_high_hz, min_sync, max, shape, window, false)
+}
+
+/// Come [`find_candidates_ex`]; con `swl` (modo SWL di JTDX, `nswl`) il ritardo accettato va da -74 a 101 passi invece di -49..76 e due
+/// candidati si considerano lo stesso segnale solo se distano meno di 3 Hz invece di 4 (`sync8`, letto con REA: `docs/analisi-jtdx-reverse-rea.md`).
+#[allow(clippy::too_many_arguments)]
+pub fn find_candidates_swl(
+    samples: &[f32],
+    f_low_hz: f32,
+    f_high_hz: f32,
+    min_sync: f32,
+    max: usize,
+    shape: Spectrum,
+    window: (i32, i32),
+    swl: bool,
+) -> Vec<PassCandidate> {
     if samples.is_empty() || max == 0 || f_low_hz.is_nan() || f_high_hz.is_nan() || f_high_hz <= f_low_hz || window.1 < window.0 {
         return Vec::new();
     }
@@ -364,13 +380,14 @@ pub fn find_candidates_ex(
     // Dal piu' forte al piu' debole.
     let mut order: Vec<usize> = (ia..=ib).collect();
     order.sort_by(|&a, &b| red[b].total_cmp(&red[a]));
+    let (jpeak_low, jpeak_high, dup_hz) = if swl { (-74, 101, 3.0) } else { (-49, 76, 4.0) };
     let mut c0: Vec<Candidate> = Vec::new();
     let mut c0_cq: Vec<bool> = Vec::new();
     for &i in &order {
         if red[i] < min_sync {
             continue;
         }
-        if jpeak[i] < -49 || jpeak[i] > 76 {
+        if jpeak[i] < jpeak_low || jpeak[i] > jpeak_high {
             continue;
         }
         if c0.len() >= 450 {
@@ -386,7 +403,7 @@ pub fn find_candidates_ex(
         for j in 0..i {
             let fdiff = (c0[i].freq_hz - c0[j].freq_hz).abs();
             let xdt = (c0[i].dt_s - c0[j].dt_s).abs();
-            if fdiff < 4.0 && xdt < 0.1 {
+            if fdiff < dup_hz && xdt < 0.1 {
                 if sync_v[i] >= sync_v[j] {
                     sync_v[j] = 0.0;
                 }

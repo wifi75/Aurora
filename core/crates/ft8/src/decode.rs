@@ -91,6 +91,9 @@ pub struct Options {
     pub low_threshold: bool,
     /// `lft8subpass`: seconda lettura dei simboli (a tempo invertito) per ogni candidato.
     pub subpass: bool,
+    /// Modo SWL di JTDX (`nswl`): finestra di ricerca piu' ampia (+-86 passi), soglie di sincronismo come con la soglia bassa, la terza passata
+    /// di un ciclo da 3 sottrae e la lettura a tempo invertito si fa sempre. La quarta sottopassata di SWL non e' portata.
+    pub swl: bool,
     /// Come si tolgono i segnali decodificati.
     pub subtraction: Subtraction,
     /// Sottrarre subito dopo ogni decodifica (come JTDX) invece che a fine passata.
@@ -129,6 +132,7 @@ impl Options {
             osd_order: if depth == 1 { 2 } else { 3 },
             low_threshold: depth == 3,
             subpass: depth == 3,
+            swl: false,
             subtraction: Subtraction::Adaptive,
             immediate_subtraction: true,
             filters: true,
@@ -190,9 +194,9 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
     let jz = |center: f32, base: i32| base + (center * 25.0) as i32;
 
     for ipass in 1..=npass {
-        let subtract_on = !(ipass > 5 || (ipass == 3 && npass == 3));
+        let subtract_on = !(ipass > 5 || (ipass == 3 && npass == 3 && !options.swl));
         // syncmin: 1,5 oppure, con la soglia bassa, 1,225 / 1,5 / 1,1 a rotazione
-        let syncmin = if options.low_threshold {
+        let syncmin = if options.low_threshold || options.swl {
             match (ipass - 1) % 3 {
                 0 => 1.225,
                 1 => 1.5,
@@ -216,8 +220,9 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
             }
         }
 
-        let window = (jz(options.dt_center_s, -62), jz(options.dt_center_s, 62));
-        let candidates = sync::find_candidates_ex(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window);
+        let half_window = if options.swl { 86 } else { 62 };
+        let window = (jz(options.dt_center_s, -half_window), jz(options.dt_center_s, half_window));
+        let candidates = sync::find_candidates_swl(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window, options.swl);
         if candidates.is_empty() {
             continue;
         }
@@ -509,7 +514,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
     }
 
     let flags = signal_flags(ctx, &cd, ibest, &first.s8, refined.freq_hz);
-    let nweak = if options.subpass { 2 } else { 1 };
+    let nweak = if options.subpass || options.swl { 2 } else { 1 };
     let progress = usize::from(o.qso_progress.min(5));
 
     for isubp1 in 1..=nweak {
@@ -677,6 +682,22 @@ mod tests {
             assert!(texts.iter().any(|t| t == expected), "manca {expected}: {texts:?}");
         }
         assert_eq!(texts.len(), 3, "nessun falso: {texts:?}");
+    }
+
+    #[test]
+    fn swl_mode_finds_the_same_signals_and_invents_nothing() {
+        let audio = slot(&[("CQ K1ABC FN42", 800.0, 0.1, -6.0), ("IU3ABC K1ABC -15", 1500.0, 0.3, -9.0), ("K1ABC IU3ABC RR73", 2200.0, -0.2, -4.0)], 7);
+        let swl = Options { swl: true, ..Options::default() };
+        let texts: Vec<String> = decode_slot(&audio, &swl, &mut CallHashes::default()).into_iter().map(|d| d.text).collect();
+        for expected in ["CQ K1ABC FN42", "IU3ABC K1ABC -15", "K1ABC IU3ABC RR73"] {
+            assert!(texts.iter().any(|t| t == expected), "manca {expected}: {texts:?}");
+        }
+        assert_eq!(texts.len(), 3, "nessun falso: {texts:?}");
+        for seed in [3, 4, 5] {
+            let out = decode_slot(&slot(&[], seed), &swl, &mut CallHashes::default());
+            assert!(out.is_empty(), "solo rumore, seme {seed}: {out:?}");
+        }
+        assert!(!Options::default().swl && !Options::depth(3).swl);
     }
 
     #[test]
