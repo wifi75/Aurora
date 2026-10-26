@@ -535,7 +535,10 @@ mod tests {
         }
     }
 
-    fn fake(rate: u32) -> (Box<dyn AudioSink>, Arc<AtomicBool>, Arc<Mutex<Vec<usize>>>) {
+    /// Il finto dispositivo, se sta suonando e gli inizi registrati.
+    type FakeSink3 = (Box<dyn AudioSink>, Arc<AtomicBool>, Arc<Mutex<Vec<usize>>>);
+
+    fn fake(rate: u32) -> FakeSink3 {
         let (playing, started) = (Arc::new(AtomicBool::new(false)), Arc::new(Mutex::new(Vec::new())));
         (Box::new(FakeSink { rate, playing: Arc::clone(&playing), started: Arc::clone(&started) }), playing, started)
     }
