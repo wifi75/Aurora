@@ -1,6 +1,6 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-10-26, versione 0.11.24. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-10-26, versione 0.11.25. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
@@ -36,7 +36,7 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 22 | ~~Pagina Statistiche~~ | fatto | Pagina `#/statistiche` da `GET /stats` (0.7.0) |
 | 24 ◐ | **Versione smartphone** | A | Dati mancanti corretti; pagina Stazione rifatta a schede con pulsanti da dito (sotto 640 px). Da rivedere Storico, Propagazione, Mappa, Impostazioni, Automazioni e da provare sul telefono vero |
 | 25 ✔ | **Priorita' tra piu' CQ** nello stesso ciclo, riapplicazione del modo dopo il cambio banda, comandi a JTDX rapidi | M | Fatti (0.10.x); il modo della radio e la scelta del CQ vanno provati con la radio |
-| 26 ✔ | **Coda delle stazioni** (tasto destro) e **Rispondi a tutti** | A | 0.11.24, solo motore proprio |
+| 26 ✔ | **Coda delle stazioni** (tasto destro) e **Rispondi a tutti** | A | 0.11.23, solo motore proprio |
 | 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
