@@ -126,6 +126,17 @@
   --mode-ink: var(--mode-ft4-ink);
 }
 
+/* JT65 verde e JT9 rosa: senza il loro colore il pulsante acceso restava senza sfondo e non si vedeva quale modo fosse in uso */
+.mode-switch button[data-mode='JT65'] {
+  --mode: var(--mode-jt65);
+  --mode-ink: var(--mode-jt65-ink);
+}
+
+.mode-switch button[data-mode='JT9'] {
+  --mode: var(--mode-jt9);
+  --mode-ink: var(--mode-jt9-ink);
+}
+
 /* a riposo il colore del modo resta sul bordo e sul testo, cosi' si distinguono anche da spenti */
 .mode-switch button {
   border-color: color-mix(in srgb, var(--mode) 55%, transparent);

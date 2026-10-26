@@ -7,7 +7,7 @@ import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
-const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'monitor', 'sync', 'agc', 'filter'];
+const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'sync', 'agc', 'filter'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
