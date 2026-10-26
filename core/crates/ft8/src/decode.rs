@@ -92,7 +92,8 @@ pub struct Options {
     /// `lft8subpass`: seconda lettura dei simboli (a tempo invertito) per ogni candidato.
     pub subpass: bool,
     /// Modo SWL di JTDX (`nswl`): finestra di ricerca piu' ampia (+-86 passi), soglie di sincronismo come con la soglia bassa, la terza passata
-    /// di un ciclo da 3 sottrae e la lettura a tempo invertito si fa sempre. La quarta sottopassata di SWL non e' portata.
+    /// di un ciclo da 3 sottrae e la lettura a tempo invertito si fa sempre; la quarta lettura (`llrd`) e la prima lettura con `llra` anche alla prima passata,
+    /// e non valgono i controlli sui rapporti dei toni dei tipi a priori 1 e 2 (`ft8b`, sorgenti di JTDX letti il 2026-10-26: `swl` in `ft8b.f90`).
     pub swl: bool,
     /// Come si tolgono i segnali decodificati.
     pub subtraction: Subtraction,
@@ -471,11 +472,13 @@ fn ap_allowed(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only:
         }
     }
     // rapporti segnale/rumore dei simboli attesi, valutati alla prima lettura di ogni tipo
+    // in SWL (`.not.swl` davanti a ognuna di queste condizioni di `ft8b`) non si applicano
+    let swl = ctx.options.swl;
     match (aptype, isubp2) {
-        (1, 20) if fl.cq_ratio < 1.0 && !fl.cq_signal => return false,
-        (1, 21) if fl.cq_ratio < if lowth { 1.2 } else { 1.3 } && !fl.cq_signal => return false,
-        (2, 17) if fl.my_ratio < 1.0 && !fl.my_signal => return false,
-        (2, 18) if lowth && fl.my_ratio < 1.2 && !fl.my_signal => return false,
+        (1, 20) if !swl && fl.cq_ratio < 1.0 && !fl.cq_signal => return false,
+        (1, 21) if !swl && fl.cq_ratio < if lowth { 1.2 } else { 1.3 } && !fl.cq_signal => return false,
+        (2, 17) if !swl && fl.my_ratio < 1.0 && !fl.my_signal => return false,
+        (2, 18) if !swl && lowth && fl.my_ratio < 1.2 && !fl.my_signal => return false,
         (3, 5) if fl.my_ratio < 1.0 => return false,
         (3, 6) if fl.my_ratio < 1.2 => return false,
         _ => {}
@@ -525,12 +528,14 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
         for isubp2 in 1..=31usize {
             let (llrz, mask, aptype);
             if isubp2 < 5 {
-                if screen.cq_only || screen.skip_plain || isubp2 == 4 {
+                // la quarta lettura sola (`llrd`) esiste solo in SWL (`if(.not.swl .and. isubp2.eq.4) cycle`)
+                if screen.cq_only || screen.skip_plain || (isubp2 == 4 && !options.swl) {
                     continue;
                 }
                 llrz = match isubp2 {
+                    // `if(.not.swl .and. ipass.eq.1) llrz=llrd else llrz=llra; if(isubp1.gt.1 .and. ipass.gt.1) llrz=llrd`
                     1 => {
-                        if ipass == 1 || isubp1 > 1 {
+                        if (!options.swl && ipass == 1) || (isubp1 > 1 && ipass > 1) {
                             llrd
                         } else {
                             llra
@@ -543,7 +548,8 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
                             llrb
                         }
                     }
-                    _ => llrc,
+                    3 => llrc,
+                    _ => llrd,
                 };
                 mask = [false; 174];
                 aptype = 0u8;
