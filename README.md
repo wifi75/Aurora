@@ -9,7 +9,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1297%20Rust%20%C2%B7%20735%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1335%20Rust%20%C2%B7%20737%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -21,7 +21,7 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.22: motore FT8 proprio con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.23: motore FT8 proprio con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Comandi come JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, frequenze Tx/Rx con copia, Canc DX, Gen.Msgs; il doppio clic su un messaggio imposta il DX e JTDX lo chiama al momento giusto (opzione in Impostazioni → Generali).

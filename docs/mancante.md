@@ -1,6 +1,6 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-10-26, versione 0.11.22. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-10-26, versione 0.11.23. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
@@ -27,7 +27,7 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 14 ✔ | **Wanted list** e avvisi sul telefono (ntfy) | M | Lista dei desiderati con avvisi in pagina e sul telefono; l'automazione puo' rispondere ai loro CQ |
 | 15 ✔ | **Mappa** dei QSO e delle stazioni ricevute | M | Pagina Mappa; manca il terminatore (greyline) |
 | 16 ✔ | **Lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) | M | Tabelle in `app/src/i18n/strings` |
-| 17 ◐ | **Modo SWL, FT4, JT65/JT9**: visualizzazione e comandi per modo | M | FT8/FT4 si cambiano dalla pagina; restano SWL, Hound, JT65/JT9 |
+| 17 ◐ | **Modo SWL, Hound, JT65/JT9**: visualizzazione e comandi per modo | M | FT8/FT4 si cambiano dalla pagina; Hound (niente CQ) e SWL (decoder FT8) funzionano nel motore proprio dalla 0.11.23; JT65 e JT9 hanno il crate `jt` (messaggi, trasmissione e ricezione provate) ma non sono ancora nel motore: periodi da 60 s, modulatore, cascata, sequenza. Piano in `docs/2026-10-26-jt65-jt9.md` |
 | 18 | Riproduzione dei cicli decodificati, statistiche di propagazione | B | |
 | 19 | Tipo `HighlightCallsign` (evidenziare i lavorati dentro JTDX) | B | |
 | 20 | Il bool finale dello `Status` di JTDX: capire che cosa e' | B | |
@@ -36,6 +36,7 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 | 22 | ~~Pagina Statistiche~~ | fatto | Pagina `#/statistiche` da `GET /stats` (0.7.0) |
 | 24 ◐ | **Versione smartphone** | A | Dati mancanti corretti; pagina Stazione rifatta a schede con pulsanti da dito (sotto 640 px). Da rivedere Storico, Propagazione, Mappa, Impostazioni, Automazioni e da provare sul telefono vero |
 | 25 ✔ | **Priorita' tra piu' CQ** nello stesso ciclo, riapplicazione del modo dopo il cambio banda, comandi a JTDX rapidi | M | Fatti (0.10.x); il modo della radio e la scelta del CQ vanno provati con la radio |
+| 26 ✔ | **Coda delle stazioni** (tasto destro) e **Rispondi a tutti** | A | 0.11.23, solo motore proprio |
 | 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
