@@ -878,6 +878,17 @@
   padding: 0 0.3rem;
 }
 
+/* Su schermi stretti il rigo puo' andare a capo invece di uscire dalla cella */
+@media (max-width: 640px) {
+  .jt-colors > .sx-field--plain .sx-control {
+    flex-wrap: wrap;
+  }
+
+  .jt-colors .sx-label {
+    white-space: normal;
+  }
+}
+
 .jt-colors .jt-sample {
   min-width: 4.2rem;
   padding: 0.05rem 0.3rem;
