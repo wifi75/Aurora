@@ -3931,9 +3931,11 @@
   box-shadow: 0 0 10px -1px #8a4dff;
 }
 
-/* stazione in coda per il prossimo QSO */
+/* stazione in coda per il prossimo QSO (sta nella colonna delle etichette o accanto al paese, non sul testo del messaggio) */
 .queue-mark {
-  margin-left: 0.5rem;
+  display: inline-block;
+  margin-left: 0.4rem;
+  white-space: nowrap;
   padding: 0 0.35rem;
   border-radius: 0.3rem;
   background: #1f6feb;
