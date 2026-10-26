@@ -124,7 +124,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const txLog = useStation((st) => st.txLog);
   const sentTo = transmittedTo(txLog);
   // le stazioni in coda per il prossimo QSO
-  const queued = new Set((useStation((st) => st.status?.queue) ?? []).map((c) => c.toUpperCase()));
+  const queueCalls = (useStation((st) => st.status?.queue) ?? []).map((c) => c.toUpperCase());
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -148,7 +148,10 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const talker = own ? null : senderOf(d.text);
         // risposta alla mia chiamata: gli avevo trasmesso da poco, oppure e' la stazione che sto lavorando adesso
         const answered = toMe && (isAnswerToMyCall(d.text, d.time_ms, sentTo) || (!!dxCall && !!talker && talker.call.toUpperCase() === dxCall.trim().toUpperCase()));
-        const inQueue = !!talker && queued.has(talker.call.toUpperCase());
+        // il posto in coda (1 = la prossima): la sigla sta nella colonna delle etichette o accanto al paese, mai sopra il testo del messaggio
+        const queuePos = talker ? queueCalls.indexOf(talker.call.toUpperCase()) + 1 : 0;
+        const inQueue = queuePos > 0;
+        const queueMark = inQueue ? <span className="queue-mark">{t('row.queued')} {queuePos}</span> : null;
         // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
         const sender = own || !wishlist.enabled ? null : senderOf(d.text);
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
@@ -196,11 +199,13 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="c-freq num muted">{d.freq_hz}</span>
             <span className="decode-text">
               <span className="data">{view.highlightDxCall || view.highlightDxGrid || answered ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined) : d.text}</span>
-              {inQueue ? <span className="queue-mark">{t('row.queued')}</span> : null}
             </span>
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
-              <span className="w-country">{prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}</span>
+              <span className="w-country">
+                {prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}
+                {badge ? queueMark : null}
+              </span>
               <span className="w-km num muted">
                 {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
                 {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
@@ -215,7 +220,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
                 {t(badge.label)}
               </span>
             ) : (
-              <span className="badge-cell" />
+              <span className="badge-cell">{queueMark}</span>
             )}
             {toMe && view.redMarker && !isClosingMessage(d.text) ? (
               <span className={`me-mark${answered ? ' me-mark--answer' : view.blueMarker && dxCall && namesCall(d.text, dxCall) ? ' me-mark--blue' : ''}`} aria-hidden="true" />

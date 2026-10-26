@@ -351,7 +351,10 @@ describe('DecodeList', () => {
     fireEvent.contextMenu(rows[0] as HTMLElement);
     expect(onQueue).toHaveBeenCalledWith(1);
     expect(rows[1]).toHaveClass('decode-row--queued');
-    expect(screen.getByText('IN CODA')).toBeInTheDocument();
+    // la sigla porta il posto in coda e non sta dentro il testo del messaggio
+    const mark = screen.getByText('IN CODA 1');
+    expect(mark).toBeInTheDocument();
+    expect(mark.closest('.decode-text')).toBeNull();
     expect(rows[0]).not.toHaveClass('decode-row--queued');
     useStation.setState({ status: null });
   });
