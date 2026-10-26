@@ -145,6 +145,36 @@ const JTDX_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("2m", "FT8", 144_174_000, Region::All, true),
 ];
 
+/// Le righe di JT65 e JT9 della tabella iniziale di JTDX 2.2.159 per le bande che Aurora conosce: lette con REA da `jtdx.exe`
+/// (`default_frequency_list`, `REA 0x13eca00`: 115 righe da 24 byte; modo 1 = JT65, 2 = JT9, 3 = T10, 4 = FT8, 5 = FT4, 6 = WSPR; regione 0 = tutte,
+/// 1 = R1, 2 = R2, 3 = R3). Sono tutte predefinite. Mancano 4 m (70,102 e 70,104 MHz, R1) e le bande oltre i 2 m.
+const JT_ROWS: &[(&str, &str, u64, Region, bool)] = &[
+    ("160m", "JT65", 1_838_000, Region::All, true),
+    ("80m", "JT65", 3_570_000, Region::All, true),
+    ("60m", "JT65", 5_357_000, Region::All, true),
+    ("40m", "JT65", 7_076_000, Region::All, true),
+    ("30m", "JT65", 10_138_000, Region::All, true),
+    ("20m", "JT65", 14_076_000, Region::All, true),
+    ("17m", "JT65", 18_102_000, Region::All, true),
+    ("15m", "JT65", 21_076_000, Region::All, true),
+    ("12m", "JT65", 24_917_000, Region::All, true),
+    ("10m", "JT65", 28_076_000, Region::All, true),
+    ("6m", "JT65", 50_276_000, Region::R2, true),
+    ("6m", "JT65", 50_276_000, Region::R3, true),
+    ("6m", "JT65", 50_310_000, Region::All, true),
+    ("2m", "JT65", 144_120_000, Region::All, true),
+    ("160m", "JT9", 1_839_000, Region::All, true),
+    ("80m", "JT9", 3_572_000, Region::All, true),
+    ("40m", "JT9", 7_078_000, Region::All, true),
+    ("30m", "JT9", 10_140_000, Region::All, true),
+    ("20m", "JT9", 14_078_000, Region::All, true),
+    ("17m", "JT9", 18_104_000, Region::All, true),
+    ("15m", "JT9", 21_078_000, Region::All, true),
+    ("12m", "JT9", 24_919_000, Region::All, true),
+    ("10m", "JT9", 28_078_000, Region::All, true),
+    ("6m", "JT9", 50_312_000, Region::All, true),
+];
+
 /// Le 24 righe della tabella che Aurora usava prima di avere le regioni (una per banda e modo): chi le ha salvate senza cambiarle passa alla tabella di JTDX.
 const LEGACY_ROWS: &[(&str, &str, u64)] = &[
     ("160m", "FT8", 1_840_000),
@@ -174,7 +204,7 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
 
 impl Default for FrequencyTable {
     fn default() -> Self {
-        FrequencyTable(JTDX_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
+        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
     }
 }
 
@@ -182,14 +212,14 @@ fn valid_entries(entries: &[Entry]) -> bool {
     if entries.is_empty() {
         return false;
     }
-    // la stessa frequenza non puo' stare due volte nella stessa banda e nello stesso modo; la stessa banda e lo stesso modo possono avere piu' righe
-    // (frequenze alternative e righe di regioni diverse, come in JTDX)
+    // la stessa frequenza non puo' stare due volte nella stessa banda, nello stesso modo e nella stessa regione; la stessa banda e lo stesso modo
+    // possono avere piu' righe (frequenze alternative e righe di regioni diverse, anche con la stessa frequenza: 50,276 MHz JT65 in R2 e R3)
     let mut seen = std::collections::HashSet::new();
     entries.iter().all(|entry| {
         let Some(band) = canonical_band(&entry.band) else { return false };
         let mode = entry.mode.trim().to_uppercase();
         let in_band = band_limits(&band).is_some_and(|(lo, hi)| (lo..=hi).contains(&entry.hz));
-        in_band && matches!(mode.as_str(), "FT8" | "FT4") && seen.insert((band, mode, entry.hz))
+        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
     })
 }
 
@@ -208,10 +238,14 @@ impl FrequencyTable {
         let legacy = entries.len() == LEGACY_ROWS.len()
             && LEGACY_ROWS.iter().all(|(band, mode, hz)| entries.iter().any(|e| e.band == *band && e.mode == *mode && e.hz == *hz && e.region == Region::All && e.preferred));
         if legacy {
-            FrequencyTable::default().0
-        } else {
-            entries
+            return FrequencyTable::default().0;
         }
+        // una tabella salvata prima di JT65 e JT9 non ha le loro righe: si aggiungono quelle di JTDX, senza toccare le righe dell'utente
+        let mut entries = entries;
+        if !entries.iter().any(|e| matches!(e.mode.to_uppercase().as_str(), "JT65" | "JT9")) {
+            entries.extend(JT_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
+        }
+        entries
     }
 
     /// La banda in cui cade una frequenza di dial, tra quelle della tabella.

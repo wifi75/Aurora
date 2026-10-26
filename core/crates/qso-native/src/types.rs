@@ -228,6 +228,9 @@ impl Options {
         self.late_start_s.unwrap_or(match mode {
             Mode::Ft8 => 13.64,
             Mode::Ft4 => 6.04,
+            // 1 s + 126 simboli da 0,3715 s (JT65) o 85 da 0,576 s (JT9): la durata del messaggio come `txDuration` di JTDX
+            Mode::Jt65 => 47.81,
+            Mode::Jt9 => 49.96,
         })
     }
 
@@ -236,6 +239,8 @@ impl Options {
         match mode {
             Mode::Ft8 => 51,
             Mode::Ft4 => 84,
+            Mode::Jt65 => 176,
+            Mode::Jt9 => 16,
         }
     }
 }
