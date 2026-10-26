@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
@@ -158,6 +158,7 @@ export function Live() {
             dxCall={status?.dx_call}
             dxGrid={status?.dx_grid}
             onReply={onReply}
+            onQueue={onQueue}
             emptyText={t('decode.noCq')}
           />
         );
@@ -176,7 +177,7 @@ export function Live() {
           </div>
         );
       case 'all':
-        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} />;
+        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
     }
   };
 
@@ -241,6 +242,18 @@ export function Live() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, info.data?.tx_allowed, engineConfig.data?.AcceptUDPReplyMessages],
+  );
+
+  // tasto destro su una stazione: in coda per il prossimo QSO (subito, se non ce n'e' uno in corso); di nuovo la toglie
+  const onQueue = useCallback(
+    async (id: number) => {
+      const target = useStation.getState().decodes.find((d) => d.id === id);
+      await attempt(async () => {
+        await postQueueReply(id);
+      }, t('note.queued', { text: target?.text ?? '' }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
   );
 
   return (

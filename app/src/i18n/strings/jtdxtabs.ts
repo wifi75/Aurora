@@ -27,6 +27,7 @@ export const jtdxTabStrings = {
   ],
   'seq2.switches': ['Sequenza e scelta di chi chiamare', 'Sequence and choice of whom to call', 'Folge und Wahl des Gerufenen', 'Séquence et choix de qui appeler', 'Secuencia y elección de a quién llamar', 'Sequência e escolha de quem chamar'],
   'seq2.autoseq': ['Sequenza automatica (AutoSeq)', 'Automatic sequence (AutoSeq)', 'Automatische Folge (AutoSeq)', 'Séquence automatique (AutoSeq)', 'Secuencia automática (AutoSeq)', 'Sequência automática (AutoSeq)'],
+  'seq2.answerAll': ['Rispondi a tutte le stazioni che mi chiamano (coda)', 'Answer every station that calls me (queue)', 'Jede Station beantworten, die mich ruft (Warteschlange)', 'Répondre à toutes les stations qui m’appellent (file)', 'Responder a todas las estaciones que me llaman (cola)', 'Responder a todas as estações que me chamam (fila)'],
   'seq2.single': ['Un solo QSO', 'Single QSO', 'Nur ein QSO', 'Un seul QSO', 'Un solo QSO', 'Um só QSO'],
   'seq2.skipTx1': ['Salta Tx1', 'Skip Tx1', 'Tx1 überspringen', 'Sauter Tx1', 'Saltar Tx1', 'Saltar Tx1'],
   'seq2.answerB4': ['Rispondi ai già lavorati (Risp B4)', 'Answer already worked (Answer B4)', 'Auf Gearbeitete antworten (Antw. B4)', 'Répondre aux déjà contactés (Rép. B4)', 'Responder a los ya contactados (Resp. B4)', 'Responder aos já contactados (Resp. B4)'],

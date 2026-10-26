@@ -3918,10 +3918,33 @@
   white-space: nowrap;
 }
 
-/* messaggio a me che e' la RISPOSTA alla mia chiamata: linguetta verde al posto di quella rossa */
+/* messaggio a me che e' la RISPOSTA alla mia chiamata: linguetta viola al posto di quella rossa (rossa solo per chi mi chiama per primo) */
 .me-mark--answer {
-  background: #1aa34a;
-  box-shadow: 0 0 10px 1px #1aa34a;
+  background: #8a4dff;
+  box-shadow: 0 0 10px 1px #8a4dff;
+}
+
+/* il nominativo di chi mi ha risposto: etichetta viola */
+.dx-call.dx-call--answered {
+  background: #8a4dff;
+  color: #ffffff;
+  box-shadow: 0 0 10px -1px #8a4dff;
+}
+
+/* stazione in coda per il prossimo QSO */
+.queue-mark {
+  margin-left: 0.5rem;
+  padding: 0 0.35rem;
+  border-radius: 0.3rem;
+  background: #1f6feb;
+  color: #ffffff;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.06em;
+}
+
+.decode-row--queued {
+  box-shadow: inset 3px 0 0 #1f6feb;
 }
 
 /* QSO appena messo a log: tutta la riga lampeggia tre volte, lentamente */

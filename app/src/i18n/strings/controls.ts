@@ -126,6 +126,7 @@ export const controlStrings = {
   ],
   'ctl.autoseq': ['AutoSeq', 'AutoSeq', 'AutoSeq', 'AutoSeq', 'AutoSeq', 'AutoSeq'],
   'ctl.single_qso': ['1 QSO', '1 QSO', '1 QSO', '1 QSO', '1 QSO', '1 QSO'],
+  'ctl.answer_all': ['Risp. a tutti', 'Answer all', 'Alle beantw.', 'Rép. à tous', 'Resp. a todos', 'Resp. a todos'],
   'ctl.answer_b4': ['Risp B4', 'Answer B4', 'Antw. B4', 'Rép. B4', 'Resp. B4', 'Resp. B4'],
   'ctl.bypass': ['Bypassa', 'Bypass', 'Bypass', 'Bypass', 'Omitir', 'Ignorar'],
   'ctl.skip_tx1': ['Salta Tx1', 'Skip Tx1', 'Tx1 aus', 'Sauter Tx1', 'Saltar Tx1', 'Saltar Tx1'],
@@ -158,6 +159,14 @@ export const controlStrings = {
     "Après un QSO terminé, Aurora cesse d'émettre.",
     'Tras un QSO completado Aurora deja de transmitir.',
     'Depois de um QSO completo a Aurora pára de transmitir.',
+  ],
+  'tip.ctl.answer_all': [
+    'Risponde a tutte le stazioni che ti chiamano: ognuna va in coda e, a QSO registrato, si passa alla successiva. Spento, si risponde solo a quelle scelte con il tasto destro o il doppio clic.',
+    'Answers every station that calls you: each goes into the queue and, once the QSO is logged, the next one is called. Off, only the stations you pick with right-click or double-click are answered.',
+    'Beantwortet jede Station, die dich ruft: jede kommt in die Warteschlange und nach dem Loggen des QSO folgt die nächste. Aus: nur Stationen, die du per Rechtsklick oder Doppelklick wählst.',
+    "Répond à toutes les stations qui vous appellent : chacune entre dans la file et, le QSO enregistré, on passe à la suivante. Désactivé : seulement celles choisies par clic droit ou double-clic.",
+    'Responde a todas las estaciones que te llaman: cada una entra en la cola y, registrado el QSO, se pasa a la siguiente. Apagado, solo se responde a las elegidas con clic derecho o doble clic.',
+    'Responde a todas as estações que te chamam: cada uma entra na fila e, registado o QSO, passa-se à seguinte. Desligado, só se responde às escolhidas com clique direito ou duplo clique.',
   ],
   'tip.ctl.answer_b4': [
     'Risponde anche a stazioni già collegate (Answer B4).',

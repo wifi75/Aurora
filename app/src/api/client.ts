@@ -62,6 +62,11 @@ export async function postReply(decodeId: number): Promise<void> {
   await request('/commands/reply', jsonInit({ decode_id: decodeId }));
 }
 
+/** Tasto destro su una stazione: in coda per il prossimo QSO (o subito, se non ce n'e' uno in corso); di nuovo la toglie. */
+export async function postQueueReply(decodeId: number): Promise<void> {
+  await request('/commands/queue-reply', jsonInit({ decode_id: decodeId }));
+}
+
 export async function finishPairing(code: string, deviceName: string): Promise<void> {
   await request('/pair/finish', jsonInit({ code, device_name: deviceName }));
 }
@@ -860,7 +865,7 @@ export async function getStats(): Promise<StatsResponse> {
 }
 
 export type ControlId =
-  | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
+  | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_all' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
   | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx';
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
