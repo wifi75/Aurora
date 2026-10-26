@@ -1,0 +1,11 @@
+[package]
+name = "jt"
+description = "Modi JT65 e JT9 di Aurora: messaggi a 72 bit, codice Reed-Solomon e convoluzionale, modulazione e decodifica (algoritmi di WSJT-X, GPL 3)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+rustfft = "6.4.1"
