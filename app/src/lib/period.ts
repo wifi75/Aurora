@@ -1,6 +1,9 @@
-/** Durata di un periodo in secondi: FT8 15, FT4 7,5. */
+/** Durata di un periodo in secondi: FT8 15, FT4 7,5, JT65 e JT9 60 (un minuto intero: si decodifica a fine minuto). */
 export function periodSecs(mode: string): number {
-  return mode === 'FT4' ? 7.5 : 15;
+  const m = mode.toUpperCase();
+  if (m === 'FT4') return 7.5;
+  if (m.startsWith('JT')) return 60;
+  return 15;
 }
 
 /**

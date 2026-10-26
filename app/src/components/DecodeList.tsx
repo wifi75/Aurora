@@ -115,6 +115,8 @@ interface Props {
 
 export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText }: Props) {
   const t = useT();
+  // in JT65 e JT9 si decodifica a fine minuto: lo si dice invece di lasciare una pagina vuota che sembra rotta
+  const mode = useStation((st) => st.status?.mode ?? '');
   const prefs = usePrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
   const wishlist = useWishlist((s) => s.list);
@@ -133,7 +135,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   if (decodes.length === 0) {
     return (
       <section className="decode-list decode-list--empty" aria-label={t('decode.aria')}>
-        <p>{emptyText ?? t('decode.empty')}</p>
+        <p>{emptyText ?? (mode.toUpperCase().startsWith('JT') ? t('decode.emptyJt', { mode }) : t('decode.empty'))}</p>
       </section>
     );
   }
