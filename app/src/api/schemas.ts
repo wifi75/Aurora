@@ -43,6 +43,8 @@ export const StationStatusSchema = z.object({
   tr_period: z.number().nullable().optional(),
   own_continent: z.string().nullable().optional(),
   meters: RadioMetersSchema.nullable().optional(),
+  /** Le stazioni in coda per il prossimo QSO. */
+  queue: z.array(z.string()).optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 

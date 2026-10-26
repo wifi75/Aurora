@@ -44,12 +44,27 @@ function namesCall(text: string, call: string): boolean {
 }
 
 /** Il testo del messaggio, con il nominativo chiamato e il suo locatore (se si evidenziano) in rilievo. */
-function highlightCall(text: string, call: string, grid: string): ReactNode {
+/** Il tooltip della riga: lo stato della stazione e, sotto, il suggerimento del tasto destro. */
+function rowTitle(state: string | undefined, hint: string | undefined): string | undefined {
+  if (state && hint) return `${state}\n${hint}`;
+  return state ?? hint;
+}
+
+function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }): ReactNode {
   const wanted = call.trim().toUpperCase();
+  const answeredCall = answered?.call.trim().toUpperCase() ?? '';
   const wantedGrid = grid.trim().toUpperCase().slice(0, 4);
-  if (wanted === '' && wantedGrid.length < 4) return text;
+  if (wanted === '' && wantedGrid.length < 4 && answeredCall === '') return text;
   return text.split(/(\s+)/).map((part, i) => {
     const up = part.toUpperCase();
+    // chi mi ha risposto: etichetta viola con il suo tooltip (vale anche se non e' la stazione DX in corso)
+    if (answeredCall !== '' && up === answeredCall) {
+      return (
+        <mark key={i} className="dx-call dx-call--answered" title={answered?.title}>
+          {part}
+        </mark>
+      );
+    }
     if (wanted !== '' && up === wanted) {
       return (
         <mark key={i} className="dx-call">
@@ -94,9 +109,11 @@ interface Props {
   dxGrid?: string | null;
   /** Testo dello stato vuoto (predefinito: invito all'ascolto). */
   emptyText?: string;
+  /** Tasto destro su una stazione: la mette in coda per il prossimo QSO. */
+  onQueue?: (id: number) => void;
 }
 
-export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, emptyText }: Props) {
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText }: Props) {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   const notify = useNotify((s) => s.notify);
@@ -106,6 +123,8 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
   // i nominativi a cui ho trasmesso da poco: un loro messaggio a me e' una risposta alla mia chiamata
   const txLog = useStation((st) => st.txLog);
   const sentTo = transmittedTo(txLog);
+  // le stazioni in coda per il prossimo QSO
+  const queued = new Set((useStation((st) => st.status?.queue) ?? []).map((c) => c.toUpperCase()));
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -126,7 +145,10 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
         if (own && !prefs.showTx) return null;
         const toMe = !own && isCallToMe(d.text, myCall);
         // un messaggio a me di una stazione a cui avevo trasmesso da poco e' la sua RISPOSTA (linguetta verde); altrimenti mi sta chiamando per prima (rossa)
-        const answered = toMe && isAnswerToMyCall(d.text, d.time_ms, sentTo);
+        const talker = own ? null : senderOf(d.text);
+        // risposta alla mia chiamata: gli avevo trasmesso da poco, oppure e' la stazione che sto lavorando adesso
+        const answered = toMe && (isAnswerToMyCall(d.text, d.time_ms, sentTo) || (!!dxCall && !!talker && talker.call.toUpperCase() === dxCall.trim().toUpperCase()));
+        const inQueue = !!talker && queued.has(talker.call.toUpperCase());
         // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
         const sender = own || !wishlist.enabled ? null : senderOf(d.text);
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
@@ -155,18 +177,26 @@ export function DecodeList({ decodes, onReply, myGrid, myCall, dxCall, dxGrid, e
           {gap ? <div className="decode-gap" role="separator" /> : null}
           <button
             type="button"
-            title={own ? t('tip.row.tx') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}`}
+            title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
+            onContextMenu={(e) => {
+              // tasto destro: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)
+              if (own || !talker || !onQueue) return;
+              e.preventDefault();
+              setSelected(d.id);
+              onQueue(d.id);
+            }}
           >
             <span className="c-time num muted">{formatClock(d.time_ms)}</span>
             <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
             <span className="decode-text">
-              <span className="data">{view.highlightDxCall || view.highlightDxGrid ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '') : d.text}</span>
+              <span className="data">{view.highlightDxCall || view.highlightDxGrid || answered ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined) : d.text}</span>
+              {inQueue ? <span className="queue-mark">{t('row.queued')}</span> : null}
             </span>
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>

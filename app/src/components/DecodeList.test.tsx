@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
 import { usePrefs } from '../lib/prefs';
 import { useNotifyView } from '../lib/notifyView';
+import { useStation } from '../state/station';
 import { DecodeList } from './DecodeList';
 
 const decode = (over: Partial<DecodedMessage> = {}): DecodedMessage => ({
@@ -274,7 +275,7 @@ describe('DecodeList', () => {
     expect(document.querySelectorAll('mark.dx-grid')).toHaveLength(1);
     useNotifyView.getState().set({ highlightDxCall: false });
     rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" dxGrid="JO31" onReply={() => {}} />);
-    expect(document.querySelectorAll('mark.dx-call:not(.dx-grid)')).toHaveLength(0);
+    expect(document.querySelectorAll('mark.dx-call:not(.dx-grid):not(.dx-call--answered)')).toHaveLength(0);
     expect(screen.getByRole('button', { name: /AA1AA BB2BB/ })).not.toHaveClass('decode-row--dx');
     useNotifyView.getState().reset();
   });
@@ -286,14 +287,13 @@ describe('DecodeList', () => {
     useNotifyView.getState().reset();
   });
 
-  it('marks the calls to me in red, in blue for the station being called, and not at all with the markers off', () => {
+  it('marks the calls to me in red, in violet for the station that answers me, and not at all with the markers off', () => {
     const rows = [decode({ id: 1, text: 'AA1AA BB2BB -10', tag: null }), decode({ id: 2, text: 'AA1AA CC3CC -10', tag: null })];
     const { container, rerender } = render(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
     expect(container.querySelectorAll('.me-mark')).toHaveLength(2);
-    expect(container.querySelectorAll('.me-mark--blue')).toHaveLength(0);
-    useNotifyView.getState().set({ blueMarker: true });
-    rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
-    expect(container.querySelectorAll('.me-mark--blue')).toHaveLength(1);
+    // BB2BB e' la stazione che sto lavorando: il suo messaggio e' la risposta (linguetta viola); CC3CC mi chiama per primo (rossa)
+    expect(container.querySelectorAll('.me-mark--answer')).toHaveLength(1);
+    expect(container.querySelectorAll('.me-mark:not(.me-mark--answer)')).toHaveLength(1);
     useNotifyView.getState().set({ redMarker: false });
     rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
     expect(container.querySelectorAll('.me-mark')).toHaveLength(0);
@@ -314,4 +314,46 @@ describe('DecodeList', () => {
     expect(screen.queryByText('Tx')).not.toBeInTheDocument();
     usePrefs.getState().reset();
   });
+  it('turns the callsign violet with a tooltip and drops the red mark when the station answers my call', () => {
+    render(
+      <DecodeList
+        myCall="AA1AA"
+        dxCall="BB2BB"
+        decodes={[decode({ id: 1, text: 'AA1AA BB2BB R-10' }), decode({ id: 2, text: 'AA1AA CC3CC -07' })]}
+        onReply={() => {}}
+      />,
+    );
+    const rows = screen.getAllByRole('button');
+    // BB2BB e' la stazione che sto lavorando: il suo messaggio e' la risposta (etichetta viola, linguetta viola)
+    const pill = rows[0]?.querySelector('mark.dx-call--answered');
+    expect(pill).toHaveTextContent('BB2BB');
+    expect(pill).toHaveAttribute('title', 'Ti ha risposto');
+    expect(rows[0]?.querySelector('.me-mark--answer')).not.toBeNull();
+    expect(rows[0]?.querySelector('.me-mark:not(.me-mark--answer)')).toBeNull();
+    // CC3CC mi chiama per primo: linguetta rossa, nessuna etichetta viola
+    expect(rows[1]?.querySelector('mark.dx-call--answered')).toBeNull();
+    expect(rows[1]?.querySelector('.me-mark:not(.me-mark--answer)')).not.toBeNull();
+  });
+
+  it('puts a station in the queue with the right button and shows the queued ones', () => {
+    const onQueue = vi.fn();
+    useStation.setState({ status: { dial_hz: 0, mode: 'FT8', tx_enabled: true, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'JN45', queue: ['CC3CC'] } });
+    render(
+      <DecodeList
+        myCall="AA1AA"
+        onQueue={onQueue}
+        decodes={[decode({ id: 1, text: 'AA1AA BB2BB -10' }), decode({ id: 2, text: 'AA1AA CC3CC -07' })]}
+        onReply={() => {}}
+      />,
+    );
+    const rows = screen.getAllByRole('button');
+    expect(rows[0]).toHaveAttribute('title', expect.stringContaining('Tasto destro'));
+    fireEvent.contextMenu(rows[0] as HTMLElement);
+    expect(onQueue).toHaveBeenCalledWith(1);
+    expect(rows[1]).toHaveClass('decode-row--queued');
+    expect(screen.getByText('IN CODA')).toBeInTheDocument();
+    expect(rows[0]).not.toHaveClass('decode-row--queued');
+    useStation.setState({ status: null });
+  });
+
 });
