@@ -21,30 +21,39 @@ pub struct Control {
     pub tx: bool,
     /// Il nome nell'API e il controllo di JTDX hanno il senso contrario: acceso nell'API = spento in JTDX (`split` e `pbTxLock`).
     pub inverted: bool,
+    /// Esiste solo nel motore proprio di Aurora: JTDX non ha il pulsante (non si legge ne' si preme con l'accessibilita').
+    pub own: bool,
 }
 
 const fn toggle(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: false }
+    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: false, own: false }
+}
+
+/// Interruttore del solo motore proprio (non e' un controllo di JTDX).
+const fn own_toggle(id: &'static str) -> Control {
+    Control { id, ui_id: "", kind: Kind::Toggle, tx: false, inverted: false, own: true }
 }
 
 const fn arming(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Toggle, tx: true, inverted: false }
+    Control { id, ui_id, kind: Kind::Toggle, tx: true, inverted: false, own: false }
 }
 
 const fn press(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Press, tx: false, inverted: false }
+    Control { id, ui_id, kind: Kind::Press, tx: false, inverted: false, own: false }
 }
 
 /// Interruttore dal senso contrario a quello di JTDX. `pbTxLock` e' «Lockd Tx=Rx» quando e' acceso e «Tx/Rx Split» quando e' spento
 /// (`on_pbTxLock_clicked`, `REA 0x4a4b30`: `m_lockTxFreq = checked`): lo «Split» dell'API e' **acceso quando il blocco e' spento**.
 const fn inverted(id: &'static str, ui_id: &'static str) -> Control {
-    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: true }
+    Control { id, ui_id, kind: Kind::Toggle, tx: false, inverted: true, own: false }
 }
 
 pub const CONTROLS: &[Control] = &[
     toggle("autoseq", "AutoSeqButton"),
     toggle("tx_period", "TxMinuteButton"),
     toggle("single_qso", "singleQSOButton"),
+    // «Rispondi a tutti»: ogni stazione che mi chiama entra in coda da sola (senza, solo quelle scelte con il tasto destro)
+    own_toggle("answer_all"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
@@ -136,7 +145,7 @@ pub fn parse_reading(text: &str) -> Reading {
 /// Script che stampa `nome=1` o `nome=0` per ogni interruttore trovato in JTDX, poi i sei messaggi Tx (`txmsg1=...`) e il
 /// numero di quello selezionato (`txsel=2`), tutto nella stessa lettura (ogni lettura costa circa un secondo).
 pub fn read_script() -> String {
-    let pairs: Vec<String> = CONTROLS.iter().filter(|c| c.kind == Kind::Toggle).map(|c| format!("@('{}','{}',{})", c.id, c.ui_id, u8::from(c.inverted))).collect();
+    let pairs: Vec<String> = CONTROLS.iter().filter(|c| c.kind == Kind::Toggle && !c.own).map(|c| format!("@('{}','{}',{})", c.id, c.ui_id, u8::from(c.inverted))).collect();
     format!(
         "{HEAD}foreach ($pair in @({})) {{ \
          $el = $all | Where-Object {{ $_.Current.AutomationId -like ('*.' + $pair[1]) }} | Select-Object -First 1; \

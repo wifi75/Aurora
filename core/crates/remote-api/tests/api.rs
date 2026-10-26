@@ -161,6 +161,23 @@ async fn reply_known_decode_id_is_forwarded() {
 }
 
 #[tokio::test]
+async fn queue_reply_known_decode_id_is_forwarded_and_unknown_is_404() {
+    let s = state();
+    let mut rx = s.bus.take_command_rx().unwrap();
+    s.bus.events().send(decode(78)).unwrap();
+    wait_known(&s, 78).await;
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/queue-reply").cookie(&cookie).json(r#"{"decode_id":78}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(rx.recv().await, Some(Command::QueueReply { decode_id: 78 }));
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/queue-reply").cookie(&cookie).json(r#"{"decode_id":424242}"#)).await;
+    status_is(&resp, StatusCode::NOT_FOUND);
+    // come ogni comando che puo' far trasmettere: da una via non consentita e' rifiutato
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/commands/queue-reply").cookie(&cookie).json(r#"{"decode_id":78}"#).header("cf-ray", "abc")).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn tx_command_denied_by_policy_on_cloudflare_is_403() {
     let s = state();
     s.bus.events().send(decode(5)).unwrap();

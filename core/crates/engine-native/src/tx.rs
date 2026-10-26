@@ -150,6 +150,9 @@ pub enum TxCommand {
     GenMsgs,
     /// «Cancella»: svuota i messaggi ricordati per il doppio clic.
     Erase,
+    /// Tasto destro su una stazione che chiama: se c'e' un QSO in corso la mette in coda (a QSO registrato si risponde a lei), altrimenti le risponde
+    /// subito come il doppio clic; un secondo tasto destro sulla stessa stazione la toglie dalla coda.
+    QueueReply { decode_id: u64 },
 }
 
 /// Cio' che la pagina mostra della trasmissione.
@@ -160,6 +163,32 @@ pub struct TxView {
     pub dx: Option<String>,
     pub dx_grid: Option<String>,
     pub enabled: bool,
+    /// Le stazioni in coda per il prossimo QSO, nell'ordine in cui si risponde.
+    pub queue: Vec<String>,
+}
+
+/// Quante stazioni si tengono in coda: oltre, la prima ha quasi certamente rinunciato.
+const QUEUE_MAX: usize = 8;
+/// Dopo quanto una stazione in coda e' considerata sparita se non si fa piu' sentire (ms).
+const QUEUE_KEEP_MS: u64 = 10 * 60 * 1000;
+
+/// Una stazione in coda: l'ultimo messaggio sentito da lei (si aggiorna se si rifa' sentire).
+struct Queued {
+    call: String,
+    text: String,
+    snr: i32,
+    freq_hz: u32,
+    /// Inizio del periodo in cui l'ho sentita l'ultima volta (ms dal 1970).
+    slot_start_ms: u64,
+}
+
+/// Il nominativo di chi ha mandato un messaggio (chi chiama o chi risponde), se si puo' rispondergli.
+fn sender_of(text: &str) -> Option<String> {
+    match qso_native::message::parse(text) {
+        qso_native::message::Message::Cq { call, .. } => Some(call),
+        qso_native::message::Message::Directed { from, .. } => Some(from),
+        qso_native::message::Message::Other => None,
+    }
 }
 
 struct Recent {
@@ -177,6 +206,14 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     port: Arc<P>,
     controls: Arc<NativeControls>,
     recent: VecDeque<Recent>,
+    /// Le stazioni che aspettano il loro turno (tasto destro): a QSO registrato si risponde alla prima.
+    queue: VecDeque<Queued>,
+    /// Il QSO in corso e' finito e la sua ultima trasmissione sta per concludersi: da questo periodo in poi si puo' rispondere alla coda.
+    queue_gate: Option<Slot>,
+    /// Il mio nominativo: serve a riconoscere chi mi chiama.
+    my_call: String,
+    /// Le stazioni gia' collegate in questa sessione (per «Risp B4» spento).
+    logged: Vec<String>,
     /// «Consenti cambi di frequenza Tx durante la trasmissione» (scheda Generali, `TxQSYAllowed`); di base si'.
     tx_qsy_allowed: bool,
     /// Messaggio libero in coda per la prossima trasmissione.
@@ -245,7 +282,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
         driver.seq.set_rx_freq(rx_published);
         driver.publish_view();
         Ok(driver)
@@ -346,6 +383,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.heard.clear();
         self.free_for = None;
         self.recent.clear();
+        self.queue.clear();
+        self.queue_gate = None;
         self.free_text = None;
         self.prepared = None;
         self.last_planned = None;
@@ -360,6 +399,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.halt_tx();
         self.seq.band_changed();
         self.recent.clear();
+        self.queue.clear();
+        self.queue_gate = None;
         self.free_text = None;
         self.prepared = None;
         self.last_planned = None;
@@ -369,6 +410,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
 
     /// Ricorda un messaggio decodificato, per il doppio clic (arriva solo l'identificativo). `slot_start_ms` e' l'inizio del periodo in cui e' arrivato.
     pub fn remember(&mut self, id: u64, text: &str, snr: i32, freq_hz: u32, slot_start_ms: u64) {
+        // una stazione in coda che si rifa' sentire: si tiene l'ultimo messaggio (e' quello a cui si rispondera')
+        if let Some(call) = sender_of(text)
+            && let Some(q) = self.queue.iter_mut().find(|q| q.call.eq_ignore_ascii_case(&call))
+        {
+            q.text = text.to_string();
+            q.snr = snr;
+            q.freq_hz = freq_hz;
+            q.slot_start_ms = slot_start_ms;
+        }
         self.recent.push_back(Recent { id, text: text.to_string(), snr, freq_hz, slot_start_ms });
         while self.recent.len() > RECENT_KEEP {
             self.recent.pop_front();
@@ -386,6 +436,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             dx: self.seq.dx().map(str::to_string),
             dx_grid: self.seq.dx_grid().map(str::to_string),
             enabled: self.seq.is_enabled(),
+            queue: self.queue.iter().map(|q| q.call.clone()).collect(),
         };
         if let Ok(mut slot) = self.controls.tx_view.lock() {
             *slot = view;
@@ -433,6 +484,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let decode = QDecoded::new(&r.text, r.snr, r.freq_hz);
                     match self.seq.reply_to_with(slot, &decode, self.auto_tx) {
                         Ok(()) => {
+                            if let Some(call) = sender_of(&text) {
+                                self.queue.retain(|q| !q.call.eq_ignore_ascii_case(&call));
+                            }
                             self.prepared = None;
                             self.free_text = None;
                             self.follow_decode_frequency(freq);
@@ -449,6 +503,32 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     }
                 }
                 None => log.push(format!("messaggio {decode_id} non piu' in memoria: non e' possibile rispondere")),
+            },
+            TxCommand::QueueReply { decode_id } => match self.recent.iter().find(|r| r.id == decode_id) {
+                Some(r) => {
+                    let (text, snr, freq_hz, slot_start_ms) = (r.text.clone(), r.snr, r.freq_hz, r.slot_start_ms);
+                    match sender_of(&text) {
+                        None => log.push(format!("«{text}» non e' un messaggio a cui si puo' rispondere")),
+                        Some(call) if self.queue.iter().any(|q| q.call.eq_ignore_ascii_case(&call)) => {
+                            self.queue.retain(|q| !q.call.eq_ignore_ascii_case(&call));
+                            log.push(format!("{call} tolta dalla coda"));
+                        }
+                        Some(call) if self.seq.dx().is_some_and(|d| d.eq_ignore_ascii_case(&call)) => {
+                            log.push(format!("{call} e' gia' la stazione in corso"));
+                        }
+                        Some(call) if self.seq.dx().is_none() || !self.seq.is_enabled() => {
+                            // nessun QSO in corso: non c'e' niente da aspettare, come il doppio clic
+                            log.push(format!("{call}: nessun QSO in corso, si risponde subito"));
+                            log.extend(self.handle(TxCommand::Reply { decode_id }, now_s));
+                        }
+                        Some(_) if self.queue.len() >= QUEUE_MAX => log.push(format!("coda piena ({QUEUE_MAX} stazioni)")),
+                        Some(call) => {
+                            log.push(format!("{call} in coda: si risponde a QSO registrato"));
+                            self.queue.push_back(Queued { call, text, snr, freq_hz, slot_start_ms });
+                        }
+                    }
+                }
+                None => log.push(format!("messaggio {decode_id} non piu' in memoria: non e' possibile metterlo in coda")),
             },
             TxCommand::CallCq { modifier } => match self.seq.call_cq(modifier.as_deref()) {
                 Ok(()) => {
@@ -477,6 +557,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 self.halt_tx();
                 self.seq.halt();
                 self.free_text = None;
+                // dopo uno STOP non deve ripartire niente da sola
+                self.queue.clear();
+                self.queue_gate = None;
                 log.push("STOP TX".to_string());
             }
             TxCommand::FreeText { text, send } => {
@@ -604,9 +687,20 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.note_heard(slot, decoded);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
+        // «Rispondi a tutti»: chi mi chiama entra in coda senza il tasto destro
+        self.queue_callers(slot, slot_start_ms, decoded, &mut log);
         log.extend(self.maybe_move_free_tx(slot.next()));
+        // la chiusura del QSO precedente (RR73 o 73) e' gia' stata trasmessa: si risponde alla prima stazione in coda
+        if self.queue_gate.is_some_and(|gate| slot >= gate) {
+            self.start_queued(slot, now_s, &mut log);
+        }
         log.extend(self.plan(slot.next(), now_s));
         qsos.extend(self.collect_events(slot_start_ms, dial_hz, band, &mut log));
+        // un QSO chiuso in ricezione non ha una trasmissione di chiusura da aspettare: si parte subito
+        if self.queue_gate.is_some() && !self.queue.is_empty() && self.last_planned != Some(slot.next()) {
+            self.start_queued(slot, now_s, &mut log);
+            log.extend(self.plan(slot.next(), now_s));
+        }
         self.arm_clear_dx(&qsos, now_s);
         self.sync_rx_to_user();
         self.publish_view();
@@ -641,9 +735,16 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// risponde a un altro, fine QSO, 1 QSO, watchdog) ferma anche la trasmissione in corso (`haltTx`); `Halt` viene da un comando che l'ha gia' fermata.
     fn collect_events(&mut self, slot_start_ms: u64, dial_hz: u64, band: &str, log: &mut Vec<String>) -> Vec<QsoRecord> {
         let mut qsos = Vec::new();
+        let slot = Slot(slot_start_ms / self.mode.period_ms());
         for event in self.seq.drain_events() {
             match event {
                 QEvent::QsoComplete(rec) => {
+                    // chi e' stato appena collegato non serve piu' in coda; e' ora di passare alla prossima stazione
+                    self.queue.retain(|q| !q.call.eq_ignore_ascii_case(&rec.call));
+                    self.logged.push(rec.call.clone());
+                    if !self.queue.is_empty() {
+                        self.queue_gate = Some(slot.next());
+                    }
                     // come JTDX (`on_logQSOButton_clicked`): l'inizio e' il primo periodo del QSO, la fine e' l'istante in cui comincia a trasmettere
                     // RR73 o 73 (il periodo dopo l'ultima ricezione, se il QSO si chiude in ricezione) piu' 14 s in FT8 e 7 s in FT4
                     let tx_slot_ms = rec.time_off_ms.max(slot_start_ms + self.mode.period_ms());
@@ -662,7 +763,13 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         ..Default::default()
                     });
                 }
-                QEvent::Abandoned { call, reason } => log.push(format!("QSO con {call} abbandonato: {reason:?}")),
+                QEvent::Abandoned { call, reason } => {
+                    log.push(format!("QSO con {call} abbandonato: {reason:?}"));
+                    // una rinuncia (contatori, DX che risponde a un altro) libera il turno; una sostituzione fatta dall'operatore no
+                    if !matches!(reason, qso_native::AbandonReason::Replaced) && !self.queue.is_empty() {
+                        self.queue_gate = Some(slot.next());
+                    }
+                }
                 QEvent::Stopped(reason) => {
                     log.push(format!("trasmissione automatica ferma: {reason:?}"));
                     if !matches!(reason, StopReason::Halt) {
@@ -674,6 +781,59 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
         }
         qsos
+    }
+
+    /// «Rispondi a tutti» (`answer_all`): ogni stazione che mi chiama direttamente (non un CQ, non un messaggio di chiusura) si mette in coda, se non e'
+    /// gia' il DX, non e' gia' in coda e, con «Risp B4» spento, non e' gia' stata collegata. Senza QSO in corso si risponde subito alla prima.
+    fn queue_callers(&mut self, slot: Slot, slot_start_ms: u64, decoded: &[(String, i32, u32)], log: &mut Vec<String>) {
+        if !self.controls.switch_on("answer_all") {
+            return;
+        }
+        for (text, snr, freq_hz) in decoded {
+            let qso_native::message::Message::Directed { to, from, body } = qso_native::message::parse(text) else { continue };
+            if !to.eq_ignore_ascii_case(&self.my_call) || matches!(body, qso_native::message::Body::Rrr | qso_native::message::Body::Rr73 | qso_native::message::Body::Bye) {
+                continue;
+            }
+            let known = |c: &str| c.eq_ignore_ascii_case(&from);
+            if self.seq.dx().is_some_and(known) || self.queue.iter().any(|q| known(&q.call)) || (!self.opts.answer_worked_before && self.logged.iter().any(|c| known(c))) {
+                continue;
+            }
+            if self.queue.len() >= QUEUE_MAX {
+                break;
+            }
+            log.push(format!("{from} ti chiama: in coda (Rispondi a tutti)"));
+            self.queue.push_back(Queued { call: from, text: text.clone(), snr: *snr, freq_hz: *freq_hz, slot_start_ms });
+        }
+        // nessun QSO in corso: non si aspetta niente, si parte da questa stazione
+        if !self.queue.is_empty() && self.seq.dx().is_none() && self.queue_gate.is_none() {
+            self.queue_gate = Some(slot);
+        }
+    }
+
+    /// Risponde alla prima stazione in coda, con l'ultimo messaggio che si e' sentito da lei. Una stazione sparita da piu' di dieci minuti si salta.
+    fn start_queued(&mut self, slot: Slot, now_s: f64, log: &mut Vec<String>) {
+        self.queue_gate = None;
+        let now_ms = (now_s * 1000.0) as u64;
+        while let Some(q) = self.queue.pop_front() {
+            if now_ms.saturating_sub(q.slot_start_ms) > QUEUE_KEEP_MS {
+                log.push(format!("{} tolta dalla coda: non si fa sentire da piu' di dieci minuti", q.call));
+                continue;
+            }
+            let heard_at = Slot(q.slot_start_ms / self.mode.period_ms());
+            let decode = QDecoded::new(&q.text, q.snr, q.freq_hz);
+            // «Abilita Tx» si accende: mettere in coda e' una richiesta esplicita di rispondere a questa stazione
+            match self.seq.reply_to_with(heard_at, &decode, true) {
+                Ok(()) => {
+                    self.prepared = None;
+                    self.free_text = None;
+                    self.follow_decode_frequency(q.freq_hz);
+                    log.push(format!("QSO registrato: si risponde a {} (in coda)", q.call));
+                    let _ = slot;
+                    break;
+                }
+                Err(e) => log.push(format!("{} in coda non raggiungibile: {e:?}", q.call)),
+            }
+        }
     }
 
     /// Prepara la trasmissione del periodo `slot` (se tocca a lui): sceglie il messaggio, lo modula nel modo corrente e lo consegna alla catena. Se per
@@ -1070,6 +1230,96 @@ mod tests {
         let log = d.handle(TxCommand::CallCq { modifier: Some("QUESTO E TROPPO".into()) }, BASE + 1.0);
         assert!(log.iter().any(|l| l.contains("CQ non possibile")), "{log:?}");
         assert!(port.requests.lock().expect("richieste").is_empty());
+    }
+
+    /// Tasto destro su una stazione che chiama mentre si lavora un'altra: va in coda e, a QSO registrato, si risponde a lei.
+    #[test]
+    fn a_right_click_queues_a_caller_and_the_queue_starts_when_the_qso_is_logged() {
+        let mut b = Bench::new();
+        b.d.remember(7, "IU3ABC K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.remember(8, "IU3ABC W9XYZ -08", -12, 1800, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        let log = b.d.handle(TxCommand::QueueReply { decode_id: 8 }, BASE + 14.1);
+        assert!(log.iter().any(|l| l.contains("W9XYZ in coda")), "{log:?}");
+        b.d.publish_view();
+        let view = view_of(&b.controls);
+        assert_eq!((view.dx.as_deref(), view.queue.clone()), (Some("K1ABC"), vec!["W9XYZ".to_string()]), "si lavora ancora K1ABC");
+        // K1ABC chiama (pari), noi rapportiamo (dispari); K1ABC manda R-rapporto (pari): chiudiamo con RR73 e il QSO si registra
+        b.d.after_slot(SLOT_MS, &[("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        b.d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
+        let (qsos, log) = b.d.after_slot(SLOT_MS + 30_000, &[("IU3ABC K1ABC R-12".to_string(), -10, 1200)], BASE + 44.3, 14_074_000, "20m");
+        assert_eq!(qsos.len(), 1, "{log:?}");
+        // la chiusura (RR73) e' ancora in onda: la coda aspetta
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).queue, vec!["W9XYZ".to_string()], "{log:?}");
+        // finita la chiusura si risponde a W9XYZ
+        let (_, log) = b.d.after_slot(SLOT_MS + 45_000, &[], BASE + 59.3, 14_074_000, "20m");
+        assert!(log.iter().any(|l| l.contains("si risponde a W9XYZ")), "{log:?}");
+        b.d.publish_view();
+        let view = view_of(&b.controls);
+        assert_eq!((view.dx.as_deref(), view.queue.is_empty()), (Some("W9XYZ"), true), "{log:?}");
+    }
+
+    /// Senza un QSO in corso il tasto destro risponde subito (come il doppio clic); un secondo tasto destro toglie dalla coda.
+    #[test]
+    fn a_right_click_answers_at_once_when_idle_and_toggles_when_queued() {
+        let mut b = Bench::new();
+        b.d.remember(7, "IU3ABC K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.remember(8, "IU3ABC W9XYZ -08", -12, 1800, SLOT_MS);
+        b.d.remember(9, "IU3ABC N5AAA FN42", -14, 900, SLOT_MS);
+        let log = b.d.handle(TxCommand::QueueReply { decode_id: 7 }, BASE + 14.0);
+        assert!(log.iter().any(|l| l.contains("si risponde subito")), "{log:?}");
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).dx.as_deref(), Some("K1ABC"));
+        b.d.handle(TxCommand::QueueReply { decode_id: 8 }, BASE + 14.1);
+        b.d.handle(TxCommand::QueueReply { decode_id: 9 }, BASE + 14.2);
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).queue, vec!["W9XYZ".to_string(), "N5AAA".to_string()]);
+        let log = b.d.handle(TxCommand::QueueReply { decode_id: 8 }, BASE + 14.3);
+        assert!(log.iter().any(|l| l.contains("tolta dalla coda")), "{log:?}");
+        let log = b.d.handle(TxCommand::QueueReply { decode_id: 7 }, BASE + 14.4);
+        assert!(log.iter().any(|l| l.contains("gia' la stazione in corso")), "{log:?}");
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).queue, vec!["N5AAA".to_string()]);
+        // STOP TX svuota la coda: dopo uno STOP non deve ripartire niente da sola
+        b.d.handle(TxCommand::Halt, BASE + 15.0);
+        b.d.publish_view();
+        assert!(view_of(&b.controls).queue.is_empty());
+    }
+
+    /// «Rispondi a tutti»: chi mi chiama entra in coda da solo; i CQ, i messaggi tra altri e le chiusure no; il DX in corso e i doppioni no.
+    #[test]
+    fn answer_all_queues_every_direct_caller_but_nothing_else() {
+        let mut b = Bench::new();
+        b.controls.set_switch("answer_all", true);
+        b.d.after_slot(
+            SLOT_MS,
+            &[
+                ("IU3ABC K1ABC FN42".to_string(), -10, 1200),
+                ("CQ W9XYZ EN37".to_string(), -12, 1800),
+                ("IU3ABC N5AAA -08".to_string(), -14, 900),
+                ("IU3ABC N5AAA -08".to_string(), -14, 900),
+                ("K2DEF G4GGG RR73".to_string(), -9, 700),
+                ("IU3ABC F5HHH RR73".to_string(), -9, 700),
+            ],
+            BASE + 14.3,
+            14_074_000,
+            "20m",
+        );
+        // la sequenza sceglie la prima (K1ABC) e le altre aspettano in coda
+        b.d.publish_view();
+        let view = view_of(&b.controls);
+        assert_eq!(view.dx.as_deref(), Some("K1ABC"), "{view:?}");
+        assert_eq!(view.queue, vec!["N5AAA".to_string()], "{view:?}");
+    }
+
+    /// Spento (di fabbrica), «Rispondi a tutti» non accoda nessuno.
+    #[test]
+    fn without_answer_all_nobody_is_queued_by_himself() {
+        let mut b = Bench::new();
+        b.d.after_slot(SLOT_MS, &[("IU3ABC N5AAA -08".to_string(), -14, 900), ("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        b.d.publish_view();
+        assert!(view_of(&b.controls).queue.is_empty());
     }
 
     /// Modo Hound: la trasmissione di un CQ non e' permessa («Transmission of CQ message is not allowed in the Hound mode»).

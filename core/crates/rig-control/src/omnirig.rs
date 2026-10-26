@@ -145,6 +145,9 @@ impl Rig for WindowsRig {
 
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         let control = crate::controls::find(id).ok_or_else(|| RigError(format!("controllo sconosciuto: {id}")))?;
+        if control.own {
+            return Err(RigError(format!("«{id}» esiste solo nel motore proprio di Aurora, non in JTDX")));
+        }
         command(&crate::controls::set_script(control, on))
     }
 }

@@ -726,6 +726,7 @@ fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str,
         tr_period: None,
         own_continent: None,
         meters: None,
+        queue: Vec::new(),
     }
 }
 
@@ -1284,6 +1285,7 @@ pub async fn run(
                     let mapped = match command {
                         aurora_core::Command::HaltTx => engine_native::TxCommand::Halt,
                         aurora_core::Command::Reply { decode_id } => engine_native::TxCommand::Reply { decode_id },
+                        aurora_core::Command::QueueReply { decode_id } => engine_native::TxCommand::QueueReply { decode_id },
                         aurora_core::Command::SendFreeText { text, send } => engine_native::TxCommand::FreeText { text, send },
                         aurora_core::Command::CallCq { modifier } => engine_native::TxCommand::CallCq { modifier: Some(modifier).filter(|m| !m.trim().is_empty()) },
                         aurora_core::Command::SetTxFrequency { hz } => engine_native::TxCommand::SetTxFreq(hz),
