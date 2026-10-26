@@ -6,8 +6,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
     match mode.trim().to_uppercase().as_str() {
         "FT8" => Some("ft8Button"),
         "FT4" => Some("ft4Button"),
-        // i modi JT65 e JT9 di JTDX stanno dietro al pulsante JT
-        "JT" => Some("jtButton"),
+        // i modi JT65 e JT9 di JTDX stanno dietro al pulsante JT (il motore proprio li distingue, JTDX sceglie da se')
+        "JT" | "JT65" | "JT9" => Some("jtButton"),
         _ => None,
     }
 }

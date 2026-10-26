@@ -212,6 +212,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     queue_gate: Option<Slot>,
     /// Il mio nominativo: serve a riconoscere chi mi chiama.
     my_call: String,
+    /// «Usa RRR» come lo ha scelto l'operatore: in JT65 e JT9 si manda sempre RRR (RR73 non e' un messaggio di quei modi).
+    rrr_user: bool,
     /// Le stazioni gia' collegate in questa sessione (per «Risp B4» spento).
     logged: Vec<String>,
     /// «Consenti cambi di frequenza Tx durante la trasmissione» (scheda Generali, `TxQSYAllowed`); di base si'.
@@ -281,9 +283,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
         let seq = Sequencer::new(mode, Station { call: call.to_string(), grid: grid.to_string() }, opts.clone()).map_err(|e| format!("{e:?}"))?;
         let auto_tx = controls.switch_on("auto_tx");
+        let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None };
         driver.seq.set_rx_freq(rx_published);
+        if matches!(mode, Mode::Jt65 | Mode::Jt9) {
+            driver.opts.use_rrr = true;
+            driver.seq.set_options(driver.opts.clone());
+        }
         driver.publish_view();
         Ok(driver)
     }
@@ -377,6 +384,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.halt_tx();
         self.seq.set_mode(mode);
         self.mode = mode;
+        // RR73 esiste solo in FT8 e FT4: in JT65 e JT9 la chiusura e' RRR
+        self.opts.use_rrr = self.rrr_user || matches!(mode, Mode::Jt65 | Mode::Jt9);
+        self.seq.set_options(self.opts.clone());
         if self.free_tx.is_some() {
             self.free_tx = Some(FreeTxParams::for_mode(mode));
         }
@@ -598,7 +608,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     OptionChange::Bypass(v) => self.opts.bypass_tx1 = v,
                     OptionChange::SingleQso(v) => self.opts.single_qso = v,
                     OptionChange::AnswerWorkedBefore(v) => self.opts.answer_worked_before = v,
-                    OptionChange::UseRrr(v) => self.opts.use_rrr = v,
+                    OptionChange::UseRrr(v) => {
+                        self.rrr_user = v;
+                        self.opts.use_rrr = v || matches!(self.mode, Mode::Jt65 | Mode::Jt9);
+                    }
                     OptionChange::Hound(v) => self.opts.hound = v,
                     OptionChange::Sequence(settings) => {
                         self.tx_qsy_allowed = settings.tx_qsy_allowed;
@@ -625,8 +638,20 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
             }
             TxCommand::ClearDx => {
+                // «Canc DX» libera la stazione e ferma subito quello che si stava per trasmettere o si stava trasmettendo (messaggio gia' consegnato alla
+                // catena, audio e PTT): senza, la trasmissione verso la stazione cancellata partiva lo stesso. JTDX (`clearDX`) non ferma il Tx; qui si
+                // ferma perche' l'operatore ha scelto di lasciare quella stazione.
+                self.halt_tx();
                 self.seq.clear_dx();
                 self.prepared = None;
+                self.free_text = None;
+                self.last_planned = None;
+                self.clear_dx_due = None;
+                // se ci sono stazioni in coda si passa alla prossima al primo periodo utile
+                if !self.queue.is_empty() {
+                    self.queue_gate = Some(Slot::at(self.mode, now_s));
+                }
+                log.push("Canc DX: stazione liberata e trasmissione ferma".to_string());
             }
             TxCommand::GenMsgs => {
                 self.seq.regen_messages();
@@ -875,6 +900,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 let mode = match self.mode {
                     Mode::Ft8 => tx_native::Mode::Ft8,
                     Mode::Ft4 => tx_native::Mode::Ft4,
+                    Mode::Jt65 => tx_native::Mode::Jt65,
+                    Mode::Jt9 => tx_native::Mode::Jt9,
                 };
                 let request = TxRequest { wave, mode, parity };
                 let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
@@ -912,10 +939,18 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mode = self.mode;
         let mut run = |t: &str| -> Result<Vec<f32>, String> {
             match mode {
-                Mode::Ft8 => ft8::modem::encode_message(t, freq as f32, &mut self.hashes),
-                Mode::Ft4 => ft4::modem::encode_message(t, freq as f32, &mut self.hashes),
+                Mode::Ft8 => ft8::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}")),
+                Mode::Ft4 => ft4::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}")),
+                // JT65 e JT9: `freq` e' il tono di sincronismo (il piu' basso); tutta la banda deve stare entro i 5 kHz
+                Mode::Jt65 => {
+                    jt_check_frequency(freq, 65.0 * jt::jt65::TONE_SPACING_HZ)?;
+                    Ok(jt::jt65::modulate(&jt::jt65::tones(&jt::rs::Codec::new(), t), f64::from(freq), 1.0, 12_000.0))
+                }
+                Mode::Jt9 => {
+                    jt_check_frequency(freq, 8.0 * jt::jt9::TONE_SPACING_HZ)?;
+                    Ok(jt::jt9::modulate(&jt::jt9::tones(t), f64::from(freq), 1.0))
+                }
             }
-            .map_err(|e| format!("{e:?}"))
         };
         match run(text) {
             Ok(wave) => Ok((wave, text.to_string())),
@@ -926,6 +961,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Err(e) => Err(e),
         }
     }
+}
+
+/// La banda di un messaggio JT (dal tono di sincronismo in su) deve stare tra 100 e 5000 Hz.
+fn jt_check_frequency(freq: u32, width_hz: f64) -> Result<(), String> {
+    if freq >= 100 && f64::from(freq) + width_hz <= 5000.0 { Ok(()) } else { Err(format!("frequenza di trasmissione fuori campo per questo modo: {freq} Hz")) }
 }
 
 /// Lo stato osservabile della trasmissione per la pagina.
@@ -1059,6 +1099,9 @@ mod tests {
                 }
                 ft4::decode::decode_slot(&audio, &ft4::decode::Options::default(), &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
             }
+            // l'onda dei modi JT comincia a un secondo dall'inizio del minuto, che e' dove la mette il trasmettitore
+            tx_native::Mode::Jt65 => jt::rx::decode(&minute_with(&req.wave), &jt::rx::Options::default()).into_iter().map(|d| d.text).collect(),
+            tx_native::Mode::Jt9 => jt::jt9rx::decode(&minute_with(&req.wave), &jt::jt9rx::Options::default()).into_iter().map(|d| d.text).collect(),
         }
     }
 
@@ -1232,6 +1275,26 @@ mod tests {
         assert!(port.requests.lock().expect("richieste").is_empty());
     }
 
+    /// «Canc DX»: la stazione si libera e la trasmissione gia' pianificata verso di lei si ferma subito (prima partiva lo stesso).
+    #[test]
+    fn clear_dx_stops_the_planned_transmission_at_once() {
+        let mut b = Bench::new();
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        b.d.after_slot(SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        assert_eq!(b.requests().len(), 1, "la risposta a K1ABC e' consegnata alla catena");
+        assert!(!b.d.due_notes(SLOT_MS + 15_100).is_empty(), "e annunciata per ALL.TXT");
+        let halts_before = *b.port.halts.lock().expect("fermate");
+        b.d.remember(8, "CQ W9XYZ EN37", -10, 1500, SLOT_MS);
+        let log = b.d.handle(TxCommand::ClearDx, BASE + 20.0);
+        assert!(log.iter().any(|l| l.contains("trasmissione ferma")), "{log:?}");
+        assert_eq!(*b.port.halts.lock().expect("fermate"), halts_before + 1, "audio e PTT fermati");
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).dx, None, "stazione liberata");
+        // la trasmissione annunciata non si scrive piu' in ALL.TXT
+        assert!(b.d.due_notes(SLOT_MS + 90_000).is_empty());
+    }
+
     /// Tasto destro su una stazione che chiama mentre si lavora un'altra: va in coda e, a QSO registrato, si risponde a lei.
     #[test]
     fn a_right_click_queues_a_caller_and_the_queue_starts_when_the_qso_is_logged() {
@@ -1320,6 +1383,79 @@ mod tests {
         b.d.after_slot(SLOT_MS, &[("IU3ABC N5AAA -08".to_string(), -14, 900), ("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
         b.d.publish_view();
         assert!(view_of(&b.controls).queue.is_empty());
+    }
+
+    /// Un minuto UTC pari (indice 1 666 668) e il suo istante in secondi.
+    const JT_SLOT_MS: u64 = 100_000_080_000;
+    const JT_BASE: f64 = JT_SLOT_MS as f64 / 1000.0;
+
+    fn jt_driver(mode: Mode) -> (TxDriver<FakePort>, Arc<FakePort>) {
+        let port = Arc::new(FakePort::default());
+        let controls = Arc::new(NativeControls::default());
+        controls.set_mode(mode);
+        let d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::clone(&controls)).expect("pilota");
+        (d, port)
+    }
+
+    /// L'audio di un minuto con un'onda che comincia a 1 s dall'inizio del minuto, come la manda il trasmettitore (ritardo di 1 s in JT65 e JT9).
+    fn minute_with(wave: &[f32]) -> Vec<f32> {
+        let mut audio = vec![0.0f32; 12_000];
+        audio.extend_from_slice(wave);
+        audio.resize(720_000, 0.0);
+        // un po' di rumore deterministico per non dare al decodificatore un silenzio perfetto
+        let mut state = 7u32;
+        for v in audio.iter_mut() {
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            *v += ((state >> 16) as f32 / 65_536.0 - 0.5) * 0.4;
+        }
+        audio
+    }
+
+    /// JT65: una risposta a un CQ parte nel minuto opposto, con l'onda del modo, e il ricevitore di JT65 rilegge lo stesso messaggio.
+    #[test]
+    fn a_jt65_reply_goes_out_in_the_opposite_minute_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Jt65);
+        d.remember(1, "CQ K1ABC FN42", -10, 1200, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 59.0);
+        d.after_slot(JT_SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1200)], JT_BASE + 59.3, 14_076_000, "20m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].mode, tx_native::Mode::Jt65);
+        assert_eq!(requests[0].parity, Parity::Odd, "il CQ e' del minuto pari: si risponde nel dispari");
+        let seconds = requests[0].wave.len() as f64 / 12_000.0;
+        assert!((seconds - 46.8).abs() < 0.2, "126 simboli da 0,3715 s: {seconds}");
+        let decoded = jt::rx::decode(&minute_with(&requests[0].wave), &jt::rx::Options::default());
+        assert_eq!(decoded.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(), vec!["K1ABC IU3ABC IO91"], "{decoded:?}");
+        // con Split acceso la trasmissione resta sulla frequenza Tx (1500 Hz di fabbrica), non su quella del CQ
+        assert!((decoded[0].freq_hz - 1500.0).abs() < 2.0, "{:?}", decoded[0]);
+    }
+
+    /// JT9: lo stesso, con 85 simboli da 0,576 s.
+    #[test]
+    fn a_jt9_reply_goes_out_in_the_opposite_minute_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Jt9);
+        d.remember(1, "CQ K1ABC FN42", -10, 1500, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 59.0);
+        d.after_slot(JT_SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1500)], JT_BASE + 59.3, 14_078_000, "20m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1);
+        assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Jt9, Parity::Odd));
+        let decoded = jt::jt9rx::decode(&minute_with(&requests[0].wave), &jt::jt9rx::Options::default());
+        assert_eq!(decoded.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(), vec!["K1ABC IU3ABC IO91"], "{decoded:?}");
+    }
+
+    /// In JT65 e JT9 la chiusura e' RRR (RR73 non e' un messaggio di quei modi), anche se «Usa RRR» e' spento; tornando in FT8 si ripristina.
+    #[test]
+    fn the_jt_modes_close_with_rrr_and_ft8_gets_its_own_choice_back() {
+        let (mut d, _) = jt_driver(Mode::Jt65);
+        d.remember(1, "IU3ABC K1ABC R-12", -10, 1200, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 59.0);
+        d.publish_view();
+        assert!(d.opts.use_rrr, "in JT65 sempre RRR");
+        d.set_mode(Mode::Ft8);
+        assert!(!d.opts.use_rrr, "in FT8 vale la scelta dell'operatore (RR73)");
+        d.set_mode(Mode::Jt9);
+        assert!(d.opts.use_rrr);
     }
 
     /// Modo Hound: la trasmissione di un CQ non e' permessa («Transmission of CQ message is not allowed in the Hound mode»).
@@ -1998,10 +2134,15 @@ mod tests {
         assert_eq!(b.rig.controls_and_tx().expect("lettura").1.expect("tx").minute_label, "TX 00");
         b.controls.set_switch("tx_period", false);
         assert_eq!(b.rig.controls_and_tx().expect("lettura").1.expect("tx").minute_label, "TX 7.5");
-        // JT65 e JT9 si accettano e non cambiano il modo
+        // JT65 e JT9 sono modi veri (minuto intero, tono di sincronismo)
         b.rig.set_mode("JT65").expect("accettato");
+        assert_eq!(b.controls.mode(), Mode::Jt65);
+        assert_eq!(b.rig.controls_and_tx().expect("lettura").1.expect("tx").minute_label, "TX odd");
         b.rig.set_mode("JT9").expect("accettato");
-        assert_eq!(b.controls.mode(), Mode::Ft4);
+        assert_eq!(b.controls.mode(), Mode::Jt9);
+        // il pulsante JT di JTDX (JT65 e JT9 insieme) parte da JT65
+        b.rig.set_mode("JT").expect("accettato");
+        assert_eq!(b.controls.mode(), Mode::Jt65);
         b.rig.set_mode("FT8").expect("modo");
         assert_eq!(b.controls.mode(), Mode::Ft8);
         assert!(b.rig.set_mode("SSB").is_err());

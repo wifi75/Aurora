@@ -1323,6 +1323,7 @@ impl Sequencer {
         let limit = match self.mode {
             Mode::Ft8 => 32.0,
             Mode::Ft4 => 16.0,
+            Mode::Jt65 | Mode::Jt9 => 32.0,
         };
         for m in (last + 1)..=cur_min {
             let t = m as f64 * 60.0;

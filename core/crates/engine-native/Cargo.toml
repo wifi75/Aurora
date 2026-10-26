@@ -12,6 +12,7 @@ aurora-core = { path = "../aurora-core" }
 audio-spectrum = { path = "../audio-spectrum" }
 ft8 = { path = "../ft8" }
 ft4 = { path = "../ft4" }
+jt = { path = "../jt" }
 rig-control = { path = "../rig-control" }
 qso-native = { path = "../qso-native" }
 tx-native = { path = "../tx-native" }
