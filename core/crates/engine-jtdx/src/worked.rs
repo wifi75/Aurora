@@ -382,9 +382,10 @@ impl WorkedLog {
         // banda e modo insieme, solo banda, solo modo: gli argomenti con cui JTDX chiama `match*`
         // Per paese e zone (non per locatore, prefisso e nominativo) «banda» vince su «banda+modo»: se il paese e' gia' stato collegato su questa
         // banda, anche in RTTY o SSB, non e' «nuovo su banda» (scelta del proprietario; JTDX con tutte e due le caselle guarda banda e modo insieme).
+        // Con la banda sconosciuta resta solo il modo: lo si controlla comunque.
         let by_area = matches!(crit, Crit::Dxcc | Crit::Cqz | Crit::Ituz);
         let (b, m) = match (c.band, c.band_mode) {
-            (true, true) if by_area => (band, None),
+            (true, true) if by_area && !band.is_empty() => (band, None),
             (true, true) => (band, class),
             (true, false) => (band, None),
             _ => ("", class),
@@ -729,8 +730,43 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         log.add_adif_qso(&qso("AT3AB", "20m", "RTTY"), &db);
         let flags = HighlightFlags { dxcc: Criterion::new(true, true, true), ..HighlightFlags::none() };
         let n = log.novelty_flags("AT7XY", None, "20m", Some("FT8"), &flags, &db);
-        assert_ne!(n, Some(Novelty::NewDxccBand), "stessa banda, altro modo e altro nominativo: il paese non e' nuovo su banda");
+        assert_eq!(n, Some(Novelty::Worked), "stessa banda, altro modo e altro nominativo: il paese non e' nuovo su banda");
         assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("FT8"), &flags, &db), Some(Novelty::NewDxccBand), "altra banda: nuovo su banda");
+    }
+
+    #[test]
+    fn a_country_with_unknown_band_is_still_checked_by_mode() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        log.add_adif_qso(&qso("AT3AB", "20m", "FT8"), &db);
+        let flags = HighlightFlags { dxcc: Criterion::new(true, true, true), ..HighlightFlags::none() };
+        assert_eq!(log.novelty_flags("AT7XY", None, "", Some("FT8"), &flags, &db), Some(Novelty::Worked), "banda ignota, modo gia' fatto");
+        assert_eq!(log.novelty_flags("AT7XY", None, "", Some("RTTY"), &flags, &db), Some(Novelty::NewDxccBand), "banda ignota, modo mai fatto per il paese");
+    }
+
+    #[test]
+    fn zones_follow_the_country_rule_but_grid_prefix_and_call_stay_mode_sensitive() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        log.add_adif_qso(&AdifQso { grid: "FN42".into(), ..qso("AT3AB", "20m", "RTTY") }, &db);
+        let all = Criterion::new(true, true, true);
+        let cqz = HighlightFlags { cqz: all, ..HighlightFlags::none() };
+        let itu = HighlightFlags { itu: all, ..HighlightFlags::none() };
+        // stessa zona CQ e ITU (AT3AB e AT7XY sono nel paese Atlantis, zona 14/27), stessa banda, altro modo: non nuova
+        assert_eq!(log.novelty_flags("AT7XY", None, "20m", Some("FT8"), &cqz, &db), Some(Novelty::Worked));
+        assert_eq!(log.novelty_flags("AT7XY", None, "20m", Some("FT8"), &itu, &db), Some(Novelty::Worked));
+        assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("FT8"), &cqz, &db), Some(Novelty::NewZoneBand));
+        assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("FT8"), &itu, &db), Some(Novelty::NewItuBand));
+        // locatore e nominativo: banda e modo insieme, come in JTDX
+        let grid = HighlightFlags { grid: all, ..HighlightFlags::none() };
+        assert_eq!(log.novelty_flags("AT7XY", Some("FN42"), "20m", Some("FT8"), &grid, &db), Some(Novelty::NewGridBand));
+        assert_eq!(log.novelty_flags("AT7XY", Some("FN42"), "20m", Some("RTTY"), &grid, &db), Some(Novelty::Worked));
+        let call = call_only(true, true);
+        assert_eq!(log.novelty_flags("AT3AB", None, "20m", Some("FT8"), &call, &db), Some(Novelty::NewCallBand));
+        // «per banda e modo» da solo (senza «per banda») resta sul modo anche per il paese
+        let dxcc_mode = HighlightFlags { dxcc: Criterion::new(true, false, true), ..HighlightFlags::none() };
+        assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("RTTY"), &dxcc_mode, &db), Some(Novelty::Worked));
+        assert_eq!(log.novelty_flags("AT7XY", None, "40m", Some("FT8"), &dxcc_mode, &db), Some(Novelty::NewDxccBand));
     }
 
     #[test]
