@@ -202,28 +202,29 @@ fn find_candidates(ss: &[f32], nq: usize, options: &Options) -> Vec<Candidate> {
     out
 }
 
-/// Energia di un tono a frequenza `f` nella finestra che comincia a `start` (campioni, anche fuori dal segnale: li' vale zero).
-fn tone_energy(samples: &[f32], start: i64, table: &[Complex<f32>]) -> f32 {
-    let mut re = 0.0f32;
-    let mut im = 0.0f32;
-    for (n, t) in table.iter().enumerate() {
+/// Energia del tono a frequenza `freq` nella finestra di un simbolo (rotazione di fase per ricorrenza: non serve una tabella per frequenza).
+fn tone_energy_at(samples: &[f32], start: i64, freq: f64) -> f32 {
+    let (mut re, mut im) = (0.0f64, 0.0f64);
+    let step = std::f64::consts::TAU * freq / FS;
+    let (wr, wi) = (step.cos(), step.sin());
+    let (mut cr, mut ci) = (1.0f64, 0.0f64);
+    for n in 0..WINDOW {
         let idx = start + n as i64;
         if idx >= 0 && (idx as usize) < samples.len() {
-            let x = samples[idx as usize];
-            re += x * t.re;
-            im += x * t.im;
+            let x = f64::from(samples[idx as usize]);
+            re += x * cr;
+            im -= x * ci;
         }
+        let nr = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = nr;
     }
-    re * re + im * im
+    (re * re + im * im) as f32
 }
 
-fn rotation_table(f: f64) -> Vec<Complex<f32>> {
-    (0..WINDOW)
-        .map(|n| {
-            let ph = -2.0 * std::f64::consts::PI * f * n as f64 / FS;
-            Complex::new(ph.cos() as f32, ph.sin() as f32)
-        })
-        .collect()
+/// La frequenza del tono di sincronismo nel simbolo `k` con una deriva lineare di `drift` hertz su tutto il messaggio.
+fn symbol_freq(f: f64, drift: f64, k: usize) -> f64 {
+    f + drift * (k as f64 / (NSYM - 1) as f64 - 0.5)
 }
 
 fn symbol_start(dt_samples: f64, k: usize) -> i64 {
@@ -231,55 +232,74 @@ fn symbol_start(dt_samples: f64, k: usize) -> i64 {
 }
 
 /// Correlazione con la sequenza di sincronismo di tutta la trasmissione (energie del tono 0 meno quelle dei simboli di dati).
-fn sync_metric(samples: &[f32], dt_samples: f64, table: &[Complex<f32>]) -> f32 {
+fn sync_metric(samples: &[f32], dt_samples: f64, f: f64, drift: f64) -> f32 {
     let mut m = 0.0f32;
     for (k, &p) in SYNC_PATTERN.iter().enumerate() {
-        let e = tone_energy(samples, symbol_start(dt_samples, k), table);
+        let e = tone_energy_at(samples, symbol_start(dt_samples, k), symbol_freq(f, drift, k));
         m += if p == 1 { e } else { -e };
     }
     m
 }
 
-/// Affina frequenza e ritardo attorno al candidato: prima il ritardo, poi la frequenza, poi ancora il ritardo piu' fine.
-fn refine(samples: &[f32], c: &Candidate) -> (f64, f64) {
+/// Affina frequenza, ritardo e deriva attorno al candidato (`afc65b`): prima il ritardo, poi la frequenza, poi la deriva lineare (da -3 a +3 Hz
+/// su tutto il messaggio), poi ancora il ritardo piu' fine e una frequenza piu' fine. Ritorna la frequenza a meta' messaggio, il ritardo e la deriva.
+fn refine(samples: &[f32], c: &Candidate) -> (f64, f64, f64) {
     let mut f = c.bin as f64 * DF_BIN;
     let mut dt = f64::from(c.lag) * QSTEP;
-    let mut table = rotation_table(f);
-    let mut best = sync_metric(samples, dt, &table);
+    let mut drift = 0.0f64;
+    let mut best = sync_metric(samples, dt, f, drift);
     for step in [QSTEP / 4.0, QSTEP / 16.0] {
         let center = dt;
         for d in -4i32..=4 {
             let t = center + f64::from(d) * step;
-            let m = sync_metric(samples, t, &table);
+            let m = sync_metric(samples, t, f, drift);
             if m > best {
                 best = m;
                 dt = t;
             }
         }
         if step > QSTEP / 8.0 {
-            // la frequenza si cerca dopo il primo passo del ritardo
+            // la frequenza si cerca dopo il primo passo del ritardo, poi la deriva
             let center_f = f;
             for d in -4i32..=4 {
                 let ff = center_f + f64::from(d) * 0.35;
-                let tb = rotation_table(ff);
-                let m = sync_metric(samples, dt, &tb);
+                let m = sync_metric(samples, dt, ff, drift);
                 if m > best {
                     best = m;
                     f = ff;
-                    table = tb;
+                }
+            }
+            for d in -6i32..=6 {
+                let dr = f64::from(d) * 0.5;
+                let m = sync_metric(samples, dt, f, dr);
+                if m > best {
+                    best = m;
+                    drift = dr;
                 }
             }
         }
     }
-    (f, dt)
+    // ultimo ritocco: frequenza e deriva piu' fini
+    let (f0, d0) = (f, drift);
+    for df in -2i32..=2 {
+        for dd in -2i32..=2 {
+            let (ff, dr) = (f0 + f64::from(df) * 0.15, d0 + f64::from(dd) * 0.25);
+            let m = sync_metric(samples, dt, ff, dr);
+            if m > best {
+                best = m;
+                f = ff;
+                drift = dr;
+            }
+        }
+    }
+    (f, dt, drift)
 }
 
 /// Le energie dei 64 toni di dati per i 63 simboli di dati: `s3[j][i]`, `j` nell'ordine di trasmissione.
-fn tone_matrix(samples: &[f32], f: f64, dt_samples: f64) -> Vec<[f32; 64]> {
+fn tone_matrix(samples: &[f32], f: f64, dt_samples: f64, drift: f64) -> Vec<[f32; 64]> {
     let mut planner = FftPlanner::<f32>::new();
     let fft = planner.plan_fft_forward(WINDOW);
     let mut scratch = vec![Complex::new(0.0f32, 0.0); fft.get_inplace_scratch_len()];
-    let table = rotation_table(f);
     let mut s3 = Vec::with_capacity(NN);
     let mut buf = vec![Complex::new(0.0f32, 0.0); WINDOW];
     for (k, &p) in SYNC_PATTERN.iter().enumerate() {
@@ -287,10 +307,17 @@ fn tone_matrix(samples: &[f32], f: f64, dt_samples: f64) -> Vec<[f32; 64]> {
             continue;
         }
         let start = symbol_start(dt_samples, k);
+        // si porta il tono di sincronismo di questo simbolo a frequenza zero (con la deriva ogni simbolo ha la sua)
+        let step = -std::f64::consts::TAU * symbol_freq(f, drift, k) / FS;
+        let (wr, wi) = (step.cos(), step.sin());
+        let (mut cr, mut ci) = (1.0f64, 0.0f64);
         for (n, b) in buf.iter_mut().enumerate() {
             let idx = start + n as i64;
-            let x = if idx >= 0 && (idx as usize) < samples.len() { samples[idx as usize] } else { 0.0 };
-            *b = table[n] * x;
+            let x = if idx >= 0 && (idx as usize) < samples.len() { f64::from(samples[idx as usize]) } else { 0.0 };
+            *b = Complex::new((x * cr) as f32, (x * ci) as f32);
+            let nr = cr * wr - ci * wi;
+            ci = cr * wi + ci * wr;
+            cr = nr;
         }
         fft.process_with_scratch(&mut buf, &mut scratch);
         let mut row = [0.0f32; 64];
@@ -555,10 +582,10 @@ fn demodulate(audio: &[f32], start: i64, freq: f64) -> (f64, f64, usize) {
 }
 
 /// Quanta energia il segnale ricostruito (frequenza `f`, ritardo `dt`) trova nell'audio: serve a rifinire f e dt sul messaggio gia' noto.
-fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64) -> f64 {
+fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64, drift: f64) -> f64 {
     let mut total = 0.0f64;
     for (k, &tone) in tones.iter().enumerate() {
-        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), f + f64::from(tone) * TONE_DF);
+        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), symbol_freq(f, drift, k) + f64::from(tone) * TONE_DF);
         if count >= WINDOW / 2 {
             total += re * re + im * im;
         }
@@ -569,13 +596,13 @@ fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64) -> f64 {
 /// `subtract65`: toglie dall'audio un segnale decodificato. Prima si rifinisce frequenza e ritardo sul messaggio noto (un errore di un decimo di
 /// hertz lascerebbe un residuo di -18 dB), poi per ogni simbolo si stima ampiezza e fase del suo tono e si sottrae l'onda ricostruita; senza questo
 /// un segnale forte lascia ai vicini tanta energia da far «decodificare» messaggi inesistenti.
-fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64) {
+fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64) {
     let tones = all_tones(channel);
     let (mut f, mut dt) = (f0, dt0);
-    let mut best = tone_fit(audio, &tones, f, dt);
+    let mut best = tone_fit(audio, &tones, f, dt, drift);
     for d in -6i32..=6 {
         let ff = f0 + f64::from(d) * 0.04;
-        let fit = tone_fit(audio, &tones, ff, dt);
+        let fit = tone_fit(audio, &tones, ff, dt, drift);
         if fit > best {
             best = fit;
             f = ff;
@@ -584,14 +611,14 @@ fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64) {
     let dt_center = dt0;
     for d in -6i32..=6 {
         let t = dt_center + f64::from(d) * 8.0;
-        let fit = tone_fit(audio, &tones, f, t);
+        let fit = tone_fit(audio, &tones, f, t, drift);
         if fit > best {
             best = fit;
             dt = t;
         }
     }
     for (k, &tone) in tones.iter().enumerate() {
-        let freq = f + f64::from(tone) * TONE_DF;
+        let freq = symbol_freq(f, drift, k) + f64::from(tone) * TONE_DF;
         let start = symbol_start(dt, k);
         let (re, im, count) = demodulate(audio, start, freq);
         if count < WINDOW / 2 {
@@ -620,19 +647,32 @@ fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64) {
 /// il candidato successivo (`subtract65`).
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     let codec = Codec::new();
-    let (ss, nq) = symbol_spectra(samples);
-    let candidates = find_candidates(&ss, nq, options);
-    drop(ss);
     let mut audio = samples.to_vec();
     let mut out: Vec<Decoded> = Vec::new();
-    for c in &candidates {
+    // fino a tre passate: dopo aver tolto i segnali decodificati si cerca di nuovo, perche' quelli deboli nascosti dai forti compaiono solo allora
+    for _pass in 0..3 {
+        let (ss, nq) = symbol_spectra(&audio);
+        let candidates = find_candidates(&ss, nq, options);
+        drop(ss);
+        let found_before = out.len();
+        decode_candidates(&codec, &mut audio, &candidates, options, &mut out);
+        if out.len() == found_before {
+            break;
+        }
+    }
+    out
+}
+
+/// Prova i candidati di una passata e toglie dall'audio ogni messaggio trovato.
+fn decode_candidates(codec: &Codec, audio: &mut [f32], candidates: &[Candidate], options: &Options, out: &mut Vec<Decoded>) {
+    for c in candidates {
         // un candidato sul segnale gia' trovato (stessa frequenza del tono di sincronismo, entro 3 Hz) non serve
         let bin_hz = c.bin as f64 * DF_BIN;
         if out.iter().any(|o| (f64::from(o.freq_hz) - bin_hz).abs() < 3.0) {
             continue;
         }
-        let (f, dt) = refine(&audio, c);
-        let s3 = tone_matrix(&audio, f, dt);
+        let (f, dt, drift) = refine(audio, c);
+        let s3 = tone_matrix(audio, f, dt, drift);
         if s3.len() != NN {
             continue;
         }
@@ -644,7 +684,7 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         let base = percentile(&all, 50).max(1e-30);
         let s3_norm: Vec<[f32; 64]> = s3.iter().map(|row| row.map(|v| v / base)).collect();
         let d = demod(&s3);
-        let Some(res) = soft_decode(&codec, &d, &s3_norm, options.trials) else { continue };
+        let Some(res) = soft_decode(codec, &d, &s3_norm, options.trials) else { continue };
         // soglie di `extract`: distanza totale e vicinanza del secondo candidato
         let accepted = res.nhard < 0 || (res.ntotal <= 81 && res.rtt <= 0.87);
         if !accepted {
@@ -666,8 +706,14 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         if text.is_empty() || out.iter().any(|o| o.text == text) {
             continue;
         }
+        // un messaggio di testo libero e' il tipo che il decodificatore a cancellazioni casuali inventa piu' spesso (nessun nominativo da controllare):
+        // si accetta solo se e' uscito dalla decisione dura (al massimo 25 simboli sbagliati). JTDX lo mostra con un marcatore (`.` o `,`) e un punto
+        // interrogativo se non supera il controllo dei nominativi; qui non si mostra.
+        if dat[9] & 8 != 0 && res.nhard > 25 {
+            continue;
+        }
         let tones = channel_tones(&res.word);
-        subtract(&mut audio, &tones, f, dt);
+        subtract(audio, &tones, f, dt, drift);
         out.push(Decoded {
             text,
             freq_hz: f as f32,
@@ -679,7 +725,6 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
             rtt: res.rtt,
         });
     }
-    out
 }
 
 /// Ritorna le costanti di tempo per chi deve sapere quanto dura un messaggio.
@@ -744,7 +789,6 @@ mod tests {
     fn a_weak_signal_at_minus_twenty_one_db_still_decodes() {
         let audio = minute(&[("K1ABC IU3ABC -15", 1200.0, 0.0, -21.0)], 5);
         let out = decode(&audio, &Options::default());
-        eprintln!("WEAK {out:?}");
         assert!(out.iter().any(|d| d.text == "K1ABC IU3ABC -15"), "{out:?}");
     }
 
@@ -758,5 +802,33 @@ mod tests {
             let noise = minute(&[], seed);
             assert!(decode(&noise, &Options::default()).is_empty(), "il rumore non deve dare messaggi");
         }
+    }
+    #[test]
+    fn a_strong_signal_is_subtracted_so_it_does_not_hide_or_invent_neighbours() {
+        let audio = minute(&[("CQ IU3ABC JN55", 1500.0, 0.1, 3.0), ("K1ABC IU3ABC -15", 1640.0, 0.2, -17.0)], 3);
+        let out = decode(&audio, &Options::default());
+        let texts: Vec<&str> = out.iter().map(|d| d.text.as_str()).collect();
+        assert!(texts.contains(&"CQ IU3ABC JN55"), "{out:?}");
+        assert!(texts.contains(&"K1ABC IU3ABC -15"), "{out:?}");
+        assert_eq!(out.len(), 2, "nessun messaggio inventato vicino al segnale forte: {out:?}");
+    }
+    /// Un segnale che deriva di due hertz sul messaggio (uno spostamento da propagazione) si decodifica e la frequenza riportata e' quella di mezzo.
+    #[test]
+    fn a_drifting_signal_is_followed() {
+        let codec = Codec::new();
+        let mut rng = Lcg(5);
+        let n = 60 * 12_000;
+        let mut audio: Vec<f32> = (0..n).map(|_| rng.gauss() as f32).collect();
+        let amp = (2.0 * 10f64.powf(-16.0 / 10.0) * 2500.0 / 6000.0).sqrt() as f32;
+        let wave = crate::jt65::modulate_drifting(&tones(&codec, "K1ABC IU3ABC -15"), 1400.0, amp, 12_000.0, 3.0);
+        let start = 12_000 + 1_200;
+        for (i, v) in wave.iter().enumerate() {
+            audio[start + i] += v;
+        }
+        let out = decode(&audio, &Options::default());
+        assert!(out.iter().any(|d| d.text == "K1ABC IU3ABC -15"), "{out:?}");
+        let d = out.iter().find(|d| d.text == "K1ABC IU3ABC -15").expect("trovato");
+        // a meta' messaggio il tono di sincronismo sta a 1400 Hz (deriva simmetrica attorno a f0)
+        assert!((d.freq_hz - 1400.0).abs() < 1.0, "{d:?}");
     }
 }

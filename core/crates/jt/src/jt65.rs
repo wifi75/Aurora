@@ -92,13 +92,19 @@ pub fn tones(codec: &Codec, msg: &str) -> [u8; NSYM] {
 /// L'onda audio di un messaggio a 12 kHz (fase continua): `tones` da [`tones`], `f0` la frequenza del tono di sincronismo, `amplitude` il picco.
 /// L'audio comincia al tempo zero della trasmissione e dura `126 * 4096 / 11025` secondi.
 pub fn modulate(tones: &[u8; NSYM], f0: f64, amplitude: f32, sample_rate: f64) -> Vec<f32> {
+    modulate_drifting(tones, f0, amplitude, sample_rate, 0.0)
+}
+
+/// Come [`modulate`] con una deriva lineare della frequenza: `drift_hz` e' di quanto cambia tra l'inizio e la fine del messaggio (per le prove del
+/// ricevitore, che segue la deriva).
+pub fn modulate_drifting(tones: &[u8; NSYM], f0: f64, amplitude: f32, sample_rate: f64, drift_hz: f64) -> Vec<f32> {
     let symbol = 4096.0 * sample_rate / 11_025.0;
     let total = (NSYM as f64 * symbol).round() as usize;
     let mut out = Vec::with_capacity(total);
     let mut phase = 0.0f64;
     for n in 0..total {
         let k = ((n as f64 / symbol) as usize).min(NSYM - 1);
-        let f = f0 + f64::from(tones[k]) * TONE_SPACING_HZ;
+        let f = f0 + f64::from(tones[k]) * TONE_SPACING_HZ + drift_hz * (n as f64 / total as f64 - 0.5);
         phase += 2.0 * std::f64::consts::PI * f / sample_rate;
         if phase > 2.0 * std::f64::consts::PI {
             phase -= 2.0 * std::f64::consts::PI;
