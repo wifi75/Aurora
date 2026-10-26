@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-26, v0.11.22).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-26, v0.11.23).
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
@@ -23,6 +23,11 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Analisi delle logiche di JTDX (`docs/logiche-jtdx.md`)
 
 ## Da fare
+- [x] **Coda delle stazioni che chiamano** (tasto destro) e **Rispondi a tutti** (fatti il 2026-10-26, 0.11.23): vedi `memory.md`. Da provare con la radio.
+- [x] **Hound e modo SWL nel motore proprio** (2026-10-26): Hound senza CQ, SWL con finestra, soglie e passate come JTDX (quarta sottopassata di SWL non portata, filtro +-290 Hz e salti di Hound non portati).
+- [ ] **JT65 e JT9 nel motore proprio**: il crate `jt` e' fatto e provato (`docs/2026-10-26-jt65-jt9.md`); resta l'integrazione (periodi da 60 s, modulatore nel percorso di trasmissione, cascata, ALL.TXT, sequenza con messaggi JT), poi la parita' con JTDX sul segnale debole (afc, subtract, avg65, dynhint).
+- [ ] **Aprire un'interfaccia per il filtro +-290 Hz di Hound e per la sensibilita' fissa** (letti in `docs/analisi-jtdx-reverse-rea.md`, non portati).
+- [ ] **Causa dell'arresto del 2026-10-26 (0.11.21)**: non trovata; dalla 0.11.22 il log ha i panic e le risorse del processo (`health.rs`): al prossimo arresto leggere `%APPDATA%\Aurora\logsurora.log`.
 - [x] **Generali: Regione IARU e «Generazione dei messaggi per nominativi composti di tipo 2» funzionanti** (fatte il 2026-10-25, lette con REA in `jtdx.exe`: `docs/analisi-jtdx-reverse-rea.md`, sezione «Regione IARU e nominativi composti di tipo 2»): la regione filtra la tabella iniziale di JTDX (FT8 e FT4) e sceglie la riga di banda, cambio di modo e programmazione; il tipo 2 si salva e si legge ma, come in JTDX, vale solo per JT65/JT9/T10 e in FT8/FT4 non cambia nessun messaggio.
 - [ ] **Frequenze: 8 m, 4 m, 70 cm e scelta delle alternative**: le righe di JTDX per 40,680 MHz (R1), 70 MHz (R1) e 432,174 MHz non ci sono perche' Aurora non ha quelle bande (`rig_control::bands`, ADIF, filtri); le righe non predefinite (14,071, 14,090...) restano nella tabella ma Aurora non ha una tendina per sceglierle.
 - [x] **Scheda Impostazioni «Radio» = scheda «Radio CAT»** (fatta il 2026-10-25): una sola scheda «Radio» con collegamento, PTT, split e lettura, profili, stato e prova, condivisione e OmniRig; «Audio TCI» resta indicato come non disponibile.
