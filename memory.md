@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-25, versione 0.11.22. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-26, versione 0.11.22. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -45,6 +45,13 @@ Stato al 2026-10-25, versione 0.11.22. Per riprendere il lavoro leggi anche `doc
 
 - Crate `core/crates/ft8`: modulazione, CRC e LDPC, sincronismo e messaggi a 77 bit portati e provati (67 prove); manca il decoder del periodo intero (`decode.rs`), il confronto con JTDX e l'integrazione in Aurora. Piano in `docs/2026-10-24-aurora-motore-ft8.md`.
 - Analisi di Decodium (sorgente pubblico GPL 3 e REA): `docs/analisi-decodium-cascata.md` (la cascata mostra 3,8 righe/s per la media a 4: causa principale); CAT per tutte le radio e banda satura in arrivo.
+
+## Arresto del 2026-10-26 (0.11.21) e diagnostica
+
+- Alle 17:45 `aurora-desktop.exe` 0.11.21 si e' chiuso con `0xc0000409` (arresto immediato, di solito un `abort` di Rust); nello stesso istante sono caduti piu' `jtdx.exe` (`Qt5Core.dll`), `msedgewebview2.exe` e un `powershell.exe`, e `cmd.exe` ha dato `0xc0000142` (avvio non riuscito, tipico di risorse di sessione esaurite). Il log non aveva nessun panic e il dump (senza simboli, `strip = true`) non dice la funzione: **causa non trovata**. Non e' stato misurato il consumo di Aurora in esecuzione.
+- Dalla 0.11.22 (`desktop/src-tauri/src/health.rs`) i panic vanno nel log e ogni 10 minuti (ogni minuto se oltre soglia: 1500 MB privati, 8000 maniglie, 5000 oggetti USER o GDI) si scrive una riga «risorse del processo». Al prossimo arresto leggere le ultime righe di `%APPDATA%\Aurora\logsurora.log` e i dump in `%LOCALAPPDATA%\CrashDumps`.
+- Il test del core con troppi lavori in parallelo puo' fallire in collegamento (`LNK1102`, memoria insufficiente): `cargo test --workspace -j 2`.
+- Novita' DXCC/zone su banda: «Banda» vince su «Banda+Modo» solo con la banda nota (scelta del proprietario, diversa da JTDX); con la banda ignota si controlla il modo.
 
 ## Sicurezza (non negoziabile)
 - Il core parte con la trasmissione chiusa (`AURORA_ALLOW_TX=0`), due cancelli indipendenti (API e motore); lo script `avvia-sviluppo.ps1` su richiesta di Tiziano (2026-10-24) la apre, con `-Chiusa` resta chiusa. STOP TX mai bloccato e spegne anche l'automazione.
