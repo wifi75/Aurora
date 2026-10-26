@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.23 - 2026-10-26
+- **Coda delle stazioni che chiamano**: tasto destro su una riga della finestra Attivita' di banda mette la stazione in coda; a QSO registrato (e a fine della trasmissione di chiusura RR73/73) Aurora risponde alla prima della coda, con l'ultimo messaggio che ha mandato. Senza un QSO in corso il tasto destro risponde subito (come il doppio clic); di nuovo sulla stessa la toglie. Fino a 8 stazioni, una stazione sparita da 10 minuti si salta, STOP TX, cambio di banda e cambio di modo svuotano la coda. La riga in coda ha la sigla «IN CODA» e una barra blu. Solo motore proprio (con JTDX decide JTDX). `POST /api/v1/commands/queue-reply`.
+- **«Risp. a tutti»** (nuovo interruttore nel riquadro QSO, accanto a «1 QSO», e nelle impostazioni della Sequenza): ogni stazione che mi chiama direttamente va in coda da sola (non i CQ, non le chiusure RR73/73, non il DX in corso, non i doppioni; con «Risp B4» spento nemmeno i gia' collegati in sessione). Spento di fabbrica.
+- **Chi mi ha risposto**: l'etichetta del suo nominativo e la linguetta a destra diventano viola con il tooltip «Ti ha risposto» (prima era verde solo se avevo trasmesso a lui da poco); la linguetta rossa resta solo per chi mi chiama per primo. La stazione che sto lavorando e che mi scrive e' sempre una risposta.
+- **Hound e modo SWL nel motore proprio**: Hound non trasmette CQ e usa la logica di chiusura della spedizione; SWL allarga la finestra di ricerca del ritardo (+-86 passi invece di +-62, picco da -74 a 101, vicini a meno di 3 Hz), usa le soglie del sincronismo della soglia bassa, sottrae anche alla terza passata di un ciclo da 3 e fa sempre la lettura a tempo invertito (valori letti con REA in `jtdxjt9.exe`). La quarta sottopassata di SWL non e' portata.
+- **Crate `jt` (JT65 e JT9), non ancora nel programma**: messaggi a 72 bit, Reed-Solomon, trasmissione e ricezione di JT65, trasmissione e ricezione di JT9 con decodificatore di Fano; i vettori della guida di WSJT-X coincidono simbolo per simbolo e la tabella delle metriche di JT9 e' uguale a quella di `jtdxjt9.exe` (REA). Stato e cose mancanti in `docs/2026-10-26-jt65-jt9.md`.
+
 ## 0.11.22 - 2026-10-26
 - **Novita' DXCC e zone con banda sconosciuta**: con «Banda» e «Banda+Modo» accese e la banda non nota, il modo si controlla ancora (prima un paese nuovo solo in quel modo non si illuminava). Prove per zone CQ/ITU, locatore, nominativo e per «solo modo».
 - **Diagnostica del programma Windows**: i panic finiscono nel log con il thread e il punto; ogni 10 minuti (ogni minuto se troppo alte) una riga con memoria privata, maniglie, oggetti USER e GDI del processo, per capire arresti e consumi.
