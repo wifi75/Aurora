@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.22 - 2026-10-26
+- **Novita' DXCC e zone con banda sconosciuta**: con «Banda» e «Banda+Modo» accese e la banda non nota, il modo si controlla ancora (prima un paese nuovo solo in quel modo non si illuminava). Prove per zone CQ/ITU, locatore, nominativo e per «solo modo».
+- **Diagnostica del programma Windows**: i panic finiscono nel log con il thread e il punto; ogni 10 minuti (ogni minuto se troppo alte) una riga con memoria privata, maniglie, oggetti USER e GDI del processo, per capire arresti e consumi.
+- **Notifiche, «Colori e anteprima»** va a capo sugli schermi stretti (sotto 640 px) invece di uscire dalla cella.
+- Immagini dell'installatore rigenerate con la versione giusta.
+
 ## 0.11.21 - 2026-10-25
 - **«DXCC BANDA» (e zone CQ/ITU su banda) corretta**: un paese gia' collegato su quella banda, in qualunque modo (anche RTTY, SSB, PSK31) e con qualunque nominativo, non e' piu' «nuovo su banda»; prima, con le caselle «Banda» e «Banda+Modo» accese, una stazione slovacca in FT8 su 20 m si illuminava anche avendo gia' la Slovacchia su 20 m in altri modi. Locatore, prefisso e nominativo restano come in JTDX.
 - **Scheda Audio**: le tendine di ingresso e uscita sono a tutta larghezza, il nome del dispositivo si legge intero.
