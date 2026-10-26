@@ -9,6 +9,9 @@
 pub enum Mode {
     Ft8,
     Ft4,
+    /// JT65 (sottomodo A) e JT9: periodi di un minuto, il messaggio comincia a un secondo dall'inizio.
+    Jt65,
+    Jt9,
 }
 
 impl Mode {
@@ -17,6 +20,7 @@ impl Mode {
         match self {
             Mode::Ft8 => 15_000,
             Mode::Ft4 => 7_500,
+            Mode::Jt65 | Mode::Jt9 => 60_000,
         }
     }
 
@@ -29,6 +33,8 @@ impl Mode {
         match self {
             Mode::Ft8 => "FT8",
             Mode::Ft4 => "FT4",
+            Mode::Jt65 => "JT65",
+            Mode::Jt9 => "JT9",
         }
     }
 }

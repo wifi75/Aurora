@@ -41,6 +41,13 @@ pub struct SavedControls {
     pub rx_df: u32,
     pub tx_df: u32,
     pub ft4: bool,
+    /// 0 = FT8 o FT4 (vale `ft4`), 1 = JT65, 2 = JT9. Nei file scritti prima manca.
+    #[serde(default)]
+    pub jt: u8,
+    /// Scritto da una versione in cui «Filtro» restringe davvero la ricerca (spento di fabbrica, come in JTDX). Nei file scritti prima, il «Filtro» acceso
+    /// era solo l'impostazione di fabbrica di un pulsante che non faceva niente: non si ripristina, o la decodifica si ridurrebbe di colpo a +-60 Hz.
+    #[serde(default)]
+    pub filter_wired: bool,
     pub attenuation: u32,
     pub levels: std::collections::BTreeMap<String, u32>,
     /// Abilita Tx: per scelta del proprietario resta com'era al riavvio. Nei file scritti prima manca (spento).
@@ -64,7 +71,8 @@ pub struct NativeControls {
     /// Frequenza audio di trasmissione, in Hz. Con «Tx/Rx Split» spento segue la ricezione (e viceversa); con Split acceso sono indipendenti.
     pub tx_df: AtomicU32,
     /// Il modo corrente e' FT4 (altrimenti FT8). Lo legge il motore a ogni blocco di audio e cambia periodi e decoder.
-    ft4: AtomicBool,
+    /// 0 FT8, 1 FT4, 2 JT65, 3 JT9.
+    mode_code: AtomicU8,
     /// «Decodifica»: chiesto di rielaborare l'ultimo periodo (lo raccoglie il motore).
     pub redecode: AtomicBool,
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB: la usera' la trasmissione.
@@ -102,9 +110,9 @@ impl Default for NativeControls {
         let switches = controls::CONTROLS
             .iter()
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
-            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "filter" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
+            .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), ft4: AtomicBool::new(false), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
     }
 }
 
@@ -115,11 +123,22 @@ impl NativeControls {
 
     /// Il modo corrente (FT8 di base).
     pub fn mode(&self) -> Mode {
-        if self.ft4.load(Ordering::Relaxed) { Mode::Ft4 } else { Mode::Ft8 }
+        match self.mode_code.load(Ordering::Relaxed) {
+            1 => Mode::Ft4,
+            2 => Mode::Jt65,
+            3 => Mode::Jt9,
+            _ => Mode::Ft8,
+        }
     }
 
     pub fn set_mode(&self, mode: Mode) {
-        self.ft4.store(mode == Mode::Ft4, Ordering::Relaxed);
+        let code = match mode {
+            Mode::Ft8 => 0,
+            Mode::Ft4 => 1,
+            Mode::Jt65 => 2,
+            Mode::Jt9 => 3,
+        };
+        self.mode_code.store(code, Ordering::Relaxed);
     }
 
     /// Lo stato da ricordare. Monitora non si ricorda (l'ascolto parte sempre acceso); Abilita Tx si'.
@@ -133,7 +152,13 @@ impl NativeControls {
             switches,
             rx_df: self.rx_df.load(Ordering::Relaxed),
             tx_df: self.tx_df.load(Ordering::Relaxed),
-            ft4: self.ft4.load(Ordering::Relaxed),
+            filter_wired: true,
+            ft4: self.mode() == Mode::Ft4,
+            jt: match self.mode() {
+                Mode::Jt65 => 1,
+                Mode::Jt9 => 2,
+                _ => 0,
+            },
             attenuation: self.attenuation.load(Ordering::Relaxed),
             levels,
         }
@@ -142,7 +167,7 @@ impl NativeControls {
     /// Rimette lo stato ricordato (all'avvio). Valori fuori campo si scartano.
     pub fn restore(&self, saved: &SavedControls) {
         for (id, on) in &saved.switches {
-            if id != "enable_tx" && id != "monitor" {
+            if id != "enable_tx" && id != "monitor" && !(id == "filter" && !saved.filter_wired) {
                 self.set_switch(id, *on);
             }
         }
@@ -152,7 +177,12 @@ impl NativeControls {
         if (100..=5000).contains(&saved.tx_df) {
             self.tx_df.store(saved.tx_df, Ordering::Relaxed);
         }
-        self.ft4.store(saved.ft4, Ordering::Relaxed);
+        self.set_mode(match (saved.jt, saved.ft4) {
+            (1, _) => Mode::Jt65,
+            (2, _) => Mode::Jt9,
+            (_, true) => Mode::Ft4,
+            _ => Mode::Ft8,
+        });
         self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         if let Ok(mut memory) = self.levels.lock() {
             memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
@@ -405,7 +435,7 @@ impl Rig for NativeRig {
     fn set_mode(&self, mode: &str) -> Result<(), RigError> {
         match mode {
             // la radio va sulla frequenza del modo scelto (lo fa chi chiama); il motore se ne accorge al blocco di audio dopo e cambia
-            // periodi, decodifica e trasmissione. JT65 e JT9 si accettano ma non hanno decoder: il modo resta quello di prima.
+            // periodi, decodifica e trasmissione. «JT» e' il pulsante JT di JTDX (JT65 e JT9 insieme): qui parte da JT65.
             "FT8" => {
                 self.controls.set_mode(Mode::Ft8);
                 Ok(())
@@ -414,7 +444,14 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Ft4);
                 Ok(())
             }
-            "JT" | "JT65" | "JT9" => Ok(()),
+            "JT" | "JT65" => {
+                self.controls.set_mode(Mode::Jt65);
+                Ok(())
+            }
+            "JT9" => {
+                self.controls.set_mode(Mode::Jt9);
+                Ok(())
+            }
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -432,6 +469,8 @@ impl Rig for NativeRig {
             (Mode::Ft8, false) => "TX 15/45",
             (Mode::Ft4, true) => "TX 00",
             (Mode::Ft4, false) => "TX 7.5",
+            (Mode::Jt65 | Mode::Jt9, true) => "TX even",
+            (Mode::Jt65 | Mode::Jt9, false) => "TX odd",
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),
@@ -633,6 +672,24 @@ mod tests {
         assert_eq!(fresh.mode(), Mode::Ft4);
         assert_eq!(fresh.attenuation.load(Ordering::Relaxed), 100);
         assert_eq!(fresh.saved(), saved, "stato identico dopo il ripristino");
+    }
+
+    /// «Filtro» spento di fabbrica; un file salvato prima che il pulsante facesse qualcosa lo ricordava acceso solo per via del valore di fabbrica: non si ripristina.
+    #[test]
+    fn the_filter_comes_back_only_from_a_file_written_when_it_worked() {
+        let (_, fresh) = rig();
+        assert!(!fresh.switch_on("filter"), "spento di fabbrica, come in JTDX");
+        let mut old = SavedControls { version: SavedControls::VERSION, rx_df: 1500, tx_df: 1500, attenuation: 100, ..SavedControls::default() };
+        old.switches.insert("filter".to_string(), true);
+        old.switches.insert("hound".to_string(), true);
+        let (_, a) = rig();
+        a.restore(&old);
+        assert!(!a.switch_on("filter") && a.switch_on("hound"), "il filtro di un file vecchio si scarta, il resto no");
+        old.filter_wired = true;
+        let (_, b) = rig();
+        b.restore(&old);
+        assert!(b.switch_on("filter"), "un file nuovo lo ripristina");
+        assert!(b.saved().filter_wired);
     }
 
     #[test]

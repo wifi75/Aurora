@@ -8,6 +8,8 @@ use crate::error::TxError;
 pub enum Mode {
     Ft8,
     Ft4,
+    Jt65,
+    Jt9,
 }
 
 impl Mode {
@@ -15,12 +17,16 @@ impl Mode {
         match self {
             Mode::Ft8 => Duration::from_millis(15_000),
             Mode::Ft4 => Duration::from_millis(7_500),
+            Mode::Jt65 | Mode::Jt9 => Duration::from_millis(60_000),
         }
     }
 
-    /// Ritardo dell'inizio dell'audio dall'inizio del periodo (0,5 s).
+    /// Ritardo dell'inizio dell'audio dall'inizio del periodo: 0,5 s in FT8 e FT4, 1 s in JT65 e JT9.
     pub fn tx_delay(self) -> Duration {
-        Duration::from_millis(500)
+        match self {
+            Mode::Ft8 | Mode::Ft4 => Duration::from_millis(500),
+            Mode::Jt65 | Mode::Jt9 => Duration::from_millis(1_000),
+        }
     }
 
     /// La finestra in cui una trasmissione puo' ancora cominciare, contata dall'inizio del periodo: la durata del messaggio di JTDX
@@ -30,6 +36,8 @@ impl Mode {
         match self {
             Mode::Ft8 => Duration::from_millis(13_640),
             Mode::Ft4 => Duration::from_millis(6_040),
+            Mode::Jt65 => Duration::from_millis(47_810),
+            Mode::Jt9 => Duration::from_millis(49_960),
         }
     }
 }

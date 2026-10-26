@@ -28,7 +28,7 @@ fn invalid_tables_are_refused() {
     for bad in [
         vec![],
         vec![Entry::new("13m", "FT8", 14_074_000)],
-        vec![Entry::new("20m", "JT65", 14_074_000)],
+        vec![Entry::new("20m", "WSPR", 14_095_600)],
         vec![Entry::new("20m", "FT8", 5)],
         vec![Entry::new("20m", "FT8", 9_000_000_000)],
         vec![Entry::new("20m", "FT8", 14_074_000), Entry::new("20M", "ft8", 14_074_000)],

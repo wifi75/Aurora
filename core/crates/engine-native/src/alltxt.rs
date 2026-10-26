@@ -106,12 +106,22 @@ pub fn format_mhz(dial_hz: u64) -> String {
     format_g(dial_hz as f64 / 1_000_000.0, 12)
 }
 
+/// Il segno che JTDX mette nelle righe di `ALL.TXT` per ogni modo.
+pub fn mode_symbol(mode: &str) -> char {
+    match mode {
+        "FT4" => ':',
+        "JT65" => '#',
+        "JT9" => '@',
+        _ => '~',
+    }
+}
+
 /// Riga di decodifica. `hhmmss` e' l'inizio del periodo; il messaggio e' troncato a 26 caratteri come in JTDX (`msg26`); `flag` e' l'indicatore
-/// finale (spazio = nessuno). Modo `ft4` = `:`, altrimenti `~`.
-pub fn decode_line(date: &str, hhmmss: &str, row: (i32, f32, i64), ft4: bool, text: &str, flag: char) -> String {
+/// finale (spazio = nessuno). Il segno del modo: `~` FT8, `:` FT4, `#` JT65, `@` JT9 (vedi [`mode_symbol`]).
+pub fn decode_line(date: &str, hhmmss: &str, row: (i32, f32, i64), symbol: char, text: &str, flag: char) -> String {
     let (snr, dt, freq_hz) = row;
     let msg: String = text.chars().take(26).collect();
-    let line = format!("{date}_{hhmmss}{snr:>4}{dt:>5.1}{freq_hz:>5} {} {msg:<26}{flag}", if ft4 { ':' } else { '~' });
+    let line = format!("{date}_{hhmmss}{snr:>4}{dt:>5.1}{freq_hz:>5} {symbol} {msg:<26}{flag}");
     line.trim().to_string()
 }
 
@@ -238,7 +248,7 @@ impl AllTxt {
             self.header_pending = true;
         }
         self.last_secs = Some(secs);
-        let ft4 = mode == "FT4";
+        let symbol = mode_symbol(mode);
         let mut lines = Vec::with_capacity(decoded.len() + 1);
         if self.header_pending {
             lines.push(header_line(&at, dial_hz, mode));
@@ -246,7 +256,7 @@ impl AllTxt {
         }
         let (date, time) = (at.date(), at.time());
         for (snr, dt, freq, text) in decoded {
-            lines.push(decode_line(&date, &time, (*snr, *dt, *freq), ft4, text, ' '));
+            lines.push(decode_line(&date, &time, (*snr, *dt, *freq), symbol, text, ' '));
         }
         self.append(&at, &lines);
     }
@@ -339,16 +349,16 @@ mod tests {
     #[test]
     fn a_decode_line_has_the_columns_of_jtdx() {
         // dai file veri: SNR a 4 colonne, DT a 5, frequenza a 5, tilde, messaggio a 26
-        assert_eq!(decode_line("20261018", "043545", (-9, 0.1, 1908), false, "R8CEC SV2YC KN10", ' '), "20261018_043545  -9  0.1 1908 ~ R8CEC SV2YC KN10");
-        assert_eq!(decode_line("20261018", "043545", (-3, -0.1, 911), false, "CQ RA5O KO91", ' '), "20261018_043545  -3 -0.1  911 ~ CQ RA5O KO91");
-        assert_eq!(decode_line("20261018", "043545", (-8, 0.0, 1363), false, "CQ RC7KH KN75", '*'), "20261018_043545  -8  0.0 1363 ~ CQ RC7KH KN75             *");
-        assert_eq!(decode_line("20260104", "071615", (-10, 0.2, 1294), false, "BG5JGG SP8AJK KO10", '^'), "20260104_071615 -10  0.2 1294 ~ BG5JGG SP8AJK KO10        ^");
-        assert_eq!(decode_line("20260104", "085622", (-5, 0.0, 1371), true, "CQ WWA", '.'), "20260104_085622  -5  0.0 1371 : CQ WWA                    .");
+        assert_eq!(decode_line("20261018", "043545", (-9, 0.1, 1908), '~', "R8CEC SV2YC KN10", ' '), "20261018_043545  -9  0.1 1908 ~ R8CEC SV2YC KN10");
+        assert_eq!(decode_line("20261018", "043545", (-3, -0.1, 911), '~', "CQ RA5O KO91", ' '), "20261018_043545  -3 -0.1  911 ~ CQ RA5O KO91");
+        assert_eq!(decode_line("20261018", "043545", (-8, 0.0, 1363), '~', "CQ RC7KH KN75", '*'), "20261018_043545  -8  0.0 1363 ~ CQ RC7KH KN75             *");
+        assert_eq!(decode_line("20260104", "071615", (-10, 0.2, 1294), '~', "BG5JGG SP8AJK KO10", '^'), "20260104_071615 -10  0.2 1294 ~ BG5JGG SP8AJK KO10        ^");
+        assert_eq!(decode_line("20260104", "085622", (-5, 0.0, 1371), ':', "CQ WWA", '.'), "20260104_085622  -5  0.0 1371 : CQ WWA                    .");
         // 59 caratteri con l'indicatore; il messaggio oltre 26 e' troncato
-        assert_eq!(decode_line("20261018", "043545", (-3, 0.1, 911), false, "CQ RA5O KO91", '^').len(), 59);
-        assert_eq!(decode_line("20261018", "043545", (-3, 0.1, 911), false, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123", ' ').len(), 58);
+        assert_eq!(decode_line("20261018", "043545", (-3, 0.1, 911), '~', "CQ RA5O KO91", '^').len(), 59);
+        assert_eq!(decode_line("20261018", "043545", (-3, 0.1, 911), '~', "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123", ' ').len(), 58);
         // valori limite: SNR a tre cifre, frequenza a 4
-        assert_eq!(decode_line("20261018", "043545", (0, 0.0, 2500), false, "73", ' '), "20261018_043545   0  0.0 2500 ~ 73");
+        assert_eq!(decode_line("20261018", "043545", (0, 0.0, 2500), '~', "73", ' '), "20261018_043545   0  0.0 2500 ~ 73");
     }
 
     #[test]

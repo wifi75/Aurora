@@ -97,7 +97,29 @@ fn an_old_saved_table_moves_to_the_jtdx_one_and_a_custom_one_stays() {
     assert_eq!(FrequencyTable::upgraded(legacy.clone()), FrequencyTable::default().entries().to_vec());
     let mut custom = legacy;
     custom[9] = Entry::new("20m", "FT8", 14_075_000);
-    assert_eq!(FrequencyTable::upgraded(custom.clone()), custom, "una tabella modificata dall'utente non si tocca");
+    // le righe dell'utente restano com'erano; si aggiungono solo quelle di JT65 e JT9 (la tabella e' di prima che esistessero)
+    let upgraded = FrequencyTable::upgraded(custom.clone());
+    assert_eq!(&upgraded[..custom.len()], &custom[..], "una tabella modificata dall'utente non si tocca");
+    assert!(upgraded[custom.len()..].iter().all(|e| e.mode == "JT65" || e.mode == "JT9") && upgraded.len() > custom.len());
+    // una tabella che ha gia' le righe JT resta esattamente com'e'
+    assert_eq!(FrequencyTable::upgraded(upgraded.clone()), upgraded);
+}
+
+#[test]
+fn jt65_and_jt9_use_the_jtdx_default_rows() {
+    let t = FrequencyTable::default();
+    assert!(t.is_valid());
+    assert_eq!(t.frequency("20m", "JT65"), Some(14_076_000));
+    assert_eq!(t.frequency("20m", "JT9"), Some(14_078_000));
+    assert_eq!(t.frequency("40m", "JT65"), Some(7_076_000));
+    assert_eq!(t.frequency("160m", "JT9"), Some(1_839_000));
+    // 6 m JT65: 50,276 solo nelle regioni 2 e 3, 50,310 per tutti
+    assert_eq!(rows(&t, Region::R2, "6m", "JT65"), vec![50_276_000, 50_310_000]);
+    assert_eq!(rows(&t, Region::R1, "6m", "JT65"), vec![50_310_000]);
+    // da FT8 a JT65 su 20 m si cambia frequenza
+    assert_eq!(t.best_working(Region::All, "JT65", 14_074_000), Some(14_076_000));
+    // JTDX non ha JT9 su 60 m e 2 m
+    assert_eq!(t.frequency("60m", "JT9"), None);
 }
 
 #[test]

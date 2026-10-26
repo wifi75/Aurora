@@ -41,6 +41,7 @@ impl Bench {
         let base = match mode {
             Mode::Ft8 => 2880,
             Mode::Ft4 => 5760,
+            Mode::Jt65 | Mode::Jt9 => 720,
         };
         Bench {
             seq,
@@ -291,6 +292,32 @@ fn full_qso_in_ft4() {
     // la finestra di avvio dell'FT4 e' la durata del messaggio: 6,04 s
     assert_eq!(b.tx_at(6, 6.1), None);
     assert_eq!(b.tx_at(6, 5.9).map(|t| t.n), Some(6));
+}
+
+/// JT65 e JT9: periodi di un minuto, chiusura con RRR (RR73 non esiste nei messaggi a 72 bit) e finestra di avvio lunga quanto il messaggio.
+#[test]
+fn full_qso_in_jt65_and_jt9_closes_with_rrr() {
+    for (mode, window_s) in [(Mode::Jt65, 47.81), (Mode::Jt9, 49.96)] {
+        let mut b = Bench::new(mode, Options { use_rrr: true, autolog: true, ..opts() });
+        b.seq.call_cq(None).expect("cq");
+        assert_eq!(b.tx(0).as_deref(), Some("CQ IU3ABC JN55"), "{mode:?}");
+        b.rx(1, &[("IU3ABC LZ2KSQ KN23", -5)]);
+        assert_eq!(b.tx(1), None);
+        let tx = b.tx_at(2, 0.3).expect("tx2");
+        assert_eq!(tx.text, "LZ2KSQ IU3ABC -05");
+        assert!(tx.even_slot);
+        b.rx(3, &[("IU3ABC LZ2KSQ R-02", -5)]);
+        assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RRR"), "{mode:?}");
+        // con RRR il QSO non e' chiuso: il DX risponde con il 73, si trasmette il 73 e solo allora si registra
+        assert!(b.records().is_empty(), "{mode:?}");
+        b.rx(5, &[("IU3ABC LZ2KSQ 73", -5)]);
+        assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"), "{mode:?}");
+        assert_eq!(b.records().len(), 1, "{mode:?}");
+        assert_eq!(b.records()[0].mode, mode);
+        // la finestra di avvio e' la durata del messaggio (1 s + i simboli): dopo non parte piu', dentro si
+        assert_eq!(b.tx_at(8, window_s + 0.1), None, "{mode:?}");
+        assert!(b.tx_at(8, window_s - 0.1).is_some(), "{mode:?}");
+    }
 }
 
 // ---------------------------------------------------------------------------------------
