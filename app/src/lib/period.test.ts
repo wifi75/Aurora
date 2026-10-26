@@ -28,3 +28,14 @@ describe('period position', () => {
     expect(periodPosition(at(13, 0, 7, 400), 'FT4').seconds).toBe(7);
   });
 });
+
+describe('JT65 and JT9 periods', () => {
+  it('last a whole minute, so the progress bar counts to 60', () => {
+    expect(periodSecs('JT65')).toBe(60);
+    expect(periodSecs('JT9')).toBe(60);
+    expect(periodSecs('FT8')).toBe(15);
+    expect(periodSecs('FT4')).toBe(7.5);
+    const at = Date.UTC(2026, 9, 26, 20, 36, 42);
+    expect(periodPosition(at, 'JT65')).toMatchObject({ seconds: 42, length: 60 });
+  });
+});

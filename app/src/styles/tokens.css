@@ -15,6 +15,10 @@
   --mode-ft8-ink: #120d33;
   --mode-ft4: #ffb347;
   --mode-ft4-ink: #2b1700;
+  --mode-jt65: #5fd38d;
+  --mode-jt65-ink: #06260f;
+  --mode-jt9: #ff7eb6;
+  --mode-jt9-ink: #35081d;
   --accent-ink: #04201d;
   --rare: #f2a93b;
   --rare-ink: #241604;
@@ -105,6 +109,10 @@
   --mode-ft8-ink: #ffffff;
   --mode-ft4: #b25e00;
   --mode-ft4-ink: #ffffff;
+  --mode-jt65: #1b7f45;
+  --mode-jt65-ink: #ffffff;
+  --mode-jt9: #b3306c;
+  --mode-jt9-ink: #ffffff;
   --accent-ink: #ffffff;
   --rare: #9a5d00;
   --rare-ink: #ffffff;
