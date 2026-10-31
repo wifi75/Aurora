@@ -109,7 +109,8 @@ export function PropagationPage() {
   const receivers: MapReceiver[] = useMemo(() => latestPerReceiver(rows).map((r) => ({ call: r.receiver, grid: r.locator, snr: r.snr, band: r.band, km: r.km })), [rows]);
   // dalla piu' lontana alla piu' vicina (chi non ha un locatore noto va in fondo)
   const byDistance: PskRow[] = useMemo(() => [...rows].sort((a, b) => (b.km ?? -1) - (a.km ?? -1)), [rows]);
-  const receivedColumns = useMemo(() => chunk(byDistance, 14), [byDistance]);
+  // al massimo 4 colonne di uguale lunghezza: con piu' colonne strette la tabella era illeggibile
+  const receivedColumns = useMemo(() => chunk(byDistance, Math.max(1, Math.ceil(byDistance.length / 4))), [byDistance]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
