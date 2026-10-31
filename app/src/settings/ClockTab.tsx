@@ -13,10 +13,11 @@ interface Draft {
   minutes: string;
   warn: string;
   auto: boolean;
+  atStart: boolean;
 }
 
 function toDraft(c: ClockConfig): Draft {
-  return { enabled: c.enabled, servers: c.servers.join('\n'), minutes: String(Math.round(c.interval_secs / 60)), warn: String(c.warn_ms), auto: c.auto_correct };
+  return { enabled: c.enabled, servers: c.servers.join('\n'), minutes: String(Math.round(c.interval_secs / 60)), warn: String(c.warn_ms), auto: c.auto_correct, atStart: c.correct_at_start };
 }
 
 /** Il testo della scheda in un'impostazione valida per il core, o `null` se i valori non vanno. */
@@ -27,7 +28,7 @@ export function draftToConfig(d: Draft): ClockConfig | null {
   if (servers.length < 1 || servers.length > 8) return null;
   if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) return null;
   if (!Number.isInteger(warn) || warn < 10 || warn > 5000) return null;
-  return { enabled: d.enabled, servers, interval_secs: minutes * 60, warn_ms: warn, auto_correct: d.auto };
+  return { enabled: d.enabled, servers, interval_secs: minutes * 60, warn_ms: warn, auto_correct: d.auto, correct_at_start: d.atStart };
 }
 
 function errorText(error: unknown, t: T): string {
@@ -128,6 +129,7 @@ export function ClockTab() {
         <Cells min={17}>
           <Check label={t('clock.enabled')} hint={t('tip.clock.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
           <Check label={t('clock.auto')} hint={t('tip.clock.auto')} checked={shown.auto} onChange={(v) => set({ auto: v })} />
+          <Check label={t('clock.atStart')} hint={t('tip.clock.atStart')} checked={shown.atStart} onChange={(v) => set({ atStart: v })} />
           <Field label={t('clock.interval')} hint={t('tip.clock.interval')}>
             <input type="number" className="set-number" min={1} max={1440} value={shown.minutes} onChange={(e) => set({ minutes: e.target.value })} />
           </Field>

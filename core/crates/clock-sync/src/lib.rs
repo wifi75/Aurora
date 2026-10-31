@@ -31,6 +31,13 @@ pub struct Config {
     pub warn_ms: u32,
     /// Correggi da solo l'orologio quando lo scarto supera la soglia (serve poter cambiare l'ora del PC).
     pub auto_correct: bool,
+    /// All'avvio di Aurora: misura subito e, se l'ora e' fuori tolleranza, la corregge (serve poter cambiare l'ora del PC).
+    #[serde(default = "yes")]
+    pub correct_at_start: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 impl Default for Config {
@@ -41,6 +48,7 @@ impl Default for Config {
             interval_secs: 900,
             warn_ms: 200,
             auto_correct: false,
+            correct_at_start: true,
         }
     }
 }
@@ -138,6 +146,9 @@ pub struct ClockService {
     path: PathBuf,
     config: Mutex<Config>,
     last: Mutex<Option<Measurement>>,
+    /// L'ultima volta (ms Unix) che l'ora risultava giusta (entro la tolleranza o appena corretta): si ricorda tra un avvio e l'altro, cosi'
+    /// l'avviso sa da quanti giorni l'orologio non si e' piu' potuto verificare.
+    last_good: Mutex<Option<u64>>,
     query: QueryFn,
     setter: Arc<dyn ClockSetter>,
     wake: Notify,
@@ -151,7 +162,24 @@ impl ClockService {
             .and_then(|text| serde_json::from_str::<Config>(&text).ok())
             .filter(|c| c.validate().is_ok())
             .unwrap_or_default();
-        Arc::new(ClockService { path: path.to_path_buf(), config: Mutex::new(config), last: Mutex::new(None), query, setter, wake: Notify::new() })
+        let last_good = std::fs::read_to_string(path.with_extension("good")).ok().and_then(|t| t.trim().parse::<u64>().ok());
+        Arc::new(ClockService { path: path.to_path_buf(), config: Mutex::new(config), last: Mutex::new(None), last_good: Mutex::new(last_good), query, setter, wake: Notify::new() })
+    }
+
+    /// Quando l'ora e' risultata giusta l'ultima volta (ms Unix), anche in un avvio precedente.
+    pub fn last_good_ms(&self) -> Option<u64> {
+        *self.last_good.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
+    fn note(&self, m: &Measurement) {
+        let good = m.corrected || m.offset_ms.is_some_and(|off| off.abs() <= f64::from(self.config().warn_ms));
+        if !good {
+            return;
+        }
+        *self.last_good.lock().unwrap_or_else(|p| p.into_inner()) = Some(m.at_ms);
+        if let Err(e) = std::fs::write(self.path.with_extension("good"), m.at_ms.to_string()) {
+            tracing::warn!("orologio: ultima verifica non salvata ({e})");
+        }
     }
 
     pub fn config(&self) -> Config {
@@ -201,6 +229,7 @@ impl ClockService {
             corrected: false,
         };
         *self.last.lock().unwrap_or_else(|p| p.into_inner()) = Some(measurement.clone());
+        self.note(&measurement);
         measurement
     }
 
@@ -212,6 +241,7 @@ impl ClockService {
         let mut after = self.check_now();
         after.corrected = true;
         *self.last.lock().unwrap_or_else(|p| p.into_inner()) = Some(after.clone());
+        self.note(&after);
         Ok(after)
     }
 
@@ -219,15 +249,18 @@ impl ClockService {
     pub fn spawn(self: &Arc<Self>) -> tokio::task::JoinHandle<()> {
         let service = Arc::clone(self);
         tokio::spawn(async move {
+            // il primo giro e' quello dell'avvio: con «aggiorna l'ora all'avvio» si corregge anche se il controllo periodico non lo fa
+            let mut first = true;
             loop {
                 let config = service.config();
-                if config.enabled {
+                let at_start = std::mem::take(&mut first) && config.correct_at_start;
+                if config.enabled || at_start {
                     let worker = Arc::clone(&service);
                     let outcome = tokio::task::spawn_blocking(move || {
                         let m = worker.check_now();
                         let cfg = worker.config();
                         match m.offset_ms {
-                            Some(off) if cfg.auto_correct && off.abs() > f64::from(cfg.warn_ms) => worker.correct_now().map(|_| ()).map_err(|e| format!("correzione: {e}")),
+                            Some(off) if (cfg.auto_correct || at_start) && off.abs() > f64::from(cfg.warn_ms) => worker.correct_now().map(|_| ()).map_err(|e| format!("correzione: {e}")),
                             _ => Ok(()),
                         }
                     })

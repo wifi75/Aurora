@@ -473,6 +473,8 @@ export interface ClockConfig {
   interval_secs: number;
   warn_ms: number;
   auto_correct: boolean;
+  /** All'avvio di Aurora si misura subito e, se fuori tolleranza, si corregge. */
+  correct_at_start: boolean;
 }
 
 export interface ClockMeasurement {
@@ -487,8 +489,15 @@ export interface ClockMeasurement {
 }
 
 /** Client NTP: impostazioni e ultima misura dell'orologio del PC. */
-export async function getClock(): Promise<{ config: ClockConfig; last: ClockMeasurement | null }> {
-  return (await (await request('/clock')).json()) as { config: ClockConfig; last: ClockMeasurement | null };
+export interface ClockState {
+  config: ClockConfig;
+  last: ClockMeasurement | null;
+  /** L'ultima volta (ms Unix) che l'ora risultava giusta, anche in un avvio precedente. */
+  last_good_ms?: number | null;
+}
+
+export async function getClock(): Promise<ClockState> {
+  return (await (await request('/clock')).json()) as ClockState;
 }
 
 export async function putClock(config: ClockConfig): Promise<void> {

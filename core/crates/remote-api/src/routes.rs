@@ -1043,7 +1043,7 @@ fn from_home_network(peer: Option<SocketAddr>, headers: &HeaderMap) -> bool {
 #[utoipa::path(get, path = "/api/v1/clock", responses((status = 200, description = "Impostazioni del client NTP e ultima misura dell'orologio"), (status = 404, description = "Non disponibile (clock_unavailable)")))]
 async fn clock_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let clock = clock_service(&state)?;
-    Ok(Json(json!({ "config": clock.config(), "last": clock.last() })))
+    Ok(Json(json!({ "config": clock.config(), "last": clock.last(), "last_good_ms": clock.last_good_ms() })))
 }
 
 #[utoipa::path(put, path = "/api/v1/clock", responses((status = 200, description = "Impostazioni salvate"), (status = 400, description = "Valori non validi (bad_clock)"), (status = 403, description = "La correzione automatica si accende solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (clock_unavailable)"), (status = 500, description = "Scrittura non riuscita (clock_write)")))]
