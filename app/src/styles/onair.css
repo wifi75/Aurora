@@ -4351,3 +4351,135 @@
   max-height: 16rem;
   overflow-y: auto;
 }
+
+/* Guida: indice fisso a sinistra con la ricerca, capitoli numerati, passi in elenco numerato, consigli in evidenza */
+.guide {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.guide-index {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0.8rem;
+}
+
+.guide-search {
+  width: 100%;
+}
+
+.guide-index ol {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.guide-index a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.guide-index a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+  max-width: 60rem;
+}
+
+.guide-intro {
+  margin: -0.5rem 0 0;
+}
+
+.guide-chapter {
+  scroll-margin-top: 1rem;
+}
+
+.guide-chapter-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.guide-chapter-n {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.95rem;
+  color: var(--bg, #0b1322);
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.guide-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 0.8rem;
+}
+
+.guide-section {
+  padding: 0.9rem 1.1rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0.8rem;
+  line-height: 1.5;
+}
+
+.guide-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.guide-section p {
+  margin: 0 0 0.5rem;
+}
+
+.guide-steps {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.guide-steps li::marker {
+  font-weight: var(--weight-strong);
+  color: var(--accent);
+}
+
+.guide-tip {
+  margin: 0.6rem 0 0 !important;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: 0.3rem;
+}
+
+@media (max-width: 50rem) {
+  .guide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .guide-index {
+    position: static;
+  }
+}

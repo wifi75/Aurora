@@ -146,13 +146,4 @@ export const wishStrings = {
     'Estación de tu lista de deseadas.',
     'Estação da tua lista de desejadas.',
   ],
-  'wiki.wanted.t': ['Lista dei desiderati', 'Wanted list', 'Liste der Gesuchten', 'Liste des recherchées', 'Lista de deseadas', 'Lista de desejadas'],
-  'wiki.wanted.b': [
-    'In Impostazioni → Desiderati scrivi nominativi, prefissi, paesi e griglie che vuoi collegare. Quando una compare in un messaggio o in uno spot del cluster, in alto compare una barra gialla (con il suono, se gli avvisi sonori sono accesi) e la riga si evidenzia negli elenchi. Con un indirizzo ntfy l’avviso arriva anche sul telefono, a pagina chiusa.',
-    'In Settings → Wanted write the callsigns, prefixes, countries and grids you want to work. When one shows up in a message or in a cluster spot, a yellow bar appears at the top (with the sound, if sound alerts are on) and the row is highlighted in the lists. With an ntfy address the alert also reaches your phone, with the page closed.',
-    'Unter Einstellungen → Gesuchte trägst du Rufzeichen, Präfixe, Länder und Felder ein, die du arbeiten willst. Taucht eine in einer Nachricht oder einem Cluster-Spot auf, erscheint oben ein gelber Balken (mit Ton, wenn die Tonwarnungen an sind) und die Zeile wird in den Listen hervorgehoben. Mit einer ntfy-Adresse kommt die Warnung auch aufs Handy, bei geschlossener Seite.',
-    'Dans Réglages → Recherchées, écris les indicatifs, préfixes, pays et carrés que tu veux contacter. Quand l’un apparaît dans un message ou un spot du cluster, une barre jaune s’affiche en haut (avec le son, si les alertes sonores sont activées) et la ligne est mise en évidence dans les listes. Avec une adresse ntfy l’alerte arrive aussi sur le téléphone, page fermée.',
-    'En Ajustes → Deseadas escribe los indicativos, prefijos, países y cuadrículas que quieres contactar. Cuando uno aparece en un mensaje o en un spot del cluster, arriba aparece una barra amarilla (con sonido, si los avisos sonoros están activados) y la fila se resalta en las listas. Con una dirección ntfy el aviso llega también al teléfono, con la página cerrada.',
-    'Em Definições → Desejadas escreve os indicativos, prefixos, países e quadrados que queres contactar. Quando um aparece numa mensagem ou num spot do cluster, surge no topo uma barra amarela (com som, se os avisos sonoros estiverem ligados) e a linha fica realçada nas listas. Com um endereço ntfy o aviso chega também ao telemóvel, com a página fechada.',
-  ],
 } as const;
