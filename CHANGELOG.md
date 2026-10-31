@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.39 - 2026-10-31
+- **Propagazione**: «la piu' lontana» anche con il nome del paese.
+
 ## 0.11.38 - 2026-10-31
 - **Due VFO per i programmi che condividono la radio**: con la condivisione accesa rigctld parte con `--vfo`, come chiede Log4OM con «VFO MODE»; Aurora se ne accorge (`\chk_vfo`) e indica il VFO nei suoi comandi. Prima Log4OM perdeva il primo VFO.
 - **Propagazione**: «la piu' lontana» con chi mi ha ricevuto, bandierina e orario; condizioni per banda con la parola intera sotto le barrette (non si taglia piu').
