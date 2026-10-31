@@ -816,6 +816,49 @@ fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> 
     }
 }
 
+/// Il cursore Pwr come volume di Windows dell'uscita audio che va alla radio (scelta del proprietario): un'attenuazione del segnale
+/// generato, come in JTDX, poteva solo abbassare, e con il volume di Windows basso il cursore al massimo non bastava. Il segnale digitale
+/// resta pieno (0 dB) e il livello lo da' il volume della scheda.
+struct WindowsVolumePort {
+    inner: Arc<dyn engine_native::TxPort>,
+    output: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+}
+
+impl WindowsVolumePort {
+    /// All'avvio: segnale digitale pieno e il livello salvato portato sul volume di Windows.
+    fn set_attenuation_now(&self, tenths: u32) {
+        engine_native::TxPort::set_attenuation(self, tenths);
+    }
+
+    fn apply(&self, tenths: u32) {
+        let volume = 1.0 - (tenths.min(450) as f32 / 450.0);
+        let Some(name) = (self.output)() else { return };
+        match audio_spectrum::OutputEndpoint::find(&name).and_then(|out| out.set_volume(volume)) {
+            Ok(()) => tracing::info!("Pwr: volume di Windows di «{name}» al {:.0} %", volume * 100.0),
+            Err(e) => tracing::warn!("Pwr: volume dell'uscita non impostato ({e})"),
+        }
+    }
+}
+
+impl engine_native::TxPort for WindowsVolumePort {
+    fn schedule(&self, request: tx_native::TxRequest) -> Result<(), String> {
+        self.inner.schedule(request)
+    }
+
+    fn halt(&self) {
+        self.inner.halt();
+    }
+
+    fn replace(&self, request: tx_native::TxRequest) -> Result<bool, String> {
+        self.inner.replace(request)
+    }
+
+    fn set_attenuation(&self, tenths: u32) {
+        self.inner.set_attenuation(0);
+        self.apply(tenths);
+    }
+}
+
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
 fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
     let port = config.ptt_port.clone().unwrap_or_default();
@@ -1267,7 +1310,12 @@ pub async fn run(
                     if transmitter.is_none() {
                         m.output_closed();
                     }
-                    transmitter
+                    let manager = Arc::clone(m);
+                    transmitter.map(|inner| {
+                        let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()) };
+                        port.set_attenuation_now(native_controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+                        Arc::new(port) as Arc<dyn engine_native::TxPort>
+                    })
                 }),
                 band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),
                 annotate: Arc::new(move |text, band| match &enrich {

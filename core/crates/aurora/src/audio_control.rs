@@ -225,6 +225,11 @@ impl AudioManager {
         Arc::clone(&self.save)
     }
 
+    /// L'uscita usata per trasmettere adesso (il suo volume di Windows e' il cursore Pwr).
+    pub fn output_name(&self) -> Option<String> {
+        lock(&self.state).out_cur.name.clone()
+    }
+
     /// L'ingresso che sta ricevendo adesso.
     pub fn input_name(&self) -> Option<String> {
         lock(&self.state).in_cur.name.clone()
