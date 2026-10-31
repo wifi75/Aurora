@@ -222,6 +222,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     free_text: Option<String>,
     /// «AutoTX» acceso: il doppio clic accende anche «Abilita Tx».
     auto_tx: bool,
+    /// Il CQ in corso l'ha chiesto l'operatore (pulsante CQ). Il CQ che la sequenza riprende da sola a QSO finito parte solo con AutoTX.
+    cq_by_user: bool,
     /// Messaggio libero preparato (campo Tx5): lo mostra la pagina, «Invia» senza testo lo trasmette.
     prepared: Option<String>,
     hashes: CallHashes,
@@ -290,7 +292,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0 };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0 };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -548,6 +550,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             TxCommand::CallCq { modifier } => match self.seq.call_cq(modifier.as_deref()) {
                 Ok(()) => {
                     self.free_text = None;
+                    self.cq_by_user = true;
                     self.seq.set_enabled(true);
                     log.push("CQ: Tx abilitato".to_string());
                     log.extend(self.start_now(now_s));
@@ -596,7 +599,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     }
                 }
             }
-            TxCommand::AutoTx(on) => self.auto_tx = on,
+            TxCommand::AutoTx(on) => {
+                self.auto_tx = on;
+                // scelta del proprietario (diversa da JTDX): accendere AutoTX vuol dire trasmettere, quindi accende anche Abilita Tx
+                if on {
+                    self.seq.set_enabled(true);
+                    log.extend(self.start_now(now_s));
+                }
+            }
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
                 if on {
@@ -936,6 +946,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let Some((text, freq, n, retransmit)) = planned else {
             return log;
         };
+        // un CQ che nessuno ha chiesto (la sequenza ci torna da sola a QSO finito) parte solo con AutoTX: senza, la trasmissione si ferma
+        if n == 6 && !self.cq_by_user && !self.auto_tx {
+            self.seq.set_enabled(false);
+            log.push("QSO finito: AutoTX spento, niente CQ automatico (Abilita Tx spento)".to_string());
+            return log;
+        }
+        if n != 6 {
+            self.cq_by_user = false;
+        }
         if already && !retransmit {
             return log;
         }
@@ -1405,6 +1424,15 @@ mod tests {
         b.d.publish_view();
         let view = view_of(&b.controls);
         assert_eq!((view.dx.as_deref(), view.queue.is_empty()), (Some("W9XYZ"), true), "{log:?}");
+        // doppio clic sull'R-12 di K1ABC (QSO gia' registrato): si chiude con RR73 e non si torna al rapporto nei periodi dopo
+        b.d.remember(9, "IU3ABC K1ABC R-12", -10, 1200, SLOT_MS + 30_000);
+        b.d.handle(TxCommand::Reply { decode_id: 9 }, BASE + 62.0);
+        let mut sent = Vec::new();
+        for k in 4..9u64 {
+            b.d.after_slot(SLOT_MS + k * 15_000, &[], BASE + (k as f64 + 1.0) * 15.0 - 0.7, 14_074_000, "20m");
+            sent.extend(last_text(&b.port));
+        }
+        assert!(sent.iter().all(|t| !t.starts_with("K1ABC IU3ABC -") && !t.starts_with("K1ABC IU3ABC R-")), "{sent:?}");
     }
 
     /// Senza un QSO in corso il tasto destro risponde subito (come il doppio clic); un secondo tasto destro toglie dalla coda.
