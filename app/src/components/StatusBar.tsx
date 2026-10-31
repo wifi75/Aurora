@@ -13,12 +13,15 @@ interface Props {
 
 export function StatusBar({ status, connection, hideDial = false }: Props) {
   const t = useT();
-  const label = { connecting: t('conn.connecting'), open: t('conn.open'), closed: t('conn.closed') }[connection];
+  // «In linea» non si mostra piu': la pillola compare solo quando il collegamento con Aurora manca o si sta riprendendo
+  const label = { connecting: t('conn.connecting'), open: null, closed: t('conn.closed') }[connection];
   return (
     <div className="status-bar" role="status">
-      <span className={`pill pill--link pill--${connection}`} title={t('tip.conn')}>
-        {label}
-      </span>
+      {label ? (
+        <span className={`pill pill--link pill--${connection}`} title={t('tip.conn')}>
+          {label}
+        </span>
+      ) : null}
       {status && (
         <>
           {hideDial ? null : (
