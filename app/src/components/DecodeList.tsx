@@ -7,7 +7,7 @@ import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { isCq } from '../lib/filters';
 import { useNotifyView, workedLook } from '../lib/notifyView';
 import { useNotify } from '../lib/notify';
-import { isAnswerToMyCall, transmittedTo } from '../lib/answered';
+import { isAnswerToMyCall, isOngoingDxReply, transmittedTo } from '../lib/answered';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
 import { useStation } from '../state/station';
 import { senderOf, wishReason } from '../lib/wishlist';
@@ -148,8 +148,10 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const toMe = !own && isCallToMe(d.text, myCall);
         // un messaggio a me di una stazione a cui avevo trasmesso da poco e' la sua RISPOSTA (linguetta verde); altrimenti mi sta chiamando per prima (rossa)
         const talker = own ? null : senderOf(d.text);
-        // risposta alla mia chiamata: gli avevo trasmesso da poco, oppure e' la stazione che sto lavorando adesso
-        const answered = toMe && (isAnswerToMyCall(d.text, d.time_ms, sentTo) || (!!dxCall && !!talker && talker.call.toUpperCase() === dxCall.trim().toUpperCase()));
+        // risposta alla mia chiamata: gli avevo trasmesso da poco, oppure e' la stazione che sto lavorando adesso e le avevo gia' trasmesso
+        // (il suo primissimo messaggio, prima di averle risposto, resta rosso: mi ha chiamato lei per prima)
+        const answered =
+          toMe && (isAnswerToMyCall(d.text, d.time_ms, sentTo) || (!!dxCall && !!talker && talker.call.toUpperCase() === dxCall.trim().toUpperCase() && isOngoingDxReply(d.text, d.time_ms, sentTo)));
         // il posto in coda (1 = la prossima): la sigla sta nella colonna delle etichette o accanto al paese, mai sopra il testo del messaggio
         const queuePos = talker ? queueCalls.indexOf(talker.call.toUpperCase()) + 1 : 0;
         const inQueue = queuePos > 0;

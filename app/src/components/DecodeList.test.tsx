@@ -288,16 +288,27 @@ describe('DecodeList', () => {
   });
 
   it('marks the calls to me in red, in violet for the station that answers me, and not at all with the markers off', () => {
+    // le avevo gia' trasmesso: il suo messaggio successivo e' la risposta
+    useStation.setState({ txLog: [decode({ id: -1, time_ms: 45_000_000, text: 'BB2BB AA1AA -10' })] });
     const rows = [decode({ id: 1, text: 'AA1AA BB2BB -10', tag: null }), decode({ id: 2, text: 'AA1AA CC3CC -10', tag: null })];
     const { container, rerender } = render(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
     expect(container.querySelectorAll('.me-mark')).toHaveLength(2);
-    // BB2BB e' la stazione che sto lavorando: il suo messaggio e' la risposta (linguetta viola); CC3CC mi chiama per primo (rossa)
+    // BB2BB e' la stazione che sto lavorando e le avevo gia' trasmesso: il suo messaggio e' la risposta (linguetta viola); CC3CC mi chiama per primo (rossa)
     expect(container.querySelectorAll('.me-mark--answer')).toHaveLength(1);
     expect(container.querySelectorAll('.me-mark:not(.me-mark--answer)')).toHaveLength(1);
     useNotifyView.getState().set({ redMarker: false });
     rerender(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
     expect(container.querySelectorAll('.me-mark')).toHaveLength(0);
     useNotifyView.getState().reset();
+    useStation.setState({ txLog: [] });
+  });
+
+  it('keeps the first call from the current DX red until I actually reply to it', () => {
+    // BB2BB mi ha appena chiamato per prima: non le ho ancora trasmesso nulla, anche se e' gia' la stazione DX in corso
+    const rows = [decode({ id: 1, text: 'AA1AA BB2BB -10', tag: null })];
+    const { container } = render(<DecodeList decodes={rows} myCall="AA1AA" dxCall="BB2BB" onReply={() => {}} />);
+    expect(container.querySelectorAll('.me-mark--answer')).toHaveLength(0);
+    expect(container.querySelectorAll('.me-mark:not(.me-mark--answer)')).toHaveLength(1);
   });
 
   it('puts a blank line between periods, shows the azimuth and can hide the own Tx rows', () => {
@@ -315,6 +326,8 @@ describe('DecodeList', () => {
     usePrefs.getState().reset();
   });
   it('turns the callsign violet with a tooltip and drops the red mark when the station answers my call', () => {
+    // le avevo gia' trasmesso: il suo messaggio successivo e' la risposta
+    useStation.setState({ txLog: [decode({ id: -1, time_ms: 45_000_000, text: 'BB2BB AA1AA -10' })] });
     render(
       <DecodeList
         myCall="AA1AA"
@@ -324,7 +337,7 @@ describe('DecodeList', () => {
       />,
     );
     const rows = screen.getAllByRole('button');
-    // BB2BB e' la stazione che sto lavorando: il suo messaggio e' la risposta (etichetta viola, linguetta viola)
+    // BB2BB e' la stazione che sto lavorando e le avevo gia' trasmesso: il suo messaggio e' la risposta (etichetta viola, linguetta viola)
     const pill = rows[0]?.querySelector('mark.dx-call--answered');
     expect(pill).toHaveTextContent('BB2BB');
     expect(pill).toHaveAttribute('title', 'Ti ha risposto');
@@ -333,6 +346,7 @@ describe('DecodeList', () => {
     // CC3CC mi chiama per primo: linguetta rossa, nessuna etichetta viola
     expect(rows[1]?.querySelector('mark.dx-call--answered')).toBeNull();
     expect(rows[1]?.querySelector('.me-mark:not(.me-mark--answer)')).not.toBeNull();
+    useStation.setState({ txLog: [] });
   });
 
   it('puts a station in the queue with the right button and shows the queued ones', () => {
