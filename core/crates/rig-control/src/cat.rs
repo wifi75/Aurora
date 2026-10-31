@@ -41,8 +41,11 @@ impl CatParts {
         });
         let models: ModelsFn = Arc::new(|| {
             let rigctld = locate_rigctld().ok_or_else(|| RigError("rigctld non trovato".into()))?;
-            let rigctl = rigctl_beside(&rigctld).ok_or_else(|| RigError("rigctl non trovato accanto a rigctld".into()))?;
-            list_models(&rigctl)
+            // senza rigctl (installazione interrotta) l'elenco lo da' anche rigctld con lo stesso `-l`: la radio non "sparisce" dalla pagina
+            match rigctl_beside(&rigctld) {
+                Some(rigctl) => list_models(&rigctl).or_else(|_| list_models(&rigctld)),
+                None => list_models(&rigctld),
+            }
         });
         CatParts { factory, locate: Arc::new(locate_rigctld), models, timing: Arc::new(Timing::standard) }
     }
