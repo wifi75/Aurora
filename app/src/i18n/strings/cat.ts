@@ -270,6 +270,7 @@ export const catStrings = {
   'cat.err.profile': ['Profilo non trovato.', 'Profile not found.', 'Profil nicht gefunden.', 'Profil introuvable.', 'Perfil no encontrado.', 'Perfil não encontrado.'],
   'cat.err.name': ['Nome non valido o già usato (massimo 80 caratteri).', 'Name invalid or already used (80 characters at most).', 'Name ungültig oder schon vergeben (höchstens 80 Zeichen).', 'Nom invalide ou déjà utilisé (80 caractères au maximum).', 'Nombre no válido o ya usado (80 caracteres como máximo).', 'Nome inválido ou já usado (80 caracteres no máximo).'],
   'cat.err.write': ['Non è stato possibile scrivere il file delle impostazioni.', 'The settings file could not be written.', 'Die Einstellungsdatei konnte nicht geschrieben werden.', 'Impossible d’écrire le fichier des réglages.', 'No se pudo escribir el archivo de ajustes.', 'Não foi possível escrever o ficheiro de definições.'],
+  'cat.port.pick': ['— scegli la porta COM —', '— choose the COM port —', '— COM-Port wählen —', '— choisir le port COM —', '— elige el puerto COM —', '— escolha a porta COM —'],
   'cat.port.vspe': ['virtuale (VSPE)', 'virtual (VSPE)', 'virtuell (VSPE)', 'virtuel (VSPE)', 'virtual (VSPE)', 'virtual (VSPE)'],
   'cat.port.virtual': ['virtuale', 'virtual', 'virtuell', 'virtuel', 'virtual', 'virtual'],
   'cat.share': ['Condividi la radio con altri programmi', 'Share the radio with other programs', 'Funkgerät mit anderen Programmen teilen', 'Partager la radio avec d’autres programmes', 'Compartir la radio con otros programas', 'Partilhar o rádio com outros programas'],

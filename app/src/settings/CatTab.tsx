@@ -280,7 +280,16 @@ export function CatGroups() {
         ) : null}
         {fields.port ? (
           <Field label={t('cat.port')} hint={t('tip.cat.port')}>
-            <input type="text" list="cat-ports" value={config.port} spellCheck={false} onChange={(e) => set({ port: e.target.value.trim() })} />
+            {/* un menu delle porte trovate: la casella di testo sembrava un campo per scrivere un nome */}
+            <select value={config.port} onChange={(e) => set({ port: e.target.value })}>
+              <option value="">{t('cat.port.pick')}</option>
+              {config.port !== '' && !(ports.data ?? []).some((p) => p.port === config.port) ? <option value={config.port}>{config.port}</option> : null}
+              {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (
+                <option key={p.port} value={p.port}>
+                  {p.port} — {p.virtual_kind === 'vspe' ? t('cat.port.vspe') : p.virtual ? t('cat.port.virtual') : p.name}
+                </option>
+              ))}
+            </select>
           </Field>
         ) : null}
         {fields.port && fields.baud ? (
