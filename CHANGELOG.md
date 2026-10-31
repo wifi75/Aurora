@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.36 - 2026-10-31
+- **Il volume di Windows segue sempre il cursore Pwr**: all'avvio si applicava il livello di fabbrica (50 %) prima di quello salvato, e cursore e scheda non coincidevano. Ora il livello salvato arriva subito alla scheda e si riapplica prima di ogni trasmissione.
+
 ## 0.11.35 - 2026-10-31
 - **Cursore Pwr = volume di Windows dell'uscita verso la radio**: prima era un'attenuazione del segnale generato (come JTDX), che poteva solo abbassare; il segnale ora resta pieno e il livello lo da' il volume della scheda.
 - **S-meter e potenza non spariscono piu'**: un errore momentaneo della radio (-1, frequente con la FT-2000 e con altri programmi sulla porta) toglieva il misuratore per tutta la sessione; ora si abbandona solo dopo 5 errori di fila.
