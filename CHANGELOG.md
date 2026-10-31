@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.31 - 2026-10-31
+- **Propagazione riorganizzata**: sole, indici, condizioni per banda e statistiche di ricezione ora in un'unica barra stretta a sinistra; mappa piu' corta a destra, con la lista delle stazioni ricevute subito sotto invece che in una sezione separata piu' in basso.
+
 ## 0.11.30 - 2026-10-31
 - **Quadratini della mappa visibili di nuovo**: l'opacita' bassa (12%-50%) introdotta per togliere l'effetto scacchiera li aveva resi quasi invisibili sullo sfondo reale. Alzata a 35%-70%.
 - **Tabella "Chi mi ha ricevuto" ordinata e piu' ricca**: dalla stazione piu' lontana alla piu' vicina, bandierina del paese accanto al nominativo, distanza in km o miglia secondo le preferenze, divisa in piu' colonne affiancate (una tabella ogni 14 righe) per vederne il piu' possibile senza scorrere.
