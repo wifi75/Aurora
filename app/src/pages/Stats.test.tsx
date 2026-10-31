@@ -43,12 +43,14 @@ beforeEach(() => {
   vi.mocked(getDxccMatrix).mockReset().mockRejectedValue(new Error('no'));
 });
 
+const tile = (n: string, total: string) => (_: string, el: Element | null) => el?.tagName === 'STRONG' && (el.textContent ?? '').replace(/\s/g, '') === `${n}/${total}`;
+
 describe('Stats', () => {
   it('shows the award progress, the per-band table and the missing countries', async () => {
     vi.mocked(getStats).mockResolvedValue(data);
     show();
-    expect(await screen.findByText('40 di 340')).toBeInTheDocument();
-    expect(screen.getByText('22 di 40')).toBeInTheDocument();
+    expect(await screen.findByText(tile('40', '340'))).toBeInTheDocument();
+    expect(screen.getByText(tile('22', '40'))).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '20m' })).toBeInTheDocument();
     expect(screen.getByText('Atlantis')).toBeInTheDocument();
@@ -74,7 +76,7 @@ describe('Stats', () => {
     expect(screen.getByText('NEW ONE', { selector: 'li' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Scarica ADIF' })).toBeInTheDocument();
     expect(screen.getByLabelText('Importa un file ADIF')).toBeInTheDocument();
-    expect(await screen.findByText('40 di 340')).toBeInTheDocument();
+    expect(await screen.findByText(tile('40', '340'))).toBeInTheDocument();
   });
 
   it('keeps the card and the log exchange when only the statistics are missing', async () => {

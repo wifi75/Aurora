@@ -4254,3 +4254,100 @@
   font-size: 0.8rem;
   font-weight: var(--weight-strong);
 }
+
+/* Statistiche: numeri in alto, bande e scheda DXCC affiancate, il resto chiuso finche' non si apre */
+.stats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.6rem;
+}
+
+.stats-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--glass-lo);
+  border: 1px solid var(--glass-edge);
+  border-radius: 0.6rem;
+}
+
+.stats-tile strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.stats-tile strong small {
+  font-size: 0.8rem;
+}
+
+.stats-tile > span.muted {
+  font-size: 0.75rem;
+}
+
+.stats-progress {
+  display: block;
+  height: 0.35rem;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  background: var(--glass-edge);
+  border-radius: 999px;
+}
+
+.stats-progress i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.stats-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .stats-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stats-card {
+  margin: 0;
+  padding: 0.8rem 1rem;
+}
+
+.stats-bands td,
+.stats-bands th {
+  padding: 0.25rem 0.5rem;
+}
+
+.stats-bar-cell {
+  width: 40%;
+}
+
+.stats-bar-cell .stats-progress {
+  margin: 0;
+}
+
+.stats-fold > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.stats-fold[open] > summary {
+  margin-bottom: 0.6rem;
+}
+
+.stats-missing {
+  max-height: 16rem;
+  overflow-y: auto;
+}
