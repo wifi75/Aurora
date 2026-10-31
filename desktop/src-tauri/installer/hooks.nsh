@@ -1,10 +1,20 @@
 ; Installazione e disinstallazione forzate: se Aurora e' aperta (anche nascosta nel vassoio) la si chiude da soli,
 ; (solo il programma, non i suoi figli: l'installatore lanciato da Aurora non deve morire con lei) senza chiedere e senza fermarsi con «Aurora e' in esecuzione!». Il core riparte al prossimo avvio.
 
+; Una sola chiusura non bastava: se Aurora resta viva rifa' partire il suo rigctld (si ricollega alla radio) e la DLL di Hamlib resta
+; bloccata ("Errore nell'apertura del file in scrittura: libhamlib-4.dll"). Si ripete finche' Aurora e il suo rigctld sono spariti
+; (al massimo 10 s); se non ci si riesce (Aurora avviata come amministratore) si chiede di chiuderla a mano.
 !macro AuroraStopRunning
-  nsExec::Exec 'taskkill /F /IM aurora-desktop.exe'
+  StrCpy $1 0
+  aurora_stop_retry:
+  nsExec::Exec `powershell -NoProfile -WindowStyle Hidden -Command "for ($$i = 0; $$i -lt 20; $$i++) { Get-Process aurora-desktop -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Get-Process rigctl* -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like '$INSTDIR\hamlib\*' } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500; if (-not (Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and -not (Get-Process rigctl* -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like '$INSTDIR\hamlib\*' })) { exit 0 } }; exit 1"`
   Pop $0
-  Sleep 1200
+  StrCmp $0 "0" aurora_stop_done
+  IntOp $1 $1 + 1
+  IntCmp $1 3 aurora_stop_done
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Aurora e' ancora aperta e non si lascia chiudere (forse e' stata avviata come amministratore).$\r$\nChiudila dal vassoio (tasto destro sull'icona, Esci), poi premi OK."
+  Goto aurora_stop_retry
+  aurora_stop_done:
 !macroend
 
 ; Hamlib incluso (cartella "hamlib" accanto al programma): prima di copiare i file nuovi si ferma l'eventuale rigctld di Aurora rimasto vivo
