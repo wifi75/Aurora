@@ -239,14 +239,13 @@ export function CatGroups() {
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
               {/* i risultati sotto la casella: il menu «Radio» accanto puo' finire fuori dallo schermo e la ricerca sembrava non fare niente */}
               {search.trim() !== '' ? (
-                <ul className="cat-search-results" role="listbox" aria-label={t('cat.rig')}>
+                <ul className="cat-search-results">
                   {shown.slice(0, 12).map((m) => (
                     <li key={m.id}>
                       <button
                         type="button"
                         className={`glass chip${m.id === config.model ? ' glass--on' : ''}`}
-                        role="option"
-                        aria-selected={m.id === config.model}
+                        aria-pressed={m.id === config.model}
                         onClick={() => {
                           set({ model: m.id, rig_name: modelLabel(m) });
                           setSearch('');
