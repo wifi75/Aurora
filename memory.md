@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-10-26, versione 0.11.25. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-10-31, versione 0.11.31. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -96,4 +96,5 @@ Stato al 2026-10-26, versione 0.11.25. Per riprendere il lavoro leggi anche `doc
 - Quadratini della mappa (griglie lavorate): tolto il bordo (dava un effetto a scacchiera). L'opacita' era stata abbassata troppo (12%-50%, quasi invisibile con lo sfondo reale acceso): alzata di nuovo a 35%-70% (`WorldMap.tsx`, verificato con un confronto diretto prima di pubblicare).
 - Tabella "Chi mi ha ricevuto" (Propagazione): ordinata dalla stazione piu' lontana alla piu' vicina, bandierina del paese, distanza in km/miglia secondo le preferenze (`formatDistance`), divisa in piu' tabelle affiancate (`chunk`, 14 righe ciascuna) per vederne il piu' possibile senza scorrere.
 - Scheda Propagazione: anche i riquadri dei fatti e le pillole delle condizioni per banda erano grandi come pulsanti, non solo i quadranti del sole (gia' sistemati una volta, poi sistemato tutto il resto): padding e font dimezzati, matrice delle bande stretta a 28rem invece di 46rem.
+- Pagina Propagazione ridisegnata (0.11.31): prima mappa e dati erano affiancati in due colonne quasi uguali, con la tabella "Chi mi ha ricevuto" in una sezione separata sotto tutto. Scelto tra 5 impaginazioni mostrate come file HTML di prova sul Desktop (non nel repository): ora sole, indici, condizioni per banda e statistiche PSK stanno tutti in una barra stretta a sinistra (`.prop-sidebar`, 15-17rem) e a destra (`.prop-main`) la mappa compatta con la lista delle stazioni subito sotto, non piu' in una sezione a parte (`PropagationPage.tsx`, `onair.css`).
 - Programma Windows (2026-10-24): `desktop/` e' un workspace Cargo a parte (Tauri 2) che usa il crate `aurora`; impostazioni da `%APPDATA%\Aurora\aurora.env` + rilevamento di JTDX/Log4OM2; trasmissione chiusa di default. Aggiornamenti: solo pacchetti con firma minisign valida (`desktop/updater.pub`); la chiave privata e' in `%USERPROFILE%\.aurora-signing\aurora.key`, fuori dal repository e da salvare altrove. Repository privato: serve il token (sola lettura) per vedere e scaricare le release.
