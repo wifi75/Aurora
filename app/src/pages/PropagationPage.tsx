@@ -195,6 +195,7 @@ export function PropagationPage() {
                       <span className="data prop-stat-who">
                         {farthestRow && flagCode(farthestRow.country) ? <span className={`fi fi-${flagCode(farthestRow.country)} prop-received-flag`} aria-hidden="true" /> : null}
                         {summary.farthest.call}
+                        {farthestRow?.country ? <span className="muted"> · {farthestRow.country}</span> : null}
                         {farthestRow ? <span className="muted"> · {formatClock(farthestRow.time_s * 1000)}</span> : null}
                       </span>
                     ) : null}
