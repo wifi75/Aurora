@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
+import { useMeterBallistics } from '../../lib/meterBallistics';
 import { displayModel, useRadioDisplay } from '../../lib/radioDisplay';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
@@ -51,8 +52,10 @@ export function RadioDisplayHeader() {
     };
   }, [open]);
 
+  const raw = displayModel(status);
+  const meters = useMeterBallistics(raw.meters);
   if (pref.hidden) return null;
-  const model = displayModel(status);
+  const model = { ...raw, meters };
 
   if (phone) {
     return (
