@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getControls: vi.fn().mockResolvedValue({}), postControl: vi.fn() }));
+vi.mock('../api/client', () => ({ getControls: vi.fn().mockResolvedValue({}), getEngineSettings: vi.fn().mockRejectedValue(new Error('404')), postControl: vi.fn() }));
 import { RxControls } from './RxControls';
 
 function show(transmitting: boolean) {

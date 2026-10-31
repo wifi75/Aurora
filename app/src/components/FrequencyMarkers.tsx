@@ -10,6 +10,8 @@ interface Props {
   txHz?: number | null;
   /** Larghezza del segnale del modo in uso (Hz): le barre la occupano a destra della frequenza. 0 o assente = barra sottile. */
   bandwidthHz?: number;
+  /** Con il Filtro acceso: mezza larghezza (Hz) della finestra decodificata attorno a Rx; fuori la cascata si scurisce. */
+  filterHalfHz?: number | null;
   onRx(hz: number): void;
   onTx(hz: number): void;
 }
@@ -21,7 +23,7 @@ const BIG_STEP = 50;
  * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione, larghe quanto il segnale del modo.
  * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
  */
-export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, onRx, onTx }: Props) {
+export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, filterHalfHz = null, onRx, onTx }: Props) {
   const t = useT();
   const box = useRef<HTMLDivElement | null>(null);
 
@@ -90,6 +92,12 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
           else onRx(hz);
         }}
       />
+      {filterHalfHz != null && rxHz != null ? (
+        <>
+          <div className="wf-filter-shade" aria-hidden="true" style={{ left: 0, width: `${leftPercent(Math.max(fMinHz, rxHz - filterHalfHz), fMinHz, fMaxHz)}%` }} />
+          <div className="wf-filter-shade" aria-hidden="true" style={{ left: `${leftPercent(Math.min(fMaxHz, rxHz + filterHalfHz), fMinHz, fMaxHz)}%`, right: 0 }} />
+        </>
+      ) : null}
       {marker('rx', rxHz, onRx, t('marker.rx'))}
       {marker('tx', txHz, onTx, t('marker.tx'))}
     </div>
