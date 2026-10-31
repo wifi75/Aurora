@@ -3061,8 +3061,9 @@
 .prop-matrix-head,
 .prop-matrix-row {
   display: grid;
-  grid-template-columns: 6rem repeat(2, minmax(0, 1fr));
-  gap: 0.3rem;
+  grid-template-columns: 4.6rem repeat(2, minmax(0, 1fr));
+  column-gap: 0.7rem;
+  row-gap: 0.3rem;
   align-items: stretch;
 }
 
@@ -3110,15 +3111,26 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.4rem;
-  padding: 0.15rem 0;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.15rem 0.25rem;
   color: var(--ok);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  border-radius: 0.3rem;
 }
 
+/* la parola resta nella sua cella: prima «Discreta» toccava le barrette della colonna accanto */
 .prop-tile b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--text);
   font-weight: var(--weight-strong);
+}
+
+.prop-tile .prop-meter {
+  flex: none;
 }
 
 .prop-tile--fair {
@@ -3133,10 +3145,9 @@
   color: var(--text-muted);
 }
 
+/* la condizione di adesso (giorno o notte da te): un velo del suo colore, niente bordo ne' sottolineatura */
 .prop-tile--active {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.2rem;
+  background: color-mix(in srgb, currentColor 14%, transparent);
 }
 
 .prop-meter {
