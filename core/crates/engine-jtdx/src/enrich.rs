@@ -98,8 +98,12 @@ impl Enrichment {
 }
 
 /// Etichetta di una novita'. In un messaggio tra altre due stazioni contano solo paese, zona e ITU;
-/// griglia, prefisso, stazione e "gia' lavorata" si segnalano per i CQ.
+/// griglia, prefisso e stazione nuova si segnalano per i CQ; "gia' lavorata" in ogni suo messaggio (scelta del proprietario: una stazione
+/// collegata si riconosce anche mentre lavora un altro, non solo quando chiama CQ).
 fn tag_for(novelty: Novelty, is_cq: bool) -> Option<DecodeTag> {
+    if novelty == Novelty::Worked {
+        return Some(DecodeTag::WorkedCall);
+    }
     let broad = match novelty {
         Novelty::NewDxcc => Some(DecodeTag::NewDxcc),
         Novelty::NewDxccBand => Some(DecodeTag::NewDxccBand),

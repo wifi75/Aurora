@@ -167,7 +167,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
         // «gia' lavorato» come nel motore: barrato (o sottolineato, o colorato); «non mostrare» lo nasconde, salvo i messaggi a me e i desiderati
         const worked = !own && d.tag === 'worked_call';
-        if (worked && view.workedDontShow && !toMe && !wanted) return null;
+        // «non mostrare» nasconde i CQ delle stazioni gia' collegate, non i loro scambi con altri
+        if (worked && view.workedDontShow && !toMe && !wanted && /^CQ\s/i.test(d.text.trim())) return null;
         // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque; un messaggio tra altre stazioni senza «altri messaggi predefiniti» non ha marcatori
         const between = !own && !toMe && !isCq(d.text);
         const lit = !own && d.tag && notify.highlight[d.tag] && !(between && !view.otherMarker) ? d.tag : null;
