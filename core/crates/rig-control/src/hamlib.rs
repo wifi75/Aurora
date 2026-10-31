@@ -29,6 +29,9 @@ pub struct RigctldConfig {
     pub conf: Vec<(String, String)>,
     /// Porta TCP fissa su cui ascoltare (condivisione con altri programmi); `None` = una libera a caso.
     pub tcp_port: Option<u16>,
+    /// `--vfo`: ogni comando indica il VFO. Lo chiedono i programmi che leggono i due VFO (Log4OM con «VFO MODE»); Aurora se ne accorge
+    /// da sola (`\chk_vfo`) e aggiunge `currVFO` ai suoi comandi.
+    pub vfo_mode: bool,
 }
 
 /// Gli argomenti di `rigctld` per questa configurazione, con la porta TCP su cui ascoltare. Solo valori ricavati da numeri e da nomi
@@ -46,6 +49,9 @@ pub fn rigctld_args(config: &RigctldConfig, tcp_port: u16) -> Result<Vec<String>
         check_token(key, "chiave")?;
         check_token(value, "valore")?;
         args.extend(["--set-conf".to_string(), format!("{key}={value}")]);
+    }
+    if config.vfo_mode {
+        args.push("--vfo".to_string());
     }
     Ok(args)
 }
@@ -135,6 +141,8 @@ pub fn list_models(rigctl: &Path) -> Result<Vec<RigModel>, RigError> {
 
 /// Una connessione a un `rigctld` che ascolta (lanciato da noi o gia' esistente).
 pub struct RigctldClient {
+    /// rigctld e' in modalita' VFO (`--vfo`): si scopre al collegamento con `\chk_vfo`.
+    vfo_mode: std::sync::atomic::AtomicBool,
     io: Mutex<(BufReader<TcpStream>, TcpStream)>,
 }
 
@@ -154,7 +162,12 @@ impl RigctldClient {
                     stream.set_write_timeout(Some(io_timeout)).map_err(|e| RigError(e.to_string()))?;
                     let _ = stream.set_nodelay(true);
                     let reader = BufReader::new(stream.try_clone().map_err(|e| RigError(e.to_string()))?);
-                    return Ok(RigctldClient { io: Mutex::new((reader, stream)) });
+                    let client = RigctldClient { io: Mutex::new((reader, stream)), vfo_mode: std::sync::atomic::AtomicBool::new(false) };
+                    // rigctld avviato con --vfo (anche da un altro programma): i comandi devono indicare il VFO
+                    if client.ask_raw("\\chk_vfo", 1).is_ok_and(|r| r.first().is_some_and(|l| l.trim().ends_with('1'))) {
+                        client.vfo_mode.store(true, std::sync::atomic::Ordering::Relaxed);
+                    }
+                    return Ok(client);
                 }
                 Err(e) if Instant::now() >= deadline => return Err(RigError(format!("rigctld non risponde su {addr}: {e}"))),
                 Err(_) => std::thread::sleep(Duration::from_millis(100)),
@@ -162,8 +175,21 @@ impl RigctldClient {
         }
     }
 
-    /// Manda un comando e legge `lines` righe di risposta (0 per i comandi che rispondono solo `RPRT`).
+    /// Manda un comando e legge `lines` righe di risposta (0 per i comandi che rispondono solo `RPRT`). Con rigctld in modalita' VFO i comandi
+    /// della radio portano `currVFO` subito dopo la lettera.
     fn ask(&self, command: &str, lines: usize) -> Result<Vec<String>, RigError> {
+        if self.vfo_mode.load(std::sync::atomic::Ordering::Relaxed) {
+            let mut parts = command.splitn(2, ' ');
+            let head = parts.next().unwrap_or_default();
+            if matches!(head, "f" | "F" | "m" | "M" | "t" | "T" | "l" | "L" | "s" | "S" | "i" | "I") {
+                let rest = parts.next().map(|r| format!(" {r}")).unwrap_or_default();
+                return self.ask_raw(&format!("{head} currVFO{rest}"), lines);
+            }
+        }
+        self.ask_raw(command, lines)
+    }
+
+    fn ask_raw(&self, command: &str, lines: usize) -> Result<Vec<String>, RigError> {
         let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
         let (reader, writer) = &mut *io;
         writer.write_all(format!("{command}\n").as_bytes()).map_err(|e| RigError(format!("rigctld: scrittura: {e}")))?;
@@ -440,7 +466,7 @@ mod tests {
     };
 
     fn config() -> RigctldConfig {
-        RigctldConfig { exe: "rigctld.exe".into(), model: 1049, port: Some("COM3".into()), baud: Some(38400), conf: vec![("data_bits".into(), "8".into()), ("ptt_type".into(), "RIG".into())], tcp_port: None }
+        RigctldConfig { exe: "rigctld.exe".into(), model: 1049, port: Some("COM3".into()), baud: Some(38400), conf: vec![("data_bits".into(), "8".into()), ("ptt_type".into(), "RIG".into())], tcp_port: None, vfo_mode: false }
     }
 
     #[test]
@@ -539,7 +565,7 @@ mod tests {
         assert_eq!(client.split().expect("s"), (true, "VFOB".to_string()));
         client.set_split(false, "VFOA").expect("S");
         let commands: Vec<String> = seen.try_iter().collect();
-        assert_eq!(commands, ["f", "F 14074000", "m", "M PKTUSB 0", "t", "T 1", "s", "S 0 VFOA"]);
+        assert_eq!(commands, ["\\chk_vfo", "f", "F 14074000", "m", "M PKTUSB 0", "t", "T 1", "s", "S 0 VFOA"]);
     }
 
     #[test]
@@ -608,7 +634,7 @@ mod tests {
         // un eseguibile che esce subito (qualunque programma che non e' rigctld): l'errore non aspetta i 6 secondi e cita l'uscita
         let Some(exe) = ["C:/Windows/System32/whoami.exe", "/usr/bin/true"].into_iter().map(PathBuf::from).find(|p| p.is_file()) else { return };
         let started = Instant::now();
-        let err = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None }).err().expect("doveva fallire");
+        let err = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None, vfo_mode: false }).err().expect("doveva fallire");
         assert!(err.0.contains("si e' fermato"), "{err}");
         assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
     }
@@ -628,7 +654,7 @@ mod tests {
         let exe = ["C:/JTDX64/159/bin/rigctld-jtdx.exe", "C:/WSJT/wsjtx/bin/rigctld-wsjtx.exe"].into_iter().map(PathBuf::from).find(|p| p.is_file());
         let Some(exe) = exe else { return };
         let free = TcpListener::bind("127.0.0.1:0").expect("porta").local_addr().expect("indirizzo").port();
-        let config = RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: Some(free) };
+        let config = RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: Some(free), vfo_mode: false };
         let rig = Rigctld::start(&config).expect("rigctld dummy");
         assert_eq!(rig.addr.port(), free);
         // un secondo programma (come Log4OM2) si collega alla stessa porta e legge la stessa radio
@@ -646,7 +672,7 @@ mod tests {
     fn a_real_dummy_rig_round_trips() {
         let exe = ["C:/JTDX64/159/bin/rigctld-jtdx.exe", "C:/WSJT/wsjtx/bin/rigctld-wsjtx.exe"].into_iter().map(PathBuf::from).find(|p| p.is_file());
         let Some(exe) = exe else { return };
-        let rig = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None }).expect("rigctld dummy");
+        let rig = Rigctld::start(&RigctldConfig { exe, model: 1, port: None, baud: None, conf: Vec::new(), tcp_port: None, vfo_mode: false }).expect("rigctld dummy");
         rig.client.set_frequency(14_074_000).expect("F");
         assert_eq!(rig.client.frequency().expect("f"), 14_074_000);
         rig.client.set_mode("USB", 0).expect("M");

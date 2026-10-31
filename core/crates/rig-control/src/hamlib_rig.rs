@@ -909,7 +909,8 @@ mod tests {
     fn it_turns_the_ptt_off_first_and_reads_the_radio() {
         let fake = FakeRigctld::start(14_074_000);
         let rig = start(&fake, RigConfig::default());
-        let commands = fake.commands();
+        // la prima domanda e' solo `\chk_vfo` (modalita' VFO del demone); il primo comando alla radio e' lo spegnimento del PTT
+        let commands: Vec<String> = fake.commands().into_iter().filter(|c| c != "\\chk_vfo").collect();
         assert_eq!(commands.first().map(String::as_str), Some("T 0"), "il PTT si spegne subito dopo l'apertura: {commands:?}");
         let s = rig.status();
         assert_eq!((s.frequency_hz, s.mode.as_deref(), s.ptt), (Some(14_074_000), Some("PKTUSB"), false));
