@@ -196,6 +196,10 @@ pub fn start_with_save(
                 tick.tick().await;
                 let view = tx::view_of(&live.controls);
                 let selected_text = view.texts.get(usize::from(view.selected).saturating_sub(1)).filter(|t| !t.is_empty() && view.selected > 0).cloned();
+                // in trasmissione il messaggio e' quello davvero in onda: la sequenza puo' trasmettere senza un messaggio selezionato,
+                // e senza testo la pagina non registrava il Tx (la risposta della stazione chiamata sembrava una chiamata a me)
+                let on_air = live.controls.on_air.lock().ok().and_then(|t| t.clone());
+                let selected_text = if live.controls.transmitting.load(Ordering::Relaxed) { on_air.or(selected_text) } else { selected_text };
                 let status = StationStatus {
                     dial_hz: live.dial_hz.load(Ordering::Relaxed),
                     mode: live.controls.mode().name().to_string(),

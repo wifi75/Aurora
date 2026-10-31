@@ -956,6 +956,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     // ritrasmissione: il messaggio e' cambiato dopo l'avvio
                     match self.port.replace(request.clone()) {
                         Ok(true) => {
+                            if let Ok(mut on_air) = self.controls.on_air.lock() {
+                                *on_air = Some(sent.clone());
+                            }
                             self.notes.push(note);
                             log.push(format!("ritrasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()));
                             return log;
@@ -969,6 +972,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 match self.port.schedule(request) {
                     Ok(()) => {
+                        if let Ok(mut on_air) = self.controls.on_air.lock() {
+                            *on_air = Some(sent.clone());
+                        }
                         self.notes.push(TxNote { retransmit: false, ..note });
                         log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()))
                     }
