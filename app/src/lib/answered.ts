@@ -24,3 +24,16 @@ export function isAnswerToMyCall(text: string, timeMs: number, sent: ReadonlyMap
   const dt = timeMs - when;
   return dt >= 0 && dt <= ANSWER_WINDOW_MS;
 }
+
+/**
+ * Il messaggio a me e' della stazione DX in corso e le avevo gia' trasmesso, anche oltre i 15 minuti:
+ * conta come risposta (linguetta viola) finche' dura il QSO. Il suo primo messaggio, prima di averle
+ * trasmesso qualcosa, resta "mi ha chiamato lei per prima" (linguetta rossa), anche dopo che e' diventata
+ * la stazione DX in corso.
+ */
+export function isOngoingDxReply(text: string, timeMs: number, sent: ReadonlyMap<string, number>): boolean {
+  const caller = text.trim().split(/\s+/)[1]?.toUpperCase();
+  if (!caller) return false;
+  const when = sent.get(caller);
+  return when !== undefined && timeMs >= when;
+}
