@@ -283,6 +283,8 @@ pub fn start_with_save(
             // il livello (cursore Pwr) arriva al dispositivo subito, anche a trasmissione in corso, come in JTDX
             let leveling = Arc::clone(&port);
             l.controls.set_attenuation_hook(Arc::new(move |tenths| leveling.set_attenuation(tenths)));
+            // il livello salvato (gia' ripristinato) arriva subito al dispositivo: prima restava quello di fabbrica finche' non si muoveva il cursore
+            port.set_attenuation(l.controls.attenuation.load(Ordering::Relaxed));
             let base = SeqOptions { my_continent: l.own_continent.clone().unwrap_or_default(), ..SeqOptions::default() };
             match TxDriver::with_options(&l.de_call, &l.de_grid, port, Arc::clone(&l.controls), base) {
                 Ok(mut d) => {

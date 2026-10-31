@@ -822,18 +822,27 @@ fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> 
 struct WindowsVolumePort {
     inner: Arc<dyn engine_native::TxPort>,
     output: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+    /// Il livello del cursore (quello vero, anche dopo il ripristino dei livelli salvati): si riapplica prima di ogni trasmissione, perche' il
+    /// volume di Windows puo' cambiare per conto suo (all'avvio il cursore diceva 100 % e la scheda era al 50 %).
+    controls: Arc<engine_native::NativeControls>,
 }
 
 impl WindowsVolumePort {
-    /// All'avvio: segnale digitale pieno e il livello salvato portato sul volume di Windows.
-    fn set_attenuation_now(&self, tenths: u32) {
-        engine_native::TxPort::set_attenuation(self, tenths);
-    }
-
     fn apply(&self, tenths: u32) {
         let volume = 1.0 - (tenths.min(450) as f32 / 450.0);
         let Some(name) = (self.output)() else { return };
-        match audio_spectrum::OutputEndpoint::find(&name).and_then(|out| out.set_volume(volume)) {
+        let out = match audio_spectrum::OutputEndpoint::find(&name) {
+            Ok(out) => out,
+            Err(e) => {
+                tracing::warn!("Pwr: uscita non trovata ({e})");
+                return;
+            }
+        };
+        // si scrive solo se e' diverso (succede prima di ogni trasmissione): cosi' nel registro resta solo quando si corregge davvero
+        if out.volume().is_ok_and(|v| (v - volume).abs() < 0.005) {
+            return;
+        }
+        match out.set_volume(volume) {
             Ok(()) => tracing::info!("Pwr: volume di Windows di «{name}» al {:.0} %", volume * 100.0),
             Err(e) => tracing::warn!("Pwr: volume dell'uscita non impostato ({e})"),
         }
@@ -842,6 +851,7 @@ impl WindowsVolumePort {
 
 impl engine_native::TxPort for WindowsVolumePort {
     fn schedule(&self, request: tx_native::TxRequest) -> Result<(), String> {
+        self.apply(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         self.inner.schedule(request)
     }
 
@@ -1312,8 +1322,7 @@ pub async fn run(
                     }
                     let manager = Arc::clone(m);
                     transmitter.map(|inner| {
-                        let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()) };
-                        port.set_attenuation_now(native_controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+                        let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()), controls: Arc::clone(&native_controls) };
                         Arc::new(port) as Arc<dyn engine_native::TxPort>
                     })
                 }),
