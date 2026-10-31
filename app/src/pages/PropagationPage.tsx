@@ -187,12 +187,18 @@ export function PropagationPage() {
               <>
                 <div className="prop-stats">
                   <Stat label={t('prop.stat.stations', { hours: pskState?.hours ?? 0 })} value={String(summary.stations)} />
-                  <Stat
-                    label={t('prop.stat.farthest')}
-                    value={summary.farthest ? `${summary.farthest.km} km` : '–'}
-                    hint={summary.farthest ? `${summary.farthest.call}${farthestRow?.country ? ` · ${farthestRow.country}` : ''}` : undefined}
-                  />
-                  <Stat label={t('prop.stat.farthestCall')} value={summary.farthest?.call ?? '–'} />
+                  {/* la piu' lontana: distanza, e sotto chi mi ha ricevuto con la bandierina e l'orario */}
+                  <div className="prop-stat" title={farthestRow?.country ?? undefined}>
+                    <strong className="data">{summary.farthest ? formatDistance(summary.farthest.km, prefs.distanceUnit) : '–'}</strong>
+                    <span className="muted">{t('prop.stat.farthest')}</span>
+                    {summary.farthest ? (
+                      <span className="data prop-stat-who">
+                        {farthestRow && flagCode(farthestRow.country) ? <span className={`fi fi-${flagCode(farthestRow.country)} prop-received-flag`} aria-hidden="true" /> : null}
+                        {summary.farthest.call}
+                        {farthestRow ? <span className="muted"> · {formatClock(farthestRow.time_s * 1000)}</span> : null}
+                      </span>
+                    ) : null}
+                  </div>
                   <Stat label={t('prop.stat.best')} value={best ? `${best.snr} dB` : '–'} hint={best?.call} />
                 </div>
                 <div className="prop-bars" aria-label={t('prop.stat.byBand')}>
