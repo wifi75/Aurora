@@ -135,4 +135,5 @@ export const onlineStrings = {
   'prop.col.snr': ['SNR', 'SNR', 'SNR', 'SNR', 'SNR', 'SNR'],
   'prop.col.km': ['km', 'km', 'km', 'km', 'km', 'km'],
   'prop.col.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
+  'prop.col.distance': ['Distanza', 'Distance', 'Entfernung', 'Distance', 'Distancia', 'Distância'],
 } as const satisfies Record<string, Entry>;

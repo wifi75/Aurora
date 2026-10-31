@@ -5,14 +5,23 @@ import { Gauge } from '../components/Gauge';
 import { WorldMap, type MapReceiver } from '../components/WorldMap';
 import { useT, type Key } from '../i18n';
 import { bandOf, formatClock } from '../lib/format';
+import { flagCode } from '../lib/flags';
 import { gridCenter } from '../lib/geo';
 import { BAND_LEGEND, bandColor } from '../lib/mapColors';
 import { readMapOptions } from '../lib/mapOptions';
-import { bandCounts, bestSnr, conditionGroup, latestPerReceiver, pskRows, summarize } from '../lib/psk';
+import { formatDistance, usePrefs } from '../lib/prefs';
+import { bandCounts, bestSnr, conditionGroup, latestPerReceiver, pskRows, summarize, type PskRow } from '../lib/psk';
 import { aLevel, conditionLevel, kLevel, sfiLevel, type Level } from '../lib/solar';
 import { isNight } from '../lib/terminator';
 import { useStation } from '../state/station';
 import { mapLabels } from './MapPage';
+
+/** Divide le righe in blocchi, per affiancare piu' colonne di tabella e vedere piu' stazioni senza scorrere. */
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
 
 const GROUPS = ['80m-40m', '30m-20m', '17m-15m', '12m-10m'] as const;
 
@@ -81,6 +90,7 @@ function Stat({ value, label, hint }: { value: string; label: string; hint?: str
 export function PropagationPage() {
   const t = useT();
   const client = useQueryClient();
+  const prefs = usePrefs((s) => s.prefs);
   const status = useStation((s) => s.status);
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const solar = useQuery({ queryKey: ['online-solar'], queryFn: getSolar, retry: false, refetchInterval: 60_000, enabled: online.data?.solar === true });
@@ -97,6 +107,9 @@ export function PropagationPage() {
   const pskState = psk.data?.psk ?? null;
   const rows = useMemo(() => (pskState ? pskRows(pskState.reports, status?.de_grid) : []), [pskState, status?.de_grid]);
   const receivers: MapReceiver[] = useMemo(() => latestPerReceiver(rows).map((r) => ({ call: r.receiver, grid: r.locator, snr: r.snr, band: r.band, km: r.km })), [rows]);
+  // dalla piu' lontana alla piu' vicina (chi non ha un locatore noto va in fondo)
+  const byDistance: PskRow[] = useMemo(() => [...rows].sort((a, b) => (b.km ?? -1) - (a.km ?? -1)), [rows]);
+  const receivedColumns = useMemo(() => chunk(byDistance, 14), [byDistance]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -217,37 +230,41 @@ export function PropagationPage() {
 
       {online.data.psk && pskHasRows ? (
         <section className="prop-card prop-table-card" aria-label={t('prop.col.who')}>
-          <div className="history-table-wrap prop-table-wrap">
-            <table className="history-table">
-              <thead>
-                <tr>
-                  <th>{t('prop.col.when')}</th>
-                  <th>{t('prop.col.who')}</th>
-                  <th>{t('prop.col.grid')}</th>
-                  <th>{t('prop.col.band')}</th>
-                  <th>{t('prop.col.mode')}</th>
-                  <th className="num">{t('prop.col.snr')}</th>
-                  <th className="num">{t('prop.col.km')}</th>
-                  <th>{t('prop.col.country')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={`${r.receiver}-${r.time_s}-${r.freq_hz}`}>
-                    <td className="data">{formatClock(r.time_s * 1000)}</td>
-                    <td className="data">{r.receiver}</td>
-                    <td className="data">{r.locator}</td>
-                    <td>
-                      <i className="prop-dot" style={{ background: bandColor(r.band) }} /> {r.band ?? '–'}
-                    </td>
-                    <td>{r.mode}</td>
-                    <td className="num data">{r.snr ?? '–'}</td>
-                    <td className="num data">{r.km ?? '–'}</td>
-                    <td>{r.country ?? ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="prop-received-columns">
+            {receivedColumns.map((col, i) => (
+              <div className="history-table-wrap prop-table-wrap" key={i}>
+                <table className="history-table prop-received-table">
+                  <thead>
+                    <tr>
+                      <th>{t('prop.col.when')}</th>
+                      <th>{t('prop.col.who')}</th>
+                      <th>{t('prop.col.band')}</th>
+                      <th className="num">{t('prop.col.snr')}</th>
+                      <th className="num">{t('prop.col.distance')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {col.map((r) => {
+                      const code = prefs.showFlag ? flagCode(r.country) : null;
+                      return (
+                        <tr key={`${r.receiver}-${r.time_s}-${r.freq_hz}`}>
+                          <td className="data">{formatClock(r.time_s * 1000)}</td>
+                          <td className="data">
+                            {code ? <span className={`fi fi-${code} prop-received-flag`} title={r.country ?? undefined} aria-hidden="true" /> : null}
+                            {r.receiver}
+                          </td>
+                          <td>
+                            <i className="prop-dot" style={{ background: bandColor(r.band) }} /> {r.band ?? '–'}
+                          </td>
+                          <td className="num data">{r.snr ?? '–'}</td>
+                          <td className="num data">{r.km !== null ? formatDistance(r.km, prefs.distanceUnit) : '–'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
