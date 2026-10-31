@@ -67,6 +67,41 @@ impl InputEndpoint {
     }
 }
 
+/// L'uscita audio verso la radio, di cui si regola il volume di Windows (il cursore Pwr): come [`InputEndpoint`] ma tra le uscite.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OutputEndpoint {
+    id: String,
+    name: String,
+}
+
+impl OutputEndpoint {
+    /// Trova l'uscita per nome: prima quella identica, poi quella che contiene `hint` (senza distinzione di maiuscole).
+    pub fn find(hint: &str) -> Result<OutputEndpoint, VolumeError> {
+        let host = cpal::default_host();
+        let devices: Vec<cpal::Device> = host.output_devices().map_err(|e| VolumeError::Unavailable(e.to_string()))?.collect();
+        let names: Vec<String> = devices.iter().map(|d| d.description().map(|d| d.name().to_string()).unwrap_or_default()).collect();
+        let Some(index) = crate::match_device_name(&names, hint) else {
+            return Err(VolumeError::NoDevice(hint.to_string()));
+        };
+        let id = devices[index].id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
+        Ok(OutputEndpoint { id: id.id().to_string(), name: names[index].clone() })
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Volume attuale, da 0.0 a 1.0.
+    pub fn volume(&self) -> Result<f32, VolumeError> {
+        platform::get(&self.id)
+    }
+
+    /// Imposta il volume, da 0.0 a 1.0.
+    pub fn set_volume(&self, value: f32) -> Result<(), VolumeError> {
+        platform::set(&self.id, clamp_unit(value))
+    }
+}
+
 /// Riporta un valore in [0, 1]; un valore non numerico vale 0.
 pub fn clamp_unit(value: f32) -> f32 {
     if value.is_nan() { 0.0 } else { value.clamp(0.0, 1.0) }
