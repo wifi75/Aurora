@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.40 - 2026-10-31
+- **Guida riscritta**: 8 capitoli con indice, ricerca e passi pratici numerati, in 6 lingue; i nomi di schede e pulsanti si prendono dall'interfaccia (`app/src/i18n/guide.ts`).
+- **Statistiche riorganizzate**: numeri in alto con le barre di avanzamento, bande e scheda DXCC affiancate, paesi mancanti e log ADIF a richiesta.
+- **Orologio**: tolte le pillole «In linea» e orologio/DT; un avviso compare solo se l'ora e' fuori tolleranza o non verificata da piu' di un giorno (anche tra un avvio e l'altro), e porta alle impostazioni dell'orologio. Nuova impostazione «Aggiorna l'ora all'avvio di Aurora».
+
 ## 0.11.39 - 2026-10-31
 - **Propagazione**: «la piu' lontana» anche con il nome del paese.
 
