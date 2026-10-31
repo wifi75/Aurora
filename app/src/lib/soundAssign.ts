@@ -381,11 +381,25 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
   const newSenders = new Set<string>();
   for (const d of fresh) {
     const sender = (senderOf(d.text)?.call ?? d.text.trim().split(/\s+/)[1] ?? d.text).toUpperCase();
-    if (alreadyNotified(sender, now)) continue;
+    const events = eventsOf(d, myCall, dxCall);
+    if (alreadyNotified(sender, now)) {
+      // una risposta alla mia chiamata suona anche da una stazione che ha gia' fatto suonare altro (un CQ, «nuovo nominativo»),
+      // una volta per ogni messaggio diverso (rapporto, R-rapporto, RR73): la stessa riga ripetuta tace
+      const reply = `${sender}|${d.text.trim().toUpperCase()}`;
+      const mine = events.filter((x) => x === 'my_call' || x === 'alert_my_call');
+      if (mine.length > 0 && !alreadyNotified(reply, now)) {
+        for (const e of mine) {
+          candidates.add(e);
+          keysOf.set(e, [...(keysOf.get(e) ?? []), reply]);
+        }
+      }
+      continue;
+    }
     newSenders.add(sender);
-    for (const e of eventsOf(d, myCall, dxCall)) {
+    for (const e of events) {
       candidates.add(e);
-      keysOf.set(e, [...(keysOf.get(e) ?? []), sender]);
+      const reply = e === 'my_call' || e === 'alert_my_call' ? [`${sender}|${d.text.trim().toUpperCase()}`] : [];
+      keysOf.set(e, [...(keysOf.get(e) ?? []), sender, ...reply]);
     }
   }
   let event: SoundEvent | null = null;

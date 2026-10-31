@@ -198,4 +198,16 @@ describe('a station rings only the first time', () => {
     const other = pickSoundEvent([decode(4, null, 'AA1AA CC3CC -10')], third.lastId, st, 'AA1AA');
     expect(other.event).toBe('my_call');
   });
+
+  it('a reply to my call rings even if the station already rang for something else, once per new message', () => {
+    const st = state({ my_call: 'chime', cq: 'pip' }, { sound: { my_call: true, cq: true } });
+    const cq = pickSoundEvent([decode(1, 'cq', 'CQ BB2BB JN55')], 0, st, 'AA1AA');
+    expect(cq.event).toBe('cq');
+    const reply = pickSoundEvent([decode(2, null, 'AA1AA BB2BB -10')], cq.lastId, st, 'AA1AA');
+    expect(reply.event).toBe('my_call');
+    const repeat = pickSoundEvent([decode(3, null, 'AA1AA BB2BB -10')], reply.lastId, st, 'AA1AA');
+    expect(repeat.event).toBeNull();
+    const rr73 = pickSoundEvent([decode(4, null, 'AA1AA BB2BB RR73')], repeat.lastId, st, 'AA1AA');
+    expect(rr73.event).toBe('my_call');
+  });
 });
