@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.33 - 2026-10-31
+- **AGCc funziona**: compensazione AGC portata da JTDX (`agccft8` e il ramo `lagcc` di `sync8`) e migliorata. Quando l'AGC della radio cambia il guadagno (una stazione forte che parte o finisce), quei tratti tornano al livello del resto del periodo. Misura tutto il periodo e non solo i bordi, non dipende dal volume d'ingresso e compensa il salto intero. Sul banco di prova, con l'AGC che pompa, a -21 dB da 9 a 18 decodifiche su 20; nessun peggioramento sull'audio senza sbalzi. Solo FT8.
+- **Cancella** svuota anche l'elenco delle decodifiche e le righe Tx.
+
 ## 0.11.32 - 2026-10-31
 - **Programma "sordo" con il Filtro acceso**: il Filtro decodifica solo ±60 Hz attorno a Rx (±290 in Hound). Ora la cascata si scurisce fuori dalla finestra e accanto al pulsante compare un avviso. **AGCc** con il motore proprio non fa niente (la compensazione AGC di JTDX non c'e' ancora): disabilitato.
 - **Linguetta viola corretta davvero**: con la sequenza automatica lo stato non portava il testo in onda e la pagina non registrava i Tx: la risposta della stazione chiamata appariva rossa. Ora il motore pubblica il messaggio davvero trasmesso.
