@@ -486,7 +486,18 @@ impl Sequencer {
         self.rx_hz = decode.freq_hz as i32;
         if call_changed {
             self.his_grid.clear();
-            self.hist.reset_count(&call, Status::None);
+            // un messaggio diretto a me dice gia' a che punto e' il QSO (R-07: ha il mio rapporto): lo stato riparte da li', non da zero,
+            // altrimenti al periodo dopo la sequenza tornava al rapporto invece di mandare RR73
+            let from_click = match &directed {
+                Some(Body::Grid(_)) => Status::Rcall,
+                Some(Body::Report(_)) => Status::Rreport,
+                Some(Body::RReport(_)) => Status::Rrreport,
+                Some(Body::Rrr) => Status::Rrr,
+                Some(Body::Rr73) => Status::Rrr73,
+                Some(Body::Bye) => Status::R73,
+                Some(Body::Other) | None => Status::None,
+            };
+            self.hist.reset_count(&call, from_click);
             self.his_call = call.clone();
             self.rpt_rcvd.clear();
         }
