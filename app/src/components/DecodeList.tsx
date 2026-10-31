@@ -127,6 +127,12 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const sentTo = transmittedTo(txLog);
   // le stazioni in coda per il prossimo QSO
   const queueCalls = (useStation((st) => st.status?.queue) ?? []).map((c) => c.toUpperCase());
+  // la sigla «in coda» va solo sulla riga piu' recente di ogni stazione in coda, non su tutte le sue righe
+  const queueRow = new Map<string, number>();
+  for (const d of decodes) {
+    const call = d.id >= 0 ? senderOf(d.text)?.call.toUpperCase() : undefined;
+    if (call && queueCalls.includes(call) && !queueRow.has(call)) queueRow.set(call, d.id);
+  }
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -154,7 +160,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           toMe && (isAnswerToMyCall(d.text, d.time_ms, sentTo) || (!!dxCall && !!talker && talker.call.toUpperCase() === dxCall.trim().toUpperCase() && isOngoingDxReply(d.text, d.time_ms, sentTo)));
         // il posto in coda (1 = la prossima): la sigla sta nella colonna delle etichette o accanto al paese, mai sopra il testo del messaggio
         const queuePos = talker ? queueCalls.indexOf(talker.call.toUpperCase()) + 1 : 0;
-        const inQueue = queuePos > 0;
+        const inQueue = queuePos > 0 && queueRow.get(talker?.call.toUpperCase() ?? '') === d.id;
         const queueMark = inQueue ? <span className="queue-mark">{t('row.queued')} {queuePos}</span> : null;
         // una stazione della lista dei desiderati: si evidenzia anche se l'avviso e' gia' scattato
         const sender = own || !wishlist.enabled ? null : senderOf(d.text);
