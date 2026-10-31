@@ -63,11 +63,11 @@ describe('PropagationPage', () => {
     render(<PropagationPage />);
     expect((await screen.findAllByText('JA1ABC')).length).toBeGreaterThan(0);
     expect(screen.getByText('stazioni ti hanno ricevuto (ultime 3 ore)')).toBeInTheDocument();
-    expect(screen.getByText(/^\d+ km$/)).toBeInTheDocument();
+    expect(screen.getAllByText(/^\d+ km$/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('JA1ABC').length).toBeGreaterThan(1);
     expect(document.querySelector('.worldmap-receiver')).not.toBeNull();
     expect(document.querySelectorAll('.worldmap-link')).toHaveLength(1);
-    expect(screen.getByText('Japan')).toBeInTheDocument();
+    expect(document.querySelector('.prop-received-flag[title="Japan"]')).not.toBeNull();
     expect(screen.getAllByText('20m').length).toBeGreaterThan(0);
   });
 

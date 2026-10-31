@@ -49,9 +49,9 @@ interface Props {
   labels: Labels;
 }
 
-/** Quanto e' piena una griglia: piu' QSO, piu' colore (scala logaritmica, da 12% a 50%). */
+/** Quanto e' piena una griglia: piu' QSO, piu' colore (scala logaritmica, da 35% a 70%). */
 export function squareOpacity(count: number): number {
-  return 0.12 + 0.38 * Math.min(1, Math.log10(count + 1) / 3);
+  return 0.35 + 0.35 * Math.min(1, Math.log10(count + 1) / 3);
 }
 
 const TILES_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}';

@@ -3184,9 +3184,28 @@
 }
 
 .prop-table-wrap {
-  max-height: 22rem;
-  margin-top: 1rem;
+  max-height: 26rem;
   overflow: auto;
+}
+
+/* chi mi ha ricevuto: piu' tabelle affiancate, quante ne stanno nella larghezza, per vederne il piu' possibile senza scorrere */
+.prop-received-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.prop-received-table {
+  font-size: 0.78rem;
+}
+
+.prop-received-flag {
+  width: 1.3em;
+  height: 0.95em;
+  margin-right: 0.3rem;
+  border-radius: 2px;
+  vertical-align: middle;
 }
 
 @media (max-width: 40rem) {
