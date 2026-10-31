@@ -294,6 +294,27 @@ fn full_qso_in_ft4() {
     assert_eq!(b.tx_at(6, 5.9).map(|t| t.n), Some(6));
 }
 
+/// Doppio clic sull'R+rapporto di una stazione diversa dal DX in corso: la nuova stazione ha gia' il mio rapporto, quindi RR73,
+/// anche nei periodi successivi senza messaggi nuovi da lei (prima lo stato si azzerava e si tornava al rapporto).
+#[test]
+fn double_click_on_r_report_of_another_station_keeps_rr73() {
+    // come nel log del 2026-10-31: QSO con FR1GZ chiuso e registrato, si passa a un'altra stazione, poi doppio clic sul suo R-07
+    let mut b = Bench::new(Mode::Ft8, opts());
+    b.reply(0, "IU3ABC FR1GZ LG79", -20);
+    assert_eq!(b.tx(1).as_deref(), Some("FR1GZ IU3ABC -20"));
+    b.rx(2, &[("IU3ABC FR1GZ R-07", -20)]);
+    assert_eq!(b.tx(3).as_deref(), Some("FR1GZ IU3ABC RR73"));
+    b.rx(4, &[("CQ CT9ABC IM12", -10)]);
+    b.reply(4, "CQ CT9ABC IM12", -10);
+    assert_eq!(b.tx(5).as_deref(), Some("CT9ABC IU3ABC JN55"));
+    b.reply(2, "IU3ABC FR1GZ R-07", -20);
+    let rr73 = b.tx_at(5, 2.0);
+    assert!(rr73.as_ref().is_some_and(|t| t.text == "FR1GZ IU3ABC RR73"), "{rr73:?}");
+    b.idle(6);
+    let next = b.tx(7);
+    assert!(next.as_deref().is_none_or(|t| !t.starts_with("FR1GZ IU3ABC -") && !t.starts_with("FR1GZ IU3ABC R-")), "{next:?}");
+}
+
 /// JT65 e JT9: periodi di un minuto, chiusura con RRR (RR73 non esiste nei messaggi a 72 bit) e finestra di avvio lunga quanto il messaggio.
 #[test]
 fn full_qso_in_jt65_and_jt9_closes_with_rrr() {
