@@ -94,6 +94,8 @@ pub struct NativeControls {
     band_memory: AtomicBool,
     /// STOP TX immediato (vedi `set_halt_now`).
     halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    /// Il testo davvero messo in onda per ultimo (anche quando la sequenza lo sceglie da sola senza un messaggio selezionato).
+    pub(crate) on_air: Mutex<Option<String>>,
     /// Cosa fare quando il livello di uscita cambia (portarlo subito al dispositivo, anche a trasmissione in corso).
     attenuation_hook: Mutex<Option<AttenuationHook>>,
     /// Le impostazioni della scheda Sequenza (contatori, «ferma se risponde a un altro», CQ rigoroso, watchdog): le legge la trasmissione quando parte e a ogni cambio.
@@ -112,7 +114,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
     }
 }
 
