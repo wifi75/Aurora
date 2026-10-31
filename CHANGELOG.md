@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.30 - 2026-10-31
+- **Quadratini della mappa visibili di nuovo**: l'opacita' bassa (12%-50%) introdotta per togliere l'effetto scacchiera li aveva resi quasi invisibili sullo sfondo reale. Alzata a 35%-70%.
+- **Tabella "Chi mi ha ricevuto" ordinata e piu' ricca**: dalla stazione piu' lontana alla piu' vicina, bandierina del paese accanto al nominativo, distanza in km o miglia secondo le preferenze, divisa in piu' colonne affiancate (una tabella ogni 14 righe) per vederne il piu' possibile senza scorrere.
+
 ## 0.11.29 - 2026-10-31
 - **Scheda Propagazione compatta davvero**: i riquadri dei fatti (raggi X, macchie solari...) e le pillole delle condizioni per banda erano grandi come pulsanti (padding, raggi e font da elemento dominante), non solo i quadranti gia' sistemati nella 0.11.28. Ridotti insieme: matrice delle bande stretta a 28rem invece di 46rem, font e padding dimezzati.
 
