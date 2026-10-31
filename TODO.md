@@ -23,6 +23,9 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato
 - [x] Analisi delle logiche di JTDX (`docs/logiche-jtdx.md`)
 
 ## Da fare
+- [ ] **Doppio clic su R+rapporto dopo un QSO gia' registrato e la coda partita** (0.11.32): correzione in `reply_to_with` non riprodotta dal banco di prova; verificare in onda che resti RR73 e non torni al rapporto.
+- [ ] **Compensazione AGC (AGCc) nel motore proprio**: oggi il pulsante e' disabilitato perche' non fa niente; portare `lagcc`/`agccft8` di JTDX leggendo il sorgente.
+- [ ] Test dell'interfaccia «Notifications > switches highlight and sound per kind» fallito una volta sotto carico (0.11.32): ricontrollare se e' instabile.
 - [x] **Coda delle stazioni che chiamano** (tasto destro) e **Rispondi a tutti** (fatti il 2026-10-26, 0.11.23): vedi `memory.md`. Da provare con la radio.
 - [x] **Hound e modo SWL nel motore proprio** (2026-10-26): Hound senza CQ, SWL con finestra, soglie e passate come JTDX (quarta sottopassata di SWL non portata, filtro +-290 Hz e salti di Hound non portati).
 - [x] **JT65 e JT9 nel motore proprio** (0.11.24): selettore, ricezione, trasmissione, sequenza con RRR, frequenze di JTDX, `ALL.TXT`; da provare con la radio.
