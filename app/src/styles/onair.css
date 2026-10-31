@@ -3107,26 +3107,24 @@
 }
 
 /* testo colorato e barrette, niente riquadro: una riga di stato non un bottone */
+/* barrette sopra, parola intera sotto: affiancate nella barra stretta le parole si tagliavano («Disc…») */
 .prop-tile {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.15rem;
   min-width: 0;
-  padding: 0.15rem 0.25rem;
+  padding: 0.2rem 0.2rem;
   color: var(--ok);
   font-size: 0.72rem;
   border-radius: 0.3rem;
 }
 
-/* la parola resta nella sua cella: prima «Discreta» toccava le barrette della colonna accanto */
 .prop-tile b {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--text);
   font-weight: var(--weight-strong);
+  white-space: nowrap;
 }
 
 .prop-tile .prop-meter {
