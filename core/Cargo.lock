@@ -53,7 +53,7 @@ dependencies = [
 
 [[package]]
 name = "aurora"
-version = "0.11.27"
+version = "0.11.28"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
