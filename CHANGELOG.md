@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.34 - 2026-10-31
+- **Radio via Hamlib che "spariva" al riavvio**: il programma Windows imponeva OmniRig trovando JTDX; ora vince la scelta fatta nella pagina della radio. L'elenco dei modelli si legge anche da rigctld se manca rigctl.
+- **Installatore**: chiude Aurora e il suo rigctld finche' non sono spariti (prima la DLL di Hamlib restava bloccata: «Errore nell'apertura del file in scrittura: libhamlib-4.dll»).
+- **Misuratori dalla radio**: in trasmissione la potenza compare sempre (il CAT sa subito che si trasmette); S-meter e potenza con l'inerzia della radio (salita immediata, discesa lenta).
+- Pagina della radio: i modelli trovati compaiono sotto la ricerca, la porta si sceglie da un menu.
+
 ## 0.11.33 - 2026-10-31
 - **AGCc funziona**: compensazione AGC portata da JTDX (`agccft8` e il ramo `lagcc` di `sync8`) e migliorata. Quando l'AGC della radio cambia il guadagno (una stazione forte che parte o finisce), quei tratti tornano al livello del resto del periodo. Misura tutto il periodo e non solo i bordi, non dipende dal volume d'ingresso e compensa il salto intero. Sul banco di prova, con l'AGC che pompa, a -21 dB da 9 a 18 decodifiche su 20; nessun peggioramento sull'audio senza sbalzi. Solo FT8.
 - **Cancella** svuota anche l'elenco delle decodifiche e le righe Tx.
