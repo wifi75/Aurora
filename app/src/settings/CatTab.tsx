@@ -237,6 +237,28 @@ export function CatGroups() {
           <>
             <Field label={t('cat.rig.search')}>
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+              {/* i risultati sotto la casella: il menu «Radio» accanto puo' finire fuori dallo schermo e la ricerca sembrava non fare niente */}
+              {search.trim() !== '' ? (
+                <ul className="cat-search-results" role="listbox" aria-label={t('cat.rig')}>
+                  {shown.slice(0, 12).map((m) => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        className={`glass chip${m.id === config.model ? ' glass--on' : ''}`}
+                        role="option"
+                        aria-selected={m.id === config.model}
+                        onClick={() => {
+                          set({ model: m.id, rig_name: modelLabel(m) });
+                          setSearch('');
+                        }}
+                      >
+                        {modelLabel(m)}
+                      </button>
+                    </li>
+                  ))}
+                  {shown.length === 0 ? <li className="muted">—</li> : null}
+                </ul>
+              ) : null}
             </Field>
             <Field label={t('cat.rig')}>
               <select

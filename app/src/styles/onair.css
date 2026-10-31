@@ -4182,3 +4182,21 @@
     font-size: 0.72rem;
   }
 }
+
+/* risultati della ricerca del modello di radio (scheda CAT) */
+.cat-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.cat-search-results .chip {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
