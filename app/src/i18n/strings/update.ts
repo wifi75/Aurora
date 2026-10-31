@@ -94,13 +94,4 @@ export const updateStrings = {
     'La comprobación falló: {message}',
     'A verificação falhou: {message}',
   ],
-  'wiki.updates.t': ['Aggiornamenti', 'Updates', 'Aktualisierungen', 'Mises à jour', 'Actualizaciones', 'Atualizações'],
-  'wiki.updates.b': [
-    'In Impostazioni → Aggiornamenti scegli il repository GitHub dove escono le versioni di Aurora e ogni quante ore controllare. Quando ne esce una più nuova compare una barra in alto con le note e il link per scaricarla; con un indirizzo ntfy l’avviso arriva anche sul telefono. Un repository privato richiede un token di sola lettura.',
-    'In Settings → Updates choose the GitHub repository where Aurora versions come out and how many hours between checks. When a newer one appears, a bar at the top shows the notes and the link to download it; with an ntfy address the alert also reaches your phone. A private repository needs a read-only token.',
-    'Unter Einstellungen → Aktualisierungen wählst du das GitHub-Repository, in dem die Aurora-Versionen erscheinen, und wie viele Stunden zwischen Prüfungen liegen. Erscheint eine neuere, zeigt oben ein Balken die Hinweise und den Download-Link; mit einer ntfy-Adresse kommt die Warnung auch aufs Handy. Ein privates Repository braucht ein Token mit reinem Lesezugriff.',
-    'Dans Réglages → Mises à jour, choisis le dépôt GitHub où sortent les versions d’Aurora et toutes les combien d’heures contrôler. Quand une plus récente sort, une barre en haut montre les notes et le lien de téléchargement ; avec une adresse ntfy l’alerte arrive aussi sur le téléphone. Un dépôt privé demande un jeton en lecture seule.',
-    'En Ajustes → Actualizaciones elige el repositorio de GitHub donde salen las versiones de Aurora y cada cuántas horas comprobar. Cuando sale una más nueva, una barra arriba muestra las notas y el enlace de descarga; con una dirección ntfy el aviso llega también al teléfono. Un repositorio privado necesita un token de solo lectura.',
-    'Em Definições → Atualizações escolhe o repositório do GitHub onde saem as versões da Aurora e de quantas em quantas horas verificar. Quando sai uma mais nova, surge no topo uma barra com as notas e a ligação para descarregar; com um endereço ntfy o aviso chega também ao telemóvel. Um repositório privado precisa de um token só de leitura.',
-  ],
 } as const;
