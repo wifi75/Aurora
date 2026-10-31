@@ -5,6 +5,7 @@ import { periodPosition } from '../lib/period';
 import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
+import { useStation } from '../state/station';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
 const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'sync', 'agc', 'filter'];
@@ -50,6 +51,8 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
   const reachable = !controls.isError;
 
   const run = async (id: ControlId, on?: boolean) => {
+    // «Cancella»: come in JTDX svuota anche la finestra dei messaggi decodificati (e le nostre righe Tx), non solo la memoria del motore
+    if (id === 'erase') useStation.setState({ decodes: [], txLog: [] });
     try {
       await postControl(id, on);
       if (on !== undefined) client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, [id]: on }));
