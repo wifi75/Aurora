@@ -2862,7 +2862,7 @@
   gap: 1rem;
 }
 
-/* sole/bande a sinistra, ricezione PSK a destra: niente piu' tutto impilato in una colonna sola */
+/* tutti i dati (sole, bande, statistiche) in una barra stretta a sinistra; mappa e stazioni ricevute a destra */
 .prop-columns {
   display: grid;
   grid-template-columns: 1fr;
@@ -2870,10 +2870,20 @@
   align-items: start;
 }
 
-@media (min-width: 72rem) {
+@media (min-width: 60rem) {
   .prop-columns {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr);
   }
+}
+
+.prop-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.prop-main {
+  min-width: 0;
 }
 
 .prop-head {

@@ -148,73 +148,118 @@ export function PropagationPage() {
       </header>
 
       <div className="prop-columns">
-        {online.data.solar ? (
-          <section className="prop-card prop-hero" aria-label={t('prop.solar')}>
-            <h2>{t('prop.solar')}</h2>
-            {data ? (
+        {online.data.solar || (online.data.psk && pskHasRows) ? (
+          <aside className="prop-card prop-sidebar" aria-label={t('prop.solar')}>
+            {online.data.solar ? (
               <>
-                <div className="prop-gauges">
-                  <Gauge label={t('prop.sfi')} value={data.sfi} max={250} level={sfiLevel(data.sfi)} hint={t('prop.sfi.hint')} />
-                  <Gauge label={t('prop.a')} value={data.a_index} max={50} level={aLevel(data.a_index)} hint={t('prop.a.hint')} />
-                  <Gauge label={t('prop.k')} value={data.k_index} max={9} level={kLevel(data.k_index)} hint={t('prop.k.hint')} />
-                </div>
-                <div className="prop-facts">
-                  <Stat label={t('prop.xray')} value={data.xray || '–'} />
-                  <Stat label={t('prop.spots')} value={data.sunspots === null ? '–' : String(data.sunspots)} />
-                  <Stat label={t('prop.wind')} value={data.solar_wind === null ? '–' : `${data.solar_wind.toFixed(0)} km/s`} />
-                  <Stat label={t('prop.geomag')} value={data.geomag || '–'} />
-                  <Stat label={t('prop.noise')} value={data.signal_noise || '–'} />
-                  {data.aurora !== null ? <Stat label={t('prop.aurora')} value={String(data.aurora)} /> : null}
-                </div>
-                <h3>{t('prop.bands')}</h3>
-                <Conditions data={data} group={group} nightNow={nightNow} />
-                <p className="muted prop-credit">
-                  {t('prop.updated', { when: data.updated || '–' })} · {t('prop.credit')}
-                </p>
+                <h2>{t('prop.solar')}</h2>
+                {data ? (
+                  <>
+                    <div className="prop-gauges">
+                      <Gauge label={t('prop.sfi')} value={data.sfi} max={250} level={sfiLevel(data.sfi)} hint={t('prop.sfi.hint')} />
+                      <Gauge label={t('prop.a')} value={data.a_index} max={50} level={aLevel(data.a_index)} hint={t('prop.a.hint')} />
+                      <Gauge label={t('prop.k')} value={data.k_index} max={9} level={kLevel(data.k_index)} hint={t('prop.k.hint')} />
+                    </div>
+                    <div className="prop-facts">
+                      <Stat label={t('prop.xray')} value={data.xray || '–'} />
+                      <Stat label={t('prop.spots')} value={data.sunspots === null ? '–' : String(data.sunspots)} />
+                      <Stat label={t('prop.wind')} value={data.solar_wind === null ? '–' : `${data.solar_wind.toFixed(0)} km/s`} />
+                      <Stat label={t('prop.geomag')} value={data.geomag || '–'} />
+                      <Stat label={t('prop.noise')} value={data.signal_noise || '–'} />
+                      {data.aurora !== null ? <Stat label={t('prop.aurora')} value={String(data.aurora)} /> : null}
+                    </div>
+                    <h3>{t('prop.bands')}</h3>
+                    <Conditions data={data} group={group} nightNow={nightNow} />
+                    <p className="muted prop-credit">
+                      {t('prop.updated', { when: data.updated || '–' })} · {t('prop.credit')}
+                    </p>
+                  </>
+                ) : solarError ? (
+                  <p className="notice">{t('prop.error', { message: solarError })}</p>
+                ) : (
+                  <p className="muted">{t('prop.waiting')}</p>
+                )}
               </>
-            ) : solarError ? (
-              <p className="notice">{t('prop.error', { message: solarError })}</p>
-            ) : (
-              <p className="muted">{t('prop.waiting')}</p>
-            )}
-          </section>
+            ) : null}
+
+            {online.data.psk && pskHasRows ? (
+              <>
+                <div className="prop-stats">
+                  <Stat label={t('prop.stat.stations', { hours: pskState?.hours ?? 0 })} value={String(summary.stations)} />
+                  <Stat
+                    label={t('prop.stat.farthest')}
+                    value={summary.farthest ? `${summary.farthest.km} km` : '–'}
+                    hint={summary.farthest ? `${summary.farthest.call}${farthestRow?.country ? ` · ${farthestRow.country}` : ''}` : undefined}
+                  />
+                  <Stat label={t('prop.stat.farthestCall')} value={summary.farthest?.call ?? '–'} />
+                  <Stat label={t('prop.stat.best')} value={best ? `${best.snr} dB` : '–'} hint={best?.call} />
+                </div>
+                <div className="prop-bars" aria-label={t('prop.stat.byBand')}>
+                  {counts.map((c) => (
+                    <div key={c.band} className="prop-bar">
+                      <span className="data">{c.band}</span>
+                      <span className="prop-bar-track">
+                        <i style={{ width: `${(c.count / maxCount) * 100}%`, background: bandColor(c.band) }} />
+                      </span>
+                      <span className="data">{c.count}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="prop-legend" aria-hidden="true">
+                  {BAND_LEGEND.filter(([b]) => counts.some((c) => c.band === b)).map(([b, color]) => (
+                    <span key={b}>
+                      <i style={{ background: color }} /> {b}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </aside>
         ) : null}
 
         {online.data.psk ? (
-          <section className="prop-card" aria-label={t('prop.psk')}>
+          <section className="prop-card prop-main" aria-label={t('prop.psk')}>
             <h2>{t('prop.psk')}</h2>
             {pskReady ? (
               !pskHasRows ? (
                 <p className="muted">{t('prop.psk.none', { hours: pskState?.hours ?? 0 })}</p>
               ) : (
                 <>
-                  <div className="prop-stats">
-                    <Stat label={t('prop.stat.stations', { hours: pskState?.hours ?? 0 })} value={String(summary.stations)} />
-                    <Stat
-                      label={t('prop.stat.farthest')}
-                      value={summary.farthest ? `${summary.farthest.km} km` : '–'}
-                      hint={summary.farthest ? `${summary.farthest.call}${farthestRow?.country ? ` · ${farthestRow.country}` : ''}` : undefined}
-                    />
-                    <Stat label={t('prop.stat.farthestCall')} value={summary.farthest?.call ?? '–'} />
-                    <Stat label={t('prop.stat.best')} value={best ? `${best.snr} dB` : '–'} hint={best?.call} />
-                  </div>
                   <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} night={options.night} compact labels={mapLabels(t)} />
-                  <div className="prop-bars" aria-label={t('prop.stat.byBand')}>
-                    {counts.map((c) => (
-                      <div key={c.band} className="prop-bar">
-                        <span className="data">{c.band}</span>
-                        <span className="prop-bar-track">
-                          <i style={{ width: `${(c.count / maxCount) * 100}%`, background: bandColor(c.band) }} />
-                        </span>
-                        <span className="data">{c.count}</span>
+                  <div className="prop-received-columns">
+                    {receivedColumns.map((col, i) => (
+                      <div className="history-table-wrap prop-table-wrap" key={i}>
+                        <table className="history-table prop-received-table">
+                          <thead>
+                            <tr>
+                              <th>{t('prop.col.when')}</th>
+                              <th>{t('prop.col.who')}</th>
+                              <th>{t('prop.col.band')}</th>
+                              <th className="num">{t('prop.col.snr')}</th>
+                              <th className="num">{t('prop.col.distance')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {col.map((r) => {
+                              const code = prefs.showFlag ? flagCode(r.country) : null;
+                              return (
+                                <tr key={`${r.receiver}-${r.time_s}-${r.freq_hz}`}>
+                                  <td className="data">{formatClock(r.time_s * 1000)}</td>
+                                  <td className="data">
+                                    {code ? <span className={`fi fi-${code} prop-received-flag`} title={r.country ?? undefined} aria-hidden="true" /> : null}
+                                    {r.receiver}
+                                  </td>
+                                  <td>
+                                    <i className="prop-dot" style={{ background: bandColor(r.band) }} /> {r.band ?? '–'}
+                                  </td>
+                                  <td className="num data">{r.snr ?? '–'}</td>
+                                  <td className="num data">{r.km !== null ? formatDistance(r.km, prefs.distanceUnit) : '–'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-                    ))}
-                  </div>
-                  <div className="prop-legend" aria-hidden="true">
-                    {BAND_LEGEND.filter(([b]) => counts.some((c) => c.band === b)).map(([b, color]) => (
-                      <span key={b}>
-                        <i style={{ background: color }} /> {b}
-                      </span>
                     ))}
                   </div>
                 </>
@@ -227,47 +272,6 @@ export function PropagationPage() {
           </section>
         ) : null}
       </div>
-
-      {online.data.psk && pskHasRows ? (
-        <section className="prop-card prop-table-card" aria-label={t('prop.col.who')}>
-          <div className="prop-received-columns">
-            {receivedColumns.map((col, i) => (
-              <div className="history-table-wrap prop-table-wrap" key={i}>
-                <table className="history-table prop-received-table">
-                  <thead>
-                    <tr>
-                      <th>{t('prop.col.when')}</th>
-                      <th>{t('prop.col.who')}</th>
-                      <th>{t('prop.col.band')}</th>
-                      <th className="num">{t('prop.col.snr')}</th>
-                      <th className="num">{t('prop.col.distance')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {col.map((r) => {
-                      const code = prefs.showFlag ? flagCode(r.country) : null;
-                      return (
-                        <tr key={`${r.receiver}-${r.time_s}-${r.freq_hz}`}>
-                          <td className="data">{formatClock(r.time_s * 1000)}</td>
-                          <td className="data">
-                            {code ? <span className={`fi fi-${code} prop-received-flag`} title={r.country ?? undefined} aria-hidden="true" /> : null}
-                            {r.receiver}
-                          </td>
-                          <td>
-                            <i className="prop-dot" style={{ background: bandColor(r.band) }} /> {r.band ?? '–'}
-                          </td>
-                          <td className="num data">{r.snr ?? '–'}</td>
-                          <td className="num data">{r.km !== null ? formatDistance(r.km, prefs.distanceUnit) : '–'}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
