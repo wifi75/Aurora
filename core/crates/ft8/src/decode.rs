@@ -120,6 +120,8 @@ pub struct Options {
     /// tempi): sceglie quale meta' della [`history::PeriodHistory`] passata a [`decode_slot_with_history`] leggere e
     /// scrivere. Senza cronologia non conta.
     pub even_period: bool,
+    /// Compensazione AGC (pulsante AGCc, `nagcc` di JTDX): [`sync::agc_compensate`] sull'audio e sincronismo per tono nella ricerca.
+    pub agc: bool,
 }
 
 impl Default for Options {
@@ -152,6 +154,7 @@ impl Options {
             ap_cq: depth > 1,
             call_book: None,
             even_period: true,
+            agc: false,
         }
     }
 }
@@ -203,6 +206,8 @@ struct Pending {
 pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut CallHashes, history: Option<&mut PeriodHistory>) -> Vec<DecodedInfo> {
     let mut audio: Vec<f32> = samples.iter().take(SLOT_SAMPLES).map(|&x| x * SCALE).collect();
     audio.resize(SLOT_SAMPLES, 0.0);
+    // AGCc: come JTDX una volta sola sull'audio del periodo, prima di tutte le passate; se il rumore e' uniforme (`lagccbail`) resta tutto com'e'
+    let agcc = options.agc && sync::agc_compensate(&mut audio, options.f_low_hz, options.f_high_hz);
     let mut found: Vec<DecodedInfo> = Vec::new();
     // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO di questo periodo, da tenere per il prossimo
     // periodo della stessa parita' (sottopassate 3-11): si popolano in `try_candidate`, si scrivono in `history` alla fine.
@@ -247,7 +252,7 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
 
         let half_window = if options.swl { 86 } else { 62 };
         let window = (jz(options.dt_center_s, -half_window), jz(options.dt_center_s, half_window));
-        let candidates = sync::find_candidates_swl(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window, options.swl);
+        let candidates = sync::find_candidates_agc(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window, options.swl, agcc.then_some(ipass));
         if candidates.is_empty() {
             continue;
         }
@@ -896,6 +901,77 @@ mod tests {
         let odd = Options { even_period: false, ..Options::default() };
         let second = decode_slot_with_history(&slot(&[(text, freq, dt, snr)], 404), &odd, &mut hashes, &mut history);
         assert!(!second.iter().any(|d| d.text == text), "la parita' dispari non deve vedere la cronologia della pari: {second:?}");
+    }
+
+    /// L'AGC della radio che "pompa": il guadagno e' 8 volte piu' alto nei primi 0,8 s e negli ultimi 0,8 s del periodo (una trasmissione
+    /// forte appena finita o appena cominciata). Con la compensazione (AGCc) quei tratti tornano al livello del resto.
+    fn pumped(mut audio: Vec<f32>) -> Vec<f32> {
+        for a in &mut audio[..9600] {
+            *a *= 8.0;
+        }
+        for a in &mut audio[161_280..171_650] {
+            *a *= 8.0;
+        }
+        audio
+    }
+
+    #[test]
+    fn la_compensazione_agc_lascia_stare_un_periodo_uniforme() {
+        let mut audio: Vec<f32> = slot(&[], 7).iter().map(|x| x * SCALE).collect();
+        let before = audio.clone();
+        assert!(!sync::agc_compensate(&mut audio, 200.0, 4000.0), "rumore uniforme: niente da compensare");
+        assert_eq!(audio, before);
+    }
+
+    #[test]
+    fn la_compensazione_agc_riporta_al_livello_i_tratti_pompati() {
+        let mut audio: Vec<f32> = pumped(slot(&[], 7)).iter().map(|x| x * SCALE).collect();
+        assert!(sync::agc_compensate(&mut audio, 200.0, 4000.0));
+        let rms = |r: std::ops::Range<usize>| (audio[r.clone()].iter().map(|x| x * x).sum::<f32>() / r.len() as f32).sqrt();
+        let (head, middle, tail) = (rms(0..9600), rms(9600..161_280), rms(161_280..170_880));
+        // dopo la compensazione inizio e fine non sono piu' 8 volte (18 dB) sopra il resto
+        assert!(head / middle < 3.0 && tail / middle < 3.0, "inizio {head}, centro {middle}, fine {tail}");
+    }
+
+    #[test]
+    fn con_l_agc_che_pompa_la_compensazione_decodifica() {
+        let text = "CQ IU3ABC JN45";
+        let audio = pumped(slot(&[(text, 1500.0, 0.1, -17.0)], 31));
+        let with = decode_slot(&audio, &Options { agc: true, ..Options::default() }, &mut CallHashes::default());
+        assert!(with.iter().any(|d| d.text == text), "con AGCc: {with:?}");
+    }
+
+    #[test]
+    #[ignore]
+    fn esplora_agc() {
+        let text = "CQ IU3ABC JN45";
+        // a meta' periodo una stazione forte fa scendere il guadagno a un quarto per 5 s
+        let mid = |mut a: Vec<f32>| {
+            for x in &mut a[60_000..120_000] {
+                *x *= 0.25;
+            }
+            a
+        };
+        let mut false_hits = 0;
+        for seed in 100..130 {
+            false_hits += decode_slot(&pumped(slot(&[], seed)), &Options { agc: true, ..Options::default() }, &mut CallHashes::default()).len();
+        }
+        eprintln!("ESPLORA solo rumore pompato, con AGCc: {false_hits} messaggi su 30 periodi");
+        for (name, snr, f) in [("pulito", -21.0, 2), ("pulito", -22.0, 2), ("bordi", -21.0, 0), ("bordi", -22.0, 0), ("meta'", -20.0, 1)] {
+            let (mut off, mut on) = (0, 0);
+            for seed in 40..60 {
+                let clean = slot(&[(text, 1500.0, 0.1, snr)], seed);
+                let audio = match f {
+                    0 => pumped(clean),
+                    1 => mid(clean),
+                    _ => clean,
+                };
+                let hit = |agc: bool| decode_slot(&audio, &Options { agc, ..Options::default() }, &mut CallHashes::default()).iter().any(|d| d.text == text);
+                off += usize::from(hit(false));
+                on += usize::from(hit(true));
+            }
+            eprintln!("ESPLORA {name} snr {snr}: senza {off}/20, con {on}/20");
+        }
     }
 
     #[test]
