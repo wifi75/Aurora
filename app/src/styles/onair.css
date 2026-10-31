@@ -3068,16 +3068,19 @@
   color: var(--accent);
 }
 
+.prop-matrix-row:not(:last-child) {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+/* testo colorato e barrette, niente riquadro: una riga di stato non un bottone */
 .prop-tile {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.4rem;
-  padding: 0.3rem 0.5rem;
+  padding: 0.15rem 0;
   color: var(--ok);
-  background: color-mix(in srgb, currentColor 13%, transparent);
-  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
-  border-radius: 0.4rem;
   font-size: 0.78rem;
 }
 
@@ -3099,7 +3102,9 @@
 }
 
 .prop-tile--active {
-  box-shadow: 0 0 0 1px currentColor, 0 0 18px -4px currentColor;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2rem;
 }
 
 .prop-meter {
@@ -3235,10 +3240,6 @@
   .prop-matrix-row {
     grid-template-columns: 5.5rem repeat(2, minmax(0, 1fr));
     gap: 0.35rem;
-  }
-
-  .prop-tile {
-    padding: 0.3rem 0.45rem;
   }
 }
 
