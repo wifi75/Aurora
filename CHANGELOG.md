@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.37 - 2026-10-31
+- **Propagazione**: stazioni ricevute in al massimo 4 colonne di uguale lunghezza, senza scorrimenti interni che tagliavano la distanza; condizioni per banda leggibili nella barra stretta (la condizione di adesso con un velo di colore).
+
 ## 0.11.36 - 2026-10-31
 - **Il volume di Windows segue sempre il cursore Pwr**: all'avvio si applicava il livello di fabbrica (50 %) prima di quello salvato, e cursore e scheda non coincidevano. Ora il livello salvato arriva subito alla scheda e si riapplica prima di ogni trasmissione.
 
