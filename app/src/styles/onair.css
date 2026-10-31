@@ -2979,46 +2979,48 @@
   color: var(--text-muted);
 }
 
-/* fatti accanto ai quadranti */
+/* fatti accanto ai quadranti: riquadri piccoli, informazione densa invece di un elemento a sé */
 .prop-facts,
 .prop-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  max-width: 34rem;
 }
 
 .prop-stat {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.55rem 0.8rem;
+  gap: 0.05rem;
+  padding: 0.35rem 0.55rem;
   background: var(--glass-lo);
   border: 1px solid var(--glass-edge);
-  border-radius: 0.7rem;
+  border-radius: 0.45rem;
 }
 
 .prop-stat strong {
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   line-height: 1.2;
 }
 
 .prop-stat span {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
 }
 
-/* matrice delle bande */
+/* matrice delle bande: righe di stato compatte, non pulsanti */
 .prop-matrix {
   display: grid;
-  gap: 0.5rem;
-  max-width: 46rem;
+  gap: 0.3rem;
+  max-width: 28rem;
+  font-size: 0.8rem;
 }
 
 .prop-matrix-head,
 .prop-matrix-row {
   display: grid;
-  grid-template-columns: 9rem repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: 6rem repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
   align-items: stretch;
 }
 
@@ -3026,14 +3028,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
 }
 
 .prop-matrix-head small,
 .prop-group small {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
@@ -3049,6 +3051,7 @@
   justify-content: center;
   font-family: var(--font-data);
   font-weight: var(--weight-strong);
+  font-size: 0.78rem;
 }
 
 .prop-matrix-row--mine .prop-group {
@@ -3059,12 +3062,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.7rem 0.9rem;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
   color: var(--ok);
   background: color-mix(in srgb, currentColor 13%, transparent);
   border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
-  border-radius: 0.7rem;
+  border-radius: 0.4rem;
+  font-size: 0.78rem;
 }
 
 .prop-tile b {
@@ -3205,7 +3209,7 @@
   }
 
   .prop-tile {
-    padding: 0.55rem 0.6rem;
+    padding: 0.3rem 0.45rem;
   }
 }
 
