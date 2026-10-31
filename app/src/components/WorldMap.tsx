@@ -49,9 +49,9 @@ interface Props {
   labels: Labels;
 }
 
-/** Quanto e' piena una griglia: piu' QSO, piu' colore (scala logaritmica, da 25% a 85%). */
+/** Quanto e' piena una griglia: piu' QSO, piu' colore (scala logaritmica, da 12% a 50%). */
 export function squareOpacity(count: number): number {
-  return 0.25 + 0.6 * Math.min(1, Math.log10(count + 1) / 3);
+  return 0.12 + 0.38 * Math.min(1, Math.log10(count + 1) / 3);
 }
 
 const TILES_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}';
@@ -220,7 +220,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
           [c.lat, c.lon],
           [c.lat + 1, c.lon + 2],
         ],
-        { className: 'worldmap-worked-rect', color: '#6b5d00', weight: 0.8, fillColor: '#ffe14a', fillOpacity: squareOpacity(s.count), interactive: true },
+        { className: 'worldmap-worked-rect', stroke: false, fillColor: '#ffe14a', fillOpacity: squareOpacity(s.count), interactive: true },
       )
         .bindTooltip(`${s.grid} · ${s.count} QSO${s.bands.length > 0 ? ` · ${s.bands.join(', ')}` : ''}`, { sticky: true })
         .addTo(group);
