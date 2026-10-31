@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Motore FT8 a profondita' 3**: il motore dal vivo restava sulla profondita' 2 di JTDX (6 passate); la profondita' 3 (9 passate, soglia di sincronismo piu' bassa a rotazione, seconda lettura dei simboli a tempo invertito) era gia' scritta e provata ma mai usata. Ora e' quella in uso: decodifica i segnali piu' deboli, a costo di piu' CPU per periodo.
+- **Linguetta viola/rossa corretta**: la stazione DX in corso diventava viola su ogni suo messaggio, compreso il primo con cui mi aveva chiamato lei per prima, appena ci rispondevo (es. doppio clic). Ora resta rossa finche' non le trasmetto davvero qualcosa.
+- **Quadratini della mappa meno invasivi**: tolto il bordo scuro delle griglie lavorate (dava un effetto a scacchiera) e abbassata l'opacita' (12%-50% invece di 25%-85%).
 
 ## 0.11.25 - 2026-10-26
 - **Pulsanti JT65 e JT9 che si accendono**: il pulsante del modo in uso non aveva uno sfondo (mancavano i loro colori: ora JT65 verde e JT9 rosa), quindi sembrava che il clic non facesse niente.
