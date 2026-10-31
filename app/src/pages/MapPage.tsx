@@ -52,24 +52,28 @@ export function MapPage() {
     <div className="map-page">
       <h1 className="page-title">{t('map.title')}</h1>
       <div className="map-bar" title={t('tip.map')}>
-        <label className="map-check">
-          <input type="checkbox" checked={showWorked} onChange={(e) => setShowWorked(e.target.checked)} />
-          <span className="map-swatch map-swatch--worked" aria-hidden="true" />
-          {t('map.worked')}
-        </label>
-        <label className="map-check">
-          <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} />
-          <span className="map-swatch map-swatch--cq" aria-hidden="true" />
-          {t('map.live')}
-        </label>
-        <label className="map-check" title={t('map.tiles.tip')}>
-          <input type="checkbox" checked={options.tiles} onChange={(e) => change({ tiles: e.target.checked })} />
-          {t('map.tiles')}
-        </label>
-        <label className="map-check">
-          <input type="checkbox" checked={options.night} onChange={(e) => change({ night: e.target.checked })} />
-          {t('map.night')}
-        </label>
+        <div className="map-bar-group">
+          <label className="map-check">
+            <input type="checkbox" checked={showWorked} onChange={(e) => setShowWorked(e.target.checked)} />
+            <span className="map-swatch map-swatch--worked" aria-hidden="true" />
+            {t('map.worked')}
+          </label>
+          <label className="map-check">
+            <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} />
+            <span className="map-swatch map-swatch--cq" aria-hidden="true" />
+            {t('map.live')}
+          </label>
+        </div>
+        <div className="map-bar-group">
+          <label className="map-check" title={t('map.tiles.tip')}>
+            <input type="checkbox" checked={options.tiles} onChange={(e) => change({ tiles: e.target.checked })} />
+            {t('map.tiles')}
+          </label>
+          <label className="map-check">
+            <input type="checkbox" checked={options.night} onChange={(e) => change({ night: e.target.checked })} />
+            {t('map.night')}
+          </label>
+        </div>
         <label className="map-select">
           {t('map.band')}
           <select value={band} onChange={(e) => setBand(e.target.value)} disabled={bands.length === 0}>
@@ -88,27 +92,29 @@ export function MapPage() {
           {currentBand ? ` · ${currentBand}` : ''}
         </span>
       </div>
-      <WorldMap
-        squares={showWorked ? shownSquares : []}
-        stations={showLive ? stations : []}
-        homeGrid={status?.de_grid}
-        selected={selected}
-        onSelect={setSelected}
-        tiles={options.tiles}
-        night={options.night}
-        labels={mapLabels(t)}
-      />
-      <div className="map-legend">
-        <span>
-          <i className="map-dot map-dot--cq" /> {t('map.legend.cq')}
-        </span>
-        <span>
-          <i className="map-dot map-dot--qso" /> {t('map.legend.qso')}
-        </span>
-        <span>
-          <i className="map-star" aria-hidden="true">★</i> {t('map.legend.home')}
-        </span>
-        {picked ? <strong className="map-picked data">{t('map.selected', { call: picked.call, grid: picked.grid, snr: picked.snr })}{picked.country ? ` · ${picked.country}` : ''}</strong> : null}
+      <div className="worldmap-wrap">
+        <WorldMap
+          squares={showWorked ? shownSquares : []}
+          stations={showLive ? stations : []}
+          homeGrid={status?.de_grid}
+          selected={selected}
+          onSelect={setSelected}
+          tiles={options.tiles}
+          night={options.night}
+          labels={mapLabels(t)}
+        />
+        <div className="map-legend map-legend--overlay">
+          <span>
+            <i className="map-dot map-dot--cq" /> {t('map.legend.cq')}
+          </span>
+          <span>
+            <i className="map-dot map-dot--qso" /> {t('map.legend.qso')}
+          </span>
+          <span>
+            <i className="map-star" aria-hidden="true">★</i> {t('map.legend.home')}
+          </span>
+          {picked ? <strong className="map-picked data">{t('map.selected', { call: picked.call, grid: picked.grid, snr: picked.snr })}{picked.country ? ` · ${picked.country}` : ''}</strong> : null}
+        </div>
       </div>
     </div>
   );
