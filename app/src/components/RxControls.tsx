@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { formatClock } from '../lib/format';
 import { periodPosition } from '../lib/period';
-import { getControls, postControl, type ControlId } from '../api/client';
+import { getControls, getEngineSettings, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
 
@@ -45,6 +45,8 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
   const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
+  // le impostazioni rispondono solo col motore proprio, che non ha la compensazione AGC di JTDX: li' AGCc non farebbe niente
+  const nativeEngine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false }).isSuccess;
   const [note, setNote] = useState('');
   const state = controls.data ?? {};
   const reachable = !controls.isError;
@@ -64,20 +66,32 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
     <div className="rx-row" aria-label={t('ctl.sec.rx')}>
       <div className="cmd-chips">
         {RX_TOGGLES.map((id) => {
-          const on = state[id] === true;
-          return (
+          const inert = id === 'agc' && nativeEngine;
+          const on = state[id] === true && !inert;
+          const button = (
             <button
               key={id}
               type="button"
-              className={`glass chip${on ? ' glass--on' : ''}`}
+              className={`glass chip${on ? ' glass--on' : ''}${id === 'filter' && on ? ' chip--warn' : ''}`}
               aria-pressed={on}
-              disabled={!reachable}
-              title={t(`tip.ctl.${id}` as Key)}
+              disabled={!reachable || inert}
+              title={t(inert ? 'tip.ctl.agc.inert' : (`tip.ctl.${id}` as Key))}
               onClick={() => void run(id, !on)}
             >
               {t(`ctl.${id}` as Key)}
             </button>
           );
+          if (id === 'filter' && on) {
+            return (
+              <span key={id} className="chip-with-note">
+                {button}
+                <span className="live-note chip-note" role="status">
+                  {t('ctl.filter.on', { hz: state.hound === true ? 290 : 60 })}
+                </span>
+              </span>
+            );
+          }
+          return button;
         })}
         {RX_BUTTONS.map((id) => (
           <button key={id} type="button" className="glass chip" disabled={!reachable} title={t(`tip.ctl.${id}` as Key)} onClick={() => void run(id)}>
