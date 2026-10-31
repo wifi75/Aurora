@@ -94,7 +94,10 @@ impl LevelMemory {
 
     /// Registra l'esito negativo di una lettura. `true` se il livello e' ora da non chiedere piu'.
     pub fn failed(&mut self, level: Level, error: &RigError) -> bool {
-        if is_unsupported(error) {
+        // «non implementato» e «non disponibile» (-4, -11): la radio non ce l'ha, non si chiede piu'. «Parametro non valido» (-1) invece
+        // conta come un guasto: la FT-2000 lo risponde per un istante (all'inizio della trasmissione, con un altro programma sulla porta)
+        // e un solo -1 toglieva potenza o S-meter per tutta la sessione
+        if is_unsupported(error) && error_code(error) != Some(-1) {
             self.mark_unsupported(level);
             return true;
         }
@@ -161,6 +164,19 @@ mod tests {
         }
         assert!(memory.failed(Level::Alc, &timeout));
         assert!(!memory.supported(Level::Alc));
+    }
+
+    #[test]
+    fn a_passing_invalid_parameter_does_not_drop_the_meter() {
+        let mut memory = LevelMemory::default();
+        let invalid = RigError("l: parametro non valido (-1)".into());
+        assert!(!memory.failed(Level::PowerWatts, &invalid), "un -1 isolato della FT-2000 non toglie la potenza");
+        assert!(memory.supported(Level::PowerWatts));
+        memory.ok(Level::PowerWatts);
+        for _ in 0..4 {
+            assert!(!memory.failed(Level::Strength, &invalid));
+        }
+        assert!(memory.failed(Level::Strength, &invalid), "cinque -1 di fila: la radio non ce l'ha davvero");
     }
 
     #[test]
