@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.29 - 2026-10-31
+- **Scheda Propagazione compatta davvero**: i riquadri dei fatti (raggi X, macchie solari...) e le pillole delle condizioni per banda erano grandi come pulsanti (padding, raggi e font da elemento dominante), non solo i quadranti gia' sistemati nella 0.11.28. Ridotti insieme: matrice delle bande stretta a 28rem invece di 46rem, font e padding dimezzati.
+
 ## 0.11.28 - 2026-10-31
 - **Quadranti del sole molto piu' piccoli**: erano larghi fino a 46rem (circa 245px l'uno), un elemento dominante della pagina Propagazione invece di un'icona. Ridotti a 20rem (circa 105px l'uno).
 
