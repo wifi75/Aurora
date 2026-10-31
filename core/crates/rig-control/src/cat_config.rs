@@ -271,6 +271,8 @@ impl RigConfig {
             baud: (self.baud != 0).then_some(self.baud),
             conf,
             tcp_port: self.share_enabled.then_some(self.share_port),
+            // condividendo la radio, i programmi che leggono i due VFO (Log4OM con «VFO MODE») chiedono rigctld con --vfo
+            vfo_mode: self.share_enabled,
         })
     }
 }
