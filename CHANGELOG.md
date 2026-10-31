@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.32 - 2026-10-31
+- **Programma "sordo" con il Filtro acceso**: il Filtro decodifica solo ±60 Hz attorno a Rx (±290 in Hound). Ora la cascata si scurisce fuori dalla finestra e accanto al pulsante compare un avviso. **AGCc** con il motore proprio non fa niente (la compensazione AGC di JTDX non c'e' ancora): disabilitato.
+- **Linguetta viola corretta davvero**: con la sequenza automatica lo stato non portava il testo in onda e la pagina non registrava i Tx: la risposta della stazione chiamata appariva rossa. Ora il motore pubblica il messaggio davvero trasmesso.
+- **Suono**: la risposta alla mia chiamata suona sempre, anche da una stazione che aveva gia' fatto suonare altro; la stessa riga ripetuta tace.
+- **Doppio clic su R+rapporto** di una stazione diversa dal DX in corso: si resta su RR73, non si torna al rapporto.
+- **AutoTX** accende anche Abilita Tx; a QSO finito il CQ automatico riparte solo con AutoTX acceso (scelte diverse da JTDX).
+- **Gia' lavorata** segnata in ogni messaggio della stazione, non solo nei CQ.
+- Sigla «in coda» solo sull'ultima riga della stazione e piu' larga; pillola dell'orologio leggibile sul tema chiaro.
+
 ## 0.11.31 - 2026-10-31
 - **Propagazione riorganizzata**: sole, indici, condizioni per banda e statistiche di ricezione ora in un'unica barra stretta a sinistra; mappa piu' corta a destra, con la lista delle stazioni ricevute subito sotto invece che in una sezione separata piu' in basso.
 
