@@ -245,7 +245,9 @@ pub fn start_with_save(
         // `ALL.TXT` come JTDX, solo quando il motore proprio e' l'unico: i QSO registrati aspettano l'inizio della trasmissione che li chiude
         let mut all_txt = live.as_ref().map(|_| AllTxt::from_env(&data_dir, &format!("Aurora v{}", aurora_core::version::APP_VERSION)));
         let mut logged_due: Vec<(u64, String)> = Vec::new();
-        let ft8_options = Options::default();
+        // profondita' 3 di JTDX («profonda»): soglia di sincronismo piu' bassa a rotazione e una seconda lettura a tempo
+        // invertito, per i segnali piu' deboli (richiesta del proprietario, 2026-10-31: un segnale udibile non si decodificava)
+        let ft8_options = Options::depth(3);
         let ft4_options = ft4::decode::Options::default();
         // l'ultimo periodo (per «Decodifica») e i messaggi che ne sono gia' stati pubblicati
         let mut last_slot: Option<(u64, Mode, Vec<f32>)> = None;
