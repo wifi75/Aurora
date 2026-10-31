@@ -645,7 +645,7 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
 /// ricezione, +-290 Hz in Hound: `nfilter` di `ft8_decode`, letto con REA in `jtdxjt9.exe`), e la parita' del periodo (sottopassate 3-11:
 /// FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei tempi, `docs/analisi-jtdx-reverse-rea.md` 7.2.3).
 fn period_options(base: &Options, controls: &rig::NativeControls, slot_start_ms: u64) -> Options {
-    let mut options = Options { swl: controls.switch_on("swl"), even_period: (slot_start_ms / 15_000).is_multiple_of(2), ..base.clone() };
+    let mut options = Options { swl: controls.switch_on("swl"), agc: controls.switch_on("agc"), even_period: (slot_start_ms / 15_000).is_multiple_of(2), ..base.clone() };
     if controls.switch_on("filter") {
         let half = if controls.switch_on("hound") { 290.0 } else { 60.0 };
         let rx = controls.rx_df.load(Ordering::Relaxed) as f32;

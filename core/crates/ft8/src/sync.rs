@@ -216,6 +216,78 @@ fn spectrogram(dd: &[f32], shape: Spectrum) -> Vec<f32> {
     s
 }
 
+/// Compensazione AGC (pulsante AGCc), da `agccft8.f90` di JTDX migliorata. L'AGC della radio cambia il guadagno quando una trasmissione
+/// forte parte o finisce, e quei tratti hanno un rumore di fondo diverso dal resto: i segnali deboli che ci cadono dentro si perdono.
+///
+/// Come JTDX si misura il rumore di fondo (mediana dello spettro tra `f_low_hz` e `f_high_hz`, che anche con segnali forti presenti resta
+/// sul rumore) in blocchi da 80 ms; se tra i blocchi c'e' meno di 2 dB di differenza non si tocca niente (`lagccbail`). Diversamente da JTDX:
+/// - si misurano tutti i blocchi, non solo i primi e gli ultimi 10: il guadagno puo' cambiare anche a meta' periodo;
+/// - il riferimento e' la mediana dei blocchi dello stesso periodo, non un livello assoluto (JTDX divide per la radice del livello, tarata su
+///   un volume d'ingresso preciso: con un volume diverso il centro e i bordi finivano a livelli diversi);
+/// - si riporta al riferimento l'ampiezza intera (JTDX con la radice compensava solo meta' del salto, in dB) con un passaggio graduale da un
+///   blocco all'altro invece di un gradino, che sporcherebbe lo spettro.
+///
+/// Restituisce vero se la compensazione e' stata applicata: allora [`find_candidates_agc`] va usato con la misura di sincronismo per tono.
+pub fn agc_compensate(audio: &mut [f32], f_low_hz: f32, f_high_hz: f32) -> bool {
+    const NFFT: usize = 1024;
+    const STEP: usize = 960;
+    if audio.len() < SLOT_SAMPLES {
+        return false;
+    }
+    let w: Vec<f32> = (1..=NFFT).map(|k| (2.0 * PI * (k as f64 + 2.0) / 2048.0).sin() as f32).collect();
+    let nf1 = NFFT * (f_low_hz.max(0.0) as usize) / 12_000 + 1;
+    let nf2 = (NFFT * (f_high_hz.clamp(0.0, 4999.0) as usize) / 12_000).min(NFFT / 2);
+    if nf2 <= nf1 + 2 {
+        return false;
+    }
+    let blocks = (SLOT_SAMPLES - NFFT) / STEP + 1;
+    let plan = fft_plan(NFFT, false);
+    let mut scratch = vec![ZERO; plan.get_inplace_scratch_len()];
+    let mut buf = vec![ZERO; NFFT];
+    let mut mags: Vec<f32> = Vec::with_capacity(nf2 - nf1 + 1);
+    let mut level = Vec::with_capacity(blocks);
+    for j in 0..blocks {
+        let i0 = j * STEP;
+        for (m, b) in buf.iter_mut().enumerate() {
+            *b = Complex::new(w[m] * audio[i0 + m], 0.0);
+        }
+        plan.process_with_scratch(&mut buf, &mut scratch);
+        mags.clear();
+        mags.extend((nf1..=nf2).map(|i| buf[i].norm()));
+        mags.sort_by(|a, b| a.total_cmp(b));
+        level.push(mags[mags.len() / 2]);
+    }
+    let mut sorted = level.clone();
+    sorted.sort_by(|a, b| a.total_cmp(b));
+    let reference = sorted[sorted.len() / 2];
+    // audio muto o quasi: niente da misurare
+    if reference <= 1e-6 {
+        return false;
+    }
+    let gain: Vec<f32> = level.iter().map(|&l| (l / reference).max(1e-3)).collect();
+    let (lo, hi) = gain.iter().fold((f32::MAX, f32::MIN), |(lo, hi), &g| (lo.min(g), hi.max(g)));
+    // meno di 2 dB tra il tratto piu' alto e il piu' basso: niente da compensare
+    if hi / lo < 1.26 {
+        return false;
+    }
+    // il guadagno di un campione: interpolato tra i centri dei blocchi
+    let center = |j: usize| (j * STEP + NFFT / 2) as f32;
+    for (n, a) in audio.iter_mut().take(SLOT_SAMPLES).enumerate() {
+        let x = n as f32;
+        let g = if x <= center(0) {
+            gain[0]
+        } else if x >= center(blocks - 1) {
+            gain[blocks - 1]
+        } else {
+            let j = ((x - center(0)) / STEP as f32) as usize;
+            let t = (x - center(j)) / STEP as f32;
+            gain[j] + (gain[(j + 1).min(blocks - 1)] - gain[j]) * t
+        };
+        *a /= g;
+    }
+    true
+}
+
 /// Cerca i candidati tra `f_low_hz` e `f_high_hz` nei 15 secondi di `samples` (12 kHz).
 ///
 /// `min_sync` e' la soglia di `sync8` (`syncmin`: 1,5 normale, 1,225 o 1,1 per la sensibilita' alta di JTDX); `max` il numero massimo di
@@ -261,6 +333,24 @@ pub fn find_candidates_swl(
     window: (i32, i32),
     swl: bool,
 ) -> Vec<PassCandidate> {
+    find_candidates_agc(samples, f_low_hz, f_high_hz, min_sync, max, shape, window, swl, None)
+}
+
+/// Come [`find_candidates_swl`]; con `agcc = Some(ipass)` (audio gia' passato da [`agc_compensate`]) il sincronismo si misura tono per tono
+/// come nel ramo `lagcc` di `sync8`: ogni tono di Costas rispetto alla media degli altri sei della stessa colonna, cosi' un tratto con il
+/// guadagno diverso non pesa piu' degli altri. Dalla seconda passata (`ipass > 1`) contano anche i nove simboli del CQ.
+#[allow(clippy::too_many_arguments)]
+pub fn find_candidates_agc(
+    samples: &[f32],
+    f_low_hz: f32,
+    f_high_hz: f32,
+    min_sync: f32,
+    max: usize,
+    shape: Spectrum,
+    window: (i32, i32),
+    swl: bool,
+    agcc: Option<usize>,
+) -> Vec<PassCandidate> {
     if samples.is_empty() || max == 0 || f_low_hz.is_nan() || f_high_hz.is_nan() || f_high_hz <= f_low_hz || window.1 < window.0 {
         return Vec::new();
     }
@@ -303,8 +393,60 @@ pub fn find_candidates_swl(
     let mut jpeak = vec![0i32; NH1 + 1];
     let mut best = vec![f32::NEG_INFINITY; NH1 + 1];
     let mut best_cq = vec![false; NH1 + 1];
+    // ramo `lagcc`: il rapporto di un tono con gli altri sei toni (passo 2 bin) della stessa colonna
+    let ratio = |k: i32, i: usize, off: usize| -> f32 {
+        let c = col(k);
+        let t = c[off];
+        let others: f32 = (0..7).map(|m| c[i + NFOS * m]).sum::<f32>() - t;
+        if t > 1e-9 && others > 1e-9 { t * 6.0 / others } else { 0.0 }
+    };
     for j in window.0..=window.1 {
         for i in ia..=ib {
+            if let Some(ipass) = agcc {
+                // tall(1:7) i Costas iniziali, tall(8:16) i simboli del CQ, tall(17:30) i Costas centrali e finali
+                let mut tall = [0.0f32; 30];
+                for (n, &c) in COSTAS.iter().enumerate() {
+                    let off = i + NFOS * c as usize;
+                    let k = j + JSTRT + (NSSY * n) as i32;
+                    if k > 0 {
+                        tall[n] = ratio(k, i, off);
+                    }
+                    let k36 = k + nssy36;
+                    if k36 > 0 && k36 <= nhsym {
+                        tall[n + 16] = ratio(k36, i, off);
+                    }
+                    let k72 = k + nssy72;
+                    if k72 > 0 && k72 <= nhsym {
+                        tall[n + 23] = ratio(k72, i, off);
+                    }
+                }
+                let mut cq = false;
+                let (sync_abc, sync_bc) = if ipass > 1 {
+                    for (n, slot) in tall.iter_mut().enumerate().take(16).skip(7) {
+                        let k = j + JSTRT + (NSSY * n) as i32;
+                        if k > 0 && k <= nhsym {
+                            *slot = ratio(k, i, if n < 15 { i } else { i + 2 });
+                        }
+                    }
+                    let sya: f32 = tall[0..7].iter().sum();
+                    let sycq: f32 = tall[7..16].iter().sum();
+                    let sybc: f32 = tall[16..30].iter().sum();
+                    let abc = ((sya + sycq + sybc) / 30.0).max((sya + sybc) / 21.0);
+                    let (sy1, sy2) = ((sycq + sybc) / 23.0, sybc / 14.0);
+                    cq = sy1 > sy2;
+                    (abc, sy1.max(sy2))
+                } else {
+                    let sybc: f32 = tall[16..30].iter().sum();
+                    ((tall[0..7].iter().sum::<f32>() + sybc) / 21.0, sybc / 14.0)
+                };
+                let v = sync_abc.max(sync_bc);
+                if v > best[i] {
+                    best[i] = v;
+                    jpeak[i] = j;
+                    best_cq[i] = cq;
+                }
+                continue;
+            }
             let (mut ta, mut tb, mut tc, mut tcq) = (0.0f32, 0.0f32, 0.0f32, 0.0f32);
             let (mut t0a, mut t0b, mut t0c, mut t0cq) = (0.0f32, 0.0f32, 0.0f32, 0.0f32);
             for (n, &c) in COSTAS.iter().enumerate() {
