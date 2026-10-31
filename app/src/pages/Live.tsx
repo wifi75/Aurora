@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getControls, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
@@ -108,6 +108,8 @@ export function Live() {
 
   const engineConfig = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, staleTime: 30_000 });
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
+  const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
+  const filterHalfHz = switches?.filter === true ? (switches.hound === true ? 290 : 60) : null;
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
   const changeLayout = (next: Layout) => {
     saveLayout(browserStorage(), next);
@@ -137,6 +139,7 @@ export function Live() {
                 rxHz={status?.rx_df}
                 txHz={status?.tx_df}
                 bandwidthHz={signalBandwidthHz(status?.mode)}
+                filterHalfHz={filterHalfHz}
                 onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
                 onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
               />
