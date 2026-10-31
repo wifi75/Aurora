@@ -239,6 +239,8 @@ pub fn start_with_save(
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
+        // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro (sottopassate 3-11)
+        let mut ft8_history = ft8::decode::PeriodHistory::default();
         let mut band_watch = BandWatch::default();
         // S-meter stimato dall'audio in ingresso (per le radio senza misuratori); taratura con AURORA_SMETER_S9_DB
         let mut s_meter = smeter::SMeter::new(smeter::s9_db_from_env());
@@ -373,7 +375,7 @@ pub fn start_with_save(
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls), &ft4_options, &mut hashes);
+                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, *start), &ft4_options, &mut hashes, &mut ft8_history);
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -456,8 +458,8 @@ pub fn start_with_save(
                 }
                 let started = Instant::now();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
-                let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls));
-                let mut decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes);
+                let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, slot.start_unix_ms));
+                let mut decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history);
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 let other_mode = match mode {
                     Mode::Jt65 => Some(Mode::Jt9),
@@ -466,7 +468,7 @@ pub fn start_with_save(
                 };
                 let mut other_texts: Vec<String> = Vec::new();
                 if let Some(other) = other_mode.filter(|_| live.as_ref().is_some_and(|l| l.controls.switch_on("jt_both"))) {
-                    for d in decode_period(other, &slot.samples, &options, &ft4_options, &mut hashes) {
+                    for d in decode_period(other, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history) {
                         if !decoded.iter().any(|x| x.text == d.text) {
                             other_texts.push(d.text.clone());
                             decoded.push(d);
@@ -636,9 +638,10 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
 }
 
 /// Le opzioni di decodifica FT8 di questo periodo: «Modo SWL» (finestra e soglie di JTDX), «Filtro» (solo +-60 Hz attorno alla frequenza di
-/// ricezione, +-290 Hz in Hound: `nfilter` di `ft8_decode`, letto con REA in `jtdxjt9.exe`).
-fn period_options(base: &Options, controls: &rig::NativeControls) -> Options {
-    let mut options = Options { swl: controls.switch_on("swl"), ..base.clone() };
+/// ricezione, +-290 Hz in Hound: `nfilter` di `ft8_decode`, letto con REA in `jtdxjt9.exe`), e la parita' del periodo (sottopassate 3-11:
+/// FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei tempi, `docs/analisi-jtdx-reverse-rea.md` 7.2.3).
+fn period_options(base: &Options, controls: &rig::NativeControls, slot_start_ms: u64) -> Options {
+    let mut options = Options { swl: controls.switch_on("swl"), even_period: (slot_start_ms / 15_000).is_multiple_of(2), ..base.clone() };
     if controls.switch_on("filter") {
         let half = if controls.switch_on("hound") { 290.0 } else { 60.0 };
         let rx = controls.rx_df.load(Ordering::Relaxed) as f32;
@@ -653,9 +656,19 @@ fn as_decoded(freq_hz: f32, dt_s: f32, snr_db: i32, text: String) -> ft8::decode
 }
 
 /// Decodifica un periodo nel modo dato (audio a 12 kHz: 15 s in FT8, 7,5 s in FT4, un minuto in JT65 e JT9).
-fn decode_period(mode: Mode, samples: &[f32], ft8_options: &Options, ft4_options: &ft4::decode::Options, hashes: &mut CallHashes) -> Vec<ft8::decode::Decoded> {
+/// `ft8_history` tiene i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro
+/// (sottopassate 3-11 di `ft8b`); gli altri modi non la usano.
+#[allow(clippy::too_many_arguments)]
+fn decode_period(
+    mode: Mode,
+    samples: &[f32],
+    ft8_options: &Options,
+    ft4_options: &ft4::decode::Options,
+    hashes: &mut CallHashes,
+    ft8_history: &mut ft8::decode::PeriodHistory,
+) -> Vec<ft8::decode::Decoded> {
     match mode {
-        Mode::Ft8 => ft8::decode::decode_slot(samples, ft8_options, hashes),
+        Mode::Ft8 => ft8::decode::decode_slot_with_history(samples, ft8_options, hashes, ft8_history),
         Mode::Ft4 => ft4::decode::decode_slot(samples, ft4_options, hashes),
         Mode::Jt65 => jt::rx::decode(samples, &jt::rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
         Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
@@ -698,19 +711,30 @@ mod tests {
         let controls = NativeControls::default();
         let base = Options::default();
         controls.rx_df.store(1500, Ordering::Relaxed);
-        let o = period_options(&base, &controls);
+        let o = period_options(&base, &controls, 0);
         assert_eq!((o.f_low_hz, o.f_high_hz, o.swl), (base.f_low_hz, base.f_high_hz, false), "filtro spento: tutta la banda");
         controls.set_switch("filter", true);
-        let o = period_options(&base, &controls);
+        let o = period_options(&base, &controls, 0);
         assert_eq!((o.f_low_hz, o.f_high_hz), (1440.0, 1560.0));
         controls.set_switch("hound", true);
-        let o = period_options(&base, &controls);
+        let o = period_options(&base, &controls, 0);
         assert_eq!((o.f_low_hz, o.f_high_hz), (1210.0, 1790.0));
         // vicino al bordo la banda resta dentro quella del decodificatore
         controls.rx_df.store(300, Ordering::Relaxed);
-        assert_eq!(period_options(&base, &controls).f_low_hz, base.f_low_hz);
+        assert_eq!(period_options(&base, &controls, 0).f_low_hz, base.f_low_hz);
         controls.set_switch("swl", true);
-        assert!(period_options(&base, &controls).swl);
+        assert!(period_options(&base, &controls, 0).swl);
+    }
+
+    /// La parita' del periodo segue il tempo assoluto: alterna ogni 15 s, indipendente dalle altre opzioni.
+    #[test]
+    fn period_options_alternates_the_parity_every_15_seconds() {
+        let controls = NativeControls::default();
+        let base = Options::default();
+        assert!(period_options(&base, &controls, 0).even_period);
+        assert!(!period_options(&base, &controls, 15_000).even_period);
+        assert!(period_options(&base, &controls, 30_000).even_period);
+        assert!(!period_options(&base, &controls, 45_000).even_period);
     }
 
     /// Il motore proprio come unico motore: i messaggi e lo stato arrivano sul bus, con paese ed etichetta.

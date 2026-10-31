@@ -11,6 +11,7 @@ pub mod ap;
 pub mod crc;
 pub mod decode;
 pub mod filters;
+pub mod history;
 pub mod ldpc;
 pub mod message;
 pub mod modem;

@@ -18,9 +18,13 @@
 //!
 //! # Differenze rispetto a JTDX
 //!
-//! - Un solo thread (JTDX divide la banda in fasce, una per thread).
-//! - Non ci sono la cronologia dei periodi precedenti (`evencopy`/`oddcopy`: `ft8sd`, `ft8mf1`), le sotto-passate che mediano con il
-//!   periodo prima (`isubp1` 3-11), il decoder `ft8s` del segnale di QSO ne' i candidati virtuali sulla frequenza di ricezione.
+//! - Un solo thread (JTDX divide la banda in fasce, una per thread); la cronologia tra periodi ([`history::PeriodHistory`],
+//!   `evencq`/`oddcq`/`evenmyc`/`oddmyc`/`evenqso`/`oddqso` di JTDX) quindi e' una lista sola per parita', non una per thread.
+//! - Le sottopassate 3-11 (CQ, chiamata diretta a noi, segnale del canale QSO, combinate con la lettura a tempo invertito dello
+//!   stesso periodo o con il periodo precedente della stessa parita') sono portate in [`try_candidate`]; restano fuori i casi piu'
+//!   intrecciati del gate per tipo a priori quando piu' motivi si sovrappongono (vedi i commenti li') e `evencopy`/`oddcopy`
+//!   (il messaggio ridecodificato con `ft8sd`/`ft8mf1`), il decoder `ft8s` del segnale di QSO e i candidati virtuali sulla
+//!   frequenza di ricezione.
 //! - Nessun controllo `chkgrid` (geografico) ne' `ALLCALL7.TXT`: vedi [`filters`].
 
 use std::sync::{Arc, OnceLock};
@@ -30,6 +34,8 @@ use rustfft::{Fft, FftPlanner};
 
 use crate::ap::{self, ApContext, ApOptions, NAPTYPES};
 use crate::filters::{self, CallBook, MessageCheck};
+pub use crate::history::PeriodHistory;
+use crate::history::StoredSignal;
 use crate::message::{self, CallHashes};
 use crate::subtract::{self, Reference};
 use crate::sync::{self, Candidate, Complex, Downsampler, MetricsMode, PassCandidate, Spectrum, SyncKind};
@@ -110,6 +116,10 @@ pub struct Options {
     pub ap_cq: bool,
     /// Elenco completo di nominativi (come `ALLCALL7.TXT`) per `chkflscall`; con un elenco incompleto si scartano stazioni vere.
     pub call_book: Option<Arc<CallBook>>,
+    /// Parita' di questo periodo (FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei
+    /// tempi): sceglie quale meta' della [`history::PeriodHistory`] passata a [`decode_slot_with_history`] leggere e
+    /// scrivere. Senza cronologia non conta.
+    pub even_period: bool,
 }
 
 impl Default for Options {
@@ -141,6 +151,7 @@ impl Options {
             ap: None,
             ap_cq: depth > 1,
             call_book: None,
+            even_period: true,
         }
     }
 }
@@ -168,7 +179,14 @@ const REFFT_HZ: f32 = 50.0;
 
 /// Decodifica i 15 secondi di audio di un periodo (12 kHz, campioni normalizzati a ±1).
 pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<Decoded> {
-    decode_slot_detailed(samples, options, hashes).into_iter().map(|d| d.decoded).collect()
+    decode_slot_detailed(samples, options, hashes, None).into_iter().map(|d| d.decoded).collect()
+}
+
+/// Come [`decode_slot`], con la cronologia tra periodi delle sottopassate 3-11 (`history::PeriodHistory`): i segnali CQ,
+/// le chiamate dirette a noi e il segnale del canale QSO visti in questo periodo vengono sommati, se si ripetono, con
+/// quelli del periodo precedente della stessa parita' ([`Options::even_period`]).
+pub fn decode_slot_with_history(samples: &[f32], options: &Options, hashes: &mut CallHashes, history: &mut PeriodHistory) -> Vec<Decoded> {
+    decode_slot_detailed(samples, options, hashes, Some(history)).into_iter().map(|d| d.decoded).collect()
 }
 
 /// Un segnale decodificato in attesa di essere sottratto a fine passata.
@@ -180,11 +198,17 @@ struct Pending {
     i0: i64,
 }
 
-/// Come [`decode_slot`], con le grandezze di accettazione di ogni messaggio.
-pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<DecodedInfo> {
+/// Come [`decode_slot`], con le grandezze di accettazione di ogni messaggio e, se data, la cronologia tra periodi
+/// (`None` = nessuna sottopassata 3-11, come prima).
+pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut CallHashes, history: Option<&mut PeriodHistory>) -> Vec<DecodedInfo> {
     let mut audio: Vec<f32> = samples.iter().take(SLOT_SAMPLES).map(|&x| x * SCALE).collect();
     audio.resize(SLOT_SAMPLES, 0.0);
     let mut found: Vec<DecodedInfo> = Vec::new();
+    // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO di questo periodo, da tenere per il prossimo
+    // periodo della stessa parita' (sottopassate 3-11): si popolano in `try_candidate`, si scrivono in `history` alla fine.
+    let mut cq_capture: Vec<StoredSignal> = Vec::new();
+    let mut my_capture: Vec<StoredSignal> = Vec::new();
+    let mut qso_capture: Option<StoredSignal> = None;
 
     let npass = options.passes.max(1);
     let cycles = if npass >= 7 { 3 } else if npass >= 4 { 2 } else { 1 };
@@ -240,8 +264,20 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
                 ds = Downsampler::new(&audio);
                 stale.clear();
             }
-            let mut ctx = PassContext { ipass, cycles, options, ap: &ap_ctx, qso_decoded, hashes: &mut *hashes };
-            let Some(hit) = try_candidate(&ds, cand, &mut ctx) else { continue };
+            let mut ctx = PassContext { ipass, cycles, options, ap: &ap_ctx, qso_decoded, hashes: &mut *hashes, history: history.as_deref() };
+            let (hit, capture) = try_candidate(&ds, cand, &mut ctx);
+            if hit.is_none() {
+                if let Some(s) = capture.cq {
+                    cq_capture.push(s);
+                }
+                if let Some(s) = capture.my_call {
+                    my_capture.push(s);
+                }
+                if let Some(s) = capture.qso {
+                    qso_capture = Some(s);
+                }
+            }
+            let Some(hit) = hit else { continue };
 
             if subtract_on {
                 let freq = hit.info.decoded.freq_hz;
@@ -267,6 +303,11 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
         for p in pending {
             remove_signal(&mut audio, options, &p.tones, p.hit_freq, p.hit_dt, &p.cd, p.i0);
         }
+    }
+    if let Some(h) = history {
+        h.store_cq(options.even_period, cq_capture);
+        h.store_my_call(options.even_period, my_capture);
+        h.store_qso(options.even_period, qso_capture);
     }
     found.sort_by(|a, b| a.decoded.freq_hz.total_cmp(&b.decoded.freq_hz));
     found
@@ -294,6 +335,19 @@ struct PassContext<'a> {
     ap: &'a ApContext,
     qso_decoded: bool,
     hashes: &'a mut CallHashes,
+    /// La cronologia tra periodi, per le sottopassate 3-11 (`None` = nessuna, come senza [`decode_slot_with_history`]).
+    history: Option<&'a PeriodHistory>,
+}
+
+/// Il segnale di questo candidato da tenere per il periodo successivo della stessa parita' (sottopassate 3-11 di
+/// `ft8b`): si riempie solo sulla passata giusta (penultima per CQ e chiamata diretta, ultima per il canale QSO) e solo
+/// se il candidato ha il motivo giusto. Il chiamante lo tiene solo se il candidato non decodifica affatto in questo
+/// periodo (corrisponde al confronto di JTDX con i CQ/chiamate gia' decodificati, qui semplificato).
+#[derive(Default)]
+struct Capture {
+    cq: Option<StoredSignal>,
+    my_call: Option<StoredSignal>,
+    qso: Option<StoredSignal>,
 }
 
 /// Un candidato decodificato, con quello che serve per sottrarlo.
@@ -317,6 +371,11 @@ struct Flags {
     qso_rr73: bool,
     qso_rrr: bool,
     cq_dx: bool,
+    /// Simboli del nominativo del DX (10-19) che tornano (`ndxt` di `ft8b`): serve a `qso_candidate` e a `cq_dx`.
+    ndxt: usize,
+    /// `lqsocandave`: il candidato e' il segnale del canale QSO in corso (AP mio attivo, QSO non ancora decodificato,
+    /// entrambi i nominativi standard, candidato vicino alla frequenza di ricezione). Abilita le sottopassate 9-11.
+    qso_candidate: bool,
 }
 
 /// FFT di 256 punti per l'indicatore di CQ e la sua rotazione di 3,125 Hz (`ctwk256`).
@@ -403,7 +462,13 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
     if ctx.ap.his_ok {
         // simboli 10-19 di dati: il nominativo del DX (`idtone56(1,k)`, k = 10..19)
         let ndxt = ap::tone_matches(s8, &ctx.ap.qso_tones[9..19], 9);
+        fl.ndxt = ndxt;
         fl.cq_dx = fl.cq_signal && ndxt > 3;
+    }
+    if ctx.ap.my_ok && ctx.ap.his_ok {
+        // `lqsocandave`: il segnale del canale QSO in corso (sottopassate 9-11, `docs/analisi-jtdx-reverse-rea.md` 7.2.4)
+        fl.qso_candidate =
+            o.my_call_active && fl.ndxt > 2 && fl.my_matches > 2 && !ctx.qso_decoded && dfqso < o.width_hz / 2.0;
     }
     fl
 }
@@ -486,8 +551,9 @@ fn ap_allowed(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only:
     true
 }
 
-/// Allinea un candidato, ne calcola le probabilita' dei bit e prova a decodificarlo (`ft8b`).
-fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -> Option<Hit> {
+/// Allinea un candidato, ne calcola le probabilita' dei bit e prova a decodificarlo (`ft8b`); ritorna anche il segnale
+/// da tenere per il periodo successivo della stessa parita', se questo candidato ha il motivo giusto sulla passata giusta.
+fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -> (Option<Hit>, Capture) {
     let options = ctx.options;
     let ipass = ctx.ipass;
     let c = cand.candidate;
@@ -500,7 +566,9 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
 
     // lettura a tempo invertito: passate 5 e 7 con piu' cicli, la 2 con uno solo
     let reverse = if ctx.cycles < 2 { ipass == 2 } else { ipass == 5 || ipass == 7 };
-    let first = sync::bit_metrics_ex(&cd, refined.dt_s, MetricsMode { reverse, second: false })?;
+    let Some(first) = sync::bit_metrics_ex(&cd, refined.dt_s, MetricsMode { reverse, second: false }) else {
+        return (None, Capture::default());
+    };
 
     // controlli di sincronismo prima di LDPC
     let o = &ctx.ap.opts;
@@ -513,16 +581,91 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
         filters::SyncScreen { pass: false, cq_only: false, skip_plain: false }
     };
     if !screen.pass {
-        return None;
+        return (None, Capture::default());
     }
 
     let flags = signal_flags(ctx, &cd, ibest, &first.s8, refined.freq_hz);
     let nweak = if options.subpass || options.swl { 2 } else { 1 };
     let progress = usize::from(o.qso_progress.min(5));
 
-    for isubp1 in 1..=nweak {
-        let metrics = if isubp1 == 1 { first.clone() } else { sync::bit_metrics_ex(&cd, refined.dt_s, MetricsMode { reverse, second: true })? };
-        let [llra, llrb, llrc, llrd] = metrics.llr;
+    // sottopassate 3-11: CQ, chiamata diretta a noi e segnale del canale QSO, sommati (in potenza o in ampiezza) con il
+    // periodo precedente della stessa parita' se si ripetono li' (`docs/analisi-jtdx-reverse-rea.md` 7.2.4).
+    let even = options.even_period;
+    let mut nsubpasses = nweak;
+    let mut csold_cq = None;
+    let mut csold_my = None;
+    let mut csold_qso = None;
+    if flags.cq_signal {
+        nsubpasses = 3;
+        if let Some(s) = ctx.history.and_then(|h| h.find_cq(even, refined.freq_hz, refined.dt_s)) {
+            nsubpasses = 5;
+            csold_cq = Some(s);
+        }
+    }
+    if flags.my_signal {
+        nsubpasses = 6;
+        if let Some(s) = ctx.history.and_then(|h| h.find_my_call(even, refined.freq_hz, refined.dt_s)) {
+            nsubpasses = 8;
+            csold_my = Some(s);
+        }
+    }
+    if flags.qso_candidate {
+        nsubpasses = 9;
+        if let Some(s) = ctx.history.and_then(|h| h.find_qso(even, refined.freq_hz, refined.dt_s)) {
+            nsubpasses = 11;
+            csold_qso = Some(s);
+        }
+    }
+    // il segnale da proporre per il prossimo periodo della stessa parita': sulla penultima passata per CQ e chiamata
+    // diretta, sull'ultima per il canale QSO (`ipass.eq.npass-1` / `ipass.eq.npass` di `ft8b`).
+    let mut capture = Capture::default();
+    if ipass + 1 == options.passes.max(1) {
+        if flags.cq_signal {
+            capture.cq = Some(StoredSignal::new(refined.freq_hz, refined.dt_s, &first.cs));
+        }
+        if flags.my_signal {
+            capture.my_call = Some(StoredSignal::new(refined.freq_hz, refined.dt_s, &first.cs));
+        }
+    }
+    if ipass == options.passes.max(1) && flags.qso_candidate {
+        capture.qso = Some(StoredSignal::new(refined.freq_hz, refined.dt_s, &first.cs));
+    }
+
+    for isubp1 in 1..=nsubpasses {
+        if nweak == 1 && isubp1 == 2 {
+            continue;
+        }
+        // le sottopassate del CQ (3, 4, 5) non si provano se il segnale e' anche una chiamata diretta a noi: quella vince
+        if isubp1 > 2 && isubp1 < 6 && flags.my_signal {
+            continue;
+        }
+        let (llr, s8): ([[f32; 174]; 4], [[f32; 8]; NN]) = if isubp1 <= 2 {
+            let Some(metrics) = (if isubp1 == 1 { Some(first.clone()) } else { sync::bit_metrics_ex(&cd, refined.dt_s, MetricsMode { reverse, second: true }) }) else {
+                return (None, capture);
+            };
+            (metrics.llr, metrics.s8)
+        } else if matches!(isubp1, 3 | 6 | 9) {
+            // combina la lettura normale e quella a tempo invertito dello stesso periodo: non serve la cronologia
+            let source = sync::SymbolSource::PowerSum(&first.cs, &first.csr);
+            let Some(llr) = sync::llr_from_source(source, first.srr, false) else { return (None, capture) };
+            (llr, first.s8)
+        } else {
+            // 4/7/10 (potenza) o 5/8/11 (ampiezza): il periodo attuale con quello precedente della stessa parita' (`csold`)
+            let old = match isubp1 {
+                4 | 5 => csold_cq,
+                7 | 8 => csold_my,
+                _ => csold_qso,
+            };
+            let Some(old) = old else { continue };
+            let source = if matches!(isubp1, 4 | 7 | 10) {
+                sync::SymbolSource::PowerSum(&first.cs, &old.cs)
+            } else {
+                sync::SymbolSource::AmplitudeSum(&first.cs, &old.cs)
+            };
+            let Some(llr) = sync::llr_from_source(source, first.srr, false) else { return (None, capture) };
+            (llr, first.s8)
+        };
+        let [llra, llrb, llrc, llrd] = llr;
         let apmag = llra.iter().fold(0.0f32, |m, v| m.max(v.abs())) * 1.01;
 
         for isubp2 in 1..=31usize {
@@ -595,32 +738,35 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
                 continue;
             }
             let tones = modem::tones_from_codeword(&quality.decoded.codeword);
-            let xsnr = filters::jtdx_snr(&metrics.s8, &tones, aptype != 0);
+            let xsnr = filters::jtdx_snr(&s8, &tones, aptype != 0);
             if options.filters {
                 let qual = 1.0 - (quality.hard_errors as f32 + quality.dmin) / 60.0;
                 let check = MessageCheck { text: &text, i3, n3, ap_type: aptype, qual, snr: xsnr, dt_s: refined.dt_s };
                 if filters::reject_message(&check, &o.mycall, options.call_book.as_deref()) {
-                    return None;
+                    return (None, capture);
                 }
             }
             *ctx.hashes = trial;
 
-            return Some(Hit {
-                info: DecodedInfo {
-                    decoded: Decoded { freq_hz: refined.freq_hz, dt_s: refined.dt_s, snr_db: xsnr.round() as i32, text, hint: aptype != 0 },
-                    pass: ipass,
-                    ap_type: aptype,
-                    hard_errors: quality.hard_errors,
-                    dmin: quality.dmin,
-                    sync: c.sync,
-                },
-                tones,
-                cd,
-                i0: ibest,
-            });
+            return (
+                Some(Hit {
+                    info: DecodedInfo {
+                        decoded: Decoded { freq_hz: refined.freq_hz, dt_s: refined.dt_s, snr_db: xsnr.round() as i32, text, hint: aptype != 0 },
+                        pass: ipass,
+                        ap_type: aptype,
+                        hard_errors: quality.hard_errors,
+                        dmin: quality.dmin,
+                        sync: c.sync,
+                    },
+                    tones,
+                    cd,
+                    i0: ibest,
+                }),
+                capture,
+            );
         }
     }
-    None
+    (None, capture)
 }
 
 #[cfg(test)]
@@ -713,6 +859,43 @@ mod tests {
         let texts: Vec<String> = decode(&audio).into_iter().map(|d| d.text).collect();
         assert!(texts.iter().any(|t| t == "CQ DX IU3ABC IO91"), "{texts:?}");
         assert!(texts.iter().any(|t| t == "K1ABC W9XYZ -12"), "{texts:?}");
+    }
+
+    #[test]
+    fn un_cq_debole_che_si_ripete_decodifica_sommando_due_periodi() {
+        let text = "CQ IU3ABC JN45";
+        let freq = 1700.0;
+        let dt = 0.1;
+        let snr = -23.0; // non decodifica da solo, ma due periodi sommati (sottopassate 4/5) si'
+        let mut hashes = CallHashes::default();
+        let mut history = PeriodHistory::default();
+        let options = Options::default();
+
+        let first_audio = slot(&[(text, freq, dt, snr)], 101);
+        let first = decode_slot_with_history(&first_audio, &options, &mut hashes, &mut history);
+        assert!(first.is_empty(), "il primo periodo da solo non deve ancora decodificare: {first:?}");
+
+        // stessa parita' (stesso `even_period`), rumore indipendente: lo stesso CQ debole ora si somma col primo
+        let second_audio = slot(&[(text, freq, dt, snr)], 202);
+        let second = decode_slot_with_history(&second_audio, &options, &mut hashes, &mut history);
+        assert!(second.iter().any(|d| d.text == text), "il secondo periodo deve decodificare sommando il primo: {second:?}");
+    }
+
+    #[test]
+    fn la_cronologia_non_aiuta_la_parita_sbagliata() {
+        let text = "CQ IU3ABC JN45";
+        let freq = 1750.0;
+        let dt = 0.1;
+        let snr = -23.0;
+        let mut hashes = CallHashes::default();
+        let mut history = PeriodHistory::default();
+        let options = Options { even_period: true, ..Options::default() };
+        let first = decode_slot_with_history(&slot(&[(text, freq, dt, snr)], 303), &options, &mut hashes, &mut history);
+        assert!(first.is_empty());
+
+        let odd = Options { even_period: false, ..Options::default() };
+        let second = decode_slot_with_history(&slot(&[(text, freq, dt, snr)], 404), &odd, &mut hashes, &mut history);
+        assert!(!second.iter().any(|d| d.text == text), "la parita' dispari non deve vedere la cronologia della pari: {second:?}");
     }
 
     #[test]

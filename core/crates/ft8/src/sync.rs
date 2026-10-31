@@ -59,8 +59,9 @@
 //!   IO92" come in `cwfilter.f90`. Il ritardo e' cercato prima della frequenza come in `ft8b`, senza ripeterlo dopo. Mancano i
 //!   riferimenti per il QSO (`csynce`, `csyncsd`, `csyncsdcq`).
 //! - `bit_metrics_ex`: le quattro serie `llra`, `llrb`, `llrc`, `llrd`, la lettura a tempo invertito (`lreverse`) e la seconda lettura
-//!   (`isubp1 = 2`); mancano le medie con i segnali ricevuti nel periodo prima (`isubp1` 3-11). `bit_metrics` e' la versione di prima
-//!   (tre serie, `nsync >= 7`). I filtri sui falsi (`nsyncscore`, `scoreratio`) stanno in `filters`.
+//!   (`isubp1 = 2`), con `cs`/`csr` esposti per le sottopassate 3-11 di `ft8b` ([`llr_from_source`], [`SymbolSource`]), che le usa
+//!   `crate::decode::try_candidate`. `bit_metrics` e' la versione di prima (tre serie, `nsync >= 7`). I filtri sui falsi
+//!   (`nsyncscore`, `scoreratio`) stanno in `filters`.
 
 use std::f64::consts::PI;
 use std::sync::{Arc, OnceLock};
@@ -759,6 +760,35 @@ pub struct Metrics {
     pub syncav: f32,
     /// `nsync`: simboli di Costas (su 21) con il tono piu' forte al posto giusto.
     pub nsync: u32,
+    /// `cs`: i simboli complessi (8 toni x 79 posizioni) della lettura scelta da `mode` (equalizzati, divisi per 1000).
+    /// Servono alle sottopassate 3-11 (`isubp1` di `ft8b`), che li combinano con `csr` o con quelli di un periodo precedente.
+    pub cs: Vec<[Complex; 8]>,
+    /// `csr`: gli stessi simboli letti a tempo invertito (sempre calcolata, indipendentemente da `mode`).
+    pub csr: Vec<[Complex; 8]>,
+}
+
+/// Come si combinano i simboli per le sottopassate 3-11 di `ft8b`, sulla stessa coppia (simbolo, tono) prima di sommare sui
+/// simboli del gruppo (1, 2 o 3 alla volta, secondo `nsym`): la singola lettura (`isubp1` 1 o 2); la somma in **potenza** di
+/// due letture (`isubp1` 3, 6, 9: quella normale e quella a tempo invertito dello stesso periodo, `cscs`/`csr` di `ft8b`;
+/// 4, 7, 10: quella attuale e quella del periodo precedente della stessa parita', `cs`/`csold`); la somma in **ampiezza**
+/// delle stesse due letture (`isubp1` 5, 8, 11).
+#[derive(Debug, Clone, Copy)]
+pub enum SymbolSource<'a> {
+    Single(&'a [[Complex; 8]]),
+    PowerSum(&'a [[Complex; 8]], &'a [[Complex; 8]]),
+    AmplitudeSum(&'a [[Complex; 8]], &'a [[Complex; 8]]),
+}
+
+impl SymbolSource<'_> {
+    /// La somma dei simboli indicati (`(ks, tono)`, gia' passati per la mappa Gray), combinata secondo la sorgente.
+    fn combine(&self, terms: &[(usize, usize)]) -> f32 {
+        let sum = |a: &[[Complex; 8]]| -> Complex { terms.iter().map(|&(ks, t)| a[ks][t]).sum() };
+        match self {
+            SymbolSource::Single(a) => sum(a).norm(),
+            SymbolSource::PowerSum(a, b) => sum(a).norm_sqr() + sum(b).norm_sqr(),
+            SymbolSource::AmplitudeSum(a, b) => sum(a).norm() + sum(b).norm(),
+        }
+    }
 }
 
 fn plan32() -> &'static Arc<dyn Fft<f32>> {
@@ -893,7 +923,15 @@ pub fn bit_metrics_ex(cd: &[Complex], dt_s: f32, mode: MetricsMode) -> Option<Me
     }
     let srr = synclev / snoiselev;
 
-    let chosen: &Vec<[Complex; 8]> = if mode.second { &csr } else { &cs };
+    let source = if mode.second { SymbolSource::Single(&csr) } else { SymbolSource::Single(&cs) };
+    let bm = llr_from_source(source, srr, !mode.second)?;
+    Some(Metrics { llr: bm, s8, srr, syncav, nsync, cs, csr })
+}
+
+/// Le quattro serie di LLR dai simboli di `source` (sottopassate 1-11 di `ft8b`): `detailed` sceglie la trasformazione dei
+/// segnali deboli sotto -19 dB (`srr < 2,5`), vera solo per la prima lettura (`isubp1 = 1`), falsa per tutte le altre
+/// (seconda lettura, combinazioni con la lettura a tempo invertito o con il periodo precedente).
+pub(crate) fn llr_from_source(source: SymbolSource, srr: f32, detailed: bool) -> Option<[[f32; 174]; 4]> {
     // bm[0..3] = a, b, c; la quarta serie e' bmetd
     let mut bm = [[0.0f32; 174]; 4];
     let mut s2 = [0.0f32; 512];
@@ -912,23 +950,25 @@ pub fn bit_metrics_ex(cd: &[Complex], dt_s: f32, mode: MetricsMode) -> Option<Me
                     let i1 = i / 64;
                     let i2 = (i & 63) / 8;
                     let i3 = i & 7;
-                    let mut x = match nsym {
-                        1 => chosen[ks][GRAY_MAP[i3]].norm(),
-                        2 => (chosen[ks][GRAY_MAP[i2]] + chosen[ks + 1][GRAY_MAP[i3]]).norm(),
-                        _ => (chosen[ks][GRAY_MAP[i1]] + chosen[ks + 1][GRAY_MAP[i2]] + chosen[ks + 2][GRAY_MAP[i3]]).norm(),
+                    let terms: [(usize, usize); 3] = match nsym {
+                        1 => [(ks, GRAY_MAP[i3]), (ks, GRAY_MAP[i3]), (ks, GRAY_MAP[i3])],
+                        2 => [(ks, GRAY_MAP[i2]), (ks + 1, GRAY_MAP[i3]), (ks + 1, GRAY_MAP[i3])],
+                        _ => [(ks, GRAY_MAP[i1]), (ks + 1, GRAY_MAP[i2]), (ks + 2, GRAY_MAP[i3])],
                     };
-                    if mode.second {
+                    let take = if nsym == 1 { 1 } else if nsym == 2 { 2 } else { 3 };
+                    let mut x = source.combine(&terms[..take]);
+                    if detailed {
                         if srr < 2.5 {
-                            x = (0.5 * x).powi(3);
+                            if srr > 2.3 {
+                                x *= x;
+                            } else if x < 5.77 {
+                                x = 1.0 + 8.0 * x * x - 0.12 * x * x * x * x;
+                            } else {
+                                x = (x + 5.82) * (x + 5.82);
+                            }
                         }
                     } else if srr < 2.5 {
-                        if srr > 2.3 {
-                            x *= x;
-                        } else if x < 5.77 {
-                            x = 1.0 + 8.0 * x * x - 0.12 * x * x * x * x;
-                        } else {
-                            x = (x + 5.82) * (x + 5.82);
-                        }
+                        x = (0.5 * x).powi(3);
                     }
                     *v = x;
                 }
@@ -962,7 +1002,7 @@ pub fn bit_metrics_ex(cd: &[Complex], dt_s: f32, mode: MetricsMode) -> Option<Me
     for set in bm.iter_mut() {
         normalize_llr(set)?;
     }
-    Some(Metrics { llr: bm, s8, srr, syncav, nsync })
+    Some(bm)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
