@@ -867,7 +867,11 @@ pub async fn run(
     let cat = rig_control::cat::CatService::open(&config.data_dir.join("radio.json"));
     let mut config = config;
     let stored = cat.config();
-    if !config.rig_omnirig && !config.rig_hamlib && stored.auto_connect {
+    // la scelta salvata dall'operatore nella pagina della radio vince su AURORA_RIG: il programma Windows la imposta da solo a «omnirig»
+    // quando trova JTDX, e passando a Hamlib dalla pagina al riavvio si tornava su OmniRig (niente elenco dei modelli, radio «sparita»)
+    if stored.auto_connect {
+        config.rig_omnirig = false;
+        config.rig_hamlib = false;
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
