@@ -288,7 +288,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-desktop"
-version = "0.11.26"
+version = "0.11.27"
 dependencies = [
  "aurora",
  "aurora-core",
