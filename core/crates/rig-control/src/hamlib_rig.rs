@@ -160,6 +160,9 @@ struct Inner {
     ptt_blocked_until: Mutex<Option<Instant>>,
     quick: Mutex<Vec<Instant>>,
     ptt_readable: AtomicBool,
+    /// Trasmissione comandata fuori dal CAT (PTT su RTS/DTR di un'altra porta): la dice il motore, cosi' i misuratori passano subito a
+    /// potenza/ROS/ALC invece di aspettare la lettura del PTT dalla radio (ogni `poll_secs`), che non sempre vede quel PTT.
+    external_tx: AtomicBool,
     tx_audio_hz: AtomicU32,
     rx_dial: AtomicU64,
     emulate_restore: Mutex<Option<u64>>,
@@ -246,7 +249,7 @@ impl Inner {
     }
 
     fn transmitting(&self) -> bool {
-        self.status.lock().is_ok_and(|s| s.ptt)
+        self.external_tx.load(Ordering::SeqCst) || self.status.lock().is_ok_and(|s| s.ptt)
     }
 
     fn queue_quick_reads(&self) {
@@ -617,6 +620,7 @@ impl HamlibRig {
             ptt_blocked_until: Mutex::new(None),
             quick: Mutex::new(Vec::new()),
             ptt_readable: AtomicBool::new(true),
+            external_tx: AtomicBool::new(false),
             tx_audio_hz: AtomicU32::new(0),
             rx_dial: AtomicU64::new(0),
             emulate_restore: Mutex::new(None),
@@ -636,6 +640,11 @@ impl HamlibRig {
 
     pub fn config(&self) -> &RigConfig {
         &self.inner.config
+    }
+
+    /// Il motore dice se sta trasmettendo con un PTT che non passa dal CAT (vedi `external_tx`).
+    pub fn set_external_tx(&self, on: bool) {
+        self.inner.external_tx.store(on, Ordering::SeqCst);
     }
 
     pub fn status(&self) -> RigStatus {

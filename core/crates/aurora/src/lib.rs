@@ -1385,6 +1385,9 @@ pub async fn run(
         let controls = Arc::clone(&native_controls);
         std::thread::spawn(move || {
             loop {
+                if let Ok(rig) = cat.hamlib() {
+                    rig.set_external_tx(controls.transmitting.load(std::sync::atomic::Ordering::Relaxed));
+                }
                 match rig_control::Rig::meters(cat.as_ref()) {
                     Ok(meters) => {
                         controls.set_meters(Some(meters));
