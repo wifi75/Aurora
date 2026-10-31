@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.27 - 2026-10-31
 - **Cronologia tra periodi FT8**: un CQ debole, una chiamata diretta a te o il segnale del canale QSO che non decodificano da soli ora si sommano (in potenza o in ampiezza, come JTDX) con il periodo precedente della stessa parita' se si ripetono li' entro 2 Hz e 0,05 s. E' il meccanismo con cui JTDX cattura i segnali deboli che si ripetono e che Aurora non aveva ancora: sorgente pubblico di JTDX letto alla lettera (`docs/analisi-jtdx-reverse-rea.md`), provato con un CQ che non decodifica da solo ma decodifica sommato al periodo successivo. Restano fuori la ridecodifica col messaggio del periodo prima e il decoder dedicato del canale QSO (`ft8s`): voci successive della stessa analisi.
 
 ## 0.11.26 - 2026-10-31
