@@ -5609,3 +5609,31 @@
 .dxd-facts dd { margin: 0; }
 .dxd-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.8rem; }
 .dxd-actions a { text-decoration: none; }
+
+/* Pannello QSO: acceso = viola pieno con testo bianco (si vede subito); Abilita Tx e AutoTX accesi in rosso; spento = contorno grigio */
+.qso-grid .chip[aria-pressed='true'],
+.qso-grid .chip.glass--on {
+  color: #fff;
+  background: #6c4ad8;
+  border-color: #6c4ad8;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #6c4ad8 30%, transparent);
+  font-weight: 700;
+}
+
+.qso-grid .chip.chip--arming[aria-pressed='true'],
+.qso-grid .chip.chip--arming.glass--on {
+  background: #c62828;
+  border-color: #c62828;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #c62828 30%, transparent);
+}
+
+.qso-grid .chip[aria-pressed='false'] {
+  color: var(--text, #1b2430);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--text, #1b2430) 35%, transparent);
+  font-weight: 500;
+}
+
+.qso-grid .chip .chip-led {
+  background: #fff;
+}
