@@ -10,3 +10,9 @@ L'elenco dei compiti da chiudere a ogni versione e' in `TASK.md`; qui i comandi.
    (il nome dell'installatore deve finire in `-setup.exe`; guida in `docs/installer-windows.md`).
 5. Copia `Aurora-Setup.exe` dell'installatore e `SHA256SUMS.txt` dei file; tag `vX.Y.Z`, push del tag, `gh release create` con installatore, `.sig`, `SHA256SUMS.txt` e `Aurora-Setup.exe` (il link `releases/latest/download/Aurora-Setup.exe` scarica sempre l'ultima).
 6. Ora vera nelle Novita' (`gh release view vX.Y.Z --json publishedAt`), commit e push; pagina web con `scripts/pubblica-sito.ps1`.
+
+## Velocita' della compilazione
+
+- `D:\progetti` e `D:\build` sono esclusi da Windows Defender (impostazione permanente fatta dal proprietario). Senza esclusione la compilazione si bloccava in attesa del disco.
+- Durante la compilazione dell'installatore non devono girare altre compilazioni (agenti, prove): si mettono in pausa. Da sola, con `CARGO_BUILD_JOBS=18`, dura pochi minuti.
+- Prima di `git checkout` del commit nella cartella di compilazione `D:\build\Aurora-0.11.1` si annullano i file rigenerati (`git checkout -- .`, es. `Cargo.lock`) e si controlla che `HEAD` sia il commit giusto: un checkout fallito ricompila la versione vecchia.
