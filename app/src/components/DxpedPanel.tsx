@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDxped, type Dxpedition } from '../api/client';
 import { useT } from '../i18n';
+import { flagCode } from '../lib/flags';
 
 /** Oggi come `AAAA-MM-GG` (UTC, come il calendario NG3K). */
 function today(now = new Date()): string {
@@ -50,8 +51,11 @@ export function DxpedPanel({ heardCalls, keepDays = 15 }: { heardCalls: string[]
         {items.map((d) => (
           <li key={`${d.call}-${d.start}`} className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}`} title={d.info}>
             <div className="dxped-line">
-              <strong className="data">{d.call}</strong>
-              <span className="dxped-country">{d.country}</span>
+              <strong className="data dxped-call">{d.call}</strong>
+              <span className="dxped-country">
+                {flagCode(d.country) ? <span className={`fi fi-${flagCode(d.country)} dxped-flag`} aria-hidden="true" /> : null}
+                {d.country}
+              </span>
               <span className="dxped-when">
                 {d.heard ? t('dxp.heard') : d.state === 'active' ? t('dxp.until', { date: short(d.end) }) : d.state === 'soon' ? t('dxp.from', { date: short(d.start) }) : t('dxp.ended', { date: short(d.end) })}
               </span>
