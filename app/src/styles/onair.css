@@ -4830,3 +4830,14 @@
   align-items: center;
 }
 
+
+/* STOP nel pannello Trasmissione: piccolo, non spinge via il nominativo */
+.tx-dx .stop-btn {
+  min-height: 0;
+  height: 1.9rem;
+  padding: 0 0.6rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
