@@ -78,7 +78,7 @@ pub fn gfsk_pulse(bt: f32, t: f32) -> f32 {
     gfsk_pulse_f64(f64::from(bt), f64::from(t)) as f32
 }
 
-fn gfsk_pulse_f64(bt: f64, t: f64) -> f64 {
+pub(crate) fn gfsk_pulse_f64(bt: f64, t: f64) -> f64 {
     let c = PI * (2.0 / std::f64::consts::LN_2).sqrt();
     0.5 * (erf(c * bt * (t + 0.5)) - erf(c * bt * (t - 0.5)))
 }

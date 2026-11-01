@@ -121,7 +121,7 @@ fn nint(x: f32) -> i64 {
     x.round() as i64
 }
 
-fn fft_plan(n: usize, inverse: bool) -> Arc<dyn Fft<f32>> {
+pub(crate) fn fft_plan(n: usize, inverse: bool) -> Arc<dyn Fft<f32>> {
     let mut planner = FftPlanner::<f32>::new();
     if inverse { planner.plan_fft_inverse(n) } else { planner.plan_fft_forward(n) }
 }
@@ -729,7 +729,7 @@ fn sync_tables() -> &'static SyncTables {
 }
 
 /// Correzioni di frequenza di 32 campioni per `ifr` = -5..5 (passi di 0,5 Hz).
-fn freq_tweak(delf_hz: f32) -> [Complex; SYM200] {
+pub(crate) fn freq_tweak(delf_hz: f32) -> [Complex; SYM200] {
     let dphi = 2.0 * PI * delf_hz as f64 * 0.005;
     let mut t = [ZERO; SYM200];
     for (i, v) in t.iter_mut().enumerate() {
@@ -757,7 +757,7 @@ fn sync_term(z: Complex, kind: SyncKind) -> f32 {
 /// `AvgAbs` ogni simbolo e' la media di se stesso e del successivo, e l'ultimo riusa il valore del sesto, come nel Fortran).
 /// Con `cq` (e solo nella ricerca in frequenza, cioe' con `tweak`) si aggiungono gli otto simboli di dati di un CQ.
 /// `i0` e' il campione (a 200 Hz) in cui comincia il primo simbolo; `tweak` sposta il riferimento in frequenza.
-fn sync8d(cd: &[Complex], i0: i64, tweak: Option<&[Complex; SYM200]>, kind: SyncKind, cq: bool) -> f32 {
+pub(crate) fn sync8d(cd: &[Complex], i0: i64, tweak: Option<&[Complex; SYM200]>, kind: SyncKind, cq: bool) -> f32 {
     let tables = sync_tables();
     let correlate = |start: i64, row: &[Complex; SYM200]| -> Complex {
         let mut z = ZERO;

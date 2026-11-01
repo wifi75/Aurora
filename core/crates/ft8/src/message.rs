@@ -395,6 +395,17 @@ fn codifica_standard(c: &str) -> Option<u32> {
     Some(n28 + NTOKENS + MAX22)
 }
 
+/// Nominativo standard (si codifica nei 28 bit senza hash): `stdcall` di WSJT-X.
+pub fn is_standard_call(c: &str) -> bool {
+    codifica_standard(c).is_some()
+}
+
+/// Come [`is_standard_call`], ammettendo il suffisso `/R` o `/P` (`stdcall_suffix` di WSJT-X).
+pub fn is_standard_call_suffix(c: &str) -> bool {
+    let base = c.strip_suffix("/R").or_else(|| c.strip_suffix("/P")).unwrap_or(c);
+    is_standard_call(base)
+}
+
 /// Nominativo ammesso nel tipo 4 e nell'hash: da 3 a 11 caratteri tra cifre, lettere e barra, senza barra ai bordi.
 fn nominativo_valido(c: &str) -> bool {
     let b = c.as_bytes();
