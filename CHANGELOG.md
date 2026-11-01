@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.62 - 2026-11-01
+- **Pannello Comandi come WSJT-X 3.3**: DX Call e locatore scrivibili (Invio prepara i messaggi senza trasmettere), Lookup su QRZ.com, rapporto da inviare scelto a mano, Hold Tx Freq, tendina del tipo di CQ (CQ, DX, continenti, POTA, SOTA, TEST), Tune e Log QSO a scelta (Impostazioni > Generali, spenti di base); ogni voce con il «?» in sei lingue. Nuove API `/api/v1/commands/dx`, `report`, `tune`, `log-qso` e interruttore `hold_tx`.
+- **Pannello QSO**: sequenza in due colonne a sinistra, pulsanti che fanno trasmettere in colonna a destra, misure fisse.
+- **Hound**: il Tx1 non appare piu' barrato (WSJT-X 3.3 non permette di saltarlo, `elide_tx1_not_allowed`) e il Tx6 (CQ) e' spento.
+- **Righe Tx**: paese, bandiera e distanza della stazione chiamata (prima la distanza dal proprio locatore e nessun paese).
+- **Bandiere**: riconosciute anche le grafie di NG3K (Gambia, Solomon Is, eSwatini...); bandiera, nominativo e paese allineati nella scheda DXCC.
+- Guida: nuova sezione «Il pannello Comandi».
+
 ## 0.11.61 - 2026-11-01
 - **R+rapporto subito dopo il Tx1**: se la stazione chiamata risponde direttamente con R+rapporto (MSHV, molte DXpedition, caso V26JJ) Aurora chiude con RR73 e registra, come WSJT-X 3.3 (DecodedMessageReaction.cpp); prima restava sul Tx1 come JTDX.
 - **Wait and Pounce** (WSJT-X 3.3, `updateRespondTarget`, `AutoRespondPolicy.hpp`, `AutoRespondScoring.hpp`): nuovo pulsante «Wait and Pounce» tra gli interruttori del QSO; armato con Abilita Tx spento, a fine periodo risponde da solo al CQ scelto con la voce «Wait and Pounce: a quale CQ» (scheda Generali: nessuno, il primo, il più lontano, il più forte, il più debole; di fabbrica il primo), saltando le stazioni già collegate nella sessione; senza risposta entro 6,2 periodi la trasmissione si spegne; scattato, il pulsante si disarma.

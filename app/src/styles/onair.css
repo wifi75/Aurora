@@ -5518,3 +5518,33 @@
   background: #c62828;
   border-color: #c62828;
 }
+
+/* Pannello Comandi, impaginazione 1: righe a misura fissa, tutto allineato */
+.tx-commands .cmd-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.15rem 0;
+}
+
+.tx-commands .chip,
+.tx-commands select,
+.tx-commands input[type='text'],
+.tx-commands input[type='number'] {
+  box-sizing: border-box;
+  height: 1.75rem;
+}
+
+.tx-commands .cmd-hz input {
+  width: 4.2rem;
+}
+
+.tx-commands .cmd-free {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.tx-commands select {
+  min-width: 6.5rem;
+}
