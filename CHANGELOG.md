@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.57 - 2026-11-01
 - **Cascata**: la riga verde di inizio periodo si puo' spegnere (Impostazioni > Cascata > «Riga di inizio periodo», accesa di base come JTDX).
 - **Anteprima dal vivo della cascata nelle Impostazioni**: in Impostazioni > Cascata il pulsante «Mostra anteprima dal vivo» apre la cascata e lo spettro veri (stessi componenti della pagina Stazione, righe del motore), fissi in cima mentre si cambiano le opzioni: ogni modifica si vede subito. La scelta aperta/chiusa resta ricordata; l'anteprima si spegne del tutto (renderer e abbonamento alle righe) uscendo dalla scheda o con la finestra nascosta, e senza righe dal motore dice di accendere radio e audio.
 - **Flatten sul tratto visibile** (WSJT-X v3.3.0-beta5, `widgets/plotter.cpp`, `izVisible`/`savgBins`): scala e appiattimento della cascata e dello spettro si calcolano solo sulle colonne visibili con dati, cosi' un bordo senza canali non piega la linea di base.
