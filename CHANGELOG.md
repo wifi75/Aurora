@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.44 - 2026-11-01
+- **Km e azimut** anche sui messaggi senza locatore, col locatore gia' mandato da quella stazione.
+- **STOP** nel pannello Trasmissione, accanto a RX/TX.
+- **Notifiche** piu' evidenti: piu' in basso, colore pieno, quasi opache.
+- **Display della testata** con la larghezza di prima ma piu' alto.
+- **Installatore**: chiude anche i rigctld orfani di Aurora e riprova finche' la cartella hamlib si libera (niente piu' «libhamlib-4.dll» bloccata).
+
 ## 0.11.43 - 2026-11-01
 - **Cascata fedele al filtro della radio**: Aurora legge col CAT (Hamlib) la larghezza del filtro e la cascata mostra quell'ampiezza, fino a 5000 Hz (0-3000 Hz se la radio non la dice).
 - **Coda sempre visibile**: nel pannello Trasmissione, sotto il DX, «In coda» con pallini blu numerati e nominativi.
