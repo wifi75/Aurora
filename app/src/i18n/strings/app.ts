@@ -18,12 +18,12 @@ export const appStrings = {
     'Não consigo contactar a Aurora. Verifica se está ligado no PC e se a rede está acessível.',
   ],
   'splash.motto': [
-    'Stazione digitale FT8 e FT4: ascolta, decodifica e trasmette per te',
-    'Digital FT8 and FT4 station: it listens, decodes and transmits for you',
-    'Digitale FT8- und FT4-Station: hört, dekodiert und sendet für dich',
-    'Station numérique FT8 et FT4 : elle écoute, décode et émet pour toi',
-    'Estación digital FT8 y FT4: escucha, decodifica y transmite por ti',
-    'Estação digital FT8 e FT4: escuta, descodifica e transmite por ti',
+    'Stazione digitale FT8, FT4, JT65 e JT9 con CAT, DX Cluster e DXpedition: ascolta, decodifica e trasmette per te',
+    'Digital FT8, FT4, JT65 and JT9 station with CAT, DX Cluster and DXpeditions: it listens, decodes and transmits for you',
+    'Digitale FT8-, FT4-, JT65- und JT9-Station mit CAT, DX-Cluster und DXpeditionen: hört, dekodiert und sendet für dich',
+    'Station numérique FT8, FT4, JT65 et JT9 avec CAT, DX Cluster et DXpéditions : elle écoute, décode et émet pour toi',
+    'Estación digital FT8, FT4, JT65 y JT9 con CAT, DX Cluster y DXpediciones: escucha, decodifica y transmite por ti',
+    'Estação digital FT8, FT4, JT65 e JT9 com CAT, DX Cluster e DXpedições: escuta, descodifica e transmite por ti',
   ],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
