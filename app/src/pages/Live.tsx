@@ -13,6 +13,7 @@ import { Log4omPanel } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
 import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
+import { RadioExtras } from '../components/radio-display/RadioExtras';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
@@ -295,10 +296,14 @@ export function Live() {
         <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
         </div>
         {phone ? null : (
-          <RxControls
-            mode={status?.mode ?? ''}
-            transmitting={status?.transmitting ?? false}
-          />
+          <div className="live-left-line">
+            <RxControls
+              mode={status?.mode ?? ''}
+              transmitting={status?.transmitting ?? false}
+            />
+            {/* il display esteso della radio sta su un solo rigo, a destra dei controlli di ricezione */}
+            <RadioExtras />
+          </div>
         )}
         </div>
         <RadioDisplayHeader />

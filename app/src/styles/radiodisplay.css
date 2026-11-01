@@ -492,3 +492,53 @@
     width: 100%;
   }
 }
+
+/* Display esteso su UN SOLO RIGO: nella riga dei controlli di ricezione, a destra; non allunga la testata */
+.live-left-line {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.live-left-line .rx-row {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.live-left-line .rx-extras {
+  flex: 1 1 auto;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  height: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0.1rem 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.live-left-line .rx-extras .rx-meter {
+  flex: none;
+  min-width: 3.2rem;
+}
+
+.live-left-line .rx-extras .rx-vfob,
+.live-left-line .rx-extras .rx-line {
+  flex: none;
+}
+
+@media (max-width: 64rem) {
+  .live-left-line {
+    flex-wrap: wrap;
+  }
+
+  .live-left-line .rx-extras {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+}

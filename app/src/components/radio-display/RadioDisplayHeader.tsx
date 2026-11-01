@@ -23,7 +23,7 @@ export function RadioDisplayHeader() {
       <div className="rd-trigger rd-trigger--static">
         <RadioDisplay model={model} style={pref.style} size="mini" />
       </div>
-      <RadioExtras />
+      {phone ? <RadioExtras /> : null}
     </div>
   );
 }
