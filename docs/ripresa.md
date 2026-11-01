@@ -15,7 +15,6 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione pubblicata**: **0.11.67** (2026-11-01, 20:37 UTC). Dopo, su `main` e non ancora in una versione: splash con tutti i modi (FT8, FT4, JT65, JT9) nel logo e nel motto.
 - **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
 
 ## Lavoro in corso (non finito)
