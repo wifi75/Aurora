@@ -4,6 +4,7 @@ Elenco dei lavori presi da WSJT-X 3.x: ogni voce si cancella quando e' integrata
 
 Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti di riferimento: `D:\build\analisi-wsjtx\sorgenti`, tag `v3.3.0-beta5` (GPL-3, compatibile con Aurora GPL-3.0-only: citare la provenienza nei commenti e in `docs/licenze-terze-parti.md`).
 
+
 ## 1. SuperFox: codice QPC (127,50) su GF(128)
 
 - Cosa fare: portare in Rust codifica e decodifica del Q-ary Polar Code e il CRC a 21 bit (`lookup3` `hashlittle`, seme 571, maschera `0x1FFFFF` sui primi 47 simboli).
