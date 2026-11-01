@@ -8,4 +8,5 @@ license.workspace = true
 publish = false
 
 [dependencies]
+rayon = "1.12.0"
 rustfft = "6.4.1"

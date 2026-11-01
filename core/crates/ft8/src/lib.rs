@@ -7,6 +7,8 @@
 //! - [`message`]: da 77 bit al testo ("CQ DX IU3ABC IO91") e viceversa;
 //! - [`decode`]: mette tutto insieme su un periodo di 15 secondi, con piu' passate e sottrazione dei segnali gia' decodificati.
 
+pub mod a7;
+pub mod a8;
 pub mod ap;
 pub mod crc;
 pub mod decode;
