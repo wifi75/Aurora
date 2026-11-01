@@ -3,8 +3,8 @@ import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-librar
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getUpdate: vi.fn(), putUpdate: vi.fn().mockResolvedValue({}), checkUpdate: vi.fn() }));
-import { checkUpdate, getUpdate, putUpdate, type UpdateStatus } from '../api/client';
+vi.mock('../api/client', () => ({ getUpdate: vi.fn(), putUpdate: vi.fn().mockResolvedValue({}), checkUpdate: vi.fn(), getDiagnostics: vi.fn().mockResolvedValue({ crash_folder: false }), openCrashFolder: vi.fn().mockResolvedValue(undefined) }));
+import { checkUpdate, getDiagnostics, getUpdate, openCrashFolder, putUpdate, type UpdateStatus } from '../api/client';
 import { UpdatesTab, draftToUpdate } from './UpdatesTab';
 
 function render(ui: ReactElement) {
@@ -70,5 +70,18 @@ describe('UpdatesTab', () => {
     expect(await screen.findByText(/Un valore non va/)).toBeInTheDocument();
     await new Promise((r) => setTimeout(r, 900));
     expect(putUpdate).not.toHaveBeenCalled();
+  });
+
+  it('offers to open the crash folder only when the Windows program can', async () => {
+    vi.mocked(getDiagnostics).mockResolvedValueOnce({ crash_folder: true });
+    render(<UpdatesTab />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Apri la cartella dei crash' }));
+    await waitFor(() => expect(openCrashFolder).toHaveBeenCalled());
+  });
+
+  it('hides the crash folder button outside the Windows program', async () => {
+    render(<UpdatesTab />);
+    expect(await screen.findByText('0.9.0')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apri la cartella dei crash' })).toBeNull();
   });
 });
