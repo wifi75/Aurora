@@ -4768,3 +4768,24 @@
 .tx-dx {
   align-items: center;
 }
+
+/* Parte alta piu' bassa: meno spazio tra la riga modo/bande e quella dei pulsanti */
+.live-top {
+  margin-bottom: 0.2rem;
+  row-gap: 0.25rem;
+  align-items: center;
+}
+
+.live-top .band-row {
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.mode-switch .mode-switch-btn {
+  height: 2rem;
+  min-height: 2rem;
+}
+
+.rx-row {
+  margin: 0 0 0.35rem;
+}
