@@ -5670,3 +5670,28 @@
 .dxd { width: min(44rem, 94vw); }
 .dxd-map { height: auto; min-height: 16rem; background: none; }
 .dxd-map .world-map, .dxd-map .leaflet-container { height: 18rem; }
+
+/* scheda DXpedition: la mappa occupa solo la sua altezza, senza fascia vuota sotto */
+.dxd-map .worldmap,
+.dxd-map .worldmap--compact {
+  height: auto;
+  min-height: 0;
+}
+
+.dxd-map .worldmap-view {
+  height: 20rem;
+}
+
+.dxd-map {
+  min-height: 0;
+}
+
+.dxd-map .worldmap,
+.dxd-map .worldmap.worldmap--compact {
+  height: 20rem;
+}
+
+.dxd-map .worldmap .worldmap-view {
+  height: 100%;
+}
+
