@@ -108,3 +108,15 @@ Stato al 2026-11-01, versione 0.11.46. Per riprendere il lavoro leggi anche `doc
 - Limite RR73/73: e' `SeqSentRR7373Count`/`CounterValue` (dal proprietario 5), funziona; si regola nelle Impostazioni.
 - Il proprietario fa le prove: durante le sue sessioni non lanciare test locali ne' verifiche nel browser se lo chiede.
 - Programma Windows (2026-10-24): `desktop/` e' un workspace Cargo a parte (Tauri 2) che usa il crate `aurora`; impostazioni da `%APPDATA%\Aurora\aurora.env` + rilevamento di JTDX/Log4OM2; trasmissione chiusa di default. Aggiornamenti: solo pacchetti con firma minisign valida (`desktop/updater.pub`); la chiave privata e' in `%USERPROFILE%\.aurora-signing\aurora.key`, fuori dal repository e da salvare altrove. Il repository e' pubblico: le release si scaricano senza token.
+
+## Interfaccia e radio (2026-11-01, 0.11.41-0.11.46)
+- **Scelte grafiche del proprietario** (mostrate come PNG sul Desktop, non nel repository): impostazioni a barra laterale (proposta 1), barra modo a tendina + bande a pillole (modello 2), notifiche «pillola aurora» (proposta 4, errori rossi), display della radio esteso (proposta 1). Le proposte grafiche vanno fatte come immagini sul Desktop: i widget nella chat il proprietario non li vede.
+- **Ogni funzione nuova va resa accendibile dalle impostazioni con un «?» che la spiega** (richiesta esplicita). Le voci senza spiegazione sono considerate un difetto.
+- **STOP**: nessun pulsante a parte; in onda la pastiglia rossa «TX STOP» accanto al DX e' lo STOP (`TxPanel.tsx`); sul telefono resta la barra in fondo.
+- **Notifiche** (`lib/toast.ts`, `Toaster.tsx`): niente notifica per gli spostamenti delle barre Rx/Tx (solo errori); doppio clic = «Rispondo a NOMINATIVO», l'avviso sui messaggi non CQ e' un toast separato.
+- **Cascata**: il core analizza 0-5000 Hz su 2048 canali (`audio-spectrum`); l'interfaccia ritaglia fino alla larghezza del filtro letta da Hamlib (`RigStatus.passband_hz`, `spanFromPassband` in `lib/spectrumFeed.ts`), 0-3000 se ignota.
+- **Dati in piu' della radio** (`rig-control/src/extras.rs`): con `read_extras` (CAT, spento di base) si leggono a turno 3 voci per lettura (1 sulle seriali lente), solo in ricezione; quelle non supportate si ricordano. Secondo VFO con `+\get_vfo_info VFOB` letto fino a RPRT. Cosa mostrare: `lib/radioExtras.ts` (preferenze del browser).
+- **DXpedition**: `online-info/src/dxped.rs` legge `ng3k.com/Misc/adxo.html` (righe `adxoitem`) ogni 6 ore; `/api/v1/online/dxped`; pannello `DxpedPanel.tsx` nel pannello CQ.
+- **rigctld orfano**: `close_orphan_rigctld()` (porta occupata da un rigctld senza padre) e l'installatore (`hooks.nsh`) che ripete finche' la cartella hamlib si libera.
+- **Km senza locatore**: `gridOfSender` in `DecodeList.tsx` ricorda il locatore di ogni stazione per la sessione della pagina.
+- **Test pesanti**: `cargo test --workspace` in parallelo alle build ha esaurito le risorse di Windows (cmd.exe 0xc0000142) mentre il proprietario era in onda. Usare `-j 2` e test mirati per crate; il proprietario puo' chiedere di non fare test.
