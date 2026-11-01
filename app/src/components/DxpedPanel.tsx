@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { DxpedDetail } from './DxpedDetail';
 import { getDxped, type Dxpedition } from '../api/client';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
@@ -37,6 +39,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
   const t = useT();
   // finche' il core non ha ancora scaricato il calendario si richiede spesso; poi ogni 10 minuti
   const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
+  const [open, setOpen] = useState<(Dxpedition & { state: DxpedState }) | null>(null);
   const heard = new Set(heardCalls.map((c) => c.toUpperCase()));
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays);
   return (
@@ -49,7 +52,14 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
       {items.length === 0 ? <p className="muted dxped-note">{q.data?.dxped.fetched_ms ? t('dxp.none') : t('dxp.loading')}</p> : null}
       <ul className="dxped-list">
         {items.map((d) => (
-          <li key={`${d.call}-${d.start}`} className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}`} title={d.info}>
+          <li
+            key={`${d.call}-${d.start}`}
+            className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}`}
+            title={t('tip.dxp.open')}
+            tabIndex={0}
+            onClick={() => setOpen(d)}
+            onKeyDown={(e) => e.key === 'Enter' && setOpen(d)}
+          >
             <div className="dxped-line">
               <strong className="data dxped-call">{d.call}</strong>
               <span className="dxped-country">
@@ -74,6 +84,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
           </li>
         ))}
       </ul>
+      {open ? <DxpedDetail d={open} onClose={() => setOpen(null)} /> : null}
     </section>
   );
 }
