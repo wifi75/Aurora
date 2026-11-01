@@ -229,6 +229,17 @@ struct MeterPoll {
     full_scale_tries: u8,
 }
 
+/// Quanti dati in piu' (PRE, ATT, AGC, NB...) si leggono a ogni giro: pochi sulle seriali lente per non togliere tempo al PTT.
+fn extras_per_read(config: &RigConfig) -> usize {
+    if slow_port(config) {
+        1
+    } else if is_serial_port(&config.port) && config.baud < 19200 {
+        3
+    } else {
+        6
+    }
+}
+
 /// Seriali a 9600 baud o meno (o con la velocita' del modello, che puo' essere bassa): una raffica di comandi toglierebbe tempo al PTT.
 fn slow_port(config: &RigConfig) -> bool {
     is_serial_port(&config.port) && (config.baud == 0 || config.baud <= 9600)
@@ -391,10 +402,11 @@ impl Inner {
         if let Some(f) = freq {
             self.rx_dial.store(f, Ordering::SeqCst);
         }
-        // i dati in piu', a turno e solo in ricezione: tre per lettura, uno sulle seriali lente
+        // i dati in piu', a turno e solo in ricezione: uno per lettura sulle seriali lente, sei sulle veloci (da 19200 baud, rete o USB senza
+        // seriale), cosi' i 16 valori del display si rinfrescano in circa tre letture invece di sei
         let extras = if self.config.read_extras && freq.is_some() {
             self.extras.lock().ok().map(|mut poll| {
-                poll.read(client, if slow_port(&self.config) { 1 } else { 3 });
+                poll.read(client, extras_per_read(&self.config));
                 poll.cache.clone()
             })
         } else {
