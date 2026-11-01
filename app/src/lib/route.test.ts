@@ -25,6 +25,7 @@ describe('parseRoute', () => {
   });
 
   it('reads the statistics and guide pages', () => {
+    expect(parseRoute('#/esporta')).toEqual({ name: 'export' });
     expect(parseRoute('#/statistiche')).toEqual({ name: 'stats' });
     expect(parseRoute('#/guida')).toEqual({ name: 'guide' });
   });

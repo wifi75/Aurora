@@ -1,0 +1,253 @@
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ApiError, getLogQsos, logExportUrl, saveLogAdif, type LogQso } from '../api/client';
+import { useT } from '../i18n';
+import { BAND_NAMES } from '../lib/format';
+import { toast } from '../lib/toast';
+import { Help } from '../settings/layout';
+
+/** Le bande nell'ordine della radio (160m prima di 80m), quelle sconosciute in fondo. */
+function bandOrder(a: string, b: string): number {
+  const ia = BAND_NAMES.indexOf(a);
+  const ib = BAND_NAMES.indexOf(b);
+  return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b);
+}
+
+export interface ExportFilter {
+  call: string;
+  from: string;
+  to: string;
+  band: string;
+  mode: string;
+}
+
+const NO_FILTER: ExportFilter = { call: '', from: '', to: '', band: '', mode: '' };
+
+/** I QSO che passano i filtri: nominativo (parte del nome), date UTC `AAAA-MM-GG` comprese, banda e modo. */
+export function filterQsos(qsos: readonly LogQso[], f: ExportFilter): LogQso[] {
+  const call = f.call.trim().toUpperCase();
+  return qsos.filter(
+    (q) => (!call || q.call.toUpperCase().includes(call)) && (!f.from || q.date >= f.from) && (!f.to || q.date <= f.to) && (!f.band || q.band === f.band) && (!f.mode || q.mode === f.mode),
+  );
+}
+
+/** Pagina di esportazione del log interno: elenco dei QSO con selezione, filtri e «Salva ADIF…» (finestra di Windows) o il download. */
+export function ExportPage() {
+  const t = useT();
+  const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchOnWindowFocus: false });
+  const [filter, setFilter] = useState<ExportFilter>(NO_FILTER);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
+  // la prima volta che arriva il log sono scelti tutti: il caso piu' comune e' esportare l'intero log
+  const primed = useRef(false);
+  useEffect(() => {
+    if (!log.data || primed.current) return;
+    primed.current = true;
+    setSelected(new Set(log.data.qsos.map((q) => q.id)));
+  }, [log.data]);
+
+  const qsos = useMemo(() => log.data?.qsos ?? [], [log.data]);
+  const bands = useMemo(() => [...new Set(qsos.map((q) => q.band))].sort(bandOrder), [qsos]);
+  const modes = useMemo(() => [...new Set(qsos.map((q) => q.mode))].sort(), [qsos]);
+  const shown = useMemo(() => filterQsos(qsos, filter), [qsos, filter]);
+  const shownSelected = shown.reduce((n, q) => n + (selected.has(q.id) ? 1 : 0), 0);
+  const hiddenSelected = selected.size - shownSelected;
+  const everything = qsos.length > 0 && selected.size === qsos.length;
+  const filtered = filter.call !== '' || filter.from !== '' || filter.to !== '' || filter.band !== '' || filter.mode !== '';
+
+  const headBox = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (headBox.current) headBox.current.indeterminate = shownSelected > 0 && shownSelected < shown.length;
+  }, [shownSelected, shown.length]);
+
+  const set = (patch: Partial<ExportFilter>) => setFilter((f) => ({ ...f, ...patch }));
+  const toggle = (id: number) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const selectShown = (on: boolean) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      for (const q of shown) {
+        if (on) next.add(q.id);
+        else next.delete(q.id);
+      }
+      return next;
+    });
+
+  const save = async () => {
+    if (selected.size === 0) {
+      toast(t('exp.noneSelected'), 'info');
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await saveLogAdif(everything ? { all: true } : { ids: [...selected] });
+      if (r.cancelled) toast(t('exp.cancelled'), 'info');
+      else toast(t('exp.saved', { n: r.count, path: r.path }), 'ok');
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'save_busy') toast(t('exp.busy'), 'info');
+      else if (error instanceof ApiError && (error.code === 'no_selection' || error.code === 'empty_export')) toast(t('exp.noneSelected'), 'info');
+      else if (error instanceof ApiError && error.detail) toast(t('exp.failed', { why: error.detail }), 'error');
+      else toast(t('exp.error'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+  let body;
+  if (log.isError) body = <p className="notice">{t('exp.unavailable')}</p>;
+  else if (log.isPending) body = <p className="muted">{t('exp.loading')}</p>;
+  else if (qsos.length === 0) body = <p className="notice">{t('exp.empty')}</p>;
+  else if (shown.length === 0) body = <p className="muted">{t('exp.noMatch')}</p>;
+  else
+    body = (
+      <div className="export-table-wrap">
+        <table className="export-table">
+          <thead>
+            <tr>
+              <th className="export-check">
+                <input
+                  ref={headBox}
+                  type="checkbox"
+                  aria-label={t('exp.selectShown')}
+                  checked={shown.length > 0 && shownSelected === shown.length}
+                  onChange={(e) => selectShown(e.target.checked)}
+                />
+              </th>
+              <th>{t('exp.col.date')}</th>
+              <th>{t('exp.col.time')}</th>
+              <th>{t('exp.col.call')}</th>
+              <th>{t('exp.col.band')}</th>
+              <th>{t('exp.col.mode')}</th>
+              <th className="num">{t('exp.col.sent')}</th>
+              <th className="num">
+                {t('exp.col.rcvd')}
+                <Help tip={t('exp.rstTip')} />
+              </th>
+              <th>{t('exp.col.grid')}</th>
+              <th>{t('exp.col.country')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((q) => {
+              const on = selected.has(q.id);
+              return (
+                <tr key={q.id} className={on ? 'export-row export-row--on' : 'export-row'} onClick={() => toggle(q.id)}>
+                  <td className="export-check">
+                    <input type="checkbox" aria-label={t('exp.selectRow', { call: q.call })} checked={on} onChange={() => toggle(q.id)} onClick={(e) => e.stopPropagation()} />
+                  </td>
+                  <td className="data">{q.date}</td>
+                  <td className="data">{q.time.slice(0, 5)}</td>
+                  <td className="data export-call">{q.call}</td>
+                  <td className="data">{q.band}</td>
+                  <td className="data">{q.mode}</td>
+                  <td className="data num">{q.rst_sent}</td>
+                  <td className="data num">{q.rst_rcvd}</td>
+                  <td className="data">{q.grid}</td>
+                  <td>{q.country}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+
+  const hasLog = !!log.data && qsos.length > 0;
+  return (
+    <div className="export-page">
+      <div className="export-head">
+        <h1 className="page-title">{t('exp.title')}</h1>
+        <a className="glass export-back" href="#/">
+          {t('exp.back')}
+        </a>
+      </div>
+      <p className="muted export-help">{t('exp.help')}</p>
+
+      {hasLog ? (
+        <>
+          <div className="export-bar">
+            <input type="search" aria-label={t('exp.search')} placeholder={t('exp.search')} value={filter.call} onChange={(e) => set({ call: e.target.value })} />
+            <label className="map-select">
+              {t('exp.from')}
+              <input type="date" value={filter.from} max={filter.to || undefined} onChange={(e) => set({ from: e.target.value })} />
+            </label>
+            <label className="map-select">
+              {t('exp.to')}
+              <input type="date" value={filter.to} min={filter.from || undefined} onChange={(e) => set({ to: e.target.value })} />
+              <Help tip={t('exp.datesTip')} />
+            </label>
+            <label className="map-select">
+              {t('exp.band')}
+              <select value={filter.band} onChange={(e) => set({ band: e.target.value })}>
+                <option value="">{t('exp.any')}</option>
+                {bands.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="map-select">
+              {t('exp.mode')}
+              <select value={filter.mode} onChange={(e) => set({ mode: e.target.value })}>
+                <option value="">{t('exp.anyMode')}</option>
+                {modes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {filtered ? (
+              <button type="button" className="glass" onClick={() => setFilter(NO_FILTER)}>
+                {t('exp.clear')}
+              </button>
+            ) : null}
+          </div>
+
+          <div className="export-actions">
+            <button type="button" className="glass" title={t('exp.allTip')} onClick={() => selectShown(true)} disabled={shown.length === 0}>
+              {t('exp.all')}
+            </button>
+            <button type="button" className="glass" title={t('exp.noneTip')} onClick={() => selectShown(false)} disabled={shownSelected === 0}>
+              {t('exp.none')}
+            </button>
+            <span className="muted export-count" role="status">
+              {t('exp.count', { selected: selected.size, shown: shown.length, total: qsos.length })}
+              {hiddenSelected > 0 ? <span className="export-hidden"> · {t('exp.hidden', { n: hiddenSelected })}</span> : null}
+            </span>
+            {busy ? <span className="muted export-count">{t('exp.saving')}</span> : null}
+            {log.data?.save_dialog ? (
+              <button type="button" className="glass glass--on export-save" title={t('exp.saveTip')} disabled={busy || selected.size === 0} onClick={() => void save()}>
+                {t('exp.save')}
+              </button>
+            ) : selected.size > 0 ? (
+              <a
+                className="glass glass--on export-save"
+                href={logExportUrl(undefined, undefined, everything ? undefined : selected)}
+                download={`aurora_log_${today}.adi`}
+                title={t('exp.downloadTip')}
+                onClick={() => toast(t('exp.downloaded', { n: selected.size }), 'ok')}
+              >
+                {t('exp.download')}
+              </a>
+            ) : (
+              <button type="button" className="glass export-save" title={t('exp.downloadTip')} disabled>
+                {t('exp.download')}
+              </button>
+            )}
+          </div>
+        </>
+      ) : null}
+
+      {body}
+    </div>
+  );
+}
