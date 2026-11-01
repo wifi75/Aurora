@@ -1,7 +1,11 @@
 # Changelog
 
 ## Non rilasciato
-- **Display della radio in due disposizioni** (Impostazioni > Radio > «Disposizione in testata»): blocco unico a doppio VFO come una FT-2000 (VFO A grande a sinistra, VFO B e indicatori a destra, scelta di fabbrica) oppure due blocchi uguali affiancati. Il display esteso torna in alto a destra accanto al display e non occupa piu' la riga dei controlli.
+
+## 0.11.52 - 2026-11-01
+- **Tasto destro sulla cascata = frequenza Tx**, come in JTDX: il sinistro sposta la barra Rx, il destro la Tx, tenendo premuto la barra segue il mouse. La Tx si sposta anche durante la trasmissione: il messaggio in corso si rimodula subito alla nuova frequenza (con «cambi di frequenza Tx durante la trasmissione» acceso, come di fabbrica).
+- **Display della radio in due disposizioni** (Impostazioni > Radio > «Disposizione in testata»): blocco unico a doppio VFO come una FT-2000 (VFO A grande a sinistra, VFO B e indicatori a destra in un solo schermo continuo, senza separatori, scelta di fabbrica) oppure due blocchi uguali affiancati. Il display esteso torna in alto a destra accanto al display e non occupa piu' la riga dei controlli.
+- **Guida aggiornata** con le funzioni dalla 0.11.41 alla 0.11.51, in sei lingue.
 
 ## 0.11.51 - 2026-11-01
 - **Cascata di nuovo visibile**: con la 0.11.50 restava nera perche' l'interfaccia scartava le righe del nuovo spettro (6827 canali, il limite era 4096); ora le accetta fino a 8192 come il core.
