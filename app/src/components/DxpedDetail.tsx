@@ -1,7 +1,8 @@
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { Component, useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import countries from 'world-atlas/countries-110m.json';
@@ -21,16 +22,18 @@ function MiniMap({ home, target, zoom, className }: { home: Point | null; target
   useEffect(() => {
     if (!box.current) return;
     const map = L.map(box.current, { zoomControl: false, attributionControl: false, dragging: zoom !== null, scrollWheelZoom: false, worldCopyJump: true });
+    // centro e zoom PRIMA di aggiungere linee e punti: Leaflet senza vista va in errore («Set map center and zoom first»)
+    if (zoom !== null) map.setView([target.lat, target.lon], zoom);
+    else if (home) map.fitBounds(L.latLngBounds([home.lat, home.lon], [target.lat, target.lon]).pad(0.35));
+    else map.setView([target.lat, target.lon], 2);
     L.geoJSON(LAND, { style: { color: '#3d7a63', weight: 0.6, fillColor: '#2f6b57', fillOpacity: 0.9 }, interactive: false }).addTo(map);
     if (home && zoom === null) {
       L.polyline(greatCircle(home, target, 64).map((p) => [p.lat, p.lon] as [number, number]), { color: '#ffd166', weight: 2, dashArray: '6 5' }).addTo(map);
       L.circleMarker([home.lat, home.lon], { radius: 5, color: '#20c997', fillColor: '#20c997', fillOpacity: 1 }).addTo(map);
     }
     L.circleMarker([target.lat, target.lon], { radius: zoom === null ? 7 : 9, color: '#ff5d8a', fillColor: '#ff5d8a', fillOpacity: 1, weight: 6, opacity: 0.35 }).addTo(map);
-    if (zoom !== null) map.setView([target.lat, target.lon], zoom);
-    else if (home) map.fitBounds(L.latLngBounds([home.lat, home.lon], [target.lat, target.lon]).pad(0.35));
-    else map.setView([target.lat, target.lon], 2);
-    return () => {
+    // la finestra appena aperta puo' non avere ancora la misura giusta
+    setTimeout(() => map.invalidateSize(), 50);    return () => {
       map.remove();
     };
   }, [home?.lat, home?.lon, target.lat, target.lon, zoom]);
@@ -44,7 +47,31 @@ const short = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
  * La scheda di una DXpedition (proposta 1): mappa grande con la linea dal proprio QTH e un riquadro ingrandito sul punto, sotto i dati di NG3K,
  * paese e zone da cty.dat, distanza e direzione, l'ultima volta che e' stata sentita e i pulsanti per andarci.
  */
-export function DxpedDetail({ d, onClose }: { d: Dxpedition & { state: string }; onClose(): void }) {
+/** La scheda dentro una rete di sicurezza, sopra a tutto (in document.body): un errore la chiude invece di svuotare la pagina. */
+export function DxpedDetail(props: { d: Dxpedition & { state: string }; onClose(): void }) {
+  return createPortal(
+    <SafeCard onError={props.onClose}>
+      <DxpedCard {...props} />
+    </SafeCard>,
+    document.body,
+  );
+}
+
+class SafeCard extends Component<{ children: ReactNode; onError(): void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.error('scheda DXpedition', error);
+    this.props.onError();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(): void }) {
   const t = useT();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
