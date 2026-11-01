@@ -21,8 +21,9 @@ describe('novita', () => {
     }
   });
 
-  it('dalla piu recente alla piu vecchia', () => {
-    const times = NOVITA.map((n) => Date.parse(n.released));
-    expect(times).toEqual([...times].sort((a, b) => b - a));
+  it('dalla piu recente alla piu vecchia (per versione)', () => {
+    const key = (v: string) => v.split('.').map((x) => x.padStart(4, '0')).join('.');
+    const versions = NOVITA.map((n) => key(n.version));
+    expect(versions).toEqual([...versions].sort().reverse());
   });
 });
