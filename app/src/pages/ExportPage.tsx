@@ -1,3 +1,4 @@
+import { flagCode } from '../lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getLogQsos, logExportUrl, saveLogAdif, type LogQso } from '../api/client';
@@ -130,7 +131,7 @@ export function ExportPage() {
                 {t('exp.col.rcvd')}
                 <Help tip={t('exp.rstTip')} />
               </th>
-              <th>{t('exp.col.grid')}</th>
+              <th className="export-grid">{t('exp.col.grid')}</th>
               <th>{t('exp.col.country')}</th>
             </tr>
           </thead>
@@ -149,8 +150,13 @@ export function ExportPage() {
                   <td className="data">{q.mode}</td>
                   <td className="data num">{q.rst_sent}</td>
                   <td className="data num">{q.rst_rcvd}</td>
-                  <td className="data">{q.grid}</td>
-                  <td>{q.country}</td>
+                  <td className="data export-grid">{q.grid}</td>
+                  <td>
+                    <span className="export-country">
+                      {flagCode(q.country) ? <span className={`fi fi-${flagCode(q.country)} export-flag`} aria-hidden="true" /> : null}
+                      {q.country}
+                    </span>
+                  </td>
                 </tr>
               );
             })}
