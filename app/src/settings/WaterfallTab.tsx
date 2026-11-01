@@ -106,7 +106,11 @@ export function WaterfallTab() {
           <Check label={t('wfs.periodLine')} hint={t('tip.wfs.periodLine')} checked={prefs.periodLine} onChange={(v) => set({ periodLine: v })} />
           <Check label={t('wfs.freqOn')} hint={t('tip.wfs.freqOn')} checked={prefs.freq} onChange={(v) => set({ freq: v })} />
           <Cell>
-            <button type="button" className="glass" onClick={() => useWfPrefs.getState().reset()}>
+            {/* come la cascata di WSJT-X: righe a blocchi (media su 5 righe), fondo appiattito, tavolozza Default, riga d'inizio periodo */}
+        <button type="button" className="glass" title={t('tip.wfs.wsjtx')} onClick={() => set({ navg: 5, flatten: true, scale: true, palette: 'Default', periodLine: true, gain: 0, zero: 0 })}>
+          {t('wfs.wsjtx')}
+        </button>
+        <button type="button" className="glass" onClick={() => useWfPrefs.getState().reset()}>
               {t('set.reset')}
             </button>
           </Cell>
