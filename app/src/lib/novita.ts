@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.58',
-    released: '2026-11-01T21:00:00Z',
+    released: '2026-11-01T14:54:24Z',
     kind: 'new',
     title: ['Display Yaesu FT-2000 e Icom IC-7610', 'Yaesu FT-2000 and Icom IC-7610 displays', 'Anzeigen Yaesu FT-2000 und Icom IC-7610', 'Afficheurs Yaesu FT-2000 et Icom IC-7610', 'Displays Yaesu FT-2000 e Icom IC-7610', 'Visores Yaesu FT-2000 e Icom IC-7610'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.58',
-    released: '2026-11-01T21:00:00Z',
+    released: '2026-11-01T14:54:24Z',
     kind: 'new',
     title: ['DXpedition evidenziate nel cluster', 'DXpeditions highlighted in the cluster', 'DXpeditionen im Cluster hervorgehoben', 'DXpéditions en évidence dans le cluster', 'DXpediciones resaltadas en el clúster', 'DXpedições realçadas no cluster'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.58',
-    released: '2026-11-01T21:00:00Z',
+    released: '2026-11-01T14:54:24Z',
     kind: 'changed',
     title: ['Barre Rx e Tx fluide', 'Smooth Rx and Tx bars', 'Flüssige Rx- und Tx-Balken', 'Barres Rx et Tx fluides', 'Barras Rx y Tx fluidas', 'Barras Rx e Tx fluidas'],
     text: [
