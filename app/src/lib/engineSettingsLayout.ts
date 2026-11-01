@@ -18,54 +18,26 @@ export interface SettingRow {
 /** I servizi dell'invio diretto dei QSO (pulsante «Prova» e stato dell'ultimo invio). */
 export type UploadService = 'wavelog' | 'clublog' | 'qrz' | 'lotw';
 
+
 export interface SettingGroup {
   title: Key;
   rows: readonly SettingRow[];
-  /** Invio diretto dei QSO: il servizio da provare e la spiegazione sotto le voci. */
+  /** Invio diretto dei QSO: il servizio da provare e la spiegazione (nel «?» del titolo). */
   upload?: { service: UploadService; help: Key };
+  /** La spiegazione del riquadro, nel «?» del titolo. */
+  help?: Key;
 }
 
-/** La scheda Segnalazioni come nella schermata di JTDX: stessi gruppi, stesse voci, stesso ordine. */
-export const REPORT_GROUPS: readonly SettingGroup[] = [
+/** Scheda «Servizi di log»: un riquadro per servizio esterno, in ordine. */
+export const LOG_SERVICE_GROUPS: readonly SettingGroup[] = [
   {
-    title: 'ens.g.log',
-    rows: [
-      { key: 'PromptToLog', kind: 'bool' },
-      { key: 'AutoQSOLogging', kind: 'bool' },
-      { key: 'toRTTY', kind: 'bool' },
-      { key: 'dBtoComments', kind: 'bool' },
-      { key: 'distanceToComments', kind: 'bool' },
-      { key: 'ClearCallGrid', kind: 'bool' },
-      { key: 'ClearCallGridExit', kind: 'bool' },
-    ],
-  },
-  {
-    title: 'ens.g.adif',
-    rows: [
-      { key: 'TCPServer', kind: 'text' },
-      { key: 'TCPServerPort', kind: 'num' },
-      { key: 'EnableTCPConnection', kind: 'bool' },
-      { key: 'UDP2Server', kind: 'text' },
-      { key: 'UDP2ServerPort', kind: 'num' },
-      { key: 'EnableUDP2adifBroadcast', kind: 'bool' },
-    ],
-  },
-  {
-    title: 'ens.g.alltxt',
-    rows: [
-      { key: 'WriteDecodedALLTXT', kind: 'bool' },
-      { key: 'WriteDecodedDebugALLTXT', kind: 'bool' },
-    ],
-  },
-  {
-    title: 'ens.g.net',
+    title: 'ens.g.eqsl',
+    help: 'ens.eqsl.help',
     rows: [
       { key: 'EQSLSend', kind: 'bool' },
       { key: 'EQSLUser', kind: 'text' },
       { key: 'EQSLPasswd', kind: 'secret' },
       { key: 'EQSLNick', kind: 'text' },
-      { key: 'PSKReporter', kind: 'bool' },
-      { key: 'AllowSpotsDXSummit', kind: 'bool' },
     ],
   },
   {
@@ -106,8 +78,13 @@ export const REPORT_GROUPS: readonly SettingGroup[] = [
       { key: 'LoTWLocation', kind: 'text' },
     ],
   },
+];
+
+/** Scheda «Programmi collegati»: server UDP primario, ADIF via UDP, TCP (N1MM); sotto, il riquadro Integrazioni. */
+export const LINK_GROUPS: readonly SettingGroup[] = [
   {
     title: 'ens.g.udp',
+    help: 'ens.udp.help',
     rows: [
       { key: 'UDPServer', kind: 'text' },
       { key: 'UDPServerPort', kind: 'num' },
@@ -120,4 +97,58 @@ export const REPORT_GROUPS: readonly SettingGroup[] = [
       { key: 'ApplyFiltersToUDPmessages', kind: 'bool' },
     ],
   },
+  {
+    title: 'ens.g.adif',
+    help: 'ens.rep.help',
+    rows: [
+      { key: 'EnableUDP2adifBroadcast', kind: 'bool' },
+      { key: 'UDP2Server', kind: 'text' },
+      { key: 'UDP2ServerPort', kind: 'num' },
+    ],
+  },
+  {
+    title: 'ens.g.tcp',
+    help: 'ens.tcp.help',
+    rows: [
+      { key: 'EnableTCPConnection', kind: 'bool' },
+      { key: 'TCPServer', kind: 'text' },
+      { key: 'TCPServerPort', kind: 'num' },
+    ],
+  },
 ];
+
+/** Gli spot (PSK Reporter e DXSummit): stanno nella scheda «Servizi online». */
+export const SPOT_GROUP: SettingGroup = {
+  title: 'ens.g.spot',
+  help: 'ens.dxsummit.help',
+  rows: [
+    { key: 'PSKReporter', kind: 'bool' },
+    { key: 'AllowSpotsDXSummit', kind: 'bool' },
+  ],
+};
+
+/** Come si registra il QSO e il file ALL.TXT: stanno nella scheda «Sequenza». */
+export const QSO_LOG_GROUPS: readonly SettingGroup[] = [
+  {
+    title: 'ens.g.log',
+    rows: [
+      { key: 'PromptToLog', kind: 'bool' },
+      { key: 'AutoQSOLogging', kind: 'bool' },
+      { key: 'toRTTY', kind: 'bool' },
+      { key: 'dBtoComments', kind: 'bool' },
+      { key: 'distanceToComments', kind: 'bool' },
+      { key: 'ClearCallGrid', kind: 'bool' },
+      { key: 'ClearCallGridExit', kind: 'bool' },
+    ],
+  },
+  {
+    title: 'ens.g.alltxt',
+    rows: [
+      { key: 'WriteDecodedALLTXT', kind: 'bool' },
+      { key: 'WriteDecodedDebugALLTXT', kind: 'bool' },
+    ],
+  },
+];
+
+/** Tutte le voci che una volta stavano nella scheda Segnalazioni (per i controlli e la ricerca). */
+export const REPORT_GROUPS: readonly SettingGroup[] = [...LINK_GROUPS, ...LOG_SERVICE_GROUPS, SPOT_GROUP, ...QSO_LOG_GROUPS];
