@@ -2597,17 +2597,24 @@
   color: #7a1fa2;
 }
 
+/* DXpedition in onda: giallo fluo pieno, si vede subito (richiesta del proprietario) */
+.cluster-row--dxped,
+.cluster-row--dxped td {
+  background: #e6ff00 !important;
+  color: #1a1a00 !important;
+  font-weight: 700;
+}
+
 .cluster-row--dxped {
-  box-shadow: inset 4px 0 0 #ff8a3d;
-  background: color-mix(in srgb, #ff8a3d 18%, transparent);
+  box-shadow: inset 5px 0 0 #b8cc00;
 }
 
 .cluster-dxped-tag {
   margin-left: 0.35rem;
   padding: 0 0.3rem;
   border-radius: 0.3rem;
-  background: #ff8a3d;
-  color: #2a1100;
+  background: #1a1a00;
+  color: #e6ff00;
   font-size: 0.62rem;
   font-weight: 700;
   vertical-align: middle;
