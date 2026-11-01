@@ -192,17 +192,18 @@ export function Live() {
     }
   };
 
-  const attempt = async (action: () => Promise<void>, done: string) => {
+  const attempt = async (action: () => Promise<void>, done: string | null) => {
     try {
       await action();
-      toast(done, 'ok');
+      if (done) toast(done, 'ok');
     } catch (error) {
       toast(replyErrorMessage(error, t), 'error');
     }
   };
 
-  const setFrequency = (which: string, hz: number, send: (hz: number) => Promise<void>) =>
-    attempt(() => send(hz), t('note.freqSet', { which, hz }));
+  const setFrequency = (_which: string, hz: number, send: (hz: number) => Promise<void>) =>
+    // spostando le barre si mandano tante frequenze di fila: nessun avviso se va bene (la barra si vede gia' spostata), solo gli errori
+    attempt(() => send(hz), null);
   // il pulsante scelto si accende subito e resta cosi' finche' il motore non conferma; se il comando fallisce torna com'era
   const pickMode = (mode: string) => {
     const before = useStation.getState().status?.mode;
