@@ -95,12 +95,16 @@ describe('Settings tabs', () => {
   it('has a separate tab for each configuration function, in the usual order, and shows one at a time', () => {
     open();
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
-    // due righe ordinate per tipo; Radio CAT e' dentro Radio
+    // sei gruppi per argomento; Radio CAT e' dentro Radio, Avanzate non c'e' piu'
     expect(names).toEqual([
-      'Generali', 'Radio', 'Audio', 'Cascata', 'Frequenze', 'Bande', 'Sequenza', 'Macro TX', 'Programmazione', 'Filtri', 'Avanzate',
-      'Notifiche', 'Desiderati', 'DXCC', 'DX Cluster', 'Segnalazioni', 'Servizi online', 'Orologio', 'Accesso', 'Finestre', 'Aggiornamenti', 'Informazioni',
+      'Generali', 'Radio', 'Audio', 'Orologio',
+      'Cascata', 'Filtri', 'Bande', 'Frequenze',
+      'Sequenza', 'Macro TX', 'Programmazione',
+      'Notifiche', 'Desiderati', 'DXCC',
+      'DX Cluster', 'Servizi online', 'Servizi di log', 'Programmi collegati',
+      'Accesso', 'Finestre', 'Aggiornamenti', 'Informazioni',
     ]);
-    expect(screen.getAllByRole('tablist')).toHaveLength(2);
+    expect(screen.getAllByRole('tablist')).toHaveLength(6);
     expect(screen.getByRole('tab', { name: 'Generali' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Generali');
     goTo('Finestre');
@@ -152,30 +156,43 @@ describe('Radio, Audio, Reports and Advanced', () => {
 
   it('shows the real the engine values: UDP server and port, audio device, decoding depth', async () => {
     open();
-    goTo('Segnalazioni');
+    goTo('Programmi collegati');
     expect(await screen.findByText('Server UDP primario: porta')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2334')).toBeInTheDocument();
     expect(screen.getByText('solo CQ')).toBeInTheDocument();
     goTo('Audio');
     expect(await screen.findByDisplayValue('Microfono di prova')).toBeInTheDocument();
-    goTo('Avanzate');
+    goTo('Filtri');
     expect(await screen.findByDisplayValue('profonda')).toBeInTheDocument();
   });
 
   it('shows the export targets, UDP, countries and QSOs', async () => {
     open();
-    goTo('Segnalazioni');
+    goTo('Programmi collegati');
     expect(await screen.findByText('127.0.0.1:2239')).toBeInTheDocument();
     expect(screen.getByText('127.0.0.1:2334')).toBeInTheDocument();
     expect(screen.getByText('346 paesi')).toBeInTheDocument();
     expect(screen.getByText('2056 QSO')).toBeInTheDocument();
   });
 
-  it('explains that the decoder parameters live in the engine and links the guide', () => {
+  it('opens Filters from the old «advanced» link', () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Settings initialTab="advanced" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole('tab', { name: 'Filtri' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Avanzate' })).toBeNull();
+  });
+
+  it('the search finds the settings moved to another tab', () => {
     open();
-    goTo('Avanzate');
-    expect(screen.getAllByText(/motore/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: 'Leggi la guida' })).toHaveAttribute('href', '#/guida');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ClubLog' } });
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Servizi di log']);
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'DXSummit' } });
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toContain('Servizi online');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'monitoraggio Tx' } });
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toContain('Sequenza');
   });
 });
 

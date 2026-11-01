@@ -1,6 +1,12 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni riordinate per argomento**: il menu ha sei gruppi con titolo, Stazione (Generali, Radio, Audio, Orologio), Ricezione (Cascata, Filtri, Bande, Frequenze), Trasmissione e QSO (Sequenza, Macro TX, Programmazione), Avvisi (Notifiche, Desiderati, DXCC), Rete e log (DX Cluster, Servizi online, Servizi di log, Programmi collegati) e Sistema (Accesso, Finestre, Aggiornamenti, Informazioni). La pagina Avanzate non c'e' piu' (il vecchio indirizzo apre Filtri). La ricerca trova anche le singole voci, comprese quelle spostate.
+- **Nuova pagina «Servizi di log»**: eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com e LoTW, un riquadro per servizio con interruttore, campi, «Prova» e stato dell'ultimo invio; le spiegazioni sono nel «?» del titolo.
+- **«Segnalazioni» diventa «Programmi collegati»**: server UDP primario, ADIF via UDP, server TCP (N1MM) e Integrazioni. Gli spot su PSK Reporter e DXSummit sono in Servizi online; registrazione del QSO e ALL.TXT in Sequenza.
+- **Voci spostate dove servono**: monitoraggio Tx, cambi di frequenza Tx, limite ROS, full duplex, Wait features, verifica del Fox e Band Hopping passano da Generali a Sequenza; l'avvio della decodifica FT8 passa in Filtri (riquadro «Decodifica»).
+- **Niente piu' riquadri «Non disponibili in Aurora»**: le voci di JTDX che Aurora non usa non compaiono in nessuna pagina.
+- **Errori del salvataggio chiari**: quando un valore e' rifiutato compare il motivo vero accanto alla voce, con il suo nome (per esempio «Server UDP2: serve un indirizzo IP (o localhost)»), non piu' un messaggio generico in fondo alla pagina. Un valore vecchio e incoerente di un servizio (per esempio importato da JTDX) non blocca piu' il salvataggio delle altre voci: i controlli fra piu' voci valgono solo per il servizio che si sta cambiando.
 
 ## 0.11.59 - 2026-11-01
 - **DX Cluster**: le DXpedition sono solo evidenziate nel colore scelto, senza l'etichetta «DXped» che tagliava il nominativo.

@@ -9,11 +9,15 @@ vi.mock('../api/client', () => ({
   putEngineSettings: vi.fn(),
   postUploadTest: vi.fn(),
   getEngineConfig: vi.fn(),
+  getOnline: vi.fn(() => Promise.resolve({ psk: false, solar: false })),
+  putOnline: vi.fn(),
   applyEngineConfig: vi.fn(),
   ApiError: class extends Error {
     constructor(
       readonly status: number,
       readonly code: string,
+      readonly retryAfterSecs?: number,
+      readonly detail?: string,
     ) {
       super(code);
     }
@@ -24,6 +28,8 @@ import type { EngineSettings } from '../api/schemas';
 import { translate } from '../i18n';
 import { EngineValues } from './EngineValues';
 import { ReportsTab } from './InfoTabs';
+import { LogServicesTab } from './LogServicesTab';
+import { OnlineTab } from './OnlineTab';
 
 const it_ = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate('it', key, vars);
 
@@ -86,39 +92,40 @@ beforeEach(() => {
   vi.mocked(api.getEngineConfig).mockReset().mockResolvedValue({});
 });
 
-describe('Reports tab with the built-in engine', () => {
-  it('has the same five groups as JTDX, with the voices of its screen', async () => {
+describe('Connected programs tab with the built-in engine', () => {
+  it('has only the links to other programs, in order, and no box of unavailable items', async () => {
     render(<ReportsTab />);
-    for (const title of ['ens.g.log', 'ens.g.adif', 'ens.g.alltxt', 'ens.g.net', 'ens.g.udp'] as const) expect(await screen.findByText(it_(title))).toBeInTheDocument();
-    for (const key of ['PromptToLog', 'toRTTY', 'dBtoComments', 'ClearCallGridExit', 'TCPServer', 'UDP2Server', 'WriteDecodedDebugALLTXT', 'EQSLNick', 'PSKReporter', 'AllowSpotsDXSummit', 'UDPServer', 'preventFalseUDPspots', 'ApplyFiltersToUDPmessages'] as const) {
-      expect(screen.getByLabelText(it_(`ens.k.${key}`))).toBeInTheDocument();
-    }
-    // niente del vecchio testo «file del motore» e «riavvia il motore»
+    expect(await screen.findByText(it_('ens.g.adif'))).toBeInTheDocument();
+    expect(screen.getByLabelText(it_('ens.k.UDP2Server'))).toHaveValue('127.0.0.1');
+    expect(screen.getByLabelText(it_('ens.k.EnableUDP2adifBroadcast'))).toBeChecked();
+    // le voci che Aurora non usa non compaiono, neanche spente
+    for (const key of ['TCPServer', 'UDPServer', 'PSKReporter', 'EQSLUser', 'PromptToLog', 'WriteDecodedALLTXT'] as const) expect(screen.queryByLabelText(it_(`ens.k.${key}`))).toBeNull();
+    expect(screen.queryByText(/Non disponibili/)).toBeNull();
+    // i servizi di log e gli spot hanno le loro schede
+    expect(screen.queryByText(it_('ens.g.qrz'))).toBeNull();
+    expect(screen.queryByLabelText(it_('ens.k.AllowSpotsDXSummit'))).toBeNull();
     expect(screen.queryByText(/riavvia il motore/i)).toBeNull();
-    expect(screen.queryByText(/AURORA_EXPORT_UDP/)).toBeNull();
     expect(api.getEngineConfig).not.toHaveBeenCalled();
   });
 
-  it('has the DXSummit spotting as a working voice, on, with the last send and the way to spot', async () => {
-    render(<ReportsTab />);
+  it('has the DXSummit spotting in Online services, on, with the last send', async () => {
+    render(<OnlineTab />);
     const box = await screen.findByLabelText(it_('ens.k.AllowSpotsDXSummit'));
     expect(box).toBeEnabled();
     expect(box).toBeChecked();
     expect(screen.getByTestId('status-dxsummit')).toHaveTextContent(/spot inviato: DL1ABC su 14075.5 kHz/);
-    expect(screen.getByText(it_('ens.dxsummit.help'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(it_('ens.k.PSKReporter'))).toBeNull();
   });
 
-  it('shows what Aurora cannot do yet as switched off, with the reason, and never as a working control', async () => {
+  it('shows the real reason of a refusal next to the field, with the name of the field', async () => {
+    vi.mocked(api.putEngineSettings).mockRejectedValue(new (api.ApiError as unknown as new (s: number, c: string, r?: number, d?: string) => Error)(400, 'bad_setting', undefined, "UDP2Server: serve un indirizzo IP (o localhost)"));
     render(<ReportsTab />);
-    const psk = await screen.findByLabelText(it_('ens.k.PSKReporter'));
-    expect(psk).toBeDisabled();
-    expect(psk).not.toBeChecked();
-    expect(screen.getAllByText(it_('ens.r.psk')).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(it_('ens.k.TCPServerPort'))).toBeDisabled();
-    expect(screen.getByLabelText(it_('ens.k.EQSLPasswd'))).toBeDisabled();
-    expect(screen.getByLabelText(it_('ens.k.UDP2Server'))).toBeEnabled();
-    expect(screen.getByLabelText(it_('ens.k.UDP2Server'))).toHaveValue('127.0.0.1');
-    expect(screen.getByLabelText(it_('ens.k.EnableUDP2adifBroadcast'))).toBeChecked();
+    fireEvent.change(await screen.findByLabelText(it_('ens.k.UDP2Server')), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: it_('ens.apply') }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(`${it_('ens.k.UDP2Server')}: serve un indirizzo IP (o localhost)`);
+    expect(screen.getByLabelText(it_('ens.k.UDP2Server')).closest('label')).toContainElement(alert);
+    expect(screen.queryByText(it_('ens.err.bad'))).toBeNull();
   });
 
   it('saves a change at once, with no restart, and shows the new values', async () => {
@@ -151,9 +158,10 @@ describe('Other tabs with the built-in engine', () => {
     expect(screen.queryByLabelText(it_('jx.TxWatchdogTimer'))).toBeNull();
   });
 
-  it('Radio has nothing of another program’s file: only the explanation', async () => {
+  it('Radio has nothing of another program’s file and no list of unavailable items', async () => {
     render(<EngineValues group="radio" />);
-    expect(await screen.findByText(it_('ens.hidden', { n: 8 }))).toBeInTheDocument();
+    expect(await screen.findByText(it_('ens.title'))).toBeInTheDocument();
+    expect(screen.queryByText(/Non disponibili/)).toBeNull();
     expect(screen.queryByRole('button', { name: it_('ens.apply') })).toBeNull();
   });
 
@@ -181,12 +189,13 @@ describe('Direct QSO upload with the built-in engine', () => {
   it('shows the switch, the saved key, the queue and the test button with its answer', async () => {
     vi.mocked(api.getEngineSettings).mockResolvedValue(withQrz());
     vi.mocked(api.postUploadTest).mockReset().mockResolvedValue('chiave valida, logbook K1ABC');
-    render(<ReportsTab />);
+    render(<LogServicesTab />);
     expect(await screen.findByText(it_('ens.g.qrz'))).toBeInTheDocument();
     expect(screen.getByLabelText(it_('ens.k.QRZLogSend'))).toBeChecked();
     expect(screen.getByLabelText(it_('ens.k.QRZLogKey'))).toHaveAttribute('placeholder', it_('ens.pw.saved'));
     expect(screen.getByTestId('status-qrz')).toHaveTextContent(it_('ens.st.pending', { n: 2 }));
-    expect(screen.getByText(it_('ens.up.qrz.help'))).toBeInTheDocument();
+    // la spiegazione lunga sta nel «?», non sotto i campi
+    expect(screen.queryByText(it_('ens.up.qrz.help'))).toBeNull();
     fireEvent.click(screen.getByTestId('test-qrz'));
     await waitFor(() => expect(api.postUploadTest).toHaveBeenCalledWith('qrz'));
     expect(await screen.findByText(/chiave valida, logbook K1ABC/)).toBeInTheDocument();

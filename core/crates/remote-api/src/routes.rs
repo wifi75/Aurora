@@ -1160,7 +1160,8 @@ async fn engine_settings_put(State(state): State<AppState>, _: Authed, Peer(peer
             tracing::warn!("impostazioni del motore non salvate: {e}");
             Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_settings_write"))
         }
-        Err(_) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting")),
+        // il perche' vero («UDP2Server: serve un indirizzo…»): l'interfaccia lo mostra accanto alla voce
+        Err(e) => Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting").with_message(e.to_string())),
     }
 }
 
