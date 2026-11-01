@@ -248,6 +248,9 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     hound_calling_hz: Option<u32>,
     /// L'ultima frequenza della radio che il motore ha visto (serve a sapere se si e' su una frequenza comune dell'FT8).
     last_dial_hz: u64,
+    /// L'ultima trasmissione consegnata alla catena (testo inviato, se e' testo libero, periodo, inizio): serve a rimodularla a un'altra frequenza
+    /// quando la barra Tx si sposta durante la trasmissione (JTDX con `TxQSYAllowed`: il tono cambia subito).
+    on_air_tx: Option<(String, bool, Parity, u64)>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -292,7 +295,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0 };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -369,6 +372,32 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     fn halt_tx(&mut self) {
         self.port.halt();
         self.notes.clear();
+        self.on_air_tx = None;
+    }
+
+    /// La barra Tx si e' spostata mentre si trasmette: lo stesso messaggio si rimodula alla nuova frequenza e sostituisce quello in corso, dal
+    /// punto in cui si trova (JTDX con «consenti cambi di frequenza Tx durante la trasmissione»: il tono si sposta subito).
+    fn retune_on_air(&mut self, hz: u32) -> Vec<String> {
+        let Some((text, free, parity, start_ms)) = self.on_air_tx.clone() else { return Vec::new() };
+        let mode = match self.mode {
+            Mode::Ft8 => tx_native::Mode::Ft8,
+            Mode::Ft4 => tx_native::Mode::Ft4,
+            Mode::Jt65 => tx_native::Mode::Jt65,
+            Mode::Jt9 => tx_native::Mode::Jt9,
+        };
+        match self.encode(&text, hz, free) {
+            Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
+                Ok(true) => {
+                    self.opts.tx_freq_hz = hz;
+                    self.seq.set_options(self.opts.clone());
+                    self.notes.push(TxNote { start_ms, mode: self.mode, tx_df: hz, text: sent.clone(), retransmit: true });
+                    vec![format!("frequenza Tx spostata durante la trasmissione: {sent} ora a {hz} Hz")]
+                }
+                Ok(false) => Vec::new(),
+                Err(e) => vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")],
+            },
+            Err(e) => vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")],
+        }
     }
 
     /// Le trasmissioni il cui periodo e' cominciato entro `now_ms`: si tolgono dall'elenco e si restituiscono (per scriverle in `ALL.TXT`).
@@ -562,10 +591,13 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::SetTxFreq(hz) => {
                 if (100..=5000).contains(&hz) {
-                    self.controls.tx_df.store(hz, Ordering::Relaxed);
+                    let before = self.controls.tx_df.swap(hz, Ordering::Relaxed);
                     // con Tx = Rx (Split spento) la ricezione segue la trasmissione, come con il blocco di JTDX
                     if !self.controls.switch_on("split") {
                         self.controls.rx_df.store(hz, Ordering::Relaxed);
+                    }
+                    if before != hz && self.controls.transmitting.load(Ordering::Relaxed) {
+                        log.extend(self.retune_on_air(hz));
                     }
                 } else {
                     log.push(format!("frequenza Tx fuori campo: {hz} Hz"));
@@ -969,6 +1001,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Jt65 => tx_native::Mode::Jt65,
                     Mode::Jt9 => tx_native::Mode::Jt9,
                 };
+                let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
                 let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
                 if already {
@@ -979,6 +1012,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                                 *on_air = Some(sent.clone());
                             }
                             self.notes.push(note);
+                            self.on_air_tx = Some(keep);
                             log.push(format!("ritrasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()));
                             return log;
                         }
@@ -995,6 +1029,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                             *on_air = Some(sent.clone());
                         }
                         self.notes.push(TxNote { retransmit: false, ..note });
+                        self.on_air_tx = Some(keep);
                         log.push(format!("trasmetto (Tx{n}) {} a {freq} Hz: {sent}", self.mode.name()))
                     }
                     Err(e) => log.push(format!("trasmissione non partita: {e}")),

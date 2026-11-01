@@ -25,7 +25,7 @@ const BIG_STEP = 50;
 
 /**
  * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione, larghe quanto il segnale del modo.
- * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
+ * Si trascinano; un clic sinistro sulla cascata sposta la verde, il tasto destro (o Maiusc+clic) la rossa, anche durante la trasmissione.
  */
 export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, filter = null, showBars = true, showFreq = false, onRx, onTx }: Props) {
   const t = useT();
@@ -39,8 +39,8 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
     return hzAt((clientX - r.left) / r.width, fMinHz, fMaxHz);
   };
 
-  const drag = (apply: (hz: number) => void) => (e: ReactPointerEvent<HTMLElement>) => {
-    if (e.button !== 0) return;
+  const drag = (apply: (hz: number) => void, anyButton = false) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.button !== 0 && !(anyButton && e.button === 2)) return;
     e.stopPropagation();
     const handle = e.currentTarget;
     handle.setPointerCapture(e.pointerId);
@@ -99,11 +99,14 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
         }}
         onPointerLeave={() => setHover(null)}
         onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          const hz = hzFromPointer(e.clientX);
-          if (e.shiftKey) onTx(hz);
-          else onRx(hz);
+          // come JTDX: tasto sinistro = Rx, tasto destro (o Maiusc+clic) = Tx; tenendo premuto e trascinando la barra segue il puntatore.
+          // Vale anche mentre si trasmette: il motore sposta subito il tono (con «cambi di frequenza Tx durante la trasmissione» acceso)
+          if (e.button !== 0 && e.button !== 2) return;
+          const apply = e.button === 2 || e.shiftKey ? onTx : onRx;
+          apply(hzFromPointer(e.clientX));
+          drag(apply, true)(e);
         }}
+        onContextMenu={(e) => e.preventDefault()}
       />
       {filter != null && rxHz != null ? (
         <>

@@ -33,7 +33,7 @@ export function DisplayFrame({ width, height, radius = 14, screen, inset = 8, ar
   return (
     <svg className={`rd-svg${stretch ? ' rd-svg--stretch' : ''}`} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel} preserveAspectRatio={stretch ? 'none' : 'xMidYMid meet'}>
       <rect className="rd-bezel" x="1" y="1" width={width - 2} height={height - 2} rx={radius} />
-      <rect x={inset} y={inset} width={width - inset * 2} height={height - inset * 2} rx={radius * 0.65} fill={screen} />
+      <rect x={inset} y={inset} width={width - inset * 2} height={height - inset * 2} rx={radius * 0.65} fill={screen} className="rd-screen" />
       {children}
     </svg>
   );

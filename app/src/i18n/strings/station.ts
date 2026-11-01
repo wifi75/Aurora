@@ -242,12 +242,12 @@ export const stationStrings = {
     'Todas as mensagens descodificadas, as mais recentes no topo. Um clique seleciona; um duplo clique chama essa estação e a Aurora transmite no próximo intervalo livre (a transmissão tem de estar ativa).',
   ],
   'tip.panel.waterfall': [
-    "Spettro audio nel tempo. Clic: frequenza Rx (verde). Maiusc+clic: frequenza Tx (rossa).",
-    'Audio spectrum over time. Click: Rx frequency (green). Shift+click: Tx frequency (red).',
-    'Audiospektrum über die Zeit. Klick: Rx-Frequenz (grün). Umschalt+Klick: Tx-Frequenz (rot).',
-    "Spectre audio dans le temps. Clic : fréquence Rx (vert). Maj+clic : fréquence Tx (rouge).",
-    'Espectro de audio en el tiempo. Clic: frecuencia Rx (verde). Mayús+clic: frecuencia Tx (roja).',
-    'Espectro de áudio no tempo. Clique: frequência Rx (verde). Shift+clique: frequência Tx (vermelha).',
+    "Spettro audio nel tempo. Tasto sinistro: frequenza Rx (verde). Tasto destro o Maiusc+clic: frequenza Tx (rossa), anche mentre trasmetti.",
+    'Audio spectrum over time. Left button: Rx frequency (green). Right button or Shift+click: Tx frequency (red), even while transmitting.',
+    'Audiospektrum über die Zeit. Linke Taste: Rx-Frequenz (grün). Rechte Taste oder Umschalt+Klick: Tx-Frequenz (rot), auch beim Senden.',
+    "Spectre audio dans le temps. Bouton gauche : fréquence Rx (vert). Bouton droit ou Maj+clic : fréquence Tx (rouge), même en émission.",
+    'Espectro de audio en el tiempo. Botón izquierdo: frecuencia Rx (verde). Botón derecho o Mayús+clic: frecuencia Tx (roja), también transmitiendo.',
+    'Espectro de áudio no tempo. Botão esquerdo: frequência Rx (verde). Botão direito ou Shift+clique: frequência Tx (vermelha), mesmo a transmitir.',
   ],
   'decode.empty': [
     'In ascolto: i messaggi compaiono qui',
