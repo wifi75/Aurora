@@ -2,6 +2,7 @@ import type { Entry } from '../core';
 
 /** Storico dei messaggi ricevuti. [it, en, de, fr, es, pt] */
 export const historyStrings = {
+  'nav.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
   'nav.history': ['Storico', 'History', 'Verlauf', 'Historique', 'Historial', 'Histórico'],
   'hist.title': ['Storico dei messaggi', 'Message history', 'Nachrichtenverlauf', 'Historique des messages', 'Historial de mensajes', 'Histórico de mensagens'],
   'hist.help': [

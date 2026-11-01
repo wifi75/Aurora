@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **«Log» nel menu in alto al posto di «Storico»**: apre tutti i QSO con filtri ed esportazione ADIF; il pulsante «Esporta ADIF» sparisce dalla pagina Stazione (resta il totale dei QSO). Lo storico dei messaggi ricevuti esce dal menu.
 - **Impostazioni riordinate per argomento**: il menu ha sei gruppi con titolo, Stazione (Generali, Radio, Audio, Orologio), Ricezione (Cascata, Filtri, Bande, Frequenze), Trasmissione e QSO (Sequenza, Macro TX, Programmazione), Avvisi (Notifiche, Desiderati, DXCC), Rete e log (DX Cluster, Servizi online, Servizi di log, Programmi collegati) e Sistema (Accesso, Finestre, Aggiornamenti, Informazioni). La pagina Avanzate non c'e' piu' (il vecchio indirizzo apre Filtri). La ricerca trova anche le singole voci, comprese quelle spostate.
 - **Nuova pagina «Servizi di log»**: eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com e LoTW, un riquadro per servizio con interruttore, campi, «Prova» e stato dell'ultimo invio; le spiegazioni sono nel «?» del titolo.
 - **«Segnalazioni» diventa «Programmi collegati»**: server UDP primario, ADIF via UDP, server TCP (N1MM) e Integrazioni. Gli spot su PSK Reporter e DXSummit sono in Servizi online; registrazione del QSO e ALL.TXT in Sequenza.

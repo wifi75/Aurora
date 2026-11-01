@@ -72,7 +72,7 @@ export function Log4omPanel() {
   );
 }
 
-/** Nella barra del pannello Log: quanti QSO e il pulsante per esportarli in ADIF (pagina di esportazione). */
+/** Nella barra del pannello Log: quanti QSO (l'esportazione ADIF sta nella pagina Log del menu in alto). */
 export function LogHeader() {
   const t = useT();
   const count = usePrefs((s) => s.prefs.log4omCount);
@@ -80,9 +80,6 @@ export function LogHeader() {
   return (
     <div className="dock-grip-extra dock-grip-extra--right" onPointerDown={(e) => e.stopPropagation()}>
       {log.data ? <span className="muted log4om-total">{t('log.total', { n: log.data.total })}</span> : null}
-      <a className="glass log4om-adif" href="#/esporta" title={t('logio.export.tip')}>
-        {t('logio.export')}
-      </a>
     </div>
   );
 }
