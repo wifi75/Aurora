@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.56 - 2026-11-01
 - **Momento di avvio della decodifica FT8** (WSJT-X 3.3, `m_ft8DecoderStart`/`fixStop`): nuova voce «Avvio della decodifica FT8» nella scheda Generali, Presto (13,82 s), Normale (14,11 s, di fabbrica come WSJT-X) o Tardi (14,40 s); il periodo si consegna al decoder in quel momento (prima sempre a 14,2 s). FT4 e JT invariati.
 - **Full duplex per i satelliti** (WSJT-X, `actionFull_Duplex_Mode`): spento (di fabbrica) il periodo in cui si e' trasmesso non si decodifica piu', come WSJT-X che spegne il monitor in trasmissione; acceso si decodifica e si mostra, ma la sequenza non reagisce a quei messaggi (`fullDuplexBlocked`).
 - **Wait and Reply e Wait and Call** (WSJT-X 3.3, `processWaitReplyCall`, `planWaitReplyCall`, `WaitFeaturePolicy.hpp`): con un DX impostato e Abilita Tx spento, se il DX ti chiama il QSO riprende da solo; nuovo pulsante «Wait and Call» tra gli interruttori del QSO: quando il DX chiama CQ o chiude il suo QSO (RR73, RRR, 73) lo si chiama da soli per 6,2 periodi, poi la trasmissione si spegne se non ha risposto. Voce «Wait and Reply / Wait and Call» nella scheda Generali, accesa di fabbrica come in WSJT-X.

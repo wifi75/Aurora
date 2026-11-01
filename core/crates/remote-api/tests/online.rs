@@ -43,7 +43,7 @@ async fn starts_off_and_asks_nothing_until_turned_on() {
     let (s, path) = with_service("off");
     let cookie = cookie_for(&s);
     let app = router(&s);
-    assert_eq!(body_json(call(&app, req(Method::GET, "/api/v1/online").cookie(&cookie)).await).await, json!({ "psk": false, "solar": false }));
+    assert_eq!(body_json(call(&app, req(Method::GET, "/api/v1/online").cookie(&cookie)).await).await, json!({ "psk": false, "solar": false, "dxped": false }));
     let psk = body_json(call(&app, req(Method::GET, "/api/v1/online/psk").cookie(&cookie)).await).await;
     assert_eq!((psk["enabled"].as_bool(), psk["psk"]["reports"].as_array().map(Vec::len)), (Some(false), Some(0)));
     let refreshed = body_json(call(&app, req(Method::POST, "/api/v1/online/refresh").cookie(&cookie)).await).await;
@@ -57,7 +57,7 @@ async fn turning_propagation_on_and_refreshing_brings_the_data() {
     let cookie = cookie_for(&s);
     let app = router(&s);
     let put = call(&app, req(Method::PUT, "/api/v1/online").cookie(&cookie).json(&json!({ "solar": true }).to_string())).await;
-    assert_eq!(body_json(put).await, json!({ "psk": false, "solar": true }));
+    assert_eq!(body_json(put).await, json!({ "psk": false, "solar": true, "dxped": false }));
     let refreshed = body_json(call(&app, req(Method::POST, "/api/v1/online/refresh").cookie(&cookie)).await).await;
     assert_eq!(refreshed["asked"], true);
     let solar = body_json(call(&app, req(Method::GET, "/api/v1/online/solar").cookie(&cookie)).await).await;
