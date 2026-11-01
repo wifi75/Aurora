@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.60',
+    released: '2026-11-01T23:00:00Z',
+    kind: 'changed',
+    title: ['Impostazioni in ordine', 'Settings in order', 'Einstellungen geordnet', 'Réglages en ordre', 'Ajustes en orden', 'Definições em ordem'],
+    text: [
+      'Il menu è diviso in sei gruppi (Stazione, Ricezione, Trasmissione e QSO, Avvisi, Rete e log, Sistema), ogni voce sta nella sua pagina, c’è la nuova pagina Servizi di log e sparisce Avanzate. Se un valore non va, l’errore compare accanto al campo giusto.',
+      'The menu has six groups (Station, Receive, Transmit and QSO, Alerts, Network and logs, System), every item sits on its page, there is a new Log services page and Advanced is gone. If a value is wrong, the error shows next to the right field.',
+      'Das Menü hat sechs Gruppen (Station, Empfang, Senden und QSO, Hinweise, Netz und Logs, System), jede Einstellung steht auf ihrer Seite, es gibt die neue Seite Log-Dienste und Erweitert entfällt. Stimmt ein Wert nicht, erscheint der Fehler beim richtigen Feld.',
+      'Le menu a six groupes (Station, Réception, Émission et QSO, Alertes, Réseau et logs, Système), chaque réglage est sur sa page, il y a une nouvelle page Services de log et Avancés disparaît. Si une valeur ne va pas, l’erreur s’affiche à côté du bon champ.',
+      'El menú tiene seis grupos (Estación, Recepción, Transmisión y QSO, Avisos, Red y logs, Sistema), cada ajuste está en su página, hay una nueva página Servicios de log y desaparece Avanzados. Si un valor no vale, el error aparece junto al campo correcto.',
+      'O menu tem seis grupos (Estação, Receção, Transmissão e QSO, Avisos, Rede e logs, Sistema), cada definição está na sua página, há uma nova página Serviços de log e Avançadas desaparece. Se um valor não estiver certo, o erro aparece junto ao campo certo.',
+    ],
+  },
+  {
+    version: '0.11.60',
+    released: '2026-11-01T23:00:00Z',
+    kind: 'changed',
+    title: ['«Log» nel menu in alto', '“Log” in the top menu', '„Log“ im Menü oben', '« Journal » dans le menu', '«Log» en el menú superior', '«Log» no menu de cima'],
+    text: [
+      'Al posto di «Storico» c’è «Log»: tutti i tuoi QSO con ricerca ed esportazione ADIF. Il pulsante Esporta ADIF esce dalla pagina Stazione.',
+      '“Log” replaces “History”: all your QSOs with search and ADIF export. The Export ADIF button leaves the Station page.',
+      '„Log“ ersetzt „Verlauf“: alle deine QSOs mit Suche und ADIF-Export. Die Taste ADIF exportieren verschwindet von der Seite Station.',
+      '« Journal » remplace « Historique » : tous tes QSO avec recherche et export ADIF. Le bouton Exporter ADIF quitte la page Station.',
+      '«Log» sustituye a «Historial»: todos tus QSO con búsqueda y exportación ADIF. El botón Exportar ADIF sale de la página Estación.',
+      '«Log» substitui «Histórico»: todos os teus QSO com pesquisa e exportação ADIF. O botão Exportar ADIF sai da página Estação.',
+    ],
+  },
+  {
     version: '0.11.59',
     released: '2026-11-01T15:21:41Z',
     kind: 'changed',
@@ -549,34 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Plus de « Appliquer » ni « Enregistrer » : chaque modification est enregistrée après une courte pause et aussi en quittant la page. Avant, par exemple, « Lire aussi les autres données » se perdait en changeant de page.',
       'Ya no hay «Aplicar» ni «Guardar»: cada cambio se guarda tras una breve pausa y también al salir de la página. Antes, por ejemplo, «Leer también los demás datos» se perdía al cambiar de página.',
       'Já não há «Aplicar» nem «Guardar»: cada alteração é guardada após uma breve pausa e também ao sair da página. Antes, por exemplo, «Ler também os outros dados» perdia-se ao mudar de página.',
-    ],
-  },
-  {
-    version: '0.11.48',
-    released: '2026-11-01T09:03:53Z',
-    kind: 'new',
-    title: ['Pagina Novità', 'News page', 'Seite „Neuigkeiten“', 'Page Nouveautés', 'Página de novedades', 'Página de novidades'],
-    text: [
-      'Dopo la Guida c’è il pulsante Novità: le ultime 40 funzioni aggiunte, modificate o corrette, con data e ora del rilascio.',
-      'After the Guide there is a News button: the latest 40 features added, changed or fixed, with the release date and time.',
-      'Nach der Anleitung gibt es die Schaltfläche Neuigkeiten: die letzten 40 neuen, geänderten oder korrigierten Funktionen mit Datum und Uhrzeit der Veröffentlichung.',
-      'Après le Guide, un bouton Nouveautés : les 40 dernières fonctions ajoutées, modifiées ou corrigées, avec la date et l’heure de publication.',
-      'Tras la Guía hay un botón Novedades: las últimas 40 funciones añadidas, modificadas o corregidas, con la fecha y hora de publicación.',
-      'Depois do Guia há o botão Novidades: as últimas 40 funções adicionadas, alteradas ou corrigidas, com a data e a hora da publicação.',
-    ],
-  },
-  {
-    version: '0.11.48',
-    released: '2026-11-01T09:03:53Z',
-    kind: 'new',
-    title: ['Messaggi toast personalizzabili e immediati', 'Customisable, instant toast messages', 'Anpassbare, sofortige Toast-Meldungen', 'Messages toast personnalisables et immédiats', 'Mensajes toast personalizables e inmediatos', 'Mensagens toast personalizáveis e imediatas'],
-    text: [
-      'In Impostazioni > Notifiche scegli quali avvisi mostrare, per quanti secondi, dove (in alto, a destra, in basso) e di che dimensione. L’avviso compare subito al clic.',
-      'In Settings > Notifications choose which notices to show, for how long, where (top, right, bottom) and how big. The notice appears at once on click.',
-      'Unter Einstellungen > Benachrichtigungen wählst du, welche Hinweise, wie lange, wo (oben, rechts, unten) und wie groß. Der Hinweis erscheint sofort beim Klick.',
-      'Dans Réglages > Notifications, choisissez quels avis, combien de secondes, où (haut, droite, bas) et quelle taille. L’avis apparaît dès le clic.',
-      'En Ajustes > Notificaciones eliges qué avisos, cuántos segundos, dónde (arriba, derecha, abajo) y de qué tamaño. El aviso aparece al instante con el clic.',
-      'Em Definições > Notificações escolhes que avisos, quantos segundos, onde (cima, direita, baixo) e que tamanho. O aviso aparece logo ao clicar.',
     ],
   },
 ];
