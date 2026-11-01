@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.58 - 2026-11-01
 - **DX Cluster**: gli spot delle DXpedition in onda secondo il calendario NG3K si evidenziano con l'etichetta «DXped», nel colore scelto in Impostazioni > DX Cluster (tavolozza fluo: giallo di base, verde, arancio, rosa, azzurro, viola, oppure un colore qualsiasi).
 - **Riquadro CQ**: con le DXpedition affiancate il messaggio CQ si legge intero, la colonna del paese si stringe.
 - **Barre Rx e Tx fluide**: trascinandole sulla cascata la barra segue subito il mouse e la frequenza va al motore al massimo ogni 80 ms (prima si aspettava la risposta del motore a ogni movimento e la barra andava a scatti).
