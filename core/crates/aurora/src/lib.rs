@@ -1649,6 +1649,7 @@ pub async fn run(
                         aurora_core::Command::SetReport { db } => engine_native::TxCommand::SetReport(db),
                         aurora_core::Command::Tune { on } => engine_native::TxCommand::Tune(on),
                         aurora_core::Command::LogQso => engine_native::TxCommand::LogQso,
+                        aurora_core::Command::Fox(cmd) => engine_native::TxCommand::Fox(cmd),
                     };
                     if let Err(e) = controls.send(mapped) {
                         tracing::warn!("comando di trasmissione non consegnato: {e}");

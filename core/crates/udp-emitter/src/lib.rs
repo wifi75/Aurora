@@ -430,7 +430,8 @@ impl Session {
             | Event::AudioLevel(_)
             | Event::BandChanged { .. }
             | Event::HighlightCallsign { .. }
-            | Event::ClearDecodes { .. } => Vec::new(),
+            | Event::ClearDecodes { .. }
+            | Event::Fox(_) => Vec::new(),
         }
     }
 

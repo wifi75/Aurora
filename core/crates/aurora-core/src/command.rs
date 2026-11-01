@@ -19,4 +19,21 @@ pub enum Command {
     Tune { on: bool },
     /// «Log QSO» a mano.
     LogQso,
+    /// Un comando della pagina Fox.
+    Fox(FoxCommand),
+}
+
+/// I comandi della pagina Fox.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FoxCommand {
+    /// Mette in coda un chiamante (in testa con `top`).
+    Select { call: String, top: bool },
+    /// Toglie un Hound dalla coda.
+    Unqueue { call: String },
+    /// Chiude un QSO in corso.
+    Drop { call: String },
+    /// Le scelte dell'operatore.
+    Options { slots: usize, more_cqs: bool, cq: String, free_text: Option<String>, auto_queue: bool },
+    /// Tutto da capo.
+    Reset,
 }

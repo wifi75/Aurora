@@ -165,6 +165,8 @@ pub enum TxCommand {
     SetReport(i32),
     /// «Log QSO» a mano: registra il QSO con la stazione in corso.
     LogQso,
+    /// Un comando della pagina Fox.
+    Fox(aurora_core::FoxCommand),
 }
 
 /// Cio' che la pagina mostra della trasmissione.
@@ -273,6 +275,10 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     hound_auto_for: Option<String>,
     /// I nominativi sentiti trasmettere come Fox di WSJT-X (`features::fox_sender`).
     foxes: Vec<String>,
+    /// Il modo Fox di WSJT-X (interruttore «fox»): coda dei Hound e trasmissione a piu' posti.
+    fox: crate::fox::Fox,
+    fox_logged: u64,
+    fox_last_tx: Vec<String>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -317,7 +323,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new() };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new() };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -760,6 +766,24 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 } else {
                     log.push("Log QSO: nessuna stazione in corso".to_string());
                 }
+            }            TxCommand::Fox(cmd) => {
+                use aurora_core::FoxCommand as F;
+                match cmd {
+                    F::Select { call, top } => {
+                        if !self.fox.select(&call, top) {
+                            log.push(format!("Fox: {call} non si puo' mettere in coda"));
+                        }
+                    }
+                    F::Unqueue { call } => {
+                        self.fox.unqueue(&call);
+                    }
+                    F::Drop { call } => self.fox.drop_qso(&call),
+                    F::Options { slots, more_cqs, cq, free_text, auto_queue } => {
+                        self.fox.opts = crate::fox::FoxOptions { slots: slots.clamp(1, crate::fox::MAX_SLOTS), more_cqs, cq, free_text, auto_queue };
+                    }
+                    F::Reset => self.fox.reset(),
+                }
+                self.publish_fox();
             }            TxCommand::Erase => self.recent.clear(),
             TxCommand::SetDx { call, grid, generate } => match self.seq.set_dx(call.as_deref(), grid.as_deref()) {
                 Ok(()) => {
@@ -841,6 +865,90 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         (qsos, log)
     }
 
+    /// Il periodo nel modo Fox: i messaggi ricevuti aggiornano chiamanti e QSO; prima di un periodo pari (la Fox trasmette nel primo,
+    /// come WSJT-X con `txFirst`) si prepara un'onda con un segnale FT8 per posto e si registrano i QSO chiusi con RR73.
+    fn fox_slot(&mut self, slot: Slot, slot_start_ms: u64, decoded: &[(String, i32, u32)], dial_hz: u64, band: &str, log: &mut Vec<String>) -> Vec<QsoRecord> {
+        self.fox.on_decodes(decoded);
+        let mut qsos = Vec::new();
+        let next = slot.next();
+        if self.seq.is_enabled() && next.is_even() && self.last_planned != Some(next) {
+            let (msgs, logged) = self.fox.plan_tx(band);
+            let tx_hz = self.controls.tx_df.load(Ordering::Relaxed);
+            let mut waves = Vec::new();
+            let mut sent = Vec::new();
+            for (i, m) in msgs.iter().enumerate() {
+                match self.encode(m, crate::fox::fox_wave_hz(tx_hz, i), false) {
+                    Ok((w, s)) => {
+                        waves.push(w);
+                        sent.push(s);
+                    }
+                    Err(e) => log.push(format!("Fox: messaggio non codificabile «{m}»: {e}")),
+                }
+            }
+            if !waves.is_empty() {
+                let mode = match self.mode {
+                    Mode::Ft8 => tx_native::Mode::Ft8,
+                    Mode::Ft4 => tx_native::Mode::Ft4,
+                    Mode::Jt65 => tx_native::Mode::Jt65,
+                    Mode::Jt9 => tx_native::Mode::Jt9,
+                };
+                self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
+                match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
+                    Ok(()) => {
+                        self.last_planned = Some(next);
+                        log.push(format!("Fox: trasmetto {} posti a {tx_hz} Hz: {}", sent.len(), sent.join(" | ")));
+                    }
+                    Err(e) => log.push(format!("Fox: trasmissione non partita: {e}")),
+                }
+            }
+            self.fox_last_tx = sent;
+            let start = next.start_ms(self.mode);
+            for l in logged {
+                self.fox_logged += 1;
+                qsos.push(QsoRecord {
+                    call: l.call,
+                    grid: l.grid,
+                    band: l.band,
+                    mode: self.mode.name().to_string(),
+                    freq_hz: dial_hz + u64::from(tx_hz),
+                    rst_sent: l.sent,
+                    rst_rcvd: l.rcvd,
+                    time_ms: (start % DAY_MS) as u32,
+                    time_on_unix_ms: slot_start_ms,
+                    time_off_unix_ms: start + 14_000,
+                    ..Default::default()
+                });
+            }
+        }
+        self.publish_fox();
+        qsos
+    }
+
+    /// Lo stato della Fox per l'interfaccia.
+    fn publish_fox(&self) {
+        let f = &self.fox;
+        let view = |c: &crate::fox::HoundCaller| aurora_core::FoxCallerView { call: c.call.clone(), grid: c.grid.clone(), snr: c.snr, freq_hz: c.freq_hz, age: c.age };
+        let snap = aurora_core::FoxSnapshot {
+            enabled: self.controls.switch_on("fox"),
+            slots: f.opts.slots,
+            more_cqs: f.opts.more_cqs,
+            cq: f.opts.cq.clone(),
+            auto_queue: f.opts.auto_queue,
+            callers: f.callers.values().map(view).collect(),
+            queue: f.queue.iter().map(|q| aurora_core::FoxCallerView { call: q.call.clone(), grid: q.grid.clone(), snr: q.report.parse().unwrap_or(0), freq_hz: 0, age: 0 }).collect(),
+            in_progress: f
+                .in_progress
+                .iter()
+                .filter_map(|c| f.qsos.get(c).map(|q| aurora_core::FoxQsoView { call: c.clone(), sent: q.sent.clone(), rcvd: q.rcvd.clone(), tries: q.ncall, rr73_sent: q.t_tx_rr73 >= 0 }))
+                .collect(),
+            tx: self.fox_last_tx.clone(),
+            periods: f.periods(),
+            logged: self.fox_logged,
+        };
+        if let Ok(mut v) = self.controls.fox_view.lock() {
+            *v = snap;
+        }
+    }
     /// Un periodo e' stato decodificato (o saltato: elenco vuoto). `slot_start_ms` e' l'inizio di quel periodo. Fa avanzare la sequenza e,
     /// se serve, prepara (o sostituisce) la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
@@ -848,6 +956,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.last_dial_hz = dial_hz;
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
+        // modo Fox: la sequenza normale non c'entra, la Fox lavora fino a 5 Hound per periodo
+        if self.controls.switch_on("fox") {
+            let qsos = self.fox_slot(slot, slot_start_ms, decoded, dial_hz, band, &mut log);
+            return (qsos, log);
+        }
         self.fire_clear_dx(now_s, &mut log);
         self.sync_rx_from_user();
         self.note_heard(slot, decoded);
@@ -2820,5 +2933,28 @@ mod tests {
         d.handle(TxCommand::Reply { decode_id: 9 }, BASE + 14.5);
         assert_eq!(controls.tx_df.load(Ordering::Relaxed), 1200);
         assert_eq!(d.handle(TxCommand::LogQso, BASE + 15.0).len(), 1);
+    }
+
+    /// Modo Fox: due Hound in coda, la Fox trasmette nel periodo pari un'onda con due segnali FT8 (si decodificano tutti e due); all'R+rapporto
+    /// del primo parte «RR73; ...» combinato e il QSO va a log.
+    #[test]
+    fn fox_mode_works_two_hounds_in_one_transmission() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("fox", true);
+        controls.tx_df.store(600, Ordering::Relaxed);
+        d.handle(TxCommand::Enable(true), BASE);
+        let odd = SLOT_MS + 15_000;
+        d.after_slot(odd, &[("IU3ABC K1ABC FN42".to_string(), -10, 1500), ("IU3ABC W9XYZ EN52".to_string(), -14, 1800)], BASE + 29.2, 14_090_000, "20m");
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "K1ABC".into(), top: false }), BASE + 29.5);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "W9XYZ".into(), top: false }), BASE + 29.6);
+        let (_, log) = d.after_slot(odd + 30_000, &[], BASE + 59.2, 14_090_000, "20m");
+        assert!(log.iter().any(|l| l.contains("Fox: trasmetto 2 posti")), "{log:?}");
+        let mut sent = last_text(&port);
+        sent.sort();
+        assert_eq!(sent, vec!["K1ABC IU3ABC -10".to_string(), "W9XYZ IU3ABC -14".to_string()], "{log:?}");
+        let (qsos, log) = d.after_slot(odd + 60_000, &[("IU3ABC K1ABC R-12".to_string(), -9, 1500)], BASE + 89.2, 14_090_000, "20m");
+        assert!(qsos.iter().any(|q| q.call == "K1ABC" && q.rst_rcvd == "-12"), "{log:?}");
+        assert!(last_text(&port).iter().any(|t| t.starts_with("K1ABC RR73; W9XYZ")), "{:?}", last_text(&port));
+        assert_eq!(controls.fox_view.lock().expect("fox").logged, 1);
     }
 }

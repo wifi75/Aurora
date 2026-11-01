@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -41,6 +41,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/report", post(set_report))
         .route("/api/v1/commands/tune", post(tune))
         .route("/api/v1/commands/log-qso", post(log_qso))
+        .route("/api/v1/fox", post(fox_command))
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
@@ -481,6 +482,52 @@ async fn tune(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json
 #[utoipa::path(post, path = "/api/v1/commands/log-qso", responses((status = 200, description = "Registrazione chiesta")))]
 async fn log_qso(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     dispatch(&state, Command::LogQso)
+}
+
+#[derive(Deserialize)]
+struct FoxBody {
+    action: String,
+    #[serde(default)]
+    call: String,
+    #[serde(default)]
+    top: bool,
+    #[serde(default)]
+    slots: Option<usize>,
+    #[serde(default)]
+    more_cqs: bool,
+    #[serde(default)]
+    cq: String,
+    #[serde(default)]
+    free_text: Option<String>,
+    #[serde(default)]
+    auto_queue: bool,
+}
+
+/// I comandi della pagina Fox: `select` (in coda, `top` in testa), `unqueue`, `drop` (chiude un QSO in corso), `options`, `reset`.
+#[utoipa::path(post, path = "/api/v1/fox", responses((status = 200, description = "Comando consegnato al motore"), (status = 400, description = "Azione o nominativo non validi (bad_fox)")))]
+async fn fox_command(State(state): State<AppState>, _: Authed, Json(body): Json<FoxBody>) -> Result<Json<Value>, ApiError> {
+    use aurora_core::FoxCommand as F;
+    let bad = || ApiError::new(StatusCode::BAD_REQUEST, "bad_fox");
+    let call = || clean_dx_call(&body.call).filter(|c| !c.is_empty()).ok_or_else(bad);
+    let cmd = match body.action.as_str() {
+        "select" => F::Select { call: call()?, top: body.top },
+        "unqueue" => F::Unqueue { call: call()? },
+        "drop" => F::Drop { call: call()? },
+        "options" => {
+            let cq = body.cq.trim().to_uppercase();
+            if !cq.starts_with("CQ") || cq.len() > 8 {
+                return Err(bad());
+            }
+            let free_text = match body.free_text.as_deref().map(str::trim).filter(|t| !t.is_empty()) {
+                Some(t) => Some(clean_free_text(t).ok_or_else(bad)?),
+                None => None,
+            };
+            F::Options { slots: body.slots.unwrap_or(5).clamp(1, 5), more_cqs: body.more_cqs, cq, free_text, auto_queue: body.auto_queue }
+        }
+        "reset" => F::Reset,
+        _ => return Err(bad()),
+    };
+    dispatch(&state, Command::Fox(cmd))
 }
 
 #[derive(Deserialize, Default)]
