@@ -16,6 +16,8 @@ export interface Prefs {
   clearOnChange: boolean;
   /** Quanti QSO di Log4OM2 mostra la finestra Log (1-200). */
   log4omCount: number;
+  /** Per quanti giorni si vedono ancora le DXpedition finite. */
+  dxpedDays: number;
   /** «Riga vuota tra i periodi di decodifica» (`InsertBlank`): uno spazio tra i messaggi di un periodo e quelli del successivo. */
   insertBlank: boolean;
   /** «Visualizza i tuoi messaggi Tx nella finestra Rx» (`Tx2QSO`): le righe Tx si vedono nell'elenco. */
@@ -30,7 +32,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, insertBlank: false, showTx: true, showAzimuth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -43,7 +45,8 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
-    if (typeof parsed.log4omCount === 'number' && Number.isFinite(parsed.log4omCount)) prefs.log4omCount = Math.min(200, Math.max(1, Math.round(parsed.log4omCount)));
+    if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));
+  if (typeof parsed.log4omCount === 'number' && Number.isFinite(parsed.log4omCount)) prefs.log4omCount = Math.min(200, Math.max(1, Math.round(parsed.log4omCount)));
   } catch {
     return defaultPrefs();
   }

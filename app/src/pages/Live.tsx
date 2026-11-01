@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getCat, getControls, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, getOnline, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
@@ -18,6 +18,9 @@ import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
 import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
+import { DxpedPanel } from '../components/DxpedPanel';
+import { usePrefs } from '../lib/prefs';
+import { senderOf } from '../lib/wishlist';
 import { TxPanel } from '../components/TxPanel';
 import { DxccCard } from '../components/DxccCard';
 import { subjectBand, subjectMode } from '../lib/dxccCard';
@@ -99,6 +102,10 @@ export function Live() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
+  const dxpedOn = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false, staleTime: 60_000 }).data?.dxped === true;
+  const prefs = usePrefs((s) => s.prefs);
+  // i nominativi sentiti negli ultimi messaggi: una DXpedition in onda e sentita adesso va in cima
+  const heardCalls = decodes.slice(0, 300).map((d) => senderOf(d.text)?.call ?? '').filter(Boolean);
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterHalfHz = switches?.filter === true ? (switches.hound === true ? 290 : 60) : null;
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
@@ -144,18 +151,28 @@ export function Live() {
       case 'tx':
         return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
       case 'cq':
-        return (
-          <DecodeList
-            decodes={applyCqPrefs(shown, cqPrefs)}
-            myGrid={status?.de_grid}
-            myCall={status?.de_call}
-            dxCall={status?.dx_call}
-            dxGrid={status?.dx_grid}
-            onReply={onReply}
-            onQueue={onQueue}
-            emptyText={t('decode.noCq')}
-          />
-        );
+        {
+          const cqList = (
+            <DecodeList
+              decodes={applyCqPrefs(shown, cqPrefs)}
+              myGrid={status?.de_grid}
+              myCall={status?.de_call}
+              dxCall={status?.dx_call}
+              dxGrid={status?.dx_grid}
+              onReply={onReply}
+              onQueue={onQueue}
+              emptyText={t('decode.noCq')}
+            />
+          );
+          // con il calendario NG3K acceso il pannello si divide: CQ a sinistra, DXpedition a destra
+          if (!dxpedOn) return cqList;
+          return (
+            <div className="cq-split">
+              <div className="cq-split-main">{cqList}</div>
+              <DxpedPanel heardCalls={heardCalls} keepDays={prefs.dxpedDays} />
+            </div>
+          );
+        }
       case 'cluster':
         return <ClusterPanel />;
       case 'log':
