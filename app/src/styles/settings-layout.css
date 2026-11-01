@@ -1097,18 +1097,16 @@
   color: var(--accent);
 }
 
-.sx-help::after {
-  content: attr(data-tip);
-  position: absolute;
-  z-index: 50;
-  left: 50%;
-  bottom: calc(100% + 0.4rem);
+/* la nuvoletta della spiegazione: sopra a tutto, centrata sul «?», sempre dentro lo schermo */
+.sx-tip {
+  position: fixed;
+  z-index: 100000;
   width: max-content;
   max-width: 22rem;
   padding: 0.5rem 0.65rem;
   color: var(--text);
   background: var(--panel);
-  border: 1px solid var(--sx-edge);
+  border: 1px solid var(--border);
   border-radius: 0.45rem;
   box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.45);
   font-size: 0.8rem;
@@ -1116,15 +1114,8 @@
   line-height: 1.4;
   text-align: left;
   white-space: normal;
-  transform: translateX(-30%);
-  opacity: 0;
+  transform: translate(-50%, calc(-100% - 0.4rem));
   pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.sx-help:hover::after,
-.sx-help:focus-visible::after {
-  opacity: 1;
 }
 
 @media (max-width: 60rem) {
