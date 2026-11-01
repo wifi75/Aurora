@@ -1141,17 +1141,17 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
   }
 }
 
 @container (min-width: 54.01rem) {
   .decode-list .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
   }
 
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 13rem) minmax(0, 17rem) 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
   }
 }
 
@@ -1574,7 +1574,7 @@
 /* Attivita' di banda: riga a colonne con griglia, spazi ordinati, etichette colorate grandi e leggibili */
 .dock-panel--all .decode-list .decode-row,
 .dock-panel--cq .decode-list .decode-row {
-  grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) 15.5rem 7rem;
+  grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) 17rem 7rem;
   column-gap: 0;
   padding: 0 0.3rem 0 0;
   min-height: 1.95rem;
@@ -1583,12 +1583,12 @@
 @container (min-width: 54.01rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--cq .decode-list .decode-row {
-    grid-template-columns: 4.5rem 2.4rem 2.8rem 3.4rem minmax(0, 1fr) 16rem 7rem;
+    grid-template-columns: 4.5rem 2.4rem 2.8rem 3.4rem minmax(0, 1fr) 17rem 7rem;
   }
 
   .dock-panel--all .decode-list--no-dt .decode-row,
   .dock-panel--cq .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.5rem 2.4rem 3.4rem minmax(0, 1fr) 16rem 7rem;
+    grid-template-columns: 4.5rem 2.4rem 3.4rem minmax(0, 1fr) 17rem 7rem;
   }
 }
 
@@ -4726,4 +4726,32 @@
   .dock-panel--cq .decode-list .decode-row .decode-where {
     grid-template-columns: 2.2rem minmax(0, 1fr);
   }
+}
+
+/* Paese: colonna fissa, misurata sul nome DXCC piu' lungo (24 caratteri, «Central African Republic»):
+   bandiera 2.2rem + nome 10.5rem + km 4.3rem = 17rem; lo spazio che avanza va ai nominativi */
+@container (min-width: 40.01rem) {
+  .decode-list .decode-row .decode-where,
+  .dock-panel--all .decode-list .decode-row .decode-where,
+  .dock-panel--cq .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.2rem 10.5rem 4.3rem;
+  }
+}
+
+/* Log: data piu' piccola e rapporti stretti, cosi' il paese resta leggibile */
+.log4om-table .log4om-date {
+  font-size: 0.68rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.log4om-table .log4om-rst {
+  font-size: 0.72rem;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.log4om-table th,
+.log4om-table td {
+  padding-inline: 0.3rem;
 }

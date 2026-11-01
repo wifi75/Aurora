@@ -225,7 +225,7 @@ describe('Notifications tab (as in JTDX)', () => {
     expect(screen.getByLabelText(it_('not2.muteTx'))).toBeChecked();
     fireEvent.click(screen.getByLabelText(it_('not2.muteTx')));
     expect(JSON.parse(localStorage.getItem('aurora-alerts') ?? '{}').muteWhileTx).toBe(false);
-    expect(screen.getAllByRole('button', { name: it_('alert.button') }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('checkbox', { name: it_('alert.button') }).length).toBeGreaterThan(0);
     localStorage.removeItem('aurora-alerts');
   });
 
