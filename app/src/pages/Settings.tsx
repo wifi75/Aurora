@@ -72,25 +72,33 @@ const TABS: readonly TabDef[] = ROWS.flatMap((r) => r.tabs.map((id) => TAB[id]!)
 /** Le vecchie scelte salvate: «Radio CAT» ora e' dentro «Radio». */
 const RENAMED: Record<string, string> = { cat: 'radio' };
 
-/** Impostazioni: una scheda per ogni funzione di configurazione, in due righe per tipo; ogni scheda e' a riquadri e colonne. */
+/**
+ * Impostazioni: a sinistra l'elenco delle schede nei due gruppi, con una ricerca sul nome e sulla descrizione; a destra la scheda scelta.
+ * Prima erano due righe di pulsanti grandi in cima, che occupavano mezza pagina.
+ */
 export function Settings({ initialTab }: { initialTab?: string }) {
   const t = useT();
   const wanted = initialTab ? (RENAMED[initialTab] ?? initialTab) : undefined;
   const [id, setId] = useState(TABS.some((x) => x.id === wanted) ? (wanted as string) : TABS[0]!.id);
+  const [query, setQuery] = useState('');
   const tab = TABS.find((x) => x.id === id) ?? TABS[0]!;
+  const needle = query.trim().toLowerCase();
+  const matches = (x: TabDef) => needle === '' || `${t(x.label)} ${t(x.tip)}`.toLowerCase().includes(needle);
   return (
-    <div className="settings">
-      <h1 className="page-title">{t('set.title')}</h1>
-      <div className="tabs">
-        {ROWS.map((row) => (
-          <div className="tabs-row" key={row.id}>
-            <span className="tabs-row-label" id={`tabs-${row.id}`}>
-              {t(row.title)}
-            </span>
-            <div className="tabs-row-list" role="tablist" aria-labelledby={`tabs-${row.id}`}>
-              {row.tabs.map((tid) => {
-                const x = TAB[tid]!;
-                return (
+    <div className="settings settings-layout">
+      <aside className="settings-nav">
+        <h1 className="settings-nav-title">{t('set.title')}</h1>
+        <input type="search" className="settings-search" placeholder={t('set.search')} aria-label={t('set.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
+        {ROWS.map((row) => {
+          const shown = row.tabs.map((tid) => TAB[tid]!).filter(matches);
+          if (shown.length === 0) return null;
+          return (
+            <div className="settings-nav-group" key={row.id}>
+              <span className="settings-nav-label" id={`tabs-${row.id}`}>
+                {t(row.title)}
+              </span>
+              <div role="tablist" aria-orientation="vertical" aria-labelledby={`tabs-${row.id}`}>
+                {shown.map((x) => (
                   <button
                     key={x.id}
                     type="button"
@@ -99,7 +107,7 @@ export function Settings({ initialTab }: { initialTab?: string }) {
                     aria-selected={tab.id === x.id}
                     aria-controls="settings-panel"
                     title={t(x.tip)}
-                    className={`glass${tab.id === x.id ? ' glass--on' : ''}`}
+                    className={`settings-nav-item${tab.id === x.id ? ' settings-nav-item--on' : ''}`}
                     onClick={() => {
                       setId(x.id);
                       rememberTab(browserStorage(), x.id);
@@ -107,19 +115,20 @@ export function Settings({ initialTab }: { initialTab?: string }) {
                   >
                     {t(x.label)}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-      <section className="panel settings-block" role="tabpanel" id="settings-panel" aria-label={t(tab.label)}>
-        <h2 className="panel-title">{t(tab.label)}</h2>
+          );
+        })}
+        <a className="settings-nav-back" href="#/">
+          {t('set.back')}
+        </a>
+      </aside>
+      <section className="settings-content" role="tabpanel" id="settings-panel" aria-label={t(tab.label)}>
+        <h2 className="settings-content-title">{t(tab.label)}</h2>
+        <p className="muted settings-content-tip">{t(tab.tip)}</p>
         {tab.render()}
       </section>
-      <a className="glass glass--link" href="#/">
-        {t('set.back')}
-      </a>
     </div>
   );
 }

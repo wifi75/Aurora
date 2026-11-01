@@ -900,3 +900,244 @@
   height: 1.4rem;
   padding: 0;
 }
+
+/*
+ * Impaginazione a barra laterale (proposta 1 scelta dal proprietario): elenco delle schede a sinistra, contenuto a destra.
+ * Voci compatte: riga «etichetta | comando» senza un riquadro per ogni voce, riquadri leggeri, due colonne.
+ */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 13.5rem minmax(0, 1fr);
+  gap: var(--space-4, 1.25rem);
+  align-items: start;
+}
+
+.settings-nav {
+  position: sticky;
+  top: var(--space-3, 0.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-3, 0.75rem) var(--space-2, 0.5rem);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.7rem;
+}
+
+.settings-nav-title {
+  margin: 0 var(--space-2, 0.5rem);
+  font-size: 1.1rem;
+}
+
+.settings-search {
+  width: 100%;
+  height: 1.9rem;
+  padding: 0 var(--space-2, 0.5rem);
+  background: var(--panel);
+  border: 1px solid var(--sx-edge);
+  border-radius: 0.4rem;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.settings-nav-group [role='tablist'] {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-nav-label {
+  display: block;
+  margin: var(--space-2, 0.5rem) var(--space-2, 0.5rem) 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-nav-item {
+  display: block;
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  background: none;
+  border: 0;
+  border-radius: 0.4rem;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-nav-item:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.settings-nav-item--on {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-weight: var(--weight-strong);
+}
+
+.settings-nav-back {
+  margin: var(--space-2, 0.5rem) var(--space-2, 0.5rem) 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.settings-content {
+  min-width: 0;
+}
+
+.settings-content-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.settings-content-tip {
+  margin: 0.15rem 0 var(--space-3, 0.75rem);
+  font-size: var(--text-sm);
+}
+
+/* contenuto: due colonne invece di tre (la barra laterale prende il suo spazio) */
+.settings-layout .sx-page {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+.settings-layout .sx-span-3 {
+  grid-column: 1 / -1;
+}
+
+.settings-layout .sx-span-2 {
+  grid-column: 1 / -1;
+}
+
+/* riquadri leggeri */
+.settings-layout .sx-group {
+  background: color-mix(in srgb, var(--text) 2%, transparent);
+  border: 1px solid var(--sx-line);
+  border-radius: 0.6rem;
+}
+
+.settings-layout .sx-title {
+  padding: 0.45rem var(--space-3, 0.75rem) 0.2rem;
+  background: none;
+  border-bottom: 0;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.settings-layout .sx-body {
+  gap: 0;
+  padding: 0.1rem var(--space-3, 0.75rem) var(--space-2, 0.5rem);
+}
+
+/* voci compatte: una riga per voce, una linea sottile tra le righe */
+.settings-layout .sx-cells {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--sx-min, 18rem)), 1fr));
+  gap: 0 var(--space-3, 0.75rem);
+}
+
+.settings-layout .sx-field {
+  min-height: 2.05rem;
+  padding: 0.12rem 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+  border-radius: 0;
+  font-size: var(--text-sm);
+}
+
+.settings-layout .sx-field input[type='text'],
+.settings-layout .sx-field input[type='search'],
+.settings-layout .sx-field input[type='password'],
+.settings-layout .sx-field input[type='url'],
+.settings-layout .sx-field input[type='number'],
+.settings-layout .sx-field select {
+  height: 1.7rem;
+}
+
+.settings-layout .sx-actions .glass,
+.settings-layout .sx-body > .glass,
+.settings-layout .sx-field .glass {
+  min-height: 1.75rem;
+  padding: 0 0.7rem;
+  font-size: var(--text-sm);
+}
+
+/* l'icona «?» delle voci che hanno una spiegazione: la spiegazione compare subito, in una nuvoletta leggibile */
+.sx-help {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.sx-help::before {
+  content: '?';
+}
+
+.sx-help:hover,
+.sx-help:focus-visible {
+  color: var(--accent);
+}
+
+.sx-help::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 50;
+  left: 50%;
+  bottom: calc(100% + 0.4rem);
+  width: max-content;
+  max-width: 22rem;
+  padding: 0.5rem 0.65rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--sx-edge);
+  border-radius: 0.45rem;
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.45);
+  font-size: 0.8rem;
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  transform: translateX(-30%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.sx-help:hover::after,
+.sx-help:focus-visible::after {
+  opacity: 1;
+}
+
+@media (max-width: 60rem) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-nav {
+    position: static;
+    max-height: none;
+  }
+
+  .settings-layout .sx-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

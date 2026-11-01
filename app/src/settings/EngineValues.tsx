@@ -4,7 +4,9 @@ import { ApiError, applyEngineConfig, getEngineConfig } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup, type EngineItem } from '../lib/engineGroups';
 import { useEngineDraft } from '../lib/engineDraft';
-import { Help } from './common';
+import { Help as Note } from './common';
+import { Help } from './layout';
+import { engineHint } from './engineHints';
 import { NativeValues, useIsNative } from './NativeSettings';
 
 /** I valori ammessi per le voci a scelta (come li scrive il file del motore). */
@@ -55,7 +57,10 @@ function Field({ item, current, draft, label }: { item: EngineItem; current: str
   }
   return (
     <label className={`jx-row${draft !== undefined ? ' jx-row--changed' : ''}`} htmlFor={id} title={t('tip.jx')}>
-      <span className="jx-name">{label}</span>
+      <span className="jx-name">
+        {label}
+        <Help tip={engineHint(item.key, t)} />
+      </span>
       {control}
     </label>
   );
@@ -131,7 +136,7 @@ function JtdxValues({ group, title }: { group: EngineGroup; title?: string }) {
               <Field key={item.key} item={item} current={config.data[item.key]} draft={changes[item.key]} label={t(`jx.${item.key}` as Key)} />
             ))}
           </div>
-          <Help>{t('jx.note')}</Help>
+          <Note>{t('jx.note')}</Note>
           <ApplyBar />
         </>
       )}

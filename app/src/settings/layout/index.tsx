@@ -1,6 +1,18 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useT } from '../../i18n';
 
+/**
+ * L'icona «?» con la spiegazione di una voce: passandoci sopra la spiegazione compare subito in una nuvoletta.
+ * Un clic non tocca il comando accanto (la voce e' spesso una `<label>`).
+ */
+export function Help({ tip }: { tip?: string }) {
+  if (!tip) return null;
+  return (
+    // il «?» e' disegnato dallo stile, non e' testo: il nome della voce resta «Distanza in miglia», non «Distanza in miglia?»
+    <span className="sx-help" aria-hidden="true" data-tip={tip} onClick={(e) => e.preventDefault()} />
+  );
+}
+
 /*
  * Sistema di layout comune delle schede delle Impostazioni.
  *
@@ -87,10 +99,14 @@ export function Field({
   className?: string;
 }) {
   const cls = ['sx-field', stack ? 'sx-field--stack' : '', wide ? 'sx-field--wide' : '', changed ? 'sx-field--changed' : '', off ? 'sx-field--off' : '', className].filter(Boolean).join(' ');
-  const title = hint ?? (typeof label === 'string' ? label : undefined);
+  // il testo intero dell'etichetta resta nel suggerimento del browser (puo' essere tagliato a due righe); la spiegazione sta nel «?»
+  const title = typeof label === 'string' ? label : undefined;
   return (
     <label className={cls} title={title}>
-      <span className="sx-label">{label}</span>
+      <span className="sx-label">
+        {label}
+        <Help tip={hint} />
+      </span>
       <span className="sx-control">{children}</span>
     </label>
   );
@@ -99,8 +115,13 @@ export function Field({
 /** Una cella che non e' un controllo (un valore letto, un gruppo di pulsanti): etichetta e contenuto, senza `<label>`. */
 export function Cell({ label, hint, children, wide = false, className = '' }: { label?: ReactNode; hint?: string; children: ReactNode; wide?: boolean; className?: string }) {
   return (
-    <div className={`sx-field sx-field--plain${wide ? ' sx-field--wide' : ''} ${className}`.trim()} title={hint}>
-      {label ? <span className="sx-label">{label}</span> : null}
+    <div className={`sx-field sx-field--plain${wide ? ' sx-field--wide' : ''} ${className}`.trim()}>
+      {label ? (
+        <span className="sx-label">
+          {label}
+          <Help tip={hint} />
+        </span>
+      ) : null}
       <span className="sx-control">{children}</span>
     </div>
   );
