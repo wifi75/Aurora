@@ -43,4 +43,14 @@ describe('BandBar', () => {
     render(<BandBar dialHz={14_074_000} onPick={() => {}} locked />);
     expect(screen.getAllByRole('button').every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
   });
+
+  it('jumps to the next Band Hopping frequency with the right button, not while transmitting', () => {
+    const onHop = vi.fn();
+    const { rerender } = render(<BandBar dialHz={14_074_000} onPick={() => {}} onHop={onHop} />);
+    fireEvent.contextMenu(screen.getByRole('button', { name: '20' }));
+    expect(onHop).toHaveBeenCalledTimes(1);
+    rerender(<BandBar dialHz={14_074_000} onPick={() => {}} onHop={onHop} locked />);
+    fireEvent.contextMenu(screen.getByRole('group'));
+    expect(onHop).toHaveBeenCalledTimes(1);
+  });
 });

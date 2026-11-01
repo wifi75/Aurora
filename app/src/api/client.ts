@@ -1,7 +1,7 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, type EngineSettings, type Health, type SpotResult, type WantedAlert } from './schemas';
+import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
@@ -123,6 +123,16 @@ export async function postTxFrequency(hz: number): Promise<void> {
 }
 
 /** Risponde con la frequenza impostata (`dial_hz`), cosi' la pagina la mostra subito. */
+/** Clic destro sulla barra delle bande: la voce successiva dell'elenco del Band Hopping, subito. */
+export async function postBandHopNext(): Promise<void> {
+  await request('/commands/band-hop-next', jsonInit({}));
+}
+
+/** Le stazioni Wavelog/Cloudlog della chiave salvata, lette dal server (solo dalla rete di casa). */
+export async function postWavelogStations(url: string): Promise<WavelogStation[]> {
+  return WavelogStationsSchema.parse(await (await request('/qso-upload/wavelog-stations', jsonInit({ url }))).json()).stations;
+}
+
 export async function postBand(band: string): Promise<{ dial_hz?: number }> {
   return (await (await request('/commands/band', jsonInit({ band }))).json()) as { dial_hz?: number };
 }

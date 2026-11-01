@@ -230,6 +230,13 @@ export function flat4(values: Float32Array, flatten: boolean): void {
   }
 }
 
+/** Il valore piu' basso (0 se vuoto): il fondo per le colonne senza dati. */
+function floorOf(values: Float32Array): number {
+  let min = Infinity;
+  for (const v of values) if (v < min) min = v;
+  return Number.isFinite(min) ? min : 0;
+}
+
 export interface ProcessedRow {
   /** Livello `y` di ogni pixel (dB del Wide Graph). */
   y: Float32Array;
@@ -237,11 +244,29 @@ export interface ProcessedRow {
   codes: Uint8Array;
 }
 
-/** Dalle ampiezze medie di una riga ai pixel della cascata: somma dei canali, scala, dB, flatten. */
+/**
+ * Quante colonne della riga cadono su canali che il core ha mandato davvero: come `izVisible` di `CPlotter::draw` (WSJT-X
+ * v3.3.0-beta5, `widgets/plotter.cpp`, GPL), che limita l'appiattimento al tratto visibile con dati fino a 5000 Hz.
+ */
+export function visibleColumns(channels: number, binWidthHz: number, o: Pick<ColumnOptions, 'binsPerPixel' | 'startHz' | 'endHz'>): number {
+  const bpp = Math.max(1, Math.round(o.binsPerPixel));
+  const first = Math.floor(o.startHz / binWidthHz + 0.5);
+  const fit = Math.floor((channels - first) / bpp);
+  return Math.max(0, Math.min(columnCount(binWidthHz, o), fit));
+}
+
+/**
+ * Dalle ampiezze medie di una riga ai pixel della cascata: somma dei canali, scala, dB, flatten. Scala e appiattimento si
+ * calcolano solo sul tratto visibile con dati (WSJT-X `plotter.cpp`: `flat4_(swidePlot, &izVisible, ...)`), cosi' un bordo
+ * senza canali non piega la linea di base.
+ */
 export function processRow(amplitude: Float32Array, binWidthHz: number, o: ColumnOptions): ProcessedRow {
   const y = sumColumns(amplitude, binWidthHz, o);
-  if (o.scale) scaleByMedian(y);
-  flat4(y, o.flatten);
+  const visible = y.subarray(0, visibleColumns(amplitude.length, binWidthHz, o));
+  if (o.scale) scaleByMedian(visible);
+  flat4(visible, o.flatten);
+  // le colonne oltre i dati restano al fondo della scala
+  y.fill(floorOf(visible), visible.length);
   const codes = new Uint8Array(y.length);
   for (let i = 0; i < y.length; i++) codes[i] = codeOfY(y[i]!);
   return { y, codes };
@@ -255,16 +280,19 @@ export function cumulativeCurve(average: Float32Array, binWidthHz: number, o: Co
   const bpp = Math.max(1, Math.round(o.binsPerPixel));
   const iz = columnCount(binWidthHz, o);
   const first = Math.floor(o.startHz / binWidthHz + 0.5);
-  const bins = new Float32Array(iz * bpp);
-  for (let i = 0; i < bins.length; i++) bins[i] = average[first + i] ?? 0;
+  // come `savgBins` di WSJT-X `plotter.cpp`: solo i canali visibili che esistono (`NSMAX - j0`)
+  const bins = new Float32Array(Math.max(0, Math.min(iz * bpp, average.length - first)));
+  for (let i = 0; i < bins.length; i++) bins[i] = average[first + i]!;
   if (o.scale) scaleByMedian(bins);
   flat4(bins, o.flatten);
   const out = new Float32Array(iz);
-  for (let j = 0; j < iz; j++) {
+  const full = Math.floor(bins.length / bpp);
+  for (let j = 0; j < full; j++) {
     let sum = 0;
     for (let k = 0; k < bpp; k++) sum += bins[j * bpp + k]!;
     out[j] = sum / bpp;
   }
+  out.fill(floorOf(out.subarray(0, full)), full);
   return out;
 }
 

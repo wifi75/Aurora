@@ -374,6 +374,23 @@ export const stationStrings = {
     'Cambia de banda con un clic (frecuencia FT8 predeterminada). La banda en uso está encendida. Elige cuáles mostrar en Ajustes → Bandas.',
     'Muda de banda com um clique (frequência FT8 predefinida). A banda em uso está acesa. Escolhe quais mostrar em Definições → Bandas.',
   ],
+  'tip.band.hop': [
+    'Tasto destro: salta subito alla frequenza successiva dell’elenco del Band Hopping (Impostazioni → Generali).',
+    'Right click: jump at once to the next frequency of the Band Hopping list (Settings → General).',
+    'Rechtsklick: sofort zur nächsten Frequenz der Band-Hopping-Liste springen (Einstellungen → Allgemein).',
+    'Clic droit : passe tout de suite à la fréquence suivante de la liste du Band Hopping (Réglages → Général).',
+    'Clic derecho: salta enseguida a la frecuencia siguiente de la lista del Band Hopping (Ajustes → General).',
+    'Clique direito: salta logo para a frequência seguinte da lista do Band Hopping (Definições → Geral).',
+  ],
+  'note.bandHop': ['Band Hopping: frequenza successiva', 'Band Hopping: next frequency', 'Band Hopping: nächste Frequenz', 'Band Hopping : fréquence suivante', 'Band Hopping: frecuencia siguiente', 'Band Hopping: frequência seguinte'],
+  'err.bandHopEmpty': [
+    'L’elenco del Band Hopping è vuoto: scrivilo in Impostazioni → Generali.',
+    'The Band Hopping list is empty: fill it in Settings → General.',
+    'Die Band-Hopping-Liste ist leer: trage sie in Einstellungen → Allgemein ein.',
+    'La liste du Band Hopping est vide : remplis-la dans Réglages → Général.',
+    'La lista del Band Hopping está vacía: rellénala en Ajustes → General.',
+    'A lista do Band Hopping está vazia: preenche-a em Definições → Geral.',
+  ],
   'mode.group': ['Modo', 'Mode', 'Betriebsart', 'Mode', 'Modo', 'Modo'],
   'mode.pick': ['Passa a {mode}', 'Switch to {mode}', 'Wechsle zu {mode}', 'Passer à {mode}', 'Cambiar a {mode}', 'Mudar para {mode}'],
   'mode.locked': [

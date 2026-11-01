@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getCat, getControls, getOnline, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, getOnline, getEngineConfig, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
@@ -295,6 +295,7 @@ export function Live() {
             pendingBand={pendingBand}
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
+            onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
         </div>
         <StatusBar status={status} connection={connection} hideDial={!displayHidden} />

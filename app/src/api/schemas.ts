@@ -183,6 +183,8 @@ export type EngineSettings = z.infer<typeof EngineSettingsSchema>;
 
 /** Esito della prova di un servizio dell'invio diretto dei QSO (`POST /api/v1/qso-upload/test`). */
 export const UploadTestSchema = z.object({ ok: z.boolean(), message: z.string() });
+export const WavelogStationsSchema = z.object({ stations: z.array(z.object({ id: z.string(), name: z.string(), call: z.string() })) });
+export type WavelogStation = z.infer<typeof WavelogStationsSchema>['stations'][number];
 
 /** Esito dello spot su DXSummit (`POST /api/v1/spot/dxsummit`): chi, su che frequenza (Hz) e con che testo. */
 export const SpotResultSchema = z.object({ ok: z.boolean(), dx_call: z.string(), frequency_hz: z.number(), info: z.string() });

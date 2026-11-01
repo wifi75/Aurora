@@ -1371,3 +1371,37 @@
 .int-dest input[aria-invalid='true'] {
   outline: 2px solid #e5141b;
 }
+
+/* Cascata: anteprima dal vivo in cima alla scheda, con le opzioni sotto */
+.wfs-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wfs-preview-toggle {
+  font-weight: 600;
+}
+
+.wfs-preview {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.6rem;
+}
+
+.wfs-preview .waterfall {
+  height: 16rem;
+  min-height: 10rem;
+}
+
+.wfs-preview-quiet {
+  z-index: 2;
+  background: color-mix(in srgb, var(--wf-bg) 70%, transparent);
+}
+
+/* l'anteprima resta in vista mentre si scorrono le opzioni */
+.wfs-preview-group {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}

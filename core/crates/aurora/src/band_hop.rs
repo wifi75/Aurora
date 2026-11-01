@@ -66,6 +66,13 @@ impl Hopper {
         self.next = index + 1;
         (!blocked).then_some(index)
     }
+
+    /// Il clic destro sulla barra delle bande: la voce successiva subito, senza aspettare il minuto pari.
+    pub fn skip(&mut self, len: usize) -> Option<usize> {
+        let index = next_index(len, self.next)?;
+        self.next = index + 1;
+        Some(index)
+    }
 }
 
 /// Fa girare il Band Hopping: le impostazioni si rileggono a ogni controllo, cosi' accenderlo o cambiarne l'elenco vale subito.
@@ -74,16 +81,28 @@ pub fn spawn(state: remote_api::AppState, rig: Arc<dyn Rig>) {
         let mut hopper = Hopper::default();
         let mut tick = tokio::time::interval(Duration::from_secs(5));
         loop {
-            tick.tick().await;
+            // il giro ogni 5 secondi, oppure il salto chiesto dal clic destro sulla barra delle bande
+            let manual = tokio::select! {
+                _ = tick.tick() => false,
+                () = remote_api::BAND_HOP_NEXT.notified() => true,
+            };
             let Some(settings) = state.engine_settings.as_ref() else { continue };
             let r = settings.reports();
-            if !r.band_hopping {
+            if !r.band_hopping && !manual {
                 continue;
             }
             let entries = parse_list(&r.band_hop_list);
             let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
             let blocked = state.current_status().is_some_and(|s| s.tx_enabled || s.transmitting);
-            let Some(index) = hopper.tick(now, entries.len(), blocked) else { continue };
+            let index = if manual {
+                if state.current_status().is_some_and(|s| s.transmitting) {
+                    continue;
+                }
+                hopper.skip(entries.len())
+            } else {
+                hopper.tick(now, entries.len(), blocked)
+            };
+            let Some(index) = index else { continue };
             let Some(entry) = entries.get(index).cloned() else { continue };
             hop_to(&state, &rig, &entry).await;
         }
@@ -146,5 +165,16 @@ mod tests {
         assert_eq!(h.tick(t0 + 240, 3, false), Some(2));
         assert_eq!(h.tick(t0 + 360, 3, false), Some(0), "si ricomincia dal primo");
         assert_eq!(h.tick(t0 + 480, 0, false), None, "elenco vuoto");
+    }
+
+    #[test]
+    fn the_right_click_skips_to_the_next_entry_at_once() {
+        let mut h = Hopper::default();
+        assert_eq!(h.skip(3), Some(0));
+        assert_eq!(h.skip(3), Some(1));
+        let t0 = 1_800_000_000 / 120 * 120;
+        assert_eq!(h.tick(t0, 3, false), Some(2), "il giro automatico continua dalla voce dopo");
+        assert_eq!(h.skip(3), Some(0));
+        assert_eq!(h.skip(0), None);
     }
 }

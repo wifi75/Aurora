@@ -1,6 +1,10 @@
 # Changelog
 
 ## Non rilasciato
+- **Anteprima dal vivo della cascata nelle Impostazioni**: in Impostazioni > Cascata il pulsante «Mostra anteprima dal vivo» apre la cascata e lo spettro veri (stessi componenti della pagina Stazione, righe del motore), fissi in cima mentre si cambiano le opzioni: ogni modifica si vede subito. La scelta aperta/chiusa resta ricordata; l'anteprima si spegne del tutto (renderer e abbonamento alle righe) uscendo dalla scheda o con la finestra nascosta, e senza righe dal motore dice di accendere radio e audio.
+- **Flatten sul tratto visibile** (WSJT-X v3.3.0-beta5, `widgets/plotter.cpp`, `izVisible`/`savgBins`): scala e appiattimento della cascata e dello spettro si calcolano solo sulle colonne visibili con dati, cosi' un bordo senza canali non piega la linea di base.
+- **Band Hopping con il tasto destro**: clic destro sulla barra delle bande per passare subito alla voce successiva dell'elenco (nuovo comando `POST /api/v1/commands/band-hop-next`), anche col giro automatico spento; non in trasmissione.
+- **Stazione Wavelog dalla tendina**: in Impostazioni > Segnalazioni il numero della stazione Wavelog/Cloudlog si sceglie da un elenco letto dal server con la chiave salvata (nuovo `POST /api/v1/qso-upload/wavelog-stations`, solo dalla rete di casa); se il server non risponde resta la casella del numero.
 
 ## 0.11.56 - 2026-11-01
 - **Momento di avvio della decodifica FT8** (WSJT-X 3.3, `m_ft8DecoderStart`/`fixStop`): nuova voce «Avvio della decodifica FT8» nella scheda Generali, Presto (13,82 s), Normale (14,11 s, di fabbrica come WSJT-X) o Tardi (14,40 s); il periodo si consegna al decoder in quel momento (prima sempre a 14,2 s). FT4 e JT invariati.

@@ -3,6 +3,7 @@ import { JTDX_PALETTE_NAMES } from '../render/wfPalettes';
 import { USER_PALETTE, WF_LIMITS, clampWf, paletteColors, useWfPrefs, type PaletteColor, type WfPrefs } from '../lib/wfPrefs';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Notes, Page } from './layout';
+import { WaterfallPreview } from './WaterfallPreview';
 
 type NumberKey = keyof typeof WF_LIMITS;
 
@@ -50,7 +51,11 @@ export function WaterfallTab() {
   };
 
   return (
-    <Page>
+    <Page className="wfs-page">
+      <Group title={t('wfs.preview.title')} span={3} className="wfs-preview-group">
+        <WaterfallPreview />
+      </Group>
+
       <Group title={t('wfs.res')}>
         <Cells min={14}>
           {number('binsPerPixel', t('wfs.bpp'), t('tip.wfs.bpp'))}

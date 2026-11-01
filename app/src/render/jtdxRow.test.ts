@@ -190,3 +190,21 @@ describe('fitWidth', () => {
     expect(Math.max(...out)).toBe(200);
   });
 });
+
+describe('flatten sul tratto visibile (WSJT-X plotter.cpp, izVisible)', () => {
+  it('ignora le colonne oltre i canali ricevuti', async () => {
+    const { processRow, visibleColumns } = await import('./jtdxRow');
+    const binWidth = 1;
+    const amplitude = new Float32Array(1000);
+    for (let i = 0; i < amplitude.length; i++) amplitude[i] = 1 + i / 1000;
+    const o = { binsPerPixel: 1, startHz: 0, endHz: 1500, scale: false, flatten: true };
+    expect(visibleColumns(amplitude.length, binWidth, o)).toBe(1000);
+    const row = processRow(amplitude, binWidth, o);
+    expect(row.y.length).toBe(1500);
+    // la pendenza dei dati veri e' tolta: senza il limite i 500 zeri piegherebbero il polinomio
+    let max = 0;
+    for (let i = 0; i < 1000; i++) max = Math.max(max, Math.abs(row.y[i]!));
+    expect(max).toBeLessThan(0.5);
+    for (let i = 1000; i < 1500; i++) expect(Number.isFinite(row.y[i]!)).toBe(true);
+  });
+});
