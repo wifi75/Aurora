@@ -768,6 +768,33 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// La radio sta trasmettendo (PTT acceso da noi o dal motore).
+    pub fn transmitting(&self) -> bool {
+        self.inner.transmitting()
+    }
+
+    /// Il clic su un indicatore del display esteso (NB, NR, notch, ATU, preamplificatore, attenuatore, AGC, VFO, RIT, XIT): cambia
+    /// l'impostazione sulla radio, rilegge subito quel dato e lo mette nello stato. Mai in trasmissione.
+    pub fn set_extra(&self, item: crate::extras::ExtraItem) -> Result<(), RigError> {
+        let inner = &self.inner;
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: impostazione rifiutata".into()));
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        let cache = {
+            let mut poll = inner.extras.lock().map_err(|_| RigError("letture della radio non disponibili".into()))?;
+            poll.apply(link.client(), item).map_err(|e| RigError(friendly_error(&e.0)))?;
+            poll.cache.clone()
+        };
+        inner.update(|s| s.extras = cache);
+        if item == crate::extras::ExtraItem::Vfo {
+            // cambiando VFO cambiano anche frequenza e modo mostrati
+            inner.queue_quick_reads();
+        }
+        Ok(())
+    }
+
     pub fn set_split(&self, on: bool, tx_vfo: &str) -> Result<(), RigError> {
         let link = self.inner.connected_link()?;
         self.inner.epoch.fetch_add(1, Ordering::SeqCst);

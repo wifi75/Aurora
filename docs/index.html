@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora — FT8 &amp; FT4 station</title>
+<meta name="description" content="Aurora is a free, open-source FT8/FT4 digital station for Windows: its own decoder, a stunning waterfall, automated QSOs, DXCC card, phone remote control and CAT for 300+ radios.">
+<meta name="theme-color" content="#070b14">
+<meta property="og:title" content="Aurora — your FT8 &amp; FT4 station, reimagined">
+<meta property="og:description" content="Free and open source. Own decoder, live waterfall, automatic QSOs, DXCC card, CAT for 300+ radios.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b14; --bg2:#0b1222; --panel:rgba(255,255,255,.06); --edge:rgba(255,255,255,.14);
+  --text:#e9eefb; --muted:#9aa8c7; --teal:#3dd6c8; --violet:#8e7bff; --pink:#ff5d8a; --amber:#ffcb47;
+  --radius:1.1rem; --font:'Space Grotesk',system-ui,Segoe UI,Roboto,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.55;overflow-x:hidden}
+a{color:inherit}
+.wrap{width:min(72rem,100% - 2.4rem);margin:0 auto}
+
+/* sfondo aurora */
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#0d1730 0%,var(--bg) 60%)}
+.aurora i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;mix-blend-mode:screen;animation:drift 22s ease-in-out infinite alternate}
+.aurora i:nth-child(1){width:46rem;height:26rem;left:-8rem;top:-6rem;background:linear-gradient(120deg,var(--teal),transparent 70%)}
+.aurora i:nth-child(2){width:42rem;height:28rem;right:-10rem;top:2rem;background:linear-gradient(240deg,var(--violet),transparent 70%);animation-duration:28s}
+.aurora i:nth-child(3){width:36rem;height:22rem;left:30%;top:10rem;background:linear-gradient(60deg,var(--pink),transparent 70%);opacity:.32;animation-duration:34s}
+@keyframes drift{to{transform:translate3d(6rem,3rem,0) scale(1.15)}}
+
+/* barra */
+.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);background:linear-gradient(180deg,rgba(7,11,20,.85),rgba(7,11,20,.55));border-bottom:1px solid var(--edge)}
+.nav .wrap{display:flex;align-items:center;gap:1.2rem;height:3.6rem}
+.logo{font-weight:700;letter-spacing:.34em;font-size:1.05rem;text-decoration:none;background:linear-gradient(100deg,var(--teal),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.nav nav{display:flex;gap:1.1rem;margin-left:auto;font-size:.92rem;color:var(--muted)}
+.nav nav a{text-decoration:none}
+.nav nav a:hover{color:var(--text)}
+.lang{margin-left:.4rem;background:var(--panel);color:var(--text);border:1px solid var(--edge);border-radius:.6rem;padding:.3rem .5rem;font:inherit;font-size:.85rem}
+.lang option{color:#000}
+@media(max-width:46rem){.nav nav{display:none}.lang{margin-left:auto}}
+
+/* hero */
+.hero{padding:4.5rem 0 2rem;display:grid;grid-template-columns:1.05fr .95fr;gap:2.5rem;align-items:center}
+@media(max-width:60rem){.hero{grid-template-columns:1fr;padding-top:2.5rem}}
+.pill{display:inline-flex;gap:.5rem;align-items:center;font-size:.8rem;color:var(--teal);border:1px solid rgba(61,214,200,.4);background:rgba(61,214,200,.08);padding:.25rem .8rem;border-radius:999px}
+.pill b{width:.5rem;height:.5rem;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+h1{font-size:clamp(2.4rem,6vw,4.4rem);line-height:1.04;margin:1rem 0 1rem;letter-spacing:-.02em}
+h1 em{font-style:normal;background:linear-gradient(100deg,var(--teal),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:1.15rem;color:var(--muted);max-width:34rem}
+.cta{display:flex;flex-wrap:wrap;gap:.8rem;margin:1.8rem 0 .8rem}
+.btn{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;border-radius:.9rem;font-weight:700;text-decoration:none;border:1px solid var(--edge);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.primary{color:#04121a;background:linear-gradient(100deg,var(--teal),#7fe9dd);border-color:transparent;box-shadow:0 10px 30px -8px rgba(61,214,200,.7)}
+.btn.ghost{background:var(--panel);backdrop-filter:blur(8px)}
+.note{font-size:.82rem;color:var(--muted)}
+.note code{font-family:var(--mono)}
+
+/* finto programma */
+.mock{position:relative;border-radius:1.2rem;border:1px solid var(--edge);background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.03));box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden;transform:perspective(1400px) rotateY(-7deg) rotateX(3deg)}
+@media(max-width:60rem){.mock{transform:none}}
+.mock-top{display:flex;align-items:center;gap:.7rem;padding:.6rem .9rem;border-bottom:1px solid var(--edge);font-size:.8rem;color:var(--muted)}
+.dots{display:flex;gap:.3rem}.dots i{width:.6rem;height:.6rem;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.rx{margin-left:auto;font-family:var(--mono);font-weight:600;color:#06240f;background:#35d36a;padding:.1rem .6rem;border-radius:999px;font-size:.75rem}
+.freq{font-family:var(--mono);font-size:2rem;letter-spacing:.06em;color:#7ff3ff;text-shadow:0 0 18px rgba(80,220,255,.7);padding:.7rem 1rem .2rem;background:#07101a}
+.freq small{font-size:.8rem;color:#52b9cc;letter-spacing:.1em;margin-left:.6rem}
+.mock canvas{display:block;width:100%;height:9rem;background:#030814}
+.rows{padding:.4rem .5rem .7rem;font-family:var(--mono);font-size:.74rem;display:grid;gap:.18rem}
+.row{display:grid;grid-template-columns:3.6rem 2rem 1fr auto;gap:.5rem;padding:.2rem .5rem;border-radius:.35rem;background:rgba(255,255,255,.04);animation:rowin .6s both}
+.row.cq{background:rgba(255,203,71,.12)}.row.new{background:rgba(142,123,255,.22)}.row.me{background:rgba(255,93,138,.2)}
+.row span:last-child{color:var(--muted)}
+@keyframes rowin{from{opacity:0;transform:translateY(.6rem)}}
+
+/* sezioni */
+section{padding:4rem 0}
+h2{font-size:clamp(1.7rem,3.6vw,2.6rem);margin:0 0 .6rem;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:40rem;margin:0 0 2.2rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:1.4rem;border:1px solid var(--edge);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(10px)}
+.stats div{text-align:center}.stats b{display:block;font-size:2rem;background:linear-gradient(100deg,var(--teal),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stats span{font-size:.85rem;color:var(--muted)}
+@media(max-width:46rem){.stats{grid-template-columns:repeat(2,1fr)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(16.5rem,1fr));gap:1rem}
+.card{position:relative;padding:1.3rem 1.3rem 1.4rem;border-radius:var(--radius);border:1px solid var(--edge);background:var(--panel);backdrop-filter:blur(8px);transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);border-color:rgba(61,214,200,.55)}
+.card .ic{width:2.6rem;height:2.6rem;border-radius:.8rem;display:grid;place-items:center;font-size:1.3rem;margin-bottom:.8rem;background:linear-gradient(135deg,rgba(61,214,200,.25),rgba(142,123,255,.25));border:1px solid var(--edge)}
+.card h3{margin:.1rem 0 .35rem;font-size:1.08rem}
+.card p{margin:0;color:var(--muted);font-size:.93rem}
+.band{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:56rem){.band{grid-template-columns:1fr}}
+.feat{padding:1.6rem;border-radius:var(--radius);border:1px solid var(--edge);background:linear-gradient(160deg,rgba(142,123,255,.16),rgba(61,214,200,.06))}
+.feat h3{margin:0 0 .4rem;font-size:1.25rem}.feat p{margin:0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:.6rem}
+.chip{padding:.5rem 1rem;border-radius:999px;border:1px solid var(--edge);background:var(--panel);font-size:.92rem}
+.dl{margin-top:1rem;padding:2.6rem 2rem;border-radius:1.4rem;border:1px solid rgba(61,214,200,.45);background:radial-gradient(90% 140% at 20% 0%,rgba(61,214,200,.22),transparent 60%),radial-gradient(90% 140% at 90% 100%,rgba(255,93,138,.2),transparent 60%),var(--bg2);text-align:center}
+.steps{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin:1.6rem 0}
+.steps div{flex:1 1 11rem;max-width:15rem;padding:1rem;border-radius:var(--radius);background:var(--panel);border:1px solid var(--edge)}
+.steps b{display:block;font-size:1.5rem;color:var(--teal)}
+footer{padding:2.4rem 0 3rem;border-top:1px solid var(--edge);color:var(--muted);font-size:.9rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between}
+footer a{color:var(--text)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<header class="nav"><div class="wrap">
+  <a class="logo" href="#top">AURORA</a>
+  <nav>
+    <a href="#features" data-i18n="nav.features">Features</a>
+    <a href="#shack" data-i18n="nav.shack">Why Aurora</a>
+    <a href="#download" data-i18n="nav.download">Download</a>
+    <a href="https://github.com/wifi75/Aurora">GitHub</a>
+  </nav>
+  <select class="lang" id="lang" aria-label="Language">
+    <option value="en">English</option><option value="it">Italiano</option><option value="de">Deutsch</option>
+    <option value="fr">Français</option><option value="es">Español</option><option value="pt">Português</option>
+  </select>
+</div></header>
+
+<main id="top">
+<div class="wrap hero">
+  <div>
+    <span class="pill"><b></b><span id="ver" data-i18n="hero.pill">Free &amp; open source</span></span>
+    <h1><span data-i18n="hero.h1a">Your FT8 &amp; FT4 station,</span> <em data-i18n="hero.h1b">reimagined.</em></h1>
+    <p class="lead" data-i18n="hero.lead">Aurora decodes, transmits and runs your QSOs with its own engine — a live waterfall, an automatic DXCC card, phone remote control and CAT for 300+ radios. Beautiful to use, fast on air.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe">⬇ <span data-i18n="cta.dl">Download for Windows</span></a>
+      <a class="btn ghost" href="https://github.com/wifi75/Aurora">★ <span data-i18n="cta.gh">View on GitHub</span></a>
+    </div>
+    <p class="note" data-i18n-html="cta.note">Windows 10/11 · 64-bit · always the latest version · <a href="https://github.com/wifi75/Aurora/releases/latest">all downloads</a></p>
+  </div>
+
+  <div class="mock" aria-hidden="true">
+    <div class="mock-top"><span class="dots"><i></i><i></i><i></i></span><span>Aurora</span><span class="rx">RX</span></div>
+    <div class="freq">21.074.00<small>USB · FT8</small></div>
+    <canvas id="wf" width="720" height="150"></canvas>
+    <div class="rows" id="rows"></div>
+  </div>
+</div>
+
+<div class="wrap"><div class="stats">
+  <div><b>FT8·FT4</b><span data-i18n="stat.modes">plus JT65 &amp; JT9</span></div>
+  <div><b>300+</b><span data-i18n="stat.radios">radios via Hamlib CAT</span></div>
+  <div><b>6</b><span data-i18n="stat.langs">languages built in</span></div>
+  <div><b>GPL-3</b><span data-i18n="stat.oss">free and open source</span></div>
+</div></div>
+
+<section id="features"><div class="wrap">
+  <h2 data-i18n="f.h">Everything a digital-mode ham wants</h2>
+  <p class="sub" data-i18n="f.sub">One window, designed for the shack: nothing to hunt for, every control explained.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">📡</div><h3 data-i18n="f1.t">Own decoding engine</h3><p data-i18n="f1.p">FT8 and FT4 decoding and transmission built in, plus JT65 and JT9. No other program needed.</p></div>
+    <div class="card"><div class="ic">🌈</div><h3 data-i18n="f2.t">Live waterfall</h3><p data-i18n="f2.p">A sharp, JTDX-faithful waterfall with 30 palettes, gain and zero, Rx/Tx markers and a spectrum plot.</p></div>
+    <div class="card"><div class="ic">🏆</div><h3 data-i18n="f3.t">DXCC card</h3><p data-i18n="f3.p">See at a glance whether a station is a new country, band or mode — read from your own log.</p></div>
+    <div class="card"><div class="ic">🤖</div><h3 data-i18n="f4.t">Automatic QSOs</h3><p data-i18n="f4.p">AutoSeq, queue of callers, reply to all, DX wish-list and safe limits, with a STOP that is always one click away.</p></div>
+    <div class="card"><div class="ic">📱</div><h3 data-i18n="f5.t">Phone remote</h3><p data-i18n="f5.p">Pair your phone with a QR code and watch or operate the station from the couch.</p></div>
+    <div class="card"><div class="ic">🎛️</div><h3 data-i18n="f6.t">CAT for every radio</h3><p data-i18n="f6.p">Hamlib and OmniRig, frequency, mode, split, PTT, meters and clickable PRE/ATT/AGC/NB/NR.</p></div>
+    <div class="card"><div class="ic">🌍</div><h3 data-i18n="f7.t">DXpeditions &amp; propagation</h3><p data-i18n="f7.p">NG3K DXpedition calendar, DX cluster, world map and who-heard-me propagation at a glance.</p></div>
+    <div class="card"><div class="ic">🔔</div><h3 data-i18n="f8.t">Smart notifications</h3><p data-i18n="f8.p">53 sounds, colours per message type, one alert per station, customisable toasts.</p></div>
+  </div>
+</div></section>
+
+<section id="shack"><div class="wrap">
+  <h2 data-i18n="s.h">Plays well with your shack</h2>
+  <p class="sub" data-i18n="s.sub">Aurora talks to the programs you already use.</p>
+  <div class="chips">
+    <span class="chip">Log4OM 2</span><span class="chip">GridTracker</span><span class="chip">PSK Reporter</span><span class="chip">DXSummit</span>
+    <span class="chip">WSJT-X UDP</span><span class="chip">JTDX</span><span class="chip">LoTW · eQSL</span><span class="chip">ADIF</span><span class="chip">VSPE · com0com</span>
+  </div>
+  <div class="band" style="margin-top:2rem">
+    <div class="feat"><h3 data-i18n="b1.t">Designed to be read</h3><p data-i18n="b1.p">Colour-coded messages, struck-through worked stations, flags and distances — every control has a “?” that explains it.</p></div>
+    <div class="feat"><h3 data-i18n="b2.t">Made for contesting speed</h3><p data-i18n="b2.p">Double-click to call, instant toasts, a fixed layout that never jumps, and settings that save themselves.</p></div>
+    <div class="feat"><h3 data-i18n="b3.t">Yours to change</h3><p data-i18n="b3.p">Open source under GPL-3.0. Read it, fix it, make it better — and it stays free.</p></div>
+  </div>
+</div></section>
+
+<section id="download"><div class="wrap"><div class="dl">
+  <h2 data-i18n="d.h">Get on the air in three steps</h2>
+  <div class="steps">
+    <div><b>1</b><span data-i18n="d.1">Download the installer</span></div>
+    <div><b>2</b><span data-i18n="d.2">Run it and choose your radio</span></div>
+    <div><b>3</b><span data-i18n="d.3">Press Monitor and watch the band</span></div>
+  </div>
+  <div class="cta" style="justify-content:center">
+    <a class="btn primary" href="https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe">⬇ <span data-i18n="cta.dl2">Download Aurora for Windows</span></a>
+    <a class="btn ghost" href="https://github.com/wifi75/Aurora/releases/latest" data-i18n="d.rel">Release notes &amp; checksums</a>
+  </div>
+  <p class="note" id="rel" data-i18n="d.note">The link always points to the latest version.</p>
+</div></div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© Aurora · <span data-i18n="foot.by">Designed and developed by</span> Tiziano Cassone (IU3WJQ) · GPL-3.0</span>
+  <span><a href="https://github.com/wifi75/Aurora">GitHub</a> · <a href="https://github.com/wifi75/Aurora/releases/latest">Releases</a> · <a href="https://github.com/wifi75/Aurora/blob/main/CHANGELOG.md">Changelog</a> · 73!</span>
+</div></footer>
+
+<script>
+const T={
+en:{'nav.features':'Features','nav.shack':'Why Aurora','nav.download':'Download','hero.pill':'Free & open source','hero.h1a':'Your FT8 & FT4 station,','hero.h1b':'reimagined.','hero.lead':'Aurora decodes, transmits and runs your QSOs with its own engine — a live waterfall, an automatic DXCC card, phone remote control and CAT for 300+ radios. Beautiful to use, fast on air.','cta.dl':'Download for Windows','cta.gh':'View on GitHub','cta.note':'Windows 10/11 · 64-bit · always the latest version · <a href="https://github.com/wifi75/Aurora/releases/latest">all downloads</a>','stat.modes':'plus JT65 & JT9','stat.radios':'radios via Hamlib CAT','stat.langs':'languages built in','stat.oss':'free and open source','f.h':'Everything a digital-mode ham wants','f.sub':'One window, designed for the shack: nothing to hunt for, every control explained.','f1.t':'Own decoding engine','f1.p':'FT8 and FT4 decoding and transmission built in, plus JT65 and JT9. No other program needed.','f2.t':'Live waterfall','f2.p':'A sharp, JTDX-faithful waterfall with 30 palettes, gain and zero, Rx/Tx markers and a spectrum plot.','f3.t':'DXCC card','f3.p':'See at a glance whether a station is a new country, band or mode — read from your own log.','f4.t':'Automatic QSOs','f4.p':'AutoSeq, queue of callers, reply to all, DX wish-list and safe limits, with a STOP that is always one click away.','f5.t':'Phone remote','f5.p':'Pair your phone with a QR code and watch or operate the station from the couch.','f6.t':'CAT for every radio','f6.p':'Hamlib and OmniRig, frequency, mode, split, PTT, meters and clickable PRE/ATT/AGC/NB/NR.','f7.t':'DXpeditions & propagation','f7.p':'NG3K DXpedition calendar, DX cluster, world map and who-heard-me propagation at a glance.','f8.t':'Smart notifications','f8.p':'53 sounds, colours per message type, one alert per station, customisable toasts.','s.h':'Plays well with your shack','s.sub':'Aurora talks to the programs you already use.','b1.t':'Designed to be read','b1.p':'Colour-coded messages, struck-through worked stations, flags and distances — every control has a “?” that explains it.','b2.t':'Made for speed','b2.p':'Double-click to call, instant toasts, a fixed layout that never jumps, and settings that save themselves.','b3.t':'Yours to change','b3.p':'Open source under GPL-3.0. Read it, fix it, make it better — and it stays free.','d.h':'Get on the air in three steps','d.1':'Download the installer','d.2':'Run it and choose your radio','d.3':'Press Monitor and watch the band','cta.dl2':'Download Aurora for Windows','d.rel':'Release notes & checksums','d.note':'The link always points to the latest version.','foot.by':'Designed and developed by'},
+it:{'nav.features':'Funzioni','nav.shack':'Perché Aurora','nav.download':'Scarica','hero.pill':'Gratuita e open source','hero.h1a':'La tua stazione FT8 e FT4,','hero.h1b':'ripensata.','hero.lead':'Aurora decodifica, trasmette e gestisce i tuoi QSO con un motore proprio: cascata dal vivo, scheda DXCC automatica, controllo dal telefono e CAT per oltre 300 radio. Bella da usare, veloce in onda.','cta.dl':'Scarica per Windows','cta.gh':'Vedi su GitHub','cta.note':'Windows 10/11 · 64 bit · sempre l’ultima versione · <a href="https://github.com/wifi75/Aurora/releases/latest">tutti i download</a>','stat.modes':'più JT65 e JT9','stat.radios':'radio via CAT Hamlib','stat.langs':'lingue integrate','stat.oss':'libera e open source','f.h':'Tutto quello che serve a chi ama i modi digitali','f.sub':'Una sola finestra pensata per il shack: niente da cercare, ogni comando spiegato.','f1.t':'Motore di decodifica proprio','f1.p':'Decodifica e trasmissione FT8 e FT4 integrate, più JT65 e JT9. Nessun altro programma necessario.','f2.t':'Cascata dal vivo','f2.p':'Una cascata nitida e fedele a JTDX con 30 tavolozze, guadagno e zero, marcatori Rx/Tx e grafico dello spettro.','f3.t':'Scheda DXCC','f3.p':'Vedi subito se una stazione è un paese, una banda o un modo nuovo — letto dal tuo log.','f4.t':'QSO automatici','f4.p':'AutoSeq, coda dei chiamanti, risposta a tutti, lista desideri DX e limiti di sicurezza, con uno STOP sempre a un clic.','f5.t':'Telefono come telecomando','f5.p':'Associa il telefono con un codice QR e segui o usa la stazione dal divano.','f6.t':'CAT per ogni radio','f6.p':'Hamlib e OmniRig, frequenza, modo, split, PTT, strumenti e PRE/ATT/AGC/NB/NR cliccabili.','f7.t':'DXpedition e propagazione','f7.p':'Calendario DXpedition NG3K, DX cluster, mappa del mondo e propagazione «chi mi ha ricevuto» a colpo d’occhio.','f8.t':'Notifiche intelligenti','f8.p':'53 suoni, colori per tipo di messaggio, un solo avviso per stazione, messaggi toast personalizzabili.','s.h':'Si integra con il tuo shack','s.sub':'Aurora dialoga con i programmi che già usi.','b1.t':'Fatta per essere letta','b1.p':'Messaggi colorati, stazioni già lavorate barrate, bandiere e distanze — ogni comando ha un «?» che lo spiega.','b2.t':'Fatta per la velocità','b2.p':'Doppio clic per chiamare, avvisi istantanei, un layout fisso che non salta e impostazioni che si salvano da sole.','b3.t':'Tua da cambiare','b3.p':'Open source con licenza GPL-3.0. Leggila, correggila, migliorala — e resta libera.','d.h':'In onda in tre passi','d.1':'Scarica l’installatore','d.2':'Avvialo e scegli la radio','d.3':'Premi Monitora e guarda la banda','cta.dl2':'Scarica Aurora per Windows','d.rel':'Note di rilascio e checksum','d.note':'Il link punta sempre all’ultima versione.','foot.by':'Progettata e sviluppata da'},
+de:{'nav.features':'Funktionen','nav.shack':'Warum Aurora','nav.download':'Download','hero.pill':'Kostenlos & Open Source','hero.h1a':'Deine FT8- & FT4-Station,','hero.h1b':'neu gedacht.','hero.lead':'Aurora dekodiert, sendet und führt deine QSOs mit eigenem Motor — Live-Wasserfall, automatische DXCC-Karte, Fernsteuerung per Handy und CAT für über 300 Funkgeräte. Schön zu bedienen, schnell auf Sendung.','cta.dl':'Für Windows herunterladen','cta.gh':'Auf GitHub ansehen','cta.note':'Windows 10/11 · 64-Bit · immer die neueste Version · <a href="https://github.com/wifi75/Aurora/releases/latest">alle Downloads</a>','stat.modes':'plus JT65 & JT9','stat.radios':'Funkgeräte über Hamlib-CAT','stat.langs':'Sprachen integriert','stat.oss':'frei und Open Source','f.h':'Alles, was ein Digimode-Funker braucht','f.sub':'Ein Fenster, gemacht für die Funkbude: nichts zu suchen, jede Funktion erklärt.','f1.t':'Eigener Dekodiermotor','f1.p':'FT8- und FT4-Dekodierung und -Senden eingebaut, dazu JT65 und JT9. Kein weiteres Programm nötig.','f2.t':'Live-Wasserfall','f2.p':'Ein scharfer, JTDX-treuer Wasserfall mit 30 Paletten, Gain und Zero, Rx/Tx-Markern und Spektrumgrafik.','f3.t':'DXCC-Karte','f3.p':'Auf einen Blick: neues Land, Band oder Modus — aus deinem eigenen Log gelesen.','f4.t':'Automatische QSOs','f4.p':'AutoSeq, Warteschlange der Anrufer, allen antworten, DX-Wunschliste und sichere Grenzen, mit einem STOP immer einen Klick entfernt.','f5.t':'Handy als Fernbedienung','f5.p':'Handy per QR-Code koppeln und die Station vom Sofa aus beobachten oder bedienen.','f6.t':'CAT für jedes Funkgerät','f6.p':'Hamlib und OmniRig, Frequenz, Modus, Split, PTT, Messgeräte und klickbare PRE/ATT/AGC/NB/NR.','f7.t':'DXpeditionen & Ausbreitung','f7.p':'NG3K-DXpeditionskalender, DX-Cluster, Weltkarte und „Wer hat mich gehört“ auf einen Blick.','f8.t':'Intelligente Hinweise','f8.p':'53 Töne, Farben je Nachrichtenart, ein Hinweis pro Station, anpassbare Toasts.','s.h':'Passt zu deiner Funkbude','s.sub':'Aurora spricht mit den Programmen, die du schon nutzt.','b1.t':'Zum Lesen gemacht','b1.p':'Farbige Nachrichten, durchgestrichene Stationen, Flaggen und Entfernungen — jede Funktion hat ein „?“, das sie erklärt.','b2.t':'Auf Tempo gebaut','b2.p':'Doppelklick zum Rufen, sofortige Hinweise, ein festes Layout, das nie springt, und Einstellungen, die sich selbst speichern.','b3.t':'Zum Verändern','b3.p':'Open Source unter GPL-3.0. Lesen, verbessern, weitergeben — und sie bleibt frei.','d.h':'In drei Schritten auf Sendung','d.1':'Installer herunterladen','d.2':'Starten und Funkgerät wählen','d.3':'Monitor drücken und das Band beobachten','cta.dl2':'Aurora für Windows herunterladen','d.rel':'Versionshinweise & Prüfsummen','d.note':'Der Link zeigt immer auf die neueste Version.','foot.by':'Entworfen und entwickelt von'},
+fr:{'nav.features':'Fonctions','nav.shack':'Pourquoi Aurora','nav.download':'Télécharger','hero.pill':'Libre et open source','hero.h1a':'Votre station FT8 et FT4,','hero.h1b':'réinventée.','hero.lead':'Aurora décode, émet et gère vos QSO avec son propre moteur : cascade en direct, fiche DXCC automatique, télécommande par téléphone et CAT pour plus de 300 radios. Agréable à utiliser, rapide en ondes.','cta.dl':'Télécharger pour Windows','cta.gh':'Voir sur GitHub','cta.note':'Windows 10/11 · 64 bits · toujours la dernière version · <a href="https://github.com/wifi75/Aurora/releases/latest">tous les téléchargements</a>','stat.modes':'plus JT65 et JT9','stat.radios':'radios via CAT Hamlib','stat.langs':'langues intégrées','stat.oss':'libre et open source','f.h':'Tout ce qu’un radioamateur des modes numériques veut','f.sub':'Une seule fenêtre pensée pour le shack : rien à chercher, chaque commande expliquée.','f1.t':'Moteur de décodage propre','f1.p':'Décodage et émission FT8 et FT4 intégrés, plus JT65 et JT9. Aucun autre programme nécessaire.','f2.t':'Cascade en direct','f2.p':'Une cascade nette, fidèle à JTDX, avec 30 palettes, gain et zéro, repères Rx/Tx et graphique du spectre.','f3.t':'Fiche DXCC','f3.p':'Voyez d’un coup d’œil si une station est un nouveau pays, une nouvelle bande ou un nouveau mode — lu dans votre journal.','f4.t':'QSO automatiques','f4.p':'AutoSeq, file des appelants, répondre à tous, liste de souhaits DX et limites de sécurité, avec un STOP toujours à un clic.','f5.t':'Téléphone en télécommande','f5.p':'Associez votre téléphone avec un QR code et suivez ou pilotez la station depuis le canapé.','f6.t':'CAT pour chaque radio','f6.p':'Hamlib et OmniRig, fréquence, mode, split, PTT, instruments et PRE/ATT/AGC/NB/NR cliquables.','f7.t':'DXpéditions et propagation','f7.p':'Calendrier des DXpéditions NG3K, DX cluster, carte du monde et « qui m’a reçu » en un coup d’œil.','f8.t':'Notifications intelligentes','f8.p':'53 sons, couleurs par type de message, une seule alerte par station, toasts personnalisables.','s.h':'S’intègre à votre shack','s.sub':'Aurora dialogue avec les programmes que vous utilisez déjà.','b1.t':'Faite pour être lue','b1.p':'Messages colorés, stations déjà contactées barrées, drapeaux et distances — chaque commande a un « ? » qui l’explique.','b2.t':'Faite pour la vitesse','b2.p':'Double-clic pour appeler, avis instantanés, une mise en page fixe qui ne saute jamais, et des réglages qui s’enregistrent seuls.','b3.t':'À vous de la changer','b3.p':'Open source sous GPL-3.0. Lisez-la, corrigez-la, améliorez-la — et elle reste libre.','d.h':'En ondes en trois étapes','d.1':'Téléchargez l’installateur','d.2':'Lancez-le et choisissez votre radio','d.3':'Appuyez sur Monitor et regardez la bande','cta.dl2':'Télécharger Aurora pour Windows','d.rel':'Notes de version et sommes de contrôle','d.note':'Le lien pointe toujours vers la dernière version.','foot.by':'Conçu et développé par'},
+es:{'nav.features':'Funciones','nav.shack':'Por qué Aurora','nav.download':'Descargar','hero.pill':'Gratis y de código abierto','hero.h1a':'Tu estación FT8 y FT4,','hero.h1b':'reinventada.','hero.lead':'Aurora decodifica, transmite y gestiona tus QSO con su propio motor: cascada en vivo, ficha DXCC automática, control desde el móvil y CAT para más de 300 radios. Agradable de usar, rápida en el aire.','cta.dl':'Descargar para Windows','cta.gh':'Ver en GitHub','cta.note':'Windows 10/11 · 64 bits · siempre la última versión · <a href="https://github.com/wifi75/Aurora/releases/latest">todas las descargas</a>','stat.modes':'más JT65 y JT9','stat.radios':'radios por CAT Hamlib','stat.langs':'idiomas integrados','stat.oss':'libre y de código abierto','f.h':'Todo lo que quiere un radioaficionado de modos digitales','f.sub':'Una sola ventana pensada para el shack: nada que buscar, cada control explicado.','f1.t':'Motor de decodificación propio','f1.p':'Decodificación y transmisión FT8 y FT4 integradas, más JT65 y JT9. No hace falta otro programa.','f2.t':'Cascada en vivo','f2.p':'Una cascada nítida y fiel a JTDX con 30 paletas, ganancia y cero, marcadores Rx/Tx y gráfico del espectro.','f3.t':'Ficha DXCC','f3.p':'Mira de un vistazo si una estación es país, banda o modo nuevo — leído de tu propio log.','f4.t':'QSO automáticos','f4.p':'AutoSeq, cola de llamantes, responder a todos, lista de deseos DX y límites de seguridad, con un STOP siempre a un clic.','f5.t':'El móvil como mando','f5.p':'Empareja el móvil con un código QR y vigila o maneja la estación desde el sofá.','f6.t':'CAT para cada radio','f6.p':'Hamlib y OmniRig, frecuencia, modo, split, PTT, instrumentos y PRE/ATT/AGC/NB/NR clicables.','f7.t':'DXpediciones y propagación','f7.p':'Calendario de DXpediciones NG3K, DX cluster, mapa del mundo y «quién me ha recibido» de un vistazo.','f8.t':'Notificaciones inteligentes','f8.p':'53 sonidos, colores por tipo de mensaje, un solo aviso por estación, toasts personalizables.','s.h':'Encaja con tu shack','s.sub':'Aurora habla con los programas que ya usas.','b1.t':'Hecha para leerse','b1.p':'Mensajes de colores, estaciones ya contactadas tachadas, banderas y distancias — cada control tiene un «?» que lo explica.','b2.t':'Hecha para la velocidad','b2.p':'Doble clic para llamar, avisos instantáneos, un diseño fijo que nunca salta y ajustes que se guardan solos.','b3.t':'Tuya para cambiarla','b3.p':'Código abierto bajo GPL-3.0. Léela, corrígela, mejórala — y sigue siendo libre.','d.h':'En el aire en tres pasos','d.1':'Descarga el instalador','d.2':'Ejecútalo y elige tu radio','d.3':'Pulsa Monitor y mira la banda','cta.dl2':'Descargar Aurora para Windows','d.rel':'Notas de versión y sumas de control','d.note':'El enlace apunta siempre a la última versión.','foot.by':'Diseñada y desarrollada por'},
+pt:{'nav.features':'Funções','nav.shack':'Porquê o Aurora','nav.download':'Transferir','hero.pill':'Gratuito e de código aberto','hero.h1a':'A tua estação FT8 e FT4,','hero.h1b':'reinventada.','hero.lead':'O Aurora descodifica, transmite e gere os teus QSO com um motor próprio: cascata em direto, ficha DXCC automática, controlo pelo telemóvel e CAT para mais de 300 rádios. Agradável de usar, rápido no ar.','cta.dl':'Transferir para Windows','cta.gh':'Ver no GitHub','cta.note':'Windows 10/11 · 64 bits · sempre a última versão · <a href="https://github.com/wifi75/Aurora/releases/latest">todas as transferências</a>','stat.modes':'mais JT65 e JT9','stat.radios':'rádios por CAT Hamlib','stat.langs':'línguas integradas','stat.oss':'livre e de código aberto','f.h':'Tudo o que um radioamador de modos digitais quer','f.sub':'Uma só janela pensada para o shack: nada para procurar, cada controlo explicado.','f1.t':'Motor de descodificação próprio','f1.p':'Descodificação e transmissão FT8 e FT4 integradas, mais JT65 e JT9. Não precisa de outro programa.','f2.t':'Cascata em direto','f2.p':'Uma cascata nítida e fiel ao JTDX com 30 paletas, ganho e zero, marcadores Rx/Tx e gráfico do espetro.','f3.t':'Ficha DXCC','f3.p':'Vê de relance se uma estação é país, banda ou modo novo — lido do teu próprio log.','f4.t':'QSO automáticos','f4.p':'AutoSeq, fila de chamadores, responder a todos, lista de desejos DX e limites de segurança, com um STOP sempre a um clique.','f5.t':'Telemóvel como comando','f5.p':'Emparelha o telemóvel com um código QR e vigia ou opera a estação do sofá.','f6.t':'CAT para cada rádio','f6.p':'Hamlib e OmniRig, frequência, modo, split, PTT, instrumentos e PRE/ATT/AGC/NB/NR clicáveis.','f7.t':'DXpedições e propagação','f7.p':'Calendário de DXpedições NG3K, DX cluster, mapa do mundo e «quem me recebeu» de relance.','f8.t':'Notificações inteligentes','f8.p':'53 sons, cores por tipo de mensagem, um só aviso por estação, toasts personalizáveis.','s.h':'Combina com o teu shack','s.sub':'O Aurora fala com os programas que já usas.','b1.t':'Feita para se ler','b1.p':'Mensagens coloridas, estações já contactadas riscadas, bandeiras e distâncias — cada controlo tem um «?» que o explica.','b2.t':'Feita para a velocidade','b2.p':'Duplo clique para chamar, avisos instantâneos, um esquema fixo que nunca salta e definições que se guardam sozinhas.','b3.t':'Tua para mudar','b3.p':'Código aberto sob GPL-3.0. Lê-a, corrige-a, melhora-a — e continua livre.','d.h':'No ar em três passos','d.1':'Transfere o instalador','d.2':'Executa-o e escolhe o teu rádio','d.3':'Prime Monitor e vê a banda','cta.dl2':'Transferir o Aurora para Windows','d.rel':'Notas de versão e somas de controlo','d.note':'A ligação aponta sempre para a última versão.','foot.by':'Desenhado e desenvolvido por'}
+};
+const sel=document.getElementById('lang');
+function setLang(l){
+  const t=T[l]||T.en;document.documentElement.lang=l;
+  document.querySelectorAll('[data-i18n]').forEach(e=>{const v=t[e.dataset.i18n];if(v!==undefined)e.textContent=v});
+  document.querySelectorAll('[data-i18n-html]').forEach(e=>{const v=t[e.dataset.i18nHtml];if(v!==undefined)e.innerHTML=v});
+  try{localStorage.setItem('aurora-site-lang',l)}catch(e){}
+}
+let l0='en';try{l0=localStorage.getItem('aurora-site-lang')||((navigator.language||'en').slice(0,2))}catch(e){}
+if(!T[l0])l0='en';sel.value=l0;setLang(l0);sel.addEventListener('change',()=>setLang(sel.value));
+
+/* ultima versione da GitHub */
+fetch('https://api.github.com/repos/wifi75/Aurora/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
+  if(!j||!j.tag_name)return;
+  const d=new Date(j.published_at).toLocaleDateString(document.documentElement.lang,{year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('ver').textContent=j.tag_name+' · '+d;
+  document.getElementById('rel').textContent=j.tag_name+' — '+d;
+}).catch(()=>{});
+
+/* cascata animata: segnali FT8 sottili */
+(function(){
+  const c=document.getElementById('wf');if(!c)return;const g=c.getContext('2d');const W=c.width,H=c.height;
+  const sig=[...Array(14)].map(()=>({x:Math.random()*W,w:2+Math.random()*2,p:Math.random()*30,on:Math.random()}));
+  const pal=v=>{const t=Math.min(1,Math.max(0,v));const s=[[3,8,30],[10,40,140],[20,120,220],[40,210,230],[250,235,90],[255,255,255]];const k=t*(s.length-1),i=Math.floor(k),f=k-i,a=s[i],b=s[Math.min(i+1,s.length-1)];return`rgb(${a[0]+(b[0]-a[0])*f|0},${a[1]+(b[1]-a[1])*f|0},${a[2]+(b[2]-a[2])*f|0})`};
+  let tick=0;
+  function row(){
+    g.drawImage(c,0,1);
+    for(let x=0;x<W;x+=2){let v=.08+Math.random()*.1;g.fillStyle=pal(v);g.fillRect(x,0,2,1)}
+    tick++;
+    sig.forEach(s=>{
+      if(tick%30===0){s.on=Math.random()>.35;if(tick%90===0)s.x=Math.random()*W}
+      if(!s.on)return;
+      for(let k=-s.w;k<s.w;k++){const v=.75-Math.abs(k)/s.w*.45+Math.random()*.12;g.fillStyle=pal(v);g.fillRect(s.x+k,0,1,1)}
+    });
+  }
+  for(let i=0;i<H;i++)row();
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  setInterval(row,70);
+})();
+
+/* decodifiche che scorrono (nominativi di fantasia) */
+(function(){
+  const box=document.getElementById('rows');if(!box)return;
+  const data=[['CQ K1ABC FN42','cq','412 km'],['W9XYZ DL1QRP -12','','5 840 km'],['CQ DX JA1TST PM95','new','10 120 km'],['K1ABC EA8ABC R-07','','4 210 km'],['CQ OM1XYZ JN88','cq','960 km'],['PY2DEF G4QRP RR73','','9 330 km'],['ZS6XYZ VK3ABC -15','new','11 400 km'],['CQ I1TST JN45','me','120 km']];
+  let i=0;const add=()=>{const [t,k,d]=data[i++%data.length];const r=document.createElement('div');r.className='row '+k;const n=new Date();const hh=String(n.getUTCHours()).padStart(2,'0')+String(n.getUTCMinutes()).padStart(2,'0')+String(Math.floor(n.getUTCSeconds()/15)*15).padStart(2,'0');r.innerHTML='<span>'+hh+'</span><span>'+(-5-(i*3)%18)+'</span><span>'+t+'</span><span>'+d+'</span>';box.prepend(r);while(box.children.length>5)box.lastChild.remove()};
+  for(let j=0;j<5;j++)add();setInterval(add,2600);
+})();
+</script>
+</body>
+</html>

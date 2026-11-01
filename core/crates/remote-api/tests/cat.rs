@@ -106,6 +106,7 @@ async fn every_route_needs_a_paired_device() {
         (Method::GET, "/api/v1/cat/models"),
         (Method::GET, "/api/v1/cat/ports"),
         (Method::POST, "/api/v1/cat/detect"),
+        (Method::POST, "/api/v1/cat/extra"),
     ] {
         let resp = call(&router(&s.state), req(m.clone(), uri)).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED, "{m} {uri}");
@@ -185,6 +186,52 @@ async fn connecting_and_disconnecting_are_from_the_pc_and_show_the_real_state() 
     let v = body_json(send(&s.state, Method::POST, "/api/v1/cat/disconnect", None, Via::Pc).await).await;
     assert_eq!(v["status"]["state"], "disconnected");
     assert!(!s.fake.ptt());
+}
+
+#[tokio::test]
+async fn a_click_on_an_indicator_changes_the_radio_only_from_the_pc_and_never_while_transmitting() {
+    let s = setup("extra", true);
+    s.fake.set_func("NB", false);
+    let nb = || Some(json!({ "item": "nb" }));
+    // senza radio collegata
+    status_is(&send(&s.state, Method::PUT, "/api/v1/cat", Some(ft2000()), Via::Pc).await, StatusCode::OK);
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), Via::Pc).await;
+    status_is(&resp, StatusCode::CONFLICT);
+    assert_eq!(body_json(resp).await["error"], "not_connected");
+
+    status_is(&send(&s.state, Method::POST, "/api/v1/cat/connect", None, Via::Pc).await, StatusCode::OK);
+    wait_state(&s.state, "connected").await;
+    for via in [Via::Network, Via::Proxy] {
+        let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), via).await;
+        status_is(&resp, StatusCode::FORBIDDEN);
+        assert_eq!(body_json(resp).await["error"], "local_only");
+    }
+    assert_eq!(s.fake.func("NB"), Some(false), "nulla e' cambiato");
+
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", Some(json!({ "item": "tuner" })), Via::Pc).await;
+    status_is(&resp, StatusCode::BAD_REQUEST);
+    assert_eq!(body_json(resp).await["error"], "bad_item");
+
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), Via::Pc).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!((v["ok"].clone(), v["extras"]["nb"].clone()), (json!(true), json!(true)));
+    assert_eq!(s.fake.func("NB"), Some(true));
+
+    // una radio che non ha la funzione: errore chiaro
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", Some(json!({ "item": "nr" })), Via::Pc).await;
+    status_is(&resp, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(body_json(resp).await["error"], "unsupported");
+
+    // in trasmissione si rifiuta
+    s.fake.set_func("NB", true);
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), Via::Pc).await;
+    status_is(&resp, StatusCode::OK);
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    s.state.cat.as_ref().expect("cat").hamlib().expect("rig").set_ptt(true).expect("ptt");
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), Via::Pc).await;
+    status_is(&resp, StatusCode::CONFLICT);
+    assert_eq!(body_json(resp).await["error"], "transmitting");
 }
 
 #[tokio::test]

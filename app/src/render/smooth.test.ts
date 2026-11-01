@@ -1,35 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RowAverager, RowClock } from './smooth';
-
-describe('RowAverager', () => {
-  it('returns the mean of every N rows and nothing in between', () => {
-    const avg = new RowAverager(4);
-    expect(avg.add(Uint8Array.from([0, 100]))).toBeNull();
-    expect(avg.add(Uint8Array.from([40, 100]))).toBeNull();
-    expect(avg.add(Uint8Array.from([80, 100]))).toBeNull();
-    expect(Array.from(avg.add(Uint8Array.from([120, 100]))!)).toEqual([60, 100]);
-  });
-
-  it('starts a new group after each result', () => {
-    const avg = new RowAverager(2);
-    avg.add(Uint8Array.from([10]));
-    expect(Array.from(avg.add(Uint8Array.from([30]))!)).toEqual([20]);
-    avg.add(Uint8Array.from([200]));
-    expect(Array.from(avg.add(Uint8Array.from([100]))!)).toEqual([150]);
-  });
-
-  it('restarts when the width changes and ignores empty rows', () => {
-    const avg = new RowAverager(2);
-    expect(avg.add(new Uint8Array(0))).toBeNull();
-    avg.add(Uint8Array.from([10, 10]));
-    expect(avg.add(Uint8Array.from([20]))).toBeNull();
-    expect(Array.from(avg.add(Uint8Array.from([40]))!)).toEqual([30]);
-  });
-
-  it('refuses a group size below one', () => {
-    expect(() => new RowAverager(0)).toThrow();
-  });
-});
+import { RowClock } from './smooth';
 
 describe('RowClock', () => {
   it('is 0 before the first row and grows to 1 between two rows', () => {

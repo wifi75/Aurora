@@ -79,6 +79,12 @@ pub trait Rig: Send + Sync {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 
+    /// Il clic su un indicatore del display esteso: cambia l'impostazione della radio (NB, NR, notch, ATU, preamplificatore, attenuatore,
+    /// AGC, VFO, RIT/XIT) e rilegge quel dato. Solo con il CAT Hamlib.
+    fn set_extra(&self, _item: extras::ExtraItem) -> Result<(), RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
     /// Porta un interruttore allo stato voluto (`Some`) o preme un pulsante semplice (`None`).
     fn set_control(&self, _id: &str, _on: Option<bool>) -> Result<(), RigError> {
         Err(RigError("comando non supportato da questa radio".into()))

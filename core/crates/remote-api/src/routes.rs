@@ -95,6 +95,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat/models", get(crate::cat::cat_models))
         .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
         .route("/api/v1/cat/detect", post(crate::cat::cat_detect))
+        .route("/api/v1/cat/extra", post(crate::cat::cat_extra))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .with_state(state)

@@ -10,6 +10,7 @@ import { FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralTab } from '../settings/GeneralTab';
 import { AudioTab, ReportsTab } from '../settings/InfoTabs';
+import { WaterfallTab } from '../settings/WaterfallTab';
 import { AdvancedTab } from '../settings/AdvancedTab';
 import { RadioTab } from '../settings/RadioTab';
 import { MacrosTab } from '../settings/MacrosTab';
@@ -35,6 +36,7 @@ const TAB: Record<string, TabDef> = Object.fromEntries(
       ['general', <GeneralTab />],
       ['radio', <RadioTab />],
       ['audio', <AudioTab />],
+      ['waterfall', <WaterfallTab />],
       ['frequencies', <FrequenciesTab />],
       ['bands', <BandsTab />],
       ['sequence', <SequenceTab />],
@@ -65,7 +67,7 @@ interface TabRow {
 
 /** La barra delle schede: due gruppi per tipo; in fondo Aggiornamenti e Informazioni. */
 const ROWS: readonly TabRow[] = [
-  { id: 'station', title: 'tabg.station', tabs: ['general', 'radio', 'audio', 'frequencies', 'bands', 'sequence', 'macros', 'schedule', 'filters', 'advanced'] },
+  { id: 'station', title: 'tabg.station', tabs: ['general', 'radio', 'audio', 'waterfall', 'frequencies', 'bands', 'sequence', 'macros', 'schedule', 'filters', 'advanced'] },
   { id: 'data', title: 'tabg.data', tabs: ['notifications', 'wishlist', 'dxcc', 'cluster', 'reports', 'online', 'clock', 'access', 'windows', 'updates', 'about'] },
 ];
 

@@ -1,17 +1,20 @@
 import type { WaterfallBackend } from './backend';
-import { LUT_SIZE, WATERFALL_STOPS, buildLut } from './colormap';
+import { LUT_SIZE, jtdxPaletteLut } from './colormap';
 import { RowRing } from './ring';
-import { DEFAULT_LEVELS, type Levels } from './levels';
+import { Y_MIN, Y_PER_DB } from './jtdxRow';
+import { JTDX_PALETTES, DEFAULT_PALETTE } from './wfPalettes';
 import { RowClock } from './smooth';
-import { WATERFALL_HEIGHT, WATERFALL_WIDTH, rowsPerPixel } from './webgl2';
+import { WATERFALL_HEIGHT, WATERFALL_WIDTH, rowsPerPixel, toneUniform } from './webgl2';
 
 const SHADER = /* wgsl */ `
-// head/h: anello; frac: frazione di riga gia' scorsa; rpp: righe per pixel; w/ch: dimensioni del canvas in pixel
-struct U { head: f32, h: f32, frac: f32, rpp: f32, w: f32, ch: f32, black: f32, gain: f32, contrast: f32, pad0: f32, pad1: f32, pad2: f32 };
+// head/h: anello; frac: frazione di riga gia' scorsa; rpp: righe per pixel; w/ch: dimensioni del canvas in pixel;
+// ta/tb: il colore di JTDX, indice = ta * y + tb (vedi toneUniform)
+struct U { head: f32, h: f32, frac: f32, rpp: f32, w: f32, ch: f32, ta: f32, tb: f32 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var tex: texture_2d<f32>;
 @group(0) @binding(2) var lut: texture_2d<f32>;
 @group(0) @binding(3) var samp: sampler;
+@group(0) @binding(4) var flags: texture_2d<f32>;
 
 struct VOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
 
@@ -23,8 +26,9 @@ struct VOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
   return o;
 }
 
-// Una riga vale un pixel e la cascata scende di continuo (frac); in orizzontale si mediano quattro punti e si tiene anche
-// il massimo, perche' i 1024 canali sono piu' dei pixel e un segnale stretto non sparisca ne' tremi.
+// Una riga vale un pixel e la cascata scende di continuo (frac). La texture tiene il livello y del Wide Graph di JTDX
+// (byte = (y + 24) * 4); il colore e' quello di CPlotter::draw: 10 * gain * y + 10 * zero + 40 tenuto in 0-254, cercato nella
+// tavolozza da 256 colori. In orizzontale si mediano quattro punti (i canali possono essere piu' dei pixel).
 fn at(x: f32, r: f32) -> f32 {
   return textureSampleLevel(tex, samp, vec2f(x, r), 0.0).r;
 }
@@ -34,15 +38,13 @@ fn at(x: f32, r: f32) -> f32 {
   let coord = min(u.head - py + u.frac, u.head - 0.5);
   let r = fract(coord / u.h);
   let w = 1.0 / u.w;
-  let a = at(in.uv.x - 0.375 * w, r);
-  let b = at(in.uv.x - 0.125 * w, r);
-  let c4 = at(in.uv.x + 0.125 * w, r);
-  let d = at(in.uv.x + 0.375 * w, r);
-  let v = 0.5 * (a + b + c4 + d) * 0.25 + 0.5 * max(max(a, b), max(c4, d));
-  var x = clamp((v - u.black) / max(1.0 - u.black, 0.05), 0.0, 1.0);
-  x = pow(x, 1.0 / u.gain);
-  x = clamp((x - 0.5) * u.contrast + 0.5, 0.0, 1.0);
-  let c = textureSampleLevel(lut, samp, vec2f(x * 0.99609375 + 0.001953125, 0.5), 0.0).rgb;
+  let v = 0.25 * (at(in.uv.x - 0.375 * w, r) + at(in.uv.x - 0.125 * w, r) + at(in.uv.x + 0.125 * w, r) + at(in.uv.x + 0.375 * w, r));
+  let y = v * 255.0 / ${Y_PER_DB}.0 + (${Y_MIN}.0);
+  let idx = clamp(trunc(u.ta * y + u.tb), 0.0, 254.0);
+  var c = textureSampleLevel(lut, samp, vec2f((idx + 0.5) / 256.0, 0.5), 0.0).rgb;
+  let f = textureSampleLevel(flags, samp, vec2f(0.5, r), 0.0).rg;
+  c = mix(c, vec3f(0.0, 1.0, 0.0), f.r);
+  c = mix(c, vec3f(1.0, 1.0, 0.0), f.g);
   return vec4f(c, 1.0);
 }`;
 
@@ -55,6 +57,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
   private bindGroup!: GPUBindGroup;
   private texture!: GPUTexture;
   private lutTexture!: GPUTexture;
+  private flagTexture!: GPUTexture;
   private uniforms!: GPUBuffer;
   private raf = 0;
   private alive = false;
@@ -86,10 +89,14 @@ export class WebGpuWaterfall implements WaterfallBackend {
       format: 'rgba8unorm',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
-    const lut = buildLut(WATERFALL_STOPS);
-    device.queue.writeTexture({ texture: this.lutTexture }, lut.buffer as ArrayBuffer, { bytesPerRow: LUT_SIZE * 4 }, [LUT_SIZE, 1]);
+    this.flagTexture = device.createTexture({
+      size: [1, WATERFALL_HEIGHT],
+      format: 'rg8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    this.writeLut(jtdxPaletteLut(JTDX_PALETTES[DEFAULT_PALETTE]!));
 
-    this.uniforms = device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.uniforms = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -110,22 +117,39 @@ export class WebGpuWaterfall implements WaterfallBackend {
         { binding: 1, resource: this.texture.createView() },
         { binding: 2, resource: this.lutTexture.createView() },
         { binding: 3, resource: sampler },
+        { binding: 4, resource: this.flagTexture.createView() },
       ],
     });
     this.alive = true;
     this.schedule();
   }
 
-  private levels: Levels = DEFAULT_LEVELS;
+  private tone: [number, number] = toneUniform(0, 0);
 
-  setLevels(levels: Levels): void {
-    this.levels = levels;
+  setTone(gain: number, zero: number): void {
+    this.tone = toneUniform(gain, zero);
     this.schedule();
   }
 
-  pushRow(row: Uint8Array): void {
+  setPalette(lut: Uint8Array): void {
+    if (!this.alive) return;
+    this.writeLut(lut);
+    this.schedule();
+  }
+
+  private writeLut(lut: Uint8Array): void {
+    this.device.queue.writeTexture({ texture: this.lutTexture }, lut.slice().buffer as ArrayBuffer, { bytesPerRow: LUT_SIZE * 4 }, [LUT_SIZE, 1]);
+  }
+
+  pushRow(row: Uint8Array, flag: 0 | 1 | 2 = 0): void {
     const index = this.ring.push(row);
     if (index < 0 || !this.alive) return;
+    this.device.queue.writeTexture(
+      { texture: this.flagTexture, origin: [0, index, 0] },
+      Uint8Array.of(flag === 1 ? 255 : 0, flag === 2 ? 255 : 0),
+      { bytesPerRow: 2 },
+      [1, 1],
+    );
     this.clock.push(performance.now());
     const slice = this.ring.data.slice(index * WATERFALL_WIDTH, (index + 1) * WATERFALL_WIDTH);
     this.device.queue.writeTexture(
@@ -149,6 +173,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
     this.raf = 0;
     this.texture?.destroy();
     this.lutTexture?.destroy();
+    this.flagTexture?.destroy();
     this.uniforms?.destroy();
     this.device?.destroy();
   }
@@ -170,12 +195,8 @@ export class WebGpuWaterfall implements WaterfallBackend {
       rowsPerPixel(this.canvas.height),
       this.canvas.width,
       this.canvas.height,
-      this.levels.black,
-      this.levels.gain,
-      this.levels.contrast,
-      0,
-      0,
-      0,
+      this.tone[0],
+      this.tone[1],
     ]));
     const encoder = this.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({

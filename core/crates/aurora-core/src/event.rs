@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::CoreError;
 
-pub const MAX_SPECTRUM_BINS: usize = 4096;
+pub const MAX_SPECTRUM_BINS: usize = 8192;
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct StationStatus {

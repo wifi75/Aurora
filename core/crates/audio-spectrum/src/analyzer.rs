@@ -2,20 +2,28 @@ use std::{collections::VecDeque, sync::Arc};
 
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
-/// Fino a 5000 Hz: la cascata mostra poi solo la parte che passa dal filtro della radio (fino a 4000 Hz e oltre su alcune radio).
+/// Fino a 5000 Hz, come il Wide Graph di JTDX (`iz = nint(5000/df3)` in `symspec.f90`); la cascata mostra poi
+/// solo la parte che passa dal filtro della radio.
 pub const F_MAX_HZ: u32 = 5000;
-/// Circa 2,4 Hz per canale, un po' meglio di prima (1024 canali su 3000 Hz).
-pub const OUTPUT_BINS: usize = 2048;
+/// Frequenza di campionamento di riferimento di JTDX: tutte le sue costanti sono in campioni a 12000 Hz.
+const JTDX_RATE: f32 = 12_000.0;
+/// `nfft3 = 16384` in `symspec.f90`: canali da 12000/16384 = 0,732 Hz.
+const JTDX_NFFT: f32 = 16_384.0;
+/// Canali di uscita: `nint(5000 / 0,732422)` = 6827, uno per canale della FFT di JTDX, da 0 a 5000 Hz.
+pub const OUTPUT_BINS: usize = 6827;
+/// `nsps = 6912` per tutti i modi (`MainWindow::commonActions`, «For symspec only»); la finestra e' una gaussiana
+/// `exp(-z^2)` con `z = (i - nfft3/2) / (0,25 * nsps)`: larghezza 1728 campioni a 12 kHz = 0,144 s.
+const WINDOW_WIDTH_SECS: f32 = 0.25 * 6912.0 / JTDX_RATE;
+/// JTDX fa una riga ogni mezzo simbolo (nsps/2 = 3456 campioni = 0,288 s, 3,47 righe al secondo). Qui 15 al secondo: la
+/// cascata scorre fluida e il client media le righe come l'opzione «N Avg» (4-5 righe nostre = una riga di JTDX).
 const ROWS_PER_SECOND: usize = 15;
 const MIN_SAMPLE_RATE: u32 = 8000;
-/// Contrasto automatico: il nero segue il rumore di fondo (mediana dei bin, mediata nel tempo).
-/// Lo sfondo cade a `MARGIN_DB` sotto il rumore; il massimo e' `HEADROOM_DB` sopra di esso.
-const MARGIN_DB: f32 = 5.0;
-const HEADROOM_DB: f32 = 40.0;
-/// Sotto questo livello assoluto il rumore stimato non scende: il silenzio resta nero.
-const ABSOLUTE_FLOOR_DB: f32 = -100.0;
-/// Quanto in fretta la stima segue il fondo (per riga; a 15 righe al secondo: circa 1 secondo).
-const NOISE_ALPHA: f32 = 0.1;
+/// `fac0 = 0.1` per un campione a 16 bit: i campioni in [-1, 1] si portano alla scala di JTDX (interi a 16 bit) prima.
+const FAC0: f32 = 0.1 * 32768.0;
+/// Ampiezza di JTDX (`sx = (|re| + |im|) / nfft3`) in dB, il minimo e il passo con cui diventa un byte.
+/// Il client usa gli stessi valori (`app/src/render/jtdxRow.ts`): vanno cambiati insieme.
+pub const DB_MIN: f32 = -40.0;
+pub const DB_STEP: f32 = 80.0 / 255.0;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AnalyzerError {
@@ -34,7 +42,9 @@ impl std::fmt::Display for AnalyzerError {
 
 impl std::error::Error for AnalyzerError {}
 
-/// Trasforma l'audio in righe di 2048 valori `u8` su 0-5000 Hz, circa 15 al secondo.
+/// Trasforma l'audio in righe di 6827 byte su 0-5000 Hz (canali da 0,732 Hz), circa 15 al secondo, con lo spettro di JTDX:
+/// finestra gaussiana, FFT di 1,365 s, ampiezza `(|re| + |im|) / n`. Il byte e' l'ampiezza in dB (`DB_MIN`, `DB_STEP`):
+/// la scala mediana, i canali per pixel, il guadagno e i colori li applica il client come il Wide Graph.
 pub struct SpectrumAnalyzer {
     fft: Arc<dyn Fft<f32>>,
     n: usize,
@@ -44,12 +54,6 @@ pub struct SpectrumAnalyzer {
     since_row: usize,
     buf: Vec<Complex<f32>>,
     scratch: Vec<Complex<f32>>,
-    /// Per ogni bin di uscita: intervallo dei bin FFT da cui prendere il massimo.
-    ranges: Vec<(usize, usize)>,
-    /// Ampiezza di un seno a fondo scala dopo la finestra di Hann.
-    full_scale: f32,
-    /// Rumore di fondo stimato, in dBFS.
-    noise_db: Option<f32>,
 }
 
 impl SpectrumAnalyzer {
@@ -57,36 +61,24 @@ impl SpectrumAnalyzer {
         if sample_rate < MIN_SAMPLE_RATE {
             return Err(AnalyzerError::SampleRateTooLow(sample_rate));
         }
-        let rate = sample_rate as usize;
-        // risoluzione pari o migliore di un bin di uscita (circa 2,9 Hz)
-        let n = (rate * OUTPUT_BINS).div_ceil(F_MAX_HZ as usize).next_power_of_two();
-        let hop = (rate / ROWS_PER_SECOND).max(1);
+        let rate = sample_rate as f32;
+        // canali da 12000/16384 Hz come JTDX, qualunque sia la frequenza di campionamento
+        let n = ((rate * JTDX_NFFT / JTDX_RATE).round() as usize).max(2);
+        let hop = ((sample_rate as usize) / ROWS_PER_SECOND).max(1);
+        let width = WINDOW_WIDTH_SECS * rate;
+        // `z = (i - nfft3/2) / width` con i da 1 (indice di Fortran): il picco cade a meta' della finestra
         let window = (0..n)
-            .map(|i| 0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / (n - 1) as f32).cos())
+            .map(|i| {
+                let z = ((i + 1) as f32 - n as f32 / 2.0) / width;
+                (-z * z).exp()
+            })
             .collect();
         let fft = FftPlanner::<f32>::new().plan_fft_forward(n);
         let scratch = vec![Complex::new(0.0, 0.0); fft.get_inplace_scratch_len()];
-        let ranges = (0..OUTPUT_BINS)
-            .map(|i| {
-                let bin = |edge: usize| edge * F_MAX_HZ as usize * n / (OUTPUT_BINS * rate);
-                let lo = bin(i);
-                let hi = bin(i + 1).max(lo + 1).min(n / 2);
-                (lo.min(hi - 1), hi)
-            })
-            .collect();
-        Ok(SpectrumAnalyzer {
-            fft,
-            n,
-            hop,
-            window,
-            samples: VecDeque::with_capacity(n + 1),
-            since_row: 0,
-            buf: vec![Complex::new(0.0, 0.0); n],
-            scratch,
-            ranges,
-            full_scale: n as f32 / 4.0,
-            noise_db: None,
-        })
+        // come JTDX, che azzera i campioni mancanti all'inizio: le prime righe sono scure invece di aspettare la finestra piena
+        let mut samples = VecDeque::with_capacity(n + 1);
+        samples.extend(std::iter::repeat_n(0.0, n));
+        Ok(SpectrumAnalyzer { fft, n, hop, window, samples, since_row: 0, buf: vec![Complex::new(0.0, 0.0); n], scratch })
     }
 
     /// Aggiunge campioni mono in [-1, 1]; restituisce le righe diventate pronte (anche zero).
@@ -95,11 +87,9 @@ impl SpectrumAnalyzer {
         let mut rows = Vec::new();
         for &s in input {
             self.samples.push_back(if s.is_finite() { s } else { 0.0 });
-            if self.samples.len() > self.n {
-                self.samples.pop_front();
-            }
+            self.samples.pop_front();
             self.since_row += 1;
-            if self.samples.len() == self.n && self.since_row >= self.hop {
+            if self.since_row >= self.hop {
                 self.since_row = 0;
                 rows.push(self.compute_row());
             }
@@ -109,30 +99,21 @@ impl SpectrumAnalyzer {
 
     fn compute_row(&mut self) -> Vec<u8> {
         for (i, s) in self.samples.iter().enumerate() {
-            self.buf[i] = Complex::new(s * self.window[i], 0.0);
+            self.buf[i] = Complex::new(s * FAC0 * self.window[i], 0.0);
         }
         self.fft.process_with_scratch(&mut self.buf, &mut self.scratch);
-        let dbs: Vec<f32> = self
-            .ranges
-            .iter()
-            .map(|&(lo, hi)| {
-                let magnitude = self.buf[lo..hi].iter().map(|c| c.norm()).fold(0.0f32, f32::max);
-                (20.0 * (magnitude.max(1e-12) / self.full_scale).log10()).clamp(-200.0, 60.0)
+        let fac1 = 1.0 / self.n as f32;
+        (0..OUTPUT_BINS)
+            .map(|j| {
+                // sotto i 10 kHz di campionamento i canali oltre Nyquist restano vuoti
+                if j >= self.n / 2 {
+                    return 0;
+                }
+                let c = self.buf[j];
+                let amplitude = (c.re.abs() + c.im.abs()) * fac1;
+                let db = 20.0 * amplitude.max(1e-12).log10();
+                ((db - DB_MIN) / DB_STEP).clamp(0.0, 255.0).round() as u8
             })
-            .collect();
-
-        let mut sorted = dbs.clone();
-        let mid = sorted.len() / 2;
-        let median = *sorted.select_nth_unstable_by(mid, f32::total_cmp).1;
-        let noise = match self.noise_db {
-            None => median,
-            Some(previous) => previous + NOISE_ALPHA * (median - previous),
-        };
-        self.noise_db = Some(noise);
-
-        let reference = noise.max(ABSOLUTE_FLOOR_DB);
-        dbs.iter()
-            .map(|db| ((db - (reference - MARGIN_DB)) / (HEADROOM_DB + MARGIN_DB) * 255.0).clamp(0.0, 255.0).round() as u8)
             .collect()
     }
 }

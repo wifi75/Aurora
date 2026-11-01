@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-01, versione 0.11.49. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-01, versione 0.11.50. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -125,7 +125,13 @@ Stato al 2026-11-01, versione 0.11.49. Per riprendere il lavoro leggi anche `doc
 - **Notifiche** (`lib/toast.ts`, `Toaster.tsx`): niente notifica per gli spostamenti delle barre Rx/Tx (solo errori); doppio clic = «Rispondo a NOMINATIVO», l'avviso sui messaggi non CQ e' un toast separato.
 - **Cascata**: il core analizza 0-5000 Hz su 2048 canali (`audio-spectrum`); l'interfaccia ritaglia fino alla larghezza del filtro letta da Hamlib (`RigStatus.passband_hz`, `spanFromPassband` in `lib/spectrumFeed.ts`), 0-3000 se ignota.
 - **Dati in piu' della radio** (`rig-control/src/extras.rs`): con `read_extras` (CAT, spento di base) si leggono a turno 3 voci per lettura (1 sulle seriali lente), solo in ricezione; quelle non supportate si ricordano. Secondo VFO con `+\get_vfo_info VFOB` letto fino a RPRT. Cosa mostrare: `lib/radioExtras.ts` (preferenze del browser).
+- **Display esteso cliccabile** (2026-11-01): `extras.rs` ha `ExtraItem` e `ExtrasPoll::apply` (legge il valore vero, scrive il successivo con `U`/`L`/`V`/`J`/`Z` di `RigctldClient`, rilegge e mette in cache); `HamlibRig::set_extra` (rifiuta in trasmissione), trait `Rig::set_extra` (OmniRig: errore chiaro), rotta `POST /api/v1/cat/extra` (`remote-api/src/cat.rs`), `postCatExtra` e pulsanti `rx-chip--btn` in `RadioExtras.tsx`. Da provare con la radio vera.
 - **DXpedition**: `online-info/src/dxped.rs` legge `ng3k.com/Misc/adxo.html` (righe `adxoitem`) ogni 6 ore; `/api/v1/online/dxped`; pannello `DxpedPanel.tsx` nel pannello CQ.
 - **rigctld orfano**: `close_orphan_rigctld()` (porta occupata da un rigctld senza padre) e l'installatore (`hooks.nsh`) che ripete finche' la cartella hamlib si libera.
 - **Km senza locatore**: `gridOfSender` in `DecodeList.tsx` ricorda il locatore di ogni stazione per la sessione della pagina.
 - **Test pesanti**: `cargo test --workspace` in parallelo alle build ha esaurito le risorse di Windows (cmd.exe 0xc0000142) mentre il proprietario era in onda. Usare `-j 2` e test mirati per crate; il proprietario puo' chiedere di non fare test.
+
+## Cascata (2026-11-01)
+- La cascata segue il Wide Graph di JTDX 2.2.159 (REA + sorgenti, `docs/analisi-jtdx-reverse-rea.md`, sezione «Cascata e spettro»): il core (`audio-spectrum`) manda 6827 canali da 0,732 Hz (0-5000 Hz) come ampiezza in dB (byte: -40 dB + 80/255 dB per passo, costanti uguali in `app/src/render/jtdxRow.ts`), finestra gaussiana 0,144 s, 15 righe/s; il resto (N Avg, Bins/Pixel, Scale, Flatten, indice di colore) e' nel client.
+- Opzioni in Impostazioni > Cascata (`app/src/lib/wfPrefs.ts`, chiave `aurora-wf-prefs`): valori di fabbrica e limiti di JTDX (Bins/Pixel 5, N Avg 1, Spec 30 %, Scale acceso...). In JTDX 2.2.159 lo spettro ha solo Current e Cumulative (niente Smooth, Ref Spec, Linear Avg).
+- Barre Rx/Tx: 43,75 Hz in FT8, 62,5 Hz in FT4 (come `CPlotter::DrawOverlay`); finestra del Filtro asimmetrica (`filterWindowHz`). `MAX_SPECTRUM_BINS` = 8192.

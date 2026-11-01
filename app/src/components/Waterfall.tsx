@@ -1,55 +1,60 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
-import { LEVEL_KEYS, clampLevel, readLevels, type Levels } from '../render/levels';
-import { RowAverager } from '../render/smooth';
-
-/** Righe del core (15 al secondo) mediate a gruppi. Di base nessuna media (15 righe al secondo, come Decodium: scorre fluida);
- * con la chiave `aurora-wf-rows` (1-4) si puo' mediare di piu', per una cascata piu' lenta e meno rumorosa. */
-const DEFAULT_ROWS_PER_STEP = 1;
-
-export function rowsPerStep(raw: string | null | undefined): number {
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 1 && n <= 4 ? n : DEFAULT_ROWS_PER_STEP;
-}
-
-const ROWS_KEY = 'aurora-wf-rows';
-
-function readPref(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writePref(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // senza archivio del browser le regolazioni valgono fino alla chiusura della pagina
-  }
-}
+import { jtdxPaletteLut } from '../render/colormap';
+import { PeriodAverage, RowAverager, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
+import { drawSpectrum } from '../render/spectrumPlot';
+import { WATERFALL_WIDTH } from '../render/webgl2';
+import { periodSecs } from '../lib/period';
+import { type SpectrumListener, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
+import { WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
 
 interface Props {
   /** Registra la funzione che riceve ogni riga di spettro; restituisce come annullare. */
-  register(push: (bins: Uint8Array) => void): () => void;
+  register(push: SpectrumListener): () => void;
+  /** Il modo in uso (FT8, FT4...): da qui la durata del periodo per le righe verdi e per la media «Cumulative». */
+  mode?: string;
 }
+
+/** Quota massima dell'altezza per lo spettro (%). */
+const MAX_SPECTRUM_SHARE = 85;
 
 type Phase = 'loading' | 'ready' | 'unsupported';
 
-export function Waterfall({ register }: Props) {
+/**
+ * La cascata e lo spettro del Wide Graph di JTDX: le righe del core (canali da 0,732 Hz) diventano pixel con le opzioni
+ * delle Impostazioni → Cascata (Bins/Pixel, Start, N Avg, Scale, Flatten, tavolozza, Gain, Zero, spettro Current/Cumulative).
+ */
+export function Waterfall({ register, mode }: Props) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>('loading');
   const [kind, setKind] = useState('');
   // WebGPU puo' aver gia' preso il canvas: per ripiegare su WebGL2 serve un canvas nuovo
   const [attempt, setAttempt] = useState<{ forced?: 'webgl2'; key: number }>({ key: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const plotRef = useRef<HTMLCanvasElement>(null);
   const backendRef = useRef<WaterfallBackend | null>(null);
-  const [levels, setLevels] = useState<Levels>(() => readLevels(readPref));
-  const [rows, setRows] = useState(() => rowsPerStep(readPref(ROWS_KEY)));
-  const rowsRef = useRef(rows);
-  const levelsRef = useRef(levels);
+  const prefs = useWfPrefs((s) => s.prefs);
+  const spanHz = useSpectrumSpan((s) => s.spanHz);
+  const range = visibleRange(prefs.startHz, spanHz);
+  // come `if(m_h2 > m_h - 30)` di JTDX: la cascata non sparisce mai del tutto
+  const specPercent = Math.min(prefs.spectrumPercent, MAX_SPECTRUM_SHARE);
+
+  // le opzioni correnti per il ricevitore delle righe, che vive per tutta la vita del renderer
+  const live = useRef({ prefs, from: range.from, to: range.to, mode });
+  live.current = { prefs, from: range.from, to: range.to, mode };
+  const curveRef = useRef<Float32Array | null>(null);
+  const drawPlot = () => {
+    const canvas = plotRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w) canvas.width = w;
+    if (canvas.height !== h) canvas.height = h;
+    drawSpectrum(canvas, curveRef.current, live.current.from, live.current.to);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -72,7 +77,8 @@ export function Waterfall({ register }: Props) {
         }
         backend = b;
         backendRef.current = b;
-        b.setLevels(levelsRef.current);
+        b.setPalette(jtdxPaletteLut(paletteColors(live.current.prefs)));
+        b.setTone(live.current.prefs.gain, live.current.prefs.zero);
         setKind(b.kind);
         setPhase('ready');
         const fit = () => {
@@ -81,13 +87,42 @@ export function Waterfall({ register }: Props) {
           b.resize(Math.round(rect.width * dpr), Math.round(rect.height * dpr));
         };
         fit();
-        observer = new ResizeObserver(fit);
+        observer = new ResizeObserver(() => {
+          fit();
+          drawPlot();
+        });
         observer.observe(canvas);
-        let average = new RowAverager(rowsRef.current);
-        unregister = register((bins) => {
-          if (average.every !== rowsRef.current) average = new RowAverager(rowsRef.current);
-          const row = average.add(bins);
-          if (row) b.pushRow(row);
+        if (plotRef.current) observer.observe(plotRef.current);
+
+        const averager = new RowAverager();
+        const periodAverage = new PeriodAverage();
+        let lastPhase = 0;
+        unregister = register((bins, fMinHz, fMaxHz) => {
+          const { prefs: p, from, to, mode: m } = live.current;
+          // inizio del periodo (come `tr < m_tr0` di WideGraph::dataSink2): una riga verde al posto dei dati
+          const period = periodSecs(m ?? 'FT8');
+          const inPeriod = (Date.now() / 1000) % period;
+          const wrapped = inPeriod < lastPhase;
+          lastPhase = inPeriod;
+          if (wrapped) periodAverage.reset();
+          periodAverage.add(bins);
+          const average = averager.add(bins, p.navg);
+          if (!average) return;
+          if (wrapped) {
+            b.pushRow(new Uint8Array(1), 1);
+            return;
+          }
+          const binWidthHz = (fMaxHz - fMinHz) / bins.length;
+          const options = { binsPerPixel: p.binsPerPixel, startHz: from, endHz: to, scale: p.scale, flatten: p.flatten };
+          const row = processRow(average, binWidthHz, options);
+          if (row.codes.length === 0) return;
+          b.pushRow(fitWidth(row.codes, WATERFALL_WIDTH));
+          if (Math.min(p.spectrumPercent, MAX_SPECTRUM_SHARE) > 0) {
+            const cumulative = p.spectrumMode === 'cumulative' ? periodAverage.average() : null;
+            const values = cumulative ? cumulativeCurve(cumulative, binWidthHz, options) : row.y;
+            curveRef.current = spectrumCurve(values, cumulative ? 'cumulative' : 'current', p.gain2d, p.zero2d, p.flatten);
+            drawPlot();
+          }
         });
       })
       .catch(() => {
@@ -103,52 +138,47 @@ export function Waterfall({ register }: Props) {
     };
   }, [register, attempt]);
 
+  // Gain, Zero e tavolozza valgono subito su tutta la cascata gia' disegnata
+  useEffect(() => {
+    backendRef.current?.setTone(prefs.gain, prefs.zero);
+  }, [prefs.gain, prefs.zero, phase]);
+  const colors = paletteColors(prefs);
+  useEffect(() => {
+    backendRef.current?.setPalette(jtdxPaletteLut(colors));
+  }, [colors, phase]);
+  // il grafico si ridisegna anche se non arriva una riga (altezza, Start, ampiezza)
+  useEffect(() => {
+    drawPlot();
+  }, [prefs.spectrumPercent, range.from, range.to]);
+
+  const quick = (name: 'gain' | 'zero') => (
+    <label key={name} className="wf-slider">
+      <span>{`${t(`wf.${name}`)} ${prefs[name]}`}</span>
+      <input
+        type="range"
+        min={WF_LIMITS[name][0]}
+        max={WF_LIMITS[name][1]}
+        step={1}
+        value={prefs[name]}
+        aria-label={t(`wf.${name}`)}
+        onChange={(e) => useWfPrefs.getState().set({ [name]: clampWf(name, Number(e.target.value)) })}
+      />
+    </label>
+  );
+
   return (
     <div className="waterfall" data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
-      {phase === 'unsupported' && (
-        <p className="waterfall-note">{t('wf.unsupported')}</p>
-      )}
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      <canvas
+        ref={plotRef}
+        className="wf-spectrum"
+        aria-hidden="true"
+        style={{ flex: `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
+      />
+      {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
       <div className="wf-controls">
-        {(['black', 'gain', 'contrast'] as const).map((name) => (
-          <label key={name} className="wf-slider">
-            <span>{t(`wf.${name}`)}</span>
-            <input
-              type="range"
-              min={name === 'black' ? 0 : name === 'gain' ? 0.4 : 0.5}
-              max={name === 'black' ? 0.6 : 2.5}
-              step={0.05}
-              value={levels[name]}
-              aria-label={t(`wf.${name}`)}
-              onChange={(e) => {
-                const next = { ...levelsRef.current, [name]: clampLevel(name, Number(e.target.value)) };
-                levelsRef.current = next;
-                setLevels(next);
-                backendRef.current?.setLevels(next);
-                writePref(LEVEL_KEYS[name], String(next[name]));
-              }}
-            />
-          </label>
-        ))}
-        <label className="wf-slider">
-          <span>{t('wf.speed')}</span>
-          <select
-            value={rows}
-            aria-label={t('wf.speed')}
-            onChange={(e) => {
-              const next = rowsPerStep(e.target.value);
-              rowsRef.current = next;
-              setRows(next);
-              writePref(ROWS_KEY, String(next));
-            }}
-          >
-            {[1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n === 1 ? '15/s' : `${(15 / n).toFixed(1).replace('.0', '')}/s`}
-              </option>
-            ))}
-          </select>
-        </label>
+        {quick('gain')}
+        {quick('zero')}
       </div>
     </div>
   );

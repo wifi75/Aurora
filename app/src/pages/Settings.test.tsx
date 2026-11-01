@@ -97,7 +97,7 @@ describe('Settings tabs', () => {
     const names = screen.getAllByRole('tab').map((t) => t.textContent);
     // due righe ordinate per tipo; Radio CAT e' dentro Radio
     expect(names).toEqual([
-      'Generali', 'Radio', 'Audio', 'Frequenze', 'Bande', 'Sequenza', 'Macro TX', 'Programmazione', 'Filtri', 'Avanzate',
+      'Generali', 'Radio', 'Audio', 'Cascata', 'Frequenze', 'Bande', 'Sequenza', 'Macro TX', 'Programmazione', 'Filtri', 'Avanzate',
       'Notifiche', 'Desiderati', 'DXCC', 'DX Cluster', 'Segnalazioni', 'Servizi online', 'Orologio', 'Accesso', 'Finestre', 'Aggiornamenti', 'Informazioni',
     ]);
     expect(screen.getAllByRole('tablist')).toHaveLength(2);

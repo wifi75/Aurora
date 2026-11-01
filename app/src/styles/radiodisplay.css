@@ -416,6 +416,30 @@
   border-radius: 0.25rem;
 }
 
+/* l'indicatore cliccabile: stessa misura del chip, senza l'aspetto di un pulsante del browser */
+.rx-chip--btn {
+  margin: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.rx-chip--btn:hover:not(:disabled),
+.rx-chip--btn:focus-visible {
+  color: #bfeaff;
+  border-color: #7fe0ff;
+  outline: none;
+}
+
+.rx-chip--btn:disabled {
+  cursor: default;
+}
+
+.rx-chip--wait {
+  opacity: 0.55;
+}
+
 .rx-chip--on {
   color: #9fe1cb;
   border-color: #3d8b74;
@@ -468,7 +492,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.6rem;
   min-width: 0;
 }
 
@@ -503,12 +527,16 @@
 }
 
 .live-left-line .rx-row {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+.live-left-line .rx-row .cmd-chips {
+  flex-wrap: nowrap;
 }
 
 .live-left-line .rx-extras {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   flex-flow: row nowrap;
   align-items: center;
   justify-content: flex-end;
@@ -533,6 +561,14 @@
 
 @media (max-width: 64rem) {
   .live-left-line {
+    flex-wrap: wrap;
+  }
+
+  .live-left-line .rx-row {
+    flex-wrap: wrap;
+  }
+
+  .live-left-line .rx-row .cmd-chips {
     flex-wrap: wrap;
   }
 

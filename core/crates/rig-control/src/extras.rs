@@ -146,3 +146,290 @@ fn read_item(client: &RigctldClient, item: Item, out: &mut RigExtras) -> Result<
     }
     Ok(())
 }
+
+/// Le impostazioni della radio che il display esteso lascia cambiare con un clic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExtraItem {
+    Nb,
+    Nr,
+    Notch,
+    Atu,
+    Preamp,
+    Att,
+    Agc,
+    Vfo,
+    Rit,
+    Xit,
+}
+
+impl ExtraItem {
+    /// Il nome usato dall'API («nb», «notch», «atu»...).
+    pub fn parse(name: &str) -> Option<ExtraItem> {
+        Some(match name {
+            "nb" => ExtraItem::Nb,
+            "nr" => ExtraItem::Nr,
+            "notch" => ExtraItem::Notch,
+            "atu" => ExtraItem::Atu,
+            "preamp" => ExtraItem::Preamp,
+            "att" => ExtraItem::Att,
+            "agc" => ExtraItem::Agc,
+            "vfo" => ExtraItem::Vfo,
+            "rit" => ExtraItem::Rit,
+            "xit" => ExtraItem::Xit,
+            _ => return None,
+        })
+    }
+
+    fn reading(self) -> &'static [Item] {
+        match self {
+            ExtraItem::Nb => &[Item::Nb],
+            ExtraItem::Nr => &[Item::Nr],
+            ExtraItem::Notch => &[Item::Notch],
+            ExtraItem::Atu => &[Item::Tuner],
+            ExtraItem::Preamp => &[Item::Preamp],
+            ExtraItem::Att => &[Item::Att],
+            ExtraItem::Agc => &[Item::Agc],
+            ExtraItem::Vfo => &[Item::Vfo],
+            ExtraItem::Rit => &[Item::Rit],
+            ExtraItem::Xit => &[Item::Xit],
+        }
+    }
+}
+
+/// I valori che il clic prova in ordine: lo spento (0) e poi quelli che le radio accettano (10/20 dB; 6/12/18 dB).
+const PREAMP_CYCLE: [i32; 3] = [0, 10, 20];
+const ATT_CYCLE: [i32; 6] = [0, 10, 20, 6, 12, 18];
+/// AGC come lo numera Hamlib: auto, fast, medium, slow, spento.
+const AGC_CYCLE: [i32; 5] = [6, 2, 5, 3, 0];
+
+/// Il VFO «dall'altra parte» di quello dato (A<->B, Main<->Sub), con i nomi di Hamlib.
+pub fn other_vfo(current: &str) -> Option<&'static str> {
+    Some(match current.trim().to_ascii_lowercase().as_str() {
+        "vfoa" => "VFOB",
+        "vfob" => "VFOA",
+        "maina" => "MainB",
+        "mainb" => "MainA",
+        "main" => "Sub",
+        "sub" => "Main",
+        "suba" => "SubB",
+        "subb" => "SubA",
+        _ => return None,
+    })
+}
+
+/// Il prossimo valore del ciclo dopo `current` (da `cycle[0]` se non e' nell'elenco), nell'ordine di `cycle`, e poi gli altri a seguire.
+fn cycle_from(cycle: &[i32], current: i32) -> Vec<i32> {
+    let start = cycle.iter().position(|&v| v == current).map_or(0, |p| p + 1);
+    (0..cycle.len()).map(|i| cycle[(start + i) % cycle.len()]).filter(|&v| v != current).collect()
+}
+
+/// Il valore e' stato rifiutato dalla radio (si prova il prossimo) e non e' un guasto di comunicazione.
+fn is_refusal(e: &RigError) -> bool {
+    matches!(crate::hamlib::error_code(e), Some(-1 | -4 | -9 | -11 | -13))
+}
+
+impl ExtrasPoll {
+    /// Il clic su un indicatore: legge il valore vero dalla radio, scrive il successivo (inversione, ciclo o azzeramento), rilegge e mette in cache.
+    pub fn apply(&mut self, client: &RigctldClient, item: ExtraItem) -> Result<(), RigError> {
+        let cannot_read = |e: RigError, what: &str| {
+            if is_unsupported(&e) { RigError(format!("la radio non sa dare questo dato ({what}): non si puo' cambiare da qui")) } else { e }
+        };
+        match item {
+            ExtraItem::Nb | ExtraItem::Nr | ExtraItem::Notch | ExtraItem::Atu => {
+                let (name, label) = match item {
+                    ExtraItem::Nb => ("NB", "NB"),
+                    ExtraItem::Nr => ("NR", "NR"),
+                    ExtraItem::Notch => ("ANF", "notch"),
+                    _ => ("TUNER", "ATU"),
+                };
+                let on = client.func(name).map_err(|e| cannot_read(e, label))?;
+                client.set_func(name, !on)?;
+            }
+            ExtraItem::Preamp | ExtraItem::Att | ExtraItem::Agc => {
+                let (name, cycle, label): (&str, &[i32], &str) = match item {
+                    ExtraItem::Preamp => ("PREAMP", &PREAMP_CYCLE, "preamplificatore"),
+                    ExtraItem::Att => ("ATT", &ATT_CYCLE, "attenuatore"),
+                    _ => ("AGC", &AGC_CYCLE, "AGC"),
+                };
+                let current = client.level(name).map_err(|e| cannot_read(e, label))?.round() as i32;
+                let mut last_refusal = None;
+                let mut done = false;
+                for value in cycle_from(cycle, current) {
+                    match client.set_level(name, value as f32) {
+                        Ok(()) => {
+                            done = true;
+                            break;
+                        }
+                        Err(e) if is_refusal(&e) => last_refusal = Some(e),
+                        Err(e) => return Err(e),
+                    }
+                }
+                if !done {
+                    return Err(last_refusal.unwrap_or_else(|| RigError(format!("la radio non accetta nessun altro valore per {label}"))));
+                }
+            }
+            ExtraItem::Vfo => {
+                let current = client.vfo().map_err(|e| cannot_read(e, "VFO"))?;
+                let other = other_vfo(&current).ok_or_else(|| RigError(format!("non so passare all'altro VFO partendo da «{current}»")))?;
+                client.set_vfo(other)?;
+            }
+            ExtraItem::Rit | ExtraItem::Xit => {
+                let xit = item == ExtraItem::Xit;
+                let offset = client.offset(xit).map_err(|e| cannot_read(e, if xit { "XIT" } else { "RIT" }))?;
+                if offset != 0 {
+                    client.set_offset(xit, 0)?;
+                }
+            }
+        }
+        // rilettura subito: il display si aggiorna e la voce, se prima era data per non disponibile, torna in lettura
+        for &read in item.reading() {
+            read_item(client, read, &mut self.cache)?;
+            self.unsupported &= !(1 << read as u32);
+            self.fails[read as usize] = 0;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+    use crate::fake_rigctld::FakeRigctld;
+
+    fn setup() -> (FakeRigctld, RigctldClient, ExtrasPoll) {
+        let fake = FakeRigctld::start(14_074_000);
+        let client = fake.client(Duration::from_millis(500)).expect("client");
+        (fake, client, ExtrasPoll::default())
+    }
+
+    #[test]
+    fn the_cycle_goes_on_from_the_current_value_and_wraps() {
+        assert_eq!(cycle_from(&AGC_CYCLE, 6), vec![2, 5, 3, 0]);
+        assert_eq!(cycle_from(&AGC_CYCLE, 0), vec![6, 2, 5, 3]);
+        assert_eq!(cycle_from(&AGC_CYCLE, 1), vec![6, 2, 5, 3, 0], "un valore fuori elenco riparte dall'inizio");
+        assert_eq!(cycle_from(&PREAMP_CYCLE, 20), vec![0, 10]);
+        assert_eq!(cycle_from(&ATT_CYCLE, 0)[0], 10);
+    }
+
+    #[test]
+    fn the_other_vfo_is_the_opposite_one() {
+        assert_eq!(other_vfo("VFOA"), Some("VFOB"));
+        assert_eq!(other_vfo("VFOB"), Some("VFOA"));
+        assert_eq!(other_vfo("Main"), Some("Sub"));
+        assert_eq!(other_vfo("Mem"), None);
+    }
+
+    #[test]
+    fn names_from_the_api_are_known() {
+        assert_eq!(ExtraItem::parse("notch"), Some(ExtraItem::Notch));
+        assert_eq!(ExtraItem::parse("atu"), Some(ExtraItem::Atu));
+        assert_eq!(ExtraItem::parse("tuner"), None);
+    }
+
+    #[test]
+    fn a_function_is_inverted_and_read_back() {
+        let (fake, client, mut poll) = setup();
+        fake.set_func("NB", false);
+        poll.apply(&client, ExtraItem::Nb).expect("nb");
+        assert_eq!(fake.func("NB"), Some(true));
+        assert_eq!(poll.cache.nb, Some(true));
+        poll.apply(&client, ExtraItem::Nb).expect("nb");
+        assert_eq!(fake.func("NB"), Some(false));
+        assert_eq!(poll.cache.nb, Some(false));
+        assert!(fake.commands().contains(&"U NB 1".to_string()));
+    }
+
+    #[test]
+    fn notch_and_atu_use_the_hamlib_names() {
+        let (fake, client, mut poll) = setup();
+        fake.set_func("ANF", false);
+        fake.set_func("TUNER", true);
+        poll.apply(&client, ExtraItem::Notch).expect("notch");
+        poll.apply(&client, ExtraItem::Atu).expect("atu");
+        assert_eq!(fake.func("ANF"), Some(true));
+        assert_eq!(fake.func("TUNER"), Some(false));
+    }
+
+    #[test]
+    fn a_function_the_radio_lacks_gives_a_clear_error() {
+        let (_fake, client, mut poll) = setup();
+        let e = poll.apply(&client, ExtraItem::Nr).expect_err("la radio non ha NR");
+        assert!(e.0.contains("non sa dare"), "{e}");
+    }
+
+    #[test]
+    fn the_attenuator_cycles_skipping_refused_values() {
+        let (fake, client, mut poll) = setup();
+        fake.set_level("ATT", "0");
+        for v in ["10", "20", "6"] {
+            fake.refuse_level_value("ATT", v);
+        }
+        let mut seen = Vec::new();
+        for _ in 0..4 {
+            poll.apply(&client, ExtraItem::Att).expect("att");
+            seen.push(fake.level("ATT").unwrap_or_default());
+        }
+        assert_eq!(seen, ["12", "18", "0", "12"]);
+        assert_eq!(poll.cache.att_db, Some(12.0));
+    }
+
+    #[test]
+    fn the_preamp_goes_through_10_20_and_off() {
+        let (fake, client, mut poll) = setup();
+        fake.set_level("PREAMP", "0");
+        let mut seen = Vec::new();
+        for _ in 0..4 {
+            poll.apply(&client, ExtraItem::Preamp).expect("pre");
+            seen.push(fake.level("PREAMP").unwrap_or_default());
+        }
+        assert_eq!(seen, ["10", "20", "0", "10"]);
+    }
+
+    #[test]
+    fn the_agc_cycles_auto_fast_medium_slow_off() {
+        let (fake, client, mut poll) = setup();
+        fake.set_level("AGC", "6");
+        let mut seen = Vec::new();
+        for _ in 0..5 {
+            poll.apply(&client, ExtraItem::Agc).expect("agc");
+            seen.push(fake.level("AGC").unwrap_or_default());
+        }
+        assert_eq!(seen, ["2", "5", "3", "0", "6"]);
+    }
+
+    #[test]
+    fn a_radio_that_refuses_everything_reports_the_refusal() {
+        let (fake, client, mut poll) = setup();
+        fake.set_level("AGC", "6");
+        for v in ["2", "5", "3", "0"] {
+            fake.refuse_level_value("AGC", v);
+        }
+        let e = poll.apply(&client, ExtraItem::Agc).expect_err("tutti rifiutati");
+        assert!(e.0.contains("rifiutato"), "{e}");
+    }
+
+    #[test]
+    fn the_vfo_switches_to_the_other_one() {
+        let (fake, client, mut poll) = setup();
+        poll.apply(&client, ExtraItem::Vfo).expect("vfo");
+        assert_eq!(fake.vfo(), "VFOB");
+        assert_eq!(poll.cache.vfo.as_deref(), Some("VFOB"));
+        poll.apply(&client, ExtraItem::Vfo).expect("vfo");
+        assert_eq!(fake.vfo(), "VFOA");
+    }
+
+    #[test]
+    fn rit_and_xit_are_cleared_only_when_not_zero() {
+        let (fake, client, mut poll) = setup();
+        fake.set_offset(false, 150);
+        poll.apply(&client, ExtraItem::Rit).expect("rit");
+        assert_eq!(fake.offset(false), 0);
+        assert_eq!(poll.cache.rit_hz, Some(0));
+        fake.clear_commands();
+        poll.apply(&client, ExtraItem::Xit).expect("xit");
+        assert!(!fake.commands().iter().any(|c| c.starts_with('Z')), "con XIT gia' a zero non si scrive nulla");
+    }
+}

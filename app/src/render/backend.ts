@@ -1,14 +1,17 @@
-import type { Levels } from './levels';
-
 export type BackendKind = 'webgpu' | 'webgl2';
 
 export interface WaterfallBackend {
   readonly kind: BackendKind;
   init(canvas: HTMLCanvasElement): Promise<void>;
-  /** Aggiunge una riga di spettro (byte 0-255, riscalata alla larghezza della texture). */
-  pushRow(row: Uint8Array): void;
-  /** Nero, guadagno e contrasto del disegno (si applicano subito a tutta la storia). */
-  setLevels(levels: Levels): void;
+  /**
+   * Aggiunge una riga: il livello `y` di ogni pixel come byte (`codeOfY`), riscalata alla larghezza della texture.
+   * `flag` 1 e 2 disegnano la riga di inizio periodo, verde (solo ricezione) o gialla (si e' trasmesso), come JTDX.
+   */
+  pushRow(row: Uint8Array, flag?: 0 | 1 | 2): void;
+  /** Guadagno e zero della cascata (i cursori Gain e Zero di JTDX, -50...50): valgono subito per tutta la storia gia' scorsa. */
+  setTone(gain: number, zero: number): void;
+  /** La tavolozza da 256 voci RGBA. */
+  setPalette(lut: Uint8Array): void;
   resize(widthPx: number, heightPx: number): void;
   destroy(): void;
 }
