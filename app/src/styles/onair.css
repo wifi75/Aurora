@@ -2597,6 +2597,22 @@
   color: #7a1fa2;
 }
 
+.cluster-row--dxped {
+  box-shadow: inset 4px 0 0 #ff8a3d;
+  background: color-mix(in srgb, #ff8a3d 18%, transparent);
+}
+
+.cluster-dxped-tag {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 0.3rem;
+  background: #ff8a3d;
+  color: #2a1100;
+  font-size: 0.62rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .cluster-row--wanted {
   box-shadow: inset 4px 0 0 #ffd23f;
   background: color-mix(in srgb, #ffd23f 16%, transparent);

@@ -4,7 +4,7 @@ import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 
 /** Oggi come `AAAA-MM-GG` (UTC, come il calendario NG3K). */
-function today(now = new Date()): string {
+export function today(now = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
