@@ -4980,3 +4980,21 @@
   opacity: 0.9;
 }
 
+
+/* Trasmissione: la riga del DX resta dentro il riquadro; Tx/Rx vanno a capo a destra se non c'e' posto */
+.tx-left {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tx-dx {
+  flex-wrap: wrap;
+  min-width: 0;
+  row-gap: 0.25rem;
+}
+
+.tx-dx .tx-freqs {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+

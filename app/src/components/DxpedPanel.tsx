@@ -34,7 +34,8 @@ export function dxpedList(items: Dxpedition[], heard: Set<string>, day: string, 
 /** Il calendario delle DXpedition (NG3K) accanto ai CQ: quelle in onda, quelle sentite adesso evidenziate, e lo storico da scorrere. */
 export function DxpedPanel({ heardCalls, keepDays = 15 }: { heardCalls: string[]; keepDays?: number }) {
   const t = useT();
-  const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: 10 * 60_000, retry: false });
+  // finche' il core non ha ancora scaricato il calendario si richiede spesso; poi ogni 10 minuti
+  const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
   const heard = new Set(heardCalls.map((c) => c.toUpperCase()));
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays);
   return (
