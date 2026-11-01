@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
+import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT } from '../i18n';
 import { MultiPick } from './MultiPick';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
@@ -36,6 +37,7 @@ export function ClusterPanel() {
   // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
   const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
   const day = today();
+  const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
   const status = useStation((s) => s.status);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
@@ -102,7 +104,7 @@ export function ClusterPanel() {
   };
 
   return (
-    <div className="cluster">
+    <div className="cluster" style={{ '--dxped-bg': dxpedColor, '--dxped-ink': inkFor(dxpedColor) } as CSSProperties}>
       <div className="cluster-bar" title={t('tip.cluster.filters')}>
         <MultiPick
           label={t('cluster.filter.band')}

@@ -2600,21 +2600,21 @@
 /* DXpedition in onda: giallo fluo pieno, si vede subito (richiesta del proprietario) */
 .cluster-row--dxped,
 .cluster-row--dxped td {
-  background: #e6ff00 !important;
-  color: #1a1a00 !important;
+  background: var(--dxped-bg, #e6ff00) !important;
+  color: var(--dxped-ink, #141400) !important;
   font-weight: 700;
 }
 
 .cluster-row--dxped {
-  box-shadow: inset 5px 0 0 #b8cc00;
+  box-shadow: inset 5px 0 0 color-mix(in srgb, var(--dxped-bg, #e6ff00) 70%, #000);
 }
 
 .cluster-dxped-tag {
   margin-left: 0.35rem;
   padding: 0 0.3rem;
   border-radius: 0.3rem;
-  background: #1a1a00;
-  color: #e6ff00;
+  background: var(--dxped-ink, #141400);
+  color: var(--dxped-bg, #e6ff00);
   font-size: 0.62rem;
   font-weight: 700;
   vertical-align: middle;
@@ -5362,4 +5362,24 @@
 .decode-row.decode-row--hl-fg .w-km {
   color: var(--hl-fg) !important;
   text-shadow: none !important;
+}
+
+.dxped-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.dxped-swatch {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 2px solid transparent;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.dxped-swatch--on {
+  border-color: var(--text, #000);
+  box-shadow: 0 0 0 2px var(--accent, #2fd3a5);
 }
