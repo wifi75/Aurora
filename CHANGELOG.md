@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.65 - 2026-11-01
+- **DX Cluster**: il doppio clic su uno spot FT4 o FT8 cambia anche il modo, prima della frequenza (cosi' il cambio di modo non riporta la radio sulla frequenza standard).
+
 ## 0.11.64 - 2026-11-01
 - **Scheda della DXpedition**: un clic su una DXpedition apre la scheda con la mappa (linea dal proprio QTH e riquadro ingrandito sul paese), paese, continente e zone, date, note e QSL di NG3K, distanza e direzione, ultima volta sentita e «Vai su ... kHz» dall'ultimo spot del cluster. Il core da' latitudine e longitudine del paese (`/api/v1/dxcc`, da cty.dat).
 - **Display con zoom**: passando il mouse sul display della radio si apre una copia piu' grande (circa 44rem) con gli stessi indicatori cliccabili.
