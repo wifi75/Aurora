@@ -3,6 +3,8 @@
 ## Non rilasciato
 
 ## 0.11.47 - 2026-11-01
+- **Tutta la radio nella scheda Radio**: dal CAT al display, anche «Display esteso: cosa mostrare» e la scelta dello stile del display sono ora in Impostazioni > Radio (non piu' in Generali).
+- **Testata compatta e a misura fissa**: righe di modi, bande e pulsanti vicine; il display e' meno alto e il display esteso ha altezza fissa (quello che non entra scorre dentro il riquadro), cosi' la pagina non si allunga.
 - **Spiegazioni dei «?» di nuovo visibili**: la nuvoletta restava tagliata dentro l'etichetta; ora compare sopra a tutto, centrata sul «?», passandoci sopra col mouse (un clic la tiene aperta).
 
 ## 0.11.46 - 2026-11-01

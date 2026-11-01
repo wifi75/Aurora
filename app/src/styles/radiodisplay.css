@@ -337,7 +337,7 @@
 }
 
 .rd-svg--stretch {
-  height: 4.2rem;
+  height: 3.4rem;
 }
 
 /* Display esteso sotto quello della radio: stesso schermo scuro, secondo VFO piu' piccolo, strumenti e filtri */
@@ -423,4 +423,23 @@
 
 .rx-line {
   color: #9fb4c8;
+}
+
+/* Testata compatta e a misura fissa: le righe di modi, bande e pulsanti restano vicine e il display esteso ha un'altezza fissa
+   (quello che non entra scorre dentro il riquadro, senza allungare la pagina) */
+.live-top {
+  align-content: flex-start;
+  row-gap: 0.25rem;
+}
+
+.rx-extras {
+  box-sizing: border-box;
+  height: 1.9rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.rx-extras::-webkit-scrollbar {
+  display: none;
 }

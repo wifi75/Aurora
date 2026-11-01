@@ -6,7 +6,6 @@ import { useStation } from '../state/station';
 import { EngineValues } from './EngineValues';
 import { NativeGeneral } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
-import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Row } from './common';
 import { Cell, Cells, Field, Group, Notes, Page } from './layout';
 import { Help } from './common';
@@ -71,10 +70,6 @@ function JtdxGeneralTab() {
 
       <Group title={t('jx.title')} span={2}>
         <EngineValues group="general" />
-      </Group>
-
-      <Group title={t('rd.title')} span={3}>
-        <RadioDisplayPicker />
       </Group>
 
       <Notes>
