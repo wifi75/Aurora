@@ -6,6 +6,7 @@ import { BAND_NAMES } from '../lib/format';
 import { Help } from './common';
 import { Actions, Group, Message, Notes, Page } from './layout';
 import { useSettings } from './NativeSettings';
+import { useAutosave } from './useAutosave';
 
 const MODES = ['FT8', 'FT4', 'JT65', 'JT9'] as const;
 const REGIONS: readonly { value: IaruRegion; label: Key }[] = [
@@ -36,6 +37,8 @@ export function FrequenciesTab() {
     },
   });
   const defaults = useMutation({ mutationFn: getFrequencyDefaults, onSuccess: (rows) => setDraft(rows) });
+  // si salva da sola, dopo una breve pausa e uscendo dalla scheda
+  useAutosave(draft, draft !== null, (v) => save.mutate(v), (v) => save.mutate(v), 900);
   if (query.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!query.data) return <p className="muted">{t('set.loading')}</p>;
   const rows = draft ?? query.data;

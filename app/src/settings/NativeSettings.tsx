@@ -9,6 +9,7 @@ import { ENGINE_GROUPS, type EngineGroup } from '../lib/engineGroups';
 import { REPORT_GROUPS, type SettingRow } from '../lib/engineSettingsLayout';
 import { Help as Note } from './common';
 import { Cells, Group, Notes, Page, Unavailable } from './layout';
+import { useAutosave } from './useAutosave';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
 export function useIsNative(): boolean | undefined {
@@ -129,6 +130,8 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
     onError: (e) => setNote(errorText(e, t)),
   });
   const count = Object.keys(changes).length;
+  // le modifiche si applicano da sole, dopo una breve pausa e uscendo dalla scheda
+  useAutosave(count > 0 ? changes : null, count > 0, () => apply.mutate(), (v) => void putEngineSettings(v).catch(() => undefined), 700);
   if (count === 0 && !note) return null;
   return (
     <div className="jx-bar" role="status">

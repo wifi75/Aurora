@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ApiError, getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { Help } from './common';
+import { useAutosave } from './useAutosave';
 import { Actions, Field, Group, Message, Notes, Page } from './layout';
 
 const IN_CHANNELS = ['Mono', 'Left', 'Right'] as const;
@@ -148,6 +149,9 @@ export function AudioDevicesPanel() {
     onError: (e) => setLines([{ text: errorText(e, t), bad: true }]),
   });
 
+  // le scelte si applicano da sole, dopo una breve pausa e uscendo dalla scheda
+  const pendingNow = devices.data ? FIELDS.some((k) => draft[k] !== undefined && draft[k] !== devices.data.values[k]) : false;
+  useAutosave(devices.data && pendingNow ? { data: devices.data, draft } : null, pendingNow, (v) => apply.mutate(v.data), (v) => apply.mutate(v.data), 1000);
   if (devices.isError) return <p className="notice">{errorText(devices.error, t)}</p>;
   if (!devices.data) return <p className="muted">{t('set.loading')}</p>;
   const data = devices.data;

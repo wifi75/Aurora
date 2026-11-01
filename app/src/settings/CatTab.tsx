@@ -24,6 +24,7 @@ import { useT, type Key, type T } from '../i18n';
 import { BAUDS, applyCandidate, catIssue, filterModels, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
 import { Check, Help, Row } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
+import { useAutosave } from './useAutosave';
 
 const STATE_KEY: Record<CatState, Key> = {
   disconnected: 'cat.state.disconnected',
@@ -184,6 +185,8 @@ export function CatGroups() {
     onSuccess: () => done(t('cat.applied')),
     onError: failed,
   });
+  // la configurazione valida si applica da sola, dopo una pausa (la radio si ricollega una volta) e uscendo dalla scheda
+  useAutosave(dirty && issue === null && draft ? draft : null, dirty, (v) => apply.mutate(v), (v) => void putCat(v).catch(() => undefined), 1500);
   const connect = useMutation({
     // con modifiche in sospeso si applicano prima: si collega sempre cio' che si vede
     mutationFn: async () => {

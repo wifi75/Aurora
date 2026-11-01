@@ -4,6 +4,7 @@ import { getSchedule, putSchedule, type ScheduleState } from '../api/client';
 import { useT } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { Check, Help } from './common';
+import { useAutosave } from './useAutosave';
 import { Actions, Cells, Group, Message, Notes, Page } from './layout';
 
 const ROWS = 5;
@@ -21,6 +22,7 @@ export function ScheduleTab() {
       void client.invalidateQueries({ queryKey: ['schedule'] });
     },
   });
+  useAutosave(draft, draft !== null, (v) => save.mutate(v), (v) => save.mutate(v), 900);
   if (query.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!query.data) return <p className="muted">{t('set.loading')}</p>;
   const state = draft ?? query.data;

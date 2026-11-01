@@ -20,6 +20,20 @@ export const NOVITA_MAX = 20;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.49',
+    released: '2026-11-01T09:20:00Z',
+    kind: 'changed',
+    title: ['Tutte le impostazioni si salvano da sole', 'All settings save by themselves', 'Alle Einstellungen speichern sich selbst', 'Tous les réglages s’enregistrent tout seuls', 'Todos los ajustes se guardan solos', 'Todas as definições guardam-se sozinhas'],
+    text: [
+      'Niente più «Applica» o «Salva»: ogni modifica viene salvata dopo una breve pausa e anche uscendo dalla pagina. Prima, per esempio, «Leggi anche gli altri dati della radio» si perdeva cambiando pagina.',
+      'No more “Apply” or “Save”: every change is saved after a short pause and also when you leave the page. Before, for example, “Also read the other radio data” was lost when you changed page.',
+      'Kein „Anwenden“ oder „Speichern“ mehr: Jede Änderung wird nach kurzer Pause gespeichert, auch beim Verlassen der Seite. Vorher ging z. B. „Auch die übrigen Funkgerätedaten lesen“ beim Seitenwechsel verloren.',
+      'Plus de « Appliquer » ni « Enregistrer » : chaque modification est enregistrée après une courte pause et aussi en quittant la page. Avant, par exemple, « Lire aussi les autres données » se perdait en changeant de page.',
+      'Ya no hay «Aplicar» ni «Guardar»: cada cambio se guarda tras una breve pausa y también al salir de la página. Antes, por ejemplo, «Leer también los demás datos» se perdía al cambiar de página.',
+      'Já não há «Aplicar» nem «Guardar»: cada alteração é guardada após uma breve pausa e também ao sair da página. Antes, por exemplo, «Ler também os outros dados» perdia-se ao mudar de página.',
+    ],
+  },
+  {
     version: '0.11.48',
     released: '2026-11-01T09:03:53Z',
     kind: 'new',
@@ -283,20 +297,6 @@ export const NOVITA: readonly Novita[] = [
       'Quand l’AGC change le gain (une station forte qui démarre ou s’arrête), ces passages reviennent au bon niveau et se décodent mieux ; repris de JTDX et amélioré.',
       'Cuando el AGC cambia la ganancia (una estación fuerte que empieza o termina), esos tramos vuelven al nivel correcto y se decodifican mejor; portado de JTDX y mejorado.',
       'Quando o AGC muda o ganho (uma estação forte que começa ou acaba), esses trechos voltam ao nível certo e descodificam melhor; trazido do JTDX e melhorado.',
-    ],
-  },
-  {
-    version: '0.11.24',
-    released: '2026-10-26T20:16:48Z',
-    kind: 'new',
-    title: ['JT65 e JT9 nel motore proprio', 'JT65 and JT9 in the own engine', 'JT65 und JT9 im eigenen Motor', 'JT65 et JT9 dans le moteur propre', 'JT65 y JT9 en el motor propio', 'JT65 e JT9 no motor próprio'],
-    text: [
-      'Nel selettore dei modi ci sono FT8, FT4, JT65 e JT9: decodifica del minuto intero con sottrazione dei segnali, e trasmissione.',
-      'The mode selector now has FT8, FT4, JT65 and JT9: full-minute decoding with signal subtraction, and transmission.',
-      'Der Modusschalter bietet FT8, FT4, JT65 und JT9: Dekodierung der ganzen Minute mit Signalabzug, und Senden.',
-      'Le sélecteur de modes propose FT8, FT4, JT65 et JT9 : décodage de la minute entière avec soustraction des signaux, et émission.',
-      'El selector de modos tiene FT8, FT4, JT65 y JT9: decodificación del minuto entero con sustracción de señales, y transmisión.',
-      'O seletor de modos tem FT8, FT4, JT65 e JT9: descodificação do minuto inteiro com subtração de sinais, e transmissão.',
     ],
   },
 ];
