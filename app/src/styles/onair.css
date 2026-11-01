@@ -2610,14 +2610,9 @@
 }
 
 .cluster-dxped-tag {
-  margin-left: 0.35rem;
-  padding: 0 0.3rem;
-  border-radius: 0.3rem;
-  background: var(--dxped-ink, #141400);
-  color: var(--dxped-bg, #e6ff00);
-  font-size: 0.62rem;
-  font-weight: 700;
-  vertical-align: middle;
+  margin-right: 0.2rem;
+  color: var(--dxped-ink, #141400);
+  font-size: 0.8em;
 }
 
 .cluster-row--wanted {
