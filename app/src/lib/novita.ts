@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.68',
+    released: '2026-11-01T22:00:00Z',
+    kind: 'new',
+    title: ['Modo Fox per le DXpedition', 'Fox mode for DXpeditions', 'Fox-Modus für DXpeditionen', 'Mode Fox pour les DXpéditions', 'Modo Fox para DXpediciones', 'Modo Fox para DXpedições'],
+    text: [
+      'Nuova pagina Fox: coda dei Hound, fino a 5 stazioni per trasmissione e RR73 combinato, come WSJT-X 3.3. In fase di prova. Anche: splash con tutti i modi, pulsante «Stile WSJT-X» nella cascata.',
+      'New Fox page: Hound queue, up to 5 stations per transmission and combined RR73, as in WSJT-X 3.3. Under testing. Also: splash with all modes, “WSJT-X style” button in the waterfall.',
+      'Neue Fox-Seite: Hound-Warteschlange, bis zu 5 Stationen pro Aussendung und kombiniertes RR73 wie in WSJT-X 3.3. Im Test. Außerdem: Startbild mit allen Modi, Knopf „WSJT-X-Stil“ im Wasserfall.',
+      'Nouvelle page Fox : file des Hound, jusqu’à 5 stations par émission et RR73 combiné, comme WSJT-X 3.3. En test. Aussi : écran d’accueil avec tous les modes, bouton « Style WSJT-X » dans la cascade.',
+      'Nueva página Fox: cola de Hound, hasta 5 estaciones por transmisión y RR73 combinado, como WSJT-X 3.3. En pruebas. Además: pantalla inicial con todos los modos, botón «Estilo WSJT-X» en la cascada.',
+      'Nova página Fox: fila dos Hound, até 5 estações por transmissão e RR73 combinado, como no WSJT-X 3.3. Em teste. Também: ecrã inicial com todos os modos, botão «Estilo WSJT-X» na cascata.',
+    ],
+  },
+  {
     version: '0.11.67',
     released: '2026-11-01T20:37:16Z',
     kind: 'fixed',
@@ -558,18 +572,4 @@ export const NOVITA: readonly Novita[] = [
       'Novo quadro «Integrações»: uma lista de destinos (GridTracker, Log4OM, N1MM…) cada um com as suas opções, multicast e XML do N1MM. A Aurora aceita também realce de indicativos, posição, configuração e limpeza dos programas ligados.',
     ],
   },
-  {
-    version: '0.11.53',
-    released: '2026-11-01T10:35:57Z',
-    kind: 'fixed',
-    title: ['Display a doppio VFO: un solo schermo anche col tema chiaro', 'Dual-VFO display: one screen in the light theme too', 'Doppel-VFO-Anzeige: ein Bildschirm auch im hellen Design', 'Afficheur double VFO : un seul écran aussi en thème clair', 'Display de doble VFO: una sola pantalla también con el tema claro', 'Visor de duplo VFO: um só ecrã também no tema claro'],
-    text: [
-      'Con il tema chiaro il blocco unico mostrava ancora la cornice del display a sinistra: ora è un solo schermo continuo, senza separatori.',
-      'In the light theme the single block still showed the display frame on the left: now it is one continuous screen, with no separators.',
-      'Im hellen Design zeigte der Block links noch den Rahmen der Anzeige: jetzt ist es ein durchgehender Bildschirm ohne Trennlinien.',
-      'En thème clair, le bloc unique montrait encore le cadre de l’afficheur à gauche : c’est maintenant un seul écran continu, sans séparation.',
-      'Con el tema claro el bloque único aún mostraba el marco del display a la izquierda: ahora es una sola pantalla continua, sin separadores.',
-      'No tema claro o bloco único ainda mostrava a moldura do visor à esquerda: agora é um só ecrã contínuo, sem separadores.',
-    ],
-  },
-];
+  ];

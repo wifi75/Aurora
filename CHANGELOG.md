@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.68 - 2026-11-01
+- **Modo Fox classico (WSJT-X 3.3)**: nuova pagina Fox nel menu in alto. Coda dei Hound, fino a 5 stazioni nella stessa trasmissione, messaggio combinato «RR73; ...», CQ nei posti liberi, QSO a log da soli. Evento `fox` e `POST /api/v1/fox`. In fase di prova; SuperFox escluso.
+- **Splash**: elenca tutti i modi (FT8, FT4, JT65, JT9).
+- **Comandi**: spot DX e commento solo con lo spot acceso e il DX Cluster collegato.
+- **Cascata**: pulsante «Stile WSJT-X» (righe a blocchi, Flatten, tavolozza Default, riga di inizio periodo).
+- Guida: nuova sezione «Fare la Fox».
+
 ## 0.11.67 - 2026-11-01
 - **Scheda della DXpedition**: la mappa e' quella della pagina Propagazione (terreno e confini veri, zona di notte, linea dal proprio QTH con la DXpedition selezionata) al posto della mappa disegnata a mano, che aveva difetti grafici.
 
