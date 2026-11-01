@@ -152,9 +152,12 @@ export const EngineSettingsSchema = z.object({
   /** Segreti: solo se ci sono (mai il valore). */
   secrets: z.record(z.string(), z.boolean()).optional(),
   /** Esito dell'ultimo invio di ogni servizio. */
-  status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number() })).optional(),
+  status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number(), pending: z.number().optional() })).optional(),
 });
 export type EngineSettings = z.infer<typeof EngineSettingsSchema>;
+
+/** Esito della prova di un servizio dell'invio diretto dei QSO (`POST /api/v1/qso-upload/test`). */
+export const UploadTestSchema = z.object({ ok: z.boolean(), message: z.string() });
 
 /** Esito dello spot su DXSummit (`POST /api/v1/spot/dxsummit`): chi, su che frequenza (Hz) e con che testo. */
 export const SpotResultSchema = z.object({ ok: z.boolean(), dx_call: z.string(), frequency_hz: z.number(), info: z.string() });

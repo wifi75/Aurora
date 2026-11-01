@@ -7,6 +7,7 @@ vi.mock('../api/client', () => ({
   getStationInfo: vi.fn(),
   getEngineSettings: vi.fn(),
   putEngineSettings: vi.fn(),
+  postUploadTest: vi.fn(),
   getEngineConfig: vi.fn(),
   applyEngineConfig: vi.fn(),
   ApiError: class extends Error {
@@ -162,5 +163,34 @@ describe('Other tabs with the built-in engine', () => {
     render(<EngineValues group="general" />);
     expect(await screen.findByLabelText(it_('jx.MyCall'))).toHaveValue('IU3ABC');
     expect(api.getEngineSettings).not.toHaveBeenCalled();
+  });
+});
+
+describe('Direct QSO upload with the built-in engine', () => {
+  function withQrz(): EngineSettings {
+    const d = doc();
+    return {
+      ...d,
+      values: { ...d.values, QRZLogSend: 'true' },
+      secrets: { QRZLogKey: true },
+      items: { ...d.items, QRZLogSend: { state: 'live', apply: 'now' }, QRZLogKey: { state: 'live', apply: 'now' }, WavelogSend: { state: 'unavailable', reason: 'upload_secrets' } },
+      status: { ...d.status, qrz: { ok: false, at_ms: 1_792_860_405_000, message: 'QRZ ha risposto 503: nuovo tentativo alle 17:47 UTC', sent: 0, failed: 1, pending: 2 } },
+    };
+  }
+
+  it('shows the switch, the saved key, the queue and the test button with its answer', async () => {
+    vi.mocked(api.getEngineSettings).mockResolvedValue(withQrz());
+    vi.mocked(api.postUploadTest).mockReset().mockResolvedValue('chiave valida, logbook K1ABC');
+    render(<ReportsTab />);
+    expect(await screen.findByText(it_('ens.g.qrz'))).toBeInTheDocument();
+    expect(screen.getByLabelText(it_('ens.k.QRZLogSend'))).toBeChecked();
+    expect(screen.getByLabelText(it_('ens.k.QRZLogKey'))).toHaveAttribute('placeholder', it_('ens.pw.saved'));
+    expect(screen.getByTestId('status-qrz')).toHaveTextContent(it_('ens.st.pending', { n: 2 }));
+    expect(screen.getByText(it_('ens.up.qrz.help'))).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('test-qrz'));
+    await waitFor(() => expect(api.postUploadTest).toHaveBeenCalledWith('qrz'));
+    expect(await screen.findByText(/chiave valida, logbook K1ABC/)).toBeInTheDocument();
+    // senza la protezione dei segreti Wavelog non e' un controllo vivo
+    expect(screen.queryByTestId('test-wavelog')).toBeNull();
   });
 });
