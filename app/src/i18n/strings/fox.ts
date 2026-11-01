@@ -1,6 +1,14 @@
 /** Pagina Fox (modo DXpedition classico di WSJT-X). [it, en, de, fr, es, pt] */
 export const foxStrings = {
   'nav.fox': ['Fox', 'Fox', 'Fox', 'Fox', 'Fox', 'Fox'],
+  'tip.nav.fox': [
+    'Solo per chi trasmette da una DXpedition: modo Fox di WSJT-X, molte stazioni (Hound) servite insieme. Per chiamare una DXpedition non serve: si usa Hound nella Stazione.',
+    'Only for those operating a DXpedition: WSJT-X Fox mode, many stations (Hounds) worked together. Not needed to call a DXpedition: use Hound on the Station page.',
+    'Nur für den Betrieb einer DXpedition: Fox-Modus von WSJT-X, viele Stationen (Hounds) gleichzeitig. Um eine DXpedition anzurufen, nicht nötig: Hound auf der Stationsseite.',
+    'Seulement pour qui opère une DXpédition : mode Fox de WSJT-X, plusieurs stations (Hounds) servies ensemble. Inutile pour appeler une DXpédition : utilise Hound dans Station.',
+    'Solo para quien opera una DXpedición: modo Fox de WSJT-X, muchas estaciones (Hounds) atendidas a la vez. No hace falta para llamar a una DXpedición: usa Hound en Estación.',
+    'Só para quem opera uma DXpedição: modo Fox do WSJT-X, muitas estações (Hounds) servidas juntas. Não é preciso para chamar uma DXpedição: usa Hound na Estação.',
+  ],
   'fox.title': ['Fox (DXpedition)', 'Fox (DXpedition)', 'Fox (DXpedition)', 'Fox (DXpédition)', 'Fox (DXpedición)', 'Fox (DXpedição)'],
   'fox.dev': ['Modo Fox classico di WSJT-X 3.3, in fase di prova. SuperFox non c’è.', 'Classic WSJT-X 3.3 Fox mode, under testing. No SuperFox.', 'Klassischer Fox-Modus von WSJT-X 3.3, im Test. Kein SuperFox.', 'Mode Fox classique de WSJT-X 3.3, en test. Pas de SuperFox.', 'Modo Fox clásico de WSJT-X 3.3, en pruebas. Sin SuperFox.', 'Modo Fox clássico do WSJT-X 3.3, em teste. Sem SuperFox.'],
   'fox.on': ['Fox acceso', 'Fox on', 'Fox an', 'Fox actif', 'Fox activo', 'Fox ligado'],
