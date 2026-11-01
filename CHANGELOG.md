@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 - **Barre Rx e Tx fluide**: trascinandole sulla cascata la barra segue subito il mouse e la frequenza va al motore al massimo ogni 80 ms (prima si aspettava la risposta del motore a ogni movimento e la barra andava a scatti).
+- **Due nuovi stili del display della radio a pannello unico**: «Pannello Yaesu FT-2000» (cifre a 7 segmenti azzurre, riquadri ANT/ATT/FLT/IPO/R.FLT/AGC con valori ambra, spie PROC/TUNER/BUSY/NB/NR/NOTCH, scala di sintonia con riquadro CLAR, VFO B con S-meter a barra, riquadro modo e AGC) e «Pannello Icom IC-7610» (MAIN e SUB affiancati con S-meter ad arco, modo in riquadro azzurro, colonna ANT/P.AMP/ATT/IP+/AGC/VOX/COMP, spia TX, DUAL-W e SPLIT). In testata prendono il posto dei due blocchi alla stessa misura (40rem x 4rem); gli indicatori restano cliccabili come nel display esteso; i dati che la radio non da' restano spenti. Scelta in Impostazioni > Radio con anteprima, testi in 6 lingue.
 
 ## 0.11.57 - 2026-11-01
 - **Cascata**: la riga verde di inizio periodo si puo' spegnere (Impostazioni > Cascata > «Riga di inizio periodo», accesa di base come JTDX).

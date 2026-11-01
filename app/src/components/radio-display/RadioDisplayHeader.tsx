@@ -1,7 +1,10 @@
-import { RadioExtras } from './RadioExtras';
+import { RadioExtras, useCatExtras } from './RadioExtras';
+import { describeDisplay } from './describe';
+import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
+import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
 import { useMeterBallistics } from '../../lib/meterBallistics';
-import { displayModel, useRadioDisplay } from '../../lib/radioDisplay';
+import { displayModel, isFaceStyle, useRadioDisplay, type DisplayModel } from '../../lib/radioDisplay';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
 
@@ -29,6 +32,8 @@ export function RadioDisplayHeader() {
     );
   }
 
+  if (isFaceStyle(pref.style)) return <FaceHeader model={model} style={pref.style} />;
+
   // due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (VFO A grande a sinistra, VFO B e indicatori a destra)
   return (
     <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
@@ -40,4 +45,13 @@ export function RadioDisplayHeader() {
       </div>
     </div>
   );
+}
+
+/** Pannello unico in testata (FT-2000, IC-7610): stessa misura dei due blocchi, con gli indicatori cliccabili come nel display esteso. */
+function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | 'ic7610' }) {
+  const t = useT();
+  const { rig, waiting, click } = useCatExtras();
+  const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
+  const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
+  return <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
 }
