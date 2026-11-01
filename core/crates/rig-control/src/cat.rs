@@ -85,7 +85,7 @@ impl From<StoreError> for CatError {
 }
 
 /// Lo stato del collegamento, per l'interfaccia.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CatStatus {
     pub backend: Backend,
     pub state: LinkState,

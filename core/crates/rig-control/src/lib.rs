@@ -6,6 +6,7 @@ pub mod cat;
 pub mod cat_config;
 pub mod controls;
 pub mod detect;
+pub mod extras;
 #[cfg(any(test, feature = "testing"))]
 pub mod fake_rigctld;
 pub mod hamlib;
