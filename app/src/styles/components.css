@@ -920,3 +920,47 @@ button.primary {
   padding: 0.85rem 1.2rem;
   font-size: 1.05rem;
 }
+
+/* Pagina Log: larghezza contenuta, griglia, sfondo a righe alterne, bandiere; Locatore staccato da Ric. */
+.export-page {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel, #fff);
+}
+
+.export-table th,
+.export-table td {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--text, #1b2430) 14%, transparent);
+  white-space: nowrap;
+}
+
+.export-table thead th {
+  background: color-mix(in srgb, var(--accent, #2fd3a5) 16%, var(--panel, #fff));
+  font-weight: 700;
+}
+
+.export-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--accent, #2fd3a5) 6%, var(--panel, #fff));
+}
+
+.export-table .export-grid {
+  padding-left: 1.2rem;
+}
+
+.export-country {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.export-flag {
+  flex: none;
+  width: 1.35em;
+  height: 1em;
+}
