@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Barre Rx e Tx fluide**: trascinandole sulla cascata la barra segue subito il mouse e la frequenza va al motore al massimo ogni 80 ms (prima si aspettava la risposta del motore a ogni movimento e la barra andava a scatti).
 
 ## 0.11.57 - 2026-11-01
 - **Cascata**: la riga verde di inizio periodo si puo' spegnere (Impostazioni > Cascata > «Riga di inizio periodo», accesa di base come JTDX).

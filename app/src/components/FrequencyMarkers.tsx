@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT } from '../i18n';
 import { hzAt, leftPercent } from '../lib/markers';
 
@@ -27,8 +27,59 @@ const BIG_STEP = 50;
  * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione, larghe quanto il segnale del modo.
  * Si trascinano; un clic sinistro sulla cascata sposta la verde, il tasto destro (o Maiusc+clic) la rossa, anche durante la trasmissione.
  */
-export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, filter = null, showBars = true, showFreq = false, onRx, onTx }: Props) {
+/** Ogni quanto si manda la frequenza al motore mentre si trascina (ms): la barra si muove subito, i comandi non si accavallano. */
+const SEND_EVERY_MS = 80;
+/** Dopo il rilascio la barra resta dove l'ha lasciata l'operatore finche' il motore non conferma (al massimo questo tempo). */
+const HOLD_MS = 1500;
+
+export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngine, bandwidthHz = 0, filter = null, showBars = true, showFreq = false, onRx: sendRx, onTx: sendTx }: Props) {
   const t = useT();
+  // posizione mostrata subito durante il trascinamento: non si aspetta la risposta del motore a ogni movimento (prima la barra andava a scatti)
+  const [local, setLocal] = useState<{ rx?: number; tx?: number }>({});
+  const pending = useRef<{ rx?: number; tx?: number }>({});
+  const timers = useRef<{ rx?: ReturnType<typeof setTimeout>; tx?: ReturnType<typeof setTimeout> }>({});
+  const lastSent = useRef<{ rx: number; tx: number }>({ rx: 0, tx: 0 });
+  const holdUntil = useRef<{ rx: number; tx: number }>({ rx: 0, tx: 0 });
+
+  const throttled = (kind: 'rx' | 'tx', send: (hz: number) => void) => (hz: number) => {
+    const rounded = Math.round(hz);
+    setLocal((l) => ({ ...l, [kind]: rounded }));
+    holdUntil.current[kind] = Date.now() + HOLD_MS;
+    pending.current[kind] = rounded;
+    const flush = () => {
+      timers.current[kind] = undefined;
+      const value = pending.current[kind];
+      if (value === undefined) return;
+      pending.current[kind] = undefined;
+      lastSent.current[kind] = Date.now();
+      send(value);
+    };
+    const wait = SEND_EVERY_MS - (Date.now() - lastSent.current[kind]);
+    if (wait <= 0) flush();
+    else if (timers.current[kind] === undefined) timers.current[kind] = setTimeout(flush, wait);
+  };
+  const onRx = throttled('rx', sendRx);
+  const onTx = throttled('tx', sendTx);
+
+  // quando il motore conferma (o passa il tempo di attesa) torna a valere il valore del motore
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLocal((l) => {
+        const now = Date.now();
+        const next = { ...l };
+        if (l.rx !== undefined && (l.rx === rxEngine || now > holdUntil.current.rx) && timers.current.rx === undefined) next.rx = undefined;
+        if (l.tx !== undefined && (l.tx === txEngine || now > holdUntil.current.tx) && timers.current.tx === undefined) next.tx = undefined;
+        return next.rx === l.rx && next.tx === l.tx ? l : next;
+      });
+    }, 100);
+    return () => clearInterval(id);
+  }, [rxEngine, txEngine]);
+  useEffect(() => () => {
+    clearTimeout(timers.current.rx);
+    clearTimeout(timers.current.tx);
+  }, []);
+  const rxHz = local.rx ?? rxEngine;
+  const txHz = local.tx ?? txEngine;
   const box = useRef<HTMLDivElement | null>(null);
   // posizione del puntatore sulla cascata (0-1): le linee bianche di JTDX (`HoverOverlayPixmap`) e il suggerimento «Freq»
   const [hover, setHover] = useState<number | null>(null);

@@ -53,8 +53,12 @@ describe('FrequencyMarkers', () => {
     const rx = screen.getByRole('slider', { name: /frequenza rx/i });
     fireEvent.keyDown(rx, { key: 'ArrowRight' });
     expect(onRx).toHaveBeenLastCalledWith(1010);
+    // la barra si muove subito: il secondo passo parte dalla posizione mostrata (1010), e il comando arriva al motore dopo la pausa fra due invii
+    vi.useFakeTimers();
     fireEvent.keyDown(rx, { key: 'ArrowLeft', shiftKey: true });
-    expect(onRx).toHaveBeenLastCalledWith(950);
+    vi.advanceTimersByTime(100);
+    expect(onRx).toHaveBeenLastCalledWith(960);
+    vi.useRealTimers();
   });
 
   it('darkens the sides of an asymmetric filter window (FT8: 60 Hz below, 110 Hz above Rx)', () => {
