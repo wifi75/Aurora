@@ -142,6 +142,7 @@ fn message_id(m: &Message) -> Option<String> {
         | Message::Unknown { id, .. } => id.clone(),
         Message::Status(s) => s.id.clone(),
         Message::Decode(d) => d.id.clone(),
+        Message::InhibitStatus(s) => Some(s.id.clone()),
     }
 }
 

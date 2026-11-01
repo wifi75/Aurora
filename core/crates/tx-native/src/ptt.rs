@@ -8,7 +8,7 @@ use std::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use rig_control::{hamlib::RigctldClient, session::SharedSession};
@@ -175,6 +175,328 @@ impl Drop for PttGuard {
         {
             tracing::error!("PTT non spento: {e}");
         }
+    }
+}
+
+/// Quanti controller si seguono uno per uno (`maximum_tracked_holds` di WSJT-X 3.3): gli altri allungano una prenotazione comune.
+pub const MAX_TRACKED_HOLDS: usize = 64;
+
+/// Lo stato del blocco della trasmissione, con i contatori dall'avvio (i campi di InhibitStatus, tipo 17 di WSJT-X).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InhibitSnapshot {
+    pub inhibited: bool,
+    /// Chi blocca: le stazioni (o i controller) delle prenotazioni attive, senza doppioni, in ordine alfabetico, separate da «, ».
+    pub holder: String,
+    pub hold_rx: u32,
+    pub release_rx: u32,
+    pub expiries: u32,
+    pub invalid: u32,
+}
+
+#[derive(Debug, Clone)]
+struct Hold {
+    expires_at: Instant,
+    holder: String,
+}
+
+/// Le prenotazioni di blocco dei controller, come `TxInhibitTransceiver` di WSJT-X 3.3: una per controller (la rinnova lo stesso controller,
+/// la toglie un TTL 0), al piu' 64 seguite una per una; oltre, una prenotazione comune che dura fino alla scadenza piu' lontana e che nessun
+/// rilascio toglie (la sua scadenza conta una volta). La trasmissione e' bloccata finche' c'e' almeno una prenotazione (OR).
+#[derive(Debug, Default)]
+pub struct InhibitLeases {
+    holds: Vec<(String, Hold)>,
+    overflow: Option<Instant>,
+    hold_rx: u32,
+    release_rx: u32,
+    expiries: u32,
+    invalid: u32,
+}
+
+/// Il nome di chi blocca come lo mostra WSJT-X (`sanitize_holder`): al piu' 64 caratteri stampabili, senza spazi ai bordi.
+fn sanitize_holder(text: &str) -> String {
+    text.chars().take(64).filter(|c| !c.is_control()).collect::<String>().trim().to_string()
+}
+
+impl InhibitLeases {
+    pub fn is_inhibited(&self) -> bool {
+        !self.holds.is_empty() || self.overflow.is_some()
+    }
+
+    /// Un comando valido: `ttl_ms` 0 rilascia la prenotazione di `controller`, altrimenti la crea o la rinnova fino a `now + ttl_ms`.
+    pub fn command(&mut self, controller: &str, ttl_ms: u32, station: &str, now: Instant) {
+        if ttl_ms == 0 {
+            self.release_rx = self.release_rx.saturating_add(1);
+            self.holds.retain(|(c, _)| c != controller);
+            return;
+        }
+        self.hold_rx = self.hold_rx.saturating_add(1);
+        let expires_at = now + Duration::from_millis(u64::from(ttl_ms));
+        let holder = sanitize_holder(if station.is_empty() { controller } else { station });
+        if let Some((_, hold)) = self.holds.iter_mut().find(|(c, _)| c == controller) {
+            *hold = Hold { expires_at, holder };
+        } else if self.holds.len() < MAX_TRACKED_HOLDS {
+            self.holds.push((controller.to_string(), Hold { expires_at, holder }));
+        } else {
+            self.overflow = Some(self.overflow.map_or(expires_at, |at| at.max(expires_at)));
+        }
+    }
+
+    /// Comandi malformati ricevuti (si contano soltanto).
+    pub fn invalid(&mut self, count: u32) {
+        self.invalid = self.invalid.saturating_add(count);
+    }
+
+    /// Toglie le prenotazioni scadute entro `now`; vero se ne e' scaduta almeno una.
+    pub fn expire(&mut self, now: Instant) -> bool {
+        let before = self.holds.len();
+        self.holds.retain(|(_, h)| h.expires_at > now);
+        let mut expired = u32::try_from(before - self.holds.len()).unwrap_or(u32::MAX);
+        if self.overflow.is_some_and(|at| at <= now) {
+            self.overflow = None;
+            expired = expired.saturating_add(1);
+        }
+        self.expiries = self.expiries.saturating_add(expired);
+        expired > 0
+    }
+
+    /// La prossima scadenza, se c'e' una prenotazione.
+    pub fn next_expiry(&self) -> Option<Instant> {
+        self.holds.iter().map(|(_, h)| h.expires_at).chain(self.overflow).min()
+    }
+
+    pub fn snapshot(&self) -> InhibitSnapshot {
+        let mut holders: Vec<String> = Vec::new();
+        for (_, h) in &self.holds {
+            if !h.holder.is_empty() && !holders.contains(&h.holder) {
+                holders.push(h.holder.clone());
+            }
+        }
+        holders.sort_by_key(|h| h.to_lowercase());
+        InhibitSnapshot {
+            inhibited: self.is_inhibited(),
+            holder: holders.join(", "),
+            hold_rx: self.hold_rx,
+            release_rx: self.release_rx,
+            expiries: self.expiries,
+            invalid: self.invalid,
+        }
+    }
+}
+
+struct InterlockState {
+    leases: InhibitLeases,
+    inner: Option<Arc<dyn Ptt>>,
+    /// Il PTT che la trasmissione ha chiesto.
+    requested: bool,
+    /// Il PTT davvero acceso sulla radio.
+    keyed: bool,
+}
+
+/// Il PTT con il blocco esterno (TxInhibit via UDP): sta tra il pianificatore e il PTT vero. Con una prenotazione attiva il PTT non si accende
+/// (e se e' acceso si spegne subito); alla scadenza o al rilascio dell'ultima, se la trasmissione lo chiede ancora, si riaccende. Come
+/// `TxInhibitTransceiver` di WSJT-X l'audio non si ferma: e' il comando alla radio che resta spento.
+pub struct TxInterlock {
+    state: std::sync::Mutex<InterlockState>,
+}
+
+impl Default for TxInterlock {
+    fn default() -> Self {
+        TxInterlock::new()
+    }
+}
+
+impl TxInterlock {
+    pub fn new() -> TxInterlock {
+        TxInterlock { state: std::sync::Mutex::new(InterlockState { leases: InhibitLeases::default(), inner: None, requested: false, keyed: false }) }
+    }
+
+    /// Il PTT vero (cambia quando si ricostruisce la catena di trasmissione). Quello di prima, se acceso, si spegne.
+    pub fn attach(&self, inner: Arc<dyn Ptt>) {
+        let mut s = crate::lock(&self.state);
+        if let Some(old) = s.inner.take()
+            && s.keyed
+            && let Err(e) = release_ptt(&*old)
+        {
+            tracing::error!("PTT precedente non spento: {e}");
+        }
+        s.inner = Some(inner);
+        s.requested = false;
+        s.keyed = false;
+    }
+
+    /// Porta la radio allo stato voluto: acceso solo se chiesto e senza blocchi.
+    fn apply(s: &mut InterlockState) -> Result<(), TxError> {
+        let want = s.requested && !s.leases.is_inhibited();
+        if want == s.keyed {
+            return Ok(());
+        }
+        let Some(inner) = s.inner.clone() else { return Ok(()) };
+        if want {
+            inner.set(true)?;
+            s.keyed = true;
+        } else {
+            release_ptt(&*inner)?;
+            s.keyed = false;
+        }
+        Ok(())
+    }
+
+    fn after_change(s: &mut InterlockState, was_inhibited: bool) {
+        let now_inhibited = s.leases.is_inhibited();
+        if was_inhibited != now_inhibited {
+            if now_inhibited {
+                tracing::warn!("Tx bloccata da un controller esterno ({})", s.leases.snapshot().holder);
+            } else {
+                tracing::info!("blocco della Tx tolto");
+            }
+            if let Err(e) = Self::apply(s) {
+                tracing::error!("PTT non portato allo stato voluto dopo il cambio del blocco: {e}");
+            }
+        }
+    }
+
+    /// Un TxInhibit valido (vedi [`InhibitLeases::command`]), adesso.
+    pub fn command(&self, controller: &str, ttl_ms: u32, station: &str) {
+        self.command_at(controller, ttl_ms, station, Instant::now());
+    }
+
+    pub fn command_at(&self, controller: &str, ttl_ms: u32, station: &str, now: Instant) {
+        let mut s = crate::lock(&self.state);
+        let was = s.leases.is_inhibited();
+        s.leases.expire(now);
+        s.leases.command(controller, ttl_ms, station, now);
+        Self::after_change(&mut s, was);
+    }
+
+    pub fn invalid(&self, count: u32) {
+        crate::lock(&self.state).leases.invalid(count);
+    }
+
+    /// Fa scadere le prenotazioni (da chiamare spesso: ogni 50 ms basta, la durata minima e' 100 ms); vero se lo stato e' cambiato.
+    pub fn tick(&self) -> bool {
+        self.tick_at(Instant::now())
+    }
+
+    pub fn tick_at(&self, now: Instant) -> bool {
+        let mut s = crate::lock(&self.state);
+        let was = s.leases.is_inhibited();
+        let expired = s.leases.expire(now);
+        Self::after_change(&mut s, was);
+        expired
+    }
+
+    pub fn snapshot(&self) -> InhibitSnapshot {
+        crate::lock(&self.state).leases.snapshot()
+    }
+
+    pub fn is_inhibited(&self) -> bool {
+        crate::lock(&self.state).leases.is_inhibited()
+    }
+
+    /// Il PTT e' davvero acceso sulla radio (non solo chiesto).
+    pub fn is_keyed(&self) -> bool {
+        crate::lock(&self.state).keyed
+    }
+}
+
+impl Ptt for TxInterlock {
+    fn set(&self, on: bool) -> Result<(), TxError> {
+        let mut s = crate::lock(&self.state);
+        s.requested = on;
+        if on && s.leases.is_inhibited() {
+            tracing::warn!("PTT trattenuto: Tx bloccata da {}", s.leases.snapshot().holder);
+        }
+        Self::apply(&mut s)
+    }
+
+    fn is_on(&self) -> bool {
+        crate::lock(&self.state).requested
+    }
+}
+
+#[cfg(test)]
+mod interlock_tests {
+    use super::*;
+
+    fn ms(n: u64) -> Duration {
+        Duration::from_millis(n)
+    }
+
+    #[test]
+    fn a_hold_blocks_the_ptt_and_its_expiry_gives_it_back() {
+        let t0 = Instant::now();
+        let radio = Arc::new(NoPtt::new());
+        let lock = TxInterlock::new();
+        lock.attach(radio.clone());
+        lock.set(true).expect("ptt");
+        assert!(radio.is_on());
+        lock.command_at("AMP", 600, "K1ABC amp", t0);
+        assert!(!radio.is_on(), "la prenotazione spegne subito il PTT");
+        assert!(lock.is_on(), "la trasmissione lo chiede ancora");
+        assert_eq!(lock.snapshot(), InhibitSnapshot { inhibited: true, holder: "K1ABC amp".into(), hold_rx: 1, ..Default::default() });
+        // rinnovo prima della scadenza: resta bloccata oltre i 600 ms iniziali
+        lock.command_at("AMP", 600, "K1ABC amp", t0 + ms(500));
+        assert!(!lock.tick_at(t0 + ms(700)));
+        assert!(!radio.is_on());
+        assert!(lock.tick_at(t0 + ms(1100)), "scaduta");
+        assert!(radio.is_on(), "scaduta la prenotazione, il PTT torna come lo chiede la trasmissione");
+        let s = lock.snapshot();
+        assert_eq!((s.inhibited, s.hold_rx, s.expiries), (false, 2, 1));
+    }
+
+    #[test]
+    fn the_ptt_asked_while_inhibited_stays_off_until_the_release() {
+        let t0 = Instant::now();
+        let radio = Arc::new(NoPtt::new());
+        let lock = TxInterlock::new();
+        lock.attach(radio.clone());
+        lock.command_at("AMP", 30_000, "", t0);
+        lock.set(true).expect("ptt");
+        assert!(!radio.is_on());
+        assert_eq!(lock.snapshot().holder, "AMP", "senza stazione si mostra il controller");
+        lock.command_at("ALTRO", 0, "", t0 + ms(10));
+        assert!(!radio.is_on(), "il rilascio di un altro controller non toglie la prenotazione");
+        lock.command_at("AMP", 0, "", t0 + ms(20));
+        assert!(radio.is_on());
+        lock.set(false).expect("ptt");
+        assert!(!radio.is_on());
+        let s = lock.snapshot();
+        assert_eq!((s.hold_rx, s.release_rx, s.expiries), (1, 2, 0));
+    }
+
+    #[test]
+    fn holds_combine_with_or_and_the_65th_controller_joins_the_common_hold() {
+        let t0 = Instant::now();
+        let mut leases = InhibitLeases::default();
+        for i in 0..MAX_TRACKED_HOLDS {
+            leases.command(&format!("C{i}"), 1200, &format!("S{i}"), t0);
+        }
+        leases.command("C0", 2400, "S0", t0);
+        leases.command("OLTRE", 1800, "OLTRE", t0);
+        leases.command("OLTRE", 0, "OLTRE", t0);
+        assert!(!leases.snapshot().holder.contains("OLTRE"), "la prenotazione comune non ha nome");
+        assert!(leases.expire(t0 + ms(1300)));
+        assert_eq!(leases.snapshot().expiries, 63, "63 scadute, C0 rinnovata");
+        assert!(leases.is_inhibited());
+        leases.command("C0", 0, "", t0 + ms(1400));
+        assert!(leases.is_inhibited(), "il rilascio non toglie la prenotazione comune");
+        assert!(leases.expire(t0 + ms(1800)));
+        assert!(!leases.is_inhibited());
+        assert_eq!(leases.snapshot().expiries, 64, "la prenotazione comune conta una volta");
+        assert_eq!(leases.next_expiry(), None);
+    }
+
+    #[test]
+    fn invalid_commands_are_counted_and_holders_sorted() {
+        let t0 = Instant::now();
+        let mut leases = InhibitLeases::default();
+        leases.invalid(3);
+        leases.command("b", 500, "zeta", t0);
+        leases.command("a", 500, "Alfa", t0);
+        leases.command("c", 500, "alfa", t0);
+        leases.command("d", 500, "zeta", t0);
+        let s = leases.snapshot();
+        assert_eq!((s.invalid, s.holder.as_str()), (3, "Alfa, alfa, zeta"));
     }
 }
 

@@ -89,11 +89,20 @@ GridTracker2 li inoltra a Log4OM2 come prima, quindi il nominativo in chiamata t
 | Decode | uno per messaggio, `nuovo = true`, modo `~` (FT8) o `:` (FT4) | `Event::Decode` |
 | QSO Logged (tipo 5) | alla registrazione del QSO | `Event::QsoLogged` |
 | Logged ADIF (tipo 12) | dopo il QSO Logged, solo con `AURORA_UDP_ADIF=1` | `Event::QsoLogged` |
+| InhibitStatus (tipo 17) | con «Accetta richieste UDP» e trasmissione attiva: alla partenza, dopo ogni Heartbeat, a ogni cambio del blocco; alla chiusura un ultimo con `supported = false` | blocco del PTT (`tx_native::TxInterlock`) |
 | Close | alla chiusura di Aurora | - |
 
 Il secondo server (`127.0.0.1:2237`, record ADIF grezzo per Log4OM2) resta a carico dell'esportatore dei QSO (`AURORA_EXPORT_UDP`): sono due flussi distinti, come in JTDX.
 
 **Canale di ritorno**: l'emettitore scrive e ascolta sulla stessa porta (effimera), quindi i comandi di GridTracker (Reply, HaltTx, FreeText, SetTxFreq, TriggerCQ) arrivano a lui: li gira al motore proprio solo con `AURORA_UDP_ACCEPT=1` (da `AcceptUDPRequests` di `JTDX.ini`),
 il Reply solo per i messaggi ammessi da `AURORA_UDP_ACCEPT_REPLY` (da `AcceptUDPReplyMessages`); il Replay (richiesta dei decode correnti) e' sempre accettato. Con il motore JTDX niente di tutto questo: l'hub inoltra i pacchetti di JTDX e i comandi a JTDX.
+
+**TxInhibit (tipo 18, WSJT-X 3.3)**: un controller (amplificatore, interblocco multi-operatore) manda all'indirizzo da cui arriva il flusso `Id`, identita' del controller
+(UTF-8 non vuota, senza spazi, al piu' 128 byte), durata in ms e stazione (al piu' 128 byte, nulla = vuota). Durata 100-30000 prenota o rinnova il blocco di quel controller, 0 lo rilascia;
+basta un blocco attivo perche' il PTT resti spento (o si spenga subito, anche a trasmissione in corso: l'audio continua come in WSJT-X, la radio no) e torni acceso alla scadenza o al rilascio
+dell'ultimo. Fino a 64 controller seguiti uno per uno; gli altri allungano una prenotazione comune che nessun rilascio toglie (la sua scadenza conta una volta). Datagrammi oltre 4096 byte,
+identificativi oltre 1024, schema sotto 2, durate fuori limite e campi non validi si ignorano e si contano nel campo `invalid` dell'InhibitStatus; un altro identificativo si ignora senza contarlo.
+Solo con «Accetta richieste UDP»; diversamente da WSJT-X (che vuole PTT su DTR/RTS) vale con ogni PTT, perche' il blocco sta davanti al comando di Aurora. Le prenotazioni durano quanto il programma:
+spegnere le richieste non toglie quelle in corso, che scadono da sole.
 
 Impostazioni: `AURORA_UDP_FORWARD`, `AURORA_UDP_EMIT` (0 spegne), `AURORA_UDP_ACCEPT`, `AURORA_UDP_ACCEPT_REPLY`, `AURORA_UDP_ADIF` (vedi `.env.example`); il programma Windows ricava forward e opzioni da `JTDX.ini`. Con il motore proprio gli indirizzi dell'ambiente sono solo i valori iniziali: i destinatari si scelgono nel riquadro «Integrazioni» (flusso, Logged ADIF, ADIF su UDP, XML di N1MM, multicast), vedi `docs/integrazioni-log.md`.

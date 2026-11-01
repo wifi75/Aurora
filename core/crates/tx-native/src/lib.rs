@@ -26,7 +26,7 @@ pub use audio::{
 };
 pub use clock::{Clock, ManualClock, SystemClock};
 pub use error::TxError;
-pub use ptt::{HamlibPtt, NoPtt, OmniRigPtt, Ptt, PttGuard};
+pub use ptt::{HamlibPtt, InhibitLeases, InhibitSnapshot, NoPtt, OmniRigPtt, Ptt, PttGuard, TxInterlock, MAX_TRACKED_HOLDS};
 pub use ptt_serial::{Line, SerialLinePtt};
 pub use scheduler::{Transmitter, TxConfig, TxOutcome, TxPlan, TxRequest, TxState};
 pub use slot::{Mode, Parity};

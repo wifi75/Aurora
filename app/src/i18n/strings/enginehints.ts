@@ -61,6 +61,14 @@ export const engineHintStrings = {
     'Vacía también el indicativo y el localizador de la estación DX al cerrar Aurora.',
     'Limpa também o indicativo e o locator da estação DX ao fechar a Aurora.',
   ],
+  'jxh.SWRLimit': [
+    'Sicurezza: se in trasmissione la radio legge un ROS piu\' alto di questo valore, Aurora ferma subito la trasmissione e ti avvisa (come WSJT-X, 2,5). Serve il CAT Hamlib con la lettura del ROS. 0 = controllo spento.',
+    'Safety: if the radio reads an SWR higher than this while transmitting, Aurora stops transmitting at once and warns you (like WSJT-X, 2.5). Needs Hamlib CAT with SWR reading. 0 = check off.',
+    'Sicherheit: Misst das Funkgerät beim Senden ein höheres SWR als diesen Wert, stoppt Aurora sofort und warnt dich (wie WSJT-X, 2,5). Braucht Hamlib-CAT mit SWR-Messung. 0 = aus.',
+    'Sécurité : si la radio mesure en émission un ROS supérieur à cette valeur, Aurora arrête tout de suite l\'émission et te prévient (comme WSJT-X, 2,5). Il faut le CAT Hamlib avec lecture du ROS. 0 = désactivé.',
+    'Seguridad: si al transmitir la radio mide una ROE mayor que este valor, Aurora detiene la transmisión al instante y te avisa (como WSJT-X, 2,5). Necesita CAT Hamlib con lectura de ROE. 0 = desactivado.',
+    'Segurança: se ao transmitir o rádio medir uma ROE maior que este valor, a Aurora para a transmissão de imediato e avisa-te (como o WSJT-X, 2,5). Requer CAT Hamlib com leitura de ROE. 0 = desligado.',
+  ],
   'jxh.TxWatchdogTimer': [
     'Sicurezza: se per questi minuti non tocchi niente, la trasmissione automatica si ferma (per non trasmettere da solo per ore). 0 = spento.',
     'Safety: if you touch nothing for these minutes, automatic transmission stops (so it does not run alone for hours). 0 = off.',

@@ -68,7 +68,7 @@ inclusi), la funzione che le legge resta **da verificare con REA** (con `REA_GHI
 |---|---|---|---|
 | Generali | `MyCall`, `MyGrid` | nominativo e locatore di Aurora: record ADIF, flusso UDP, trasmissione, DX Cluster, continente per i CQ direzionali | **funzionano** (dal prossimo avvio) |
 | | `Language`, `Miles`, `showDistance`, `countryName`, `UseDarkStyle` | sono nella sezione Schermo, tema e lingua di Aurora | nascoste, `own_screen` |
-| | `TxWatchdogTimer`, `TxQSYAllowed`, `MonitorOFF`, `callsignLogFiltering`, `gridLogFiltering`, `timeFromLogFiltering` | **schede Generali come in JTDX**: vedi «Scheda Generali» sotto | **funzionano** (a caldo; `MonitorOFF` al prossimo avvio) |
+| | `TxWatchdogTimer`, `TxQSYAllowed`, `SWRLimit`, `MonitorOFF`, `callsignLogFiltering`, `gridLogFiltering`, `timeFromLogFiltering` | **schede Generali come in JTDX**: vedi «Scheda Generali» sotto | **funzionano** (a caldo; `MonitorOFF` al prossimo avvio) |
 | | `Decode52`, `After73`, `IDint`, `TuneTimer`, `MonitorLastUsed`, `Scroll`, `HideTxMessages`, `countryPrefix`, `AlignDistanceAzimuth` | visibili e spente con il motivo (vedi sotto) | spente |
 | | `InsertBlank`, `Tx2QSO`, `showAzimuth` | opzioni dello schermo, nel browser (valgono subito) | **funzionano** |
 | Radio | `Rig`, `PTTport`, `CATSerialPort`, `CATSerialRate`, `Polling`, `CATForceDTR/RTS`, `TCIAudio` | la radio e il PTT stanno nella scheda CAT | nascoste, `radio_cat` |
@@ -138,6 +138,7 @@ Resta fuori: le righe di 8 m (40,680 MHz), 4 m (70 MHz) e 70 cm (Aurora non ha q
 | La ricezione ritorna sull'ultima frequenza usata | `MonitorLastUsed` | solo `on_monitorButton_clicked` 0x4acf00 [**binario**]: riaccendendo Monitor riporta la radio sull'ultima frequenza ascoltata | **spenta** (`monitor_last`): da fare (ricordare la frequenza e riscriverla alla radio) |
 | Invia ID CW dopo 73; Intervallo periodo ID CW | `After73`, `IDint` | solo `guiUpdate` 0x4c4350, dentro `!m_mode.startsWith("FT")` [**binario**] | **spente** (`cw_id`): l'ID CW non esiste in FT8 e FT4 |
 | Periodo monitoraggio Tx (minuti) | `TxWatchdogTimer` (0-99, fabbrica 6) | `on_the_minute` 0x48aa40, `update_watchdog_label`, `guiUpdate` [**binario**] | **viva**: `Options.watchdog_min` (a caldo) |
+| Ferma la Tx con ROS oltre | `SWRLimit` (voce di Aurora: 0 = spento oppure 1,1-10, fabbrica 2,5) | WSJT-X `stopForHighSWR` (`mainwindow.cpp`, soglia fissa 2,5) | **viva**: `NativeControls::set_swr_limit`, controllo a ogni lettura del ROS in trasmissione |
 | Tempo per l'accordo | `TuneTimer` (0-300, fabbrica 30) | `on_tuneButton_clicked` 0x4a7ed0, `guiUpdate` [**binario**] | **spenta** (`tune_timer`): Aurora non preme mai l'accordo |
 
 ### Scheda Notifiche e «gia' lavorato»

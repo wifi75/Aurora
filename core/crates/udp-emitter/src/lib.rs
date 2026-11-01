@@ -22,6 +22,7 @@ use tokio::{
     task::JoinHandle,
 };
 use udp_bridge::{
+    encode_inhibit_status, parse_tx_inhibit, InhibitParse, InhibitStatus,
     decode_request, encode_clear, encode_close, encode_decode, encode_heartbeat, encode_logged_adif, encode_qso_logged, encode_status, message::LOGGED_ADIF, Decode, QsoLoggedData, Request, Status, HEARTBEAT_SECS, INITIAL_SCHEMA, MAX_SCHEMA,
 };
 
@@ -185,6 +186,21 @@ struct Recent {
     hint: bool,
 }
 
+/// Chi applica i blocchi della trasmissione chiesti con TxInhibit (tipo 18): la catena di trasmissione di Aurora (`tx_native::TxInterlock`).
+pub trait InhibitControl: Send + Sync {
+    /// Un comando valido: `ttl_ms` 0 rilascia, 100-30000 prenota o rinnova.
+    fn command(&self, controller: &str, ttl_ms: u32, station: &str);
+    /// Comandi malformati ricevuti.
+    fn invalid(&self, count: u32);
+    /// Fa scadere le prenotazioni.
+    fn tick(&self);
+    /// Lo stato attuale (i campi `id` e `supported` li mette l'emettitore).
+    fn snapshot(&self) -> InhibitStatus;
+}
+
+/// Ogni quanto si fanno scadere le prenotazioni e si controlla se lo stato del blocco e' cambiato (la durata minima e' 100 ms).
+pub const INHIBIT_TICK: Duration = Duration::from_millis(50);
+
 /// Il cuore dell'emettitore, senza rete: trasforma eventi in datagrammi e datagrammi in comandi.
 pub struct Session {
     config: EmitterConfig,
@@ -200,6 +216,10 @@ pub struct Session {
     /// I filtri della scheda Filtri (copia mandata dalla pagina) e il continente di chi opera: servono con `apply_filters`.
     filters: Option<SharedUdpFilters>,
     own_continent: Option<String>,
+    /// Il blocco della trasmissione (TxInhibit): c'e' solo se la catena di trasmissione lo sa applicare.
+    inhibit: Option<Arc<dyn InhibitControl>>,
+    /// L'ultimo InhibitStatus mandato (per mandarlo solo ai cambi, oltre che dopo ogni Heartbeat).
+    last_inhibit: Option<InhibitStatus>,
 }
 
 /// Cosa fare dopo un datagramma ricevuto.
@@ -233,7 +253,53 @@ pub fn reply_accepted(accept_reply: u8, text: &str) -> bool {
 
 impl Session {
     pub fn new(config: EmitterConfig) -> Session {
-        Session { config, schema: INITIAL_SCHEMA, last: None, mode: "FT8".to_string(), last_status: None, recent: VecDeque::new(), last_qso: None, filters: None, own_continent: None }
+        Session { config, schema: INITIAL_SCHEMA, last: None, mode: "FT8".to_string(), last_status: None, recent: VecDeque::new(), last_qso: None, filters: None, own_continent: None, inhibit: None, last_inhibit: None }
+    }
+
+    /// Chi applica i TxInhibit (`None`: i comandi si ignorano e l'InhibitStatus non si manda).
+    pub fn set_inhibit(&mut self, inhibit: Option<Arc<dyn InhibitControl>>) {
+        self.inhibit = inhibit;
+    }
+
+    /// WSJT-X: «supportato» vuol dire che l'istanza applica i blocchi (PTT comandabile) e che «accetta le richieste UDP» e' acceso.
+    pub fn inhibit_supported(&self) -> bool {
+        self.config.accept_requests && self.inhibit.is_some()
+    }
+
+    fn inhibit_snapshot(&self, supported: bool) -> Option<InhibitStatus> {
+        let control = self.inhibit.as_ref()?;
+        Some(InhibitStatus { id: self.config.id.clone(), supported, ..control.snapshot() })
+    }
+
+    /// InhibitStatus (tipo 17): con `force` sempre (dopo ogni Heartbeat), altrimenti solo se lo stato e' cambiato dall'ultimo mandato. Niente se il
+    /// blocco non e' supportato. Non passa dal controllo dei doppioni del flusso.
+    pub fn inhibit_status(&mut self, force: bool) -> Option<Vec<u8>> {
+        if !self.inhibit_supported() {
+            return None;
+        }
+        let snapshot = self.inhibit_snapshot(true)?;
+        if !force && self.last_inhibit.as_ref() == Some(&snapshot) {
+            return None;
+        }
+        let datagram = encode_inhibit_status(self.schema, &snapshot);
+        self.last_inhibit = Some(snapshot);
+        Some(datagram)
+    }
+
+    /// Fa scadere le prenotazioni e restituisce l'InhibitStatus se lo stato e' cambiato.
+    pub fn inhibit_tick(&mut self) -> Option<Vec<u8>> {
+        if let Some(control) = &self.inhibit {
+            control.tick();
+        }
+        self.inhibit_status(false)
+    }
+
+    /// Alla chiusura: l'ultimo InhibitStatus «non supportato» ritira la disponibilita' ai controller.
+    pub fn inhibit_withdrawal(&self) -> Option<Vec<u8>> {
+        if !self.inhibit_supported() {
+            return None;
+        }
+        self.inhibit_snapshot(false).map(|s| encode_inhibit_status(self.schema, &s))
     }
 
     /// I filtri di testo e il continente proprio, per `apply_filters`.
@@ -423,6 +489,31 @@ impl Session {
     /// Un datagramma arrivato da un programma collegato: comandi per Aurora e, per il Replay, datagrammi da rimandare.
     pub fn on_datagram(&mut self, data: &[u8], tx_first: bool) -> Handled {
         let mut handled = Handled::default();
+        // TxInhibit (18) prima di tutto, come `parse_tx_inhibit` di WSJT-X 3.3: con «accetta le richieste» spento si ignora senza contarlo
+        match parse_tx_inhibit(data, &self.config.id) {
+            InhibitParse::NotInhibit => {}
+            _ if !self.config.accept_requests => return handled,
+            InhibitParse::OtherId => return handled,
+            InhibitParse::Invalid => {
+                match &self.inhibit {
+                    Some(control) => control.invalid(1),
+                    None => tracing::debug!("TxInhibit malformato ignorato"),
+                }
+                handled.datagrams.extend(self.inhibit_status(false));
+                return handled;
+            }
+            InhibitParse::Command(c) => {
+                match &self.inhibit {
+                    Some(control) => {
+                        tracing::info!("TxInhibit da {} ({}): {} ms", c.controller, c.station, c.ttl_ms);
+                        control.command(&c.controller, c.ttl_ms, &c.station);
+                    }
+                    None => tracing::info!("TxInhibit da {} ignorato: nessuna catena di trasmissione", c.controller),
+                }
+                handled.datagrams.extend(self.inhibit_status(false));
+                return handled;
+            }
+        }
         let Ok(received) = decode_request(data) else { return handled };
         // `parse_message`: solo i datagrammi per noi (stesso identificativo); uno schema piu' alto del 3 e' un errore, non si legge
         if received.id.as_deref() != Some(self.config.id.as_str()) || received.schema > MAX_SCHEMA {
@@ -511,6 +602,8 @@ pub struct EmitterHooks {
     pub on_reply_accepted: Option<Arc<dyn Fn() + Send + Sync>>,
     /// I comandi in ingresso che non sono di trasmissione (colori, Clear, Location, Configure, cambio di configurazione).
     pub on_external: Option<Arc<dyn Fn(External) + Send + Sync>>,
+    /// Chi applica i TxInhibit (tipo 18); senza, l'istanza non li supporta.
+    pub inhibit: Option<Arc<dyn InhibitControl>>,
 }
 
 /// Da quale socket parte un destinatario: unicast (uno per famiglia di indirizzi) o multicast (uno per TTL e interfaccia).
@@ -635,11 +728,18 @@ impl Emitter {
         let heartbeat = config.heartbeat;
         let mut first_session = Session::new(config);
         first_session.set_filters(hooks.filters.clone(), hooks.own_continent.clone());
+        first_session.set_inhibit(hooks.inhibit.clone());
         let session = Arc::new(Mutex::new(first_session));
         let on_accepted = hooks.on_reply_accepted.clone();
         let on_external = hooks.on_external.clone();
 
-        let first = lock(&session).map(|mut s| s.start()).unwrap_or_default();
+        let first = lock(&session)
+            .map(|mut s| {
+                let mut out = s.start();
+                out.extend(s.inhibit_status(true));
+                out
+            })
+            .unwrap_or_default();
         send_all(&sockets, &routes, &first).await;
 
         // ogni socket ascolta i comandi di ritorno e li passa al ciclo principale
@@ -674,6 +774,8 @@ impl Emitter {
             tokio::spawn(async move {
                 let mut tick = tokio::time::interval(heartbeat);
                 tick.tick().await;
+                let mut inhibit_tick = tokio::time::interval(INHIBIT_TICK);
+                inhibit_tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 loop {
                     tokio::select! {
                         event = events.recv() => match event {
@@ -685,9 +787,16 @@ impl Emitter {
                             Err(RecvError::Closed) => break,
                         },
                         _ = tick.tick() => {
-                            let heartbeat = lock(&session).map(|s| s.heartbeat());
-                            if let Some(heartbeat) = heartbeat {
-                                send_all(&sockets, &routes, &[heartbeat]).await;
+                            // WSJT-X: dopo ogni Heartbeat anche l'InhibitStatus, se il blocco e' supportato
+                            let out = lock(&session).map(|mut s| [Some(s.heartbeat()), s.inhibit_status(true)].into_iter().flatten().collect::<Vec<_>>());
+                            if let Some(out) = out {
+                                send_all(&sockets, &routes, &out).await;
+                            }
+                        }
+                        _ = inhibit_tick.tick() => {
+                            let out = lock(&session).and_then(|mut s| s.inhibit_tick());
+                            if let Some(out) = out {
+                                send_all(&sockets, &routes, &[out]).await;
                             }
                         }
                         received = incoming.recv() => match received {
@@ -733,9 +842,9 @@ impl Emitter {
 
     /// Alla chiusura di Aurora: manda il Close e ferma l'emettitore.
     pub async fn shutdown(&self) {
-        let close = lock(&self.session).map(|s| s.close());
-        if let Some(close) = close {
-            send_all(&self.sockets, &self.routes, &[close]).await;
+        let out = lock(&self.session).map(|s| s.inhibit_withdrawal().into_iter().chain([s.close()]).collect::<Vec<_>>());
+        if let Some(out) = out {
+            send_all(&self.sockets, &self.routes, &out).await;
         }
         for task in &self.tasks {
             task.abort();

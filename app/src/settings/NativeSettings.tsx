@@ -71,7 +71,7 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
   if (row.kind === 'bool') {
     control = <input id={id} aria-label={label} type="checkbox" disabled={!live || locked} checked={live && value === 'true'} onChange={(e) => change(e.target.checked ? 'true' : 'false')} />;
   } else if (row.kind === 'num') {
-    control = <input id={id} aria-label={label} type="number" min={row.min ?? 1} max={row.max ?? 65535} disabled={!live || locked} className="set-number" value={live ? value : ''} onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type="number" min={row.min ?? 1} max={row.max ?? 65535} step={row.step} disabled={!live || locked} className="set-number" value={live ? value : ''} onChange={(e) => change(e.target.value)} />;
   } else if (row.kind === 'reply') {
     control = (
       <select id={id} aria-label={label} disabled={!live || locked} value={live ? value : ''} onChange={(e) => change(e.target.value)}>

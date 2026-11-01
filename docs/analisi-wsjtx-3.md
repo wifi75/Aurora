@@ -75,7 +75,7 @@ Aurora: nessun modo Fox. **Manca**, priorita' bassa (servono chiave NCDXF per l'
 | Decodificatore multithread (MTD) | `lib/ft8var/*` (dal decoder di JTDX, `ft8_decodevar.f90`; in 3.2/3.3 riscritti `ft8_coarse_sync.f90`, `ft8_mtd_residual.f90`, `ft8_decode_ranges.f90`, `ft8_coarse_mutex.cpp`), scelta del momento di avvio `m_ft8DecoderStart` (hsymStop 48-50, decodifica anticipata a 46). Ghidra: `__ft8_decodevar_MOD_decodevar`, `multimode_decoder_._omp_fn.*` | `ft8/src/decode.rs` porta la logica di JTDX ma su un solo thread (commento in testa al file) | In parte |
 | a7: decodifica con i messaggi del periodo precedente della stessa parita' | `lib/ft8/ft8_a7.f90` (`ft8_a7_save`, `ft8_a7d`), chiamata in `lib/ft8_decode.f90` 329-374 | assente (Aurora ha la cronologia tra periodi di JTDX, `ft8/src/history.rs`, che e' un'altra cosa) | Manca |
 | a8: "list decoding" sul corrispondente a Rx +-10 Hz quando DX Call e DX Grid sono noti | `lib/ft8/ft8_a8d.f90`, chiamata in `ft8_decode.f90` 381-397 | assente | Manca |
-| Rifiuto prima del PTT dei messaggi non rappresentabili (niente troncamenti silenziosi) | 3.2: `pack77_legacy_truncating_fallback_for_state` in `genft8.f90`/`genft4.f90` e controlli in `mainwindow.cpp` | `ft8/src/message.rs` impacchetta; da verificare che un nominativo non rappresentabile blocchi la Tx | Da verificare |
+| Rifiuto prima del PTT dei messaggi non rappresentabili (niente troncamenti silenziosi) | 3.2: `pack77_legacy_truncating_fallback_for_state` in `genft8.f90`/`genft4.f90` e controlli in `mainwindow.cpp` | `engine-native/src/tx.rs` `check_exact`: impacchetta e rilegge prima del PTT, se cambia non trasmette, spegne la sequenza e avvisa | Fatto |
 | Stato del codec rientrante (hash dei nominativi per decoder) | `pack77_state`, `decoder_codec_context`, `lib/decoder_engine*.f90` | `CallHashes` gia' passato per riferimento | Gia' presente |
 | FT4 | 3.x: solo rifattorizzazione (stato AP nell'oggetto, `ft4_decode.f90`) | crate `ft4` | Gia' presente |
 | Riga Decode UDP: campo Mode e' il marcatore (`~` FT8, `+` FT4) | `NetworkMessage.hpp` | `udp-bridge` | Da verificare |
@@ -102,7 +102,7 @@ Aurora: nessun modo Fox. **Manca**, priorita' bassa (servono chiave NCDXF per l'
 | 0-15 | invariati | tutti dichiarati, letti 0-6 e 12; 50/51 di JTDX | Gia' presente |
 | 16 `AnnotationInfo` (In): ordinamento dei Hound in modo Fox | 2.7.0-rc7 | assente | Manca (serve solo con Fox) |
 | Status: conteggio evidenziazioni/punteggi | 2.7.0-rc7 (note) | no | Manca (bassa) |
-| 17 `InhibitStatus` (Out) e 18 `TxInhibit` (In): blocco Tx multi-operatore con lease 100-30000 ms, max 64 controller, OR delle prenotazioni, solo con PTT DTR/RTS e "Accept UDP requests" | 3.2/3.3, `Network/NetworkMessage.hpp` 549-600, `Network/MessageClient.cpp` | assente | Manca |
+| 17 `InhibitStatus` (Out) e 18 `TxInhibit` (In): blocco Tx multi-operatore con lease 100-30000 ms, max 64 controller, OR delle prenotazioni, solo con PTT DTR/RTS e "Accept UDP requests" | 3.2/3.3, `Network/NetworkMessage.hpp` 549-600, `Network/MessageClient.cpp` | `udp-bridge` (`parse_tx_inhibit`, `encode_inhibit_status`), `udp-emitter`, `tx_native::TxInterlock`; vale con ogni PTT | Fatto |
 | Reply: confronto dei campi del Decode, marcatore `~`/`+` | 3.3 (documentazione) | `udp-bridge/src/request.rs` | Da verificare |
 | Replay inviato a lotti | 3.2 | n.a. (Aurora non riceve Replay) | n.a. |
 | ADIF in LoggedADIF: `adif_ver` 3.1.8 | 3.3 | `logbook/src/adif.rs` scrive 3.1.4 | Manca (bassa) |
@@ -112,7 +112,7 @@ Aurora: nessun modo Fox. **Manca**, priorita' bassa (servono chiave NCDXF per l'
 | Voce | WSJT-X | Aurora (`rig-control`) | Stato |
 |---|---|---|---|
 | TCI (controllo e audio) | 3.0, `Transceiver/TCITransceiver.cpp` | Hamlib/rigctld e OmniRig | Manca |
-| Potenza e SWR in barra di stato, stop se SWR > 2,5 | 3.0 | `meters.rs`, `extras.rs` leggono livelli | In parte (manca lo stop automatico) |
+| Potenza e SWR in barra di stato, stop se SWR > 2,5 | 3.0 | `meters.rs` legge potenza e ROS (display della radio); `NativeControls::check_swr` ferma la Tx oltre `SWRLimit` | Fatto |
 | Mantenere DATA2/DATA3 scelti dall'operatore | 3.2 | `modes.rs` | Da verificare |
 | Rig Split mantiene i ruoli VFO in PTT; split sincronizzato al cambio di offset Tx | 3.2 | split in `tx.rs` | Da verificare |
 | Cambi di banda bloccati durante Tx/Tune; comandi PTT pendenti scartati dopo un errore della radio | 3.2 | in parte | Da verificare |

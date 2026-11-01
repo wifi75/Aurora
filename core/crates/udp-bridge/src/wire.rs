@@ -71,6 +71,11 @@ impl<'a> Reader<'a> {
         Ok(color_to_rgb(spec, [c1, c2, c3, pad]))
     }
 
+    /// `n` byte grezzi.
+    pub fn bytes(&mut self, n: usize) -> Result<&'a [u8], Error> {
+        self.take(n)
+    }
+
     /// Stringa Qt (`QByteArray` UTF-8): lunghezza u32, `0xFFFFFFFF` = nulla.
     pub fn utf8(&mut self) -> Result<Option<String>, Error> {
         let len = self.u32()?;

@@ -104,7 +104,16 @@ pub struct NativeControls {
     all_txt: AtomicU8,
     /// Il locatore proprio per questa sessione, se un programma collegato l'ha cambiato (Location via UDP); `None` = quello delle impostazioni.
     session_grid: Mutex<Option<String>>,
+    /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (250 = 2,5 come WSJT-X); 0 = controllo spento.
+    swr_limit: AtomicU32,
+    /// Gli avvisi di sicurezza della trasmissione e fino a quando valgono (`None` = finche' non si tolgono).
+    alerts: Mutex<Vec<(aurora_core::TxAlert, Option<std::time::Instant>)>>,
 }
+
+/// Soglia di fabbrica del ROS (WSJT-X: «SWR > 2.5», `stopForHighSWR`), in centesimi.
+pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 250;
+/// Per quanto resta visibile l'avviso di un messaggio non rappresentabile o di un ROS alto.
+pub const TX_ALERT_KEEP: std::time::Duration = std::time::Duration::from_secs(120);
 
 /// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
 const ESTIMATE_MAX_AGE: std::time::Duration = std::time::Duration::from_secs(2);
@@ -116,7 +125,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()) }
     }
 }
 
@@ -331,9 +340,68 @@ impl NativeControls {
         });
         // un quadro senza nessuna lettura equivale a nessuno strumento
         let converted = converted.filter(|m| *m != aurora_core::RadioMeters::default());
+        let swr = converted.as_ref().and_then(|m| m.swr);
         if let Ok(mut slot) = self.meters.lock() {
             *slot = converted;
         }
+        if let Some(swr) = swr {
+            self.check_swr(swr);
+        }
+    }
+
+    /// Soglia del ROS (per esempio 2.5); 0 o meno spegne il controllo.
+    pub fn set_swr_limit(&self, limit: f32) {
+        let hundredths = if limit.is_finite() && limit > 0.0 { (limit * 100.0).round().clamp(100.0, 10_000.0) as u32 } else { 0 };
+        self.swr_limit.store(hundredths, Ordering::Relaxed);
+    }
+
+    /// La soglia del ROS in uso (`None` = controllo spento).
+    pub fn swr_limit(&self) -> Option<f32> {
+        let h = self.swr_limit.load(Ordering::Relaxed);
+        (h > 0).then(|| h as f32 / 100.0)
+    }
+
+    /// Come `stopForHighSWR` di WSJT-X: in trasmissione, un ROS letto dalla radio sopra la soglia ferma subito la Tx (audio e PTT, sequenza
+    /// spenta) e lascia un avviso. Vero se ha fermato.
+    pub fn check_swr(&self, swr: f32) -> bool {
+        let Some(limit) = self.swr_limit() else { return false };
+        if !self.transmitting.load(Ordering::Relaxed) || !swr.is_finite() || swr <= limit {
+            return false;
+        }
+        tracing::warn!("ROS {swr:.2} oltre la soglia {limit:.2}: trasmissione fermata, controlla l'antenna");
+        self.raise_alert(aurora_core::TxAlert { kind: aurora_core::TxAlertKind::HighSwr, detail: String::new(), value: Some(swr), limit: Some(limit) }, Some(TX_ALERT_KEEP));
+        if let Err(e) = self.send(TxCommand::Halt) {
+            // senza il ciclo del motore il fermo immediato (audio e PTT) e' gia' partito in `send`
+            tracing::debug!("STOP per ROS alto senza motore: {e}");
+        }
+        true
+    }
+
+    /// Mostra un avviso di sicurezza (sostituisce quello dello stesso tipo); `keep` = per quanto, `None` = finche' non si toglie.
+    pub fn raise_alert(&self, alert: aurora_core::TxAlert, keep: Option<std::time::Duration>) {
+        if let Ok(mut all) = self.alerts.lock() {
+            all.retain(|(a, _)| a.kind != alert.kind);
+            all.push((alert, keep.map(|k| std::time::Instant::now() + k)));
+        }
+    }
+
+    /// Toglie l'avviso di quel tipo.
+    pub fn clear_alert(&self, kind: aurora_core::TxAlertKind) {
+        if let Ok(mut all) = self.alerts.lock() {
+            all.retain(|(a, _)| a.kind != kind);
+        }
+    }
+
+    /// Gli avvisi ancora validi, per lo stato della stazione.
+    pub fn tx_alerts(&self) -> Vec<aurora_core::TxAlert> {
+        let now = std::time::Instant::now();
+        self.alerts
+            .lock()
+            .map(|mut all| {
+                all.retain(|(_, until)| until.is_none_or(|u| u > now));
+                all.iter().map(|(a, _)| a.clone()).collect()
+            })
+            .unwrap_or_default()
     }
 
     pub fn meters(&self) -> Option<aurora_core::RadioMeters> {
@@ -782,6 +850,37 @@ mod tests {
         // in trasmissione (o ascolto spento) la stima viene tolta
         controls.set_s_estimate(None);
         assert_eq!(controls.published_meters(), None);
+    }
+
+    #[test]
+    fn an_swr_over_the_limit_while_transmitting_halts_and_warns() {
+        let controls = NativeControls::default();
+        let halted = Arc::new(AtomicU32::new(0));
+        let h = Arc::clone(&halted);
+        controls.set_halt_now(Arc::new(move || {
+            h.fetch_add(1, Ordering::Relaxed);
+        }));
+        let high = || Some(rig_control::meters::Meters { power_w: Some(50.0), swr: Some(3.0), ..Default::default() });
+        // in ricezione un ROS alto (lettura vecchia) non conta
+        controls.set_meters(high());
+        assert_eq!(halted.load(Ordering::Relaxed), 0);
+        controls.transmitting.store(true, Ordering::Relaxed);
+        controls.set_meters(Some(rig_control::meters::Meters { swr: Some(2.5), ..Default::default() }));
+        assert_eq!(halted.load(Ordering::Relaxed), 0, "2,5 non supera 2,5");
+        controls.set_meters(high());
+        assert_eq!(halted.load(Ordering::Relaxed), 1);
+        let alerts = controls.tx_alerts();
+        assert_eq!(alerts.len(), 1);
+        assert_eq!((alerts[0].kind, alerts[0].value, alerts[0].limit), (aurora_core::TxAlertKind::HighSwr, Some(3.0), Some(2.5)));
+        // soglia piu' alta: 3,0 passa; controllo spento: nemmeno 9
+        controls.set_swr_limit(3.5);
+        controls.set_meters(high());
+        controls.set_swr_limit(0.0);
+        controls.set_meters(Some(rig_control::meters::Meters { swr: Some(9.0), ..Default::default() }));
+        assert_eq!(halted.load(Ordering::Relaxed), 1);
+        assert_eq!(controls.swr_limit(), None);
+        controls.clear_alert(aurora_core::TxAlertKind::HighSwr);
+        assert!(controls.tx_alerts().is_empty());
     }
 
     #[test]

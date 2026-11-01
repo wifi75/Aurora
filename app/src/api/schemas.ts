@@ -26,6 +26,14 @@ export const RadioMetersSchema = z.object({
 });
 export type RadioMeters = z.infer<typeof RadioMetersSchema>;
 
+export const TxAlertSchema = z.object({
+  kind: z.enum(['unrepresentable', 'high_swr', 'inhibited']),
+  detail: z.string().optional(),
+  value: z.number().optional(),
+  limit: z.number().optional(),
+});
+export type TxAlert = z.infer<typeof TxAlertSchema>;
+
 export const StationStatusSchema = z.object({
   dial_hz: z.number(),
   mode: z.string(),
@@ -45,6 +53,8 @@ export const StationStatusSchema = z.object({
   meters: RadioMetersSchema.nullable().optional(),
   /** Le stazioni in coda per il prossimo QSO. */
   queue: z.array(z.string()).optional(),
+  /** Avvisi di sicurezza della trasmissione: messaggio non rappresentabile, ROS alto, Tx bloccata da un controller UDP. */
+  tx_alerts: z.array(TxAlertSchema).optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 

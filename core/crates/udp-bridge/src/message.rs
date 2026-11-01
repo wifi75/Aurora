@@ -16,10 +16,29 @@ pub const LOGGED_ADIF: u32 = 12;
 pub const HIGHLIGHT_CALLSIGN: u32 = 13;
 pub const SWITCH_CONFIGURATION: u32 = 14;
 pub const CONFIGURE: u32 = 15;
+/// WSJT-X 3.3: stato del blocco della trasmissione (in uscita), vedi [`InhibitStatus`].
+pub const INHIBIT_STATUS: u32 = 17;
+/// WSJT-X 3.3: prenotazione di blocco della trasmissione da un controller (in ingresso), vedi [`crate::request::parse_tx_inhibit`].
+pub const TX_INHIBIT: u32 = 18;
 /// Solo JTDX: frequenza audio di trasmissione.
 pub const SET_TX_FREQ: u32 = 50;
 /// Solo JTDX: come il pulsante "CQ". Provato dal vivo: con il bool a `true` JTDX abilita Tx e trasmette il CQ.
 pub const TRIGGER_CQ: u32 = 51;
+
+/// InhibitStatus (tipo 17, WSJT-X 3.3, `Network/NetworkMessage.hpp`): se l'istanza applica i blocchi (`supported`), se la trasmissione e'
+/// bloccata, chi la blocca (riassunto delle prenotazioni attive) e i contatori dall'avvio: prenotazioni e rilasci ricevuti, scadenze, comandi
+/// malformati.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct InhibitStatus {
+    pub id: String,
+    pub supported: bool,
+    pub inhibited: bool,
+    pub source_station: String,
+    pub hold_rx: u32,
+    pub release_rx: u32,
+    pub expiries: u32,
+    pub invalid: u32,
+}
 
 /// Un datagramma decodificato: numero di schema e contenuto.
 #[derive(Debug, Clone, PartialEq)]
@@ -120,6 +139,8 @@ pub enum Message {
     Close {
         id: Option<String>,
     },
+    /// InhibitStatus (17): lo stato del blocco della trasmissione.
+    InhibitStatus(InhibitStatus),
     /// Tipo non (ancora) modellato: i byte originali non si perdono.
     Unknown {
         kind: u32,
@@ -151,6 +172,16 @@ pub fn decode(datagram: &[u8]) -> Result<Packet, Error> {
         QSO_LOGGED => read_qso_logged(&mut r)?,
         LOGGED_ADIF => Message::LoggedAdif { id: r.utf8()?, adif: r.utf8()? },
         CLOSE => Message::Close { id: r.utf8()? },
+        INHIBIT_STATUS => Message::InhibitStatus(InhibitStatus {
+            id: r.utf8()?.unwrap_or_default(),
+            supported: r.bool()?,
+            inhibited: r.bool()?,
+            source_station: r.utf8()?.unwrap_or_default(),
+            hold_rx: r.u32()?,
+            release_rx: r.u32()?,
+            expiries: r.u32()?,
+            invalid: r.u32()?,
+        }),
         _ => Message::Unknown {
             kind,
             id: r.utf8().ok().flatten(),
@@ -405,5 +436,15 @@ pub fn encode_configure(id: &str, schema: u32, c: &ConfigureFields) -> Vec<u8> {
     w.utf8(Some(&c.dx_call));
     w.utf8(Some(&c.dx_grid));
     w.bool(c.generate_messages);
+    w.into_bytes()
+}
+
+/// TxInhibit (tipo 18): un controller prenota (`ttl_ms` 100-30000) o rilascia (`ttl_ms` 0) il blocco della trasmissione dell'istanza `id`.
+/// Serve ai controller e alle prove: Aurora lo riceve, non lo manda.
+pub fn encode_tx_inhibit(id: &str, schema: u32, controller: &str, ttl_ms: u32, station: Option<&str>) -> Vec<u8> {
+    let mut w = command_header(TX_INHIBIT, schema, id);
+    w.utf8(Some(controller));
+    w.u32(ttl_ms);
+    w.utf8(station);
     w.into_bytes()
 }
