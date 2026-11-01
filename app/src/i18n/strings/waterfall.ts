@@ -199,4 +199,13 @@ export const waterfallStrings = {
   ],
 
   'wf.zero': ['Zero', 'Zero', 'Null', 'Zéro', 'Cero', 'Zero'],
+  'wfs.wsjtx': ['Stile WSJT-X', 'WSJT-X style', 'WSJT-X-Stil', 'Style WSJT-X', 'Estilo WSJT-X', 'Estilo WSJT-X'],
+  'tip.wfs.wsjtx': [
+    'Rende la cascata ordinata come quella di WSJT-X: righe più lente (media su 5), così ogni trasmissione diventa un blocco netto; fondo appiattito (Flatten); tavolozza Default; riga verde a ogni inizio periodo. Si torna indietro con Ripristina.',
+    'Makes the waterfall tidy like WSJT-X: slower rows (average of 5), so each transmission becomes a clean block; flattened background (Flatten); Default palette; green line at each period start. Undo with Reset.',
+    'Macht den Wasserfall aufgeräumt wie bei WSJT-X: langsamere Zeilen (Mittel aus 5), jede Sendung wird ein klarer Block; geglätteter Hintergrund (Flatten); Palette Default; grüne Linie an jedem Periodenbeginn. Zurück mit Zurücksetzen.',
+    'Rend la cascade ordonnée comme celle de WSJT-X : lignes plus lentes (moyenne de 5), chaque émission devient un bloc net ; fond aplani (Flatten) ; palette Default ; ligne verte à chaque début de période. Annuler avec Réinitialiser.',
+    'Deja la cascada ordenada como la de WSJT-X: filas más lentas (media de 5), cada transmisión es un bloque nítido; fondo aplanado (Flatten); paleta Default; línea verde en cada inicio de periodo. Se deshace con Restablecer.',
+    'Deixa a cascata arrumada como a do WSJT-X: linhas mais lentas (média de 5), cada transmissão fica um bloco nítido; fundo aplanado (Flatten); paleta Default; linha verde em cada início de período. Desfaz-se com Repor.',
+  ],
 } as const satisfies Record<string, Entry>;
