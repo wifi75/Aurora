@@ -1,8 +1,9 @@
 //! Gli encoder dei datagrammi di JTDX si rileggono con il decoder esistente (e con i comandi di ritorno).
 
 use udp_bridge::{
-    decode, decode_request, encode_clear, encode_close, encode_decode, encode_free_text, encode_halt_tx, encode_heartbeat, encode_logged_adif, encode_qso_logged, encode_replay,
-    encode_reply, encode_set_tx_freq, encode_status, encode_trigger_cq, Decode, Message, QsoLoggedData, Request, Status, ADIF_HEADER, MAGIC,
+    decode, decode_request, encode_clear, encode_clear_window, encode_close, encode_configure, encode_decode, encode_free_text, encode_halt_tx, encode_heartbeat, encode_highlight_callsign,
+    encode_location, encode_logged_adif, encode_qso_logged, encode_replay, encode_reply, encode_set_tx_freq, encode_status, encode_switch_configuration, encode_trigger_cq, Configure,
+    ConfigureFields, Decode, Message, QsoLoggedData, Request, Status, ADIF_HEADER, MAGIC,
 };
 
 fn sample_status() -> Status {
@@ -118,6 +119,9 @@ fn qso_logged_roundtrips_with_the_times_and_the_station() {
         operator_call: "IU3ABC".into(),
         my_call: "IU3ABC".into(),
         my_grid: "IO91wm".into(),
+        exchange_sent: "-16 FN42".into(),
+        exchange_received: String::new(),
+        propagation_mode: String::new(),
     };
     let p = decode(&encode_qso_logged("JTDX", 2, &q)).expect("qso");
     let Message::QsoLogged { id, dx_call, dx_grid, tx_freq, mode, report_sent, report_received, extra } = p.message else { panic!("atteso QsoLogged") };
@@ -128,6 +132,41 @@ fn qso_logged_roundtrips_with_the_times_and_the_station() {
     assert_eq!((extra.time_off_ms, extra.time_on_ms), (q.time_off_ms, q.time_on_ms));
     assert_eq!((extra.tx_power.as_deref(), extra.comments.as_deref(), extra.name.as_deref()), (Some("50"), Some(""), Some("")));
     assert_eq!((extra.operator_call.as_deref(), extra.my_call.as_deref(), extra.my_grid.as_deref()), (Some("IU3ABC"), Some("IU3ABC"), Some("IO91wm")));
+    // i campi di WSJT-X 2.x in coda
+    assert_eq!((extra.exchange_sent.as_deref(), extra.exchange_received.as_deref(), extra.propagation_mode.as_deref()), (Some("-16 FN42"), Some(""), Some("")));
+}
+
+#[test]
+fn the_new_incoming_commands_are_read() {
+    assert_eq!(decode_request(&encode_clear_window("JTDX", 3, 2)).expect("clear").request, Some(Request::Clear { window: Some(2) }));
+    // il Clear di schema 2 non ha il campo della finestra
+    assert_eq!(decode_request(&encode_clear("JTDX", 2)).expect("clear").request, Some(Request::Clear { window: None }));
+    assert_eq!(decode_request(&encode_location("JTDX", 3, "FN42ab")).expect("loc").request, Some(Request::Location { location: "FN42ab".into() }));
+    assert_eq!(
+        decode_request(&encode_highlight_callsign("JTDX", 3, "K1ABC", Some([255, 255, 0]), Some([0, 0, 0]), true)).expect("hl").request,
+        Some(Request::HighlightCallsign { call: "K1ABC".into(), background: Some([255, 255, 0]), foreground: Some([0, 0, 0]), last_only: true })
+    );
+    assert_eq!(
+        decode_request(&encode_highlight_callsign("JTDX", 3, "K1ABC", None, None, false)).expect("hl").request,
+        Some(Request::HighlightCallsign { call: "K1ABC".into(), background: None, foreground: None, last_only: false })
+    );
+    assert_eq!(decode_request(&encode_switch_configuration("JTDX", 3, "Gara")).expect("sw").request, Some(Request::SwitchConfiguration { name: "Gara".into() }));
+    let unchanged = decode_request(&encode_configure("JTDX", 3, &ConfigureFields::default())).expect("cfg").request;
+    assert_eq!(unchanged, Some(Request::Configure(Configure::default())));
+    let fields = ConfigureFields { mode: "FT4".into(), tr_period: 7, rx_df: 1500, dx_call: "K1ABC".into(), dx_grid: "FN42".into(), generate_messages: true, ..ConfigureFields::default() };
+    let Some(Request::Configure(c)) = decode_request(&encode_configure("JTDX", 3, &fields)).expect("cfg").request else { panic!("atteso Configure") };
+    assert_eq!((c.mode.as_deref(), c.tr_period, c.rx_df, c.frequency_tolerance), (Some("FT4"), Some(7), Some(1500), None));
+    assert_eq!((c.dx_call.as_deref(), c.dx_grid.as_deref(), c.generate_messages), (Some("K1ABC"), Some("FN42"), true));
+}
+
+#[test]
+fn a_jtdx_qso_logged_without_the_tail_still_reads() {
+    let full = encode_qso_logged("JTDX", 2, &QsoLoggedData { dx_call: "K1ABC".into(), ..QsoLoggedData::default() });
+    // JTDX si ferma al locatore proprio: tre stringhe vuote (4 byte ciascuna) in meno
+    let jtdx = &full[..full.len() - 12];
+    let Message::QsoLogged { extra, .. } = decode(jtdx).expect("qso").message else { panic!("atteso QsoLogged") };
+    let extra = extra.expect("coda");
+    assert_eq!((extra.exchange_sent, extra.exchange_received, extra.propagation_mode), (None, None, None));
 }
 
 #[test]

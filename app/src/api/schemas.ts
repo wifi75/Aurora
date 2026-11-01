@@ -121,6 +121,16 @@ export type AudioLevel = z.infer<typeof AudioLevelSchema>;
 export const BandChangedSchema = z.object({ band: z.string().nullable(), dial_hz: z.number(), epoch: z.number() });
 export type BandChanged = z.infer<typeof BandChangedSchema>;
 
+/** Un programma collegato via UDP (Highlight Callsign) chiede colori per un nominativo: `#rrggbb`; entrambi `null` = togli. */
+export const HighlightCallsignSchema = z.object({
+  call: z.string(),
+  background: z.string().nullable(),
+  foreground: z.string().nullable(),
+  /** Solo la riga piu' recente con quel nominativo. */
+  last_only: z.boolean(),
+});
+export type HighlightCallsign = z.infer<typeof HighlightCallsignSchema>;
+
 export const EventSchema = z.discriminatedUnion('type', [
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
@@ -130,6 +140,9 @@ export const EventSchema = z.discriminatedUnion('type', [
   UpdateNoticeSchema.extend({ type: z.literal('update_available') }),
   AudioLevelSchema.extend({ type: z.literal('audio_level') }),
   BandChangedSchema.extend({ type: z.literal('band_changed') }),
+  HighlightCallsignSchema.extend({ type: z.literal('highlight_callsign') }),
+  /** Un programma collegato via UDP (Clear) chiede di svuotare le liste, come «Cancella». */
+  z.object({ type: z.literal('clear_decodes'), window: z.number() }),
 ]);
 export type AuroraEvent = z.infer<typeof EventSchema>;
 

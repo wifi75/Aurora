@@ -172,7 +172,7 @@ async fn invalid_spectrum_row_is_not_forwarded_to_clients() {
     tokio::time::sleep(Duration::from_millis(100)).await;
     let spectrum = s.bus.spectrum();
     spectrum.send(SpectrumRow { seq: 1, f_min_hz: 0, f_max_hz: 3000, bins: vec![] }).unwrap();
-    spectrum.send(SpectrumRow { seq: 2, f_min_hz: 0, f_max_hz: 3000, bins: vec![0; 5000] }).unwrap();
+    spectrum.send(SpectrumRow { seq: 2, f_min_hz: 0, f_max_hz: 3000, bins: vec![0; 9000] }).unwrap();
     spectrum.send(SpectrumRow { seq: 3, f_min_hz: 3000, f_max_hz: 0, bins: vec![1; 8] }).unwrap();
     spectrum.send(row(4)).unwrap();
     let msg = tokio::time::timeout(Duration::from_secs(2), async {

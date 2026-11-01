@@ -9,7 +9,7 @@
 
 use std::{
     collections::VecDeque,
-    net::SocketAddr,
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -22,9 +22,10 @@ use tokio::{
     task::JoinHandle,
 };
 use udp_bridge::{
-    decode_request, encode_clear, encode_close, encode_decode, encode_heartbeat, encode_logged_adif, encode_qso_logged, encode_status, Decode, QsoLoggedData, Request, Status,
-    HEARTBEAT_SECS, INITIAL_SCHEMA, MAX_SCHEMA,
+    decode_request, encode_clear, encode_close, encode_decode, encode_heartbeat, encode_logged_adif, encode_qso_logged, encode_status, message::LOGGED_ADIF, Decode, QsoLoggedData, Request, Status, HEARTBEAT_SECS, INITIAL_SCHEMA, MAX_SCHEMA,
 };
+
+pub use udp_bridge::Configure;
 
 /// Quanti messaggi decodificati si ricordano: servono al Reply (che li indica per testo) e al Replay.
 pub const RECENT_DECODES: usize = 300;
@@ -34,12 +35,60 @@ pub const JTDX_ID: &str = "JTDX";
 /// Versione che JTDX dichiara nel Heartbeat.
 pub const JTDX_VERSION: &str = "2.2.159";
 
+/// TTL di base dei datagrammi multicast: 1 = solo la rete locale (come WSJT-X).
+pub const DEFAULT_MULTICAST_TTL: u32 = 1;
+
+/// Le opzioni di un destinatario multicast: quanti salti (TTL) e da quale interfaccia escono i datagrammi (`None` = scelta del sistema).
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Multicast {
+    pub ttl: u32,
+    pub interface: Option<IpAddr>,
+}
+
+impl Default for Multicast {
+    fn default() -> Self {
+        Multicast { ttl: DEFAULT_MULTICAST_TTL, interface: None }
+    }
+}
+
+/// Un destinatario del flusso con le sue opzioni.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Destination {
+    pub addr: SocketAddr,
+    /// Riceve il flusso binario di WSJT-X (Heartbeat, Status, Decode, Clear, QSO Logged, Close).
+    pub stream: bool,
+    /// Riceve il Logged ADIF (tipo 12) dopo ogni QSO Logged.
+    pub logged_adif: bool,
+    /// `Some` per un gruppo multicast (l'indirizzo deve esserlo): TTL e interfaccia di uscita.
+    pub multicast: Option<Multicast>,
+}
+
+impl Destination {
+    /// Il flusso completo verso un indirizzo; se l'indirizzo e' un gruppo multicast, con TTL 1 e interfaccia scelta dal sistema.
+    pub fn stream(addr: SocketAddr, logged_adif: bool) -> Destination {
+        Destination { addr, stream: true, logged_adif, multicast: addr.ip().is_multicast().then(Multicast::default) }
+    }
+
+    /// Vero se il datagramma (gia' codificato) va a questo destinatario: il Logged ADIF solo a chi lo vuole, il resto a chi vuole il flusso.
+    pub fn wants(&self, datagram: &[u8]) -> bool {
+        if is_logged_adif(datagram) { self.logged_adif } else { self.stream }
+    }
+}
+
+/// Il tipo del messaggio sta nei byte 8-11 (dopo numero magico e schema).
+fn is_logged_adif(datagram: &[u8]) -> bool {
+    datagram.get(8..12).and_then(|b| <[u8; 4]>::try_from(b).ok()).is_some_and(|b| u32::from_be_bytes(b) == LOGGED_ADIF)
+}
+
 #[derive(Clone, Debug)]
 pub struct EmitterConfig {
     pub id: String,
     pub version: String,
-    /// I destinatari del flusso (il «primo server UDP» di JTDX e chi l'hub inoltrava: GridTracker2 su 127.0.0.1:2333).
+    /// I destinatari del flusso (il «primo server UDP» di JTDX e chi l'hub inoltrava: GridTracker2 su 127.0.0.1:2333). Ricevono il flusso e,
+    /// con `send_adif`, il Logged ADIF; un indirizzo multicast si tratta come tale (TTL 1).
     pub targets: Vec<SocketAddr>,
+    /// Altri destinatari, ciascuno con le sue opzioni (flusso, Logged ADIF, multicast).
+    pub destinations: Vec<Destination>,
     /// Nominativo e locatore propri, per il QSO Logged e per il record ADIF (lo Status porta i suoi).
     pub de_call: String,
     pub de_grid: String,
@@ -49,7 +98,7 @@ pub struct EmitterConfig {
     pub accept_requests: bool,
     /// `AcceptUDPReplyMessages`: 1 solo CQ, 2 CQ e 73, 3 tutti.
     pub accept_reply: u8,
-    /// `EnableUDP1adifSending`: dopo ogni QSO Logged manda anche il Logged ADIF.
+    /// `EnableUDP1adifSending`: dopo ogni QSO Logged manda anche il Logged ADIF (ai `targets`; i `destinations` hanno la loro opzione).
     pub send_adif: bool,
     /// L'invio a eQSL e' acceso: il record ADIF porta `EQSL_QSL_SENT` come in JTDX.
     pub eqsl_sent: bool,
@@ -65,6 +114,7 @@ impl EmitterConfig {
             id: JTDX_ID.to_string(),
             version: JTDX_VERSION.to_string(),
             targets,
+            destinations: Vec::new(),
             de_call: String::new(),
             de_grid: String::new(),
             tx_power: String::new(),
@@ -76,6 +126,52 @@ impl EmitterConfig {
             heartbeat: Duration::from_secs(HEARTBEAT_SECS),
         }
     }
+
+    /// Tutti i destinatari: prima `targets` (con `send_adif`), poi `destinations`; lo stesso indirizzo una volta sola (vince il primo).
+    pub fn all_destinations(&self) -> Vec<Destination> {
+        let mut out: Vec<Destination> = Vec::new();
+        for d in self.targets.iter().map(|a| Destination::stream(*a, self.send_adif)).chain(self.destinations.iter().cloned()) {
+            if !(d.stream || d.logged_adif) || out.iter().any(|o| o.addr == d.addr) {
+                continue;
+            }
+            out.push(d);
+        }
+        out
+    }
+}
+
+/// Un comando in ingresso che non e' un comando di trasmissione: chi costruisce l'emettitore decide che cosa farne (`EmitterHooks::on_external`).
+/// Arrivano solo con «accetta le richieste UDP» acceso.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum External {
+    /// Clear (3): svuota le liste come «Cancella». `window` 0 attivita' di banda, 1 frequenza Rx, 2 entrambe.
+    Clear { window: u8 },
+    /// Location (11): il locatore della stazione per la sessione, gia' controllato e scritto come `FN42ab`.
+    Location { grid: String },
+    /// Highlight Callsign (13): colori RGB di sfondo e testo; entrambi `None` = togli.
+    Highlight { call: String, background: Option<[u8; 3]>, foreground: Option<[u8; 3]>, last_only: bool },
+    /// Switch Configuration (14): Aurora non ha configurazioni con nome; chi la riceve la registra e la ignora.
+    SwitchConfiguration { name: String },
+    /// Configure (15): solo i campi presenti.
+    Configure(Configure),
+}
+
+/// Il locatore di un Location come lo legge WSJT-X (`MainWindow::locationChange`): oltre sei caratteri serve il prefisso `GRID:`; poi 4, 6 o 8
+/// caratteri Maidenhead. Restituisce il locatore con le lettere del campo maiuscole e quelle del sottoquadrato minuscole.
+pub fn parse_location(text: &str) -> Option<String> {
+    let mut grid = text.trim().to_string();
+    if grid.chars().count() > 6 {
+        let upper = grid.to_ascii_uppercase();
+        let rest = upper.strip_prefix("GRID:")?;
+        grid = rest.trim().to_string();
+    }
+    let b = grid.as_bytes();
+    let pair = |i: usize, lo: u8, hi: u8| b.get(i).zip(b.get(i + 1)).is_some_and(|(x, y)| (lo..=hi).contains(&x.to_ascii_uppercase()) && (lo..=hi).contains(&y.to_ascii_uppercase()));
+    let ok = matches!(b.len(), 4 | 6 | 8) && pair(0, b'A', b'R') && pair(2, b'0', b'9') && (b.len() < 6 || pair(4, b'A', b'X')) && (b.len() < 8 || pair(6, b'0', b'9'));
+    if !ok {
+        return None;
+    }
+    Some(grid.chars().enumerate().map(|(i, c)| if i < 2 { c.to_ascii_uppercase() } else { c.to_ascii_lowercase() }).collect())
 }
 
 #[derive(Clone)]
@@ -114,6 +210,8 @@ pub struct Handled {
     pub reply_accepted: bool,
     /// Datagrammi da rimandare ai destinatari (il Replay rimanda i decode correnti).
     pub datagrams: Vec<Vec<u8>>,
+    /// Comandi che non riguardano la trasmissione (colori, Clear, Location, Configure...).
+    pub external: Vec<External>,
 }
 
 /// Il carattere che JTDX scrive dopo la frequenza e manda nel campo `mode` del Decode: `~` per FT8, `:` per FT4 (letto in `ALL.TXT` e in `replyToUDP`).
@@ -257,7 +355,16 @@ impl Session {
                 self.send(datagram).into_iter().collect()
             }
             Event::QsoLogged(q) => self.on_qso(q, now_unix_ms),
-            Event::QsoCompleted(_) | Event::QsoPending(_) | Event::QsoPendingDone { .. } | Event::TxHalted | Event::Wanted(_) | Event::UpdateAvailable(_) | Event::AudioLevel(_) | Event::BandChanged { .. } => Vec::new(),
+            Event::QsoCompleted(_)
+            | Event::QsoPending(_)
+            | Event::QsoPendingDone { .. }
+            | Event::TxHalted
+            | Event::Wanted(_)
+            | Event::UpdateAvailable(_)
+            | Event::AudioLevel(_)
+            | Event::BandChanged { .. }
+            | Event::HighlightCallsign { .. }
+            | Event::ClearDecodes { .. } => Vec::new(),
         }
     }
 
@@ -281,6 +388,8 @@ impl Session {
         }
         self.last_qso = Some((q.call.clone(), stamp));
         let instant = |ms: u64| (ms > 0).then(|| i64::try_from(ms).unwrap_or(i64::MAX));
+        // il locatore dell'ultimo Status (un Location lo puo' aver cambiato per la sessione), altrimenti quello della configurazione
+        let my_grid = self.last_status.as_ref().map(|s| s.de_grid.clone()).filter(|g| !g.is_empty()).unwrap_or_else(|| self.config.de_grid.clone());
         let data = QsoLoggedData {
             time_off_ms: instant(q.time_off_unix_ms),
             dx_call: q.call.clone(),
@@ -295,11 +404,15 @@ impl Session {
             time_on_ms: instant(q.time_on_unix_ms),
             operator_call: self.config.de_call.clone(),
             my_call: self.config.de_call.clone(),
-            my_grid: self.config.de_grid.clone(),
+            my_grid: my_grid.clone(),
+            // Aurora non fa gare: scambi vuoti come WSJT-X fuori dal modo gara; propagazione non nota
+            exchange_sent: String::new(),
+            exchange_received: String::new(),
+            propagation_mode: String::new(),
         };
         let mut out: Vec<Vec<u8>> = self.send(encode_qso_logged(&self.config.id, self.schema, &data)).into_iter().collect();
         if self.config.send_adif {
-            let station = adif::Station { call: self.config.de_call.clone(), grid: self.config.de_grid.clone(), tx_power: self.config.tx_power.clone() };
+            let station = adif::Station { call: self.config.de_call.clone(), grid: my_grid, tx_power: self.config.tx_power.clone() };
             let today = adif::utc_date(now_unix_ms / 1000);
             let record = adif::jtdx_record_with(q, &station, &today, self.config.eqsl_sent.then_some(today.as_str()));
             out.extend(self.send(encode_logged_adif(&self.config.id, self.schema, &record)));
@@ -363,6 +476,20 @@ impl Session {
                     handled.commands.push(Command::CallCq { modifier: direction });
                 }
             }
+            // WSJT-X: senza il campo della finestra vale 0 (attivita' di banda); un valore oltre 2 vale «entrambe»
+            Request::Clear { window } => handled.external.push(External::Clear { window: window.unwrap_or(0).min(2) }),
+            Request::Location { location } => match parse_location(&location) {
+                Some(grid) => handled.external.push(External::Location { grid }),
+                None => tracing::info!("Location UDP ignorato: «{location}» non e' un locatore"),
+            },
+            Request::HighlightCallsign { call, background, foreground, last_only } => {
+                let call = call.trim().to_ascii_uppercase();
+                if !call.is_empty() && call.len() <= 20 {
+                    handled.external.push(External::Highlight { call, background, foreground, last_only });
+                }
+            }
+            Request::SwitchConfiguration { name } => handled.external.push(External::SwitchConfiguration { name }),
+            Request::Configure(c) => handled.external.push(External::Configure(c)),
             Request::Replay => {}
         }
         handled
@@ -382,15 +509,87 @@ pub struct EmitterHooks {
     pub own_continent: Option<String>,
     /// Chiamata quando una richiesta `Reply` e' accettata: la finestra del programma si porta in primo piano o si ripristina.
     pub on_reply_accepted: Option<Arc<dyn Fn() + Send + Sync>>,
+    /// I comandi in ingresso che non sono di trasmissione (colori, Clear, Location, Configure, cambio di configurazione).
+    pub on_external: Option<Arc<dyn Fn(External) + Send + Sync>>,
 }
 
-/// L'emettitore in esecuzione: un socket UDP da cui partono i datagrammi e su cui tornano i comandi.
+/// Da quale socket parte un destinatario: unicast (uno per famiglia di indirizzi) o multicast (uno per TTL e interfaccia).
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum SocketKind {
+    Unicast { ipv6: bool, loopback: bool },
+    Multicast { ipv6: bool, options: Multicast },
+}
+
+impl SocketKind {
+    fn of(dest: &Destination, all: &[Destination]) -> SocketKind {
+        let ipv6 = dest.addr.is_ipv6();
+        match &dest.multicast {
+            Some(options) if dest.addr.ip().is_multicast() => SocketKind::Multicast { ipv6, options: options.clone() },
+            // il socket unicast si lega al loopback solo se tutti i destinatari unicast della stessa famiglia sono su questo PC (come prima)
+            _ => SocketKind::Unicast {
+                ipv6,
+                loopback: all.iter().filter(|d| d.addr.is_ipv6() == ipv6 && !is_multicast_route(d)).all(|d| d.addr.ip().is_loopback()),
+            },
+        }
+    }
+}
+
+fn is_multicast_route(d: &Destination) -> bool {
+    d.multicast.is_some() && d.addr.ip().is_multicast()
+}
+
+/// Apre un socket. Unicast: porta effimera sul loopback o su tutte le interfacce. Multicast: TTL, interfaccia di uscita e ritorno locale acceso
+/// (i programmi sullo stesso PC ricevono il gruppo); nessuna iscrizione al gruppo: come WSJT-X si scrive al gruppo e i comandi tornano
+/// all'indirizzo del mittente.
+async fn open_socket(kind: &SocketKind) -> std::io::Result<UdpSocket> {
+    match kind {
+        SocketKind::Unicast { ipv6, loopback } => {
+            let ip: IpAddr = match (ipv6, loopback) {
+                (false, true) => Ipv4Addr::LOCALHOST.into(),
+                (false, false) => Ipv4Addr::UNSPECIFIED.into(),
+                (true, true) => Ipv6Addr::LOCALHOST.into(),
+                (true, false) => Ipv6Addr::UNSPECIFIED.into(),
+            };
+            UdpSocket::bind(SocketAddr::new(ip, 0)).await
+        }
+        SocketKind::Multicast { ipv6, options } => {
+            use socket2::{Domain, Protocol, Socket, Type};
+            let socket = Socket::new(if *ipv6 { Domain::IPV6 } else { Domain::IPV4 }, Type::DGRAM, Some(Protocol::UDP))?;
+            if *ipv6 {
+                socket.set_multicast_hops_v6(options.ttl)?;
+                socket.set_multicast_loop_v6(true)?;
+                if options.interface.is_some() {
+                    tracing::info!("multicast IPv6: l'interfaccia di uscita si sceglie per numero, qui decide il sistema");
+                }
+                socket.bind(&SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 0).into())?;
+            } else {
+                socket.set_multicast_ttl_v4(options.ttl)?;
+                socket.set_multicast_loop_v4(true)?;
+                if let Some(IpAddr::V4(interface)) = options.interface {
+                    socket.set_multicast_if_v4(&interface)?;
+                }
+                socket.bind(&SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0).into())?;
+            }
+            socket.set_nonblocking(true)?;
+            UdpSocket::from_std(socket.into())
+        }
+    }
+}
+
+/// Un destinatario e il socket (indice in `Emitter::sockets`) da cui gli si scrive.
+struct Route {
+    dest: Destination,
+    socket: usize,
+}
+
+/// L'emettitore in esecuzione: i socket UDP da cui partono i datagrammi e su cui tornano i comandi (uno unicast per famiglia, uno per ogni
+/// gruppo multicast con le sue opzioni).
 pub struct Emitter {
     local: SocketAddr,
-    socket: Arc<UdpSocket>,
+    sockets: Vec<Arc<UdpSocket>>,
+    routes: Arc<Vec<Route>>,
     session: Arc<Mutex<Session>>,
-    targets: Vec<SocketAddr>,
-    task: JoinHandle<()>,
+    tasks: Vec<JoinHandle<()>>,
 }
 
 impl Emitter {
@@ -401,45 +600,86 @@ impl Emitter {
 
     /// Come `start`, con i filtri di testo e la notifica delle richieste accettate.
     pub async fn start_with(
-        config: EmitterConfig,
+        mut config: EmitterConfig,
         mut events: broadcast::Receiver<Event>,
         commands: mpsc::Sender<Command>,
         tx_first: Arc<dyn Fn() -> bool + Send + Sync>,
         hooks: EmitterHooks,
     ) -> std::io::Result<Emitter> {
-        // un solo socket per tutti i destinatari: i comandi tornano all'indirizzo da cui e' partito il flusso (come con JTDX)
-        let loopback = config.targets.iter().all(|t| t.ip().is_loopback());
-        let ipv6 = config.targets.iter().any(|t| t.is_ipv6());
-        let bind = match (ipv6, loopback) {
-            (false, true) => "127.0.0.1:0",
-            (false, false) => "0.0.0.0:0",
-            (true, true) => "[::1]:0",
-            (true, false) => "[::]:0",
-        };
-        let socket = Arc::new(UdpSocket::bind(bind).await?);
-        let local = socket.local_addr()?;
-        let targets = config.targets.clone();
+        let destinations = config.all_destinations();
+        // il Logged ADIF si prepara se almeno un destinatario lo vuole; a chi va lo decide `Destination::wants`
+        config.send_adif = destinations.iter().any(|d| d.logged_adif);
+        let mut kinds: Vec<SocketKind> = Vec::new();
+        let mut routes: Vec<Route> = Vec::new();
+        for dest in destinations.iter().cloned() {
+            let kind = SocketKind::of(&dest, &destinations);
+            let socket = match kinds.iter().position(|k| *k == kind) {
+                Some(i) => i,
+                None => {
+                    kinds.push(kind);
+                    kinds.len() - 1
+                }
+            };
+            routes.push(Route { dest, socket });
+        }
+        // senza destinatari un socket sul loopback c'e' comunque (l'indirizzo dei comandi non cambia significato)
+        if kinds.is_empty() {
+            kinds.push(SocketKind::Unicast { ipv6: false, loopback: true });
+        }
+        let mut sockets: Vec<Arc<UdpSocket>> = Vec::new();
+        for kind in &kinds {
+            sockets.push(Arc::new(open_socket(kind).await?));
+        }
+        let local = sockets.first().map(|s| s.local_addr()).transpose()?.unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 0)));
+        let routes = Arc::new(routes);
         let heartbeat = config.heartbeat;
         let mut first_session = Session::new(config);
         first_session.set_filters(hooks.filters.clone(), hooks.own_continent.clone());
         let session = Arc::new(Mutex::new(first_session));
         let on_accepted = hooks.on_reply_accepted.clone();
+        let on_external = hooks.on_external.clone();
 
         let first = lock(&session).map(|mut s| s.start()).unwrap_or_default();
-        send_all(&socket, &targets, &first).await;
+        send_all(&sockets, &routes, &first).await;
 
-        let task = {
-            let (socket, targets, session) = (Arc::clone(&socket), targets.clone(), Arc::clone(&session));
+        // ogni socket ascolta i comandi di ritorno e li passa al ciclo principale
+        let (incoming_tx, mut incoming) = mpsc::channel::<Vec<u8>>(64);
+        let mut tasks: Vec<JoinHandle<()>> = sockets
+            .iter()
+            .map(|socket| {
+                let (socket, incoming_tx) = (Arc::clone(socket), incoming_tx.clone());
+                tokio::spawn(async move {
+                    let mut buf = vec![0u8; 65_535];
+                    loop {
+                        match socket.recv_from(&mut buf).await {
+                            Ok((n, _from)) => {
+                                if incoming_tx.send(buf[..n].to_vec()).await.is_err() {
+                                    break;
+                                }
+                            }
+                            // su Windows un ICMP «porta chiusa» (GridTracker spento) appare come errore di ricezione: si prosegue
+                            Err(e) => {
+                                tracing::debug!("errore di ricezione sulla porta del flusso UDP: {e}");
+                                tokio::time::sleep(Duration::from_millis(10)).await;
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+        drop(incoming_tx);
+
+        let main = {
+            let (sockets, routes, session) = (sockets.clone(), Arc::clone(&routes), Arc::clone(&session));
             tokio::spawn(async move {
                 let mut tick = tokio::time::interval(heartbeat);
                 tick.tick().await;
-                let mut buf = vec![0u8; 65_535];
                 loop {
                     tokio::select! {
                         event = events.recv() => match event {
                             Ok(event) => {
                                 let out = lock(&session).map(|mut s| s.on_event(&event, tx_first(), now_unix_ms())).unwrap_or_default();
-                                send_all(&socket, &targets, &out).await;
+                                send_all(&sockets, &routes, &out).await;
                             }
                             Err(RecvError::Lagged(_)) => {}
                             Err(RecvError::Closed) => break,
@@ -447,12 +687,12 @@ impl Emitter {
                         _ = tick.tick() => {
                             let heartbeat = lock(&session).map(|s| s.heartbeat());
                             if let Some(heartbeat) = heartbeat {
-                                send_all(&socket, &targets, &[heartbeat]).await;
+                                send_all(&sockets, &routes, &[heartbeat]).await;
                             }
                         }
-                        received = socket.recv_from(&mut buf) => match received {
-                            Ok((n, _from)) => {
-                                let handled = lock(&session).map(|mut s| s.on_datagram(&buf[..n], tx_first())).unwrap_or_default();
+                        received = incoming.recv() => match received {
+                            Some(data) => {
+                                let handled = lock(&session).map(|mut s| s.on_datagram(&data, tx_first())).unwrap_or_default();
                                 if handled.reply_accepted
                                     && let Some(hook) = &on_accepted
                                 {
@@ -463,39 +703,51 @@ impl Emitter {
                                         tracing::debug!("comando UDP non consegnato: canale chiuso");
                                     }
                                 }
-                                send_all(&socket, &targets, &handled.datagrams).await;
+                                for external in handled.external {
+                                    match &on_external {
+                                        Some(hook) => hook(external),
+                                        None => tracing::debug!("comando UDP senza destinatario: {external:?}"),
+                                    }
+                                }
+                                send_all(&sockets, &routes, &handled.datagrams).await;
                             }
-                            // su Windows un ICMP «porta chiusa» (GridTracker spento) appare come errore di ricezione: si prosegue
-                            Err(e) => {
-                                tracing::debug!("errore di ricezione sulla porta del flusso UDP: {e}");
-                                tokio::time::sleep(Duration::from_millis(10)).await;
-                            }
+                            None => break,
                         },
                     }
                 }
             })
         };
-        Ok(Emitter { local, socket, session, targets, task })
+        tasks.push(main);
+        Ok(Emitter { local, sockets, routes, session, tasks })
     }
 
-    /// L'indirizzo da cui partono i datagrammi (e su cui i programmi collegati mandano i comandi).
+    /// L'indirizzo da cui partono i datagrammi (e su cui i programmi collegati mandano i comandi): quello del primo socket.
     pub fn local_addr(&self) -> SocketAddr {
         self.local
+    }
+
+    /// Gli indirizzi di tutti i socket (unicast e multicast): i comandi possono tornare a ciascuno.
+    pub fn local_addrs(&self) -> Vec<SocketAddr> {
+        self.sockets.iter().filter_map(|s| s.local_addr().ok()).collect()
     }
 
     /// Alla chiusura di Aurora: manda il Close e ferma l'emettitore.
     pub async fn shutdown(&self) {
         let close = lock(&self.session).map(|s| s.close());
         if let Some(close) = close {
-            send_all(&self.socket, &self.targets, &[close]).await;
+            send_all(&self.sockets, &self.routes, &[close]).await;
         }
-        self.task.abort();
+        for task in &self.tasks {
+            task.abort();
+        }
     }
 }
 
 impl Drop for Emitter {
     fn drop(&mut self) {
-        self.task.abort();
+        for task in &self.tasks {
+            task.abort();
+        }
     }
 }
 
@@ -503,12 +755,55 @@ fn lock(session: &Mutex<Session>) -> Option<std::sync::MutexGuard<'_, Session>> 
     session.lock().ok()
 }
 
-async fn send_all(socket: &UdpSocket, targets: &[SocketAddr], datagrams: &[Vec<u8>]) {
+async fn send_all(sockets: &[Arc<UdpSocket>], routes: &[Route], datagrams: &[Vec<u8>]) {
     for datagram in datagrams {
-        for target in targets {
-            if let Err(e) = socket.send_to(datagram, target).await {
-                tracing::debug!("invio verso {target} non riuscito: {e}");
+        for route in routes.iter().filter(|r| r.dest.wants(datagram)) {
+            let Some(socket) = sockets.get(route.socket) else { continue };
+            if let Err(e) = socket.send_to(datagram, route.dest.addr).await {
+                tracing::debug!("invio verso {} non riuscito: {e}", route.dest.addr);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_location_is_read_like_wsjtx() {
+        assert_eq!(parse_location("fn42AB"), Some("FN42ab".to_string()));
+        assert_eq!(parse_location(" FN42 "), Some("FN42".to_string()));
+        assert_eq!(parse_location("GRID:fn42ab12"), Some("FN42ab12".to_string()));
+        assert_eq!(parse_location("FN42ab12"), None, "oltre sei caratteri serve GRID:");
+        assert_eq!(parse_location("ZZ42"), None);
+        assert_eq!(parse_location("FN4"), None);
+        assert_eq!(parse_location("45.0,9.0"), None);
+    }
+
+    #[test]
+    fn each_destination_gets_only_what_it_asked_for() {
+        let adif = udp_bridge::encode_logged_adif("JTDX", 2, "<EOR>");
+        let clear = encode_clear("JTDX", 2);
+        let stream_only = Destination { addr: SocketAddr::from(([127, 0, 0, 1], 2237)), stream: true, logged_adif: false, multicast: None };
+        let adif_only = Destination { stream: false, logged_adif: true, ..stream_only.clone() };
+        assert!(stream_only.wants(&clear) && !stream_only.wants(&adif));
+        assert!(!adif_only.wants(&clear) && adif_only.wants(&adif));
+    }
+
+    #[test]
+    fn targets_and_destinations_merge_without_doubles() {
+        let a = SocketAddr::from(([127, 0, 0, 1], 2237));
+        let group = SocketAddr::from(([239, 255, 0, 1], 2237));
+        let mut config = EmitterConfig::jtdx(vec![a, group]);
+        config.send_adif = true;
+        config.destinations = vec![
+            Destination { addr: a, stream: false, logged_adif: true, multicast: None },
+            Destination { addr: SocketAddr::from(([127, 0, 0, 1], 2240)), stream: false, logged_adif: false, multicast: None },
+        ];
+        let all = config.all_destinations();
+        assert_eq!(all.len(), 2, "lo stesso indirizzo una volta, il destinatario senza niente da ricevere si salta");
+        assert!(all[0].logged_adif && all[0].multicast.is_none());
+        assert_eq!(all[1].multicast, Some(Multicast::default()), "un gruppo multicast tra i destinatari semplici ha TTL 1");
     }
 }

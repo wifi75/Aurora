@@ -383,3 +383,33 @@ describe('distance without a grid in the message', () => {
     expect(gridOfSender('JA2ORW K9ZZZ -10')).toBeNull();
   });
 });
+
+describe('DecodeList and the colours asked over UDP', () => {
+  afterEach(() => useStation.getState().reset());
+
+  it('paints the rows of a highlighted callsign, only the newest with «last only», and removes it with invalid colours', () => {
+    const rows = [decode({ id: 3, text: 'K1ABC W9XYZ -05' }), decode({ id: 2, text: 'CQ K1ABC FN42' }), decode({ id: 1, text: 'CQ W9XYZ EN52' })];
+    const { apply } = useStation.getState();
+    apply({ type: 'highlight_callsign', call: 'k1abc', background: '#ffff00', foreground: '#000000', last_only: false });
+    const { container, rerender } = render(<DecodeList decodes={rows} onReply={() => {}} />);
+    expect(container.querySelectorAll('.decode-row--hl-bg')).toHaveLength(2);
+    apply({ type: 'highlight_callsign', call: 'K1ABC', background: '#ff0000', foreground: null, last_only: true });
+    rerender(<DecodeList decodes={rows} onReply={() => {}} />);
+    const painted = container.querySelectorAll<HTMLElement>('.decode-row--hl-bg');
+    expect(painted).toHaveLength(1);
+    expect(painted[0]?.style.getPropertyValue('--hl-bg')).toBe('#ff0000');
+    expect(container.querySelectorAll('.decode-row--hl-fg')).toHaveLength(0);
+    apply({ type: 'highlight_callsign', call: 'K1ABC', background: null, foreground: null, last_only: false });
+    rerender(<DecodeList decodes={rows} onReply={() => {}} />);
+    expect(container.querySelectorAll('.decode-row--hl-bg')).toHaveLength(0);
+  });
+
+  it('ignores colours that are not #rrggbb and empties the lists on a clear', () => {
+    const { apply } = useStation.getState();
+    apply({ type: 'highlight_callsign', call: 'K1ABC', background: 'red;x:y', foreground: null, last_only: false });
+    expect(useStation.getState().highlights).toEqual({});
+    apply({ type: 'decode', ...decode() });
+    apply({ type: 'clear_decodes', window: 2 });
+    expect(useStation.getState().decodes).toEqual([]);
+  });
+});

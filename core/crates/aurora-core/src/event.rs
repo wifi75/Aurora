@@ -236,6 +236,12 @@ pub enum Event {
     /// La banda della radio e' cambiata (da qualunque causa): il motore ha gia' fermato la trasmissione e azzerato la stazione DX;
     /// l'interfaccia svuota attivita' di banda, CQ e novita' e i campi del chiamante. `epoch` cresce a ogni cambio.
     BandChanged { band: Option<String>, dial_hz: u64, epoch: u64 },
+    /// Un programma collegato via UDP (Highlight Callsign, tipo 13) chiede di colorare le righe di un nominativo. Colori `#rrggbb`;
+    /// entrambi `None` = togli l'evidenziazione. Con `last_only` si colora solo la riga piu' recente con quel nominativo.
+    HighlightCallsign { call: String, background: Option<String>, foreground: Option<String>, last_only: bool },
+    /// Un programma collegato via UDP (Clear, tipo 3) chiede di svuotare le liste dei messaggi, come «Cancella».
+    /// `window`: 0 attivita' di banda, 1 frequenza Rx, 2 entrambe.
+    ClearDecodes { window: u8 },
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.
