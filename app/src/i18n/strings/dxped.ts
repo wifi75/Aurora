@@ -1,0 +1,37 @@
+/** Pannello e impostazione delle DXpedition (calendario NG3K). [it, en, de, fr, es, pt] */
+export const dxpedStrings = {
+  'dxp.title': ['DXpedition', 'DXpeditions', 'DXpeditionen', 'DXpéditions', 'DXpediciones', 'DXpedições'],
+  'dxp.none': ['Nessuna DXpedition in onda o in arrivo.', 'No DXpedition on air or coming up.', 'Keine DXpedition aktiv oder geplant.', 'Aucune DXpédition active ou prévue.', 'Ninguna DXpedición activa o próxima.', 'Nenhuma DXpedição ativa ou próxima.'],
+  'dxp.loading': ['Scarico il calendario...', 'Downloading the calendar...', 'Kalender wird geladen...', 'Téléchargement du calendrier...', 'Descargando el calendario...', 'A descarregar o calendário...'],
+  'dxp.heard': ['sentita ora', 'heard now', 'jetzt gehört', 'entendue', 'oída ahora', 'ouvida agora'],
+  'dxp.until': ['fino al {date}', 'until {date}', 'bis {date}', 'jusqu’au {date}', 'hasta el {date}', 'até {date}'],
+  'dxp.from': ['dal {date}', 'from {date}', 'ab {date}', 'dès le {date}', 'desde el {date}', 'a partir de {date}'],
+  'dxp.ended': ['finita {date}', 'ended {date}', 'beendet {date}', 'finie {date}', 'terminó {date}', 'terminou {date}'],
+  'onl.grpDxped': ['DXpedition (NG3K)', 'DXpeditions (NG3K)', 'DXpeditionen (NG3K)', 'DXpéditions (NG3K)', 'DXpediciones (NG3K)', 'DXpedições (NG3K)'],
+  'onl.dxped': ['Calendario delle DXpedition accanto ai CQ', 'DXpedition calendar next to the CQ list', 'DXpedition-Kalender neben der CQ-Liste', 'Calendrier des DXpéditions à côté des CQ', 'Calendario de DXpediciones junto a los CQ', 'Calendário das DXpedições ao lado dos CQ'],
+  'tip.onl.dxped': [
+    'Divide il pannello «CQ e novità»: a destra le DXpedition in onda (evidenziate se le senti adesso), quelle in arrivo e lo storico. Il calendario si scarica da ng3k.com ogni 6 ore.',
+    'Splits the “CQ and new” panel: on the right the DXpeditions on air (highlighted if heard now), upcoming ones and history. The calendar is downloaded from ng3k.com every 6 hours.',
+    'Teilt das Feld „CQ und Neues“: rechts aktive DXpeditionen (hervorgehoben, wenn gerade gehört), kommende und Verlauf. Der Kalender kommt alle 6 Stunden von ng3k.com.',
+    'Partage le panneau « CQ et nouveautés » : à droite les DXpéditions actives (en évidence si entendues), à venir et l’historique. Calendrier téléchargé de ng3k.com toutes les 6 heures.',
+    'Divide el panel «CQ y novedades»: a la derecha las DXpediciones activas (resaltadas si se oyen), las próximas y el historial. El calendario se descarga de ng3k.com cada 6 horas.',
+    'Divide o painel «CQ e novidades»: à direita as DXpedições ativas (realçadas se ouvidas), as próximas e o histórico. O calendário descarrega-se de ng3k.com a cada 6 horas.',
+  ],
+  'onl.dxped.note': [
+    'ng3k.com vede solo l’indirizzo IP. Nulla di ciò che ricevi o trasmetti viene inviato.',
+    'ng3k.com only sees your IP address. Nothing you receive or transmit is sent.',
+    'ng3k.com sieht nur die IP-Adresse. Nichts von dem, was du empfängst oder sendest, wird übertragen.',
+    'ng3k.com ne voit que l’adresse IP. Rien de ce que tu reçois ou émets n’est envoyé.',
+    'ng3k.com solo ve la dirección IP. No se envía nada de lo que recibes o transmites.',
+    'ng3k.com só vê o endereço IP. Nada do que recebes ou transmites é enviado.',
+  ],
+  'onl.dxpedDays': ['Storico delle finite (giorni)', 'History of ended ones (days)', 'Verlauf beendeter (Tage)', 'Historique des terminées (jours)', 'Historial de terminadas (días)', 'Histórico das terminadas (dias)'],
+  'tip.onl.dxpedDays': [
+    'Per quanti giorni si vedono ancora le DXpedition finite, in fondo all’elenco.',
+    'How many days ended DXpeditions stay at the bottom of the list.',
+    'Wie viele Tage beendete DXpeditionen unten in der Liste bleiben.',
+    'Combien de jours les DXpéditions terminées restent en bas de la liste.',
+    'Cuántos días siguen al final de la lista las DXpediciones terminadas.',
+    'Quantos dias as DXpedições terminadas ficam no fim da lista.',
+  ],
+} as const;

@@ -308,6 +308,8 @@ export async function clearHistory(): Promise<void> {
 export interface OnlineSettings {
   psk: boolean;
   solar: boolean;
+  /** Calendario delle DXpedition da NG3K. */
+  dxped?: boolean;
 }
 
 export interface PskReport {
@@ -364,6 +366,24 @@ export async function getSolar(): Promise<SolarState> {
   return (await (await request('/online/solar')).json()) as SolarState;
 }
 
+/** Una DXpedition del calendario NG3K (date `AAAA-MM-GG`). */
+export interface Dxpedition {
+  start: string;
+  end: string;
+  country: string;
+  call: string;
+  qsl: string;
+  info: string;
+}
+
+export interface DxpedState {
+  enabled: boolean;
+  dxped: { fetched_ms: number; items: Dxpedition[]; error: string | null };
+}
+
+export async function getDxped(): Promise<DxpedState> {
+  return (await (await request('/online/dxped')).json()) as DxpedState;
+}
 /** Chiede subito i dati ai servizi accesi (al massimo una volta al minuto per servizio). */
 export async function refreshOnline(): Promise<{ asked: boolean }> {
   return (await (await request('/online/refresh', { method: 'POST' })).json()) as { asked: boolean };

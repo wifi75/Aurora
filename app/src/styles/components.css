@@ -862,3 +862,31 @@ button.primary {
 .toast .toast-bar {
   background: rgb(255 255 255 / 0.7);
 }
+
+/* Notifiche, proposta 4: pillola con i colori dell'aurora e alone viola; l'errore resta rosso */
+.toast {
+  color: #ffffff;
+  background: linear-gradient(100deg, rgb(32 201 151 / 0.9), rgb(142 123 255 / 0.9) 60%, rgb(255 93 138 / 0.9));
+  border: 1px solid rgb(255 255 255 / 0.45);
+  border-radius: 999px;
+  box-shadow: 0 0 24px rgb(142 123 255 / 0.55), 0 12px 28px -10px rgb(0 0 0 / 0.5);
+  font-weight: 600;
+}
+
+.toast--error {
+  background: linear-gradient(100deg, rgb(226 75 74 / 0.95), rgb(255 93 138 / 0.92));
+  box-shadow: 0 0 24px rgb(226 75 74 / 0.55), 0 12px 28px -10px rgb(0 0 0 / 0.5);
+}
+
+.toast .toast-icon {
+  color: #6b55e0;
+  background: #ffffff;
+}
+
+.toast--error .toast-icon {
+  color: #d23b3b;
+}
+
+.toast .toast-bar {
+  background: #ffffff;
+}
