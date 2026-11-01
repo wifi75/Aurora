@@ -237,6 +237,8 @@ export function Live() {
       // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che il motore la riporti
       const call = target ? callOf(target.text) : null;
       if (call) useStation.getState().setPendingDx(call);
+      // se il motore ignorera' quel tipo di messaggio lo si dice a parte, chiaro, invece di non fare nulla in silenzio
+      if (!replyAccepted(engineConfig.data?.AcceptUDPReplyMessages, target?.text ?? '')) toast(t('note.replyMode'), 'info');
       await attempt(
         async () => {
           // la stazione e' scelta: perche' il motore la chiami da solo al momento giusto serve anche Abilita Tx
@@ -246,10 +248,7 @@ export function Live() {
           await postReply(id);
           await arm;
         },
-        // se il motore ignorera' quel tipo di messaggio lo si dice, invece di non fare nulla in silenzio
-        replyAccepted(engineConfig.data?.AcceptUDPReplyMessages, target?.text ?? '')
-          ? t('note.replySent', { text: target?.text ?? '' })
-          : `${t('note.replySent', { text: target?.text ?? '' })} ${t('note.replyMode')}`,
+        t('note.replySent', { call: call ?? target?.text ?? '' }),
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
