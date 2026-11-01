@@ -153,6 +153,31 @@ impl Logbook {
         Ok(found > 0)
     }
 
+    /// Gli ultimi `limit` QSO del log interno, dal piu' recente, nella stessa forma del log di Log4OM2 (il pannello Log li mostra uguali).
+    /// `country_of` da' il paese di un nominativo (vuoto se non lo conosce).
+    pub fn recent_view(&self, limit: usize, country_of: &dyn Fn(&str) -> String) -> Result<log4om::Log4omView, LogError> {
+        let total = self.count()?;
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(
+            "SELECT call, grid, band, mode, rst_sent, rst_rcvd, date, time_on FROM qso ORDER BY date DESC, time_on DESC, id DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |r| {
+            let (call, grid, band, mode, sent, rcvd, date, time): (String, String, String, String, String, String, String, String) =
+                (r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?);
+            Ok((call, grid, band, mode, sent, rcvd, date, time))
+        })?;
+        let mut qsos = Vec::new();
+        for row in rows {
+            let (call, grid, band, mode, rst_sent, rst_rcvd, date, time) = row?;
+            // «2026-11-01 08:15:00Z» come nel log di Log4OM2
+            let d = if date.len() >= 8 { format!("{}-{}-{}", &date[0..4], &date[4..6], &date[6..8]) } else { date.clone() };
+            let t = if time.len() >= 4 { format!("{}:{}:{}", &time[0..2], &time[2..4], if time.len() >= 6 { &time[4..6] } else { "00" }) } else { "00:00:00".to_string() };
+            let country = country_of(&call);
+            qsos.push(log4om::Log4omQso { date: format!("{d} {t}Z"), call, band: band.to_lowercase(), mode: mode.to_uppercase(), rst_sent, rst_rcvd, country, grid });
+        }
+        Ok(log4om::Log4omView { total, qsos })
+    }
+
     pub fn count(&self) -> Result<u64, LogError> {
         let n: i64 = self.conn()?.query_row("SELECT COUNT(*) FROM qso", [], |r| r.get(0))?;
         Ok(n as u64)

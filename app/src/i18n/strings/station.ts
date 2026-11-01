@@ -160,7 +160,7 @@ export const stationStrings = {
   'panel.station': ['Comandi', 'Commands', 'Befehle', 'Commandes', 'Comandos', 'Comandos'],
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
-  'panel.log': ['Log Log4OM2', 'Log4OM2 log', 'Log4OM2-Log', 'Journal Log4OM2', 'Log de Log4OM2', 'Log do Log4OM2'],
+  'panel.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
   'log.total': ['{n} QSO nel log', '{n} QSOs in the log', '{n} QSOs im Log', '{n} QSO dans le journal', '{n} QSO en el log', '{n} QSO no log'],
   'log.empty': ['Nessun QSO nel log', 'No QSOs in the log', 'Keine QSOs im Log', 'Aucun QSO dans le journal', 'Ningún QSO en el log', 'Nenhum QSO no log'],
   'log.unavailable': [

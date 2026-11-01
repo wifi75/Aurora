@@ -9,7 +9,7 @@ import { DiagnosisBar } from '../components/DiagnosisBar';
 import { Dock } from '../components/Dock';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
-import { Log4omPanel } from '../components/Log4omPanel';
+import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
 import { ModeSwitch } from '../components/ModeSwitch';
 import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
@@ -335,6 +335,7 @@ export function Live() {
           headerExtra={
             dxpedOn
               ? {
+                  log: <LogHeader />,
                   cq: (
                     <div className="dock-grip-extra">
                       <h2>{t('dxp.title')}</h2>
@@ -342,7 +343,7 @@ export function Live() {
                     </div>
                   ),
                 }
-              : undefined
+              : { log: <LogHeader /> }
           }
         />
       )}
