@@ -5548,3 +5548,26 @@
 .tx-commands select {
   min-width: 6.5rem;
 }
+
+/* Pannello QSO: testo piu' piccolo e margini stretti, cosi' i nomi entrano interi (niente puntini) */
+.qso-cols {
+  gap: 0.4rem;
+}
+
+.qso-grid {
+  gap: 0.25rem;
+}
+
+.qso-grid .chip {
+  height: 1.6rem;
+  padding: 0 0.2rem;
+  gap: 0.2rem;
+  font-size: 0.64rem;
+  letter-spacing: -0.01em;
+  text-overflow: clip;
+}
+
+.qso-grid .chip .chip-led {
+  width: 0.4rem;
+  height: 0.4rem;
+}
