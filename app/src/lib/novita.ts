@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.62',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:53:23Z',
     kind: 'new',
     title: ['Pannello Comandi come WSJT-X', 'Commands panel like WSJT-X', 'Befehle wie WSJT-X', 'Commandes comme WSJT-X', 'Comandos como WSJT-X', 'Comandos como o WSJT-X'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.62',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:53:23Z',
     kind: 'changed',
     title: ['Pannello QSO in due colonne', 'QSO panel in two columns', 'QSO-Feld in zwei Spalten', 'Panneau QSO en deux colonnes', 'Panel QSO en dos columnas', 'Painel QSO em duas colunas'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.62',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:53:23Z',
     kind: 'fixed',
     title: ['Hound e righe Tx', 'Hound and Tx lines', 'Hound und Tx-Zeilen', 'Hound et lignes Tx', 'Hound y líneas Tx', 'Hound e linhas Tx'],
     text: [
