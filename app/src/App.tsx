@@ -25,6 +25,7 @@ import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
+import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 
@@ -86,6 +87,8 @@ export function App() {
     content = <PropagationPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
+  } else if (route.name === 'news') {
+    content = <News />;
   } else {
     content = <Live />;
   }
@@ -106,6 +109,7 @@ export function App() {
           <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
+          <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
         </nav>
         {session.data ? <UpdateBar /> : null}
         <LanguageSelect />

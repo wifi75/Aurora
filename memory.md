@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-01, versione 0.11.47. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-01, versione 0.11.48. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -114,6 +114,7 @@ Stato al 2026-11-01, versione 0.11.47. Per riprendere il lavoro leggi anche `doc
 - **Testata Stazione**: `live-left` (modi e bande, poi controlli di ricezione) a sinistra, display a destra; il display esteso (`rx-extras`) ha area fissa a due righe e non ripete S-meter e potenza, che sono gia' nel display.
 - **CQ e novita'**: meta' CQ e meta' DXpedition (`cq-split`, `1fr 1fr`); il titolo «DXpedition» e' nella barra del pannello (`Dock` ha `headerExtra`).
 - **Doppio clic su una stazione**: `onReply` manda prima la risposta e poi `enable_tx` (in parallelo poteva arrivare per primo).
+- **Pagina Novita'** (`pages/News.tsx`, `lib/novita.ts`, `styles/news.css`, rotta `#/novita`, pulsante dopo la Guida): ultime 20 voci, ogni versione ne aggiunge una in sei lingue con data e ora UTC del rilascio (regola anche in `AGENTS.md`); il display in testata non ha piu' popup e il menu del tasto destro e' spento fuori dai campi di testo (`main.tsx`).
 - **Toast** (`lib/toast.ts`, `lib/toastPrefs.ts`, `settings/ToastGroup.tsx`): tipi, secondi, posizione e dimensione scelti nelle Notifiche; gli errori non si spengono; `attempt` in `Live.tsx` mostra l'avviso subito e lo toglie se il comando fallisce.
 - **Logica «nuovo su banda» per paese e zone**: vale la sola banda in qualunque modo, anche con «Banda+Modo» accesa (scelta del proprietario, vedi `docs/logiche-jtdx.md`).
 

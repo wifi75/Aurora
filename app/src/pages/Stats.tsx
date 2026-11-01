@@ -52,7 +52,7 @@ export function Stats() {
 
       {query.data ? <Missing data={query.data} /> : null}
 
-      <details className="panel stats-card stats-fold">
+      <details className="panel stats-card stats-fold" open>
         <summary className="panel-title">{t('logio.title')}</summary>
         <LogTransfer />
       </details>

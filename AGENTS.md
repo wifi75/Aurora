@@ -33,5 +33,7 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza: GPL-3.0 (solo). Repository: <https://
 - Programma Windows: ogni processo figlio (PowerShell, cmd) parte con `CREATE_NO_WINDOW`; l'installatore dell'aggiornamento parte staccato da Aurora (`cmd /C start`) e la riga di chiusura dell'installatore non deve uccidere i processi figli.
 - La trasmissione nel programma Windows e' aperta di default (`AURORA_ALLOW_TX=0` la chiude): STOP TX, tetti, dead-man e automazioni spente di default restano.
 
+- **Novita' per l'utente**: a ogni versione che aggiunge, modifica o corregge qualcosa si aggiunge la voce in `app/src/lib/novita.ts` (titolo e testo nelle sei lingue, data e ora UTC del rilascio) e si toglie la ventunesima: la pagina «Novita'» mostra le ultime 20. Una prova controlla che la voce piu' recente sia della versione in `app/package.json`.
+
 ## Dove riprendere
 Leggere `memory.md` (stato e decisioni), `docs/mancante.md`, `CHANGELOG.md` e, per il motore proprio, `docs/2026-10-24-aurora-motore-ft8.md` e le analisi `docs/analisi-decodium-*.md` (CAT per tutte le radio, cascata piu' reattiva, banda satura).

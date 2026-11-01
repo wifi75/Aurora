@@ -43,6 +43,7 @@ const HASH_OF: Record<string, string> = {
   propagation: '#/propagazione',
   settings: '#/impostazioni',
   guide: '#/guida',
+  news: '#/novita',
 };
 
 /** Da chiamare a ogni cambio di pagina. L'associazione non si ricorda: e' un passaggio, non una pagina. */

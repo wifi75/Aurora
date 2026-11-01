@@ -1,6 +1,12 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.48 - 2026-11-01
+- **Pagina Novità** (pulsante dopo la Guida): le ultime 20 funzioni aggiunte, modificate o corrette, a linea del tempo per versione, con schede colorate (nuovo, modificato, corretto) e data e ora del rilascio nell'ora del dispositivo, in sei lingue. L'elenco sta in `app/src/lib/novita.ts` e una prova controlla che la voce piu' recente sia della versione in uso.
+- **Display della radio senza popup**: passandoci sopra o cliccando non si apre piu' niente.
+- **Niente menu del tasto destro del browser** (Indietro, Ricarica, Ispeziona...): resta solo nei campi di testo, per copia e incolla; il tasto destro sulle righe dei messaggi (coda) funziona come prima.
+- **Esporta ADIF piu' facile da trovare**: il riquadro «Log interno di Aurora» della pagina Statistiche e' aperto di base (Scarica ADIF e Importa).
 - **Messaggi toast personalizzabili** (Impostazioni > Notifiche, riquadro «Messaggi toast»): quali tipi mostrare (gli errori sempre), quanti secondi restano, posizione (in alto al centro, in alto a destra, in basso) e dimensione, con il tasto «Prova i messaggi».
 - **Messaggi toast immediati**: l'avviso compare subito al clic, senza aspettare la risposta del motore; se il comando poi fallisce diventa un errore.
 - **CQ e novita' diviso esattamente a meta'**: a sinistra i CQ, a destra le DXpedition; il titolo «DXpedition» sta nella barra del pannello, nella meta' destra, con lo stesso stile di «CQ e novita'». Le DXpedition hanno schede colorate per stato (in onda verde, in arrivo blu, finite grigie, sentita adesso arancio), bandiera e pastiglia con la data.
