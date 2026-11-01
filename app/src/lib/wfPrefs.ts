@@ -28,6 +28,8 @@ export interface WfPrefs {
   zero2d: number;
   /** «Bars»: le due barre verticali Rx e Tx sulla cascata. */
   bars: boolean;
+  /** La riga verde (o gialla dopo una trasmissione) disegnata a ogni inizio di periodo, come JTDX. */
+  periodLine: boolean;
   /** «Freq»: la frequenza sotto il puntatore. */
   freq: boolean;
 }
@@ -65,6 +67,7 @@ export function defaultWfPrefs(): WfPrefs {
     gain2d: 0,
     zero2d: 0,
     bars: true,
+    periodLine: true,
     freq: false,
   };
 }
@@ -104,7 +107,7 @@ export function readWfPrefs(storage: ReadableStorage): WfPrefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     for (const key of Object.keys(WF_LIMITS) as NumericKey[]) prefs[key] = inRange(key, parsed[key], prefs[key]);
-    for (const key of ['scale', 'flatten', 'bars', 'freq'] as const) {
+    for (const key of ['scale', 'flatten', 'bars', 'periodLine', 'freq'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (parsed.spectrumMode === 'current' || parsed.spectrumMode === 'cumulative') prefs.spectrumMode = parsed.spectrumMode;

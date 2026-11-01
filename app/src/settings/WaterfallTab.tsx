@@ -103,6 +103,7 @@ export function WaterfallTab() {
       <Group title={t('wfs.bars')}>
         <Cells min={15}>
           <Check label={t('wfs.barsOn')} hint={t('tip.wfs.barsOn')} checked={prefs.bars} onChange={(v) => set({ bars: v })} />
+          <Check label={t('wfs.periodLine')} hint={t('tip.wfs.periodLine')} checked={prefs.periodLine} onChange={(v) => set({ periodLine: v })} />
           <Check label={t('wfs.freqOn')} hint={t('tip.wfs.freqOn')} checked={prefs.freq} onChange={(v) => set({ freq: v })} />
           <Cell>
             <button type="button" className="glass" onClick={() => useWfPrefs.getState().reset()}>
