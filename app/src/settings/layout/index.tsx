@@ -1,15 +1,47 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useT } from '../../i18n';
 
 /**
- * L'icona «?» con la spiegazione di una voce: passandoci sopra la spiegazione compare subito in una nuvoletta.
+ * L'icona «?» con la spiegazione di una voce: passandoci sopra (o con la tastiera) la spiegazione compare subito in una nuvoletta.
+ * La nuvoletta e' fuori dal flusso (portale in `body`, posizione fissa): dentro l'etichetta veniva tagliata dal suo `overflow: hidden`.
  * Un clic non tocca il comando accanto (la voce e' spesso una `<label>`).
  */
 export function Help({ tip }: { tip?: string }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   if (!tip) return null;
+  const show = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top });
+  };
   return (
-    // il «?» e' disegnato dallo stile, non e' testo: il nome della voce resta «Distanza in miglia», non «Distanza in miglia?»
-    <span className="sx-help" aria-hidden="true" data-tip={tip} onClick={(e) => e.preventDefault()} />
+    <>
+      {/* il «?» e' disegnato dallo stile, non e' testo: il nome della voce resta «Distanza in miglia», non «Distanza in miglia?» */}
+      <span
+        className="sx-help"
+        aria-hidden="true"
+        tabIndex={-1}
+        onMouseEnter={(e) => show(e.currentTarget)}
+        onMouseLeave={() => setPos(null)}
+        onClick={(e) => {
+          e.preventDefault();
+          if (pos) setPos(null);
+          else show(e.currentTarget);
+        }}
+      />
+      {pos
+        ? createPortal(
+            <div
+              className="sx-tip"
+              role="tooltip"
+              style={{ left: Math.min(Math.max(pos.x, 180), window.innerWidth - 180), top: pos.y }}
+            >
+              {tip}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
