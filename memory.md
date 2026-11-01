@@ -49,7 +49,7 @@ Stato al 2026-11-01, versione 0.11.69. Per riprendere il lavoro leggi anche `doc
 ## Arresto del 2026-10-26 (0.11.21) e diagnostica
 
 - Alle 17:45 `aurora-desktop.exe` 0.11.21 si e' chiuso con `0xc0000409` (arresto immediato, di solito un `abort` di Rust); nello stesso istante sono caduti piu' `jtdx.exe` (`Qt5Core.dll`), `msedgewebview2.exe` e un `powershell.exe`, e `cmd.exe` ha dato `0xc0000142` (avvio non riuscito, tipico di risorse di sessione esaurite). Il log non aveva nessun panic e il dump (senza simboli, `strip = true`) non dice la funzione: **causa non trovata**. Non e' stato misurato il consumo di Aurora in esecuzione.
-- Dalla 0.11.22 (`desktop/src-tauri/src/health.rs`) i panic vanno nel log e ogni 10 minuti (ogni minuto se oltre soglia: 1500 MB privati, 8000 maniglie, 5000 oggetti USER o GDI) si scrive una riga «risorse del processo». Al prossimo arresto leggere le ultime righe di `%APPDATA%\Aurora\logsurora.log` e i dump in `%LOCALAPPDATA%\CrashDumps`.
+- Dalla 0.11.22 (`desktop/src-tauri/src/health.rs`) i panic vanno nel log e ogni 10 minuti (ogni minuto se oltre soglia: 1500 MB privati, 8000 maniglie, 5000 oggetti USER o GDI) si scrive una riga «risorse del processo». Al prossimo arresto leggere le ultime righe di `%APPDATA%\Aurora\logs\aurora.log` e i dump in `%LOCALAPPDATA%\CrashDumps`.
 - Il test del core con troppi lavori in parallelo puo' fallire in collegamento (`LNK1102`, memoria insufficiente): `cargo test --workspace -j 2`.
 - Novita' DXCC/zone su banda: «Banda» vince su «Banda+Modo» solo con la banda nota (scelta del proprietario, diversa da JTDX); con la banda ignota si controlla il modo.
 
