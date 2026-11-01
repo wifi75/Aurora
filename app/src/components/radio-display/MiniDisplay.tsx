@@ -28,6 +28,8 @@ const PALETTES: Record<RadioDisplayStyle, Palette> = {
   analog: { screen: '#0a0a0d', digits: '#7be3ff', glow: '#3fa0c8', ink: '#7be3ff', rx: '#1f7a2a', rxInk: '#d4ffd9', tx: '#c0301f', txInk: '#ffe3de', meter: 'ruler', lo: '#f2f4f8', hi: '#58c8f0', off: '#f2f4f8', skew: 0.08 },
   color: { screen: '#07182b', digits: '#44e8ff', glow: '#1fb4d6', ink: '#9fd2ff', rx: '#2fbf63', rxInk: '#02210e', tx: '#ff5a3a', txInk: '#2a0800', meter: 'bar', lo: '#44e8ff', hi: '#ff5a3a', off: '#123257', skew: 0.12 },
   amber: { screen: '#3a2808', digits: '#ffb41f', glow: '#ff9a00', ink: '#ffc241', rx: '#ffb41f', rxInk: '#2b1d06', tx: '#ff5a1a', txInk: '#2b0d00', meter: 'ramp', lo: '#ffb41f', hi: '#ff5a1a', off: '#ffb41f', skew: 0 },
+  ft2000: { screen: '#020405', digits: '#5ce8ff', glow: '#1aa8d0', ink: '#ffb428', rx: '#47d13a', rxInk: '#052200', tx: '#ff3b2f', txInk: '#2a0500', meter: 'bar', lo: '#5ce8ff', hi: '#ff3b2f', off: '#0e2630', skew: 0.08 },
+  ic7610: { screen: '#000000', digits: '#f4f6fa', ink: '#7fd4ff', rx: '#1aa0e8', rxInk: '#02060c', tx: '#ff3a2a', txInk: '#ffffff', meter: 'ruler', lo: '#f4f6fa', hi: '#ff3a2a', off: '#3a4656', skew: 0 },
   led: { screen: '#0b0505', digits: '#ff3a22', glow: '#ff2a10', ink: '#ff7a5a', rx: '#3fd13a', rxInk: '#032200', tx: '#ff3a22', txInk: '#2a0500', meter: 'led', lo: '#3fd13a', hi: '#ff3a22', off: '#3a1410', skew: 0.1 },
 };
 

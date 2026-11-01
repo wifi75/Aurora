@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isFaceStyle,
   alcFraction,
   compFraction,
   DEFAULT_RADIO_DISPLAY,
@@ -159,12 +160,20 @@ describe('saved style', () => {
     const saved: Record<string, string> = {};
     saveRadioDisplay({ setItem: (k, v) => void (saved[k] = v) }, { style: 'amber', hidden: true, layout: 'single' });
     expect(Object.keys(saved)).toEqual(['aurora-radio-display']);
-    expect(readRadioDisplay(store(saved['aurora-radio-display'] ?? null))).toEqual({ style: 'amber', hidden: true });
+    expect(readRadioDisplay(store(saved['aurora-radio-display'] ?? null))).toEqual({ style: 'amber', hidden: true, layout: 'single' });
   });
 
   it('falls back on garbage or unknown styles', () => {
     expect(readRadioDisplay(store('non json'))).toEqual(DEFAULT_RADIO_DISPLAY);
-    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true });
+    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true, layout: 'single' });
     expect(readRadioDisplay({ getItem: () => { throw new Error('negato'); } })).toEqual(DEFAULT_RADIO_DISPLAY);
+  });
+});
+
+describe('panel styles', () => {
+  it('keeps the FT-2000 and IC-7610 panels as saved choices', () => {
+    expect(readRadioDisplay({ getItem: () => '{"style":"ic7610"}' }).style).toBe('ic7610');
+    expect(isFaceStyle('ft2000')).toBe(true);
+    expect(isFaceStyle('color')).toBe(false);
   });
 });

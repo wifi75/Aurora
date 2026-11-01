@@ -32,21 +32,13 @@ function Bar({ value, tone }: { value: number; tone: string }) {
 }
 
 /**
- * Il display esteso sotto quello della radio: secondo VFO piu' piccolo, strumenti, filtri e impostazioni, ognuno solo se acceso
- * nelle impostazioni e se la radio lo da'. In trasmissione SWR e ALC (S-meter e potenza sono gia' nel display).
+ * Lettura dei dati in piu' della radio e clic sugli indicatori, condivisi dal display esteso e dai display a pannello unico
+ * (FT-2000, IC-7610): l'indicatore appena cliccato resta in attesa finche' la radio non ha risposto.
  */
-export function RadioExtras() {
+export function useCatExtras() {
   const t = useT();
-  const prefs = useRadioExtras((s) => s.prefs);
-  const status = useStation((s) => s.status);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
-  const rig = cat.data?.status.rig;
-  const x = rig?.extras ?? {};
-  const m = status?.meters ?? null;
-  const tx = status?.transmitting ?? false;
-
   const queryClient = useQueryClient();
-  // l'indicatore appena cliccato resta in attesa finche' la radio non ha risposto
   const [waiting, setWaiting] = useState<CatExtraItem | null>(null);
   const click = async (item: CatExtraItem) => {
     if (waiting !== null) return;
@@ -65,6 +57,26 @@ export function RadioExtras() {
       await queryClient.invalidateQueries({ queryKey: ['cat'] });
     }
   };
+  return { cat, rig: cat.data?.status.rig, waiting, click };
+}
+
+/** Suggerimento del clic su un indicatore. */
+export function actionTip(item: CatExtraItem) {
+  return ACTION_TIP[item];
+}
+
+/**
+ * Il display esteso sotto quello della radio: secondo VFO piu' piccolo, strumenti, filtri e impostazioni, ognuno solo se acceso
+ * nelle impostazioni e se la radio lo da'. In trasmissione SWR e ALC (S-meter e potenza sono gia' nel display).
+ */
+export function RadioExtras() {
+  const t = useT();
+  const prefs = useRadioExtras((s) => s.prefs);
+  const status = useStation((s) => s.status);
+  const { cat, rig, waiting, click } = useCatExtras();
+  const x = rig?.extras ?? {};
+  const m = status?.meters ?? null;
+  const tx = status?.transmitting ?? false;
 
   const chips: Array<{ key: CatExtraItem; text: string; on?: boolean }> = [];
   if (prefs.frontEnd) {
