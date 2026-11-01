@@ -5665,3 +5665,8 @@
   font-size: 0.7rem;
   padding: 0 0.3rem;
 }
+
+/* Scheda DXpedition: la mappa e' quella della Propagazione, con la sua altezza */
+.dxd { width: min(44rem, 94vw); }
+.dxd-map { height: auto; min-height: 16rem; background: none; }
+.dxd-map .world-map, .dxd-map .leaflet-container { height: 18rem; }
