@@ -772,3 +772,9 @@
 .rd-zoom .rx-extras {
   font-size: 0.85rem;
 }
+
+.rd-layout-card--off {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
