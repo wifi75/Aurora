@@ -19,7 +19,6 @@ import { RxControls } from '../components/RxControls';
 import { StatusBar } from '../components/StatusBar';
 import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
-import { TxBanner } from '../components/TxBanner';
 import { TxPanel } from '../components/TxPanel';
 import { DxccCard } from '../components/DxccCard';
 import { subjectBand, subjectMode } from '../lib/dxccCard';
@@ -272,11 +271,6 @@ export function Live() {
         {/* il display sta a destra della riga delle bande, al posto dei controlli che ora sono sulla seconda riga */}
         <RadioDisplayHeader />
         <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
-        {phone ? (
-          <div className="live-actions">
-            <TxBanner status={status} />
-          </div>
-        ) : null}
       </div>
       {phone ? null : (
         <RxControls
@@ -284,7 +278,6 @@ export function Live() {
           transmitting={status?.transmitting ?? false}
           trailing={
             <>
-              <TxBanner status={status} />
               <AlertSwitch value={alerts} onChange={changeAlerts} />
               <StopButton variant="compact" />
             </>

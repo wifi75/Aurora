@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { LANGS, useLang } from '../i18n';
 import { LANG_FLAGS, LanguageSelect } from './LanguageSelect';
 import { StopButton } from './StopButton';
-import { TxBanner } from './TxBanner';
+import { AlertSwitch } from './AlertSwitch';
 
 /** Apre il menu e sceglie la lingua con il mouse. */
 function pick(name: string) {
@@ -44,22 +44,22 @@ describe('LanguageSelect', () => {
     render(
       <>
         <LanguageSelect />
-        <TxBanner status={{ dial_hz: 1, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'FN42' }} />
+        <AlertSwitch value={{ enabled: true, volume: 0.5, sound: 'chime', muteWhileTx: true }} onChange={() => {}} />
         <StopButton />
       </>,
     );
-    expect(screen.getByText('IN ASCOLTO')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avvisi sonori' })).toBeInTheDocument();
     pick('Deutsch');
-    expect(screen.getByText('EMPFANG')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tonsignale' })).toBeInTheDocument();
     expect(useLang.getState().lang).toBe('de');
     expect(localStorage.getItem('aurora-lang')).toBe('de');
     expect(document.documentElement.lang).toBe('de');
     // il menu si chiude dopo la scelta
     expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
     pick('Português');
-    expect(screen.getByText('À ESCUTA')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avisos sonoros' })).toBeInTheDocument();
     pick('Italiano');
-    expect(screen.getByText('IN ASCOLTO')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avvisi sonori' })).toBeInTheDocument();
   });
 
   it('works from the keyboard: arrows move, Enter chooses, Esc closes', () => {
