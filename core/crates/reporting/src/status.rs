@@ -1,11 +1,12 @@
-//! Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP): serve alla scheda Segnalazioni per dire se funziona.
+//! Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP e invio diretto dei QSO a Wavelog/Cloudlog, ClubLog,
+//! QRZ.com e LoTW): serve alla scheda Segnalazioni per dire se funziona.
 
 use std::{collections::BTreeMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 
 use serde_json::{json, Value};
 
 /// I servizi di cui si tiene lo stato.
-pub const KINDS: [&str; 4] = ["psk", "dxsummit", "eqsl", "tcp"];
+pub const KINDS: [&str; 8] = ["psk", "dxsummit", "eqsl", "tcp", "wavelog", "clublog", "qrz", "lotw"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SendState {
@@ -17,6 +18,8 @@ pub struct SendState {
     pub message: String,
     pub sent: u64,
     pub failed: u64,
+    /// QSO in coda in attesa di partire (solo per l'invio diretto).
+    pub pending: u64,
 }
 
 #[derive(Default)]
@@ -61,6 +64,11 @@ impl ReportStatus {
         });
     }
 
+    /// Quanti QSO aspettano in coda.
+    pub fn set_pending(&self, kind: &'static str, pending: u64) {
+        self.with(kind, |s| s.pending = pending);
+    }
+
     pub fn get(&self, kind: &str) -> SendState {
         self.states.lock().unwrap_or_else(|p| p.into_inner()).get(kind).cloned().unwrap_or_default()
     }
@@ -72,7 +80,7 @@ impl ReportStatus {
             let s = self.get(kind);
             out.insert(
                 kind.to_string(),
-                json!({ "ok": s.ok, "at_ms": s.at_ms, "message": s.message, "sent": s.sent, "failed": s.failed }),
+                json!({ "ok": s.ok, "at_ms": s.at_ms, "message": s.message, "sent": s.sent, "failed": s.failed, "pending": s.pending }),
             );
         }
         Value::Object(out)
@@ -96,6 +104,8 @@ mod tests {
         let snap = s.snapshot();
         assert_eq!(snap["psk"]["sent"], 2);
         assert_eq!(snap["eqsl"]["ok"], Value::Null, "un servizio mai usato ha ok nullo");
-        assert_eq!(snap.as_object().map(serde_json::Map::len), Some(4));
+        assert_eq!(snap.as_object().map(serde_json::Map::len), Some(8));
+        s.set_pending("qrz", 3);
+        assert_eq!((s.get("qrz").pending, s.get("qrz").ok), (3, None), "la coda non e' un esito");
     }
 }

@@ -13,9 +13,14 @@ export interface SettingRow {
   options?: readonly { value: string; label: Key }[];
 }
 
+/** I servizi dell'invio diretto dei QSO (pulsante «Prova» e stato dell'ultimo invio). */
+export type UploadService = 'wavelog' | 'clublog' | 'qrz' | 'lotw';
+
 export interface SettingGroup {
   title: Key;
   rows: readonly SettingRow[];
+  /** Invio diretto dei QSO: il servizio da provare e la spiegazione sotto le voci. */
+  upload?: { service: UploadService; help: Key };
 }
 
 /** La scheda Segnalazioni come nella schermata di JTDX: stessi gruppi, stesse voci, stesso ordine. */
@@ -59,6 +64,44 @@ export const REPORT_GROUPS: readonly SettingGroup[] = [
       { key: 'EQSLNick', kind: 'text' },
       { key: 'PSKReporter', kind: 'bool' },
       { key: 'AllowSpotsDXSummit', kind: 'bool' },
+    ],
+  },
+  {
+    title: 'ens.g.wavelog',
+    upload: { service: 'wavelog', help: 'ens.up.wavelog.help' },
+    rows: [
+      { key: 'WavelogSend', kind: 'bool' },
+      { key: 'WavelogUrl', kind: 'text' },
+      { key: 'WavelogKey', kind: 'secret' },
+      { key: 'WavelogStation', kind: 'text' },
+    ],
+  },
+  {
+    title: 'ens.g.clublog',
+    upload: { service: 'clublog', help: 'ens.up.clublog.help' },
+    rows: [
+      { key: 'ClublogSend', kind: 'bool' },
+      { key: 'ClublogEmail', kind: 'text' },
+      { key: 'ClublogPasswd', kind: 'secret' },
+      { key: 'ClublogCall', kind: 'text' },
+      { key: 'ClublogApiKey', kind: 'secret' },
+    ],
+  },
+  {
+    title: 'ens.g.qrz',
+    upload: { service: 'qrz', help: 'ens.up.qrz.help' },
+    rows: [
+      { key: 'QRZLogSend', kind: 'bool' },
+      { key: 'QRZLogKey', kind: 'secret' },
+    ],
+  },
+  {
+    title: 'ens.g.lotw',
+    upload: { service: 'lotw', help: 'ens.up.lotw.help' },
+    rows: [
+      { key: 'LoTWSend', kind: 'bool' },
+      { key: 'LoTWTqsl', kind: 'text' },
+      { key: 'LoTWLocation', kind: 'text' },
     ],
   },
   {

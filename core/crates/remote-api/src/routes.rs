@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -79,6 +79,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
         .route("/api/v1/spot/dxsummit", post(spot_dxsummit))
+        .route("/api/v1/qso-upload/test", post(qso_upload_test))
         .route("/api/v1/audio/devices", get(audio_devices))
         .route("/api/v1/audio/settings", axum::routing::put(audio_settings_put))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
@@ -1182,6 +1183,28 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
             };
             Err(ApiError::new(status, e.code()).with_message(e.to_string()))
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct QsoUploadTestBody {
+    /// `wavelog`, `clublog`, `qrz` o `lotw`.
+    service: String,
+}
+
+/// Il pulsante «Prova» dell'invio diretto dei QSO: controlla le impostazioni salvate **senza registrare QSO** (Wavelog/Cloudlog: elenco delle
+/// stazioni della chiave; QRZ: `ACTION=STATUS`; LoTW: TQSL e posizione di stazione presenti; ClubLog: solo i dati, perche' non ha una prova
+/// senza invio). Se va bene, un servizio fermo per un errore di credenziali riparte. Solo dalla rete di casa.
+#[utoipa::path(post, path = "/api/v1/qso-upload/test", responses((status = 200, description = "Prova riuscita: `{ok, message}`"), (status = 400, description = "Servizio sconosciuto (bad_service)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (upload_unavailable)"), (status = 502, description = "Prova non riuscita (upload_test_failed, con `message`)")))]
+async fn qso_upload_test(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<QsoUploadTestBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let service = state.engine_settings.as_ref().and_then(|s| s.reporting()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "upload_unavailable"))?;
+    let target = reporting::upload::Target::parse(&body.service).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_service"))?;
+    match service.test_upload(target).await {
+        Ok(message) => Ok(Json(json!({ "ok": true, "message": message }))),
+        Err(message) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message(message)),
     }
 }
 
