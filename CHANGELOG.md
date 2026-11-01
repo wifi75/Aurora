@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display della radio piu' reattivo**: con il CAT su USB, rete o seriale da 19200 baud in su si leggono 6 valori in piu' per giro invece di 3 (PRE, ATT, AGC, NB, NR, NOTCH, VFO B...): il display si aggiorna in circa la meta' del tempo. Le seriali lente restano a uno per giro per non disturbare il PTT.
 
 ## 0.11.58 - 2026-11-01
 - **DX Cluster**: gli spot delle DXpedition in onda secondo il calendario NG3K si evidenziano con l'etichetta «DXped», nel colore scelto in Impostazioni > DX Cluster (tavolozza fluo: giallo di base, verde, arancio, rosa, azzurro, viola, oppure un colore qualsiasi).
