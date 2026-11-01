@@ -20,6 +20,19 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.66',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'fixed',
+    title: ['Lente sul display', 'Display magnifier', 'Lupe für das Display', 'Loupe sur l’affichage', 'Lupa en el display', 'Lupa no visor'],
+    text: [
+      'Passando il mouse sul display della radio si apre lo stesso display ingrandito il doppio, in larghezza e in altezza, senza stirarlo.',
+      'Hovering the radio display opens the same display twice as large, in width and height, without stretching it.',
+      'Mit der Maus über dem Display öffnet sich dasselbe Display doppelt so groß, in Breite und Höhe, ohne Verzerrung.',
+      'En survolant l’affichage du poste s’ouvre le même affichage deux fois plus grand, en largeur et en hauteur, sans l’étirer.',
+      'Al pasar el ratón por el display se abre el mismo display el doble de grande, en ancho y alto, sin estirarlo.',
+      'Passando o rato pelo visor abre-se o mesmo visor duas vezes maior, em largura e altura, sem o esticar.',
+    ],
+  },  {
     version: '0.11.65',
     released: '2026-11-01T17:41:25Z',
     kind: 'fixed',
@@ -558,20 +571,6 @@ export const NOVITA: readonly Novita[] = [
       'Comme dans JTDX : bouton gauche pour la barre Rx, bouton droit pour la barre Tx, bouton maintenu la barre suit la souris. La Tx se déplace même en émission et la tonalité change aussitôt.',
       'Como en JTDX: el botón izquierdo mueve la barra Rx, el derecho la Tx, y manteniendo pulsado la barra sigue al ratón. La Tx se mueve incluso transmitiendo y el tono cambia al momento.',
       'Como no JTDX: o botão esquerdo move a barra Rx, o direito a Tx, e com o botão premido a barra segue o rato. A Tx move-se mesmo a transmitir e o tom muda logo.',
-    ],
-  },
-  {
-    version: '0.11.52',
-    released: '2026-11-01T10:24:29Z',
-    kind: 'new',
-    title: ['Display a doppio VFO o due blocchi', 'Dual-VFO display or two blocks', 'Doppel-VFO-Anzeige oder zwei Blöcke', 'Afficheur double VFO ou deux blocs', 'Display de doble VFO o dos bloques', 'Visor de duplo VFO ou dois blocos'],
-    text: [
-      'In Impostazioni > Radio scegli come stanno in alto a destra display e display esteso: un blocco unico a doppio VFO in stile FT-2000 (un solo schermo: VFO A grande, VFO B e indicatori accanto) oppure due blocchi uguali affiancati.',
-      'In Settings > Radio choose how the display and the extended display sit top right: one dual-VFO block in FT-2000 style (one screen: large VFO A, VFO B and indicators beside it) or two equal blocks side by side.',
-      'Unter Einstellungen > Radio wählst du, wie Anzeige und erweiterte Anzeige oben rechts stehen: ein Doppel-VFO-Block im FT-2000-Stil (großer VFO A, VFO B und Anzeigen daneben) oder zwei gleiche Blöcke nebeneinander.',
-      'Dans Réglages > Radio, choisissez la disposition en haut à droite : un bloc double VFO style FT-2000 (grand VFO A, VFO B et indicateurs à côté) ou deux blocs identiques côte à côte.',
-      'En Ajustes > Radio eliges cómo quedan arriba a la derecha el display y el ampliado: un bloque de doble VFO estilo FT-2000 (VFO A grande, VFO B e indicadores al lado) o dos bloques iguales lado a lado.',
-      'Em Definições > Rádio escolhes como ficam em cima à direita o visor e o visor alargado: um bloco de duplo VFO estilo FT-2000 (VFO A grande, VFO B e indicadores ao lado) ou dois blocos iguais lado a lado.',
     ],
   },
 ];
