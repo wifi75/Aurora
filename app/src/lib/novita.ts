@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.69',
-    released: '2026-11-01T23:00:00Z',
+    released: '2026-11-01T21:38:33Z',
     kind: 'fixed',
     title: ['Pagina Fox e mappa DXpedition', 'Fox page and DXpedition map', 'Fox-Seite und DXpedition-Karte', 'Page Fox et carte DXpédition', 'Página Fox y mapa DXpedición', 'Página Fox e mapa DXpedição'],
     text: [
