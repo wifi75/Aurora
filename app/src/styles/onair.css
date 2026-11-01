@@ -5118,6 +5118,12 @@
   overflow: auto;
 }
 
+/* nel riquadro CQ diviso a meta' il messaggio ha la precedenza: il paese si stringe (bandiera e nome accorciato), il CQ si legge intero */
+.cq-split-main .decode-list .decode-row,
+.cq-split-main .decode-list--no-dt .decode-row {
+  grid-template-columns: 4.4rem 2.1rem minmax(0, 2.4fr) minmax(0, 0.8fr) 6.2rem;
+}
+
 .dxped {
   display: flex;
   flex-direction: column;
