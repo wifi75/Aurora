@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.41 - 2026-11-01
+- **Impostazioni riordinate**: barra laterale con ricerca, pagine compatte e un «?» con la spiegazione di ogni voce (anche quelle del motore), in 6 lingue.
+- **Coda**: nell'elenco un pallino blu col numero del posto al posto dell'etichetta grande.
+- **Notifiche toast** in alto: vetro traslucido colorato per tipo, entrata e uscita animate.
+- **Barra in alto**: modo a tendina e bande a pillole piccole.
+- **Stato RX/TX**: tolta la striscia «In ascolto / Tx abilitato»; accanto al periodo di trasmissione RX verde e TX rosso lampeggiante.
+- **Icone**: avvisi sonori (altoparlante con il volume accanto), tema chiaro/scuro e lingua.
+- Intestazione: «by IU3CYV» sotto AURORA.
+
 ## 0.11.40 - 2026-10-31
 - **Guida riscritta**: 8 capitoli con indice, ricerca e passi pratici numerati, in 6 lingue; i nomi di schede e pulsanti si prendono dall'interfaccia (`app/src/i18n/guide.ts`).
 - **Statistiche riorganizzate**: numeri in alto con le barre di avanzamento, bande e scheda DXCC affiancate, paesi mancanti e log ADIF a richiesta.
