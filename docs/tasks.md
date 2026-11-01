@@ -67,13 +67,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `widgets/mainwindow.cpp` `processWaitReplyCall`, `WaitFeatureContext`, `wait_and_call_arming_eligible`.
 - Verifica: test di sequenza con il DX occupato in un altro QSO.
 
-## 15. Rifiniture CAT dalla 3.2
-
-- Cosa fare: mantenere DATA2/DATA3 scelti; ruoli dei VFO stabili in split; split riallineato al cambio dell'offset Tx; nessun cambio di banda durante Tx/Tune; scartare PTT/Tune pendenti dopo un errore della radio; rifiutare frequenze non valide.
-- Aurora: `core/crates/rig-control/src/modes.rs`, `cat.rs`, `session.rs`, `engine-native/src/tx.rs`.
-- WSJT-X: note 3.2 «Rig control and TCI», `Transceiver/HamlibTransceiver.cpp`, `widgets/mainwindow.cpp` (`requestNominalFrequencyChange`).
-- Verifica: test con `fake_rigctld`; prova dal vivo sulla radio del proprietario.
-
 ## 16. TCI
 
 - Cosa fare: controllo radio e audio via TCI (WebSocket) per radio SDR (Expert, SunSDR, ANAN con Thetis).
@@ -88,11 +81,11 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `widgets/mainwindow_bandhopping.cpp`.
 - Verifica: test di pianificazione con orologio finto.
 
-## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF
+## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
-- Cosa fare: pacchetti PSK Reporter piu' piccoli e data giusta a mezzanotte; banda/frequenza del periodo in ALL.TXT e negli spot dopo un cambio; verifica della connessione Wavelog con scelta della stazione dal server; scambi contest nell'ADIF; `ADIF_VER` aggiornato.
-- Aurora: `core/crates/reporting/src/psk.rs`, `wavelog.rs`, `engine-native/src/alltxt.rs`, `core/crates/logbook/src/adif.rs`.
-- WSJT-X: note 3.2 «Networking, logging, and integrations», `Network/PSKReporter.cpp`, `logbook/`.
+- Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
+- Resta: ALL.TXT con la banda del periodo dopo un cambio (`engine-native/src/alltxt.rs`, lasciato a chi lavora sul motore); scambi di contest nei record ADIF (servono i campi dello scambio in `QsoRecord`, riempiti dal motore QSO, poi `contest_fields` nei record); tendina della stazione Wavelog nelle Impostazioni (oggi le stazioni del server compaiono nel messaggio della prova).
+- WSJT-X: note 3.2 «Networking, logging, and integrations», `logbook/AdifQso.cpp`.
 - Verifica: test unitari sui casi di mezzanotte e cambio banda.
 
 ## 20. Modo Fox e SuperFox trasmettitore
@@ -137,13 +130,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Aurora: nuovo ingresso I/Q in `core/crates/audio-*`, decodifica Q65 su piu' canali, pagina nell'interfaccia.
 - WSJT-X: cartella `qmap/`.
 - Verifica: registrazione I/Q di prova con piu' segnali Q65.
-
-## 27. Hamlib aggiornato
-
-- Cosa fare: allineare la versione di Hamlib usata da Aurora a quella di WSJT-X 3.x per il controllo CAT delle radio recenti.
-- Aurora: `core/crates/rig-control` (libreria Hamlib inclusa e `docs/cat-radio.md`).
-- WSJT-X: versione di Hamlib indicata in `CMakeLists.txt` e nelle note di rilascio.
-- Verifica: elenco radio supportate e prova CAT del proprietario.
 
 ## 19b. Cascata: appiattimento sul campo visibile
 

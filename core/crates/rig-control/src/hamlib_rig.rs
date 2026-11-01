@@ -170,11 +170,44 @@ struct Inner {
     tx_audio_hz: AtomicU32,
     rx_dial: AtomicU64,
     emulate_restore: Mutex<Option<u64>>,
+    /// Ruoli dei VFO in split invertiti (l'operatore riceve sul VFO B, quindi si trasmette sul VFO A). Si osserva solo fuori dalla
+    /// trasmissione, come `HamlibVfoRoleState` di WSJT-X 3.2 (`Transceiver/HamlibVfoRoleState.hpp`, GPL-3.0): durante il PTT molte radio
+    /// riportano il VFO di trasmissione come attivo e i ruoli si scambierebbero.
+    vfo_reversed: AtomicBool,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
     meter: Mutex<MeterPoll>,
     extras: Mutex<crate::extras::ExtrasPoll>,
+}
+
+/// Frequenza audio massima accettata per la trasmissione (Hz): oltre e' un valore sbagliato, non un offset.
+const MAX_AUDIO_HZ: u32 = 6000;
+
+/// Frequenza accettabile per la radio: niente zero (un valore perso) e niente oltre i 300 GHz (un overflow). Dalle note di WSJT-X 3.2:
+/// «Invalid frequencies [...] are rejected rather than becoming zero or overflowing».
+pub fn valid_dial_hz(hz: u64) -> bool {
+    hz > 0 && hz <= 300_000_000_000
+}
+
+/// Il modo letto dalla radio va gia' bene per quello richiesto? `PKTUSB` e' soddisfatto anche da `USB-D1/D2/D3` e `PKTLSB` da
+/// `LSB-D1/D2/D3`: cosi' il profilo DATA2 o DATA3 scelto dall'operatore resta (radio con piu' profili dati, come la TS-990S).
+/// Da `HamlibMode::satisfies_request` di WSJT-X 3.2 (`Transceiver/HamlibMode.cpp`, GPL-3.0).
+pub fn mode_satisfies(requested: &str, current: &str) -> bool {
+    let (r, c) = (requested.trim().to_uppercase(), current.trim().to_uppercase());
+    if r == c {
+        return true;
+    }
+    match r.as_str() {
+        "PKTUSB" => matches!(c.as_str(), "USB-D1" | "USB-D2" | "USB-D3" | "USBD1" | "USBD2" | "USBD3"),
+        "PKTLSB" => matches!(c.as_str(), "LSB-D1" | "LSB-D2" | "LSB-D3" | "LSBD1" | "LSBD2" | "LSBD3"),
+        _ => false,
+    }
+}
+
+/// Il VFO attivo e' il B (o il «Sub»)?
+fn vfo_is_b(vfo: &str) -> bool {
+    matches!(vfo.trim().to_uppercase().as_str(), "VFOB" | "B" | "SUB")
 }
 
 /// Ogni quanto si legge il misuratore in ricezione e in trasmissione.
@@ -594,8 +627,14 @@ impl Inner {
         if audio == 0 || dial == 0 {
             return Ok(());
         }
+        if !self.transmitting()
+            && let Ok(active) = link.client().vfo()
+        {
+            self.vfo_reversed.store(vfo_is_b(&active), Ordering::SeqCst);
+        }
+        let tx_vfo = if self.vfo_reversed.load(Ordering::SeqCst) { "VFOA" } else { "VFOB" };
         link.client().set_split_frequency(split_tx_dial_hz(dial, audio))?;
-        link.client().set_split(true, "VFOB")?;
+        link.client().set_split(true, tx_vfo)?;
         self.update(|s| s.split = Some(true));
         Ok(())
     }
@@ -652,6 +691,7 @@ impl HamlibRig {
             tx_audio_hz: AtomicU32::new(0),
             rx_dial: AtomicU64::new(0),
             emulate_restore: Mutex::new(None),
+            vfo_reversed: AtomicBool::new(false),
             epoch: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
             extras: Mutex::new(crate::extras::ExtrasPoll::default()),
@@ -702,6 +742,11 @@ impl HamlibRig {
         let link = inner.connected_link()?;
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         if on {
+            // dopo un guasto della radio un PTT rimasto in attesa non parte (WSJT-X 3.2: «After a rig failure, pending PTT, Tune,
+            // and Stop TX commands are discarded»): si accende solo con la radio che ha risposto all'ultima lettura
+            if inner.snapshot().failures > 0 {
+                return Err(RigError("la radio non ha risposto all'ultima lettura: PTT scartato".into()));
+            }
             if let Some(left) = inner.ptt_blocked() {
                 return Err(RigError(format!("PTT bloccato per altri {} s dopo il collegamento", left.as_secs_f32().ceil())));
             }
@@ -745,6 +790,9 @@ impl HamlibRig {
 
     /// La frequenza audio con cui si trasmette (Hz): con lo split vero sposta il VFO di trasmissione, con la simulazione serve al PTT.
     pub fn set_tx_audio_frequency(&self, hz: u32) -> Result<(), RigError> {
+        if hz > MAX_AUDIO_HZ {
+            return Err(RigError(format!("frequenza audio di trasmissione non valida: {hz} Hz")));
+        }
         self.inner.tx_audio_hz.store(hz, Ordering::SeqCst);
         if self.inner.config.split == SplitMode::Rig {
             let link = self.inner.connected_link()?;
@@ -844,6 +892,9 @@ impl Rig for HamlibRig {
     /// se la radio ha richiamato quello memorizzato per la banda e, con lo split vero, riposiziona il VFO di trasmissione.
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
         let inner = &self.inner;
+        if !valid_dial_hz(hz) {
+            return Err(RigError(format!("frequenza non valida: {hz} Hz")));
+        }
         let link = inner.connected_link()?;
         if inner.transmitting() {
             return Err(RigError("la radio sta trasmettendo: cambio di frequenza rifiutato".into()));
@@ -864,7 +915,7 @@ impl Rig for HamlibRig {
         inner.update(|s| s.frequency_hz = Some(hz));
         if let Some(wanted) = inner.config.cat_mode.hamlib_name() {
             let current = link.client().mode().map(|m| m.0).ok();
-            if current.as_deref() != Some(wanted) {
+            if !current.as_deref().is_some_and(|c| mode_satisfies(wanted, c)) {
                 match link.client().set_mode(wanted, 0) {
                     Ok(()) => inner.update(|s| s.mode = Some(wanted.to_string())),
                     Err(e) => tracing::warn!("modo {wanted} non scritto dopo il cambio di frequenza: {e}"),
@@ -1141,6 +1192,67 @@ mod tests {
         rig.set_frequency(14_074_000).expect("QSY");
         assert_eq!(fake.mode(), "USB");
         assert!(!fake.commands().iter().any(|c| c.starts_with("M ")));
+    }
+
+    #[test]
+    fn a_data2_or_data3_profile_chosen_on_the_radio_is_kept_after_a_qsy() {
+        let fake = FakeRigctld::start(7_074_000);
+        fake.set_mode("USB-D2");
+        let rig = start(&fake, RigConfig { cat_mode: CatMode::Data, ..RigConfig::default() });
+        rig.set_frequency(14_074_000).expect("QSY");
+        assert_eq!(fake.mode(), "USB-D2");
+        assert!(!fake.commands().iter().any(|c| c.starts_with("M ")), "nessun cambio di modo");
+        assert!(mode_satisfies("PKTUSB", "usb-d3") && mode_satisfies("PKTLSB", "LSB-D1") && mode_satisfies("USB", "USB"));
+        assert!(!mode_satisfies("PKTUSB", "USB") && !mode_satisfies("USB", "USB-D1") && !mode_satisfies("PKTUSB", "LSB-D2"));
+    }
+
+    #[test]
+    fn invalid_frequencies_are_refused_before_reaching_the_radio() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        fake.clear_commands();
+        assert!(rig.set_frequency(0).is_err());
+        assert!(rig.set_frequency(u64::MAX).is_err());
+        assert!(rig.set_tx_audio_frequency(70_000).is_err());
+        assert!(!fake.commands().iter().any(|c| c.starts_with("F ") || c.starts_with("I ")), "{:?}", fake.commands());
+        assert_eq!(fake.frequency(), 14_074_000);
+    }
+
+    #[test]
+    fn split_keeps_the_vfo_roles_while_transmitting_and_follows_the_tx_offset() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        std::thread::sleep(Duration::from_millis(300));
+        // l'operatore riceve sul VFO B: si trasmette sul VFO A
+        fake.client(Duration::from_secs(1)).expect("client").set_vfo("VFOB").expect("VFO B");
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(1500).expect("split");
+        assert!(fake.commands().iter().any(|c| c == "S 1 VFOA"), "{:?}", fake.commands());
+        rig.set_ptt(true).expect("PTT");
+        // in trasmissione la radio dice VFO A (quello di trasmissione): i ruoli non si scambiano e l'offset nuovo segue
+        fake.client(Duration::from_secs(1)).expect("client").set_vfo("VFOA").expect("VFO A");
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2000).expect("offset nuovo");
+        let c = fake.commands();
+        assert!(c.iter().any(|x| x.starts_with("I ")) && c.iter().any(|x| x == "S 1 VFOA"), "{c:?}");
+        assert!(!c.iter().any(|x| x == "v"), "il VFO attivo non si rilegge in trasmissione: {c:?}");
+        // e la banda non cambia durante la trasmissione
+        assert!(rig.set_frequency(7_074_000).is_err());
+        rig.set_ptt(false).expect("PTT spento");
+    }
+
+    #[test]
+    fn after_a_failed_read_a_pending_ptt_is_discarded() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        std::thread::sleep(Duration::from_millis(300));
+        rig.inner.update(|s| s.failures = 1);
+        let e = rig.set_ptt(true).expect_err("PTT scartato");
+        assert!(e.0.contains("scartato"), "{e}");
+        assert!(!fake.ptt());
+        rig.inner.update(|s| s.failures = 0);
+        rig.set_ptt(true).expect("PTT con la radio che risponde");
+        rig.set_ptt(false).expect("PTT spento");
     }
 
     #[test]
