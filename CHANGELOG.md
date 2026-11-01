@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.42 - 2026-11-01
+- **Trasmissione**: RX verde / TX rosso lampeggiante spostato accanto al blocco del DX, come pastiglia ben visibile.
+- **DX Cluster**: frequenza piu' stretta, piu' spazio al paese; intestazioni «Paese» e «UTC» allineate.
+- **Elenco messaggi**: colonna km fissa (4,3rem) e colonna paese fissa sul nome DXCC piu' lungo; lo spazio avanzato va ai nominativi.
+- **Log Log4OM**: data e rapporti piu' compatti, paese leggibile.
+- Impostazioni: tolto il doppione di avvisi sonori e volume (il volume resta in «Suoni»).
+
 ## 0.11.41 - 2026-11-01
 - **Impostazioni riordinate**: barra laterale con ricerca, pagine compatte e un «?» con la spiegazione di ogni voce (anche quelle del motore), in 6 lingue.
 - **Coda**: nell'elenco un pallino blu col numero del posto al posto dell'etichetta grande.
