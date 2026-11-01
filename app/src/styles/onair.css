@@ -2582,6 +2582,21 @@
   color: #8a6400;
 }
 
+/* evidenziati dai Filtri per nominativo, prefisso o paese: viola come «Highlight Whitelist entries» di WSJT-X */
+.decode-row--picked {
+  box-shadow: inset 4px 0 0 #b04cd8;
+  background: color-mix(in srgb, #b04cd8 14%, transparent);
+}
+
+.decode-row--picked .decode-text .data {
+  color: #d58cf2;
+  font-weight: 700;
+}
+
+:root[data-theme='light'] .decode-row--picked .decode-text .data {
+  color: #7a1fa2;
+}
+
 .cluster-row--wanted {
   box-shadow: inset 4px 0 0 #ffd23f;
   background: color-mix(in srgb, #ffd23f 16%, transparent);

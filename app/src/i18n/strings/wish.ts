@@ -138,6 +138,7 @@ export const wishStrings = {
   'wish.banner': ['{call} desiderata ({reason})', '{call} wanted ({reason})', '{call} gesucht ({reason})', '{call} recherchée ({reason})', '{call} deseada ({reason})', '{call} desejada ({reason})'],
   'wish.tune': ['Vai alla frequenza', 'Go to the frequency', 'Zur Frequenz', 'Aller à la fréquence', 'Ir a la frecuencia', 'Ir para a frequência'],
   'wish.close': ['Chiudi', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar'],
+  'tip.row.picked': ['Evidenziato dai Filtri (nominativo, prefisso o paese)', 'Highlighted by the Filters (callsign, prefix or country)', 'Von den Filtern hervorgehoben (Rufzeichen, Präfix oder Land)', 'Mis en évidence par les Filtres (indicatif, préfixe ou pays)', 'Resaltado por los Filtros (indicativo, prefijo o país)', 'Destacado pelos Filtros (indicativo, prefixo ou país)'],
   'tip.row.wanted': [
     'Stazione della tua lista dei desiderati.',
     'Station from your wanted list.',

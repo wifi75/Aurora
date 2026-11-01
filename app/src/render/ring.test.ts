@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RowRing } from './ring';
+import { RowRing, sharedRing } from './ring';
 
 const row = (...v: number[]) => Uint8Array.from(v);
 
@@ -50,5 +50,24 @@ describe('RowRing', () => {
   it('rejects non-positive dimensions', () => {
     expect(() => new RowRing(0, 4)).toThrow();
     expect(() => new RowRing(4, 0)).toThrow();
+  });
+
+  it('keeps the period flags of each row', () => {
+    const ring = new RowRing(1, 2);
+    ring.push(row(1), 1);
+    ring.push(row(2), 2);
+    expect(Array.from(ring.flags)).toEqual([255, 0, 0, 255]);
+    ring.push(row(3));
+    expect(Array.from(ring.flags)).toEqual([0, 0, 0, 255]);
+  });
+
+  it('shared ring survives a new renderer (resize or remount keeps history)', () => {
+    const first = sharedRing(2, 4);
+    first.push(row(7, 8), 1);
+    const again = sharedRing(2, 4);
+    expect(again).toBe(first);
+    expect([again.head, again.filled]).toEqual([1, 1]);
+    expect(Array.from(again.data.subarray(0, 2))).toEqual([7, 8]);
+    expect(again.flags[0]).toBe(255);
   });
 });

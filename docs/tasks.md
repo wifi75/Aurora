@@ -95,13 +95,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: note 3.2 «Networking, logging, and integrations», `Network/PSKReporter.cpp`, `logbook/`.
 - Verifica: test unitari sui casi di mezzanotte e cambio banda.
 
-## 19. Cascata: storia conservata al ridimensionamento
-
-- Cosa fare: ridimensionare la cascata senza perdere le righe; appiattimento calcolato sul campo visibile.
-- Aurora: cascata in `app/src`, `core/crates/audio-spectrum/src/analyzer.rs`.
-- WSJT-X: `widgets/plotter.cpp`, `widgets/widegraph.cpp`, `widgets/WaterfallScale.hpp`.
-- Verifica: prova manuale nell'interfaccia.
-
 ## 20. Modo Fox e SuperFox trasmettitore
 
 - Cosa fare: Fox classico (fino a 5 slot, `foxgen`) e SuperFox (pack 329 bit, QPC, GFSK a 750 Hz), coda dei Hound con ordinamento UDP `AnnotationInfo` (tipo 16) e OTP con seme TOTP.
@@ -130,13 +123,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Aurora: `app/src/components/ModeSwitch.tsx`, `core/crates/rig-control/src/table.rs` (frequenze per modo).
 - WSJT-X: `widgets/mainwindow.ui` (pulsanti dei modi della 3.0).
 - Verifica: cambio modo dal pulsante con radio collegata.
-
-## 24. Filtri dei decode per prefisso, nominativo e «gia' collegato»
-
-- Cosa fare: confrontare con i filtri di WSJT-X 3.0 (nascondere o evidenziare per prefisso, nominativo, Worked Before) e aggiungere quelli che mancano in Aurora (oggi ha filtri e colori per DXCC, desiderati e gia' collegati).
-- Aurora: `app/src/components/DecodeList.tsx`, `app/src/settings/FiltersTab.tsx`.
-- WSJT-X: `widgets/mainwindow.cpp`, `Configuration.cpp` (filtri e evidenziazioni della 3.0).
-- Verifica: decode di prova con prefissi e nominativi filtrati.
 
 ## 25. Full duplex per i satelliti
 

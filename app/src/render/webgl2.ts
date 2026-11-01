@@ -1,6 +1,6 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, jtdxPaletteLut } from './colormap';
-import { RowRing } from './ring';
+import { sharedRing } from './ring';
 import { Y_MIN, Y_PER_DB } from './jtdxRow';
 import { JTDX_PALETTES, DEFAULT_PALETTE } from './wfPalettes';
 import { RowClock } from './smooth';
@@ -101,7 +101,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
   private tone: [number, number] = toneUniform(0, 0);
   private readonly clock = new RowClock();
   private raf = 0;
-  private readonly ring = new RowRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
+  private readonly ring = sharedRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
 
   async init(canvas: HTMLCanvasElement): Promise<void> {
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
@@ -133,7 +133,8 @@ export class WebGl2Waterfall implements WaterfallBackend {
     this.tex = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, WATERFALL_WIDTH, WATERFALL_HEIGHT, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+    // la storia gia' ricevuta (anello condiviso): un renderer nuovo dopo un ridimensionamento non parte vuoto
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, WATERFALL_WIDTH, WATERFALL_HEIGHT, 0, gl.RED, gl.UNSIGNED_BYTE, this.ring.data);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -151,7 +152,7 @@ export class WebGl2Waterfall implements WaterfallBackend {
     this.flagTex = gl.createTexture();
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.flagTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8, 1, WATERFALL_HEIGHT, 0, gl.RG, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8, 1, WATERFALL_HEIGHT, 0, gl.RG, gl.UNSIGNED_BYTE, this.ring.flags);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -165,12 +166,12 @@ export class WebGl2Waterfall implements WaterfallBackend {
   }
 
   pushRow(row: Uint8Array, flag: 0 | 1 | 2 = 0): void {
-    const index = this.ring.push(row);
-    if (index < 0) return;
+    const index = this.ring.push(row, flag);
+    if (index < 0 || !this.program) return;
     const gl0 = this.gl;
     gl0.activeTexture(gl0.TEXTURE2);
     gl0.bindTexture(gl0.TEXTURE_2D, this.flagTex);
-    gl0.texSubImage2D(gl0.TEXTURE_2D, 0, 0, index, 1, 1, gl0.RG, gl0.UNSIGNED_BYTE, Uint8Array.of(flag === 1 ? 255 : 0, flag === 2 ? 255 : 0));
+    gl0.texSubImage2D(gl0.TEXTURE_2D, 0, 0, index, 1, 1, gl0.RG, gl0.UNSIGNED_BYTE, this.ring.flags.subarray(index * 2, index * 2 + 2));
     this.clock.push(performance.now());
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);

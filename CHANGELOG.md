@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Cascata: la storia resta al ridimensionamento** (come `CPlotter::resizeEvent` di WSJT-X 3.2): le righe ricevute stanno in un anello condiviso fuori dal renderer, cosi' ridimensionando la finestra, passando tra vista a finestre e a schede o spostando il pannello la cascata nuova riparte con tutte le righe gia' disegnate, comprese le righe verdi di inizio periodo.
+- **Filtri dei messaggi come WSJT-X 3** (Impostazioni > Filtri, salvati da soli, «?» in sei lingue): «Mostra solo questi nominativi» (Whitelist, con prefissi JA*), «Mostra sempre questi nominativi» (Always Pass, vince sugli altri filtri), «nascondi anche i loro scambi» per le stazioni gia' collegate (Hide B4 su tutti i messaggi, non solo i CQ), «Sospendi tutti i filtri» (Bypass) e il nuovo riquadro «Evidenzia nell'elenco» per nominativi, prefissi e paesi (righe viola, come Highlight Whitelist entries e Highlight Territory). Si affiancano ai filtri per continente, paese, nominativo e ai colori di DXCC, desiderati e gia' collegati gia' presenti. Nuova voce nella Guida.
 
 ## 0.11.55 - 2026-11-01
 - **Blocco della trasmissione da un controller UDP** (WSJT-X 3.3, tipi 17 e 18; motore proprio, solo con «Accetta richieste UDP»): un TxInhibit (18) prenota il blocco per 100-30000 ms per controller (fino a 64 seguiti uno per uno, oltre una prenotazione comune), si rinnova, scade o si rilascia con durata 0; i blocchi si sommano (basta uno). Con un blocco attivo il PTT resta spento o si spegne subito e torna quando l'ultimo scade o si rilascia. Comandi malformati o fuori limite si ignorano e si contano. Aurora manda InhibitStatus (17) all'avvio, dopo ogni Heartbeat, a ogni cambio e un ultimo «non supportato» alla chiusura. Nel pannello Tx compare «Tx bloccata da …».

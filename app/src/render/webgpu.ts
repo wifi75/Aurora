@@ -1,6 +1,6 @@
 import type { WaterfallBackend } from './backend';
 import { LUT_SIZE, jtdxPaletteLut } from './colormap';
-import { RowRing } from './ring';
+import { sharedRing } from './ring';
 import { Y_MIN, Y_PER_DB } from './jtdxRow';
 import { JTDX_PALETTES, DEFAULT_PALETTE } from './wfPalettes';
 import { RowClock } from './smooth';
@@ -62,7 +62,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
   private raf = 0;
   private alive = false;
   private readonly clock = new RowClock();
-  private readonly ring = new RowRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
+  private readonly ring = sharedRing(WATERFALL_WIDTH, WATERFALL_HEIGHT);
 
   async init(canvas: HTMLCanvasElement): Promise<void> {
     if (!navigator.gpu) throw new Error('WebGPU non disponibile');
@@ -95,6 +95,9 @@ export class WebGpuWaterfall implements WaterfallBackend {
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
     this.writeLut(jtdxPaletteLut(JTDX_PALETTES[DEFAULT_PALETTE]!));
+    // la storia gia' ricevuta (anello condiviso): un renderer nuovo dopo un ridimensionamento non parte vuoto
+    device.queue.writeTexture({ texture: this.texture }, this.ring.data.slice().buffer as ArrayBuffer, { bytesPerRow: WATERFALL_WIDTH }, [WATERFALL_WIDTH, WATERFALL_HEIGHT]);
+    device.queue.writeTexture({ texture: this.flagTexture }, this.ring.flags.slice().buffer as ArrayBuffer, { bytesPerRow: 2 }, [1, WATERFALL_HEIGHT]);
 
     this.uniforms = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const sampler = device.createSampler({
@@ -142,11 +145,11 @@ export class WebGpuWaterfall implements WaterfallBackend {
   }
 
   pushRow(row: Uint8Array, flag: 0 | 1 | 2 = 0): void {
-    const index = this.ring.push(row);
+    const index = this.ring.push(row, flag);
     if (index < 0 || !this.alive) return;
     this.device.queue.writeTexture(
       { texture: this.flagTexture, origin: [0, index, 0] },
-      Uint8Array.of(flag === 1 ? 255 : 0, flag === 2 ? 255 : 0),
+      this.ring.flags.slice(index * 2, index * 2 + 2),
       { bytesPerRow: 2 },
       [1, 1],
     );

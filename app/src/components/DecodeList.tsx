@@ -4,7 +4,7 @@ import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { formatClock } from '../lib/format';
 import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
-import { isCq } from '../lib/filters';
+import { isCq, isFilterHighlight, useFilters } from '../lib/filters';
 import { useNotifyView, workedLook } from '../lib/notifyView';
 import { useNotify } from '../lib/notify';
 import { isAnswerToMyCall, isOngoingDxReply, transmittedTo } from '../lib/answered';
@@ -165,6 +165,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const notify = useNotify((s) => s.notify);
   const wishlist = useWishlist((s) => s.list);
   const view = useNotifyView((s) => s.view);
+  // nominativi, prefissi e paesi da evidenziare (Impostazioni → Filtri)
+  const filters = useFilters((s) => s.filters);
   const look = workedLook(view);
   // i nominativi a cui ho trasmesso da poco: un loro messaggio a me e' una risposta alla mia chiamata
   const txLog = useStation((st) => st.txLog);
@@ -227,6 +229,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const wanted = sender !== null && wishReason(wishlist, sender.call, sender.grid, d.country) !== null;
         // «gia' lavorato» come nel motore: barrato (o sottolineato, o colorato); «non mostrare» lo nasconde, salvo i messaggi a me e i desiderati
         const worked = !own && d.tag === 'worked_call';
+        const picked = !own && isFilterHighlight(d, filters);
         // «non mostrare» nasconde i CQ delle stazioni gia' collegate, non i loro scambi con altri
         if (worked && view.workedDontShow && !toMe && !wanted && /^CQ\s/i.test(d.text.trim())) return null;
         // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque; un messaggio tra altre stazioni senza «altri messaggi predefiniti» non ha marcatori
@@ -258,8 +261,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           {gap ? <div className="decode-gap" role="separator" /> : null}
           <button
             type="button"
-            title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${hlClass}`}
+            title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${hlClass}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
