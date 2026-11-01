@@ -46,6 +46,8 @@ interface Props {
   night: boolean;
   /** Piu' bassa, per stare dentro una pagina con altro. */
   compact?: boolean;
+  /** Tropici, equatore e circoli polari (di base si'). */
+  parallels?: boolean;
   labels: Labels;
 }
 
@@ -72,7 +74,7 @@ function cssColor(variable: string | null, fallback: string): string {
  * lavorati in giallo, le stazioni che si ricevono ora, chi ci ha ricevuto con le sue linee e la lettura sotto il cursore.
  * Si trascina e si ingrandisce con la rotella.
  */
-export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, labels }: Props) {
+export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, labels }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<'tiles' | 'lines' | 'worked' | 'stations' | 'receivers' | 'home', L.Layer | null>>({
@@ -168,6 +170,10 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
   useEffect(() => {
     const m = map.current;
     if (!m) return;
+    if (!parallels) {
+      replace('lines', null);
+      return;
+    }
     const group = L.layerGroup();
     const lines: Array<[number, string, string]> = [
       [0, labels.equator, 'eq'],
@@ -189,7 +195,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     }
     replace('lines', group);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [labels.equator, labels.cancer, labels.capricorn, labels.arctic, labels.antarctic]);
+  }, [parallels, labels.equator, labels.cancer, labels.capricorn, labels.arctic, labels.antarctic]);
 
   useEffect(() => {
     const m = map.current;

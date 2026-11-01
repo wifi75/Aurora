@@ -77,7 +77,8 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
               homeGrid={status?.de_grid}
               selected={d.call}
               onSelect={() => undefined}
-              tiles={mapOptions.tiles}
+              tiles={false}
+              parallels={false}
               night={mapOptions.night}
               compact
               labels={mapLabels(t)}
