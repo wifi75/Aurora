@@ -66,7 +66,8 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
   return (
     <div className="rx-row" aria-label={t('ctl.sec.rx')}>
       <div className="cmd-chips">
-        {RX_TOGGLES.map((id) => {
+        {/* «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra */}
+        {RX_TOGGLES.filter((id) => id !== 'jt_both' || mode.toUpperCase().startsWith('JT')).map((id) => {
           const on = state[id] === true;
           const button = (
             <button
