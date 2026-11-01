@@ -1,5 +1,6 @@
 import { useT } from '../i18n';
 import { useToasts } from '../lib/toast';
+import { useToastPrefs } from '../lib/toastPrefs';
 
 const ICON = { ok: '✓', error: '!', info: 'i' } as const;
 
@@ -11,8 +12,9 @@ export function Toaster() {
   const t = useT();
   const toasts = useToasts((s) => s.toasts);
   const dismiss = useToasts((s) => s.dismiss);
+  const prefs = useToastPrefs((s) => s.prefs);
   return (
-    <div className="toaster" aria-live="polite" aria-relevant="additions">
+    <div className={`toaster toaster--${prefs.position} toaster--${prefs.size}`} aria-live="polite" aria-relevant="additions">
       {toasts.map((x) => (
         <div
           key={x.id}

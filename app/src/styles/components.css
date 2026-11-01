@@ -890,3 +890,26 @@ button.primary {
 .toast .toast-bar {
   background: #ffffff;
 }
+
+/* Messaggi toast: posizione e dimensione scelte nelle Notifiche */
+.toaster--topRight {
+  left: auto;
+  right: 1rem;
+  align-items: flex-end;
+  transform: none;
+}
+
+.toaster--bottom {
+  top: auto;
+  bottom: 3rem;
+}
+
+.toaster--small .toast {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.toaster--large .toast {
+  padding: 0.85rem 1.2rem;
+  font-size: 1.05rem;
+}

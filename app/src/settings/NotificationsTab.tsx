@@ -12,6 +12,7 @@ import { NativeNotifications } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
 import { Help } from './common';
 import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
+import { ToastGroup } from './ToastGroup';
 import { Actions, Cell, Group, Notes, Page } from './layout';
 
 /** Scheda Notifiche: con il motore proprio come nel motore (evidenziazioni, gia' lavorati, colori e marcatori); con JTDX colore, evidenziazione e suono per tipo. */
@@ -34,6 +35,7 @@ function JtdxNotificationsTab() {
 
   return (
     <Page>
+      <ToastGroup />
       <Group title={t('not2.grpAlerts')}>
         <Cell label={t('alert.button')} hint={t('tip.alert.button')}>
           <AlertSwitch

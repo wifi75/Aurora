@@ -20,6 +20,7 @@ import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page, Unavailable } from './layout';
+import { ToastGroup } from './ToastGroup';
 
 /** Il valore di una voce adesso: la modifica non ancora applicata, o quello salvato. */
 function valueOf(doc: EngineSettings, draft: Draft, key: string): string {
@@ -680,6 +681,7 @@ export function NativeNotifications() {
         <SoundsHelp />
       </Notes>
       <SoundsGroup />
+      <ToastGroup />
       <ApplyBar draft={draft} doc={doc} />
     </Page>
   );
