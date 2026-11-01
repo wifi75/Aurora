@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.64',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T17:32:44Z',
     kind: 'new',
     title: ['Scheda DXpedition con mappa', 'DXpedition card with map', 'DXpedition-Karte mit Landkarte', 'Fiche DXpédition avec carte', 'Ficha DXpedición con mapa', 'Ficha DXpedição com mapa'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.64',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T17:32:44Z',
     kind: 'changed',
     title: ['Display con zoom e menu nuovo', 'Display zoom and new menu', 'Display-Zoom und neues Menü', 'Zoom de l’affichage et nouveau menu', 'Zoom del display y menú nuevo', 'Zoom do visor e menu novo'],
     text: [
