@@ -3,7 +3,9 @@
 ## Non rilasciato
 
 ## 0.11.65 - 2026-11-01
+- **Scheda della DXpedition**: corretto il blocco della 0.11.64 (la scheda apriva una pagina vuota sopra a tutto). Ora la mappa prende centro e zoom prima di linee e punti, la scheda sta sopra a tutto e una rete di sicurezza la chiude se qualcosa va storto.
 - **DX Cluster**: il doppio clic su uno spot FT4 o FT8 cambia anche il modo, prima della frequenza (cosi' il cambio di modo non riporta la radio sulla frequenza standard).
+- **Zoom del display** il doppio di prima; **pannello QSO** con i pulsanti di trasmissione sotto la sequenza, piu' larghi e leggibili.
 
 ## 0.11.64 - 2026-11-01
 - **Scheda della DXpedition**: un clic su una DXpedition apre la scheda con la mappa (linea dal proprio QTH e riquadro ingrandito sul paese), paese, continente e zone, date, note e QSL di NG3K, distanza e direzione, ultima volta sentita e «Vai su ... kHz» dall'ultimo spot del cluster. Il core da' latitudine e longitudine del paese (`/api/v1/dxcc`, da cty.dat).

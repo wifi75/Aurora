@@ -25,8 +25,8 @@ export const NOVITA: readonly Novita[] = [
     kind: 'fixed',
     title: ['Spot FT4 dal cluster', 'FT4 spots from the cluster', 'FT4-Spots vom Cluster', 'Spots FT4 du cluster', 'Spots FT4 del cluster', 'Spots FT4 do cluster'],
     text: [
-      'Doppio clic su uno spot FT4 (o FT8) nel DX Cluster: Aurora cambia anche il modo e poi va sulla frequenza dello spot.',
-      'Double-click an FT4 (or FT8) spot in the DX Cluster: Aurora also switches mode and then tunes to the spot frequency.',
+      'Corretta la scheda della DXpedition che apriva una pagina vuota. Doppio clic su uno spot FT4 (o FT8): Aurora cambia anche il modo. Zoom del display più grande e pannello QSO più leggibile.',
+      'Fixed the DXpedition card that opened a blank page. Double-click an FT4 (or FT8) spot: Aurora also switches mode. Larger display zoom and a more readable QSO panel.',
       'Doppelklick auf einen FT4- (oder FT8-) Spot im DX-Cluster: Aurora wechselt auch die Betriebsart und geht dann auf die Spot-Frequenz.',
       'Double clic sur un spot FT4 (ou FT8) dans le DX Cluster : Aurora change aussi de mode puis va sur la fréquence du spot.',
       'Doble clic en un spot FT4 (o FT8) del DX Cluster: Aurora cambia también el modo y luego va a la frecuencia del spot.',
