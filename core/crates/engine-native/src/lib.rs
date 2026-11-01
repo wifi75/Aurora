@@ -382,7 +382,7 @@ pub fn start_with_save(
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, *start), &ft4_options, &mut hashes, &mut ft8_history);
+                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_options, &mut hashes, &mut ft8_history);
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -465,7 +465,7 @@ pub fn start_with_save(
                 }
                 let started = Instant::now();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
-                let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, slot.start_unix_ms));
+                let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 let mut decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history);
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 let other_mode = match mode {
@@ -647,8 +647,31 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
 /// Le opzioni di decodifica FT8 di questo periodo: «Modo SWL» (finestra e soglie di JTDX), «Filtro» (solo +-60 Hz attorno alla frequenza di
 /// ricezione, +-290 Hz in Hound: `nfilter` di `ft8_decode`, letto con REA in `jtdxjt9.exe`), e la parita' del periodo (sottopassate 3-11:
 /// FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei tempi, `docs/analisi-jtdx-reverse-rea.md` 7.2.3).
-fn period_options(base: &Options, controls: &rig::NativeControls, slot_start_ms: u64) -> Options {
-    let mut options = Options { swl: controls.switch_on("swl"), agc: controls.switch_on("agc"), even_period: (slot_start_ms / 15_000).is_multiple_of(2), ..base.clone() };
+/// «a7/a8» (`ap_list`, acceso di base come l'analisi a priori di WSJT-X) accende le decodifiche a liste di WSJT-X: "a7" sui seguiti
+/// dei QSO del periodo precedente della stessa parita', "a8" sul DX alla frequenza di ricezione quando DX Call e DX Grid sono
+/// noti (non in Hound, come `ncontest` 6/7 di WSJT-X). «Multithread» (`mtd`, acceso di base) usa tutti i processori: i decode
+/// sono gli stessi del singolo thread.
+fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str, slot_start_ms: u64) -> Options {
+    let threads = if controls.switch_on("mtd") { std::thread::available_parallelism().map_or(1, std::num::NonZero::get) } else { 1 };
+    let list = controls.switch_on("ap_list");
+    let view = tx::view_of(controls);
+    let a8 = (list && !controls.switch_on("hound")).then(|| ft8::a8::A8Query {
+        mycall: de_call.to_string(),
+        dxcall: view.dx.clone().unwrap_or_default(),
+        dxgrid: view.dx_grid.clone().unwrap_or_default(),
+        rx_freq_hz: controls.rx_df.load(Ordering::Relaxed) as f32,
+        threads,
+    });
+    let mut options = Options {
+        swl: controls.switch_on("swl"),
+        agc: controls.switch_on("agc"),
+        even_period: (slot_start_ms / 15_000).is_multiple_of(2),
+        a7: list,
+        a8: a8.filter(ft8::a8::A8Query::usable),
+        period_key: Some(slot_start_ms / 15_000),
+        threads,
+        ..base.clone()
+    };
     if controls.switch_on("filter") {
         let half = if controls.switch_on("hound") { 290.0 } else { 60.0 };
         let rx = controls.rx_df.load(Ordering::Relaxed) as f32;
@@ -718,19 +741,19 @@ mod tests {
         let controls = NativeControls::default();
         let base = Options::default();
         controls.rx_df.store(1500, Ordering::Relaxed);
-        let o = period_options(&base, &controls, 0);
+        let o = period_options(&base, &controls, "", 0);
         assert_eq!((o.f_low_hz, o.f_high_hz, o.swl), (base.f_low_hz, base.f_high_hz, false), "filtro spento: tutta la banda");
         controls.set_switch("filter", true);
-        let o = period_options(&base, &controls, 0);
+        let o = period_options(&base, &controls, "", 0);
         assert_eq!((o.f_low_hz, o.f_high_hz), (1440.0, 1560.0));
         controls.set_switch("hound", true);
-        let o = period_options(&base, &controls, 0);
+        let o = period_options(&base, &controls, "", 0);
         assert_eq!((o.f_low_hz, o.f_high_hz), (1210.0, 1790.0));
         // vicino al bordo la banda resta dentro quella del decodificatore
         controls.rx_df.store(300, Ordering::Relaxed);
-        assert_eq!(period_options(&base, &controls, 0).f_low_hz, base.f_low_hz);
+        assert_eq!(period_options(&base, &controls, "", 0).f_low_hz, base.f_low_hz);
         controls.set_switch("swl", true);
-        assert!(period_options(&base, &controls, 0).swl);
+        assert!(period_options(&base, &controls, "", 0).swl);
     }
 
     /// La parita' del periodo segue il tempo assoluto: alterna ogni 15 s, indipendente dalle altre opzioni.
@@ -738,10 +761,33 @@ mod tests {
     fn period_options_alternates_the_parity_every_15_seconds() {
         let controls = NativeControls::default();
         let base = Options::default();
-        assert!(period_options(&base, &controls, 0).even_period);
-        assert!(!period_options(&base, &controls, 15_000).even_period);
-        assert!(period_options(&base, &controls, 30_000).even_period);
-        assert!(!period_options(&base, &controls, 45_000).even_period);
+        assert!(period_options(&base, &controls, "", 0).even_period);
+        assert!(!period_options(&base, &controls, "", 15_000).even_period);
+        assert!(period_options(&base, &controls, "", 30_000).even_period);
+        assert!(!period_options(&base, &controls, "", 45_000).even_period);
+    }
+
+    /// «a7/a8» e «Multithread» sono accesi di base; "a8" parte solo con DX Call e DX Grid noti e non in Hound.
+    #[test]
+    fn period_options_list_decoding_and_threads() {
+        let controls = NativeControls::default();
+        let base = Options::default();
+        let o = period_options(&base, &controls, "IU3ABC", 30_000);
+        assert!(o.a7 && o.a8.is_none() && o.period_key == Some(2) && o.threads >= 1);
+        if let Ok(mut v) = controls.tx_view.lock() {
+            v.dx = Some("K1ABC".into());
+            v.dx_grid = Some("FN42".into());
+        }
+        let o = period_options(&base, &controls, "IU3ABC", 0);
+        let q = o.a8.expect("a8 con DX noto");
+        assert_eq!((q.dxcall.as_str(), q.dxgrid.as_str(), q.rx_freq_hz), ("K1ABC", "FN42", 1500.0));
+        controls.set_switch("hound", true);
+        assert!(period_options(&base, &controls, "IU3ABC", 0).a8.is_none());
+        controls.set_switch("hound", false);
+        controls.set_switch("ap_list", false);
+        controls.set_switch("mtd", false);
+        let o = period_options(&base, &controls, "IU3ABC", 0);
+        assert!(!o.a7 && o.a8.is_none() && o.threads == 1);
     }
 
     /// Il motore proprio come unico motore: i messaggi e lo stato arrivano sul bus, con paese ed etichetta.

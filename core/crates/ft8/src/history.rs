@@ -53,6 +53,8 @@ struct Parity {
 pub struct PeriodHistory {
     even: Parity,
     odd: Parity,
+    /// La tabella dei decode per la decodifica "a7" ([`crate::a7`]).
+    pub a7: crate::a7::A7Table,
 }
 
 impl PeriodHistory {

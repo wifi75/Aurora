@@ -56,6 +56,10 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("answer_all"),
     // «JT65+JT9»: in uno dei due modi JT si decodifica nello stesso minuto anche l'altro (la trasmissione resta nel modo scelto)
     own_toggle("jt_both"),
+    // «a7/a8»: decodifiche a liste di WSJT-X in FT8 (seguiti dei QSO del periodo precedente, DX alla frequenza di ricezione)
+    own_toggle("ap_list"),
+    // «Multithread»: la decodifica FT8 su tutti i processori (stessi decode del singolo thread)
+    own_toggle("mtd"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
