@@ -1,6 +1,12 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`. Qui solo lo stato a colpo d'occhio (2026-10-26, v0.11.25).
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-01, v0.11.58.
+
+## Aperti (2026-11-01)
+- [ ] Riordino del menu Impostazioni (gruppi per funzione, pagina Servizi di log, via Avanzate, errori di salvataggio col nome del campo): in lavorazione
+- [ ] Hound automatico, etichetta FOX, Tx sopra 1000 Hz e Salta Tx1 disattivato in Hound: in lavorazione
+- [ ] Lavori grandi da WSJT-X 3: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza approvata `docs/mockup-fox.html`)
+- [ ] Prove dal vivo del proprietario: a7/a8, stop per ROS, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, display Yaesu/Icom, barre Rx/Tx
 
 ## Fatto
 - [x] Fase 0: spike su JTDX (H1, H2, H5 confermate dal vivo)
