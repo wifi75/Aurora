@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.66 - 2026-11-01
+- **Zoom del display come una lente**: passando il mouse si apre una copia identica del display ingrandita 2 volte in larghezza e in altezza (CSS `zoom`), invece di una versione solo allargata e stirata.
+
 ## 0.11.65 - 2026-11-01
 - **Scheda della DXpedition**: corretto il blocco della 0.11.64 (la scheda apriva una pagina vuota sopra a tutto). Ora la mappa prende centro e zoom prima di linee e punti, la scheda sta sopra a tutto e una rete di sicurezza la chiude se qualcosa va storto.
 - **DX Cluster**: il doppio clic su uno spot FT4 o FT8 cambia anche il modo, prima della frequenza (cosi' il cambio di modo non riporta la radio sulla frequenza standard).
