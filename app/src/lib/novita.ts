@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.54',
-    released: '2026-11-01T13:00:00Z',
+    released: '2026-11-01T10:55:52Z',
     kind: 'new',
     title: ['Dedicato ad Aura', 'Dedicated to Aura', 'Für Aura', 'Dédié à Aura', 'Dedicado a Aura', 'Dedicado à Aura'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.54',
-    released: '2026-11-01T13:00:00Z',
+    released: '2026-11-01T10:55:52Z',
     kind: 'new',
     title: ['Esporta ADIF: scegli QSO e cartella', 'ADIF export: pick QSOs and folder', 'ADIF-Export: QSOs und Ordner wählen', 'Export ADIF : choisis QSO et dossier', 'Exportar ADIF: elige QSO y carpeta', 'Exportar ADIF: escolhe QSO e pasta'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.54',
-    released: '2026-11-01T13:00:00Z',
+    released: '2026-11-01T10:55:52Z',
     kind: 'new',
     title: ['Invio diretto a Wavelog, ClubLog, QRZ e LoTW', 'Direct upload to Wavelog, ClubLog, QRZ and LoTW', 'Direkter Upload zu Wavelog, ClubLog, QRZ und LoTW', 'Envoi direct vers Wavelog, ClubLog, QRZ et LoTW', 'Envío directo a Wavelog, ClubLog, QRZ y LoTW', 'Envio direto para Wavelog, ClubLog, QRZ e LoTW'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.54',
-    released: '2026-11-01T13:00:00Z',
+    released: '2026-11-01T10:55:52Z',
     kind: 'new',
     title: ['Integrazioni UDP con più programmi', 'UDP integrations with several programs', 'UDP-Integration mit mehreren Programmen', 'Intégrations UDP avec plusieurs programmes', 'Integraciones UDP con varios programas', 'Integrações UDP com vários programas'],
     text: [
