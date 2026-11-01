@@ -8,8 +8,9 @@ import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
-const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_all', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period', 'wait_call', 'pounce'];
-const SENDING: ControlId[] = ['auto_tx', 'enable_tx'];
+// sinistra: come si svolge il QSO, due colonne; destra: tutto cio' che fa trasmettere, in colonna (proposta 2 scelta dal proprietario)
+const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_all', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period'];
+const SENDING: ControlId[] = ['enable_tx', 'auto_tx', 'wait_call', 'pounce'];
 /** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
 const ARMING: ControlId[] = ['auto_tx', 'enable_tx', 'wait_call', 'pounce'];
 
@@ -77,10 +78,16 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   return (
     <section className="cmd-sec tx-block" aria-label={t('ctl.sec.qso')}>
       <h3 className="cmd-title">{t('ctl.sec.qso')}</h3>
-      <p className="qso-group">{t('ctl.grp.seq')}</p>
-      <div className="cmd-chips">{chips(SEQUENCE)}</div>
-      <p className="qso-group">{t('ctl.grp.tx')}</p>
-      <div className="cmd-chips">{chips(SENDING)}</div>
+      <div className="qso-cols">
+        <div className="qso-col">
+          <p className="qso-group">{t('ctl.grp.seq')}</p>
+          <div className="qso-grid qso-grid--two">{chips(SEQUENCE)}</div>
+        </div>
+        <div className="qso-col">
+          <p className="qso-group">{t('ctl.grp.tx')}</p>
+          <div className="qso-grid">{chips(SENDING)}</div>
+        </div>
+      </div>
       {!reachable ? <p className="muted tx-note">{t('ctl.unavailable')}</p> : null}
       {note ? <p className="live-note" role="status">{note}</p> : null}
     </section>

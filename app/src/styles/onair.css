@@ -5447,3 +5447,39 @@
   border-color: #ff7a05;
   color: #ff7a05;
 }
+
+/* Pannello QSO (proposta 2): sequenza in due colonne a sinistra, pulsanti che fanno trasmettere in colonna a destra; pulsanti tutti uguali */
+.qso-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.qso-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.3rem;
+}
+
+.qso-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.qso-grid .chip {
+  box-sizing: border-box;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 1.8rem;
+  padding: 0 0.4rem;
+  overflow: hidden;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@container (max-width: 22rem) {
+  .qso-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -22,6 +22,9 @@ export function flagCode(country: string | null | undefined): string | null {
   if (!country) return null;
   const exact = FLAG_TABLE[country];
   if (exact) return exact;
-  if (!byKey) byKey = new Map(Object.entries(FLAG_TABLE).map(([name, code]) => [countryKey(name), code]));
+  if (!byKey) {
+    byKey = new Map();
+    for (const [name, code] of Object.entries(FLAG_TABLE)) if (code) byKey.set(countryKey(name), code);
+  }
   return byKey.get(countryKey(country)) ?? null;
 }
