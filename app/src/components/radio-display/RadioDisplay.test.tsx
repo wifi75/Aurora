@@ -114,17 +114,18 @@ describe('RadioDisplayHeader', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('opens no popup: neither a click nor the mouse over it shows anything more', () => {
+  it('opens a larger copy when the mouse rests on it and closes it when the mouse leaves', () => {
     vi.useFakeTimers();
     act(() => useStation.setState({ status }));
     const { container } = render(<RadioDisplayHeader />, { wrapper });
     const root = container.firstElementChild as HTMLElement;
-    expect(screen.queryByRole('button')).toBeNull();
-    fireEvent.mouseEnter(root);
-    fireEvent.click(root);
-    act(() => void vi.advanceTimersByTime(500));
     expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
-    expect(container.querySelectorAll('svg')).toHaveLength(1);
+    fireEvent.mouseEnter(root);
+    act(() => void vi.advanceTimersByTime(300));
+    expect(screen.getByRole('group', { name: 'Display della radio ingrandito' })).toBeInTheDocument();
+    fireEvent.mouseLeave(root);
+    act(() => void vi.advanceTimersByTime(400));
+    expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
   });
 
   it('shows the single FT-2000 panel with clickable indicators in place of the two blocks', () => {

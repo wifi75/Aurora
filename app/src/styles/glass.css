@@ -995,3 +995,38 @@ button.glass.chip.chip--main {
 .lang-trigger {
   gap: 0.3rem;
 }
+
+/* Menu in alto (proposta 3): solo testo, niente bordi ne' sfondi; la pagina scelta sottolineata con i colori dell'aurora */
+.app-nav {
+  gap: 0.15rem;
+  align-items: stretch;
+}
+
+.app-nav a,
+.app-nav a.glass,
+.app-nav a.glass--on {
+  padding: 0.35rem 0.6rem 0.2rem;
+  color: var(--muted, #5b6b80);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.app-nav a:hover {
+  color: var(--text, #1b2430);
+}
+
+.app-nav a.glass--on,
+.app-nav a[aria-current='page'] {
+  color: var(--text, #1b2430);
+  font-weight: 700;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #20c997, #8e7bff, #ff5d8a) 1;
+}
