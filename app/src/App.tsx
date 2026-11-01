@@ -108,7 +108,8 @@ export function App() {
           <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
           <a className={`glass${route.name === 'map' ? ' glass--on' : ''}`} aria-current={route.name === 'map' ? 'page' : undefined} href="#/mappa">{t('nav.map')}</a>
-          <a className={`glass${route.name === 'history' ? ' glass--on' : ''}`} aria-current={route.name === 'history' ? 'page' : undefined} href="#/storico">{t('nav.history')}</a>
+          {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}
+          <a className={`glass${route.name === 'export' ? ' glass--on' : ''}`} aria-current={route.name === 'export' ? 'page' : undefined} href="#/esporta">{t('nav.log')}</a>
           <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
