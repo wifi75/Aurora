@@ -154,3 +154,10 @@ Stato al 2026-11-01, versione 0.11.67. Per riprendere il lavoro leggi anche `doc
 - **Elenco dei lavori**: `docs/tasks.md` (WSJT-X 3.x) e `TODO.md`. Bozza approvata della pagina Fox: `docs/mockup-fox.html`.
 - **Regole che contano**: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero (nello screenshot del sito e' nascosto); compilare l'installatore da solo (antivirus escluso su `D:\progetti` e `D:build`); giro di commit ogni 30 minuti; il proprietario fa le prove dal vivo.
 
+## Sessione del 2026-11-01 sera (0.11.61-0.11.67)
+- **Riferimento**: si parte sempre da WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`); cio' che WSJT-X 3.3 non ha non si aggiunge (per questo «Sinc» di JTDX e' tolto). Casi verificati nel sorgente: R+rapporto dopo il nostro Tx1 chiude con RR73 (`DecodedMessageReaction.cpp` 626-632, `history.rs`); in Hound il Tx1 non si salta (`elide_tx1_not_allowed`).
+- **Pannello Comandi** allineato a WSJT-X 3.3 (DX Call/Locatore, Lookup, rapporto, Hold Tx Freq, tipo di CQ, Tune e Log QSO a scelta) con le API `/api/v1/commands/dx|report|tune|log-qso` e l'interruttore `hold_tx`. Tune passa dal trasmettitore normale.
+- **Colori del pannello QSO** (scelta del proprietario): acceso viola pieno, Abilita Tx e AutoTX accesi rossi, periodo Tx ambra.
+- **Display**: zoom = lente (CSS `zoom: 2` sulla copia identica), non una versione allargata.
+- **Scheda DXpedition**: usa `WorldMap` della Propagazione; coordinate del paese da `cty.dat` (`/api/v1/dxcc` con `lat`/`lon`). Nella 0.11.64 la mappa disegnata a mano svuotava la pagina: le finestre sopra a tutto vanno in `createPortal` con una rete di sicurezza (error boundary).
+- **Anteprime**: quando il proprietario chiede di vedere prima di pubblicare, una pagina di prova temporanea in `app/` (non salvata) con i dati finti mostra il componente nel browser; l'interfaccia di sviluppo vera chiede l'associazione del dispositivo.
