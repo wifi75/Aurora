@@ -88,7 +88,7 @@ describe('ClusterPanel', () => {
   it('highlights the spots of DXpeditions on the air in the NG3K calendar', async () => {
     vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(2, 'JA1ABC', '20m', 'FT8', 'Japan'), spot(1, 'K1ABC', '40m', 'CW', 'United States')] });
     show();
-    expect(await screen.findByText('DXped')).toBeInTheDocument();
+    expect(await screen.findByText('★')).toBeInTheDocument();
     expect(screen.getByText('JA1ABC').closest('tr')).toHaveClass('cluster-row--dxped');
     expect(screen.getByText('K1ABC').closest('tr')).not.toHaveClass('cluster-row--dxped');
   });

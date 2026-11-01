@@ -164,8 +164,13 @@ export function ClusterPanel() {
                     <span className="cluster-freq data">{formatKhzWhole(s.freq_khz)}</span>
                   </td>
                   <td>
+                    {/* la riga e' gia' colorata: davanti al nominativo basta una stella, che non toglie spazio al nominativo */}
+                    {dxped ? (
+                      <span className="cluster-dxped-tag" title={t('tip.cluster.dxped')} aria-label={t('tip.cluster.dxped')}>
+                        ★
+                      </span>
+                    ) : null}
                     <strong className="data cluster-dx">{s.dx_call}</strong>
-                    {dxped ? <span className="cluster-dxped-tag" title={t('tip.cluster.dxped')}>DXped</span> : null}
                   </td>
                   <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>
                   <td className="cluster-country">{s.country ?? ''}</td>
