@@ -25,6 +25,7 @@ import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
+import { ExportPage } from './pages/ExportPage';
 import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
@@ -89,6 +90,8 @@ export function App() {
     content = <Wiki />;
   } else if (route.name === 'news') {
     content = <News />;
+  } else if (route.name === 'export') {
+    content = <ExportPage />;
   } else {
     content = <Live />;
   }

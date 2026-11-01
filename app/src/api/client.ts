@@ -914,13 +914,61 @@ export async function importLog(file: Blob): Promise<LogImportResult> {
   return (await (await request('/log/import', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: file })).json()) as LogImportResult;
 }
 
-/** L'indirizzo da cui si scarica il log interno come file ADIF (`from` e `to` come `AAAA-MM-GG`, facoltativi). */
-export function logExportUrl(from?: string, to?: string): string {
+/** I numeri dei QSO in forma corta, a intervalli: `[1,2,3,7,9,10]` -> `1-3,7,9-10` (l'indirizzo resta corto anche con migliaia di QSO). */
+export function compactIds(ids: Iterable<number>): string {
+  const sorted = [...new Set(ids)].sort((a, b) => a - b);
+  const parts: string[] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j]! + 1) j++;
+    parts.push(i === j ? `${sorted[i]}` : `${sorted[i]}-${sorted[j]}`);
+    i = j + 1;
+  }
+  return parts.join(',');
+}
+
+/** L'indirizzo da cui si scarica il log interno come file ADIF (`from` e `to` come `AAAA-MM-GG`, facoltativi; `ids` = solo quei QSO). */
+export function logExportUrl(from?: string, to?: string, ids?: Iterable<number>): string {
   const p = new URLSearchParams();
   if (from) p.set('from', from);
   if (to) p.set('to', to);
+  if (ids) p.set('ids', compactIds(ids));
   const q = p.toString();
   return `${BASE}/log/export.adi${q ? `?${q}` : ''}`;
+}
+
+/** Un QSO del log interno, per la pagina di esportazione. `date` e' `AAAA-MM-GG`, `time` `HH:MM:SS` (UTC). */
+export interface LogQso {
+  id: number;
+  date: string;
+  time: string;
+  call: string;
+  band: string;
+  mode: string;
+  freq_hz: number;
+  rst_sent: string;
+  rst_rcvd: string;
+  grid: string;
+  country: string;
+}
+
+export interface LogQsos {
+  total: number;
+  qsos: LogQso[];
+  /** Vero se da qui «Salva ADIF…» apre la finestra di Windows (programma Windows, dal PC stesso). */
+  save_dialog: boolean;
+}
+
+export async function getLogQsos(): Promise<LogQsos> {
+  return (await (await request('/log/qsos')).json()) as LogQsos;
+}
+
+export type LogSaveResult = { ok: true; cancelled: true } | { ok: true; cancelled: false; path: string; count: number };
+
+/** Salva i QSO scelti (o tutti) con la finestra «Salva con nome» del programma Windows. */
+export async function saveLogAdif(choice: { ids: number[] } | { all: true }): Promise<LogSaveResult> {
+  return (await (await request('/log/export-save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(choice) })).json()) as LogSaveResult;
 }
 
 export async function getStats(): Promise<StatsResponse> {

@@ -4,6 +4,7 @@
 mod health;
 mod installer;
 mod links;
+mod save_dialog;
 mod settings;
 mod window_state;
 
@@ -133,6 +134,7 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
 
     let started = settings::config_from(&values).map_err(|e| e.to_string()).and_then(|mut config| {
         config.update_installer = Some(aurora::UpdateInstallerHandle(installer.clone()));
+        config.save_dialog = Some(aurora::SaveDialogHandle(save_dialog::dialog(handle.clone())));
         let (tx, rx) = oneshot::channel::<()>();
         let server = tauri::async_runtime::block_on(aurora::run(config, async move {
             let _ = rx.await;

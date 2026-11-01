@@ -58,6 +58,25 @@ pub struct ImportReport {
     pub skipped: usize,
 }
 
+/// Un QSO del log interno com'e' salvato, con il suo numero: per l'elenco della pagina di esportazione.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct LogEntry {
+    pub id: i64,
+    /// `AAAAMMGG` (UTC, inizio del QSO).
+    pub date: String,
+    /// `HHMMSS` (UTC, inizio del QSO).
+    pub time: String,
+    pub call: String,
+    /// In minuscolo, come nell'ADIF (`20m`).
+    pub band: String,
+    /// In maiuscolo (`FT8`).
+    pub mode: String,
+    pub freq_hz: u64,
+    pub rst_sent: String,
+    pub rst_rcvd: String,
+    pub grid: String,
+}
+
 pub struct Logbook {
     conn: Mutex<Connection>,
 }
@@ -211,15 +230,46 @@ impl Logbook {
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
+    /// Tutti i QSO del log interno, dal piu' recente, con il loro numero (`id`): la pagina di esportazione li elenca e sceglie quali salvare.
+    pub fn entries(&self) -> Result<Vec<LogEntry>, LogError> {
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid FROM qso ORDER BY date DESC, time_on DESC, id DESC",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok(LogEntry {
+                id: r.get(0)?,
+                date: r.get(1)?,
+                time: r.get(2)?,
+                call: r.get(3)?,
+                band: r.get::<_, String>(4)?.to_lowercase(),
+                mode: r.get::<_, String>(5)?.to_uppercase(),
+                freq_hz: r.get::<_, i64>(6)?.max(0) as u64,
+                rst_sent: r.get(7)?,
+                rst_rcvd: r.get(8)?,
+                grid: r.get(9)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
     /// Il log come file ADIF di JTDX (`wsjtx_log.adi`: stesse righe di `jtdx_file_record`, CR LF), con i QSO tra due date (`AAAAMMGG`, estremi
     /// compresi; `None` = senza limite). Ritorna il testo e quanti QSO contiene.
     pub fn export_jtdx_adif(&self, station: &adif::Station, from: Option<&str>, to: Option<&str>) -> Result<(String, usize), LogError> {
+        self.export_jtdx_adif_selected(station, from, to, None)
+    }
+
+    /// Come `export_jtdx_adif`, ma con i soli QSO il cui numero (`id`, quello di `entries`) e' in `ids` (`None` = tutti). Un numero che
+    /// non c'e' nel log si ignora.
+    pub fn export_jtdx_adif_selected(&self, station: &adif::Station, from: Option<&str>, to: Option<&str>, ids: Option<&[i64]>) -> Result<(String, usize), LogError> {
+        let wanted: Option<std::collections::HashSet<i64>> = ids.map(|ids| ids.iter().copied().collect());
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
-            "SELECT call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, date, time_on, date_off, time_off FROM qso
+            "SELECT call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, date, time_on, date_off, time_off, id FROM qso
              WHERE (?1 = '' OR date >= ?1) AND (?2 = '' OR date <= ?2) ORDER BY date, time_on, id",
         )?;
         let rows = stmt.query_map(params![from.unwrap_or(""), to.unwrap_or("")], |r| {
+            let id: i64 = r.get(11)?;
             let (date, time_on, date_off, time_off): (String, String, String, String) = (r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?);
             let on = unix_ms(&date, &time_on).unwrap_or(0);
             let off = unix_ms(if date_off.is_empty() { &date } else { &date_off }, if time_off.is_empty() { &time_on } else { &time_off }).unwrap_or(on);
@@ -238,12 +288,16 @@ impl Logbook {
                     ..Default::default()
                 },
                 date,
+                id,
             ))
         })?;
         let mut out = String::from(adif::JTDX_FILE_HEADER);
         let mut count = 0;
         for row in rows {
-            let (q, date) = row?;
+            let (q, date, id) = row?;
+            if wanted.as_ref().is_some_and(|w| !w.contains(&id)) {
+                continue;
+            }
             out.push_str(&adif::jtdx_file_record(&q, station, &date));
             count += 1;
         }

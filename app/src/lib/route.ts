@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' };
+export type Route = { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
 
-/** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida e novita'. Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
+/** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
   const match = /^#\/pair(?:\/(.*))?$/.exec(hash);
   if (match) return { name: 'pair', code: (match[1] ?? '').replace(/\D/g, '') };
@@ -15,6 +15,7 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/propagazione') return { name: 'propagation' };
   if (hash === '#/guida') return { name: 'guide' };
   if (hash === '#/novita') return { name: 'news' };
+  if (hash === '#/esporta') return { name: 'export' };
   return { name: 'live' };
 }
 

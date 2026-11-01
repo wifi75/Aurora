@@ -1,14 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { ApiError, importLog, logExportUrl } from '../api/client';
+import { ApiError, importLog } from '../api/client';
 import { useT } from '../i18n';
 
-/** Esporta il log interno come file ADIF (con un intervallo di date facoltativo) e ci importa un file ADIF senza doppioni. */
+/** Porta alla pagina di esportazione del log interno (`#/esporta`) e ci importa un file ADIF senza doppioni. */
 export function LogTransfer() {
   const t = useT();
   const client = useQueryClient();
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement | null>(null);
@@ -37,15 +35,7 @@ export function LogTransfer() {
     <div className="log-transfer">
       <p className="muted settings-hint">{t('logio.intro')}</p>
       <div className="log-transfer-row">
-        <label>
-          {t('logio.from')}
-          <input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label>
-          {t('logio.to')}
-          <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
-        </label>
-        <a className="glass log-transfer-button" href={logExportUrl(from, to)} download="aurora_log.adi" title={t('logio.export.tip')}>
+        <a className="glass log-transfer-button" href="#/esporta" title={t('logio.export.tip')}>
           {t('logio.export')}
         </a>
       </div>

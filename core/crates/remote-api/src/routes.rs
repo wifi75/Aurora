@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -65,7 +65,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/station-info", get(station_info))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/dxcc-matrix", get(dxcc_matrix))
+        .route("/api/v1/log/qsos", get(log_qsos))
         .route("/api/v1/log/export.adi", get(log_export))
+        .route("/api/v1/log/export-save", post(log_export_save))
         .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
@@ -1509,6 +1511,7 @@ async fn dxcc_matrix(State(state): State<AppState>, _: Authed, axum::extract::Qu
 struct ExportParams {
     from: Option<String>,
     to: Option<String>,
+    ids: Option<String>,
 }
 
 /// `AAAAMMGG` o `AAAA-MM-GG` -> `AAAAMMGG`; vuoto = nessun limite; altro = `None` (data non valida).
@@ -1519,11 +1522,9 @@ fn adif_date(v: Option<&str>) -> Option<Option<String>> {
     (digits.len() == 8 && aurora_core::adif::unix_ms(&digits, "").is_some()).then_some(Some(digits))
 }
 
-/// Il log interno come file ADIF nel formato di JTDX (`wsjtx_log.adi`), con i QSO tra le date `from` e `to` (estremi compresi, `AAAAMMGG`
-/// o `AAAA-MM-GG`, facoltative). Risponde con un allegato `aurora_log.adi` e `x-aurora-qsos` con il numero di QSO.
-#[utoipa::path(get, path = "/api/v1/log/export.adi", responses((status = 200, description = "File ADIF come allegato"), (status = 400, description = "Data non valida o intervallo rovesciato (bad_range)"), (status = 502, description = "Log non leggibile (log_read)")))]
-async fn log_export(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<ExportParams>) -> Result<Response, ApiError> {
-    let (Some(from), Some(to)) = (adif_date(p.from.as_deref()), adif_date(p.to.as_deref())) else {
+/// Le date `from` e `to` dell'esportazione, controllate: valide e non rovesciate (`bad_range`).
+fn export_range(from: Option<&str>, to: Option<&str>) -> Result<(Option<String>, Option<String>), ApiError> {
+    let (Some(from), Some(to)) = (adif_date(from), adif_date(to)) else {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_range"));
     };
     if let (Some(f), Some(t)) = (&from, &to)
@@ -1531,15 +1532,114 @@ async fn log_export(State(state): State<AppState>, _: Authed, axum::extract::Que
     {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_range"));
     }
+    Ok((from, to))
+}
+
+/// Quanti numeri di QSO puo' indicare al massimo una richiesta (un log lungo anni ne ha decine di migliaia).
+const MAX_EXPORT_IDS: usize = 1_000_000;
+
+/// `ids=3,7,10-25`: i numeri dei QSO da esportare, anche a intervalli; assente o vuoto = tutti (`None`). Altro: `bad_ids`.
+fn export_ids(v: Option<&str>) -> Result<Option<Vec<i64>>, ApiError> {
+    let bad = || ApiError::new(StatusCode::BAD_REQUEST, "bad_ids");
+    let Some(v) = v.map(str::trim).filter(|v| !v.is_empty()) else { return Ok(None) };
+    let mut ids: Vec<i64> = Vec::new();
+    for part in v.split(',').map(str::trim).filter(|p| !p.is_empty()) {
+        let (a, b) = match part.split_once('-') {
+            Some((a, b)) => (a.trim().parse::<i64>().map_err(|_| bad())?, b.trim().parse::<i64>().map_err(|_| bad())?),
+            None => {
+                let n = part.parse::<i64>().map_err(|_| bad())?;
+                (n, n)
+            }
+        };
+        // un intervallo rovesciato o troppo lungo non e' una scelta fatta dalla pagina
+        let room = MAX_EXPORT_IDS.saturating_sub(ids.len()) as u64;
+        if a > b || b.abs_diff(a) >= room {
+            return Err(bad());
+        }
+        ids.extend(a..=b);
+    }
+    Ok(Some(ids))
+}
+
+/// Il testo ADIF (formato di JTDX) dei QSO scelti, letto fuori dal thread asincrono.
+async fn export_text(state: &AppState, from: Option<String>, to: Option<String>, ids: Option<Vec<i64>>) -> Result<(String, usize), ApiError> {
     let station = state.log_station.as_ref().map(|s| s()).unwrap_or_default();
     let book = state.logbook.clone();
-    let (text, count) = tokio::task::spawn_blocking(move || book.export_jtdx_adif(&station, from.as_deref(), to.as_deref()))
+    tokio::task::spawn_blocking(move || book.export_jtdx_adif_selected(&station, from.as_deref(), to.as_deref(), ids.as_deref()))
         .await
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
         .map_err(|e| {
             tracing::warn!("log non esportato: {e}");
             ApiError::new(StatusCode::BAD_GATEWAY, "log_read")
-        })?;
+        })
+}
+
+/// `AAAAMMGG` -> `AAAA-MM-GG` (cio' che non ha la forma attesa resta com'e').
+fn shown_date(d: &str) -> String {
+    match (d.len(), d.get(0..4), d.get(4..6), d.get(6..8)) {
+        (8, Some(y), Some(m), Some(g)) => format!("{y}-{m}-{g}"),
+        _ => d.to_string(),
+    }
+}
+
+/// `HHMMSS` -> `HH:MM:SS` (senza secondi: `:00`).
+fn shown_time(t: &str) -> String {
+    match (t.get(0..2), t.get(2..4)) {
+        (Some(h), Some(m)) => format!("{h}:{m}:{}", t.get(4..6).unwrap_or("00")),
+        _ => t.to_string(),
+    }
+}
+
+/// La richiesta arriva da questo stesso PC (loopback, non da un proxy): solo qui si apre una finestra del programma.
+fn from_this_pc(peer: Option<SocketAddr>, headers: &HeaderMap) -> bool {
+    peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(headers)
+}
+
+/// Tutti i QSO del log interno, dal piu' recente: `{total, qsos: [{id, date, time, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid,
+/// country}], save_dialog}`. `country` viene dal database DXCC (vuoto se manca); `save_dialog` dice se da qui si puo' usare
+/// `POST /api/v1/log/export-save` (programma Windows, richiesta dal PC stesso).
+#[utoipa::path(get, path = "/api/v1/log/qsos", responses((status = 200, description = "{total, qsos, save_dialog}"), (status = 502, description = "Log non leggibile (log_read)")))]
+async fn log_qsos(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let book = state.logbook.clone();
+    let dxcc = state.dxcc.clone();
+    let rows = tokio::task::spawn_blocking(move || -> Result<Vec<Value>, logbook::LogError> {
+        // un paese per nominativo: chi e' a log molte volte si cerca una volta sola
+        let mut countries: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut country_of = |call: &str| -> String {
+            let Some(lookup) = &dxcc else { return String::new() };
+            countries
+                .entry(call.to_string())
+                .or_insert_with(|| lookup(call).and_then(|v| v.get("country").and_then(Value::as_str).map(str::to_string)).unwrap_or_default())
+                .clone()
+        };
+        Ok(book
+            .entries()?
+            .into_iter()
+            .map(|e| {
+                let country = country_of(&e.call);
+                json!({ "id": e.id, "date": shown_date(&e.date), "time": shown_time(&e.time), "call": e.call, "band": e.band, "mode": e.mode,
+                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country })
+            })
+            .collect())
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+    .map_err(|e| {
+        tracing::warn!("log non letto: {e}");
+        ApiError::new(StatusCode::BAD_GATEWAY, "log_read")
+    })?;
+    let save_dialog = state.save_dialog.is_some() && from_this_pc(peer, &headers);
+    Ok(Json(json!({ "total": rows.len(), "qsos": rows, "save_dialog": save_dialog })))
+}
+
+/// Il log interno come file ADIF nel formato di JTDX (`wsjtx_log.adi`), con i QSO tra le date `from` e `to` (estremi compresi, `AAAAMMGG`
+/// o `AAAA-MM-GG`, facoltative) e, con `ids` (`3,7,10-25`), solo quei QSO. Risponde con un allegato `aurora_log.adi` e `x-aurora-qsos`
+/// con il numero di QSO.
+#[utoipa::path(get, path = "/api/v1/log/export.adi", responses((status = 200, description = "File ADIF come allegato"), (status = 400, description = "Data non valida o intervallo rovesciato (bad_range), numeri dei QSO non validi (bad_ids)"), (status = 502, description = "Log non leggibile (log_read)")))]
+async fn log_export(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<ExportParams>) -> Result<Response, ApiError> {
+    let (from, to) = export_range(p.from.as_deref(), p.to.as_deref())?;
+    let ids = export_ids(p.ids.as_deref())?;
+    let (text, count) = export_text(&state, from, to, ids).await?;
     let mut resp = text.into_response();
     let h = resp.headers_mut();
     h.insert(header::CONTENT_TYPE, HeaderValue::from_static("text/plain; charset=utf-8"));
@@ -1548,6 +1648,79 @@ async fn log_export(State(state): State<AppState>, _: Authed, axum::extract::Que
         h.insert("x-aurora-qsos", v);
     }
     Ok(resp)
+}
+
+#[derive(Deserialize, Default)]
+struct ExportSaveBody {
+    /// I numeri dei QSO da salvare (quelli di `GET /api/v1/log/qsos`).
+    #[serde(default)]
+    ids: Option<Vec<i64>>,
+    /// Tutti i QSO (tra le date, se ci sono): `ids` non conta.
+    #[serde(default)]
+    all: bool,
+    from: Option<String>,
+    to: Option<String>,
+}
+
+/// Toglie il segno «finestra aperta» anche se la richiesta si interrompe a meta'.
+struct SaveOpen(std::sync::Arc<std::sync::atomic::AtomicBool>);
+
+impl Drop for SaveOpen {
+    fn drop(&mut self) {
+        self.0.store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+/// Salva i QSO scelti come file ADIF dove vuole l'operatore: apre la finestra «Salva con nome» del programma Windows (nome proposto
+/// `aurora_log_AAAAMMGG.adi`, filtro `*.adi`) e scrive il file. Solo dal PC stesso. Risponde `{ok, cancelled, path, count}`.
+#[utoipa::path(post, path = "/api/v1/log/export-save", responses((status = 200, description = "{ok, cancelled, path, count}: salvato o annullato"), (status = 400, description = "Nessun QSO scelto (no_selection), nessun QSO da salvare (empty_export), date non valide (bad_range)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Finestra non disponibile fuori dal programma Windows (save_unavailable)"), (status = 409, description = "Finestra gia' aperta (save_busy)"), (status = 500, description = "File non scritto (write_failed)")))]
+async fn log_export_save(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<ExportSaveBody>) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let dialog = state.save_dialog.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "save_unavailable"))?;
+    let (from, to) = export_range(body.from.as_deref(), body.to.as_deref())?;
+    let ids = if body.all {
+        None
+    } else {
+        match body.ids {
+            Some(ids) if !ids.is_empty() => Some(ids),
+            _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "no_selection")),
+        }
+    };
+    let (text, count) = export_text(&state, from, to, ids).await?;
+    if count == 0 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "empty_export"));
+    }
+    if state.save_open.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "save_busy"));
+    }
+    let open = SaveOpen(std::sync::Arc::clone(&state.save_open));
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let name = format!("aurora_log_{}.adi", logbook::adif::utc_date(now));
+    let written = tokio::task::spawn_blocking(move || -> Result<Option<std::path::PathBuf>, String> {
+        let _open = open;
+        let Some(mut path) = dialog(&name) else { return Ok(None) };
+        // senza estensione il file diventa `.adi`, come dice il filtro della finestra
+        if path.extension().is_none() {
+            path.set_extension("adi");
+        }
+        std::fs::write(&path, text.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
+        Ok(Some(path))
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+    .map_err(|e| {
+        tracing::warn!("log ADIF non salvato: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "write_failed").with_message(e)
+    })?;
+    Ok(Json(match written {
+        Some(path) => {
+            tracing::info!("log ADIF salvato: {count} QSO in {}", path.display());
+            json!({ "ok": true, "cancelled": false, "path": path.display().to_string(), "count": count })
+        }
+        None => json!({ "ok": true, "cancelled": true }),
+    }))
 }
 
 /// Aggiunge al log interno i QSO di un file ADIF (corpo della richiesta, per esempio il `wsjtx_log.adi` di JTDX), senza doppioni.

@@ -15,7 +15,6 @@ vi.mock('../api/client', () => {
   return {
     ApiError,
     importLog: vi.fn(),
-    logExportUrl: (from?: string, to?: string) => `/api/v1/log/export.adi?from=${from ?? ''}&to=${to ?? ''}`,
   };
 });
 import { ApiError, importLog } from '../api/client';
@@ -34,13 +33,9 @@ beforeEach(() => {
 });
 
 describe('LogTransfer', () => {
-  it('points the download to the export route with the chosen dates', async () => {
+  it('sends the export to the export page', () => {
     show();
-    const link = screen.getByRole('link', { name: 'Scarica ADIF' });
-    expect(link).toHaveAttribute('download', 'aurora_log.adi');
-    await userEvent.type(screen.getByLabelText('Dal'), '2026-10-01');
-    await userEvent.type(screen.getByLabelText('Al'), '2026-10-31');
-    expect(link.getAttribute('href')).toBe('/api/v1/log/export.adi?from=2026-10-01&to=2026-10-31');
+    expect(screen.getByRole('link', { name: 'Esporta ADIF' })).toHaveAttribute('href', '#/esporta');
   });
 
   it('imports the chosen file and tells what happened', async () => {
