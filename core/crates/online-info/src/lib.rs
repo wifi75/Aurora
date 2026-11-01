@@ -2,12 +2,14 @@
 //!
 //! - **PSK Reporter** (`pskreporter.info`): chi ha ricevuto il proprio nominativo. Il sito vede il nominativo e l'indirizzo IP.
 //! - **hamqsl.com**: condizioni di propagazione. Il sito vede solo l'indirizzo IP.
+//! - **NG3K** (`ng3k.com`): il calendario delle DXpedition annunciate. Il sito vede solo l'indirizzo IP.
 //!
 //! Sono richieste di sola lettura, rare (PSK Reporter chiede di non insistere: al massimo una ogni 5 minuti, qui anche meno) e
 //! nulla di cio' che Aurora riceve o trasmette viene inviato: non si mandano spot ne' messaggi.
 
 mod xml;
 
+pub mod dxped;
 pub mod psk;
 pub mod solar;
 
@@ -19,6 +21,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+pub use dxped::Dxpedition;
 pub use psk::Report;
 pub use solar::Solar;
 
@@ -26,6 +29,8 @@ pub use solar::Solar;
 pub const PSK_EVERY_MS: u64 = 5 * 60_000;
 /// Ogni quanto si chiede la propagazione: il servizio la aggiorna ogni qualche ora.
 pub const SOLAR_EVERY_MS: u64 = 30 * 60_000;
+/// Ogni quanto si chiede il calendario delle DXpedition: cambia poche volte al giorno.
+pub const DXPED_EVERY_MS: u64 = 6 * 60 * 60_000;
 /// Con «Aggiorna ora» non si chiede piu' di una volta al minuto.
 pub const MANUAL_MIN_MS: u64 = 60_000;
 /// Quante ore indietro si guardano i rapporti di PSK Reporter.
@@ -64,6 +69,7 @@ impl Fetch for HttpFetch {
 pub struct Settings {
     pub psk: bool,
     pub solar: bool,
+    pub dxped: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
@@ -83,6 +89,13 @@ pub struct SolarSnapshot {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct DxpedSnapshot {
+    pub fetched_ms: u64,
+    pub items: Vec<Dxpedition>,
+    pub error: Option<String>,
+}
+
 #[derive(Default)]
 struct State {
     settings: Settings,
@@ -90,6 +103,8 @@ struct State {
     psk_attempt_ms: u64,
     solar: SolarSnapshot,
     solar_attempt_ms: u64,
+    dxped: DxpedSnapshot,
+    dxped_attempt_ms: u64,
 }
 
 pub struct OnlineService {
@@ -125,6 +140,10 @@ impl OnlineService {
             state.solar = SolarSnapshot::default();
             state.solar_attempt_ms = 0;
         }
+        if !settings.dxped {
+            state.dxped = DxpedSnapshot::default();
+            state.dxped_attempt_ms = 0;
+        }
         state.settings = settings;
         Ok(settings)
     }
@@ -135,6 +154,29 @@ impl OnlineService {
 
     pub fn solar(&self) -> SolarSnapshot {
         lock(&self.state).solar.clone()
+    }
+
+    pub fn dxped(&self) -> DxpedSnapshot {
+        lock(&self.state).dxped.clone()
+    }
+
+    fn fetch_dxped(&self, now_ms: u64) {
+        lock(&self.state).dxped_attempt_ms = now_ms;
+        let result = self.fetch.get(dxped::URL).and_then(|body| {
+            let items = dxped::parse(&body);
+            if items.is_empty() { Err("risposta non riconosciuta da NG3K".to_string()) } else { Ok(items) }
+        });
+        let mut state = lock(&self.state);
+        if !state.settings.dxped {
+            return;
+        }
+        match result {
+            Ok(items) => state.dxped = DxpedSnapshot { fetched_ms: now_ms, items, error: None },
+            Err(e) => {
+                tracing::warn!("NG3K: {e}");
+                state.dxped.error = Some(e);
+            }
+        }
     }
 
     fn fetch_psk(&self, now_ms: u64, callsign: &str) {
@@ -178,9 +220,9 @@ impl OnlineService {
     /// Chiede cio' che e' acceso e scaduto (da chiamare ogni tanto, anche spesso: non fa nulla se non e' ora). E' bloccante.
     /// Restituisce `true` se ha fatto almeno una richiesta.
     pub fn refresh_due(&self, now_ms: u64, callsign: &str) -> bool {
-        let (settings, psk_attempt, solar_attempt, psk_call) = {
+        let (settings, psk_attempt, solar_attempt, psk_call, dxped_attempt) = {
             let s = lock(&self.state);
-            (s.settings, s.psk_attempt_ms, s.solar_attempt_ms, s.psk.callsign.clone())
+            (s.settings, s.psk_attempt_ms, s.solar_attempt_ms, s.psk.callsign.clone(), s.dxped_attempt_ms)
         };
         let mut done = false;
         if settings.psk && psk::clean_callsign(callsign).is_some() {
@@ -197,14 +239,18 @@ impl OnlineService {
             self.fetch_solar(now_ms);
             done = true;
         }
+        if settings.dxped && (dxped_attempt == 0 || now_ms.saturating_sub(dxped_attempt) >= DXPED_EVERY_MS) {
+            self.fetch_dxped(now_ms);
+            done = true;
+        }
         done
     }
 
     /// Chiede subito cio' che e' acceso, ma non piu' di una volta al minuto per servizio. Restituisce se ha chiesto qualcosa.
     pub fn refresh_now(&self, now_ms: u64, callsign: &str) -> bool {
-        let (settings, psk_attempt, solar_attempt) = {
+        let (settings, psk_attempt, solar_attempt, dxped_attempt) = {
             let s = lock(&self.state);
-            (s.settings, s.psk_attempt_ms, s.solar_attempt_ms)
+            (s.settings, s.psk_attempt_ms, s.solar_attempt_ms, s.dxped_attempt_ms)
         };
         let mut done = false;
         if settings.psk && psk::clean_callsign(callsign).is_some() && (psk_attempt == 0 || now_ms.saturating_sub(psk_attempt) >= MANUAL_MIN_MS) {
@@ -213,6 +259,10 @@ impl OnlineService {
         }
         if settings.solar && (solar_attempt == 0 || now_ms.saturating_sub(solar_attempt) >= MANUAL_MIN_MS) {
             self.fetch_solar(now_ms);
+            done = true;
+        }
+        if settings.dxped && (dxped_attempt == 0 || now_ms.saturating_sub(dxped_attempt) >= MANUAL_MIN_MS) {
+            self.fetch_dxped(now_ms);
             done = true;
         }
         done

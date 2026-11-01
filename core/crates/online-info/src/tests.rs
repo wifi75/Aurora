@@ -46,7 +46,7 @@ fn service(name: &str, fake: &Arc<Fake>) -> (Arc<OnlineService>, PathBuf) {
 }
 
 fn on(psk: bool, solar: bool) -> Settings {
-    Settings { psk, solar }
+    Settings { psk, solar, dxped: false }
 }
 
 #[test]
