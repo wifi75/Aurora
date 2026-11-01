@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -40,6 +40,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
+        .route("/api/v1/commands/band-hop-next", post(band_hop_next))
         .route("/api/v1/commands/frequency", post(change_frequency))
         .route("/api/v1/commands/mode", post(change_mode))
         .route("/api/v1/commands/rx-frequency", post(rx_frequency))
@@ -63,6 +64,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/schedule", get(schedule_get).put(schedule_put))
         .route("/api/v1/automation", get(automation_get).put(automation_put))
         .route("/api/v1/station-info", get(station_info))
+        .route("/api/v1/qso-upload/wavelog-stations", post(wavelog_stations))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/dxcc-matrix", get(dxcc_matrix))
         .route("/api/v1/log/qsos", get(log_qsos))
@@ -1222,6 +1224,43 @@ async fn qso_upload_test(State(state): State<AppState>, _: Authed, Peer(peer): P
         Ok(message) => Ok(Json(json!({ "ok": true, "message": message }))),
         Err(message) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message(message)),
     }
+}
+
+#[derive(Deserialize, Default)]
+struct WavelogStationsBody {
+    /// L'indirizzo scritto nelle Impostazioni (anche non ancora salvato); vuoto = quello salvato.
+    #[serde(default)]
+    url: Option<String>,
+}
+
+/// Le stazioni Wavelog/Cloudlog della chiave salvata, lette dal server: riempiono la tendina della stazione. Solo dalla rete di casa.
+#[utoipa::path(post, path = "/api/v1/qso-upload/wavelog-stations", responses((status = 200, description = "`{stations: [{id, name, call}]}`"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (upload_unavailable)"), (status = 502, description = "Lettura non riuscita (wavelog_stations_failed, con `message`)")))]
+async fn wavelog_stations(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<WavelogStationsBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let service = state.engine_settings.as_ref().and_then(|s| s.reporting()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "upload_unavailable"))?;
+    match service.wavelog_stations(body.url).await {
+        Ok(list) => Ok(Json(json!({ "stations": list.iter().map(|s| json!({ "id": s.id, "name": s.name, "call": s.call })).collect::<Vec<_>>() }))),
+        Err(message) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "wavelog_stations_failed").with_message(message)),
+    }
+}
+
+/// Il clic destro sulla barra delle bande: chi fa girare il Band Hopping passa subito alla voce successiva dell'elenco.
+pub static BAND_HOP_NEXT: tokio::sync::Notify = tokio::sync::Notify::const_new();
+
+/// Passa subito alla voce successiva dell'elenco del Band Hopping (anche con il giro automatico spento). 409 se l'elenco e' vuoto o si trasmette.
+#[utoipa::path(post, path = "/api/v1/commands/band-hop-next", responses((status = 200, description = "Salto chiesto"), (status = 409, description = "Elenco vuoto (band_hop_empty) o in trasmissione (transmitting)"), (status = 404, description = "Solo con il motore proprio (engine_settings_unavailable)")))]
+async fn band_hop_next(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let settings = state.engine_settings.as_ref().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_settings_unavailable"))?;
+    if settings.reports().band_hop_list.split(',').all(|s| s.trim().is_empty()) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "band_hop_empty"));
+    }
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+    }
+    BAND_HOP_NEXT.notify_one();
+    Ok(Json(json!({ "ok": true })))
 }
 
 fn audio_control(state: &AppState) -> Result<(std::sync::Arc<dyn crate::audio_api::AudioControl>, std::sync::Arc<crate::engine_settings::EngineSettingsStore>), ApiError> {

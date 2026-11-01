@@ -9,6 +9,7 @@ export function replyErrorMessage(error: unknown, t: T): string {
     if (error.code === 'rig_unavailable') return t('err.noRig');
     if (error.code === 'bad_text') return t('err.badText');
     if (error.code === 'tx_disabled') return t('err.txDisabled');
+    if (error.code === 'band_hop_empty') return t('err.bandHopEmpty');
     if (error.status === 403) return t('err.forbidden');
     if (error.status === 404) return t('err.gone');
     if (error.status === 401) return t('err.unpaired');

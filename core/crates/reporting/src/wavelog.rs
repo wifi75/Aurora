@@ -141,31 +141,43 @@ pub fn check_rights(body: &str) -> Result<(), String> {
     }
 }
 
-/// La prova (bloccante): chiave, permesso di scrittura e stazione, senza scrivere nel log.
-pub fn test(url: &str, key: &str, station_id: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+/// Una pagina dell'API con la chiave nel percorso (`{indirizzo}/index.php/api/{pagina}/{chiave}`): stato HTTP e testo.
+fn get_page(url: &str, key: &str, page: &str, timeout: Duration, user_agent: &str) -> Result<(u16, String), String> {
     let base = api_base(url).ok_or("indirizzo non valido: serve http:// o https://")?;
     let path_key: String = key.chars().filter(char::is_ascii_alphanumeric).collect();
     if path_key.is_empty() || path_key.len() != key.len() {
         return Err("la chiave API contiene caratteri non previsti".into());
     }
-    let get = |path: &str| -> Result<(u16, String), String> {
-        match agent(timeout, user_agent).get(format!("{base}/index.php/api/{path}/{path_key}")).call() {
-            Ok(mut response) => Ok((response.status().as_u16(), response.body_mut().read_to_string().unwrap_or_default())),
-            Err(e) => Err(crate::eqsl::describe(&e)),
-        }
-    };
-    match get("auth")? {
+    match agent(timeout, user_agent).get(format!("{base}/index.php/api/{page}/{path_key}")).call() {
+        Ok(mut response) => Ok((response.status().as_u16(), response.body_mut().read_to_string().unwrap_or_default())),
+        Err(e) => Err(crate::eqsl::describe(&e)),
+    }
+}
+
+/// La risposta di `station_info` se e' andata bene, altrimenti il motivo.
+fn station_info(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+    match get_page(url, key, "station_info", timeout, user_agent)? {
+        (200, text) => Ok(text),
+        (401 | 403, _) => Err("chiave API non valida".into()),
+        (404, _) => Err("indirizzo dell'API non trovato".into()),
+        (s, _) => Err(format!("risposta {s}")),
+    }
+}
+
+/// Le stazioni della chiave lette dal server (bloccante): servono alla tendina della stazione nelle Impostazioni.
+pub fn stations(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Result<Vec<Station>, String> {
+    parse_stations(&station_info(url, key, timeout, user_agent)?)
+}
+
+/// La prova (bloccante): chiave, permesso di scrittura e stazione, senza scrivere nel log.
+pub fn test(url: &str, key: &str, station_id: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+    match get_page(url, key, "auth", timeout, user_agent)? {
         (200, text) => check_rights(&text)?,
         (401 | 403, _) => return Err("chiave API non valida".into()),
         // server senza la pagina dei permessi: si controlla solo la stazione
         _ => {}
     }
-    match get("station_info")? {
-        (200, text) => find_station(&text, station_id),
-        (401 | 403, _) => Err("chiave API non valida".into()),
-        (404, _) => Err("indirizzo dell'API non trovato".into()),
-        (s, _) => Err(format!("risposta {s}")),
-    }
+    find_station(&station_info(url, key, timeout, user_agent)?, station_id)
 }
 
 #[cfg(test)]

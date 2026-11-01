@@ -47,3 +47,8 @@ export function registerSpectrum(listener: Listener): () => void {
 export function emitSpectrum(bins: Uint8Array, fMinHz = 0, fMaxHz = DEFAULT_SPAN_HZ): void {
   for (const listener of listeners) listener(bins, fMinHz, fMaxHz);
 }
+
+/** Quanti ricevitori sono abbonati alle righe (serve alle prove: l'anteprima spenta non deve restare abbonata). */
+export function spectrumListenerCount(): number {
+  return listeners.size;
+}

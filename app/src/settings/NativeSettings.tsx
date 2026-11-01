@@ -10,6 +10,7 @@ import { REPORT_GROUPS, type SettingRow, type UploadService } from '../lib/engin
 import { Help as Note } from './common';
 import { Cells, Group, Notes, Page, Unavailable } from './layout';
 import { useAutosave } from './useAutosave';
+import { WavelogStationSelect } from './WavelogStationSelect';
 import { IntegrationsPanel } from './IntegrationsPanel';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
@@ -94,6 +95,9 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
         ))}
       </select>
     );
+  } else if (row.key === 'WavelogStation') {
+    const url = draft.changes.WavelogUrl ?? doc.values.WavelogUrl ?? '';
+    control = <WavelogStationSelect id={id} label={label} url={url} value={live ? value : ''} disabled={!live || locked} onChange={change} />;
   } else {
     // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
     control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} placeholder={row.kind === 'secret' && doc.secrets?.[row.key] ? t('ens.pw.saved') : undefined} autoComplete="off" onChange={(e) => change(e.target.value)} />;

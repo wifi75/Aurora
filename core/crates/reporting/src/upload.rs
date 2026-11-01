@@ -426,6 +426,20 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
 }
 
 /// Il pulsante «Prova»: controlla le credenziali **senza** registrare QSO (dove il servizio lo permette).
+/// Le stazioni Wavelog/Cloudlog della chiave salvata, dall'indirizzo dato (o da quello salvato se vuoto).
+pub(crate) async fn wavelog_stations(service: &Service, url: Option<String>) -> Result<Vec<crate::wavelog::Station>, String> {
+    let secrets = Arc::clone(&service.secrets);
+    let endpoints = service.endpoints.clone();
+    let saved = service.config.borrow().wavelog.as_ref().map(|a| a.url.clone());
+    tokio::task::spawn_blocking(move || {
+        let url = url.filter(|u| !u.trim().is_empty()).or(saved).ok_or("scrivi l'indirizzo di Wavelog/Cloudlog")?;
+        let key = secrets.get(crate::WAVELOG_SECRET).ok_or("chiave API non impostata")?;
+        crate::wavelog::stations(&url, &key, endpoints.upload_timeout, &endpoints.user_agent)
+    })
+    .await
+    .unwrap_or_else(|e| Err(format!("lettura interrotta: {e}")))
+}
+
 pub(crate) async fn test(service: &Service, target: Target) -> Result<String, String> {
     let secrets = Arc::clone(&service.secrets);
     let endpoints = service.endpoints.clone();

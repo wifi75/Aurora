@@ -296,6 +296,11 @@ impl Service {
         result
     }
 
+    /// Le stazioni Wavelog/Cloudlog lette dal server con la chiave salvata (per la tendina delle Impostazioni).
+    pub async fn wavelog_stations(&self, url: Option<String>) -> Result<Vec<wavelog::Station>, String> {
+        upload::wavelog_stations(self, url).await
+    }
+
     /// Le credenziali sono cambiate: i servizi fermi ripartono e quello che e' in coda si riprova subito.
     pub fn credentials_changed(&self) {
         for target in upload::Target::ALL {

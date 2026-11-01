@@ -74,13 +74,14 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 17. Band Hopping FT8/FT4: rifiniture
 
 - Fatto: `aurora/src/band_hop.rs` (elenco «FT8 20m», «FT4 40m» e fino a 8 frequenze in kHz, salto ogni due minuti, saltato con Abilita Tx acceso o in trasmissione), voci `BandHopping` e `BandHopList` nella scheda Generali.
-- Manca: il clic destro per passare subito alla frequenza successiva (serve un comando nella barra delle bande, interfaccia della cascata/bande di un altro lavoro); MSK144 (modo non presente).
+- Fatto anche: clic destro sulla barra delle bande per la voce successiva (`POST /api/v1/commands/band-hop-next`).
+- Manca: MSK144 (modo non presente).
 - WSJT-X: `widgets/mainwindow_bandhopping.cpp`.
 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
 - Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
-- Resta: ALL.TXT con la banda del periodo dopo un cambio (`engine-native/src/alltxt.rs`, lasciato a chi lavora sul motore); scambi di contest nei record ADIF (servono i campi dello scambio in `QsoRecord`, riempiti dal motore QSO, poi `contest_fields` nei record); tendina della stazione Wavelog nelle Impostazioni (oggi le stazioni del server compaiono nel messaggio della prova).
+- Resta: ALL.TXT con la banda del periodo dopo un cambio (`engine-native/src/alltxt.rs`, lasciato a chi lavora sul motore); scambi di contest nei record ADIF (servono i campi dello scambio in `QsoRecord`, riempiti dal motore QSO, poi `contest_fields` nei record).
 - WSJT-X: note 3.2 «Networking, logging, and integrations», `logbook/AdifQso.cpp`.
 - Verifica: test unitari sui casi di mezzanotte e cambio banda.
 
@@ -121,7 +122,3 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: cartella `qmap/`.
 - Verifica: registrazione I/Q di prova con piu' segnali Q65.
 
-## 19b. Cascata: appiattimento sul campo visibile
-
-- Cosa fare: calcolare l'appiattimento della cascata solo sulla parte di banda visibile, come WSJT-X (`widgets/plotter.cpp`). La conservazione della storia e' gia' fatta.
-- Aurora: `app/src/render/`.

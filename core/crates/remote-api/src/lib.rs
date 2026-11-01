@@ -23,7 +23,7 @@ use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
-pub use routes::switch_mode;
+pub use routes::{switch_mode, BAND_HOP_NEXT};
 pub use policy::{transport_of, Transport, TxPolicy};
 
 /// Salva le regole dell'automazione quando cambiano.
