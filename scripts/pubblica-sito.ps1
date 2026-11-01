@@ -9,6 +9,8 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) 'aurora-gh-pages'
 if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
 git clone --quiet --depth 1 --branch gh-pages $remoto $tmp
 Copy-Item $sorgente (Join-Path $tmp 'index.html') -Force
+# le immagini della pagina (screenshot di Aurora)
+Get-ChildItem (Join-Path $repo 'docs') -File | Where-Object { $_.Extension -in '.png', '.jpg', '.webp' } | ForEach-Object { Copy-Item $_.FullName (Join-Path $tmp $_.Name) -Force }
 New-Item -ItemType File -Force (Join-Path $tmp '.nojekyll') | Out-Null
 # stesso autore dei commit del repository (indirizzo noreply di GitHub)
 $nome = (git -C $repo config user.name).Trim()
