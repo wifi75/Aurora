@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.63',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:58:11Z',
     kind: 'changed',
     title: ['Pagina Log più leggibile', 'Clearer Log page', 'Übersichtlichere Log-Seite', 'Page Journal plus lisible', 'Página Log más legible', 'Página Log mais legível'],
     text: [

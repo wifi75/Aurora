@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione pubblicata**: **0.11.62** (2026-11-01, 16:53 UTC). Dopo, su `main` e non ancora in una versione: pagina Log con bandiere, griglia e larghezza contenuta.
+- **Ultima versione pubblicata**: **0.11.63** (2026-11-01). `main` e GitHub allineati.
 - **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
 
 ## Lavoro in corso (non finito)
@@ -24,7 +24,6 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Prossimo passo
 
-1. Pubblicare la 0.11.63 con la pagina Log rifatta (bandiere, griglia, righe alterne).
 2. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`), SuperFox.
 3. Regola del proprietario: si parte sempre da WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`); cio' che WSJT-X 3.3 non ha non si aggiunge (per questo «Sinc» di JTDX e' tolto).
 
