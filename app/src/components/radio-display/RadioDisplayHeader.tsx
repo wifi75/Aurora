@@ -1,3 +1,4 @@
+import { RadioExtras } from './RadioExtras';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
@@ -61,6 +62,7 @@ export function RadioDisplayHeader() {
     return (
       <div className="rd-header rd-header--phone">
         <RadioDisplay model={model} style={pref.style} size="mini" />
+        <RadioExtras />
       </div>
     );
   }
@@ -91,6 +93,7 @@ export function RadioDisplayHeader() {
       >
         <RadioDisplay model={model} style={pref.style} size="mini" />
       </button>
+      <RadioExtras />
       {open ? (
         <div className="rd-popover" id={popoverId} role="group" aria-label={t('rd.popover')}>
           <RadioDisplay model={model} style={pref.style} size="full" />

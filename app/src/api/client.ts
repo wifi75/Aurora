@@ -560,9 +560,31 @@ export interface CatConfig {
   civ_address: number;
   poll_secs: number;
   auto_connect: boolean;
+  /** Legge a turno anche preamplificatore, AGC, NB/NR, guadagni, RIT/XIT e secondo VFO (spento di base). */
+  read_extras?: boolean;
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;
+}
+
+export interface RigExtras {
+  preamp_db?: number | null;
+  att_db?: number | null;
+  agc?: number | null;
+  nb?: boolean | null;
+  nr?: boolean | null;
+  notch?: boolean | null;
+  tuner?: boolean | null;
+  rf_gain?: number | null;
+  af_gain?: number | null;
+  squelch?: number | null;
+  power_set?: number | null;
+  mic_gain?: number | null;
+  rit_hz?: number | null;
+  xit_hz?: number | null;
+  vfo?: string | null;
+  vfo_b_hz?: number | null;
+  vfo_b_mode?: string | null;
 }
 
 export interface CatRigStatus {
@@ -578,6 +600,8 @@ export interface CatRigStatus {
   reconnect_attempt: number;
   ptt_blocked: boolean;
   updated_ms: number;
+  /** I dati in piu' della radio (con «Leggi anche gli altri dati» acceso); ognuno solo se la radio lo da'. */
+  extras?: RigExtras;
 }
 
 export interface CatStatus {
