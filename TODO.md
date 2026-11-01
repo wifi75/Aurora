@@ -1,6 +1,6 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-01, v0.11.58.
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-01, v0.11.59.
 
 ## Aperti (2026-11-01)
 - [ ] Riordino del menu Impostazioni (gruppi per funzione, pagina Servizi di log, via Avanzate, errori di salvataggio col nome del campo): in lavorazione
