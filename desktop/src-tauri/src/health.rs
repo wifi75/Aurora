@@ -13,6 +13,7 @@ pub fn install_panic_hook() {
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let thread = std::thread::current();
+        crate::crash::write_panic_report(info);
         tracing::error!("panic nel thread «{}»: {info}", thread.name().unwrap_or("senza nome"));
         previous(info);
     }));

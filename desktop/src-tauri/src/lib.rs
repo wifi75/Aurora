@@ -1,6 +1,7 @@
 //! Aurora per Windows: il core gira dentro questo programma e la finestra mostra la sua pagina (la stessa che si apre dal telefono).
 //! Il vassoio tiene Aurora a portata di mano, parte con Windows e si aggiorna da sola quando esce una versione nuova.
 
+mod crash;
 mod health;
 mod installer;
 mod links;
@@ -48,11 +49,11 @@ pub fn run() {
             }
             // dimensione e posizione si ricordano per il prossimo avvio (senza scrivere a ogni pixel)
             WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
-                if let Ok(mut last) = LAST_WINDOW_SAVE.lock() {
-                    if last.is_none_or(|t| t.elapsed() > Duration::from_millis(600)) {
-                        *last = Some(Instant::now());
-                        remember_window(window);
-                    }
+                if let Ok(mut last) = LAST_WINDOW_SAVE.lock()
+                    && last.is_none_or(|t| t.elapsed() > Duration::from_millis(600))
+                {
+                    *last = Some(Instant::now());
+                    remember_window(window);
                 }
             }
             _ => {}
@@ -72,12 +73,12 @@ pub fn run() {
 }
 
 fn stop_core(app: &AppHandle) {
-    if let Some(core) = app.try_state::<Core>() {
-        if let Some(tx) = core.shutdown.lock().ok().and_then(|mut s| s.take()) {
-            let _ = tx.send(());
-            // il tempo di chiudere porte e archivi
-            std::thread::sleep(Duration::from_millis(400));
-        }
+    if let Some(core) = app.try_state::<Core>()
+        && let Some(tx) = core.shutdown.lock().ok().and_then(|mut s| s.take())
+    {
+        let _ = tx.send(());
+        // il tempo di chiudere porte e archivi
+        std::thread::sleep(Duration::from_millis(400));
     }
 }
 
@@ -117,8 +118,10 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
         None => handle.path().data_dir()?.join("Aurora"),
     };
     std::fs::create_dir_all(&data_dir)?;
+    crash::init(&data_dir);
     init_logging(&data_dir);
     health::install_panic_hook();
+    crash::spawn_watchdog(handle.clone());
     health::spawn_monitor();
     let env_path = data_dir.join("aurora.env");
     if !env_path.exists() {
@@ -135,6 +138,7 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     let started = settings::config_from(&values).map_err(|e| e.to_string()).and_then(|mut config| {
         config.update_installer = Some(aurora::UpdateInstallerHandle(installer.clone()));
         config.save_dialog = Some(aurora::SaveDialogHandle(save_dialog::dialog(handle.clone())));
+        config.crash_folder = Some(aurora::CrashFolderHandle(crash::folder_opener()));
         let (tx, rx) = oneshot::channel::<()>();
         let server = tauri::async_runtime::block_on(aurora::run(config, async move {
             let _ = rx.await;
@@ -156,10 +160,10 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
             apply_autostart_choice(&handle, values.get("AURORA_AUTOSTART").map(String::as_str) == Some("1"));
             open_window(&handle, &page, true)?;
             // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'
-            if values.get("AURORA_MONITOR_ON_START").map(String::as_str) != Some("0") {
-                if let Some(state) = core_state(&handle) {
-                    monitor_on_start(state);
-                }
+            if values.get("AURORA_MONITOR_ON_START").map(String::as_str) != Some("0")
+                && let Some(state) = core_state(&handle)
+            {
+                monitor_on_start(state);
             }
             let watcher = handle.clone();
             tauri::async_runtime::spawn(async move {
@@ -229,12 +233,11 @@ fn monitor_on_start(state: remote_api::AppState) {
             if let Ok((list, _)) = rig.controls_and_tx() {
                 match list.iter().find(|(id, _)| id == "monitor") {
                     Some((_, true)) => return,
-                    Some((_, false)) => {
-                        if rig.set_control("monitor", Some(true)).is_ok() {
-                            tracing::info!("Monitora acceso all'avvio");
-                            return;
-                        }
+                    Some((_, false)) if rig.set_control("monitor", Some(true)).is_ok() => {
+                        tracing::info!("Monitora acceso all'avvio");
+                        return;
                     }
+                    Some((_, false)) => {}
                     None => {}
                 }
             }
@@ -276,10 +279,10 @@ fn remember_window(window: &tauri::Window) {
         let (Ok(size), Ok(pos)) = (window.inner_size(), window.outer_position()) else { return };
         window_state::WindowState { width: size.width, height: size.height, x: pos.x, y: pos.y, maximized: false }
     };
-    if previous != Some(state) {
-        if let Err(e) = window_state::save(&core.data_dir, &state) {
-            tracing::warn!("posizione della finestra non salvata: {e}");
-        }
+    if previous != Some(state)
+        && let Err(e) = window_state::save(&core.data_dir, &state)
+    {
+        tracing::warn!("posizione della finestra non salvata: {e}");
     }
 }
 

@@ -869,6 +869,16 @@ export async function installUpdate(): Promise<{ version: string }> {
   return (await (await request('/update/install', { method: 'POST' })).json()) as { version: string };
 }
 
+/** Cosa offre la diagnostica da qui (`crash_folder`: solo nel programma Windows, dal PC stesso). */
+export async function getDiagnostics(): Promise<{ crash_folder: boolean }> {
+  return (await (await request('/diagnostics')).json()) as { crash_folder: boolean };
+}
+
+/** Apre in Esplora risorse la cartella dei crash (minidump e rapporti). */
+export async function openCrashFolder(): Promise<void> {
+  await request('/diagnostics/crash-folder', { method: 'POST' });
+}
+
 export async function checkUpdate(): Promise<UpdateStatus> {
   return (await (await request('/update/check', { method: 'POST' })).json()) as UpdateStatus;
 }

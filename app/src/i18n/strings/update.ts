@@ -94,4 +94,16 @@ export const updateStrings = {
     'La comprobación falló: {message}',
     'A verificação falhou: {message}',
   ],
+  'diag.title': ['Diagnostica', 'Diagnostics', 'Diagnose', 'Diagnostic', 'Diagnóstico', 'Diagnóstico'],
+  'diag.crashFolder': ['Rapporti dei crash', 'Crash reports', 'Absturzberichte', 'Rapports de plantage', 'Informes de fallos', 'Relatórios de falhas'],
+  'diag.openCrashFolder': ['Apri la cartella dei crash', 'Open the crash folder', 'Absturzordner öffnen', 'Ouvrir le dossier des plantages', 'Abrir la carpeta de fallos', 'Abrir a pasta de falhas'],
+  'diag.openFailed': ['Cartella non aperta: {message}', 'Folder not opened: {message}', 'Ordner nicht geöffnet: {message}', 'Dossier non ouvert : {message}', 'Carpeta no abierta: {message}', 'Pasta não aberta: {message}'],
+  'tip.diag.crashFolder': [
+    'Aurora registra da sola ogni guasto: se il programma resta bloccato per più di 20 secondi, se si chiude per un errore o per un panic, in questa cartella (%APPDATA%\\Aurora\\crash) trovi un file .txt leggibile e, per blocchi ed errori, un minidump .dmp con lo stato di tutti i thread. Per una segnalazione allega i file con la data del problema e il log (cartella logs). Si tengono gli ultimi 10 dump e 50 testi.',
+    'Aurora records every failure by itself: if the program stays frozen for more than 20 seconds, or closes because of an error or a panic, this folder (%APPDATA%\\Aurora\\crash) gets a readable .txt file and, for freezes and errors, a .dmp minidump with the state of every thread. To report a problem attach the files with its date and the log (logs folder). The last 10 dumps and 50 texts are kept.',
+    'Aurora zeichnet jeden Fehler selbst auf: Hängt das Programm länger als 20 Sekunden oder schließt es wegen eines Fehlers oder Panics, entsteht in diesem Ordner (%APPDATA%\\Aurora\\crash) eine lesbare .txt-Datei und bei Hängern und Fehlern ein .dmp-Minidump mit dem Zustand aller Threads. Für eine Meldung hänge die Dateien mit dem Datum des Problems und das Log (Ordner logs) an. Es bleiben die letzten 10 Dumps und 50 Texte.',
+    'Aurora enregistre seule chaque panne : si le programme reste bloqué plus de 20 secondes, ou se ferme à cause d’une erreur ou d’un panic, ce dossier (%APPDATA%\\Aurora\\crash) reçoit un fichier .txt lisible et, pour les blocages et erreurs, un minidump .dmp avec l’état de tous les threads. Pour signaler un problème, joins les fichiers à sa date et le journal (dossier logs). Les 10 derniers dumps et 50 textes sont conservés.',
+    'Aurora registra sola cada fallo: si el programa se queda bloqueado más de 20 segundos, o se cierra por un error o un panic, en esta carpeta (%APPDATA%\\Aurora\\crash) aparece un archivo .txt legible y, para bloqueos y errores, un minidump .dmp con el estado de todos los hilos. Para informar de un problema adjunta los archivos con su fecha y el registro (carpeta logs). Se guardan los últimos 10 dumps y 50 textos.',
+    'A Aurora regista sozinha cada falha: se o programa ficar bloqueado mais de 20 segundos, ou fechar por um erro ou um panic, nesta pasta (%APPDATA%\\Aurora\\crash) aparece um ficheiro .txt legível e, para bloqueios e erros, um minidump .dmp com o estado de todas as threads. Para reportar um problema anexa os ficheiros com a data e o registo (pasta logs). Ficam os últimos 10 dumps e 50 textos.',
+  ],
 } as const;

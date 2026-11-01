@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
+import { ApiError, checkUpdate, getDiagnostics, getUpdate, installUpdate, openCrashFolder, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help, Row } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
@@ -35,6 +35,12 @@ export function UpdatesTab() {
   const t = useT();
   const client = useQueryClient();
   const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false });
+  const diagnostics = useQuery({ queryKey: ['diagnostics'], queryFn: getDiagnostics, retry: false });
+  const [crashFailure, setCrashFailure] = useState('');
+  const openCrashes = () => {
+    setCrashFailure('');
+    openCrashFolder().catch((error: unknown) => setCrashFailure(t('diag.openFailed', { message: error instanceof ApiError ? error.code : '—' })));
+  };
   const [draft, setDraft] = useState<Draft | null>(null);
   const [note, setNote] = useState('');
   const [installing, setInstalling] = useState(false);
@@ -150,6 +156,19 @@ export function UpdatesTab() {
         {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : <Message kind="muted">{t('upd.autosave')}</Message>}
         {note ? <Message>{note}</Message> : null}
       </Group>
+
+      {diagnostics.data?.crash_folder ? (
+        <Group title={t('diag.title')}>
+          <Cells min={17}>
+            <Cell label={t('diag.crashFolder')} hint={t('tip.diag.crashFolder')}>
+              <button type="button" className="glass" onClick={openCrashes}>
+                {t('diag.openCrashFolder')}
+              </button>
+            </Cell>
+          </Cells>
+          {crashFailure ? <Message kind="alert">{crashFailure}</Message> : null}
+        </Group>
+      ) : null}
 
       <Notes>
         <Help>{t('upd.intro')}</Help>

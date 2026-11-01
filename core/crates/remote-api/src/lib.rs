@@ -60,6 +60,9 @@ pub type LogChangedHook = Arc<dyn Fn() + Send + Sync>;
 /// (`None` = annullato). E' bloccante: si chiama fuori dal thread asincrono.
 pub type SaveFileDialog = Arc<dyn Fn(&str) -> Option<std::path::PathBuf> + Send + Sync>;
 
+/// Apre in Esplora risorse la cartella dei crash del programma Windows (solo dal PC stesso).
+pub type OpenCrashFolder = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
+
 const MAX_KNOWN_DECODES: usize = 500;
 
 #[derive(Default)]
@@ -108,6 +111,8 @@ pub struct AppState {
     pub log_changed: Option<LogChangedHook>,
     /// «Salva con nome» del programma Windows, per salvare il log ADIF dove si vuole (solo dal PC stesso).
     pub save_dialog: Option<SaveFileDialog>,
+    /// «Apri la cartella dei crash» (solo nel programma Windows).
+    pub crash_folder: Option<OpenCrashFolder>,
     /// Vero mentre la finestra «Salva con nome» e' aperta: un secondo clic non ne apre un'altra.
     pub(crate) save_open: Arc<std::sync::atomic::AtomicBool>,
     /// La lista dei desiderati, con i suoi avvisi.
@@ -197,7 +202,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -337,6 +342,11 @@ impl AppState {
 
     pub fn with_save_dialog_if(mut self, dialog: Option<SaveFileDialog>) -> AppState {
         self.save_dialog = dialog;
+        self
+    }
+
+    pub fn with_crash_folder_if(mut self, open: Option<OpenCrashFolder>) -> AppState {
+        self.crash_folder = open;
         self
     }
 

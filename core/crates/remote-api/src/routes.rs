@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -68,6 +68,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/log/qsos", get(log_qsos))
         .route("/api/v1/log/export.adi", get(log_export))
         .route("/api/v1/log/export-save", post(log_export_save))
+        .route("/api/v1/diagnostics", get(diagnostics_get))
+        .route("/api/v1/diagnostics/crash-folder", post(diagnostics_crash_folder))
         .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
@@ -1367,6 +1369,29 @@ async fn ui_settings_put(
 
 fn update_service(state: &AppState) -> Result<std::sync::Arc<updater::UpdateService>, ApiError> {
     state.updates.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "update_unavailable"))
+}
+
+/// Cosa offre la diagnostica da qui: `crash_folder` vero se si puo' aprire la cartella dei crash (programma Windows, richiesta dal PC stesso).
+#[utoipa::path(get, path = "/api/v1/diagnostics", responses((status = 200, description = "{crash_folder}")))]
+async fn diagnostics_get(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Json<Value> {
+    Json(json!({ "crash_folder": state.crash_folder.is_some() && from_this_pc(peer, &headers) }))
+}
+
+/// Apre in Esplora risorse la cartella dei crash (minidump e rapporti dei blocchi, delle eccezioni e dei panic).
+#[utoipa::path(post, path = "/api/v1/diagnostics/crash-folder", responses((status = 200, description = "{ok}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Solo nel programma Windows (crash_folder_unavailable)"), (status = 500, description = "Cartella non aperta (open_failed)")))]
+async fn diagnostics_crash_folder(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let open = state.crash_folder.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "crash_folder_unavailable"))?;
+    match tokio::task::spawn_blocking(move || open()).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
+        Ok(Err(e)) => {
+            tracing::warn!("cartella dei crash non aperta: {e}");
+            Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "open_failed"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "open_failed")),
+    }
 }
 
 /// Versione in uso, impostazioni del controllo e ultima release trovata (il token non si restituisce mai).
