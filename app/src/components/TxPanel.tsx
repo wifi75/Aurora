@@ -41,6 +41,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
   const [note, setNote] = useState('');
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const skipTx1 = controls.data?.skip_tx1 === true;
+  const hound = controls.data?.hound === true;
   const messages = status
     ? txMessages({ myCall: status.de_call, myGrid: status.de_grid, dxCall: pendingDx || status.dx_call || '', report: status.report ?? '' })
     : [];
@@ -71,6 +72,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
 
   /** Sceglie a mano il messaggio da cui il motore parte: si vede subito e, se il comando fallisce, torna quello di prima. */
   const choose = async (i: number) => {
+    if (i === 5 && hound) return;
     if (messages[i] === '' || i === selected) return;
     useEngineTx.getState().choose(i + 1);
     try {
@@ -149,7 +151,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 role="radio"
                 tabIndex={m === '' ? -1 : 0}
                 aria-checked={i === active || i === next}
-                aria-disabled={m === '' ? true : undefined}
+                aria-disabled={m === '' || (i === 5 && hound) ? true : undefined}
                 onClick={() => void choose(i)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -159,9 +161,10 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 }}
                 aria-current={i === active ? 'true' : undefined}
                 data-next={i === next && m !== '' ? 'true' : undefined}
-                data-skipped={i === 0 && skipTx1 && m !== '' ? 'true' : undefined}
-                title={i === 0 && skipTx1 ? t('tip.ctl.skip_tx1') : undefined}
-                className={m === '' ? 'tx-empty' : undefined}
+                // in Hound il Tx1 non si salta mai (WSJT-X 3.3, elide_tx1_not_allowed) e il CQ non si trasmette: niente riga barrata, Tx6 spento
+                data-skipped={i === 0 && skipTx1 && !hound && m !== '' ? 'true' : undefined}
+                title={i === 0 && skipTx1 && !hound ? t('tip.ctl.skip_tx1') : i === 5 && hound ? t('tip.tx.cqHound') : undefined}
+                className={m === '' ? 'tx-empty' : i === 5 && hound ? 'tx-empty tx-off' : undefined}
               >
                 <span className="tx-n">{i + 1}</span>
                 <span className="data tx-msg">{m}</span>
