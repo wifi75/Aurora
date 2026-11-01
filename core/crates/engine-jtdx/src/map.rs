@@ -25,6 +25,7 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         meters: None,
         queue: Vec::new(),
         tx_alerts: Vec::new(),
+        fox_verification: None,
     }
 }
 

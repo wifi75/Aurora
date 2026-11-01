@@ -60,6 +60,8 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("ap_list"),
     // «Multithread»: la decodifica FT8 su tutti i processori (stessi decode del singolo thread)
     own_toggle("mtd"),
+    // «Wait and Call» di WSJT-X: armato, quando il DX si libera (CQ, RR73, RRR, 73) lo si chiama da soli
+    own_toggle("wait_call"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),

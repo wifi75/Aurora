@@ -9,6 +9,7 @@ use std::{
 };
 
 pub mod audio_control;
+pub mod band_hop;
 pub mod history;
 pub mod online;
 pub mod updates;
@@ -928,7 +929,48 @@ fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str,
         meters: None,
         queue: Vec::new(),
         tx_alerts: Vec::new(),
+        fox_verification: None,
     }
+}
+
+/// Le voci delle funzioni di WSJT-X 3.x che il motore legge dai pulsanti: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox.
+fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_api::engine_settings::Reports) {
+    use std::sync::atomic::Ordering;
+    controls.set_decoder_start(engine_native::features::DecoderStart::parse(&r.ft8_decoder_start));
+    controls.full_duplex.store(r.full_duplex, Ordering::Relaxed);
+    controls.wait_features.store(r.wait_features, Ordering::Relaxed);
+    controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
+}
+
+/// La verifica in linea del codice OTP del Fox (Hound classico, `processSFoxVerification`/`handleVerifyMsg` di WSJT-X): la richiesta parte in un thread
+/// a parte; l'esito va nello stato della stazione (pagina Stazione) e, come in WSJT-X, diventa una riga tra i decode («CALL verified» o «CALL invalid»).
+fn wire_fox_verifier(controls: &Arc<engine_native::NativeControls>, bus: &Bus) {
+    let (weak, events) = (Arc::downgrade(controls), bus.events());
+    let ids = Arc::new(std::sync::atomic::AtomicU64::new(1_900_000_000));
+    controls.set_otp_hook(Arc::new(move |otp: engine_native::features::FoxOtp| {
+        let Some(controls) = weak.upgrade() else { return };
+        let (events, ids) = (events.clone(), Arc::clone(&ids));
+        let url = controls.otp_settings().url;
+        std::thread::spawn(move || {
+            let fetch = online_info::foxcheck::FoxFetch { user_agent: format!("Aurora/{}", aurora_core::version::APP_VERSION) };
+            match online_info::foxcheck::check(&fetch, &url, &otp.call, otp.slot_start_ms, &otp.code) {
+                Ok(verified) => {
+                    tracing::info!("verifica del Fox {}: {}", otp.call, if verified { "verificato" } else { "non valido" });
+                    controls.set_fox_verification(Some(aurora_core::FoxVerification { call: otp.call.clone(), verified }));
+                    let _ = events.send(Event::Decode(aurora_core::DecodedMessage {
+                        id: ids.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+                        time_ms: (otp.slot_start_ms % 86_400_000) as u32,
+                        snr: 0,
+                        delta_time: 0.0,
+                        freq_hz: otp.freq_hz,
+                        text: format!("{} {}", otp.call, if verified { "verified" } else { "invalid" }),
+                        ..Default::default()
+                    }));
+                }
+                Err(e) => tracing::warn!("verifica del Fox {} non riuscita: {e}", otp.call),
+            }
+        });
+    }));
 }
 
 fn spawn_scheduler(state: AppState, rig: Arc<dyn Rig>) {
@@ -1236,6 +1278,8 @@ pub async fn run(
         native_controls.monitor.store(!r.monitor_off_at_start, std::sync::atomic::Ordering::Relaxed);
         native_controls.set_sequence(sequence_settings(&r));
         native_controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
+        apply_wsjtx3_settings(&native_controls, &r);
+        wire_fox_verifier(&native_controls, &bus);
         let (store, flags, filter, controls, live) = (Arc::clone(store), Arc::clone(&highlight_flags), Arc::clone(&log_filter), Arc::clone(&native_controls), live_log.clone());
         let mut changes = store.subscribe();
         tokio::spawn(async move {
@@ -1243,6 +1287,7 @@ pub async fn run(
             while changes.changed().await.is_ok() {
                 let r = store.reports();
                 controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
+                apply_wsjtx3_settings(&controls, &r);
                 if let Ok(mut f) = flags.write() {
                     *f = r.highlights;
                 }
@@ -1697,6 +1742,7 @@ pub async fn run(
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {
         spawn_scheduler(state.clone(), rig.clone());
+        band_hop::spawn(state.clone(), rig.clone());
         if config.engine == EngineKind::Jtdx {
             spawn_status_bootstrap(state.clone(), bus.events(), rig, config.jtdx_ini.clone());
         }

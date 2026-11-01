@@ -256,6 +256,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     /// L'ultima trasmissione consegnata alla catena (testo inviato, se e' testo libero, periodo, inizio): serve a rimodularla a un'altra frequenza
     /// quando la barra Tx si sposta durante la trasmissione (JTDX con `TxQSYAllowed`: il tono cambia subito).
     on_air_tx: Option<(String, bool, Parity, u64)>,
+    /// Wait and Call scattato: fino a quando (secondi UTC) si continua a chiamare il DX se non risponde.
+    wait_call_until: Option<f64>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -300,7 +302,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -783,6 +785,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.note_heard(slot, decoded);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
+        self.wait_features(slot, decoded, now_s, &mut log);
         // «Rispondi a tutti»: chi mi chiama entra in coda senza il tasto destro
         self.queue_callers(slot, slot_start_ms, decoded, &mut log);
         log.extend(self.maybe_move_free_tx(slot.next()));
@@ -884,6 +887,65 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
         }
         qsos
+    }
+
+    /// Wait and Reply e Wait and Call (`processWaitReplyCall` di `widgets/mainwindow.cpp`, `planWaitReplyCall` di `DecodedMessageReaction.cpp`, `WaitFeaturePolicy.hpp`
+    /// di WSJT-X 3.3). Con «Wait features» acceso e un DX impostato:
+    /// - Wait and Reply: con «Abilita Tx» spento, se il DX mi scrive (non un 73) la trasmissione si riaccende e il QSO riprende dal suo messaggio;
+    /// - Wait and Call (pulsante armato, AutoSeq acceso): quando il DX chiama CQ o chiude il suo QSO (RR73, RRR, 73) lo si chiama da soli, per 6,2 periodi
+    ///   (fino a tre chiamate); poi, se non ha risposto, la trasmissione si spegne. Scattato, il pulsante si disarma.
+    fn wait_features(&mut self, slot: Slot, decoded: &[(String, i32, u32)], now_s: f64, log: &mut Vec<String>) {
+        // la finestra di Wait and Call e' finita senza risposta: si smette di chiamare
+        if let Some(until) = self.wait_call_until
+            && now_s >= until
+        {
+            self.wait_call_until = None;
+            if self.seq.is_enabled() && self.seq.ntx() <= 1 {
+                self.seq.set_enabled(false);
+                self.halt_tx();
+                log.push("Wait and Call: il DX non ha risposto, trasmissione spenta".to_string());
+            }
+        }
+        if !self.controls.wait_features.load(Ordering::Relaxed) || self.opts.hound {
+            return;
+        }
+        let Some(his) = self.seq.dx().map(str::to_string) else { return };
+        let my = self.my_call.clone();
+        if !self.seq.is_enabled()
+            && let Some((text, snr, freq)) = decoded.iter().find(|(t, _, _)| crate::features::dx_calls_me(t, &my, &his)).cloned()
+        {
+            match self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true) {
+                Ok(()) => {
+                    self.wait_call_until = None;
+                    log.push(format!("Wait and Reply: {his} ti chiama («{text}»), si riprende il QSO"));
+                }
+                Err(e) => log.push(format!("Wait and Reply non possibile: {e:?}")),
+            }
+            return;
+        }
+        if !self.controls.switch_on("wait_call") || !self.opts.auto_seq {
+            return;
+        }
+        let Some((text, snr, freq)) = decoded.iter().find(|(t, _, _)| crate::features::frees_the_dx(t, &his)).cloned() else { return };
+        // il pulsante si disarma (`SetNoWaitAndCall`): un nuovo Wait and Call va armato a mano
+        self.controls.set_switch("wait_call", false);
+        let result = if text.starts_with("CQ ") {
+            self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true)
+        } else {
+            // il DX ha chiuso con un altro: lo si chiama dal primo messaggio, nel periodo opposto al suo
+            self.seq.set_tx_even(!slot.is_even());
+            self.opts.tx_even = !slot.is_even();
+            let first = if self.opts.skip_tx1 { 2 } else { 1 };
+            self.seq.select_tx(first).map(|()| self.seq.set_enabled(true))
+        };
+        match result {
+            Ok(()) => {
+                let period = self.mode.period_ms() as f64 / 1000.0;
+                self.wait_call_until = Some(now_s + crate::features::WAIT_CALL_PERIODS * period);
+                log.push(format!("Wait and Call: {his} e' libero («{text}»), lo chiamo"));
+            }
+            Err(e) => log.push(format!("Wait and Call non possibile: {e:?}")),
+        }
     }
 
     /// «Rispondi a tutti» (`answer_all`): ogni stazione che mi chiama direttamente (non un CQ, non un messaggio di chiusura) si mette in coda, se non e'
@@ -1319,6 +1381,44 @@ mod tests {
         assert_eq!(requests[0].mode, tx_native::Mode::Ft8);
         // il CQ e' arrivato in un periodo pari: si risponde nei dispari
         assert_eq!(requests[0].parity, Parity::Odd);
+    }
+
+    /// Wait and Reply (WSJT-X 3.3): con Abilita Tx spento e il DX impostato, se il DX mi scrive il QSO riprende da solo; con le Wait features spente no.
+    #[test]
+    fn wait_and_reply_resumes_the_qso_when_the_dx_calls_me() {
+        for on in [true, false] {
+            let (mut d, _port, controls) = driver();
+            controls.wait_features.store(on, Ordering::Relaxed);
+            d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+            d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+            d.handle(TxCommand::Enable(false), BASE + 14.1);
+            assert!(!d.seq.is_enabled());
+            let later = SLOT_MS + 30_000;
+            let (_, log) = d.after_slot(later, &[("IU3ABC K1ABC -07".to_string(), -8, 1200)], BASE + 44.2, 14_074_000, "20m");
+            assert_eq!(d.seq.is_enabled(), on, "{log:?}");
+            assert_eq!(log.iter().any(|l| l.contains("Wait and Reply")), on, "{log:?}");
+        }
+    }
+
+    /// Wait and Call: armato, quando il DX chiude con un altro lo si chiama; il pulsante si disarma e, senza risposta, dopo 6,2 periodi si smette.
+    #[test]
+    fn wait_and_call_calls_the_dx_when_he_is_free_and_gives_up_without_answer() {
+        let (mut d, port, controls) = driver();
+        d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: None, generate: true }, BASE + 1.0);
+        controls.set_switch("wait_call", true);
+        // il DX e' ancora in QSO con un altro: niente
+        let (_, log) = d.after_slot(SLOT_MS, &[("W9XYZ K1ABC -07".to_string(), -8, 900)], BASE + 14.2, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
+        // chiude con RR73: tocca a me, nel periodo opposto
+        let next = SLOT_MS + 30_000;
+        let (_, log) = d.after_slot(next, &[("W9XYZ K1ABC RR73".to_string(), -8, 900)], BASE + 44.2, 14_074_000, "20m");
+        assert!(d.seq.is_enabled(), "{log:?}");
+        assert!(!controls.switch_on("wait_call"), "il pulsante si disarma");
+        assert!(log.iter().any(|l| l.contains("Wait and Call")), "{log:?}");
+        assert!(!port.requests.lock().expect("richieste").is_empty(), "la chiamata parte: {log:?}");
+        // nessuna risposta per piu' di 6,2 periodi: la trasmissione si spegne
+        let (_, log) = d.after_slot(next + 120_000, &[], BASE + 44.2 + 120.0, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
     }
 
     /// Per `ALL.TXT`: una trasmissione consegnata alla catena si annuncia con il suo periodo e il testo davvero modulato, esce una volta sola quando
