@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Integrazioni UDP** (Impostazioni > Segnalazioni, nuovo riquadro «Integrazioni», sei lingue, «?» per ogni voce, salvataggio automatico): elenco di destinatari UDP, ciascuno con le sue scelte: flusso WSJT-X, Logged ADIF (12), ADIF su UDP, XML stile N1MM (`contactinfo`, porta di base 12060), unicast o **multicast** con TTL e interfaccia di uscita (piu' programmi sulla stessa porta: GridTracker, QLog, MacLoggerDX, CQRLOG, N1MM+, HRD, JTAlert). I comandi di ritorno arrivano anche dai gruppi multicast. Le variabili `AURORA_UDP_FORWARD` (oltre il primo indirizzo) e `AURORA_EXPORT_UDP` sono ora solo i valori iniziali dell'elenco.
+- **Nuovi comandi UDP in ingresso** (solo con «Accetta richieste UDP»): Highlight Callsign (13) colora le righe del nominativo nella lista dei messaggi (sfondo e testo, «solo l'ultima», tolto con colori non validi); Clear (3) svuota le liste come «Cancella»; Location (11) cambia il locatore per la sessione; Configure (15) imposta modo FT8/FT4, frequenza Rx, DX call e locatore e genera i messaggi; Switch Configuration (14) si ignora con una riga di log. Nuovi eventi WebSocket `highlight_callsign` e `clear_decodes`.
+- **QSO Logged (5)** con i campi di WSJT-X 2.x in coda: Exchange sent, Exchange received, ADIF Propagation mode (vuoti).
 
 ## 0.11.51 - 2026-11-01
 - **Cascata di nuovo visibile**: con la 0.11.50 restava nera perche' l'interfaccia scartava le righe del nuovo spettro (6827 canali, il limite era 4096); ora le accetta fino a 8192 come il core.

@@ -49,6 +49,11 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
     {
         return;
     }
+    for highlight in state.current_highlights() {
+        if !send_event(&mut socket, &highlight).await {
+            return;
+        }
+    }
 
     loop {
         tokio::select! {

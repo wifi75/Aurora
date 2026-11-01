@@ -13,6 +13,9 @@ pub const FREE_TEXT: u32 = 9;
 pub const WSPR_DECODE: u32 = 10;
 pub const LOCATION: u32 = 11;
 pub const LOGGED_ADIF: u32 = 12;
+pub const HIGHLIGHT_CALLSIGN: u32 = 13;
+pub const SWITCH_CONFIGURATION: u32 = 14;
+pub const CONFIGURE: u32 = 15;
 /// Solo JTDX: frequenza audio di trasmissione.
 pub const SET_TX_FREQ: u32 = 50;
 /// Solo JTDX: come il pulsante "CQ". Provato dal vivo: con il bool a `true` JTDX abilita Tx e trasmette il CQ.
@@ -79,6 +82,10 @@ pub struct QsoExtra {
     pub operator_call: Option<String>,
     pub my_call: Option<String>,
     pub my_grid: Option<String>,
+    /// Campi di WSJT-X 2.x (scambio di gara inviato e ricevuto, modo di propagazione ADIF): `None` se il pacchetto finisce prima (JTDX).
+    pub exchange_sent: Option<String>,
+    pub exchange_received: Option<String>,
+    pub propagation_mode: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -235,7 +242,15 @@ fn read_qso_logged(r: &mut Reader) -> Result<Message, Error> {
         let operator_call = r.utf8()?;
         let my_call = r.utf8()?;
         let my_grid = r.utf8()?;
-        Some(QsoExtra { time_off_ms, tx_power, comments, name, time_on_ms, operator_call, my_call, my_grid })
+        let mut tail = [None, None, None];
+        for field in &mut tail {
+            if r.is_empty() {
+                break;
+            }
+            *field = r.utf8()?;
+        }
+        let [exchange_sent, exchange_received, propagation_mode] = tail;
+        Some(QsoExtra { time_off_ms, tx_power, comments, name, time_on_ms, operator_call, my_call, my_grid, exchange_sent, exchange_received, propagation_mode })
     };
     Ok(Message::QsoLogged { id, dx_call, dx_grid, tx_freq, mode, report_sent, report_received, extra })
 }
@@ -315,4 +330,80 @@ pub fn encode_trigger_cq(id: &str, schema: u32, modifier: &str, flag: bool) -> V
 /// Chiede a JTDX di rimandare i decode correnti (utile a chi si collega a sessione iniziata).
 pub fn encode_replay(id: &str, schema: u32) -> Vec<u8> {
     command_header(REPLAY, schema, id).into_bytes()
+}
+
+/// Clear in ingresso: `window` 0 = attivita' di banda, 1 = frequenza Rx, 2 = entrambe (campo aggiunto da WSJT-X; senza, vale 0).
+pub fn encode_clear_window(id: &str, schema: u32, window: u8) -> Vec<u8> {
+    let mut w = command_header(CLEAR, schema, id);
+    w.u8(window);
+    w.into_bytes()
+}
+
+/// Location (tipo 11): il locatore della stazione (anche nella forma `GRID:xxxx`).
+pub fn encode_location(id: &str, schema: u32, location: &str) -> Vec<u8> {
+    let mut w = command_header(LOCATION, schema, id);
+    w.utf8(Some(location));
+    w.into_bytes()
+}
+
+/// Highlight Callsign (tipo 13): colori di sfondo e di testo (`None` = `QColor()` non valido, che toglie l'evidenziazione) e «solo l'ultima».
+pub fn encode_highlight_callsign(id: &str, schema: u32, call: &str, background: Option<[u8; 3]>, foreground: Option<[u8; 3]>, last_only: bool) -> Vec<u8> {
+    let mut w = command_header(HIGHLIGHT_CALLSIGN, schema, id);
+    w.utf8(Some(call));
+    w.qcolor(background);
+    w.qcolor(foreground);
+    w.bool(last_only);
+    w.into_bytes()
+}
+
+/// Switch Configuration (tipo 14): il nome della configurazione da usare.
+pub fn encode_switch_configuration(id: &str, schema: u32, name: &str) -> Vec<u8> {
+    let mut w = command_header(SWITCH_CONFIGURATION, schema, id);
+    w.utf8(Some(name));
+    w.into_bytes()
+}
+
+/// I campi di un Configure (tipo 15). Testo vuoto e `u32::MAX` vogliono dire «non cambiare» (come in WSJT-X).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigureFields {
+    pub mode: String,
+    pub frequency_tolerance: u32,
+    pub submode: String,
+    pub fast_mode: bool,
+    pub tr_period: u32,
+    pub rx_df: u32,
+    pub dx_call: String,
+    pub dx_grid: String,
+    pub generate_messages: bool,
+}
+
+impl Default for ConfigureFields {
+    fn default() -> Self {
+        ConfigureFields {
+            mode: String::new(),
+            frequency_tolerance: u32::MAX,
+            submode: String::new(),
+            fast_mode: false,
+            tr_period: u32::MAX,
+            rx_df: u32::MAX,
+            dx_call: String::new(),
+            dx_grid: String::new(),
+            generate_messages: false,
+        }
+    }
+}
+
+/// Configure (tipo 15): modo, tolleranza, sottomodo, modo veloce, periodo T/R, frequenza Rx, DX call e locatore, «genera i messaggi».
+pub fn encode_configure(id: &str, schema: u32, c: &ConfigureFields) -> Vec<u8> {
+    let mut w = command_header(CONFIGURE, schema, id);
+    w.utf8(Some(&c.mode));
+    w.u32(c.frequency_tolerance);
+    w.utf8(Some(&c.submode));
+    w.bool(c.fast_mode);
+    w.u32(c.tr_period);
+    w.u32(c.rx_df);
+    w.utf8(Some(&c.dx_call));
+    w.utf8(Some(&c.dx_grid));
+    w.bool(c.generate_messages);
+    w.into_bytes()
 }

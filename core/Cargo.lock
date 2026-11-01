@@ -2052,6 +2052,7 @@ version = "0.11.51"
 dependencies = [
  "aurora-core",
  "logbook",
+ "socket2",
  "tokio",
  "tracing",
  "udp-bridge",

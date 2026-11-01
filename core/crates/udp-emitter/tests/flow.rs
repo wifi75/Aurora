@@ -232,6 +232,7 @@ async fn rig_with(accept: bool, apply_filters: bool, filters: aurora_core::UdpFi
         on_reply_accepted: Some(Arc::new(move || {
             accepted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         })),
+        ..Default::default()
     };
     let emitter = Emitter::start_with(config, rx, cmd_tx, Arc::new(|| true), hooks).await.expect("emettitore");
     Rig { gridtracker, emitter, events, commands }
@@ -313,4 +314,125 @@ async fn the_comment_name_and_power_of_the_qso_travel_in_the_udp_qso_logged() {
     assert_eq!((extra.name.as_deref(), extra.comments.as_deref(), extra.tx_power.as_deref()), (Some("Mario"), Some("Distance: 6000 km"), Some("50")));
     let Message::LoggedAdif { adif, .. } = next(&rig.gridtracker).await.message else { panic!("atteso LoggedAdif") };
     assert!(adif.expect("adif").contains("<NAME:5>Mario <COMMENT:17>Distance: 6000 km"));
+}
+
+async fn rig_external(accept: bool, seen: Arc<std::sync::Mutex<Vec<udp_emitter::External>>>) -> Rig {
+    let (gridtracker, addr) = listener().await;
+    let (events, rx) = broadcast::channel(64);
+    let (cmd_tx, commands) = mpsc::channel(16);
+    let mut config = EmitterConfig::jtdx(vec![addr]);
+    config.accept_requests = accept;
+    let hooks = udp_emitter::EmitterHooks {
+        on_external: Some(Arc::new(move |e| {
+            if let Ok(mut v) = seen.lock() {
+                v.push(e);
+            }
+        })),
+        ..Default::default()
+    };
+    let emitter = Emitter::start_with(config, rx, cmd_tx, Arc::new(|| true), hooks).await.expect("emettitore");
+    Rig { gridtracker, emitter, events, commands }
+}
+
+async fn wait_for(seen: &std::sync::Mutex<Vec<udp_emitter::External>>, n: usize) -> Vec<udp_emitter::External> {
+    for _ in 0..100 {
+        let now = seen.lock().map(|v| v.clone()).unwrap_or_default();
+        if now.len() >= n {
+            return now;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    seen.lock().map(|v| v.clone()).unwrap_or_default()
+}
+
+#[tokio::test]
+async fn highlight_clear_location_configure_and_switch_reach_the_hook_only_when_accepted() {
+    use udp_bridge::{encode_clear_window, encode_configure, encode_highlight_callsign, encode_location, encode_switch_configuration, ConfigureFields};
+    use udp_emitter::External;
+    let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let rig = rig_external(true, Arc::clone(&seen)).await;
+    let to = rig.emitter.local_addr();
+    let datagrams = [
+        encode_highlight_callsign("JTDX", 3, "k1abc", Some([255, 0, 0]), None, true),
+        encode_clear_window("JTDX", 3, 1),
+        encode_location("JTDX", 3, "fn42ab"),
+        encode_location("JTDX", 3, "non un locatore"),
+        encode_configure("JTDX", 3, &ConfigureFields { mode: "FT4".into(), rx_df: 1200, ..ConfigureFields::default() }),
+        encode_switch_configuration("JTDX", 3, "Gara"),
+    ];
+    for d in &datagrams {
+        rig.gridtracker.send_to(d, to).await.expect("invio");
+    }
+    let got = wait_for(&seen, 5).await;
+    assert_eq!(got.len(), 5, "il Location non valido si scarta: {got:?}");
+    assert_eq!(got[0], External::Highlight { call: "K1ABC".into(), background: Some([255, 0, 0]), foreground: None, last_only: true });
+    assert_eq!(got[1], External::Clear { window: 1 });
+    assert_eq!(got[2], External::Location { grid: "FN42ab".into() });
+    let External::Configure(c) = &got[3] else { panic!("atteso Configure") };
+    assert_eq!((c.mode.as_deref(), c.rx_df, c.dx_call.as_deref()), (Some("FT4"), Some(1200), None));
+    assert_eq!(got[4], External::SwitchConfiguration { name: "Gara".into() });
+
+    // con «accetta le richieste» spento non passa niente
+    let closed = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let rig = rig_external(false, Arc::clone(&closed)).await;
+    for d in &datagrams {
+        rig.gridtracker.send_to(d, rig.emitter.local_addr()).await.expect("invio");
+    }
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert!(closed.lock().map(|v| v.is_empty()).unwrap_or(false));
+}
+
+#[tokio::test]
+async fn each_destination_receives_only_its_own_choice() {
+    let (stream_socket, stream_addr) = listener().await;
+    let (adif_socket, adif_addr) = listener().await;
+    let (events, rx) = broadcast::channel(64);
+    let (cmd_tx, _commands) = mpsc::channel(16);
+    let mut config = EmitterConfig::jtdx(Vec::new());
+    config.de_call = "IU3ABC".into();
+    config.destinations = vec![
+        udp_emitter::Destination { addr: stream_addr, stream: true, logged_adif: false, multicast: None },
+        udp_emitter::Destination { addr: adif_addr, stream: false, logged_adif: true, multicast: None },
+    ];
+    let _emitter = Emitter::start(config, rx, cmd_tx, Arc::new(|| true)).await.expect("emettitore");
+    assert!(matches!(next(&stream_socket).await.message, Message::Heartbeat { .. }));
+    assert!(matches!(next(&stream_socket).await.message, Message::Clear { .. }));
+    events.send(Event::QsoLogged(QsoRecord { call: "K1ABC".into(), grid: "FN42".into(), mode: "FT8".into(), time_off_unix_ms: 1_792_860_449_000, ..Default::default() })).expect("evento");
+    assert!(matches!(next(&stream_socket).await.message, Message::QsoLogged { .. }));
+    silence(&stream_socket).await;
+    let Message::LoggedAdif { adif, .. } = next(&adif_socket).await.message else { panic!("solo il Logged ADIF") };
+    assert!(adif.expect("adif").contains("<CALL:5>K1ABC"));
+    silence(&adif_socket).await;
+}
+
+#[tokio::test]
+async fn a_multicast_group_on_the_loopback_receives_the_flow() {
+    use std::net::Ipv4Addr;
+    let group = Ipv4Addr::new(239, 255, 77, 31);
+    let std_socket = std::net::UdpSocket::bind("0.0.0.0:0").expect("socket");
+    let port = std_socket.local_addr().expect("indirizzo").port();
+    if std_socket.join_multicast_v4(&group, &Ipv4Addr::LOCALHOST).is_err() {
+        // un sistema senza multicast sul loopback: la prova non ha senso
+        return;
+    }
+    std_socket.set_nonblocking(true).expect("non bloccante");
+    let listener = UdpSocket::from_std(std_socket).expect("tokio");
+    let (_events, rx) = broadcast::channel(64);
+    let (cmd_tx, _commands) = mpsc::channel(16);
+    let mut config = EmitterConfig::jtdx(Vec::new());
+    config.destinations = vec![udp_emitter::Destination {
+        addr: SocketAddr::from((group, port)),
+        stream: true,
+        logged_adif: false,
+        multicast: Some(udp_emitter::Multicast { ttl: 1, interface: Some(Ipv4Addr::LOCALHOST.into()) }),
+    }];
+    let emitter = Emitter::start(config, rx, cmd_tx, Arc::new(|| true)).await.expect("emettitore");
+    let mut buf = vec![0u8; 65_535];
+    let Ok(Ok((n, from))) = tokio::time::timeout(Duration::from_secs(2), listener.recv_from(&mut buf)).await else {
+        // alcuni sistemi non riportano il multicast sul loopback: niente da verificare
+        return;
+    };
+    assert!(matches!(decode(&buf[..n]).expect("datagramma").message, Message::Heartbeat { .. }));
+    // il mittente e' il socket multicast dell'emettitore: i comandi tornano li'
+    assert!(emitter.local_addrs().iter().any(|a| a.port() == from.port()));
 }
