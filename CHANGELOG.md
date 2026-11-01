@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Barre Rx e Tx**: mentre si trascinano, l'etichetta con gli Hz diventa piena del colore della barra e si legge bene; al rilascio torna trasparente.
 - **Display della radio piu' reattivo**: con il CAT su USB, rete o seriale da 19200 baud in su si leggono 6 valori in piu' per giro invece di 3 (PRE, ATT, AGC, NB, NR, NOTCH, VFO B...): il display si aggiorna in circa la meta' del tempo. Le seriali lente restano a uno per giro per non disturbare il PTT.
 
 ## 0.11.58 - 2026-11-01

@@ -246,6 +246,18 @@
   outline: none;
 }
 
+/* mentre si trascina: etichetta piena del colore della barra, testo scuro e piu' grande, per leggere gli Hz in movimento */
+.wf-marker--dragging .wf-marker-tag {
+  z-index: 2;
+  background: currentColor;
+  font-weight: 700;
+}
+
+.wf-marker--dragging .wf-marker-tag > * ,
+.wf-marker--dragging .wf-marker-tag {
+  -webkit-text-fill-color: #0b0f14;
+}
+
 .wf-marker:focus-visible .wf-marker-tag {
   box-shadow: 0 0 0 2px var(--accent);
 }
