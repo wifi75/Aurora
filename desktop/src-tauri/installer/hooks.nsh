@@ -21,10 +21,17 @@
 ; (solo quello lanciato da questa cartella, non i rigctld che l'utente usa per altri programmi) e si toglie la cartella vecchia,
 ; cosi' un aggiornamento non lascia file di versioni precedenti.
 !macro AuroraCleanHamlib
-  nsExec::Exec `powershell -NoProfile -WindowStyle Hidden -Command "Get-Process rigctl* -ErrorAction SilentlyContinue | Where-Object { $$_.Path -like '$INSTDIR\hamlib\*' } | Stop-Process -Force"`
+  ; si ripete finche' la cartella sparisce davvero: un rigctld rimasto orfano (Aurora chiusa mentre lo riavviava) teneva bloccata la DLL
+  StrCpy $2 0
+  aurora_hamlib_retry:
+  nsExec::Exec `powershell -NoProfile -WindowStyle Hidden -Command "Get-CimInstance Win32_Process -Filter \"Name like 'rigctl%'\" | Where-Object { $$_.ExecutablePath -like '$INSTDIR\hamlib\*' } | ForEach-Object { Stop-Process -Id $$_.ProcessId -Force -ErrorAction SilentlyContinue }"`
   Pop $0
-  Sleep 300
+  Sleep 400
   RMDir /r "$INSTDIR\hamlib"
+  IfFileExists "$INSTDIR\hamlib\*.*" 0 aurora_hamlib_done
+  IntOp $2 $2 + 1
+  IntCmp $2 15 aurora_hamlib_done aurora_hamlib_retry aurora_hamlib_done
+  aurora_hamlib_done:
 !macroend
 
 !macro NSIS_HOOK_PREINSTALL
