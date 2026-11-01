@@ -47,6 +47,9 @@ Version 0.11.58: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CA
 - **DXpeditions**: NG3K calendar (Online services, off by default) next to the CQs: on the air, heard now, upcoming and history.
 - **Settings**: sidebar with search, «?» with an explanation on every item, About page (version, author, licence, links).
 - **Phone**: PWA on the same network, with the Station page in tabs and finger-sized buttons (screens up to 640 px); pairing with a code (duration decided by you) or code-free access for testing.
+- **Logs and integrations**: direct upload to Wavelog/Cloudlog, ClubLog, QRZ.com and LoTW (TQSL); UDP integrations with multicast and per-program options, N1MM XML; ADIF export page with «Save as».
+- **From WSJT-X 3**: a7/a8 decoding and multithread FT8, Wait and Reply/Call, band hopping, full duplex, Fox verification (OTP), Tx block over UDP, stop on high SWR, unencodable messages blocked, WSJT-X 3 filters, Hamlib 4.7.2.
+- **Display and cluster**: Yaesu FT-2000 and Icom IC-7610 style radio displays; NG3K DXpeditions highlighted in the DX Cluster in a colour of your choice; live waterfall preview in the settings; always-on crash diagnostics.
 
 What is missing: `docs/mancante.md`. Results of the tests with JTDX: `docs/fase0-rapporto.md` (documentation in Italian).
 

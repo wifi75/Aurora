@@ -47,6 +47,9 @@ Version 0.11.58: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Sende
 - **DXpeditionen**: NG3K-Kalender (Online-Dienste, standardmäßig aus) neben den CQs: in der Luft, jetzt gehört, kommende und Verlauf.
 - **Einstellungen**: Seitenleiste mit Suche, «?» mit Erklärung zu jedem Eintrag, Infoseite (Version, Autor, Lizenz, Links).
 - **Smartphone**: PWA im selben Netzwerk, mit der Stationsseite in Reitern und fingergroßen Schaltflächen (Bildschirme bis 640 px); Kopplung mit Code (Gültigkeitsdauer legst du fest) oder Zugang ohne Code zum Testen.
+- **Logs und Integrationen**: direkter Upload zu Wavelog/Cloudlog, ClubLog, QRZ.com und LoTW (TQSL); UDP-Integrationen mit Multicast und Optionen je Programm, N1MM-XML; ADIF-Exportseite mit „Speichern unter“.
+- **Aus WSJT-X 3**: a7/a8-Dekodierung und Multithread-FT8, Wait and Reply/Call, automatischer Bandwechsel, Vollduplex, Fox-Prüfung (OTP), Sendesperre per UDP, Stopp bei hohem SWR, nicht kodierbare Nachrichten gesperrt, Filter wie WSJT-X 3, Hamlib 4.7.2.
+- **Anzeige und Cluster**: Funkanzeige im Stil Yaesu FT-2000 und Icom IC-7610; NG3K-DXpeditionen im DX-Cluster in einer Farbe deiner Wahl hervorgehoben; Live-Vorschau des Wasserfalls in den Einstellungen; Absturzdiagnose immer aktiv.
 
 Was fehlt: `docs/mancante.md`. Ergebnisse der Tests mit JTDX: `docs/fase0-rapporto.md` (Dokumentation auf Italienisch).
 
