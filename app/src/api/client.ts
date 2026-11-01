@@ -1,7 +1,7 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { EngineSettingsSchema, HealthSchema, SpotResultSchema, type EngineSettings, type Health, type SpotResult, type WantedAlert } from './schemas';
+import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, type EngineSettings, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
@@ -728,6 +728,11 @@ export async function getEngineSettings(): Promise<EngineSettings> {
 /** Segnala la stazione su DXSummit (solo dalla rete di casa): frequenza e modo li sa il core, qui servono la stazione, il suo locatore e il testo. */
 export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string }): Promise<SpotResult> {
   return SpotResultSchema.parse(await (await request('/spot/dxsummit', jsonInit(body))).json());
+}
+
+/** Il pulsante «Prova» dell'invio diretto dei QSO: controlla le impostazioni salvate senza registrare QSO. Un errore arriva come `ApiError` con il testo in `detail`. */
+export async function postUploadTest(service: 'wavelog' | 'clublog' | 'qrz' | 'lotw'): Promise<string> {
+  return UploadTestSchema.parse(await (await request('/qso-upload/test', jsonInit({ service }))).json()).message;
 }
 
 /** Salva e applica subito le modifiche; restituisce il documento aggiornato. */

@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiError, getEngineSettings, getStationInfo, putEngineSettings } from '../api/client';
+import { ApiError, getEngineSettings, getStationInfo, postUploadTest, putEngineSettings } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
 import { Help } from './layout';
 import { engineHint } from './engineHints';
 import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup } from '../lib/engineGroups';
-import { REPORT_GROUPS, type SettingRow } from '../lib/engineSettingsLayout';
+import { REPORT_GROUPS, type SettingRow, type UploadService } from '../lib/engineSettingsLayout';
 import { Help as Note } from './common';
 import { Cells, Group, Notes, Page, Unavailable } from './layout';
 import { useAutosave } from './useAutosave';
@@ -151,17 +151,56 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
   );
 }
 
-const STATUS_OF: Record<string, string> = { PSKReporter: 'psk', EQSLSend: 'eqsl', EnableTCPConnection: 'tcp', AllowSpotsDXSummit: 'dxsummit' };
+const STATUS_OF: Record<string, string> = {
+  PSKReporter: 'psk',
+  EQSLSend: 'eqsl',
+  EnableTCPConnection: 'tcp',
+  AllowSpotsDXSummit: 'dxsummit',
+  WavelogSend: 'wavelog',
+  ClublogSend: 'clublog',
+  QRZLogSend: 'qrz',
+  LoTWSend: 'lotw',
+};
 
 /** L'esito dell'ultimo invio di un servizio (ok o errore, e quando). */
 function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
   const t = useT();
   const st = doc.status?.[kind];
   const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
+  const pending = st?.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : '';
   return (
     <p className={`ens-reason ${st?.ok === false ? 'live-note' : 'muted'}`} role="status" data-testid={`status-${kind}`}>
       {t('ens.st.title')}: {text}
+      {pending}
     </p>
+  );
+}
+
+/** Il pulsante «Prova» di un servizio dell'invio diretto: controlla le impostazioni gia' salvate, senza registrare QSO. */
+function UploadTest({ service, waiting }: { service: UploadService; waiting: boolean }) {
+  const t = useT();
+  const client = useQueryClient();
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const test = useMutation({
+    mutationFn: () => postUploadTest(service),
+    onSuccess: (text) => setResult({ ok: true, text }),
+    onError: (e) => setResult({ ok: false, text: e instanceof ApiError ? (e.detail ?? (e.code === 'local_only' ? t('ens.err.local') : e.code)) : t('ens.test.err') }),
+    // la prova puo' far ripartire un servizio fermo: si rilegge lo stato
+    onSettled: () => void client.invalidateQueries({ queryKey: ['engine-settings'] }),
+  });
+  return (
+    <div className="ens-test">
+      <button type="button" className="glass" disabled={waiting || test.isPending} title={waiting ? t('ens.test.saveFirst') : undefined} onClick={() => test.mutate()} data-testid={`test-${service}`}>
+        {test.isPending ? t('ens.test.running') : t('ens.test')}
+      </button>
+      {waiting ? <span className="muted"> {t('ens.test.saveFirst')}</span> : null}
+      {result && !waiting ? (
+        <span className={result.ok ? 'muted' : 'live-note'} role="status">
+          {' '}
+          {result.ok ? t('ens.test.ok') : t('ens.test.err')}: {result.text}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -180,6 +219,7 @@ export function NativeReports() {
         {REPORT_GROUPS.map((group) => {
           const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
           const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
+          const waiting = group.rows.some((r) => draft.changes[r.key] !== undefined);
           return (
             <Group key={group.title} title={t(group.title)} span={group.title === 'ens.g.net' || group.title === 'ens.g.udp' ? 2 : 1}>
               <Cells min={15}>
@@ -190,6 +230,12 @@ export function NativeReports() {
               {kinds.map((k) => (
                 <SendStatus key={k} doc={doc} kind={k} />
               ))}
+              {group.upload && rows.length > 0 ? (
+                <>
+                  <UploadTest service={group.upload.service} waiting={waiting} />
+                  <Note>{t(group.upload.help)}</Note>
+                </>
+              ) : null}
             </Group>
           );
         })}

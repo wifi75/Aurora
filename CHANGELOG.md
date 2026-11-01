@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Invio diretto dei QSO** (scheda Impostazioni > Segnalazioni, motore proprio): ogni QSO messo a log parte subito verso **Wavelog/Cloudlog** (API `index.php/api/qso` con chiave e numero della stazione), **ClubLog** (invio in tempo reale, chiave API dell'applicazione configurabile), **QRZ.com Logbook** (`ACTION=INSERT`) e **LoTW** (firma e caricamento con TQSL installato: `tqsl -d -u -a compliant -x -l <posizione> <file.adi>`, percorso cercato da solo). Ogni servizio ha interruttore (spento di fabbrica), campi, pulsante «Prova» (senza scrivere QSO dove il servizio lo permette), stato dell'ultimo invio con i QSO in coda e spiegazione «?», in sei lingue. Chiavi e password protette con DPAPI come quella di eQSL. Se la rete manca i QSO restano in una coda salvata su file (`invii-in-coda.json`) e si riprovano con attese crescenti, anche dopo un riavvio; un errore di credenziali ferma solo quel servizio finche' non si correggono. Rotta nuova `POST /api/v1/qso-upload/test`. Dettagli e limiti in `docs/integrazioni-log.md`.
 
 ## 0.11.51 - 2026-11-01
 - **Cascata di nuovo visibile**: con la 0.11.50 restava nera perche' l'interfaccia scartava le righe del nuovo spettro (6827 canali, il limite era 4096); ora le accetta fino a 8192 come il core.

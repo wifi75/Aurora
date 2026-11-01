@@ -509,10 +509,15 @@ fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) ->
         dxsummit: r.dxsummit,
         tcp: r.tcp,
         eqsl: r.eqsl.then(|| reporting::EqslAccount { user: r.eqsl_user.clone(), nick: r.eqsl_nick.clone() }),
+        wavelog: r.wavelog.then(|| reporting::WavelogAccount { url: r.wavelog_url.clone(), station_id: r.wavelog_station.clone() }),
+        clublog: r.clublog.then(|| reporting::ClublogAccount { email: r.clublog_email.clone(), callsign: r.clublog_call.clone() }),
+        qrz: r.qrz,
+        lotw: r.lotw.then(|| reporting::LotwSetup { tqsl: r.lotw_tqsl.clone(), location: r.lotw_location.clone() }),
     }
 }
 
-/// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, spot DXSummit a richiesta, server TCP, eQSL), la registrazione del log (commento con rapporti e distanza,
+/// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, spot DXSummit a richiesta, server TCP, eQSL, invio diretto dei QSO con la sua
+/// coda `invii-in-coda.json` nella cartella dei dati), la registrazione del log (commento con rapporti e distanza,
 /// modo) e la scrittura di `ALL.TXT`. Ogni invio ha il suo thread e i suoi tempi massimi: non ferma mai il motore.
 fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>, bus: &Bus, controls: &Arc<engine_native::NativeControls>, data_dir: &Path, tx_power: String) {
     use remote_api::engine_settings::Feature;
@@ -521,7 +526,8 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
     store.set_feature(Feature::AllTxt, true);
     let r = store.reports();
     controls.set_all_txt(r.all_txt, r.all_txt_debug);
-    let service = reporting::Service::spawn(bus, store.status(), secrets, reporting::Endpoints::default(), Arc::new(unix_secs), reporting_config(&r, &tx_power));
+    let endpoints = reporting::Endpoints { queue_file: Some(data_dir.join("invii-in-coda.json")), ..reporting::Endpoints::default() };
+    let service = reporting::Service::spawn(bus, store.status(), secrets, endpoints, Arc::new(unix_secs), reporting_config(&r, &tx_power));
     store.set_reporting(Arc::clone(&service));
     {
         let (store, controls) = (Arc::clone(store), Arc::clone(controls));
