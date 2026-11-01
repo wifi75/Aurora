@@ -67,6 +67,7 @@ pub enum Support {
 /// `EQSLPasswd`: la password di eQSL **non si legge mai dal `JTDX.ini`** e non sta nel file delle impostazioni: si salva solo nella protezione dei segreti del sistema (`SECRET_KEYS`).
 /// `Region` e `Type2MsgGen` stanno nel `JTDX.ini` come valori binari (`@Variant`): non si leggono ne' si scrivono, ma la scheda Generali li mostra.
 /// Le voci dell'invio diretto dei QSO (Wavelog/Cloudlog, ClubLog, QRZ.com, LoTW) sono solo di Aurora: JTDX non le ha.
+/// `UdpDestinations` e' di Aurora (JTDX non ce l'ha): l'elenco dei destinatari UDP con le loro opzioni, in JSON (riquadro «Integrazioni»).
 pub const EXTRA_KEYS: &[&str] = &[
     "EQSLPasswd",
     "Region",
@@ -85,7 +86,117 @@ pub const EXTRA_KEYS: &[&str] = &[
     "LoTWSend",
     "LoTWTqsl",
     "LoTWLocation",
+    UDP_DESTINATIONS,
 ];
+
+/// La voce con l'elenco dei destinatari UDP (JSON, vedi [`UdpDestination`]).
+pub const UDP_DESTINATIONS: &str = "UdpDestinations";
+/// Quanti destinatari al massimo.
+pub const MAX_DESTINATIONS: usize = 16;
+/// La porta di base dei messaggi XML di N1MM Logger+ (`contactinfo`).
+pub const N1MM_PORT: u16 = 12060;
+
+/// Un destinatario UDP con le sue opzioni (riquadro «Integrazioni» della scheda Segnalazioni). Si salva come elemento dell'elenco JSON
+/// `UdpDestinations`; i nomi dei campi sono quelli dell'interfaccia.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default, deny_unknown_fields)]
+pub struct UdpDestination {
+    /// Un nome per riconoscerlo (GridTracker, Log4OM...).
+    pub name: String,
+    pub host: String,
+    pub port: u16,
+    /// Spento: resta nell'elenco ma non riceve niente.
+    pub enabled: bool,
+    /// Flusso binario di WSJT-X (Heartbeat, Status, Decode, QSO Logged...).
+    pub wsjtx: bool,
+    /// Logged ADIF (tipo 12) nel flusso binario.
+    pub logged_adif: bool,
+    /// Record ADIF testuale in un datagramma (come il server UDP secondario).
+    pub adif: bool,
+    /// Messaggio XML `contactinfo` di N1MM Logger+ a ogni QSO.
+    pub n1mm: bool,
+    /// Gruppo multicast (l'indirizzo deve esserlo): TTL e interfaccia di uscita.
+    pub multicast: bool,
+    pub ttl: u32,
+    /// Indirizzo IPv4 dell'interfaccia di uscita del multicast; vuoto = scelta del sistema.
+    pub iface: String,
+}
+
+impl Default for UdpDestination {
+    fn default() -> Self {
+        UdpDestination { name: String::new(), host: String::new(), port: 2237, enabled: true, wsjtx: false, logged_adif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: String::new() }
+    }
+}
+
+impl UdpDestination {
+    /// Un destinatario da un indirizzo (valori iniziali dall'ambiente): multicast se l'indirizzo lo e'.
+    pub fn from_addr(name: &str, addr: SocketAddr) -> UdpDestination {
+        UdpDestination { name: name.to_string(), host: addr.ip().to_string(), port: addr.port(), multicast: addr.ip().is_multicast(), ..UdpDestination::default() }
+    }
+
+    pub fn addr(&self) -> Option<SocketAddr> {
+        parse_server(&self.host, &self.port.to_string())
+    }
+
+    /// L'interfaccia di uscita del multicast, se indicata.
+    pub fn interface(&self) -> Option<IpAddr> {
+        parse_host(&self.iface)
+    }
+
+    /// Vero se e' acceso e riceve qualcosa.
+    pub fn active(&self) -> bool {
+        self.enabled && (self.wsjtx || self.logged_adif || self.adif || self.n1mm)
+    }
+
+    fn check(&self) -> Result<(), String> {
+        let label = if self.name.trim().is_empty() { self.host.clone() } else { self.name.clone() };
+        if self.name.chars().count() > 40 || self.name.chars().any(char::is_control) {
+            return Err(format!("{label}: il nome ha al piu' 40 caratteri"));
+        }
+        let addr = self.addr().ok_or_else(|| format!("{label}: serve un indirizzo IP (o localhost) e una porta da 1 a 65535"))?;
+        if self.multicast {
+            if !addr.ip().is_multicast() {
+                return Err(format!("{label}: per il multicast serve un indirizzo di gruppo (224.0.0.0-239.255.255.255)"));
+            }
+            if !(1..=255).contains(&self.ttl) {
+                return Err(format!("{label}: il TTL va da 1 a 255"));
+            }
+            if !self.iface.trim().is_empty() {
+                match self.interface() {
+                    Some(IpAddr::V4(_)) if addr.is_ipv4() => {}
+                    _ => return Err(format!("{label}: l'interfaccia del multicast e' un indirizzo IPv4 di questo PC (o vuota)")),
+                }
+            }
+        } else if addr.ip().is_multicast() {
+            return Err(format!("{label}: e' un indirizzo multicast, accendi «multicast»"));
+        }
+        Ok(())
+    }
+}
+
+/// Legge e controlla l'elenco dei destinatari (testo JSON della voce `UdpDestinations`).
+pub fn parse_destinations(text: &str) -> Result<Vec<UdpDestination>, String> {
+    if text.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let list: Vec<UdpDestination> = serde_json::from_str(text).map_err(|e| format!("{UDP_DESTINATIONS}: elenco non leggibile ({e})"))?;
+    if list.len() > MAX_DESTINATIONS {
+        return Err(format!("{UDP_DESTINATIONS}: al piu' {MAX_DESTINATIONS} destinatari"));
+    }
+    for d in &list {
+        d.check()?;
+    }
+    Ok(list)
+}
+
+/// I valori iniziali dell'elenco dai destinatari dell'ambiente: gli indirizzi di `AURORA_UDP_FORWARD` oltre il primo (il primo e' il valore
+/// iniziale del server UDP primario) ricevono il flusso WSJT-X (e il Logged ADIF se `logged_adif`), quelli di `AURORA_EXPORT_UDP` il record ADIF.
+pub fn seed_destinations(env_forward: &[SocketAddr], env_export: &[SocketAddr], logged_adif: bool) -> String {
+    let mut list: Vec<UdpDestination> = env_forward.iter().skip(1).map(|a| UdpDestination { wsjtx: true, logged_adif, ..UdpDestination::from_addr("AURORA_UDP_FORWARD", *a) }).collect();
+    list.extend(env_export.iter().map(|a| UdpDestination { adif: true, ..UdpDestination::from_addr("AURORA_EXPORT_UDP", *a) }));
+    list.truncate(MAX_DESTINATIONS);
+    serde_json::to_string(&list).unwrap_or_else(|_| "[]".to_string())
+}
 
 /// Le voci che non finiscono mai nel file delle impostazioni ne' nelle risposte dell'API: hanno un posto protetto (`SecretStore`).
 pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "QRZLogKey"];
@@ -127,6 +238,8 @@ pub fn all_keys() -> Vec<&'static str> {
 pub fn support(key: &str) -> Support {
     match key {
         "MyCall" | "MyGrid" => Support::Live(Apply::Restart),
+        // l'elenco dei destinatari UDP (riquadro «Integrazioni»): esportatore e emettitore lo rileggono a ogni modifica
+        UDP_DESTINATIONS => Support::Live(Apply::Now),
         "UDP2Server" | "UDP2ServerPort" | "EnableUDP2adifBroadcast" => Support::Live(Apply::Now),
         "UDPServer" | "UDPServerPort" | "EnableUDP1adifSending" | "AcceptUDPRequests" | "AcceptUDPReplyMessages" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         "WriteDecodedALLTXT" | "WriteDecodedDebugALLTXT" => Support::Needs(Feature::AllTxt, "all_txt_pending", Apply::Now),
@@ -344,6 +457,8 @@ pub struct Reports {
     pub udp_window_restore: bool,
     /// «Messaggi decodificati e di debug» (`WriteDecodedDebugALLTXT`).
     pub all_txt_debug: bool,
+    /// I destinatari UDP del riquadro «Integrazioni», solo quelli accesi e validi.
+    pub destinations: Vec<UdpDestination>,
 }
 
 /// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
@@ -423,6 +538,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("preventFalseUDPspots", "true"),
         ("udpWindowToFront", "false"),
         ("udpWindowRestore", "false"),
+        // riquadro «Integrazioni»: nessun destinatario in piu' (i valori iniziali vengono dall'ambiente, vedi `seed_destinations`)
+        (UDP_DESTINATIONS, "[]"),
         // Audio: dispositivi predefiniti del sistema (nome vuoto), canale Mono, nessun file audio, cartella `save` dei dati
         ("SoundInName", ""),
         ("SoundOutName", ""),
@@ -527,6 +644,9 @@ fn addr_default() -> SocketAddr {
 pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if !is_stored(key) {
         return Err(SettingsError::NotAvailable(key.to_string()));
+    }
+    if key == UDP_DESTINATIONS {
+        return if value.len() > 16_384 { Err(SettingsError::BadValue(format!("{key}: elenco troppo lungo"))) } else { parse_destinations(value).map(|_| ()).map_err(SettingsError::BadValue) };
     }
     // il nominativo e il locatore possono essere vuoti (nessuno impostato): gli altri testi anche, gli indirizzi si controllano sotto
     if value.is_empty()
@@ -651,6 +771,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         udp_window_to_front: truthy(values.get("udpWindowToFront")),
         udp_window_restore: truthy(values.get("udpWindowRestore")),
         all_txt_debug: truthy(values.get("WriteDecodedDebugALLTXT")),
+        destinations: parse_destinations(get(UDP_DESTINATIONS)).unwrap_or_default().into_iter().filter(UdpDestination::active).collect(),
     }
 }
 
@@ -1435,5 +1556,56 @@ SaveWav=2
 
     fn temp_path_of(store: &EngineSettingsStore) -> PathBuf {
         store.path.clone()
+    }
+
+    #[test]
+    fn the_udp_destinations_are_checked_and_interpreted() {
+        let ok = r#"[{"name":"GridTracker","host":"127.0.0.1","port":2237,"wsjtx":true},
+            {"name":"Gruppo","host":"239.255.0.1","port":2237,"wsjtx":true,"multicast":true,"ttl":2,"iface":"127.0.0.1"},
+            {"name":"N1MM","host":"127.0.0.1","port":12060,"n1mm":true,"enabled":false},
+            {"name":"Vuoto","host":"127.0.0.1","port":2333}]"#;
+        let list = parse_destinations(ok).expect("elenco valido");
+        assert_eq!(list.len(), 4);
+        assert_eq!(list[1].interface(), Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+        let r = interpret(&map(&[(UDP_DESTINATIONS, ok)]));
+        assert_eq!(r.destinations.iter().map(|d| d.name.as_str()).collect::<Vec<_>>(), vec!["GridTracker", "Gruppo"], "spenti e senza niente da ricevere restano fuori");
+        for bad in [
+            r#"[{"host":"239.255.0.1","port":2237,"wsjtx":true}]"#,
+            r#"[{"host":"127.0.0.1","port":2237,"multicast":true}]"#,
+            r#"[{"host":"239.255.0.1","port":2237,"multicast":true,"ttl":0}]"#,
+            r#"[{"host":"239.255.0.1","port":2237,"multicast":true,"iface":"non un indirizzo"}]"#,
+            r#"[{"host":"","port":2237}]"#,
+            r#"[{"host":"127.0.0.1","port":0}]"#,
+            r#"[{"host":"127.0.0.1","port":2237,"sconosciuto":true}]"#,
+            "non json",
+        ] {
+            assert!(validate(UDP_DESTINATIONS, bad).is_err(), "{bad}");
+        }
+        assert!(validate(UDP_DESTINATIONS, "[]").is_ok());
+    }
+
+    #[test]
+    fn the_destinations_start_from_the_environment_and_then_belong_to_the_file() {
+        let seeded = seed_destinations(&[addr("127.0.0.1:2333"), addr("239.255.0.1:2237")], &[addr("127.0.0.1:2237")], true);
+        let list = parse_destinations(&seeded).expect("seme valido");
+        assert_eq!(list.len(), 2, "il primo dell'inoltro e' il server primario");
+        assert!(list[0].wsjtx && list[0].logged_adif && list[0].multicast && !list[0].adif);
+        assert!(list[1].adif && !list[1].wsjtx && !list[1].multicast);
+        let path = temp("destinations");
+        let store = EngineSettingsStore::open(&path, || {
+            let mut seed = defaults();
+            seed.insert(UDP_DESTINATIONS.into(), seeded.clone());
+            seed
+        });
+        assert_eq!(store.reports().destinations.len(), 2);
+        store.update(&map(&[(UDP_DESTINATIONS, "[]")])).expect("modifica");
+        // riaprendo, il file vince sull'ambiente
+        let again = EngineSettingsStore::open(&path, || {
+            let mut seed = defaults();
+            seed.insert(UDP_DESTINATIONS.into(), seeded.clone());
+            seed
+        });
+        assert!(again.reports().destinations.is_empty());
+        assert_eq!(again.state_of(UDP_DESTINATIONS), Ok(Apply::Now));
     }
 }

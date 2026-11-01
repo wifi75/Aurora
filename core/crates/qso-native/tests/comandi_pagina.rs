@@ -152,3 +152,26 @@ fn a_double_click_with_auto_tx_off_picks_the_dx_but_does_not_enable_tx() {
     on.reply_to(Slot(10), &cq()).expect("risposta");
     assert!(on.is_enabled());
 }
+
+#[test]
+fn the_dx_typed_or_sent_by_configure_regenerates_the_messages() {
+    let mut s = seq(Options::default());
+    s.set_dx(Some("k1abc"), Some("FN42")).expect("DX valido");
+    assert_eq!((s.dx(), s.dx_grid()), (Some("K1ABC"), Some("FN42")));
+    assert!(!s.is_enabled(), "scrivere il DX non abilita la trasmissione");
+    s.regen_messages();
+    assert_eq!(s.tx_texts()[0], "K1ABC IU3ABC JN55");
+    // un altro nominativo sostituisce il DX e ne azzera il locatore
+    s.set_dx(Some("K2XYZ"), None).expect("DX valido");
+    assert_eq!((s.dx(), s.dx_grid()), (Some("K2XYZ"), None));
+    assert!(s.set_dx(Some("non valido!"), None).is_err());
+    assert!(s.set_dx(None, Some("ZZ99")).is_err());
+}
+
+#[test]
+fn the_location_changes_the_own_grid_of_the_messages() {
+    let mut s = seq(Options::default());
+    s.set_my_grid("FN42ab").expect("locatore valido");
+    assert_eq!(s.tx_texts()[5], "CQ IU3ABC FN42");
+    assert!(s.set_my_grid("12").is_err());
+}

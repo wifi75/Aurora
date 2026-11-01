@@ -1,5 +1,18 @@
 import { create } from 'zustand';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
+
+/** I colori chiesti da un programma collegato via UDP per un nominativo (Highlight Callsign). */
+export interface CallHighlight {
+  background: string | null;
+  foreground: string | null;
+  lastOnly: boolean;
+}
+
+/** Quante evidenziazioni si tengono al massimo. */
+const MAX_HIGHLIGHTS = 500;
+/** Solo colori `#rrggbb`: niente altro finisce nello stile della riga. */
+const COLOR = /^#[0-9a-f]{6}$/i;
+const colorOrNull = (c: string | null): string | null => (c !== null && COLOR.test(c) ? c : null);
 import type { ConnectionState } from '../api/stream';
 import { bandOf } from '../lib/format';
 import { usePrefs } from '../lib/prefs';
@@ -51,6 +64,8 @@ interface StationState {
   clearedDx: { call: string; until: number } | null;
   /** Quanti QSO sono stati registrati da quando la pagina e' aperta: chi mostra dati del log (scheda DXCC) li rilegge quando cambia. */
   qsosLogged: number;
+  /** I nominativi colorati dai programmi collegati via UDP (Highlight Callsign), per nominativo in maiuscolo. */
+  highlights: Record<string, CallHighlight>;
   apply(event: AuroraEvent): void;
   /** Mostra subito un cambio comandato (banda, modo) e lo tiene finche' il motore non lo riporta uguale (o scade). */
   patchStatus(patch: Partial<StationStatus>): void;
@@ -144,6 +159,7 @@ export const useStation = create<StationState>((set) => ({
   clearedBand: null,
   clearedDx: null,
   qsosLogged: 0,
+  highlights: {},
   dismissWanted() {
     set({ wantedBanner: null });
   },
@@ -212,6 +228,26 @@ export const useStation = create<StationState>((set) => ({
       case 'qso_logged':
         set((s) => ({ qsosLogged: s.qsosLogged + 1 }));
         break;
+      case 'highlight_callsign': {
+        const call = event.call.trim().toUpperCase();
+        if (call === '') break;
+        const background = colorOrNull(event.background);
+        const foreground = colorOrNull(event.foreground);
+        set((s) => {
+          const next = { ...s.highlights };
+          delete next[call];
+          // due colori non validi tolgono l'evidenziazione, come nel protocollo
+          if (background !== null || foreground !== null) next[call] = { background, foreground, lastOnly: event.last_only };
+          const keys = Object.keys(next);
+          for (const old of keys.slice(0, Math.max(0, keys.length - MAX_HIGHLIGHTS))) delete next[old];
+          return { highlights: next };
+        });
+        break;
+      }
+      case 'clear_decodes':
+        // come «Cancella»: le liste dei messaggi si svuotano (i colori dei nominativi restano)
+        set({ decodes: [], txLog: [] });
+        break;
     }
   },
   patchStatus(patch) {
@@ -245,6 +281,6 @@ export const useStation = create<StationState>((set) => ({
     set({ connection });
   },
   reset() {
-    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null, clearedBand: null, clearedDx: null });
+    set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null, clearedBand: null, clearedDx: null, highlights: {} });
   },
 }));

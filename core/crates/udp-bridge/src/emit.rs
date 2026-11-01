@@ -103,10 +103,15 @@ pub struct QsoLoggedData {
     pub operator_call: String,
     pub my_call: String,
     pub my_grid: String,
+    /// Scambio di gara inviato e ricevuto e modo di propagazione ADIF: campi che WSJT-X 2.x aggiunge in coda (vuoti fuori dalle gare).
+    pub exchange_sent: String,
+    pub exchange_received: String,
+    pub propagation_mode: String,
 }
 
 /// QSO Logged (tipo 5): ora di fine, nominativo, locatore, frequenza, modo, rapporti, potenza, commento, nome, ora di inizio,
-/// operatore, nominativo e locatore propri.
+/// operatore, nominativo e locatore propri; poi, come lo schema di WSJT-X 2.x, scambio inviato e ricevuto e modo di propagazione
+/// (JTDX si ferma al locatore proprio: chi legge il formato di JTDX ignora i campi in piu').
 pub fn encode_qso_logged(id: &str, schema: u32, q: &QsoLoggedData) -> Vec<u8> {
     let mut w = command_header(QSO_LOGGED, schema, id);
     w.qdatetime_utc(q.time_off_ms);
@@ -123,6 +128,9 @@ pub fn encode_qso_logged(id: &str, schema: u32, q: &QsoLoggedData) -> Vec<u8> {
     w.utf8(Some(&q.operator_call));
     w.utf8(Some(&q.my_call));
     w.utf8(Some(&q.my_grid));
+    w.utf8(Some(&q.exchange_sent));
+    w.utf8(Some(&q.exchange_received));
+    w.utf8(Some(&q.propagation_mode));
     w.into_bytes()
 }
 

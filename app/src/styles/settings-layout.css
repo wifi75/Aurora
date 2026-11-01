@@ -1310,3 +1310,33 @@
   height: 1.6rem;
   padding: 0;
 }
+
+/* Riquadro «Integrazioni»: un destinatario UDP per cornice */
+.int-add {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.int-dest {
+  border: 1px solid var(--border, rgb(127 127 127 / 0.35));
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem 0.6rem;
+  margin: 0 0 0.6rem;
+  min-width: 0;
+}
+
+.int-dest legend {
+  padding: 0 0.3rem;
+  font-weight: var(--weight-strong, 600);
+}
+
+.int-remove {
+  margin-left: 0.4rem;
+  font-size: 0.85em;
+}
+
+.int-dest input[aria-invalid='true'] {
+  outline: 2px solid #e5141b;
+}

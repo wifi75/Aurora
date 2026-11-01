@@ -9,7 +9,7 @@ import { useNotifyView, workedLook } from '../lib/notifyView';
 import { useNotify } from '../lib/notify';
 import { isAnswerToMyCall, isOngoingDxReply, transmittedTo } from '../lib/answered';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
-import { useStation } from '../state/station';
+import { useStation, type CallHighlight } from '../state/station';
 import { senderOf, wishReason } from '../lib/wishlist';
 import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
@@ -41,6 +41,22 @@ function accentOf(tag: DecodeTag | null | undefined): string | null {
 function namesCall(text: string, call: string): boolean {
   const wanted = call.trim().toUpperCase();
   return wanted !== '' && text.toUpperCase().split(/\s+/).includes(wanted);
+}
+
+/** I nominativi nelle parole di un messaggio, senza le parentesi angolari dei nominativi composti (`<PJ4/K1ABC>`). */
+function callWords(text: string): string[] {
+  return text.toUpperCase().split(/\s+/).map((w) => w.replace(/^<|>$/g, ''));
+}
+
+/** Il colore chiesto via UDP per una riga: il primo nominativo evidenziato nel messaggio; con «solo l'ultima» solo la riga piu' recente che lo nomina. */
+export function highlightOf(text: string, id: number, highlights: Record<string, CallHighlight>, newest: Map<string, number>): CallHighlight | null {
+  for (const word of callWords(text)) {
+    const h = highlights[word];
+    if (!h) continue;
+    if (h.lastOnly && newest.get(word) !== id) continue;
+    return h;
+  }
+  return null;
 }
 
 /** Il testo del messaggio, con il nominativo chiamato e il suo locatore (se si evidenziano) in rilievo. */
@@ -161,6 +177,15 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     const call = d.id >= 0 ? senderOf(d.text)?.call.toUpperCase() : undefined;
     if (call && queueCalls.includes(call) && !queueRow.has(call)) queueRow.set(call, d.id);
   }
+  // i colori chiesti dai programmi collegati via UDP: per «solo l'ultima» serve la riga piu' recente di ogni nominativo (l'elenco e' dal piu' recente)
+  const highlights = useStation((st) => st.highlights);
+  const newestRow = new Map<string, number>();
+  if (Object.keys(highlights).length > 0) {
+    for (const d of decodes) {
+      if (d.id < 0) continue;
+      for (const word of callWords(d.text)) if (highlights[word] && !newestRow.has(word)) newestRow.set(word, d.id);
+    }
+  }
   // i locatori di tutte le righe prima di disegnarle: la riga piu' recente senza locatore usa quello di un CQ piu' vecchio
   for (const d of decodes) if (d.id >= 0) gridOfSender(d.text);
   const mine = myGrid ? gridCenter(myGrid) : null;
@@ -221,14 +246,21 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // «sfondo diverso per il mio nominativo nel messaggio»: ciano o giallo, come nel motore
         const myBackground = toMe && view.differentBackground ? (view.diffYellow ? ' decode-row--me-yellow' : ' decode-row--me-cyan') : '';
         const workedClass = worked ? ` decode-row--worked${look.strike ? ' decode-row--strike' : ''}${look.underline ? ' decode-row--underline' : ''}${look.color ? ' decode-row--worked-color' : ''}` : '';
+        // il colore chiesto da un programma collegato (Highlight Callsign) vince sui colori normali
+        const hl = own ? null : highlightOf(d.text, d.id, highlights, newestRow);
+        const hlClass = hl ? `${hl.background ? ' decode-row--hl-bg' : ''}${hl.foreground ? ' decode-row--hl-fg' : ''}` : '';
+        const rowStyle: Record<string, string> = {};
+        if (accent) rowStyle['--row-accent'] = `var(--tag-${accent})`;
+        if (hl?.background) rowStyle['--hl-bg'] = hl.background;
+        if (hl?.foreground) rowStyle['--hl-fg'] = hl.foreground;
         return (
           <Fragment key={d.id}>
           {gap ? <div className="decode-gap" role="separator" /> : null}
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}`}
-            style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as CSSProperties) : undefined}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${hlClass}`}
+            style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
             onContextMenu={(e) => {

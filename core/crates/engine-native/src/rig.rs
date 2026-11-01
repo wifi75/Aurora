@@ -102,6 +102,8 @@ pub struct NativeControls {
     sequence: Mutex<Option<crate::tx::SequenceSettings>>,
     /// `ALL.TXT`: 0 = solo i messaggi con il proprio nominativo, 1 = tutti i decodificati, 2 = anche le righe di debug (vedi `AllTxtScope`).
     all_txt: AtomicU8,
+    /// Il locatore proprio per questa sessione, se un programma collegato l'ha cambiato (Location via UDP); `None` = quello delle impostazioni.
+    session_grid: Mutex<Option<String>>,
 }
 
 /// Oltre questo tempo senza aggiornamenti la stima dell'S-meter non si pubblica piu'.
@@ -114,11 +116,23 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None) }
     }
 }
 
 impl NativeControls {
+    /// Il locatore proprio di questa sessione (Location via UDP): lo Status lo riporta e la sequenza lo usa nei messaggi (vedi `TxCommand::SetMyGrid`).
+    pub fn set_session_grid(&self, grid: &str) {
+        if let Ok(mut slot) = self.session_grid.lock() {
+            *slot = Some(grid.to_string());
+        }
+    }
+
+    /// Il locatore da mostrare: quello della sessione se c'e', altrimenti `configured`.
+    pub fn grid_or(&self, configured: &str) -> String {
+        self.session_grid.lock().ok().and_then(|g| g.clone()).unwrap_or_else(|| configured.to_string())
+    }
+
     pub fn is_monitoring(&self) -> bool {
         self.monitor.load(Ordering::Relaxed)
     }

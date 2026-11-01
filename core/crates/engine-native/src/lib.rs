@@ -210,7 +210,7 @@ pub fn start_with_save(
                     tx_message: selected_text,
                     decoding: live.controls.is_monitoring(),
                     de_call: live.de_call.clone(),
-                    de_grid: live.de_grid.clone(),
+                    de_grid: live.controls.grid_or(&live.de_grid),
                     rx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
                     tx_df: Some(live.controls.tx_df.load(Ordering::Relaxed)),
                     // FT4 ha periodi di 7,5 s: il campo e' intero, come lo manda JTDX (7)
