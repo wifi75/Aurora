@@ -83,15 +83,43 @@ function highlightCall(text: string, call: string, grid: string, answered?: { ca
   });
 }
 
-function distanceOf(mine: { lat: number; lon: number }, text: string): number | null {
+/**
+ * Il locatore di ogni stazione visto in un messaggio precedente: «JA2ORW S21BDK +07» non ha il locatore, ma S21BDK l'aveva mandato
+ * nel suo CQ. Si ricorda per tutta la sessione (al massimo 5000 stazioni, le piu' vecchie escono).
+ */
+const KNOWN_GRIDS = new Map<string, string>();
+const KNOWN_MAX = 5000;
+
+export function rememberGrid(call: string, grid: string): void {
+  const key = call.toUpperCase();
+  KNOWN_GRIDS.delete(key);
+  KNOWN_GRIDS.set(key, grid);
+  if (KNOWN_GRIDS.size > KNOWN_MAX) {
+    const oldest = KNOWN_GRIDS.keys().next().value;
+    if (oldest !== undefined) KNOWN_GRIDS.delete(oldest);
+  }
+}
+
+/** Il locatore della stazione che manda il messaggio: quello nel messaggio o, se manca, quello gia' visto. */
+export function gridOfSender(text: string): string | null {
+  const call = senderOf(text)?.call;
   const grid = gridOfMessage(text);
+  if (grid) {
+    if (call) rememberGrid(call, grid);
+    return grid;
+  }
+  return call ? (KNOWN_GRIDS.get(call.toUpperCase()) ?? null) : null;
+}
+
+function distanceOf(mine: { lat: number; lon: number }, text: string): number | null {
+  const grid = gridOfSender(text);
   const theirs = grid ? gridCenter(grid) : null;
   return theirs ? distanceKm(mine, theirs) : null;
 }
 
-/** L'azimut verso la stazione, in gradi, se il messaggio ha un locatore. */
+/** L'azimut verso la stazione, in gradi, se si conosce il suo locatore. */
 function bearingOf(mine: { lat: number; lon: number }, text: string): number | null {
-  const grid = gridOfMessage(text);
+  const grid = gridOfSender(text);
   const theirs = grid ? gridCenter(grid) : null;
   return theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null;
 }
@@ -133,6 +161,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     const call = d.id >= 0 ? senderOf(d.text)?.call.toUpperCase() : undefined;
     if (call && queueCalls.includes(call) && !queueRow.has(call)) queueRow.set(call, d.id);
   }
+  // i locatori di tutte le righe prima di disegnarle: la riga piu' recente senza locatore usa quello di un CQ piu' vecchio
+  for (const d of decodes) if (d.id >= 0) gridOfSender(d.text);
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
