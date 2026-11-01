@@ -5637,3 +5637,15 @@
 .qso-grid .chip .chip-led {
   background: #fff;
 }
+
+/* il periodo Tx e' una scelta fra due, non acceso/spento: resta ambra */
+.qso-grid .chip.chip--period,
+.qso-grid .chip.chip--period[aria-pressed='true'],
+.qso-grid .chip.chip--period[aria-pressed='false'] {
+  color: #fff;
+  background: #a8650a;
+  border-color: #a8650a;
+  box-shadow: none;
+  font-weight: 700;
+}
+
