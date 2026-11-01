@@ -195,6 +195,7 @@ pub fn start_with_save(
             // lo stato (frequenza, S-meter, trasmissione) si pubblica quattro volte al secondo: a un secondo lo S-meter sembrava fermo
             let mut tick = tokio::time::interval(std::time::Duration::from_millis(250));
             let mut last_fox = aurora_core::FoxSnapshot::default();
+            let mut fox_ticks: u32 = 0;
             loop {
                 tick.tick().await;
                 let view = tx::view_of(&live.controls);
@@ -229,9 +230,12 @@ pub fn start_with_save(
                     fox_verification: live.controls.fox_verification(),
                     ..StationStatus::default()
                 };
-                // lo stato della Fox, solo quando cambia
-                let fox = live.controls.fox_view.lock().map(|v| v.clone()).unwrap_or_default();
-                if fox != last_fox {
+                // lo stato della Fox quando cambia e comunque ogni 2 s (una pagina appena aperta lo riceve subito);
+                // l'interruttore si legge qui, cosi' la pagina lo vede anche prima del primo periodo
+                let mut fox = live.controls.fox_view.lock().map(|v| v.clone()).unwrap_or_default();
+                fox.enabled = live.controls.switch_on("fox");
+                fox_ticks = fox_ticks.wrapping_add(1);
+                if fox != last_fox || fox_ticks % 8 == 1 {
                     let _ = events.send(Event::Fox(fox.clone()));
                     last_fox = fox;
                 }
