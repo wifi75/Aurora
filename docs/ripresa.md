@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione pubblicata**: **0.11.61** (2026-11-01, 16:08 UTC). `main` locale e GitHub sono allineati; sito https://wifi75.github.io/Aurora/ aggiornato con lo screenshot vero.
+- **Ultima versione pubblicata**: **0.11.62** (2026-11-01, 16:53 UTC). Dopo, su `main` e non ancora in una versione: pagina Log con bandiere, griglia e larghezza contenuta.
 - **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
 
 ## Lavoro in corso (non finito)
@@ -24,13 +24,13 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Prossimo passo
 
-1. Pannello Comandi: il proprietario dice che non si capisce come sono collegati i pulsanti. Studiare WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`) e allineare comportamento e spiegazioni.
-2. Pulsante «Sinc» (`syncButton` di JTDX): tolto perche' non collegato; collegarlo solo dopo averne verificato il comportamento in JTDX con REA.
-3. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`), SuperFox quando arriva il permesso.
+1. Pubblicare la 0.11.63 con la pagina Log rifatta (bandiere, griglia, righe alterne).
+2. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`), SuperFox quando arriva il permesso.
+3. Regola del proprietario: si parte sempre da WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`); cio' che WSJT-X 3.3 non ha non si aggiunge (per questo «Sinc» di JTDX e' tolto).
 
 ## Da provare dal vivo (proprietario)
 
-Hound automatico e FOX, Wait and Pounce, chiusura con RR73 dopo un R+rapporto al Tx1, nuovo menu Impostazioni e pagina Log, barre Rx/Tx, display Yaesu/Icom, colore DXpedition nel cluster, a7/a8, stop per ROS alto, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP.
+Pannello Comandi (DX scritto a mano, rapporto, Hold Tx Freq, tipo di CQ, Tune e Log QSO), pannello QSO in due colonne, Hound automatico e FOX, Wait and Pounce, chiusura con RR73 dopo un R+rapporto al Tx1, nuovo menu Impostazioni e pagina Log, barre Rx/Tx, display Yaesu/Icom, colore DXpedition nel cluster, a7/a8, stop per ROS alto, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP.
 
 ## Dove stanno le cose
 
