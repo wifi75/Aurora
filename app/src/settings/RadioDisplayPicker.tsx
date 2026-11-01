@@ -1,6 +1,6 @@
 import { RadioDisplay } from '../components/radio-display/RadioDisplay';
 import { useT, type Key } from '../i18n';
-import { DEMO_MODEL, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useRadioDisplay } from '../lib/radioDisplay';
+import { DEMO_MODEL, isFaceStyle, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useRadioDisplay } from '../lib/radioDisplay';
 import { Check, Help } from './common';
 
 /** Scelta dello stile del display della radio, con un'anteprima (dati di prova) per ognuno, e l'opzione per nasconderlo. */
@@ -14,7 +14,7 @@ export function RadioDisplayPicker() {
       <Help>{t('rd.intro')}</Help>
       <div className="rd-picker" role="radiogroup" aria-label={t('rd.title')}>
         {RADIO_DISPLAY_STYLES.map((style) => (
-          <label key={style} className={`rd-card${pref.style === style ? ' rd-card--on' : ''}${pref.hidden ? ' rd-card--off' : ''}`}>
+          <label key={style} className={`rd-card${pref.style === style ? ' rd-card--on' : ''}${pref.hidden ? ' rd-card--off' : ''}${isFaceStyle(style) ? ' rd-card--wide' : ''}`}>
             <input type="radio" name="radio-display-style" aria-label={t(`rd.style.${style}` as Key)} value={style} checked={pref.style === style} onChange={() => set({ style })} />
             <span className="rd-card-name">{t(`rd.style.${style}` as Key)}</span>
             <RadioDisplay model={DEMO_MODEL} style={style} size="full" />
@@ -22,6 +22,7 @@ export function RadioDisplayPicker() {
         ))}
       </div>
       <Help>{t('rd.preview')}</Help>
+      <Help>{t('tip.rd.faces')}</Help>
       <h3 className="set-sub">{t('rd.layout')}</h3>
       <Help>{t('tip.rd.layout')}</Help>
       <div className="rd-layouts" role="radiogroup" aria-label={t('rd.layout')}>

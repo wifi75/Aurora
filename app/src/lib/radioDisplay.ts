@@ -3,8 +3,13 @@ import type { RadioMeters } from '../api/schemas';
 import { browserStorage } from './theme';
 
 /** Gli stili del display della radio, nell'ordine in cui si propongono nelle Impostazioni. */
-export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led'] as const;
+export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610'] as const;
 export type RadioDisplayStyle = (typeof RADIO_DISPLAY_STYLES)[number];
+
+/** Stili a pannello unico (un solo schermo largo con i due VFO e gli indicatori): in testata prendono il posto dei due blocchi. */
+export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' {
+  return style === 'ft2000' || style === 'ic7610';
+}
 
 export interface RadioDisplayPref {
   style: RadioDisplayStyle;

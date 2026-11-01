@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadioDisplayHeader } from './RadioDisplayHeader';
 import { RadioDisplay } from './RadioDisplay';
@@ -79,23 +79,23 @@ describe('RadioDisplay', () => {
 });
 
 describe('RadioDisplayPicker', () => {
-  it('offers the five styles with a preview each and saves the choice', () => {
+  it('offers the seven styles with a preview each and saves the choice', () => {
     render(<RadioDisplayPicker />);
-    const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(5);
-    expect(screen.getAllByRole('img')).toHaveLength(5);
+    const radios = within(screen.getByRole('radiogroup', { name: 'Stile del display della radio' })).getAllByRole('radio');
+    expect(radios).toHaveLength(7);
+    expect(screen.getAllByRole('img')).toHaveLength(7);
     expect(screen.getByRole('radio', { name: 'Fluorescente Yaesu' })).toBeChecked();
     fireEvent.click(screen.getByRole('radio', { name: 'LCD ambra Kenwood' }));
     expect(useRadioDisplay.getState().pref.style).toBe('amber');
-    expect(JSON.parse(localStorage.getItem('aurora-radio-display') ?? '{}')).toEqual({ style: 'amber', hidden: false });
+    expect(JSON.parse(localStorage.getItem('aurora-radio-display') ?? '{}')).toEqual({ style: 'amber', hidden: false, layout: 'single' });
   });
 
   it('hides the display and remembers the style', () => {
     render(<RadioDisplayPicker />);
     fireEvent.click(screen.getByRole('radio', { name: 'LED rosso' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Nascondi il display' }));
-    expect(useRadioDisplay.getState().pref).toEqual({ style: 'led', hidden: true });
-    expect(JSON.parse(localStorage.getItem('aurora-radio-display') ?? '{}')).toEqual({ style: 'led', hidden: true });
+    expect(useRadioDisplay.getState().pref).toEqual({ style: 'led', hidden: true, layout: 'single' });
+    expect(JSON.parse(localStorage.getItem('aurora-radio-display') ?? '{}')).toEqual({ style: 'led', hidden: true, layout: 'single' });
   });
 });
 
@@ -125,5 +125,22 @@ describe('RadioDisplayHeader', () => {
     act(() => void vi.advanceTimersByTime(500));
     expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
     expect(container.querySelectorAll('svg')).toHaveLength(1);
+  });
+
+  it('shows the single FT-2000 panel with clickable indicators in place of the two blocks', () => {
+    act(() => useStation.setState({ status }));
+    act(() => useRadioDisplay.getState().set({ style: 'ft2000' }));
+    const { container } = render(<RadioDisplayHeader />, { wrapper });
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
+    expect(container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 960 96');
+    expect(container.querySelector('.rx-extras')).toBeNull();
+    expect(container.textContent).toContain('VFO-A');
+  });
+
+  it('draws the IC-7610 panel with the demo data of the radio', () => {
+    const { container } = render(<RadioDisplay model={DEMO_MODEL} style="ic7610" />);
+    expect(container.textContent).toContain('MAIN');
+    expect(container.textContent).toContain('21.076.50');
+    expect(container.textContent).toContain('BW 3.0k');
   });
 });
