@@ -2,7 +2,6 @@ import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { getControls, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
-import { AlertSwitch } from '../components/AlertSwitch';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
@@ -25,7 +24,7 @@ import { subjectBand, subjectMode } from '../lib/dxccCard';
 import { Waterfall } from '../components/Waterfall';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
-import { useAlertPrefs, type AlertPrefs } from '../lib/alerts';
+import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
 import { armAudio, playSound } from '../lib/soundBank';
 import { replyAccepted } from '../lib/replyMode';
@@ -65,11 +64,6 @@ export function Live() {
   const shown = applyFilters(decodes, filters, status?.own_continent);
   const alerts = useAlertPrefs((s) => s.prefs);
 
-  const changeAlerts = (next: AlertPrefs) => {
-    // il contesto audio si prepara al primo gesto dell'utente: i browser non lo permettono prima
-    if (next.enabled) armAudio();
-    useAlertPrefs.getState().set(next);
-  };
 
   // avvisi gia' accesi da una visita precedente: l'audio si abilita al primo tocco sulla pagina
   useEffect(() => {
@@ -278,7 +272,6 @@ export function Live() {
           transmitting={status?.transmitting ?? false}
           trailing={
             <>
-              <AlertSwitch value={alerts} onChange={changeAlerts} />
               <StopButton variant="compact" />
             </>
           }
@@ -293,7 +286,6 @@ export function Live() {
             station: (
               <>
                 <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
-                <AlertSwitch value={alerts} onChange={changeAlerts} />
               </>
             ),
           }}

@@ -5,6 +5,7 @@ import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
 import { Logo } from './components/Logo';
 import { LanguageSelect } from './components/LanguageSelect';
+import { HeaderAlertSwitch } from './components/AlertSwitch';
 import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
 import { UpdateBar } from './components/UpdateBar';
@@ -108,6 +109,7 @@ export function App() {
         </nav>
         {session.data ? <UpdateBar /> : null}
         <LanguageSelect />
+        <HeaderAlertSwitch />
         <ThemeToggle />
         <a className="app-logo-link" href="#/" aria-label="Aurora"><Logo size={36} animated /></a>
       </header>
