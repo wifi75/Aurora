@@ -174,6 +174,16 @@ export function CatGroups() {
     },
     onError: failed,
   });
+  // le due caselle semplici (collega all'avvio, leggi anche gli altri dati) si salvano subito, da sole: non restano in attesa di «Applica»
+  // (altrimenti uscendo dalla pagina si perdevano). Si salva solo quella voce sul valore gia' applicato; le altre modifiche restano in bozza.
+  const saveNow = useMutation({
+    mutationFn: (change: Partial<CatConfig>) => {
+      if (!snap.data) return Promise.reject(new Error('cat_not_loaded'));
+      return putCat({ ...snap.data.config, ...change });
+    },
+    onSuccess: () => done(t('cat.applied')),
+    onError: failed,
+  });
   const connect = useMutation({
     // con modifiche in sospeso si applicano prima: si collega sempre cio' che si vede
     mutationFn: async () => {
@@ -453,8 +463,8 @@ export function CatGroups() {
               <input type="number" min={1} max={99} value={config.poll_secs} onChange={(e) => set({ poll_secs: Number(e.target.value) })} />
             </Field>
           ) : null}
-          <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => set({ auto_connect: v })} />
-          <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => set({ read_extras: v })} />
+          <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => { set({ auto_connect: v }); saveNow.mutate({ auto_connect: v }); }} />
+          <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => { set({ read_extras: v }); saveNow.mutate({ read_extras: v }); }} />
         </Cells>
       </Group>
 
