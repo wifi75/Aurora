@@ -8,10 +8,10 @@ import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
-const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_all', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period'];
+const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_all', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period', 'wait_call'];
 const SENDING: ControlId[] = ['auto_tx', 'enable_tx'];
 /** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
-const ARMING: ControlId[] = ['auto_tx', 'enable_tx'];
+const ARMING: ControlId[] = ['auto_tx', 'enable_tx', 'wait_call'];
 
 /** Stato e comando degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). Spegnere e' sempre permesso. */
 export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {

@@ -44,6 +44,16 @@ pub struct StationStatus {
     /// Gli avvisi di sicurezza della trasmissione in corso (messaggio non rappresentabile, ROS alto, Tx bloccata da un controller esterno).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tx_alerts: Vec<TxAlert>,
+    /// Hound: esito della verifica in linea del codice OTP del Fox (`CALL.123456`, come `FoxVerifier` di WSJT-X), se c'e' stata.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fox_verification: Option<FoxVerification>,
+}
+
+/// L'esito della verifica del Fox: nominativo e se il server ha detto «VERIFIED» (altrimenti «INVALID»).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxVerification {
+    pub call: String,
+    pub verified: bool,
 }
 
 /// Perche' la trasmissione e' stata fermata o trattenuta.

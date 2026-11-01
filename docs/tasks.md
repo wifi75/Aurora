@@ -40,12 +40,11 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `widgets/mainwindow.cpp` (`on_dxCallEntry_textChanged` 10414, `on_tx1_editingFinished` 10053, 7714-7735, 9939), `widgets/HoundTransmissionPolicy*`.
 - Verifica: test in `core/crates/qso-native/tests/` con una sequenza SuperFox simulata (chiamata, rapporto, RR73, log); prova dal vivo.
 
-## 6. Verifica del Fox con OTP (Hound classico e SuperHound)
+## 6. Verifica del Fox con OTP: parte SuperFox
 
-- Cosa fare: riconoscere `CALL.123456` (Hound classico) e `$VERIFY$ CALL 123456` (SuperFox); se il codice non e' `000000` e la verifica in linea e' accesa, chiedere `GET {url}/check/{call}/{ora ISO}/{codice}.text` (predefinito `https://www.9dx.cc`, timeout 5 s); mostrare «CALL verified/invalid», etichetta Hound verde; opzione «Mostra messaggi OTP»; le righe OTP non vanno al server UDP.
-- Aurora: `core/crates/engine-native` (riconoscimento), `core/crates/aurora/src/online.rs` (richiesta), impostazioni in `app/src/pages` e `app/src/i18n/strings/engineconfig.ts`, `udp-bridge/src/emit.rs` (filtro `$VERIFY$`).
-- WSJT-X: `widgets/mainwindow.cpp` `processSFoxVerification` (17360-17415), `handleVerifyMsg`, `Network/FoxVerifier.cpp/.hpp`, `Configuration.cpp` (`OTPUrl`, `ShowOTP`).
-- Verifica: test con risposta HTTP finta (verified/invalid/errore); nessuna richiesta con `000000` o con verifica spenta.
+- Fatto (Hound classico): riconoscimento di `CALL.123456`, righe nascoste con «Mostra i messaggi OTP» spento o codice `000000`, richiesta `GET {url}/check/{call}/{ora ISO}/{codice}.text` (5 s) solo con verifica in linea accesa e codice diverso da `000000`, esito nella pagina Stazione e riga «CALL verified/invalid» (`engine-native/src/features.rs`, `online-info/src/foxcheck.rs`, `aurora/src/lib.rs` `wire_fox_verifier`).
+- Manca: il formato SuperFox `$VERIFY$ CALL 123456` (hz 750) e il filtro `$VERIFY$` verso il server UDP (`udp-bridge/src/emit.rs`): dipende dal ricevitore SuperFox (voci 1-3), che usa codice non GPL non ancora autorizzato; l'etichetta Hound/SuperHound verde dell'interfaccia.
+- WSJT-X: `widgets/mainwindow.cpp` `processSFoxVerification` (17360-17415), `handleVerifyMsg`.
 
 ## 7. Cascata e spot per SuperFox
 
@@ -54,18 +53,16 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `widgets/widegraph.cpp`, `widgets/plotter.cpp` (`setSuperFox`, `setSuperHound`), note 2.7.0-rc6.
 - Verifica: confronto visivo con WSJT-X sullo stesso WAV; spot visibili su PSK Reporter.
 
-## 10. Decodifica FT8 multithread: momento di avvio
+## 10. Decodifica FT8 multithread: misura su banda satura
 
-- Fatto: decodifica multithread con rayon in `core/crates/ft8/src/decode.rs` (candidati di una passata in parallelo, accettati nell'ordine del singolo thread: stessi decode, verificato con 2/4/8 thread; banda sintetica di 30 segnali da 1145 a 637 ms con 8 thread), interruttore «Multithread» (`mtd`). Non si usano le fasce di banda di `lib/ft8var` perche' danno decode diversi dal singolo thread.
-- Manca: scegliere il momento di avvio della decodifica (`m_ft8DecoderStart`, hsymStop 48-50, decodifica anticipata a 46) in `engine-native/src/lib.rs`, e misurare il tempo su un periodo vero di banda satura (non ci sono WAV nel repository).
-- WSJT-X: `widgets/mainwindow.cpp` 11280-11290 (`m_ft8DecoderStart`), `lib/ft8_engine_kernel.f90`.
+- Fatto: decodifica multithread (`mtd`) e momento di avvio della decodifica (`FT8DecoderStart`: Presto 13,82 s, Normale 14,11 s, Tardi 14,40 s, come `m_ft8DecoderStart`/`fixStop` di WSJT-X) in `engine-native/src/features.rs` e `slots.rs`.
+- Manca: misurare il tempo su un periodo vero di banda satura (non ci sono WAV nel repository); le decodifiche anticipate a due/tre passate di WSJT-X (`m_earlyDecode`, `m_earlyDecode2` a 46-47) non sono portate.
 
-## 12. Wait and Reply / Wait and Call / Wait and Pounce
+## 12. Wait and Pounce
 
-- Cosa fare: aspettare che il corrispondente sia libero (fine del suo QSO) prima di rispondere/chiamare, invece di trasmettere sopra.
-- Aurora: `core/crates/qso-native/src/sequencer.rs`, `types.rs`, interfaccia.
-- WSJT-X: `widgets/mainwindow.cpp` `processWaitReplyCall`, `WaitFeatureContext`, `wait_and_call_arming_eligible`.
-- Verifica: test di sequenza con il DX occupato in un altro QSO.
+- Fatto: Wait and Reply e Wait and Call (`engine-native/src/tx.rs` `wait_features`, `features.rs`, pulsante `wait_call`, voce `WaitFeaturesEnabled`).
+- Manca: Wait and Pounce (risposta automatica a un CQ secondo il criterio scelto, «Max Dist», «Max dB», «Min dB», con i filtri e senza doppioni): da coordinare con l'Automazione di Aurora e con i filtri dei decode (altro lavoro).
+- WSJT-X: `widgets/mainwindow.cpp` `updateRespondTarget`, `AutoRespondPolicy.hpp`, `AutoRespondScoring.hpp`.
 
 ## 15. Rifiniture CAT dalla 3.2
 
@@ -81,12 +78,11 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `Transceiver/TCITransceiver.cpp/.hpp`.
 - Verifica: con un server TCI di prova; dal vivo con una SDR.
 
-## 17. Band Hopping FT8/FT4
+## 17. Band Hopping FT8/FT4: rifiniture
 
-- Cosa fare: periodi di ricezione a rotazione sulle sotto-bande o su fino a 8 frequenze scelte; clic destro per la frequenza successiva.
-- Aurora: `core/crates/rig-control/src/schedule.rs`, interfaccia.
+- Fatto: `aurora/src/band_hop.rs` (elenco «FT8 20m», «FT4 40m» e fino a 8 frequenze in kHz, salto ogni due minuti, saltato con Abilita Tx acceso o in trasmissione), voci `BandHopping` e `BandHopList` nella scheda Generali.
+- Manca: il clic destro per passare subito alla frequenza successiva (serve un comando nella barra delle bande, interfaccia della cascata/bande di un altro lavoro); MSK144 (modo non presente).
 - WSJT-X: `widgets/mainwindow_bandhopping.cpp`.
-- Verifica: test di pianificazione con orologio finto.
 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF
 
@@ -137,13 +133,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Aurora: `app/src/components/DecodeList.tsx`, `app/src/settings/FiltersTab.tsx`.
 - WSJT-X: `widgets/mainwindow.cpp`, `Configuration.cpp` (filtri e evidenziazioni della 3.0).
 - Verifica: decode di prova con prefissi e nominativi filtrati.
-
-## 25. Full duplex per i satelliti
-
-- Cosa fare: ricevere e decodificare mentre si trasmette quando la radio lo consente (satelliti), senza bloccare la ricezione durante il PTT.
-- Aurora: `core/crates/engine-native/src/lib.rs` (oggi la decodifica si ferma in trasmissione), `tx-native`.
-- WSJT-X: `widgets/mainwindow.cpp` (opzione Full Duplex), `Configuration.cpp`.
-- Verifica: con radio satellitare in full duplex, decode del proprio segnale di ritorno.
 
 ## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz
 

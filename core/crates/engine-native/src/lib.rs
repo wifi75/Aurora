@@ -4,6 +4,7 @@
 //! che vede l'utente. Quando il confronto e' abbastanza buono il motore proprio prendera' il posto di JTDX.
 
 mod alltxt;
+pub mod features;
 mod parity;
 mod persist;
 mod resample;
@@ -223,6 +224,7 @@ pub fn start_with_save(
                     meters: live.controls.published_meters(),
                     queue: view.queue.clone(),
                     tx_alerts: live.controls.tx_alerts(),
+                    fox_verification: live.controls.fox_verification(),
                     ..StationStatus::default()
                 };
                 if events.send(Event::Status(status)).is_err() && events.receiver_count() == 0 {
@@ -252,6 +254,8 @@ pub fn start_with_save(
         // `ALL.TXT` come JTDX, solo quando il motore proprio e' l'unico: i QSO registrati aspettano l'inizio della trasmissione che li chiude
         let mut all_txt = live.as_ref().map(|_| AllTxt::from_env(&data_dir, &format!("Aurora v{}", aurora_core::version::APP_VERSION)));
         let mut logged_due: Vec<(u64, String)> = Vec::new();
+        // i periodi in cui si e' trasmesso: senza «Full duplex» non si decodificano (WSJT-X spegne il monitor in trasmissione)
+        let mut tx_periods = features::TxPeriods::default();
         // profondita' 3 di JTDX («profonda»): soglia di sincronismo piu' bassa a rotazione e una seconda lettura a tempo
         // invertito, per i segnali piu' deboli (richiesta del proprietario, 2026-10-31: un segnale udibile non si decodificava)
         let ft8_options = Options::depth(3);
@@ -407,6 +411,16 @@ pub fn start_with_save(
                 }
             };
             let samples = rs.push(&chunk.samples);
+            if let Some(l) = live.as_ref() {
+                if l.controls.transmitting.load(Ordering::Relaxed) {
+                    tx_periods.note(chunk.received_unix_ms, mode.period_ms());
+                }
+                // momento di avvio della decodifica FT8 (`m_ft8DecoderStart` di WSJT-X); gli altri modi restano come sono
+                let early = if mode == Mode::Ft8 { l.controls.decoder_start().early_ms() } else { slots::EARLY_MS };
+                if assembler.early_ms() != early {
+                    assembler.set_early_ms(early);
+                }
+            }
             // lo S-meter si stima solo in ricezione con l'ascolto acceso; in trasmissione (o con Monitora spento) si ferma
             if let Some(l) = live.as_ref() {
                 if l.controls.is_monitoring() && !l.controls.transmitting.load(Ordering::Relaxed) {
@@ -440,8 +454,10 @@ pub fn start_with_save(
                         }
                     }
                 }
-                // con Monitora spento il periodo passa senza essere decodificato
-                if live.as_ref().is_some_and(|l| !l.controls.is_monitoring()) {
+                // con Monitora spento il periodo passa senza essere decodificato; cosi' anche il periodo in cui si e' trasmesso, se «Full duplex» e' spento
+                let had_tx = tx_periods.had_tx(slot.start_unix_ms);
+                let full_duplex = live.as_ref().is_some_and(|l| l.controls.full_duplex.load(Ordering::Relaxed));
+                if live.as_ref().is_some_and(|l| !l.controls.is_monitoring() || (had_tx && !full_duplex)) {
                     if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
                         let dial = l.dial_hz.load(Ordering::Relaxed);
                         let band = (l.band_of)(dial).unwrap_or_default();
@@ -528,7 +544,9 @@ pub fn start_with_save(
                 if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
                     let dial = l.dial_hz.load(Ordering::Relaxed);
                     let band = (l.band_of)(dial).unwrap_or_default();
-                    let list: Vec<(String, i32, u32)> = decoded.iter().map(|x| (x.text.clone(), x.snr_db, x.freq_hz.round().max(0.0) as u32)).collect();
+                    // full duplex: i decode del periodo in cui si trasmetteva si mostrano ma non fanno reagire la sequenza (`fullDuplexBlocked` di WSJT-X)
+                    let list: Vec<(String, i32, u32)> =
+                        if had_tx { Vec::new() } else { decoded.iter().map(|x| (x.text.clone(), x.snr_db, x.freq_hz.round().max(0.0) as u32)).collect() };
                     let (qsos, log) = d.after_slot(slot.start_unix_ms, &list, now_unix_ms() as f64 / 1000.0, dial, &band);
                     for line in log {
                         tracing::info!("trasmissione: {line}");
@@ -709,7 +727,18 @@ fn decode_period(
 fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, events: &broadcast::Sender<Event>, next_id: &AtomicU64, slot_start_ms: u64, decoded: &[ft8::decode::Decoded]) {
     let band = (live.band_of)(live.dial_hz.load(Ordering::Relaxed));
     let time_ms = (slot_start_ms % DAY_MS) as u32;
+    let hound = live.controls.switch_on("hound");
     for d in decoded {
+        // Hound: il codice OTP del Fox classico (`CALL.123456`, `processSFoxVerification` di WSJT-X) si nasconde e/o si fa verificare
+        if hound && let Some((call, code)) = features::parse_fox_otp(&d.text) {
+            let (hide, check) = features::otp_action(&code, &live.controls.otp_settings());
+            if check {
+                live.controls.request_otp_check(features::FoxOtp { call, code, freq_hz: d.freq_hz.round().max(0.0) as u32, slot_start_ms });
+            }
+            if hide {
+                continue;
+            }
+        }
         let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
         let id = next_id.fetch_add(1, Ordering::Relaxed);
         if let Some(driver) = driver.as_deref_mut() {
@@ -1152,6 +1181,40 @@ mod tests {
             band_of: Arc::new(|_| Some("20m".to_string())),
             annotate: Arc::new(|_, _| (None, None, None)),
         }
+    }
+
+    /// Hound: la riga OTP del Fox classico si nasconde (di fabbrica) e, se il codice non e' 000000, si chiede la verifica; senza Hound passa com'e'.
+    #[test]
+    fn the_fox_code_is_hidden_and_checked_only_in_hound() {
+        let controls = Arc::new(NativeControls::default());
+        let asked = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&asked);
+        controls.set_otp_hook(Arc::new(move |otp| {
+            if let Ok(mut a) = sink.lock() {
+                a.push(otp);
+            }
+        }));
+        let live = live_config(Arc::clone(&controls));
+        let (events, mut rx) = broadcast::channel(16);
+        let next = AtomicU64::new(1_000_000_000);
+        let line = |t: &str| as_decoded(750.0, 0.1, -5, t.to_string());
+        let lines = [line("K8R.920749"), line("K8R.000000"), line("CQ K8R FN42")];
+        publish(&live, None, &events, &next, 1_005_000, &lines);
+        let mut texts = Vec::new();
+        while let Ok(Event::Decode(m)) = rx.try_recv() {
+            texts.push(m.text);
+        }
+        assert_eq!(texts.len(), 3, "senza Hound nessun filtro: {texts:?}");
+        controls.set_switch("hound", true);
+        publish(&live, None, &events, &next, 1_020_000, &lines);
+        let mut texts = Vec::new();
+        while let Ok(Event::Decode(m)) = rx.try_recv() {
+            texts.push(m.text);
+        }
+        assert_eq!(texts, vec!["CQ K8R FN42".to_string()]);
+        let asked = asked.lock().map(|a| a.clone()).unwrap_or_default();
+        assert_eq!(asked.len(), 1, "000000 non si verifica");
+        assert_eq!((asked[0].call.as_str(), asked[0].code.as_str(), asked[0].slot_start_ms), ("K8R", "920749", 1_020_000));
     }
 
     /// Aspetta (al massimo `secs` secondi) che sul bus siano comparsi tutti i testi dati; restituisce i messaggi e gli stati letti.

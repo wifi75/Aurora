@@ -5006,6 +5006,17 @@
   font-size: 0.8rem;
 }
 
+.tx-fox {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b42318;
+}
+
+.tx-fox[data-ok='true'] {
+  color: #1a7f37;
+}
+
 .tx-queue-label {
   color: #1f6feb;
   font-weight: 700;
