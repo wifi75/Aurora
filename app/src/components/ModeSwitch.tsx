@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 
 const MODES = ['FT8', 'FT4', 'JT65', 'JT9'] as const;
@@ -18,28 +19,74 @@ interface Props {
   locked?: boolean;
 }
 
-/** Selettore FT8 / FT4 / JT65 / JT9 come nel motore; il modo in uso e' acceso. */
+/** Selettore compatto del modo: un pulsante col modo in uso che apre una tendina con FT8 / FT4 / JT65 / JT9. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   const t = useT();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const disabled = !onPick || locked;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  const label = mode.toUpperCase() === 'JT' ? 'JT65' : mode || '—';
   return (
-    <div className="mode-switch" role="group" aria-label={t('mode.group')} title={t('tip.mode.bar')}>
-      {MODES.map((m) => (
-        <button
-          key={m}
-          type="button"
-          data-mode={m}
-          className={`glass${isActive(m, mode) ? ' glass--on' : ''}`}
-          aria-pressed={isActive(m, mode)}
-          aria-current={isActive(m, mode) ? 'true' : undefined}
-          disabled={!onPick || locked}
-          title={onPick ? (locked ? t('mode.locked') : t('mode.pick', { mode: m })) : t('band.noRig')}
-          onClick={() => {
-            if (!isActive(m, mode)) onPick?.(m);
-          }}
-        >
-          {m}
-        </button>
-      ))}
+    <div className="mode-switch" ref={box}>
+      <button
+        type="button"
+        className="glass mode-switch-btn"
+        data-mode={label}
+        aria-current="true"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('mode.group')}
+        disabled={disabled}
+        title={onPick ? (locked ? t('mode.locked') : t('tip.mode.bar')) : t('band.noRig')}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {label}
+        <span className="mode-switch-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div className="mode-switch-menu glass" role="menu" aria-label={t('mode.group')}>
+          {MODES.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="menuitemradio"
+              data-mode={m}
+              aria-checked={isActive(m, mode)}
+              className={isActive(m, mode) ? 'is-on' : undefined}
+              title={t('mode.pick', { mode: m })}
+              onClick={() => {
+                setOpen(false);
+                if (!isActive(m, mode)) onPick?.(m);
+              }}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
