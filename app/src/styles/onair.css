@@ -4702,3 +4702,28 @@
   color: #fff;
   box-shadow: 0 0 14px var(--danger, #e5484d);
 }
+
+/* Distanza: colonna fissa e stretta, misurata su «99999 km» (8 caratteri del carattere a passo fisso a 0.74rem + margini);
+   lo spazio recuperato va al nome del paese */
+.decode-list .decode-row .decode-where,
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 2.2rem minmax(0, 1fr) 4.3rem;
+}
+
+.decode-list .decode-row .decode-where .w-km {
+  box-sizing: border-box;
+  width: 4.3rem;
+  padding: 0 0.3rem 0 0.4rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@container (max-width: 40rem) {
+  .decode-list .decode-row .decode-where,
+  .dock-panel--all .decode-list .decode-row .decode-where,
+  .dock-panel--cq .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+  }
+}
