@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Guida**: nuovo capitolo su Fox e Hound (cosa sono, come collegare una DXpedition passo per passo), in sei lingue.
 
 ## 0.11.54 - 2026-11-01
 - **Dedica ad Aura**, la figlia dell'autore da cui prende il nome Aurora: nella pagina Informazioni e nei README, in sei lingue.
