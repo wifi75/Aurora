@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.47 - 2026-11-01
 - **Spiegazioni dei «?» di nuovo visibili**: la nuvoletta restava tagliata dentro l'etichetta; ora compare sopra a tutto, centrata sul «?», passandoci sopra col mouse (un clic la tiene aperta).
 
 ## 0.11.46 - 2026-11-01
