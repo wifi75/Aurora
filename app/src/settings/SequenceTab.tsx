@@ -3,7 +3,7 @@ import { getAutomation, putAutomation } from '../api/client';
 import { AutomationRulesForm } from '../components/AutomationRulesForm';
 import { useT } from '../i18n';
 import { EngineValues } from './EngineValues';
-import { NativeSequence } from './JtdxTabs';
+import { NativeSequence, NativeTxOptions } from './JtdxTabs';
 import { useIsNative } from './NativeSettings';
 import { Help } from './common';
 import { Actions, Group, Notes, Page } from './layout';
@@ -42,6 +42,7 @@ export function SequenceTab() {
         extra={
           <>
             {rules}
+            <NativeTxOptions />
             <Notes>
               <Help>{t('seq.intro')}</Help>
             </Notes>
