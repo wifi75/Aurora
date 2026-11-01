@@ -27,6 +27,12 @@ export function AboutTab() {
           </p>
         </div>
       </header>
+      {/* la dedica dell'autore: Aurora porta il nome di sua figlia Aura */}
+      <figure className="about-dedica">
+        <span className="about-dedica-cuore" aria-hidden="true">♥</span>
+        <blockquote>{t('about.dedica')}</blockquote>
+        <figcaption>{t('about.dedicaFirma')}</figcaption>
+      </figure>
       <dl className="about-facts">
         <dt>{t('about.author')}</dt>
         <dd>
