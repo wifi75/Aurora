@@ -4,6 +4,7 @@ import type { Entry } from '../core';
 export const settingsStrings = {
   'set.title': ['Impostazioni', 'Settings', 'Einstellungen', 'Réglages', 'Ajustes', 'Definições'],
   'set.back': ['Torna alla stazione', 'Back to the station', 'Zurück zur Station', 'Retour à la station', 'Volver a la estación', 'Voltar à estação'],
+  'toast.close': ['Clic per chiudere', 'Click to close', 'Klicken zum Schließen', 'Clic pour fermer', 'Clic para cerrar', 'Clique para fechar'],
   'set.search': ['Cerca un’impostazione…', 'Search a setting…', 'Einstellung suchen…', 'Chercher un réglage…', 'Buscar un ajuste…', 'Pesquisar uma definição…'],
   'set.loading': ['Caricamento…', 'Loading…', 'Wird geladen …', 'Chargement…', 'Cargando…', 'A carregar…'],
   'set.loadError': [

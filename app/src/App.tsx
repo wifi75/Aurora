@@ -25,6 +25,7 @@ import { PropagationPage } from './pages/PropagationPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { Wiki } from './pages/Wiki';
+import { Toaster } from './components/Toaster';
 
 export function App() {
   const t = useT();
@@ -110,6 +111,7 @@ export function App() {
       {session.data ? <WantedBar /> : null}
       <main className="app-main">{content}</main>
       <Footer />
+      <Toaster />
     </div>
   );
 }
