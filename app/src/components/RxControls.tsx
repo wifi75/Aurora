@@ -8,7 +8,8 @@ import { replyErrorMessage } from '../lib/replyError';
 import { useStation } from '../state/station';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
-const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'sync', 'agc', 'filter', 'ap_list', 'mtd'];
+// «Sinc» (syncButton di JTDX) non e' collegato al motore proprio: non si mostra finche' non fa davvero qualcosa
+const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'agc', 'filter', 'ap_list', 'mtd'];
 /** Interruttori del solo decodificatore FT8. */
 const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
