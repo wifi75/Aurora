@@ -66,10 +66,41 @@ pub enum Support {
 /// Voci della scheda Segnalazioni di JTDX che non sono in `engine_jtdx::ini::FIELDS` (non si leggono ne' si scrivono nel `JTDX.ini`).
 /// `EQSLPasswd`: la password di eQSL **non si legge mai dal `JTDX.ini`** e non sta nel file delle impostazioni: si salva solo nella protezione dei segreti del sistema (`SECRET_KEYS`).
 /// `Region` e `Type2MsgGen` stanno nel `JTDX.ini` come valori binari (`@Variant`): non si leggono ne' si scrivono, ma la scheda Generali li mostra.
-pub const EXTRA_KEYS: &[&str] = &["EQSLPasswd", "Region", "Type2MsgGen"];
+/// Le voci dell'invio diretto dei QSO (Wavelog/Cloudlog, ClubLog, QRZ.com, LoTW) sono solo di Aurora: JTDX non le ha.
+pub const EXTRA_KEYS: &[&str] = &[
+    "EQSLPasswd",
+    "Region",
+    "Type2MsgGen",
+    "WavelogSend",
+    "WavelogUrl",
+    "WavelogKey",
+    "WavelogStation",
+    "ClublogSend",
+    "ClublogEmail",
+    "ClublogPasswd",
+    "ClublogCall",
+    "ClublogApiKey",
+    "QRZLogSend",
+    "QRZLogKey",
+    "LoTWSend",
+    "LoTWTqsl",
+    "LoTWLocation",
+];
 
 /// Le voci che non finiscono mai nel file delle impostazioni ne' nelle risposte dell'API: hanno un posto protetto (`SecretStore`).
-pub const SECRET_KEYS: &[&str] = &["EQSLPasswd"];
+pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "QRZLogKey"];
+
+/// Il nome con cui una voce segreta si salva nella protezione dei segreti.
+pub fn secret_name(key: &str) -> Option<&'static str> {
+    match key {
+        "EQSLPasswd" => Some(reporting::EQSL_SECRET),
+        "WavelogKey" => Some(reporting::WAVELOG_SECRET),
+        "ClublogPasswd" => Some(reporting::CLUBLOG_SECRET),
+        "ClublogApiKey" => Some(reporting::CLUBLOG_API_SECRET),
+        "QRZLogKey" => Some(reporting::QRZ_SECRET),
+        _ => None,
+    }
+}
 
 /// Le voci della scheda Audio: stanno nel file ma si cambiano solo dalla rotta `audio/settings` (apre i dispositivi, poi salva).
 pub const AUDIO_KEYS: &[&str] = &["SoundInName", "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav"];
@@ -135,6 +166,10 @@ pub fn support(key: &str) -> Support {
         // spotting verso internet: PSK Reporter in automatico, DXSummit a richiesta (pulsante), eQSL solo con la protezione dei segreti del sistema
         "PSKReporter" | "AllowSpotsDXSummit" => Support::Live(Apply::Now),
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
+        // invio diretto dei QSO: chiavi e password solo nella protezione dei segreti; LoTW usa il certificato di TQSL e non ne ha bisogno
+        "WavelogSend" | "WavelogUrl" | "WavelogKey" | "WavelogStation" | "ClublogSend" | "ClublogEmail" | "ClublogPasswd" | "ClublogCall" | "ClublogApiKey" | "QRZLogSend"
+        | "QRZLogKey" => Support::Needs(Feature::Secrets, "upload_secrets", Apply::Now),
+        "LoTWSend" | "LoTWTqsl" | "LoTWLocation" => Support::Live(Apply::Now),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
         // scheda Audio: si cambiano solo dalla rotta `audio/settings`, che apre i dispositivi prima di salvare
@@ -287,6 +322,20 @@ pub struct Reports {
     pub eqsl: bool,
     pub eqsl_user: String,
     pub eqsl_nick: String,
+    /// Invio diretto a Wavelog/Cloudlog: acceso con indirizzo e numero della stazione (la chiave API sta nei segreti).
+    pub wavelog: bool,
+    pub wavelog_url: String,
+    pub wavelog_station: String,
+    /// Invio diretto a ClubLog: acceso con l'email; nominativo del log (vuoto nelle impostazioni = il proprio). Password e chiave API nei segreti.
+    pub clublog: bool,
+    pub clublog_email: String,
+    pub clublog_call: String,
+    /// Invio diretto al logbook di QRZ.com (la chiave sta nei segreti).
+    pub qrz: bool,
+    /// Invio a LoTW con TQSL: percorso di `tqsl` (vuoto = cercato da solo) e posizione di stazione di TQSL.
+    pub lotw: bool,
+    pub lotw_tqsl: String,
+    pub lotw_location: String,
     /// «Applica filtri di testo alla trasmissione dei messaggi UDP» e «Prevenire ... nominativi non confermati» (`ApplyFiltersToUDPmessages`, `preventFalseUDPspots`).
     pub udp_apply_filters: bool,
     pub udp_prevent_false: bool,
@@ -359,6 +408,17 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("EQSLSend", "false"),
         ("EQSLUser", ""),
         ("EQSLNick", ""),
+        // invio diretto dei QSO: tutto spento di fabbrica
+        ("WavelogSend", "false"),
+        ("WavelogUrl", ""),
+        ("WavelogStation", ""),
+        ("ClublogSend", "false"),
+        ("ClublogEmail", ""),
+        ("ClublogCall", ""),
+        ("QRZLogSend", "false"),
+        ("LoTWSend", "false"),
+        ("LoTWTqsl", ""),
+        ("LoTWLocation", ""),
         // Server UDP primario (JTDX: `preventFalseUDPspots` acceso, il resto spento)
         ("preventFalseUDPspots", "true"),
         ("udpWindowToFront", "false"),
@@ -469,8 +529,18 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         return Err(SettingsError::NotAvailable(key.to_string()));
     }
     // il nominativo e il locatore possono essere vuoti (nessuno impostato): gli altri testi anche, gli indirizzi si controllano sotto
-    if value.is_empty() && matches!(key, "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir") {
+    if value.is_empty()
+        && matches!(
+            key,
+            "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
+                | "LoTWTqsl" | "LoTWLocation"
+        )
+    {
         return Ok(());
+    }
+    // le voci dell'invio diretto non sono di JTDX: si controllano qui
+    if let Some(result) = validate_upload(key, value) {
+        return result;
     }
     // le due voci che JTDX salva come enumerazioni Qt: non sono tra quelle del `JTDX.ini` che Aurora scrive, hanno un elenco di nomi ammessi
     if let Some((_, _, allowed)) = engine_jtdx::ini::ENUM_VARIANTS.iter().find(|(k, _, _)| *k == key) {
@@ -499,6 +569,23 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
             Err(SettingsError::BadValue("MyGrid: il locatore ha 4, 6 o 8 caratteri".into()))
         }
         _ => Ok(()),
+    }
+}
+
+/// Le voci dell'invio diretto dei QSO (`None` = non e' una di queste).
+fn validate_upload(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
+    let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
+    let path_ok = |v: &str| v.chars().count() <= 260 && !v.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '|' | '?' | '*'));
+    match key {
+        "WavelogSend" | "ClublogSend" | "QRZLogSend" | "LoTWSend" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "WavelogUrl" if value.chars().count() > 200 || reporting::wavelog::api_base(value).is_none() => bad("serve un indirizzo che comincia con http:// o https://"),
+        "WavelogStation" if value.len() > 10 || !value.chars().all(|c| c.is_ascii_digit()) => bad("il numero della stazione ha solo cifre"),
+        "ClublogEmail" if value.len() > 100 || !value.contains('@') || value.chars().any(|c| c.is_whitespace() || c.is_control()) => bad("email non valida"),
+        "ClublogCall" if value.len() > 20 || !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') => bad("nominativo non valido"),
+        "LoTWTqsl" if !path_ok(value) => bad("percorso non valido"),
+        "LoTWLocation" if value.chars().count() > 80 || value.chars().any(|c| c.is_control() || c == '"') => bad("nome della posizione non valido"),
+        "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall" | "LoTWTqsl" | "LoTWLocation" => Some(Ok(())),
+        _ => None,
     }
 }
 
@@ -548,6 +635,16 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         eqsl: truthy(values.get("EQSLSend")) && !get("EQSLUser").is_empty(),
         eqsl_user: get("EQSLUser").to_string(),
         eqsl_nick: get("EQSLNick").to_string(),
+        wavelog: truthy(values.get("WavelogSend")) && reporting::wavelog::api_base(get("WavelogUrl")).is_some() && !get("WavelogStation").is_empty(),
+        wavelog_url: get("WavelogUrl").trim().to_string(),
+        wavelog_station: get("WavelogStation").to_string(),
+        clublog: truthy(values.get("ClublogSend")) && !get("ClublogEmail").is_empty(),
+        clublog_email: get("ClublogEmail").to_string(),
+        clublog_call: if get("ClublogCall").is_empty() { get("MyCall").to_uppercase() } else { get("ClublogCall").to_uppercase() },
+        qrz: truthy(values.get("QRZLogSend")),
+        lotw: truthy(values.get("LoTWSend")) && !get("LoTWLocation").trim().is_empty(),
+        lotw_tqsl: get("LoTWTqsl").trim().to_string(),
+        lotw_location: get("LoTWLocation").trim().to_string(),
         udp_apply_filters: truthy(values.get("ApplyFiltersToUDPmessages")),
         // JTDX: `preventFalseUDPspots` vale vero se manca
         udp_prevent_false: values.get("preventFalseUDPspots").is_none_or(|v| v == "true"),
@@ -745,7 +842,12 @@ impl EngineSettingsStore {
 
     /// C'e' una password di eQSL salvata (senza leggerla).
     pub fn eqsl_password_saved(&self) -> bool {
-        self.secret_store().is_some_and(|s| s.has(reporting::EQSL_SECRET))
+        self.secret_saved("EQSLPasswd")
+    }
+
+    /// C'e' un valore salvato per una voce segreta (senza leggerlo).
+    pub fn secret_saved(&self, key: &str) -> bool {
+        secret_name(key).is_some_and(|name| self.secret_store().is_some_and(|s| s.has(name)))
     }
 
     /// Lo stato degli invii: lo scrivono i servizi, lo legge l'API.
@@ -793,7 +895,12 @@ impl EngineSettingsStore {
             }
             validate(key, value)?;
         }
-        let secret_change = changes.get("EQSLPasswd");
+        let secret_changes: Vec<(&'static str, &String)> = changes.iter().filter_map(|(k, v)| secret_name(k).map(|n| (n, v))).collect();
+        // una voce segreta c'e' se cambia con un valore non vuoto, o se non cambia ed e' gia' salvata
+        let has_secret = |key: &str| match changes.get(key) {
+            Some(v) => !v.is_empty(),
+            None => self.secret_saved(key),
+        };
         let mut next = self.values();
         next.extend(changes.iter().filter(|(k, _)| !SECRET_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())));
         // le caselle che in JTDX si escludono a vicenda (cliccare una toglie l'altra)
@@ -808,25 +915,42 @@ impl EngineSettingsStore {
         if truthy(next.get("EnableTCPConnection")) && r.tcp.is_none() {
             return Err(SettingsError::BadValue("TCPServer: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
-        if truthy(next.get("EQSLSend")) {
-            let has_password = match secret_change {
-                Some(v) => !v.is_empty(),
-                None => self.eqsl_password_saved(),
-            };
-            if next.get("EQSLUser").is_none_or(String::is_empty) || !has_password {
-                return Err(SettingsError::BadValue("EQSLSend: servono utente e password di eQSL per accendere l'invio".into()));
-            }
-        }
-        // la password si salva nella protezione del sistema, mai nel file
-        if let Some(value) = secret_change {
-            let store = self.secret_store().ok_or_else(|| SettingsError::NotAvailable("EQSLPasswd".into()))?;
-            store.set(reporting::EQSL_SECRET, value).map_err(SettingsError::Io)?;
+        if truthy(next.get("EQSLSend")) && (next.get("EQSLUser").is_none_or(String::is_empty) || !has_secret("EQSLPasswd")) {
+            return Err(SettingsError::BadValue("EQSLSend: servono utente e password di eQSL per accendere l'invio".into()));
         }
         if truthy(next.get("EnableUDP2adifBroadcast")) && r.secondary.is_none() {
             return Err(SettingsError::BadValue("UDP2Server: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
         if truthy(next.get("EnableUDP1adifSending")) && r.primary.is_none() {
             return Err(SettingsError::BadValue("UDPServer: serve un indirizzo e una porta validi per accendere l'invio".into()));
+        }
+        // invio diretto: acceso solo con tutto quello che serve (non si finge un invio che non puo' partire)
+        if truthy(next.get("WavelogSend")) && (!r.wavelog || !has_secret("WavelogKey")) {
+            return Err(SettingsError::BadValue("WavelogSend: servono indirizzo, numero della stazione e chiave API per accendere l'invio".into()));
+        }
+        if truthy(next.get("ClublogSend")) && (!r.clublog || r.clublog_call.is_empty() || !has_secret("ClublogPasswd") || !has_secret("ClublogApiKey")) {
+            return Err(SettingsError::BadValue("ClublogSend: servono email, nominativo, password e chiave API per accendere l'invio".into()));
+        }
+        if truthy(next.get("QRZLogSend")) && !has_secret("QRZLogKey") {
+            return Err(SettingsError::BadValue("QRZLogSend: serve la chiave del logbook per accendere l'invio".into()));
+        }
+        if truthy(next.get("LoTWSend")) {
+            if !r.lotw {
+                return Err(SettingsError::BadValue("LoTWSend: serve la posizione di stazione di TQSL per accendere l'invio".into()));
+            }
+            if reporting::lotw::find_tqsl(&r.lotw_tqsl, &reporting::lotw::default_candidates()).is_none() {
+                return Err(SettingsError::BadValue("LoTWSend: TQSL non trovato (indica il percorso di tqsl.exe)".into()));
+            }
+        }
+        // le password e le chiavi si salvano nella protezione del sistema, mai nel file, e solo quando tutto il resto va bene
+        if !secret_changes.is_empty() {
+            let store = self.secret_store().ok_or_else(|| SettingsError::NotAvailable("secrets".into()))?;
+            for (name, value) in &secret_changes {
+                store.set(name, value).map_err(SettingsError::Io)?;
+            }
+            if let Some(service) = self.reporting() {
+                service.credentials_changed();
+            }
         }
         let previous = std::mem::replace(&mut *self.lock(), next);
         if let Err(e) = self.write() {
@@ -869,7 +993,7 @@ impl EngineSettingsStore {
             }
         }
         // i segreti non si restituiscono mai: si dice solo se ci sono
-        let secrets: BTreeMap<&str, bool> = SECRET_KEYS.iter().map(|k| (*k, self.eqsl_password_saved())).collect();
+        let secrets: BTreeMap<&str, bool> = SECRET_KEYS.iter().map(|k| (*k, self.secret_saved(k))).collect();
         json!({ "version": FILE_VERSION, "file": FILE_NAME, "values": values, "items": items, "secrets": secrets, "status": self.status.snapshot() })
     }
 }
@@ -1260,5 +1384,56 @@ SaveWav=2
         let got = import_from_ini(&ini, addr("127.0.0.1:2334"), &[]);
         assert_eq!((got["SoundInName"].as_str(), got["SoundOutName"].as_str()), ("Microfono (2- USB Audio Device)", "Altoparlanti (2- USB Audio Device)"));
         assert_eq!((got["AudioInputChannel"].as_str(), got["AudioOutputChannel"].as_str(), got["SaveWav"].as_str(), got["SaveDir"].as_str()), ("Left", "Both", "2", "C:/Users/x/save"));
+    }
+
+    #[test]
+    fn direct_uploads_are_off_by_default_need_their_data_and_keep_keys_only_in_the_secrets() {
+        let store = EngineSettingsStore::open(&temp("uploads"), defaults);
+        let r = store.reports();
+        assert!(!r.wavelog && !r.clublog && !r.qrz && !r.lotw, "tutto spento di fabbrica");
+        // senza la protezione dei segreti le voci con chiavi non sono disponibili; LoTW si'
+        assert_eq!(store.state_of("WavelogKey"), Err("upload_secrets"));
+        assert_eq!(store.state_of("LoTWLocation"), Ok(Apply::Now));
+        let secrets = Arc::new(reporting::secret::MemorySecrets::default());
+        store.set_secrets(Arc::clone(&secrets) as Arc<dyn SecretStore>);
+        for (k, v) in [("WavelogUrl", "log.example.com"), ("WavelogStation", "3a"), ("ClublogEmail", "k1abc"), ("ClublogCall", "K1 ABC"), ("WavelogSend", "si")] {
+            assert!(store.update(&map(&[(k, v)])).is_err(), "{k}={v}");
+        }
+        // acceso senza la chiave: rifiutato, e la chiave non e' salvata se il resto non va
+        assert!(store.update(&map(&[("WavelogUrl", "https://log.example.com/index.php"), ("WavelogStation", "3"), ("WavelogSend", "true")])).is_err());
+        assert!(store.update(&map(&[("WavelogKey", "wl0123"), ("WavelogStation", "x")])).is_err());
+        assert!(!secrets.has(reporting::WAVELOG_SECRET), "un gruppo rifiutato non salva nemmeno la chiave");
+        store.update(&map(&[("WavelogUrl", "https://log.example.com/index.php"), ("WavelogStation", "3"), ("WavelogKey", "wl0123"), ("WavelogSend", "true")])).unwrap();
+        let r = store.reports();
+        assert_eq!((r.wavelog, r.wavelog_url.as_str(), r.wavelog_station.as_str()), (true, "https://log.example.com/index.php", "3"));
+        assert_eq!(secrets.get(reporting::WAVELOG_SECRET).as_deref(), Some("wl0123"));
+        let file = std::fs::read_to_string(temp_path_of(&store)).unwrap();
+        assert!(!file.contains("wl0123") && !file.contains("WavelogKey"), "la chiave non e' nel file");
+        let doc = store.document();
+        assert_eq!(doc["secrets"]["WavelogKey"], true);
+        assert_eq!(doc["secrets"]["QRZLogKey"], false);
+        assert!(!doc.to_string().contains("wl0123"));
+        // ClubLog: nominativo vuoto = il proprio, ma ci vuole
+        assert!(store.update(&map(&[("ClublogEmail", "k1abc@example.com"), ("ClublogPasswd", "p"), ("ClublogApiKey", "a"), ("ClublogSend", "true")])).is_err(), "manca il nominativo");
+        store.update(&map(&[("MyCall", "K1ABC"), ("ClublogEmail", "k1abc@example.com"), ("ClublogPasswd", "p"), ("ClublogApiKey", "a"), ("ClublogSend", "true")])).unwrap();
+        assert_eq!((store.reports().clublog, store.reports().clublog_call.as_str()), (true, "K1ABC"));
+        assert_eq!(secrets.get(reporting::CLUBLOG_API_SECRET).as_deref(), Some("a"));
+        // QRZ: solo la chiave
+        assert!(store.update(&map(&[("QRZLogSend", "true")])).is_err());
+        store.update(&map(&[("QRZLogKey", "ABCD-0A0B"), ("QRZLogSend", "true")])).unwrap();
+        assert!(store.reports().qrz);
+        // cancellare la chiave con l'invio acceso non si puo'
+        assert!(store.update(&map(&[("QRZLogKey", "")])).is_err());
+        // LoTW: posizione e un TQSL che esiste
+        assert!(store.update(&map(&[("LoTWLocation", "Casa"), ("LoTWTqsl", "C:/non/esiste/tqsl.exe"), ("LoTWSend", "true")])).is_err());
+        let exe = std::env::current_exe().unwrap().display().to_string();
+        assert!(store.update(&map(&[("LoTWTqsl", exe.as_str()), ("LoTWSend", "true")])).is_err(), "manca la posizione");
+        store.update(&map(&[("LoTWLocation", "Casa"), ("LoTWTqsl", exe.as_str()), ("LoTWSend", "true")])).unwrap();
+        let r = store.reports();
+        assert_eq!((r.lotw, r.lotw_location.as_str(), r.lotw_tqsl.as_str()), (true, "Casa", exe.as_str()));
+    }
+
+    fn temp_path_of(store: &EngineSettingsStore) -> PathBuf {
+        store.path.clone()
     }
 }

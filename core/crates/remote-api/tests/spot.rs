@@ -117,3 +117,27 @@ async fn off_bad_call_and_server_errors_are_told_in_clear() {
     // un invio fallito non conta: si puo' riprovare subito (un altro 502, non un 409)
     status_is(&call(&router(&s), spot(&s, &cookie, r#"{"dx_call":"DL1ABC"}"#)).await, StatusCode::BAD_GATEWAY);
 }
+
+#[tokio::test]
+async fn the_upload_test_route_checks_the_saved_settings_and_refuses_unknown_services() {
+    let s = state();
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/qso-upload/test").cookie(&cookie).json(r#"{"service":"qrz"}"#)).await;
+    status_is(&resp, StatusCode::NOT_FOUND);
+    assert_eq!(body_json(resp).await["error"], "upload_unavailable");
+    let (url, _requests) = local_server("200 OK");
+    let s = with_service("upload", url, false).await;
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/qso-upload/test").cookie(&cookie).json(r#"{"service":"boh"}"#)).await;
+    status_is(&resp, StatusCode::BAD_REQUEST);
+    assert_eq!(body_json(resp).await["error"], "bad_service");
+    // QRZ spento: la prova non parte e lo dice
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/qso-upload/test").cookie(&cookie).json(r#"{"service":"qrz"}"#)).await;
+    status_is(&resp, StatusCode::BAD_GATEWAY);
+    let doc = body_json(resp).await;
+    assert_eq!(doc["error"], "upload_test_failed");
+    assert!(doc["message"].as_str().unwrap_or("").contains("QRZ"), "{doc}");
+    let mut outside = req(Method::POST, "/api/v1/qso-upload/test").cookie(&cookie).json(r#"{"service":"qrz"}"#);
+    outside.peer = axum::extract::ConnectInfo("8.8.8.8:50000".parse().unwrap());
+    status_is(&call(&router(&s), outside).await, StatusCode::FORBIDDEN);
+}

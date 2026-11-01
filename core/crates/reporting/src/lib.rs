@@ -1,21 +1,28 @@
-//! Gli invii verso l'esterno della scheda Segnalazioni: spotting su PSK Reporter, spot su DXSummit, QSO al server TCP e a eQSL.
+//! Gli invii verso l'esterno della scheda Segnalazioni: spotting su PSK Reporter, spot su DXSummit, QSO al server TCP e a eQSL, invio diretto dei
+//! QSO a Wavelog/Cloudlog, ClubLog, QRZ.com Logbook e LoTW (modulo [`upload`], con coda e nuovi tentativi).
 //!
 //! Regole comuni (decise per tutti gli invii verso internet):
 //! - ognuno si accende e si spegne dalle impostazioni (`Config`), a caldo; spento non parte niente e non si accoda niente;
 //! - **non blocca mai il motore**: l'ascolto del bus passa lo spot o il QSO a un'attivita' a parte (con i suoi tempi massimi) e riprende subito;
 //! - l'esito dell'ultimo invio sta in [`ReportStatus`] (e nel registro, senza mai password);
-//! - la password di eQSL si legge dalla protezione dei segreti solo nel momento dell'invio.
+//! - le password e le chiavi (eQSL, Wavelog/Cloudlog, ClubLog, QRZ) si leggono dalla protezione dei segreti solo nel momento dell'invio.
 
+pub mod clublog;
 pub mod dxsummit;
 pub mod eqsl;
+pub mod lotw;
 pub mod psk;
+pub mod qrz;
 pub mod secret;
 pub mod status;
 pub mod tcp;
+pub mod upload;
+pub mod wavelog;
 
 use std::{
     collections::VecDeque,
     net::{IpAddr, SocketAddr},
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -28,6 +35,35 @@ use tokio::{net::UdpSocket, sync::{broadcast::error::RecvError, watch}};
 
 /// Il nome con cui si salva la password di eQSL nei segreti.
 pub const EQSL_SECRET: &str = "eqsl";
+/// La chiave API di Wavelog/Cloudlog.
+pub const WAVELOG_SECRET: &str = "wavelog";
+/// La password (o «Application Password») di ClubLog.
+pub const CLUBLOG_SECRET: &str = "clublog";
+/// La chiave API dell'applicazione per ClubLog.
+pub const CLUBLOG_API_SECRET: &str = "clublog-api";
+/// La chiave del logbook di QRZ.com.
+pub const QRZ_SECRET: &str = "qrz";
+
+/// Wavelog o Cloudlog: indirizzo e numero della stazione (la chiave API sta nei segreti).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct WavelogAccount {
+    pub url: String,
+    pub station_id: String,
+}
+
+/// ClubLog: email dell'account e nominativo del log (vuoto = il proprio); password e chiave API stanno nei segreti.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ClublogAccount {
+    pub email: String,
+    pub callsign: String,
+}
+
+/// LoTW: percorso di TQSL (vuoto = cercato da solo) e posizione di stazione di TQSL.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LotwSetup {
+    pub tqsl: String,
+    pub location: String,
+}
 
 /// L'account di eQSL (la password sta nei segreti).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -51,6 +87,18 @@ pub struct Config {
     pub tcp: Option<SocketAddr>,
     /// eQSL acceso con questo account.
     pub eqsl: Option<EqslAccount>,
+    /// Invio diretto dei QSO: ognuno `Some` (o vero) solo se acceso.
+    pub wavelog: Option<WavelogAccount>,
+    pub clublog: Option<ClublogAccount>,
+    pub qrz: bool,
+    pub lotw: Option<LotwSetup>,
+}
+
+impl Config {
+    /// C'e' almeno un destinatario dei QSO registrati.
+    fn wants_qsos(&self) -> bool {
+        self.tcp.is_some() || self.eqsl.is_some() || upload::Target::ALL.into_iter().any(|t| upload::enabled(self, t))
+    }
 }
 
 /// Gli indirizzi a cui si manda: in produzione quelli veri, nelle prove un server locale.
@@ -66,6 +114,17 @@ pub struct Endpoints {
     pub dxsummit_timeout: Duration,
     /// Il programma che dichiara l'invio a PSK Reporter.
     pub software: String,
+    /// Invio diretto: indirizzi fissi di ClubLog e QRZ, attese massime, il programma dichiarato (User-Agent).
+    pub clublog_url: String,
+    pub qrz_url: String,
+    pub upload_timeout: Duration,
+    pub lotw_timeout: Duration,
+    pub user_agent: String,
+    /// Il file della coda dell'invio diretto; `None` = solo in memoria.
+    pub queue_file: Option<PathBuf>,
+    /// Dove cercare TQSL e il suo elenco delle posizioni di stazione.
+    pub tqsl_candidates: Vec<PathBuf>,
+    pub tqsl_station_data: Option<PathBuf>,
 }
 
 impl Default for Endpoints {
@@ -78,6 +137,14 @@ impl Default for Endpoints {
             eqsl_timeout: eqsl::TIMEOUT,
             dxsummit_timeout: dxsummit::TIMEOUT,
             software: format!("Aurora v{}", aurora_core::version::APP_VERSION),
+            clublog_url: clublog::URL.to_string(),
+            qrz_url: qrz::URL.to_string(),
+            upload_timeout: upload::HTTP_TIMEOUT,
+            lotw_timeout: lotw::TIMEOUT,
+            user_agent: format!("Aurora/{}", aurora_core::version::APP_VERSION),
+            queue_file: None,
+            tqsl_candidates: lotw::default_candidates(),
+            tqsl_station_data: lotw::default_station_data(),
         }
     }
 }
@@ -92,6 +159,8 @@ pub struct Service {
     last_spot: Mutex<Option<(String, Instant)>>,
     /// Quello che il motore dice adesso (frequenza, modo, rapporto): serve a comporre lo spot come lo comporrebbe JTDX.
     live: Mutex<Live>,
+    /// La coda dell'invio diretto dei QSO.
+    queue: Arc<upload::Queue>,
 }
 
 /// Lo stato del motore che serve allo spot.
@@ -206,10 +275,38 @@ impl Service {
         initial: Config,
     ) -> Arc<Service> {
         let (config, rx) = watch::channel(initial);
-        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()) });
+        let queue = Arc::new(upload::Queue::open(endpoints.queue_file.clone()));
+        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()), queue });
         let events = bus.subscribe_events();
         tokio::spawn(run(Arc::clone(&service), events, rx));
+        for target in upload::Target::ALL {
+            tokio::spawn(upload::worker(Arc::clone(&service), target));
+        }
         service
+    }
+
+    /// Il pulsante «Prova» dell'invio diretto: controlla le impostazioni salvate senza registrare QSO (dove il servizio lo permette). Se va
+    /// bene, un servizio fermo per un errore di credenziali riparte e riprova subito quello che e' in coda.
+    pub async fn test_upload(&self, target: upload::Target) -> Result<String, String> {
+        let result = upload::test(self, target).await;
+        if result.is_ok() {
+            self.queue.set_blocked(target, false);
+            self.queue.retry_now(Some(target), (self.now)());
+        }
+        result
+    }
+
+    /// Le credenziali sono cambiate: i servizi fermi ripartono e quello che e' in coda si riprova subito.
+    pub fn credentials_changed(&self) {
+        for target in upload::Target::ALL {
+            self.queue.set_blocked(target, false);
+        }
+        self.queue.retry_now(None, (self.now)());
+    }
+
+    /// Quanti QSO aspettano di partire verso un servizio.
+    pub fn pending(&self, target: upload::Target) -> usize {
+        self.queue.count(target)
     }
 
     pub fn status(&self) -> Arc<ReportStatus> {
@@ -339,7 +436,7 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                 Ok(Event::QsoLogged(q)) => {
                     let config = service.config.borrow().clone();
                     let stamp = if q.time_off_unix_ms > 0 { q.time_off_unix_ms } else { (service.now)() * 1000 };
-                    if (config.tcp.is_some() || config.eqsl.is_some()) && guard.accept(&q.call, &q.mode, stamp) {
+                    if config.wants_qsos() && guard.accept(&q.call, &q.mode, stamp) {
                         dispatch_qso(&service, config, q);
                     }
                 }
@@ -430,11 +527,16 @@ async fn send_psk(target: &str, packets: &[Vec<u8>]) -> Result<(), String> {
     Ok(())
 }
 
-/// Un QSO registrato: lo si manda al server TCP e a eQSL, ognuno in un'attivita' a parte.
+/// Un QSO registrato: lo si manda al server TCP e a eQSL, ognuno in un'attivita' a parte, e lo si mette in coda per l'invio diretto.
 fn dispatch_qso(service: &Arc<Service>, config: Config, q: QsoRecord) {
     let now = (service.now)();
     let today = adif::utc_date(now);
     let station = Station { call: config.call.clone(), grid: config.grid.clone(), tx_power: config.tx_power.clone() };
+    // invio diretto: lo stesso record ADIF del secondo server UDP di JTDX, senza credenziali (si aggiungono al momento dell'invio)
+    let record = adif::jtdx_record(&q, &station, &today);
+    for target in upload::Target::ALL.into_iter().filter(|t| upload::enabled(&config, *t)) {
+        service.queue.push(target, &q.call, record.clone(), now);
+    }
     if let Some(addr) = config.tcp {
         let record = adif::jtdx_record_with(&q, &station, &today, config.eqsl.is_some().then_some(today.as_str()));
         let status = Arc::clone(&service.status);
