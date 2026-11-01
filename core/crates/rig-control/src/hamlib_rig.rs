@@ -120,7 +120,7 @@ pub enum LinkState {
 }
 
 /// Lo stato osservabile della radio.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RigStatus {
     pub state: LinkState,
     /// Testo per l'utente (errore tradotto, avanzamento della riconnessione).
@@ -129,6 +129,8 @@ pub struct RigStatus {
     pub mode: Option<String>,
     /// Larghezza del filtro della radio (Hz), come la da' Hamlib con il modo; 0 o assente se la radio non la dice.
     pub passband_hz: Option<u32>,
+    /// I dati in piu' (con «Leggi anche gli altri dati della radio» acceso).
+    pub extras: crate::extras::RigExtras,
     pub ptt: bool,
     pub split: Option<bool>,
     /// Guasti di lettura consecutivi.
@@ -172,6 +174,7 @@ struct Inner {
     epoch: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
     meter: Mutex<MeterPoll>,
+    extras: Mutex<crate::extras::ExtrasPoll>,
 }
 
 /// Ogni quanto si legge il misuratore in ricezione e in trasmissione.
@@ -220,6 +223,7 @@ impl Inner {
             frequency_hz: None,
             mode: None,
             passband_hz: None,
+            extras: crate::extras::RigExtras::default(),
             ptt: false,
             split: None,
             failures: 0,
@@ -305,6 +309,9 @@ impl Inner {
             // un collegamento nuovo puo' essere un'altra radio: si riprova a chiedere tutti i livelli
             *meter = MeterPoll::default();
         }
+        if let Ok(mut extras) = self.extras.lock() {
+            *extras = crate::extras::ExtrasPoll::default();
+        }
         if let Ok(mut slot) = self.link.lock() {
             *slot = Some(link);
         }
@@ -351,6 +358,15 @@ impl Inner {
         if let Some(f) = freq {
             self.rx_dial.store(f, Ordering::SeqCst);
         }
+        // i dati in piu', a turno e solo in ricezione: tre per lettura, uno sulle seriali lente
+        let extras = if self.config.read_extras && freq.is_some() {
+            self.extras.lock().ok().map(|mut poll| {
+                poll.read(client, if slow_port(&self.config) { 1 } else { 3 });
+                poll.cache.clone()
+            })
+        } else {
+            None
+        };
         let fresh = self.epoch.load(Ordering::SeqCst) == epoch;
         self.update(|s| {
             s.failures = 0;
@@ -359,6 +375,9 @@ impl Inner {
                     s.frequency_hz = freq;
                     s.mode = mode;
                     s.passband_hz = passband;
+                    if let Some(x) = extras {
+                        s.extras = x;
+                    }
                 }
                 if let Some(p) = ptt {
                     s.ptt = p;
@@ -617,6 +636,7 @@ impl HamlibRig {
                 frequency_hz: None,
                 mode: None,
                 passband_hz: None,
+                extras: crate::extras::RigExtras::default(),
                 ptt: false,
                 split: None,
                 failures: 0,
@@ -634,6 +654,7 @@ impl HamlibRig {
             emulate_restore: Mutex::new(None),
             epoch: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
+            extras: Mutex::new(crate::extras::ExtrasPoll::default()),
         });
         let worker = Arc::clone(&inner);
         let handle = std::thread::Builder::new().name("aurora-cat".into()).spawn(move || worker.run()).ok();

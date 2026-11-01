@@ -114,6 +114,9 @@ pub struct RigConfig {
     /// cosi' Log4OM2, GridTracker, JTDX e gli altri si collegano ad Aurora come a una radio «Hamlib NET rigctl».
     pub share_enabled: bool,
     pub share_port: u16,
+    /// «Leggi anche gli altri dati della radio»: preamplificatore, AGC, NB/NR, guadagni, RIT/XIT, secondo VFO... a turno, in ricezione.
+    /// Spento di base: sulle seriali lente occupa la porta.
+    pub read_extras: bool,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -139,6 +142,7 @@ impl Default for RigConfig {
             civ_address: 0,
             poll_secs: 2,
             auto_connect: false,
+            read_extras: false,
             share_enabled: false,
             share_port: DEFAULT_SHARE_PORT,
         }

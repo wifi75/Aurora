@@ -240,6 +240,63 @@ impl RigctldClient {
         self.ask(&format!("M {mode} {passband}"), 0).map(|_| ())
     }
 
+    /// Un comando che in modalita' VFO vuole il VFO davanti agli argomenti (`u`, `j`, `z`): lo aggiunge.
+    fn ask_vfo(&self, head: &str, rest: &str, lines: usize) -> Result<Vec<String>, RigError> {
+        let vfo = if self.vfo_mode.load(std::sync::atomic::Ordering::Relaxed) { " currVFO" } else { "" };
+        let rest = if rest.is_empty() { String::new() } else { format!(" {rest}") };
+        self.ask_raw(&format!("{head}{vfo}{rest}"), lines)
+    }
+
+    /// Una funzione acceso/spento di Hamlib (`u NB`, `u NR`, `u ANF`, `u TUNER`...).
+    pub fn func(&self, name: &str) -> Result<bool, RigError> {
+        check_token(name, "funzione")?;
+        let r = self.ask_vfo("u", name, 1)?;
+        Ok(r[0].trim() != "0")
+    }
+
+    /// Lo spostamento RIT (`j`) o XIT (`z`) in Hz.
+    pub fn offset(&self, xit: bool) -> Result<i32, RigError> {
+        let r = self.ask_vfo(if xit { "z" } else { "j" }, "", 1)?;
+        r[0].trim().parse::<i32>().map_err(|_| RigError(format!("RIT/XIT illeggibile: {}", r[0])))
+    }
+
+    /// Il VFO in uso («VFOA», «VFOB», «Main»...).
+    pub fn vfo(&self) -> Result<String, RigError> {
+        let r = self.ask_raw("v", 1)?;
+        Ok(r[0].trim().to_string())
+    }
+
+    /// Frequenza e modo di un altro VFO senza cambiarlo, con la risposta estesa (`+\get_vfo_info VFOB`): si legge fino a «RPRT».
+    pub fn vfo_info(&self, vfo: &str) -> Result<(u64, String), RigError> {
+        check_token(vfo, "VFO")?;
+        let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
+        let (reader, writer) = &mut *io;
+        writer.write_all(format!("+\\get_vfo_info {vfo}\n").as_bytes()).map_err(|e| RigError(format!("rigctld: scrittura: {e}")))?;
+        let (mut freq, mut mode) = (None, String::new());
+        for _ in 0..16 {
+            let mut line = String::new();
+            reader.read_line(&mut line).map_err(|e| RigError(format!("rigctld: lettura: {e}")))?;
+            if line.is_empty() {
+                return Err(RigError("rigctld ha chiuso la connessione".into()));
+            }
+            let line = line.trim();
+            if let Some(rprt) = parse_rprt(line) {
+                return match (rprt, freq) {
+                    (Ok(()), Some(f)) => Ok((f, mode)),
+                    (Ok(()), None) => Err(RigError(format!("{vfo}: frequenza non data"))),
+                    (Err(code), _) => Err(RigError(format!("get_vfo_info: {} ({code})", hamlib_error(code)))),
+                };
+            }
+            if let Some((key, value)) = line.split_once(':') {
+                match key.trim() {
+                    "Freq" => freq = value.trim().parse::<f64>().ok().map(|f| f.round() as u64),
+                    "Mode" => mode = value.trim().to_string(),
+                    _ => {}
+                }
+            }
+        }
+        Err(RigError("get_vfo_info: risposta troppo lunga".into()))
+    }
     pub fn ptt(&self) -> Result<bool, RigError> {
         let r = self.ask("t", 1)?;
         Ok(r[0] != "0")
