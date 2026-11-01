@@ -270,6 +270,9 @@ export function Live() {
   return (
     <div className="live">
       <div className="live-top">
+        {/* a sinistra modi, bande e controlli di ricezione una sotto l'altra, vicini; a destra il display della radio */}
+        <div className="live-left">
+        <div className="live-left-row">
         <div className="band-row">
           <ModeSwitch
             mode={status?.mode ?? ''}
@@ -284,16 +287,17 @@ export function Live() {
             onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
           />
         </div>
-        {/* il display sta a destra della riga delle bande, al posto dei controlli che ora sono sulla seconda riga */}
-        <RadioDisplayHeader />
         <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
+        </div>
+        {phone ? null : (
+          <RxControls
+            mode={status?.mode ?? ''}
+            transmitting={status?.transmitting ?? false}
+          />
+        )}
+        </div>
+        <RadioDisplayHeader />
       </div>
-      {phone ? null : (
-        <RxControls
-          mode={status?.mode ?? ''}
-          transmitting={status?.transmitting ?? false}
-        />
-      )}
       <DiagnosisBar />
       {phone ? (
         <PhoneTabs

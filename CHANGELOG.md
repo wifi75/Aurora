@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni piu' compatte e ordinate**: la casella di spunta sta subito prima del suo testo (prima era all'altro capo della cella); lingua e tema in un solo riquadro «Aspetto»; tabelle corte (frequenze, programmazione, notifiche) a larghezza contenuta; macro in griglia; i riquadri bassi salgono accanto a quelli alti.
+- **Stazione, testata**: modi, bande e controlli di ricezione stretti uno sotto l'altro a sinistra, display piu' basso a destra; il display esteso ha un'area fissa a due righe con tutti i pulsanti (PRE, ATT, AGC, NB, NR...) e senza il doppione dello S-meter e della potenza; se le voci sono accese ma i dati extra della radio sono spenti, lo dice.
 - **Radio, riquadro Collegamento**: le caselle hanno la larghezza che serve; larghe per sistema di controllo, modello e porta (il testo si legge intero), strette per bit di dati, bit di stop, velocita' e indirizzo CI-V; il tutto su due righe.
 
 ## 0.11.47 - 2026-11-01

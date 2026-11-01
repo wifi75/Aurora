@@ -61,11 +61,15 @@ function JtdxGeneralTab() {
         </Cells>
       </Group>
 
-      <Group title={t('gen.language')}>
-        <LanguageSelect />
-      </Group>
-      <Group title={t('gen.theme')}>
-        <ThemeToggle />
+      <Group title={t('gen.look')}>
+        <Cells min={9}>
+          <Cell label={t('gen.language')}>
+            <LanguageSelect />
+          </Cell>
+          <Cell label={t('gen.theme')}>
+            <ThemeToggle />
+          </Cell>
+        </Cells>
       </Group>
 
       <Group title={t('jx.title')} span={2}>

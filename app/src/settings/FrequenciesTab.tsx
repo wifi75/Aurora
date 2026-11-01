@@ -44,7 +44,7 @@ export function FrequenciesTab() {
     <Page>
       <Group title={t('tab.frequencies')} span={2}>
         <div className="sx-tablewrap sx-tablewrap--scroll">
-          <table className="sx-table">
+          <table className="sx-table sx-table--compact">
             <thead>
               <tr>
                 <th scope="col">{t('freq.band')}</th>
