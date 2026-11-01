@@ -8,6 +8,9 @@ import '../styles/fox.css';
 type Caller = FoxSnapshot['callers'][number];
 type SortKey = 'snr' | 'call' | 'freq_hz' | 'age';
 
+/** Prima del primo stato dal motore: Fox spento, valori di WSJT-X. */
+const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: '', auto_queue: false, callers: [], queue: [], in_progress: [], tx: [], periods: 0, logged: 0 };
+
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 
 /**
@@ -16,10 +19,9 @@ const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
  */
 export function FoxPage() {
   const t = useT();
-  const fox = useFox((s) => s.fox);
+  const fox = useFox((s) => s.fox) ?? EMPTY;
   const [sort, setSort] = useState<SortKey>('snr');
   const [filter, setFilter] = useState('');
-  if (!fox) return <section className="fox"><h1>{t('fox.title')}</h1><p className="muted">{t('fox.waiting')}</p></section>;
 
   const options = (o: Partial<{ slots: number; more_cqs: boolean; cq: string; auto_queue: boolean }>) =>
     void postFox({ action: 'options', slots: fox.slots, more_cqs: fox.more_cqs, cq: fox.cq, auto_queue: fox.auto_queue, ...o });
