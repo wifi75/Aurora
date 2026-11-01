@@ -1441,7 +1441,7 @@ pub async fn run(
             Arc::new(move |call: &str| {
                 db.lookup(call).map(|l| {
                     let e = db.entity(l.entity);
-                    serde_json::json!({ "country": e.name, "continent": e.continent, "prefix": e.prefix, "cq_zone": l.cq_zone, "itu_zone": l.itu_zone })
+                    serde_json::json!({ "country": e.name, "continent": e.continent, "prefix": e.prefix, "cq_zone": l.cq_zone, "itu_zone": l.itu_zone, "lat": f64::from(e.lat_e2) / 100.0, "lon": f64::from(e.lon_e2) / 100.0 })
                 })
             }) as remote_api::DxccProvider
         }))
