@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.59',
-    released: '2026-11-01T22:00:00Z',
+    released: '2026-11-01T15:21:41Z',
     kind: 'changed',
     title: ['Hz leggibili mentre sposti le barre', 'Readable Hz while dragging the bars', 'Hz lesbar beim Ziehen der Balken', 'Hz lisibles en déplaçant les barres', 'Hz legibles al mover las barras', 'Hz legíveis ao mover as barras'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.59',
-    released: '2026-11-01T22:00:00Z',
+    released: '2026-11-01T15:21:41Z',
     kind: 'changed',
     title: ['Display della radio più reattivo', 'More responsive radio display', 'Reaktionsschnellere Funkanzeige', 'Afficheur radio plus réactif', 'Display de la radio más reactivo', 'Visor do rádio mais reativo'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.59',
-    released: '2026-11-01T22:00:00Z',
+    released: '2026-11-01T15:21:41Z',
     kind: 'changed',
     title: ['DXpedition nel cluster solo evidenziate', 'DXpeditions in the cluster just highlighted', 'DXpeditionen im Cluster nur hervorgehoben', 'DXpéditions du cluster seulement surlignées', 'DXpediciones del clúster solo resaltadas', 'DXpedições no cluster só realçadas'],
     text: [
