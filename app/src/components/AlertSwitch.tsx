@@ -1,5 +1,6 @@
 import { useT } from '../i18n';
-import type { AlertPrefs } from '../lib/alerts';
+import { useAlertPrefs, type AlertPrefs } from '../lib/alerts';
+import { armAudio } from '../lib/soundBank';
 
 interface Props {
   value: AlertPrefs;
@@ -44,5 +45,19 @@ export function AlertSwitch({ value, onChange }: Props) {
         />
       </label>
     </div>
+  );
+}
+
+/** L'icona degli avvisi nella testata, accanto alla lingua: legge e salva da sola le preferenze. */
+export function HeaderAlertSwitch() {
+  const value = useAlertPrefs((s) => s.prefs);
+  return (
+    <AlertSwitch
+      value={value}
+      onChange={(next) => {
+        if (next.enabled) armAudio();
+        useAlertPrefs.getState().set(next);
+      }}
+    />
   );
 }
