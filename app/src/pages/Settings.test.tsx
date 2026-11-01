@@ -98,7 +98,7 @@ describe('Settings tabs', () => {
     // due righe ordinate per tipo; Radio CAT e' dentro Radio
     expect(names).toEqual([
       'Generali', 'Radio', 'Audio', 'Frequenze', 'Bande', 'Sequenza', 'Macro TX', 'Programmazione', 'Filtri', 'Avanzate',
-      'Notifiche', 'Desiderati', 'DXCC', 'DX Cluster', 'Segnalazioni', 'Servizi online', 'Orologio', 'Aggiornamenti', 'Accesso', 'Finestre',
+      'Notifiche', 'Desiderati', 'DXCC', 'DX Cluster', 'Segnalazioni', 'Servizi online', 'Orologio', 'Accesso', 'Finestre', 'Aggiornamenti', 'Informazioni',
     ]);
     expect(screen.getAllByRole('tablist')).toHaveLength(2);
     expect(screen.getByRole('tab', { name: 'Generali' })).toHaveAttribute('aria-selected', 'true');

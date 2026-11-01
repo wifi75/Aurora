@@ -1141,3 +1141,73 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Informazioni: pagina di presentazione */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 46rem;
+}
+
+.about-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, #8e7bff 14%, transparent) 55%, color-mix(in srgb, #ff5d8a 12%, transparent));
+}
+
+.about-name {
+  margin: 0;
+  background: linear-gradient(100deg, var(--accent), #8e7bff 55%, #ff5d8a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 2.2rem;
+  letter-spacing: 0.22em;
+}
+
+.about-tagline,
+.about-version {
+  margin: 0.25rem 0 0;
+}
+
+.about-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.about-facts dt {
+  font-weight: 700;
+}
+
+.about-facts dd {
+  margin: 0;
+}
+
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.about-link {
+  padding: 0.4rem 0.8rem;
+  text-decoration: none;
+}
+
+@media (max-width: 40rem) {
+  .about-hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .about-facts {
+    grid-template-columns: 1fr;
+  }
+}
