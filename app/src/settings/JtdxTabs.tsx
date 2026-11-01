@@ -1,3 +1,4 @@
+import { engineHint } from './engineHints';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { getControls, postControl, type ControlId } from '../api/client';
@@ -19,7 +20,7 @@ import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { RadioDisplayPicker } from './RadioDisplayPicker';
 import { Check, Help } from './common';
-import { Cell, Cells, Field, Group, Message, Notes, Page, Unavailable } from './layout';
+import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page, Unavailable } from './layout';
 
 /** Il valore di una voce adesso: la modifica non ancora applicata, o quello salvato. */
 function valueOf(doc: EngineSettings, draft: Draft, key: string): string {
@@ -47,8 +48,9 @@ function EngineCheck({ k, label, doc, draft, locked = false }: { k: string; labe
 
 /** Una cella con la casella di una voce del motore proprio. */
 function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
+  const t = useT();
   return (
-    <Field label={label} changed={draft.changes[k] !== undefined}>
+    <Field label={label} hint={engineHint(k, t)} changed={draft.changes[k] !== undefined}>
       <EngineCheck k={k} label={label} doc={doc} draft={draft} locked={locked} />
     </Field>
   );
@@ -76,8 +78,9 @@ function OffRow({ label, reason, kind = 'check', suffix }: { label: string; reas
 
 /** Una preferenza dello schermo (del browser, vale subito). */
 function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'showTx' | 'showAzimuth' | 'showCountry' | 'showDistance'); label: string }) {
+  const t = useT();
   const prefs = usePrefs((s) => s.prefs);
-  return <Check label={label} checked={prefs[k]} onChange={(v) => usePrefs.getState().set({ [k]: v })} />;
+  return <Check label={label} hint={t(`tip.pref.${k}` as Key)} checked={prefs[k]} onChange={(v) => usePrefs.getState().set({ [k]: v })} />;
 }
 
 /** Le scelte della regione IARU (i nomi di JTDX) e dei messaggi per i nominativi composti di tipo 2. */
@@ -116,11 +119,12 @@ const SCENARIOS = [
 
 /** Un interruttore del pannello QSO (AutoSeq, 1 QSO, Salta Tx1, Risp B4): stesso stato e stesso comando del pannello, senza copie. */
 function ControlBox({ id, label }: { id: ControlId; label: string }) {
+  const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const on = controls.data?.[id] === true;
   return (
-    <Field label={label}>
+    <Field label={label} hint={t(`tip.ctl.${id}` as Key)}>
       <input
         type="checkbox"
         aria-label={label}
@@ -177,6 +181,7 @@ export function NativeSequence({ extra }: { extra?: ReactNode }) {
               <Cell
                 key={s.on}
                 label={<label htmlFor={id}>{t(s.label)}</label>}
+                hint={engineHint(s.on, t)}
                 className={draft.changes[s.on] !== undefined || draft.changes[s.value] !== undefined ? 'sx-field--changed' : ''}
               >
                 <input
@@ -385,9 +390,9 @@ function AlertCheck({ k, label, locked = false }: { k: AlertKey; label: string; 
 }
 
 /** Una cella con la casella di un avviso. */
-function AlertBox({ k, label, locked = false }: { k: AlertKey; label: string; locked?: boolean }) {
+function AlertBox({ k, label, hint, locked = false }: { k: AlertKey; label: string; hint?: string; locked?: boolean }) {
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <AlertCheck k={k} label={label} locked={locked} />
     </Field>
   );
@@ -429,9 +434,9 @@ function SoundCheck({ kinds, label, disabled }: { kinds: readonly ColorKey[]; la
 }
 
 /** Una cella con la casella dei suoni. */
-function SoundBox({ kinds, label, disabled }: { kinds: readonly ColorKey[]; label: string; disabled?: boolean }) {
+function SoundBox({ kinds, label, hint, disabled }: { kinds: readonly ColorKey[]; label: string; hint?: string; disabled?: boolean }) {
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <SoundCheck kinds={kinds} label={label} disabled={disabled} />
     </Field>
   );
@@ -490,13 +495,13 @@ export function NativeNotifications() {
             </colgroup>
             <thead>
               <tr>
-                <th scope="col">{t('not2.colKind')}</th>
-                <th scope="col">{t('not2.colHighlight')}</th>
-                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span></th>
-                <th scope="col"><span className="sx-first-letter">{t('not2.perMode')}</span></th>
-                <th scope="col"><span className="sx-first-letter">{t('not2.alsoSound')}</span></th>
-                <th scope="col">{t('not2.colAlert')}</th>
-                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span></th>
+                <th scope="col">{t('not2.colKind')}<Tip tip={t('tip.not2.colKind')} /></th>
+                <th scope="col">{t('not2.colHighlight')}<Tip tip={t('tip.not2.colHighlight')} /></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span><Tip tip={t('tip.not2.perBand')} /></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perMode')}</span><Tip tip={t('tip.not2.perMode')} /></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.alsoSound')}</span><Tip tip={t('tip.not2.alsoSound')} /></th>
+                <th scope="col">{t('not2.colAlert')}<Tip tip={t('tip.not2.colAlert')} /></th>
+                <th scope="col"><span className="sx-first-letter">{t('not2.perBand')}</span><Tip tip={t('tip.not2.perBand')} /></th>
               </tr>
             </thead>
             <tbody>
@@ -504,7 +509,7 @@ export function NativeNotifications() {
                 const main = isOn(doc, draft, r.key);
                 return (
                   <tr key={r.key}>
-                    <th scope="row">{t(r.name)}</th>
+                    <th scope="row">{t(r.name)}<Tip tip={t(`tip.kind.${r.kinds[0]}` as Key)} /></th>
                     <td title={t(r.label)}>
                       <span className="sx-cellbox">
                         <EngineCheck k={r.key} label={t(r.label)} doc={doc} draft={draft} />
@@ -588,7 +593,7 @@ export function NativeNotifications() {
             // «gia' lavorato»: senza il suo colore e' un messaggio qualunque (sfondo neutro), con barra o sottolineatura
             const bg = worked && !look.color ? { background: 'var(--panel)', color: 'var(--text)' } : style;
             return (
-              <Cell key={key} label={name}>
+              <Cell key={key} label={name} hint={t(`tip.kind.${key}` as Key)}>
                 <SoundPicker event={key as SoundEvent} label={name} />
                 <span
                   className={`jt-sample${key.startsWith('new_') ? ' jt-sample--bold' : ''}${worked && look.strike ? ' jt-sample--strike' : ''}${worked && look.underline ? ' jt-sample--underline' : ''}`}
@@ -604,6 +609,7 @@ export function NativeNotifications() {
             <button
               type="button"
               className="glass"
+              title={t('tip.not2.restoreColors')}
               onClick={() => {
                 commit(defaultColors());
                 useNotify.getState().reset();
@@ -619,11 +625,12 @@ export function NativeNotifications() {
       <Group title={t('not2.grpAlerts')}>
         <Cells min={14}>
           <AlertOptions />
-          <AlertBox k="alertMyCall" label={t('not2.alertMy')} />
-          <AlertBox k="alertDxCall" label={t('not2.alertDx')} />
-          <SoundBox kinds={['my_call']} label={t('not2.soundMy')} />
+          <AlertBox k="alertMyCall" label={t('not2.alertMy')} hint={t('tip.not2.alertMy')} />
+          <AlertBox k="alertDxCall" label={t('not2.alertDx')} hint={t('tip.not2.alertDx')} />
+          <SoundBox kinds={['my_call']} label={t('not2.soundMy')} hint={t('tip.not2.soundMy')} />
           <Check
             label={t('not2.soundFirst')}
+            hint={t('tip.not2.soundFirst')}
             checked={view.beepFirst}
             onChange={(v) => {
               setView({ beepFirst: v });
