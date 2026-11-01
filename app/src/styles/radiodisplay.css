@@ -787,3 +787,19 @@
 .rd-zoom .rx-extras {
   font-size: 1.1rem;
 }
+
+/* Lente del display: copia identica ingrandita 2x in larghezza e altezza, niente stiramenti */
+.rd-zoom {
+  width: auto;
+  padding: 0.3rem;
+}
+
+.rd-zoom .rd-zoom-lens {
+  zoom: 2;
+}
+
+.rd-zoom .rd-zoom-lens .rd-header,
+.rd-zoom .rd-zoom-lens .rd-face-slot {
+  width: 100%;
+  margin: 0;
+}

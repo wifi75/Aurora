@@ -10,8 +10,8 @@ import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
 
 /**
- * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia piu' grande (zoom moderato, ~44rem) con gli stessi indicatori
- * cliccabili, per leggerlo bene. Sul telefono niente zoom. Con "Nascondi il display" non c'e' affatto.
+ * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
+ * indicatori cliccabili, per leggerlo bene. Sul telefono niente zoom. Con "Nascondi il display" non c'e' affatto.
  */
 export function RadioDisplayHeader() {
   const phone = usePhone();
@@ -35,7 +35,7 @@ export function RadioDisplayHeader() {
 
   if (isFaceStyle(pref.style)) {
     return (
-      <Zoom big={<FaceHeader model={model} style={pref.style} />}>
+      <Zoom>
         <FaceHeader model={model} style={pref.style} />
       </Zoom>
     );
@@ -43,14 +43,7 @@ export function RadioDisplayHeader() {
 
   // due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (VFO A grande a sinistra, VFO B e indicatori a destra)
   return (
-    <Zoom
-      big={
-        <div className="rd-zoom-duo">
-          <RadioDisplay model={model} style={pref.style} size="full" />
-          <RadioExtras />
-        </div>
-      }
-    >
+    <Zoom>
     <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
       <div className="rd-slot rd-trigger rd-trigger--static">
         <RadioDisplay model={model} style={pref.style} size="mini" />
@@ -66,22 +59,32 @@ export function RadioDisplayHeader() {
 const OPEN_MS = 250;
 const CLOSE_MS = 300;
 
-/** Passando il mouse sul display, dopo un attimo si apre ig sotto di lui; resta aperto finche' il mouse e' sul display o sulla copia grande. */
-function Zoom({ children, big }: { children: ReactNode; big: ReactNode }) {
+/**
+ * La lente: passando il mouse sul display, dopo un attimo si apre sotto una copia identica ingrandita 2 volte in larghezza E in altezza
+ * (CSS `zoom`, come una lente: niente si stira). Resta aperta finche' il mouse e' sul display o sulla copia.
+ */
+function Zoom({ children }: { children: ReactNode }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const [width, setWidth] = useState(0);
+  const host = useRef<HTMLDivElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const later = (next: boolean, ms: number) => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(next), ms);
+    timer.current = setTimeout(() => {
+      if (next && host.current) setWidth(host.current.offsetWidth);
+      setOpen(next);
+    }, ms);
   };
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <div className="rd-zoom-host" onMouseEnter={() => later(true, OPEN_MS)} onMouseLeave={() => later(false, CLOSE_MS)}>
+    <div className="rd-zoom-host" ref={host} onMouseEnter={() => later(true, OPEN_MS)} onMouseLeave={() => later(false, CLOSE_MS)}>
       {children}
       {open ? (
         <div className="rd-zoom" role="group" aria-label={t('rd.popover')}>
-          {big}
+          <div className="rd-zoom-lens" style={{ width: width || undefined }}>
+            {children}
+          </div>
         </div>
       ) : null}
     </div>
