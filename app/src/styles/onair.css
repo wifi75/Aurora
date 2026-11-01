@@ -4659,3 +4659,22 @@
   align-items: center;
   gap: 0.4rem;
 }
+
+/* DX Cluster: frequenza piu' stretta (piu' vicina al DX), lo spazio va al paese; «Paese» allineato alla bandierina, «UTC» all'orario */
+.cluster-table th:nth-child(2) { width: 11%; }
+.cluster-table th:nth-child(5) { width: 20%; }
+
+.cluster-table th.cluster-th-country {
+  overflow: visible;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.cluster-table th:last-child {
+  text-align: right;
+}
+
+@container (max-width: 34rem) {
+  .cluster-table th:nth-child(2) { width: 13%; }
+  .cluster-table th:nth-child(5) { width: 24%; }
+}
