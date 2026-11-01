@@ -21,7 +21,7 @@ export const NOVITA_MAX = 20;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'new',
     title: ['Pagina Novità', 'News page', 'Seite „Neuigkeiten“', 'Page Nouveautés', 'Página de novedades', 'Página de novidades'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'new',
     title: ['Messaggi toast personalizzabili e immediati', 'Customisable, instant toast messages', 'Anpassbare, sofortige Toast-Meldungen', 'Messages toast personnalisables et immédiats', 'Mensajes toast personalizables e inmediatos', 'Mensagens toast personalizáveis e imediatas'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'changed',
     title: ['CQ e novità a metà, DXpedition a colori', 'CQ and new ones split in half, coloured DXpeditions', 'CQ und Neues halbiert, farbige DXpeditionen', 'CQ et nouveautés en deux moitiés, DXpéditions en couleur', 'CQ y novedades a la mitad, DXpediciones a color', 'CQ e novidades a meio, DXpedições a cores'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'fixed',
     title: ['Doppio clic: parte la trasmissione', 'Double-click: transmission starts', 'Doppelklick: die Sendung startet', 'Double-clic : l’émission démarre', 'Doble clic: arranca la transmisión', 'Duplo clique: a transmissão arranca'],
     text: [
@@ -77,7 +77,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'changed',
     title: ['Impostazioni più compatte e ordinate', 'More compact, tidier settings', 'Kompaktere, übersichtlichere Einstellungen', 'Réglages plus compacts et ordonnés', 'Ajustes más compactos y ordenados', 'Definições mais compactas e organizadas'],
     text: [
@@ -91,7 +91,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.48',
-    released: '2026-11-01T07:56:00Z',
+    released: '2026-11-01T09:03:53Z',
     kind: 'changed',
     title: ['RX/TX più piccola, un clic su TX ferma', 'Smaller RX/TX, one click on TX stops', 'Kleineres RX/TX, ein Klick auf TX stoppt', 'RX/TX plus petit, un clic sur TX arrête', 'RX/TX más pequeño, un clic en TX detiene', 'RX/TX mais pequeno, um clique em TX para'],
     text: [
