@@ -13,7 +13,8 @@
 //! - La discesa a 200 Hz e' quella di Aurora ([`Downsampler`], variante di JTDX), con la stessa scala di `ft8_downsample`.
 //! - I messaggi che `pack` scriverebbe come testo libero non si provano (in WSJT-X `genft8` li codificherebbe come tali).
 //! - L'SNR si misura sui +-2 Hz attorno al picco trovato e non attorno alla frequenza di ricezione: con il corrispondente
-//!   a qualche hertz dalla frequenza di ricezione WSJT-X riporta sempre il minimo (-30 dB).
+//!   a qualche hertz dalla frequenza di ricezione WSJT-X riporta sempre il minimo (-30 dB). La costante e' 41 dB invece di 35,
+//!   tarata su audio sintetico.
 //! - Il calcolo delle correlazioni si divide tra i thread con `rayon` quando [`A8Query::threads`] e' piu' di 1; a parita'
 //!   di picco vince comunque il messaggio con l'indice piu' basso, come nella regione `omp critical` di WSJT-X.
 
@@ -327,7 +328,9 @@ pub fn a8_decode(ds: &Downsampler, query: &A8Query, hashes: &CallHashes) -> Opti
         }
     }
     let sig = if nsig > 0 { sig / nsig as f32 } else { 0.0 };
-    let xsnr = (db(sig) - 35.0).max(-30.0);
+    // WSJT-X sottrae 35 dB; con la discesa a 200 Hz di Aurora la stessa misura esce 6 dB piu' alta (tarato su audio sintetico
+    // da -23 a -25 dB), quindi qui si sottraggono 41 dB
+    let xsnr = (db(sig) - 41.0).max(-30.0);
 
     // probabilita' dei simboli attesi
     let fft32 = sync::fft_plan(32, false);
