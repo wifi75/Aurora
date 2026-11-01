@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.45 - 2026-11-01
+- **DXpedition**: calendario NG3K (Impostazioni > Servizi online, spento di base); il pannello «CQ e novita'» si divide: CQ a sinistra, DXpedition a destra (in onda, sentite adesso in cima, in arrivo, storico da scorrere).
+- **STOP**: niente pulsante a parte; in onda la pastiglia rossa TX e' anche lo STOP.
+- **Notifiche**: stile «pillola aurora»; nessuna notifica a ogni spostamento delle barre Rx/Tx; il doppio clic dice «Rispondo a NOMINATIVO» e l'avviso sui messaggi non CQ e' separato e chiaro.
+- **DX Cluster**: frequenza come testo normale, senza pillola gialla.
+- Motore: lettura dei dati in piu' della radio (preamp, ATT, AGC, NB/NR, guadagni, RIT/XIT, secondo VFO) pronta ma spenta: il display esteso arriva nella prossima versione.
+
 ## 0.11.44 - 2026-11-01
 - **Km e azimut** anche sui messaggi senza locatore, col locatore gia' mandato da quella stazione.
 - **STOP** nel pannello Trasmissione, accanto a RX/TX.
