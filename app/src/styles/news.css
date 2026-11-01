@@ -185,17 +185,30 @@
   cursor: default;
 }
 
-/* Log: «Scarica ADIF» sempre a portata di mano, nella barra del pannello, accanto al numero dei QSO */
-.dock-panel--log .log4om-adif {
-  position: absolute;
-  top: 0.3rem;
-  right: 9.5rem;
-  z-index: 2;
-  min-height: 1.4rem;
-  padding: 0 0.6rem;
-  font-size: 0.72rem;
-  line-height: 1.4rem;
+/* Log: numero dei QSO e «Esporta ADIF» nella barra del pannello, a destra (non piu' sopra la tabella) */
+.dock-grip-extra--right {
+  left: auto;
+  right: 0;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.dock-grip-extra .log4om-total {
+  position: static;
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.dock-grip-extra .log4om-adif {
+  min-height: 1.15rem;
+  padding: 0 0.55rem;
+  font-size: 0.7rem;
+  line-height: 1.15rem;
   text-decoration: none;
+}
+
+.dock-panel--log .dock-grip {
+  position: relative;
 }
 
 /* Meno spazio sprecato: margini laterali stretti, intestazioni dei pannelli basse, cascata senza titolo */

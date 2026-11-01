@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { getLog4om, logExportUrl } from '../api/client';
+import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
@@ -41,10 +41,6 @@ export function Log4omPanel() {
   if (log.data.qsos.length === 0) return <p className="muted log4om-note">{t('log.empty')}</p>;
   return (
     <div className="log4om">
-      <p className="muted log4om-total">{t('log.total', { n: log.data.total })}</p>
-      <a className="glass log4om-adif" href={logExportUrl()} download="aurora_log.adi" title={t('logio.export.tip')}>
-        {t('logio.export')}
-      </a>
       <table className="log4om-table">
         <thead>
           <tr>
@@ -72,6 +68,21 @@ export function Log4omPanel() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** Nella barra del pannello Log: quanti QSO e il pulsante per esportarli in ADIF (pagina di esportazione). */
+export function LogHeader() {
+  const t = useT();
+  const count = usePrefs((s) => s.prefs.log4omCount);
+  const log = useQuery({ queryKey: ['log4om', count], queryFn: () => getLog4om(count), refetchInterval: 10_000, retry: false });
+  return (
+    <div className="dock-grip-extra dock-grip-extra--right" onPointerDown={(e) => e.stopPropagation()}>
+      {log.data ? <span className="muted log4om-total">{t('log.total', { n: log.data.total })}</span> : null}
+      <a className="glass log4om-adif" href="#/statistiche" title={t('logio.export.tip')}>
+        {t('logio.export')}
+      </a>
     </div>
   );
 }

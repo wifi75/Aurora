@@ -2,7 +2,8 @@ import { EventSchema, type AuroraEvent } from './schemas';
 
 const FRAME_SPECTRUM = 0x01;
 const HEADER_BYTES = 17;
-const MAX_BINS = 4096;
+// come MAX_SPECTRUM_BINS del core (le righe sono di 6827 canali, 0-5000 Hz): oltre si scarta
+const MAX_BINS = 8192;
 
 export interface SpectrumFrame {
   seq: number;

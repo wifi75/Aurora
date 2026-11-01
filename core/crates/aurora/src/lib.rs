@@ -1152,6 +1152,7 @@ pub async fn run(
         cluster.default_callsign(&my_call);
     }
     cluster.restart();
+    let own_log = Arc::clone(&logbook);
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access)
@@ -1206,12 +1207,31 @@ pub async fn run(
             Some((db, worked, sources)) => Arc::new(move || refresh_worked(&sources, &db, &worked)),
             None => Arc::new(|| {}),
         })
-        .with_log4om_if(config.log4om_db.clone().map(|path| {
-            Arc::new(move |limit: usize| {
+        .with_log4om_if(Some(match config.log4om_db.clone() {
+            Some(path) => Arc::new(move |limit: usize| {
                 logbook::log4om::read_recent(&path, limit)
-                    .map(|view| serde_json::json!(view))
+                    .map(|view| {
+                        let mut v = serde_json::json!(view);
+                        v["source"] = serde_json::json!("log4om");
+                        v
+                    })
                     .map_err(|e| e.to_string())
-            }) as remote_api::Log4omProvider
+            }) as remote_api::Log4omProvider,
+            // nessun log esterno collegato: il pannello Log mostra il log interno di Aurora (con l'esportazione ADIF)
+            None => {
+                let own = Arc::clone(&own_log);
+                let dxcc = enrichment.as_ref().map(|(db, _)| Arc::clone(db));
+                Arc::new(move |limit: usize| {
+                    let country = |call: &str| dxcc.as_ref().and_then(|db| db.lookup(call).map(|l| db.entity(l.entity).name.clone())).unwrap_or_default();
+                    own.recent_view(limit, &country)
+                        .map(|view| {
+                            let mut v = serde_json::json!(view);
+                            v["source"] = serde_json::json!("aurora");
+                            v
+                        })
+                        .map_err(|e| e.to_string())
+                }) as remote_api::Log4omProvider
+            }
         }))
         .with_worked_map_if(config.log4om_db.clone().map(|path| {
             Arc::new(move || {
