@@ -1,5 +1,7 @@
 import { useT } from '../i18n';
 import { CatGroups, CatNotes } from './CatTab';
+import { RadioDisplayPicker } from './RadioDisplayPicker';
+import { RadioExtrasGroup } from './RadioExtrasGroup';
 import { EngineValues } from './EngineValues';
 import { Group, Cells, Page, Unavailable } from './layout';
 import { InfoTab, Row } from './common';
@@ -27,6 +29,10 @@ export function RadioTab() {
   return (
     <Page>
       <CatGroups />
+      <Group title={t('rd.title')} span={3}>
+        <RadioDisplayPicker />
+      </Group>
+      <RadioExtrasGroup />
       <InfoTab
         render={(info) => (
           <Group title={t('radio.sharing')}>
