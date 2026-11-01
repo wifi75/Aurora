@@ -32,6 +32,9 @@ use std::sync::{Arc, OnceLock};
 use rustfft::num_complex::Complex32;
 use rustfft::{Fft, FftPlanner};
 
+use rayon::prelude::*;
+
+use crate::a8::A8Query;
 use crate::ap::{self, ApContext, ApOptions, NAPTYPES};
 use crate::filters::{self, CallBook, MessageCheck};
 pub use crate::history::PeriodHistory;
@@ -39,7 +42,7 @@ use crate::history::StoredSignal;
 use crate::message::{self, CallHashes};
 use crate::subtract::{self, Reference};
 use crate::sync::{self, Candidate, Complex, Downsampler, MetricsMode, PassCandidate, Spectrum, SyncKind};
-use crate::{ldpc, modem, NN, SLOT_SAMPLES};
+use crate::{a7, a8, ldpc, modem, NN, SLOT_SAMPLES};
 
 /// Un messaggio decodificato.
 #[derive(Debug, Clone, PartialEq)]
@@ -122,6 +125,16 @@ pub struct Options {
     pub even_period: bool,
     /// Compensazione AGC (pulsante AGCc, `nagcc` di JTDX): [`sync::agc_compensate`] sull'audio e sincronismo per tono nella ricerca.
     pub agc: bool,
+    /// Decodifica "a7" ([`a7`]): i messaggi attesi dopo quelli del periodo precedente della stessa parita'. Serve la
+    /// cronologia ([`decode_slot_with_history`]). In WSJT-X e' accesa con l'analisi a priori (`lft8apon`).
+    pub a7: bool,
+    /// Decodifica "a8" ([`a8`]) del corrispondente alla frequenza di ricezione (`None`: spenta).
+    pub a8: Option<A8Query>,
+    /// Identifica il periodo per la tabella "a7" (per esempio i quarti di minuto dall'inizio dei tempi): decodificare di
+    /// nuovo lo stesso periodo non sposta la tabella. `None`: ogni chiamata e' un periodo nuovo.
+    pub period_key: Option<u64>,
+    /// Thread per la decodifica (1 = un solo thread). I decode sono gli stessi con qualunque numero di thread.
+    pub threads: usize,
 }
 
 impl Default for Options {
@@ -155,6 +168,10 @@ impl Options {
             call_book: None,
             even_period: true,
             agc: false,
+            a7: depth > 1,
+            a8: None,
+            period_key: None,
+            threads: 1,
         }
     }
 }
@@ -222,6 +239,13 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
     let mut qso_decoded = false;
     let mut audio_before_shift: Option<Vec<f32>> = None;
     let jz = |center: f32, base: i32| base + (center * 25.0) as i32;
+    let mut history = history;
+    // l'audio dopo l'ultima passata che ha tolto qualcosa: su questo lavorano "a7" e "a8"
+    let mut residual = audio.clone();
+    // thread: un gruppo di candidati per volta, due per thread
+    let threads = options.threads.max(1);
+    let pool = if threads > 1 { rayon::ThreadPoolBuilder::new().num_threads(threads).build().ok() } else { None };
+    let batch = if pool.is_some() { 2 * threads } else { 1 };
 
     for ipass in 1..=npass {
         let subtract_on = !(ipass > 5 || (ipass == 3 && npass == 3 && !options.swl));
@@ -259,63 +283,183 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
         let mut ds = Downsampler::new(&audio);
         let mut stale: Vec<f32> = Vec::new();
         let mut pending: Vec<Pending> = Vec::new();
+        let mut subtracted = false;
 
-        for cand in candidates {
-            let c = cand.candidate;
-            if found.iter().any(|d| (d.decoded.freq_hz - c.freq_hz).abs() < SAME_FREQ_HZ && (d.decoded.dt_s - c.dt_s).abs() < SAME_DT_S) {
-                continue;
-            }
-            if stale.iter().any(|&f| (f - c.freq_hz).abs() < REFFT_HZ) {
-                ds = Downsampler::new(&audio);
-                stale.clear();
-            }
-            let mut ctx = PassContext { ipass, cycles, options, ap: &ap_ctx, qso_decoded, hashes: &mut *hashes, history: history.as_deref() };
-            let (hit, capture) = try_candidate(&ds, cand, &mut ctx);
-            if hit.is_none() {
-                if let Some(s) = capture.cq {
-                    cq_capture.push(s);
+        // I candidati si provano a gruppi in parallelo sulla stessa fotografia dello stato (spettro, hash, QSO gia' decodificato)
+        // e si accettano poi uno per uno, nell'ordine del singolo thread. Un risultato si butta e si rifa' quando lo stato che
+        // ha letto e' cambiato prima del suo turno: spettro rifatto per un segnale tolto vicino, QSO decodificato, hash
+        // cambiati per un candidato che ha letto un testo. Cosi' i decode sono identici a quelli del singolo thread.
+        let mut hashes_version = 0u64;
+        let mut idx = 0usize;
+        while idx < candidates.len() {
+            let end = (idx + batch).min(candidates.len());
+            let snapshot_qso = qso_decoded;
+            let snapshot_hashes = hashes_version;
+            let speculative: Vec<Option<(Option<Hit>, Capture)>> = {
+                let ctx = PassContext { ipass, cycles, options, ap: &ap_ctx, qso_decoded, hashes: &*hashes, history: history.as_deref() };
+                let eval = |cand: &PassCandidate| -> Option<(Option<Hit>, Capture)> {
+                    let c = cand.candidate;
+                    if found.iter().any(|d| (d.decoded.freq_hz - c.freq_hz).abs() < SAME_FREQ_HZ && (d.decoded.dt_s - c.dt_s).abs() < SAME_DT_S) {
+                        return None;
+                    }
+                    Some(try_candidate(&ds, *cand, &ctx))
+                };
+                match (&pool, end - idx > 1) {
+                    (Some(pool), true) => pool.install(|| candidates[idx..end].par_iter().map(eval).collect()),
+                    _ => candidates[idx..end].iter().map(eval).collect(),
                 }
-                if let Some(s) = capture.my_call {
-                    my_capture.push(s);
+            };
+            let mut k = idx;
+            for result in speculative {
+                let cand = candidates[k];
+                let c = cand.candidate;
+                if found.iter().any(|d| (d.decoded.freq_hz - c.freq_hz).abs() < SAME_FREQ_HZ && (d.decoded.dt_s - c.dt_s).abs() < SAME_DT_S) {
+                    k += 1;
+                    continue;
                 }
-                if let Some(s) = capture.qso {
-                    qso_capture = Some(s);
+                if stale.iter().any(|&f| (f - c.freq_hz).abs() < REFFT_HZ) {
+                    // lo spettro si rifa': questo candidato e i seguenti vanno provati di nuovo
+                    ds = Downsampler::new(&audio);
+                    stale.clear();
+                    break;
                 }
-            }
-            let Some(hit) = hit else { continue };
+                if qso_decoded != snapshot_qso {
+                    break;
+                }
+                let (hit, capture) = match result {
+                    Some(r) if !(r.1.used_hashes && hashes_version != snapshot_hashes) => r,
+                    _ => {
+                        let ctx = PassContext { ipass, cycles, options, ap: &ap_ctx, qso_decoded, hashes: &*hashes, history: history.as_deref() };
+                        try_candidate(&ds, cand, &ctx)
+                    }
+                };
+                k += 1;
+                if hit.is_none() {
+                    if let Some(s) = capture.cq {
+                        cq_capture.push(s);
+                    }
+                    if let Some(s) = capture.my_call {
+                        my_capture.push(s);
+                    }
+                    if let Some(s) = capture.qso {
+                        qso_capture = Some(s);
+                    }
+                }
+                let Some(hit) = hit else { continue };
+                *hashes = hit.hashes;
+                hashes_version += 1;
 
-            if subtract_on {
-                let freq = hit.info.decoded.freq_hz;
-                if options.immediate_subtraction {
-                    remove_signal(&mut audio, options, &hit.tones, freq, hit.info.decoded.dt_s, &hit.cd, hit.i0);
-                    stale.push(freq);
-                } else {
-                    pending.push(Pending { tones: hit.tones, hit_freq: freq, hit_dt: hit.info.decoded.dt_s, cd: hit.cd, i0: hit.i0 });
+                if subtract_on {
+                    let freq = hit.info.decoded.freq_hz;
+                    subtracted = true;
+                    if options.immediate_subtraction {
+                        remove_signal(&mut audio, options, &hit.tones, freq, hit.info.decoded.dt_s, &hit.cd, hit.i0);
+                        stale.push(freq);
+                    } else {
+                        pending.push(Pending { tones: hit.tones, hit_freq: freq, hit_dt: hit.info.decoded.dt_s, cd: hit.cd, i0: hit.i0 });
+                    }
+                }
+                let info = hit.info;
+                if found.iter().any(|d| d.decoded.text == info.decoded.text && (d.decoded.freq_hz - info.decoded.freq_hz).abs() < DUPE_FREQ_HZ) {
+                    continue;
+                }
+                if let Some(a) = &options.ap {
+                    let root = format!("{} {} ", a.mycall, a.hiscall);
+                    if a.mycall.len() >= 3 && a.hiscall.len() > 3 && info.decoded.text.starts_with(&root) {
+                        qso_decoded = true;
+                    }
+                }
+                found.push(info);
+                if qso_decoded != snapshot_qso {
+                    break;
                 }
             }
-            let info = hit.info;
-            if found.iter().any(|d| d.decoded.text == info.decoded.text && (d.decoded.freq_hz - info.decoded.freq_hz).abs() < DUPE_FREQ_HZ) {
-                continue;
-            }
-            if let Some(a) = &options.ap {
-                let root = format!("{} {} ", a.mycall, a.hiscall);
-                if a.mycall.len() >= 3 && a.hiscall.len() > 3 && info.decoded.text.starts_with(&root) {
-                    qso_decoded = true;
-                }
-            }
-            found.push(info);
+            idx = k;
         }
         for p in pending {
             remove_signal(&mut audio, options, &p.tones, p.hit_freq, p.hit_dt, &p.cd, p.i0);
         }
+        if subtracted {
+            residual.clone_from(&audio);
+        }
     }
-    if let Some(h) = history {
+    if let Some(h) = history.as_deref_mut() {
         h.store_cq(options.even_period, cq_capture);
         h.store_my_call(options.even_period, my_capture);
         h.store_qso(options.even_period, qso_capture);
     }
+    list_decoding(&residual, options, hashes, history, &mut found, npass);
     found.sort_by(|a, b| a.decoded.freq_hz.total_cmp(&b.decoded.freq_hz));
     found
+}
+
+/// Le decodifiche a liste di WSJT-X dopo le passate ([`a7`], [`a8`]), sul residuo. Ogni decode del periodo entra nella
+/// tabella "a7" della sua parita'.
+fn list_decoding(residual: &[f32], options: &Options, hashes: &CallHashes, history: Option<&mut PeriodHistory>, found: &mut Vec<DecodedInfo>, npass: usize) {
+    let even = options.even_period;
+    let mut table = history.map(|h| &mut h.a7);
+    if let Some(t) = table.as_mut() {
+        t.begin_period(even, options.period_key);
+        for d in found.iter() {
+            t.save(even, d.decoded.dt_s, d.decoded.freq_hz, &d.decoded.text);
+        }
+    }
+    let a8 = options.a8.as_ref().filter(|q| q.usable());
+    let a7_entries = match (&table, options.a7) {
+        (Some(t), true) => t.candidates(even),
+        _ => Vec::new(),
+    };
+    if a7_entries.is_empty() && a8.is_none() {
+        return;
+    }
+    let ds = Downsampler::new(residual);
+    let dupe = |found: &[DecodedInfo], text: &str, freq: f32| found.iter().any(|d| d.decoded.text == text && (d.decoded.freq_hz - freq).abs() < DUPE_FREQ_HZ);
+    let mut try_a8 = true;
+    let dxcall = a8.map(|q| q.dxcall.trim().to_uppercase()).unwrap_or_default();
+    let has_word = |text: &str, word: &str| !word.is_empty() && text.split_whitespace().any(|w| w == word);
+    for entry in &a7_entries {
+        let Some(hit) = a7::a7_decode(&ds, entry, hashes) else { continue };
+        if dupe(found, &hit.text, hit.freq_hz) {
+            continue;
+        }
+        if has_word(&hit.text, &dxcall) {
+            try_a8 = false;
+        }
+        if let Some(t) = table.as_mut() {
+            t.save(even, hit.dt_s, hit.freq_hz, &hit.text);
+        }
+        found.push(DecodedInfo {
+            decoded: Decoded { freq_hz: hit.freq_hz, dt_s: hit.dt_s, snr_db: hit.snr_db.round() as i32, text: hit.text, hint: true },
+            pass: npass + 1,
+            ap_type: 7,
+            hard_errors: hit.hard_errors,
+            dmin: hit.dmin,
+            sync: 0.0,
+        });
+    }
+    let Some(query) = a8 else { return };
+    // il corrispondente gia' decodificato vicino alla frequenza di ricezione: non serve cercarlo per liste
+    if found.iter().any(|d| has_word(&d.decoded.text, &dxcall) && (d.decoded.freq_hz - query.rx_freq_hz).abs() <= 10.0) {
+        try_a8 = false;
+    }
+    if !try_a8 {
+        return;
+    }
+    let Some(hit) = a8::a8_decode(&ds, query, hashes) else { return };
+    if dupe(found, &hit.text, hit.freq_hz) {
+        return;
+    }
+    if let Some(t) = table.as_mut() {
+        t.save(even, hit.dt_s, query.rx_freq_hz, &hit.text);
+    }
+    found.push(DecodedInfo {
+        decoded: Decoded { freq_hz: hit.freq_hz, dt_s: hit.dt_s, snr_db: hit.snr_db.round() as i32, text: hit.text, hint: true },
+        pass: npass + 2,
+        ap_type: 8,
+        hard_errors: hit.hard_errors,
+        dmin: -hit.plog,
+        sync: 0.0,
+    });
 }
 
 /// Toglie un segnale dall'audio nel modo scelto dalle opzioni.
@@ -339,7 +483,7 @@ struct PassContext<'a> {
     options: &'a Options,
     ap: &'a ApContext,
     qso_decoded: bool,
-    hashes: &'a mut CallHashes,
+    hashes: &'a CallHashes,
     /// La cronologia tra periodi, per le sottopassate 3-11 (`None` = nessuna, come senza [`decode_slot_with_history`]).
     history: Option<&'a PeriodHistory>,
 }
@@ -353,6 +497,8 @@ struct Capture {
     cq: Option<StoredSignal>,
     my_call: Option<StoredSignal>,
     qso: Option<StoredSignal>,
+    /// Il candidato e' arrivato a leggere il testo: il risultato dipende dalla tabella degli hash.
+    used_hashes: bool,
 }
 
 /// Un candidato decodificato, con quello che serve per sottrarlo.
@@ -361,6 +507,8 @@ struct Hit {
     tones: [u8; NN],
     cd: Vec<Complex>,
     i0: i64,
+    /// La tabella degli hash dopo aver letto il messaggio: si adotta quando il decode si accetta.
+    hashes: CallHashes,
 }
 
 /// Indicatori sul segnale che decidono quali tipi a priori valgono la pena (`lcqsignal`, `lmycsignal`, `lqso73`...).
@@ -558,7 +706,7 @@ fn ap_allowed(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only:
 
 /// Allinea un candidato, ne calcola le probabilita' dei bit e prova a decodificarlo (`ft8b`); ritorna anche il segnale
 /// da tenere per il periodo successivo della stessa parita', se questo candidato ha il motivo giusto sulla passata giusta.
-fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -> (Option<Hit>, Capture) {
+fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (Option<Hit>, Capture) {
     let options = ctx.options;
     let ipass = ctx.ipass;
     let c = cand.candidate;
@@ -737,6 +885,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
                 continue;
             }
             // il testo si legge su una copia degli hash: se il messaggio poi e' scartato la tabella non si sporca
+            capture.used_hashes = true;
             let mut trial = ctx.hashes.clone();
             let Ok(text) = message::unpack(&bits77, &mut trial) else { continue };
             if aptype == 1 && text.starts_with("CQ DE AA00") {
@@ -751,7 +900,6 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
                     return (None, capture);
                 }
             }
-            *ctx.hashes = trial;
 
             return (
                 Some(Hit {
@@ -766,6 +914,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &mut PassContext) -
                     tones,
                     cd,
                     i0: ibest,
+                    hashes: trial,
                 }),
                 capture,
             );
@@ -1025,5 +1174,172 @@ mod tests {
         let added = seed_call_hashes(&mut hashes, ["K1ABC", "IU3ABC", "K1ABC", "AB"]);
         assert_eq!(added, 2);
         assert_eq!(hashes.len(), 2);
+    }
+
+    /// Una banda affollata: 30 segnali tra 300 e 2900 Hz, alcuni sovrapposti, da -20 a +5 dB.
+    fn crowded(seed: u64) -> Vec<f32> {
+        let calls = ["K1ABC", "W9XYZ", "IU3ABC", "DL1ABC", "F4ABC", "EA3ABC", "G4ABC", "JA1ABC", "VK2ABC", "PY2ABC"];
+        let mut rng = Rng(seed);
+        let mut texts: Vec<String> = Vec::new();
+        let mut signals: Vec<(f32, f32, f32)> = Vec::new();
+        for i in 0..30 {
+            let a = calls[i % calls.len()];
+            let b = calls[(i * 7 + 3) % calls.len()];
+            let text = match i % 4 {
+                0 => format!("CQ {a} FN42"),
+                1 => format!("{a} {b} -{:02}", i % 20),
+                2 => format!("{a} {b} RR73"),
+                _ => format!("{a} {b} R-{:02}", i % 15),
+            };
+            texts.push(text);
+            let freq = 300.0 + (i as f32) * 85.0 + (rng.uniform() as f32) * 20.0;
+            let dt = (rng.uniform() as f32) * 0.8 - 0.3;
+            let snr = -20.0 + (rng.uniform() as f32) * 25.0;
+            signals.push((freq, dt, snr));
+        }
+        let list: Vec<(&str, f32, f32, f32)> = texts.iter().zip(&signals).map(|(t, &(f, d, s))| (t.as_str(), f, d, s)).collect();
+        slot(&list, seed)
+    }
+
+    #[test]
+    fn il_multithread_da_gli_stessi_decode_del_singolo_thread() {
+        for (seed, depth) in [(21u64, 2u8), (22, 3)] {
+            let audio = crowded(seed);
+            let ap = ApOptions { hiscall: "W9XYZ".into(), hisgrid: "EN37".into(), rx_freq_hz: Some(1200.0), ..ApOptions::new("IU3ABC") };
+            let base = Options { ap: Some(ap), ..Options::depth(depth) };
+            let one = decode_slot_detailed(&audio, &base, &mut CallHashes::default(), None);
+            assert!(one.len() > 15, "{}", one.len());
+            for threads in [2usize, 4, 8] {
+                let many = decode_slot_detailed(&audio, &Options { threads, ..base.clone() }, &mut CallHashes::default(), None);
+                assert_eq!(one, many, "profondita' {depth}, {threads} thread");
+            }
+        }
+    }
+
+    /// Tempi su banda affollata (`cargo test --release -p ft8 tempi_multithread -- --ignored --nocapture`).
+    #[test]
+    #[ignore]
+    fn tempi_multithread() {
+        let audio = crowded(21);
+        for threads in [1usize, 2, 4, 8] {
+            let options = Options { threads, ..Options::depth(3) };
+            let t = std::time::Instant::now();
+            let out = decode_slot(&audio, &options, &mut CallHashes::default());
+            println!("{threads} thread: {} decode in {} ms", out.len(), t.elapsed().as_millis());
+        }
+    }
+
+    fn a8_query() -> A8Query {
+        A8Query { mycall: "IU3ABC".into(), dxcall: "K1ABC".into(), dxgrid: "FN42".into(), rx_freq_hz: 1500.0, threads: 4 }
+    }
+
+    #[test]
+    fn a8_trova_il_corrispondente_sotto_la_soglia_e_non_inventa() {
+        let mut found_plain = 0;
+        let mut found_a8 = 0;
+        let seeds = 501..509u64;
+        for seed in seeds.clone() {
+            let audio = slot(&[("IU3ABC K1ABC R-17", 1503.0, 0.2, -23.0)], seed);
+            let plain = decode_slot_detailed(&audio, &Options::depth(3), &mut CallHashes::default(), None);
+            if plain.iter().any(|d| d.decoded.text == "IU3ABC K1ABC R-17") {
+                found_plain += 1;
+            }
+            let with = decode_slot_detailed(&audio, &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default(), None);
+            for d in &with {
+                assert_eq!(d.decoded.text, "IU3ABC K1ABC R-17", "falso: {d:?}");
+            }
+            if let Some(d) = with.iter().find(|d| d.ap_type == 8) {
+                assert!((d.decoded.freq_hz - 1503.0).abs() < 1.0 && (d.decoded.dt_s - 0.2).abs() < 0.05, "{d:?}");
+                assert!(d.decoded.hint);
+            }
+            if with.iter().any(|d| d.decoded.text == "IU3ABC K1ABC R-17") {
+                found_a8 += 1;
+            }
+        }
+        assert!(found_a8 > found_plain, "a8 {found_a8} contro {found_plain} su 8");
+        // solo rumore: nessun decode
+        for seed in 601..611u64 {
+            let out = decode_slot_detailed(&slot(&[], seed), &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default(), None);
+            assert!(out.is_empty(), "rumore, seme {seed}: {out:?}");
+        }
+    }
+
+    #[test]
+    fn a7_trova_il_seguito_del_qso_nel_periodo_dopo_della_stessa_parita() {
+        let mut found_a7 = 0;
+        for seed in 700..706u64 {
+            let mut hashes = CallHashes::default();
+            let mut history = PeriodHistory::default();
+            let even = Options { period_key: Some(2), ..Options::depth(2) };
+            let first = decode_slot_with_history(&slot(&[("K1ABC W9XYZ EN37", 1200.0, 0.1, -5.0)], seed), &even, &mut hashes, &mut history);
+            assert_eq!(first.len(), 1);
+            let odd = Options { even_period: false, period_key: Some(3), ..Options::depth(2) };
+            decode_slot_with_history(&slot(&[], seed + 1000), &odd, &mut hashes, &mut history);
+            let third_audio = slot(&[("K1ABC W9XYZ R-19", 1201.0, 0.12, -24.0)], seed + 2000);
+            let plain = decode_slot(&third_audio, &Options::depth(2), &mut CallHashes::default());
+            let third = decode_slot_detailed(&third_audio, &Options { period_key: Some(4), ..Options::depth(2) }, &mut hashes, Some(&mut history));
+            for d in &third {
+                assert_eq!(d.decoded.text, "K1ABC W9XYZ R-19", "falso: {d:?}");
+            }
+            if third.iter().any(|d| d.ap_type == 7) && plain.is_empty() {
+                found_a7 += 1;
+            }
+        }
+        assert!(found_a7 >= 3, "a7 ha trovato {found_a7} su 6");
+
+        // il periodo dopo con solo rumore: nessun decode inventato
+        for seed in 800..806u64 {
+            let mut hashes = CallHashes::default();
+            let mut history = PeriodHistory::default();
+            decode_slot_with_history(&slot(&[("K1ABC W9XYZ EN37", 1200.0, 0.1, -5.0), ("CQ IU3ABC JN45", 1700.0, 0.0, -8.0)], seed), &Options::depth(2), &mut hashes, &mut history);
+            let out = decode_slot_with_history(&slot(&[], seed + 50), &Options::depth(2), &mut hashes, &mut history);
+            assert!(out.is_empty(), "rumore, seme {seed}: {out:?}");
+        }
+    }
+
+    /// Misure di "a7" e "a8" su audio sintetico (`cargo test --release -p ft8 misure_a7_a8 -- --ignored --nocapture`).
+    #[test]
+    #[ignore]
+    fn misure_a7_a8() {
+        for snr in [-21.0f32, -22.0, -23.0, -24.0, -25.0] {
+            let (mut plain, mut with, mut false_hits) = (0, 0, 0);
+            let t = std::time::Instant::now();
+            for seed in 0..20u64 {
+                let audio = slot(&[("IU3ABC K1ABC R-17", 1503.0, 0.2, snr)], 9000 + seed);
+                plain += decode_slot(&audio, &Options::depth(3), &mut CallHashes::default()).iter().filter(|d| d.text == "IU3ABC K1ABC R-17").count();
+                let out = decode_slot(&audio, &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default());
+                with += out.iter().filter(|d| d.text == "IU3ABC K1ABC R-17").count();
+                false_hits += out.iter().filter(|d| d.text != "IU3ABC K1ABC R-17").count();
+            }
+            println!("a8 SNR {snr}: senza {plain}/20, con {with}/20, falsi {false_hits}, {} ms per periodo", t.elapsed().as_millis() / 20);
+        }
+        let mut noise_false = 0;
+        for seed in 0..50u64 {
+            noise_false += decode_slot(&slot(&[], 9500 + seed), &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default()).len();
+        }
+        println!("a8 solo rumore: {noise_false} falsi su 50 periodi");
+
+        for snr in [-21.0f32, -22.0, -23.0, -24.0, -25.0] {
+            let (mut plain, mut with, mut false_hits) = (0, 0, 0);
+            for seed in 0..20u64 {
+                let mut hashes = CallHashes::default();
+                let mut history = PeriodHistory::default();
+                decode_slot_with_history(&slot(&[("K1ABC W9XYZ EN37", 1200.0, 0.1, -5.0)], 7000 + seed), &Options::depth(2), &mut hashes, &mut history);
+                let audio = slot(&[("K1ABC W9XYZ R-19", 1201.0, 0.12, snr)], 7100 + seed);
+                plain += decode_slot(&audio, &Options::depth(2), &mut CallHashes::default()).iter().filter(|d| d.text == "K1ABC W9XYZ R-19").count();
+                let out = decode_slot_with_history(&audio, &Options::depth(2), &mut hashes, &mut history);
+                with += out.iter().filter(|d| d.text == "K1ABC W9XYZ R-19").count();
+                false_hits += out.iter().filter(|d| d.text != "K1ABC W9XYZ R-19").count();
+            }
+            println!("a7 SNR {snr}: senza {plain}/20, con {with}/20, falsi {false_hits}");
+        }
+        let mut noise_false = 0;
+        for seed in 0..50u64 {
+            let mut hashes = CallHashes::default();
+            let mut history = PeriodHistory::default();
+            decode_slot_with_history(&crowded(8000 + seed), &Options::depth(2), &mut hashes, &mut history);
+            noise_false += decode_slot_with_history(&slot(&[], 8100 + seed), &Options::depth(2), &mut hashes, &mut history).len();
+        }
+        println!("a7 solo rumore dopo una banda affollata: {noise_false} falsi su 50 periodi");
     }
 }

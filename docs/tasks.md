@@ -54,26 +54,11 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `widgets/widegraph.cpp`, `widgets/plotter.cpp` (`setSuperFox`, `setSuperHound`), note 2.7.0-rc6.
 - Verifica: confronto visivo con WSJT-X sullo stesso WAV; spot visibili su PSK Reporter.
 
-## 8. Decodifica FT8 "a8" sul corrispondente
+## 10. Decodifica FT8 multithread: momento di avvio
 
-- Cosa fare: con DX Call e DX Grid noti, a Rx +-10 Hz provare le ipotesi di messaggio del QSO (circa 206) per correlazione sul segnale, come seconda possibilita' quando LDPC fallisce.
-- Aurora: `core/crates/ft8/src/decode.rs`, nuovo `core/crates/ft8/src/a8.rs`.
-- WSJT-X: `lib/ft8/ft8_a8d.f90`, `lib/ft8_decode.f90` (381-397).
-- Verifica: WAV con il corrispondente a SNR -22..-24 dB: piu' decode del corrispondente senza aumentare i falsi (insieme di prova di `docs/analisi-decodium-decoder.md`).
-
-## 9. Decodifica FT8 "a7" dal periodo precedente
-
-- Cosa fare: salvare i decode di ogni parita' e, nel periodo successivo della stessa parita', cercare i messaggi attesi (seguito dei QSO osservati) nelle stesse frequenze/DT.
-- Aurora: `core/crates/ft8/src/history.rs`, nuovo `a7.rs`, chiamata da `decode.rs`.
-- WSJT-X: `lib/ft8/ft8_a7.f90` (`ft8_a7_save`, `ft8_a7d`), `lib/ft8_decode.f90` (175, 329-374).
-- Verifica: sequenze di WAV consecutivi; contare decode aggiunti e falsi rispetto a oggi.
-
-## 10. Decodifica FT8 multithread
-
-- Cosa fare: dividere la banda in fasce e lanciarle in parallelo (rayon), con sottrazione coordinata dei segnali; scegliere il momento di avvio della decodifica.
-- Aurora: `core/crates/ft8/src/decode.rs`, `subtract.rs`, `engine-native/src/lib.rs`.
-- WSJT-X: `lib/ft8var/ft8_decodevar.f90`, `ft8_decode_ranges.f90`, `ft8_coarse_sync.f90`, `ft8_mtd_residual.f90`, `ft8_coarse_mutex.cpp`; `widgets/mainwindow.cpp` 11280-11290 (`m_ft8DecoderStart`).
-- Verifica: stessi decode del singolo thread sui WAV di prova (a parita' di opzioni) e tempo di decodifica ridotto su banda satura.
+- Fatto: decodifica multithread con rayon in `core/crates/ft8/src/decode.rs` (candidati di una passata in parallelo, accettati nell'ordine del singolo thread: stessi decode, verificato con 2/4/8 thread; banda sintetica di 30 segnali da 1145 a 637 ms con 8 thread), interruttore «Multithread» (`mtd`). Non si usano le fasce di banda di `lib/ft8var` perche' danno decode diversi dal singolo thread.
+- Manca: scegliere il momento di avvio della decodifica (`m_ft8DecoderStart`, hsymStop 48-50, decodifica anticipata a 46) in `engine-native/src/lib.rs`, e misurare il tempo su un periodo vero di banda satura (non ci sono WAV nel repository).
+- WSJT-X: `widgets/mainwindow.cpp` 11280-11290 (`m_ft8DecoderStart`), `lib/ft8_engine_kernel.f90`.
 
 ## 12. Wait and Reply / Wait and Call / Wait and Pounce
 
