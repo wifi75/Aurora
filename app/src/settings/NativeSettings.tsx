@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ApiError, getEngineSettings, getStationInfo, postUploadTest, putEngineSettings } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
 import { Help } from './layout';
 import { engineHint } from './engineHints';
 import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup } from '../lib/engineGroups';
-import { REPORT_GROUPS, type SettingRow, type UploadService } from '../lib/engineSettingsLayout';
+import { LINK_GROUPS, type SettingGroup, type SettingRow, type UploadService } from '../lib/engineSettingsLayout';
 import { Help as Note } from './common';
-import { Cells, Group, Notes, Page, Unavailable } from './layout';
+import { Cells, Group, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 import { WavelogStationSelect } from './WavelogStationSelect';
 import { IntegrationsPanel } from './IntegrationsPanel';
@@ -24,24 +24,46 @@ export function useSettings() {
   return useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false });
 }
 
-function errorText(error: unknown, t: T): string {
+/** Un rifiuto del salvataggio: la voce coinvolta (se il server la dice) e il testo da mostrare accanto. */
+export interface SaveError {
+  key: string | null;
+  text: string;
+}
+
+/** Il messaggio vero del server («UDP2Server: serve un indirizzo…») con il nome della voce come appare nell'interfaccia. */
+export function saveErrorOf(error: unknown, t: T): SaveError {
   if (error instanceof ApiError) {
-    if (error.code === 'local_only') return t('ens.err.local');
-    if (error.code === 'bad_setting') return t('ens.err.bad');
+    if (error.code === 'local_only') return { key: null, text: t('ens.err.local') };
+    if (error.code === 'bad_setting') {
+      const m = error.detail ? /^([A-Za-z0-9_]+)\s*:\s*(.+)$/s.exec(error.detail) : null;
+      if (m) {
+        const key = m[1]!;
+        const name = t(`ens.k.${key}` as Key);
+        return { key, text: `${name.startsWith('ens.k.') ? key : name}: ${m[2]}` };
+      }
+      return { key: null, text: error.detail ?? t('ens.err.bad') };
+    }
   }
-  return t('ens.err.failed');
+  return { key: null, text: t('ens.err.failed') };
 }
 
 export interface Draft {
   changes: Record<string, string>;
   set(key: string, value: string, current: string | undefined): void;
+  /** L'ultimo rifiuto del salvataggio automatico (si toglie al salvataggio riuscito o quando la voce cambia). */
+  error?: SaveError | null;
+  setError?(e: SaveError | null): void;
 }
 
 export function useDraft(): Draft & { clear(): void } {
   const [changes, setChanges] = useState<Record<string, string>>({});
+  const [error, setError] = useState<SaveError | null>(null);
   return {
     changes,
+    error,
+    setError,
     set(key, value, current) {
+      setError((e) => (e?.key === key ? null : e));
       setChanges((previous) => {
         const next = { ...previous };
         if (value === (current ?? '')) delete next[key];
@@ -114,6 +136,11 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
       {control}
       {!live ? <span className="ens-reason muted">{note}</span> : null}
       {liveNote ? <span className="ens-reason muted">{liveNote}</span> : null}
+      {draft.error?.key === row.key ? (
+        <span className="ens-reason live-note ens-error" role="alert">
+          {draft.error.text}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -130,13 +157,21 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
       const slow = Object.keys(changes).some((k) => doc.items[k]?.apply === 'restart');
       client.setQueryData(['engine-settings'], next);
       draft.clear();
+      draft.setError?.(null);
       setNote(slow ? t('ens.appliedRestart') : t('ens.applied'));
     },
-    onError: (e) => setNote(errorText(e, t)),
+    onError: (e) => {
+      const err = saveErrorOf(e, t);
+      // con la voce nota l'errore va accanto al suo riquadro; senza, resta qui nella barra
+      if (err.key && doc.items[err.key]?.state === 'live' && draft.setError) {
+        draft.setError(err);
+        setNote('');
+      } else setNote(err.text);
+    },
   });
   const count = Object.keys(changes).length;
   // le modifiche si applicano da sole, dopo una breve pausa e uscendo dalla scheda
-  useAutosave(count > 0 ? changes : null, count > 0, () => apply.mutate(), (v) => void putEngineSettings(v).catch(() => undefined), 700);
+  useAutosave(count > 0 ? changes : null, count > 0, () => apply.mutate(), (v) => void Promise.resolve().then(() => putEngineSettings(v)).catch(() => undefined), 700);
   if (count === 0 && !note) return null;
   return (
     <div className="jx-bar" role="status">
@@ -209,57 +244,80 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
   );
 }
 
-/** La scheda Segnalazioni come in JTDX, nel sistema di layout delle schede: cinque riquadri a tutta larghezza, voci in celle, aiuti in «Note», voci spente in un riquadro chiuso. */
-export function NativeReports() {
+/** I riquadri di voci del motore (una pagina o parte di una): interruttore e campi, «?» con la spiegazione, «Prova» e stato dell'ultimo invio, errore accanto. */
+export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readonly SettingGroup[]; doc: EngineSettings; draft: Draft; span?: 1 | 2 | 3 }) {
+  const t = useT();
+  return (
+    <>
+      {groups.map((group) => {
+        const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
+        if (rows.length === 0) return null;
+        const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
+        const waiting = group.rows.some((r) => draft.changes[r.key] !== undefined);
+        const help = group.upload?.help ?? group.help;
+        return (
+          <Group key={group.title} title={<>{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
+            <Cells min={15}>
+              {rows.map((row) => (
+                <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
+              ))}
+            </Cells>
+            {group.upload ? <UploadTest service={group.upload.service} waiting={waiting} /> : null}
+            {kinds.map((k) => (
+              <SendStatus key={k} doc={doc} kind={k} />
+            ))}
+          </Group>
+        );
+      })}
+    </>
+  );
+}
+
+/** Riquadri del motore dentro un'altra pagina (spot in «Servizi online», registrazione del QSO in «Sequenza»), con la loro barra del salvataggio. */
+export function EngineGroups({ groups }: { groups: readonly SettingGroup[] }) {
+  const settings = useSettings();
+  const draft = useDraft();
+  const native = useIsNative();
+  if (!native || !settings.data) return null;
+  return (
+    <>
+      <SettingGroups groups={groups} doc={settings.data} draft={draft} />
+      <div className="sx-span-3">
+        <ApplyBar draft={draft} doc={settings.data} />
+      </div>
+    </>
+  );
+}
+
+/** Una pagina fatta solo di riquadri del motore, con la barra del salvataggio. */
+export function NativeGroupsPage({ groups, label, children }: { groups: readonly SettingGroup[]; label: string; children?: (doc: EngineSettings, draft: Draft) => ReactNode }) {
   const t = useT();
   const settings = useSettings();
   const draft = useDraft();
   if (settings.isError) return <p className="muted">{t('ens.unavailable')}</p>;
   if (!settings.data) return <p className="muted">{t('set.loading')}</p>;
   const doc = settings.data;
-  const off = REPORT_GROUPS.flatMap((g) => g.rows).filter((r) => doc.items[r.key]?.state !== 'live');
   return (
-    <section aria-label={t('ens.title')}>
+    <section aria-label={label}>
       <Page>
-        {REPORT_GROUPS.map((group) => {
-          const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
-          const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
-          const waiting = group.rows.some((r) => draft.changes[r.key] !== undefined);
-          return (
-            <Group key={group.title} title={t(group.title)} span={group.title === 'ens.g.net' || group.title === 'ens.g.udp' ? 2 : 1}>
-              <Cells min={15}>
-                {rows.map((row) => (
-                  <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
-                ))}
-              </Cells>
-              {kinds.map((k) => (
-                <SendStatus key={k} doc={doc} kind={k} />
-              ))}
-              {group.upload && rows.length > 0 ? (
-                <>
-                  <UploadTest service={group.upload.service} waiting={waiting} />
-                  <Note>{t(group.upload.help)}</Note>
-                </>
-              ) : null}
-            </Group>
-          );
-        })}
-        <IntegrationsPanel doc={doc} draft={draft} />
+        <SettingGroups groups={groups} doc={doc} draft={draft} />
+        {children?.(doc, draft)}
         <Notes span={2}>
-          <Note>{t('ens.rep.help')}</Note>
-          {doc.items.AllowSpotsDXSummit?.state === 'live' ? <Note>{t('ens.dxsummit.help')}</Note> : null}
           <Note>{t('ens.note', { file: doc.file })}</Note>
         </Notes>
-        <Unavailable count={off.length} span={2}>
-          <Cells min={15}>
-            {off.map((row) => (
-              <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
-            ))}
-          </Cells>
-        </Unavailable>
       </Page>
       <ApplyBar draft={draft} doc={doc} />
     </section>
+  );
+}
+
+/** Scheda «Programmi collegati»: server UDP primario, ADIF via UDP, TCP (N1MM) e il riquadro Integrazioni. */
+export function NativeReports() {
+  const t = useT();
+  return (
+    <NativeGroupsPage groups={LINK_GROUPS} label={t('tab.reports')}>
+      {(doc, draft) => <IntegrationsPanel doc={doc} draft={draft} />}
+    </NativeGroupsPage>
   );
 }
 
@@ -273,7 +331,6 @@ export function NativeValues({ group, title }: { group: EngineGroup; title?: str
   const doc = settings.data;
   const items = ENGINE_GROUPS[group];
   const live = items.filter((i) => doc.items[i.key]?.state === 'live');
-  const off = items.filter((i) => doc.items[i.key]?.state !== 'live');
   return (
     <section aria-label={title ?? t('ens.title')}>
       <h3 className="set-sub">{title ?? t('ens.title')}</h3>
@@ -287,19 +344,6 @@ export function NativeValues({ group, title }: { group: EngineGroup; title?: str
           <Note>{t('ens.note', { file: doc.file })}</Note>
           <ApplyBar draft={draft} doc={doc} />
         </>
-      ) : null}
-      {off.length > 0 ? (
-        <details className="ens-hidden">
-          <summary>{t('ens.hidden', { n: off.length })}</summary>
-          <ul className="ens-hidden-list">
-            {off.map((i) => (
-              <li key={i.key}>
-                <strong>{t(`jx.${i.key}` as Key)}</strong>
-                <span className="muted"> — {t(`ens.r.${doc.items[i.key]?.reason ?? 'own_decoder'}` as Key)}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
       ) : null}
     </section>
   );
