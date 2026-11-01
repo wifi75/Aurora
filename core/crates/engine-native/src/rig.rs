@@ -108,7 +108,22 @@ pub struct NativeControls {
     swr_limit: AtomicU32,
     /// Gli avvisi di sicurezza della trasmissione e fino a quando valgono (`None` = finche' non si tolgono).
     alerts: Mutex<Vec<(aurora_core::TxAlert, Option<std::time::Instant>)>>,
+    /// Momento di avvio della decodifica FT8 (`DecoderStart::code`): lo legge il motore a ogni blocco.
+    decoder_start: AtomicU8,
+    /// «Full duplex» (WSJT-X `actionFull_Duplex_Mode`, di fabbrica spento): il periodo in cui si trasmette si decodifica lo stesso.
+    pub full_duplex: AtomicBool,
+    /// «Abilita Wait features» (WSJT-X `WaitFeaturesEnabled`, di fabbrica acceso): Wait and Reply e Wait and Call.
+    pub wait_features: AtomicBool,
+    /// Verifica del Fox con OTP (Hound classico).
+    otp: Mutex<crate::features::OtpSettings>,
+    /// Chi verifica un codice OTP in linea (lo imposta il programma, che ha la rete).
+    otp_hook: Mutex<Option<OtpHook>>,
+    /// L'ultimo esito della verifica del Fox.
+    fox_verification: Mutex<Option<aurora_core::FoxVerification>>,
 }
+
+/// Chi riceve i codici OTP del Fox da verificare.
+pub type OtpHook = Arc<dyn Fn(crate::features::FoxOtp) + Send + Sync>;
 
 /// Soglia di fabbrica del ROS (WSJT-X: «SWR > 2.5», `stopForHighSWR`), in centesimi.
 pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 250;
@@ -125,11 +140,55 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), wait_features: AtomicBool::new(true), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None) }
     }
 }
 
 impl NativeControls {
+    /// Il momento di avvio della decodifica FT8.
+    pub fn decoder_start(&self) -> crate::features::DecoderStart {
+        crate::features::DecoderStart::from_code(self.decoder_start.load(Ordering::Relaxed))
+    }
+
+    pub fn set_decoder_start(&self, start: crate::features::DecoderStart) {
+        self.decoder_start.store(start.code(), Ordering::Relaxed);
+    }
+
+    pub fn otp_settings(&self) -> crate::features::OtpSettings {
+        self.otp.lock().map(|o| o.clone()).unwrap_or_default()
+    }
+
+    pub fn set_otp_settings(&self, settings: crate::features::OtpSettings) {
+        if let Ok(mut o) = self.otp.lock() {
+            *o = settings;
+        }
+    }
+
+    /// Chi verifica i codici OTP (senza, nessuna richiesta parte).
+    pub fn set_otp_hook(&self, hook: OtpHook) {
+        if let Ok(mut h) = self.otp_hook.lock() {
+            *h = Some(hook);
+        }
+    }
+
+    pub(crate) fn request_otp_check(&self, otp: crate::features::FoxOtp) {
+        let hook = self.otp_hook.lock().ok().and_then(|h| h.clone());
+        if let Some(hook) = hook {
+            hook(otp);
+        }
+    }
+
+    /// L'esito della verifica del Fox (lo scrive chi ha fatto la richiesta; `None` lo azzera).
+    pub fn set_fox_verification(&self, verification: Option<aurora_core::FoxVerification>) {
+        if let Ok(mut v) = self.fox_verification.lock() {
+            *v = verification;
+        }
+    }
+
+    pub fn fox_verification(&self) -> Option<aurora_core::FoxVerification> {
+        self.fox_verification.lock().ok().and_then(|v| v.clone())
+    }
+
     /// Il locatore proprio di questa sessione (Location via UDP): lo Status lo riporta e la sequenza lo usa nei messaggi (vedi `TxCommand::SetMyGrid`).
     pub fn set_session_grid(&self, grid: &str) {
         if let Ok(mut slot) = self.session_grid.lock() {

@@ -13,7 +13,6 @@ pub const SLOT_MS: u64 = 15_000;
 /// Il periodo si consegna questi millisecondi prima della sua fine (gli ultimi non portano segnale: un messaggio FT8 finisce a 13,1 s):
 /// cosi' la decodifica e la scelta della risposta sono pronte per trasmettere a inizio del periodo dopo.
 pub const EARLY_MS: u64 = 800;
-const EARLY_SAMPLES: usize = (EARLY_MS as usize) * RATE / 1000;
 /// Oltre questo scarto tra l'ora attesa e quella vera si riancora di colpo.
 const JUMP_MS: f64 = 200.0;
 /// Correzione graduale dello scarto (frazione per blocco).
@@ -38,6 +37,8 @@ pub struct SlotAssembler {
     first_idx: u64,
     total: u64,
     next_slot_ms: Option<u64>,
+    /// Millisecondi prima della fine del periodo in cui lo si consegna (di base [`EARLY_MS`]; in FT8 lo sceglie il momento di avvio della decodifica).
+    early_ms: u64,
 }
 
 fn time_of(anchor: f64, idx: u64) -> f64 {
@@ -62,7 +63,26 @@ impl SlotAssembler {
             first_idx: 0,
             total: 0,
             next_slot_ms: None,
+            early_ms: EARLY_MS,
         }
+    }
+
+    /// Come [`SlotAssembler::new`], consegnando il periodo `early_ms` prima della sua fine (al piu' la durata del periodo).
+    #[cfg(test)]
+    pub fn with_early(mode: Mode, early_ms: u64) -> SlotAssembler {
+        let mut asm = SlotAssembler::new(mode);
+        asm.early_ms = early_ms.min(asm.period_ms);
+        asm
+    }
+
+    /// Cambia il momento di consegna: vale dal prossimo periodo, senza perdere l'audio gia' raccolto.
+    pub fn set_early_ms(&mut self, early_ms: u64) {
+        self.early_ms = early_ms.min(self.period_ms);
+    }
+
+    /// Il momento di consegna in uso (ms prima della fine del periodo).
+    pub fn early_ms(&self) -> u64 {
+        self.early_ms
     }
 
     /// Aggiunge un blocco a 12 kHz arrivato all'istante `end_unix_ms`; restituisce i periodi che si sono completati.
@@ -94,12 +114,12 @@ impl SlotAssembler {
         let buf_start_ms = time_of(anchor, self.first_idx);
         let mut next = *self.next_slot_ms.get_or_insert_with(|| ((buf_start_ms / self.period_ms as f64).ceil() as u64) * self.period_ms);
         loop {
-            let slot_end_ms = (next + self.period_ms - EARLY_MS) as f64;
+            let slot_end_ms = (next + self.period_ms - self.early_ms) as f64;
             if time_of(anchor, self.total) < slot_end_ms {
                 break;
             }
             let from = ((next as f64 - anchor) * RATE as f64 / 1000.0).round() as i64 - self.first_idx as i64;
-            if from >= 0 && from as usize + self.slot_samples - EARLY_SAMPLES <= self.buf.len() {
+            if from >= 0 && from as usize + self.slot_samples - (self.early_ms as usize) * RATE / 1000 <= self.buf.len() {
                 let from = from as usize;
                 let end = (from + self.slot_samples).min(self.buf.len());
                 let mut samples = self.buf[from..end].to_vec();
@@ -175,6 +195,17 @@ mod tests {
         assert!(!peak.is_empty());
         let centre = peak.iter().sum::<usize>() as f64 / peak.len() as f64;
         assert!((centre - 30_000.0).abs() < 12.0, "centro {centre}");
+    }
+
+    #[test]
+    fn the_delivery_moment_follows_the_decoder_start() {
+        // «Presto» (13,82 s): il periodo che comincia a 1 005 000 esce quando l'audio arriva a 1 018 824, non prima
+        let mut asm = SlotAssembler::with_early(Mode::Ft8, 15_000 - 13_824);
+        let early = feed(&mut asm, 1_000_000, 18.9, 120, None);
+        assert_eq!(early.iter().map(|s| s.start_unix_ms).collect::<Vec<_>>(), vec![1_005_000]);
+        let mut asm = SlotAssembler::with_early(Mode::Ft8, 15_000 - 14_400);
+        assert!(feed(&mut asm, 1_000_000, 19.3, 120, None).is_empty(), "«Tardi» (14,4 s) non e' ancora pronto a 14,3 s");
+        assert_eq!(asm.early_ms(), 600);
     }
 
     #[test]
