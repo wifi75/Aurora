@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.53',
-    released: '2026-11-01T12:00:00Z',
+    released: '2026-11-01T10:35:57Z',
     kind: 'fixed',
     title: ['Display a doppio VFO: un solo schermo anche col tema chiaro', 'Dual-VFO display: one screen in the light theme too', 'Doppel-VFO-Anzeige: ein Bildschirm auch im hellen Design', 'Afficheur double VFO : un seul écran aussi en thème clair', 'Display de doble VFO: una sola pantalla también con el tema claro', 'Visor de duplo VFO: um só ecrã também no tema claro'],
     text: [
