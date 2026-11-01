@@ -791,7 +791,9 @@ impl QsoHistory {
             Status::Rrreport => {
                 t.srx_p = t.srx_c;
                 t.srx_c = status;
-                if t.status < Status::Fin && t.stx_c >= Status::Sreport {
+                // JTDX vuole un nostro rapporto gia' inviato; WSJT-X 3.3 (DecodedMessageReaction.cpp, progress >= Replying in FT8/FT4) accetta anche il solo Tx1:
+                // la stazione che risponde subito R+rapporto al nostro Tx1 (MSHV, molte DXpedition) chiude il QSO invece di lasciarci chiamare all'infinito
+                if t.status < Status::Fin && (t.stx_c >= Status::Sreport || t.stx_c == Status::Scall) {
                     let old = t.status;
                     t.status = status;
                     if priority > t.priority {
@@ -963,7 +965,13 @@ mod tests {
         let mut h = hist();
         rx(&mut h, "AA1AA", Status::Rcq, "FN42", 100, "-05", 0);
         rx(&mut h, "AA1AA", Status::Rrreport, "R-09", 115, "-09", 0);
-        assert_eq!(h.status("AA1AA").0, Status::Rcq, "R+rapporto senza un nostro rapporto non avanza");
+        assert_eq!(h.status("AA1AA").0, Status::Rcq, "R+rapporto senza una nostra chiamata non avanza");
+        // come WSJT-X 3.3: dopo il nostro Tx1 l'R+rapporto vale
+        let mut h = hist();
+        rx(&mut h, "AA1AA", Status::Rcq, "FN42", 100, "-05", 0);
+        h.message("AA1AA", Status::Scall, 0, "", "", "", "", 110, "", 1500);
+        rx(&mut h, "AA1AA", Status::Rrreport, "R-09", 125, "-09", 0);
+        assert_eq!(h.status("AA1AA").0, Status::Rrreport, "R+rapporto dopo il nostro Tx1 avanza");
     }
 
     /// RR73 e 73 senza il rapporto ricevuto non fanno niente; FIN solo quando le due chiusure si sono incrociate.
