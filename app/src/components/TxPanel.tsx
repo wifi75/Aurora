@@ -25,6 +25,7 @@ interface Props {
 /** Il testo di un avviso di sicurezza della trasmissione. */
 export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
   if (a.kind === 'high_swr') return t('tx.alert.highSwr', { swr: (a.value ?? 0).toFixed(1), limit: (a.limit ?? 0).toFixed(1) });
+  if (a.kind === 'hound_on') return t(a.detail === 'split' ? 'tx.alert.houndSplit' : 'tx.alert.hound', { hz: Math.round(a.value ?? 0) });
   if (a.kind === 'inhibited') return t('tx.alert.inhibited', { holder: a.detail || '—' });
   return t('tx.alert.unrepresentable', { text: a.detail ?? '' });
 }
@@ -99,6 +100,12 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
+            {/* in Hound lo si vede sempre accanto alle frequenze: chiama sopra 1000 Hz e risponde solo al Fox */}
+            {controls.data?.hound === true ? (
+              <span className="hound-badge" role="status" title={t('tip.houndBadge')}>
+                Hound
+              </span>
+            ) : null}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
           {status.tx_alerts && status.tx_alerts.length > 0 ? (

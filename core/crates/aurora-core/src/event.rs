@@ -66,6 +66,9 @@ pub enum TxAlertKind {
     HighSwr,
     /// Un controller UDP (TxInhibit) blocca il PTT (`detail` = chi blocca).
     Inhibited,
+    /// Il modo Hound e' stato acceso e Aurora ha sistemato la trasmissione come WSJT-X (`value` = frequenza Tx in Hz, `detail` = `split` se ha
+    /// acceso lo Split). Avviso informativo, non ferma niente.
+    HoundOn,
 }
 
 /// Un avviso di sicurezza della trasmissione, da mostrare finche' resta nello stato.
@@ -184,6 +187,12 @@ pub struct QsoRecord {
     /// Messaggio per eQSL (`QSLMSG`): serve solo all'invio a eQSL, non entra nel log.
     #[serde(default)]
     pub eqsl_comment: String,
+    /// Scambio di contest inviato e ricevuto (`579 WI`, `2A EMA`, `579 0013`), come `xSent`/`xRcvd` di WSJT-X: nel log ADIF diventa
+    /// `STX`/`SRX`, `STX_STRING`/`SRX_STRING` o i campi di Field Day e RTTY Roundup (`logbook::adif::contest_fields`). Vuoti fuori dai contest.
+    #[serde(default)]
+    pub exch_sent: String,
+    #[serde(default)]
+    pub exch_rcvd: String,
 }
 
 /// Un QSO concluso che aspetta di essere registrato.

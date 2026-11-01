@@ -292,3 +292,53 @@ fn analisi_a_priori_su_messaggi_per_noi() {
         report(&format!("AP W1AW (sbagliata) a {snr} dB"), &run(40, make, &sbagliata));
     }
 }
+
+/// Legge un WAV PCM 16 bit mono a 12 kHz (quelli di `recordings` di Aurora) in campioni da -1 a 1.
+fn read_wav(path: &std::path::Path) -> Option<Vec<f32>> {
+    let bytes = std::fs::read(path).ok()?;
+    let data = bytes.windows(4).position(|w| w == b"data")? + 8;
+    Some(bytes.get(data..)?.chunks_exact(2).map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect())
+}
+
+/// Banda piena vera: i WAV di una cartella fuori dal repository (`AURORA_WAV_DIR`, periodi FT8 da 15 s registrati da Aurora; contengono
+/// nominativi reali e non vanno nel repository). Per ogni momento di avvio della decodifica (Presto 13,824 s, Normale 14,112 s, Tardi 14,400 s:
+/// l'audio si taglia li', come fa il motore) e per 1 thread e tutti i processori, profondita' 3 come il motore: messaggi e millisecondi per periodo.
+/// `cargo test -p ft8 --release --test misure -- --ignored --nocapture banda_vera`
+#[test]
+#[ignore]
+fn banda_vera_da_wav() {
+    let Ok(dir) = std::env::var("AURORA_WAV_DIR") else {
+        println!("AURORA_WAV_DIR non impostata: niente da misurare");
+        return;
+    };
+    let mut files: Vec<_> = std::fs::read_dir(&dir).map(|r| r.filter_map(|e| e.ok().map(|e| e.path())).collect()).unwrap_or_default();
+    files.retain(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("wav")));
+    files.sort();
+    let periods: Vec<Vec<f32>> = files.iter().filter_map(|p| read_wav(p)).collect();
+    let cpus = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+    println!("\n== {} periodi veri da {dir}, {cpus} processori ==", periods.len());
+    for (label, start_ms) in [("Presto 13,824 s", 13_824usize), ("Normale 14,112 s", 14_112), ("Tardi 14,400 s", 14_400)] {
+        for threads in [1, cpus] {
+            let options = Options { threads, ..Options::depth(3) };
+            let (mut total, mut ms, mut worst) = (0usize, 0.0f64, 0.0f64);
+            let mut counts = Vec::new();
+            for audio in &periods {
+                let cut = &audio[..audio.len().min(start_ms * SAMPLE_RATE / 1000)];
+                // il decoder vuole il periodo intero: la parte non ancora arrivata e' silenzio, come nel motore
+                let mut slot = cut.to_vec();
+                slot.resize(SLOT_SAMPLES.max(cut.len()), 0.0);
+                let t0 = Instant::now();
+                let out = decode_slot(&slot, &options, &mut CallHashes::default());
+                let t = t0.elapsed().as_secs_f64() * 1000.0;
+                worst = worst.max(t);
+                ms += t;
+                total += out.len();
+                counts.push(out.len());
+            }
+            println!(
+                "{label:<18} thread {threads:>2}: messaggi {total:>4} ({counts:?})  media {:>6.0} ms/periodo  peggiore {worst:>6.0} ms",
+                ms / periods.len().max(1) as f64
+            );
+        }
+    }
+}

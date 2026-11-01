@@ -136,6 +136,112 @@ pub fn dx_calls_me(text: &str, my_call: &str, his_call: &str) -> bool {
     padded.contains(&format!(" {my_call} {his_call} ")) && !format!("{text} ").contains("73 ")
 }
 
+/// Criterio di Wait and Pounce («CQ:» di WSJT-X, `AutoRespondPolicy.hpp`): a quale CQ rispondere da soli.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PouncePolicy {
+    /// «Nessuno»: Wait and Pounce non si arma (WSJT-X chiede di scegliere un criterio).
+    None,
+    /// Il primo CQ decodificato.
+    #[default]
+    First,
+    /// Il CQ con il locatore piu' lontano («Max Dist»; senza locatore non si sceglie).
+    MaxDistance,
+    /// Il CQ con il segnale piu' forte («Max dB»).
+    MaxSignal,
+    /// Il CQ con il segnale piu' debole («Min dB»).
+    MinSignal,
+}
+
+impl PouncePolicy {
+    pub fn parse(value: &str) -> PouncePolicy {
+        match value {
+            "none" => PouncePolicy::None,
+            "max_dist" => PouncePolicy::MaxDistance,
+            "max_db" => PouncePolicy::MaxSignal,
+            "min_db" => PouncePolicy::MinSignal,
+            _ => PouncePolicy::First,
+        }
+    }
+
+    pub fn code(self) -> u8 {
+        match self {
+            PouncePolicy::None => 0,
+            PouncePolicy::First => 1,
+            PouncePolicy::MaxDistance => 2,
+            PouncePolicy::MaxSignal => 3,
+            PouncePolicy::MinSignal => 4,
+        }
+    }
+
+    pub fn from_code(code: u8) -> PouncePolicy {
+        match code {
+            0 => PouncePolicy::None,
+            2 => PouncePolicy::MaxDistance,
+            3 => PouncePolicy::MaxSignal,
+            4 => PouncePolicy::MinSignal,
+            _ => PouncePolicy::First,
+        }
+    }
+}
+
+/// Wait and Pounce (`updateRespondTarget` di `widgets/mainwindow.cpp` e `AutoRespondScoring.hpp` di WSJT-X 3.3): fra i CQ del periodo sceglie quello
+/// a cui rispondere. Come WSJT-X si scartano le stazioni gia' chiamate o collegate in questa sessione (`txLog`, `skip`) e, con «Max Dist», i CQ senza
+/// locatore; a parita' vince il primo (il confronto e' stretto come `considerDistance`/`considerMaximumDb`). Restituisce l'indice del decode scelto.
+pub fn pounce_pick(policy: PouncePolicy, decoded: &[(String, i32, u32)], my_grid: &str, skip: &dyn Fn(&str) -> bool) -> Option<usize> {
+    use qso_native::message::{Message, parse};
+    let mut best: Option<(usize, i32)> = None;
+    for (i, (text, snr, _)) in decoded.iter().enumerate() {
+        let Message::Cq { call, grid, .. } = parse(&text.replace(['<', '>'], "")) else { continue };
+        if skip(&call) {
+            continue;
+        }
+        let score = match policy {
+            PouncePolicy::None => return None,
+            PouncePolicy::First => return Some(i),
+            PouncePolicy::MaxDistance => match grid {
+                Some(g) => qso_native::history::grid_distance_km(my_grid, &g),
+                None => continue,
+            },
+            PouncePolicy::MaxSignal => *snr,
+            PouncePolicy::MinSignal => -*snr,
+        };
+        if best.is_none_or(|(_, b)| score > b) {
+            best = Some((i, score));
+        }
+    }
+    best.map(|(i, _)| i)
+}
+
+/// Lo scambio di contest in un messaggio diretto a me dal DX (`MYCALL HISCALL [R] scambio`), nelle forme dei messaggi FT8 di WSJT-X:
+/// rapporto e stato/provincia o seriale del RTTY Roundup (`579 WI`, `559 0013`), classe e sezione di Field Day (`2A EMA`), rapporto+seriale e
+/// locatore dell'EU VHF (`570123 JN65AB`). `None` se non e' uno scambio (rapporti, locatori, saluti).
+pub fn contest_exchange(text: &str, my_call: &str, his_call: &str) -> Option<String> {
+    let text = text.replace(['<', '>'], "").to_ascii_uppercase();
+    let w: Vec<&str> = text.split_whitespace().collect();
+    if w.len() < 4 || !w[0].eq_ignore_ascii_case(my_call) || !w[1].eq_ignore_ascii_case(his_call) {
+        return None;
+    }
+    let rest: &[&str] = if w[2] == "R" { &w[3..] } else { &w[2..] };
+    let [a, b] = rest else { return None };
+    let digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    let letters = |s: &str| !s.is_empty() && s.len() <= 3 && s.chars().all(|c| c.is_ascii_alphabetic());
+    let rst = a.len() == 3 && a.starts_with('5') && digits(a);
+    let class = a.len() >= 2 && a.len() <= 3 && digits(&a[..a.len() - 1]) && a.ends_with(|c: char| ('A'..='F').contains(&c));
+    let vhf = a.len() >= 5 && digits(a) && qso_native::message::is_valid_locator(b);
+    ((rst && (letters(b) || (digits(b) && b.len() <= 4))) || (class && letters(b)) || vhf).then(|| format!("{a} {b}"))
+}
+
+/// Hound: il Fox trasmette sotto i 1000 Hz e i Hound chiamano fra 1000 e 3000 Hz (`QRandomGenerator::bounded (1000, 2999)` in `widgets/mainwindow.cpp`
+/// di WSJT-X 3.3, «Hound randomized range: 1000-3000 Hz»). All'accensione di Hound una frequenza Tx sotto 1000 Hz si sposta in quell'intervallo;
+/// `seed` sceglie il punto (WSJT-X lo sceglie a caso). Restituisce la frequenza da usare.
+pub fn hound_tx_hz(tx_hz: u32, seed: u64) -> u32 {
+    if tx_hz >= HOUND_MIN_TX_HZ { tx_hz } else { HOUND_MIN_TX_HZ + (seed % u64::from(HOUND_MAX_TX_HZ - HOUND_MIN_TX_HZ)) as u32 }
+}
+
+/// L'intervallo di chiamata dei Hound (`[1000, 2999)` Hz come WSJT-X).
+pub const HOUND_MIN_TX_HZ: u32 = 1000;
+pub const HOUND_MAX_TX_HZ: u32 = 2999;
+
 /// Per quanti periodi Wait and Call continua a chiamare dopo che il DX si e' liberato (`StartWaitCallTimer`, 6,2 periodi: fino a tre chiamate).
 pub const WAIT_CALL_PERIODS: f64 = 6.2;
 
@@ -178,6 +284,55 @@ impl TxPeriods {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Scambi di contest nei messaggi del DX: RTTY Roundup, Field Day, EU VHF; i messaggi normali no.
+    #[test]
+    fn contest_exchanges_are_read_from_the_dx_messages() {
+        let x = |t: &str| contest_exchange(t, "IU3ABC", "K1ABC");
+        assert_eq!(x("IU3ABC K1ABC 579 WI").as_deref(), Some("579 WI"));
+        assert_eq!(x("IU3ABC K1ABC R 559 0013").as_deref(), Some("559 0013"));
+        assert_eq!(x("<IU3ABC> K1ABC R 2A EMA").as_deref(), Some("2A EMA"));
+        assert_eq!(x("IU3ABC K1ABC 570123 JN65AB").as_deref(), Some("570123 JN65AB"));
+        assert_eq!(x("IU3ABC K1ABC -07"), None);
+        assert_eq!(x("IU3ABC K1ABC FN42"), None);
+        assert_eq!(x("IU3ABC W9XYZ 579 WI"), None, "non dal DX");
+    }
+
+    /// Hound: sotto 1000 Hz si sale nell'intervallo dei Hound, sopra si resta dove si e'.
+    #[test]
+    fn hound_moves_the_tx_frequency_above_the_fox() {
+        assert_eq!(hound_tx_hz(1500, 7), 1500);
+        assert_eq!(hound_tx_hz(1000, 7), 1000);
+        for seed in [0, 1, 1998, 1999, 123_456_789] {
+            let hz = hound_tx_hz(600, seed);
+            assert!((HOUND_MIN_TX_HZ..HOUND_MAX_TX_HZ).contains(&hz), "{hz}");
+        }
+    }
+
+    /// Wait and Pounce: i quattro criteri di WSJT-X sugli stessi CQ, con le stazioni gia' chiamate scartate.
+    #[test]
+    fn wait_and_pounce_picks_the_cq_by_the_chosen_policy() {
+        let d: Vec<(String, i32, u32)> = vec![
+            ("W9XYZ K1ABC R-07".into(), 5, 900),
+            ("CQ DL1AAA JO62".into(), -3, 1000),
+            ("CQ JA1ZZZ PM95".into(), -18, 1200),
+            ("CQ VK2AAA".into(), 2, 1400),
+            ("CQ DX G4BBB IO91".into(), -20, 1600),
+        ];
+        let none = |_: &str| false;
+        assert_eq!(pounce_pick(PouncePolicy::None, &d, "JN65", &none), None);
+        assert_eq!(pounce_pick(PouncePolicy::First, &d, "JN65", &none), Some(1));
+        assert_eq!(pounce_pick(PouncePolicy::MaxDistance, &d, "JN65", &none), Some(2), "il Giappone e' il piu' lontano; VK2AAA non ha locatore");
+        assert_eq!(pounce_pick(PouncePolicy::MaxSignal, &d, "JN65", &none), Some(3));
+        assert_eq!(pounce_pick(PouncePolicy::MinSignal, &d, "JN65", &none), Some(4));
+        let worked = |c: &str| c == "DL1AAA" || c == "G4BBB";
+        assert_eq!(pounce_pick(PouncePolicy::First, &d, "JN65", &worked), Some(2));
+        assert_eq!(pounce_pick(PouncePolicy::MinSignal, &d, "JN65", &worked), Some(2));
+        for p in [PouncePolicy::None, PouncePolicy::First, PouncePolicy::MaxDistance, PouncePolicy::MaxSignal, PouncePolicy::MinSignal] {
+            assert_eq!(PouncePolicy::from_code(p.code()), p);
+        }
+        assert_eq!(PouncePolicy::parse("max_dist"), PouncePolicy::MaxDistance);
+    }
 
     #[test]
     fn the_decoder_start_follows_the_wsjtx_half_symbols() {

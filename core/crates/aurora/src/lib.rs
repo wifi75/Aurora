@@ -953,6 +953,7 @@ fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_ap
     controls.set_decoder_start(engine_native::features::DecoderStart::parse(&r.ft8_decoder_start));
     controls.full_duplex.store(r.full_duplex, Ordering::Relaxed);
     controls.wait_features.store(r.wait_features, Ordering::Relaxed);
+    controls.pounce_policy.store(engine_native::features::PouncePolicy::parse(&r.pounce_policy).code(), Ordering::Relaxed);
     controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
 }
 

@@ -196,11 +196,14 @@ pub struct AllTxt {
     header_pending: bool,
     last_secs: Option<u32>,
     last_dial_hz: u64,
+    /// Le frequenze della radio degli ultimi minuti (`(da quando, Hz)`): i messaggi di un periodo si scrivono con la frequenza di quel periodo,
+    /// anche se la decodifica finisce dopo un cambio di banda (note di WSJT-X 3.2, «ALL.TXT ... band of the period»).
+    dials: std::collections::VecDeque<(u64, u64)>,
 }
 
 impl AllTxt {
     pub fn new(dir: &Path, program: &str) -> AllTxt {
-        AllTxt { dir: dir.to_path_buf(), enabled: true, program: program.to_string(), header_pending: true, last_secs: None, last_dial_hz: 0 }
+        AllTxt { dir: dir.to_path_buf(), enabled: true, program: program.to_string(), header_pending: true, last_secs: None, last_dial_hz: 0, dials: std::collections::VecDeque::new() }
     }
 
     /// Come `new`, ma `AURORA_ALL_TXT=0` (o `false`, `no`, `off`) spegne la scrittura.
@@ -214,6 +217,22 @@ impl AllTxt {
 
     pub fn is_enabled(&self) -> bool {
         self.enabled
+    }
+
+    /// Segna la frequenza della radio in questo momento (si chiama a ogni giro del motore); si tengono gli ultimi due minuti.
+    pub fn note_dial(&mut self, now_ms: u64, dial_hz: u64) {
+        if dial_hz == 0 || self.dials.back().is_some_and(|(_, d)| *d == dial_hz) {
+            return;
+        }
+        self.dials.push_back((now_ms, dial_hz));
+        while self.dials.len() > 1 && self.dials.get(1).is_some_and(|(t, _)| now_ms.saturating_sub(*t) > 120_000) {
+            self.dials.pop_front();
+        }
+    }
+
+    /// La frequenza in vigore a `at_ms` (0 se non se ne e' mai vista una; prima della prima nota vale la prima).
+    pub fn dial_at(&self, at_ms: u64) -> u64 {
+        self.dials.iter().rev().find(|(t, _)| *t <= at_ms).or(self.dials.front()).map_or(0, |(_, d)| *d)
     }
 
     /// Aggiunge le righe (CR LF) al file del mese di `at`. Errori di scrittura: solo un avviso, il traffico non si ferma per un registro.
@@ -237,7 +256,9 @@ impl AllTxt {
 
     /// Le decodifiche di un periodo. `slot_start_ms` e' l'inizio del periodo; la data e il file sono quelli del periodo (JTDX usa la data del
     /// momento della scrittura: la differenza si vede solo per i messaggi decodificati dopo mezzanotte). Prima della prima riga, e dopo ogni
-    /// cambio di giorno, la riga di frequenza.
+    /// cambio di giorno, la riga di frequenza. `dial_hz` e' la frequenza del periodo (`dial_at`): se non e' quella dell'ultima riga di frequenza
+    /// (il cambio di banda e' gia' stato scritto ma il periodo era sulla banda di prima) si rimette la riga della banda del periodo, e la prossima
+    /// lettura della radio riscrive quella nuova.
     pub fn write_decodes(&mut self, slot_start_ms: u64, dial_hz: u64, mode: &str, decoded: &[(i32, f32, i64, &str)]) {
         if !self.enabled || decoded.is_empty() {
             return;
@@ -250,9 +271,12 @@ impl AllTxt {
         self.last_secs = Some(secs);
         let symbol = mode_symbol(mode);
         let mut lines = Vec::with_capacity(decoded.len() + 1);
-        if self.header_pending {
+        if self.header_pending || (dial_hz != 0 && self.last_dial_hz != 0 && dial_hz != self.last_dial_hz) {
             lines.push(header_line(&at, dial_hz, mode));
             self.header_pending = false;
+            if dial_hz != 0 && self.last_dial_hz != 0 {
+                self.last_dial_hz = dial_hz;
+            }
         }
         let (date, time) = (at.date(), at.time());
         for (snr, dt, freq, text) in decoded {
@@ -300,6 +324,31 @@ impl AllTxt {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Cambio di banda durante la decodifica: i messaggi del periodo vanno sotto la banda del periodo, poi torna la riga della banda nuova.
+    #[test]
+    fn decodes_after_a_band_change_keep_the_band_of_their_period() {
+        let dir = std::env::temp_dir().join(format!("aurora-alltxt-banda-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("cartella");
+        let mut a = AllTxt::new(&dir, "Aurora");
+        let start = 1_761_998_400_000u64; // 2025-11-01 12:00:00
+        a.note_dial(start - 60_000, 14_074_000);
+        a.write_frequency_change(start - 60_000, 14_074_000, "FT8");
+        // a 14,5 s del periodo si passa sui 40 m: la riga di frequenza esce prima dei messaggi
+        a.note_dial(start + 14_500, 7_074_000);
+        a.write_frequency_change(start + 14_500, 7_074_000, "FT8");
+        assert_eq!(a.dial_at(start + 7_500), 14_074_000);
+        assert_eq!(a.dial_at(start + 20_000), 7_074_000);
+        a.write_decodes(start, a.dial_at(start + 7_500), "FT8", &[(-10, 0.1, 1200, "CQ K1ABC FN42")]);
+        a.write_frequency_change(start + 16_000, 7_074_000, "FT8");
+        let text = std::fs::read_to_string(dir.join(Utc::from_unix_ms(start).file_name())).expect("file");
+        let lines: Vec<&str> = text.lines().collect();
+        let cq = lines.iter().position(|l| l.contains("CQ K1ABC")).expect("riga del CQ");
+        assert!(lines[cq - 1].contains("14.074 MHz"), "{text}");
+        assert!(lines[cq + 1].contains("7.074 MHz"), "{text}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     // 2026-10-18 04:36:00 UTC
     const T: u64 = 1_792_298_160_000;
