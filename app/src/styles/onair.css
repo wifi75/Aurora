@@ -4789,3 +4789,23 @@
 .rx-row {
   margin: 0 0 0.35rem;
 }
+
+/* Log: colonne strette quanto il contenuto, il resto al paese */
+.log4om-table {
+  table-layout: auto;
+}
+
+.log4om-table th:not(:last-child),
+.log4om-table td:not(:last-child) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.log4om-table th:last-child,
+.log4om-table td:last-child {
+  width: auto;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

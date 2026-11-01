@@ -56,7 +56,10 @@ export function Log4omPanel() {
         <tbody>
           {log.data.qsos.map((q, i) => (
             <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && flash === `${q.date}-${q.call}` ? 'log4om-row--flash' : undefined}>
-              <td className="data log4om-date">{q.date.replace('Z', '').slice(0, 16)}</td>
+              {/* giorno/mese e ora, senza l'anno: la data intera nel suggerimento */}
+              <td className="data log4om-date" title={q.date.replace('Z', '').slice(0, 16)}>
+                {`${q.date.slice(8, 10)}/${q.date.slice(5, 7)} ${q.date.slice(11, 16)}`}
+              </td>
               <td className="data log4om-call">{q.call}</td>
               <td className="data">{q.band}</td>
               <td className="data">{q.mode}</td>
