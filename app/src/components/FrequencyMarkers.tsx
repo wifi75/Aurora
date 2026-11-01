@@ -90,13 +90,18 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
     return hzAt((clientX - r.left) / r.width, fMinHz, fMaxHz);
   };
 
-  const drag = (apply: (hz: number) => void, anyButton = false) => (e: ReactPointerEvent<HTMLElement>) => {
+  // la barra che si sta trascinando: la sua etichetta diventa piena del suo colore per leggere bene gli Hz, al rilascio torna trasparente
+  const [dragging, setDragging] = useState<'rx' | 'tx' | null>(null);
+
+  const drag = (apply: (hz: number) => void, kind: 'rx' | 'tx', anyButton = false) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0 && !(anyButton && e.button === 2)) return;
     e.stopPropagation();
     const handle = e.currentTarget;
     handle.setPointerCapture(e.pointerId);
+    setDragging(kind);
     const move = (ev: PointerEvent) => apply(hzFromPointer(ev.clientX));
     const stop = () => {
+      setDragging(null);
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', stop);
       handle.removeEventListener('pointercancel', stop);
@@ -118,7 +123,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
     hz == null ? null : (
       <div
         key={kind}
-        className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}${showBars ? '' : ' wf-marker--nobars'}`}
+        className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}${showBars ? '' : ' wf-marker--nobars'}${dragging === kind ? ' wf-marker--dragging' : ''}`}
         style={{
           left: `${leftPercent(hz, fMinHz, fMaxHz)}%`,
           ...(bandwidthHz > 0 ? { width: `${(bandwidthHz / (fMaxHz - fMinHz)) * 100}%` } : {}),
@@ -130,7 +135,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
         aria-valuemin={fMinHz}
         aria-valuemax={fMaxHz}
         aria-valuenow={hz}
-        onPointerDown={drag(apply)}
+        onPointerDown={drag(apply, kind)}
         onKeyDown={keys(hz, apply)}
       >
         <span className="wf-marker-tag">{`${kind === 'rx' ? 'Rx' : 'Tx'} ${hz}`}</span>
@@ -155,7 +160,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
           if (e.button !== 0 && e.button !== 2) return;
           const apply = e.button === 2 || e.shiftKey ? onTx : onRx;
           apply(hzFromPointer(e.clientX));
-          drag(apply, true)(e);
+          drag(apply, apply === onTx ? 'tx' : 'rx', true)(e);
         }}
         onContextMenu={(e) => e.preventDefault()}
       />
