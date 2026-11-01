@@ -20,6 +20,19 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.65',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'fixed',
+    title: ['Spot FT4 dal cluster', 'FT4 spots from the cluster', 'FT4-Spots vom Cluster', 'Spots FT4 du cluster', 'Spots FT4 del cluster', 'Spots FT4 do cluster'],
+    text: [
+      'Doppio clic su uno spot FT4 (o FT8) nel DX Cluster: Aurora cambia anche il modo e poi va sulla frequenza dello spot.',
+      'Double-click an FT4 (or FT8) spot in the DX Cluster: Aurora also switches mode and then tunes to the spot frequency.',
+      'Doppelklick auf einen FT4- (oder FT8-) Spot im DX-Cluster: Aurora wechselt auch die Betriebsart und geht dann auf die Spot-Frequenz.',
+      'Double clic sur un spot FT4 (ou FT8) dans le DX Cluster : Aurora change aussi de mode puis va sur la fréquence du spot.',
+      'Doble clic en un spot FT4 (o FT8) del DX Cluster: Aurora cambia también el modo y luego va a la frecuencia del spot.',
+      'Duplo clique num spot FT4 (ou FT8) no DX Cluster: o Aurora muda também o modo e depois vai para a frequência do spot.',
+    ],
+  },  {
     version: '0.11.64',
     released: '2026-11-01T17:32:44Z',
     kind: 'new',
@@ -559,20 +572,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Radio, choisissez la disposition en haut à droite : un bloc double VFO style FT-2000 (grand VFO A, VFO B et indicateurs à côté) ou deux blocs identiques côte à côte.',
       'En Ajustes > Radio eliges cómo quedan arriba a la derecha el display y el ampliado: un bloque de doble VFO estilo FT-2000 (VFO A grande, VFO B e indicadores al lado) o dos bloques iguales lado a lado.',
       'Em Definições > Rádio escolhes como ficam em cima à direita o visor e o visor alargado: um bloco de duplo VFO estilo FT-2000 (VFO A grande, VFO B e indicadores ao lado) ou dois blocos iguais lado a lado.',
-    ],
-  },
-  {
-    version: '0.11.52',
-    released: '2026-11-01T10:24:29Z',
-    kind: 'changed',
-    title: ['Guida aggiornata', 'Guide updated', 'Anleitung aktualisiert', 'Guide mis à jour', 'Guía actualizada', 'Guia atualizado'],
-    text: [
-      'La Guida spiega tutte le novità recenti: impostazioni, display e comandi della radio, cascata, coda, DXpedition, pannello Log e messaggi a comparsa.',
-      'The Guide explains all recent features: settings, radio display and controls, waterfall, queue, DXpeditions, Log panel and pop-up messages.',
-      'Die Anleitung erklärt alle Neuerungen: Einstellungen, Funkanzeige und -steuerung, Wasserfall, Warteschlange, DXpeditionen, Log-Fenster und Hinweise.',
-      'Le Guide explique toutes les nouveautés : réglages, afficheur et commandes radio, cascade, file d’attente, DXpéditions, panneau Log et messages.',
-      'La Guía explica todas las novedades: ajustes, display y mandos de la radio, cascada, cola, DXpediciones, panel Log y avisos emergentes.',
-      'O Guia explica todas as novidades: definições, visor e comandos do rádio, cascata, fila, DXpedições, painel Log e mensagens.',
     ],
   },
 ];
