@@ -1,8 +1,8 @@
 import { DxPill } from './DxPill';
-import { StopButton } from './StopButton';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getControls, postTxMessage } from '../api/client';
+import { getControls, postHalt, postTxMessage } from '../api/client';
+import { toast } from '../lib/toast';
 import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { useEngineTx } from '../state/engineTx';
@@ -79,12 +79,16 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
         <>
           <div className="tx-dx">
             {pendingDx || status.dx_call ? <DxPill status={status} /> : <strong className="data tx-dx-call">—</strong>}
-            {/* accanto al DX: RX verde in ascolto, TX rosso lampeggiante in onda */}
-            <span className="rxtx-flag" data-state={status.transmitting ? 'tx' : 'rx'} role="status" title={t('tip.onair')}>
-              {status.transmitting ? 'TX' : 'RX'}
-            </span>
-            {/* lo STOP serve solo in onda: da fermo non c'e' nulla da fermare */}
-            {status.transmitting ? <StopButton variant="compact" /> : null}
+            {/* accanto al DX: RX verde in ascolto; in onda TX rosso lampeggiante, ed e' anche lo STOP (un clic ferma la trasmissione) */}
+            {status.transmitting ? (
+              <button type="button" className="rxtx-flag rxtx-flag--stop" data-state="tx" title={t('tip.txStop')} aria-label={t('stop.button')} onClick={() => void postHalt().catch(() => toast(t('stop.fail'), 'error'))}>
+                TX <span className="rxtx-stop">STOP</span>
+              </button>
+            ) : (
+              <span className="rxtx-flag" data-state="rx" role="status" title={t('tip.onair')}>
+                RX
+              </span>
+            )}
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>

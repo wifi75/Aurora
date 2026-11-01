@@ -4966,3 +4966,17 @@
     max-height: 12rem;
   }
 }
+
+/* in onda la pastiglia TX e' anche lo STOP: stessa misura, nessun pulsante in piu' */
+.rxtx-flag--stop {
+  gap: 0.35rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tx-dx .rxtx-flag--stop .rxtx-stop {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
