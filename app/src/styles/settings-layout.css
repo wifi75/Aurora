@@ -1405,3 +1405,21 @@
   top: 0;
   z-index: 3;
 }
+
+/* Tendina della lingua nelle Impostazioni: il riquadro non la taglia piu' e si apre verso destra sotto il pulsante */
+.sx-group:has(.lang-menu),
+.sx-cells:has(.lang-menu),
+.sx-field:has(.lang-menu) {
+  overflow: visible;
+}
+
+.sx-group .lang-menu {
+  position: relative;
+  z-index: 30;
+}
+
+.sx-group .lang-list {
+  left: 0;
+  right: auto;
+  min-width: 12rem;
+}

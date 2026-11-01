@@ -1030,3 +1030,10 @@ button.glass.chip.chip--main {
   border-bottom: 3px solid transparent;
   border-image: linear-gradient(90deg, #20c997, #8e7bff, #ff5d8a) 1;
 }
+
+/* «by IU3CYV» piu' leggibile */
+.app-brand-by {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  opacity: 1;
+}
