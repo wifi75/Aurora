@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
-import { applyFilters, callOf, defaultFilters, readFilters, saveFilters, useFilters, type Filters } from './filters';
+import { applyFilters, callOf, isFilterHighlight, defaultFilters, readFilters, saveFilters, useFilters, type Filters } from './filters';
 
 const d = (id: number, text: string, over: Partial<DecodedMessage> = {}): DecodedMessage => ({
   id, time_ms: id, snr: -10, delta_time: 0, freq_hz: 1500, text, tag: null, country: null, continent: null, ...over,
@@ -86,10 +86,42 @@ describe('applyFilters', () => {
   it('combines the filters', () => {
     expect(ids(applyFilters(sample, f({ only: 'cq', hideContinents: ['NA'] }), 'EU'))).toEqual([1]);
   });
+
+  it('shows only the listed calls and prefixes (WSJT-X Whitelist)', () => {
+    expect(ids(applyFilters(sample, f({ showOnlyCalls: ['JA*', 'AA1AA'] }), null))).toEqual([1, 3]);
+  });
+
+  it('always shows listed calls even when another filter hides them (Always Pass)', () => {
+    expect(ids(applyFilters(sample, f({ hideContinents: ['AS', 'NA'], alwaysShowCalls: ['W1*'] }), null))).toEqual([2, 3, 4, 5, 6, 7]);
+    expect(ids(applyFilters(sample, f({ showOnlyCalls: ['JA*'], alwaysShowCalls: ['W1ABC'] }), null))).toEqual([1, 7]);
+  });
+
+  it('hides every message of worked stations with hideWorkedAll (Hide B4)', () => {
+    const list = [d(1, 'CQ K1ABC FN42', { tag: 'worked_call' }), d(2, 'K2XX K1ABC -05', { tag: 'worked_call' }), d(3, 'CQ K3NEW FN20')];
+    expect(ids(applyFilters(list, f({ hideWorked: true }), null))).toEqual([2, 3]);
+    expect(ids(applyFilters(list, f({ hideWorked: true, hideWorkedAll: true }), null))).toEqual([3]);
+  });
+
+  it('bypass suspends every filter', () => {
+    expect(ids(applyFilters(sample, f({ only: 'cq', hideCalls: ['JA*'], showOnlyCalls: ['ZZ*'], bypass: true }), null))).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('highlights by call, prefix or country', () => {
+    expect(sample.filter((x) => isFilterHighlight(x, f({ highlightCalls: ['JA*'] }))).map((x) => x.id)).toEqual([1]);
+    expect(sample.filter((x) => isFilterHighlight(x, f({ highlightCountries: ['germany'] }))).map((x) => x.id)).toEqual([4]);
+    expect(sample.filter((x) => isFilterHighlight(x, defaultFilters())).length).toBe(0);
+  });
 });
 
 describe('remembered filters', () => {
   beforeEach(() => localStorage.clear());
+
+  it('remembers the WSJT-X style lists and switches', () => {
+    const store = memory();
+    const saved = f({ showOnlyCalls: ['JA*'], alwaysShowCalls: ['K1ABC'], highlightCalls: ['VK*'], highlightCountries: ['Japan'], hideWorkedAll: true, bypass: true });
+    saveFilters(store, saved);
+    expect(readFilters(store)).toEqual(saved);
+  });
 
   it('start empty', () => {
     expect(readFilters(memory())).toEqual(defaultFilters());

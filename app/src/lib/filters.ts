@@ -15,6 +15,18 @@ export interface Filters {
   hideOwnContinent: boolean;
   /** Nasconde i CQ di stazioni gia' collegate su questa banda (il motore le segna `worked_call`); gli altri messaggi restano. */
   hideWorked: boolean;
+  /** Con `hideWorked`: nasconde anche gli scambi delle stazioni gia' collegate, non solo i loro CQ («Hide B4» di WSJT-X). */
+  hideWorkedAll: boolean;
+  /** Mostra soltanto i messaggi di questi nominativi o prefissi (JA*); vuoto = tutti (la «Whitelist» di WSJT-X). */
+  showOnlyCalls: string[];
+  /** Nominativi o prefissi sempre visibili, anche se un altro filtro li nasconderebbe («Always Pass» di WSJT-X). */
+  alwaysShowCalls: string[];
+  /** Nominativi o prefissi da evidenziare nell'elenco («Highlight Whitelist entries» di WSJT-X). */
+  highlightCalls: string[];
+  /** Paesi da evidenziare nell'elenco («Highlight Territory» di WSJT-X). */
+  highlightCountries: string[];
+  /** Sospende tutti i filtri senza perderne le impostazioni (il «Bypass» di WSJT-X). */
+  bypass: boolean;
 }
 
 const KEY = 'aurora-filters';
@@ -24,7 +36,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultFilters(): Filters {
-  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false };
+  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false, hideWorkedAll: false, showOnlyCalls: [], alwaysShowCalls: [], highlightCalls: [], highlightCountries: [], bypass: false };
 }
 
 const isCallToken = (token: string) =>
@@ -66,9 +78,30 @@ function signoff(text: string, strict: boolean): boolean {
   return last === 'RR73' || last === '73' || (!strict && last === 'RRR');
 }
 
+/**
+ * Filtri ed evidenziazioni per nominativo, prefisso, paese e «gia' collegato» confrontati con WSJT-X 3.3
+ * (`MessageFilterLogic` richiamata da `widgets/mainwindow.cpp`, impostazioni in `Configuration.cpp`, GPL-3.0):
+ * Blacklist = `hideCalls`, Whitelist = `showOnlyCalls`, Always Pass = `alwaysShowCalls`, Hide B4 = `hideWorked`/`hideWorkedAll`,
+ * Highlight Whitelist entries = `highlightCalls`, Highlight Territory = `highlightCountries`, Bypass = `bypass`.
+ */
+const anyMatch = (call: string | null, patterns: string[]) => patterns.some((p) => p.trim() !== '' && callMatches(call, p));
+
+/** Vero se la riga va evidenziata per nominativo/prefisso o per paese (vale anche con il bypass, come in WSJT-X per la Whitelist). */
+export function isFilterHighlight(d: Pick<DecodedMessage, 'text' | 'country'>, filters: Filters): boolean {
+  if (filters.highlightCalls.length > 0 && anyMatch(callOf(d.text), filters.highlightCalls)) return true;
+  if (filters.highlightCountries.length > 0 && d.country) {
+    const country = d.country.toLowerCase();
+    return filters.highlightCountries.some((c) => c.trim() !== '' && c.trim().toLowerCase() === country);
+  }
+  return false;
+}
+
 export function applyFilters(decodes: DecodedMessage[], filters: Filters, ownContinent: string | null | undefined): DecodedMessage[] {
+  if (filters.bypass) return decodes;
   const countries = filters.hideCountries.map((c) => c.trim().toLowerCase());
   return decodes.filter((d) => {
+    if (filters.alwaysShowCalls.length > 0 && anyMatch(callOf(d.text), filters.alwaysShowCalls)) return true;
+    if (filters.showOnlyCalls.length > 0 && !anyMatch(callOf(d.text), filters.showOnlyCalls)) return false;
     if (d.continent && filters.hideContinents.includes(d.continent)) return false;
     if (filters.hideOwnContinent && ownContinent && d.continent === ownContinent) return false;
     if (d.country && countries.includes(d.country.toLowerCase())) return false;
@@ -80,7 +113,7 @@ export function applyFilters(decodes: DecodedMessage[], filters: Filters, ownCon
     if (filters.only === 'cq_rrr' && !isCq(d.text) && !signoff(d.text, false)) return false;
     if (filters.only === 'cq_rr73' && !isCq(d.text) && !signoff(d.text, true)) return false;
     if (filters.hideNonStandard && !isStandard(d.text)) return false;
-    if (filters.hideWorked && d.tag === 'worked_call' && isCq(d.text)) return false;
+    if (filters.hideWorked && d.tag === 'worked_call' && (filters.hideWorkedAll || isCq(d.text))) return false;
     return true;
   });
 }
@@ -100,6 +133,12 @@ export function readFilters(storage: ReadableStorage): Filters {
     filters.hideNonStandard = parsed.hideNonStandard === true;
     filters.hideOwnContinent = parsed.hideOwnContinent === true;
     filters.hideWorked = parsed.hideWorked === true;
+    filters.hideWorkedAll = parsed.hideWorkedAll === true;
+    filters.showOnlyCalls = strings(parsed.showOnlyCalls);
+    filters.alwaysShowCalls = strings(parsed.alwaysShowCalls);
+    filters.highlightCalls = strings(parsed.highlightCalls);
+    filters.highlightCountries = strings(parsed.highlightCountries);
+    filters.bypass = parsed.bypass === true;
   } catch {
     return defaultFilters();
   }

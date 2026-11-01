@@ -39,6 +39,8 @@ export function FiltersTab() {
           <Check label={t('fil.nonStandard')} hint={t('tip.fil.nonStandard')} checked={filters.hideNonStandard} onChange={(v) => set({ hideNonStandard: v })} />
           <Check label={t('fil.ownContinent')} hint={t('tip.fil.ownContinent')} checked={filters.hideOwnContinent} onChange={(v) => set({ hideOwnContinent: v })} />
           <Check label={t('fil.worked')} hint={t('tip.fil.worked')} checked={filters.hideWorked} onChange={(v) => set({ hideWorked: v })} />
+          <Check label={t('fil.workedAll')} hint={t('tip.fil.workedAll')} checked={filters.hideWorkedAll} onChange={(v) => set({ hideWorkedAll: v })} />
+          <Check label={t('fil.bypass')} hint={t('tip.fil.bypass')} checked={filters.bypass} onChange={(v) => set({ bypass: v })} />
         </Cells>
         <Actions>
           <button type="button" className="glass" onClick={() => useFilters.getState().reset()}>
@@ -54,6 +56,12 @@ export function FiltersTab() {
           <Field label={t('fil.calls')} hint={t('tip.fil.calls')} stack>
             <input type="text" value={filters.hideCalls.join(', ')} onChange={(e) => set({ hideCalls: list(e.target.value) })} />
           </Field>
+          <Field label={t('fil.showOnly')} hint={t('tip.fil.showOnly')} stack>
+            <input type="text" value={filters.showOnlyCalls.join(', ')} onChange={(e) => set({ showOnlyCalls: csv(e.target.value) })} />
+          </Field>
+          <Field label={t('fil.always')} hint={t('tip.fil.always')} stack>
+            <input type="text" value={filters.alwaysShowCalls.join(', ')} onChange={(e) => set({ alwaysShowCalls: csv(e.target.value) })} />
+          </Field>
           <Field label={t('fil.only')} hint={t('tip.fil.only')} stack>
             <select value={filters.only} onChange={(e) => set({ only: e.target.value as OnlyMode })}>
               {ONLY.map((o) => (
@@ -62,6 +70,16 @@ export function FiltersTab() {
                 </option>
               ))}
             </select>
+          </Field>
+        </Cells>
+      </Group>
+      <Group title={t('fil.highlight')} span={3}>
+        <Cells min={20}>
+          <Field label={t('fil.hlCalls')} hint={t('tip.fil.hlCalls')} stack>
+            <input type="text" value={filters.highlightCalls.join(', ')} onChange={(e) => set({ highlightCalls: csv(e.target.value) })} />
+          </Field>
+          <Field label={t('fil.hlCountries')} hint={t('tip.fil.hlCountries')} stack>
+            <input type="text" value={filters.highlightCountries.join(', ')} onChange={(e) => set({ highlightCountries: list(e.target.value) })} />
           </Field>
         </Cells>
       </Group>

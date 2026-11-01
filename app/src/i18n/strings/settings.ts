@@ -407,6 +407,13 @@ export const settingsStrings = {
     'Ocultar los CQ de estaciones ya contactadas en esta banda',
     'Esconder os CQ de estações já contactadas nesta banda',
   ],
+  'fil.workedAll': ['Con il filtro precedente, nascondi anche i loro scambi', 'With the filter above, hide their exchanges too', 'Mit dem Filter oben auch ihre Verbindungen ausblenden', 'Avec le filtre ci-dessus, masquer aussi leurs échanges', 'Con el filtro anterior, ocultar también sus intercambios', 'Com o filtro acima, esconder também as suas trocas'],
+  'fil.bypass': ['Sospendi tutti i filtri', 'Suspend all filters', 'Alle Filter aussetzen', 'Suspendre tous les filtres', 'Suspender todos los filtros', 'Suspender todos os filtros'],
+  'fil.showOnly': ['Mostra solo questi nominativi (JA* = tutti i JA; vuoto = tutti)', 'Show only these callsigns (JA* = all JA; empty = all)', 'Nur diese Rufzeichen anzeigen (JA* = alle JA; leer = alle)', 'Afficher seulement ces indicatifs (JA* = tous les JA ; vide = tous)', 'Mostrar solo estos indicativos (JA* = todos los JA; vacío = todos)', 'Mostrar só estes indicativos (JA* = todos os JA; vazio = todos)'],
+  'fil.always': ['Mostra sempre questi nominativi', 'Always show these callsigns', 'Diese Rufzeichen immer anzeigen', 'Toujours afficher ces indicatifs', 'Mostrar siempre estos indicativos', 'Mostrar sempre estes indicativos'],
+  'fil.highlight': ["Evidenzia nell'elenco", 'Highlight in the list', 'In der Liste hervorheben', 'Mettre en évidence dans la liste', 'Resaltar en la lista', 'Destacar na lista'],
+  'fil.hlCalls': ['Nominativi o prefissi da evidenziare (VK*, ZL*)', 'Callsigns or prefixes to highlight (VK*, ZL*)', 'Hervorzuhebende Rufzeichen oder Präfixe (VK*, ZL*)', 'Indicatifs ou préfixes à mettre en évidence (VK*, ZL*)', 'Indicativos o prefijos que resaltar (VK*, ZL*)', 'Indicativos ou prefixos a destacar (VK*, ZL*)'],
+  'fil.hlCountries': ['Paesi da evidenziare (separati da virgola)', 'Countries to highlight (comma separated)', 'Hervorzuhebende Länder (durch Komma getrennt)', 'Pays à mettre en évidence (séparés par des virgules)', 'Países que resaltar (separados por comas)', 'Países a destacar (separados por vírgulas)'],
   'fil.help': [
     'I filtri riguardano solo cosa vedi negli elenchi: i messaggi nascosti restano decodificati e le automazioni li vedono lo stesso.',
     'Filters only affect what you see in the lists: hidden messages are still decoded and automation still sees them.',
