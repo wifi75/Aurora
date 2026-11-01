@@ -5586,3 +5586,26 @@
   border-color: var(--muted, #9aa8bb);
   border-style: dashed;
 }
+
+/* Scheda della DXpedition (proposta 1): mappa grande sopra con riquadro ingrandito, dettagli sotto */
+.dxped-item { cursor: pointer; }
+.dxd-backdrop { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgb(0 0 0 / 0.45); }
+.dxd { position: relative; width: min(34rem, 94vw); max-height: 92vh; overflow: auto; background: var(--panel, #fff); color: var(--text, #1b2430); border-radius: 1rem; box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6); }
+.dxd-close { position: absolute; top: 0.4rem; right: 0.5rem; z-index: 5; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 1.2rem; cursor: pointer; }
+.dxd-map { position: relative; height: 15rem; background: #0f2a44; }
+.dxd-map-big { position: absolute; inset: 0; background: #0f2a44; }
+.dxd-inset { position: absolute; right: 0.6rem; bottom: 0.6rem; z-index: 4; width: 9rem; border: 2px solid #fff; border-radius: 0.5rem; overflow: hidden; background: #1d4a6e; }
+.dxd-map-small { width: 100%; height: 6.5rem; background: #1d4a6e; }
+.dxd-inset span { display: block; padding: 0.1rem 0.35rem; color: #fff; font-size: 0.7rem; font-weight: 700; background: rgb(0 0 0 / 0.5); }
+.dxd-nomap { margin: 0; padding: 6rem 1rem; text-align: center; color: #cfd8e3; }
+.dxd-body { padding: 0.8rem 1rem 1rem; }
+.dxd-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.dxd-call { color: #0f6e56; font-size: 1.7rem; }
+.dxd-pill { padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: #e3e8ef; }
+.dxd-pill--active { background: #d6f3e7; color: #0f6e56; }
+.dxd-country { display: flex; align-items: center; gap: 0.45rem; margin: 0.15rem 0 0.6rem; font-size: 1rem; }
+.dxd-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.25rem 0.9rem; margin: 0; font-size: 0.85rem; }
+.dxd-facts dt { color: var(--muted, #5b6b80); font-weight: 600; }
+.dxd-facts dd { margin: 0; }
+.dxd-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.8rem; }
+.dxd-actions a { text-decoration: none; }
