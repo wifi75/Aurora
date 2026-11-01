@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -37,6 +37,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/reply", post(reply))
         .route("/api/v1/commands/queue-reply", post(queue_reply))
         .route("/api/v1/commands/free-text", post(free_text))
+        .route("/api/v1/commands/dx", post(set_dx))
+        .route("/api/v1/commands/report", post(set_report))
+        .route("/api/v1/commands/tune", post(tune))
+        .route("/api/v1/commands/log-qso", post(log_qso))
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
@@ -406,6 +410,77 @@ async fn free_text(State(state): State<AppState>, _: Authed, headers: HeaderMap,
         check_tx_allowed(&state, &headers)?;
     }
     dispatch(&state, Command::SendFreeText { text, send: body.send })
+}
+
+#[derive(Deserialize)]
+struct DxBody {
+    #[serde(default)]
+    call: String,
+    #[serde(default)]
+    grid: String,
+}
+
+/// Nominativo scritto a mano: lettere, cifre e `/`, da 3 a 12 caratteri (vuoto = nessun DX).
+fn clean_dx_call(call: &str) -> Option<String> {
+    let c = call.trim().to_uppercase();
+    (c.is_empty() || ((3..=12).contains(&c.len()) && c.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/'))).then_some(c)
+}
+
+/// Locatore Maidenhead di 4 o 6 caratteri (vuoto = nessuno).
+fn clean_dx_grid(grid: &str) -> Option<String> {
+    let g = grid.trim().to_uppercase();
+    let b = g.as_bytes();
+    let ok = g.is_empty()
+        || ((g.len() == 4 || g.len() == 6)
+            && (b'A'..=b'R').contains(&b[0])
+            && (b'A'..=b'R').contains(&b[1])
+            && b[2].is_ascii_digit()
+            && b[3].is_ascii_digit()
+            && (g.len() == 4 || ((b'A'..=b'X').contains(&b[4]) && (b'A'..=b'X').contains(&b[5]))));
+    ok.then_some(g)
+}
+
+/// I campi «DX Call» e «Locatore» del pannello Comandi: imposta la stazione e rigenera i messaggi, senza trasmettere.
+#[utoipa::path(post, path = "/api/v1/commands/dx", responses((status = 200, description = "DX impostato"), (status = 400, description = "Nominativo o locatore non validi (bad_dx)")))]
+async fn set_dx(State(state): State<AppState>, _: Authed, Json(body): Json<DxBody>) -> Result<Json<Value>, ApiError> {
+    let (Some(call), Some(grid)) = (clean_dx_call(&body.call), clean_dx_grid(&body.grid)) else {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_dx"));
+    };
+    dispatch(&state, Command::SetDx { call, grid })
+}
+
+#[derive(Deserialize)]
+struct ReportBody {
+    db: i32,
+}
+
+/// Il rapporto da inviare scelto a mano (da -50 a +49 dB).
+#[utoipa::path(post, path = "/api/v1/commands/report", responses((status = 200, description = "Rapporto impostato"), (status = 400, description = "Fuori da -50..+49 (bad_report)")))]
+async fn set_report(State(state): State<AppState>, _: Authed, Json(body): Json<ReportBody>) -> Result<Json<Value>, ApiError> {
+    if !(-50..=49).contains(&body.db) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_report"));
+    }
+    dispatch(&state, Command::SetReport { db: body.db })
+}
+
+#[derive(Deserialize)]
+struct TuneBody {
+    on: bool,
+}
+
+/// «Tune»: portante sulla frequenza Tx per un periodo; spegnerlo e' sempre ammesso, accenderlo vuole la trasmissione aperta.
+#[utoipa::path(post, path = "/api/v1/commands/tune", responses((status = 200, description = "Tune chiesto"), (status = 403, description = "Trasmissione non abilitata o non consentita da questa via")))]
+async fn tune(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<TuneBody>) -> Result<Json<Value>, ApiError> {
+    if body.on {
+        check_tx_allowed(&state, &headers)?;
+    }
+    dispatch(&state, Command::Tune { on: body.on })
+}
+
+/// «Log QSO» a mano: registra il QSO con la stazione in corso.
+#[utoipa::path(post, path = "/api/v1/commands/log-qso", responses((status = 200, description = "Registrazione chiesta")))]
+async fn log_qso(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    dispatch(&state, Command::LogQso)
 }
 
 #[derive(Deserialize, Default)]

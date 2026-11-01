@@ -281,6 +281,8 @@ async fn on_command(hub: &Hub, config: &JtdxConfig, clock: &dyn Clock, io: &Engi
         Command::SetTxFrequency { hz } => {
             send_to_jtdx(hub, encode_set_tx_freq(&id, schema, i32::try_from(hz).unwrap_or(1500)), "SetTxFreq").await;
         }
+        // DX a mano, rapporto, Tune e Log QSO sono comandi del motore proprio: con JTDX si usano i suoi pulsanti
+        Command::SetDx { .. } | Command::SetReport { .. } | Command::Tune { .. } | Command::LogQso => tracing::warn!("comando ignorato: esiste solo nel motore proprio di Aurora"),
         // la coda di risposta e' una funzione del motore proprio: JTDX decide da se' chi chiamare
         Command::QueueReply { .. } => tracing::warn!("coda di risposta ignorata: esiste solo nel motore proprio di Aurora"),
         Command::Reply { decode_id } => {

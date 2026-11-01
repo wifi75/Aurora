@@ -11,4 +11,12 @@ pub enum Command {
     CallCq { modifier: String },
     /// Frequenza audio di trasmissione, in Hz; non fa trasmettere.
     SetTxFrequency { hz: u32 },
+    /// I campi «DX Call» e «Locatore» scritti a mano: imposta la stazione e rigenera i messaggi; non fa trasmettere.
+    SetDx { call: String, grid: String },
+    /// Il rapporto da inviare scelto a mano, in dB.
+    SetReport { db: i32 },
+    /// «Tune»: portante sulla frequenza Tx (acceso) o ferma (spento).
+    Tune { on: bool },
+    /// «Log QSO» a mano.
+    LogQso,
 }

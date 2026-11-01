@@ -1223,6 +1223,26 @@ impl Sequencer {
         Some(tx)
     }
 
+    /// «Log QSO» a mano (`on_logQSOButton_clicked` di WSJT-X): registra il QSO con la stazione in corso, con i rapporti che si conoscono.
+    /// Senza DX non fa niente; restituisce se ha registrato.
+    pub fn log_now(&mut self, slot: Slot, now: f64) -> bool {
+        if self.his_call.is_empty() {
+            return false;
+        }
+        self.log_qso(slot, now);
+        true
+    }
+
+    /// Il rapporto da inviare scelto a mano (`rptSpinBox` di WSJT-X): vale da subito per i messaggi Tx2/Tx3, senza cambiare il messaggio in corso.
+    pub fn set_report(&mut self, rpt: i32) {
+        self.rpt = rpt.clamp(-50, 49);
+        self.rpt_text = rpt_text(self.rpt_value());
+    }
+
+    /// Il rapporto che si invia adesso (quello misurato o quello scelto a mano).
+    pub fn report(&self) -> i32 {
+        self.rpt_value()
+    }
     /// Il QSO si registra (`logQSOTimer`): rapporto inviato e ricevuto dalla memoria della sequenza (`log_data`), come in `on_logQSOButton_clicked`.
     fn log_qso(&mut self, slot: Slot, now: f64) {
         if self.his_call.is_empty() {
