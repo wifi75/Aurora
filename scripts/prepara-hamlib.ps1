@@ -1,15 +1,26 @@
 # Prepara Hamlib (rigctld) per l'installatore di Windows: copia i file in desktop\src-tauri\hamlib-bundle\ (esclusa da git).
 #
-#   .\scripts\prepara-hamlib.ps1                       -> cerca la cartella sorgente da sola
+#   .\scripts\prepara-hamlib.ps1                       -> Hamlib ufficiale 4.7.2 (scaricato da GitHub, SHA-256 verificato)
 #   .\scripts\prepara-hamlib.ps1 -Hamlib C:\JTDX64\159\bin
+#   .\scripts\prepara-hamlib.ps1 -SoloLocale           -> come prima: JTDX o WSJT-X installati, niente download
 #
 # La cartella sorgente (cartella con rigctld*.exe, rigctl*.exe e le DLL di Hamlib) si sceglie, nell'ordine: parametro -Hamlib,
-# variabile d'ambiente AURORA_HAMLIB_SRC, ultima versione di JTDX (C:\JTDX64\<versione>\bin), WSJT-X (C:\WSJT\wsjtx\bin).
-# Non scarica nulla. Le DLL necessarie si ricavano leggendo le importazioni dei due eseguibili (e, a catena, delle DLL):
+# variabile d'ambiente AURORA_HAMLIB_SRC, pacchetto Windows ufficiale di Hamlib (solo da https://github.com/Hamlib/Hamlib/releases,
+# con l'hash SHA-256 fissato qui sotto: se non coincide lo script si ferma). Con -SoloLocale, invece del download: ultima versione
+# di JTDX (C:\JTDX64\<versione>\bin), WSJT-X (C:\WSJT\wsjtx\bin).
+# Le DLL necessarie si ricavano leggendo le importazioni dei due eseguibili (e, a catena, delle DLL):
 # si copiano solo quelle che non sono di Windows. Se manca qualcosa lo script si ferma con un messaggio chiaro.
 param(
-    [string]$Hamlib = $env:AURORA_HAMLIB_SRC
+    [string]$Hamlib = $env:AURORA_HAMLIB_SRC,
+    [switch]$SoloLocale
 )
+
+# Hamlib ufficiale: ultima stabile al 2026-11-01 (WSJT-X 3.3 porta una 4.7.3~rc, non ancora rilasciata).
+# Hash dal file SHA256SUM-w64-4.7.2 della release e ricontrollato sul file scaricato.
+$HamlibVersione = '4.7.2'
+$HamlibZip = "hamlib-w64-$HamlibVersione.zip"
+$HamlibUrl = "https://github.com/Hamlib/Hamlib/releases/download/$HamlibVersione/$HamlibZip"
+$HamlibSha256 = '8553bc6c5c6032e8debf99c017e98f58fed7e07e7c25d04815dc3e8bbe3304c7'
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -22,6 +33,27 @@ function Cartella-Valida([string]$dir) {
     return [bool]$d
 }
 
+$origine = 'cartella locale'
+if (-not $Hamlib -and -not $SoloLocale) {
+    # download dalla release ufficiale in target\hamlib-ufficiale (fuori da git), riusato se c'e' gia' e l'hash torna
+    $cache = Join-Path $root "target\hamlib-ufficiale\$HamlibVersione"
+    $zip = Join-Path $cache $HamlibZip
+    New-Item -ItemType Directory -Force $cache | Out-Null
+    if (-not (Test-Path -LiteralPath $zip) -or (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne $HamlibSha256) {
+        Write-Host "Hamlib: scarico $HamlibUrl"
+        Invoke-WebRequest -Uri $HamlibUrl -OutFile $zip -UseBasicParsing
+    }
+    $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+    if ($hash -ne $HamlibSha256) {
+        Remove-Item -LiteralPath $zip -Force
+        throw "SHA-256 di $HamlibZip non coincide (atteso $HamlibSha256, letto $hash): file scartato."
+    }
+    $estratto = Join-Path $cache 'estratto'
+    if (Test-Path -LiteralPath $estratto) { Remove-Item -LiteralPath $estratto -Recurse -Force }
+    Expand-Archive -LiteralPath $zip -DestinationPath $estratto
+    $Hamlib = Join-Path $estratto "hamlib-w64-$HamlibVersione\bin"
+    $origine = "$HamlibUrl (SHA-256 $HamlibSha256)"
+}
 if (-not $Hamlib) {
     $candidate = @()
     if (Test-Path 'C:\JTDX64') {
@@ -129,10 +161,10 @@ foreach ($m in 'FT-2000', 'FTDX-101D', 'FTDX-5000', 'Dummy') {
 $nMod = @($modelli -split "`n" | Where-Object { $_ -match '^\s*\d+\s' }).Count
 
 $righe = @(
-    'Hamlib incluso in Aurora (copiato, non scaricato)',
+    'Hamlib incluso in Aurora',
     "Versione:  $versione",
     "Modelli:   $nMod (FT-2000, FTDX-101D, FTDX-5000 inclusi)",
-    "Origine:   $Hamlib ($($rigctld.Name), $($rigctl.Name) rinominati rigctld.exe e rigctl.exe)",
+    "Origine:   $origine; cartella $Hamlib ($($rigctld.Name), $($rigctl.Name) rinominati rigctld.exe e rigctl.exe)",
     "Sorgenti:  https://github.com/Hamlib/Hamlib (stessa versione/commit indicati sopra)",
     'Licenze:   LGPL-2.1+ (libreria), GPL-2.0+ (programmi); testi nei file LGPL-2.1.txt e GPL-3.0.txt',
     '',

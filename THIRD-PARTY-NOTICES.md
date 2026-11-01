@@ -19,7 +19,7 @@ Aurora (© 2026 Tiziano Cassone, IU3WJQ) e' software libero: si puo' ridistribui
 
 ## Hamlib e DLL incluse nell'installatore di Windows
 
-Nella cartella `hamlib` accanto al programma l'installatore porta, **non modificati**, i file di Hamlib copiati dall'installazione di JTDX o WSJT-X (nessun download): `rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`. Versione e SHA-256 sono in `hamlib\VERSIONE.txt`.
+Nella cartella `hamlib` accanto al programma l'installatore porta, **non modificati**, i file del pacchetto Windows ufficiale di Hamlib 4.7.2 (`hamlib-w64-4.7.2.zip` dalle release di https://github.com/Hamlib/Hamlib, SHA-256 verificato dallo script `scripts/prepara-hamlib.ps1`; in alternativa copiati da JTDX o WSJT-X): `rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`. Versione e SHA-256 sono in `hamlib\VERSIONE.txt`.
 
 | Componente | Licenza | Sorgenti |
 |---|---|---|
