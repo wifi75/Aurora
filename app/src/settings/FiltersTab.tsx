@@ -2,6 +2,9 @@ import { useT, type Key } from '../i18n';
 import { CQ_TAGS, useCqPrefs } from '../lib/cqPrefs';
 import { CONTINENTS, useFilters, type OnlyMode } from '../lib/filters';
 import { Check, Help } from './common';
+import { EngineValues } from './EngineValues';
+import { NativeDecodeOptions } from './JtdxTabs';
+import { useIsNative } from './NativeSettings';
 import { Actions, Cells, Field, Group, Notes, Page } from './layout';
 
 const ONLY: ReadonlyArray<{ value: OnlyMode; label: Key }> = [
@@ -21,6 +24,7 @@ export function FiltersTab() {
   const cq = useCqPrefs((s) => s.prefs);
   const setCq = useCqPrefs.getState().set;
   const csv = (text: string) => text.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
+  const native = useIsNative();
   const toggleContinent = (code: string) =>
     set({ hideContinents: filters.hideContinents.includes(code) ? filters.hideContinents.filter((c) => c !== code) : [...filters.hideContinents, code] });
   return (
@@ -107,6 +111,12 @@ export function FiltersTab() {
         </Actions>
         <Help>{t('cqp.help')}</Help>
       </Group>
+      {native ? <NativeDecodeOptions /> : null}
+      {native === false ? (
+        <Group title={t('fil.decode')} span={2}>
+          <EngineValues group="advanced" />
+        </Group>
+      ) : null}
       <Notes span={3}>
         <Help>{t('fil.help')}</Help>
       </Notes>

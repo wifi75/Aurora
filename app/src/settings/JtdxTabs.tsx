@@ -19,7 +19,7 @@ import { useStation } from '../state/station';
 import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { Check, Help } from './common';
-import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page, Unavailable } from './layout';
+import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page } from './layout';
 import { ToastGroup } from './ToastGroup';
 
 /** Il valore di una voce adesso: la modifica non ancora applicata, o quello salvato. */
@@ -53,26 +53,6 @@ function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label:
     <Field label={label} hint={engineHint(k, t)} changed={draft.changes[k] !== undefined}>
       <EngineCheck k={k} label={label} doc={doc} draft={draft} locked={locked} />
     </Field>
-  );
-}
-
-/** Una voce che Aurora non ha: si vede spenta, con il motivo (va dentro un riquadro «Non disponibili»). */
-function OffRow({ label, reason, kind = 'check', suffix }: { label: string; reason: Key; kind?: 'check' | 'select' | 'text' | 'button' | 'number'; suffix?: string }) {
-  const t = useT();
-  const why = t(reason);
-  let control: ReactNode;
-  if (kind === 'check') control = <input type="checkbox" disabled aria-label={label} />;
-  else if (kind === 'select') control = <select disabled aria-label={label} />;
-  else if (kind === 'number') control = <input type="number" disabled aria-label={label} className="set-number" />;
-  else if (kind === 'text') control = <input type="text" disabled aria-label={label} />;
-  else control = <button type="button" className="glass" disabled>{label}</button>;
-  return (
-    <div className="jt-row jt-row--off" title={why}>
-      {control}
-      {kind === 'button' ? null : <span>{label}</span>}
-      {suffix ? <span className="muted">{suffix}</span> : null}
-      <span className="muted jt-reason">{why}</span>
-    </div>
   );
 }
 
@@ -298,6 +278,7 @@ export function NativeGeneral() {
         <Cells min={18}>
           {field('MyCall', 'text', 'gen2.call')}
           {field('MyGrid', 'text', 'gen2.grid')}
+          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
         </Cells>
         <Message kind="muted">
           {status?.de_call || '—'} · {status?.de_grid || '—'}
@@ -311,38 +292,6 @@ export function NativeGeneral() {
           {field('timeFromLogFiltering', 'text', 'gen2.fromDate')}
         </Cells>
         <Message kind="muted">{t('gen2.logHelp')}</Message>
-      </Group>
-
-      <Group title={t('gen2.operation')}>
-        <Cells min={13}>
-          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
-          {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
-          {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
-          {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
-        </Cells>
-      </Group>
-
-      <Group title={t('gen2.wsjtx3')}>
-        <Cells min={15}>
-          {field('FT8DecoderStart', 'choice', 'gen2.decStart', { options: DECODER_START_OPTIONS })}
-          {field('FullDuplex', 'bool', 'gen2.fullDuplex')}
-          {field('WaitFeaturesEnabled', 'bool', 'gen2.waitFeatures')}
-        </Cells>
-      </Group>
-
-      <Group title={t('gen2.fox')}>
-        <Cells min={15}>
-          {field('OTPVerify', 'bool', 'gen2.otpVerify')}
-          {field('ShowOTP', 'bool', 'gen2.showOtp')}
-          {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}
-        </Cells>
-      </Group>
-
-      <Group title={t('gen2.bandHop')}>
-        <Cells min={18}>
-          {field('BandHopping', 'bool', 'gen2.bandHopOn')}
-          {field('BandHopList', 'text', 'gen2.bandHopList')}
-        </Cells>
       </Group>
 
       <Group title={t('gen2.iaru')}>
@@ -375,24 +324,73 @@ export function NativeGeneral() {
         </Cells>
       </Group>
 
-      <Unavailable count={11}>
-        <OffRow label={t('gen2.scroll')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.hidePartial')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.prefix')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.align')} reason="ens.r.screen_off" />
-        <OffRow label={t('gen2.fontApp')} reason="ens.r.screen_off" kind="button" />
-        <OffRow label={t('gen2.fontRx')} reason="ens.r.screen_off" kind="button" />
-        <OffRow label={t('gen2.decode52')} reason="ens.r.decode52" />
-        <OffRow label={t('gen2.lastFreq')} reason="ens.r.monitor_last" />
-        <OffRow label={t('gen2.cwId')} reason="ens.r.cw_id" />
-        <OffRow label={t('gen2.cwInt')} reason="ens.r.cw_id" kind="number" />
-        <OffRow label={t('gen2.tune')} reason="ens.r.tune_timer" kind="number" />
-      </Unavailable>
       <Notes>
         <Help>{t('gen2.iaruHelp')}</Help>
       </Notes>
       <ApplyBar draft={draft} doc={doc} />
     </Page>
+  );
+}
+
+/** Le opzioni di trasmissione del motore (prima in Generali): monitoraggio Tx, ROS, WSJT-X 3, verifica del Fox, Band Hopping. Stanno nella scheda Sequenza. */
+export function NativeTxOptions() {
+  const t = useT();
+  const { settings, draft } = useDoc();
+  if (settings.isError || !settings.data) return <Waiting error={settings.isError} />;
+  const doc = settings.data;
+  const field = (key: string, kind: 'bool' | 'text' | 'num', label: Key, extra: { min?: number; max?: number; step?: number; locked?: boolean } = {}) => (
+    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, step: extra.step }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
+  );
+  return (
+    <>
+      <Group title={t('gen2.operation')}>
+        <Cells min={13}>
+          {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
+          {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
+          {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.wsjtx3')}>
+        <Cells min={15}>
+          {field('FullDuplex', 'bool', 'gen2.fullDuplex')}
+          {field('WaitFeaturesEnabled', 'bool', 'gen2.waitFeatures')}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.fox')}>
+        <Cells min={15}>
+          {field('OTPVerify', 'bool', 'gen2.otpVerify')}
+          {field('ShowOTP', 'bool', 'gen2.showOtp')}
+          {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.bandHop')}>
+        <Cells min={18}>
+          {field('BandHopping', 'bool', 'gen2.bandHopOn')}
+          {field('BandHopList', 'text', 'gen2.bandHopList')}
+        </Cells>
+      </Group>
+
+      <ApplyBar draft={draft} doc={doc} />
+    </>
+  );
+}
+
+/** Quando parte la decodifica FT8 (prima in Generali): sta nella scheda Filtri, con le altre scelte su cosa si riceve. */
+export function NativeDecodeOptions() {
+  const t = useT();
+  const { settings, draft } = useDoc();
+  if (settings.isError || !settings.data) return null;
+  const doc = settings.data;
+  return (
+    <Group title={t('fil.decode')}>
+      <Cells min={15}>
+        <SettingField row={{ key: 'FT8DecoderStart', kind: 'choice', options: DECODER_START_OPTIONS }} label={t('gen2.decStart')} doc={doc} draft={draft} />
+      </Cells>
+      <ApplyBar draft={draft} doc={doc} />
+    </Group>
   );
 }
 
@@ -697,10 +695,6 @@ export function NativeNotifications() {
           <EngineBox k="73RR73Marker" label={t('not2.mark7373')} doc={doc} draft={draft} />
         </Cells>
       </Group>
-
-      <Unavailable count={1}>
-        <OffRow label={t('not2.markHint')} reason="ens.r.no_hint" />
-      </Unavailable>
 
       <Notes>
         <Help>{t('not2.help')}</Help>

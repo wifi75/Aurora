@@ -1108,38 +1108,41 @@ impl EngineSettingsStore {
         };
         let mut next = self.values();
         next.extend(changes.iter().filter(|(k, _)| !SECRET_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())));
+        // i controlli fra piu' voci valgono solo per il servizio che si sta cambiando: un valore vecchio e incoerente di un altro
+        // servizio (per esempio importato da JTDX) non deve bloccare il salvataggio di tutto il resto
+        let touches = |keys: &[&str]| keys.iter().any(|k| changes.contains_key(*k));
         // le caselle che in JTDX si escludono a vicenda (cliccare una toglie l'altra)
-        if truthy(next.get("PromptToLog")) && truthy(next.get("AutoQSOLogging")) {
+        if touches(&["PromptToLog", "AutoQSOLogging"]) && truthy(next.get("PromptToLog")) && truthy(next.get("AutoQSOLogging")) {
             return Err(SettingsError::BadValue("PromptToLog e AutoQSOLogging si escludono: ne va accesa una sola".into()));
         }
-        if truthy(next.get("WriteDecodedALLTXT")) && truthy(next.get("WriteDecodedDebugALLTXT")) {
+        if touches(&["WriteDecodedALLTXT", "WriteDecodedDebugALLTXT"]) && truthy(next.get("WriteDecodedALLTXT")) && truthy(next.get("WriteDecodedDebugALLTXT")) {
             return Err(SettingsError::BadValue("WriteDecodedALLTXT e WriteDecodedDebugALLTXT si escludono: ne va accesa una sola".into()));
         }
         // un invio acceso senza un indirizzo valido non avrebbe effetto: si rifiuta, non si finge
         let r = interpret(&next);
-        if truthy(next.get("EnableTCPConnection")) && r.tcp.is_none() {
+        if touches(&["EnableTCPConnection", "TCPServer", "TCPServerPort"]) && truthy(next.get("EnableTCPConnection")) && r.tcp.is_none() {
             return Err(SettingsError::BadValue("TCPServer: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
-        if truthy(next.get("EQSLSend")) && (next.get("EQSLUser").is_none_or(String::is_empty) || !has_secret("EQSLPasswd")) {
+        if touches(&["EQSLSend", "EQSLUser", "EQSLPasswd"]) && truthy(next.get("EQSLSend")) && (next.get("EQSLUser").is_none_or(String::is_empty) || !has_secret("EQSLPasswd")) {
             return Err(SettingsError::BadValue("EQSLSend: servono utente e password di eQSL per accendere l'invio".into()));
         }
-        if truthy(next.get("EnableUDP2adifBroadcast")) && r.secondary.is_none() {
+        if touches(&["EnableUDP2adifBroadcast", "UDP2Server", "UDP2ServerPort"]) && truthy(next.get("EnableUDP2adifBroadcast")) && r.secondary.is_none() {
             return Err(SettingsError::BadValue("UDP2Server: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
-        if truthy(next.get("EnableUDP1adifSending")) && r.primary.is_none() {
+        if touches(&["EnableUDP1adifSending", "UDPServer", "UDPServerPort"]) && truthy(next.get("EnableUDP1adifSending")) && r.primary.is_none() {
             return Err(SettingsError::BadValue("UDPServer: serve un indirizzo e una porta validi per accendere l'invio".into()));
         }
         // invio diretto: acceso solo con tutto quello che serve (non si finge un invio che non puo' partire)
-        if truthy(next.get("WavelogSend")) && (!r.wavelog || !has_secret("WavelogKey")) {
+        if touches(&["WavelogSend", "WavelogUrl", "WavelogStation", "WavelogKey"]) && truthy(next.get("WavelogSend")) && (!r.wavelog || !has_secret("WavelogKey")) {
             return Err(SettingsError::BadValue("WavelogSend: servono indirizzo, numero della stazione e chiave API per accendere l'invio".into()));
         }
-        if truthy(next.get("ClublogSend")) && (!r.clublog || r.clublog_call.is_empty() || !has_secret("ClublogPasswd") || !has_secret("ClublogApiKey")) {
+        if touches(&["ClublogSend", "ClublogEmail", "ClublogCall", "ClublogPasswd", "ClublogApiKey", "MyCall"]) && truthy(next.get("ClublogSend")) && (!r.clublog || r.clublog_call.is_empty() || !has_secret("ClublogPasswd") || !has_secret("ClublogApiKey")) {
             return Err(SettingsError::BadValue("ClublogSend: servono email, nominativo, password e chiave API per accendere l'invio".into()));
         }
-        if truthy(next.get("QRZLogSend")) && !has_secret("QRZLogKey") {
+        if touches(&["QRZLogSend", "QRZLogKey"]) && truthy(next.get("QRZLogSend")) && !has_secret("QRZLogKey") {
             return Err(SettingsError::BadValue("QRZLogSend: serve la chiave del logbook per accendere l'invio".into()));
         }
-        if truthy(next.get("LoTWSend")) {
+        if touches(&["LoTWSend", "LoTWTqsl", "LoTWLocation"]) && truthy(next.get("LoTWSend")) {
             if !r.lotw {
                 return Err(SettingsError::BadValue("LoTWSend: serve la posizione di stazione di TQSL per accendere l'invio".into()));
             }
@@ -1667,6 +1670,53 @@ SaveWav=2
         store.update(&map(&[("LoTWLocation", "Casa"), ("LoTWTqsl", exe.as_str()), ("LoTWSend", "true")])).unwrap();
         let r = store.reports();
         assert_eq!((r.lotw, r.lotw_location.as_str(), r.lotw_tqsl.as_str()), (true, "Casa", exe.as_str()));
+    }
+
+    #[test]
+    fn saving_every_live_value_as_shipped_is_accepted() {
+        // la pagina intera salvata con i valori di fabbrica (UDP2Server 127.0.0.1:2237 acceso, nessun destinatario) non da' errore
+        let store = EngineSettingsStore::open(&temp("all-defaults"), defaults);
+        let doc = store.document();
+        let values: BTreeMap<String, String> = doc["values"].as_object().unwrap().iter().filter(|(k, _)| !AUDIO_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.as_str().unwrap().to_string())).collect();
+        assert!(!values.is_empty());
+        for chunk in values.iter().collect::<Vec<_>>().chunks(50) {
+            let part: BTreeMap<String, String> = chunk.iter().map(|(k, v)| ((*k).clone(), (*v).clone())).collect();
+            store.update(&part).unwrap_or_else(|e| panic!("valori di fabbrica rifiutati: {e}"));
+        }
+        let mut dest = BTreeMap::new();
+        dest.insert(UDP_DESTINATIONS.to_string(), "[]".to_string());
+        store.update(&dest).unwrap();
+    }
+
+    #[test]
+    fn the_owner_reports_page_saves_whole_and_field_by_field() {
+        // i valori dell'installazione del proprietario (0.11.56): tutti validi, nessun errore salvando la pagina intera o una voce alla volta
+        let store = EngineSettingsStore::open(&temp("owner"), defaults);
+        store.set_secrets(Arc::new(reporting::secret::MemorySecrets::default()) as Arc<dyn SecretStore>);
+        let owner = map(&[
+            ("TCPServer", "127.0.0.1"), ("TCPServerPort", "2237"), ("EnableTCPConnection", "false"),
+            ("UDP2Server", "127.0.0.1"), ("UDP2ServerPort", "2237"), ("EnableUDP2adifBroadcast", "true"),
+            ("AllowSpotsDXSummit", "true"), ("PSKReporter", "false"), ("EQSLSend", "false"), ("EQSLUser", ""), ("EQSLNick", ""),
+            ("WavelogSend", "false"), ("WavelogUrl", ""), ("WavelogStation", ""), ("ClublogSend", "false"), ("ClublogEmail", ""), ("ClublogCall", ""),
+            ("QRZLogSend", "false"), ("LoTWSend", "false"), ("LoTWTqsl", ""), ("LoTWLocation", ""), (UDP_DESTINATIONS, "[]"),
+            ("EQSLPasswd", ""), ("WavelogKey", ""), ("ClublogPasswd", ""), ("ClublogApiKey", ""), ("QRZLogKey", ""),
+        ]);
+        store.update(&owner).unwrap_or_else(|e| panic!("pagina intera rifiutata: {e}"));
+        for (k, v) in &owner {
+            store.update(&map(&[(k.as_str(), v.as_str())])).unwrap_or_else(|e| panic!("{k} rifiutata: {e}"));
+        }
+    }
+
+    #[test]
+    fn a_stale_value_of_another_service_does_not_block_saving() {
+        let store = EngineSettingsStore::open(&temp("stale"), defaults);
+        store.update(&map(&[("EnableUDP2adifBroadcast", "false"), ("UDP2Server", "")])).ok();
+        // valore incoerente gia' nel file (come da un JTDX.ini importato): acceso ma senza indirizzo
+        store.lock().insert("EnableUDP2adifBroadcast".into(), "true".into());
+        store.lock().insert("UDP2Server".into(), "".into());
+        store.update(&map(&[("PSKReporter", "false")])).expect("una voce di un altro servizio si salva");
+        let e = store.update(&map(&[("UDP2ServerPort", "2238")])).unwrap_err();
+        assert!(e.to_string().starts_with("UDP2Server:"), "{e}");
     }
 
     fn temp_path_of(store: &EngineSettingsStore) -> PathBuf {

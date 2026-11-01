@@ -3,8 +3,9 @@ import { getAutomation, putAutomation } from '../api/client';
 import { AutomationRulesForm } from '../components/AutomationRulesForm';
 import { useT } from '../i18n';
 import { EngineValues } from './EngineValues';
-import { NativeSequence } from './JtdxTabs';
-import { useIsNative } from './NativeSettings';
+import { NativeSequence, NativeTxOptions } from './JtdxTabs';
+import { EngineGroups, useIsNative } from './NativeSettings';
+import { QSO_LOG_GROUPS } from '../lib/engineSettingsLayout';
 import { Help } from './common';
 import { Actions, Group, Notes, Page } from './layout';
 
@@ -42,6 +43,8 @@ export function SequenceTab() {
         extra={
           <>
             {rules}
+            <EngineGroups groups={QSO_LOG_GROUPS} />
+            <NativeTxOptions />
             <Notes>
               <Help>{t('seq.intro')}</Help>
             </Notes>
