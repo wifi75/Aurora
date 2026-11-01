@@ -10,7 +10,6 @@ import { eventOfAlert, useSoundAssign, type SoundEvent } from '../lib/soundAssig
 import { armAudio } from '../lib/soundBank';
 import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
 import { useNotifyView, workedLook, type AlertKey, type NotifyView } from '../lib/notifyView';
-import { AlertSwitch } from '../components/AlertSwitch';
 import { usePrefs, type Prefs } from '../lib/prefs';
 import { browserStorage } from '../lib/theme';
 import { LanguageSelect } from '../components/LanguageSelect';
@@ -404,9 +403,8 @@ function AlertOptions() {
   };
   return (
     <>
-      <Cell label={t('alert.button')} hint={t('tip.alert.button')} wide>
-        <AlertSwitch value={alerts} onChange={change} />
-      </Cell>
+      {/* il volume sta solo in «Suoni» (Volume generale): qui solo l'interruttore */}
+      <Check label={t('alert.button')} hint={t('tip.alert.button')} checked={alerts.enabled} onChange={(v) => change({ ...alerts, enabled: v })} />
       <Check label={t('not2.muteTx')} hint={t('tip.not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
     </>
   );
