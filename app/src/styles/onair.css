@@ -5649,3 +5649,19 @@
   font-weight: 700;
 }
 
+
+/* Pannello QSO: sequenza sopra e pulsanti di trasmissione sotto, a tutta larghezza; pulsanti larghi quanto basta perche' il testo si legga */
+.qso-cols {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
+}
+
+.qso-grid,
+.qso-grid--two {
+  grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
+}
+
+.qso-grid .chip {
+  font-size: 0.7rem;
+  padding: 0 0.3rem;
+}
