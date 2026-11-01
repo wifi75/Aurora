@@ -489,3 +489,22 @@
   line-height: 1.45;
   color: var(--text);
 }
+
+/* bandiera, nominativo e paese sulla stessa linea, centrati in verticale */
+.dxcc-subject-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1;
+}
+
+.dxcc-subject-call > strong,
+.dxcc-subject-call > .muted {
+  line-height: 1;
+}
+
+.dxcc-subject-call .dxcc-flag {
+  flex: none;
+  margin: 0;
+  vertical-align: middle;
+}
