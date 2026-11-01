@@ -4483,3 +4483,22 @@
     position: static;
   }
 }
+
+/* in coda: un pallino blu col posto, prima del testo; la spiegazione e' nel suggerimento */
+.queue-dot {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-right: 0.35rem;
+  color: #ffffff;
+  background: #1f6feb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #1f6feb 30%, transparent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: help;
+}

@@ -212,6 +212,7 @@ export const stationStrings = {
     'Na fila: respondes-lhe assim que o QSO em curso for registado.',
   ],
   'row.queued': ['IN CODA', 'QUEUED', 'WARTET', 'EN FILE', 'EN COLA', 'NA FILA'],
+  'tip.row.queuedPos': ['In coda, posto {n}: le risponderai appena finito il QSO in corso. Tasto destro di nuovo per toglierla.', 'Queued, position {n}: you will answer it as soon as the current QSO ends. Right-click again to remove it.', 'Warteschlange, Platz {n}: du antwortest nach dem laufenden QSO. Erneut rechtsklicken zum Entfernen.', 'En file, place {n} : tu lui répondras dès la fin du QSO en cours. Clic droit à nouveau pour la retirer.', 'En cola, puesto {n}: le responderás al terminar el QSO en curso. Clic derecho otra vez para quitarla.', 'Na fila, lugar {n}: vais responder-lhe assim que acabar o QSO em curso. Clique direito outra vez para a tirar.'],
   'note.queued': ['Richiesta di coda inviata: {text}', 'Queue request sent: {text}', 'Warteschlangen-Anfrage gesendet: {text}', 'Demande de file envoyée : {text}', 'Solicitud de cola enviada: {text}', 'Pedido de fila enviado: {text}'],
   'tip.row.me': [
     'Questa stazione ti sta chiamando: doppio clic per rispondere.',
