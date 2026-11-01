@@ -143,3 +143,52 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Aurora: `core/crates/superfox`, `tx-native`, `engine-native/src/tx.rs`, `udp-bridge/src/message.rs`.
 - WSJT-X: `lib/superfox/sfox_pack.f90`, `sftx_sub.f90`, `sfox_gen_gfsk.f90`, `sfox_wave_gfsk.f90`, `lib/ft8/foxgen.f90`, `widgets/SuperFoxTxPlanner.cpp`, `FoxGuardBands.cpp`, `FoxLogWindow.cpp`, `mainwindow.cpp` (`foxOTPcode`, `sfox_tx`).
 - Verifica: il segnale generato si decodifica con `jt9.exe` 3.0.2 e con il decodificatore di Aurora.
+
+## 21. Modo Q65
+
+- Cosa fare: aggiungere Q65 (sottomodi A-E, periodi 15/30/60/120/300 s) con codifica, modulazione e decodifica, compresa la media dei messaggi e la decodifica con le ipotesi del QSO (AP).
+- Aurora: nuovo crate `core/crates/q65`; scelta del modo in `engine-native`, `qso-native`, `app/src/components/ModeSwitch.tsx`.
+- WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_decode.f90`, `q65_sync.f90`), `lib/q65params.f90`, `widgets/mainwindow.cpp` (sezioni Q65).
+- Verifica: WAV generati con `q65sim` a vari SNR; Aurora decodifica almeno quanto `jt9.exe`.
+
+## 22. Modo MSK144 (meteor scatter)
+
+- Cosa fare: aggiungere MSK144 (periodi 15/30 s, messaggi brevi «Sh»), decodifica dei ping brevi a blocchi nel periodo, sequenza dei QSO del meteor scatter.
+- Aurora: nuovo crate `core/crates/msk144`; `engine-native`, `qso-native`, `ModeSwitch.tsx`.
+- WSJT-X: `lib/msk144*.f90`, `lib/mskrtd.f90`, `lib/msk144decodeframe.f90`, `widgets/mainwindow.cpp` (MSK144).
+- Verifica: WAV con ping simulati (`msk144sim`), confronto con `jt9.exe`.
+
+## 23. Pulsanti rapidi dei modi
+
+- Cosa fare: estendere i pulsanti di scelta del modo della pagina Stazione a Q65 e MSK144 quando ci saranno (oggi FT8, FT4, JT65, JT9).
+- Aurora: `app/src/components/ModeSwitch.tsx`, `core/crates/rig-control/src/table.rs` (frequenze per modo).
+- WSJT-X: `widgets/mainwindow.ui` (pulsanti dei modi della 3.0).
+- Verifica: cambio modo dal pulsante con radio collegata.
+
+## 24. Filtri dei decode per prefisso, nominativo e «gia' collegato»
+
+- Cosa fare: confrontare con i filtri di WSJT-X 3.0 (nascondere o evidenziare per prefisso, nominativo, Worked Before) e aggiungere quelli che mancano in Aurora (oggi ha filtri e colori per DXCC, desiderati e gia' collegati).
+- Aurora: `app/src/components/DecodeList.tsx`, `app/src/settings/FiltersTab.tsx`.
+- WSJT-X: `widgets/mainwindow.cpp`, `Configuration.cpp` (filtri e evidenziazioni della 3.0).
+- Verifica: decode di prova con prefissi e nominativi filtrati.
+
+## 25. Full duplex per i satelliti
+
+- Cosa fare: ricevere e decodificare mentre si trasmette quando la radio lo consente (satelliti), senza bloccare la ricezione durante il PTT.
+- Aurora: `core/crates/engine-native/src/lib.rs` (oggi la decodifica si ferma in trasmissione), `tx-native`.
+- WSJT-X: `widgets/mainwindow.cpp` (opzione Full Duplex), `Configuration.cpp`.
+- Verifica: con radio satellitare in full duplex, decode del proprio segnale di ritorno.
+
+## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz
+
+- Cosa fare: dopo il Q65 (voce 21), un pannello che decodifica tutta una fetta di banda larga fino a 90 kHz e con un clic imposta frequenza e parametri del QSO. Serve un ricevitore SDR a banda larga (flusso I/Q), non la sola scheda audio.
+- Aurora: nuovo ingresso I/Q in `core/crates/audio-*`, decodifica Q65 su piu' canali, pagina nell'interfaccia.
+- WSJT-X: cartella `qmap/`.
+- Verifica: registrazione I/Q di prova con piu' segnali Q65.
+
+## 27. Hamlib aggiornato
+
+- Cosa fare: allineare la versione di Hamlib usata da Aurora a quella di WSJT-X 3.x per il controllo CAT delle radio recenti.
+- Aurora: `core/crates/rig-control` (libreria Hamlib inclusa e `docs/cat-radio.md`).
+- WSJT-X: versione di Hamlib indicata in `CMakeLists.txt` e nelle note di rilascio.
+- Verifica: elenco radio supportate e prova CAT del proprietario.
