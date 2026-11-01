@@ -154,6 +154,7 @@ export function ClusterPanel() {
                 <tr
                   key={s.id}
                   className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}${dxped ? ' cluster-row--dxped' : ''}`}
+                  data-dxped={dxped || undefined}
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
                   onDoubleClick={() => void tune(s)}
                 >
@@ -164,12 +165,6 @@ export function ClusterPanel() {
                     <span className="cluster-freq data">{formatKhzWhole(s.freq_khz)}</span>
                   </td>
                   <td>
-                    {/* la riga e' gia' colorata: davanti al nominativo basta una stella, che non toglie spazio al nominativo */}
-                    {dxped ? (
-                      <span className="cluster-dxped-tag" title={t('tip.cluster.dxped')} aria-label={t('tip.cluster.dxped')}>
-                        ★
-                      </span>
-                    ) : null}
                     <strong className="data cluster-dx">{s.dx_call}</strong>
                   </td>
                   <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>

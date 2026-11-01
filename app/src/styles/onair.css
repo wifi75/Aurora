@@ -2609,11 +2609,6 @@
   box-shadow: inset 5px 0 0 color-mix(in srgb, var(--dxped-bg, #e6ff00) 70%, #000);
 }
 
-.cluster-dxped-tag {
-  margin-right: 0.2rem;
-  color: var(--dxped-ink, #141400);
-  font-size: 0.8em;
-}
 
 .cluster-row--wanted {
   box-shadow: inset 4px 0 0 #ffd23f;
