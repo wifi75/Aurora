@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 - **Guida**: nuovo capitolo su Fox e Hound (cosa sono, come collegare una DXpedition passo per passo), in sei lingue.
+- **Decodifica FT8 "a8" del corrispondente** (porting di `ft8_a8d.f90` di WSJT-X 3.3, GPL 3): con DX Call e DX Grid compilati, a fine periodo si provano sul residuo, a Rx +-10 Hz, i circa 130 messaggi che il DX puo' mandarci (RRR, RR73, 73, CQ, locatore, rapporti da -30 a +30) per correlazione con l'onda attesa; si accetta solo se i simboli attesi spiegano lo spettro (`plog`, simboli sbagliati, `sigobig` come WSJT-X). Su audio sintetico il DX a -23 dB passa da 0 a 20 decode su 20, a -24 dB da 0 a 15, a -25 dB da 0 a 7, senza falsi (anche su 50 periodi di solo rumore). Non in Hound.
+- **Decodifica FT8 "a7"** (porting di `ft8_a7.f90` di WSJT-X 3.3): i decode di ogni parita' si annotano e nel periodo successivo della stessa parita' si cercano i loro seguiti (circa 206 messaggi per coppia di nominativi) per distanza dalle metriche dei bit. Su audio sintetico il seguito a -23 dB passa da 0 a 13 decode su 20, a -24 dB da 0 a 9; nessun falso su 50 periodi di solo rumore dopo una banda affollata. I messaggi trovati con a7/a8 hanno il segno `*`.
+- **Decodifica FT8 multithread**: i candidati di ogni passata si provano in parallelo (rayon) e si accettano nell'ordine del singolo thread, rifacendo quelli che hanno letto uno stato poi cambiato (spettro rifatto dopo una sottrazione vicina, hash, QSO decodificato): i decode sono identici a quelli del singolo thread (verificato in prova con 2, 4 e 8 thread). Su una banda sintetica di 30 segnali, profondita' 3: 1145 ms con un thread, 726 ms con 4, 637 ms con 8.
+- **Interruttori «a7/a8» e «Multithread»** nella riga di ricezione (solo FT8, accesi di base come in WSJT-X), sei lingue.
 
 ## 0.11.54 - 2026-11-01
 - **Dedica ad Aura**, la figlia dell'autore da cui prende il nome Aurora: nella pagina Informazioni e nei README, in sei lingue.
