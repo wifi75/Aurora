@@ -235,7 +235,7 @@ export function CatGroups() {
         </Field>
         {fields.rig ? (
           <>
-            <Field label={t('cat.rig.search')}>
+            <Field label={t('cat.rig.search')} hint={t('tip.cat.rig.search')}>
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
               {/* i risultati sotto la casella: il menu «Radio» accanto puo' finire fuori dallo schermo e la ricerca sembrava non fare niente */}
               {search.trim() !== '' ? (
@@ -259,7 +259,7 @@ export function CatGroups() {
                 </ul>
               ) : null}
             </Field>
-            <Field label={t('cat.rig')}>
+            <Field label={t('cat.rig')} hint={t('tip.cat.rig')}>
               <select
                 value={config.model}
                 onChange={(e) => {
@@ -292,7 +292,7 @@ export function CatGroups() {
           </Field>
         ) : null}
         {fields.port && fields.baud ? (
-          <Field label={t('cat.baud')}>
+          <Field label={t('cat.baud')} hint={t('tip.cat.baud')}>
             <select value={config.baud} onChange={(e) => set({ baud: Number(e.target.value) })}>
               <option value={0}>{t('cat.default')}</option>
               {BAUDS.map((b) => (
@@ -305,14 +305,14 @@ export function CatGroups() {
         ) : null}
         {fields.serial ? (
           <>
-            <Field label={t('cat.databits')}>
+            <Field label={t('cat.databits')} hint={t('tip.cat.databits')}>
               <select value={config.data_bits} onChange={(e) => set({ data_bits: Number(e.target.value) })}>
                 <option value={0}>{t('cat.default')}</option>
                 <option value={7}>7</option>
                 <option value={8}>8</option>
               </select>
             </Field>
-            <Field label={t('cat.stopbits')}>
+            <Field label={t('cat.stopbits')} hint={t('tip.cat.stopbits')}>
               <select value={config.stop_bits} onChange={(e) => set({ stop_bits: Number(e.target.value) })}>
                 <option value={0}>{t('cat.default')}</option>
                 <option value={1}>1</option>
@@ -420,7 +420,7 @@ export function CatGroups() {
               </select>
             </Field>
             {fields.pttPort ? (
-              <Field label={t('cat.ptt.port')}>
+              <Field label={t('cat.ptt.port')} hint={t('tip.cat.ptt.port')}>
                 <input type="text" list="cat-ports" value={config.ptt_port} spellCheck={false} onChange={(e) => set({ ptt_port: e.target.value.trim() })} />
               </Field>
             ) : null}

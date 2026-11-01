@@ -30,13 +30,13 @@ export function OnlineTab() {
     <Page>
       <Group title="PSK Reporter">
         <Cells min={12}>
-          <Check label={t('onl.psk')} checked={settings.psk} onChange={(psk) => save.mutate({ ...settings, psk })} />
+          <Check label={t('onl.psk')} hint={t('tip.onl.psk')} checked={settings.psk} onChange={(psk) => save.mutate({ ...settings, psk })} />
         </Cells>
         <Help>{t('onl.psk.note')}</Help>
       </Group>
       <Group title={t('onl.grpSolar')}>
         <Cells min={12}>
-          <Check label={t('onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
+          <Check label={t('onl.solar')} hint={t('tip.onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
         </Cells>
         <Help>{t('onl.solar.note')}</Help>
       </Group>

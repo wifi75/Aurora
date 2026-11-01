@@ -20,7 +20,7 @@ export function AudioTab() {
     <InfoTab
       render={(info) => (
         <>
-          <Row name={t('audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
+          <Row name={t('audio.input')} hint={t('tip.audio.input')}>{info.audio_device ?? t('audio.none')}</Row>
           <Help>{t('audio.help')}</Help>
           <EngineValues group="audio" />
         </>

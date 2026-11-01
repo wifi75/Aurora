@@ -31,7 +31,7 @@ export function RadioTab() {
         render={(info) => (
           <Group title={t('radio.sharing')}>
             <Cells min={12}>
-              <Row name={t('radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
+              <Row name={t('radio.control')} hint={t('tip.radio.control')}>{info.rig_control ? t('radio.on') : t('radio.off')}</Row>
             </Cells>
             {native ? null : <EngineValues group="radio" />}
           </Group>

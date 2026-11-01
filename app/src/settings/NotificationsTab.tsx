@@ -35,7 +35,7 @@ function JtdxNotificationsTab() {
   return (
     <Page>
       <Group title={t('not2.grpAlerts')}>
-        <Cell label={t('alert.button')}>
+        <Cell label={t('alert.button')} hint={t('tip.alert.button')}>
           <AlertSwitch
             value={alerts}
             onChange={(next) => {

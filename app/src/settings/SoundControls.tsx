@@ -72,7 +72,7 @@ export function SoundsGroup() {
     <>
       <Group title={t('snd.title')} span={3}>
         <div className="snd-top">
-          <Cell label={t('snd.volume')}>
+          <Cell label={t('snd.volume')} hint={t('tip.snd.volume')}>
             <input
               type="range"
               min="0"

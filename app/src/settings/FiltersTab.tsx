@@ -36,9 +36,9 @@ export function FiltersTab() {
       </Group>
       <Group title={t('lay.options')}>
         <Cells min={13}>
-          <Check label={t('fil.nonStandard')} checked={filters.hideNonStandard} onChange={(v) => set({ hideNonStandard: v })} />
-          <Check label={t('fil.ownContinent')} checked={filters.hideOwnContinent} onChange={(v) => set({ hideOwnContinent: v })} />
-          <Check label={t('fil.worked')} checked={filters.hideWorked} onChange={(v) => set({ hideWorked: v })} />
+          <Check label={t('fil.nonStandard')} hint={t('tip.fil.nonStandard')} checked={filters.hideNonStandard} onChange={(v) => set({ hideNonStandard: v })} />
+          <Check label={t('fil.ownContinent')} hint={t('tip.fil.ownContinent')} checked={filters.hideOwnContinent} onChange={(v) => set({ hideOwnContinent: v })} />
+          <Check label={t('fil.worked')} hint={t('tip.fil.worked')} checked={filters.hideWorked} onChange={(v) => set({ hideWorked: v })} />
         </Cells>
         <Actions>
           <button type="button" className="glass" onClick={() => useFilters.getState().reset()}>
@@ -48,13 +48,13 @@ export function FiltersTab() {
       </Group>
       <Group title={t('lay.lists')} span={3}>
         <Cells min={20}>
-          <Field label={t('fil.countries')} stack>
+          <Field label={t('fil.countries')} hint={t('tip.fil.countries')} stack>
             <input type="text" value={filters.hideCountries.join(', ')} onChange={(e) => set({ hideCountries: list(e.target.value) })} />
           </Field>
-          <Field label={t('fil.calls')} stack>
+          <Field label={t('fil.calls')} hint={t('tip.fil.calls')} stack>
             <input type="text" value={filters.hideCalls.join(', ')} onChange={(e) => set({ hideCalls: list(e.target.value) })} />
           </Field>
-          <Field label={t('fil.only')} stack>
+          <Field label={t('fil.only')} hint={t('tip.fil.only')} stack>
             <select value={filters.only} onChange={(e) => set({ only: e.target.value as OnlyMode })}>
               {ONLY.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -72,13 +72,13 @@ export function FiltersTab() {
           ))}
         </Cells>
         <Cells min={20}>
-          <Field label={t('cqp.only')} stack>
+          <Field label={t('cqp.only')} hint={t('tip.cqp.only')} stack>
             <input type="text" value={cq.only.join(', ')} onChange={(e) => setCq({ only: csv(e.target.value) })} />
           </Field>
-          <Field label={t('cqp.hide')} stack>
+          <Field label={t('cqp.hide')} hint={t('tip.cqp.hide')} stack>
             <input type="text" value={cq.hide.join(', ')} onChange={(e) => setCq({ hide: csv(e.target.value) })} />
           </Field>
-          <Field label={t('cqp.limit')} stack>
+          <Field label={t('cqp.limit')} hint={t('tip.cqp.limit')} stack>
             <input type="number" min={5} max={200} value={cq.limit} onChange={(e) => setCq({ limit: Math.min(200, Math.max(5, Number(e.target.value) || 40)) })} />
           </Field>
         </Cells>
