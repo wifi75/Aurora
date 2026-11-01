@@ -90,6 +90,11 @@ const REGION_OPTIONS: SettingRow['options'] = [
   { value: 'R2', label: 'gen2.region2' },
   { value: 'R3', label: 'gen2.region3' },
 ];
+const DECODER_START_OPTIONS: SettingRow['options'] = [
+  { value: 'early', label: 'gen2.decStartEarly' },
+  { value: 'normal', label: 'gen2.decStartNormal' },
+  { value: 'late', label: 'gen2.decStartLate' },
+];
 const TYPE2_OPTIONS: SettingRow['options'] = [
   { value: 'type_2_msg_1_full', label: 'gen2.type2Tx1' },
   { value: 'type_2_msg_3_full', label: 'gen2.type2Full' },
@@ -314,6 +319,29 @@ export function NativeGeneral() {
           {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
           {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
           {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.wsjtx3')}>
+        <Cells min={15}>
+          {field('FT8DecoderStart', 'choice', 'gen2.decStart', { options: DECODER_START_OPTIONS })}
+          {field('FullDuplex', 'bool', 'gen2.fullDuplex')}
+          {field('WaitFeaturesEnabled', 'bool', 'gen2.waitFeatures')}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.fox')}>
+        <Cells min={15}>
+          {field('OTPVerify', 'bool', 'gen2.otpVerify')}
+          {field('ShowOTP', 'bool', 'gen2.showOtp')}
+          {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}
+        </Cells>
+      </Group>
+
+      <Group title={t('gen2.bandHop')}>
+        <Cells min={18}>
+          {field('BandHopping', 'bool', 'gen2.bandHopOn')}
+          {field('BandHopList', 'text', 'gen2.bandHopList')}
         </Cells>
       </Group>
 

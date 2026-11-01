@@ -110,6 +110,12 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
               ))}
             </div>
           ) : null}
+          {/* Hound: il Fox ha mandato un codice OTP e il servizio ha risposto (verde verificato, rosso non valido) */}
+          {status.fox_verification ? (
+            <p className="tx-fox" data-ok={status.fox_verification.verified} role="status" title={t('tip.tx.fox')}>
+              {t(status.fox_verification.verified ? 'tx.foxVerified' : 'tx.foxInvalid', { call: status.fox_verification.call })}
+            </p>
+          ) : null}
           {/* le stazioni in coda, sempre visibili: un pallino blu col posto e il nominativo */}
           {status.queue && status.queue.length > 0 ? (
             <div className="tx-queue" title={t('tip.tx.queue')}>

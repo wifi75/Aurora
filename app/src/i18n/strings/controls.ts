@@ -68,6 +68,15 @@ export const controlStrings = {
     'Decodificación FT8 en todos los procesadores del ordenador: los mismos mensajes que con un solo procesador, en menos tiempo en las bandas llenas.',
     'Descodificação FT8 em todos os processadores do computador: as mesmas mensagens que com um só processador, em menos tempo nas bandas cheias.',
   ],
+  'ctl.wait_call': ['Wait and Call', 'Wait and Call', 'Wait and Call', 'Wait and Call', 'Wait and Call', 'Wait and Call'],
+  'tip.ctl.wait_call': [
+    'Armato: quando il DX impostato chiama CQ o chiude il suo QSO (RR73, RRR, 73) Aurora lo chiama da sola, fino a circa tre volte; poi il pulsante si spegne. Servono AutoSeq e le Wait features accese (Impostazioni, Generali).',
+    'Armed: when the DX you set calls CQ or ends his QSO (RR73, RRR, 73) Aurora calls him by itself, up to about three times; then the button switches off. Needs AutoSeq and the Wait features on (Settings, General).',
+    'Gespannt: Wenn der eingestellte DX CQ ruft oder sein QSO beendet (RR73, RRR, 73), ruft Aurora ihn selbst, bis etwa dreimal; dann geht der Knopf aus. Braucht AutoSeq und die Wait features (Einstellungen, Allgemein).',
+    'Armé : quand le DX choisi lance CQ ou termine son QSO (RR73, RRR, 73) Aurora l’appelle seule, jusqu’à environ trois fois ; puis le bouton s’éteint. Il faut AutoSeq et les Wait features activés (Réglages, Général).',
+    'Armado: cuando el DX elegido llama CQ o cierra su QSO (RR73, RRR, 73) Aurora lo llama sola, hasta unas tres veces; luego el botón se apaga. Necesita AutoSeq y las Wait features activadas (Ajustes, General).',
+    'Armado: quando o DX escolhido chama CQ ou fecha o QSO dele (RR73, RRR, 73) a Aurora chama-o sozinha, até cerca de três vezes; depois o botão desliga-se. Requer AutoSeq e as Wait features ligadas (Definições, Geral).',
+  ],
   'ctl.filter': ['Filtro', 'Filter', 'Filter', 'Filtre', 'Filtro', 'Filtro'],
   'ctl.filter.on': [
     'Decodifico solo ±{hz} Hz attorno a Rx',

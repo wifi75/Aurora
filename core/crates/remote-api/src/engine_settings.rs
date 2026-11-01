@@ -89,6 +89,15 @@ pub const EXTRA_KEYS: &[&str] = &[
     UDP_DESTINATIONS,
     // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
     "SWRLimit",
+    // funzioni di WSJT-X 3.x nel motore proprio (vedi `engine_native::features` e `aurora::band_hop`)
+    "FT8DecoderStart",
+    "FullDuplex",
+    "WaitFeaturesEnabled",
+    "ShowOTP",
+    "OTPVerify",
+    "OTPUrl",
+    "BandHopping",
+    "BandHopList",
 ];
 
 /// La voce con l'elenco dei destinatari UDP (JSON, vedi [`UdpDestination`]).
@@ -251,6 +260,8 @@ pub fn support(key: &str) -> Support {
         // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
         "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
+        // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
+        "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
         // regione IARU: filtra la tabella delle frequenze (scheda Frequenze, cambio di banda e di modo); messaggi con il nominativo composto di tipo 2: tenuto, ma vale solo per JT65/JT9
         "Region" | "Type2MsgGen" => Support::Live(Apply::Now),
@@ -463,6 +474,19 @@ pub struct Reports {
     pub all_txt_debug: bool,
     /// I destinatari UDP del riquadro «Integrazioni», solo quelli accesi e validi.
     pub destinations: Vec<UdpDestination>,
+    /// Momento di avvio della decodifica FT8 (`early`, `normal`, `late`).
+    pub ft8_decoder_start: String,
+    /// «Full duplex»: si decodifica anche il periodo in cui si trasmette (satelliti).
+    pub full_duplex: bool,
+    /// Wait and Reply / Wait and Call (`WaitFeaturesEnabled` di WSJT-X).
+    pub wait_features: bool,
+    /// Verifica del Fox: mostra le righe OTP, verifica in linea, indirizzo del servizio.
+    pub show_otp: bool,
+    pub otp_verify: bool,
+    pub otp_url: String,
+    /// Band Hopping acceso e il suo elenco (vedi `aurora::band_hop::parse_list`).
+    pub band_hopping: bool,
+    pub band_hop_list: String,
 }
 
 /// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
@@ -569,6 +593,16 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TxQSYAllowed", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.5"),
+        // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese,
+        // righe OTP nascoste, verifica in linea del Fox accesa (WSJT-X la fa sempre in Hound) sul servizio di fabbrica, Band Hopping spento
+        ("FT8DecoderStart", "normal"),
+        ("FullDuplex", "false"),
+        ("WaitFeaturesEnabled", "true"),
+        ("ShowOTP", "false"),
+        ("OTPVerify", "true"),
+        ("OTPUrl", "https://www.9dx.cc"),
+        ("BandHopping", "false"),
+        ("BandHopList", ""),
         // regione IARU (`ALL`, `R1`, `R2`, `R3`) e generazione dei messaggi per i nominativi composti di tipo 2: valori di fabbrica di JTDX (`read_settings`: `ALL` e `type_2_msg_3_full`)
         ("Region", "ALL"),
         ("Type2MsgGen", "type_2_msg_3_full"),
@@ -671,7 +705,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if value.is_empty()
         && matches!(
             key,
-            "MyCall" | "MyGrid" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
+            "MyCall" | "MyGrid" | "BandHopList" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
                 | "LoTWTqsl" | "LoTWLocation"
         )
     {
@@ -680,6 +714,9 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     // la soglia del ROS non e' di JTDX: numero con il punto o la virgola
     if key == "SWRLimit" {
         return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,1 a 10".into()));
+    }
+    if let Some(result) = validate_wsjtx3(key, value) {
+        return result;
     }
     // le voci dell'invio diretto non sono di JTDX: si controllano qui
     if let Some(result) = validate_upload(key, value) {
@@ -712,6 +749,21 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
             Err(SettingsError::BadValue("MyGrid: il locatore ha 4, 6 o 8 caratteri".into()))
         }
         _ => Ok(()),
+    }
+}
+
+/// Le voci delle funzioni di WSJT-X 3.x (`None` = non e' una di queste).
+fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
+    let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
+    match key {
+        "FullDuplex" | "WaitFeaturesEnabled" | "ShowOTP" | "OTPVerify" | "BandHopping" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
+        "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
+            bad("serve un indirizzo che comincia con http:// o https://")
+        }
+        "BandHopList" if value.len() > 400 || value.chars().any(char::is_control) => bad("elenco troppo lungo o non valido"),
+        "OTPUrl" | "BandHopList" => Some(Ok(())),
+        _ => None,
     }
 }
 
@@ -754,6 +806,14 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         strict_directional_cq: truthy(values.get("StrictDirectionalCQ")),
         watchdog_min: get("TxWatchdogTimer").parse().ok().filter(|n| *n <= 99).unwrap_or(6),
         tx_qsy_allowed: values.get("TxQSYAllowed").is_none_or(|v| v == "true"),
+        ft8_decoder_start: values.get("FT8DecoderStart").cloned().unwrap_or_else(|| "normal".into()),
+        full_duplex: truthy(values.get("FullDuplex")),
+        wait_features: values.get("WaitFeaturesEnabled").is_none_or(|v| v == "true"),
+        show_otp: truthy(values.get("ShowOTP")),
+        otp_verify: values.get("OTPVerify").is_none_or(|v| v == "true"),
+        otp_url: values.get("OTPUrl").filter(|u| !u.trim().is_empty()).cloned().unwrap_or_else(|| "https://www.9dx.cc".into()),
+        band_hopping: truthy(values.get("BandHopping")),
+        band_hop_list: get("BandHopList").to_string(),
         swr_limit_centi: values.get("SWRLimit").and_then(|v| parse_swr_limit(v)).unwrap_or(DEFAULT_SWR_LIMIT_CENTI),
         log_filter: engine_jtdx::worked::LogFilter {
             call: truthy(values.get("callsignLogFiltering")).then(|| get("MyCall").to_uppercase()).filter(|c| !c.is_empty()),
@@ -1317,6 +1377,24 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert_eq!(doc["items"]["toRTTY"]["note"], "jt9_only");
         assert_eq!(doc["items"]["UDPServer"]["reason"], "emitter_pending");
         assert!(doc["values"].get("UDP2Server").is_some() && doc["values"].get("UDPServer").is_none() && doc["values"].get("PSKReporter").is_some());
+    }
+
+    #[test]
+    fn the_wsjtx3_features_have_the_wsjtx_defaults_and_are_checked() {
+        let r = interpret(&defaults());
+        assert_eq!(r.ft8_decoder_start, "normal");
+        assert!(!r.full_duplex && r.wait_features && !r.show_otp && r.otp_verify && !r.band_hopping);
+        assert_eq!(r.otp_url, "https://www.9dx.cc");
+        for key in ["FT8DecoderStart", "FullDuplex", "WaitFeaturesEnabled", "ShowOTP", "OTPVerify", "OTPUrl", "BandHopping", "BandHopList"] {
+            assert_eq!(support(key), Support::Live(Apply::Now), "{key}");
+        }
+        assert!(validate("FT8DecoderStart", "late").is_ok());
+        assert!(validate("FT8DecoderStart", "subito").is_err());
+        assert!(validate("FullDuplex", "si").is_err());
+        assert!(validate("OTPUrl", "ftp://x").is_err());
+        assert!(validate("OTPUrl", "https://otp.example.org").is_ok());
+        assert!(validate("BandHopList", "FT8 20m, 14090").is_ok());
+        assert!(validate("BandHopList", "").is_ok());
     }
 
     #[test]

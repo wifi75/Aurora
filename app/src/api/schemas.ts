@@ -55,6 +55,8 @@ export const StationStatusSchema = z.object({
   queue: z.array(z.string()).optional(),
   /** Avvisi di sicurezza della trasmissione: messaggio non rappresentabile, ROS alto, Tx bloccata da un controller UDP. */
   tx_alerts: z.array(TxAlertSchema).optional(),
+  /** Hound: esito della verifica in linea del codice OTP del Fox. */
+  fox_verification: z.object({ call: z.string(), verified: z.boolean() }).nullable().optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 
