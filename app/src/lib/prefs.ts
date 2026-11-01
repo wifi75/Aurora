@@ -24,6 +24,10 @@ export interface Prefs {
   showTx: boolean;
   /** «Mostra l'azimut nei messaggi con locatore» (`showAzimuth`): accanto alla distanza. */
   showAzimuth: boolean;
+  /** Pulsante «Tune» nel pannello Comandi (spento di base). */
+  cmdTune: boolean;
+  /** Pulsante «Log QSO» nel pannello Comandi (spento di base). */
+  cmdLogQso: boolean;
 }
 
 const KEY = 'aurora-prefs';
@@ -32,7 +36,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -42,7 +46,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));

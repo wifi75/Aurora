@@ -109,6 +109,26 @@ export async function postFreeText(text: string, send: boolean): Promise<void> {
   await request('/commands/free-text', jsonInit({ text, send }));
 }
 
+/** I campi «DX Call» e «Locatore» scritti a mano (vuoti = nessun DX). */
+export async function postDx(call: string, grid: string): Promise<void> {
+  await request('/commands/dx', jsonInit({ call, grid }));
+}
+
+/** Il rapporto da inviare scelto a mano, in dB (-50..+49). */
+export async function postReport(db: number): Promise<void> {
+  await request('/commands/report', jsonInit({ db }));
+}
+
+/** «Tune»: portante sulla frequenza Tx per un periodo (on) o ferma (off). */
+export async function postTune(on: boolean): Promise<void> {
+  await request('/commands/tune', jsonInit({ on }));
+}
+
+/** «Log QSO» a mano. */
+export async function postLogQso(): Promise<void> {
+  await request('/commands/log-qso', { method: 'POST' });
+}
+
 export async function postCq(modifier: string): Promise<void> {
   await request('/commands/cq', jsonInit({ modifier }));
 }
@@ -1002,7 +1022,7 @@ export async function getStats(): Promise<StatsResponse> {
 
 export type ControlId =
   | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_all' | 'jt_both' | 'ap_list' | 'mtd' | 'wait_call' | 'pounce' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
-  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx';
+  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx' | 'hold_tx';
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {

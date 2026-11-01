@@ -13,6 +13,10 @@ vi.mock('../api/client', async (importActual) => ({
   postFreeText: vi.fn().mockResolvedValue(undefined),
   postTxFrequency: vi.fn().mockResolvedValue(undefined),
   postRxFrequency: vi.fn().mockResolvedValue(undefined),
+  postDx: vi.fn().mockResolvedValue(undefined),
+  postReport: vi.fn().mockResolvedValue(undefined),
+  postTune: vi.fn().mockResolvedValue(undefined),
+  postLogQso: vi.fn().mockResolvedValue(undefined),
 }));
 import { ApiError, getControls, getEngineSettings, postControl, postCq, postFreeText, postRxFrequency, postSpotDxsummit, postTxFrequency } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
@@ -66,8 +70,8 @@ describe('TxCommands', () => {
     render(<TxCommands txAllowed />);
     fireEvent.click(screen.getByRole('button', { name: /^CQ$/ }));
     await waitFor(() => expect(postCq).toHaveBeenCalledWith(''));
-    fireEvent.click(screen.getByLabelText('DX'));
-    fireEvent.click(screen.getByRole('button', { name: /^CQ DX$/ }));
+    fireEvent.change(screen.getByLabelText('Tipo di CQ'), { target: { value: 'CQ DX' } });
+    fireEvent.click(screen.getByRole('button', { name: /^CQ$/ }));
     await waitFor(() => expect(postCq).toHaveBeenLastCalledWith('DX'));
   });
 
@@ -100,23 +104,23 @@ describe('TxCommands', () => {
 
   it('shows the DX station and its locator', () => {
     render(<TxCommands txAllowed status={status} />);
-    expect(screen.getByText('BB2BB')).toBeInTheDocument();
-    expect(screen.getByText('KK00')).toBeInTheDocument();
+    expect(screen.getByLabelText(/DX Call/)).toHaveValue('BB2BB');
+    expect(screen.getByLabelText(/Locatore/)).toHaveValue('KK00');
   });
 
   it('starts the audio frequencies from the ones the engine reports', () => {
     render(<TxCommands txAllowed status={status} />);
-    expect(screen.getByLabelText(/^Tx \(Hz\)/)).toHaveValue(1500);
-    expect(screen.getByLabelText(/^Rx \(Hz\)/)).toHaveValue(1200);
+    expect(screen.getByLabelText(/^Tx$/)).toHaveValue(1500);
+    expect(screen.getByLabelText(/^Rx$/)).toHaveValue(1200);
   });
 
   it('applies the transmit and receive frequencies on Enter', async () => {
     render(<TxCommands txAllowed={false} />);
-    const tx = screen.getByLabelText(/^Tx \(Hz\)/);
+    const tx = screen.getByLabelText(/^Tx$/);
     fireEvent.change(tx, { target: { value: '1800' } });
     fireEvent.keyDown(tx, { key: 'Enter' });
     await waitFor(() => expect(postTxFrequency).toHaveBeenCalledWith(1800));
-    const rx = screen.getByLabelText(/^Rx \(Hz\)/);
+    const rx = screen.getByLabelText(/^Rx$/);
     fireEvent.change(rx, { target: { value: '900' } });
     fireEvent.keyDown(rx, { key: 'Enter' });
     await waitFor(() => expect(postRxFrequency).toHaveBeenCalledWith(900));
@@ -124,9 +128,9 @@ describe('TxCommands', () => {
 
   it('copies one frequency onto the other with the arrows', async () => {
     render(<TxCommands txAllowed status={status} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Rx → Tx' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Tx=Rx/ }));
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('rx_to_tx', undefined));
-    fireEvent.click(screen.getByRole('button', { name: 'Tx → Rx' }));
+    fireEvent.click(screen.getByRole('button', { name: /Rx=Tx/ }));
     await waitFor(() => expect(postControl).toHaveBeenCalledWith('tx_to_rx', undefined));
   });
 
