@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.52',
-    released: '2026-11-01T10:30:00Z',
+    released: '2026-11-01T10:24:29Z',
     kind: 'new',
     title: ['Tasto destro sulla cascata: frequenza Tx', 'Right button on the waterfall: Tx frequency', 'Rechte Taste im Wasserfall: Tx-Frequenz', 'Bouton droit sur la cascade : fréquence Tx', 'Botón derecho en la cascada: frecuencia Tx', 'Botão direito na cascata: frequência Tx'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.52',
-    released: '2026-11-01T10:30:00Z',
+    released: '2026-11-01T10:24:29Z',
     kind: 'new',
     title: ['Display a doppio VFO o due blocchi', 'Dual-VFO display or two blocks', 'Doppel-VFO-Anzeige oder zwei Blöcke', 'Afficheur double VFO ou deux blocs', 'Display de doble VFO o dos bloques', 'Visor de duplo VFO ou dois blocos'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.52',
-    released: '2026-11-01T10:30:00Z',
+    released: '2026-11-01T10:24:29Z',
     kind: 'changed',
     title: ['Guida aggiornata', 'Guide updated', 'Anleitung aktualisiert', 'Guide mis à jour', 'Guía actualizada', 'Guia atualizado'],
     text: [
