@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.67 - 2026-11-01
+- **Scheda della DXpedition**: la mappa e' quella della pagina Propagazione (terreno e confini veri, zona di notte, linea dal proprio QTH con la DXpedition selezionata) al posto della mappa disegnata a mano, che aveva difetti grafici.
+
 ## 0.11.66 - 2026-11-01
 - **Zoom del display come una lente**: passando il mouse si apre una copia identica del display ingrandita 2 volte in larghezza e in altezza (CSS `zoom`), invece di una versione solo allargata e stirata.
 

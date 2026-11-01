@@ -20,6 +20,19 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.67',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'fixed',
+    title: ['Mappa vera nella scheda DXpedition', 'Real map in the DXpedition card', 'Echte Karte in der DXpedition-Karte', 'Vraie carte dans la fiche DXpédition', 'Mapa real en la ficha DXpedición', 'Mapa real na ficha DXpedição'],
+    text: [
+      'La scheda della DXpedition usa la stessa mappa della Propagazione: terreno e confini veri, notte e linea dal tuo QTH.',
+      'The DXpedition card uses the same map as Propagation: real terrain and borders, night zone and the line from your QTH.',
+      'Die DXpedition-Karte nutzt dieselbe Landkarte wie die Ausbreitung: echtes Gelände und Grenzen, Nachtzone und Linie von deinem QTH.',
+      'La fiche DXpédition utilise la même carte que Propagation : vrai relief et frontières, zone de nuit et ligne depuis ton QTH.',
+      'La ficha de la DXpedición usa el mismo mapa que Propagación: terreno y fronteras reales, zona de noche y línea desde tu QTH.',
+      'A ficha da DXpedição usa o mesmo mapa da Propagação: terreno e fronteiras reais, zona de noite e linha desde o teu QTH.',
+    ],
+  },  {
     version: '0.11.66',
     released: '2026-11-01T17:46:27Z',
     kind: 'fixed',
@@ -557,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'En thème clair, le bloc unique montrait encore le cadre de l’afficheur à gauche : c’est maintenant un seul écran continu, sans séparation.',
       'Con el tema claro el bloque único aún mostraba el marco del display a la izquierda: ahora es una sola pantalla continua, sin separadores.',
       'No tema claro o bloco único ainda mostrava a moldura do visor à esquerda: agora é um só ecrã contínuo, sem separadores.',
-    ],
-  },
-  {
-    version: '0.11.52',
-    released: '2026-11-01T10:24:29Z',
-    kind: 'new',
-    title: ['Tasto destro sulla cascata: frequenza Tx', 'Right button on the waterfall: Tx frequency', 'Rechte Taste im Wasserfall: Tx-Frequenz', 'Bouton droit sur la cascade : fréquence Tx', 'Botón derecho en la cascada: frecuencia Tx', 'Botão direito na cascata: frequência Tx'],
-    text: [
-      'Come in JTDX: tasto sinistro sposta la barra Rx, tasto destro la barra Tx, tenendo premuto la barra segue il mouse. La Tx si sposta anche mentre trasmetti e il tono cambia subito.',
-      'As in JTDX: the left button moves the Rx bar, the right button the Tx bar, and holding the button the bar follows the mouse. Tx moves even while you transmit and the tone changes at once.',
-      'Wie in JTDX: linke Taste verschiebt den Rx-Balken, rechte den Tx-Balken, mit gedrückter Taste folgt er der Maus. Tx lässt sich auch beim Senden verschieben, der Ton ändert sich sofort.',
-      'Comme dans JTDX : bouton gauche pour la barre Rx, bouton droit pour la barre Tx, bouton maintenu la barre suit la souris. La Tx se déplace même en émission et la tonalité change aussitôt.',
-      'Como en JTDX: el botón izquierdo mueve la barra Rx, el derecho la Tx, y manteniendo pulsado la barra sigue al ratón. La Tx se mueve incluso transmitiendo y el tono cambia al momento.',
-      'Como no JTDX: o botão esquerdo move a barra Rx, o direito a Tx, e com o botão premido a barra segue o rato. A Tx move-se mesmo a transmitir e o tom muda logo.',
     ],
   },
 ];
