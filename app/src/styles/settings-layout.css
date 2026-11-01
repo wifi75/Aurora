@@ -1202,3 +1202,55 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Collegamento radio: le caselle hanno la larghezza che serve al loro contenuto — larghe per modello, porta e sistema, strette per bit e velocita' */
+.cat-link {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: stretch;
+  gap: 0 0.9rem;
+}
+
+.cat-link > .sx-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cat-link > .cat-w-l {
+  flex-basis: 25rem;
+}
+
+.cat-link > .cat-w-m {
+  flex-basis: 15rem;
+}
+
+.cat-link > .cat-w-s {
+  flex-basis: 9.5rem;
+}
+
+.cat-link > .sx-field--plain {
+  flex: 0 0 auto;
+}
+
+.cat-link .sx-control {
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+.cat-link .sx-control select,
+.cat-link .sx-control input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+}
+
+.cat-link .cat-w-l .sx-control {
+  min-width: 14rem;
+}
+
+.cat-link .cat-w-m .sx-control {
+  min-width: 7rem;
+}
+
+.cat-link .cat-w-s .sx-control {
+  min-width: 4rem;
+}
