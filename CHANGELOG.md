@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.46 - 2026-11-01
+- **Display esteso della radio**: sotto il display in alto secondo VFO (piu' piccolo), strumenti, PRE/ATT, AGC, NB/NR/notch, guadagni, RIT/XIT, ATU e VFO in uso. Ogni voce si accende in Impostazioni > Generali > «Display esteso: cosa mostrare», con la spiegazione; i dati in piu' si leggono con «Leggi anche gli altri dati della radio» (scheda Radio, CAT).
+- DXpedition: il pannello non resta piu' su «Scarico il calendario...».
+- Trasmissione: la riga del DX con Tx/Rx resta dentro il riquadro.
+
 ## 0.11.45 - 2026-11-01
 - **DXpedition**: calendario NG3K (Impostazioni > Servizi online, spento di base); il pannello «CQ e novita'» si divide: CQ a sinistra, DXpedition a destra (in onda, sentite adesso in cima, in arrivo, storico da scorrere).
 - **STOP**: niente pulsante a parte; in onda la pastiglia rossa TX e' anche lo STOP.
