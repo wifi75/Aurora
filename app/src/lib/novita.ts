@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'new',
     title: ['Cascata come in JTDX', 'Waterfall like JTDX', 'Wasserfall wie in JTDX', 'Cascade comme dans JTDX', 'Cascada como en JTDX', 'Cascata como no JTDX'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'new',
     title: ['Pulsanti della radio cliccabili', 'Clickable radio buttons', 'Anklickbare Funkgerätetasten', 'Boutons de la radio cliquables', 'Botones de la radio clicables', 'Botões do rádio clicáveis'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'changed',
     title: ['Più spazio per le finestre', 'More room for the windows', 'Mehr Platz für die Fenster', 'Plus de place pour les fenêtres', 'Más espacio para las ventanas', 'Mais espaço para as janelas'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'new',
     title: ['Scarica ADIF nel pannello Log', 'Download ADIF in the Log panel', 'ADIF-Download im Log-Fenster', 'Télécharger l’ADIF dans le panneau Log', 'Descargar ADIF en el panel Log', 'Transferir ADIF no painel Log'],
     text: [
@@ -77,7 +77,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'changed',
     title: ['JT65+JT9 solo nei modi JT', 'JT65+JT9 only in JT modes', 'JT65+JT9 nur in JT-Modi', 'JT65+JT9 seulement dans les modes JT', 'JT65+JT9 solo en los modos JT', 'JT65+JT9 só nos modos JT'],
     text: [
@@ -91,7 +91,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.50',
-    released: '2026-11-01T10:40:00Z',
+    released: '2026-11-01T09:53:29Z',
     kind: 'new',
     title: ['Sito web e download diretto', 'Website and direct download', 'Webseite und Direkt-Download', 'Site web et téléchargement direct', 'Sitio web y descarga directa', 'Sítio web e transferência direta'],
     text: [
