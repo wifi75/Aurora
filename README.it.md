@@ -38,7 +38,7 @@ Versione 0.11.60: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissio
 - **Comandi come JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, frequenze Tx/Rx con copia, Canc DX, Gen.Msgs; il doppio clic su un messaggio imposta il DX e JTDX lo chiama al momento giusto (opzione in Impostazioni → Generali).
 - **Trasmissione**: CQ, messaggio libero, frequenza Tx, livello Pwr verticale, STOP TX sempre attivo (discreto a riposo, pieno in trasmissione); il tasto Esc fa lo stesso e spegne AutoTX e Abilita Tx. Non ha opzioni: è sempre abilitata (restano STOP TX, i tetti e le automazioni spente di base).
 - **Automazioni**: risposte ai CQ con novità, partono spente e in prova a vuoto, con tetti, dead-man e STOP.
-- **Impostazioni a schede** come JTDX (generali, radio, audio, sequenza, macro TX, segnalazioni, frequenze, notifiche, filtri, programmazione, avanzate) più accesso, finestre e bande.
+- **Impostazioni per argomento**: sei gruppi (Stazione, Ricezione, Trasmissione e QSO, Avvisi, Rete e log, Sistema) con pagine come Radio, Cascata, Sequenza, Servizi di log e Programmi collegati; ricerca su tutte le voci, errori mostrati accanto al campo.
 - **Sei lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) e un tooltip su ogni controllo.
 - **Guida e statistiche**: guida in-app breve nelle sei lingue; pagina Statistiche con premi, QSO per banda e paesi mancanti; i tuoi messaggi trasmessi compaiono come righe `Tx`.
 - **DX Cluster, orologio, log**: finestra DX Cluster (server telnet pubblici o propri, doppio clic = la radio va sulla frequenza dello spot), client NTP con indicatore dell'orologio, impostazioni vere di JTDX lette dal suo file e finestra Log di Log4OM2 in sola lettura.
