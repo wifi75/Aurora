@@ -130,8 +130,9 @@ export function ClusterPanel() {
               <th>{t('cluster.col.by')}</th>
               <th>{t('cluster.col.freq')}</th>
               <th>{t('cluster.col.call')}</th>
+              {/* «Paese» parte sopra la bandierina, come i paesi sotto */}
+              <th className="cluster-th-country">{t('cluster.col.country')}</th>
               <th aria-hidden="true" />
-              <th>{t('cluster.col.country')}</th>
               <th>{t('cluster.col.mode')}</th>
               <th>{t('cluster.col.comment')}</th>
               <th>{t('cluster.col.time')}</th>
