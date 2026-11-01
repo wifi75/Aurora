@@ -83,7 +83,8 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
             <span className="rxtx-flag" data-state={status.transmitting ? 'tx' : 'rx'} role="status" title={t('tip.onair')}>
               {status.transmitting ? 'TX' : 'RX'}
             </span>
-            <StopButton variant="compact" />
+            {/* lo STOP serve solo in onda: da fermo non c'e' nulla da fermare */}
+            {status.transmitting ? <StopButton variant="compact" /> : null}
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
