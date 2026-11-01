@@ -86,6 +86,18 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
           </div>
+          {/* le stazioni in coda, sempre visibili: un pallino blu col posto e il nominativo */}
+          {status.queue && status.queue.length > 0 ? (
+            <div className="tx-queue" title={t('tip.tx.queue')}>
+              <span className="tx-queue-label">{t('tx.queue')}</span>
+              {status.queue.map((call, i) => (
+                <span key={call} className="tx-queue-item" title={t('tip.row.queuedPos', { n: i + 1 })}>
+                  <span className="queue-dot">{i + 1}</span>
+                  <span className="data">{call}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
           <ol className="tx-list" role="radiogroup" aria-label={t('tx.list')} title={t('tip.tx.list')}>
             {messages.map((m, i) => (
               <li

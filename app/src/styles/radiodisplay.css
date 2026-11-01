@@ -18,11 +18,11 @@
   stroke: #5c6a82;
 }
 
-/* testata: circa 52 px di altezza e al massimo 320 px di larghezza */
+/* testata: display piu' largo (27rem), lo STOP gli sta accanto */
 .rd-header {
   position: relative;
-  flex: 0 1 20rem;
-  width: 20rem;
+  flex: 0 1 27rem;
+  width: 27rem;
   max-width: 100%;
   margin-left: auto;
 }

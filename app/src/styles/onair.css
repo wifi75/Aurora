@@ -4809,3 +4809,24 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Trasmissione: le stazioni in coda sotto il DX */
+.tx-queue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0.2rem 0 0.35rem;
+  font-size: 0.8rem;
+}
+
+.tx-queue-label {
+  color: #1f6feb;
+  font-weight: 700;
+}
+
+.tx-queue-item {
+  display: inline-flex;
+  align-items: center;
+}
+

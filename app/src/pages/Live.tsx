@@ -269,17 +269,13 @@ export function Live() {
         </div>
         {/* il display sta a destra della riga delle bande, al posto dei controlli che ora sono sulla seconda riga */}
         <RadioDisplayHeader />
+        {phone ? null : <StopButton variant="compact" />}
         <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
       </div>
       {phone ? null : (
         <RxControls
           mode={status?.mode ?? ''}
           transmitting={status?.transmitting ?? false}
-          trailing={
-            <>
-              <StopButton variant="compact" />
-            </>
-          }
         />
       )}
       <DiagnosisBar />
