@@ -1,7 +1,10 @@
 # Changelog
 
 ## Non rilasciato
-- **«Leggi anche gli altri dati della radio» e «Collega la radio all'avvio» si salvano subito**: prima restavano in bozza fino a «Applica» e uscendo dalla pagina la spunta si perdeva.
+
+
+## 0.11.49 - 2026-11-01
+- **Tutte le impostazioni si salvano da sole**: niente piu' «Applica» o «Salva». Radio (CAT), Audio, Frequenze, Programmazione, Accesso e le impostazioni del motore si applicano dopo una breve pausa e uscendo dalla pagina; «Leggi anche gli altri dati della radio» e «Collega la radio all'avvio» si salvano subito (prima uscendo dalla pagina la spunta si perdeva).
 
 ## 0.11.48 - 2026-11-01
 - **Pagina Novità** (pulsante dopo la Guida): le ultime 20 funzioni aggiunte, modificate o corrette, a linea del tempo per versione, con schede colorate (nuovo, modificato, corretto) e data e ora del rilascio nell'ora del dispositivo, in sei lingue. L'elenco sta in `app/src/lib/novita.ts` e una prova controlla che la voce piu' recente sia della versione in uso.

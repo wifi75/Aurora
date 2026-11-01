@@ -14,6 +14,7 @@ import {
 import { useT, type T } from '../i18n';
 import { Check, Help } from './common';
 import { Actions, Cell, Cells, Group, Message, Page } from './layout';
+import { useAutosave } from './useAutosave';
 
 function errorText(error: unknown, t: T): string {
   return error instanceof ApiError && error.code === 'local_only' ? t('acc.pcOnly') : t('set.saveFailed');
@@ -52,6 +53,8 @@ export function AccessTab() {
   const shownMinutes = minutes ?? (pairing.data ? String(Math.round(pairing.data.code_ttl_secs / 60)) : '');
   const secs = Math.round(Number(shownMinutes) * 60);
   const inRange = pairing.data ? secs >= pairing.data.min_secs && secs <= pairing.data.max_secs : false;
+  // la durata dei codici si salva da sola quando e' nei limiti
+  useAutosave(minutes !== null && inRange ? secs : null, minutes !== null, (v) => saveTtl.mutate(v), (v) => saveTtl.mutate(v), 900);
 
   return (
     <Page>
