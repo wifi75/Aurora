@@ -144,3 +144,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Aurora: `core/crates/rig-control` (libreria Hamlib inclusa e `docs/cat-radio.md`).
 - WSJT-X: versione di Hamlib indicata in `CMakeLists.txt` e nelle note di rilascio.
 - Verifica: elenco radio supportate e prova CAT del proprietario.
+
+## 19b. Cascata: appiattimento sul campo visibile
+
+- Cosa fare: calcolare l'appiattimento della cascata solo sulla parte di banda visibile, come WSJT-X (`widgets/plotter.cpp`). La conservazione della storia e' gia' fatta.
+- Aurora: `app/src/render/`.
