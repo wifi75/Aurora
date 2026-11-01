@@ -4755,3 +4755,16 @@
 .log4om-table td {
   padding-inline: 0.3rem;
 }
+
+/* Tx e Rx a destra, uno sotto l'altro */
+.tx-dx .tx-freqs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  line-height: 1.25;
+}
+
+.tx-dx {
+  align-items: center;
+}
