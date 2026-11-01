@@ -153,6 +153,23 @@ Verificato sull'installazione del proprietario (VSPE 1.5.8, driver 4.61):
 Prova a mano dal pacchetto, senza Aurora: `rigctld.exe -m 1029 -r COM3 -s 38400 --set-conf=stop_bits=2 -t 4532`.
 Senza radio si prova con il modello **1 (Dummy)**: `rigctld.exe -m 1 -t 4532`.
 
+## Display esteso cliccabile
+
+Gli indicatori sotto il display (PRE, ATT, AGC, NB, NR, NOTCH, ATU, RIT, XIT, VFO) sono pulsanti: un clic cambia l'impostazione sulla radio, con `POST /api/v1/cat/extra`.
+Funziona solo con il CAT Hamlib (con OmniRig risponde «non supportato»), solo dal PC e mai mentre la radio trasmette. Aurora legge prima il valore vero dalla radio, scrive il successivo e lo rilegge subito.
+
+| Indicatore | Clic | Comandi Hamlib (rigctld) |
+|---|---|---|
+| NB, NR, NOTCH, ATU | inverte | `u NB` poi `U NB 0/1`; `NR`; `ANF` per il notch; `TUNER` per l'ATU |
+| PRE | spento, 10, 20 dB, spento... | `l PREAMP` poi `L PREAMP 0/10/20` |
+| ATT | spento, 10, 20, 6, 12, 18 dB, spento... | `l ATT` poi `L ATT valore` |
+| AGC | auto (6), fast (2), medium (5), slow (3), spento (0), auto... | `l AGC` poi `L AGC valore` |
+| VFO | A con B, Main con Sub | `v` poi `V VFOB` (o `VFOA`, `Sub`, `Main`) |
+| RIT, XIT | azzera se diverso da 0 | `j`/`z` poi `J 0`/`Z 0` |
+
+I valori che Hamlib rifiuta (`RPRT` -1, -4, -9, -11, -13) si saltano e si prova il successivo; se la radio non ne accetta nessuno l'errore compare come notifica. Con rigctld in modalita'
+`--vfo` i comandi portano `currVFO` come gli altri. Le prove con la radio vera restano da fare: ogni modello di Hamlib accetta valori e funzioni un po' diversi.
+
 ## Rilevamento della radio
 
 E' **passivo**: legge da Windows il nome delle porte («Silicon Labs Dual CP210x ... Enhanced COM Port (COM5)»), l'identita' USB (VID, PID, numero di serie)

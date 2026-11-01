@@ -56,4 +56,34 @@ describe('FrequencyMarkers', () => {
     fireEvent.keyDown(rx, { key: 'ArrowLeft', shiftKey: true });
     expect(onRx).toHaveBeenLastCalledWith(950);
   });
+
+  it('darkens the sides of an asymmetric filter window (FT8: 60 Hz below, 110 Hz above Rx)', () => {
+    const { container } = render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} filter={{ below: 60, above: 110 }} onRx={() => {}} onTx={() => {}} />);
+    const shades = container.querySelectorAll('.wf-filter-shade');
+    expect(shades).toHaveLength(2);
+    expect((shades[0] as HTMLElement).style.width).toBe(`${(940 / 3000) * 100}%`);
+    expect((shades[1] as HTMLElement).style.left).toBe(`${(1110 / 3000) * 100}%`);
+  });
+
+  it('shows the two white lines and the frequency under the pointer, only when asked', () => {
+    const { container } = render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} bandwidthHz={43.75} showFreq onRx={() => {}} onTx={() => {}} />);
+    const markers = container.querySelector('.wf-markers') as HTMLElement;
+    rect(markers);
+    const pad = container.querySelector('.wf-pad') as HTMLElement;
+    fireEvent.pointerMove(pad, { clientX: 300, clientY: 100 });
+    expect(container.querySelectorAll('.wf-hover-line')).toHaveLength(2);
+    expect(container.querySelector('.wf-hover-freq')?.textContent).toBe('1500');
+    fireEvent.pointerLeave(pad);
+    expect(container.querySelectorAll('.wf-hover-line')).toHaveLength(0);
+  });
+
+  it('with Bars off it hides the lines and the band but keeps the labels', () => {
+    const { container } = render(<FrequencyMarkers fMinHz={0} fMaxHz={3000} rxHz={1000} txHz={1500} bandwidthHz={43.75} showBars={false} onRx={() => {}} onTx={() => {}} />);
+    expect(screen.getByRole('slider', { name: /frequenza rx/i })).toHaveClass('wf-marker--nobars');
+    expect(screen.getByText('Rx 1000')).toBeInTheDocument();
+    const pad = container.querySelector('.wf-pad') as HTMLElement;
+    rect(container.querySelector('.wf-markers') as HTMLElement);
+    fireEvent.pointerMove(pad, { clientX: 300, clientY: 100 });
+    expect(container.querySelectorAll('.wf-hover-line')).toHaveLength(0);
+  });
 });

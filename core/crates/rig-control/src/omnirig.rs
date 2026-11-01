@@ -143,6 +143,10 @@ impl Rig for WindowsRig {
         command(&crate::controls::select_tx_script(n))
     }
 
+    fn set_extra(&self, _item: crate::extras::ExtraItem) -> Result<(), RigError> {
+        Err(RigError("con OmniRig le impostazioni della radio (preamplificatore, AGC, NB, VFO...) non si cambiano da qui: scegli il CAT Hamlib in Impostazioni → Radio".into()))
+    }
+
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         let control = crate::controls::find(id).ok_or_else(|| RigError(format!("controllo sconosciuto: {id}")))?;
         if control.own {

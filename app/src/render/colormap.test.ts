@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WATERFALL_STOPS, NOTTE_RADIO_STOPS, buildLut, lutColor } from './colormap';
+import { WATERFALL_STOPS, NOTTE_RADIO_STOPS, buildLut, jtdxPaletteLut, lutColor } from './colormap';
+import { JTDX_PALETTES, JTDX_PALETTE_NAMES } from './wfPalettes';
 
 describe('colormap', () => {
   it('buildLut first and last stop match NOTTE_RADIO_STOPS', () => {
@@ -38,5 +39,29 @@ describe('colormap', () => {
 
   it('rejects a palette with fewer than two stops', () => {
     expect(() => buildLut([[0, [0, 0, 0]]])).toThrow();
+  });
+
+  it('jtdxPaletteLut follows WFPalette::interpolate: 9 points, 32 entries per segment', () => {
+    const lut = jtdxPaletteLut(JTDX_PALETTES.Default!);
+    expect(lut.length).toBe(256 * 4);
+    // le voci multiple di 32 sono i punti del file, in ordine
+    JTDX_PALETTES.Default!.slice(0, 8).forEach((p, k) => expect(Array.from(lut.slice(k * 32 * 4, k * 32 * 4 + 3))).toEqual(p));
+    // a meta' del primo tratto (nero -> 0,6,136) il colore e' a meta'
+    expect(Array.from(lut.slice(16 * 4, 16 * 4 + 3))).toEqual([0, 3, 68]);
+    // l'ultimo punto non si raggiunge: la voce 255 e' un passo prima del rosso finale
+    expect(lut[255 * 4]).toBe(255);
+    expect(lut[255 * 4 + 1]).toBeGreaterThan(51);
+  });
+
+  it('jtdxPaletteLut handles a single point and no point like make_valid', () => {
+    expect(Array.from(jtdxPaletteLut([[200, 100, 50]]).slice(0, 3))).toEqual([0, 0, 0]);
+    expect(Array.from(jtdxPaletteLut([]).slice(0, 3))).toEqual([0, 0, 0]);
+    expect(Array.from(jtdxPaletteLut([]).slice(-4, -1))[0]).toBeGreaterThan(250);
+  });
+
+  it('bundles the 30 palettes of JTDX, Default first among the defaults', () => {
+    expect(JTDX_PALETTE_NAMES).toHaveLength(30);
+    expect(JTDX_PALETTE_NAMES).toContain('Default');
+    for (const name of JTDX_PALETTE_NAMES) expect(JTDX_PALETTES[name]!.length).toBeGreaterThanOrEqual(9);
   });
 });

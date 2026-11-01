@@ -14,7 +14,9 @@ use rig_control::{
     cat::{CatError, CatService},
     cat_config::RigConfig,
     detect,
+    extras::ExtraItem,
     hamlib::RigModel,
+    Rig,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -125,6 +127,42 @@ pub(crate) async fn cat_profiles(State(state): State<AppState>, _: Authed, Peer(
     })
     .await??;
     Ok(Json(json!(snapshot)))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct ExtraBody {
+    /// `nb`, `nr`, `notch`, `atu`, `preamp`, `att`, `agc`, `vfo`, `rit` o `xit`.
+    item: String,
+}
+
+/// Il clic su un indicatore del display esteso: cambia quella impostazione sulla radio (NB, NR, notch, ATU: inverte; preamplificatore,
+/// attenuatore, AGC: passa al valore successivo; VFO: passa all'altro; RIT/XIT: azzera) e risponde con i dati riletti. Solo dal PC e mai
+/// mentre la radio trasmette.
+pub(crate) async fn cat_extra(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<ExtraBody>) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    require_local(peer, &headers)?;
+    let item = ExtraItem::parse(body.item.trim()).ok_or_else(|| CatApiError { status: StatusCode::BAD_REQUEST, code: "bad_item", message: "impostazione sconosciuta".into() })?;
+    let result = blocking(move || {
+        if cat.hamlib().is_ok_and(|r| r.transmitting()) {
+            return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
+        }
+        cat.set_extra(item).map_err(|e| {
+            let lower = e.0.to_lowercase();
+            let (status, code) = if lower.contains("non collegata") || lower.contains("nessuna radio collegata") {
+                (StatusCode::CONFLICT, "not_connected")
+            } else if lower.contains("trasmettendo") {
+                (StatusCode::CONFLICT, "transmitting")
+            } else if lower.contains("non supporta") || lower.contains("non supportato") || lower.contains("non sa dare") || lower.contains("non si cambiano") {
+                (StatusCode::NOT_IMPLEMENTED, "unsupported")
+            } else {
+                (StatusCode::BAD_GATEWAY, "rig_error")
+            };
+            CatApiError { status, code, message: e.0 }
+        })?;
+        Ok(cat.status().rig.map(|r| r.extras))
+    })
+    .await??;
+    Ok(Json(json!({ "ok": true, "item": body.item.trim(), "extras": result })))
 }
 
 /// I modelli di Hamlib (da `rigctl -l`).

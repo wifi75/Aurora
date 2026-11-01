@@ -2223,13 +2223,13 @@
   outline-offset: 1px;
 }
 
-/* Barre Rx e Tx larghe quanto il segnale del modo (FT8 50 Hz, FT4 83 Hz): la frequenza e' il bordo sinistro, il tono piu' basso */
+/* Barre Rx e Tx larghe come in JTDX: dal primo all'ultimo tono (FT8 43,75 Hz, FT4 62,5 Hz): la frequenza e' il bordo sinistro, il tono piu' basso */
 .wf-marker--band {
   margin-left: 0;
   min-width: 6px;
-  border-left: 2px solid currentColor;
-  border-right: 2px solid currentColor;
-  background: color-mix(in srgb, currentColor 22%, transparent);
+  border-left: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 10%, transparent);
   box-shadow: 0 0 8px 1px color-mix(in srgb, currentColor 45%, transparent);
 }
 
@@ -5073,4 +5073,38 @@
 .set-check.sx-field .sx-control {
   flex: none;
   max-width: none;
+}
+
+/* «Bars» spento: restano le etichette Rx e Tx, senza le linee e senza la fascia */
+.wf-marker--nobars {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.wf-marker--nobars .wf-marker-line {
+  display: none;
+}
+
+/* le due linee bianche che seguono il puntatore (inizio e fine di un segnale messo li') e la frequenza sotto di esso */
+.wf-hover-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgb(255 255 255 / 0.85);
+  pointer-events: none;
+}
+
+.wf-hover-freq {
+  position: absolute;
+  top: 2.4rem;
+  transform: translateX(-50%);
+  padding: 0 0.3rem;
+  border-radius: 0.2rem;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  pointer-events: none;
 }

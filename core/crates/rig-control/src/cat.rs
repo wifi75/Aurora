@@ -389,6 +389,13 @@ impl Rig for CatService {
         }
     }
 
+    fn set_extra(&self, item: crate::extras::ExtraItem) -> Result<(), RigError> {
+        match self.backend() {
+            Backend::Hamlib => self.hamlib()?.set_extra(item),
+            Backend::Omnirig => WindowsRig.set_extra(item),
+        }
+    }
+
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),

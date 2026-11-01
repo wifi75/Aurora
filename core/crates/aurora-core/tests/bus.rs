@@ -49,9 +49,9 @@ fn spectrum_validate_rejects_empty_and_oversized_and_inverted_range() {
     let ok = SpectrumRow { seq: 1, f_min_hz: 0, f_max_hz: 3000, bins: vec![0; 1024] };
     assert!(ok.validate().is_ok());
     assert!(SpectrumRow { bins: vec![], ..ok.clone() }.validate().is_err());
-    assert!(SpectrumRow { bins: vec![0; 4097], ..ok.clone() }.validate().is_err());
+    assert!(SpectrumRow { bins: vec![0; 8193], ..ok.clone() }.validate().is_err());
     assert!(SpectrumRow { f_min_hz: 3000, f_max_hz: 3000, ..ok.clone() }.validate().is_err());
-    assert!(SpectrumRow { bins: vec![0; 4096], ..ok }.validate().is_ok());
+    assert!(SpectrumRow { bins: vec![0; 8192], ..ok }.validate().is_ok());
 }
 
 #[test]

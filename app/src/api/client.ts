@@ -690,6 +690,14 @@ export async function catProfile(action: 'save' | 'load' | 'new' | 'delete', nam
   return (await (await request('/cat/profiles', jsonInit({ action, name }))).json()) as CatSnapshot;
 }
 
+/** Le impostazioni della radio che il display esteso cambia con un clic. */
+export type CatExtraItem = 'nb' | 'nr' | 'notch' | 'atu' | 'preamp' | 'att' | 'agc' | 'vfo' | 'rit' | 'xit';
+
+/** Il clic su un indicatore del display esteso: la radio cambia l'impostazione (inverte, passa al valore dopo, azzera) e risponde con i dati riletti. Solo dal PC. */
+export async function postCatExtra(item: CatExtraItem): Promise<{ ok: boolean; item: string; extras: RigExtras | null }> {
+  return (await (await request('/cat/extra', jsonInit({ item }))).json()) as { ok: boolean; item: string; extras: RigExtras | null };
+}
+
 export async function getCatModels(): Promise<CatModel[]> {
   return ((await (await request('/cat/models')).json()) as { models: CatModel[] }).models;
 }

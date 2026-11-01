@@ -1,8 +1,8 @@
 import type { Entry } from '../i18n/core';
 
 /**
- * LE ULTIME 20 NOVITA' di Aurora, dalla piu' recente. REGOLA: a ogni versione (nuova funzione, modifica o correzione) si aggiunge qui la voce
- * in TUTTE e sei le lingue [it, en, de, fr, es, pt], con la data e l'ora UTC del rilascio, e si toglie la ventunesima. Una prova controlla che la
+ * LE ULTIME 40 NOVITA' di Aurora, dalla piu' recente. REGOLA: a ogni versione (nuova funzione, modifica o correzione) si aggiunge qui la voce
+ * in TUTTE e sei le lingue [it, en, de, fr, es, pt], con la data e l'ora UTC del rilascio, e si toglie la quarantunesima. Una prova controlla che la
  * voce piu' recente sia della versione in uso.
  */
 export type NovitaKind = 'new' | 'changed' | 'fixed';
@@ -16,9 +16,93 @@ export interface Novita {
   text: Entry;
 }
 
-export const NOVITA_MAX = 20;
+export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'new',
+    title: ['Cascata come in JTDX', 'Waterfall like JTDX', 'Wasserfall wie in JTDX', 'Cascade comme dans JTDX', 'Cascada como en JTDX', 'Cascata como no JTDX'],
+    text: [
+      'I segnali FT8 tornano sottili e nitidi: spettro calcolato come JTDX, 30 tavolozze, guadagno e zero, medie, grafico dello spettro e barre Rx/Tx della larghezza giusta. Tutto in Impostazioni > Cascata.',
+      'FT8 signals are thin and sharp again: spectrum computed like JTDX, 30 palettes, gain and zero, averaging, spectrum plot and Rx/Tx bars of the right width. All in Settings > Waterfall.',
+      'FT8-Signale sind wieder dünn und scharf: Spektrum wie in JTDX berechnet, 30 Paletten, Gain und Zero, Mittelung, Spektrumgrafik und Rx/Tx-Balken in der richtigen Breite. Alles unter Einstellungen > Wasserfall.',
+      'Les signaux FT8 redeviennent fins et nets : spectre calculé comme JTDX, 30 palettes, gain et zéro, moyennes, graphique du spectre et barres Rx/Tx de la bonne largeur. Tout dans Réglages > Cascade.',
+      'Las señales FT8 vuelven a ser finas y nítidas: espectro calculado como JTDX, 30 paletas, ganancia y cero, promedios, gráfico del espectro y barras Rx/Tx del ancho correcto. Todo en Ajustes > Cascada.',
+      'Os sinais FT8 voltam a ser finos e nítidos: espetro calculado como o JTDX, 30 paletas, ganho e zero, médias, gráfico do espetro e barras Rx/Tx da largura certa. Tudo em Definições > Cascata.',
+    ],
+  },
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'new',
+    title: ['Pulsanti della radio cliccabili', 'Clickable radio buttons', 'Anklickbare Funkgerätetasten', 'Boutons de la radio cliquables', 'Botones de la radio clicables', 'Botões do rádio clicáveis'],
+    text: [
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO e RIT/XIT sotto il display sono comandi: un clic cambia l’impostazione sulla radio via CAT, anche in ciclo (PRE, ATT, AGC).',
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO and RIT/XIT under the display are controls: a click changes the setting on the radio over CAT, cycling through values for PRE, ATT and AGC.',
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO und RIT/XIT unter der Anzeige sind Bedienelemente: Ein Klick ändert die Einstellung am Funkgerät über CAT, bei PRE, ATT und AGC reihum.',
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO et RIT/XIT sous l’affichage sont des commandes : un clic change le réglage sur la radio via CAT, en cycle pour PRE, ATT et AGC.',
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO y RIT/XIT bajo el display son controles: un clic cambia el ajuste en la radio por CAT, en ciclo para PRE, ATT y AGC.',
+      'PRE, ATT, AGC, NB, NR, NOTCH, ATU, VFO e RIT/XIT sob o visor são comandos: um clique muda a definição no rádio por CAT, em ciclo para PRE, ATT e AGC.',
+    ],
+  },
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'changed',
+    title: ['Più spazio per le finestre', 'More room for the windows', 'Mehr Platz für die Fenster', 'Plus de place pour les fenêtres', 'Más espacio para las ventanas', 'Mais espaço para as janelas'],
+    text: [
+      'Margini laterali ridotti, intestazioni dei pannelli più basse, cascata senza titolo, spazio fra le righe dei menu regolato e display esteso su un solo rigo accanto ai controlli di ricezione.',
+      'Smaller side margins, lower panel headers, a waterfall with no title, tuned spacing between menu rows and the extended display on a single line next to the receive controls.',
+      'Schmalere Seitenränder, niedrigere Fensterköpfe, Wasserfall ohne Titel, angepasster Zeilenabstand der Menüs und die erweiterte Anzeige in einer Zeile neben den Empfangsreglern.',
+      'Marges latérales réduites, en-têtes de panneaux plus bas, cascade sans titre, espacement des menus réglé et affichage étendu sur une seule ligne à côté des commandes de réception.',
+      'Márgenes laterales reducidos, cabeceras de paneles más bajas, cascada sin título, espaciado de los menús ajustado y display ampliado en una sola línea junto a los controles de recepción.',
+      'Margens laterais reduzidas, cabeçalhos dos painéis mais baixos, cascata sem título, espaçamento dos menus ajustado e visor alargado numa só linha junto aos controlos de receção.',
+    ],
+  },
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'new',
+    title: ['Scarica ADIF nel pannello Log', 'Download ADIF in the Log panel', 'ADIF-Download im Log-Fenster', 'Télécharger l’ADIF dans le panneau Log', 'Descargar ADIF en el panel Log', 'Transferir ADIF no painel Log'],
+    text: [
+      'Un pulsante «Scarica ADIF» nella barra del pannello Log salva il log di Aurora come file ADIF; l’importazione resta in Statistiche.',
+      'A “Download ADIF” button in the Log panel bar saves Aurora’s log as an ADIF file; import stays in Statistics.',
+      'Eine Schaltfläche „ADIF laden“ in der Leiste des Log-Fensters speichert das Aurora-Log als ADIF-Datei; der Import bleibt unter Statistik.',
+      'Un bouton « Télécharger ADIF » dans la barre du panneau Log enregistre le journal d’Aurora en fichier ADIF ; l’import reste dans Statistiques.',
+      'Un botón «Descargar ADIF» en la barra del panel Log guarda el log de Aurora como archivo ADIF; la importación sigue en Estadísticas.',
+      'Um botão «Transferir ADIF» na barra do painel Log guarda o log do Aurora como ficheiro ADIF; a importação continua em Estatísticas.',
+    ],
+  },
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'changed',
+    title: ['JT65+JT9 solo nei modi JT', 'JT65+JT9 only in JT modes', 'JT65+JT9 nur in JT-Modi', 'JT65+JT9 seulement dans les modes JT', 'JT65+JT9 solo en los modos JT', 'JT65+JT9 só nos modos JT'],
+    text: [
+      'Il pulsante per decodificare JT65 e JT9 insieme compare solo quando sei in uno dei due modi; in FT8 e FT4 non serve e non si vede.',
+      'The button that decodes JT65 and JT9 together only appears when you are in one of the two modes; in FT8 and FT4 it is not needed and hidden.',
+      'Die Taste zum gemeinsamen Dekodieren von JT65 und JT9 erscheint nur in einem der beiden Modi; in FT8 und FT4 wird sie nicht gebraucht und ausgeblendet.',
+      'Le bouton pour décoder JT65 et JT9 ensemble n’apparaît que dans l’un des deux modes ; en FT8 et FT4 il est inutile et masqué.',
+      'El botón para decodificar JT65 y JT9 juntos solo aparece en uno de los dos modos; en FT8 y FT4 no hace falta y se oculta.',
+      'O botão para descodificar JT65 e JT9 juntos só aparece num dos dois modos; em FT8 e FT4 não é preciso e fica escondido.',
+    ],
+  },
+  {
+    version: '0.11.50',
+    released: '2026-11-01T10:40:00Z',
+    kind: 'new',
+    title: ['Sito web e download diretto', 'Website and direct download', 'Webseite und Direkt-Download', 'Site web et téléchargement direct', 'Sitio web y descarga directa', 'Sítio web e transferência direta'],
+    text: [
+      'Aurora ha una pagina web dedicata in sei lingue e il README su GitHub è in inglese con le altre lingue; un link diretto scarica sempre l’ultima versione.',
+      'Aurora has a dedicated website in six languages and the GitHub README is in English with the other languages; one direct link always downloads the latest version.',
+      'Aurora hat eine eigene Webseite in sechs Sprachen, das GitHub-README ist englisch mit den anderen Sprachen; ein Direktlink lädt immer die neueste Version.',
+      'Aurora a un site web dédié en six langues et le README GitHub est en anglais avec les autres langues ; un lien direct télécharge toujours la dernière version.',
+      'Aurora tiene un sitio web propio en seis idiomas y el README de GitHub está en inglés con los demás idiomas; un enlace directo descarga siempre la última versión.',
+      'O Aurora tem um sítio web próprio em seis línguas e o README do GitHub está em inglês com as outras línguas; uma ligação direta transfere sempre a última versão.',
+    ],
+  },
   {
     version: '0.11.49',
     released: '2026-11-01T09:12:11Z',
@@ -39,12 +123,12 @@ export const NOVITA: readonly Novita[] = [
     kind: 'new',
     title: ['Pagina Novità', 'News page', 'Seite „Neuigkeiten“', 'Page Nouveautés', 'Página de novedades', 'Página de novidades'],
     text: [
-      'Dopo la Guida c’è il pulsante Novità: le ultime 20 funzioni aggiunte, modificate o corrette, con data e ora del rilascio.',
-      'After the Guide there is a News button: the latest 20 features added, changed or fixed, with the release date and time.',
-      'Nach der Anleitung gibt es die Schaltfläche Neuigkeiten: die letzten 20 neuen, geänderten oder korrigierten Funktionen mit Datum und Uhrzeit der Veröffentlichung.',
-      'Après le Guide, un bouton Nouveautés : les 20 dernières fonctions ajoutées, modifiées ou corrigées, avec la date et l’heure de publication.',
-      'Tras la Guía hay un botón Novedades: las últimas 20 funciones añadidas, modificadas o corregidas, con la fecha y hora de publicación.',
-      'Depois do Guia há o botão Novidades: as últimas 20 funções adicionadas, alteradas ou corrigidas, com a data e a hora da publicação.',
+      'Dopo la Guida c’è il pulsante Novità: le ultime 40 funzioni aggiunte, modificate o corrette, con data e ora del rilascio.',
+      'After the Guide there is a News button: the latest 40 features added, changed or fixed, with the release date and time.',
+      'Nach der Anleitung gibt es die Schaltfläche Neuigkeiten: die letzten 40 neuen, geänderten oder korrigierten Funktionen mit Datum und Uhrzeit der Veröffentlichung.',
+      'Après le Guide, un bouton Nouveautés : les 40 dernières fonctions ajoutées, modifiées ou corrigées, avec la date et l’heure de publication.',
+      'Tras la Guía hay un botón Novedades: las últimas 40 funciones añadidas, modificadas o corregidas, con la fecha y hora de publicación.',
+      'Depois do Guia há o botão Novidades: as últimas 40 funções adicionadas, alteradas ou corrigidas, com a data e a hora da publicação.',
     ],
   },
   {
@@ -297,6 +381,202 @@ export const NOVITA: readonly Novita[] = [
       'Quand l’AGC change le gain (une station forte qui démarre ou s’arrête), ces passages reviennent au bon niveau et se décodent mieux ; repris de JTDX et amélioré.',
       'Cuando el AGC cambia la ganancia (una estación fuerte que empieza o termina), esos tramos vuelven al nivel correcto y se decodifican mejor; portado de JTDX y mejorado.',
       'Quando o AGC muda o ganho (uma estação forte que começa ou acaba), esses trechos voltam ao nível certo e descodificam melhor; trazido do JTDX e melhorado.',
+    ],
+  },
+  {
+    version: '0.11.32',
+    released: '2026-10-31T13:51:25Z',
+    kind: 'fixed',
+    title: ['Filtro acceso: cascata scura e avviso', 'Filter on: dark waterfall and a warning', 'Filter an: dunkler Wasserfall und Hinweis', 'Filtre actif : cascade assombrie et avertissement', 'Filtro activo: cascada oscura y aviso', 'Filtro ligado: cascata escura e aviso'],
+    text: [
+      'Con il Filtro acceso si decodifica solo ±60 Hz attorno a Rx (±290 in Hound): ora la cascata si scurisce fuori dalla finestra e accanto al pulsante compare un avviso, così il programma non sembra più «sordo».',
+      'With the Filter on, only ±60 Hz around Rx is decoded (±290 in Hound): the waterfall now darkens outside the window and a warning appears by the button, so the program no longer seems “deaf”.',
+      'Bei eingeschaltetem Filter wird nur ±60 Hz um Rx dekodiert (±290 im Hound): Der Wasserfall wird außerhalb des Fensters dunkel und neben der Taste erscheint ein Hinweis, damit das Programm nicht mehr „taub“ wirkt.',
+      'Avec le Filtre actif, seuls ±60 Hz autour de Rx sont décodés (±290 en Hound) : la cascade s’assombrit hors de la fenêtre et un avertissement apparaît près du bouton, le programme ne semble plus « sourd ».',
+      'Con el Filtro activo solo se decodifica ±60 Hz alrededor de Rx (±290 en Hound): la cascada se oscurece fuera de la ventana y junto al botón aparece un aviso, así el programa ya no parece «sordo».',
+      'Com o Filtro ligado só se descodifica ±60 Hz em torno de Rx (±290 em Hound): a cascata escurece fora da janela e junto ao botão aparece um aviso, para o programa não parecer «surdo».',
+    ],
+  },
+  {
+    version: '0.11.32',
+    released: '2026-10-31T13:51:25Z',
+    kind: 'fixed',
+    title: ['Linguetta e suono della risposta a me', 'Tab colour and sound of a reply to me', 'Farbe und Ton der Antwort an mich', 'Onglet et son de la réponse à moi', 'Pestaña y sonido de la respuesta a mí', 'Etiqueta e som da resposta a mim'],
+    text: [
+      'Con la sequenza automatica la stazione chiamata non appariva più rossa per errore; la risposta alla mia chiamata suona sempre, mentre la stessa riga ripetuta tace. Anche «già lavorata» è segnata in ogni messaggio della stazione.',
+      'With automatic sequencing the called station no longer wrongly showed red; a reply to my call always sounds, while the same repeated row stays quiet. “Already worked” is now marked on every message of the station.',
+      'Mit der automatischen Sequenz erschien die gerufene Station nicht mehr fälschlich rot; die Antwort auf meinen Ruf ertönt immer, dieselbe wiederholte Zeile bleibt still. „Schon gearbeitet“ steht jetzt bei jeder Nachricht der Station.',
+      'Avec la séquence automatique, la station appelée n’apparaît plus à tort en rouge ; la réponse à mon appel sonne toujours, la même ligne répétée se tait. « Déjà contactée » est marqué sur chaque message de la station.',
+      'Con la secuencia automática la estación llamada ya no salía roja por error; la respuesta a mi llamada siempre suena, la misma fila repetida calla. «Ya contactada» se marca en cada mensaje de la estación.',
+      'Com a sequência automática a estação chamada já não aparecia vermelha por engano; a resposta à minha chamada soa sempre, a mesma linha repetida cala-se. «Já contactada» marca-se em cada mensagem da estação.',
+    ],
+  },
+  {
+    version: '0.11.31',
+    released: '2026-10-31T12:34:35Z',
+    kind: 'changed',
+    title: ['Propagazione riorganizzata', 'Propagation reorganised', 'Ausbreitung neu geordnet', 'Propagation réorganisée', 'Propagación reorganizada', 'Propagação reorganizada'],
+    text: [
+      'Sole, indici, condizioni per banda e statistiche di ricezione sono in un’unica barra stretta a sinistra; la mappa è più corta a destra, con la lista delle stazioni ricevute subito sotto.',
+      'Sun, indices, band conditions and reception statistics are in one narrow bar on the left; the map is shorter on the right, with the list of received stations right below.',
+      'Sonne, Indizes, Bandbedingungen und Empfangsstatistik stehen in einer schmalen Leiste links; die Karte ist rechts kürzer, die Liste der empfangenen Stationen direkt darunter.',
+      'Soleil, indices, conditions par bande et statistiques de réception sont dans une barre étroite à gauche ; la carte est plus courte à droite, avec la liste des stations reçues juste en dessous.',
+      'Sol, índices, condiciones por banda y estadísticas de recepción están en una barra estrecha a la izquierda; el mapa es más corto a la derecha, con la lista de estaciones recibidas justo debajo.',
+      'Sol, índices, condições por banda e estatísticas de receção estão numa barra estreita à esquerda; o mapa é mais curto à direita, com a lista das estações recebidas logo abaixo.',
+    ],
+  },
+  {
+    version: '0.11.30',
+    released: '2026-10-31T10:55:09Z',
+    kind: 'changed',
+    title: ['«Chi mi ha ricevuto» ordinata e più ricca', '“Who heard me” sorted and richer', '„Wer mich gehört hat“ sortiert und reicher', '« Qui m’a reçu » triée et plus riche', '«Quién me recibió» ordenada y más rica', '«Quem me recebeu» ordenada e mais rica'],
+    text: [
+      'Dalla stazione più lontana alla più vicina, con bandiera del paese, distanza in km o miglia e più colonne affiancate. I quadratini della mappa tornano ben visibili.',
+      'From the farthest station to the nearest, with country flag, distance in km or miles and several columns side by side. The map squares are clearly visible again.',
+      'Von der fernsten zur nächsten Station, mit Landesflagge, Entfernung in km oder Meilen und mehreren Spalten nebeneinander. Die Kartenquadrate sind wieder gut sichtbar.',
+      'De la station la plus lointaine à la plus proche, avec drapeau, distance en km ou miles et plusieurs colonnes côte à côte. Les carrés de la carte sont de nouveau bien visibles.',
+      'De la estación más lejana a la más cercana, con bandera, distancia en km o millas y varias columnas en paralelo. Los cuadritos del mapa vuelven a verse bien.',
+      'Da estação mais distante à mais próxima, com bandeira, distância em km ou milhas e várias colunas lado a lado. Os quadradinhos do mapa voltam a ver-se bem.',
+    ],
+  },
+  {
+    version: '0.11.27',
+    released: '2026-10-31T08:17:32Z',
+    kind: 'new',
+    title: ['Cronologia tra periodi FT8', 'History across FT8 periods', 'Verlauf über FT8-Perioden', 'Historique entre périodes FT8', 'Historial entre periodos FT8', 'Histórico entre períodos FT8'],
+    text: [
+      'Un CQ debole, una chiamata diretta a te o il segnale del canale QSO che non decodificano da soli si sommano al periodo precedente della stessa parità, come in JTDX.',
+      'A weak CQ, a call directed at you or the QSO channel signal that cannot be decoded alone are now combined with the previous period of the same parity, as in JTDX.',
+      'Ein schwaches CQ, ein direkter Ruf an dich oder das Signal des QSO-Kanals, die allein nicht dekodierbar sind, werden mit der vorigen Periode gleicher Parität summiert, wie in JTDX.',
+      'Un CQ faible, un appel direct vers vous ou le signal du canal QSO qui ne se décodent pas seuls s’ajoutent à la période précédente de même parité, comme dans JTDX.',
+      'Un CQ débil, una llamada directa a ti o la señal del canal QSO que no se decodifican solas se suman al periodo anterior de la misma paridad, como en JTDX.',
+      'Um CQ fraco, uma chamada direta a ti ou o sinal do canal QSO que não se descodificam sozinhos somam-se ao período anterior da mesma paridade, como no JTDX.',
+    ],
+  },
+  {
+    version: '0.11.26',
+    released: '2026-10-31T06:49:23Z',
+    kind: 'new',
+    title: ['Motore FT8 a profondità 3', 'FT8 engine at depth 3', 'FT8-Motor mit Tiefe 3', 'Moteur FT8 à profondeur 3', 'Motor FT8 a profundidad 3', 'Motor FT8 a profundidade 3'],
+    text: [
+      'Il motore dal vivo usa la profondità 3 di JTDX: 9 passate, soglia di sincronismo più bassa a rotazione e seconda lettura dei simboli a tempo invertito, per decodificare più segnali deboli.',
+      'The live engine now uses JTDX depth 3: 9 passes, a lower sync threshold on rotation and a second symbol reading at reversed timing, to decode more weak signals.',
+      'Der Live-Motor nutzt jetzt die JTDX-Tiefe 3: 9 Durchläufe, niedrigere Synchronschwelle im Wechsel und eine zweite Symbollesung mit umgekehrter Zeit, um mehr schwache Signale zu dekodieren.',
+      'Le moteur en direct utilise la profondeur 3 de JTDX : 9 passes, seuil de synchronisation plus bas en rotation et seconde lecture des symboles à temps inversé, pour décoder plus de signaux faibles.',
+      'El motor en vivo usa la profundidad 3 de JTDX: 9 pasadas, umbral de sincronismo más bajo en rotación y segunda lectura de símbolos a tiempo invertido, para decodificar más señales débiles.',
+      'O motor em direto usa a profundidade 3 do JTDX: 9 passagens, limiar de sincronismo mais baixo em rotação e segunda leitura dos símbolos a tempo invertido, para descodificar mais sinais fracos.',
+    ],
+  },
+  {
+    version: '0.11.25',
+    released: '2026-10-26T21:08:56Z',
+    kind: 'new',
+    title: ['JT65+JT9 insieme', 'JT65+JT9 together', 'JT65+JT9 zusammen', 'JT65+JT9 ensemble', 'JT65+JT9 juntos', 'JT65+JT9 juntos'],
+    text: [
+      'Nuovo interruttore «JT65+JT9»: in uno dei due modi si decodifica nello stesso minuto anche l’altro. I pulsanti JT65 e JT9 ora si accendono e la barra del periodo conta 60 secondi.',
+      'New “JT65+JT9” switch: in either mode the other is decoded in the same minute. The JT65 and JT9 buttons now light up and the period bar counts 60 seconds.',
+      'Neuer Schalter „JT65+JT9“: In einem der beiden Modi wird in derselben Minute auch der andere dekodiert. Die Tasten JT65 und JT9 leuchten jetzt, die Periodenleiste zählt 60 Sekunden.',
+      'Nouvel interrupteur « JT65+JT9 » : dans l’un des deux modes, l’autre est décodé dans la même minute. Les boutons JT65 et JT9 s’allument et la barre de période compte 60 secondes.',
+      'Nuevo interruptor «JT65+JT9»: en uno de los dos modos se decodifica en el mismo minuto también el otro. Los botones JT65 y JT9 se encienden y la barra del periodo cuenta 60 segundos.',
+      'Novo interruptor «JT65+JT9»: num dos dois modos descodifica-se no mesmo minuto também o outro. Os botões JT65 e JT9 acendem-se e a barra do período conta 60 segundos.',
+    ],
+  },
+  {
+    version: '0.11.24',
+    released: '2026-10-26T20:16:48Z',
+    kind: 'new',
+    title: ['JT65 e JT9 nel motore proprio', 'JT65 and JT9 in the own engine', 'JT65 und JT9 im eigenen Motor', 'JT65 et JT9 dans le moteur propre', 'JT65 y JT9 en el motor propio', 'JT65 e JT9 no motor próprio'],
+    text: [
+      'Nel selettore dei modi ci sono FT8, FT4, JT65 e JT9: decodifica del minuto intero con sottrazione dei segnali, e trasmissione.',
+      'The mode selector now has FT8, FT4, JT65 and JT9: full-minute decoding with signal subtraction, and transmission.',
+      'Der Modusschalter bietet FT8, FT4, JT65 und JT9: Dekodierung der ganzen Minute mit Signalabzug, und Senden.',
+      'Le sélecteur de modes propose FT8, FT4, JT65 et JT9 : décodage de la minute entière avec soustraction des signaux, et émission.',
+      'El selector de modos tiene FT8, FT4, JT65 y JT9: decodificación del minuto entero con sustracción de señales, y transmisión.',
+      'O seletor de modos tem FT8, FT4, JT65 e JT9: descodificação do minuto inteiro com subtração de sinais, e transmissão.',
+    ],
+  },
+  {
+    version: '0.11.24',
+    released: '2026-10-26T20:16:48Z',
+    kind: 'fixed',
+    title: ['«Canc DX» ferma subito la trasmissione', '“Clear DX” stops transmission at once', '„DX löschen“ stoppt sofort die Sendung', '« Eff. DX » arrête tout de suite l’émission', '«Borrar DX» detiene al instante la transmisión', '«Apagar DX» para logo a transmissão'],
+    text: [
+      'Oltre a liberare la stazione, ferma audio e PTT e scarta il messaggio già consegnato: prima la risposta alla stazione cancellata partiva lo stesso.',
+      'Besides clearing the station, it stops audio and PTT and discards the message already handed over: before, the reply to the cleared station was still sent.',
+      'Neben dem Freigeben der Station stoppt es Audio und PTT und verwirft die bereits übergebene Nachricht: Vorher wurde die Antwort an die gelöschte Station trotzdem gesendet.',
+      'En plus de libérer la station, il arrête audio et PTT et écarte le message déjà remis : avant, la réponse à la station effacée partait quand même.',
+      'Además de liberar la estación, detiene audio y PTT y descarta el mensaje ya entregado: antes la respuesta a la estación borrada salía igualmente.',
+      'Além de libertar a estação, para áudio e PTT e descarta a mensagem já entregue: antes a resposta à estação apagada saía na mesma.',
+    ],
+  },
+  {
+    version: '0.11.23',
+    released: '2026-10-26T18:45:37Z',
+    kind: 'new',
+    title: ['Coda delle stazioni che chiamano', 'Queue of calling stations', 'Warteschlange rufender Stationen', 'File des stations qui appellent', 'Cola de estaciones que llaman', 'Fila das estações que chamam'],
+    text: [
+      'Tasto destro su una riga di Attività di banda: la stazione va in coda; a QSO registrato Aurora risponde alla prima della coda. Un secondo tasto destro la toglie.',
+      'Right-click a Band activity row: the station joins the queue; once the QSO is logged Aurora answers the first in the queue. A second right-click removes it.',
+      'Rechtsklick auf eine Zeile der Bandaktivität: Die Station kommt in die Warteschlange; nach dem geloggten QSO antwortet Aurora der ersten. Ein zweiter Rechtsklick entfernt sie.',
+      'Clic droit sur une ligne d’Activité de bande : la station va en file ; le QSO enregistré, Aurora répond à la première. Un second clic droit la retire.',
+      'Clic derecho en una fila de Actividad de banda: la estación pasa a la cola; con el QSO registrado Aurora responde a la primera. Otro clic derecho la quita.',
+      'Clique direito numa linha da Atividade de banda: a estação vai para a fila; com o QSO registado o Aurora responde à primeira. Outro clique direito retira-a.',
+    ],
+  },
+  {
+    version: '0.11.23',
+    released: '2026-10-26T18:45:37Z',
+    kind: 'new',
+    title: ['«Risp. a tutti»', '“Answer all”', '„Allen antworten“', '« Répondre à tous »', '«Responder a todos»', '«Responder a todos»'],
+    text: [
+      'Nuovo interruttore nel riquadro QSO: ogni stazione che ti chiama direttamente va in coda da sola (non i CQ, non le chiusure RR73/73, non il DX in corso).',
+      'New switch in the QSO box: every station calling you directly joins the queue by itself (not CQs, not RR73/73 closings, not the DX in progress).',
+      'Neuer Schalter im QSO-Feld: Jede Station, die dich direkt ruft, kommt von selbst in die Warteschlange (nicht CQ, nicht RR73/73-Abschlüsse, nicht das laufende DX).',
+      'Nouvel interrupteur dans le cadre QSO : chaque station qui vous appelle directement va en file toute seule (pas les CQ, pas les clôtures RR73/73, pas le DX en cours).',
+      'Nuevo interruptor en el recuadro QSO: cada estación que te llama directamente pasa sola a la cola (no los CQ, no los cierres RR73/73, no el DX en curso).',
+      'Novo interruptor na caixa QSO: cada estação que te chama diretamente vai sozinha para a fila (não os CQ, não os fechos RR73/73, não o DX em curso).',
+    ],
+  },
+  {
+    version: '0.11.22',
+    released: '2026-10-26T17:36:30Z',
+    kind: 'fixed',
+    title: ['Novità DXCC con banda sconosciuta', 'DXCC news with unknown band', 'DXCC-Neuheiten bei unbekanntem Band', 'Nouveautés DXCC avec bande inconnue', 'Novedades DXCC con banda desconocida', 'Novidades DXCC com banda desconhecida'],
+    text: [
+      'Con «Banda» e «Banda+Modo» accese e la banda non nota, il modo si controlla ancora: prima un paese nuovo solo in quel modo non si illuminava.',
+      'With “Band” and “Band+Mode” on and the band unknown, the mode is still checked: before, a country new only in that mode would not light up.',
+      'Bei eingeschaltetem „Band“ und „Band+Modus“ und unbekanntem Band wird der Modus weiter geprüft: Vorher leuchtete ein nur in diesem Modus neues Land nicht auf.',
+      'Avec « Bande » et « Bande+Mode » actifs et la bande inconnue, le mode est encore vérifié : avant, un pays nouveau seulement dans ce mode ne s’allumait pas.',
+      'Con «Banda» y «Banda+Modo» activos y la banda desconocida, el modo se sigue comprobando: antes un país nuevo solo en ese modo no se iluminaba.',
+      'Com «Banda» e «Banda+Modo» ligados e a banda desconhecida, o modo continua a verificar-se: antes um país novo só nesse modo não se iluminava.',
+    ],
+  },
+  {
+    version: '0.11.21',
+    released: '2026-10-25T17:39:48Z',
+    kind: 'fixed',
+    title: ['«DXCC BANDA» corretta', '“DXCC BAND” fixed', '„DXCC BAND“ korrigiert', '« DXCC BANDE » corrigée', '«DXCC BANDA» corregida', '«DXCC BANDA» corrigida'],
+    text: [
+      'Un paese già collegato su quella banda, in qualunque modo e con qualunque nominativo, non è più «nuovo su banda». Vale anche per le zone CQ e ITU.',
+      'A country already worked on that band, in any mode and with any callsign, is no longer “new on band”. It also applies to CQ and ITU zones.',
+      'Ein auf diesem Band bereits gearbeitetes Land gilt in jedem Modus und mit jedem Rufzeichen nicht mehr als „neu auf Band“. Gilt auch für CQ- und ITU-Zonen.',
+      'Un pays déjà contacté sur cette bande, quel que soit le mode ou l’indicatif, n’est plus « nouveau sur la bande ». Vaut aussi pour les zones CQ et ITU.',
+      'Un país ya contactado en esa banda, en cualquier modo y con cualquier indicativo, ya no es «nuevo en banda». Vale también para las zonas CQ e ITU.',
+      'Um país já contactado nessa banda, em qualquer modo e com qualquer indicativo, já não é «novo em banda». Vale também para as zonas CQ e ITU.',
+    ],
+  },
+  {
+    version: '0.11.20',
+    released: '2026-10-25T17:04:02Z',
+    kind: 'fixed',
+    title: ['Barra in alto fissa', 'Top bar stays put', 'Obere Leiste bleibt stehen', 'Barre du haut fixe', 'Barra superior fija', 'Barra superior fixa'],
+    text: [
+      'I pulsanti accanto al logo restano fermi quando si scorre la pagina: un vecchio stile li rimetteva in flusso.',
+      'The buttons beside the logo stay put when you scroll the page: an old style had put them back in the flow.',
+      'Die Schaltflächen neben dem Logo bleiben beim Scrollen stehen: Ein alter Stil hatte sie wieder in den Fluss gesetzt.',
+      'Les boutons à côté du logo restent fixes quand on fait défiler la page : un ancien style les remettait dans le flux.',
+      'Los botones junto al logo se quedan fijos al desplazar la página: un estilo antiguo los volvía al flujo.',
+      'Os botões junto ao logótipo ficam fixos ao deslocar a página: um estilo antigo punha-os de novo no fluxo.',
     ],
   },
 ];

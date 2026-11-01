@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 
-/** Canale leggero tra il flusso del core e la cascata: le righe non passano da React. */
-type Listener = (bins: Uint8Array) => void;
+/** Canale leggero tra il flusso del core e la cascata: le righe non passano da React. Riga intera (0-5000 Hz), con la sua scala in Hz. */
+export type SpectrumListener = (bins: Uint8Array, fMinHz: number, fMaxHz: number) => void;
+type Listener = SpectrumListener;
 
 const listeners = new Set<Listener>();
 
@@ -20,18 +21,20 @@ export function spanFromPassband(passbandHz: number | null | undefined): number 
   return Math.min(MAX_SPAN_HZ, Math.max(MIN_SPAN_HZ, span));
 }
 
+/**
+ * Il tratto di frequenza mostrato: dal bordo sinistro (impostazione «Start» del Wide Graph, 0-4900 Hz) fino all'ampiezza del filtro
+ * della radio. Con «Start» vicino al bordo destro il tratto non si riduce sotto i 500 Hz.
+ */
+export function visibleRange(startHz: number, spanHz: number): { from: number; to: number } {
+  const to = Math.min(MAX_SPAN_HZ, Math.max(spanHz, startHz + 1000));
+  return { from: Math.min(Math.max(0, startHz), to - 500), to };
+}
+
 /** L'ampiezza mostrata dalla cascata (Hz, da 0). */
 export const useSpectrumSpan = create<{ spanHz: number; set(spanHz: number): void }>((set) => ({
   spanHz: DEFAULT_SPAN_HZ,
   set: (spanHz) => set({ spanHz }),
 }));
-
-/** Tiene solo i canali da 0 a `spanHz` di una riga che copre `fMinHz`-`fMaxHz`. */
-export function cropBins(bins: Uint8Array, fMinHz: number, fMaxHz: number, spanHz: number): Uint8Array {
-  if (fMaxHz <= fMinHz || spanHz >= fMaxHz) return bins;
-  const n = Math.max(1, Math.round((bins.length * (spanHz - fMinHz)) / (fMaxHz - fMinHz)));
-  return bins.subarray(0, Math.min(bins.length, n));
-}
 
 export function registerSpectrum(listener: Listener): () => void {
   listeners.add(listener);
@@ -40,7 +43,7 @@ export function registerSpectrum(listener: Listener): () => void {
   };
 }
 
+/** La cascata sceglie da sola il tratto da mostrare (Start e ampiezza): la riga arriva intera. */
 export function emitSpectrum(bins: Uint8Array, fMinHz = 0, fMaxHz = DEFAULT_SPAN_HZ): void {
-  const row = cropBins(bins, fMinHz, fMaxHz, useSpectrumSpan.getState().spanHz);
-  for (const listener of listeners) listener(row);
+  for (const listener of listeners) listener(bins, fMinHz, fMaxHz);
 }

@@ -1,8 +1,24 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCat } from '../../api/client';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError, getCat, postCatExtra, type CatExtraItem } from '../../api/client';
 import { useT } from '../../i18n';
+import { toast } from '../../lib/toast';
 import { agcName, formatVfo, useRadioExtras } from '../../lib/radioExtras';
 import { useStation } from '../../state/station';
+
+/** Cosa fa il clic su ogni indicatore (suggerimento ed etichetta per gli screen reader). */
+const ACTION_TIP = {
+  preamp: 'rx.act.preamp',
+  att: 'rx.act.att',
+  agc: 'rx.act.agc',
+  nb: 'rx.act.nb',
+  nr: 'rx.act.nr',
+  notch: 'rx.act.notch',
+  atu: 'rx.act.atu',
+  vfo: 'rx.act.vfo',
+  rit: 'rx.act.rit',
+  xit: 'rx.act.xit',
+} as const;
 
 const pct = (v: number | null | undefined) => (v == null ? null : `${Math.round(v * 100)}`);
 
@@ -29,9 +45,30 @@ export function RadioExtras() {
   const m = status?.meters ?? null;
   const tx = status?.transmitting ?? false;
 
-  const chips: Array<{ key: string; text: string; on?: boolean }> = [];
+  const queryClient = useQueryClient();
+  // l'indicatore appena cliccato resta in attesa finche' la radio non ha risposto
+  const [waiting, setWaiting] = useState<CatExtraItem | null>(null);
+  const click = async (item: CatExtraItem) => {
+    if (waiting !== null) return;
+    setWaiting(item);
+    try {
+      await postCatExtra(item);
+    } catch (e) {
+      const code = e instanceof ApiError ? e.code : '';
+      const detail = e instanceof ApiError ? e.detail : undefined;
+      if (code === 'local_only') toast(t('rx.err.local'), 'error');
+      else if (code === 'transmitting') toast(t('rx.err.tx'), 'error');
+      else if (code === 'unsupported') toast(detail ?? t('rx.err.unsupported'), 'error');
+      else toast(detail ?? t('rx.err.generic'), 'error');
+    } finally {
+      setWaiting(null);
+      await queryClient.invalidateQueries({ queryKey: ['cat'] });
+    }
+  };
+
+  const chips: Array<{ key: CatExtraItem; text: string; on?: boolean }> = [];
   if (prefs.frontEnd) {
-    if (x.preamp_db != null) chips.push({ key: 'pre', text: x.preamp_db > 0 ? `PRE ${Math.round(x.preamp_db)}` : 'PRE', on: x.preamp_db > 0 });
+    if (x.preamp_db != null) chips.push({ key: 'preamp', text: x.preamp_db > 0 ? `PRE ${Math.round(x.preamp_db)}` : 'PRE', on: x.preamp_db > 0 });
     if (x.att_db != null) chips.push({ key: 'att', text: x.att_db > 0 ? `ATT ${Math.round(x.att_db)}` : 'ATT', on: x.att_db > 0 });
   }
   if (prefs.agc && x.agc != null) chips.push({ key: 'agc', text: `AGC ${agcName(x.agc)}`, on: x.agc !== 0 });
@@ -94,9 +131,18 @@ export function RadioExtras() {
       {chips.length > 0 ? (
         <div className="rx-chips">
           {chips.map((c) => (
-            <span key={c.key} className={`rx-chip${c.on ? ' rx-chip--on' : ''}`}>
+            <button
+              key={c.key}
+              type="button"
+              className={`rx-chip rx-chip--btn${c.on ? ' rx-chip--on' : ''}${waiting === c.key ? ' rx-chip--wait' : ''}`}
+              title={t(ACTION_TIP[c.key])}
+              aria-label={`${c.text}: ${t(ACTION_TIP[c.key])}`}
+              aria-busy={waiting === c.key}
+              disabled={waiting !== null}
+              onClick={() => void click(c.key)}
+            >
               {c.text}
-            </span>
+            </button>
           ))}
         </div>
       ) : null}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hzAt, leftPercent, signalBandwidthHz } from './markers';
+import { filterWindowHz, hzAt, leftPercent, signalBandwidthHz } from './markers';
 
 describe('markers', () => {
   it('places a frequency as a percentage of the audio band', () => {
@@ -26,11 +26,27 @@ describe('markers', () => {
 });
 
 describe('signalBandwidthHz', () => {
-  it('is narrower in FT8 than in FT4 and zero for the other modes', () => {
-    expect(signalBandwidthHz('FT8')).toBe(50);
-    expect(signalBandwidthHz('FT4')).toBeCloseTo(83.3, 1);
-    expect(signalBandwidthHz('FT8')).toBeLessThan(signalBandwidthHz('FT4'));
+  it('is the distance between the first and the last tone, as the bars of JTDX', () => {
+    expect(signalBandwidthHz('FT8')).toBe(43.75);
+    expect(signalBandwidthHz('FT4')).toBe(62.5);
+    expect(signalBandwidthHz('JT65')).toBeCloseTo(177.65, 1);
+    expect(signalBandwidthHz('JT9')).toBeCloseTo(15.6, 1);
+    expect(signalBandwidthHz('T10')).toBe(62.5);
+  });
+
+  it('is zero for the other modes', () => {
     expect(signalBandwidthHz('JT')).toBe(0);
     expect(signalBandwidthHz(undefined)).toBe(0);
+  });
+});
+
+describe('filterWindowHz', () => {
+  it('is asymmetric around Rx like the blue marks of JTDX', () => {
+    expect(filterWindowHz('FT8')).toEqual({ below: 60, above: 110 });
+    expect(filterWindowHz('FT8', true)).toEqual({ below: 290, above: 340 });
+    expect(filterWindowHz('FT4')).toEqual({ below: 95, above: 179 });
+    expect(filterWindowHz('JT65')).toEqual({ below: 200, above: 375 });
+    expect(filterWindowHz('WSPR')).toBeNull();
+    expect(filterWindowHz(undefined)).toBeNull();
   });
 });

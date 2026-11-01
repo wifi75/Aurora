@@ -165,12 +165,12 @@ impl State {
     }
 
     fn emit_row(&mut self, io: &EngineIo) {
-        let mut bins: Vec<u8> = (0..BINS).map(|_| 18 + self.rng.below(30) as u8).collect();
+        let mut bins: Vec<u8> = (0..BINS).map(|_| 110 + self.rng.below(10) as u8).collect();
         for t in &self.tracks {
             for (offset, share) in [(0i32, 100u32), (-1, 45), (1, 45), (-2, 15), (2, 15)] {
                 let i = t.bin as i32 + offset;
                 if (0..BINS as i32).contains(&i) {
-                    let add = (t.amp as u32 * share / 100) as u8;
+                    let add = (t.amp as u32 * share / 300) as u8;
                     bins[i as usize] = bins[i as usize].saturating_add(add);
                 }
             }

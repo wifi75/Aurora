@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT } from '../i18n';
 import { hzAt, leftPercent } from '../lib/markers';
 
@@ -10,8 +10,12 @@ interface Props {
   txHz?: number | null;
   /** Larghezza del segnale del modo in uso (Hz): le barre la occupano a destra della frequenza. 0 o assente = barra sottile. */
   bandwidthHz?: number;
-  /** Con il Filtro acceso: mezza larghezza (Hz) della finestra decodificata attorno a Rx; fuori la cascata si scurisce. */
-  filterHalfHz?: number | null;
+  /** Con il Filtro acceso: Hz sotto e sopra Rx della finestra decodificata (asimmetrica come in JTDX); fuori la cascata si scurisce. */
+  filter?: { below: number; above: number } | null;
+  /** «Bars» del Wide Graph: le linee verticali Rx e Tx e le due linee che seguono il puntatore. Spento restano solo le etichette. */
+  showBars?: boolean;
+  /** «Freq» del Wide Graph: la frequenza sotto il puntatore. */
+  showFreq?: boolean;
   onRx(hz: number): void;
   onTx(hz: number): void;
 }
@@ -23,9 +27,11 @@ const BIG_STEP = 50;
  * Le due barre del motore sopra la cascata: verde = frequenza di ricezione, rossa = trasmissione, larghe quanto il segnale del modo.
  * Si trascinano; un clic sulla cascata sposta la verde, Maiusc+clic la rossa.
  */
-export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, filterHalfHz = null, onRx, onTx }: Props) {
+export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, filter = null, showBars = true, showFreq = false, onRx, onTx }: Props) {
   const t = useT();
   const box = useRef<HTMLDivElement | null>(null);
+  // posizione del puntatore sulla cascata (0-1): le linee bianche di JTDX (`HoverOverlayPixmap`) e il suggerimento «Freq»
+  const [hover, setHover] = useState<number | null>(null);
 
   const hzFromPointer = (clientX: number): number => {
     const r = box.current?.getBoundingClientRect();
@@ -61,7 +67,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
     hz == null ? null : (
       <div
         key={kind}
-        className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}`}
+        className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}${showBars ? '' : ' wf-marker--nobars'}`}
         style={{
           left: `${leftPercent(hz, fMinHz, fMaxHz)}%`,
           ...(bandwidthHz > 0 ? { width: `${(bandwidthHz / (fMaxHz - fMinHz)) * 100}%` } : {}),
@@ -81,10 +87,17 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
       </div>
     );
 
+  const hoverLeft = hover === null ? null : hover * 100;
+  const hoverWidth = bandwidthHz > 0 ? (bandwidthHz / (fMaxHz - fMinHz)) * 100 : 0;
   return (
     <div ref={box} className="wf-markers">
       <div
         className="wf-pad"
+        onPointerMove={(e) => {
+          const r = box.current?.getBoundingClientRect();
+          if (r && r.width > 0 && (showBars || showFreq)) setHover(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+        }}
+        onPointerLeave={() => setHover(null)}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           const hz = hzFromPointer(e.clientX);
@@ -92,11 +105,22 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz, txHz, bandwidthHz = 0, 
           else onRx(hz);
         }}
       />
-      {filterHalfHz != null && rxHz != null ? (
+      {filter != null && rxHz != null ? (
         <>
-          <div className="wf-filter-shade" aria-hidden="true" style={{ left: 0, width: `${leftPercent(Math.max(fMinHz, rxHz - filterHalfHz), fMinHz, fMaxHz)}%` }} />
-          <div className="wf-filter-shade" aria-hidden="true" style={{ left: `${leftPercent(Math.min(fMaxHz, rxHz + filterHalfHz), fMinHz, fMaxHz)}%`, right: 0 }} />
+          <div className="wf-filter-shade" aria-hidden="true" style={{ left: 0, width: `${leftPercent(Math.max(fMinHz, rxHz - filter.below), fMinHz, fMaxHz)}%` }} />
+          <div className="wf-filter-shade" aria-hidden="true" style={{ left: `${leftPercent(Math.min(fMaxHz, rxHz + filter.above), fMinHz, fMaxHz)}%`, right: 0 }} />
         </>
+      ) : null}
+      {showBars && hoverLeft !== null ? (
+        <>
+          <div className="wf-hover-line" aria-hidden="true" style={{ left: `${hoverLeft}%` }} />
+          {hoverWidth > 0 ? <div className="wf-hover-line" aria-hidden="true" style={{ left: `${Math.min(100, hoverLeft + hoverWidth)}%` }} /> : null}
+        </>
+      ) : null}
+      {showFreq && hoverLeft !== null ? (
+        <div className="wf-hover-freq" aria-hidden="true" style={{ left: `${hoverLeft}%` }}>
+          {hzAt(hover ?? 0, fMinHz, fMaxHz)}
+        </div>
       ) : null}
       {marker('rx', rxHz, onRx, t('marker.rx'))}
       {marker('tx', txHz, onTx, t('marker.tx'))}

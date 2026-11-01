@@ -254,6 +254,33 @@ impl RigctldClient {
         Ok(r[0].trim() != "0")
     }
 
+    /// Accende o spegne una funzione di Hamlib (`U NB 1`, `U NR 0`, `U ANF 1`, `U TUNER 0`...).
+    pub fn set_func(&self, name: &str, on: bool) -> Result<(), RigError> {
+        check_token(name, "funzione")?;
+        self.ask_vfo("U", &format!("{name} {}", u8::from(on)), 0).map(|_| ())
+    }
+
+    /// Scrive uno spostamento RIT (`J`) o XIT (`Z`) in Hz.
+    pub fn set_offset(&self, xit: bool, hz: i32) -> Result<(), RigError> {
+        self.ask_vfo(if xit { "Z" } else { "J" }, &hz.to_string(), 0).map(|_| ())
+    }
+
+    /// Cambia il VFO in uso (`V VFOB`): il comando prende il VFO come unico argomento anche con rigctld in modalita' VFO.
+    pub fn set_vfo(&self, vfo: &str) -> Result<(), RigError> {
+        check_token(vfo, "VFO")?;
+        self.ask_raw(&format!("V {vfo}"), 0).map(|_| ())
+    }
+
+    /// Scrive un livello di Hamlib (`L ATT 20`, `L AGC 6`, `L PREAMP 0`) con un valore intero o decimale.
+    pub fn set_level(&self, name: &str, value: f32) -> Result<(), RigError> {
+        check_token(name, "livello")?;
+        if !value.is_finite() {
+            return Err(RigError(format!("valore del livello {name} non valido")));
+        }
+        let text = if value.fract() == 0.0 { format!("{}", value as i64) } else { format!("{value}") };
+        self.ask(&format!("L {name} {text}"), 0).map(|_| ())
+    }
+
     /// Lo spostamento RIT (`j`) o XIT (`z`) in Hz.
     pub fn offset(&self, xit: bool) -> Result<i32, RigError> {
         let r = self.ask_vfo(if xit { "z" } else { "j" }, "", 1)?;

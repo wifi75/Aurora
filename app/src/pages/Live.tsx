@@ -34,18 +34,18 @@ import { armAudio, playSound } from '../lib/soundBank';
 import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
-import { signalBandwidthHz } from '../lib/markers';
+import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone } from '../lib/phone';
 import { useRadioDisplay } from '../lib/radioDisplay';
-import { registerSpectrum, spanFromPassband, useSpectrumSpan } from '../lib/spectrumFeed';
+import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
+import { useWfPrefs } from '../lib/wfPrefs';
 import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation } from '../state/station';
 import { toast, useToasts } from '../lib/toast';
 
-const F_MIN_HZ = 0;
 
 /** Le decodifiche con i nostri Tx in mezzo, in ordine d'orario (le piu' recenti per prime), come nel vecchio programma. */
 function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMessage[] {
@@ -99,7 +99,10 @@ export function Live() {
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   // la cascata mostra quello che passa dal filtro della radio (letto con il CAT), 0-3000 Hz se non si sa
   const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
-  const F_MAX_HZ = useSpectrumSpan((s) => s.spanHz);
+  const spanHz = useSpectrumSpan((s) => s.spanHz);
+  const wf = useWfPrefs((s) => s.prefs);
+  // il tratto mostrato: da «Start» del Wide Graph fino all'ampiezza del filtro della radio
+  const { from: F_MIN_HZ, to: F_MAX_HZ } = visibleRange(wf.startHz, spanHz);
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
@@ -108,7 +111,7 @@ export function Live() {
   // i nominativi sentiti negli ultimi messaggi: una DXpedition in onda e sentita adesso va in cima
   const heardCalls = decodes.slice(0, 300).map((d) => senderOf(d.text)?.call ?? '').filter(Boolean);
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
-  const filterHalfHz = switches?.filter === true ? (switches.hound === true ? 290 : 60) : null;
+  const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
   const changeLayout = (next: Layout) => {
     saveLayout(browserStorage(), next);
@@ -131,14 +134,16 @@ export function Live() {
         return (
           <>
             <div className="wf-stack">
-              <Waterfall register={registerSpectrum} />
+              <Waterfall register={registerSpectrum} mode={status?.mode} />
               <FrequencyMarkers
                 fMinHz={F_MIN_HZ}
                 fMaxHz={F_MAX_HZ}
                 rxHz={status?.rx_df}
                 txHz={status?.tx_df}
                 bandwidthHz={signalBandwidthHz(status?.mode)}
-                filterHalfHz={filterHalfHz}
+                filter={filterWindow}
+                showBars={wf.bars}
+                showFreq={wf.freq}
                 onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
                 onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
               />

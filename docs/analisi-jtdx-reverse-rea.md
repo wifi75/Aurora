@@ -1067,3 +1067,79 @@ Le 39 righe `ALL` (in corsivo qui le non predefinite): FT8 1,840; 3,567 *no*; 3,
 - La regione si applica **subito** (JTDX al prossimo cambio di modo).
 - Le righe alternative (non predefinite) restano nella tabella e nella scheda Frequenze; Aurora non ha una tendina per sceglierle, oggi non servono per cambiare banda.
 - 160 m e 60 m non hanno piu' una riga FT4 (JTDX non la ha: quella di Aurora era inventata); il cambio di modo su quelle bande lascia il dial com'e'.
+
+## Cascata e spettro: il Wide Graph (REA + sorgenti, 2026-11-01)
+
+Richiesta: i segnali FT8 apparivano troppo larghi e saturi, il cursore Rx/Tx con una fascia larga, lo spettro non piaceva. Letti in `jtdx.exe` 2.2.159 (`C:\JTDX64\159\bin\jtdx.exe`, REA + Ghidra 12.1.4, simboli presenti) e nei sorgenti GPL pubblici (`jtdx-project/jtdx`, ramo `master`: nella radice `widegraph.cpp/.h/.ui`, `plotter.cpp/.h`, `WFPalette.cpp`, `Palettes/*.pal`, `lib/symspec.f90`, `lib/flat4.f90`, `mainwindow.cpp`). Una sola istanza Ghidra, chiusa a fine lavoro.
+
+### Da dove viene lo spettro (`symspec_`, REA `0x435610`)
+
+| Cosa | Valore | Evidenza |
+|---|---|---|
+| FFT | `nfft3 = 16384` campioni a 12000 Hz, canali da `12000/16384` = **0,732 Hz**, fino a 5000 Hz (`iz = nint(5000/df3)` = 6827 canali) | `_nfft3 = 0x4000`, `12000.0 / nfft3`, `lroundf(5000.0 / df3)` in `symspec_`; sorgente `symspec.f90` |
+| Finestra | **gaussiana** `w = exp(-z^2)`, `z = (i - nfft3/2) / (0,25 * nsps)`; `nsps` per la cascata e' **sempre 6912** (`m_nsps=6912; //For symspec only`, `MainWindow::commonActions`) -> larghezza 1728 campioni = **0,144 s** | `expf(-((-8191.0/fVar29)^2))` con `fVar29 = nsps * 0.25` in `symspec_`; `mainwindow.cpp` 6216, 6270 |
+| Passo | `jstep = nsps/2` = 3456 campioni = **0,288 s: 3,47 righe al secondo** (la finestra e' centrata 0,68 s prima dell'ultimo campione) | `ja_3601 + iVar12 / 2` in `symspec_` |
+| Ampiezza | `sx = (abs(re) + abs(im)) / nfft3` su campioni `0,1 * id2` (non e' `abs(X)`: e' una norma L1) ed e' un'**ampiezza**, non una potenza; `s(i) = 1000 * 0,0063 * sx` (`fac2` = 6,3) | `(ABS(re)+ABS(im)) * fVar22`, `_gain_3597 = 0.0063`, `fVar29 = gain * 1000.0` |
+| Conseguenza | `flat4` fa `10*log10(s)` su un'ampiezza: i «dB» del Wide Graph sono **la meta' dei dB veri** (un segnale 20 dB sopra il rumore vale y = 10) | `flat4.f90`; `CPlotter::draw` chiama `flat4_` (`REA 0x402b60`) |
+
+### Dal numero al pixel (`WideGraph::dataSink2` `0x64a1e0`, `CPlotter::draw` `0x62dc90`)
+
+1. **N Avg**: somma di `m_waterfallAvg` spettri lineari, divisa per N (`0x64a1e0`, somma su `splot`, soglia `*(this+0x60)`).
+2. **Bins/Pixel**: `swide[j] = somma di nbpp canali` consecutivi, partendo dal canale `int(startFreq/df3 + 0.5)`; `jz = 5000/(nbpp*df3)` colonne, al massimo 2048 (`0x800` nel binario).
+3. **Scale** (`scale_by_median`, `plotter.cpp`): ordina le colonne, `mediana = buf[n/2] + 0,01`, divide tutto. Di fabbrica **acceso** (`Scale` letto con `QVariant(true)` nel binario); il `.ui` dice «false» ma il valore letto vince.
+4. **flat4**: `y = 10*log10(s)`; con **Flatten** (spento di fabbrica) 10 segmenti, in ognuno il 10 percentile (`pctile`), fino a 1000 punti «sotto la base», polinomio di 4 grado (`polyfit`, 5 termini), sottratto da tutta la riga.
+5. **Colore**: `y1 = int(10 * 10^(0,02*Gain) * y + 10*Zero + 40)`, tenuto in **0-254**, nella tabella `g_ColorTbl` da 256 colori. Quindi **y = 0 (la mediana) e' l'indice 40** (blu scuro) e il fondo scala e' a **+21,4 dB** di y; ogni dB di y sono 10 indici.
+6. **Tavolozza** (`WFPalette::interpolate`): 9 punti del file `.pal` (o fino a 255), passo `256/(punti-1)` = 32 voci per tratto, interpolazione lineare. «Default» = nero, blu (0,6,136), blu (0,19,198), blu (0,32,239), beige (172,167,105), (194,198,49), (225,228,107), **giallo** (255,255,0), **rosso** (255,51,0). Le 30 tavolozze di JTDX sono in `app/src/render/wfPalettes.ts`.
+7. **Righe di periodo**: a ogni giro di periodo (`tr < m_tr0`) la riga di dati e' sostituita da una riga **verde** (gialla se si e' trasmesso, solo WSPR); 16 righe dopo si scrive l'ora (opzione Timestamp: Off/Left/Right, di fabbrica Left).
+
+### Le opzioni, i valori di fabbrica e i limiti (`WideGraph::WideGraph` `0x64a7d0`, `saveSettings` `0x647bc0`; gruppo `[WideGraph]` del `JTDX.ini`)
+
+| Opzione (chiave) | Fabbrica | Limiti | Note |
+|---|---|---|---|
+| Bins/Pixel (`BinsPerPixel`) | **5** | 1-100 | letto con `QVariant(5)`; fuori limite torna a 5 |
+| Start (`StartFreq`) | 0 Hz | 0-4900 (`0x1324`) | fuori limite torna a 0 |
+| N Avg (`WaterfallAvg`) | **1** | 1-50 | |
+| Tavolozza (`WaterfallPalette`) | `Default` (+ `UserPalette`, tasto «Adjust...») | 30 file + «User Defined» | |
+| Scale (`Scale`) | **acceso** | | |
+| Flatten (`Flatten`) | spento | | |
+| Gain / Zero cascata (`PlotGain`, `PlotZero`) | 0 / 0 | -50...50 | fuori limite torna a 0 |
+| Gain / Zero grafico (`Plot2dGain`, `Plot2dZero`) | 0 / 0 | -50...50 | |
+| Spec % (`Percent2D`) | **30** | 0-100 | altezza del grafico sul totale (il grafico sta in basso; resta almeno 30 px di cascata) |
+| Tipo di spettro (`Current`, `Cumulative`) | Current | **solo due**: Current e Cumulative | in 2.2.159 **non** ci sono Linear Avg, Sum, Smooth, Ref Spec (sono di WSJT-X piu' recente o di Decodium) |
+| Larghezza (`PlotWidth`) | 1000 | 636-4096 | e' la larghezza della finestra Qt, non serve in una pagina web |
+| Bars (`Bars`) / Freq (`Freq`) | acceso / spento | | linee verticali Rx/Tx e due linee bianche che seguono il mouse / numero in Hz sotto il mouse |
+| Timestamp (`Timestamp`) | 1 (Left) | 0-2 | **non** implementato in Aurora (vedi «Cosa resta») |
+| Fmin (`Fmin`) | 2400 | 0-5000 | solo JT9+JT65 |
+
+Il grafico «Current» disegna `y2 = 10^(0,02*Gain2d) * (y - ymin) + Zero2d`, «Cumulative» `10^(0,02*Gain2d) * (media_dB + Zero2d)`; senza Flatten `+15`; ordinata `0,9*h - y2*h/70` (`CPlotter::draw`). «Cumulative» usa `savg = ssum/ihsym`: la media dall'inizio del periodo.
+
+### Il cursore Rx/Tx e il Filtro (`CPlotter::DrawOverlay` `0x629bb0`)
+
+- Larghezza delle barre (`bw`): FT8 `7*12000/1920` = **43,75 Hz**; FT4 `3*12000/576` = **62,5 Hz**; JT65 `66*11025/4096` = 177,65 Hz; JT9 `9*12000/nsps` = 15,6 Hz; T10 `9*4*12000/6912` = 62,5 Hz. Le barre sono **linee** a `rx` e `rx+bw` (verde, rossa per Tx), senza riempimento; la frequenza indicata e' il tono piu' basso.
+- Linee bianche del mouse (`HoverOverlayPixmap`): a `x` e a `x + larghezza di bw`.
+- Finestra del **Filtro** (segni blu): FT8 `rx-60 ... rx+110` (Hound `-290 ... +340`); FT4 `-95 ... +179`; JT65 `-200 ... +375`; JT9 `-50 ... +65,6`; T10 `-80 ... +142,4`. **Non e' simmetrica.**
+- Passo delle linee verticali del grafico (`m_fSpan`): 10 Hz sotto 100, 20 fino a 250, 50 fino a 500, 100 fino a 1000, 200 fino a 2500, 500 oltre; 7 divisioni orizzontali (`VERT_DIVS`).
+
+### Perche' i segnali di Aurora erano larghi e saturi
+
+1. **Finestra troppo lunga.** Aurora usava una finestra di Hann su 0,68 s (FFT di 32768 campioni a 48 kHz). Un simbolo FT8 dura 0,16 s e cambia tono (6,25 Hz): in ogni riga cadevano 4 simboli, cioe' fino a 4 toni accesi insieme, e la traccia diventava un **blob largo fino a 25-50 Hz**. JTDX usa una gaussiana di 0,144 s: in una riga si vede soprattutto un tono, il segnale e' una scala di righe sottili.
+2. **Massimo su piu' canali.** Aurora prendeva il massimo di 2 canali FFT per ogni canale di uscita e il disegno faceva un ulteriore massimo su 4 punti: ogni picco si allargava ancora.
+3. **Scala dei colori troppo ripida.** Il nero era il rumore stimato -5 dB e il fondo scala +40 dB: 5,7 livelli per dB e quasi tutto il segnale sopra i 20 dB finiva giallo/bianco. In JTDX **1 dB di y = 2 dB veri** e 10 indici di colore: un segnale a +20 dB veri sta a indice 140 (azzurro/beige) e non e' saturo prima di +43 dB veri.
+4. **Barre del cursore troppo larghe e riempite**: 50 Hz (FT8) e 83,3 Hz (FT4) con un riempimento al 22% contro 43,75 e 62,5 Hz a sole linee in JTDX.
+
+### Cosa fa Aurora ora
+
+- `core/crates/audio-spectrum/src/analyzer.rs`: stessa catena di `symspec.f90` (gaussiana 0,144 s, FFT da 1,365 s con canali da 0,732 Hz, ampiezza L1, scala a 16 bit con `fac0 = 0,1`), 6827 canali da 0 a 5000 Hz, 15 righe/s; il byte e' l'ampiezza in dB (-40 dB, passo 80/255 dB). `MAX_SPECTRUM_BINS` sale a 8192.
+- `app/src/render/jtdxRow.ts`: N Avg, somma dei canali (Bins/Pixel), Scale (mediana + 0,01), flat4 (dB e Flatten con polinomio), curva di Current/Cumulative; byte del livello `y` a 0,25 dB da -24 dB; indice di colore come `CPlotter::draw`.
+- Shader WebGL2 e WebGPU: `indice = 10*10^(0,02*Gain)*y + 10*Zero + 40` in 0-254 sulla tavolozza da 256 voci, riga verde di periodo; Gain, Zero e tavolozza valgono subito su tutta la storia.
+- `app/src/lib/wfPrefs.ts` e scheda **Impostazioni > Cascata** (6 lingue, «?» per ogni voce): Bins/Pixel, Start, N Avg, tavolozza (30 + personalizzata con i suoi punti), Gain, Zero, Scale, Flatten, Spec %, Current/Cumulative, Gain e Zero del grafico, Bars, Freq. Chiavi in `localStorage` (`aurora-wf-prefs`), valori di fabbrica e limiti di JTDX (fuori limite torna al valore di fabbrica come `WideGraph::WideGraph`).
+- Barre Rx/Tx 43,75 / 62,5 Hz (e JT65, JT9, T10), riempimento leggero; finestra del Filtro asimmetrica (`filterWindowHz`); linee bianche del mouse e frequenza sotto il puntatore.
+
+### Cosa resta / differenze volute
+
+- **Timestamp** (ora del periodo scritta nella cascata): non fatto; la riga verde di inizio periodo c'e'.
+- **Righe al secondo**: JTDX 3,47, Aurora 15 (cascata fluida): con **N Avg = 4 o 5** la velocita' e' quella di JTDX. Il valore di fabbrica resta 1, come JTDX: ogni riga ha la stessa finestra gaussiana, cambia solo che le righe si sovrappongono di piu' (passo 66 ms invece di 288 ms).
+- La finestra e' centrata 0,68 s prima dell'ultimo campione, come in JTDX: la cascata ha lo stesso ritardo.
+- **Larghezza (`PlotWidth`)**, **Fmin**, il comando Alt+Z e il doppio clic per decodificare sulla frequenza non sono opzioni della cascata di Aurora.
+- Il corpo di `CPlotter::DrawOverlay` e di `CPlotter::draw` non e' stato riletto riga per riga nel decompilato (la tabella colori e' nascosta dal decompilatore): per quelle due funzioni valgono i sorgenti, che nelle altre funzioni lette (`symspec_`, `dataSink2`, `WideGraph::WideGraph`) coincidono con il binario.
+- Prove dal vivo (aspetto reale dei segnali, velocita', tavolozze): le fa il proprietario.

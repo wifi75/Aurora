@@ -33,6 +33,13 @@ pub struct FakeState {
     levels: Mutex<Vec<(String, String)>>,
     /// Potenza di fondo scala in mW per `\power2mW` (0 = non supportato).
     full_power_mw: AtomicU64,
+    /// Le funzioni acceso/spento che la finta radio sa dare (`u NB`...): nome e stato. Le altre rispondono `RPRT -11`.
+    funcs: Mutex<Vec<(String, bool)>>,
+    /// Coppie (livello, valore) che `L` rifiuta con `RPRT -9`.
+    refused: Mutex<Vec<(String, String)>>,
+    /// RIT e XIT in Hz.
+    offsets: Mutex<[i32; 2]>,
+    vfo: Mutex<String>,
 }
 
 pub struct FakeRigctld {
@@ -55,6 +62,10 @@ impl FakeRigctld {
             stop: AtomicBool::new(false),
             levels: Mutex::new(Vec::new()),
             full_power_mw: AtomicU64::new(0),
+            funcs: Mutex::new(Vec::new()),
+            refused: Mutex::new(Vec::new()),
+            offsets: Mutex::new([0, 0]),
+            vfo: Mutex::new("VFOA".into()),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -136,6 +147,45 @@ impl FakeRigctld {
         }
     }
 
+    /// La finta radio da' (o cambia) questa funzione acceso/spento, ad esempio `set_func("NB", true)`.
+    pub fn set_func(&self, name: &str, on: bool) {
+        if let Ok(mut funcs) = self.state.funcs.lock() {
+            match funcs.iter_mut().find(|(n, _)| n == name) {
+                Some(entry) => entry.1 = on,
+                None => funcs.push((name.to_string(), on)),
+            }
+        }
+    }
+
+    pub fn func(&self, name: &str) -> Option<bool> {
+        self.state.funcs.lock().ok().and_then(|f| f.iter().find(|(n, _)| n == name).map(|(_, v)| *v))
+    }
+
+    /// `L name value` verra' rifiutato con `RPRT -9`.
+    pub fn refuse_level_value(&self, name: &str, value: &str) {
+        if let Ok(mut r) = self.state.refused.lock() {
+            r.push((name.to_string(), value.to_string()));
+        }
+    }
+
+    pub fn level(&self, name: &str) -> Option<String> {
+        self.state.levels.lock().ok().and_then(|l| l.iter().find(|(n, _)| n == name).map(|(_, v)| v.clone()))
+    }
+
+    pub fn set_offset(&self, xit: bool, hz: i32) {
+        if let Ok(mut o) = self.state.offsets.lock() {
+            o[usize::from(xit)] = hz;
+        }
+    }
+
+    pub fn offset(&self, xit: bool) -> i32 {
+        self.state.offsets.lock().map_or(0, |o| o[usize::from(xit)])
+    }
+
+    pub fn vfo(&self) -> String {
+        self.state.vfo.lock().map(|v| v.clone()).unwrap_or_default()
+    }
+
     /// Il fondo scala della potenza (mW) per `\power2mW`.
     pub fn set_full_power_mw(&self, mw: u64) {
         self.state.full_power_mw.store(mw, Ordering::SeqCst);
@@ -183,6 +233,7 @@ fn serve(stream: TcpStream, state: &FakeState) {
         let mut parts = cmd.split_whitespace();
         let head = parts.next().unwrap_or("");
         let arg = parts.next().unwrap_or("");
+        let arg2 = parts.next().unwrap_or("");
         let reply = if fail != 0 {
             format!("RPRT {fail}\n")
         } else {
@@ -225,6 +276,55 @@ fn serve(stream: TcpStream, state: &FakeState) {
                 "l" => {
                     let value = state.levels.lock().ok().and_then(|l| l.iter().find(|(n, _)| n == arg).map(|(_, v)| v.clone()));
                     value.map_or_else(|| "RPRT -11\n".to_string(), |v| format!("{v}\n"))
+                }
+                "L" => {
+                    let refused = state.refused.lock().is_ok_and(|r| r.iter().any(|(n, v)| n == arg && v == arg2));
+                    let mut levels = state.levels.lock().ok();
+                    match levels.as_mut().and_then(|l| l.iter_mut().find(|(n, _)| n == arg)) {
+                        _ if refused => "RPRT -9
+".to_string(),
+                        Some(entry) => {
+                            entry.1 = arg2.to_string();
+                            "RPRT 0
+".to_string()
+                        }
+                        None => "RPRT -11
+".to_string(),
+                    }
+                }
+                "u" => {
+                    let value = state.funcs.lock().ok().and_then(|f| f.iter().find(|(n, _)| n == arg).map(|(_, v)| *v));
+                    value.map_or_else(|| "RPRT -11
+".to_string(), |v| format!("{}
+", u8::from(v)))
+                }
+                "U" => match state.funcs.lock().ok().and_then(|mut f| f.iter_mut().find(|(n, _)| n == arg).map(|e| e.1 = arg2 == "1")) {
+                    Some(()) => "RPRT 0
+".into(),
+                    None => "RPRT -11
+".into(),
+                },
+                "j" | "z" => format!("{}
+", state.offsets.lock().map_or(0, |o| o[usize::from(head == "z")])),
+                "J" | "Z" => match arg.parse::<i32>() {
+                    Ok(hz) => {
+                        if let Ok(mut o) = state.offsets.lock() {
+                            o[usize::from(head == "Z")] = hz;
+                        }
+                        "RPRT 0
+".into()
+                    }
+                    Err(_) => "RPRT -1
+".into(),
+                },
+                "v" => format!("{}
+", state.vfo.lock().map(|v| v.clone()).unwrap_or_default()),
+                "V" => {
+                    if let Ok(mut v) = state.vfo.lock() {
+                        *v = arg.to_string();
+                    }
+                    "RPRT 0
+".into()
                 }
                 "\\power2mW" => match (state.full_power_mw.load(Ordering::SeqCst), arg.parse::<f64>()) {
                     (0, _) | (_, Err(_)) => "RPRT -11\n".into(),
