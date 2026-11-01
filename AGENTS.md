@@ -35,5 +35,7 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza: GPL-3.0 (solo). Repository: <https://
 
 - **Novita' per l'utente**: a ogni versione che aggiunge, modifica o corregge qualcosa si aggiunge la voce in `app/src/lib/novita.ts` (titolo e testo nelle sei lingue, data e ora UTC del rilascio) e si toglie la quarantunesima: la pagina «Novita'» mostra le ultime 40. Una prova controlla che la voce piu' recente sia della versione in `app/package.json`.
 
+- **A ogni versione** si seguono i passi di `TASK.md`: changelog, Novita', Guida, pagina web <https://wifi75.github.io/Aurora/> (`scripts/pubblica-sito.ps1`), README nelle sei lingue, release con `Aurora-Setup.exe`, controlli finali.
+
 ## Dove riprendere
 Leggere `memory.md` (stato e decisioni), `docs/mancante.md`, `CHANGELOG.md` e, per il motore proprio, `docs/2026-10-24-aurora-motore-ft8.md` e le analisi `docs/analisi-decodium-*.md` (CAT per tutte le radio, cascata piu' reattiva, banda satura).
