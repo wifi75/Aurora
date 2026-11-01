@@ -1,0 +1,51 @@
+import { useQuery } from '@tanstack/react-query';
+import { getHealth } from '../api/client';
+import { Logo } from '../components/Logo';
+import { useT } from '../i18n';
+
+const REPO = 'https://github.com/wifi75/Aurora';
+
+/** La pagina di presentazione: logo, versione dal core, autore, licenza, collegamenti e ringraziamenti. */
+export function AboutTab() {
+  const t = useT();
+  const { data } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
+  const links: Array<[string, string]> = [
+    [t('about.repo'), REPO],
+    [t('about.releases'), `${REPO}/releases`],
+    [t('about.issues'), `${REPO}/issues`],
+    [t('about.qrz'), 'https://www.qrz.com/db/IU3WJQ'],
+  ];
+  return (
+    <div className="about">
+      <header className="about-hero">
+        <Logo size={96} animated className="about-logo" />
+        <div className="about-title">
+          <h2 className="about-name">AURORA</h2>
+          <p className="about-tagline">{t('about.tagline')}</p>
+          <p className="about-version">
+            {t('about.version')} <strong className="data">{data?.version ?? '—'}</strong>
+          </p>
+        </div>
+      </header>
+      <dl className="about-facts">
+        <dt>{t('about.author')}</dt>
+        <dd>
+          Tiziano Cassone · <strong className="data">IU3WJQ</strong>
+        </dd>
+        <dt>{t('about.license')}</dt>
+        <dd>
+          <strong>GPL-3.0</strong> — {t('about.licenseText')}
+        </dd>
+        <dt>{t('about.thanks')}</dt>
+        <dd>{t('about.thanksText')}</dd>
+      </dl>
+      <nav className="about-links" aria-label={t('about.links')}>
+        {links.map(([label, href]) => (
+          <a key={href} className="glass about-link" href={href} target="_blank" rel="noreferrer">
+            {label} ↗
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}

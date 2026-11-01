@@ -18,6 +18,7 @@ import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
 import { OnlineTab } from '../settings/OnlineTab';
 import { UpdatesTab } from '../settings/UpdatesTab';
+import { AboutTab } from '../settings/AboutTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
 
@@ -51,6 +52,7 @@ const TAB: Record<string, TabDef> = Object.fromEntries(
       ['updates', <UpdatesTab />],
       ['access', <AccessTab />],
       ['windows', <WindowsTab />],
+      ['about', <AboutTab />],
     ] as const
   ).map(([id, node]) => [id, { id, label: `tab.${id}` as Key, tip: `tip.tab.${id}` as Key, render: () => node }]),
 );
@@ -61,10 +63,10 @@ interface TabRow {
   tabs: readonly string[];
 }
 
-/** La barra delle schede: due righe ordinate per tipo, dieci schede ciascuna. */
+/** La barra delle schede: due gruppi per tipo; in fondo Aggiornamenti e Informazioni. */
 const ROWS: readonly TabRow[] = [
   { id: 'station', title: 'tabg.station', tabs: ['general', 'radio', 'audio', 'frequencies', 'bands', 'sequence', 'macros', 'schedule', 'filters', 'advanced'] },
-  { id: 'data', title: 'tabg.data', tabs: ['notifications', 'wishlist', 'dxcc', 'cluster', 'reports', 'online', 'clock', 'updates', 'access', 'windows'] },
+  { id: 'data', title: 'tabg.data', tabs: ['notifications', 'wishlist', 'dxcc', 'cluster', 'reports', 'online', 'clock', 'access', 'windows', 'updates', 'about'] },
 ];
 
 const TABS: readonly TabDef[] = ROWS.flatMap((r) => r.tabs.map((id) => TAB[id]!));
