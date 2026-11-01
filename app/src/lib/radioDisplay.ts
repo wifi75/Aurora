@@ -10,9 +10,14 @@ export interface RadioDisplayPref {
   style: RadioDisplayStyle;
   /** Display nascosto: lo stile scelto resta ricordato. */
   hidden: boolean;
+  /** Disposizione in testata: due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (come il display di una FT-2000). */
+  layout: RadioDisplayLayout;
 }
 
-export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false };
+export const RADIO_DISPLAY_LAYOUTS = ['single', 'pair'] as const;
+export type RadioDisplayLayout = (typeof RADIO_DISPLAY_LAYOUTS)[number];
+
+export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false, layout: 'single' };
 
 const KEY = 'aurora-radio-display';
 
@@ -32,6 +37,7 @@ export function readRadioDisplay(storage: ReadableStorage): RadioDisplayPref {
     return {
       style: isRadioDisplayStyle(parsed.style) ? parsed.style : DEFAULT_RADIO_DISPLAY.style,
       hidden: parsed.hidden === true,
+      layout: parsed.layout === 'pair' || parsed.layout === 'single' ? parsed.layout : DEFAULT_RADIO_DISPLAY.layout,
     };
   } catch {
     return { ...DEFAULT_RADIO_DISPLAY };

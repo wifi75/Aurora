@@ -59,6 +59,17 @@ export const radioDisplayStrings = {
     'LCD âmbar Kenwood',
   ],
   'rd.style.led': ['LED rosso', 'Red LED', 'Rote LED', 'LED rouge', 'LED rojo', 'LED vermelho'],
+  'rd.layout': ['Disposizione in testata', 'Layout in the header', 'Anordnung in der Kopfzeile', 'Disposition dans l’en-tête', 'Disposición en la cabecera', 'Disposição no cabeçalho'],
+  'rd.layout.single': ['Blocco unico a doppio VFO (stile FT-2000)', 'Single dual-VFO block (FT-2000 style)', 'Ein Block mit Doppel-VFO (FT-2000-Stil)', 'Bloc unique double VFO (style FT-2000)', 'Bloque único doble VFO (estilo FT-2000)', 'Bloco único duplo VFO (estilo FT-2000)'],
+  'rd.layout.pair': ['Due blocchi uguali affiancati', 'Two equal blocks side by side', 'Zwei gleiche Blöcke nebeneinander', 'Deux blocs identiques côte à côte', 'Dos bloques iguales lado a lado', 'Dois blocos iguais lado a lado'],
+  'tip.rd.layout': [
+    'Come stanno in alto a destra il display della radio e il display esteso (secondo VFO e pulsanti): un unico pannello con VFO A grande e VFO B accanto, come le radio a doppio VFO, oppure due blocchi della stessa misura uno accanto all’altro.',
+    'How the radio display and the extended display (second VFO and buttons) sit top right: one panel with a large VFO A and VFO B beside it, like dual-VFO radios, or two blocks of the same size side by side.',
+    'Wie Funkanzeige und erweiterte Anzeige (zweiter VFO und Tasten) oben rechts stehen: ein Feld mit großem VFO A und VFO B daneben wie bei Doppel-VFO-Geräten, oder zwei gleich große Blöcke nebeneinander.',
+    'Comment l’afficheur radio et l’affichage étendu (second VFO et boutons) se placent en haut à droite : un panneau avec un grand VFO A et le VFO B à côté, comme les radios à double VFO, ou deux blocs de même taille côte à côte.',
+    'Cómo se colocan arriba a la derecha el display de la radio y el ampliado (segundo VFO y botones): un panel con VFO A grande y VFO B al lado, como las radios de doble VFO, o dos bloques del mismo tamaño uno junto al otro.',
+    'Como ficam em cima à direita o visor do rádio e o visor alargado (segundo VFO e botões): um painel com VFO A grande e VFO B ao lado, como os rádios de duplo VFO, ou dois blocos do mesmo tamanho lado a lado.',
+  ],
   'rd.hide': [
     'Nascondi il display',
     'Hide the display',

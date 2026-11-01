@@ -1,6 +1,6 @@
 import { RadioDisplay } from '../components/radio-display/RadioDisplay';
 import { useT, type Key } from '../i18n';
-import { DEMO_MODEL, RADIO_DISPLAY_STYLES, useRadioDisplay } from '../lib/radioDisplay';
+import { DEMO_MODEL, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useRadioDisplay } from '../lib/radioDisplay';
 import { Check, Help } from './common';
 
 /** Scelta dello stile del display della radio, con un'anteprima (dati di prova) per ognuno, e l'opzione per nasconderlo. */
@@ -22,6 +22,16 @@ export function RadioDisplayPicker() {
         ))}
       </div>
       <Help>{t('rd.preview')}</Help>
+      <h3 className="set-sub">{t('rd.layout')}</h3>
+      <Help>{t('tip.rd.layout')}</Help>
+      <div className="rd-layouts" role="radiogroup" aria-label={t('rd.layout')}>
+        {RADIO_DISPLAY_LAYOUTS.map((layout) => (
+          <label key={layout} className={`rd-layout-card${pref.layout === layout ? ' rd-layout-card--on' : ''}`}>
+            <input type="radio" name="radio-display-layout" value={layout} checked={pref.layout === layout} onChange={() => set({ layout })} />
+            <span>{t(`rd.layout.${layout}` as Key)}</span>
+          </label>
+        ))}
+      </div>
       <div className="set-checks">
         <Check label={t('rd.hide')} hint={t('tip.rd.hide')} checked={pref.hidden} onChange={(hidden) => set({ hidden })} />
       </div>

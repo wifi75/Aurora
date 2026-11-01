@@ -527,12 +527,9 @@
 }
 
 .live-left-line .rx-row {
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-}
-
-.live-left-line .rx-row .cmd-chips {
-  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .live-left-line .rx-extras {
@@ -577,4 +574,106 @@
     justify-content: flex-start;
     white-space: normal;
   }
+}
+
+/* Testata: display della radio e display esteso insieme, in alto a destra, a misura fissa */
+.rd-duo {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+  align-items: stretch;
+  width: auto;
+  height: 4rem;
+}
+
+.rd-duo .rd-slot {
+  box-sizing: border-box;
+  width: 19rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+.rd-duo .rd-slot .rd-svg {
+  height: 100%;
+  width: 100%;
+}
+
+.rd-duo .rd-slot--extras .rx-extras {
+  height: 100%;
+  margin: 0;
+}
+
+/* due blocchi uguali: stessa larghezza e altezza */
+.rd-duo--pair .rd-slot--extras .rx-extras {
+  border-radius: 0.65rem;
+}
+
+/* blocco unico a doppio VFO, come il display di una FT-2000: una sola cornice scura, VFO A a sinistra, VFO B e indicatori a destra */
+.rd-duo--single {
+  gap: 0;
+  padding: 0;
+  background: #0f1720;
+  border: 1px solid #4a5a74;
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+
+.rd-duo--single .rd-slot--extras {
+  width: 21rem;
+  border-left: 1px solid #2c3b4c;
+}
+
+.rd-duo--single .rd-slot--extras .rx-extras {
+  padding: 0.3rem 0.6rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.rd-duo--single .rx-vfob-freq {
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  color: #7ff3ff;
+  opacity: 0.95;
+}
+
+/* scelta della disposizione nelle Impostazioni */
+.rd-layouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0.8rem;
+}
+
+.rd-layout-card {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.rd-layout-card--on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* dentro il blocco del display esteso: VFO B in alto, pulsanti su una o due righe che entrano sempre */
+.rd-duo .rd-slot--extras .rx-extras {
+  align-content: center;
+  gap: 0.15rem 0.25rem;
+  padding: 0.25rem 0.5rem;
+  overflow: hidden;
+}
+
+.rd-duo .rd-slot--extras .rx-vfob {
+  flex: 1 0 100%;
+}
+
+.rd-duo .rd-slot--extras .rx-chip {
+  padding: 0 0.25rem;
+  font-size: 0.62rem;
+  line-height: 1.25;
 }
