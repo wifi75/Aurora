@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.60',
-    released: '2026-11-01T23:00:00Z',
+    released: '2026-11-01T15:25:09Z',
     kind: 'changed',
     title: ['Impostazioni in ordine', 'Settings in order', 'Einstellungen geordnet', 'Réglages en ordre', 'Ajustes en orden', 'Definições em ordem'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.60',
-    released: '2026-11-01T23:00:00Z',
+    released: '2026-11-01T15:25:09Z',
     kind: 'changed',
     title: ['«Log» nel menu in alto', '“Log” in the top menu', '„Log“ im Menü oben', '« Journal » dans le menu', '«Log» en el menú superior', '«Log» no menu de cima'],
     text: [
