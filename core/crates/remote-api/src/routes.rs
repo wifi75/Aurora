@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_export, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -49,6 +49,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/online", get(online_get).put(online_put))
         .route("/api/v1/online/psk", get(online_psk))
         .route("/api/v1/online/solar", get(online_solar))
+        .route("/api/v1/online/dxped", get(online_dxped))
         .route("/api/v1/online/refresh", post(online_refresh))
         .route("/api/v1/history", get(history_get).delete(history_clear))
         .route("/api/v1/history/stats", get(history_stats))
@@ -557,6 +558,13 @@ async fn online_psk(State(state): State<AppState>, _: Authed) -> Result<Json<Val
 async fn online_solar(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let service = online_service(&state)?;
     Ok(Json(json!({ "enabled": service.settings().solar, "solar": service.solar() })))
+}
+
+/// Le DXpedition annunciate dal calendario NG3K (se acceso).
+#[utoipa::path(get, path = "/api/v1/online/dxped", responses((status = 200, description = "`enabled` e `dxped` (`fetched_ms`, `items`, `error`)"), (status = 404, description = "Non disponibile (online_unavailable)")))]
+async fn online_dxped(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let service = online_service(&state)?;
+    Ok(Json(json!({ "enabled": service.settings().dxped, "dxped": service.dxped() })))
 }
 
 /// Chiede subito i dati ai servizi accesi, al massimo una volta al minuto per servizio; `asked` dice se ha chiesto qualcosa.
