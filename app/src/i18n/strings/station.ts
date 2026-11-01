@@ -464,7 +464,7 @@ export const stationStrings = {
     'Arrastra para cambiar la altura del panel.',
     'Arrasta para mudar a altura do painel.',
   ],
-  'note.replySent': ['Risposta inviata: {text}', 'Reply sent: {text}', 'Antwort gesendet: {text}', 'Réponse envoyée : {text}', 'Respuesta enviada: {text}', 'Resposta enviada: {text}'],
+  'note.replySent': ['Rispondo a {call}', 'Answering {call}', 'Antworte {call}', 'Je réponds à {call}', 'Respondo a {call}', 'Respondo a {call}'],
   'note.bandSet': ['Radio portata su {band}.', 'Radio moved to {band}.', 'Funkgerät auf {band} gestellt.', 'Poste passé sur {band}.', 'Radio llevada a {band}.', 'Rádio levado para {band}.'],
   'note.modeSet': ['Modo portato su {mode}.', 'Mode switched to {mode}.', 'Betriebsart auf {mode} gestellt.', 'Mode passé sur {mode}.', 'Modo cambiado a {mode}.', 'Modo mudado para {mode}.'],
   'note.freqSet': ['{which} impostato a {hz} Hz.', '{which} set to {hz} Hz.', '{which} auf {hz} Hz gesetzt.', '{which} réglé sur {hz} Hz.', '{which} fijado en {hz} Hz.', '{which} definido em {hz} Hz.'],
