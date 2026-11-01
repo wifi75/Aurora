@@ -56,26 +56,6 @@ function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label:
   );
 }
 
-/** Una voce che Aurora non ha: si vede spenta, con il motivo (va dentro un riquadro «Non disponibili»). */
-function OffRow({ label, reason, kind = 'check', suffix }: { label: string; reason: Key; kind?: 'check' | 'select' | 'text' | 'button' | 'number'; suffix?: string }) {
-  const t = useT();
-  const why = t(reason);
-  let control: ReactNode;
-  if (kind === 'check') control = <input type="checkbox" disabled aria-label={label} />;
-  else if (kind === 'select') control = <select disabled aria-label={label} />;
-  else if (kind === 'number') control = <input type="number" disabled aria-label={label} className="set-number" />;
-  else if (kind === 'text') control = <input type="text" disabled aria-label={label} />;
-  else control = <button type="button" className="glass" disabled>{label}</button>;
-  return (
-    <div className="jt-row jt-row--off" title={why}>
-      {control}
-      {kind === 'button' ? null : <span>{label}</span>}
-      {suffix ? <span className="muted">{suffix}</span> : null}
-      <span className="muted jt-reason">{why}</span>
-    </div>
-  );
-}
-
 /** Una preferenza dello schermo (del browser, vale subito). */
 function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'showTx' | 'showAzimuth' | 'showCountry' | 'showDistance'); label: string }) {
   const t = useT();

@@ -30,7 +30,7 @@ import { useNotifyView } from '../lib/notifyView';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import type { StationStatus } from '../api/schemas';
-import { NativeGeneral, NativeNotifications, NativeSequence } from './JtdxTabs';
+import { NativeGeneral, NativeNotifications, NativeSequence, NativeTxOptions } from './JtdxTabs';
 
 const it_ = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate('it', key, vars);
 
@@ -187,11 +187,10 @@ describe('Notifications tab (as in JTDX)', () => {
     expect(sample()).not.toHaveClass('jt-sample--strike');
   });
 
-  it('every voice of the tab works: the only one switched off is the marker for hints, with its reason', async () => {
+  it('every voice of the tab works and what Aurora does not use is not shown', async () => {
     render(<NativeNotifications />);
-    expect(await screen.findByLabelText(it_('not2.markHint'))).toBeDisabled();
-    expect(screen.getAllByText(it_('ens.r.no_hint')).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(it_('not2.alertDx'))).toBeEnabled();
+    expect(await screen.findByLabelText(it_('not2.alertDx'))).toBeEnabled();
+    expect(screen.queryByLabelText(it_('not2.markHint'))).toBeNull();
     expect(screen.getByLabelText(it_('not2.alertMy'))).toBeChecked();
     const blue = screen.getByLabelText(it_('not2.markBlue'));
     expect(blue).toBeEnabled();
@@ -316,15 +315,21 @@ describe('Notifications table', () => {
 });
 
 describe('General tab (as in JTDX)', () => {
-  it('has the four sections, with the station editable and what Aurora cannot do switched off with the reason', async () => {
+  it('has only the general sections: the transmission options are in Sequence, the decoding start in Filters, nothing unavailable', async () => {
     render(<NativeGeneral />);
     expect(await screen.findByLabelText(it_('gen2.call'))).toHaveValue('IU3ABC');
-    for (const legend of ['gen2.station', 'gen2.logFilter', 'gen2.screen', 'gen2.operation'] as const) expect(screen.getByText(it_(legend))).toBeInTheDocument();
-    for (const label of ['gen2.decode52', 'gen2.lastFreq', 'gen2.cwId', 'gen2.tune', 'gen2.cwInt'] as const) {
-      expect(screen.getByLabelText(it_(label))).toBeDisabled();
-    }
-    expect(screen.getAllByText(it_('ens.r.cw_id')).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(it_('gen2.watchdog'))).toHaveValue(6);
+    for (const legend of ['gen2.station', 'gen2.logFilter', 'gen2.screen'] as const) expect(screen.getByText(it_(legend))).toBeInTheDocument();
+    for (const label of ['gen2.decode52', 'gen2.cwId', 'gen2.watchdog', 'gen2.decStart', 'gen2.bandHopOn'] as const) expect(screen.queryByLabelText(it_(label))).toBeNull();
+  });
+
+  it('the transmission options (once in General) are real and sent with Apply', async () => {
+    vi.mocked(api.putEngineSettings).mockResolvedValue(doc());
+    render(<NativeTxOptions />);
+    expect(await screen.findByLabelText(it_('gen2.watchdog'))).toHaveValue(6);
+    fireEvent.change(screen.getByLabelText(it_('gen2.watchdog')), { target: { value: '9' } });
+    fireEvent.click(screen.getByLabelText(it_('gen2.qsy')));
+    fireEvent.click(screen.getByRole('button', { name: it_('ens.apply') }));
+    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ TxWatchdogTimer: '9', TxQSYAllowed: 'false' }));
   });
 
   it('the IARU region and the type 2 message generation are real choices, saved with their JTDX names', async () => {
@@ -353,10 +358,8 @@ describe('General tab (as in JTDX)', () => {
     expect(useGrid).toBeDisabled();
     fireEvent.click(screen.getByLabelText(it_('gen2.useCall')));
     expect(useGrid).toBeEnabled();
-    fireEvent.change(screen.getByLabelText(it_('gen2.watchdog')), { target: { value: '9' } });
-    fireEvent.click(screen.getByLabelText(it_('gen2.qsy')));
     fireEvent.click(screen.getByRole('button', { name: it_('ens.apply') }));
-    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ callsignLogFiltering: 'true', TxWatchdogTimer: '9', TxQSYAllowed: 'false' }));
+    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ callsignLogFiltering: 'true' }));
   });
 
   it('the screen options are real and change the display preferences at once', async () => {

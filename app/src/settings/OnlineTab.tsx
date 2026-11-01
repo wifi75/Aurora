@@ -5,6 +5,8 @@ import { useT } from '../i18n';
 import { Check, Help } from './common';
 import { Cells, Field, Group, Message, Notes, Page } from './layout';
 import { usePrefs } from '../lib/prefs';
+import { SPOT_GROUP } from '../lib/engineSettingsLayout';
+import { EngineGroups } from './NativeSettings';
 
 /** Scheda Servizi online: PSK Reporter e propagazione, spenti finche' non si accendono; ognuno dice cosa vede il sito. */
 export function OnlineTab() {
@@ -37,6 +39,7 @@ export function OnlineTab() {
         </Cells>
         <Help>{t('onl.psk.note')}</Help>
       </Group>
+      <EngineGroups groups={[SPOT_GROUP]} />
       <Group title={t('onl.grpSolar')}>
         <Cells min={12}>
           <Check label={t('onl.solar')} hint={t('tip.onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
@@ -62,7 +65,8 @@ export function OnlineTab() {
         </Cells>
         <Help>{t('onl.dxped.note')}</Help>
       </Group>
-      <Notes>        <Help>{t('onl.intro')}</Help>
+      <Notes>
+        <Help>{t('onl.intro')}</Help>
       </Notes>
       {note ? (
         <div className="sx-span-3">

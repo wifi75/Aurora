@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { translate } from '../../i18n';
-import { Cells, Field, Group, Notes, Page, Unavailable } from './index';
+import { Cells, Field, Group, Notes, Page } from './index';
 
 describe('settings layout', () => {
   it('a group has a visible title and its cells', () => {
@@ -42,29 +42,18 @@ describe('settings layout', () => {
     expect(cell).toHaveClass('sx-field--changed', 'sx-field--stack');
   });
 
-  it('notes and unavailable items are collapsible boxes with a translated title', () => {
+  it('notes are a collapsible box with a translated title', () => {
     render(
       <Page>
         <Notes>
           <p>Una nota lunga</p>
         </Notes>
-        <Unavailable count={3}>
-          <p>Voce spenta</p>
-        </Unavailable>
       </Page>,
     );
     expect(screen.getByText(translate('it', 'lay.notes'))).toBeInTheDocument();
-    expect(screen.getByText(translate('it', 'ens.hidden', { n: 3 }))).toBeInTheDocument();
-    expect(document.querySelectorAll('details')).toHaveLength(2);
+    expect(document.querySelectorAll('details')).toHaveLength(1);
     expect(screen.getByText('Una nota lunga')).toBeInTheDocument();
   });
 
-  it('shows no box when nothing is unavailable', () => {
-    render(
-      <Unavailable count={0}>
-        <p>niente</p>
-      </Unavailable>,
-    );
-    expect(document.querySelector('details')).toBeNull();
-  });
+
 });

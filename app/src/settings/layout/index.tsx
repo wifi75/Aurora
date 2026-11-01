@@ -55,7 +55,6 @@ export function Help({ tip }: { tip?: string }) {
  *       </Cells>
  *     </Group>
  *     <Notes>…</Notes>              note lunghe in un riquadro comprimibile (in fondo a una colonna)
- *     <Unavailable count>…</Unavailable>   voci che Aurora non ha, compatte
  *   </Page>
  *
  * Per riordinare una scheda basta sostituire le liste verticali con questi componenti: nessuna logica cambia.
@@ -178,18 +177,6 @@ export function Notes({ children, title, span = 1 }: { children: ReactNode; titl
     <details className={`sx-group sx-notes sx-span-${span}`}>
       <summary className="sx-title">{title ?? t('lay.notes')}</summary>
       <div className="sx-body sx-notes-body">{children}</div>
-    </details>
-  );
-}
-
-/** Le voci che Aurora non ha: un riquadro compatto e chiuso, con il conteggio; dentro, ogni voce spenta col suo motivo. */
-export function Unavailable({ count, children, span = 1 }: { count: number; children: ReactNode; span?: 1 | 2 | 3 }) {
-  const t = useT();
-  if (count === 0) return null;
-  return (
-    <details className={`sx-group sx-off sx-span-${span}`}>
-      <summary className="sx-title">{t('ens.hidden', { n: count })}</summary>
-      <div className="sx-body sx-off-body">{children}</div>
     </details>
   );
 }

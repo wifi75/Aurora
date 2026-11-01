@@ -3,7 +3,7 @@ import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-librar
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getOnline: vi.fn(), putOnline: vi.fn() }));
+vi.mock('../api/client', () => ({ getOnline: vi.fn(), putOnline: vi.fn(), getStationInfo: vi.fn(() => Promise.reject(new Error('jtdx'))), getEngineSettings: vi.fn(() => Promise.reject(new Error('jtdx'))), putEngineSettings: vi.fn(), postUploadTest: vi.fn(), ApiError: class extends Error {} }));
 import { getOnline, putOnline } from '../api/client';
 import { OnlineTab } from './OnlineTab';
 
