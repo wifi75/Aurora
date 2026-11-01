@@ -109,6 +109,14 @@ Stato al 2026-11-01, versione 0.11.47. Per riprendere il lavoro leggi anche `doc
 - Il proprietario fa le prove: durante le sue sessioni non lanciare test locali ne' verifiche nel browser se lo chiede.
 - Programma Windows (2026-10-24): `desktop/` e' un workspace Cargo a parte (Tauri 2) che usa il crate `aurora`; impostazioni da `%APPDATA%\Aurora\aurora.env` + rilevamento di JTDX/Log4OM2; trasmissione chiusa di default. Aggiornamenti: solo pacchetti con firma minisign valida (`desktop/updater.pub`); la chiave privata e' in `%USERPROFILE%\.aurora-signing\aurora.key`, fuori dal repository e da salvare altrove. Il repository e' pubblico: le release si scaricano senza token.
 
+## Interfaccia (2026-11-01, dopo la 0.11.47)
+- **Impostazioni**: la casella di spunta sta prima del testo (`.set-check` in `onair.css`), le pagine hanno `grid-auto-flow: dense`, le tabelle corte usano `sx-table--compact`; tutto cio' che riguarda la radio (CAT, stile del display, display esteso) e' nella scheda Radio (`RadioTab.tsx`, `RadioExtrasGroup.tsx`).
+- **Testata Stazione**: `live-left` (modi e bande, poi controlli di ricezione) a sinistra, display a destra; il display esteso (`rx-extras`) ha area fissa a due righe e non ripete S-meter e potenza, che sono gia' nel display.
+- **CQ e novita'**: meta' CQ e meta' DXpedition (`cq-split`, `1fr 1fr`); il titolo «DXpedition» e' nella barra del pannello (`Dock` ha `headerExtra`).
+- **Doppio clic su una stazione**: `onReply` manda prima la risposta e poi `enable_tx` (in parallelo poteva arrivare per primo).
+- **Toast** (`lib/toast.ts`, `lib/toastPrefs.ts`, `settings/ToastGroup.tsx`): tipi, secondi, posizione e dimensione scelti nelle Notifiche; gli errori non si spengono; `attempt` in `Live.tsx` mostra l'avviso subito e lo toglie se il comando fallisce.
+- **Logica «nuovo su banda» per paese e zone**: vale la sola banda in qualunque modo, anche con «Banda+Modo» accesa (scelta del proprietario, vedi `docs/logiche-jtdx.md`).
+
 ## Interfaccia e radio (2026-11-01, 0.11.41-0.11.46)
 - **Scelte grafiche del proprietario** (mostrate come PNG sul Desktop, non nel repository): impostazioni a barra laterale (proposta 1), barra modo a tendina + bande a pillole (modello 2), notifiche «pillola aurora» (proposta 4, errori rossi), display della radio esteso (proposta 1). Le proposte grafiche vanno fatte come immagini sul Desktop: i widget nella chat il proprietario non li vede.
 - **Ogni funzione nuova va resa accendibile dalle impostazioni con un «?» che la spiega** (richiesta esplicita). Le voci senza spiegazione sono considerate un difetto.

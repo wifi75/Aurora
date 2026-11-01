@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useToastPrefs } from './toastPrefs';
 
 export type ToastKind = 'ok' | 'error' | 'info';
 
@@ -31,7 +32,10 @@ export const useToasts = create<ToastState>((set, get) => ({
   toasts: [],
   push(text, kind = 'ok') {
     const id = nextId++;
-    const ms = TOAST_MS[kind];
+    const prefs = useToastPrefs.getState().prefs;
+    // un tipo spento non compare (gli errori si vedono sempre)
+    if (!prefs.show[kind]) return id;
+    const ms = Math.round(prefs.seconds[kind] * 1000) || TOAST_MS[kind];
     set((s) => ({ toasts: [...s.toasts.filter((t) => t.text !== text), { id, text, kind, ms, leaving: false }].slice(-MAX) }));
     setTimeout(() => get().dismiss(id), ms);
     return id;

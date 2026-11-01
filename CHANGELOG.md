@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Messaggi toast personalizzabili** (Impostazioni > Notifiche, riquadro «Messaggi toast»): quali tipi mostrare (gli errori sempre), quanti secondi restano, posizione (in alto al centro, in alto a destra, in basso) e dimensione, con il tasto «Prova i messaggi».
+- **Messaggi toast immediati**: l'avviso compare subito al clic, senza aspettare la risposta del motore; se il comando poi fallisce diventa un errore.
 - **CQ e novita' diviso esattamente a meta'**: a sinistra i CQ, a destra le DXpedition; il titolo «DXpedition» sta nella barra del pannello, nella meta' destra, con lo stesso stile di «CQ e novita'». Le DXpedition hanno schede colorate per stato (in onda verde, in arrivo blu, finite grigie, sentita adesso arancio), bandiera e pastiglia con la data.
 - **Doppio clic su una stazione**: la risposta parte per prima e subito dopo si accende Abilita Tx (prima le due richieste partivano insieme e Abilita Tx poteva arrivare a stazione ancora non scelta); se non si accende, l'errore si vede.
 - **Pastiglia RX/TX piu' piccola**: TX sta nello stesso posto e della stessa misura di RX, senza la scritta STOP; un clic su TX ferma la trasmissione.

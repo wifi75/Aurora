@@ -42,7 +42,7 @@ import { registerSpectrum, spanFromPassband, useSpectrumSpan } from '../lib/spec
 import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation } from '../state/station';
-import { toast } from '../lib/toast';
+import { toast, useToasts } from '../lib/toast';
 
 const F_MIN_HZ = 0;
 
@@ -193,10 +193,12 @@ export function Live() {
   };
 
   const attempt = async (action: () => Promise<void>, done: string | null) => {
+    // l'avviso compare subito, al clic, senza aspettare la risposta del motore; se il comando fallisce diventa un errore
+    const shown = done ? toast(done, 'ok') : null;
     try {
       await action();
-      if (done) toast(done, 'ok');
     } catch (error) {
+      if (shown !== null) useToasts.getState().dismiss(shown);
       toast(replyErrorMessage(error, t), 'error');
     }
   };
