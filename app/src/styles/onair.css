@@ -5571,3 +5571,18 @@
   width: 0.4rem;
   height: 0.4rem;
 }
+
+/* AUTO del livello d'ingresso: acceso pieno verde con testo bianco, spento solo contorno grigio */
+.in-level-auto[aria-pressed='true'] {
+  color: #fff;
+  background: #0f6e56;
+  border-color: #0f6e56;
+  font-weight: 700;
+}
+
+.in-level-auto[aria-pressed='false'] {
+  color: var(--muted, #6b7a8f);
+  background: transparent;
+  border-color: var(--muted, #9aa8bb);
+  border-style: dashed;
+}
