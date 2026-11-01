@@ -339,3 +339,88 @@
 .rd-svg--stretch {
   height: 4.2rem;
 }
+
+/* Display esteso sotto quello della radio: stesso schermo scuro, secondo VFO piu' piccolo, strumenti e filtri */
+.rx-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  padding: 0.3rem 0.5rem;
+  color: #7fe0ff;
+  background: #0f1720;
+  border: 1px solid #4a5a74;
+  border-radius: 0.6rem;
+  font-family: var(--font-data, monospace);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+.rx-vfob {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.rx-vfob-tag {
+  padding: 0 0.3rem;
+  color: #0f1720;
+  background: #7fe0ff;
+  border-radius: 0.2rem;
+  font-weight: 700;
+}
+
+.rx-vfob-freq {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.rx-meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr));
+  gap: 0.15rem 0.5rem;
+}
+
+.rx-meter {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.rx-bar {
+  display: block;
+  height: 4px;
+  margin-top: 2px;
+  overflow: hidden;
+  background: #24313f;
+  border-radius: 2px;
+}
+
+.rx-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+.rx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.rx-chip {
+  padding: 0 0.3rem;
+  color: #6c8296;
+  border: 1px solid #2c3b4c;
+  border-radius: 0.25rem;
+}
+
+.rx-chip--on {
+  color: #9fe1cb;
+  border-color: #3d8b74;
+}
+
+.rx-line {
+  color: #9fb4c8;
+}

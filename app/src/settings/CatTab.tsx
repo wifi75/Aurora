@@ -454,6 +454,7 @@ export function CatGroups() {
             </Field>
           ) : null}
           <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => set({ auto_connect: v })} />
+          <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => set({ read_extras: v })} />
         </Cells>
       </Group>
 

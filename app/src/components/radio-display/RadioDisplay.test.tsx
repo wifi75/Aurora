@@ -1,3 +1,5 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadioDisplayHeader } from './RadioDisplayHeader';
@@ -97,22 +99,25 @@ describe('RadioDisplayPicker', () => {
   });
 });
 
+// il display esteso chiede lo stato della radio: serve il client delle richieste
+const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{children}</QueryClientProvider>;
+
 describe('RadioDisplayHeader', () => {
   const status = { dial_hz: 21_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'FN42', meters: { s_points: 4 } };
 
   it('shows the compact display from the station status and nothing when hidden', () => {
     act(() => useStation.setState({ status }));
-    const { container, rerender } = render(<RadioDisplayHeader />);
+    const { container, rerender } = render(<RadioDisplayHeader />, { wrapper });
     expect(screen.getByRole('button', { name: /21\.074\.00/ })).toBeInTheDocument();
     expect(container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 320 52');
     act(() => useRadioDisplay.getState().set({ hidden: true }));
-    rerender(<RadioDisplayHeader />);
+    rerender(<RadioDisplayHeader />, { wrapper });
     expect(container).toBeEmptyDOMElement();
   });
 
   it('opens the enlarged version on click and closes it with Esc', () => {
     act(() => useStation.setState({ status }));
-    render(<RadioDisplayHeader />);
+    render(<RadioDisplayHeader />, { wrapper });
     const trigger = screen.getByRole('button');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(trigger);
@@ -126,7 +131,7 @@ describe('RadioDisplayHeader', () => {
   it('opens on hover after a short delay and closes when the mouse leaves', () => {
     vi.useFakeTimers();
     act(() => useStation.setState({ status }));
-    const { container } = render(<RadioDisplayHeader />);
+    const { container } = render(<RadioDisplayHeader />, { wrapper });
     const root = container.firstElementChild as HTMLElement;
     fireEvent.mouseEnter(root);
     expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
@@ -140,7 +145,7 @@ describe('RadioDisplayHeader', () => {
   it('keeps it open on hover leave when opened with a click', () => {
     vi.useFakeTimers();
     act(() => useStation.setState({ status }));
-    const { container } = render(<RadioDisplayHeader />);
+    const { container } = render(<RadioDisplayHeader />, { wrapper });
     const root = container.firstElementChild as HTMLElement;
     fireEvent.click(screen.getByRole('button'));
     fireEvent.mouseLeave(root);
