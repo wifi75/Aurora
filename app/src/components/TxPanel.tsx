@@ -78,6 +78,10 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
         <>
           <div className="tx-dx">
             {pendingDx || status.dx_call ? <DxPill status={status} /> : <strong className="data tx-dx-call">—</strong>}
+            {/* accanto al DX: RX verde in ascolto, TX rosso lampeggiante in onda */}
+            <span className="rxtx-flag" data-state={status.transmitting ? 'tx' : 'rx'} role="status" title={t('tip.onair')}>
+              {status.transmitting ? 'TX' : 'RX'}
+            </span>
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>

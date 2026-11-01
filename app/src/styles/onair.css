@@ -4678,3 +4678,27 @@
   .cluster-table th:nth-child(2) { width: 13%; }
   .cluster-table th:nth-child(5) { width: 24%; }
 }
+
+/* RX/TX accanto al blocco del DX: pastiglia ben visibile */
+.tx-dx .rxtx-flag {
+  justify-content: center;
+  min-width: 3rem;
+  padding: 0.3rem 0.7rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+.tx-dx .rxtx-flag[data-state='rx'] {
+  background: color-mix(in srgb, var(--ok, #2fbf5b) 18%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ok, #2fbf5b) 45%, transparent);
+}
+
+.tx-dx .rxtx-flag[data-state='tx'] {
+  background: var(--danger, #e5484d);
+  border-color: var(--danger, #e5484d);
+  color: #fff;
+  box-shadow: 0 0 14px var(--danger, #e5484d);
+}

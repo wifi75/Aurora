@@ -1,5 +1,5 @@
-import { useT } from "../i18n";
-import type { AlertPrefs } from "../lib/alerts";
+import { useT } from '../i18n';
+import type { AlertPrefs } from '../lib/alerts';
 
 interface Props {
   value: AlertPrefs;
@@ -10,29 +10,16 @@ interface Props {
 export function AlertSwitch({ value, onChange }: Props) {
   const t = useT();
   return (
-    <div
-      className="alert-switch"
-      role="group"
-      aria-label={t("alert.button")}
-      title={t("tip.alert")}
-    >
+    <div className="alert-switch" role="group" aria-label={t('alert.button')} title={t('tip.alert')}>
       <button
         type="button"
         className="glass alert-icon"
         aria-pressed={value.enabled}
-        aria-label={t("alert.button")}
-        title={t("alert.button")}
+        aria-label={t('alert.button')}
+        title={t('alert.button')}
         onClick={() => onChange({ ...value, enabled: !value.enabled })}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" />
           {value.enabled ? (
             <>
@@ -45,7 +32,7 @@ export function AlertSwitch({ value, onChange }: Props) {
         </svg>
       </button>
       <label>
-        <span className="visually-hidden">{t("alert.volume")}</span>
+        <span className="visually-hidden">{t('alert.volume')}</span>
         <input
           type="range"
           min="0"
@@ -53,9 +40,7 @@ export function AlertSwitch({ value, onChange }: Props) {
           step="0.05"
           value={value.volume}
           disabled={!value.enabled}
-          onChange={(e) =>
-            onChange({ ...value, volume: Number(e.target.value) })
-          }
+          onChange={(e) => onChange({ ...value, volume: Number(e.target.value) })}
         />
       </label>
     </div>
