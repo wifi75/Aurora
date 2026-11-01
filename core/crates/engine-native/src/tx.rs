@@ -1549,7 +1549,9 @@ mod tests {
     /// a 556 Hz sale sopra 1000 Hz prima di partire, la risposta «IU3ABC V26JJ R+03» fa mandare RR73 e registrare, e compare l'avviso «non e' un Fox».
     #[test]
     fn hound_with_a_non_fox_station_moves_tx_up_completes_and_warns() {
-        let (mut d, port, controls) = driver();
+        let (mut d, _port, controls) = driver();
+        // Hound acceso a mano e automatico spento, come nel caso dal vivo: la chiamata non parte sotto 1000 Hz
+        controls.hound_auto.store(false, Ordering::Relaxed);
         controls.set_switch("hound", true);
         d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
         controls.tx_df.store(556, Ordering::Relaxed);
@@ -1806,6 +1808,7 @@ mod tests {
     fn hound_hops_the_r_report_around_the_fox_frequency() {
         let hop = |hound: bool, split: bool, dial: u64| -> Vec<u32> {
             let mut b = Bench::new();
+            b.controls.hound_auto.store(false, Ordering::Relaxed);
             b.controls.set_switch("hound", hound);
             b.controls.set_switch("split", split);
             b.d.handle(TxCommand::Option(OptionChange::Hound(hound)), BASE);
