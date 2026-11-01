@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.56',
-    released: '2026-11-01T17:00:00Z',
+    released: '2026-11-01T13:30:02Z',
     kind: 'new',
     title: ['DXpedition: verifica della Fox', 'DXpedition: Fox verification', 'DXpedition: Fox-Prüfung', 'DXpédition : vérification du Fox', 'DXpedición: verificación del Fox', 'DXpedição: verificação do Fox'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.56',
-    released: '2026-11-01T17:00:00Z',
+    released: '2026-11-01T13:30:02Z',
     kind: 'new',
     title: ['Wait and Reply e Wait and Call', 'Wait and Reply and Wait and Call', 'Wait and Reply und Wait and Call', 'Wait and Reply et Wait and Call', 'Wait and Reply y Wait and Call', 'Wait and Reply e Wait and Call'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.56',
-    released: '2026-11-01T17:00:00Z',
+    released: '2026-11-01T13:30:02Z',
     kind: 'new',
     title: ['Cambio banda automatico', 'Automatic band hopping', 'Automatischer Bandwechsel', 'Changement de bande automatique', 'Cambio de banda automático', 'Mudança de banda automática'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.56',
-    released: '2026-11-01T17:00:00Z',
+    released: '2026-11-01T13:30:02Z',
     kind: 'changed',
     title: ['Avvio della decodifica e full duplex', 'Decoder start and full duplex', 'Dekodierstart und Vollduplex', 'Début du décodage et full duplex', 'Inicio de la decodificación y full duplex', 'Início da descodificação e full duplex'],
     text: [
