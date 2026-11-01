@@ -4841,3 +4841,25 @@
   white-space: nowrap;
 }
 
+
+/* DX Cluster: frequenza come testo normale, senza la pillola gialla; ogni intestazione esattamente sopra la sua colonna */
+.cluster-table .cluster-freq {
+  display: inline;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.cluster-table th,
+.cluster-table td {
+  padding-inline: 0.3rem;
+  text-align: left;
+}
+
+.cluster-table th:last-child,
+.cluster-table td:last-child {
+  text-align: right;
+}
