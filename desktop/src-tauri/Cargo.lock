@@ -231,7 +231,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-spectrum"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "cpal",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "aurora"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -272,6 +272,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tx-native",
+ "udp-bridge",
  "udp-emitter",
  "udp-hub",
  "updater",
@@ -280,7 +281,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-core"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "serde",
  "tokio",
@@ -288,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-desktop"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora",
  "aurora-core",
@@ -311,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "auth"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -681,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "clock-sync"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "serde",
  "serde_json",
@@ -845,6 +846,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-deque"
+version = "0.8.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "622f3fc73690be383c7214310406f28a90e6edeadc3cea882f9d71e495b9711a"
+dependencies = [
+ "crossbeam-epoch",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-epoch"
+version = "0.9.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc74980687109a3b14c72fd458107bf0baa1da1a1a805e178d15501ba9b86d9d"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
 name = "crossbeam-utils"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -957,7 +977,7 @@ dependencies = [
 
 [[package]]
 name = "decode-history"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "rusqlite",
  "serde",
@@ -1168,7 +1188,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "dx-cluster"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "serde",
  "serde_json",
@@ -1178,13 +1198,19 @@ dependencies = [
 
 [[package]]
 name = "dxcc"
-version = "0.11.54"
+version = "0.11.55"
 
 [[package]]
 name = "dyn-clone"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
+
+[[package]]
+name = "either"
+version = "1.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
 
 [[package]]
 name = "embed-resource"
@@ -1214,7 +1240,7 @@ checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
 name = "engine-jtdx"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "dxcc",
@@ -1227,7 +1253,7 @@ dependencies = [
 
 [[package]]
 name = "engine-native"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -1245,7 +1271,7 @@ dependencies = [
 
 [[package]]
 name = "engine-sim"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "tokio",
@@ -1423,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "ft4"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "ft8",
  "rustfft",
@@ -1431,8 +1457,9 @@ dependencies = [
 
 [[package]]
 name = "ft8"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
+ "rayon",
  "rustfft",
 ]
 
@@ -2161,7 +2188,7 @@ dependencies = [
 
 [[package]]
 name = "input-level"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -2369,7 +2396,7 @@ dependencies = [
 
 [[package]]
 name = "jt"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "rustfft",
 ]
@@ -2488,7 +2515,7 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "logbook"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "rusqlite",
@@ -3047,7 +3074,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "online-info"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "serde",
  "serde_json",
@@ -3386,7 +3413,7 @@ checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
 name = "qso-engine"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "engine-jtdx",
@@ -3397,7 +3424,7 @@ dependencies = [
 
 [[package]]
 name = "qso-export"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -3407,7 +3434,7 @@ dependencies = [
 
 [[package]]
 name = "qso-native"
-version = "0.11.54"
+version = "0.11.55"
 
 [[package]]
 name = "quick-xml"
@@ -3492,6 +3519,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
+name = "rayon"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
+dependencies = [
+ "either",
+ "rayon-core",
+]
+
+[[package]]
+name = "rayon-core"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
+dependencies = [
+ "crossbeam-deque",
+ "crossbeam-utils",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3561,7 +3608,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "remote-api"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "auth",
@@ -3588,7 +3635,7 @@ dependencies = [
 
 [[package]]
 name = "reporting"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -3660,7 +3707,7 @@ dependencies = [
 
 [[package]]
 name = "rig-control"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "serde",
  "serde_json",
@@ -5184,7 +5231,7 @@ dependencies = [
 
 [[package]]
 name = "tx-native"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "cpal",
  "rig-control",
@@ -5206,11 +5253,11 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
 name = "udp-bridge"
-version = "0.11.54"
+version = "0.11.55"
 
 [[package]]
 name = "udp-emitter"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -5222,7 +5269,7 @@ dependencies = [
 
 [[package]]
 name = "udp-hub"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "tokio",
  "tracing",
@@ -5266,7 +5313,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "updater"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "minisign-verify",
  "serde",
@@ -6004,7 +6051,7 @@ dependencies = [
 
 [[package]]
 name = "wishlist"
-version = "0.11.54"
+version = "0.11.55"
 dependencies = [
  "aurora-core",
  "serde",
