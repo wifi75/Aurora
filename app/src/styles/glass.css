@@ -976,3 +976,22 @@ button.glass.chip.chip--main {
   letter-spacing: 0.08em;
   opacity: 0.85;
 }
+
+/* Tema e lingua nella testata: solo icone */
+.theme-toggle--icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.theme-toggle--icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.lang-trigger {
+  gap: 0.3rem;
+}

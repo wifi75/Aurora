@@ -96,7 +96,7 @@ export function LanguageSelect() {
         onKeyDown={onKeyDown}
       >
         <span className={`fi fi-${LANG_FLAGS[lang]} lang-flag`} aria-hidden="true" />
-        <span className="lang-name">{LANG_NAMES[lang]}</span>
+        <span className="lang-name visually-hidden">{LANG_NAMES[lang]}</span>
         <span className="lang-caret" aria-hidden="true" />
       </button>
       <ul className="lang-list" id={listId} role="listbox" aria-label={t('lang.label')} hidden={!open}>
