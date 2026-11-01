@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.51',
-    released: '2026-11-01T11:10:00Z',
+    released: '2026-11-01T09:27:41Z',
     kind: 'fixed',
     title: ['Cascata di nuovo visibile', 'Waterfall visible again', 'Wasserfall wieder sichtbar', 'Cascade de nouveau visible', 'Cascada visible de nuevo', 'Cascata de novo visível'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.51',
-    released: '2026-11-01T11:10:00Z',
+    released: '2026-11-01T09:27:41Z',
     kind: 'new',
     title: ['Log interno nel pannello Log', 'Own log in the Log panel', 'Eigenes Log im Log-Fenster', 'Journal interne dans le panneau Log', 'Log interno en el panel Log', 'Log interno no painel Log'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.51',
-    released: '2026-11-01T11:10:00Z',
+    released: '2026-11-01T09:27:41Z',
     kind: 'changed',
     title: ['Numero dei QSO ed esportazione nella barra del Log', 'QSO count and export in the Log bar', 'QSO-Zahl und Export in der Log-Leiste', 'Nombre de QSO et export dans la barre du Log', 'Número de QSO y exportación en la barra del Log', 'Número de QSO e exportação na barra do Log'],
     text: [
