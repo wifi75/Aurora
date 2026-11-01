@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../api/client', async (importActual) => ({
   ApiError: (await importActual<typeof import('../api/client')>()).ApiError,
   getEngineSettings: vi.fn(),
+  getClusterSpots: vi.fn().mockResolvedValue({ config: {}, servers: [{ key: 'a', name: 'a', state: 'connected', detail: null, spots: 0, since_ms: 0 }], spots: [] }),
   postSpotDxsummit: vi.fn(),
   getControls: vi.fn(),
   postControl: vi.fn().mockResolvedValue(undefined),
