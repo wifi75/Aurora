@@ -203,7 +203,8 @@ impl State {
             | Command::SetDx { .. }
             | Command::SetReport { .. }
             | Command::Tune { .. }
-            | Command::LogQso => {}
+            | Command::LogQso
+            | Command::Fox(_) => {}
         }
     }
 }

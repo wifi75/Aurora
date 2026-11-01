@@ -293,6 +293,8 @@ pub enum Event {
     /// Un programma collegato via UDP (Clear, tipo 3) chiede di svuotare le liste dei messaggi, come «Cancella».
     /// `window`: 0 attivita' di banda, 1 frequenza Rx, 2 entrambe.
     ClearDecodes { window: u8 },
+    /// Lo stato della Fox (modo Fox di WSJT-X): chi chiama, la coda, i QSO in corso e i messaggi del periodo.
+    Fox(FoxSnapshot),
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.
@@ -339,4 +341,41 @@ mod tests {
         assert_eq!(json, serde_json::json!({ "s_points": 4.0, "estimated": true }));
         assert_eq!(serde_json::from_value::<RadioMeters>(json).expect("lettura"), m);
     }
+}
+
+/// Un Hound che chiama la Fox, come lo mostra la pagina Fox.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxCallerView {
+    pub call: String,
+    pub grid: String,
+    pub snr: i32,
+    pub freq_hz: u32,
+    pub age: u32,
+}
+
+/// Un QSO della Fox in corso.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxQsoView {
+    pub call: String,
+    pub sent: String,
+    pub rcvd: Option<String>,
+    pub tries: i64,
+    pub rr73_sent: bool,
+}
+
+/// Lo stato della Fox per l'interfaccia.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxSnapshot {
+    pub enabled: bool,
+    pub slots: usize,
+    pub more_cqs: bool,
+    pub cq: String,
+    pub auto_queue: bool,
+    pub callers: Vec<FoxCallerView>,
+    pub queue: Vec<FoxCallerView>,
+    pub in_progress: Vec<FoxQsoView>,
+    /// I messaggi dell'ultima trasmissione, uno per posto.
+    pub tx: Vec<String>,
+    pub periods: i64,
+    pub logged: u64,
 }

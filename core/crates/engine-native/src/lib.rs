@@ -3,6 +3,7 @@
 //! `native-decodes.log` (nella cartella dei dati) e si confrontano con quelli di JTDX (`GET /api/v1/engine/native`), senza toccare l'elenco
 //! che vede l'utente. Quando il confronto e' abbastanza buono il motore proprio prendera' il posto di JTDX.
 
+pub mod fox;
 mod alltxt;
 pub mod features;
 mod parity;
@@ -193,6 +194,7 @@ pub fn start_with_save(
         tokio::spawn(async move {
             // lo stato (frequenza, S-meter, trasmissione) si pubblica quattro volte al secondo: a un secondo lo S-meter sembrava fermo
             let mut tick = tokio::time::interval(std::time::Duration::from_millis(250));
+            let mut last_fox = aurora_core::FoxSnapshot::default();
             loop {
                 tick.tick().await;
                 let view = tx::view_of(&live.controls);
@@ -227,6 +229,12 @@ pub fn start_with_save(
                     fox_verification: live.controls.fox_verification(),
                     ..StationStatus::default()
                 };
+                // lo stato della Fox, solo quando cambia
+                let fox = live.controls.fox_view.lock().map(|v| v.clone()).unwrap_or_default();
+                if fox != last_fox {
+                    let _ = events.send(Event::Fox(fox.clone()));
+                    last_fox = fox;
+                }
                 if events.send(Event::Status(status)).is_err() && events.receiver_count() == 0 {
                     // nessuno ascolta ancora: si continua, la pagina si colleghera' dopo
                 }

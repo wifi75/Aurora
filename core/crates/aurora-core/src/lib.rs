@@ -9,10 +9,10 @@ pub mod filters;
 pub mod version;
 
 pub use bus::Bus;
-pub use command::Command;
+pub use command::{Command, FoxCommand};
 pub use engine::{Engine, EngineIo};
 pub use filters::{SharedUdpFilters, UdpFilters};
-pub use event::{AudioLevel, DecodeTag, DecodedMessage, Event, FoxVerification, LevelState, PendingQso, QsoRecord, RadioMeters, TxAlert, TxAlertKind, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};
+pub use event::{AudioLevel, DecodeTag, DecodedMessage, Event, FoxCallerView, FoxQsoView, FoxSnapshot, FoxVerification, LevelState, PendingQso, QsoRecord, RadioMeters, TxAlert, TxAlertKind, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoreError {

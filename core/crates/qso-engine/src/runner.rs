@@ -196,6 +196,7 @@ fn handle_event(inner: &Inner, event: Event) {
         | Event::AudioLevel(_)
         | Event::BandChanged { .. }
         | Event::HighlightCallsign { .. }
-        | Event::ClearDecodes { .. } => {}
+        | Event::ClearDecodes { .. }
+        | Event::Fox(_) => {}
     }
 }
