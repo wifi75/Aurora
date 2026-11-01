@@ -778,3 +778,12 @@
   cursor: not-allowed;
 }
 
+
+/* Zoom del display: il doppio di prima */
+.rd-zoom {
+  width: min(88rem, 96vw);
+}
+
+.rd-zoom .rx-extras {
+  font-size: 1.1rem;
+}
