@@ -111,7 +111,7 @@ describe('RadioDisplayHeader', () => {
     expect(screen.getByRole('button', { name: /21\.074\.00/ })).toBeInTheDocument();
     expect(container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 320 52');
     act(() => useRadioDisplay.getState().set({ hidden: true }));
-    rerender(<RadioDisplayHeader />, { wrapper });
+    rerender(<RadioDisplayHeader />);
     expect(container).toBeEmptyDOMElement();
   });
 
