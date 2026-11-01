@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **CQ e novita' diviso esattamente a meta'**: a sinistra i CQ, a destra le DXpedition; il titolo «DXpedition» sta nella barra del pannello, nella meta' destra, con lo stesso stile di «CQ e novita'». Le DXpedition hanno schede colorate per stato (in onda verde, in arrivo blu, finite grigie, sentita adesso arancio), bandiera e pastiglia con la data.
+- **Doppio clic su una stazione**: la risposta parte per prima e subito dopo si accende Abilita Tx (prima le due richieste partivano insieme e Abilita Tx poteva arrivare a stazione ancora non scelta); se non si accende, l'errore si vede.
+- **Pastiglia RX/TX piu' piccola**: TX sta nello stesso posto e della stessa misura di RX, senza la scritta STOP; un clic su TX ferma la trasmissione.
 - **Impostazioni piu' compatte e ordinate**: la casella di spunta sta subito prima del suo testo (prima era all'altro capo della cella); lingua e tema in un solo riquadro «Aspetto»; tabelle corte (frequenze, programmazione, notifiche) a larghezza contenuta; macro in griglia; i riquadri bassi salgono accanto a quelli alti.
 - **Stazione, testata**: modi, bande e controlli di ricezione stretti uno sotto l'altro a sinistra, display piu' basso a destra; il display esteso ha un'area fissa a due righe con tutti i pulsanti (PRE, ATT, AGC, NB, NR...) e senza il doppione dello S-meter e della potenza; se le voci sono accese ma i dati extra della radio sono spenti, lo dice.
 - **Radio, riquadro Collegamento**: le caselle hanno la larghezza che serve; larghe per sistema di controllo, modello e porta (il testo si legge intero), strette per bit di dati, bit di stop, velocita' e indirizzo CI-V; il tutto su due righe.

@@ -4679,28 +4679,29 @@
   .cluster-table th:nth-child(5) { width: 24%; }
 }
 
-/* RX/TX accanto al blocco del DX: pastiglia ben visibile */
+/* RX/TX accanto al blocco del DX: pastiglia piccola; TX sta nello stesso posto e della stessa misura di RX (un clic su TX ferma) */
 .tx-dx .rxtx-flag {
   justify-content: center;
-  min-width: 3rem;
-  padding: 0.3rem 0.7rem;
+  box-sizing: border-box;
+  min-width: 2.4rem;
+  padding: 0.18rem 0.5rem;
   border: 2px solid currentColor;
   border-radius: 999px;
-  font-size: 1rem;
-  letter-spacing: 0.1em;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
   line-height: 1;
 }
 
 .tx-dx .rxtx-flag[data-state='rx'] {
   background: color-mix(in srgb, var(--ok, #2fbf5b) 18%, transparent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--ok, #2fbf5b) 45%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ok, #2fbf5b) 45%, transparent);
 }
 
 .tx-dx .rxtx-flag[data-state='tx'] {
   background: var(--danger, #e5484d);
   border-color: var(--danger, #e5484d);
   color: #fff;
-  box-shadow: 0 0 14px var(--danger, #e5484d);
+  box-shadow: 0 0 10px var(--danger, #e5484d);
 }
 
 /* Distanza: colonna fissa e stretta, misurata su «99999 km» (8 caratteri del carattere a passo fisso a 0.74rem + margini);
@@ -4864,11 +4865,38 @@
   text-align: right;
 }
 
-/* CQ e novità diviso: CQ a sinistra, DXpedition a destra */
+/* CQ e novita' diviso esattamente a meta': CQ a sinistra, DXpedition a destra; il titolo «DXpedition» sta nella barra del pannello, nella meta' destra */
+.dock-panel--cq {
+  container-type: inline-size;
+  container-name: cqpanel;
+}
+
+.dock-panel--cq .dock-grip {
+  position: relative;
+}
+
+.dock-grip-extra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-3) 0 var(--space-3);
+  right: 0;
+}
+
+.dock-grip-extra h2 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
 .cq-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(14rem, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
   height: 100%;
   min-height: 0;
 }
@@ -4888,64 +4916,95 @@
   font-size: 0.8rem;
 }
 
+/* il titolo e' nella barra del pannello: dentro resta solo quando la finestra e' stretta */
 .dxped-head {
-  display: flex;
+  display: none;
   justify-content: space-between;
   padding: 0.2rem 0 0.35rem;
 }
 
 .dxped-list {
+  display: grid;
   flex: 1;
+  align-content: start;
+  gap: 0.3rem;
   min-height: 0;
   margin: 0;
-  padding: 0;
+  padding: 0.35rem 0.4rem 0.35rem 0;
   overflow: auto;
   list-style: none;
 }
 
 .dxped-item {
-  padding: 0.3rem 0.4rem;
-  border-bottom: 1px solid var(--border);
+  --dx: #6b7a90;
+  padding: 0.3rem 0.5rem;
+  background: color-mix(in srgb, var(--dx) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dx) 30%, transparent);
+  border-left: 4px solid var(--dx);
+  border-radius: 0.45rem;
+}
+
+.dxped-item--active {
+  --dx: #1b9a52;
+}
+
+.dxped-item--soon {
+  --dx: #2f7fd8;
+}
+
+.dxped-item--ended {
+  --dx: #8a94a3;
+  opacity: 0.6;
 }
 
 .dxped-line {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 5.2rem minmax(0, 1fr) auto;
   gap: 0.4rem;
-  align-items: baseline;
+  align-items: center;
+}
+
+.dxped-call {
+  color: var(--dx);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
 }
 
 .dxped-country {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.dxped-flag {
+  flex: none;
+  width: 1.3em;
+  height: 1em;
+  border-radius: 2px;
+}
+
 .dxped-when {
-  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
+  color: #fff;
+  background: var(--dx);
+  border-radius: 0.7rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.dxped-item--active .dxped-when {
-  color: #1b8a47;
-}
-
-.dxped-item--ended {
-  opacity: 0.55;
-}
-
 .dxped-item--heard {
-  border: 2px solid #1b8a47;
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, #1b8a47 12%, transparent);
-}
-
-.dxped-item--heard .dxped-when {
-  font-weight: 700;
+  --dx: #e0801a;
+  background: color-mix(in srgb, var(--dx) 18%, transparent);
+  border: 2px solid var(--dx);
+  box-shadow: 0 0 10px -2px var(--dx);
 }
 
 .dxped-info {
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
   font-size: 0.72rem;
   line-height: 1.3;
 }
@@ -4954,9 +5013,13 @@
   margin: 0.3rem 0;
 }
 
-@container (max-width: 34rem) {
+@container cqpanel (max-width: 34rem) {
   .cq-split {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dock-grip-extra {
+    display: none;
   }
 
   .dxped {
@@ -4965,19 +5028,16 @@
     border-top: 1px solid var(--border);
     max-height: 12rem;
   }
+
+  .dxped-head {
+    display: flex;
+  }
 }
 
-/* in onda la pastiglia TX e' anche lo STOP: stessa misura, nessun pulsante in piu' */
+/* in onda la pastiglia TX e' anche lo STOP: stessa misura e stessa posizione di RX, nessuna scritta in piu' */
 .rxtx-flag--stop {
-  gap: 0.35rem;
   cursor: pointer;
   font: inherit;
-}
-
-.tx-dx .rxtx-flag--stop .rxtx-stop {
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  opacity: 0.9;
 }
 
 

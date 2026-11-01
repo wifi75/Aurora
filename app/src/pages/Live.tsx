@@ -1,5 +1,5 @@
 import type { DecodedMessage } from '../api/schemas';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { getCat, getControls, getOnline, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
@@ -231,6 +231,7 @@ export function Live() {
     }, t('note.bandSet', { band }));
   };
 
+  const client = useQueryClient();
   const onReply = useCallback(
     async (id: number) => {
       const target = useStation.getState().decodes.find((d) => d.id === id);
@@ -241,18 +242,20 @@ export function Live() {
       if (!replyAccepted(engineConfig.data?.AcceptUDPReplyMessages, target?.text ?? '')) toast(t('note.replyMode'), 'info');
       await attempt(
         async () => {
-          // la stazione e' scelta: perche' il motore la chiami da solo al momento giusto serve anche Abilita Tx
-          // (con 1 QSO acceso il motore lo spegne a ogni QSO finito); senza trasmissione aperta il server rifiuta e resta com'e'.
-          // Le due richieste partono insieme: ogni attimo conta, la trasmissione parte solo se Abilita Tx e' acceso in tempo.
-          const arm = info.data?.tx_allowed ? postControl('enable_tx', true).catch(() => undefined) : Promise.resolve();
+          // la stazione e' scelta: perche' il motore la chiami serve anche Abilita Tx. Prima la risposta (il motore sceglie il messaggio e il periodo),
+          // poi Abilita Tx: in parallelo poteva arrivare per primo, a stazione ancora non scelta. Se il comando fallisce lo si dice, non si ignora.
           await postReply(id);
-          await arm;
+          if (info.data?.tx_allowed !== false) {
+            await postControl('enable_tx', true);
+            client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, enable_tx: true }));
+            void client.invalidateQueries({ queryKey: ['controls'] });
+          }
         },
         t('note.replySent', { call: call ?? target?.text ?? '' }),
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, info.data?.tx_allowed, engineConfig.data?.AcceptUDPReplyMessages],
+    [t, info.data?.tx_allowed, engineConfig.data?.AcceptUDPReplyMessages, client],
   );
 
   // tasto destro su una stazione: in coda per il prossimo QSO (subito, se non ce n'e' uno in corso); di nuovo la toglie
@@ -312,7 +315,24 @@ export function Live() {
           }}
         />
       ) : (
-        <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
+        <Dock
+          layout={layout}
+          onChange={changeLayout}
+          titles={titles}
+          render={renderPanel}
+          headerExtra={
+            dxpedOn
+              ? {
+                  cq: (
+                    <div className="dock-grip-extra">
+                      <h2>{t('dxp.title')}</h2>
+                      <span className="muted">NG3K</span>
+                    </div>
+                  ),
+                }
+              : undefined
+          }
+        />
       )}
       <StopButton variant="bar" />
     </div>

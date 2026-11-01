@@ -9,6 +9,8 @@ interface Props {
   /** Pannelli da non mostrare (per esempio la cascata nascosta). */
   hidden?: readonly PanelId[];
   render(id: PanelId): ReactNode;
+  /** Qualcosa in piu' nella barra del titolo di un pannello (per esempio il titolo della meta' destra). */
+  headerExtra?: Partial<Record<PanelId, ReactNode>>;
 }
 
 /** Finestre che si disegnano affiancate quando sono vicine e aperte: la prima a sinistra, la seconda a destra. */
@@ -32,7 +34,7 @@ function capture(el: HTMLElement, pointerId: number): void {
   }
 }
 
-export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
+export function Dock({ layout, onChange, titles, hidden = [], render, headerExtra }: Props) {
   const t = useT();
   const columns = useRef<Record<Zone, HTMLDivElement | null>>({ left: null, right: null });
   const root = useRef<HTMLDivElement | null>(null);
@@ -168,6 +170,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render }: Props) {
           >
             <span className="dock-grip-dots" aria-hidden="true" />
             <h2>{titles[id]}</h2>
+            {headerExtra?.[id]}
           </header>
           {!folded && <div className="dock-body">{render(id)}</div>}
           {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={t('dock.height', { title: titles[id] })} title={t('tip.dock.resize')} onPointerDown={startResize(id)} />}

@@ -82,7 +82,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
             {/* accanto al DX: RX verde in ascolto; in onda TX rosso lampeggiante, ed e' anche lo STOP (un clic ferma la trasmissione) */}
             {status.transmitting ? (
               <button type="button" className="rxtx-flag rxtx-flag--stop" data-state="tx" title={t('tip.txStop')} aria-label={t('stop.button')} onClick={() => void postHalt().catch(() => toast(t('stop.fail'), 'error'))}>
-                TX <span className="rxtx-stop">STOP</span>
+                TX
               </button>
             ) : (
               <span className="rxtx-flag" data-state="rx" role="status" title={t('tip.onair')}>
