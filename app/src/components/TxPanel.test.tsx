@@ -97,7 +97,7 @@ describe('TxPanel', () => {
     const quiet = { ...status, transmitting: false, tx_message: null };
     render(<TxPanel txAllowed status={quiet} decodes={[]} />);
     fireEvent.click(screen.getByText('BB2BB AA1AA RR73'));
-    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument());
+    await waitFor(() => expect(document.querySelector('.live-note')).toBeInTheDocument());
     expect(screen.getByText('BB2BB AA1AA -07').closest('li')).toHaveAttribute('data-next', 'true');
     expect(screen.getByText('BB2BB AA1AA RR73').closest('li')).not.toHaveAttribute('data-next');
   });

@@ -1,4 +1,5 @@
 import { DxPill } from './DxPill';
+import { StopButton } from './StopButton';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getControls, postTxMessage } from '../api/client';
@@ -82,6 +83,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
             <span className="rxtx-flag" data-state={status.transmitting ? 'tx' : 'rx'} role="status" title={t('tip.onair')}>
               {status.transmitting ? 'TX' : 'RX'}
             </span>
+            <StopButton variant="compact" />
             <span className="data muted tx-freqs">
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
