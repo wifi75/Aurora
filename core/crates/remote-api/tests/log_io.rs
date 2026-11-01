@@ -110,3 +110,114 @@ async fn the_import_refuses_an_empty_body_and_a_proxied_request() {
     assert_eq!(body_json(resp).await["error"], "local_only");
     assert_eq!(s.logbook.count().unwrap(), 0);
 }
+
+#[tokio::test]
+async fn the_list_has_every_qso_newest_first_with_its_number_and_country() {
+    let s = state().with_dxcc_if(Some(Arc::new(|call: &str| call.starts_with('K').then(|| serde_json::json!({ "country": "United States" })))));
+    let a = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let b = s.logbook.add(&qso("JA1XYZ", "FT4", DAY2)).unwrap();
+    let v = body_json(get(&s, "/api/v1/log/qsos").await).await;
+    assert_eq!(v["total"], 2);
+    assert_eq!(v["qsos"][0]["id"], b);
+    assert_eq!(v["qsos"][1]["id"], a);
+    let first = &v["qsos"][1];
+    assert_eq!((first["date"].as_str(), first["time"].as_str(), first["call"].as_str()), (Some("2026-10-24"), Some("16:46:45"), Some("K1ABC")));
+    assert_eq!((first["band"].as_str(), first["mode"].as_str(), first["rst_sent"].as_str(), first["grid"].as_str()), (Some("20m"), Some("FT8"), Some("-08"), Some("FN42")));
+    assert_eq!(first["country"], "United States");
+    assert_eq!(v["qsos"][0]["country"], "");
+    // dal telefono la finestra del programma non c'e'
+    assert_eq!(v["save_dialog"], false);
+}
+
+#[tokio::test]
+async fn the_download_keeps_only_the_chosen_ids_and_refuses_bad_ones() {
+    let s = state();
+    let a = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let b = s.logbook.add(&qso("K1ABD", "FT4", DAY2)).unwrap();
+    let c = s.logbook.add(&qso("K1ABE", "FT8", DAY2 + 60_000)).unwrap();
+    let resp = get(&s, &format!("/api/v1/log/export.adi?ids={a},{c}")).await;
+    assert_eq!(resp.headers()["x-aurora-qsos"], "2");
+    let body = text(resp).await;
+    assert!(body.contains("K1ABC") && body.contains("K1ABE") && !body.contains("K1ABD"));
+    let resp = get(&s, &format!("/api/v1/log/export.adi?ids={a}-{b}")).await;
+    assert_eq!(resp.headers()["x-aurora-qsos"], "2");
+    for uri in ["/api/v1/log/export.adi?ids=uno", "/api/v1/log/export.adi?ids=5-2", "/api/v1/log/export.adi?ids=1-99999999"] {
+        let resp = get(&s, uri).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], "bad_ids", "{uri}");
+    }
+}
+
+fn save_into(dir: std::path::PathBuf, seen: Arc<std::sync::Mutex<String>>) -> remote_api::SaveFileDialog {
+    Arc::new(move |name: &str| {
+        *seen.lock().unwrap() = name.to_string();
+        // l'operatore toglie l'estensione: il file resta comunque .adi
+        Some(dir.join("scelto"))
+    })
+}
+
+fn temp_dir(tag: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!("aurora-export-{tag}-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
+
+#[tokio::test]
+async fn save_as_writes_the_chosen_qsos_where_the_operator_says() {
+    let dir = temp_dir("save");
+    let seen = Arc::new(std::sync::Mutex::new(String::new()));
+    let s = state().with_save_dialog_if(Some(save_into(dir.clone(), Arc::clone(&seen))));
+    let a = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    s.logbook.add(&qso("K1ABD", "FT4", DAY2)).unwrap();
+    let cookie = cookie_for(&s);
+    // dal PC la pagina sa che puo' aprire la finestra
+    let v = body_json(call(&router(&s), req(Method::GET, "/api/v1/log/qsos").cookie(&cookie).via_loopback()).await).await;
+    assert_eq!(v["save_dialog"], true);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().json(&format!("{{\"ids\":[{a}]}}"))).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!((v["cancelled"].as_bool(), v["count"].as_u64()), (Some(false), Some(1)));
+    let path = std::path::PathBuf::from(v["path"].as_str().unwrap());
+    assert_eq!(path, dir.join("scelto.adi"));
+    let written = std::fs::read_to_string(&path).unwrap();
+    assert!(written.contains("K1ABC") && !written.contains("K1ABD"));
+    let proposed = seen.lock().unwrap().clone();
+    assert!(proposed.starts_with("aurora_log_") && proposed.ends_with(".adi") && proposed.len() == "aurora_log_20261101.adi".len(), "{proposed}");
+    // tutti
+    let v = body_json(call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().json("{\"all\":true}")).await).await;
+    assert_eq!(v["count"], 2);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn save_as_can_be_cancelled_and_is_only_for_this_pc() {
+    let s = state().with_save_dialog_if(Some(Arc::new(|_: &str| None)));
+    s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let cookie = cookie_for(&s);
+    let v = body_json(call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().json("{\"all\":true}")).await).await;
+    assert_eq!((v["ok"].as_bool(), v["cancelled"].as_bool()), (Some(true), Some(true)));
+    // dalla rete o da un proxy: no
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).json("{\"all\":true}")).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+    assert_eq!(body_json(resp).await["error"], "local_only");
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().header("x-forwarded-for", "1.2.3.4").json("{\"all\":true}")).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+    // niente scelto, niente da salvare
+    for (body, code) in [("{\"ids\":[]}", "no_selection"), ("{}", "no_selection"), ("{\"ids\":[999]}", "empty_export"), ("{\"all\":true,\"from\":\"20270101\"}", "empty_export")] {
+        let resp = call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().json(body)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], code, "{body}");
+    }
+}
+
+#[tokio::test]
+async fn without_the_windows_program_there_is_no_save_as() {
+    let s = state();
+    s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let cookie = cookie_for(&s);
+    let v = body_json(call(&router(&s), req(Method::GET, "/api/v1/log/qsos").cookie(&cookie).via_loopback()).await).await;
+    assert_eq!(v["save_dialog"], false);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/export-save").cookie(&cookie).via_loopback().json("{\"all\":true}")).await;
+    status_is(&resp, StatusCode::NOT_FOUND);
+    assert_eq!(body_json(resp).await["error"], "save_unavailable");
+}

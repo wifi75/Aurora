@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Pagina di esportazione del log ADIF** (`#/esporta`, dal pulsante «Esporta ADIF» nella barra del pannello Log e da Statistiche): nel programma Windows «Scarica ADIF» non salvava niente, perche' un link di download nella finestra del programma non apre la scelta del file. La pagina elenca i QSO del log interno (data, ora, nominativo, banda, modo, rapporti, locatore, paese) con una casella per riga, «Seleziona tutti» e «Nessuno», ricerca per nominativo, filtri per data (dal/al), banda e modo e il conteggio dei selezionati; «Salva ADIF…» apre la finestra «Salva con nome» di Windows per scegliere cartella e nome (proposto `aurora_log_AAAAMMGG.adi`) e salva solo i QSO selezionati, con un messaggio che dice il percorso. Dal telefono o da un browser resta il download dei QSO selezionati. Se il log e' vuoto la pagina lo dice. Sei lingue, «?» su date e rapporti. L'importazione resta in Statistiche.
+- **API**: nuove rotte `GET /api/v1/log/qsos` e `POST /api/v1/log/export-save` (solo dal PC); `GET /api/v1/log/export.adi` accetta `ids` (anche a intervalli, `3,7,10-25`).
 
 ## 0.11.53 - 2026-11-01
 - **Display a doppio VFO**: con il tema chiaro il blocco unico mostrava ancora la cornice del display; ora e' un solo schermo continuo.

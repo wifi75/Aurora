@@ -80,7 +80,7 @@ export function LogHeader() {
   return (
     <div className="dock-grip-extra dock-grip-extra--right" onPointerDown={(e) => e.stopPropagation()}>
       {log.data ? <span className="muted log4om-total">{t('log.total', { n: log.data.total })}</span> : null}
-      <a className="glass log4om-adif" href="#/statistiche" title={t('logio.export.tip')}>
+      <a className="glass log4om-adif" href="#/esporta" title={t('logio.export.tip')}>
         {t('logio.export')}
       </a>
     </div>

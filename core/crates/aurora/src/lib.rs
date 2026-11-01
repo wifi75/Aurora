@@ -50,10 +50,22 @@ impl std::fmt::Debug for UpdateInstallerHandle {
     }
 }
 
+/// La finestra «Salva con nome» del sistema (il programma Windows la da' alla partenza): la pagina di esportazione salva il log ADIF dove si vuole.
+#[derive(Clone)]
+pub struct SaveDialogHandle(pub remote_api::SaveFileDialog);
+
+impl std::fmt::Debug for SaveDialogHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SaveDialogHandle")
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
     /// Se presente, la pagina propone «Installa ora» per le versioni nuove e l'API sa installarle.
     pub update_installer: Option<UpdateInstallerHandle>,
+    /// Se presente, «Salva ADIF…» apre la finestra «Salva con nome» del programma (solo dal PC stesso).
+    pub save_dialog: Option<SaveDialogHandle>,
     pub bind: SocketAddr,
     pub data_dir: PathBuf,
     pub ui_dir: Option<PathBuf>,
@@ -147,6 +159,7 @@ impl Config {
     pub fn defaults() -> Config {
         Config {
             update_installer: None,
+            save_dialog: None,
             bind: SocketAddr::from(([127, 0, 0, 1], 8787)),
             data_dir: PathBuf::from("data"),
             ui_dir: None,
@@ -246,6 +259,7 @@ impl Config {
         };
         Ok(Config {
             update_installer: None,
+            save_dialog: None,
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
             ui_dir: get("AURORA_UI_DIR").map(PathBuf::from),
@@ -1162,6 +1176,7 @@ pub async fn run(
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level.clone())
         .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
+        .with_save_dialog_if(config.save_dialog.clone().map(|h| h.0))
         .with_online(online)
         .with_history_if(history)
         .with_updates(Arc::clone(&updates))

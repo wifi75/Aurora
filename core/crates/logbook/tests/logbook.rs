@@ -131,6 +131,25 @@ fn export_uses_the_jtdx_file_layout_with_real_times_and_filters_by_date() {
 }
 
 #[test]
+fn entries_list_the_newest_first_and_the_export_keeps_only_the_chosen_ids() {
+    let lb = Logbook::open_in_memory().unwrap();
+    let a = lb.add(&timed("JA1XYZ", "FT8", DAY1)).unwrap();
+    let b = lb.add(&timed("DL2ABC", "FT4", DAY2)).unwrap();
+    let c = lb.add(&timed("K1ABC", "FT8", DAY2 + 60_000)).unwrap();
+    let list = lb.entries().unwrap();
+    assert_eq!(list.iter().map(|e| e.id).collect::<Vec<_>>(), vec![c, b, a]);
+    assert_eq!((list[2].date.as_str(), list[2].time.as_str(), list[2].band.as_str(), list[2].mode.as_str()), ("20261024", "164645", "20m", "FT8"));
+    let (text, n) = lb.export_jtdx_adif_selected(&station(), None, None, Some(&[a, c, 9999])).unwrap();
+    assert_eq!(n, 2);
+    assert!(text.contains("JA1XYZ") && text.contains("K1ABC") && !text.contains("DL2ABC"));
+    // il filtro per data vale insieme a quello per numero
+    let (_, n) = lb.export_jtdx_adif_selected(&station(), Some("20261025"), None, Some(&[a, c])).unwrap();
+    assert_eq!(n, 1);
+    let (_, none) = lb.export_jtdx_adif_selected(&station(), None, None, Some(&[])).unwrap();
+    assert_eq!(none, 0);
+}
+
+#[test]
 fn what_was_exported_can_be_imported_into_an_empty_log_unchanged() {
     let a = Logbook::open_in_memory().unwrap();
     a.add(&timed("JA1XYZ", "FT8", DAY1)).unwrap();
