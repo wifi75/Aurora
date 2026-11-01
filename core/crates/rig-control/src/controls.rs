@@ -62,6 +62,8 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("mtd"),
     // «Wait and Call» di WSJT-X: armato, quando il DX si libera (CQ, RR73, RRR, 73) lo si chiama da soli
     own_toggle("wait_call"),
+    // «Wait and Pounce» di WSJT-X: armato con la trasmissione spenta, risponde da solo al CQ scelto con il criterio delle impostazioni
+    own_toggle("pounce"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),

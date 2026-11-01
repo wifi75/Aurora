@@ -93,6 +93,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     "FT8DecoderStart",
     "FullDuplex",
     "WaitFeaturesEnabled",
+    "PouncePolicy",
+    "HoundAuto",
     "ShowOTP",
     "OTPVerify",
     "OTPUrl",
@@ -261,7 +263,7 @@ pub fn support(key: &str) -> Support {
         "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
-        "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
+        "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
         // regione IARU: filtra la tabella delle frequenze (scheda Frequenze, cambio di banda e di modo); messaggi con il nominativo composto di tipo 2: tenuto, ma vale solo per JT65/JT9
         "Region" | "Type2MsgGen" => Support::Live(Apply::Now),
@@ -480,6 +482,10 @@ pub struct Reports {
     pub full_duplex: bool,
     /// Wait and Reply / Wait and Call (`WaitFeaturesEnabled` di WSJT-X).
     pub wait_features: bool,
+    /// Criterio di Wait and Pounce (`none`, `first`, `max_dist`, `max_db`, `min_db`).
+    pub pounce_policy: String,
+    /// «Hound automatico»: Hound si accende e si spegne da solo secondo come trasmette il DX (acceso di fabbrica).
+    pub hound_auto: bool,
     /// Verifica del Fox: mostra le righe OTP, verifica in linea, indirizzo del servizio.
     pub show_otp: bool,
     pub otp_verify: bool,
@@ -598,6 +604,9 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("FT8DecoderStart", "normal"),
         ("FullDuplex", "false"),
         ("WaitFeaturesEnabled", "true"),
+        // Wait and Pounce: WSJT-X parte da «CQ: None» (il pulsante non si arma); Aurora parte dal primo CQ, cosi' il pulsante funziona subito
+        ("PouncePolicy", "first"),
+        ("HoundAuto", "true"),
         ("ShowOTP", "false"),
         ("OTPVerify", "true"),
         ("OTPUrl", "https://www.9dx.cc"),
@@ -756,7 +765,8 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "ShowOTP" | "OTPVerify" | "BandHopping" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
             bad("serve un indirizzo che comincia con http:// o https://")
@@ -809,6 +819,8 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         ft8_decoder_start: values.get("FT8DecoderStart").cloned().unwrap_or_else(|| "normal".into()),
         full_duplex: truthy(values.get("FullDuplex")),
         wait_features: values.get("WaitFeaturesEnabled").is_none_or(|v| v == "true"),
+        hound_auto: values.get("HoundAuto").is_none_or(|v| v == "true"),
+        pounce_policy: values.get("PouncePolicy").cloned().unwrap_or_else(|| "first".into()),
         show_otp: truthy(values.get("ShowOTP")),
         otp_verify: values.get("OTPVerify").is_none_or(|v| v == "true"),
         otp_url: values.get("OTPUrl").filter(|u| !u.trim().is_empty()).cloned().unwrap_or_else(|| "https://www.9dx.cc".into()),
@@ -1392,6 +1404,7 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
             assert_eq!(support(key), Support::Live(Apply::Now), "{key}");
         }
         assert!(validate("FT8DecoderStart", "late").is_ok());
+        assert!(validate("PouncePolicy", "max_dist").is_ok() && validate("PouncePolicy", "lontano").is_err());
         assert!(validate("FT8DecoderStart", "subito").is_err());
         assert!(validate("FullDuplex", "si").is_err());
         assert!(validate("OTPUrl", "ftp://x").is_err());

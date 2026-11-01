@@ -33,7 +33,7 @@ describe('decodeSpectrumFrame', () => {
 
   it('returns null when there are no bins or too many', () => {
     expect(decodeSpectrumFrame(frame(1, 1n, 0, 3000, []))).toBeNull();
-    expect(decodeSpectrumFrame(frame(1, 1n, 0, 3000, new Array(4097).fill(0)))).toBeNull();
+    expect(decodeSpectrumFrame(frame(1, 1n, 0, 3000, new Array(8193).fill(0)))).toBeNull();
   });
 
   it('returns null on an inverted frequency range', () => {

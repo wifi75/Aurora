@@ -517,9 +517,12 @@ pub fn start_with_save(
                             .map(|d| (d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text.as_str()))
                             .collect()
                     };
-                    a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), mode.name(), &rows_of(false));
+                    // la frequenza di meta' periodo: un cambio di banda arrivato mentre si decodificava non sposta i messaggi sulla banda nuova
+                    let period_dial = a.dial_at(slot.start_unix_ms + mode.period_ms() / 2);
+                    let period_dial = if period_dial == 0 { l.dial_hz.load(Ordering::Relaxed) } else { period_dial };
+                    a.write_decodes(slot.start_unix_ms, period_dial, mode.name(), &rows_of(false));
                     if let Some(other) = other_mode.filter(|_| !other_texts.is_empty()) {
-                        a.write_decodes(slot.start_unix_ms, l.dial_hz.load(Ordering::Relaxed), other.name(), &rows_of(true));
+                        a.write_decodes(slot.start_unix_ms, period_dial, other.name(), &rows_of(true));
                     }
                     if scope == AllTxtScope::Debug {
                         a.write_debug(now_unix_ms(), "Decoding finished");
@@ -643,6 +646,7 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
         return;
     }
     let dial = live.dial_hz.load(Ordering::Relaxed);
+    all_txt.note_dial(now_ms, dial);
     if !live.controls.transmitting.load(Ordering::Relaxed) {
         all_txt.write_frequency_change(now_ms, dial, mode.name());
     }

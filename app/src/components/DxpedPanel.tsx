@@ -33,7 +33,7 @@ export function dxpedList(items: Dxpedition[], heard: Set<string>, day: string, 
 }
 
 /** Il calendario delle DXpedition (NG3K) accanto ai CQ: quelle in onda, quelle sentite adesso evidenziate, e lo storico da scorrere. */
-export function DxpedPanel({ heardCalls, keepDays = 15 }: { heardCalls: string[]; keepDays?: number }) {
+export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heardCalls: string[]; foxCalls?: string[]; keepDays?: number }) {
   const t = useT();
   // finche' il core non ha ancora scaricato il calendario si richiede spesso; poi ogni 10 minuti
   const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
@@ -56,6 +56,11 @@ export function DxpedPanel({ heardCalls, keepDays = 15 }: { heardCalls: string[]
                 {flagCode(d.country) ? <span className={`fi fi-${flagCode(d.country)} dxped-flag`} aria-hidden="true" /> : null}
                 {d.country}
               </span>
+              {foxCalls.includes(d.call.toUpperCase()) ? (
+                <span className="badge badge--fox" title={t('tip.dxp.fox')}>
+                  Fox/Hound
+                </span>
+              ) : null}
               <span className="dxped-when">
                 {d.heard ? t('dxp.heard') : d.state === 'active' ? t('dxp.until', { date: short(d.end) }) : d.state === 'soon' ? t('dxp.from', { date: short(d.start) }) : t('dxp.ended', { date: short(d.end) })}
               </span>
