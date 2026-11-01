@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.64 - 2026-11-01
+- **Scheda della DXpedition**: un clic su una DXpedition apre la scheda con la mappa (linea dal proprio QTH e riquadro ingrandito sul paese), paese, continente e zone, date, note e QSL di NG3K, distanza e direzione, ultima volta sentita e «Vai su ... kHz» dall'ultimo spot del cluster. Il core da' latitudine e longitudine del paese (`/api/v1/dxcc`, da cty.dat).
+- **Display con zoom**: passando il mouse sul display della radio si apre una copia piu' grande (circa 44rem) con gli stessi indicatori cliccabili.
+- **Menu in alto**: solo testo, la pagina scelta sottolineata con i colori dell'aurora.
+- Pannello QSO con testo piu' piccolo (i nomi entrano interi); AUTO del livello d'ingresso chiaro acceso/spento; «by IU3CYV» piu' leggibile; tendina della lingua nelle Impostazioni non piu' tagliata; con i pannelli FT-2000 e IC-7610 la disposizione del display e' spenta con la spiegazione.
+
 ## 0.11.63 - 2026-11-01
 - **Pagina Log**: bandiera accanto al paese, griglia con bordi, intestazione colorata e righe alterne, Locatore staccato da Ric., pagina larga al massimo 72rem e centrata.
 

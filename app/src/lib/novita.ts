@@ -20,6 +20,33 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.64',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'new',
+    title: ['Scheda DXpedition con mappa', 'DXpedition card with map', 'DXpedition-Karte mit Landkarte', 'Fiche DXpédition avec carte', 'Ficha DXpedición con mapa', 'Ficha DXpedição com mapa'],
+    text: [
+      'Clic su una DXpedition: mappa con la linea dal tuo QTH e il paese ingrandito, date, note e QSL, distanza e direzione, se l’hai sentita e «Vai su … kHz» dal cluster.',
+      'Click a DXpedition: map with the line from your QTH and the country zoomed in, dates, notes and QSL, distance and bearing, whether you heard it and “Tune to … kHz” from the cluster.',
+      'Klick auf eine DXpedition: Karte mit Linie von deinem QTH und vergrößertem Land, Daten, Hinweise und QSL, Entfernung und Richtung, ob gehört, und „Auf … kHz“ vom Cluster.',
+      'Clic sur une DXpédition : carte avec la ligne depuis ton QTH et le pays agrandi, dates, notes et QSL, distance et direction, si tu l’as entendue et « Aller sur … kHz » depuis le cluster.',
+      'Clic en una DXpedición: mapa con la línea desde tu QTH y el país ampliado, fechas, notas y QSL, distancia y rumbo, si la oíste y «Ir a … kHz» desde el cluster.',
+      'Clique numa DXpedição: mapa com a linha desde o teu QTH e o país ampliado, datas, notas e QSL, distância e direção, se a ouviste e «Ir para … kHz» a partir do cluster.',
+    ],
+  },
+  {
+    version: '0.11.64',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'changed',
+    title: ['Display con zoom e menu nuovo', 'Display zoom and new menu', 'Display-Zoom und neues Menü', 'Zoom de l’affichage et nouveau menu', 'Zoom del display y menú nuevo', 'Zoom do visor e menu novo'],
+    text: [
+      'Passando il mouse sul display della radio si apre una copia più grande con i pulsanti cliccabili. Il menu in alto è solo testo, con la pagina scelta sottolineata.',
+      'Hovering the radio display opens a larger copy with clickable buttons. The top menu is text only, with the chosen page underlined.',
+      'Mit der Maus über dem Display öffnet sich eine größere Kopie mit anklickbaren Schaltern. Das Menü oben ist nur Text, die gewählte Seite unterstrichen.',
+      'En survolant l’affichage du poste, une copie plus grande s’ouvre avec des boutons cliquables. Le menu du haut est en texte seul, la page choisie soulignée.',
+      'Al pasar el ratón por el display se abre una copia más grande con botones pulsables. El menú superior es solo texto, con la página elegida subrayada.',
+      'Passando o rato pelo visor abre-se uma cópia maior com botões clicáveis. O menu de cima é só texto, com a página escolhida sublinhada.',
+    ],
+  },  {
     version: '0.11.63',
     released: '2026-11-01T16:58:11Z',
     kind: 'changed',
@@ -546,34 +573,6 @@ export const NOVITA: readonly Novita[] = [
       'Le Guide explique toutes les nouveautés : réglages, afficheur et commandes radio, cascade, file d’attente, DXpéditions, panneau Log et messages.',
       'La Guía explica todas las novedades: ajustes, display y mandos de la radio, cascada, cola, DXpediciones, panel Log y avisos emergentes.',
       'O Guia explica todas as novidades: definições, visor e comandos do rádio, cascata, fila, DXpedições, painel Log e mensagens.',
-    ],
-  },
-  {
-    version: '0.11.51',
-    released: '2026-11-01T09:27:41Z',
-    kind: 'fixed',
-    title: ['Cascata di nuovo visibile', 'Waterfall visible again', 'Wasserfall wieder sichtbar', 'Cascade de nouveau visible', 'Cascada visible de nuevo', 'Cascata de novo visível'],
-    text: [
-      'Con la 0.11.50 la cascata restava nera: l’interfaccia scartava le righe del nuovo spettro (6827 canali). Ora le riceve tutte e i segnali si vedono.',
-      'With 0.11.50 the waterfall stayed black: the interface discarded the rows of the new spectrum (6827 channels). It now receives them all and signals show.',
-      'Mit 0.11.50 blieb der Wasserfall schwarz: Die Oberfläche verwarf die Zeilen des neuen Spektrums (6827 Kanäle). Jetzt kommen alle an und die Signale sind sichtbar.',
-      'Avec la 0.11.50 la cascade restait noire : l’interface rejetait les lignes du nouveau spectre (6827 canaux). Elle les reçoit maintenant toutes et les signaux apparaissent.',
-      'Con la 0.11.50 la cascada quedaba negra: la interfaz descartaba las filas del nuevo espectro (6827 canales). Ahora las recibe todas y las señales se ven.',
-      'Com a 0.11.50 a cascata ficava preta: a interface descartava as linhas do novo espetro (6827 canais). Agora recebe-as todas e os sinais veem-se.',
-    ],
-  },
-  {
-    version: '0.11.51',
-    released: '2026-11-01T09:27:41Z',
-    kind: 'new',
-    title: ['Log interno nel pannello Log', 'Own log in the Log panel', 'Eigenes Log im Log-Fenster', 'Journal interne dans le panneau Log', 'Log interno en el panel Log', 'Log interno no painel Log'],
-    text: [
-      'Se non colleghi un log esterno (Log4OM), il pannello Log mostra i QSO del log di Aurora, con paese, rapporti e il numero totale.',
-      'If you do not link an external log (Log4OM), the Log panel shows the QSOs of Aurora’s own log, with country, reports and the total.',
-      'Ohne verknüpftes externes Log (Log4OM) zeigt das Log-Fenster die QSOs des Aurora-Logs mit Land, Rapporten und Gesamtzahl.',
-      'Sans journal externe lié (Log4OM), le panneau Log montre les QSO du journal d’Aurora, avec pays, reports et total.',
-      'Si no enlazas un log externo (Log4OM), el panel Log muestra los QSO del log de Aurora, con país, reportes y el total.',
-      'Se não ligares um log externo (Log4OM), o painel Log mostra os QSO do log do Aurora, com país, relatórios e o total.',
     ],
   },
 ];
