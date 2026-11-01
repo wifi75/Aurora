@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, type CSSProperties } from 'react';
-import { getClusterSpots, getDxped, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
+import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT } from '../i18n';
@@ -94,6 +94,14 @@ export function ClusterPanel() {
     // la nuova frequenza si vede subito; se il comando fallisce torna quella di prima
     useStation.getState().patchStatus({ dial_hz: hz });
     try {
+      // uno spot di un altro modo digitale (FT4 mentre si e' in FT8, o il contrario): prima si cambia modo, poi la frequenza,
+      // cosi' il cambio di modo non riporta la radio sulla frequenza standard del modo nuovo
+      const want = (spot.mode ?? '').toUpperCase();
+      const now = (useStation.getState().status?.mode ?? '').toUpperCase();
+      if ((want === 'FT4' || want === 'FT8') && want !== now) {
+        useStation.getState().patchStatus({ mode: want });
+        await postMode(want);
+      }
       const done = await postFrequency(hz);
       if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
       setNote(t('cluster.tuned', { freq: formatKhz(spot.freq_khz) }));
