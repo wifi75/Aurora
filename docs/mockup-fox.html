@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora Fox: bozza</title>
+<style>
+  :root { --bg:#0e141b; --card:#151d27; --line:#26323f; --ink:#e6edf5; --mute:#8a9bb0; --acc:#2fd3a5; --tx:#ff6b4a; --warn:#ffc04d; --blue:#6aa8ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:13px/1.4 "Segoe UI",system-ui,sans-serif; }
+  .data { font-family:Consolas,"JetBrains Mono",monospace; }
+  header { display:flex; align-items:center; gap:14px; padding:10px 16px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:15px; letter-spacing:.2em; color:var(--acc); }
+  .pill { padding:3px 10px; border-radius:999px; border:1px solid var(--line); color:var(--mute); }
+  .pill.on { border-color:var(--acc); color:var(--acc); }
+  .pill.tx { border-color:var(--tx); color:#fff; background:var(--tx); }
+  .otp { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; padding:12px 16px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  .stat b { display:block; font-size:22px; }
+  .stat small { color:var(--mute); }
+  .spark { height:28px; display:flex; align-items:flex-end; gap:2px; margin-top:4px; }
+  .spark i { flex:1; background:var(--acc); opacity:.7; border-radius:1px; }
+  main { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:12px; padding:0 16px 16px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .panel h2 { margin:0; padding:8px 12px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; }
+  .panel h2 span { margin-left:auto; text-transform:none; letter-spacing:0; }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; border-bottom:1px solid var(--line); }
+  .tools select, .tools input { background:#0f1720; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:3px 6px; font:inherit; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:5px 8px; text-align:left; border-bottom:1px solid #1d2733; white-space:nowrap; }
+  th { color:var(--mute); font-weight:600; font-size:11px; }
+  td.num { text-align:right; }
+  tr.sel { background:rgba(47,211,165,.08); }
+  .flag { font-size:11px; padding:1px 5px; border-radius:4px; background:#22303e; color:var(--mute); }
+  .new { color:var(--warn); }
+  .btn { border:1px solid var(--line); background:#1b2532; color:var(--ink); border-radius:6px; padding:2px 8px; font-size:11px; }
+  .slots { padding:10px 12px; display:grid; gap:8px; }
+  .slot { display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
+  .slot .n { color:var(--mute); }
+  .steps { display:flex; gap:3px; margin-top:4px; }
+  .steps i { width:34px; height:5px; border-radius:3px; background:#2a3644; }
+  .steps i.ok { background:var(--acc); }
+  .steps i.now { background:var(--tx); }
+  .muted { color:var(--mute); }
+  .packet { margin:0 12px 12px; padding:8px 10px; border:1px dashed var(--line); border-radius:8px; font-size:12px; }
+  .note { padding:10px 16px; color:var(--mute); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AURORA · FOX</h1>
+  <span class="pill on">SuperFox</span>
+  <span class="pill">Fox classico</span>
+  <span class="pill tx">TX 750 Hz</span>
+  <span class="data muted">20 m · 14.090 MHz · periodo pari</span>
+  <div class="otp"><span class="muted">Verifica</span><span class="pill on data">OTP attivo</span><span class="pill">CQ NA</span><span class="pill">Testo: QSL VIA LOTW</span></div>
+</header>
+
+<section class="stats">
+  <div class="stat"><small>QSO totali</small><b class="data">1.284</b></div>
+  <div class="stat"><small>Ritmo ultimi 10</small><b class="data">412/h</b><div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:85%"></i><i style="height:90%"></i><i style="height:76%"></i><i style="height:95%"></i><i style="height:88%"></i></div></div>
+  <div class="stat"><small>Ultima ora</small><b class="data">356</b></div>
+  <div class="stat"><small>Chiamanti</small><b class="data">147</b></div>
+  <div class="stat"><small>In coda</small><b class="data">10 / 20</b></div>
+  <div class="stat"><small>Continenti (ora)</small><b class="data" style="font-size:14px">EU 61% · NA 24% · AS 9% · altri 6%</b></div>
+</section>
+
+<main>
+  <section class="panel">
+    <h2>Hound che chiamano <span class="data">147</span></h2>
+    <div class="tools">
+      <select><option>Ordina: SNR ↓</option><option>Distanza</option><option>Continente</option><option>Attesa</option><option>Valore esterno</option></select>
+      <select><option>poi: attesa ↓</option></select>
+      <select><option>Tutti i continenti</option></select>
+      <input placeholder="Cerca nominativo" size="12">
+      <span class="muted">SNR da −24 a +10 dB · solo nuovi su questa banda</span>
+    </div>
+    <table>
+      <tr><th></th><th>Nominativo</th><th>Loc</th><th class="num">SNR</th><th class="num">Hz</th><th class="num">km</th><th>Cont.</th><th class="num">Attesa</th><th></th></tr>
+      <tr class="sel"><td>☑</td><td class="data">K1ABC</td><td class="data">FN42</td><td class="num data">−08</td><td class="num data">1432</td><td class="num data">14.210</td><td>NA</td><td class="num data">2:15</td><td><span class="flag new">nuovo DXCC</span></td></tr>
+      <tr><td>☐</td><td class="data">IU3ABC</td><td class="data">IO91</td><td class="num data">−12</td><td class="num data">1680</td><td class="num data">16.020</td><td>EU</td><td class="num data">1:30</td><td></td></tr>
+      <tr><td>☐</td><td class="data">JA1XYZ</td><td class="data">PM95</td><td class="num data">−15</td><td class="num data">2110</td><td class="num data">8.950</td><td>AS</td><td class="num data">0:45</td><td></td></tr>
+      <tr><td>☐</td><td class="data">DL2QRP</td><td class="data">JO62</td><td class="num data">−18</td><td class="num data">1215</td><td class="num data">15.880</td><td>EU</td><td class="num data">0:30</td><td><span class="flag">dupe 40m</span></td></tr>
+      <tr><td>☐</td><td class="data">VK3DEF</td><td class="data">QF22</td><td class="num data">−20</td><td class="num data">1890</td><td class="num data">2.410</td><td>OC</td><td class="num data">0:15</td><td></td></tr>
+    </table>
+    <div class="tools"><button class="btn">＋ In coda (Invio)</button><button class="btn">⇡ In testa</button><button class="btn">Aggiungi i primi 5</button><span class="muted">Coda automatica: accesa</span></div>
+  </section>
+
+  <section class="panel">
+    <h2>QSO in corso <span class="muted">9 posti · SuperFox</span></h2>
+    <div class="slots">
+      <div class="slot"><span class="n data">1</span><div><b class="data">W9XYZ</b> <span class="muted">rapporto −14 inviato · R−10 ricevuto</span><div class="steps"><i class="ok"></i><i class="ok"></i><i class="now"></i></div></div><button class="btn">✕</button></div>
+      <div class="slot"><span class="n data">2</span><div><b class="data">K1ABC</b> <span class="muted">rapporto −08 · tentativo 2/3</span><div class="steps"><i class="ok"></i><i class="now"></i><i></i></div></div><button class="btn">✕</button></div>
+      <div class="slot"><span class="n data">3</span><div><b class="data">EA5GHI</b> <span class="muted">RR73 inviato · a log</span><div class="steps"><i class="ok"></i><i class="ok"></i><i class="ok"></i></div></div><button class="btn">✕</button></div>
+      <div class="slot"><span class="n data">4</span><div class="muted">libero → CQ</div><span></span></div>
+    </div>
+    <div class="packet"><span class="muted">Prossimo pacchetto (periodo 14:32:30):</span><br><span class="data">W9XYZ RR73 · K1ABC −08 · CQ · $VERIFY$ 3D2ABC 482913</span></div>
+    <div class="tools"><span class="muted">Tentativi 3 · attesa 3 cicli · CQ ogni 10 cicli</span><button class="btn">Modifica</button></div>
+  </section>
+
+  <section class="panel">
+    <h2>Coda <span class="data">10</span></h2>
+    <table>
+      <tr><th>#</th><th>Nominativo</th><th class="num">Rapp.</th><th class="num">Attesa</th><th></th></tr>
+      <tr><td class="data">1</td><td class="data">IU3ABC</td><td class="num data">−12</td><td class="num data">0:30</td><td><button class="btn">⇡</button> <button class="btn">✕</button></td></tr>
+      <tr><td class="data">2</td><td class="data">JA1XYZ</td><td class="num data">−16</td><td class="num data">0:15</td><td><button class="btn">⇡</button> <button class="btn">✕</button></td></tr>
+      <tr><td class="data">3</td><td class="data">VK3DEF</td><td class="num data">−20</td><td class="num data">0:15</td><td><button class="btn">⇡</button> <button class="btn">✕</button></td></tr>
+    </table>
+    <h2 style="border-top:1px solid var(--line)">Fox log <span><button class="btn">ADIF</button> <button class="btn">Cabrillo</button> <button class="btn">Carica su ClubLog</button></span></h2>
+    <table>
+      <tr><th>UTC</th><th>Nominativo</th><th>Banda</th><th class="num">Inv.</th><th class="num">Ric.</th></tr>
+      <tr><td class="data">14:32</td><td class="data">EA5GHI</td><td>20m</td><td class="num data">−10</td><td class="num data">−12</td></tr>
+      <tr><td class="data">14:31</td><td class="data">N0QRS</td><td>20m</td><td class="num data">−06</td><td class="num data">−08</td></tr>
+      <tr><td class="data">14:31</td><td class="data">F4TUV</td><td>20m</td><td class="num data">−14</td><td class="num data">−11</td></tr>
+    </table>
+  </section>
+</main>
+<p class="note">Bozza: dati di esempio. Nominativi di prova.</p>
+</body>
+</html>
