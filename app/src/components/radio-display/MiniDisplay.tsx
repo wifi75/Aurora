@@ -93,7 +93,7 @@ export function MiniDisplay({ model, noRadio, ariaLabel, style }: StyleProps & {
   const link = linkState(model);
   const main = mainMeter(model);
   return (
-    <DisplayFrame width={320} height={52} radius={8} inset={3} screen={p.screen} ariaLabel={ariaLabel}>
+    <DisplayFrame width={320} height={52} radius={8} inset={3} stretch screen={p.screen} ariaLabel={ariaLabel}>
       <SevenSegment text={formatRadioFrequency(model.dialHz)} x={11} y={13} w={13} h={26} t={2.8} gap={3.5} skew={p.skew} on={p.digits} glow={p.glow} offOpacity={0.14} />
       <Chip x={MX} y={8} w={28} h={14} text="RX" bg={p.rx} fg={p.rxInk} fontSize={10} rx={3} dim={!link.rx} />
       <Chip x={MX + 32} y={8} w={28} h={14} text="TX" bg={p.tx} fg={p.txInk} fontSize={10} rx={3} dim={!link.tx} />

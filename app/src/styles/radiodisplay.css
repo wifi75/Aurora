@@ -18,11 +18,11 @@
   stroke: #5c6a82;
 }
 
-/* testata: display piu' largo (27rem), lo STOP gli sta accanto */
+/* testata: larga 20rem come prima, ma piu' alta (lo schermo si allunga in verticale) */
 .rd-header {
   position: relative;
-  flex: 0 1 27rem;
-  width: 27rem;
+  flex: 0 1 20rem;
+  width: 20rem;
   max-width: 100%;
   margin-left: auto;
 }
@@ -334,4 +334,8 @@
 @keyframes splash-in {
   from { opacity: 0; transform: scale(0.97); }
   to { opacity: 1; transform: scale(1); }
+}
+
+.rd-svg--stretch {
+  height: 4.2rem;
 }

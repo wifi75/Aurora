@@ -23,13 +23,15 @@ interface FrameProps {
   /** Margine fra cornice e schermo. */
   inset?: number;
   ariaLabel: string;
+  /** Lo schermo si allunga in altezza con lo stile (display della testata, piu' alto senza allargarsi). */
+  stretch?: boolean;
   children: ReactNode;
 }
 
 /** Cornice scura dello strumento con lo schermo dentro: in entrambi i temi resta un oggetto scuro, con il bordo che lo stacca dalla pagina. */
-export function DisplayFrame({ width, height, radius = 14, screen, inset = 8, ariaLabel, children }: FrameProps) {
+export function DisplayFrame({ width, height, radius = 14, screen, inset = 8, ariaLabel, stretch = false, children }: FrameProps) {
   return (
-    <svg className="rd-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel} preserveAspectRatio="xMidYMid meet">
+    <svg className={`rd-svg${stretch ? ' rd-svg--stretch' : ''}`} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel} preserveAspectRatio={stretch ? 'none' : 'xMidYMid meet'}>
       <rect className="rd-bezel" x="1" y="1" width={width - 2} height={height - 2} rx={radius} />
       <rect x={inset} y={inset} width={width - inset * 2} height={height - inset * 2} rx={radius * 0.65} fill={screen} />
       {children}
