@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.68',
-    released: '2026-11-01T22:00:00Z',
+    released: '2026-11-01T21:07:47Z',
     kind: 'new',
     title: ['Modo Fox per le DXpedition', 'Fox mode for DXpeditions', 'Fox-Modus für DXpeditionen', 'Mode Fox pour les DXpéditions', 'Modo Fox para DXpediciones', 'Modo Fox para DXpedições'],
     text: [
