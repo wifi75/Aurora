@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.66',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T17:46:27Z',
     kind: 'fixed',
     title: ['Lente sul display', 'Display magnifier', 'Lupe für das Display', 'Loupe sur l’affichage', 'Lupa en el display', 'Lupa no visor'],
     text: [
