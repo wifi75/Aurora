@@ -1,36 +1,54 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { getControls, postControl, type ControlId } from '../api/client';
-import { useT, type Key } from '../i18n';
-import { replyErrorMessage } from '../lib/replyError';
-import { periodLabel } from '../lib/txPeriod';
-import { useEngineTx } from '../state/engineTx';
-import { useStation } from '../state/station';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { getControls, postControl, type ControlId } from "../api/client";
+import { useT, type Key } from "../i18n";
+import { replyErrorMessage } from "../lib/replyError";
+import { periodLabel } from "../lib/txPeriod";
+import { useEngineTx } from "../state/engineTx";
+import { useStation } from "../state/station";
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
-const SEQUENCE: ControlId[] = ['autoseq', 'single_qso', 'answer_all', 'answer_b4', 'bypass', 'skip_tx1', 'rrr', 'tx_period'];
-const SENDING: ControlId[] = ['auto_tx', 'enable_tx'];
+const SEQUENCE: ControlId[] = [
+  "autoseq",
+  "single_qso",
+  "answer_all",
+  "answer_b4",
+  "bypass",
+  "skip_tx1",
+  "rrr",
+  "tx_period",
+];
+const SENDING: ControlId[] = ["auto_tx", "enable_tx"];
 /** Accenderli puo' far trasmettere: serve la trasmissione aperta. */
-const ARMING: ControlId[] = ['auto_tx', 'enable_tx'];
+const ARMING: ControlId[] = ["auto_tx", "enable_tx"];
 
 /** Stato e comando degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). Spegnere e' sempre permesso. */
 export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const t = useT();
   const client = useQueryClient();
-  const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
-  const [note, setNote] = useState('');
+  const controls = useQuery({
+    queryKey: ["controls"],
+    queryFn: getControls,
+    refetchInterval: 3000,
+    retry: false,
+  });
+  const [note, setNote] = useState("");
   const mode = useStation((st) => st.status?.mode);
-  const minuteLabel = useEngineTx((st) => st.tx?.minute ?? '');
-  const autoseqLabel = useEngineTx((st) => st.tx?.autoseq ?? '');
+  const transmitting = useStation((st) => st.status?.transmitting ?? false);
+  const minuteLabel = useEngineTx((st) => st.tx?.minute ?? "");
+  const autoseqLabel = useEngineTx((st) => st.tx?.autoseq ?? "");
   const state = controls.data ?? {};
   const reachable = !controls.isError;
 
   const set = async (id: ControlId, on: boolean) => {
     try {
       await postControl(id, on);
-      client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, [id]: on }));
-      await client.invalidateQueries({ queryKey: ['controls'] });
-      setNote('');
+      client.setQueryData(["controls"], (old: object | undefined) => ({
+        ...old,
+        [id]: on,
+      }));
+      await client.invalidateQueries({ queryKey: ["controls"] });
+      setNote("");
     } catch (error) {
       setNote(replyErrorMessage(error, t));
     }
@@ -41,27 +59,38 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
       const on = state[id] === true;
       const arming = ARMING.includes(id);
       // il periodo di trasmissione e' una scelta tra due, non un acceso/spento: il testo dice quale periodo e' in uso
-      const period = id === 'tx_period' ? periodLabel(on, mode, minuteLabel) : null;
+      const period =
+        id === "tx_period" ? periodLabel(on, mode, minuteLabel) : null;
       if (period) {
         return (
-          <button
-            key={id}
-            type="button"
-            className={`glass chip chip--period chip--period-${on ? 'even' : 'odd'}`}
-            aria-pressed={on}
-            disabled={!reachable}
-            title={t(`tip.ctl.${id}` as Key)}
-            onClick={() => void set(id, !on)}
-          >
-            {period}
-          </button>
+          <span key={id} className="chip-period-wrap">
+            <button
+              type="button"
+              className={`glass chip chip--period chip--period-${on ? "even" : "odd"}`}
+              aria-pressed={on}
+              disabled={!reachable}
+              title={t(`tip.ctl.${id}` as Key)}
+              onClick={() => void set(id, !on)}
+            >
+              {period}
+            </button>
+            {/* accanto al periodo: RX verde in ascolto, TX rosso lampeggiante in onda */}
+            <span
+              className="rxtx-flag"
+              data-state={transmitting ? "tx" : "rx"}
+              role="status"
+              title={t("tip.onair")}
+            >
+              {transmitting ? "TX" : "RX"}
+            </span>
+          </span>
         );
       }
       return (
         <button
           key={id}
           type="button"
-          className={`glass chip${on ? ' glass--on' : ''}${arming ? ' chip--arming' : ''}`}
+          className={`glass chip${on ? " glass--on" : ""}${arming ? " chip--arming" : ""}`}
           aria-pressed={on}
           disabled={!reachable || (arming && !on && !txAllowed)}
           title={t(`tip.ctl.${id}` as Key)}
@@ -69,20 +98,28 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
         >
           {on ? <span className="chip-led" aria-hidden="true" /> : null}
           {/* AutoSeq porta il livello nel testo, come nel motore: «AutoSeq 3» */}
-          {id === 'autoseq' && autoseqLabel !== '' ? autoseqLabel : t(`ctl.${id}` as Key)}
+          {id === "autoseq" && autoseqLabel !== ""
+            ? autoseqLabel
+            : t(`ctl.${id}` as Key)}
         </button>
       );
     });
 
   return (
-    <section className="cmd-sec tx-block" aria-label={t('ctl.sec.qso')}>
-      <h3 className="cmd-title">{t('ctl.sec.qso')}</h3>
-      <p className="qso-group">{t('ctl.grp.seq')}</p>
+    <section className="cmd-sec tx-block" aria-label={t("ctl.sec.qso")}>
+      <h3 className="cmd-title">{t("ctl.sec.qso")}</h3>
+      <p className="qso-group">{t("ctl.grp.seq")}</p>
       <div className="cmd-chips">{chips(SEQUENCE)}</div>
-      <p className="qso-group">{t('ctl.grp.tx')}</p>
+      <p className="qso-group">{t("ctl.grp.tx")}</p>
       <div className="cmd-chips">{chips(SENDING)}</div>
-      {!reachable ? <p className="muted tx-note">{t('ctl.unavailable')}</p> : null}
-      {note ? <p className="live-note" role="status">{note}</p> : null}
+      {!reachable ? (
+        <p className="muted tx-note">{t("ctl.unavailable")}</p>
+      ) : null}
+      {note ? (
+        <p className="live-note" role="status">
+          {note}
+        </p>
+      ) : null}
     </section>
   );
 }
