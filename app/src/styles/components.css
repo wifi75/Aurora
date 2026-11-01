@@ -837,3 +837,28 @@ button.primary {
     animation-duration: 1ms;
   }
 }
+
+/* Notifiche piu' evidenti: piu' in basso (nello spazio libero accanto alle bande), colore pieno, quasi opache */
+.toaster {
+  top: 5.4rem;
+}
+
+.toast {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--toast-color) 90%, #000);
+  border: 1px solid color-mix(in srgb, var(--toast-color) 70%, #fff);
+  box-shadow: 0 16px 36px -12px rgb(0 0 0 / 0.55), 0 0 0 3px color-mix(in srgb, var(--toast-color) 30%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font-weight: 600;
+}
+
+.toast .toast-icon {
+  color: var(--toast-color);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.toast .toast-bar {
+  background: rgb(255 255 255 / 0.7);
+}
