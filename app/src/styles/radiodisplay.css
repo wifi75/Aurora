@@ -621,7 +621,9 @@
 }
 
 /* cornice e schermo propri del display spariscono: resta lo schermo unico del blocco */
-.rd-duo--single .rd-bezel,
+/* (anche nel tema chiaro, dove `:root[data-theme='light'] .rd-bezel` ridisegnerebbe la cornice) */
+:root .rd-duo--single .rd-bezel,
+:root[data-theme] .rd-duo--single .rd-bezel,
 .rd-duo--single .rd-screen {
   fill: transparent;
   stroke: none;

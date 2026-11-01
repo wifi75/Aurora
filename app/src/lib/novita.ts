@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.53',
+    released: '2026-11-01T12:00:00Z',
+    kind: 'fixed',
+    title: ['Display a doppio VFO: un solo schermo anche col tema chiaro', 'Dual-VFO display: one screen in the light theme too', 'Doppel-VFO-Anzeige: ein Bildschirm auch im hellen Design', 'Afficheur double VFO : un seul écran aussi en thème clair', 'Display de doble VFO: una sola pantalla también con el tema claro', 'Visor de duplo VFO: um só ecrã também no tema claro'],
+    text: [
+      'Con il tema chiaro il blocco unico mostrava ancora la cornice del display a sinistra: ora è un solo schermo continuo, senza separatori.',
+      'In the light theme the single block still showed the display frame on the left: now it is one continuous screen, with no separators.',
+      'Im hellen Design zeigte der Block links noch den Rahmen der Anzeige: jetzt ist es ein durchgehender Bildschirm ohne Trennlinien.',
+      'En thème clair, le bloc unique montrait encore le cadre de l’afficheur à gauche : c’est maintenant un seul écran continu, sans séparation.',
+      'Con el tema claro el bloque único aún mostraba el marco del display a la izquierda: ahora es una sola pantalla continua, sin separadores.',
+      'No tema claro o bloco único ainda mostrava a moldura do visor à esquerda: agora é um só ecrã contínuo, sem separadores.',
+    ],
+  },
+  {
     version: '0.11.52',
     released: '2026-11-01T10:24:29Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouvel interrupteur « JT65+JT9 » : dans l’un des deux modes, l’autre est décodé dans la même minute. Les boutons JT65 et JT9 s’allument et la barre de période compte 60 secondes.',
       'Nuevo interruptor «JT65+JT9»: en uno de los dos modos se decodifica en el mismo minuto también el otro. Los botones JT65 y JT9 se encienden y la barra del periodo cuenta 60 segundos.',
       'Novo interruptor «JT65+JT9»: num dos dois modos descodifica-se no mesmo minuto também o outro. Os botões JT65 e JT9 acendem-se e a barra do período conta 60 segundos.',
-    ],
-  },
-  {
-    version: '0.11.24',
-    released: '2026-10-26T20:16:48Z',
-    kind: 'new',
-    title: ['JT65 e JT9 nel motore proprio', 'JT65 and JT9 in the own engine', 'JT65 und JT9 im eigenen Motor', 'JT65 et JT9 dans le moteur propre', 'JT65 y JT9 en el motor propio', 'JT65 e JT9 no motor próprio'],
-    text: [
-      'Nel selettore dei modi ci sono FT8, FT4, JT65 e JT9: decodifica del minuto intero con sottrazione dei segnali, e trasmissione.',
-      'The mode selector now has FT8, FT4, JT65 and JT9: full-minute decoding with signal subtraction, and transmission.',
-      'Der Modusschalter bietet FT8, FT4, JT65 und JT9: Dekodierung der ganzen Minute mit Signalabzug, und Senden.',
-      'Le sélecteur de modes propose FT8, FT4, JT65 et JT9 : décodage de la minute entière avec soustraction des signaux, et émission.',
-      'El selector de modos tiene FT8, FT4, JT65 y JT9: decodificación del minuto entero con sustracción de señales, y transmisión.',
-      'O seletor de modos tem FT8, FT4, JT65 e JT9: descodificação do minuto inteiro com subtração de sinais, e transmissão.',
     ],
   },
 ];
