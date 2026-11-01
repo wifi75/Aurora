@@ -112,6 +112,8 @@ pub struct NativeControls {
     decoder_start: AtomicU8,
     /// «Full duplex» (WSJT-X `actionFull_Duplex_Mode`, di fabbrica spento): il periodo in cui si trasmette si decodifica lo stesso.
     pub full_duplex: AtomicBool,
+    /// «Hound automatico» (voce `HoundAuto`, acceso di fabbrica): Hound si accende e si spegne da solo secondo come trasmette il DX scelto.
+    pub hound_auto: AtomicBool,
     /// «Abilita Wait features» (WSJT-X `WaitFeaturesEnabled`, di fabbrica acceso): Wait and Reply e Wait and Call.
     pub wait_features: AtomicBool,
     /// Criterio di Wait and Pounce (`PouncePolicy::code`, voce `PouncePolicy`).
@@ -142,7 +144,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), wait_features: AtomicBool::new(true), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(true), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None) }
     }
 }
 
@@ -150,6 +152,19 @@ impl NativeControls {
     /// Il momento di avvio della decodifica FT8.
     pub fn decoder_start(&self) -> crate::features::DecoderStart {
         crate::features::DecoderStart::from_code(self.decoder_start.load(Ordering::Relaxed))
+    }
+
+    /// Accensione di Hound, come WSJT-X 3.3: la frequenza Tx sotto 1000 Hz sale nell'intervallo dei Hound (`features::hound_tx_hz`) e lo Split si accende
+    /// se e' spento (WSJT-X avvisa che il modo DXpedition «normally requires *Split* rig control»). Restituisce la frequenza Tx e se lo Split e' stato acceso.
+    pub fn hound_setup(&self) -> (u32, bool) {
+        let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| u64::from(d.subsec_nanos()));
+        let tx = crate::features::hound_tx_hz(self.tx_df.load(Ordering::Relaxed), seed);
+        self.tx_df.store(tx, Ordering::Relaxed);
+        let split_turned_on = !self.switch_on("split");
+        if split_turned_on {
+            self.set_switch("split", true);
+        }
+        (tx, split_turned_on)
     }
 
     pub fn set_decoder_start(&self, start: crate::features::DecoderStart) {
@@ -542,16 +557,9 @@ impl NativeRig {
         self.radio.as_ref().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni → Radio".into()))
     }
 
-    /// Accensione di Hound, come WSJT-X 3.3: la frequenza Tx sotto 1000 Hz sale nell'intervallo dei Hound (`features::hound_tx_hz`), lo Split si accende
-    /// se e' spento (WSJT-X avvisa che il modo DXpedition «normally requires *Split* rig control») e compare l'avviso con cio' che e' stato fatto.
+    /// Accensione di Hound a mano (vedi `NativeControls::hound_setup`), con l'avviso di cio' che e' stato fatto.
     fn hound_setup(&self) {
-        let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| u64::from(d.subsec_nanos()));
-        let tx = crate::features::hound_tx_hz(self.controls.tx_df.load(Ordering::Relaxed), seed);
-        self.controls.tx_df.store(tx, Ordering::Relaxed);
-        let split_turned_on = !self.controls.switch_on("split");
-        if split_turned_on {
-            self.controls.set_switch("split", true);
-        }
+        let (tx, split_turned_on) = self.controls.hound_setup();
         let alert = aurora_core::TxAlert { kind: aurora_core::TxAlertKind::HoundOn, detail: if split_turned_on { "split".into() } else { String::new() }, value: Some(tx as f32), limit: None };
         self.controls.raise_alert(alert, Some(std::time::Duration::from_secs(20)));
     }

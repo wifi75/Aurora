@@ -5346,3 +5346,17 @@
   letter-spacing: 0.04em;
   color: var(--accent, currentColor);
 }
+
+/* stazioni in Fox/Hound di WSJT-X: etichetta FOX arancione e sfondo proprio della riga */
+.decode-row--fox {
+  background: color-mix(in srgb, #ff7a05 14%, transparent);
+}
+.badge--fox {
+  background: #ff7a05;
+  color: #1b0d00;
+  font-weight: 700;
+}
+.tx-dx .hound-badge--fox {
+  border-color: #ff7a05;
+  color: #ff7a05;
+}

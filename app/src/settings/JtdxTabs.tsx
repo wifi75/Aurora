@@ -340,6 +340,7 @@ export function NativeGeneral() {
 
       <Group title={t('gen2.fox')}>
         <Cells min={15}>
+          {field('HoundAuto', 'bool', 'gen2.houndAuto')}
           {field('OTPVerify', 'bool', 'gen2.otpVerify')}
           {field('ShowOTP', 'bool', 'gen2.showOtp')}
           {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}

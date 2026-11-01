@@ -69,6 +69,11 @@ pub enum TxAlertKind {
     /// Il modo Hound e' stato acceso e Aurora ha sistemato la trasmissione come WSJT-X (`value` = frequenza Tx in Hz, `detail` = `split` se ha
     /// acceso lo Split). Avviso informativo, non ferma niente.
     HoundOn,
+    /// Hound automatico: il DX scelto trasmette come Fox di WSJT-X (righe `A RR73; B <DX> -08`) e Hound si e' acceso da solo (`detail` = il DX,
+    /// `value` = frequenza Tx in Hz).
+    FoxDetected,
+    /// Hound spento da solo: il DX risponde con messaggi standard o si e' scelto un altro DX (`detail` = il DX).
+    HoundOff,
 }
 
 /// Un avviso di sicurezza della trasmissione, da mostrare finche' resta nello stato.

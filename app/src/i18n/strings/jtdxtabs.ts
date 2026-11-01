@@ -109,6 +109,7 @@ export const jtdxTabStrings = {
   'gen2.decStartNormal': ['Normale (14,1 s)', 'Normal (14.1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)'],
   'gen2.decStartLate': ['Tardi (14,4 s)', 'Late (14.4 s)', 'Spät (14,4 s)', 'Tard (14,4 s)', 'Tarde (14,4 s)', 'Tarde (14,4 s)'],
   'gen2.fullDuplex': ['Full duplex (satelliti)', 'Full duplex (satellites)', 'Vollduplex (Satelliten)', 'Full duplex (satellites)', 'Dúplex completo (satélites)', 'Full duplex (satélites)'],
+  'gen2.houndAuto': ['Hound automatico', 'Automatic Hound', 'Hound automatisch', 'Hound automatique', 'Hound automático', 'Hound automático'],
   'gen2.pounce': ['Wait and Pounce: a quale CQ', 'Wait and Pounce: which CQ', 'Wait and Pounce: welcher CQ', 'Wait and Pounce : quel CQ', 'Wait and Pounce: a qué CQ', 'Wait and Pounce: a que CQ'],
   'gen2.pounceNone': ['Nessuno', 'None', 'Keiner', 'Aucun', 'Ninguno', 'Nenhum'],
   'gen2.pounceFirst': ['Il primo', 'The first', 'Der erste', 'Le premier', 'El primero', 'O primeiro'],

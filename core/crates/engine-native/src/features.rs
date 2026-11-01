@@ -238,6 +238,19 @@ pub fn hound_tx_hz(tx_hz: u32, seed: u64) -> u32 {
     if tx_hz >= HOUND_MIN_TX_HZ { tx_hz } else { HOUND_MIN_TX_HZ + (seed % u64::from(HOUND_MAX_TX_HZ - HOUND_MIN_TX_HZ)) as u32 }
 }
 
+/// Una riga trasmessa da un Fox di WSJT-X in modo Fox/Hound: il messaggio DXpedition a due Hound (`K1ABC RR73; W9XYZ <KH1/KH7Z> -08`, `i3=0 n3=1`
+/// di `lib/77bit/packjt77.f90`). Restituisce il nominativo del Fox. Le risposte multiple di MSHV sono messaggi standard separati e non lo sono.
+pub fn fox_sender(text: &str) -> Option<String> {
+    let (first, after) = text.split_once("; ")?;
+    let first: Vec<&str> = first.split_whitespace().collect();
+    let after: Vec<&str> = after.split_whitespace().collect();
+    if first.len() != 2 || first[1] != "RR73" || after.len() != 3 {
+        return None;
+    }
+    let fox = after[1].trim_start_matches('<').trim_end_matches('>');
+    (!fox.is_empty() && fox != "...").then(|| fox.to_string())
+}
+
 /// L'intervallo di chiamata dei Hound (`[1000, 2999)` Hz come WSJT-X).
 pub const HOUND_MIN_TX_HZ: u32 = 1000;
 pub const HOUND_MAX_TX_HZ: u32 = 2999;
@@ -296,6 +309,16 @@ mod tests {
         assert_eq!(x("IU3ABC K1ABC -07"), None);
         assert_eq!(x("IU3ABC K1ABC FN42"), None);
         assert_eq!(x("IU3ABC W9XYZ 579 WI"), None, "non dal DX");
+    }
+
+    /// Le righe del Fox di WSJT-X si riconoscono; le risposte multiple standard (MSHV, V26JJ) no.
+    #[test]
+    fn fox_lines_are_recognised_and_mshv_replies_are_not() {
+        assert_eq!(fox_sender("K1ABC RR73; W9XYZ <KH1/KH7Z> -08").as_deref(), Some("KH1/KH7Z"));
+        assert_eq!(fox_sender("K1ABC RR73; IU3ABC <V26JJ> -12").as_deref(), Some("V26JJ"));
+        assert_eq!(fox_sender("IU3WJQ V26JJ R+03"), None);
+        assert_eq!(fox_sender("R2PA V26JJ RR73"), None);
+        assert_eq!(fox_sender("CQ V26JJ FK97"), None);
     }
 
     /// Hound: sotto 1000 Hz si sale nell'intervallo dei Hound, sopra si resta dove si e'.
