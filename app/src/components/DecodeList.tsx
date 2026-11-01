@@ -1,5 +1,6 @@
 import { foxCalls, lineSender } from '../lib/fox';
-import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
@@ -105,6 +106,8 @@ function highlightCall(text: string, call: string, grid: string, answered?: { ca
  * nel suo CQ. Si ricorda per tutta la sessione (al massimo 5000 stazioni, le piu' vecchie escono).
  */
 const KNOWN_GRIDS = new Map<string, string>();
+/** I nominativi gia' chiesti al file dei prefissi (anche se senza risposta): non si richiedono. */
+const DXCC_ASKED = new Set<string>();
 const KNOWN_MAX = 5000;
 
 export function rememberGrid(call: string, grid: string): void {
@@ -191,6 +194,26 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   }
   // i locatori di tutte le righe prima di disegnarle: la riga piu' recente senza locatore usa quello di un CQ piu' vecchio
   for (const d of decodes) if (d.id >= 0) gridOfSender(d.text);
+  // il paese di ogni stazione sentita: le nostre righe Tx mostrano quello della stazione chiamata, non il nostro
+  const countryOfCall = new Map<string, string>();
+  for (const d of decodes) {
+    const c = d.id >= 0 && d.country ? senderOf(d.text)?.call.toUpperCase() : undefined;
+    if (c && d.country && !countryOfCall.has(c)) countryOfCall.set(c, d.country);
+  }
+  // le stazioni chiamate che non sono nell'elenco: il paese si chiede al file dei prefissi del core (una volta per nominativo)
+  const [lookedUp, setLookedUp] = useState<Record<string, string>>({});
+  const missing = [...new Set(decodes.filter((d) => d.id < 0).map((d) => (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()))].filter(
+    (c) => c.length >= 3 && !countryOfCall.has(c) && !(c in lookedUp) && !DXCC_ASKED.has(c),
+  );
+  useEffect(() => {
+    for (const call of missing) {
+      DXCC_ASKED.add(call);
+      getDxcc(call)
+        .then((r) => setLookedUp((old) => ({ ...old, [call]: r.country })))
+        .catch(() => undefined);
+    }
+  }, [missing.join(' ')]);
+  for (const [c, country] of Object.entries(lookedUp)) if (!countryOfCall.has(c)) countryOfCall.set(c, country);
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
@@ -243,9 +266,14 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // il verde dei gia' lavorati compare solo con «Evidenzia gia' lavorati»; di base il messaggio e' barrato e senza colore
         const quiet = worked && !look.color;
         const accent = quiet ? null : accentOf(lit);
-        const km = prefs.showDistance && mine ? distanceOf(mine, d.text) : null;
-        const azimuth = prefs.showAzimuth && mine ? bearingOf(mine, d.text) : null;
-        const code = prefs.showFlag ? flagCode(d.country) : null;
+        // riga nostra: la stazione e' quella a cui trasmettiamo (il primo nominativo, anche tra < >); il locatore nel messaggio e' il nostro e non conta
+        const target = own ? (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase() : '';
+        const targetGrid = own ? (KNOWN_GRIDS.get(target) ?? KNOWN_GRIDS.get(target.split('/').sort((a, b) => b.length - a.length)[0] ?? '') ?? null) : null;
+        const country = own ? (countryOfCall.get(target) ?? null) : d.country;
+        const theirs = own ? (targetGrid ? gridCenter(targetGrid) : null) : null;
+        const km = prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
+        const azimuth = prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
+        const code = prefs.showFlag ? flagCode(country) : null;
         const gap = prefs.insertBlank && previousTime !== null && previousTime !== d.time_ms;
         previousTime = d.time_ms;
         // «Evidenzia i messaggi con il nominativo DX»: spento, la stazione chiamata non si distingue dagli altri messaggi
@@ -289,7 +317,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">
-                {prefs.showCountry && d.country ? <span className="decode-country">{d.country}</span> : null}
+                {prefs.showCountry && country ? <span className="decode-country">{country}</span> : null}
               </span>
               <span className="w-km num muted">
                 {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
