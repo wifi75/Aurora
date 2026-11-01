@@ -108,48 +108,22 @@ describe('RadioDisplayHeader', () => {
   it('shows the compact display from the station status and nothing when hidden', () => {
     act(() => useStation.setState({ status }));
     const { container, rerender } = render(<RadioDisplayHeader />, { wrapper });
-    expect(screen.getByRole('button', { name: /21\.074\.00/ })).toBeInTheDocument();
     expect(container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 320 52');
     act(() => useRadioDisplay.getState().set({ hidden: true }));
     rerender(<RadioDisplayHeader />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('opens the enlarged version on click and closes it with Esc', () => {
-    act(() => useStation.setState({ status }));
-    render(<RadioDisplayHeader />, { wrapper });
-    const trigger = screen.getByRole('button');
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('group', { name: 'Display della radio ingrandito' }).querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 680 150');
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
-  });
-
-  it('opens on hover after a short delay and closes when the mouse leaves', () => {
+  it('opens no popup: neither a click nor the mouse over it shows anything more', () => {
     vi.useFakeTimers();
     act(() => useStation.setState({ status }));
     const { container } = render(<RadioDisplayHeader />, { wrapper });
     const root = container.firstElementChild as HTMLElement;
+    expect(screen.queryByRole('button')).toBeNull();
     fireEvent.mouseEnter(root);
-    expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
-    act(() => void vi.advanceTimersByTime(300));
-    expect(screen.getByRole('group', { name: 'Display della radio ingrandito' })).toBeInTheDocument();
-    fireEvent.mouseLeave(root);
-    act(() => void vi.advanceTimersByTime(300));
-    expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
-  });
-
-  it('keeps it open on hover leave when opened with a click', () => {
-    vi.useFakeTimers();
-    act(() => useStation.setState({ status }));
-    const { container } = render(<RadioDisplayHeader />, { wrapper });
-    const root = container.firstElementChild as HTMLElement;
-    fireEvent.click(screen.getByRole('button'));
-    fireEvent.mouseLeave(root);
+    fireEvent.click(root);
     act(() => void vi.advanceTimersByTime(500));
-    expect(screen.getByRole('group', { name: 'Display della radio ingrandito' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 });

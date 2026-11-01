@@ -11,6 +11,7 @@ import './styles/onair.css';
 import './styles/radiodisplay.css';
 import './styles/dxcc.css';
 import './styles/settings-layout.css';
+import './styles/news.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
@@ -29,6 +30,12 @@ async function start() {
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }
+  // il menu del tasto destro del browser (Indietro, Ricarica, Ispeziona...) non serve: resta solo nei campi di testo, per copia e incolla
+  document.addEventListener('contextmenu', (e) => {
+    const target = e.target instanceof Element ? e.target : null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    e.preventDefault();
+  });
   // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fa eccezione solo il collegamento di associazione del telefono
   if (!location.hash.startsWith('#/associa') && !location.hash.startsWith('#/pair')) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
