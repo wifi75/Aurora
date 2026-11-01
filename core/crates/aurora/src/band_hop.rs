@@ -58,7 +58,7 @@ impl Hopper {
     /// L'ora attuale (secondi UTC): la voce da raggiungere, se e' il momento. Con `blocked` (Tx abilitato o in trasmissione) la voce si salta.
     pub fn tick(&mut self, now_s: u64, len: usize, blocked: bool) -> Option<usize> {
         let minute = now_s / 60;
-        if self.last_minute == Some(minute) || minute % 2 != 0 {
+        if self.last_minute == Some(minute) || !minute.is_multiple_of(2) {
             return None;
         }
         self.last_minute = Some(minute);
