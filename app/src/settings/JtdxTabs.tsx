@@ -75,6 +75,13 @@ const DECODER_START_OPTIONS: SettingRow['options'] = [
   { value: 'normal', label: 'gen2.decStartNormal' },
   { value: 'late', label: 'gen2.decStartLate' },
 ];
+const POUNCE_OPTIONS: SettingRow['options'] = [
+  { value: 'none', label: 'gen2.pounceNone' },
+  { value: 'first', label: 'gen2.pounceFirst' },
+  { value: 'max_dist', label: 'gen2.pounceMaxDist' },
+  { value: 'max_db', label: 'gen2.pounceMaxDb' },
+  { value: 'min_db', label: 'gen2.pounceMinDb' },
+];
 const TYPE2_OPTIONS: SettingRow['options'] = [
   { value: 'type_2_msg_1_full', label: 'gen2.type2Tx1' },
   { value: 'type_2_msg_3_full', label: 'gen2.type2Full' },
@@ -338,8 +345,8 @@ export function NativeTxOptions() {
   const { settings, draft } = useDoc();
   if (settings.isError || !settings.data) return <Waiting error={settings.isError} />;
   const doc = settings.data;
-  const field = (key: string, kind: 'bool' | 'text' | 'num', label: Key, extra: { min?: number; max?: number; step?: number; locked?: boolean } = {}) => (
-    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, step: extra.step }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
+  const field = (key: string, kind: 'bool' | 'text' | 'num' | 'choice', label: Key, extra: { min?: number; max?: number; step?: number; locked?: boolean; options?: SettingRow['options'] } = {}) => (
+    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, step: extra.step, options: extra.options }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
   );
   return (
     <>
@@ -355,11 +362,13 @@ export function NativeTxOptions() {
         <Cells min={15}>
           {field('FullDuplex', 'bool', 'gen2.fullDuplex')}
           {field('WaitFeaturesEnabled', 'bool', 'gen2.waitFeatures')}
+          {field('PouncePolicy', 'choice', 'gen2.pounce', { options: POUNCE_OPTIONS })}
         </Cells>
       </Group>
 
       <Group title={t('gen2.fox')}>
         <Cells min={15}>
+          {field('HoundAuto', 'bool', 'gen2.houndAuto')}
           {field('OTPVerify', 'bool', 'gen2.otpVerify')}
           {field('ShowOTP', 'bool', 'gen2.showOtp')}
           {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}

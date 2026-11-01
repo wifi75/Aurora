@@ -97,7 +97,8 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
     if (e.button !== 0 && !(anyButton && e.button === 2)) return;
     e.stopPropagation();
     const handle = e.currentTarget;
-    handle.setPointerCapture(e.pointerId);
+    // nei browser c'e' sempre; nell'ambiente dei test no
+    handle.setPointerCapture?.(e.pointerId);
     setDragging(kind);
     const move = (ev: PointerEvent) => apply(hzFromPointer(ev.clientX));
     const stop = () => {

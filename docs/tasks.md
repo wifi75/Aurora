@@ -58,12 +58,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Fatto: decodifica multithread (`mtd`) e momento di avvio della decodifica (`FT8DecoderStart`: Presto 13,82 s, Normale 14,11 s, Tardi 14,40 s, come `m_ft8DecoderStart`/`fixStop` di WSJT-X) in `engine-native/src/features.rs` e `slots.rs`.
 - Manca: misurare il tempo su un periodo vero di banda satura (non ci sono WAV nel repository); le decodifiche anticipate a due/tre passate di WSJT-X (`m_earlyDecode`, `m_earlyDecode2` a 46-47) non sono portate.
 
-## 12. Wait and Pounce
-
-- Fatto: Wait and Reply e Wait and Call (`engine-native/src/tx.rs` `wait_features`, `features.rs`, pulsante `wait_call`, voce `WaitFeaturesEnabled`).
-- Manca: Wait and Pounce (risposta automatica a un CQ secondo il criterio scelto, «Max Dist», «Max dB», «Min dB», con i filtri e senza doppioni): da coordinare con l'Automazione di Aurora e con i filtri dei decode (altro lavoro).
-- WSJT-X: `widgets/mainwindow.cpp` `updateRespondTarget`, `AutoRespondPolicy.hpp`, `AutoRespondScoring.hpp`.
-
 ## 16. TCI
 
 - Cosa fare: controllo radio e audio via TCI (WebSocket) per radio SDR (Expert, SunSDR, ANAN con Thetis).
@@ -81,7 +75,7 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
 - Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
-- Resta: ALL.TXT con la banda del periodo dopo un cambio (`engine-native/src/alltxt.rs`, lasciato a chi lavora sul motore); scambi di contest nei record ADIF (servono i campi dello scambio in `QsoRecord`, riempiti dal motore QSO, poi `contest_fields` nei record).
+- Resta: tendina della stazione Wavelog nelle Impostazioni (oggi le stazioni del server compaiono nel messaggio della prova); lo scambio di contest inviato (`exch_sent`) resta vuoto finche' il motore non fa la sequenza dei contest (lo scambio ricevuto e i campi ADIF sono fatti).
 - WSJT-X: note 3.2 «Networking, logging, and integrations», `logbook/AdifQso.cpp`.
 - Verifica: test unitari sui casi di mezzanotte e cambio banda.
 

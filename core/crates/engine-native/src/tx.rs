@@ -258,6 +258,14 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     on_air_tx: Option<(String, bool, Parity, u64)>,
     /// Wait and Call scattato: fino a quando (secondi UTC) si continua a chiamare il DX se non risponde.
     wait_call_until: Option<f64>,
+    /// Gli scambi di contest ricevuti di recente (`(nominativo, scambio)`), per il record del QSO (`exch_rcvd`).
+    exchanges: VecDeque<(String, String)>,
+    /// Hound scelto a mano per questo DX (`Some(dx)`, vuoto se nessun DX): finche' il DX non cambia l'automatico non lo tocca.
+    hound_manual: Option<String>,
+    /// Il DX per cui Hound si e' acceso da solo.
+    hound_auto_for: Option<String>,
+    /// I nominativi sentiti trasmettere come Fox di WSJT-X (`features::fox_sender`).
+    foxes: Vec<String>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -302,7 +310,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new() };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -535,6 +543,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let slot = Slot(r.slot_start_ms / self.mode.period_ms());
                     let (text, freq) = (r.text.clone(), r.freq_hz);
                     let decode = QDecoded::new(&r.text, r.snr, r.freq_hz);
+                    // Hound automatico: se la stazione scelta non e' una Fox, Hound si spegne PRIMA di preparare il messaggio, cosi' «Salta Tx1» vale subito
+                    let picked = crate::features::fox_sender(&text).or_else(|| sender_of(&text));
+                    if self.opts.hound
+                        && self.controls.hound_auto.load(Ordering::Relaxed)
+                        && let Some(call) = picked.filter(|c| !self.foxes.iter().any(|f| f.eq_ignore_ascii_case(c)))
+                    {
+                        self.hound_manual = None;
+                        self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &call, &mut log);
+                    }
                     match self.seq.reply_to_with(slot, &decode, self.auto_tx) {
                         Ok(()) => {
                             if let Some(call) = sender_of(&text) {
@@ -666,7 +683,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.rrr_user = v;
                         self.opts.use_rrr = v || matches!(self.mode, Mode::Jt65 | Mode::Jt9);
                     }
-                    OptionChange::Hound(v) => self.opts.hound = v,
+                    OptionChange::Hound(v) => {
+                        self.opts.hound = v;
+                        self.hound_manual = Some(self.seq.dx().unwrap_or_default().to_string());
+                        self.hound_auto_for = None;
+                    }
                     OptionChange::Sequence(settings) => {
                         self.tx_qsy_allowed = settings.tx_qsy_allowed;
                         settings.apply(&mut self.opts);
@@ -783,6 +804,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.fire_clear_dx(now_s, &mut log);
         self.sync_rx_from_user();
         self.note_heard(slot, decoded);
+        self.note_exchanges(decoded);
+        self.auto_hound(decoded, &mut log);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
         self.wait_features(slot, decoded, now_s, &mut log);
@@ -859,6 +882,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         time_ms: (rec.time_on_ms % DAY_MS) as u32,
                         time_on_unix_ms: rec.time_on_ms,
                         time_off_unix_ms: tx_slot_ms + tail_ms,
+                        exch_rcvd: self.exchanges.iter().rev().find(|(c, _)| c.eq_ignore_ascii_case(&rec.call)).map(|(_, x)| x.clone()).unwrap_or_default(),
                         ..Default::default()
                     });
                 }
@@ -909,6 +933,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if !self.controls.wait_features.load(Ordering::Relaxed) || self.opts.hound {
             return;
         }
+        if self.wait_and_pounce(slot, decoded, now_s, log) {
+            return;
+        }
         let Some(his) = self.seq.dx().map(str::to_string) else { return };
         let my = self.my_call.clone();
         if !self.seq.is_enabled()
@@ -945,6 +972,116 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 log.push(format!("Wait and Call: {his} e' libero («{text}»), lo chiamo"));
             }
             Err(e) => log.push(format!("Wait and Call non possibile: {e:?}")),
+        }
+    }
+
+    /// Hound automatico (richiesta del proprietario; formato dei messaggi del Fox come WSJT-X):
+    /// - il DX scelto manda righe da Fox (`features::fox_sender`): Hound si accende, Tx sopra 1000 Hz, Split acceso, avviso «lavora in Fox/Hound»;
+    /// - il DX mi risponde con R+rapporto (un Fox non lo manda mai: e' una stazione normale, per esempio le risposte multiple di MSHV): Hound si spegne,
+    ///   anche se acceso a mano, prima che la sequenza legga il messaggio, cosi' il QSO continua con la sequenza normale;
+    /// - si sceglie un altro DX: Hound acceso da solo si spegne.
+    ///
+    /// Acceso o spento a mano, l'automatico non lo tocca finche' resta lo stesso DX (salvo l'R+rapporto). Con «Hound automatico» spento resta solo la
+    /// regola dell'R+rapporto.
+    fn auto_hound(&mut self, decoded: &[(String, i32, u32)], log: &mut Vec<String>) {
+        for f in decoded.iter().filter_map(|(text, _, _)| crate::features::fox_sender(text)) {
+            if !self.foxes.iter().any(|x| x.eq_ignore_ascii_case(&f)) {
+                self.foxes.push(f);
+                if self.foxes.len() > 50 {
+                    self.foxes.remove(0);
+                }
+            }
+        }
+        let dx = self.seq.dx().map(str::to_string);
+        if self.hound_manual.as_deref().is_some_and(|m| Some(m) != dx.as_deref()) {
+            self.hound_manual = None;
+        }
+        let Some(dx) = dx else {
+            if let Some(old) = self.hound_auto_for.clone() {
+                self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &old, log);
+            }
+            return;
+        };
+        let standard = decoded.iter().any(|(text, _, _)| {
+            matches!(qso_native::message::parse(text), qso_native::message::Message::Directed { to, from, body: qso_native::message::Body::RReport(_) }
+                if to.eq_ignore_ascii_case(&self.my_call) && from.eq_ignore_ascii_case(&dx))
+        });
+        if self.opts.hound && standard {
+            self.hound_manual = None;
+            self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &dx, log);
+            return;
+        }
+        if !self.controls.hound_auto.load(Ordering::Relaxed) || self.hound_manual.is_some() {
+            return;
+        }
+        if self.opts.hound
+            && let Some(old) = self.hound_auto_for.clone().filter(|c| !c.eq_ignore_ascii_case(&dx))
+        {
+            self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &old, log);
+        }
+        let fox = self.foxes.iter().any(|f| f.eq_ignore_ascii_case(&dx));
+        if fox && !self.opts.hound {
+            self.set_hound(true, aurora_core::TxAlertKind::FoxDetected, &dx, log);
+        }
+    }
+
+    /// Accende o spegne Hound dal motore (non dal pulsante) e mostra l'avviso.
+    fn set_hound(&mut self, on: bool, kind: aurora_core::TxAlertKind, call: &str, log: &mut Vec<String>) {
+        self.controls.set_switch("hound", on);
+        self.opts.hound = on;
+        self.seq.set_options(self.opts.clone());
+        self.hound_auto_for = on.then(|| call.to_string());
+        let value = if on { Some(self.controls.hound_setup().0 as f32) } else { None };
+        self.controls.clear_alert(aurora_core::TxAlertKind::HoundOn);
+        self.controls.clear_alert(if on { aurora_core::TxAlertKind::HoundOff } else { aurora_core::TxAlertKind::FoxDetected });
+        self.controls.raise_alert(aurora_core::TxAlert { kind, detail: call.to_string(), value, limit: None }, Some(std::time::Duration::from_secs(60)));
+        log.push(if on { format!("Hound automatico: {call} lavora in Fox/Hound, Hound acceso") } else { format!("Hound spento: {call} non lavora in Fox/Hound") });
+    }
+
+    /// Gli scambi di contest che mi mandano (`features::contest_exchange`): si tengono gli ultimi 20 per il record del QSO.
+    fn note_exchanges(&mut self, decoded: &[(String, i32, u32)]) {
+        for (text, _, _) in decoded {
+            let words: Vec<&str> = text.split_whitespace().collect();
+            let Some(from) = words.get(1).map(|w| w.trim_matches(['<', '>'])) else { continue };
+            if let Some(x) = crate::features::contest_exchange(text, &self.my_call, from) {
+                self.exchanges.push_back((from.to_string(), x));
+                if self.exchanges.len() > 20 {
+                    self.exchanges.pop_front();
+                }
+            }
+        }
+    }
+
+    /// Wait and Pounce (`updateRespondTarget` e il tasto destro su «Auto» di `widgets/mainwindow.cpp` di WSJT-X 3.3): armato con «Abilita Tx» spento, fra i CQ
+    /// del periodo si sceglie quello del criterio (`PouncePolicy`) e gli si risponde da soli; come Wait and Call, se non risponde entro 6,2 periodi la
+    /// trasmissione si spegne. Con la trasmissione accesa il pulsante si disarma (in WSJT-X `pounce = false` all'accensione di Enable Tx).
+    /// Le stazioni gia' collegate in questa sessione non si scelgono (`txLog`). Vero se ha risposto a un CQ.
+    fn wait_and_pounce(&mut self, slot: Slot, decoded: &[(String, i32, u32)], now_s: f64, log: &mut Vec<String>) -> bool {
+        if !self.controls.switch_on("pounce") {
+            return false;
+        }
+        if self.seq.is_enabled() {
+            self.controls.set_switch("pounce", false);
+            return false;
+        }
+        let policy = crate::features::PouncePolicy::from_code(self.controls.pounce_policy.load(Ordering::Relaxed));
+        let grid = self.seq.station().grid.clone();
+        let logged = self.logged.clone();
+        let skip = |c: &str| logged.iter().any(|l| l.eq_ignore_ascii_case(c));
+        let Some(i) = crate::features::pounce_pick(policy, decoded, &grid, &skip) else { return false };
+        let Some((text, snr, freq)) = decoded.get(i).cloned() else { return false };
+        match self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true) {
+            Ok(()) => {
+                self.controls.set_switch("pounce", false);
+                let period = self.mode.period_ms() as f64 / 1000.0;
+                self.wait_call_until = Some(now_s + crate::features::WAIT_CALL_PERIODS * period);
+                log.push(format!("Wait and Pounce: rispondo a «{text}» ({snr} dB)"));
+                true
+            }
+            Err(e) => {
+                log.push(format!("Wait and Pounce non possibile: {e:?}"));
+                false
+            }
         }
     }
 
@@ -1039,6 +1176,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     fn plan(&mut self, slot: Slot, now_s: f64) -> Vec<String> {
         let mut log = Vec::new();
         let already = self.last_planned == Some(slot);
+        // Hound: il Fox trasmette sotto 1000 Hz, una chiamata li' non parte mai (WSJT-X chiama fra 1000 e 3000 Hz): la Tx sale prima di trasmettere
+        let current = self.controls.tx_df.load(Ordering::Relaxed);
+        if self.opts.hound && current < crate::features::HOUND_MIN_TX_HZ && self.seq.ntx() != 3 {
+            let seed = slot.0.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 20;
+            let moved = crate::features::hound_tx_hz(current, seed);
+            self.controls.tx_df.store(moved, Ordering::Relaxed);
+            log.push(format!("Hound: Tx da {current} a {moved} Hz (sotto 1000 Hz trasmette il Fox)"));
+        }
         // la frequenza Tx e' quella dei comandi (Tx -> Rx, Rx -> Tx, barra della cascata, Split): la sequenza la legge qui
         let tx_df = self.controls.tx_df.load(Ordering::Relaxed);
         if self.opts.tx_freq_hz != tx_df {
@@ -1400,6 +1545,95 @@ mod tests {
         }
     }
 
+    /// Hound, sequenza reale V26JJ (risposte multiple di MSHV, non Fox/Hound): il doppio clic su una riga rivolta a un altro prepara il Tx1, la Tx
+    /// a 556 Hz sale sopra 1000 Hz prima di partire, la risposta «IU3ABC V26JJ R+03» fa mandare RR73 e registrare, e compare l'avviso «non e' un Fox».
+    #[test]
+    fn hound_with_a_non_fox_station_moves_tx_up_completes_and_warns() {
+        let (mut d, _port, controls) = driver();
+        // Hound acceso a mano e automatico spento, come nel caso dal vivo: la chiamata non parte sotto 1000 Hz
+        controls.hound_auto.store(false, Ordering::Relaxed);
+        d.handle(TxCommand::Option(OptionChange::AutoSeq(true)), BASE);
+        controls.set_switch("hound", true);
+        d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
+        controls.tx_df.store(556, Ordering::Relaxed);
+        d.remember(7, "R7RDE V26JJ -04", -6, 480, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        let (_, log) = d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_090_000, "20m");
+        assert_eq!(d.seq.ntx(), 1, "in Hound si chiama con il Tx1: {log:?}");
+        assert!(controls.tx_df.load(Ordering::Relaxed) >= 1000, "{log:?}");
+        // il periodo in cui parte la chiamata: senza, la sequenza non sa di aver trasmesso e non va avanti
+        d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.2, 14_090_000, "20m");
+        let next = SLOT_MS + 30_000;
+        let (qsos, log) = d.after_slot(next, &[("IU3ABC V26JJ R+03".to_string(), -8, 480)], BASE + 44.2, 14_090_000, "20m");
+        let (more, log2) = d.after_slot(next + 30_000, &[], BASE + 74.2, 14_090_000, "20m");
+        let sent: Vec<String> = d.notes.iter().map(|n| n.text.clone()).collect();
+        assert!(sent.iter().any(|t| t.contains("V26JJ IU3ABC RR73")) || qsos.iter().chain(more.iter()).any(|q| q.call == "V26JJ"), "{log:?} {log2:?} {sent:?}");
+        assert!(qsos.iter().chain(more.iter()).any(|q| q.call == "V26JJ"), "il QSO si registra: {log:?} {log2:?}");
+        assert!(controls.tx_alerts().iter().any(|a| a.kind == aurora_core::TxAlertKind::HoundOff && a.detail == "V26JJ"));
+        assert!(!controls.switch_on("hound"), "Hound si spegne da solo");
+    }
+
+    /// Caso dal vivo KG4ERR: Hound rimasto acceso a mano, «Salta Tx1» acceso, doppio clic su «CQ KG4ERR EM92»: con l'automatico Hound si spegne prima
+    /// di preparare il messaggio e parte il rapporto (Tx2); con l'automatico spento resta Hound e il Tx1.
+    #[test]
+    fn a_normal_station_turns_a_manual_hound_off_before_the_reply() {
+        for auto in [true, false] {
+            let (mut d, _port, controls) = driver();
+            controls.hound_auto.store(auto, Ordering::Relaxed);
+            d.handle(TxCommand::Option(OptionChange::SkipTx1(true)), BASE);
+            controls.set_switch("hound", true);
+            d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
+            d.remember(7, "CQ KG4ERR EM92", -10, 1500, SLOT_MS);
+            let log = d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+            assert_eq!(controls.switch_on("hound"), !auto, "{log:?}");
+            assert_eq!(d.seq.ntx(), if auto { 2 } else { 1 }, "{log:?}");
+        }
+    }
+
+    /// Hound automatico con un Fox di WSJT-X: la riga combinata con il DX scelto accende Hound (Tx sopra 1000 Hz, Split); scegliendo un altro DX si spegne.
+    /// La sequenza reale V26JJ (MSHV, messaggi standard multipli) lo lascia spento.
+    #[test]
+    fn hound_turns_itself_on_for_a_wsjtx_fox_and_off_for_another_dx() {
+        let (mut d, _port, controls) = driver();
+        controls.tx_df.store(600, Ordering::Relaxed);
+        controls.set_switch("split", false);
+        d.handle(TxCommand::SetDx { call: Some("KH1/KH7Z".into()), grid: None, generate: true }, BASE + 1.0);
+        d.after_slot(SLOT_MS, &[("K1ABC RR73; W9XYZ <KH1/KH7Z> -08".to_string(), -10, 450)], BASE + 14.2, 14_090_000, "20m");
+        assert!(controls.switch_on("hound") && d.opts.hound && controls.switch_on("split"));
+        assert!(controls.tx_df.load(Ordering::Relaxed) >= 1000);
+        assert!(controls.tx_alerts().iter().any(|a| a.kind == aurora_core::TxAlertKind::FoxDetected && a.detail == "KH1/KH7Z"));
+        d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: None, generate: true }, BASE + 20.0);
+        d.after_slot(SLOT_MS + 30_000, &[], BASE + 44.2, 14_090_000, "20m");
+        assert!(!controls.switch_on("hound"), "altro DX: Hound spento");
+        // V26JJ con MSHV: risposte multiple standard, Hound resta spento
+        let (mut d, _port, controls) = driver();
+        d.handle(TxCommand::SetDx { call: Some("V26JJ".into()), grid: None, generate: true }, BASE + 1.0);
+        d.after_slot(SLOT_MS, &[("R2PA V26JJ RR73".to_string(), -6, 480), ("R7RDE V26JJ -04".to_string(), -6, 480)], BASE + 14.2, 14_090_000, "20m");
+        assert!(!controls.switch_on("hound"));
+    }
+
+    /// Wait and Pounce: armato con la trasmissione spenta, risponde al CQ del criterio (qui il segnale piu' forte), scarta chi e' gia' collegato e si disarma.
+    #[test]
+    fn wait_and_pounce_answers_the_best_cq_and_disarms() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("pounce", true);
+        controls.pounce_policy.store(crate::features::PouncePolicy::MaxSignal.code(), Ordering::Relaxed);
+        d.logged.push("DL1AAA".into());
+        let decoded = vec![("CQ DL1AAA JO62".to_string(), 10, 900), ("CQ K1ABC FN42".to_string(), -3, 1200), ("CQ W9XYZ EN52".to_string(), -15, 1500)];
+        let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert!(d.seq.is_enabled(), "{log:?}");
+        assert_eq!(d.seq.dx(), Some("K1ABC"), "{log:?}");
+        assert!(!controls.switch_on("pounce"), "il pulsante si disarma");
+        assert!(log.iter().any(|l| l.contains("Wait and Pounce")), "{log:?}");
+        assert!(!port.requests.lock().expect("richieste").is_empty(), "la risposta parte: {log:?}");
+        // con le Wait features spente non scatta
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(false, Ordering::Relaxed);
+        controls.set_switch("pounce", true);
+        let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
+    }
+
     /// Wait and Call: armato, quando il DX chiude con un altro lo si chiama; il pulsante si disarma e, senza risposta, dopo 6,2 periodi si smette.
     #[test]
     fn wait_and_call_calls_the_dx_when_he_is_free_and_gives_up_without_answer() {
@@ -1577,6 +1811,7 @@ mod tests {
     fn hound_hops_the_r_report_around_the_fox_frequency() {
         let hop = |hound: bool, split: bool, dial: u64| -> Vec<u32> {
             let mut b = Bench::new();
+            b.controls.hound_auto.store(false, Ordering::Relaxed);
             b.controls.set_switch("hound", hound);
             b.controls.set_switch("split", split);
             b.d.handle(TxCommand::Option(OptionChange::Hound(hound)), BASE);

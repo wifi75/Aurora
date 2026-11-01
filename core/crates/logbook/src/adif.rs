@@ -58,6 +58,34 @@ pub fn contest_fields(x_sent: &str, x_rcvd: &str, contest: Contest) -> Vec<(&'st
     out
 }
 
+impl Contest {
+    /// Il contest di uno scambio ricevuto, dalla sua forma: `2A EMA` (classe con lettera A-F e sezione) e' Field Day, `579 WI` (rapporto e
+    /// sigla di stato) e' RTTY Roundup; il resto non ha campi speciali.
+    pub fn guess(x_rcvd: &str) -> Contest {
+        let w: Vec<&str> = x_rcvd.split_whitespace().collect();
+        let [a, b] = w.as_slice() else { return Contest::None };
+        let letters = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphabetic());
+        let class = a.len() >= 2 && a[..a.len() - 1].chars().all(|c| c.is_ascii_digit()) && a.ends_with(|c: char| ('A'..='F').contains(&c));
+        if class && letters(b) {
+            Contest::FieldDay
+        } else if a.len() == 3 && a.starts_with('5') && a.chars().all(|c| c.is_ascii_digit()) && letters(b) {
+            Contest::Rtty
+        } else {
+            Contest::None
+        }
+    }
+}
+
+/// I campi dello scambio di contest di un QSO (` <NOME:n>valore` ciascuno), vuoto fuori dai contest.
+fn contest_suffix(q: &QsoRecord, lower: bool) -> String {
+    let mut out = String::new();
+    for (name, value) in contest_fields(&q.exch_sent, &q.exch_rcvd, Contest::guess(&q.exch_rcvd)) {
+        let name = if lower { name.to_ascii_lowercase() } else { name.to_string() };
+        jtdx_field(&mut out, &name, &value);
+    }
+    out
+}
+
 pub fn field(out: &mut String, name: &str, value: &str) {
     if !value.is_empty() {
         let _ = write!(out, "<{name}:{}>{value}", value.len());
@@ -215,6 +243,7 @@ pub fn jtdx_record_with(q: &QsoRecord, station: &Station, fallback_date: &str, e
     if !q.comment.is_empty() {
         jtdx_field(&mut r, "COMMENT", &q.comment);
     }
+    r.push_str(&contest_suffix(q, false));
     if let Some(date) = eqsl_date {
         r.push_str(" <EQSL_QSL_SENT:1>Y");
         jtdx_field(&mut r, "EQSL_QSLSDATE", date);
@@ -260,6 +289,7 @@ pub fn jtdx_file_record_with(q: &QsoRecord, station: &Station, fallback_date: &s
     if !q.name.is_empty() {
         jtdx_field(&mut r, "name", &q.name);
     }
+    r.push_str(&contest_suffix(q, true));
     if eqsl {
         r.push_str(" <eqsl_qsl_sent:1>Y");
     }
@@ -306,6 +336,24 @@ mod tests {
         // un rapporto solo non e' uno scambio
         assert!(f("-10", "-12", Contest::None).is_empty());
         assert!(header().contains("<ADIF_VER:5>3.1.8"));
+        assert_eq!(Contest::guess("2A EMA"), Contest::FieldDay);
+        assert_eq!(Contest::guess("579 WI"), Contest::Rtty);
+        assert_eq!(Contest::guess("579 0013"), Contest::None);
+    }
+
+    /// Lo scambio del QSO entra nei record (UDP e file) con i campi di `contest_fields`; senza scambio i record restano quelli di prima.
+    #[test]
+    fn the_contest_exchange_of_a_qso_goes_into_the_records() {
+        let station = Station { call: "IU3ABC".into(), grid: "JN65".into(), tx_power: String::new() };
+        let mut q = sample("FT8");
+        let plain = jtdx_record(&q, &station, "20261024");
+        assert!(!plain.contains("SRX") && !plain.contains("STATE"), "{plain}");
+        q.exch_sent = "579 MA".into();
+        q.exch_rcvd = "579 CT".into();
+        let r = jtdx_record(&q, &station, "20261024");
+        assert!(r.contains("<STX_STRING:6>579 MA <STATE:2>CT"), "{r}");
+        let f = jtdx_file_record(&q, &station, "20261024");
+        assert!(f.contains("<stx_string:6>579 MA <state:2>CT"), "{f}");
     }
 
     use super::{jtdx_file_record, jtdx_record, utc_date, utc_datetime, Station};
