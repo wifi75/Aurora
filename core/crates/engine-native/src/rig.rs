@@ -114,6 +114,8 @@ pub struct NativeControls {
     pub full_duplex: AtomicBool,
     /// «Abilita Wait features» (WSJT-X `WaitFeaturesEnabled`, di fabbrica acceso): Wait and Reply e Wait and Call.
     pub wait_features: AtomicBool,
+    /// Criterio di Wait and Pounce (`PouncePolicy::code`, voce `PouncePolicy`).
+    pub pounce_policy: AtomicU8,
     /// Verifica del Fox con OTP (Hound classico).
     otp: Mutex<crate::features::OtpSettings>,
     /// Chi verifica un codice OTP in linea (lo imposta il programma, che ha la rete).
@@ -140,7 +142,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), wait_features: AtomicBool::new(true), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), wait_features: AtomicBool::new(true), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None) }
     }
 }
 
@@ -539,6 +541,20 @@ impl NativeRig {
     fn radio(&self) -> Result<&Arc<dyn Rig>, RigError> {
         self.radio.as_ref().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni → Radio".into()))
     }
+
+    /// Accensione di Hound, come WSJT-X 3.3: la frequenza Tx sotto 1000 Hz sale nell'intervallo dei Hound (`features::hound_tx_hz`), lo Split si accende
+    /// se e' spento (WSJT-X avvisa che il modo DXpedition «normally requires *Split* rig control») e compare l'avviso con cio' che e' stato fatto.
+    fn hound_setup(&self) {
+        let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| u64::from(d.subsec_nanos()));
+        let tx = crate::features::hound_tx_hz(self.controls.tx_df.load(Ordering::Relaxed), seed);
+        self.controls.tx_df.store(tx, Ordering::Relaxed);
+        let split_turned_on = !self.controls.switch_on("split");
+        if split_turned_on {
+            self.controls.set_switch("split", true);
+        }
+        let alert = aurora_core::TxAlert { kind: aurora_core::TxAlertKind::HoundOn, detail: if split_turned_on { "split".into() } else { String::new() }, value: Some(tx as f32), limit: None };
+        self.controls.raise_alert(alert, Some(std::time::Duration::from_secs(20)));
+    }
 }
 
 impl Rig for NativeRig {
@@ -636,6 +652,9 @@ impl Rig for NativeRig {
                 // Split spento = Tx e Rx insieme: come `on_pbTxLock_clicked` di JTDX, la trasmissione va sulla frequenza di ricezione
                 if id == "split" && !value {
                     self.controls.tx_df.store(self.controls.rx_df.load(Ordering::Relaxed), Ordering::Relaxed);
+                }
+                if id == "hound" && value {
+                    self.hound_setup();
                 }
                 let command = match id {
                     // «Abilita Tx» e «AutoTX» sono due cose: il primo permette di trasmettere, il secondo fa accendere il primo al doppio clic
@@ -833,6 +852,26 @@ mod tests {
         b.restore(&old);
         assert!(b.switch_on("filter"), "un file nuovo lo ripristina");
         assert!(b.saved().filter_wired);
+    }
+
+    /// Hound acceso come WSJT-X: Tx sotto 1000 Hz spostata sopra, Split acceso, avviso con la frequenza; con la Tx gia' sopra resta dov'e'.
+    #[test]
+    fn turning_hound_on_moves_tx_above_1000_hz_and_turns_split_on() {
+        let (rig, controls) = rig();
+        controls.tx_df.store(700, Ordering::Relaxed);
+        controls.set_switch("split", false);
+        rig.set_control("hound", Some(true)).expect("hound");
+        let tx = controls.tx_df.load(Ordering::Relaxed);
+        assert!((1000..2999).contains(&tx), "{tx}");
+        assert!(controls.switch_on("split"));
+        let alerts = controls.tx_alerts();
+        let a = alerts.iter().find(|a| a.kind == aurora_core::TxAlertKind::HoundOn).expect("avviso Hound");
+        assert_eq!((a.value, a.detail.as_str()), (Some(tx as f32), "split"));
+        let (rig2, controls) = super::tests::rig();
+        controls.tx_df.store(1800, Ordering::Relaxed);
+        rig2.set_control("hound", Some(true)).expect("hound");
+        assert_eq!(controls.tx_df.load(Ordering::Relaxed), 1800);
+        assert!(controls.tx_alerts().iter().any(|a| a.kind == aurora_core::TxAlertKind::HoundOn && a.detail.is_empty()), "Split era gia' acceso");
     }
 
     #[test]

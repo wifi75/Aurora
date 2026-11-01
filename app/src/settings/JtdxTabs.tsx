@@ -95,6 +95,13 @@ const DECODER_START_OPTIONS: SettingRow['options'] = [
   { value: 'normal', label: 'gen2.decStartNormal' },
   { value: 'late', label: 'gen2.decStartLate' },
 ];
+const POUNCE_OPTIONS: SettingRow['options'] = [
+  { value: 'none', label: 'gen2.pounceNone' },
+  { value: 'first', label: 'gen2.pounceFirst' },
+  { value: 'max_dist', label: 'gen2.pounceMaxDist' },
+  { value: 'max_db', label: 'gen2.pounceMaxDb' },
+  { value: 'min_db', label: 'gen2.pounceMinDb' },
+];
 const TYPE2_OPTIONS: SettingRow['options'] = [
   { value: 'type_2_msg_1_full', label: 'gen2.type2Tx1' },
   { value: 'type_2_msg_3_full', label: 'gen2.type2Full' },
@@ -327,6 +334,7 @@ export function NativeGeneral() {
           {field('FT8DecoderStart', 'choice', 'gen2.decStart', { options: DECODER_START_OPTIONS })}
           {field('FullDuplex', 'bool', 'gen2.fullDuplex')}
           {field('WaitFeaturesEnabled', 'bool', 'gen2.waitFeatures')}
+          {field('PouncePolicy', 'choice', 'gen2.pounce', { options: POUNCE_OPTIONS })}
         </Cells>
       </Group>
 

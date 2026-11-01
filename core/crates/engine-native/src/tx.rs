@@ -258,6 +258,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     on_air_tx: Option<(String, bool, Parity, u64)>,
     /// Wait and Call scattato: fino a quando (secondi UTC) si continua a chiamare il DX se non risponde.
     wait_call_until: Option<f64>,
+    /// Gli scambi di contest ricevuti di recente (`(nominativo, scambio)`), per il record del QSO (`exch_rcvd`).
+    exchanges: VecDeque<(String, String)>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -302,7 +304,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new() };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -783,6 +785,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.fire_clear_dx(now_s, &mut log);
         self.sync_rx_from_user();
         self.note_heard(slot, decoded);
+        self.note_exchanges(decoded);
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
         self.wait_features(slot, decoded, now_s, &mut log);
@@ -859,6 +862,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         time_ms: (rec.time_on_ms % DAY_MS) as u32,
                         time_on_unix_ms: rec.time_on_ms,
                         time_off_unix_ms: tx_slot_ms + tail_ms,
+                        exch_rcvd: self.exchanges.iter().rev().find(|(c, _)| c.eq_ignore_ascii_case(&rec.call)).map(|(_, x)| x.clone()).unwrap_or_default(),
                         ..Default::default()
                     });
                 }
@@ -909,6 +913,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if !self.controls.wait_features.load(Ordering::Relaxed) || self.opts.hound {
             return;
         }
+        if self.wait_and_pounce(slot, decoded, now_s, log) {
+            return;
+        }
         let Some(his) = self.seq.dx().map(str::to_string) else { return };
         let my = self.my_call.clone();
         if !self.seq.is_enabled()
@@ -945,6 +952,53 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 log.push(format!("Wait and Call: {his} e' libero («{text}»), lo chiamo"));
             }
             Err(e) => log.push(format!("Wait and Call non possibile: {e:?}")),
+        }
+    }
+
+    /// Gli scambi di contest che mi mandano (`features::contest_exchange`): si tengono gli ultimi 20 per il record del QSO.
+    fn note_exchanges(&mut self, decoded: &[(String, i32, u32)]) {
+        for (text, _, _) in decoded {
+            let words: Vec<&str> = text.split_whitespace().collect();
+            let Some(from) = words.get(1).map(|w| w.trim_matches(['<', '>'])) else { continue };
+            if let Some(x) = crate::features::contest_exchange(text, &self.my_call, from) {
+                self.exchanges.push_back((from.to_string(), x));
+                if self.exchanges.len() > 20 {
+                    self.exchanges.pop_front();
+                }
+            }
+        }
+    }
+
+    /// Wait and Pounce (`updateRespondTarget` e il tasto destro su «Auto» di `widgets/mainwindow.cpp` di WSJT-X 3.3): armato con «Abilita Tx» spento, fra i CQ
+    /// del periodo si sceglie quello del criterio (`PouncePolicy`) e gli si risponde da soli; come Wait and Call, se non risponde entro 6,2 periodi la
+    /// trasmissione si spegne. Con la trasmissione accesa il pulsante si disarma (in WSJT-X `pounce = false` all'accensione di Enable Tx).
+    /// Le stazioni gia' collegate in questa sessione non si scelgono (`txLog`). Vero se ha risposto a un CQ.
+    fn wait_and_pounce(&mut self, slot: Slot, decoded: &[(String, i32, u32)], now_s: f64, log: &mut Vec<String>) -> bool {
+        if !self.controls.switch_on("pounce") {
+            return false;
+        }
+        if self.seq.is_enabled() {
+            self.controls.set_switch("pounce", false);
+            return false;
+        }
+        let policy = crate::features::PouncePolicy::from_code(self.controls.pounce_policy.load(Ordering::Relaxed));
+        let grid = self.seq.station().grid.clone();
+        let logged = self.logged.clone();
+        let skip = |c: &str| logged.iter().any(|l| l.eq_ignore_ascii_case(c));
+        let Some(i) = crate::features::pounce_pick(policy, decoded, &grid, &skip) else { return false };
+        let Some((text, snr, freq)) = decoded.get(i).cloned() else { return false };
+        match self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true) {
+            Ok(()) => {
+                self.controls.set_switch("pounce", false);
+                let period = self.mode.period_ms() as f64 / 1000.0;
+                self.wait_call_until = Some(now_s + crate::features::WAIT_CALL_PERIODS * period);
+                log.push(format!("Wait and Pounce: rispondo a «{text}» ({snr} dB)"));
+                true
+            }
+            Err(e) => {
+                log.push(format!("Wait and Pounce non possibile: {e:?}"));
+                false
+            }
         }
     }
 
@@ -1398,6 +1452,28 @@ mod tests {
             assert_eq!(d.seq.is_enabled(), on, "{log:?}");
             assert_eq!(log.iter().any(|l| l.contains("Wait and Reply")), on, "{log:?}");
         }
+    }
+
+    /// Wait and Pounce: armato con la trasmissione spenta, risponde al CQ del criterio (qui il segnale piu' forte), scarta chi e' gia' collegato e si disarma.
+    #[test]
+    fn wait_and_pounce_answers_the_best_cq_and_disarms() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("pounce", true);
+        controls.pounce_policy.store(crate::features::PouncePolicy::MaxSignal.code(), Ordering::Relaxed);
+        d.logged.push("DL1AAA".into());
+        let decoded = vec![("CQ DL1AAA JO62".to_string(), 10, 900), ("CQ K1ABC FN42".to_string(), -3, 1200), ("CQ W9XYZ EN52".to_string(), -15, 1500)];
+        let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert!(d.seq.is_enabled(), "{log:?}");
+        assert_eq!(d.seq.dx(), Some("K1ABC"), "{log:?}");
+        assert!(!controls.switch_on("pounce"), "il pulsante si disarma");
+        assert!(log.iter().any(|l| l.contains("Wait and Pounce")), "{log:?}");
+        assert!(!port.requests.lock().expect("richieste").is_empty(), "la risposta parte: {log:?}");
+        // con le Wait features spente non scatta
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(false, Ordering::Relaxed);
+        controls.set_switch("pounce", true);
+        let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
     }
 
     /// Wait and Call: armato, quando il DX chiude con un altro lo si chiama; il pulsante si disarma e, senza risposta, dopo 6,2 periodi si smette.

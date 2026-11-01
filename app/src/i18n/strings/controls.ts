@@ -77,6 +77,15 @@ export const controlStrings = {
     'Armado: cuando el DX elegido llama CQ o cierra su QSO (RR73, RRR, 73) Aurora lo llama sola, hasta unas tres veces; luego el botón se apaga. Necesita AutoSeq y las Wait features activadas (Ajustes, General).',
     'Armado: quando o DX escolhido chama CQ ou fecha o QSO dele (RR73, RRR, 73) a Aurora chama-o sozinha, até cerca de três vezes; depois o botão desliga-se. Requer AutoSeq e as Wait features ligadas (Definições, Geral).',
   ],
+  'ctl.pounce': ['Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce'],
+  'tip.ctl.pounce': [
+    'Armato con Abilita Tx spento: alla fine del periodo Aurora risponde da sola al CQ scelto con il criterio delle impostazioni (Generali: il primo, il più lontano, il più forte o il più debole), saltando chi hai già collegato; se non risponde entro circa tre chiamate la trasmissione si spegne. Scattato, il pulsante si spegne. Servono le Wait features accese.',
+    'Armed with Enable Tx off: at the end of the period Aurora answers by itself the CQ picked by the rule in the settings (General: the first, the farthest, the strongest or the weakest), skipping stations already worked; if there is no answer within about three calls transmission stops. Once it fires, the button switches off. Needs the Wait features on.',
+    'Gespannt bei ausgeschaltetem Tx: Am Ende des Intervalls antwortet Aurora selbst auf den CQ, den die Regel in den Einstellungen wählt (Allgemein: der erste, der entfernteste, der stärkste oder der schwächste), schon gearbeitete Stationen ausgenommen; ohne Antwort nach etwa drei Anrufen endet das Senden. Nach dem Auslösen geht der Knopf aus. Braucht die Wait features.',
+    'Armé avec Activer Tx éteint : en fin de période Aurora répond seule au CQ choisi par la règle des réglages (Général : le premier, le plus lointain, le plus fort ou le plus faible), en sautant les stations déjà contactées ; sans réponse après environ trois appels l’émission s’arrête. Une fois déclenché, le bouton s’éteint. Il faut les Wait features activés.',
+    'Armado con Activar Tx apagado: al final del periodo Aurora responde sola al CQ elegido por la regla de los ajustes (General: el primero, el más lejano, el más fuerte o el más débil), saltando las estaciones ya trabajadas; sin respuesta tras unas tres llamadas la transmisión se apaga. Una vez disparado, el botón se apaga. Necesita las Wait features activadas.',
+    'Armado com Ativar Tx desligado: no fim do período a Aurora responde sozinha ao CQ escolhido pela regra das definições (Geral: o primeiro, o mais distante, o mais forte ou o mais fraco), saltando as estações já contactadas; sem resposta após cerca de três chamadas a transmissão desliga-se. Depois de disparar, o botão desliga-se. Requer as Wait features ligadas.',
+  ],
   'ctl.filter': ['Filtro', 'Filter', 'Filter', 'Filtre', 'Filtro', 'Filtro'],
   'ctl.filter.on': [
     'Decodifico solo ±{hz} Hz attorno a Rx',

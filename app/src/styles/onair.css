@@ -5334,3 +5334,15 @@
   color: var(--hl-fg) !important;
   text-shadow: none !important;
 }
+
+/* Hound acceso: etichetta fissa accanto alle frequenze del pannello Tx */
+.tx-dx .hound-badge {
+  align-self: center;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--accent, currentColor);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent, currentColor);
+}

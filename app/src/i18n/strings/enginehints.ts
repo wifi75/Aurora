@@ -77,6 +77,14 @@ export const engineHintStrings = {
     'Para satélites y equipos dúplex completo: el periodo en que transmites también se decodifica (ves tu propia señal de bajada). Sus mensajes se muestran pero no hacen responder a la secuencia. Apagado (de serie, como WSJT-X), el periodo de transmisión no se decodifica.',
     'Para satélites e rádios full duplex: o período em que transmites também é descodificado (vês o teu sinal de descida). As mensagens aparecem mas não fazem a sequência responder. Desligado (de origem, como no WSJT-X), o período de transmissão não é descodificado.',
   ],
+  'jxh.PouncePolicy': [
+    'A quale CQ risponde il pulsante Wait and Pounce, come il «CQ:» di WSJT-X: il primo decodificato, il più lontano (serve il locatore nel CQ), il più forte o il più debole. Le stazioni già collegate in questa sessione si saltano. «Nessuno» disattiva Wait and Pounce.',
+    'Which CQ the Wait and Pounce button answers, like the «CQ:» box of WSJT-X: the first decoded, the farthest (the CQ must carry a locator), the strongest or the weakest. Stations already worked in this session are skipped. «None» disables Wait and Pounce.',
+    'Auf welchen CQ der Knopf Wait and Pounce antwortet, wie «CQ:» in WSJT-X: der erste dekodierte, der entfernteste (der CQ braucht einen Locator), der stärkste oder der schwächste. In dieser Sitzung schon gearbeitete Stationen werden übersprungen. «Keiner» schaltet Wait and Pounce ab.',
+    'À quel CQ répond le bouton Wait and Pounce, comme le «CQ:» de WSJT-X : le premier décodé, le plus lointain (le CQ doit porter un locator), le plus fort ou le plus faible. Les stations déjà contactées dans cette session sont ignorées. «Aucun» désactive Wait and Pounce.',
+    'A qué CQ responde el botón Wait and Pounce, como el «CQ:» de WSJT-X: el primero decodificado, el más lejano (el CQ debe llevar locator), el más fuerte o el más débil. Las estaciones ya trabajadas en esta sesión se saltan. «Ninguno» desactiva Wait and Pounce.',
+    'A que CQ responde o botão Wait and Pounce, como o «CQ:» do WSJT-X: o primeiro descodificado, o mais distante (o CQ tem de trazer locator), o mais forte ou o mais fraco. As estações já contactadas nesta sessão são saltadas. «Nenhum» desativa o Wait and Pounce.',
+  ],
   'jxh.WaitFeaturesEnabled': [
     'Acceso (di fabbrica, come WSJT-X): con un DX impostato e Abilita Tx spento, se il DX ti chiama il QSO riprende da solo (Wait and Reply); con il pulsante Wait and Call armato, quando il DX chiama CQ o chiude il suo QSO lo chiami da solo, fino a circa 3 volte. Attenzione: può partire una trasmissione automatica.',
     'On (default, as in WSJT-X): with a DX set and Enable Tx off, if the DX calls you the QSO resumes by itself (Wait and Reply); with the Wait and Call button armed, when the DX calls CQ or ends his QSO you call him automatically, up to about 3 times. Careful: an automatic transmission may start.',
