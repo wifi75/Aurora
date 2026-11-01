@@ -5483,3 +5483,38 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Pannello Comandi come WSJT-X 3.3: titoli di sezione, campi DX e rapporto */
+.cmd-cap {
+  margin: 0.45rem 0 0.15rem;
+  color: var(--muted, #6b7a8f);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cmd-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.cmd-field .cmd-call {
+  width: 6.5rem;
+}
+
+.cmd-field .cmd-grid {
+  width: 4rem;
+}
+
+.cmd-field .cmd-report {
+  width: 3.4rem;
+}
+
+.chip--tune-on {
+  color: #fff;
+  background: #c62828;
+  border-color: #c62828;
+}
