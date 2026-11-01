@@ -108,7 +108,8 @@ export function Waterfall({ register, mode }: Props) {
           periodAverage.add(bins);
           const average = averager.add(bins, p.navg);
           if (!average) return;
-          if (wrapped) {
+          // la riga si puo' spegnere (Impostazioni > Cascata): il periodo nuovo comincia comunque
+          if (wrapped && p.periodLine) {
             b.pushRow(new Uint8Array(1), 1);
             return;
           }

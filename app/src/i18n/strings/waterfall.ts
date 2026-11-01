@@ -161,6 +161,15 @@ export const waterfallStrings = {
     'De -50 a 50, de fábrica 0 (como o «Zero» do gráfico no JTDX): move toda a curva para cima ou para baixo.',
   ],
 
+  'wfs.periodLine': ['Riga di inizio periodo', 'Period start line', 'Linie am Durchgangsbeginn', 'Ligne de début de période', 'Línea de inicio de periodo', 'Linha de início de período'],
+  'tip.wfs.periodLine': [
+    'Una riga orizzontale verde nella cascata a ogni nuovo periodo (gialla se nel periodo hai trasmesso), come JTDX: separa i periodi e mostra quali segnali sono contemporanei. Spenta, la cascata scorre senza interruzioni.',
+    'A green horizontal line in the waterfall at every new period (yellow if you transmitted in it), as in JTDX: it separates periods and shows which signals are simultaneous. Off, the waterfall flows without breaks.',
+    'Eine grüne waagerechte Linie im Wasserfall bei jedem neuen Durchgang (gelb, wenn du darin gesendet hast), wie JTDX: sie trennt die Durchgänge und zeigt gleichzeitige Signale. Aus, läuft der Wasserfall ohne Unterbrechung.',
+    'Une ligne horizontale verte dans la cascade à chaque nouvelle période (jaune si tu as émis), comme JTDX : elle sépare les périodes et montre les signaux simultanés. Désactivée, la cascade défile sans coupure.',
+    'Una línea horizontal verde en la cascada en cada periodo nuevo (amarilla si transmitiste en él), como JTDX: separa los periodos y muestra qué señales son simultáneas. Apagada, la cascada corre sin cortes.',
+    'Uma linha horizontal verde na cascata a cada novo período (amarela se transmitiste nele), como o JTDX: separa os períodos e mostra que sinais são simultâneos. Desligada, a cascata corre sem interrupções.',
+  ],
   'wfs.barsOn': ['Barre Rx e Tx (Bars)', 'Rx and Tx bars (Bars)', 'Rx- und Tx-Balken (Bars)', 'Barres Rx et Tx (Bars)', 'Barras Rx y Tx (Bars)', 'Barras Rx e Tx (Bars)'],
   'tip.wfs.barsOn': [
     'Acceso di fabbrica. Mostra le due barre verticali sulla cascata (verde Rx, rossa Tx), larghe quanto il segnale del modo (FT8 43,75 Hz, FT4 62,5 Hz), e le due linee bianche che seguono il puntatore. Spento restano solo le etichette.',
