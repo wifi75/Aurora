@@ -1166,6 +1166,37 @@
   margin: 0.25rem 0 0;
 }
 
+/* la dedica ad Aura: un'aurora tenue, in corsivo, sotto il titolo */
+.about-dedica {
+  position: relative;
+  max-width: 46rem;
+  margin: 1rem 0 0.25rem;
+  padding: 0.9rem 1.2rem 0.8rem 3rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(110deg, rgba(56, 209, 160, 0.14), rgba(120, 140, 255, 0.14) 55%, rgba(230, 120, 200, 0.16));
+}
+
+.about-dedica-cuore {
+  position: absolute;
+  left: 1.05rem;
+  top: 0.85rem;
+  font-size: 1.3rem;
+  color: #e0609a;
+}
+
+.about-dedica blockquote {
+  margin: 0;
+  font-size: 1.08rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.about-dedica figcaption {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
 .about-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);

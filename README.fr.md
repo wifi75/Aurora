@@ -15,6 +15,8 @@
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
 [![Licenza](https://img.shields.io/badge/Licenza-GPL--3.0-blue)](LICENSE)
 
+*À Aura, ma fille : la lumière qui a donné son nom à Aurora.* ♥
+
 [English](README.md) · [Italiano](README.it.md) · [Deutsch](README.de.md) · **Français** · [Español](README.es.md) · [Português](README.pt.md)
 
 > ### Télécharger Aurora
