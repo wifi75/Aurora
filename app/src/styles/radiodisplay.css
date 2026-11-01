@@ -687,3 +687,52 @@
   font-size: 0.62rem;
   line-height: 1.25;
 }
+
+/* Stili a pannello unico (FT-2000, IC-7610): un solo schermo largo quanto i due blocchi, alto uguale; i pulsanti trasparenti
+   stanno sopra gli indicatori del disegno */
+.rd-face {
+  position: relative;
+}
+
+.rd-face-slot {
+  flex: 0 0 auto;
+  width: 40rem;
+  max-width: 100%;
+  height: 4rem;
+}
+
+.rd-face-slot .rd-face,
+.rd-face-slot .rd-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.rd-face-hit {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.rd-face-hit:hover:not(:disabled),
+.rd-face-hit:focus-visible {
+  border-color: #7fe0ff;
+  box-shadow: 0 0 6px rgb(127 224 255 / 0.5);
+  outline: none;
+}
+
+.rd-face-hit:disabled {
+  cursor: default;
+}
+
+.rd-face-hit--wait {
+  background: rgb(127 224 255 / 0.18);
+}
+
+/* nelle Impostazioni i pannelli unici prendono tutta la riga: sono larghi e bassi come in testata */
+.rd-card--wide {
+  grid-column: 1 / -1;
+}
