@@ -184,3 +184,16 @@
 .rd-trigger--static {
   cursor: default;
 }
+
+/* Log: «Scarica ADIF» sempre a portata di mano, nella barra del pannello, accanto al numero dei QSO */
+.dock-panel--log .log4om-adif {
+  position: absolute;
+  top: 0.3rem;
+  right: 9.5rem;
+  z-index: 2;
+  min-height: 1.4rem;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1.4rem;
+  text-decoration: none;
+}
