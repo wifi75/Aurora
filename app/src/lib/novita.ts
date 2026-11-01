@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.67',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T20:37:16Z',
     kind: 'fixed',
     title: ['Mappa vera nella scheda DXpedition', 'Real map in the DXpedition card', 'Echte Karte in der DXpedition-Karte', 'Vraie carte dans la fiche DXpédition', 'Mapa real en la ficha DXpedición', 'Mapa real na ficha DXpedição'],
     text: [
