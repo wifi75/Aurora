@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Radio, riquadro Collegamento**: le caselle hanno la larghezza che serve; larghe per sistema di controllo, modello e porta (il testo si legge intero), strette per bit di dati, bit di stop, velocita' e indirizzo CI-V; il tutto su due righe.
 
 ## 0.11.47 - 2026-11-01
 - **Tutta la radio nella scheda Radio**: dal CAT al display, anche «Display esteso: cosa mostrare» e la scelta dello stile del display sono ora in Impostazioni > Radio (non piu' in Generali).

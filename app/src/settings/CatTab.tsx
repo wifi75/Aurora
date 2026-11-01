@@ -226,8 +226,8 @@ export function CatGroups() {
   const link = (
     <Group title={t('cat.grp.link')} span={2}>
       {hamlib && !snap.data.status.rigctld_found ? <Message kind="alert">{t('cat.missing')}</Message> : null}
-      <Cells min={17}>
-        <Field label={t('cat.backend')} hint={t('tip.cat.backend')}>
+      <Cells min={17} className="cat-link">
+        <Field label={t('cat.backend')} className="cat-w-l" hint={t('tip.cat.backend')}>
           <select value={config.backend} onChange={(e) => set({ backend: e.target.value as CatConfig['backend'] })}>
             <option value="hamlib">{t('cat.backend.hamlib')}</option>
             <option value="omnirig">{t('cat.backend.omnirig')}</option>
@@ -235,7 +235,7 @@ export function CatGroups() {
         </Field>
         {fields.rig ? (
           <>
-            <Field label={t('cat.rig.search')} hint={t('tip.cat.rig.search')}>
+            <Field label={t('cat.rig.search')} className="cat-w-m" hint={t('tip.cat.rig.search')}>
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
               {/* i risultati sotto la casella: il menu «Radio» accanto puo' finire fuori dallo schermo e la ricerca sembrava non fare niente */}
               {search.trim() !== '' ? (
@@ -259,7 +259,7 @@ export function CatGroups() {
                 </ul>
               ) : null}
             </Field>
-            <Field label={t('cat.rig')} hint={t('tip.cat.rig')}>
+            <Field label={t('cat.rig')} className="cat-w-l" hint={t('tip.cat.rig')}>
               <select
                 value={config.model}
                 onChange={(e) => {
@@ -278,7 +278,7 @@ export function CatGroups() {
           </>
         ) : null}
         {fields.port ? (
-          <Field label={t('cat.port')} hint={t('tip.cat.port')}>
+          <Field label={t('cat.port')} className="cat-w-l" hint={t('tip.cat.port')}>
             {/* un menu delle porte trovate: la casella di testo sembrava un campo per scrivere un nome */}
             <select value={config.port} onChange={(e) => set({ port: e.target.value })}>
               <option value="">{t('cat.port.pick')}</option>
@@ -292,7 +292,7 @@ export function CatGroups() {
           </Field>
         ) : null}
         {fields.port && fields.baud ? (
-          <Field label={t('cat.baud')} hint={t('tip.cat.baud')}>
+          <Field label={t('cat.baud')} className="cat-w-s" hint={t('tip.cat.baud')}>
             <select value={config.baud} onChange={(e) => set({ baud: Number(e.target.value) })}>
               <option value={0}>{t('cat.default')}</option>
               {BAUDS.map((b) => (
@@ -305,21 +305,21 @@ export function CatGroups() {
         ) : null}
         {fields.serial ? (
           <>
-            <Field label={t('cat.databits')} hint={t('tip.cat.databits')}>
+            <Field label={t('cat.databits')} className="cat-w-s" hint={t('tip.cat.databits')}>
               <select value={config.data_bits} onChange={(e) => set({ data_bits: Number(e.target.value) })}>
                 <option value={0}>{t('cat.default')}</option>
                 <option value={7}>7</option>
                 <option value={8}>8</option>
               </select>
             </Field>
-            <Field label={t('cat.stopbits')} hint={t('tip.cat.stopbits')}>
+            <Field label={t('cat.stopbits')} className="cat-w-s" hint={t('tip.cat.stopbits')}>
               <select value={config.stop_bits} onChange={(e) => set({ stop_bits: Number(e.target.value) })}>
                 <option value={0}>{t('cat.default')}</option>
                 <option value={1}>1</option>
                 <option value={2}>2</option>
               </select>
             </Field>
-            <Field label={t('cat.handshake')} hint={t('tip.cat.handshake')}>
+            <Field label={t('cat.handshake')} className="cat-w-m" hint={t('tip.cat.handshake')}>
               <select value={config.handshake} onChange={(e) => set({ handshake: e.target.value as CatHandshake })}>
                 {HANDSHAKES.map(([v, k]) => (
                   <option key={v} value={v}>
@@ -328,14 +328,14 @@ export function CatGroups() {
                 ))}
               </select>
             </Field>
-            <Field label={t('cat.dtr')} hint={t('tip.cat.line')}>
+            <Field label={t('cat.dtr')} className="cat-w-m" hint={t('tip.cat.line')}>
               <select value={lineValue(config.force_dtr)} onChange={(e) => set({ force_dtr: lineFrom(e.target.value) })}>
                 <option value="auto">{t('cat.line.auto')}</option>
                 <option value="high">{t('cat.line.high')}</option>
                 <option value="low">{t('cat.line.low')}</option>
               </select>
             </Field>
-            <Field label={t('cat.rts')} hint={t('tip.cat.line')}>
+            <Field label={t('cat.rts')} className="cat-w-m" hint={t('tip.cat.line')}>
               <select value={lineValue(config.force_rts)} onChange={(e) => set({ force_rts: lineFrom(e.target.value) })}>
                 <option value="auto">{t('cat.line.auto')}</option>
                 <option value="high">{t('cat.line.high')}</option>
@@ -343,7 +343,7 @@ export function CatGroups() {
               </select>
             </Field>
             {fields.civ ? (
-              <Field label={t('cat.civ')} hint={t('tip.cat.civ')}>
+              <Field label={t('cat.civ')} className="cat-w-s" hint={t('tip.cat.civ')}>
                 <input type="number" min={0} max={255} value={config.civ_address} onChange={(e) => set({ civ_address: Number(e.target.value) })} />
               </Field>
             ) : null}
