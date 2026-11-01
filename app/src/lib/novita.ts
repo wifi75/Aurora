@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.69',
+    released: '2026-11-01T23:00:00Z',
+    kind: 'fixed',
+    title: ['Pagina Fox e mappa DXpedition', 'Fox page and DXpedition map', 'Fox-Seite und DXpedition-Karte', 'Page Fox et carte DXpédition', 'Página Fox y mapa DXpedición', 'Página Fox e mapa DXpedição'],
+    text: [
+      'La pagina Fox si apre subito ed è dopo Stazione, con la spiegazione sul nome. La scheda DXpedition ha la mappa semplice, senza tropici ed equatore.',
+      'The Fox page opens straight away and sits after Station, with an explanation on its name. The DXpedition card has the plain map, without tropics and equator.',
+      'Die Fox-Seite öffnet sofort und steht nach Station, mit Erklärung am Namen. Die DXpedition-Karte zeigt die einfache Karte ohne Wendekreise und Äquator.',
+      'La page Fox s’ouvre tout de suite et se trouve après Station, avec une explication sur son nom. La fiche DXpédition a la carte simple, sans tropiques ni équateur.',
+      'La página Fox se abre enseguida y está después de Estación, con la explicación en su nombre. La ficha DXpedición tiene el mapa simple, sin trópicos ni ecuador.',
+      'A página Fox abre logo e fica depois de Estação, com a explicação no nome. A ficha da DXpedição tem o mapa simples, sem trópicos nem equador.',
+    ],
+  },
+  {
     version: '0.11.68',
     released: '2026-11-01T21:07:47Z',
     kind: 'new',
@@ -558,18 +572,4 @@ export const NOVITA: readonly Novita[] = [
       'Em Definições > Relatórios cada serviço tem o seu quadro com «Testar»: os QSO registados saem logo, ficam em fila sem rede e as chaves são guardadas cifradas. O LoTW passa pelo TQSL.',
     ],
   },
-  {
-    version: '0.11.54',
-    released: '2026-11-01T10:55:52Z',
-    kind: 'new',
-    title: ['Integrazioni UDP con più programmi', 'UDP integrations with several programs', 'UDP-Integration mit mehreren Programmen', 'Intégrations UDP avec plusieurs programmes', 'Integraciones UDP con varios programas', 'Integrações UDP com vários programas'],
-    text: [
-      'Nuovo riquadro «Integrazioni»: un elenco di destinatari (GridTracker, Log4OM, N1MM…) ognuno con le sue opzioni, multicast, XML di N1MM. Aurora accetta anche evidenziazioni dei nominativi, posizione, configurazione e cancellazione dai programmi collegati.',
-      'New “Integrations” box: a list of destinations (GridTracker, Log4OM, N1MM…) each with its own options, multicast and N1MM XML. Aurora also accepts callsign highlights, location, configure and clear from connected programs.',
-      'Neues Feld „Integrationen“: eine Liste von Zielen (GridTracker, Log4OM, N1MM…) mit eigenen Optionen, Multicast und N1MM-XML. Aurora nimmt auch Hervorhebungen, Standort, Konfiguration und Löschen von verbundenen Programmen an.',
-      'Nouveau cadre « Intégrations » : une liste de destinataires (GridTracker, Log4OM, N1MM…) avec leurs options, multicast et XML N1MM. Aurora accepte aussi surlignage des indicatifs, position, configuration et effacement depuis les programmes reliés.',
-      'Nuevo recuadro «Integraciones»: una lista de destinos (GridTracker, Log4OM, N1MM…) cada uno con sus opciones, multicast y XML de N1MM. Aurora acepta también resaltado de indicativos, posición, configuración y borrado desde los programas conectados.',
-      'Novo quadro «Integrações»: uma lista de destinos (GridTracker, Log4OM, N1MM…) cada um com as suas opções, multicast e XML do N1MM. A Aurora aceita também realce de indicativos, posição, configuração e limpeza dos programas ligados.',
-    ],
-  },
-  ];
+];
