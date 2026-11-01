@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.57',
-    released: '2026-11-01T19:00:00Z',
+    released: '2026-11-01T14:50:23Z',
     kind: 'new',
     title: ['Anteprima dal vivo della cascata', 'Live waterfall preview', 'Live-Vorschau des Wasserfalls', 'Aperçu en direct de la cascade', 'Vista previa en directo de la cascada', 'Pré-visualização ao vivo da cascata'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.57',
-    released: '2026-11-01T19:00:00Z',
+    released: '2026-11-01T14:50:23Z',
     kind: 'new',
     title: ['Riga di inizio periodo a scelta', 'Period start line on demand', 'Durchgangslinie wählbar', 'Ligne de début de période au choix', 'Línea de inicio de periodo opcional', 'Linha de início de período opcional'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.57',
-    released: '2026-11-01T19:00:00Z',
+    released: '2026-11-01T14:50:23Z',
     kind: 'new',
     title: ['Cambio banda col tasto destro e stazioni Wavelog', 'Right-click band hop and Wavelog stations', 'Bandwechsel per Rechtsklick und Wavelog-Stationen', 'Changement de bande au clic droit et stations Wavelog', 'Cambio de banda con clic derecho y estaciones Wavelog', 'Mudança de banda com clique direito e estações Wavelog'],
     text: [
