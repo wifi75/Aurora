@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['Diagnostica sempre accesa', 'Always-on diagnostics', 'Diagnose immer aktiv', 'Diagnostic toujours actif', 'Diagnóstico siempre activo', 'Diagnóstico sempre ativo'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['Filtri come WSJT-X 3', 'Filters like WSJT-X 3', 'Filter wie WSJT-X 3', 'Filtres comme WSJT-X 3', 'Filtros como WSJT-X 3', 'Filtros como o WSJT-X 3'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'changed',
     title: ['Cascata e CAT più solidi', 'Sturdier waterfall and CAT', 'Stabilerer Wasserfall und CAT', 'Cascade et CAT plus solides', 'Cascada y CAT más sólidos', 'Cascata e CAT mais sólidos'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['FT8 più sensibile: a7 e a8', 'More sensitive FT8: a7 and a8', 'Empfindlicheres FT8: a7 und a8', 'FT8 plus sensible : a7 et a8', 'FT8 más sensible: a7 y a8', 'FT8 mais sensível: a7 e a8'],
     text: [
@@ -77,7 +77,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['Decodifica FT8 su più processori', 'FT8 decoding on several processors', 'FT8-Dekodierung auf mehreren Prozessoren', 'Décodage FT8 sur plusieurs processeurs', 'Decodificación FT8 en varios procesadores', 'Descodificação FT8 em vários processadores'],
     text: [
@@ -91,7 +91,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['Stop della trasmissione con ROS alto', 'Transmit stop on high SWR', 'Sendestopp bei hohem SWR', 'Arrêt de l’émission si ROS élevé', 'Parada de la transmisión con ROE alta', 'Paragem da transmissão com ROE alta'],
     text: [
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.55',
-    released: '2026-11-01T15:00:00Z',
+    released: '2026-11-01T13:20:31Z',
     kind: 'new',
     title: ['Messaggi sbagliati non partono', 'Wrong messages are not sent', 'Fehlerhafte Nachrichten gehen nicht raus', 'Les messages erronés ne partent pas', 'Los mensajes erróneos no salen', 'As mensagens erradas não saem'],
     text: [
