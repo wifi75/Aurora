@@ -296,6 +296,34 @@ pub struct Rigctld {
     stderr_tail: Arc<Mutex<Vec<String>>>,
 }
 
+
+/// Chiude i `rigctld` rimasti orfani (il processo che li aveva avviati non c'e' piu', per esempio dopo un crash di Aurora).
+/// Dice se ne ha chiuso almeno uno. Solo Windows; altrove non fa nulla.
+pub fn close_orphan_rigctld() -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let script = "$n=0; Get-CimInstance Win32_Process -Filter \"Name='rigctld.exe'\" | Where-Object { -not (Get-Process -Id $_.ParentProcessId -ErrorAction SilentlyContinue) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n";
+        let out = Command::new("powershell").args(["-NoProfile", "-NonInteractive", "-Command", script]).creation_flags(0x0800_0000).output();
+        match out {
+            Ok(o) => {
+                let closed = String::from_utf8_lossy(&o.stdout).trim().parse::<u32>().unwrap_or(0);
+                if closed > 0 {
+                    tracing::info!("chiusi {closed} rigctld rimasti orfani");
+                }
+                closed > 0
+            }
+            Err(e) => {
+                tracing::debug!("controllo dei rigctld orfani non riuscito: {e}");
+                false
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        false
+    }
+}
 impl Rigctld {
     pub fn start(config: &RigctldConfig) -> Result<Rigctld, RigError> {
         if !Path::new(&config.exe).is_file() {
@@ -303,7 +331,13 @@ impl Rigctld {
         }
         // una porta libera: si apre e si chiude subito, il demone la riprende (la gara e' improbabile e si vedrebbe come errore di connessione)
         let wanted = config.tcp_port.unwrap_or(0);
-        let probe = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted)).map_err(|e| {
+        let mut first = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted));
+        if first.is_err() && wanted != 0 && close_orphan_rigctld() {
+            // un rigctld rimasto da un Aurora chiuso male teneva la porta: chiuso quello, si riprova
+            std::thread::sleep(Duration::from_millis(500));
+            first = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted));
+        }
+        let probe = first.map_err(|e| {
             if wanted == 0 { RigError(format!("nessuna porta libera: {e}")) } else { RigError(format!("la porta {wanted} e' occupata (un altro rigctld o programma la usa): cambia la porta di condivisione o chiudi l'altro programma. ({e})")) }
         })?;
         let tcp_port = probe.local_addr().map_err(|e| RigError(e.to_string()))?.port();
