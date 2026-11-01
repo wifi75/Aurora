@@ -14,7 +14,7 @@ const UNKNOWN: DisplayModel = { ...DEMO_MODEL, dialHz: 0, meters: null };
 
 beforeEach(() => {
   localStorage.clear();
-  useRadioDisplay.setState({ pref: { style: 'fluorescent', hidden: false } });
+  useRadioDisplay.setState({ pref: { style: 'fluorescent', hidden: false, layout: 'single' } });
   useStation.getState().reset();
 });
 

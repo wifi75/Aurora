@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display della radio in due disposizioni** (Impostazioni > Radio > «Disposizione in testata»): blocco unico a doppio VFO come una FT-2000 (VFO A grande a sinistra, VFO B e indicatori a destra, scelta di fabbrica) oppure due blocchi uguali affiancati. Il display esteso torna in alto a destra accanto al display e non occupa piu' la riga dei controlli.
 
 ## 0.11.51 - 2026-11-01
 - **Cascata di nuovo visibile**: con la 0.11.50 restava nera perche' l'interfaccia scartava le righe del nuovo spettro (6827 canali, il limite era 4096); ora le accetta fino a 8192 come il core.

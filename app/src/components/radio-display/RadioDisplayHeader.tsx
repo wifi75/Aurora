@@ -18,12 +18,26 @@ export function RadioDisplayHeader() {
   if (pref.hidden) return null;
   const model = { ...raw, meters };
 
+  if (phone) {
+    return (
+      <div className="rd-header rd-header--phone">
+        <div className="rd-trigger rd-trigger--static">
+          <RadioDisplay model={model} style={pref.style} size="mini" />
+        </div>
+        <RadioExtras />
+      </div>
+    );
+  }
+
+  // due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (VFO A grande a sinistra, VFO B e indicatori a destra)
   return (
-    <div className={phone ? 'rd-header rd-header--phone' : 'rd-header'}>
-      <div className="rd-trigger rd-trigger--static">
+    <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
+      <div className="rd-slot rd-trigger rd-trigger--static">
         <RadioDisplay model={model} style={pref.style} size="mini" />
       </div>
-      {phone ? <RadioExtras /> : null}
+      <div className="rd-slot rd-slot--extras">
+        <RadioExtras />
+      </div>
     </div>
   );
 }

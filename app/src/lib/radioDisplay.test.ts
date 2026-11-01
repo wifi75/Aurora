@@ -157,7 +157,7 @@ describe('saved style', () => {
 
   it('round-trips the choice under the aurora-radio-display key', () => {
     const saved: Record<string, string> = {};
-    saveRadioDisplay({ setItem: (k, v) => void (saved[k] = v) }, { style: 'amber', hidden: true });
+    saveRadioDisplay({ setItem: (k, v) => void (saved[k] = v) }, { style: 'amber', hidden: true, layout: 'single' });
     expect(Object.keys(saved)).toEqual(['aurora-radio-display']);
     expect(readRadioDisplay(store(saved['aurora-radio-display'] ?? null))).toEqual({ style: 'amber', hidden: true });
   });
