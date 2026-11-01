@@ -41,6 +41,7 @@ import { registerSpectrum } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation } from '../state/station';
+import { toast } from '../lib/toast';
 
 const F_MIN_HZ = 0;
 const F_MAX_HZ = 3000;
@@ -63,14 +64,6 @@ export function Live() {
   const filters = useFilters((s) => s.filters);
   const cqPrefs = useCqPrefs((s) => s.prefs);
   const shown = applyFilters(decodes, filters, status?.own_continent);
-  const [note, setNote] = useState('');
-  // l'esito di un comando appare un attimo sopra la pagina e sparisce: non occupa spazio
-  useEffect(() => {
-    if (!note) return;
-    const timer = setTimeout(() => setNote(''), 4000);
-    return () => clearTimeout(timer);
-  }, [note]);
-
   const alerts = useAlertPrefs((s) => s.prefs);
 
   const changeAlerts = (next: AlertPrefs) => {
@@ -187,9 +180,9 @@ export function Live() {
   const attempt = async (action: () => Promise<void>, done: string) => {
     try {
       await action();
-      setNote(done);
+      toast(done, 'ok');
     } catch (error) {
-      setNote(replyErrorMessage(error, t));
+      toast(replyErrorMessage(error, t), 'error');
     }
   };
 
@@ -315,11 +308,6 @@ export function Live() {
       ) : (
         <Dock layout={layout} onChange={changeLayout} titles={titles} render={renderPanel} />
       )}
-      {note ? (
-        <p className="live-toast" role="status" aria-live="polite">
-          {note}
-        </p>
-      ) : null}
       <StopButton variant="bar" />
     </div>
   );

@@ -700,3 +700,140 @@ button.primary {
 .wf-slider select {
   font: inherit;
 }
+
+/*
+ * Notifiche toast: in alto al centro, vetro traslucido colorato per tipo, entrano scivolando dall'alto,
+ * una barretta in basso mostra quanto resta, escono sfumando verso l'alto. Seguono il tema (chiaro/scuro).
+ */
+.toaster {
+  position: fixed;
+  top: 0.9rem;
+  left: 50%;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(34rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  --toast-color: var(--ok, #1f9d55);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem 0.95rem 0.8rem;
+  overflow: hidden;
+  color: var(--text);
+  background: color-mix(in srgb, var(--toast-color) 16%, color-mix(in srgb, var(--panel) 72%, transparent));
+  border: 1px solid color-mix(in srgb, var(--toast-color) 45%, transparent);
+  border-radius: 0.8rem;
+  box-shadow: 0 14px 34px -14px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.18);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  pointer-events: auto;
+  cursor: pointer;
+  animation: toast-in 380ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+.toast--error {
+  --toast-color: var(--danger, #d64545);
+}
+
+.toast--info {
+  --toast-color: var(--accent, #1f6feb);
+}
+
+.toast--leaving {
+  animation: toast-out 350ms ease-in forwards;
+}
+
+.toast-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  color: #ffffff;
+  background: var(--toast-color);
+  border-radius: 50%;
+  box-shadow: 0 0 12px -2px var(--toast-color);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.toast-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 0.1rem;
+}
+
+.toast-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--toast-color);
+  opacity: 0.75;
+  transform-origin: left;
+  animation: toast-bar var(--toast-ms, 4500ms) linear forwards;
+}
+
+.toast:hover .toast-bar {
+  animation-play-state: paused;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-1.2rem) scale(0.96);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    max-height: 8rem;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.9rem) scale(0.97);
+    filter: blur(5px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: -0.5rem;
+  }
+}
+
+@keyframes toast-bar {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast--leaving,
+  .toast-bar {
+    animation-duration: 1ms;
+  }
+}
