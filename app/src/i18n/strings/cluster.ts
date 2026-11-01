@@ -104,6 +104,17 @@ export const clusterStrings = {
   'cluster.col.mode': ['Modo', 'Mode', 'Modus', 'Mode', 'Modo', 'Modo'],
   'cluster.col.comment': ['Commenti', 'Comments', 'Kommentar', 'Commentaire', 'Comentarios', 'Comentários'],
   'cluster.col.by': ['DE', 'DE', 'DE', 'DE', 'DE', 'DE'],
+  'cluster.dxpedColor': ['Colore delle DXpedition', 'DXpedition colour', 'Farbe der DXpeditionen', 'Couleur des DXpéditions', 'Color de las DXpediciones', 'Cor das DXpedições'],
+  'cluster.dxpedFluo': ['Fluo', 'Fluorescent', 'Neon', 'Fluo', 'Flúor', 'Flúor'],
+  'cluster.dxpedCustom': ['Colore a scelta', 'Custom colour', 'Eigene Farbe', 'Couleur au choix', 'Color a elección', 'Cor à escolha'],
+  'tip.cluster.dxpedColor': [
+    'Con che colore si evidenziano nel DX Cluster gli spot delle DXpedition in onda secondo il calendario NG3K: scegli un colore fluo della tavolozza o uno qualsiasi. Il testo diventa scuro o chiaro da solo per restare leggibile.',
+    'The colour used in the DX Cluster for spots of DXpeditions on the air according to the NG3K calendar: pick a fluorescent colour from the palette or any colour. The text turns dark or light by itself to stay readable.',
+    'Die Farbe, mit der der DX-Cluster Spots von DXpeditionen laut NG3K-Kalender hervorhebt: wähle eine Neonfarbe aus der Palette oder eine beliebige. Der Text wird von selbst hell oder dunkel, damit er lesbar bleibt.',
+    'La couleur utilisée dans le DX Cluster pour les spots des DXpéditions en l’air selon le calendrier NG3K : choisis une couleur fluo de la palette ou n’importe laquelle. Le texte devient clair ou foncé tout seul pour rester lisible.',
+    'El color con que el DX Cluster resalta los spots de las DXpediciones en el aire según el calendario NG3K: elige un color flúor de la paleta o cualquiera. El texto se vuelve claro u oscuro solo para seguir legible.',
+    'A cor com que o DX Cluster realça os spots das DXpedições no ar segundo o calendário NG3K: escolhe uma cor flúor da paleta ou qualquer outra. O texto fica claro ou escuro sozinho para continuar legível.',
+  ],
   'tip.cluster.dxped': [
     'DXpedition in onda secondo il calendario NG3K',
     'DXpedition on the air according to the NG3K calendar',

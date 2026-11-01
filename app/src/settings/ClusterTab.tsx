@@ -5,6 +5,7 @@ import { useT, type T } from '../i18n';
 import { Check, Help } from './common';
 import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
+import { DXPED_DEFAULT, DXPED_PALETTE, setDxpedColor, useDxpedColor } from '../lib/dxpedColor';
 
 const MAX_SERVERS = 8;
 
@@ -222,6 +223,10 @@ export function ClusterTab() {
         </div>
       </Group>
 
+      <Group title={t('cluster.dxpedColor')} span={2}>
+        <Help>{t('tip.cluster.dxpedColor')}</Help>
+        <DxpedColorPicker />
+      </Group>
       <Group title={t('cluster.state')}>
         {state.data.servers.length === 0 ? <Message kind="muted">{t('cluster.state.none')}</Message> : null}
         {state.data.servers.map((s) => (
@@ -253,5 +258,31 @@ export function ClusterTab() {
         <Help>{t('cluster.intro')}</Help>
       </Notes>
     </Page>
+  );
+}
+
+/** Scelta del colore delle DXpedition nel cluster: tavolozza fluo pronta e un colore libero. */
+function DxpedColorPicker() {
+  const t = useT();
+  const color = useDxpedColor();
+  return (
+    <div className="dxped-swatches">
+      {DXPED_PALETTE.map((p) => (
+        <button
+          key={p.color}
+          type="button"
+          className={`dxped-swatch${color === p.color ? ' dxped-swatch--on' : ''}`}
+          style={{ background: p.color }}
+          title={p.fluo ? `${t('cluster.dxpedFluo')} ${p.color}` : p.color}
+          aria-label={p.color}
+          aria-pressed={color === p.color}
+          onClick={() => setDxpedColor(p.color)}
+        />
+      ))}
+      <input type="color" value={color} onChange={(e) => setDxpedColor(e.target.value)} aria-label={t('cluster.dxpedCustom')} title={t('cluster.dxpedCustom')} />
+      <button type="button" className="glass" onClick={() => setDxpedColor(DXPED_DEFAULT)}>
+        {t('set.reset')}
+      </button>
+    </div>
   );
 }
