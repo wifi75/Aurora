@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.61 - 2026-11-01
 - **R+rapporto subito dopo il Tx1**: se la stazione chiamata risponde direttamente con R+rapporto (MSHV, molte DXpedition, caso V26JJ) Aurora chiude con RR73 e registra, come WSJT-X 3.3 (DecodedMessageReaction.cpp); prima restava sul Tx1 come JTDX.
 - **Wait and Pounce** (WSJT-X 3.3, `updateRespondTarget`, `AutoRespondPolicy.hpp`, `AutoRespondScoring.hpp`): nuovo pulsante «Wait and Pounce» tra gli interruttori del QSO; armato con Abilita Tx spento, a fine periodo risponde da solo al CQ scelto con la voce «Wait and Pounce: a quale CQ» (scheda Generali: nessuno, il primo, il più lontano, il più forte, il più debole; di fabbrica il primo), saltando le stazioni già collegate nella sessione; senza risposta entro 6,2 periodi la trasmissione si spegne; scattato, il pulsante si disarma.
 - **Hound automatico**: quando il DX scelto trasmette come Fox di WSJT-X (righe «A RR73; B <FOX> -08») Hound si accende da solo, la Tx sale sopra 1000 Hz e Split si accende, con l'avviso «… lavora in Fox/Hound: Hound acceso»; se il DX risponde con R+rapporto (una stazione normale, per esempio le risposte multiple di MSHV) o si sceglie un'altra stazione Hound si spegne da solo, prima di preparare il messaggio (così «Salta Tx1» vale subito). Il pulsante Hound forza a mano finché non cambia il DX. Voce «Hound automatico» nella scheda Generali, accesa di fabbrica.
@@ -12,6 +13,7 @@
 - **Misura della decodifica FT8 su banda piena vera**: prova `banda_vera_da_wav` (WAV fuori dal repository) e numeri in `docs/analisi-decodium-decoder.md`.
 - **API**: nuovi interruttori `pounce`; voci `PouncePolicy` e `HoundAuto` di `/api/v1/engine-settings`; avvisi `hound_on`, `fox_detected`, `hound_off` in `tx_alerts`; campi `exch_sent`/`exch_rcvd` del QSO.
 - **Guida**: Wait and Pounce; la sezione Hound spiega che di solito Aurora accende e spegne Hound da sola.
+- Tolto il pulsante «Sinc» (non collegato al motore); DXpedition piu' compatte.
 
 
 ## 0.11.60 - 2026-11-01

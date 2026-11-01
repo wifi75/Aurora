@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-01, versione 0.11.60. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-01, versione 0.11.61. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -146,11 +146,11 @@ Stato al 2026-11-01, versione 0.11.60. Per riprendere il lavoro leggi anche `doc
 - **Agenti in parallelo**: ognuno nel suo worktree in `D:\build\wt-*`, rami uniti a `main` solo dopo controllo; giro dei 30 minuti con commit di salvataggio locali sui rami; meta' dei processori ai lavori, tutto il PC all'installatore.
 - **Dopo la 0.11.58 (su `main`, non ancora rilasciato)**: barre Rx/Tx con etichetta degli Hz piena durante il trascinamento; display della radio che legge 6 valori per giro sui collegamenti veloci (1 sulle seriali lente); DXpedition nel cluster solo evidenziate (niente scritte accanto al nominativo, per scelta del proprietario).
 - **0.11.59-0.11.60 (2026-11-01 sera)**: Impostazioni riordinate in sei gruppi (pagine Servizi di log e Programmi collegati, via Avanzate e i riquadri «Non disponibili»); nel menu in alto «Log» (pagina `#/esporta`) al posto di «Storico», che esce dal menu (i dati restano); pulsante «Esporta ADIF» tolto dalla pagina Stazione. Sito con lo screenshot vero (`docs/aurora-stazione.png`, locatore nascosto; `scripts/pubblica-sito.ps1` copia anche le immagini).
-- **In corso** dopo la 0.11.60: Hound automatico con etichetta FOX, Tx sopra 1000 Hz, Salta Tx1 disattivato in Hound, Wait and Pounce, ALL.TXT e contest nell'ADIF, misura della decodifica sulle registrazioni (ramo `resti-motore`).
+- **0.11.61** (pubblicata): Hound automatico con etichetta FOX, Tx sopra 1000 Hz, Salta Tx1 disattivato in Hound, Wait and Pounce, ALL.TXT e contest nell'ADIF, misura della decodifica sulle registrazioni (ramo `resti-motore`).
 
 ## Come riprendere (passaggio di sessione, 2026-11-01 sera)
 - **Ultima versione pubblicata**: 0.11.60 (`main` e GitHub allineati, sito aggiornato).
-- **Lavoro in corso, non finito**: ramo `resti-motore` (pubblicato su GitHub solo come ramo, NON unito a `main`; copia di lavoro in `D:\build\wt-resti1`). Contiene: Hound automatico con etichetta FOX, Tx sopra 1000 Hz in Hound, Salta Tx1 disattivato in Hound, avviso se la stazione chiamata non e' una Fox, Wait and Pounce, ALL.TXT con la banda del periodo, scambi di contest nell'ADIF, misura della decodifica sulle registrazioni (WAV copiati fuori dal repository in `D:\build\wav-prova`). Per riprendere: controllare cosa compila (`cargo check --workspace`, `npx tsc --noEmit`), completare le parti mancanti, unirlo a `main` (il CHANGELOG di `main` ha gia' la sezione 0.11.60: le voci del ramo vanno sotto «Non rilasciato»), poi rilasciare la 0.11.61 seguendo `docs/rilascio.md`.
+- **Ramo `resti-motore`**: unito a `main` e pubblicato nella 0.11.61 (Hound automatico, FOX, Wait and Pounce, ALL.TXT, scambi di contest). Scelta del proprietario: l'R+rapporto subito dopo il nostro Tx1 chiude con RR73 come WSJT-X 3.3 (`history.rs`), non come JTDX.
 - **Elenco dei lavori**: `docs/tasks.md` (WSJT-X 3.x) e `TODO.md`. Bozza approvata della pagina Fox: `docs/mockup-fox.html`.
 - **Regole che contano**: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero (nello screenshot del sito e' nascosto); compilare l'installatore da solo (antivirus escluso su `D:\progetti` e `D:build`); giro di commit ogni 30 minuti; il proprietario fa le prove dal vivo.
 
