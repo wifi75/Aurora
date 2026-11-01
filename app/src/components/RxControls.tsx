@@ -8,7 +8,9 @@ import { replyErrorMessage } from '../lib/replyError';
 import { useStation } from '../state/station';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
-const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'sync', 'agc', 'filter'];
+const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'sync', 'agc', 'filter', 'ap_list', 'mtd'];
+/** Interruttori del solo decodificatore FT8. */
+const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
@@ -66,8 +68,8 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
   return (
     <div className="rx-row" aria-label={t('ctl.sec.rx')}>
       <div className="cmd-chips">
-        {/* «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra */}
-        {RX_TOGGLES.filter((id) => id !== 'jt_both' || mode.toUpperCase().startsWith('JT')).map((id) => {
+        {/* «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra; «a7/a8» e «Multithread» solo in FT8 */}
+        {RX_TOGGLES.filter((id) => (id !== 'jt_both' || mode.toUpperCase().startsWith('JT')) && (!FT8_ONLY.includes(id) || mode.toUpperCase() === 'FT8')).map((id) => {
           const on = state[id] === true;
           const button = (
             <button

@@ -1342,22 +1342,4 @@ mod tests {
         }
         println!("a7 solo rumore dopo una banda affollata: {noise_false} falsi su 50 periodi");
     }
-
-    #[test]
-    #[ignore]
-    fn plog_a8() {
-        for seed in 0..50u64 {
-            for d in decode_slot_detailed(&slot(&[], 9500 + seed), &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default(), None) {
-                println!("rumore {seed}: {:?} plog {} nhard {}", d.decoded, -d.dmin, d.hard_errors);
-            }
-        }
-        for snr in [-23.0f32, -24.0, -25.0] {
-            for seed in 0..20u64 {
-                let audio = slot(&[("IU3ABC K1ABC R-17", 1503.0, 0.2, snr)], 9000 + seed);
-                for d in decode_slot_detailed(&audio, &Options { a8: Some(a8_query()), ..Options::depth(3) }, &mut CallHashes::default(), None) {
-                    println!("{snr}: plog {} nhard {} snr {}", -d.dmin, d.hard_errors, d.decoded.snr_db);
-                }
-            }
-        }
-    }
 }
