@@ -121,7 +121,8 @@ async fn psk_reporter_receives_the_spots_in_the_ipfix_format_every_few_minutes()
     assert!(contains(packet, b"\x06Dipolo"), "l'antenna");
     assert!(contains(packet, b"Aurora v"), "il programma");
     // il trasmettitore: DL1ABC a 14 074 000 + 1234 Hz
-    let spot = [&[6u8][..], b"DL1ABC", &(14_075_234u32).to_be_bytes(), &[(-12i8) as u8, 3], b"FT8", &[4], b"JO62", &[1], &(NOW as u32).to_be_bytes()].concat();
+    let spot = [&[6u8][..], b"DL1ABC", &(14_075_234u32).to_be_bytes(), &[(-12i8) as u8, 3], b"FT8", &[4], b"JO62", &[1], &((NOW - NOW % 86_400 + u64::from(next_slot) / 1000) as u32).to_be_bytes()].concat();
+    // l'ora dello spot e' quella del periodo del messaggio (WSJT-X 3.2), non quella dell'invio
     assert!(contains(packet, &spot), "il record dello spot");
     assert!(!contains(packet, b"K1ABC"), "il periodo del cambio di banda non si segnala");
     assert!(!contains(packet, b"JA1ABC"), "i decode ipotizzati non si segnalano");
@@ -239,7 +240,7 @@ async fn eqsl_gets_the_adif_with_the_protected_password_and_nothing_secret_reach
     assert!(line.starts_with("GET /qslcard/importADIF.cfm?ADIFdata="), "{line}");
     let encoded = line.split("ADIFdata=").nth(1).unwrap().split(' ').next().unwrap();
     let decoded = percent_decode(encoded);
-    assert!(decoded.starts_with("<ADIF_VER:5>2.1.9<EQSL_USER:6>IU3ABC<EQSL_PSWD:14>Pa55 segreta&1<PROGRAMID:6>Aurora<EOH><APP_EQSL_QTH_NICKNAME:4>Casa<CALL:5>K1ABC<MODE:3>FT8"), "{decoded}");
+    assert!(decoded.starts_with("<ADIF_VER:5>3.1.8<EQSL_USER:6>IU3ABC<EQSL_PSWD:14>Pa55 segreta&1<PROGRAMID:6>Aurora<EOH><APP_EQSL_QTH_NICKNAME:4>Casa<CALL:5>K1ABC<MODE:3>FT8"), "{decoded}");
     assert!(decoded.contains("<QSLMSG:3>TNX<EOR>"), "{decoded}");
     tokio::time::sleep(Duration::from_millis(300)).await;
     let st = r.status.get("eqsl");

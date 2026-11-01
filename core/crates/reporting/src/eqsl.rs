@@ -21,7 +21,8 @@ fn field(out: &mut String, name: &str, value: &str) {
 /// Il testo ADIF di `EQSL::upload`: intestazione con versione, utente, password e programma, poi (dopo `<EOH>`) nickname, nominativo, modo, data, ora
 /// (solo `hhmm`), rapporto inviato, banda e l'eventuale messaggio.
 pub fn adif(user: &str, password: &str, nick: &str, q: &QsoRecord, fallback_date: &str) -> String {
-    let mut s = String::from("<ADIF_VER:5>2.1.9");
+    // 3.1.8 come `Network/eqsl.cpp` di WSJT-X 3.3
+    let mut s = String::from("<ADIF_VER:5>3.1.8");
     field(&mut s, "EQSL_USER", user);
     field(&mut s, "EQSL_PSWD", password);
     s.push_str("<PROGRAMID:6>Aurora<EOH>");
@@ -104,7 +105,7 @@ mod tests {
         let s = adif("IU3ABC", "segreta", "Casa", &qso(), "20000101");
         assert_eq!(
             s,
-            "<ADIF_VER:5>2.1.9<EQSL_USER:6>IU3ABC<EQSL_PSWD:7>segreta<PROGRAMID:6>Aurora<EOH><APP_EQSL_QTH_NICKNAME:4>Casa<CALL:5>K1ABC<MODE:3>FT8\
+            "<ADIF_VER:5>3.1.8<EQSL_USER:6>IU3ABC<EQSL_PSWD:7>segreta<PROGRAMID:6>Aurora<EOH><APP_EQSL_QTH_NICKNAME:4>Casa<CALL:5>K1ABC<MODE:3>FT8\
              <QSO_DATE:8>20261024<TIME_ON:4>1646<RST_SENT:3>-16<BAND:3>20m<EOR>"
         );
         let with_msg = adif("A", "b", "", &QsoRecord { eqsl_comment: "TNX 73".into(), ..qso() }, "20000101");
