@@ -23,6 +23,7 @@ use rig_control::{schedule::Schedule, table::FrequencyTable, Rig};
 use tokio::sync::{broadcast::error::RecvError, watch};
 
 pub use frames::encode_spectrum;
+pub use routes::switch_mode;
 pub use policy::{transport_of, Transport, TxPolicy};
 
 /// Salva le regole dell'automazione quando cambiano.
@@ -65,7 +66,12 @@ const MAX_KNOWN_DECODES: usize = 500;
 struct Shared {
     known: BTreeSet<u64>,
     status: Option<StationStatus>,
+    /// Le evidenziazioni dei nominativi chieste dai programmi collegati (Highlight Callsign): una pagina aperta dopo le riceve subito.
+    highlights: std::collections::BTreeMap<String, Event>,
 }
+
+/// Quante evidenziazioni si ricordano al massimo (le piu' vecchie si scartano).
+const MAX_HIGHLIGHTS: usize = 500;
 
 /// Installa la versione nuova trovata dal controllo: la scarica, ne verifica la firma, avvia l'installazione e chiude il programma.
 /// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.
@@ -171,6 +177,16 @@ impl AppState {
                                     }
                                 }
                                 Event::Status(st) => s.status = Some(st),
+                                Event::HighlightCallsign { ref call, ref background, ref foreground, .. } => {
+                                    if background.is_none() && foreground.is_none() {
+                                        s.highlights.remove(call);
+                                    } else {
+                                        s.highlights.insert(call.clone(), event.clone());
+                                        while s.highlights.len() > MAX_HIGHLIGHTS {
+                                            s.highlights.pop_first();
+                                        }
+                                    }
+                                }
                                 _ => {}
                             }
                         }
@@ -420,6 +436,11 @@ impl AppState {
 
     pub fn current_status(&self) -> Option<StationStatus> {
         self.shared.lock().ok().and_then(|s| s.status.clone())
+    }
+
+    /// Le evidenziazioni dei nominativi in vigore (eventi `HighlightCallsign`), per chi apre la pagina dopo.
+    pub fn current_highlights(&self) -> Vec<Event> {
+        self.shared.lock().map(|s| s.highlights.values().cloned().collect()).unwrap_or_default()
     }
 }
 

@@ -150,6 +150,11 @@ pub enum TxCommand {
     GenMsgs,
     /// «Cancella»: svuota i messaggi ricordati per il doppio clic.
     Erase,
+    /// I campi «DX Call» e «DX Grid» (un Configure via UDP): imposta il DX senza abilitare la trasmissione; con `generate` rigenera i messaggi
+    /// come «Gen.Msgs».
+    SetDx { call: Option<String>, grid: Option<String>, generate: bool },
+    /// Il locatore proprio per la sessione (Location via UDP): i messaggi da qui in poi lo usano.
+    SetMyGrid(String),
     /// Tasto destro su una stazione che chiama: se c'e' un QSO in corso la mette in coda (a QSO registrato si risponde a lei), altrimenti le risponde
     /// subito come il doppio clic; un secondo tasto destro sulla stessa stazione la toglie dalla coda.
     QueueReply { decode_id: u64 },
@@ -707,6 +712,24 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 log.push("messaggi rigenerati".to_string());
             }
             TxCommand::Erase => self.recent.clear(),
+            TxCommand::SetDx { call, grid, generate } => match self.seq.set_dx(call.as_deref(), grid.as_deref()) {
+                Ok(()) => {
+                    if generate {
+                        self.seq.regen_messages();
+                        self.free_text = None;
+                        self.prepared = None;
+                    }
+                    log.push(format!("DX impostato da un programma collegato: {} {}", call.unwrap_or_default(), grid.unwrap_or_default()).trim_end().to_string());
+                }
+                Err(e) => log.push(format!("DX non impostato: {e}")),
+            },
+            TxCommand::SetMyGrid(grid) => match self.seq.set_my_grid(&grid) {
+                Ok(()) => {
+                    self.controls.set_session_grid(&grid);
+                    log.push(format!("locatore della sessione: {grid}"));
+                }
+                Err(e) => log.push(format!("locatore non cambiato: {e}")),
+            },
         }
         self.sync_rx_to_user();
         self.publish_view();

@@ -5276,3 +5276,18 @@
   font-size: var(--text-xs);
   pointer-events: none;
 }
+
+/* Un programma collegato via UDP ha chiesto un colore per il nominativo (Highlight Callsign): vince sui colori normali */
+.decode-row.decode-row--hl-bg {
+  background: var(--hl-bg) !important;
+  animation: none;
+}
+
+.decode-row.decode-row--hl-fg,
+.decode-row.decode-row--hl-fg .data,
+.decode-row.decode-row--hl-fg .num,
+.decode-row.decode-row--hl-fg .decode-where,
+.decode-row.decode-row--hl-fg .w-km {
+  color: var(--hl-fg) !important;
+  text-shadow: none !important;
+}

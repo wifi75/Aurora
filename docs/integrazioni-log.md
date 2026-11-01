@@ -1,8 +1,27 @@
 # Integrazione di Aurora con altri log e utility (UDP, ADIF, TCP, servizi in rete)
 
 Ricerca del 2026-11-01: questo documento dice **cosa Aurora fa oggi**, **con chi puo' parlare** e **cosa manca**. Aggiornato lo stesso giorno con l'**invio diretto dei QSO** a Wavelog/Cloudlog, ClubLog, QRZ.com Logbook e LoTW (sezione 6).
+Ricerca del 2026-11-01, aggiornata con il lavoro dello stesso giorno (multicast, destinatari con le loro opzioni, Highlight Callsign, Location, Configure, Clear e Switch Configuration in ingresso, XML di N1MM, coda del QSO Logged di WSJT-X 2.x): vedi la sezione 0. Il documento dice **cosa Aurora fa**, **con chi puo' parlare** e **cosa manca**.
 Le righe marcate **(non verificato)** non hanno una fonte ufficiale o sono state ricavate da forum e guide di terzi: vanno provate dal vivo.
 Nei programmi e nei nominativi di esempio si usano valori di fantasia (K1ABC, locatore FN42).
+
+## 0. Stato attuale (dopo l'integrazione)
+
+Fatto, con il motore proprio (`AURORA_ENGINE=native`):
+
+- **Riquadro «Integrazioni»** nella scheda Impostazioni > Segnalazioni: un elenco di destinatari UDP (al piu' 16), ciascuno con nome, indirizzo, porta, acceso/spento e le sue scelte: **flusso WSJT-X** (binario), **Logged ADIF (12)**, **ADIF su UDP** (testo, come il secondo server di JTDX), **XML N1MM** (`contactinfo`), **multicast** con **TTL** (1-255, di base 1) e **interfaccia di uscita** (indirizzo IPv4 di questo PC; vuota = sistema). Ogni voce ha il «?» e i testi in sei lingue; l'elenco si salva da solo come le altre impostazioni (voce `UdpDestinations` del file `settings-motore.json`, JSON) e vale subito: l'esportatore rilegge i destinatari a ogni QSO, l'emettitore si riavvia in pochi istanti.
+- **Valori iniziali dall'ambiente**: alla prima apertura (o se la voce manca nel file) l'elenco nasce dagli indirizzi di `AURORA_UDP_FORWARD` oltre il primo (flusso WSJT-X, con il Logged ADIF se `EnableUDP1adifSending` e' acceso) e da `AURORA_EXPORT_UDP` (ADIF su UDP). Dopo vale il file: le variabili non si aggiungono piu' da sole (prima erano destinatari fissi che non si potevano togliere). Il primo indirizzo di `AURORA_UDP_FORWARD` resta il valore iniziale del server UDP primario.
+- **Multicast**: per ogni combinazione di TTL e interfaccia l'emettitore apre un socket proprio (socket2: `IP_MULTICAST_TTL`, `IP_MULTICAST_IF`, ritorno locale acceso), scrive al gruppo e ascolta su quel socket i comandi che i programmi rimandano al mittente (come WSJT-X: nessuna iscrizione al gruppo da parte di chi trasmette). L'unicast di prima resta com'era (un socket per famiglia di indirizzi, sul loopback se tutti i destinatari unicast sono sul PC). Il server UDP primario puo' essere anche un gruppo multicast: in quel caso TTL 1 e interfaccia del sistema. IPv6: hop limit si', interfaccia no (decide il sistema). L'ADIF su UDP e l'XML verso un gruppo multicast partono con il TTL del sistema (1).
+- **Comandi in ingresso** (tutti solo con «Accetta richieste UDP», `AcceptUDPRequests`, acceso; spento non arriva niente, quindi nessuna trasmissione da comandi non accettati):
+  - **Highlight Callsign (13)**: `QColor` letto per intero (RGB, HSV, HSL, CMYK, RGB esteso convertiti in RGB); evento `highlight_callsign` sul bus verso la pagina (`call`, `background` e `foreground` come `#rrggbb` o `null`, `last_only`). La lista dei messaggi colora le righe che contengono il nominativo (anche tra `<>`), con «solo l'ultima» solo la riga piu' recente; il colore vince sui colori normali (anche sulla riga «mi chiama»). Due colori non validi (`QColor()`) tolgono l'evidenziazione. Le evidenziazioni in vigore (al piu' 500) si rimandano a chi apre la pagina dopo.
+  - **Clear (3)**: evento `clear_decodes` (`window` 0, 1 o 2; senza il campo vale 0): la pagina svuota le liste come «Cancella» e il motore dimentica i messaggi ricordati per il doppio clic. Aurora ha una sola lista: la finestra indicata non cambia l'effetto.
+  - **Location (11)**: come `MainWindow::locationChange` di WSJT-X (oltre sei caratteri serve il prefisso `GRID:`; poi 4, 6 o 8 caratteri Maidenhead). Vale per la sessione, non si salva: Status (`de_grid`), messaggi generati dalla sequenza, QSO Logged e Logged ADIF (`MY_GRIDSQUARE`) usano il nuovo locatore. Il file ADIF e l'ADIF su UDP dell'esportatore restano con il locatore delle impostazioni.
+  - **Configure (15)**: come `MainWindow::remote_configure`: modo (solo FT8 e FT4, come il pulsante della pagina: la radio va sulla frequenza del modo nella stessa banda; mai in trasmissione), frequenza Rx (`Rx DF`), DX call e locatore (non abilitano la trasmissione), «genera i messaggi» (Gen.Msgs). Tolleranza, sottomodo, modo veloce e periodo T/R non esistono in FT8/FT4 di Aurora: una riga di log e niente altro. Il protocollo non ha la frequenza Tx: resta il tipo 50 di JTDX.
+  - **Switch Configuration (14)**: Aurora non ha configurazioni con nome: una riga di log, nessun effetto.
+- **XML stile N1MM** (`contactinfo`, porta di base 12060) a ogni QSO, per i destinatari che lo vogliono: nominativi, banda (MHz di N1MM), frequenze in decine di Hz, modo, rapporti, locatore, nome, potenza, commento, `ID` di 32 cifre esadecimali stabile per lo stesso QSO, `app` = `Aurora`. **Non verificato dal vivo** con HRD Logbook.
+- **QSO Logged (5)**: dopo il locatore proprio ora ci sono anche **Exchange sent**, **Exchange received** e **ADIF Propagation mode** dello schema di WSJT-X 2.x (vuoti: Aurora non fa gare). Chi legge il formato di JTDX ignora i campi in piu'; il lettore di Aurora accetta entrambi.
+
+Da provare dal vivo (vedi anche il rapporto del lavoro): GridTracker 2 e QLog insieme su 239.255.0.1:2237 con interfaccia 127.0.0.1; colori da CQRLOG o GridTracker; Location da un programma GPS; Configure da N1MM+; XML verso HRD Logbook su 12060; MacLoggerDX su un altro computer con interfaccia di rete.
 
 ## 1. Come parla Aurora oggi
 
@@ -25,29 +44,28 @@ Numeri e nomi dallo schema di `NetworkMessage.hpp` di WSJT-X (direzione vista da
 | 0 | Heartbeat | Out e In | **si**, alla partenza e ogni 15 s, schema massimo 3, versione `2.2.159` | solo per adottare lo schema piu' alto dichiarato dal client | Non manda il campo «revisione» (come JTDX) |
 | 1 | Status | Out | **si**, a ogni cambiamento (non si rimanda uno identico) | - | Campi fino a `fast_mode`, poi `special_op_mode`, tolleranza, periodo T/R, nome configurazione, messaggio Tx |
 | 2 | Decode | Out | **si**, uno per messaggio, `nuovo = true`, modo `~` (FT8) o `:` (FT4) | - | Con `apply_filters` escono solo i messaggi che i filtri di testo lasciano vedere |
-| 3 | Clear | Out e In | **si**, alla partenza (come il costruttore di JTDX) | **no** | In WSJT-X il Clear in ingresso porta la «finestra» (quale pannello svuotare) |
+| 3 | Clear | Out e In | **si**, alla partenza (come il costruttore di JTDX) | **si**, con «accetta le richieste» | Svuota le liste come «Cancella»; la «finestra» (0, 1, 2) si legge ma Aurora ha una sola lista |
 | 4 | Reply | In | - | **si**, solo con `AURORA_UDP_ACCEPT=1` e per i messaggi ammessi da `AURORA_UDP_ACCEPT_REPLY` (1 solo CQ, 2 CQ e 73, 3 tutti) | Ritrova il decode tra gli ultimi 300 per testo, frequenza e ora; i modificatori non sono usati |
-| 5 | QSO Logged | Out | **si**, alla registrazione | - | Ordine dei campi di JTDX (fino al «nominativo e locatore propri»); mancano «Exchange sent/received» che WSJT-X 2.x aggiunge |
+| 5 | QSO Logged | Out | **si**, alla registrazione | - | Ordine dei campi di JTDX, poi «Exchange sent/received» e «ADIF Propagation mode» di WSJT-X 2.x (vuoti) |
 | 6 | Close | Out (in WSJT-X il client lo gestisce anche in ingresso: **da verificare**) | **si**, alla chiusura | **no** | |
 | 7 | Replay | In | - | **si**, sempre (anche con `AURORA_UDP_ACCEPT=0`) | Rimanda i decode correnti (non nuovi) e lo Status |
 | 8 | Halt Tx | In | - | **si**, con `AURORA_UDP_ACCEPT=1` | In Aurora fa sempre lo STOP; il flag «solo Abilita Tx» e' letto ma non distinto |
 | 9 | Free Text | In | - | **si**, con `AURORA_UDP_ACCEPT=1` | Con `send` trasmette |
 | 10 | WSPR Decode | Out | no (Aurora non decodifica WSPR) | - | Non serve |
-| 11 | Location | In | - | **no** | Servirebbe per far impostare il locatore da un GPS o da un programma esterno |
-| 12 | Logged ADIF | Out | **si**, dopo il QSO Logged, **solo** con `AURORA_UDP_ADIF=1` (spento di fabbrica) | - | Intestazione ADIF di JTDX (`programid JTDX`) davanti al record |
-| 13 | Highlight Callsign | In | - | **no** | Lo mandano CQRLOG, GridTracker, JTAlert (non verificato per tutti) per colorare le righe; Aurora ha una colorazione propria ma non legge questa |
-| 14 | Switch Configuration | In | - | **no** | Cambio di configurazione per nome |
-| 15 | Configure | In | - | **no** | Modo, frequenza Tx, DX call, ecc. da programma esterno |
+| 11 | Location | In | - | **si**, con «accetta le richieste» | Locatore della sessione (4, 6, 8 caratteri; `GRID:` oltre sei) |
+| 12 | Logged ADIF | Out | **si**, dopo il QSO Logged, al server primario con «Invia il QSO in ADIF» e ai destinatari del riquadro «Integrazioni» che lo vogliono | - | Intestazione ADIF di JTDX (`programid JTDX`) davanti al record |
+| 13 | Highlight Callsign | In | - | **si**, con «accetta le richieste» | Colori di sfondo e testo nella lista dei messaggi, «solo l'ultima», tolti con colori non validi |
+| 14 | Switch Configuration | In | - | letto, **ignorato** con una riga di log | Aurora non ha configurazioni con nome |
+| 15 | Configure | In | - | **si**, con «accetta le richieste» | Modo FT8/FT4, frequenza Rx, DX call e locatore, genera i messaggi; il resto si ignora |
 | 50 | (JTDX) Set Tx Freq | In | - | **si**, con `AURORA_UDP_ACCEPT=1`, solo 1..5000 Hz | Tipo non standard di JTDX |
 | 51 | (JTDX) Trigger CQ | In | - | **si**, con `AURORA_UDP_ACCEPT=1`, solo se `send` e' vero | Tipo non standard di JTDX |
 
-Correzione rispetto a una convinzione comune nel progetto: il **Logged ADIF (12) c'e' gia'**, e' solo spento di fabbrica. Manca invece l'**ascolto** di 11, 13, 14, 15 e del Clear in ingresso.
+Il Logged ADIF (12) c'era gia' (spento di fabbrica); ora si sceglie anche per destinatario. L'ascolto di 3, 11, 13, 14 e 15 e' fatto (sezione 0).
 
 Particolarita' dell'emettitore che contano per le integrazioni:
-- un solo socket UDP con porta effimera per tutti i destinatari (i comandi tornano a quella porta, come con JTDX): i comandi di piu' programmi collegati arrivano tutti allo stesso ascoltatore;
+- un socket UDP con porta effimera per i destinatari unicast di una famiglia di indirizzi e uno per ogni gruppo multicast con le sue opzioni (TTL, interfaccia); i comandi tornano alla porta del socket che ha scritto e arrivano tutti allo stesso ascoltatore;
 - l'identificativo e' sempre `JTDX`: i comandi con un altro identificativo si scartano;
-- non c'e' iscrizione a gruppi multicast ne' impostazione di TTL o interfaccia: un indirizzo multicast come destinatario non e' trattato in modo esplicito **(non verificato nel codice di rete)**;
-- ogni destinatario riceve lo stesso identico flusso (nessuna opzione per destinatario).
+- ogni destinatario riceve cio' che ha scelto (flusso binario, Logged ADIF; ADIF testuale e XML di N1MM passano dall'esportatore).
 
 ## 2. Tabella riassuntiva dei programmi
 
@@ -179,17 +197,17 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 
 | Pri. | Cosa | Perche' | Sforzo | Chi ne beneficia |
 |---|---|---|---|---|
-| 1 | **Multicast** per `AURORA_UDP_FORWARD` (iscrizione al gruppo, TTL, interfaccia di loopback) e come ascolto | Un solo programma per volta puo' ascoltare 2237: con il multicast GridTracker, JTAlert, QLog, MacLoggerDX, CQRLOG, N1MM+, HRD condividono il flusso senza altro | Basso: solo rete, nessun messaggio nuovo | Quasi tutti |
-| 2 | **Ascolto di Highlight Callsign (13)**, e colorazione delle righe di Aurora (o almeno memorizzazione) | CQRLOG, N1MM+ (dupe/moltiplicatori) e GridTracker colorano le righe cosi' | Medio: decodifica del `QColor`, mappa nominativo -> colore, UI | CQRLOG, N1MM+, GridTracker |
+| 1 | **Multicast** (fatto: TTL e interfaccia per destinatario, comandi di ritorno sul socket del gruppo) | Un solo programma per volta puo' ascoltare 2237: con il multicast GridTracker, JTAlert, QLog, MacLoggerDX, CQRLOG, N1MM+, HRD condividono il flusso senza altro | Basso: solo rete, nessun messaggio nuovo | Quasi tutti |
+| 2 | **Ascolto di Highlight Callsign (13)** (fatto: righe colorate nella lista dei messaggi) | CQRLOG, N1MM+ (dupe/moltiplicatori) e GridTracker colorano le righe cosi' | Medio: decodifica del `QColor`, mappa nominativo -> colore, UI | CQRLOG, N1MM+, GridTracker |
 | 3 | ~~**Invio diretto** a Wavelog/Cloudlog, ClubLog e QRZ Logbook~~ **fatto** (sezione 6) | - | - | - |
-| 4 | **Impostazioni per destinatario** (flusso binario si/no, ADIF si/no, schema, identificativo) e Logged ADIF acceso per i destinatari che lo vogliono | Evita doppioni (Log4OM, HRD, JTAlert) e permette destinazioni diverse | Basso-medio | Tutti i log locali |
-| 5 | Ascolto di **Location (11)**, **Configure (15)**, **Switch Configuration (14)**, **Clear (3) in ingresso** | Locatore da GPS/programmi, impostazione di modo e frequenza da fuori, cambio di configurazione | Medio | N1MM+, JTAlert, programmi di controllo |
-| 6 | Broadcast **N1MM XML `contactinfo`** (porta 12060) | HRD, programmi che imitano N1MM; molti traduttori lo accettano | Medio: XML con ID del QSO | HRD, gestionali di gara |
+| 4 | **Impostazioni per destinatario** (fatto: flusso binario, Logged ADIF, ADIF su UDP, XML N1MM, multicast; restano da fare schema e identificativo per destinatario) | Evita doppioni (Log4OM, HRD, JTAlert) e permette destinazioni diverse | Basso-medio | Tutti i log locali |
+| 5 | Ascolto di **Location (11)**, **Configure (15)**, **Switch Configuration (14)**, **Clear (3) in ingresso** (fatto) | Locatore da GPS/programmi, impostazione di modo e frequenza da fuori, cambio di configurazione | Medio | N1MM+, JTAlert, programmi di controllo |
+| 6 | Broadcast **N1MM XML `contactinfo`** (porta 12060) (fatto, da provare con HRD) | HRD, programmi che imitano N1MM; molti traduttori lo accettano | Medio: XML con ID del QSO | HRD, gestionali di gara |
 | 7 | ~~**LoTW** via TQSL~~ **fatto** (sezione 6) | - | - | - |
-| 8 | Campi **Exchange sent/received** nel QSO Logged; flag «solo Abilita Tx» del Halt Tx | Completezza del protocollo di WSJT-X 2.x | Basso | Programmi di gara |
+| 8 | Campi **Exchange sent/received** nel QSO Logged (fatto); flag «solo Abilita Tx» del Halt Tx (da fare) | Completezza del protocollo di WSJT-X 2.x | Basso | Programmi di gara |
 | 9 | **HamQTH**, **HamAlert** (telnet come sorgente) | Utili ma secondari | Basso-medio | Chi li usa |
 
-**Raccomandazione sul primo passo**: il multicast (priorita' 1) perche' sblocca in una volta sola l'uso di piu' programmi sulla stessa porta senza toccare il protocollo; subito dopo l'ascolto di Highlight (13). Gli invii diretti (priorita' 3 e 7) sono fatti: sezione 6.
+**Prossimo passo consigliato**: le prove dal vivo delle sezioni 0 (UDP) e 6 (invii diretti).
 
 ## 5. Impostazioni consigliate, riepilogo
 
@@ -198,7 +216,9 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 | Mappa e avvisi di GridTracker 2 | `AURORA_UDP_FORWARD=127.0.0.1:2333` (o la porta di GridTracker), `AURORA_UDP_ACCEPT=1` |
 | Log4OM 2 (QSO) | `AURORA_EXPORT_UDP=127.0.0.1:2237` |
 | WaveLogGate | `AURORA_EXPORT_UDP=127.0.0.1:2333` |
-| MacLoggerDX / QLog / CQRLOG | `AURORA_UDP_FORWARD=<indirizzo>:2237` (una sola applicazione per porta; con piu' applicazioni serve il multicast) |
+| MacLoggerDX / QLog / CQRLOG | `AURORA_UDP_FORWARD=<indirizzo>:2237` o un destinatario del riquadro «Integrazioni» (una sola applicazione per porta; con piu' applicazioni un destinatario multicast, per esempio 239.255.0.1:2237 con interfaccia 127.0.0.1) |
+| Piu' programmi sulla stessa porta | Riquadro «Integrazioni»: destinatario multicast 239.255.0.1:2237, TTL 1, interfaccia 127.0.0.1 (stesso PC) o l'indirizzo di rete (altri computer); nei programmi lo stesso gruppo |
+| HRD Logbook (XML stile N1MM) | Riquadro «Integrazioni»: destinatario 127.0.0.1:12060 con «XML N1MM» |
 | Logged ADIF sul flusso primario | `AURORA_UDP_ADIF=1` |
 | Un secondo file ADIF | `AURORA_EXPORT_FILE=<percorso>` |
 

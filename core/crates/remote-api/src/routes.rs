@@ -801,15 +801,32 @@ struct ModeBody {
 /// Porta JTDX in FT8 o FT4 (preme il suo pulsante). Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<ModeBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    if state.active_rig().is_none() {
+        return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"));
+    }
     if rig_control::modes::button_id(&body.mode).is_none() {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_mode"));
     }
     if state.current_status().is_some_and(|s| s.transmitting) {
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
-    let mode = body.mode.trim().to_uppercase();
-    let shown = mode.clone();
+    let shown = body.mode.trim().to_uppercase();
+    match switch_mode(&state, &body.mode).await {
+        Ok(dial) => Ok(Json(json!({ "ok": true, "mode": shown, "dial_hz": dial }))),
+        Err(e) if e == "rig_task" => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+        Err(e) => {
+            tracing::warn!("cambio modo fallito: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+    }
+}
+
+/// Cambia modo come il pulsante della pagina: il motore passa al modo e la radio va sulla frequenza che la tabella indica per il nuovo modo nella
+/// stessa banda. Serve anche al Configure (tipo 15) dei programmi collegati via UDP. Restituisce la frequenza di dial scelta (se cambiata);
+/// l'errore e' un testo (`rig_task` se il lavoro non e' partito).
+pub async fn switch_mode(state: &AppState, mode: &str) -> Result<Option<u64>, String> {
+    let rig = state.active_rig().ok_or_else(|| "nessuna radio o motore attivo".to_string())?;
+    let mode = mode.trim().to_uppercase();
     // JTDX al cambio di modo salta all'ultima frequenza che aveva in quel modo, anche su un'altra banda:
     // si resta nella banda di prima, sulla frequenza che la tabella indica per il nuovo modo
     // la frequenza di adesso si rilegge dalla radio (dopo lo spot di un cluster lo stato della pagina puo' essere indietro); se la radio
@@ -835,12 +852,9 @@ async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<
         Ok(target)
     };
     match tokio::task::spawn_blocking(work).await {
-        Ok(Ok(dial)) => Ok(Json(json!({ "ok": true, "mode": shown, "dial_hz": dial }))),
-        Ok(Err(e)) => {
-            tracing::warn!("cambio modo fallito: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
-        }
-        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+        Ok(Ok(dial)) => Ok(dial),
+        Ok(Err(e)) => Err(e.to_string()),
+        Err(_) => Err("rig_task".to_string()),
     }
 }
 

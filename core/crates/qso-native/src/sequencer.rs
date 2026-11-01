@@ -565,6 +565,52 @@ impl Sequencer {
         }
     }
 
+    /// Il locatore proprio cambiato durante la sessione (un Location via UDP, da un GPS o da un programma di mappe): vale per i messaggi
+    /// generati da qui in poi e per le distanze, come `Configuration::set_location` di WSJT-X.
+    pub fn set_my_grid(&mut self, grid: &str) -> Result<(), SeqError> {
+        if !is_valid_locator(grid) {
+            return Err(SeqError::InvalidGrid(grid.to_string()));
+        }
+        self.my.grid = grid.to_string();
+        self.hist.set_own(&self.opts.my_continent, &self.opts.my_prefix, &self.my.grid, self.opts.strict_directional_cq);
+        self.note_state();
+        Ok(())
+    }
+
+    /// Il DX scritto a mano nei campi «DX Call» e «DX Grid» (o da un Configure via UDP): `call` sostituisce il DX in collegamento (il
+    /// precedente si considera abbandonato), `grid` ne imposta il locatore. Non abilita la trasmissione; i messaggi si rigenerano con
+    /// [`Sequencer::regen_messages`] («Gen.Msgs»).
+    pub fn set_dx(&mut self, call: Option<&str>, grid: Option<&str>) -> Result<(), SeqError> {
+        let call = call.map(|c| c.trim().to_uppercase()).filter(|c| !c.is_empty());
+        if let Some(c) = &call
+            && !is_valid_call(c)
+        {
+            return Err(SeqError::InvalidCall(c.clone()));
+        }
+        let grid = grid.map(str::trim).filter(|g| !g.is_empty());
+        if let Some(g) = grid
+            && !is_valid_locator(g)
+        {
+            return Err(SeqError::InvalidGrid(g.to_string()));
+        }
+        if let Some(c) = call
+            && c != self.his_call
+        {
+            let old = std::mem::replace(&mut self.his_call, c.clone());
+            if !old.is_empty() {
+                self.events.push(Event::Abandoned { call: old, reason: AbandonReason::Replaced });
+            }
+            self.his_grid.clear();
+            self.rpt_rcvd.clear();
+            self.hist.reset_count(&c, Status::None);
+        }
+        if let Some(g) = grid {
+            self.his_grid = g.to_string();
+        }
+        self.note_state();
+        Ok(())
+    }
+
     /// «Canc DX»: libera la stazione; si torna al messaggio CQ.
     pub fn clear_dx(&mut self) {
         let old = self.his_call.clone();

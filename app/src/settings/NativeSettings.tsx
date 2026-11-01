@@ -10,6 +10,7 @@ import { REPORT_GROUPS, type SettingRow, type UploadService } from '../lib/engin
 import { Help as Note } from './common';
 import { Cells, Group, Notes, Page, Unavailable } from './layout';
 import { useAutosave } from './useAutosave';
+import { IntegrationsPanel } from './IntegrationsPanel';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
 export function useIsNative(): boolean | undefined {
@@ -239,6 +240,7 @@ export function NativeReports() {
             </Group>
           );
         })}
+        <IntegrationsPanel doc={doc} draft={draft} />
         <Notes span={2}>
           <Note>{t('ens.rep.help')}</Note>
           {doc.items.AllowSpotsDXSummit?.state === 'live' ? <Note>{t('ens.dxsummit.help')}</Note> : null}
