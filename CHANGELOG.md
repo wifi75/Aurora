@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.69 - 2026-11-01
+- **Fox**: la pagina si apre subito (prima restava su «Il motore non ha ancora mandato lo stato Fox»); il motore manda lo stato ogni 2 s con l'interruttore letto subito. Nel menu Fox sta dopo Stazione, con la spiegazione al passaggio del mouse.
+- **Scheda DXpedition**: mappa disegnata dal programma, senza la cartina National Geographic e senza tropici, equatore e circoli polari.
+
 ## 0.11.68 - 2026-11-01
 - **Modo Fox classico (WSJT-X 3.3)**: nuova pagina Fox nel menu in alto. Coda dei Hound, fino a 5 stazioni nella stessa trasmissione, messaggio combinato «RR73; ...», CQ nei posti liberi, QSO a log da soli. Evento `fox` e `POST /api/v1/fox`. In fase di prova; SuperFox escluso.
 - **Splash**: elenca tutti i modi (FT8, FT4, JT65, JT9).
