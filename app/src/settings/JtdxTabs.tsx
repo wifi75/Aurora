@@ -278,6 +278,7 @@ export function NativeGeneral() {
         <Cells min={18}>
           {field('MyCall', 'text', 'gen2.call')}
           {field('MyGrid', 'text', 'gen2.grid')}
+          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
         </Cells>
         <Message kind="muted">
           {status?.de_call || '—'} · {status?.de_grid || '—'}
@@ -344,7 +345,6 @@ export function NativeTxOptions() {
     <>
       <Group title={t('gen2.operation')}>
         <Cells min={13}>
-          {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
           {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
           {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
           {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
