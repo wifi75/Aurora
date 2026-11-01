@@ -158,6 +158,13 @@ pub enum TxCommand {
     /// Tasto destro su una stazione che chiama: se c'e' un QSO in corso la mette in coda (a QSO registrato si risponde a lei), altrimenti le risponde
     /// subito come il doppio clic; un secondo tasto destro sulla stessa stazione la toglie dalla coda.
     QueueReply { decode_id: u64 },
+    /// «Tune» di WSJT-X: una portante sulla frequenza Tx per un periodo (acceso) o subito ferma (spento). Passa dal trasmettitore come ogni
+    /// trasmissione, quindi rispetta trasmissione aperta, STOP, watchdog e tetti.
+    Tune(bool),
+    /// Il rapporto da inviare scelto a mano (`rptSpinBox` di WSJT-X).
+    SetReport(i32),
+    /// «Log QSO» a mano: registra il QSO con la stazione in corso.
+    LogQso,
 }
 
 /// Cio' che la pagina mostra della trasmissione.
@@ -522,7 +529,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let seq = self.seq.rx_freq();
         if seq != self.rx_published && (100..=5000).contains(&seq) {
             self.controls.rx_df.store(seq, Ordering::Relaxed);
-            if !self.controls.switch_on("split") {
+            if !self.controls.switch_on("split") && !self.controls.switch_on("hold_tx") {
                 self.controls.tx_df.store(seq, Ordering::Relaxed);
             }
             self.rx_published = seq;
@@ -734,7 +741,26 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 self.prepared = None;
                 log.push("messaggi rigenerati".to_string());
             }
-            TxCommand::Erase => self.recent.clear(),
+            TxCommand::Tune(on) => {
+                if on {
+                    log.push(self.tune(now_s));
+                } else {
+                    self.halt_tx();
+                    log.push("Tune spento".to_string());
+                }
+            }
+            TxCommand::SetReport(db) => {
+                self.seq.set_report(db);
+                self.prepared = None;
+                log.push(format!("rapporto da inviare: {:+03}", self.seq.report()));
+            }
+            TxCommand::LogQso => {
+                if self.seq.log_now(Slot::at(self.mode, now_s), now_s) {
+                    log.push("QSO registrato a mano".to_string());
+                } else {
+                    log.push("Log QSO: nessuna stazione in corso".to_string());
+                }
+            }            TxCommand::Erase => self.recent.clear(),
             TxCommand::SetDx { call, grid, generate } => match self.seq.set_dx(call.as_deref(), grid.as_deref()) {
                 Ok(()) => {
                     if generate {
@@ -763,12 +789,33 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     fn follow_decode_frequency(&self, freq_hz: u32) {
         if (100..=5000).contains(&freq_hz) {
             self.controls.rx_df.store(freq_hz, Ordering::Relaxed);
-            if !self.controls.switch_on("split") {
+            // «Hold Tx Freq» di WSJT-X: la Tx resta dove l'ha messa l'operatore
+            if !self.controls.switch_on("split") && !self.controls.switch_on("hold_tx") {
                 self.controls.tx_df.store(freq_hz, Ordering::Relaxed);
             }
         }
     }
 
+    /// «Tune»: un'onda sinusoidale sulla frequenza Tx, lunga quanto una trasmissione del modo, nel prossimo periodo utile.
+    fn tune(&mut self, now_s: f64) -> String {
+        let hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
+        let mode = match self.mode {
+            Mode::Ft8 => tx_native::Mode::Ft8,
+            Mode::Ft4 => tx_native::Mode::Ft4,
+            Mode::Jt65 => tx_native::Mode::Jt65,
+            Mode::Jt9 => tx_native::Mode::Jt9,
+        };
+        let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).max(1.0);
+        let rate = f64::from(tx_native::WAVE_RATE);
+        let wave: Vec<f32> = (0..(secs * rate) as usize).map(|i| (2.0 * std::f64::consts::PI * f64::from(hz) * i as f64 / rate).sin() as f32 * 0.95).collect();
+        let slot = Slot::at(self.mode, now_s).next();
+        let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
+        self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
+        match self.port.schedule(TxRequest { wave, mode, parity }) {
+            Ok(()) => format!("Tune: portante a {hz} Hz nel prossimo periodo"),
+            Err(e) => format!("Tune non partito: {e}"),
+        }
+    }
     /// Chiede subito la trasmissione nel periodo in corso, se tocca a questo periodo e non e' troppo tardi.
     fn start_now(&mut self, now_s: f64) -> Vec<String> {
         let slot = Slot::at(self.mode, now_s);
@@ -2751,5 +2798,27 @@ mod tests {
         assert_eq!(d.opts.limits, settings.limits);
         assert!(!d.opts.abandon_if_dx_answers_other && d.opts.strict_directional_cq);
         assert_eq!(d.opts.watchdog_min, 9);
+    }
+
+    /// Pannello Comandi come WSJT-X 3.3: DX scritto a mano, rapporto scelto a mano, Log QSO a mano e «Hold Tx Freq».
+    #[test]
+    fn commands_panel_dx_report_log_and_hold_tx() {
+        let (mut d, _port, controls) = driver();
+        d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: Some("FN42".into()), generate: true }, BASE + 1.0);
+        assert_eq!(d.seq.dx(), Some("K1ABC"));
+        d.handle(TxCommand::SetReport(-7), BASE + 2.0);
+        assert!(d.seq.tx_texts()[1].ends_with("-07"), "{:?}", d.seq.tx_texts());
+        let log = d.handle(TxCommand::LogQso, BASE + 3.0);
+        assert!(log.iter().any(|l| l.contains("registrato")), "{log:?}");
+        let (qsos, _) = d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_074_000, "20m");
+        assert!(qsos.iter().any(|q| q.call == "K1ABC"), "{qsos:?}");
+        // Hold Tx Freq: il doppio clic sposta la Rx ma non la Tx
+        controls.set_switch("split", false);
+        controls.set_switch("hold_tx", true);
+        controls.tx_df.store(1200, Ordering::Relaxed);
+        d.remember(9, "CQ W9XYZ EN52", -10, 1800, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 9 }, BASE + 14.5);
+        assert_eq!(controls.tx_df.load(Ordering::Relaxed), 1200);
+        assert_eq!(d.handle(TxCommand::LogQso, BASE + 15.0).len(), 1);
     }
 }

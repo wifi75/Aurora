@@ -1641,6 +1641,14 @@ pub async fn run(
                         aurora_core::Command::SendFreeText { text, send } => engine_native::TxCommand::FreeText { text, send },
                         aurora_core::Command::CallCq { modifier } => engine_native::TxCommand::CallCq { modifier: Some(modifier).filter(|m| !m.trim().is_empty()) },
                         aurora_core::Command::SetTxFrequency { hz } => engine_native::TxCommand::SetTxFreq(hz),
+                        aurora_core::Command::SetDx { call, grid } => engine_native::TxCommand::SetDx {
+                            call: Some(call).filter(|c| !c.is_empty()),
+                            grid: Some(grid).filter(|g| !g.is_empty()),
+                            generate: true,
+                        },
+                        aurora_core::Command::SetReport { db } => engine_native::TxCommand::SetReport(db),
+                        aurora_core::Command::Tune { on } => engine_native::TxCommand::Tune(on),
+                        aurora_core::Command::LogQso => engine_native::TxCommand::LogQso,
                     };
                     if let Err(e) = controls.send(mapped) {
                         tracing::warn!("comando di trasmissione non consegnato: {e}");
