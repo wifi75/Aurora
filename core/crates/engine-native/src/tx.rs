@@ -264,6 +264,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     hound_manual: Option<String>,
     /// Il DX per cui Hound si e' acceso da solo.
     hound_auto_for: Option<String>,
+    /// I nominativi sentiti trasmettere come Fox di WSJT-X (`features::fox_sender`).
+    foxes: Vec<String>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -308,7 +310,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new() };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -541,6 +543,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let slot = Slot(r.slot_start_ms / self.mode.period_ms());
                     let (text, freq) = (r.text.clone(), r.freq_hz);
                     let decode = QDecoded::new(&r.text, r.snr, r.freq_hz);
+                    // Hound automatico: se la stazione scelta non e' una Fox, Hound si spegne PRIMA di preparare il messaggio, cosi' «Salta Tx1» vale subito
+                    let picked = crate::features::fox_sender(&text).or_else(|| sender_of(&text));
+                    if self.opts.hound
+                        && self.controls.hound_auto.load(Ordering::Relaxed)
+                        && let Some(call) = picked.filter(|c| !self.foxes.iter().any(|f| f.eq_ignore_ascii_case(c)))
+                    {
+                        self.hound_manual = None;
+                        self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &call, &mut log);
+                    }
                     match self.seq.reply_to_with(slot, &decode, self.auto_tx) {
                         Ok(()) => {
                             if let Some(call) = sender_of(&text) {
@@ -973,6 +984,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Acceso o spento a mano, l'automatico non lo tocca finche' resta lo stesso DX (salvo l'R+rapporto). Con «Hound automatico» spento resta solo la
     /// regola dell'R+rapporto.
     fn auto_hound(&mut self, decoded: &[(String, i32, u32)], log: &mut Vec<String>) {
+        for f in decoded.iter().filter_map(|(text, _, _)| crate::features::fox_sender(text)) {
+            if !self.foxes.iter().any(|x| x.eq_ignore_ascii_case(&f)) {
+                self.foxes.push(f);
+                if self.foxes.len() > 50 {
+                    self.foxes.remove(0);
+                }
+            }
+        }
         let dx = self.seq.dx().map(str::to_string);
         if self.hound_manual.as_deref().is_some_and(|m| Some(m) != dx.as_deref()) {
             self.hound_manual = None;
@@ -1000,7 +1019,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         {
             self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &old, log);
         }
-        let fox = decoded.iter().any(|(text, _, _)| crate::features::fox_sender(text).is_some_and(|f| f.eq_ignore_ascii_case(&dx)));
+        let fox = self.foxes.iter().any(|f| f.eq_ignore_ascii_case(&dx));
         if fox && !self.opts.hound {
             self.set_hound(true, aurora_core::TxAlertKind::FoxDetected, &dx, log);
         }
@@ -1547,6 +1566,23 @@ mod tests {
         assert!(qsos.iter().chain(more.iter()).any(|q| q.call == "V26JJ"), "il QSO si registra: {log:?} {log2:?}");
         assert!(controls.tx_alerts().iter().any(|a| a.kind == aurora_core::TxAlertKind::HoundOff && a.detail == "V26JJ"));
         assert!(!controls.switch_on("hound"), "Hound si spegne da solo");
+    }
+
+    /// Caso dal vivo KG4ERR: Hound rimasto acceso a mano, «Salta Tx1» acceso, doppio clic su «CQ KG4ERR EM92»: con l'automatico Hound si spegne prima
+    /// di preparare il messaggio e parte il rapporto (Tx2); con l'automatico spento resta Hound e il Tx1.
+    #[test]
+    fn a_normal_station_turns_a_manual_hound_off_before_the_reply() {
+        for auto in [true, false] {
+            let (mut d, _port, controls) = driver();
+            controls.hound_auto.store(auto, Ordering::Relaxed);
+            d.handle(TxCommand::Option(OptionChange::SkipTx1(true)), BASE);
+            controls.set_switch("hound", true);
+            d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
+            d.remember(7, "CQ KG4ERR EM92", -10, 1500, SLOT_MS);
+            let log = d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+            assert_eq!(controls.switch_on("hound"), !auto, "{log:?}");
+            assert_eq!(d.seq.ntx(), if auto { 2 } else { 1 }, "{log:?}");
+        }
     }
 
     /// Hound automatico con un Fox di WSJT-X: la riga combinata con il DX scelto accende Hound (Tx sopra 1000 Hz, Split); scegliendo un altro DX si spegne.

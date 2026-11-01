@@ -77,6 +77,7 @@ export const controlStrings = {
     'Armado: cuando el DX elegido llama CQ o cierra su QSO (RR73, RRR, 73) Aurora lo llama sola, hasta unas tres veces; luego el botón se apaga. Necesita AutoSeq y las Wait features activadas (Ajustes, General).',
     'Armado: quando o DX escolhido chama CQ ou fecha o QSO dele (RR73, RRR, 73) a Aurora chama-o sozinha, até cerca de três vezes; depois o botão desliga-se. Requer AutoSeq e as Wait features ligadas (Definições, Geral).',
   ],
+  'tip.ctl.skip_tx1.hound': ['In Hound si parte sempre dal locatore, come chiede la Fox', 'In Hound mode you always start with the locator, as the Fox requires', 'Im Hound-Modus beginnt man immer mit dem Locator, wie der Fox es verlangt', 'En Hound on commence toujours par le locator, comme le demande le Fox', 'En Hound siempre se empieza por el locator, como pide la Fox', 'Em Hound começa-se sempre pelo locator, como a Fox pede'],
   'ctl.pounce': ['Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce'],
   'tip.ctl.pounce': [
     'Armato con Abilita Tx spento: alla fine del periodo Aurora risponde da sola al CQ scelto con il criterio delle impostazioni (Generali: il primo, il più lontano, il più forte o il più debole), saltando chi hai già collegato; se non risponde entro circa tre chiamate la trasmissione si spegne. Scattato, il pulsante si spegne. Servono le Wait features accese.',
