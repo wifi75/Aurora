@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.43 - 2026-11-01
+- **Cascata fedele al filtro della radio**: Aurora legge col CAT (Hamlib) la larghezza del filtro e la cascata mostra quell'ampiezza, fino a 5000 Hz (0-3000 Hz se la radio non la dice).
+- **Coda sempre visibile**: nel pannello Trasmissione, sotto il DX, «In coda» con pallini blu numerati e nominativi.
+- **rigctld orfano**: se la porta di rigctld e' occupata da un rigctld rimasto dopo un crash, Aurora lo chiude da sola e riprova.
+- **Impostazioni**: pagina Informazioni (logo, versione, autore, licenza, collegamenti); spiegazione «?» su tutte le voci di Notifiche, sugli interruttori QSO e sulle preferenze dello schermo.
+- Display della radio piu' largo con lo STOP accanto; avvisi sonori e volume nella testata accanto alla lingua; Tx/Rx a destra uno sotto l'altro; meno spazio tra modo/bande e pulsanti.
+- DX Cluster con frequenza come testo e intestazioni in linea; log con data senza anno e colonne strette.
+
 ## 0.11.42 - 2026-11-01
 - **Trasmissione**: RX verde / TX rosso lampeggiante spostato accanto al blocco del DX, come pastiglia ben visibile.
 - **DX Cluster**: frequenza piu' stretta, piu' spazio al paese; intestazioni «Paese» e «UTC» allineate.
