@@ -21,7 +21,7 @@ export const NOVITA_MAX = 20;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.49',
-    released: '2026-11-01T09:20:00Z',
+    released: '2026-11-01T09:12:11Z',
     kind: 'changed',
     title: ['Tutte le impostazioni si salvano da sole', 'All settings save by themselves', 'Alle Einstellungen speichern sich selbst', 'Tous les réglages s’enregistrent tout seuls', 'Todos los ajustes se guardan solos', 'Todas as definições guardam-se sozinhas'],
     text: [
