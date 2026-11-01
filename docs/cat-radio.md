@@ -61,13 +61,20 @@ Nella cartella `hamlib` accanto ad `aurora-desktop.exe` ci sono:
 | `libusb-1.0.dll`, `libwinpthread-1.dll` | le DLL di cui Hamlib ha bisogno (nient'altro: niente runtime GCC, ne' Qt) |
 | `LEGGIMI-HAMLIB.txt`, `VERSIONE.txt`, `LGPL-2.1.txt`, `GPL-3.0.txt`, `libwinpthread-licenza.txt` | avviso, versione e SHA-256 dei file, testi delle licenze |
 
-**Origine.** Non si scarica nulla: lo script `scripts/prepara-hamlib.ps1` (chiamato da `scripts/rilascio-windows.ps1`, che con `-SoloHamlib` fa solo questo passo) copia i file da una cartella locale
-(parametro `-Hamlib`, variabile `AURORA_HAMLIB_SRC`, altrimenti l'ultima versione di JTDX in `C:\JTDX64\<versione>\bin`, poi WSJT-X in `C:\WSJT\wsjtx\bin`),
-legge le importazioni di `rigctld` e `rigctl` per ricavare **solo le DLL che servono davvero** (se ne manca una si ferma con un messaggio chiaro), controlla che il pacchetto parta e che
-l'elenco contenga FT-2000, FTDX-101D, FTDX-5000 e Dummy, e scrive `VERSIONE.txt`. I file finiscono in `desktop/src-tauri/hamlib-bundle/` (esclusa da git: i binari non si committano)
+**Origine (dal 2026-11-01: Hamlib 4.7.2 ufficiale).** Lo script `scripts/prepara-hamlib.ps1` (chiamato da `scripts/rilascio-windows.ps1`, che con `-SoloHamlib` fa solo questo passo)
+di base **scarica il pacchetto Windows ufficiale** `hamlib-w64-4.7.2.zip` dalla release di https://github.com/Hamlib/Hamlib/releases/tag/4.7.2 (ultima stabile ufficiale;
+WSJT-X 3.3 porta una 4.7.3~rc, non ancora rilasciata) e ne **verifica lo SHA-256** fissato nello script
+(`8553bc6c5c6032e8debf99c017e98f58fed7e07e7c25d04815dc3e8bbe3304c7`, lo stesso del file `SHA256SUM-w64-4.7.2` della release): se non coincide il file si scarta e lo script si ferma.
+Lo zip resta in `target/hamlib-ufficiale/4.7.2/` (fuori da git) e si riusa. In alternativa: `-Hamlib <cartella>` o la variabile `AURORA_HAMLIB_SRC` (una cartella locale),
+oppure `-SoloLocale` (come prima: l'ultima versione di JTDX in `C:\JTDX64\<versione>\bin`, poi WSJT-X in `C:\WSJT\wsjtx\bin`, niente download).
+Poi legge le importazioni di `rigctld` e `rigctl` per ricavare **solo le DLL che servono davvero** (se ne manca una si ferma con un messaggio chiaro), controlla che il pacchetto parta e che
+l'elenco contenga FT-2000, FTDX-101D, FTDX-5000 e Dummy, e scrive `VERSIONE.txt` (versione, origine con hash, SHA-256 di ogni file). I file finiscono in `desktop/src-tauri/hamlib-bundle/` (esclusa da git: i binari non si committano)
 e `tauri.conf.json` li porta nell'installatore come risorse nella cartella `hamlib`. I testi delle licenze stanno in `desktop/src-tauri/hamlib-licenze/` (questi si committano).
 
-Verificato sul PC il 2026-10-25 (lettura delle importazioni dei file PE):
+Verificato sul PC il 2026-11-01 con il pacchetto ufficiale: `rigctld Hamlib 4.7.2 2026-06-21T13:07:37Z SHA=40f63488f 64-bit`, 313 modelli (FT-2000, FTDX-101D, FTDX-5000 inclusi),
+dipendenze `libhamlib-4.dll` -> `libusb-1.0.dll`, `libwinpthread-1.dll` (il pacchetto contiene anche `libgcc_s_seh-1.dll`, che `rigctld`/`rigctl` non importano e quindi non si include).
+
+Verificato il 2026-10-25 (lettura delle importazioni dei file PE) sulle cartelle locali usabili con `-Hamlib`/`-SoloLocale`:
 
 | Cartella | Hamlib | Dipendenze di `rigctld`/`rigctl` | Modelli |
 |---|---|---|---|
@@ -75,7 +82,7 @@ Verificato sul PC il 2026-10-25 (lettura delle importazioni dei file PE):
 | WSJT-X (`C:\WSJT\wsjtx\bin`) | 4.7.3~rc (2026-09-22, SHA d034b2365) | le stesse tre | 314 |
 
 Nella cartella di JTDX c'e' anche `libhamlib-5.dll`: la usa `jtdx.exe`, non `rigctld`/`rigctl` (che importano `libhamlib-4.dll`), quindi non si include.
-Di base si usa JTDX 159 (Hamlib 4.6). Per l'Hamlib piu' recente (4.7.3, con le correzioni per le Yaesu): `.\scripts\prepara-hamlib.ps1 -Hamlib C:\WSJT\wsjtx\bin` (provato: parte e conosce FT-2000 e FT-DX).
+Prima del 2026-11-01 si usava di base JTDX 159 (Hamlib 4.6); la 4.7.3~rc di WSJT-X resta usabile con `.\scripts\prepara-hamlib.ps1 -Hamlib C:\WSJT\wsjtx\bin` (provato il 2026-10-25: parte e conosce FT-2000 e FT-DX).
 Provato anche con il modello 1 (Dummy): `rigctld` del pacchetto risponde a frequenza, modo e `l STRENGTH`.
 
 **Aggiornamenti.** L'installatore (`installer/hooks.nsh`) prima di copiare ferma il `rigctld` lanciato da quella cartella e cancella la cartella `hamlib`: un aggiornamento non lascia file di versioni vecchie.
@@ -83,7 +90,7 @@ Non tocca gli altri `rigctld` che usi per altri programmi.
 
 **Licenza.** Hamlib e' software libero: la **libreria** (`libhamlib-4.dll`, i driver) e' **LGPL-2.1 o successiva**, i **programmi** (`rigctld`, `rigctl`) sono **GPL-2.0 o successiva**
 (compatibile con la GPL-3.0 di Aurora), libusb e' LGPL-2.1 o successiva, libwinpthread (MinGW-w64) ha una licenza permissiva in stile MIT. I testi stanno accanto ai file e in `THIRD-PARTY-NOTICES.md`.
-Aurora lancia `rigctld` come programma separato e gli parla su TCP: nessun collegamento tra codice. I file sono quelli di JTDX/WSJT-X, non modificati, e si possono sostituire con altri
+Aurora lancia `rigctld` come programma separato e gli parla su TCP: nessun collegamento tra codice. I file sono quelli del pacchetto ufficiale di Hamlib (o di JTDX/WSJT-X se scelti), non modificati, e si possono sostituire con altri
 (requisito della LGPL). **Sorgenti**: https://github.com/Hamlib/Hamlib (stessa versione e commit scritti in `VERSIONE.txt`); libusb: https://github.com/libusb/libusb; MinGW-w64: https://www.mingw-w64.org.
 Rileggere i testi delle licenze della versione scelta prima del rilascio. Questa non e' una consulenza legale.
 

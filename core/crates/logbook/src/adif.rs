@@ -7,6 +7,57 @@ use aurora_core::{
     QsoRecord,
 };
 
+/// La versione ADIF scritta nelle intestazioni.
+pub const ADIF_VERSION: &str = "3.1.8";
+
+/// Il contest a cui appartiene uno scambio (per i campi speciali di Field Day e RTTY Roundup).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Contest {
+    #[default]
+    None,
+    /// ARRL Field Day: `classe sezione` (`2A EMA`).
+    FieldDay,
+    /// ARRL RTTY Roundup / FT Roundup: `rapporto stato` o `rapporto seriale`.
+    Rtty,
+}
+
+/// I campi ADIF di uno scambio di contest inviato (`x_sent`) e ricevuto (`x_rcvd`), con le regole di `AdifQso::to_adif` di WSJT-X 3.2
+/// (`logbook/AdifQso.cpp`, GPL-3.0): due parole con l'ultima numerica = seriale (`STX`/`SRX`); due parole con la prima numerica di piu'
+/// di tre cifre = rapporto+seriale del contest EU VHF (si tiene il seriale); Field Day = `CONTEST_ID`, `SRX_STRING`, `CLASS`, `ARRL_SECT`;
+/// RTTY Roundup con lo stato = `STATE`; altrimenti lo scambio intero in `STX_STRING`/`SRX_STRING`. Una parola sola non e' uno scambio.
+pub fn contest_fields(x_sent: &str, x_rcvd: &str, contest: Contest) -> Vec<(&'static str, String)> {
+    let positive = |w: &str| w.parse::<u32>().is_ok_and(|n| n > 0);
+    let mut out = Vec::new();
+    let sent: Vec<&str> = x_sent.split_whitespace().collect();
+    if sent.len() > 1 {
+        if sent.len() == 2 && positive(sent[1]) {
+            out.push(("STX", sent[1].to_string()));
+        } else if sent.len() == 2 && positive(sent[0]) && sent[0].len() > 3 {
+            out.push(("STX", sent[0][2..].to_string()));
+        } else {
+            out.push(("STX_STRING", x_sent.trim().to_string()));
+        }
+    }
+    let rcvd: Vec<&str> = x_rcvd.split_whitespace().collect();
+    if rcvd.len() > 1 {
+        if rcvd.len() == 2 && positive(rcvd[1]) {
+            out.push(("SRX", rcvd[1].to_string()));
+        } else if rcvd.len() == 2 && positive(rcvd[0]) && rcvd[0].len() > 3 {
+            out.push(("SRX", rcvd[0][2..].to_string()));
+        } else if rcvd.len() == 2 && contest == Contest::FieldDay {
+            out.push(("CONTEST_ID", "ARRL-FIELD-DAY".to_string()));
+            out.push(("SRX_STRING", x_rcvd.trim().to_string()));
+            out.push(("CLASS", rcvd[0].to_string()));
+            out.push(("ARRL_SECT", rcvd[1].to_string()));
+        } else if rcvd.len() == 2 && contest == Contest::Rtty {
+            out.push(("STATE", rcvd[1].to_string()));
+        } else {
+            out.push(("SRX_STRING", x_rcvd.trim().to_string()));
+        }
+    }
+    out
+}
+
 pub fn field(out: &mut String, name: &str, value: &str) {
     if !value.is_empty() {
         let _ = write!(out, "<{name}:{}>{value}", value.len());
@@ -15,7 +66,8 @@ pub fn field(out: &mut String, name: &str, value: &str) {
 
 pub fn header() -> String {
     let mut h = String::from("Esportazione Aurora\n");
-    field(&mut h, "ADIF_VER", "3.1.4");
+    // 3.1.8 come WSJT-X 3.3 (`Network/MessageClient.cpp`, `logbook/WorkedBefore.cpp`)
+    field(&mut h, "ADIF_VER", ADIF_VERSION);
     field(&mut h, "PROGRAMID", APP_NAME);
     field(&mut h, "PROGRAMVERSION", APP_VERSION);
     h.push_str("<EOH>\n");
@@ -234,6 +286,27 @@ pub fn utc_date(unix_secs: u64) -> String {
 #[cfg(test)]
 mod tests {
     use aurora_core::QsoRecord;
+
+    #[test]
+    fn contest_exchanges_become_the_adif_fields_of_wsjtx() {
+        use super::{contest_fields, header, Contest};
+        let f = |s: &str, r: &str, c: Contest| contest_fields(s, r, c);
+        assert_eq!(f("599 0013", "599 0042", Contest::None), vec![("STX", "0013".to_string()), ("SRX", "0042".to_string())]);
+        // EU VHF: rapporto+seriale e locatore
+        assert_eq!(f("59013 JN45", "57101 JO22", Contest::None), vec![("STX", "013".to_string()), ("SRX", "101".to_string())]);
+        // Field Day
+        assert_eq!(
+            f("2A EMA", "3B WMA", Contest::FieldDay),
+            vec![("STX_STRING", "2A EMA".to_string()), ("CONTEST_ID", "ARRL-FIELD-DAY".to_string()), ("SRX_STRING", "3B WMA".to_string()), ("CLASS", "3B".to_string()), ("ARRL_SECT", "WMA".to_string())]
+        );
+        // RTTY Roundup con lo stato
+        assert_eq!(f("579 MA", "579 CT", Contest::Rtty), vec![("STX_STRING", "579 MA".to_string()), ("STATE", "CT".to_string())]);
+        // scambio senza regole speciali: intero
+        assert_eq!(f("", "R 2A", Contest::None), vec![("SRX_STRING", "R 2A".to_string())]);
+        // un rapporto solo non e' uno scambio
+        assert!(f("-10", "-12", Contest::None).is_empty());
+        assert!(header().contains("<ADIF_VER:5>3.1.8"));
+    }
 
     use super::{jtdx_file_record, jtdx_record, utc_date, utc_datetime, Station};
 

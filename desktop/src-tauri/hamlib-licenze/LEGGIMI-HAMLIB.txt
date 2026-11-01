@@ -11,6 +11,7 @@ rigctld.exe, rigctl.exe     i programmi di Hamlib (rigctld e' il demone, rigctl 
 libhamlib-4.dll             la libreria Hamlib con i driver delle radio
 libusb-1.0.dll              libusb (accesso USB)
 libwinpthread-1.dll         runtime MinGW-w64 dei thread
+libgcc_s_seh-1.dll          runtime di GCC (solo se il pacchetto scelto lo richiede, come il 4.7.2 ufficiale)
 VERSIONE.txt                versione di Hamlib, origine dei file e SHA-256 (scritto dallo script di rilascio)
 
 Licenze
@@ -19,13 +20,15 @@ Licenze
 - Hamlib, programmi (rigctld, rigctl): GNU GPL versione 2 o successiva, quindi ridistribuibili con la GPL-3.0 di Aurora. Testo della GPL-3.0: GPL-3.0.txt.
 - libusb: GNU LGPL versione 2.1 o successiva. Testo: LGPL-2.1.txt.
 - libwinpthread (MinGW-w64): licenza permissiva in stile MIT. Testo: libwinpthread-licenza.txt.
+- libgcc_s_seh-1.dll (runtime di GCC): GNU GPL versione 3 con la GCC Runtime Library Exception 3.1 (https://www.gnu.org/licenses/gcc-exception-3.1.html). Testo della GPL-3.0: GPL-3.0.txt.
 
 Sorgenti
 --------
 Il codice sorgente di Hamlib e' pubblico: https://github.com/Hamlib/Hamlib (la versione e il commit sono scritti in VERSIONE.txt).
 Sorgenti di libusb: https://github.com/libusb/libusb. Sorgenti di MinGW-w64: https://www.mingw-w64.org.
-I file sono copiati senza modifiche dall'installazione di JTDX o di WSJT-X (che compilano Hamlib per conto loro, per i sorgenti vedi anche
-http://www.jtdx.tech e https://wsjt.sourceforge.io): si possono sostituire con una versione diversa
+Di base i file sono quelli del pacchetto Windows ufficiale di Hamlib (hamlib-w64-<versione>.zip dalle release di
+https://github.com/Hamlib/Hamlib, SHA-256 verificato), copiati senza modifiche; in alternativa possono venire da JTDX o WSJT-X
+(per i loro sorgenti vedi http://www.jtdx.tech e https://wsjt.sourceforge.io). Si possono sostituire con una versione diversa
 mettendo i propri file al loro posto (LGPL).
 
 Aurora: https://github.com/wifi75/Aurora (GPL-3.0).
