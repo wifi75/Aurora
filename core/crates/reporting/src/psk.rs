@@ -2,7 +2,7 @@
 //!
 //! Letto nel sorgente pubblico (`psk_reporter.cpp`) e nel programma `jtdx.exe` 2.2.159: i modelli esadecimali di intestazione, descrittore del
 //! ricevitore (`50E2`) e del trasmettitore (`50E3`) sono gli stessi byte; il costruttore avvia un timer di 300 000 ms (5 minuti), `sendReport`
-//! compone pacchetti finche' non superano 1400 byte e li manda alla porta `0x1283` (4739). Ogni spot ha: nominativo, frequenza (4 byte), rapporto
+//! componeva pacchetti fino a circa 1400 byte e li manda alla porta `0x1283` (4739). Ogni spot ha: nominativo, frequenza (4 byte), rapporto
 //! (1 byte), modo, locatore, fonte (1 = automatica) e ora; il ricevitore (chi ascolta) ha nominativo, locatore, programma e antenna.
 
 use std::collections::VecDeque;
@@ -12,8 +12,10 @@ pub const HOST: &str = "report.pskreporter.info";
 pub const PORT: u16 = 4739;
 /// Ogni quanto si manda quello che e' in coda (JTDX: `reportTimer->start(5*60*1000)`).
 pub const SEND_EVERY_SECS: u64 = 300;
-/// Un pacchetto accetta spot finche' non ha raggiunto questa lunghezza (`MAX_PAYLOAD_LENGTH`): l'ultimo puo' superarla di poco.
-pub const MAX_PAYLOAD: usize = 1400;
+/// Lunghezza massima di un pacchetto, mai superata: 1000 byte di pacchetto IP meno le intestazioni IPv6 (40) e UDP (8), come
+/// `MAX_UDP_IPFIX_PAYLOAD_BYTES` di WSJT-X 3.2 (`Network/PSKReporterIPFIX.cpp`, GPL-3.0): passa anche sui collegamenti con pacchetti
+/// piccoli (prima 1400 byte, che su alcune linee si perdevano).
+pub const MAX_PAYLOAD: usize = 952;
 /// Tetto della coda: oltre, gli spot piu' vecchi si scartano (se la rete non c'e' per ore non si riempie la memoria).
 pub const MAX_QUEUE: usize = 5000;
 
@@ -92,16 +94,20 @@ impl Packetizer {
             // trasmettitori: se ne aggiungono finche' il pacchetto non ha raggiunto il limite
             let mut tx = vec![0x50, 0xE3, 0, 0];
             while let Some(spot) = queue.front() {
-                if 16 + rx_descriptor.len() + tx_descriptor.len() + rx.len() + tx.len() >= MAX_PAYLOAD && tx.len() > 4 {
+                let mut record = Vec::with_capacity(32);
+                push_text(&mut record, &spot.call);
+                record.extend_from_slice(&(spot.freq_hz.min(u64::from(u32::MAX)) as u32).to_be_bytes());
+                record.push(spot.snr.clamp(-128, 127) as i8 as u8);
+                push_text(&mut record, &spot.mode);
+                push_text(&mut record, &spot.grid);
+                record.push(1); // `REPORTER_SOURCE_AUTOMATIC`
+                record.extend_from_slice(&spot.time.to_be_bytes());
+                // 16 di intestazione, 2 di chiusura dell'insieme: il pacchetto con questo record resta entro il limite
+                let size = 16 + rx_descriptor.len() + tx_descriptor.len() + rx.len() + tx.len() + record.len() + 2;
+                if size > MAX_PAYLOAD && tx.len() > 4 {
                     break;
                 }
-                push_text(&mut tx, &spot.call);
-                tx.extend_from_slice(&(spot.freq_hz.min(u64::from(u32::MAX)) as u32).to_be_bytes());
-                tx.push(spot.snr.clamp(-128, 127) as i8 as u8);
-                push_text(&mut tx, &spot.mode);
-                push_text(&mut tx, &spot.grid);
-                tx.push(1); // `REPORTER_SOURCE_AUTOMATIC`
-                tx.extend_from_slice(&spot.time.to_be_bytes());
+                tx.extend_from_slice(&record);
                 queue.pop_front();
             }
             tx.extend_from_slice(&[0, 0]);
@@ -224,14 +230,14 @@ mod tests {
     }
 
     #[test]
-    fn sequence_grows_and_big_queues_are_split_around_1400_bytes() {
+    fn sequence_grows_and_big_queues_are_split_within_952_bytes() {
         let mut p = Packetizer::new(1);
         let mut queue: VecDeque<Spot> = (0..200).map(|i| spot(&format!("K{}ABC", i % 10), 14_074_000 + i, -10)).collect();
         let packets = p.build(&local(), &mut queue, 100);
         assert!(queue.is_empty());
         assert!(packets.len() >= 2, "200 spot non stanno in un pacchetto: {}", packets.len());
         for (i, packet) in packets.iter().enumerate() {
-            assert!(packet.len() < MAX_PAYLOAD + 40, "un pacchetto supera il limite al piu' di un record: {}", packet.len());
+            assert!(packet.len() <= MAX_PAYLOAD, "un pacchetto supera il limite: {}", packet.len());
             assert_eq!(u32::from_be_bytes([packet[8], packet[9], packet[10], packet[11]]), i as u32 + 1, "numero di sequenza");
             assert_eq!(u16::from_be_bytes([packet[2], packet[3]]) as usize, packet.len());
         }

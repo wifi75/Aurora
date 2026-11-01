@@ -196,13 +196,19 @@ async fn clublog_stops_on_a_credentials_error_and_restarts_when_they_change() {
 
 #[tokio::test]
 async fn the_test_of_wavelog_reads_the_stations_without_writing_and_lotw_needs_tqsl() {
-    let (url, mut requests) = server(vec![("200 OK", r#"[{"station_id":"3","station_profile_name":"Casa","station_callsign":"K1ABC"}]"#)]).await;
+    let (url, mut requests) = server(vec![
+        ("200 OK", "<auth><status>Valid</status><rights>rw</rights></auth>"),
+        ("200 OK", r#"[{"station_id":"3","station_profile_name":"Casa","station_callsign":"K1ABC"}]"#),
+    ])
+    .await;
     let account = WavelogAccount { url: url.clone(), station_id: "3".into() };
     let endpoints = Endpoints { tqsl_candidates: vec![], ..Endpoints::default() };
     let r = rig(endpoints, Config { wavelog: Some(account), lotw: Some(reporting::LotwSetup { tqsl: String::new(), location: "Casa".into() }), ..base() });
     r.secrets.set(WAVELOG_SECRET, "wl0123abcdef").unwrap();
     let got = r.service.test_upload(Target::Wavelog).await.unwrap();
     assert!(got.contains("Casa") && got.contains("K1ABC"), "{got}");
+    let request = requests.recv().await.unwrap();
+    assert!(request.starts_with("GET /index.php/api/auth/wl0123abcdef "), "{request}");
     let request = requests.recv().await.unwrap();
     assert!(request.starts_with("GET /index.php/api/station_info/wl0123abcdef "), "{request}");
     let lotw = r.service.test_upload(Target::Lotw).await.unwrap_err();

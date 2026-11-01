@@ -398,6 +398,9 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
     let mut mode = "FT8".to_string();
     // `m_okToPost`: dopo un cambio di banda o di modo i messaggi del periodo in corso non si segnalano (ascolto misto)
     let mut blocked_until_ms: u64 = ((service.now)() * 1000) / period_ms(&mode) * period_ms(&mode);
+    // banda e modo dei periodi prima dell'ultimo cambio: i messaggi di quei periodi che arrivano dopo il cambio si segnalano con la frequenza
+    // del loro periodo (WSJT-X 3.2: «PSK Reporter [...] retain the band and frequency of each receive period»)
+    let mut previous: Option<(u64, String)> = None;
     let mut guard = DupeGuard::default();
     let mut tick = tokio::time::interval(service.endpoints.psk_every);
     tick.tick().await;
@@ -407,6 +410,7 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                 Ok(Event::Status(s)) => {
                     let changed_mode = !s.mode.is_empty() && s.mode != mode;
                     if changed_mode {
+                        previous = Some((dial_hz, mode.clone()));
                         mode = s.mode.clone();
                         blocked_until_ms = ((service.now)() * 1000) / period_ms(&mode) * period_ms(&mode);
                         flush_psk(&service, &mut packetizer, &mut queue).await;
@@ -423,6 +427,9 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                 }
                 Ok(Event::BandChanged { dial_hz: hz, .. }) => {
                     flush_psk(&service, &mut packetizer, &mut queue).await;
+                    if hz != dial_hz {
+                        previous = Some((dial_hz, mode.clone()));
+                    }
                     service.set_live(|l| l.dial_hz = hz);
                     dial_hz = hz;
                     blocked_until_ms = ((service.now)() * 1000) / period_ms(&mode) * period_ms(&mode);
@@ -430,7 +437,8 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                 Ok(Event::Decode(d)) => {
                     let config = service.config.borrow().clone();
                     if config.psk && !config.call.is_empty() {
-                        queue_spot(&mut queue, &d, dial_hz, &mode, blocked_until_ms, (service.now)());
+                        let period = Period { dial_hz, mode: &mode, blocked_until_ms, previous: previous.as_ref().map(|(h, m)| (*h, m.as_str())) };
+                        queue_spot(&mut queue, &d, &period, (service.now)());
                     }
                 }
                 Ok(Event::QsoLogged(q)) => {
@@ -456,19 +464,42 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
     }
 }
 
+/// Banda e modo con cui segnalare un messaggio: quelli di adesso, e quelli di prima dell'ultimo cambio per i periodi precedenti.
+struct Period<'a> {
+    dial_hz: u64,
+    mode: &'a str,
+    /// Inizio del periodo del cambio: i messaggi di quel periodo (ascolto misto) non si segnalano (`m_okToPost`).
+    blocked_until_ms: u64,
+    /// Frequenza della radio e modo prima del cambio.
+    previous: Option<(u64, &'a str)>,
+}
+
 /// Mette in coda lo spot di un messaggio decodificato, se ha i requisiti di `readFromStdout` (messaggio standard con nominativo e locatore validi,
-/// non «ipotizzato», non del periodo del cambio di banda).
-fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, dial_hz: u64, mode: &str, blocked_until_ms: u64, now_secs: u64) {
-    if d.hint || dial_hz == 0 {
+/// non «ipotizzato», non del periodo del cambio di banda). Un messaggio di un periodo precedente al cambio si segnala con la banda di allora.
+/// L'ora dello spot e' quella del periodo del messaggio, con la data giusta anche a cavallo della mezzanotte (`DecodedTime::spotTime` di
+/// WSJT-X 3.2, `Network/DecodedTime.cpp`, GPL-3.0: un periodo che non puo' essere ancora iniziato e' di ieri).
+fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, period: &Period, now_secs: u64) {
+    if d.hint {
         return;
     }
-    // l'inizio del periodo del messaggio: i millisecondi del giorno, sul giorno di adesso
-    let day_start = now_secs * 1000 / 86_400_000 * 86_400_000;
+    let now_ms = now_secs * 1000;
+    let day_start = now_ms / 86_400_000 * 86_400_000;
     let mut slot_start = day_start + u64::from(d.time_ms);
-    if slot_start > now_secs * 1000 + 3_600_000 {
+    // un minuto di tolleranza per gli orologi appena avanti; oltre, il periodo e' di ieri
+    if slot_start > now_ms + 60_000 {
         slot_start = slot_start.saturating_sub(86_400_000);
     }
-    if slot_start <= blocked_until_ms {
+    let (dial_hz, mode) = if slot_start == period.blocked_until_ms {
+        return;
+    } else if slot_start < period.blocked_until_ms {
+        match period.previous {
+            Some(p) => p,
+            None => return,
+        }
+    } else {
+        (period.dial_hz, period.mode)
+    };
+    if dial_hz == 0 {
         return;
     }
     let Some((call, grid)) = psk::spot_call_and_grid(&d.text) else { return };
@@ -481,7 +512,7 @@ fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, dial_hz: u64,
         freq_hz: dial_hz + u64::from(d.freq_hz),
         mode: if mode.eq_ignore_ascii_case("FT4") { "FT4" } else { "FT8" }.to_string(),
         snr: d.snr,
-        time: u32::try_from(now_secs).unwrap_or(u32::MAX),
+        time: u32::try_from(slot_start / 1000).unwrap_or(u32::MAX),
     });
 }
 
@@ -569,4 +600,49 @@ pub fn server_addr(host: &str, port: u16) -> Option<SocketAddr> {
     let host = host.trim();
     let ip: IpAddr = if host.eq_ignore_ascii_case("localhost") { IpAddr::from([127, 0, 0, 1]) } else { host.parse().ok()? };
     (port != 0).then_some(SocketAddr::new(ip, port))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn decode(time_ms: u32) -> DecodedMessage {
+        DecodedMessage { id: 1, time_ms, snr: -7, delta_time: 0.1, freq_hz: 1000, text: "CQ K1ABC FN42".into(), tag: None, country: None, continent: None, hint: false }
+    }
+
+    /// 2026-11-01 00:00:00 UTC.
+    const MIDNIGHT: u64 = 1_793_491_200;
+
+    #[test]
+    fn a_spot_received_just_before_midnight_keeps_yesterdays_date() {
+        let mut q = VecDeque::new();
+        let period = Period { dial_hz: 14_074_000, mode: "FT8", blocked_until_ms: 0, previous: None };
+        // periodo delle 23:59:45, elaborato alle 00:00:02
+        queue_spot(&mut q, &decode(86_385_000), &period, MIDNIGHT + 2);
+        assert_eq!(q.front().map(|s| u64::from(s.time)), Some(MIDNIGHT - 15));
+        // un periodo di oggi resta di oggi, con l'ora del periodo
+        queue_spot(&mut q, &decode(0), &period, MIDNIGHT + 13);
+        assert_eq!(q.back().map(|s| u64::from(s.time)), Some(MIDNIGHT));
+    }
+
+    #[test]
+    fn after_a_band_change_older_periods_keep_their_band_and_the_mixed_one_is_skipped() {
+        let mut q = VecDeque::new();
+        let changed_at = (MIDNIGHT + 3600) * 1000;
+        let period = Period { dial_hz: 7_074_000, mode: "FT8", blocked_until_ms: changed_at, previous: Some((14_080_000, "FT4")) };
+        let now = MIDNIGHT + 3600 + 3;
+        // periodo prima del cambio: banda e modo di allora
+        queue_spot(&mut q, &decode(3_600_000 - 15_000), &period, now);
+        assert_eq!(q.back().map(|s| (s.freq_hz, s.mode.as_str())), Some((14_081_000, "FT4")));
+        // periodo del cambio: niente spot
+        queue_spot(&mut q, &decode(3_600_000), &period, now);
+        assert_eq!(q.len(), 1);
+        // periodo dopo il cambio: banda nuova
+        queue_spot(&mut q, &decode(3_615_000), &period, now + 15);
+        assert_eq!(q.back().map(|s| (s.freq_hz, s.mode.as_str())), Some((7_075_000, "FT8")));
+        // senza la banda di prima i periodi vecchi non si segnalano
+        let none = Period { previous: None, ..period };
+        queue_spot(&mut q, &decode(3_600_000 - 15_000), &none, now);
+        assert_eq!(q.len(), 2);
+    }
 }

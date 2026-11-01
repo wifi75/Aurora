@@ -7,8 +7,11 @@
 //! - 401 chiave mancante o sbagliata, o stazione di un altro utente; 403 chiave senza permesso di scrittura (Wavelog);
 //! - 429 troppe richieste (limite di Wavelog).
 //!
-//! La prova usa `GET {indirizzo}/index.php/api/station_info/{chiave}` (sola lettura): elenca le stazioni della chiave, cosi' si controllano
-//! chiave e numero della stazione senza scrivere niente nel log.
+//! La prova (come «Check Connection» di WSJT-X 3.2, `Network/Cloudlog.cpp`, GPL-3.0) non scrive niente nel log:
+//! 1. `GET {indirizzo}/index.php/api/auth/{chiave}` (XML `<status>`, `<rights>`): chiave valida e con permesso di scrittura (`rw`);
+//!    un server che non ha questa pagina (404) passa al punto 2;
+//! 2. `GET {indirizzo}/index.php/api/station_info/{chiave}`: le stazioni della chiave, lette dal server, con la scelta da fare se il
+//!    numero scritto non c'e'.
 
 use std::time::Duration;
 
@@ -78,42 +81,90 @@ pub fn upload(url: &str, key: &str, station_id: &str, record: &str, timeout: Dur
     }
 }
 
-/// Dalla risposta di `station_info`: la stazione con quel numero (nome e nominativo), se c'e'.
-pub fn find_station(body: &str, station_id: &str) -> Result<String, String> {
-    let v: Value = serde_json::from_str(body).map_err(|_| "risposta non leggibile (e' davvero Wavelog o Cloudlog?)".to_string())?;
-    let list = v.as_array().ok_or_else(|| v.get("reason").and_then(Value::as_str).unwrap_or("risposta inattesa").to_string())?;
-    let id_of = |s: &Value| match s.get("station_id") {
-        Some(Value::String(t)) => t.clone(),
-        Some(Value::Number(n)) => n.to_string(),
-        _ => String::new(),
-    };
-    let station = list.iter().find(|s| id_of(s) == station_id.trim()).ok_or_else(|| {
-        let ids: Vec<String> = list.iter().map(id_of).collect();
-        format!("la stazione {station_id} non e' tra quelle della chiave ({})", ids.join(", "))
-    })?;
-    let text = |k: &str| station.get(k).and_then(Value::as_str).unwrap_or("").to_string();
-    Ok(format!("chiave valida, stazione {station_id}: {} ({})", text("station_profile_name"), text("station_callsign")))
+/// Una stazione della chiave, come la elenca `station_info`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Station {
+    pub id: String,
+    pub name: String,
+    pub call: String,
 }
 
-/// La prova (bloccante): chiave e stazione, senza scrivere nel log. Non controlla il permesso di scrittura (si vede al primo QSO).
+/// Le stazioni lette dalla risposta di `station_info` (numero anche come `station_profile_id`, come accetta WSJT-X 3.2).
+pub fn parse_stations(body: &str) -> Result<Vec<Station>, String> {
+    let v: Value = serde_json::from_str(body).map_err(|_| "risposta non leggibile (e' davvero Wavelog o Cloudlog?)".to_string())?;
+    let list = v.as_array().ok_or_else(|| v.get("reason").and_then(Value::as_str).unwrap_or("risposta inattesa").to_string())?;
+    let field = |s: &Value, keys: &[&str]| {
+        keys.iter()
+            .find_map(|k| match s.get(*k) {
+                Some(Value::String(t)) if !t.is_empty() => Some(t.clone()),
+                Some(Value::Number(n)) => Some(n.to_string()),
+                _ => None,
+            })
+            .unwrap_or_default()
+    };
+    Ok(list
+        .iter()
+        .map(|s| Station { id: field(s, &["station_id", "station_profile_id"]), name: field(s, &["station_profile_name", "profile_name", "name"]), call: field(s, &["station_callsign", "callsign"]) })
+        .filter(|s| !s.id.is_empty())
+        .collect())
+}
+
+/// Dalla risposta di `station_info`: la stazione con quel numero (nome e nominativo), se c'e'. Altrimenti l'elenco delle stazioni del
+/// server tra cui scegliere.
+pub fn find_station(body: &str, station_id: &str) -> Result<String, String> {
+    let list = parse_stations(body)?;
+    let choices = || list.iter().map(|s| format!("{} = {} ({})", s.id, s.name, s.call)).collect::<Vec<_>>().join("; ");
+    if list.is_empty() {
+        return Err("la chiave non ha nessuna stazione: creane una in Wavelog/Cloudlog".into());
+    }
+    if station_id.trim().is_empty() {
+        return Err(format!("scegli il numero della stazione tra quelle del server: {}", choices()));
+    }
+    let station = list.iter().find(|s| s.id == station_id.trim()).ok_or_else(|| format!("la stazione {station_id} non e' tra quelle della chiave; scegli tra: {}", choices()))?;
+    let others = if list.len() > 1 { format!("; altre stazioni: {}", choices()) } else { String::new() };
+    Ok(format!("chiave valida con scrittura, stazione {station_id}: {} ({}){others}", station.name, station.call))
+}
+
+/// Il permesso della chiave dalla risposta XML di `api/auth` (`<status>Valid</status><rights>rw</rights>`).
+pub fn check_rights(body: &str) -> Result<(), String> {
+    let tag = |name: &str| {
+        let open = format!("<{name}>");
+        let start = body.find(&open)? + open.len();
+        let end = body[start..].find('<')? + start;
+        Some(body[start..end].trim().to_ascii_lowercase())
+    };
+    match (tag("status").as_deref(), tag("rights")) {
+        (Some("valid"), Some(r)) if r.starts_with("rw") => Ok(()),
+        (Some("valid"), Some(r)) if r.starts_with('r') => Err("la chiave API e' di sola lettura: in Wavelog/Cloudlog creane una con scrittura (rw)".into()),
+        (Some("valid"), _) => Err("il server non dice i permessi della chiave".into()),
+        _ => Err("chiave API non valida".into()),
+    }
+}
+
+/// La prova (bloccante): chiave, permesso di scrittura e stazione, senza scrivere nel log.
 pub fn test(url: &str, key: &str, station_id: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
     let base = api_base(url).ok_or("indirizzo non valido: serve http:// o https://")?;
     let path_key: String = key.chars().filter(char::is_ascii_alphanumeric).collect();
     if path_key.is_empty() || path_key.len() != key.len() {
         return Err("la chiave API contiene caratteri non previsti".into());
     }
-    match agent(timeout, user_agent).get(format!("{base}/index.php/api/station_info/{path_key}")).header("Accept", "application/json").call() {
-        Ok(mut response) => {
-            let status = response.status().as_u16();
-            let text = response.body_mut().read_to_string().unwrap_or_default();
-            match status {
-                200 => find_station(&text, station_id),
-                401 | 403 => Err("chiave API non valida".into()),
-                404 => Err("indirizzo dell'API non trovato".into()),
-                s => Err(format!("risposta {s}")),
-            }
+    let get = |path: &str| -> Result<(u16, String), String> {
+        match agent(timeout, user_agent).get(format!("{base}/index.php/api/{path}/{path_key}")).call() {
+            Ok(mut response) => Ok((response.status().as_u16(), response.body_mut().read_to_string().unwrap_or_default())),
+            Err(e) => Err(crate::eqsl::describe(&e)),
         }
-        Err(e) => Err(crate::eqsl::describe(&e)),
+    };
+    match get("auth")? {
+        (200, text) => check_rights(&text)?,
+        (401 | 403, _) => return Err("chiave API non valida".into()),
+        // server senza la pagina dei permessi: si controlla solo la stazione
+        _ => {}
+    }
+    match get("station_info")? {
+        (200, text) => find_station(&text, station_id),
+        (401 | 403, _) => Err("chiave API non valida".into()),
+        (404, _) => Err("indirizzo dell'API non trovato".into()),
+        (s, _) => Err(format!("risposta {s}")),
     }
 }
 
@@ -154,9 +205,22 @@ mod tests {
     #[test]
     fn the_test_finds_the_station_among_those_of_the_key() {
         let body = r#"[{"station_id":"1","station_profile_name":"Casa","station_callsign":"K1ABC"},{"station_id":2,"station_profile_name":"Portatile","station_callsign":"K1ABC/P"}]"#;
-        assert_eq!(find_station(body, "2").unwrap(), "chiave valida, stazione 2: Portatile (K1ABC/P)");
+        assert!(find_station(body, "2").unwrap().starts_with("chiave valida con scrittura, stazione 2: Portatile (K1ABC/P); altre stazioni:"));
         assert!(find_station(body, "1").unwrap().contains("Casa"));
-        assert!(find_station(body, "7").unwrap_err().contains("1, 2"));
+        let wrong = find_station(body, "7").unwrap_err();
+        assert!(wrong.contains("1 = Casa (K1ABC)") && wrong.contains("2 = Portatile (K1ABC/P)"), "{wrong}");
+        assert!(find_station(body, "").unwrap_err().starts_with("scegli il numero"));
+        assert!(find_station("[]", "1").unwrap_err().contains("nessuna stazione"));
         assert!(find_station("<html>", "1").is_err());
+        let alt = r#"[{"station_profile_id":5,"profile_name":"Club","callsign":"K1XYZ"}]"#;
+        assert_eq!(parse_stations(alt).unwrap(), vec![Station { id: "5".into(), name: "Club".into(), call: "K1XYZ".into() }]);
+    }
+
+    #[test]
+    fn the_rights_of_the_key_must_include_writing() {
+        assert!(check_rights("<?xml version=\"1.0\"?><auth><status>Valid</status><rights>rw</rights></auth>").is_ok());
+        assert!(check_rights("<auth><status>Valid</status><rights>r</rights></auth>").unwrap_err().contains("sola lettura"));
+        assert!(check_rights("<auth><message>Key Invalid - either not found or disabled</message></auth>").unwrap_err().contains("non valida"));
+        assert!(check_rights("<auth><status>Valid</status></auth>").is_err());
     }
 }
