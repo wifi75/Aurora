@@ -1254,3 +1254,31 @@
 .cat-link .cat-w-s .sx-control {
   min-width: 4rem;
 }
+
+/* Le pagine riempiono i vuoti: i riquadri bassi salgono accanto a quelli alti invece di lasciare spazio in mezzo */
+.sx-page {
+  grid-auto-flow: row dense;
+}
+
+/* La lingua nelle Impostazioni e' un pulsante piccolo, non una barra */
+.sx-field .lang-select,
+.sx-control .lang-select {
+  width: auto;
+}
+
+/* Tabelle con poche colonne corte (frequenze): larghezza contenuta, non a tutto schermo */
+.sx-table--compact {
+  width: 100%;
+  max-width: 56rem;
+}
+
+/* Macro TX: tante piccole voci in griglia invece di una riga a tutta larghezza per ognuna */
+.sx-group .macro-list {
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-1) var(--space-2);
+}
+
+.sx-group .macro-list li {
+  border: 1px solid var(--sx-line);
+  border-radius: 0.45rem;
+}

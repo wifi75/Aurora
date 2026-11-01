@@ -334,11 +334,15 @@ export function NativeGeneral() {
         </Cells>
       </Group>
 
-      <Group title={t('gen.language')}>
-        <LanguageSelect />
-      </Group>
-      <Group title={t('gen.theme')}>
-        <ThemeToggle />
+      <Group title={t('gen.look')}>
+        <Cells min={9}>
+          <Cell label={t('gen.language')}>
+            <LanguageSelect />
+          </Cell>
+          <Cell label={t('gen.theme')}>
+            <ThemeToggle />
+          </Cell>
+        </Cells>
       </Group>
 
       <Unavailable count={11}>
@@ -478,7 +482,7 @@ export function NativeNotifications() {
     <Page>
       <Group title={t('not2.grpTable')} span={2}>
         <div className="sx-tablewrap">
-          <table className="sx-table jt-grid">
+          <table className="sx-table sx-table--compact jt-grid">
             <colgroup>
               <col style={{ width: '19%' }} />
               <col />

@@ -4998,3 +4998,19 @@
   white-space: nowrap;
 }
 
+
+/* Caselle di spunta: la casella sta subito prima del suo testo (prima era all'estremita' opposta della cella e non si capiva a quale voce appartenesse) */
+.set-check.sx-field {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.set-check.sx-field .sx-label {
+  flex: 0 1 auto;
+}
+
+.set-check.sx-field .sx-control {
+  flex: none;
+  max-width: none;
+}

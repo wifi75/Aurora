@@ -34,7 +34,7 @@ export function ScheduleTab() {
     <Page>
       <Group title={t('tab.schedule')} span={2}>
         <div className="sx-tablewrap">
-          <table className="sx-table">
+          <table className="sx-table sx-table--compact">
             <thead>
               <tr>
                 <th scope="col">{t('sch.hour')}</th>

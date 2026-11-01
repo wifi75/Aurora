@@ -17,7 +17,7 @@ function Bar({ value, tone }: { value: number; tone: string }) {
 
 /**
  * Il display esteso sotto quello della radio: secondo VFO piu' piccolo, strumenti, filtri e impostazioni, ognuno solo se acceso
- * nelle impostazioni e se la radio lo da'. In ricezione lo S-meter, in trasmissione potenza, SWR e ALC.
+ * nelle impostazioni e se la radio lo da'. In trasmissione SWR e ALC (S-meter e potenza sono gia' nel display).
  */
 export function RadioExtras() {
   const t = useT();
@@ -59,17 +59,21 @@ export function RadioExtras() {
 
   const meters: Array<{ key: string; label: string; value: number; tone: string }> = [];
   if (prefs.meters && m) {
-    if (!tx && m.s_points != null) meters.push({ key: 's', label: m.s_over_db ? `S9+${Math.round(m.s_over_db)}` : `S${Math.round(m.s_points)}`, value: (m.s_points + (m.s_over_db ?? 0) / 10) / 15, tone: '#5dcaa5' });
-    if (tx && m.power_w != null) meters.push({ key: 'po', label: `PO ${Math.round(m.power_w)} W`, value: m.power_w / 100, tone: '#ef9f27' });
+    // lo S-meter e la potenza ci sono gia' nel display in alto: qui solo cio' che il display non mostra
     if (tx && m.swr != null) meters.push({ key: 'swr', label: `SWR ${m.swr.toFixed(1)}`, value: (m.swr - 1) / 2, tone: m.swr > 2 ? '#e24b4a' : '#5dcaa5' });
     if (tx && m.alc != null) meters.push({ key: 'alc', label: `ALC ${Math.round(m.alc * 100)}%`, value: m.alc, tone: '#85b7eb' });
   }
   const supply = prefs.supply && m && tx ? [m.vdd_v != null ? `VD ${m.vdd_v.toFixed(1)} V` : null, m.id_a != null ? `ID ${m.id_a.toFixed(1)} A` : null, m.comp_db != null ? `COMP ${Math.round(m.comp_db)} dB` : null].filter((v): v is string => v !== null) : [];
   const vfoB = prefs.vfoB && x.vfo_b_hz ? `${formatVfo(x.vfo_b_hz)}${x.vfo_b_mode ? ` ${x.vfo_b_mode}` : ''}` : null;
 
-  if (!vfoB && meters.length === 0 && supply.length === 0 && chips.length === 0 && gains.length === 0) return null;
+  // le voci sono accese ma la radio non manda i dati in piu': lo si dice, invece di non mostrare niente
+  const extrasOff = cat.data !== undefined && cat.data.config.read_extras !== true && (prefs.vfoB || prefs.frontEnd || prefs.agc || prefs.noise || prefs.gains || prefs.ritXit || prefs.tuner || prefs.vfo);
+  if (!vfoB && meters.length === 0 && supply.length === 0 && chips.length === 0 && gains.length === 0 && !extrasOff) return null;
   return (
     <div className="rx-extras" aria-label={t('rx.grp')}>
+      {extrasOff && !vfoB && chips.length === 0 && gains.length === 0 ? (
+        <div className="rx-line" title={t('rx.off.tip')}>{t('rx.off')}</div>
+      ) : null}
       {vfoB ? (
         <div className="rx-vfob" title={t('tip.rx.vfoB')}>
           <span className="rx-vfob-tag">B</span>

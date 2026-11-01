@@ -59,7 +59,7 @@ function JtdxNotificationsTab() {
       </Group>
       <Group title={t('not2.grpTable')} span={2}>
         <div className="sx-tablewrap">
-          <table className="sx-table notify-table">
+          <table className="sx-table sx-table--compact notify-table">
             <thead>
               <tr>
                 <th scope="col">{t('not.kind')}</th>

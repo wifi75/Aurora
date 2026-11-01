@@ -337,7 +337,7 @@
 }
 
 .rd-svg--stretch {
-  height: 3.4rem;
+  height: 3rem;
 }
 
 /* Display esteso sotto quello della radio: stesso schermo scuro, secondo VFO piu' piccolo, strumenti e filtri */
@@ -432,9 +432,14 @@
   row-gap: 0.25rem;
 }
 
+/* tutto in un unico flusso a capo (secondo VFO, strumenti, pulsanti, valori), alto due righe: i pulsanti si vedono sempre */
 .rx-extras {
   box-sizing: border-box;
-  height: 1.9rem;
+  flex-flow: row wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 0.15rem 0.35rem;
+  height: 3.1rem;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
@@ -442,4 +447,48 @@
 
 .rx-extras::-webkit-scrollbar {
   display: none;
+}
+
+.rx-extras .rx-meters,
+.rx-extras .rx-chips {
+  display: contents;
+}
+
+.rx-extras .rx-meter {
+  min-width: 3.6rem;
+}
+
+/* Testata della pagina Stazione: a sinistra modi, bande e controlli di ricezione stretti uno sotto l'altro; a destra il display */
+.live-top {
+  align-items: flex-start;
+  flex-wrap: nowrap;
+}
+
+.live-left {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.live-left-row {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.25rem 1.25rem;
+}
+
+.live-left .rx-row {
+  margin: 0;
+}
+
+@media (max-width: 40rem) {
+  .live-top {
+    flex-wrap: wrap;
+  }
+
+  .live-left {
+    width: 100%;
+  }
 }

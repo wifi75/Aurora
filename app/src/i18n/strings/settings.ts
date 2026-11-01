@@ -164,6 +164,7 @@ export const settingsStrings = {
   'gen.showFlag': ['Mostra la bandiera', 'Show the flag', 'Flagge anzeigen', 'Afficher le drapeau', 'Mostrar la bandera', 'Mostrar a bandeira'],
   'gen.showDistance': ['Mostra la distanza nei messaggi con griglia', 'Show distance in messages with a grid', 'Entfernung bei Nachrichten mit Locator anzeigen', 'Afficher la distance dans les messages avec locator', 'Mostrar la distancia en los mensajes con locator', 'Mostrar a distância nas mensagens com locator'],
   'gen.showDt': ['Mostra la colonna DT', 'Show the DT column', 'DT-Spalte anzeigen', 'Afficher la colonne DT', 'Mostrar la columna DT', 'Mostrar a coluna DT'],
+  'gen.look': ['Aspetto', 'Appearance', 'Darstellung', 'Aspect', 'Aspecto', 'Aspeto'],
   'gen.language': ['Lingua', 'Language', 'Sprache', 'Langue', 'Idioma', 'Idioma'],
   'gen.theme': ['Tema', 'Theme', 'Design', 'Thème', 'Tema', 'Tema'],
   'tip.gen.miles': [
