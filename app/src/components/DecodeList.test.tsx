@@ -365,10 +365,10 @@ describe('DecodeList', () => {
     fireEvent.contextMenu(rows[0] as HTMLElement);
     expect(onQueue).toHaveBeenCalledWith(1);
     expect(rows[1]).toHaveClass('decode-row--queued');
-    // la sigla porta il posto in coda e non sta dentro il testo del messaggio
-    const mark = screen.getByText('IN CODA 1');
-    expect(mark).toBeInTheDocument();
-    expect(mark.closest('.decode-text')).toBeNull();
+    // il pallino porta il posto in coda, con la spiegazione nel suggerimento, e resta fuori dal testo del messaggio
+    const mark = screen.getByLabelText(/In coda, posto 1/);
+    expect(mark).toHaveTextContent('1');
+    expect(mark.closest('.data')).toBeNull();
     expect(rows[0]).not.toHaveClass('decode-row--queued');
     useStation.setState({ status: null });
   });
