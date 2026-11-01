@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { ApiError, getControls, getEngineSettings, postControl, postCq, postDx, postFreeText, postLogQso, postReport, postTune, postRxFrequency, postSpotDxsummit, postTxFrequency, type ControlId } from '../api/client';
+import { ApiError, getClusterSpots, getControls, getEngineSettings, postControl, postCq, postDx, postFreeText, postLogQso, postReport, postTune, postRxFrequency, postSpotDxsummit, postTxFrequency, type ControlId } from '../api/client';
 import type { StationStatus } from '../api/schemas';
 import { useT, type Key, type T } from '../i18n';
 import { expandMacro, useMacros } from '../lib/macros';
@@ -72,7 +72,10 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   const [spottedDx, setSpottedDx] = useState('');
   // lo spot si offre solo se acceso nelle impostazioni (motore proprio: con JTDX la rotta non c'e')
   const settings = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false });
-  const spotOn = settings.data?.values.AllowSpotsDXSummit === 'true' && settings.data.items.AllowSpotsDXSummit?.state === 'live';
+  // lo spot (con il suo commento) si offre solo se acceso nelle impostazioni E con almeno un server del DX Cluster collegato (login fatto)
+  const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 10_000 });
+  const clusterIn = (cluster.data?.servers ?? []).some((sv) => sv.state === 'connected');
+  const spotOn = clusterIn && settings.data?.values.AllowSpotsDXSummit === 'true' && settings.data.items.AllowSpotsDXSummit?.state === 'live';
   const dxCall = (pendingDx || status?.dx_call || '').trim();
 
   // la frequenza vera e' quella del motore: quando cambia lì si aggiorna anche qui
