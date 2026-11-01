@@ -16,6 +16,7 @@ import { rememberRoute, rememberedTab } from './lib/lastPage';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
+import { FoxPage } from './pages/FoxPage';
 import { useStation } from './state/station';
 import { Automation } from './pages/Automation';
 import { Settings } from './pages/Settings';
@@ -88,6 +89,8 @@ export function App() {
     content = <PropagationPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
+  } else if (route.name === 'fox') {
+    content = <FoxPage />;
   } else if (route.name === 'news') {
     content = <News />;
   } else if (route.name === 'export') {
@@ -114,6 +117,7 @@ export function App() {
           <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
           <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
+          <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox">{t('nav.fox')}</a>
         </nav>
         {session.data ? <UpdateBar /> : null}
         <LanguageSelect />

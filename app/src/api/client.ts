@@ -124,6 +124,11 @@ export async function postTune(on: boolean): Promise<void> {
   await request('/commands/tune', jsonInit({ on }));
 }
 
+/** Un comando della pagina Fox: select (in coda), unqueue, drop (chiude un QSO), options, reset. */
+export async function postFox(body: { action: 'select' | 'unqueue' | 'drop' | 'options' | 'reset'; call?: string; top?: boolean; slots?: number; more_cqs?: boolean; cq?: string; free_text?: string | null; auto_queue?: boolean }): Promise<void> {
+  await request('/fox', jsonInit(body));
+}
+
 /** «Log QSO» a mano. */
 export async function postLogQso(): Promise<void> {
   await request('/commands/log-qso', { method: 'POST' });
@@ -1033,7 +1038,7 @@ export async function getStats(): Promise<StatsResponse> {
 
 export type ControlId =
   | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_all' | 'jt_both' | 'ap_list' | 'mtd' | 'wait_call' | 'pounce' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
-  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx' | 'hold_tx';
+  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx' | 'hold_tx' | 'fox';
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {
