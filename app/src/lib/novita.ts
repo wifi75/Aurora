@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.65',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T17:41:25Z',
     kind: 'fixed',
     title: ['Spot FT4 dal cluster', 'FT4 spots from the cluster', 'FT4-Spots vom Cluster', 'Spots FT4 du cluster', 'Spots FT4 del cluster', 'Spots FT4 do cluster'],
     text: [
