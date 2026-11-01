@@ -47,7 +47,7 @@ export function App() {
   useEffect(() => {
     if (!paired) return;
     const { apply, setConnection } = useStation.getState();
-    const stream = openStream({ onEvent: apply, onSpectrum: (frame) => emitSpectrum(frame.bins), onState: setConnection });
+    const stream = openStream({ onEvent: apply, onSpectrum: (frame) => emitSpectrum(frame.bins, frame.fMinHz, frame.fMaxHz), onState: setConnection });
     return () => stream.close();
   }, [paired]);
 

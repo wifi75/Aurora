@@ -550,6 +550,8 @@ export interface CatRigStatus {
   message: string;
   frequency_hz: number | null;
   mode: string | null;
+  /** Larghezza del filtro della radio (Hz), se la radio la dice. */
+  passband_hz?: number | null;
   ptt: boolean;
   split: boolean | null;
   failures: number;
