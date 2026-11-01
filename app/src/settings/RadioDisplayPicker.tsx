@@ -25,10 +25,12 @@ export function RadioDisplayPicker() {
       <Help>{t('tip.rd.faces')}</Help>
       <h3 className="set-sub">{t('rd.layout')}</h3>
       <Help>{t('tip.rd.layout')}</Help>
-      <div className="rd-layouts" role="radiogroup" aria-label={t('rd.layout')}>
+      {/* i pannelli FT-2000 e IC-7610 occupano da soli tutto lo spazio: la disposizione vale solo per gli altri stili */}
+      {isFaceStyle(pref.style) ? <p className="muted">{t('rd.layoutFace')}</p> : null}
+      <div className="rd-layouts" role="radiogroup" aria-label={t('rd.layout')} aria-disabled={isFaceStyle(pref.style) || undefined}>
         {RADIO_DISPLAY_LAYOUTS.map((layout) => (
-          <label key={layout} className={`rd-layout-card${pref.layout === layout ? ' rd-layout-card--on' : ''}`}>
-            <input type="radio" name="radio-display-layout" value={layout} checked={pref.layout === layout} onChange={() => set({ layout })} />
+          <label key={layout} className={`rd-layout-card${pref.layout === layout && !isFaceStyle(pref.style) ? ' rd-layout-card--on' : ''}${isFaceStyle(pref.style) ? ' rd-layout-card--off' : ''}`}>
+            <input type="radio" name="radio-display-layout" value={layout} disabled={isFaceStyle(pref.style)} checked={pref.layout === layout && !isFaceStyle(pref.style)} onChange={() => set({ layout })} />
             <span>{t(`rd.layout.${layout}` as Key)}</span>
           </label>
         ))}

@@ -498,8 +498,19 @@ export async function putCluster(config: ClusterConfig): Promise<void> {
 }
 
 /** Paese e zone di un nominativo, dal file dei prefissi (cty.dat); 404 se non lo conosce. */
-export async function getDxcc(call: string): Promise<{ country: string; continent: string; prefix: string; cq_zone: number; itu_zone: number }> {
-  return (await (await request(`/dxcc/${encodeURIComponent(call)}`)).json()) as { country: string; continent: string; prefix: string; cq_zone: number; itu_zone: number };
+export interface DxccInfo {
+  country: string;
+  continent: string;
+  prefix: string;
+  cq_zone: number;
+  itu_zone: number;
+  /** Centro del paese da cty.dat (nord ed est positivi). */
+  lat?: number;
+  lon?: number;
+}
+
+export async function getDxcc(call: string): Promise<DxccInfo> {
+  return (await (await request(`/dxcc/${encodeURIComponent(call)}`)).json()) as DxccInfo;
 }
 
 /** Prova un server: si collega e legge il benvenuto, senza dire chi siamo. */
