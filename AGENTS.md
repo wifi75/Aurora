@@ -14,6 +14,9 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://
 - Ogni testo dell'interfaccia, della Guida e delle Novita' e' in sei lingue (it, en, de, fr, es, pt).
 - A ogni versione si seguono i passi di `TASK.md`.
 
+## Per riprendere il lavoro
+Leggi per primo `docs/ripresa.md`: stato attuale, lavoro in corso e prossimo passo.
+
 ## Documenti da aprire quando servono
 - `docs/sviluppo.md`: percorsi, struttura dei crate, comandi di test e lint, regole del programma Windows.
 - `docs/rilascio.md`: comandi per alzare la versione, firmare l'installatore e pubblicare la release.
