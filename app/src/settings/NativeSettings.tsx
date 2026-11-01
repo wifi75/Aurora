@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiError, getEngineSettings, getStationInfo, putEngineSettings } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
+import { Help } from './layout';
+import { engineHint } from './engineHints';
 import { useT, type Key, type T } from '../i18n';
 import { ENGINE_GROUPS, type EngineGroup } from '../lib/engineGroups';
 import { REPORT_GROUPS, type SettingRow } from '../lib/engineSettingsLayout';
-import { Help } from './common';
+import { Help as Note } from './common';
 import { Cells, Group, Notes, Page, Unavailable } from './layout';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
@@ -100,6 +102,7 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
     <label className={`jx-row${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
       <span className="jx-name">
         {label}
+        <Help tip={engineHint(row.key, t)} />
         {note ? <small className="ens-note">{live ? ` (${note})` : ` — ${t('ens.off')}`}</small> : null}
       </span>
       {control}
@@ -188,9 +191,9 @@ export function NativeReports() {
           );
         })}
         <Notes span={2}>
-          <Help>{t('ens.rep.help')}</Help>
-          {doc.items.AllowSpotsDXSummit?.state === 'live' ? <Help>{t('ens.dxsummit.help')}</Help> : null}
-          <Help>{t('ens.note', { file: doc.file })}</Help>
+          <Note>{t('ens.rep.help')}</Note>
+          {doc.items.AllowSpotsDXSummit?.state === 'live' ? <Note>{t('ens.dxsummit.help')}</Note> : null}
+          <Note>{t('ens.note', { file: doc.file })}</Note>
         </Notes>
         <Unavailable count={off.length} span={2}>
           <Cells min={15}>
@@ -226,7 +229,7 @@ export function NativeValues({ group, title }: { group: EngineGroup; title?: str
               <SettingField key={i.key} row={{ key: i.key, kind: i.kind === 'bool' ? 'bool' : i.kind === 'num' ? 'num' : i.kind === 'text' ? 'text' : 'reply' }} label={t(`jx.${i.key}` as Key)} doc={doc} draft={draft} />
             ))}
           </div>
-          <Help>{t('ens.note', { file: doc.file })}</Help>
+          <Note>{t('ens.note', { file: doc.file })}</Note>
           <ApplyBar draft={draft} doc={doc} />
         </>
       ) : null}
