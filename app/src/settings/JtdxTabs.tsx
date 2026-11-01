@@ -284,8 +284,8 @@ export function NativeGeneral() {
     );
   }
   const doc = settings.data;
-  const field = (key: string, kind: 'bool' | 'text' | 'num' | 'choice', label: Key, extra: { min?: number; max?: number; locked?: boolean; options?: SettingRow['options'] } = {}) => (
-    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, options: extra.options }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
+  const field = (key: string, kind: 'bool' | 'text' | 'num' | 'choice', label: Key, extra: { min?: number; max?: number; step?: number; locked?: boolean; options?: SettingRow['options'] } = {}) => (
+    <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, step: extra.step, options: extra.options }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
   );
   return (
     <Page>
@@ -313,6 +313,7 @@ export function NativeGeneral() {
           {field('MonitorOFF', 'bool', 'gen2.monitorOff')}
           {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
           {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
+          {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
         </Cells>
       </Group>
 

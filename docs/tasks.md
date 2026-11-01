@@ -75,33 +75,12 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `lib/ft8var/ft8_decodevar.f90`, `ft8_decode_ranges.f90`, `ft8_coarse_sync.f90`, `ft8_mtd_residual.f90`, `ft8_coarse_mutex.cpp`; `widgets/mainwindow.cpp` 11280-11290 (`m_ft8DecoderStart`).
 - Verifica: stessi decode del singolo thread sui WAV di prova (a parita' di opzioni) e tempo di decodifica ridotto su banda satura.
 
-## 11. UDP: TxInhibit e InhibitStatus (tipi 17 e 18)
-
-- Cosa fare: ricevere `TxInhibit` (lease 100-30000 ms per controller, max 64, OR delle prenotazioni, TTL 0 rilascia), bloccare e riprendere il PTT; mandare `InhibitStatus` dopo ogni Heartbeat e a ogni cambio; solo con «Accetta richieste UDP».
-- Aurora: `core/crates/udp-bridge/src/message.rs`, `request.rs`, `emit.rs`; `core/crates/tx-native/src/ptt.rs`.
-- WSJT-X: `Network/NetworkMessage.hpp` (righe 549-641), `Network/MessageClient.cpp`, `widgets/mainwindow.cpp` (gestione della prenotazione).
-- Verifica: test con un controller UDP finto: prenotazione, rinnovo, scadenza, rilascio, valori fuori limite ignorati e contati.
-
 ## 12. Wait and Reply / Wait and Call / Wait and Pounce
 
 - Cosa fare: aspettare che il corrispondente sia libero (fine del suo QSO) prima di rispondere/chiamare, invece di trasmettere sopra.
 - Aurora: `core/crates/qso-native/src/sequencer.rs`, `types.rs`, interfaccia.
 - WSJT-X: `widgets/mainwindow.cpp` `processWaitReplyCall`, `WaitFeatureContext`, `wait_and_call_arming_eligible`.
 - Verifica: test di sequenza con il DX occupato in un altro QSO.
-
-## 13. Messaggi non rappresentabili bloccati prima del PTT
-
-- Cosa fare: se un messaggio generato non si impacchetta esattamente (nominativo, prefisso, seriale, campo contest), non trasmettere e avvisare.
-- Aurora: `core/crates/ft8/src/message.rs`, `core/crates/engine-native/src/tx.rs`.
-- WSJT-X: `lib/ft8/genft8.f90` (`pack77_legacy_truncating_fallback_for_state`), `lib/ft4/genft4.f90`, note 3.2.
-- Verifica: test con nominativi troppo lunghi e composti non standard.
-
-## 14. SWR alto: stop della trasmissione
-
-- Cosa fare: con SWR letto dalla radio sopra 2,5 fermare la Tx e avvisare; potenza e SWR in barra di stato.
-- Aurora: `core/crates/rig-control/src/meters.rs`, `extras.rs`, `engine-native/src/tx.rs`.
-- WSJT-X: note 3.0 («Transmitted Power and SWR»), `widgets/mainwindow.cpp`.
-- Verifica: `fake_rigctld` con SWR 3,0 durante la Tx.
 
 ## 15. Rifiniture CAT dalla 3.2
 

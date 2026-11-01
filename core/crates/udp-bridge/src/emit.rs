@@ -2,7 +2,7 @@
 //! Heartbeat, Status, Decode, Clear, QSO Logged, Logged ADIF e Close. Stesso ordine dei campi e stessi tipi di JTDX 2.2.159;
 //! i datagrammi si rileggono con [`crate::decode`].
 
-use crate::message::{command_header, Decode, Status, CLEAR, CLOSE, DECODE, HEARTBEAT, LOGGED_ADIF, QSO_LOGGED, STATUS};
+use crate::message::{command_header, Decode, InhibitStatus, Status, CLEAR, CLOSE, DECODE, HEARTBEAT, INHIBIT_STATUS, LOGGED_ADIF, QSO_LOGGED, STATUS};
 
 /// Schema massimo che JTDX dichiara nel Heartbeat (`schema_number`, con Qt 5.4 o piu' recente).
 pub const MAX_SCHEMA: u32 = 3;
@@ -138,5 +138,19 @@ pub fn encode_qso_logged(id: &str, schema: u32, q: &QsoLoggedData) -> Vec<u8> {
 pub fn encode_logged_adif(id: &str, schema: u32, adif_record: &str) -> Vec<u8> {
     let mut w = command_header(LOGGED_ADIF, schema, id);
     w.utf8(Some(&format!("{ADIF_HEADER}{adif_record}")));
+    w.into_bytes()
+}
+
+/// InhibitStatus (tipo 17), nell'ordine di `MessageClient::impl::send_inhibit_status` di WSJT-X 3.3: Id, supportato, bloccato, chi blocca,
+/// prenotazioni, rilasci, scadenze, comandi malformati.
+pub fn encode_inhibit_status(schema: u32, s: &InhibitStatus) -> Vec<u8> {
+    let mut w = command_header(INHIBIT_STATUS, schema, &s.id);
+    w.bool(s.supported);
+    w.bool(s.inhibited);
+    w.utf8(Some(&s.source_station));
+    w.u32(s.hold_rx);
+    w.u32(s.release_rx);
+    w.u32(s.expiries);
+    w.u32(s.invalid);
     w.into_bytes()
 }

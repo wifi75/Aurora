@@ -597,7 +597,54 @@ async fn apply_configure(c: udp_emitter::Configure, controls: &Arc<engine_native
 }
 
 /// Avvia l'emettitore; senza destinatari (primo server vuoto e nessun destinatario nel riquadro «Integrazioni») non parte nulla.
-async fn start_udp_emitter(settings: &UdpSettings, bus: &Bus, controls: &Arc<engine_native::NativeControls>, state: &AppState) -> Option<udp_emitter::Emitter> {
+/// Il collegamento tra i TxInhibit dell'emettitore UDP e il blocco del PTT; tiene anche l'avviso «Tx bloccata» nello stato della stazione.
+struct InhibitBridge {
+    interlock: Arc<tx_native::TxInterlock>,
+    controls: Arc<engine_native::NativeControls>,
+}
+
+impl InhibitBridge {
+    fn publish(&self) {
+        let s = self.interlock.snapshot();
+        if s.inhibited {
+            let alert = aurora_core::TxAlert { kind: aurora_core::TxAlertKind::Inhibited, detail: s.holder, value: None, limit: None };
+            if !self.controls.tx_alerts().contains(&alert) {
+                self.controls.raise_alert(alert, None);
+            }
+        } else {
+            self.controls.clear_alert(aurora_core::TxAlertKind::Inhibited);
+        }
+    }
+}
+
+impl udp_emitter::InhibitControl for InhibitBridge {
+    fn command(&self, controller: &str, ttl_ms: u32, station: &str) {
+        self.interlock.command(controller, ttl_ms, station);
+        self.publish();
+    }
+
+    fn invalid(&self, count: u32) {
+        self.interlock.invalid(count);
+    }
+
+    fn tick(&self) {
+        self.interlock.tick();
+        self.publish();
+    }
+
+    fn snapshot(&self) -> udp_bridge::InhibitStatus {
+        let s = self.interlock.snapshot();
+        udp_bridge::InhibitStatus { inhibited: s.inhibited, source_station: s.holder, hold_rx: s.hold_rx, release_rx: s.release_rx, expiries: s.expiries, invalid: s.invalid, ..Default::default() }
+    }
+}
+
+async fn start_udp_emitter(
+    settings: &UdpSettings,
+    bus: &Bus,
+    controls: &Arc<engine_native::NativeControls>,
+    state: &AppState,
+    inhibit: &Arc<dyn udp_emitter::InhibitControl>,
+) -> Option<udp_emitter::Emitter> {
     if settings.targets.is_empty() && settings.destinations.is_empty() {
         return None;
     }
@@ -609,7 +656,7 @@ async fn start_udp_emitter(settings: &UdpSettings, bus: &Bus, controls: &Arc<eng
     emitter_config.accept_requests = settings.accept_requests;
     emitter_config.accept_reply = settings.accept_reply;
     emitter_config.send_adif = settings.send_adif;
-    let hooks = udp_emitter::EmitterHooks { on_external: Some(external_hook(bus, controls, state)), ..Default::default() };
+    let hooks = udp_emitter::EmitterHooks { on_external: Some(external_hook(bus, controls, state)), inhibit: Some(Arc::clone(inhibit)), ..Default::default() };
     let controls = Arc::clone(controls);
     match udp_emitter::Emitter::start_with(emitter_config, bus.subscribe_events(), bus.commands(), Arc::new(move || controls.tx_first()), hooks).await {
         Ok(emitter) => Some(emitter),
@@ -880,6 +927,7 @@ fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str,
         own_continent: None,
         meters: None,
         queue: Vec::new(),
+        tx_alerts: Vec::new(),
     }
 }
 
@@ -1023,7 +1071,7 @@ impl engine_native::TxPort for WindowsVolumePort {
 }
 
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
-fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
+fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let ptt: Arc<dyn tx_native::Ptt> = match config.ptt_method.as_str() {
         "rts" | "dtr" => {
@@ -1045,6 +1093,9 @@ fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeContro
         },
         _ => Arc::new(tx_native::NoPtt::new()),
     };
+    // il PTT passa dal blocco esterno (TxInhibit via UDP): con una prenotazione attiva resta spento
+    interlock.attach(ptt);
+    let ptt: Arc<dyn tx_native::Ptt> = Arc::clone(interlock) as Arc<dyn tx_native::Ptt>;
     let tx_config = tx_native::TxConfig { allow_tx: true, attenuation_tenths: Some(controls.attenuation.load(std::sync::atomic::Ordering::Relaxed)), ..tx_native::TxConfig::default() };
     match tx_native::Transmitter::new(Arc::new(tx_native::SystemClock), ptt, sink, tx_config) {
         Ok(transmitter) => {
@@ -1091,6 +1142,8 @@ pub async fn run(
     let bus = Bus::new(4096);
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
+    // il blocco della trasmissione chiesto dai controller UDP (TxInhibit): sta tra la catena di trasmissione e il PTT vero per tutta la vita del programma
+    let tx_interlock = Arc::new(tx_native::TxInterlock::new());
     let live_tx = match config.engine {
         EngineKind::Sim => true,
         EngineKind::Jtdx => config.allow_tx,
@@ -1182,12 +1235,14 @@ pub async fn run(
         let r = store.reports();
         native_controls.monitor.store(!r.monitor_off_at_start, std::sync::atomic::Ordering::Relaxed);
         native_controls.set_sequence(sequence_settings(&r));
+        native_controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
         let (store, flags, filter, controls, live) = (Arc::clone(store), Arc::clone(&highlight_flags), Arc::clone(&log_filter), Arc::clone(&native_controls), live_log.clone());
         let mut changes = store.subscribe();
         tokio::spawn(async move {
             let (mut last_sequence, mut last_filter) = (sequence_settings(&r), r.log_filter);
             while changes.changed().await.is_ok() {
                 let r = store.reports();
+                controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
                 if let Ok(mut f) = flags.write() {
                     *f = r.highlights;
                 }
@@ -1490,7 +1545,7 @@ pub async fn run(
                 dial_hz: Arc::clone(&dial_hz),
                 controls: Arc::clone(&native_controls),
                 transmitter: audio_manager.as_ref().and_then(|m| {
-                    let transmitter = build_transmitter(&config, &native_controls, m.build_output()?);
+                    let transmitter = build_transmitter(&config, &native_controls, &tx_interlock, m.build_output()?);
                     if transmitter.is_none() {
                         m.output_closed();
                     }
@@ -1562,9 +1617,11 @@ pub async fn run(
         if let Some(store) = &engine_settings {
             store.set_feature(remote_api::engine_settings::Feature::UdpEmitter, true);
         }
-        *udp_emitter.lock().await = start_udp_emitter(&wanted, &bus, &native_controls, &state).await;
+        let inhibit: Arc<dyn udp_emitter::InhibitControl> = Arc::new(InhibitBridge { interlock: Arc::clone(&tx_interlock), controls: Arc::clone(&native_controls) });
+        *udp_emitter.lock().await = start_udp_emitter(&wanted, &bus, &native_controls, &state, &inhibit).await;
         if let Some(store) = engine_settings.clone() {
             let (slot, config, bus, controls, call, grid, app) = (Arc::clone(&udp_emitter), config.clone(), bus.clone(), Arc::clone(&native_controls), my_call.clone(), my_grid.clone(), state.clone());
+            let inhibit = Arc::clone(&inhibit);
             let mut changes = store.subscribe();
             let mut running = wanted;
             tokio::spawn(async move {
@@ -1577,7 +1634,7 @@ pub async fn run(
                     if let Some(old) = slot.take() {
                         old.shutdown().await;
                     }
-                    *slot = start_udp_emitter(&next, &bus, &controls, &app).await;
+                    *slot = start_udp_emitter(&next, &bus, &controls, &app, &inhibit).await;
                     running = next;
                 }
             });

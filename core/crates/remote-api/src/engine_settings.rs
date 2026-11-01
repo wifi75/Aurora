@@ -87,6 +87,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     "LoTWTqsl",
     "LoTWLocation",
     UDP_DESTINATIONS,
+    // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
+    "SWRLimit",
 ];
 
 /// La voce con l'elenco dei destinatari UDP (JSON, vedi [`UdpDestination`]).
@@ -247,7 +249,7 @@ pub fn support(key: &str) -> Support {
         "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqAnswerInCallCount" | "SeqAnswerInCallCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
         | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" | "CallPriorityCQ" | "MaxDistance" => Support::Live(Apply::Now),
         // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
-        "TxWatchdogTimer" | "TxQSYAllowed" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
+        "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
         // regione IARU: filtra la tabella delle frequenze (scheda Frequenze, cambio di banda e di modo); messaggi con il nominativo composto di tipo 2: tenuto, ma vale solo per JT65/JT9
@@ -401,6 +403,8 @@ pub struct Reports {
     pub watchdog_min: u32,
     /// «Consenti cambi di frequenza Tx durante la trasmissione» (`TxQSYAllowed`).
     pub tx_qsy_allowed: bool,
+    /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (`SWRLimit`, voce di Aurora; 250 = 2,5 come WSJT-X; 0 = controllo spento).
+    pub swr_limit_centi: u32,
     /// Il filtro del log della scheda Generali.
     pub log_filter: engine_jtdx::worked::LogFilter,
     /// «Non monitorare all'avvio» (`MonitorOFF`).
@@ -563,6 +567,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         // Generali
         ("TxWatchdogTimer", "6"),
         ("TxQSYAllowed", "true"),
+        // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
+        ("SWRLimit", "2.5"),
         // regione IARU (`ALL`, `R1`, `R2`, `R3`) e generazione dei messaggi per i nominativi composti di tipo 2: valori di fabbrica di JTDX (`read_settings`: `ALL` e `type_2_msg_3_full`)
         ("Region", "ALL"),
         ("Type2MsgGen", "type_2_msg_3_full"),
@@ -641,6 +647,19 @@ fn addr_default() -> SocketAddr {
 }
 
 /// Controlla un valore di una voce che il motore proprio tiene (tipo, intervallo e forma dell'indirizzo).
+/// Soglia del ROS di fabbrica in centesimi (WSJT-X: «SWR > 2.5», `stopForHighSWR`).
+pub const DEFAULT_SWR_LIMIT_CENTI: u32 = 250;
+
+/// La soglia del ROS scritta nelle impostazioni (accetta anche la virgola), in centesimi: 0 = spento, altrimenti da 1,1 a 10.
+pub fn parse_swr_limit(value: &str) -> Option<u32> {
+    let v: f64 = value.trim().replace(',', ".").parse().ok()?;
+    if !v.is_finite() {
+        return None;
+    }
+    let centi = (v * 100.0).round();
+    (centi == 0.0 || (110.0..=1000.0).contains(&centi)).then_some(centi as u32)
+}
+
 pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if !is_stored(key) {
         return Err(SettingsError::NotAvailable(key.to_string()));
@@ -657,6 +676,10 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         )
     {
         return Ok(());
+    }
+    // la soglia del ROS non e' di JTDX: numero con il punto o la virgola
+    if key == "SWRLimit" {
+        return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,1 a 10".into()));
     }
     // le voci dell'invio diretto non sono di JTDX: si controllano qui
     if let Some(result) = validate_upload(key, value) {
@@ -731,6 +754,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         strict_directional_cq: truthy(values.get("StrictDirectionalCQ")),
         watchdog_min: get("TxWatchdogTimer").parse().ok().filter(|n| *n <= 99).unwrap_or(6),
         tx_qsy_allowed: values.get("TxQSYAllowed").is_none_or(|v| v == "true"),
+        swr_limit_centi: values.get("SWRLimit").and_then(|v| parse_swr_limit(v)).unwrap_or(DEFAULT_SWR_LIMIT_CENTI),
         log_filter: engine_jtdx::worked::LogFilter {
             call: truthy(values.get("callsignLogFiltering")).then(|| get("MyCall").to_uppercase()).filter(|c| !c.is_empty()),
             grid: truthy(values.get("gridLogFiltering")).then(|| get("MyGrid").to_string()).filter(|g| !g.is_empty()),
@@ -1293,6 +1317,19 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert_eq!(doc["items"]["toRTTY"]["note"], "jt9_only");
         assert_eq!(doc["items"]["UDPServer"]["reason"], "emitter_pending");
         assert!(doc["values"].get("UDP2Server").is_some() && doc["values"].get("UDPServer").is_none() && doc["values"].get("PSKReporter").is_some());
+    }
+
+    #[test]
+    fn the_swr_limit_is_a_live_setting_with_the_wsjtx_default() {
+        assert_eq!(interpret(&defaults()).swr_limit_centi, 250);
+        assert_eq!(interpret(&map(&[("SWRLimit", "3,0")])).swr_limit_centi, 300);
+        assert_eq!(interpret(&map(&[("SWRLimit", "0")])).swr_limit_centi, 0);
+        for ok in ["0", "1.1", "2.5", "10"] {
+            assert!(validate("SWRLimit", ok).is_ok(), "{ok}");
+        }
+        for bad in ["1", "10.5", "-2", "alto", ""] {
+            assert!(validate("SWRLimit", bad).is_err(), "{bad}");
+        }
     }
 
     #[test]

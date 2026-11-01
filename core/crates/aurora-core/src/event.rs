@@ -41,6 +41,33 @@ pub struct StationStatus {
     /// Le stazioni in coda per il prossimo QSO (tasto destro o «Rispondi a tutti»), nell'ordine in cui si risponde.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub queue: Vec<String>,
+    /// Gli avvisi di sicurezza della trasmissione in corso (messaggio non rappresentabile, ROS alto, Tx bloccata da un controller esterno).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tx_alerts: Vec<TxAlert>,
+}
+
+/// Perche' la trasmissione e' stata fermata o trattenuta.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TxAlertKind {
+    /// Un messaggio generato non si impacchetta esattamente nei 77 bit: non e' partito (`detail` = il testo).
+    Unrepresentable,
+    /// Il ROS letto dalla radio in trasmissione ha superato la soglia: Tx fermata (`value` = il ROS letto, `limit` = la soglia).
+    HighSwr,
+    /// Un controller UDP (TxInhibit) blocca il PTT (`detail` = chi blocca).
+    Inhibited,
+}
+
+/// Un avviso di sicurezza della trasmissione, da mostrare finche' resta nello stato.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TxAlert {
+    pub kind: TxAlertKind,
+    #[serde(default)]
+    pub detail: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<f32>,
 }
 
 /// Gli strumenti della radio, ognuno presente solo se il CAT sa leggerlo (se manca, il campo non compare nel JSON: l'interfaccia non accetta `null`). Le unita' sono quelle del pannello della radio.

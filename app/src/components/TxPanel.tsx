@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getControls, postHalt, postTxMessage } from '../api/client';
 import { toast } from '../lib/toast';
-import type { DecodedMessage, StationStatus } from '../api/schemas';
+import type { DecodedMessage, StationStatus, TxAlert } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
@@ -20,6 +20,13 @@ interface Props {
   status?: StationStatus | null;
   /** Messaggi decodificati (i piu' recenti per primi): servono a capire a che punto e' il QSO. */
   decodes?: DecodedMessage[];
+}
+
+/** Il testo di un avviso di sicurezza della trasmissione. */
+export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
+  if (a.kind === 'high_swr') return t('tx.alert.highSwr', { swr: (a.value ?? 0).toFixed(1), limit: (a.limit ?? 0).toFixed(1) });
+  if (a.kind === 'inhibited') return t('tx.alert.inhibited', { holder: a.detail || '—' });
+  return t('tx.alert.unrepresentable', { text: a.detail ?? '' });
 }
 
 /** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
@@ -93,6 +100,16 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
           </div>
+          {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
+          {status.tx_alerts && status.tx_alerts.length > 0 ? (
+            <div className="tx-alerts" role="alert">
+              {status.tx_alerts.map((a) => (
+                <p key={a.kind} className="tx-alert" title={t('tip.tx.alert')}>
+                  {alertText(a, t)}
+                </p>
+              ))}
+            </div>
+          ) : null}
           {/* le stazioni in coda, sempre visibili: un pallino blu col posto e il nominativo */}
           {status.queue && status.queue.length > 0 ? (
             <div className="tx-queue" title={t('tip.tx.queue')}>

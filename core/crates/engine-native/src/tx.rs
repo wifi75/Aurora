@@ -1058,7 +1058,16 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Err(e) => log.push(format!("trasmissione non partita: {e}")),
                 }
             }
-            Err(e) => log.push(format!("messaggio non codificabile «{text}»: {e}")),
+            Err(e) => {
+                // come WSJT-X 3.2 (`m_generated_message_error`): niente PTT, sequenza spenta e avviso visibile, invece di mandare altro testo
+                tracing::warn!("messaggio non rappresentabile, non trasmesso: «{text}»: {e}");
+                self.controls.raise_alert(
+                    aurora_core::TxAlert { kind: aurora_core::TxAlertKind::Unrepresentable, detail: text.clone(), value: None, limit: None },
+                    Some(crate::rig::TX_ALERT_KEEP),
+                );
+                self.seq.set_enabled(false);
+                log.push(format!("messaggio non codificabile «{text}»: {e}"));
+            }
         }
         log
     }
@@ -1069,8 +1078,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mode = self.mode;
         let mut run = |t: &str| -> Result<Vec<f32>, String> {
             match mode {
-                Mode::Ft8 => ft8::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}")),
-                Mode::Ft4 => ft4::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}")),
+                Mode::Ft8 => {
+                    check_exact(t, &self.hashes)?;
+                    ft8::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}"))
+                }
+                Mode::Ft4 => {
+                    check_exact(t, &self.hashes)?;
+                    ft4::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}"))
+                }
                 // JT65 e JT9: `freq` e' il tono di sincronismo (il piu' basso); tutta la banda deve stare entro i 5 kHz
                 Mode::Jt65 => {
                     jt_check_frequency(freq, 65.0 * jt::jt65::TONE_SPACING_HZ)?;
@@ -1091,6 +1106,21 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Err(e) => Err(e),
         }
     }
+}
+
+/// Il testo come lo leggera' chi riceve, per il confronto: maiuscolo, senza le parentesi dei nominativi con hash, spazi singoli.
+fn as_received(text: &str) -> String {
+    text.to_ascii_uppercase().replace(['<', '>'], "").split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Un messaggio FT8/FT4 deve arrivare uguale: si impacchetta nei 77 bit e si rilegge (con una copia della tabella degli hash). Se cambia
+/// (nominativo, prefisso o suffisso non rappresentabili, rapporto fuori scala, modificatore del CQ tagliato...) non si trasmette: e' il
+/// controllo che WSJT-X 3.2 fa prima del PTT invece del troncamento silenzioso (`pack77_legacy_truncating_fallback_for_state`).
+fn check_exact(text: &str, hashes: &CallHashes) -> Result<(), String> {
+    let mut table = hashes.clone();
+    let bits = ft8::message::pack(text, &mut table).map_err(|e| format!("{e}"))?;
+    let back = ft8::message::unpack(&bits, &mut table).map_err(|e| format!("non si rilegge: {e}"))?;
+    if as_received(&back) == as_received(text) { Ok(()) } else { Err(format!("non rappresentabile: arriverebbe come «{back}»")) }
 }
 
 /// La banda di un messaggio JT (dal tono di sincronismo in su) deve stare tra 100 e 5000 Hz.
@@ -1140,6 +1170,42 @@ mod tests {
             if let Ok(mut h) = self.halts.lock() {
                 *h += 1;
             }
+        }
+    }
+
+    /// Come WSJT-X 3.2: un messaggio FT8/FT4 deve arrivare uguale a come si e' scritto, altrimenti non parte.
+    #[test]
+    fn only_messages_that_pack_exactly_pass_the_check() {
+        let ok = ["K1ABC IU3ABC JN65", "CQ DX K1ABC FN42", "K1ABC IU3ABC R-10", "K1ABC IU3ABC RR73", "<PJ4/K1ABC> IU3ABC", "CQ K1ABC/P FN42", "TNX 73 GL", "K1ABC RR73; W9XYZ <KH1/KH7Z> -08"];
+        for t in ok {
+            assert_eq!(check_exact(t, &CallHashes::default()), Ok(()), "{t}");
+        }
+        // nominativi troppo lunghi o composti non standard, rapporto fuori scala, modificatore del CQ troppo lungo
+        let bad = ["VERYLONGCALL1 IU3ABC", "3DA0/K1ABC/P IU3ABC", "IU3ABC/P K1ABC/QRP JN65", "K1ABC/MM IU3ABC -10", "K1ABC IU3ABC +55", "CQ ABCDEFGHIJKL K1ABC FN42"];
+        for t in bad {
+            assert!(check_exact(t, &CallHashes::default()).is_err(), "{t}");
+        }
+        // il caso del troncamento silenzioso: con un suffisso /1 il locatore non entra e il messaggio arriverebbe senza
+        let cut = check_exact("CQ IU3ABC/1 JN65", &CallHashes::default());
+        assert!(cut.as_ref().is_err_and(|e| e.contains("CQ IU3ABC/1»")), "{cut:?}");
+    }
+
+    /// Un messaggio generato che non si rappresenta esattamente non arriva al PTT: niente trasmissione, sequenza spenta e avviso nello stato.
+    #[test]
+    fn an_unrepresentable_generated_message_never_reaches_the_ptt() {
+        for dx in ["3DA0/K1ABC/P", "VERYLONGCALL1"] {
+            let mut b = Bench::new();
+            let mut log = b.d.handle(TxCommand::SetDx { call: Some(dx.into()), grid: None, generate: true }, BASE + 1.0);
+            log.extend(b.press("enable_tx", Some(true), BASE + 1.0));
+            log.extend(b.d.after_slot(SLOT_MS, &[], BASE + 14.3, 14_074_000, "20m").1);
+            log.extend(b.d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m").1);
+            assert!(b.port.requests.lock().expect("richieste").is_empty(), "{dx}: {log:?}");
+            assert!(log.iter().any(|l| l.contains("non codificabile")), "{dx}: {log:?}");
+            assert!(!view_of(&b.controls).enabled, "{dx}: la sequenza si spegne");
+            let alerts = b.controls.tx_alerts();
+            assert_eq!(alerts.len(), 1, "{dx}");
+            assert_eq!(alerts[0].kind, aurora_core::TxAlertKind::Unrepresentable);
+            assert!(alerts[0].detail.contains(dx), "{dx}: {alerts:?}");
         }
     }
 

@@ -4980,6 +4980,23 @@
 }
 
 /* Trasmissione: le stazioni in coda sotto il DX */
+/* avvisi di sicurezza della trasmissione (messaggio non rappresentabile, ROS alto, Tx bloccata) */
+.tx-alerts {
+  margin: 0.2rem 0 0.35rem;
+}
+
+.tx-alert {
+  margin: 0 0 0.2rem;
+  padding: 0.3rem 0.55rem;
+  border-left: 3px solid var(--danger);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--text, inherit);
+  font-size: 0.82rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
 .tx-queue {
   display: flex;
   flex-wrap: wrap;

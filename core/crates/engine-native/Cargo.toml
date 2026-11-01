@@ -22,5 +22,6 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+rig-control = { path = "../rig-control", features = ["testing"] }
 logbook = { path = "../logbook" }
 qso-export = { path = "../qso-export" }

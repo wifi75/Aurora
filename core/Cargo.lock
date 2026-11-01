@@ -2055,6 +2055,7 @@ dependencies = [
  "socket2",
  "tokio",
  "tracing",
+ "tx-native",
  "udp-bridge",
 ]
 

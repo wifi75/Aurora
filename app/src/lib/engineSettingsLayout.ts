@@ -9,6 +9,8 @@ export interface SettingRow {
   /** Intervallo dei numeri (di base le porte, 1-65535). */
   min?: number;
   max?: number;
+  /** Passo dei numeri (di base 1; per esempio 0.1 per la soglia del ROS). */
+  step?: number;
   /** Le scelte di una voce `choice`: il valore che si salva e l'etichetta. */
   options?: readonly { value: string; label: Key }[];
 }

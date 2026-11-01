@@ -222,6 +222,7 @@ pub fn start_with_save(
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
                     queue: view.queue.clone(),
+                    tx_alerts: live.controls.tx_alerts(),
                     ..StationStatus::default()
                 };
                 if events.send(Event::Status(status)).is_err() && events.receiver_count() == 0 {

@@ -24,6 +24,7 @@ pub fn to_status(s: &WireStatus) -> StationStatus {
         own_continent: None,
         meters: None,
         queue: Vec::new(),
+        tx_alerts: Vec::new(),
     }
 }
 
