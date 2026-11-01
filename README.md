@@ -38,7 +38,7 @@ Version 0.11.60: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CA
 - **JTDX-style controls**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, Tx/Rx frequencies with copy, Canc DX, Gen.Msgs; double-clicking a message sets the DX and JTDX calls it at the right moment (option in Settings → General).
 - **Transmission**: CQ, free message, Tx frequency, vertical Pwr level, STOP TX always active (discreet at rest, full while transmitting); the Esc key does the same and turns off AutoTX and Abilita Tx. It has no option: it is always enabled (STOP TX, the caps and the automations switched off by default remain).
 - **Automations**: replies to CQs with something new; they start switched off and in dry-run mode, with caps, dead-man and STOP.
-- **Tabbed settings** as in JTDX (general, radio, audio, sequence, TX macros, reports, frequencies, notifications, filters, schedule, advanced) plus access, windows and bands.
+- **Settings by topic**: six groups (Station, Receive, Transmit and QSO, Alerts, Network and logs, System) with pages such as Radio, Cascade, Sequence, Log services and Connected programs; search across every item, errors shown next to the field.
 - **Six languages** (Italian, English, German, French, Spanish, Portuguese) and a tooltip on every control.
 - **Help and statistics**: short in-app help in six languages; Statistics page with awards, QSOs per band and missing countries; your own transmitted messages appear as `Tx` rows.
 - **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency), NTP client with clock indicator, real JTDX settings read from its file and read-only Log4OM2 Log window.
