@@ -404,10 +404,10 @@ function AlertOptions() {
   };
   return (
     <>
-      <Cell label={t('alert.button')} wide>
+      <Cell label={t('alert.button')} hint={t('tip.alert.button')} wide>
         <AlertSwitch value={alerts} onChange={change} />
       </Cell>
-      <Check label={t('not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
+      <Check label={t('not2.muteTx')} hint={t('tip.not2.muteTx')} checked={alerts.muteWhileTx} onChange={(v) => change({ ...alerts, muteWhileTx: v })} />
     </>
   );
 }
@@ -569,14 +569,14 @@ export function NativeNotifications() {
 
       <Group title={t('not2.grpWorked')}>
         <Cells min={16}>
-          <Field label={t('not2.strike')}>
+          <Field label={t('not2.strike')} hint={t('tip.not2.strike')}>
             <input type="checkbox" aria-label={t('not2.strike')} disabled={!anyNew || view.workedUnderlined} checked={anyNew && view.workedStriked} onChange={(e) => setView({ workedStriked: e.target.checked })} />
           </Field>
-          <Field label={t('not2.underline')}>
+          <Field label={t('not2.underline')} hint={t('tip.not2.underline')}>
             <input type="checkbox" aria-label={t('not2.underline')} disabled={!anyNew || view.workedStriked} checked={anyNew && view.workedUnderlined} onChange={(e) => setView({ workedUnderlined: e.target.checked })} />
           </Field>
-          <Check label={t('not2.hide')} checked={anyNew && view.workedDontShow} onChange={(v) => setView({ workedDontShow: v })} />
-          <Check label={t('not2.invert')} checked={view.invert} onChange={(v) => setView({ invert: v })} />
+          <Check label={t('not2.hide')} hint={t('tip.not2.hide')} checked={anyNew && view.workedDontShow} onChange={(v) => setView({ workedDontShow: v })} />
+          <Check label={t('not2.invert')} hint={t('tip.not2.invert')} checked={view.invert} onChange={(v) => setView({ invert: v })} />
           <EngineBox k="newPotential" label={t('not2.potential')} doc={doc} draft={draft} />
         </Cells>
       </Group>
@@ -637,7 +637,7 @@ export function NativeNotifications() {
 
       <Group title={t('not2.grpDisplay')}>
         <Cells min={14}>
-          <Check label={t('not2.diffBg')} checked={view.differentBackground} onChange={(v) => setView({ differentBackground: v })} />
+          <Check label={t('not2.diffBg')} hint={t('tip.not2.diffBg')} checked={view.differentBackground} onChange={(v) => setView({ differentBackground: v })} />
           <Cell>
             <label className="set-check">
               <input type="radio" name="diff-bg" disabled={!view.differentBackground} checked={!view.diffYellow} onChange={() => setView({ diffYellow: false })} />
@@ -648,16 +648,16 @@ export function NativeNotifications() {
               <span>{t('not2.yellow')}</span>
             </label>
           </Cell>
-          <Check label={t('not2.hlDxCall')} checked={view.highlightDxCall} onChange={(v) => setView({ highlightDxCall: v })} />
-          <Check label={t('not2.hlDxGrid')} checked={view.highlightDxGrid} onChange={(v) => setView({ highlightDxGrid: v })} />
+          <Check label={t('not2.hlDxCall')} hint={t('tip.not2.hlDxCall')} checked={view.highlightDxCall} onChange={(v) => setView({ highlightDxCall: v })} />
+          <Check label={t('not2.hlDxGrid')} hint={t('tip.not2.hlDxGrid')} checked={view.highlightDxGrid} onChange={(v) => setView({ highlightDxGrid: v })} />
         </Cells>
       </Group>
 
       <Group title={t('not2.markers')}>
         <Cells min={14}>
-          <Check label={t('not2.markOther')} checked={view.otherMarker} onChange={(v) => setView({ otherMarker: v })} />
-          <Check label={t('not2.markRed')} checked={view.redMarker} onChange={(v) => setView({ redMarker: v })} />
-          <Field label={t('not2.markBlue')}>
+          <Check label={t('not2.markOther')} hint={t('tip.not2.markOther')} checked={view.otherMarker} onChange={(v) => setView({ otherMarker: v })} />
+          <Check label={t('not2.markRed')} hint={t('tip.not2.markRed')} checked={view.redMarker} onChange={(v) => setView({ redMarker: v })} />
+          <Field label={t('not2.markBlue')} hint={t('tip.not2.markBlue')}>
             <input type="checkbox" aria-label={t('not2.markBlue')} disabled={!view.redMarker} checked={view.redMarker && view.blueMarker} onChange={(e) => setView({ blueMarker: e.target.checked })} />
           </Field>
           <EngineBox k="73RR73Marker" label={t('not2.mark7373')} doc={doc} draft={draft} />

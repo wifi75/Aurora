@@ -120,12 +120,12 @@ export function UpdatesTab() {
 
       <Group title={t('lay.settings')} span={2}>
         <Cells min={17}>
-          <Check label={t('upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Check label={t('upd.enabled')} hint={t('tip.upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
           <Check label={t('upd.prereleases')} hint={t('tip.upd.prereleases')} checked={shown.prereleases} onChange={(v) => set({ prereleases: v })} />
           <Field label={t('upd.repo')} hint={t('tip.upd.repo')}>
             <input type="text" className="jx-text" value={shown.repo} spellCheck={false} onChange={(e) => set({ repo: e.target.value })} />
           </Field>
-          <Field label={t('upd.interval')}>
+          <Field label={t('upd.interval')} hint={t('tip.upd.interval')}>
             <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
           </Field>
           <Field label={t('upd.token')} hint={t('tip.upd.token')}>

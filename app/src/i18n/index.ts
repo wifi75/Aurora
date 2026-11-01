@@ -31,12 +31,13 @@ import { audioSetStrings } from './strings/audioset';
 import { layoutStrings } from './strings/layout';
 import { soundStrings } from './strings/sounds';
 import { engineHintStrings } from './strings/enginehints';
+import { settingHintStrings } from './strings/settinghints';
 
 export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings } as const;
+export const STRINGS = { ...appStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

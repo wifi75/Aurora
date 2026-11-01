@@ -26,8 +26,8 @@ function JtdxGeneralTab() {
     <Page>
       <Group title={t('gen.station')}>
         <Cells min={12}>
-          <Row name={t('gen.call')}>{status?.de_call || '—'}</Row>
-          <Row name={t('gen.grid')}>{status?.de_grid || '—'}</Row>
+          <Row name={t('gen.call')} hint={t('tip.gen.call')}>{status?.de_call || '—'}</Row>
+          <Row name={t('gen.grid')} hint={t('tip.gen.grid')}>{status?.de_grid || '—'}</Row>
         </Cells>
       </Group>
 

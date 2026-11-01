@@ -125,8 +125,8 @@ export function WishlistTab() {
       <Group title={t('lay.options')}>
         <Cells min={13}>
           <Check label={t('wish.enabled')} hint={t('tip.wish.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-          <Check label={t('wish.fromDecodes')} checked={shown.fromDecodes} onChange={(v) => set({ fromDecodes: v })} />
-          <Check label={t('wish.fromCluster')} checked={shown.fromCluster} onChange={(v) => set({ fromCluster: v })} />
+          <Check label={t('wish.fromDecodes')} hint={t('tip.wish.fromDecodes')} checked={shown.fromDecodes} onChange={(v) => set({ fromDecodes: v })} />
+          <Check label={t('wish.fromCluster')} hint={t('tip.wish.fromCluster')} checked={shown.fromCluster} onChange={(v) => set({ fromCluster: v })} />
           <Field label={t('wish.bands')} hint={t('tip.wish.bands')}>
             <input type="text" className="jx-text" value={shown.bands} placeholder="20m, 15m" onChange={(e) => set({ bands: e.target.value })} />
           </Field>
