@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -15,6 +15,7 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/propagazione') return { name: 'propagation' };
   if (hash === '#/guida') return { name: 'guide' };
   if (hash === '#/novita') return { name: 'news' };
+  if (hash === '#/fox') return { name: 'fox' };
   if (hash === '#/esporta') return { name: 'export' };
   return { name: 'live' };
 }

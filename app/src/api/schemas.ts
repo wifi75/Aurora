@@ -143,7 +143,24 @@ export const HighlightCallsignSchema = z.object({
 });
 export type HighlightCallsign = z.infer<typeof HighlightCallsignSchema>;
 
+const FoxCallerSchema = z.object({ call: z.string(), grid: z.string(), snr: z.number(), freq_hz: z.number(), age: z.number() });
+export const FoxSnapshotSchema = z.object({
+  enabled: z.boolean(),
+  slots: z.number(),
+  more_cqs: z.boolean(),
+  cq: z.string(),
+  auto_queue: z.boolean(),
+  callers: z.array(FoxCallerSchema),
+  queue: z.array(FoxCallerSchema),
+  in_progress: z.array(z.object({ call: z.string(), sent: z.string(), rcvd: z.string().nullable().optional(), tries: z.number(), rr73_sent: z.boolean() })),
+  tx: z.array(z.string()),
+  periods: z.number(),
+  logged: z.number(),
+});
+export type FoxSnapshot = z.infer<typeof FoxSnapshotSchema>;
+
 export const EventSchema = z.discriminatedUnion('type', [
+  FoxSnapshotSchema.extend({ type: z.literal('fox') }),
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
   QsoRecordSchema.extend({ type: z.literal('qso_logged') }),

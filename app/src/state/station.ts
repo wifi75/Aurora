@@ -1,3 +1,4 @@
+import { useFox } from './fox';
 import { create } from 'zustand';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
 
@@ -244,6 +245,9 @@ export const useStation = create<StationState>((set) => ({
         });
         break;
       }
+      case 'fox':
+        useFox.setState({ fox: event });
+        break;
       case 'clear_decodes':
         // come «Cancella»: le liste dei messaggi si svuotano (i colori dei nominativi restano)
         set({ decodes: [], txLog: [] });
