@@ -20,7 +20,7 @@ describe('DxpedDetail', () => {
       </QueryClientProvider>,
     );
     expect(screen.getByRole('dialog', { name: 'H44MS' })).toBeInTheDocument();
-    await waitFor(() => expect(document.querySelector('.dxd-map-big')).not.toBeNull());
+    await waitFor(() => expect(document.querySelector('.dxd-map .worldmap')).not.toBeNull());
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
