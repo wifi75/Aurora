@@ -374,3 +374,12 @@ describe('DecodeList', () => {
   });
 
 });
+
+describe('distance without a grid in the message', () => {
+  it('reuses the grid the station sent earlier', async () => {
+    const { gridOfSender } = await import('./DecodeList');
+    expect(gridOfSender('CQ S21BDK NL55')).toBe('NL55');
+    expect(gridOfSender('JA2ORW S21BDK +07')).toBe('NL55');
+    expect(gridOfSender('JA2ORW K9ZZZ -10')).toBeNull();
+  });
+});
