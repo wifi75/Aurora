@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getClusterSpots, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
+import { getClusterSpots, getDxped, getStationInfo, postFrequency, type ClusterSpot } from '../api/client';
+import { dxpedState, today } from './DxpedPanel';
 import { useT } from '../i18n';
 import { MultiPick } from './MultiPick';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
@@ -32,6 +33,10 @@ function readFilters(): SpotFilters {
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
 export function ClusterPanel() {
   const t = useT();
+  // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
+  const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
+  const day = today();
+  const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
   const status = useStation((s) => s.status);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
@@ -142,10 +147,11 @@ export function ClusterPanel() {
               const code = flagCode(s.country);
               const mine = s.band !== null && s.band === myBand;
               const wanted = wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null;
+              const dxped = dxpedCalls.has(s.dx_call.toUpperCase());
               return (
                 <tr
                   key={s.id}
-                  className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}`}
+                  className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}${dxped ? ' cluster-row--dxped' : ''}`}
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
                   onDoubleClick={() => void tune(s)}
                 >
@@ -157,6 +163,7 @@ export function ClusterPanel() {
                   </td>
                   <td>
                     <strong className="data cluster-dx">{s.dx_call}</strong>
+                    {dxped ? <span className="cluster-dxped-tag" title={t('tip.cluster.dxped')}>DXped</span> : null}
                   </td>
                   <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>
                   <td className="cluster-country">{s.country ?? ''}</td>

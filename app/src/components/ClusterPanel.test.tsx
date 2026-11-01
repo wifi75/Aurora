@@ -5,6 +5,7 @@ import type { ClusterSpot } from '../api/client';
 
 vi.mock('../api/client', () => ({
   getClusterSpots: vi.fn(),
+  getDxped: vi.fn(async () => ({ dxped: { fetched_ms: 1, items: [{ call: 'JA1ABC', country: 'Japan', start: '2000-01-01', end: '2999-12-31', info: '' }], error: null } })),
   getStationInfo: vi.fn().mockResolvedValue({ rig_control: true }),
   postFrequency: vi.fn().mockResolvedValue({ dial_hz: 14_074_000 }),
   ApiError: class extends Error {},
@@ -82,5 +83,13 @@ describe('ClusterPanel', () => {
     show();
     fireEvent.click(await screen.findByText('JA1ABC'));
     expect(postFrequency).not.toHaveBeenCalled();
+  });
+
+  it('highlights the spots of DXpeditions on the air in the NG3K calendar', async () => {
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(2, 'JA1ABC', '20m', 'FT8', 'Japan'), spot(1, 'K1ABC', '40m', 'CW', 'United States')] });
+    show();
+    expect(await screen.findByText('DXped')).toBeInTheDocument();
+    expect(screen.getByText('JA1ABC').closest('tr')).toHaveClass('cluster-row--dxped');
+    expect(screen.getByText('K1ABC').closest('tr')).not.toHaveClass('cluster-row--dxped');
   });
 });

@@ -104,6 +104,14 @@ export const clusterStrings = {
   'cluster.col.mode': ['Modo', 'Mode', 'Modus', 'Mode', 'Modo', 'Modo'],
   'cluster.col.comment': ['Commenti', 'Comments', 'Kommentar', 'Commentaire', 'Comentarios', 'Comentários'],
   'cluster.col.by': ['DE', 'DE', 'DE', 'DE', 'DE', 'DE'],
+  'tip.cluster.dxped': [
+    'DXpedition in onda secondo il calendario NG3K',
+    'DXpedition on the air according to the NG3K calendar',
+    'DXpedition laut NG3K-Kalender in der Luft',
+    'DXpédition en l’air selon le calendrier NG3K',
+    'DXpedición en el aire según el calendario NG3K',
+    'DXpedição no ar segundo o calendário NG3K',
+  ],
   'tip.cluster.row': [
     'Spot di {spotter} su {server}. Doppio clic: la radio va su {freq} kHz in automatico (senza trasmettere). Evidenziato: è la tua banda.',
     'Spot by {spotter} on {server}. Double-click: the radio goes to {freq} kHz by itself (without transmitting). Highlighted: it is your band.',
