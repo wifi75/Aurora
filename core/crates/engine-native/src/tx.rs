@@ -1552,6 +1552,7 @@ mod tests {
         let (mut d, _port, controls) = driver();
         // Hound acceso a mano e automatico spento, come nel caso dal vivo: la chiamata non parte sotto 1000 Hz
         controls.hound_auto.store(false, Ordering::Relaxed);
+        d.handle(TxCommand::Option(OptionChange::AutoSeq(true)), BASE);
         controls.set_switch("hound", true);
         d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
         controls.tx_df.store(556, Ordering::Relaxed);
@@ -1560,6 +1561,8 @@ mod tests {
         let (_, log) = d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_090_000, "20m");
         assert_eq!(d.seq.ntx(), 1, "in Hound si chiama con il Tx1: {log:?}");
         assert!(controls.tx_df.load(Ordering::Relaxed) >= 1000, "{log:?}");
+        // il periodo in cui parte la chiamata: senza, la sequenza non sa di aver trasmesso e non va avanti
+        d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.2, 14_090_000, "20m");
         let next = SLOT_MS + 30_000;
         let (qsos, log) = d.after_slot(next, &[("IU3ABC V26JJ R+03".to_string(), -8, 480)], BASE + 44.2, 14_090_000, "20m");
         let (more, log2) = d.after_slot(next + 30_000, &[], BASE + 74.2, 14_090_000, "20m");

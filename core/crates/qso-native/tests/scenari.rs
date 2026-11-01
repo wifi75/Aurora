@@ -570,18 +570,17 @@ fn a_plain_report_after_tx1_goes_to_tx3() {
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC R-08"));
 }
 
-/// `qsohistory.cpp` `RRREPORT` richiede di aver mandato un rapporto (`t.stx_c >= SREPORT`): un R-rapporto in risposta al nostro Tx1 non
-/// avanza e JTDX resta sul messaggio corrente (qui il Tx1, ripetuto).
+/// JTDX (`qsohistory.cpp` `RRREPORT`) vuole un nostro rapporto gia' inviato e resterebbe sul Tx1; Aurora segue WSJT-X 3.3 (`DecodedMessageReaction.cpp`,
+/// FT8/FT4 con progress >= Replying): un R-rapporto in risposta al nostro Tx1 fa chiudere con RR73 (caso dal vivo V26JJ con MSHV).
 #[test]
-fn r_report_before_our_report_does_not_advance() {
+fn r_report_after_our_tx1_closes_with_rr73_like_wsjtx() {
     let mut b = Bench::ft8(opts());
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC JN55"));
     b.rx(3, &[("IU3ABC LZ2KSQ R-10", -8)]);
-    assert_eq!(b.seq.ntx(), 1);
-    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC JN55"));
+    assert_eq!(b.seq.ntx(), 4);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
 }
-
 /// `qsohistory.cpp` `case RRR/RRR73/R73`: la chiusura vale solo se i due rapporti sono stati scambiati.
 #[test]
 fn closing_without_reports_is_ignored() {
