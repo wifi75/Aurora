@@ -2841,6 +2841,150 @@
   font-size: 0.85rem;
 }
 
+/* Esportazione del log in ADIF (#/esporta): barra dei filtri, azioni, tabella compatta come il pannello Log */
+.export-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.export-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.export-head .page-title {
+  margin: 0;
+}
+
+.export-back {
+  min-height: 1.8rem;
+  padding: 0 0.7rem;
+  font-size: 0.85rem;
+  line-height: 1.8rem;
+  text-decoration: none;
+}
+
+.export-help {
+  margin: 0;
+  max-width: 70rem;
+}
+
+.export-bar,
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.export-bar input[type='search'],
+.export-bar input[type='date'] {
+  min-height: 1.8rem;
+  padding: 0 0.6rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--text-muted);
+  border-radius: 0.4rem;
+}
+
+.export-bar input[type='search'] {
+  min-width: 11rem;
+  text-transform: uppercase;
+}
+
+.export-bar input[type='search']::placeholder {
+  text-transform: none;
+}
+
+.export-actions {
+  padding: 0.4rem 0;
+  border-block: 1px solid var(--glass-edge);
+}
+
+.export-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.export-save {
+  margin-left: auto;
+  min-height: 2rem;
+  padding: 0 1.1rem;
+  font-weight: 600;
+  line-height: 2rem;
+  text-decoration: none;
+}
+
+.export-table-wrap {
+  overflow: auto;
+  max-height: calc(100dvh - 19rem);
+  min-height: 12rem;
+}
+
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.export-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.3rem 0.5rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+  background: var(--panel);
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.export-table td {
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.export-table th.num,
+.export-table td.num {
+  text-align: right;
+}
+
+.export-check {
+  width: 1.8rem;
+  text-align: center;
+}
+
+.export-table th.export-check {
+  text-align: center;
+}
+
+.export-check input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.export-row {
+  cursor: pointer;
+}
+
+.export-row:hover {
+  background: var(--glass-lo);
+}
+
+.export-row:not(.export-row--on) td:not(.export-check) {
+  opacity: 0.55;
+}
+
+.export-call {
+  font-weight: 600;
+}
+
 /* Spot del DX Cluster sulla cascata */
 .wf-spots {
   position: absolute;
@@ -3464,6 +3608,30 @@
 
   .history-bar input[type='search'] {
     flex: 1 0 100%;
+  }
+
+  /* Esportazione: niente locatore e paese in una riga stretta; il pulsante principale a tutta larghezza */
+  .export-table th:nth-child(9),
+  .export-table td:nth-child(9),
+  .export-table th:nth-child(10),
+  .export-table td:nth-child(10) {
+    display: none;
+  }
+
+  .export-bar input[type='search'] {
+    flex: 1 0 100%;
+  }
+
+  .export-save {
+    flex: 1 0 100%;
+    min-height: 2.75rem;
+    margin-left: 0;
+    line-height: 2.75rem;
+    text-align: center;
+  }
+
+  .export-table-wrap {
+    max-height: none;
   }
 
   /* Propagazione: i tre indici per riga */

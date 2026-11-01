@@ -74,7 +74,7 @@ describe('Stats', () => {
     expect(await screen.findByRole('table', { name: /Scheda DXCC/ })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: '318' })).toBeInTheDocument();
     expect(screen.getByText('NEW ONE', { selector: 'li' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Scarica ADIF' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Esporta ADIF' })).toBeInTheDocument();
     expect(screen.getByLabelText('Importa un file ADIF')).toBeInTheDocument();
     expect(await screen.findByText(tile('40', '340'))).toBeInTheDocument();
   });
@@ -83,7 +83,7 @@ describe('Stats', () => {
     vi.mocked(getStats).mockRejectedValue(new Error('no'));
     show();
     await waitFor(() => expect(screen.getByText(/non sono disponibili/)).toBeInTheDocument());
-    expect(screen.getByRole('link', { name: 'Scarica ADIF' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Esporta ADIF' })).toBeInTheDocument();
   });
 
   it('says so when every country is worked', async () => {
