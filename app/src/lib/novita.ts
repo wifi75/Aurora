@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.61',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:08:51Z',
     kind: 'new',
     title: ['Hound automatico', 'Automatic Hound', 'Hound automatisch', 'Hound automatique', 'Hound automático', 'Hound automático'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.61',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:08:51Z',
     kind: 'new',
     title: ['Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.61',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:08:51Z',
     kind: 'fixed',
     title: ['R+rapporto dopo il Tx1', 'R+report after Tx1', 'R+Rapport nach Tx1', 'R+rapport après Tx1', 'R+reporte tras Tx1', 'R+relatório após Tx1'],
     text: [
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.61',
-    released: '2026-11-01T20:00:00Z',
+    released: '2026-11-01T16:08:51Z',
     kind: 'changed',
     title: ['Log più completo', 'Fuller log', 'Vollständigeres Log', 'Journal plus complet', 'Log más completo', 'Log mais completo'],
     text: [
