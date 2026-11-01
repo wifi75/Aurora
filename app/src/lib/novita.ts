@@ -20,6 +20,19 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.63',
+    released: '2026-11-01T20:00:00Z',
+    kind: 'changed',
+    title: ['Pagina Log più leggibile', 'Clearer Log page', 'Übersichtlichere Log-Seite', 'Page Journal plus lisible', 'Página Log más legible', 'Página Log mais legível'],
+    text: [
+      'Bandiera accanto al paese, griglia con bordi, righe alterne, locatore staccato dai rapporti e pagina meno larga.',
+      'Flag next to the country, bordered grid, alternating rows, grid square apart from the reports and a narrower page.',
+      'Flagge neben dem Land, Raster mit Rahmen, abwechselnde Zeilen, Locator getrennt von den Rapporten und schmalere Seite.',
+      'Drapeau à côté du pays, grille avec bordures, lignes alternées, locator séparé des rapports et page moins large.',
+      'Bandera junto al país, cuadrícula con bordes, filas alternas, locator separado de los reportes y página más estrecha.',
+      'Bandeira junto ao país, grelha com bordas, linhas alternadas, locator separado dos relatórios e página mais estreita.',
+    ],
+  },  {
     version: '0.11.62',
     released: '2026-11-01T16:53:23Z',
     kind: 'new',
@@ -561,20 +574,6 @@ export const NOVITA: readonly Novita[] = [
       'Sans journal externe lié (Log4OM), le panneau Log montre les QSO du journal d’Aurora, avec pays, reports et total.',
       'Si no enlazas un log externo (Log4OM), el panel Log muestra los QSO del log de Aurora, con país, reportes y el total.',
       'Se não ligares um log externo (Log4OM), o painel Log mostra os QSO do log do Aurora, com país, relatórios e o total.',
-    ],
-  },
-  {
-    version: '0.11.51',
-    released: '2026-11-01T09:27:41Z',
-    kind: 'changed',
-    title: ['Numero dei QSO ed esportazione nella barra del Log', 'QSO count and export in the Log bar', 'QSO-Zahl und Export in der Log-Leiste', 'Nombre de QSO et export dans la barre du Log', 'Número de QSO y exportación en la barra del Log', 'Número de QSO e exportação na barra do Log'],
-    text: [
-      'Il totale dei QSO e il pulsante di esportazione ADIF stanno nella barra del titolo del pannello Log e non coprono più la tabella.',
-      'The QSO total and the ADIF export button sit in the Log panel title bar and no longer cover the table.',
-      'Die QSO-Gesamtzahl und die ADIF-Exporttaste stehen in der Titelleiste des Log-Fensters und verdecken die Tabelle nicht mehr.',
-      'Le total des QSO et le bouton d’export ADIF sont dans la barre de titre du panneau Log et ne couvrent plus le tableau.',
-      'El total de QSO y el botón de exportación ADIF están en la barra de título del panel Log y ya no tapan la tabla.',
-      'O total de QSO e o botão de exportação ADIF estão na barra de título do painel Log e já não tapam a tabela.',
     ],
   },
 ];

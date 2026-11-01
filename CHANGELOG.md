@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.63 - 2026-11-01
+- **Pagina Log**: bandiera accanto al paese, griglia con bordi, intestazione colorata e righe alterne, Locatore staccato da Ric., pagina larga al massimo 72rem e centrata.
+
 ## 0.11.62 - 2026-11-01
 - **Pannello Comandi come WSJT-X 3.3**: DX Call e locatore scrivibili (Invio prepara i messaggi senza trasmettere), Lookup su QRZ.com, rapporto da inviare scelto a mano, Hold Tx Freq, tendina del tipo di CQ (CQ, DX, continenti, POTA, SOTA, TEST), Tune e Log QSO a scelta (Impostazioni > Generali, spenti di base); ogni voce con il «?» in sei lingue. Nuove API `/api/v1/commands/dx`, `report`, `tune`, `log-qso` e interruttore `hold_tx`.
 - **Pannello QSO**: sequenza in due colonne a sinistra, pulsanti che fanno trasmettere in colonna a destra, misure fisse.
