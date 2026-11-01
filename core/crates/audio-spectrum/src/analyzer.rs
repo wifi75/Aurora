@@ -2,8 +2,10 @@ use std::{collections::VecDeque, sync::Arc};
 
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
-pub const F_MAX_HZ: u32 = 3000;
-pub const OUTPUT_BINS: usize = 1024;
+/// Fino a 5000 Hz: la cascata mostra poi solo la parte che passa dal filtro della radio (fino a 4000 Hz e oltre su alcune radio).
+pub const F_MAX_HZ: u32 = 5000;
+/// Circa 2,4 Hz per canale, un po' meglio di prima (1024 canali su 3000 Hz).
+pub const OUTPUT_BINS: usize = 2048;
 const ROWS_PER_SECOND: usize = 15;
 const MIN_SAMPLE_RATE: u32 = 8000;
 /// Contrasto automatico: il nero segue il rumore di fondo (mediana dei bin, mediata nel tempo).
@@ -32,7 +34,7 @@ impl std::fmt::Display for AnalyzerError {
 
 impl std::error::Error for AnalyzerError {}
 
-/// Trasforma l'audio in righe di 1024 valori `u8` su 0-3000 Hz, circa 15 al secondo.
+/// Trasforma l'audio in righe di 2048 valori `u8` su 0-5000 Hz, circa 15 al secondo.
 pub struct SpectrumAnalyzer {
     fft: Arc<dyn Fft<f32>>,
     n: usize,

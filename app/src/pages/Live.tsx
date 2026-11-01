@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getControls, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, getEngineConfig, getStationInfo, postBand, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
@@ -35,14 +35,13 @@ import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone } from '../lib/phone';
 import { useRadioDisplay } from '../lib/radioDisplay';
-import { registerSpectrum } from '../lib/spectrumFeed';
+import { registerSpectrum, spanFromPassband, useSpectrumSpan } from '../lib/spectrumFeed';
 import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation } from '../state/station';
 import { toast } from '../lib/toast';
 
 const F_MIN_HZ = 0;
-const F_MAX_HZ = 3000;
 
 /** Le decodifiche con i nostri Tx in mezzo, in ordine d'orario (le piu' recenti per prime), come nel vecchio programma. */
 function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMessage[] {
@@ -94,6 +93,12 @@ export function Live() {
 
   const engineConfig = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, staleTime: 30_000 });
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
+  // la cascata mostra quello che passa dal filtro della radio (letto con il CAT), 0-3000 Hz se non si sa
+  const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
+  const F_MAX_HZ = useSpectrumSpan((s) => s.spanHz);
+  useEffect(() => {
+    useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
+  }, [passbandHz]);
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterHalfHz = switches?.filter === true ? (switches.hound === true ? 290 : 60) : null;
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));

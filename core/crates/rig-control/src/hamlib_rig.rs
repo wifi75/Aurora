@@ -127,6 +127,8 @@ pub struct RigStatus {
     pub message: String,
     pub frequency_hz: Option<u64>,
     pub mode: Option<String>,
+    /// Larghezza del filtro della radio (Hz), come la da' Hamlib con il modo; 0 o assente se la radio non la dice.
+    pub passband_hz: Option<u32>,
     pub ptt: bool,
     pub split: Option<bool>,
     /// Guasti di lettura consecutivi.
@@ -217,6 +219,7 @@ impl Inner {
             message: "stato non disponibile".into(),
             frequency_hz: None,
             mode: None,
+            passband_hz: None,
             ptt: false,
             split: None,
             failures: 0,
@@ -309,6 +312,7 @@ impl Inner {
             s.state = LinkState::Connected;
             s.message.clear();
             s.frequency_hz = Some(freq);
+            s.passband_hz = mode.as_ref().map(|m| m.1).filter(|&w| w > 0);
             s.mode = mode.map(|m| m.0);
             s.ptt = false;
             s.failures = 0;
@@ -325,10 +329,12 @@ impl Inner {
         }
         let epoch = self.epoch.load(Ordering::SeqCst);
         let client = link.client();
-        let (mut freq, mut mode) = (None, None);
+        let (mut freq, mut mode, mut passband) = (None, None, None);
         if !self.transmitting() {
             freq = Some(client.frequency()?);
-            mode = Some(client.mode()?.0);
+            let (m, width) = client.mode()?;
+            mode = Some(m);
+            passband = Some(width).filter(|&w| w > 0);
         }
         let ptt = if self.ptt_readable.load(Ordering::SeqCst) {
             match client.ptt() {
@@ -352,6 +358,7 @@ impl Inner {
                 if freq.is_some() {
                     s.frequency_hz = freq;
                     s.mode = mode;
+                    s.passband_hz = passband;
                 }
                 if let Some(p) = ptt {
                     s.ptt = p;
@@ -609,6 +616,7 @@ impl HamlibRig {
                 message: "Collegamento in corso".into(),
                 frequency_hz: None,
                 mode: None,
+                passband_hz: None,
                 ptt: false,
                 split: None,
                 failures: 0,
