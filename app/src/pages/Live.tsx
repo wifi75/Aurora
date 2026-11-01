@@ -19,6 +19,7 @@ import { StatusBar } from '../components/StatusBar';
 import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
 import { DxpedPanel } from '../components/DxpedPanel';
+import { foxCalls } from '../lib/fox';
 import { usePrefs } from '../lib/prefs';
 import { senderOf } from '../lib/wishlist';
 import { TxPanel } from '../components/TxPanel';
@@ -174,7 +175,7 @@ export function Live() {
           return (
             <div className="cq-split">
               <div className="cq-split-main">{cqList}</div>
-              <DxpedPanel heardCalls={heardCalls} keepDays={prefs.dxpedDays} />
+              <DxpedPanel heardCalls={heardCalls} foxCalls={[...foxCalls(decodes.slice(0, 300).map((d) => d.text))]} keepDays={prefs.dxpedDays} />
             </div>
           );
         }

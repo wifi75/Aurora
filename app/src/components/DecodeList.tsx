@@ -1,3 +1,4 @@
+import { foxCalls, lineSender } from '../lib/fox';
 import { Fragment, useState, type CSSProperties, type ReactNode } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -202,9 +203,12 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
       </section>
     );
   }
+  const foxSet = foxCalls(decodes.map((d) => d.text));
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
       {decodes.map((d) => {
+        // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
+        const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');
         const own = d.id < 0;
         // «Visualizza i tuoi messaggi Tx nella finestra Rx» spento: le righe Tx non si vedono
         if (own && !prefs.showTx) return null;
@@ -262,7 +266,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${hlClass}`}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => setSelected(d.id)}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
@@ -292,7 +296,11 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
                 {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
               </span>
             </span>
-            {badge ? (
+            {fox ? (
+              <span className="badge badge--tag badge-cell badge--fox" title={t('tip.row.fox')}>
+                FOX
+              </span>
+            ) : badge ? (
               <span
                 className={`badge badge--tag badge-cell${quiet ? ' badge--quiet' : ''}`}
                 title={t(`kind.${lit}` as Key)}
