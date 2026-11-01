@@ -92,7 +92,10 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a className="app-brand" href="#/">AURORA</a>
+        <a className="app-brand" href="#/">
+          AURORA
+          <span className="app-brand-by">by IU3CYV</span>
+        </a>
         <nav className="app-nav" aria-label={t('nav.pages')}>
           <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
           <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
