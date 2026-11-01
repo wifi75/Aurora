@@ -7,6 +7,9 @@ pub struct Entity {
     pub cq_zone: u8,
     pub itu_zone: u8,
     pub continent: String,
+    /// Latitudine e longitudine del paese in centesimi di grado (nord ed est positivi; cty.dat scrive la longitudine ovest positiva).
+    pub lat_e2: i32,
+    pub lon_e2: i32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -95,6 +98,8 @@ impl DxccDb {
             itu_zone: fields[2].parse().ok()?,
             continent: fields[3].to_string(),
             prefix: fields[7].trim_start_matches('*').to_string(),
+            lat_e2: fields[4].parse::<f64>().map_or(0, |v| (v * 100.0).round() as i32),
+            lon_e2: fields[5].parse::<f64>().map_or(0, |v| (-v * 100.0).round() as i32),
         };
         self.entities.push(entity);
         Some(self.entities.len() - 1)
