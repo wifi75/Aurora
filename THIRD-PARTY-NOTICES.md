@@ -17,6 +17,17 @@ Aurora (© 2026 Tiziano Cassone, IU3WJQ) e' software libero: si puo' ridistribui
 | [flag-icons](https://github.com/lipis/flag-icons) | MIT | le bandiere dei paesi |
 | [IBM Plex Sans](https://github.com/IBM/plex) e [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (pacchetti `@fontsource`) | SIL Open Font License 1.1 | i caratteri dell'interfaccia (© IBM Corp.; © The JetBrains Mono Project Authors) |
 
+## Codice derivato da WSJT-X e JTDX (GPL-3)
+
+Parti di Aurora sono traduzioni in Rust, con modifiche, di algoritmi di programmi GPL-3. Le traduzioni e le modifiche sono di Tiziano Cassone (IU3WJQ), dal 2025; il codice risultante e' distribuito con la stessa licenza GPL-3 (vedi `LICENSE`).
+
+| Da | Copyright | Parti di Aurora |
+|---|---|---|
+| [WSJT-X](https://wsjt.sourceforge.io) | © Joe Taylor K1JT e il WSJT Development Group | messaggi a 77 bit, LDPC, modulazione e decodifica FT8/FT4 (`core/crates/ft8`, `core/crates/ft4`), JT65/JT9 (`core/crates/jt`), Fox classico (`engine-native/src/fox.rs`), UltraFOX compatibile con SuperFox (`engine-native/src/ultrafox.rs`, `ultrafox_rx.rs`) |
+| [JTDX](https://www.jtdx.tech) | © gli autori di JTDX (derivato da WSJT-X) | decodifica FT8/FT4 a piu' passate, sequenza dei QSO (`core/crates/qso-native`), regole di risposta e di chiusura |
+
+`hashlittle` (`engine-native/src/ultrafox.rs`) viene da `lookup3.c` di Bob Jenkins, dominio pubblico.
+
 ## Hamlib e DLL incluse nell'installatore di Windows
 
 Nella cartella `hamlib` accanto al programma l'installatore porta, **non modificati**, i file del pacchetto Windows ufficiale di Hamlib 4.7.2 (`hamlib-w64-4.7.2.zip` dalle release di https://github.com/Hamlib/Hamlib, SHA-256 verificato dallo script `scripts/prepara-hamlib.ps1`; in alternativa copiati da JTDX o WSJT-X): `rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`. Versione e SHA-256 sono in `hamlib\VERSIONE.txt`.
@@ -36,7 +47,7 @@ Aurora lancia `rigctld` come programma a parte e gli parla su TCP. Si possono so
 - **Sfondo della mappa** (facoltativo, si spegne con «Sfondo reale»): tessere *National Geographic World Map* di **Esri** (`server.arcgisonline.com`), con l'attribuzione «© Esri — National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC» mostrata sulla mappa. Le tessere restano soggette ai termini di Esri; non sono incluse nel programma.
 - **PSK Reporter** (`pskreporter.info`) e **hamqsl.com** (dati di N0NBH): facoltativi, spenti di default, solo lettura; i dati restano dei loro autori.
 - **cty.dat** (elenco dei prefissi): non incluso; lo legge dall'installazione di JTDX dell'utente.
-- **JTDX** e **WSJT-X**: Aurora non ne contiene il codice; li comanda dall'esterno (UDP e accessibilita' di Windows) e ne cita il nome solo per dire con cosa lavora. Appartengono ai rispettivi autori.
+- **JTDX** e **WSJT-X** come programmi: Aurora puo' anche comandarli dall'esterno (UDP e accessibilita' di Windows); appartengono ai rispettivi autori.
 - **Decodium** (GPL-3.0): studiato come ispirazione (`docs/confronto-decodium.md`), nessun suo codice e' stato copiato.
 - **Microsoft Edge WebView2**: usato dal programma Windows per mostrare la finestra; non incluso (e' un componente di Windows).
 

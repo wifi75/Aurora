@@ -40,8 +40,10 @@ export function AboutTab() {
         </dd>
         <dt>{t('about.license')}</dt>
         <dd>
-          <strong>GPL-3.0</strong> — {t('about.licenseText')}
+          © 2026 Tiziano Cassone (IU3WJQ). <strong>GPL-3.0</strong> — {t('about.licenseText')} {t('about.warranty')}
         </dd>
+        <dt>{t('about.derived')}</dt>
+        <dd>{t('about.derivedText')}</dd>
         <dt>{t('about.thanks')}</dt>
         <dd>{t('about.thanksText')}</dd>
       </dl>
