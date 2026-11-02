@@ -15,13 +15,14 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.80** (2026-11-02, pubblicata): pannello Comandi su righe compatte (proposta 1 di `docs/mockup-comandi.html`), barre PO e SWR con scala nel display FT-2000, QRZ.com, HamQTH e HRDLOG.NET, cascata come WSJT-X, revisione grafica delle Impostazioni, DX Cluster senza colonne tagliate. Prima, 0.11.79: RX/TX dopo la frequenza nel display FT-2000, potenza riletta dopo − e +.
+- **Ultima versione**: **0.11.82** (2026-11-02, pubblicata): ricerca QRZ.com/HamQTH senza blocco (il lucchetto in `reporting/src/qrz_xml.rs` restava chiuso dentro il `match` e `login` lo aspettava per sempre). 0.11.81: spettro sotto la cascata di nuovo su «Attuale» (`spectrumLive` in `lib/wfPrefs.ts`), paese intero nella finestra CQ, bandiera e paese 15 px a destra, riquadro del nominativo senza la fonte. 0.11.80: pannello Comandi compatto, barre PO/SWR, messaggi FT8 pubblicati a ogni passata (`decode_slot_streaming`).
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
 
 - Nessun ramo aperto: `cluster-qrz`, `cascata-wsjtx` e `grafica-impostazioni` sono uniti a main; i worktree in `D:\build\wt-*` si possono togliere.
 - Restano da fare: «Prova» per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP; NAME e QTH per i QSO registrati a mano.
+- Da sistemare: la scheda DXpedition carica ancora due volte (cartina provvisoria, poi quella vera); la correzione della 0.11.80 non basta.
 - I test li lancia il proprietario: prima di pubblicare solo `tsc` e `cargo check`.
 
 ## Prossimo passo
