@@ -82,8 +82,6 @@ export function CallsignTip({ call, children }: { call: string; children: ReactN
               ) : null}
               {fullName ? <span className="calltip-name">{fullName}</span> : null}
               {person?.city ? <span className="calltip-city">{person.city}</span> : null}
-              {person ? <small className="muted">{t('calltip.source', { source: person.source })}</small> : null}
-              {info?.subscriber === false && person ? <small className="muted">{t('calltip.reduced')}</small> : null}
             </>
           )}
         </span>
