@@ -721,6 +721,8 @@ fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) ->
         wavelog: r.wavelog.then(|| reporting::WavelogAccount { url: r.wavelog_url.clone(), station_id: r.wavelog_station.clone() }),
         clublog: r.clublog.then(|| reporting::ClublogAccount { email: r.clublog_email.clone(), callsign: r.clublog_call.clone() }),
         qrz: r.qrz,
+        qrz_call: r.qrz_call.clone(),
+        hrdlog: r.hrdlog.then(|| reporting::HrdlogAccount { callsign: r.hrdlog_call.clone() }),
         lotw: r.lotw.then(|| reporting::LotwSetup { tqsl: r.lotw_tqsl.clone(), location: r.lotw_location.clone() }),
     }
 }
@@ -762,6 +764,15 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
                     };
                     q.comment = logbook::adif::log_comment(&q.mode, &q.rst_sent, &q.rst_rcvd, &distance, r.report_in_comments, r.distance_in_comments);
                     q.mode = logbook::adif::log_mode(&q.mode, r.to_rtty);
+                    // nome e citta' dalla ricerca QRZ.com/HamQTH (se accesa): al piu' 2,5 s, poi si registra senza
+                    if let Some((name, qth)) = store.name_and_qth(&q.call, unix_secs(), std::time::Duration::from_millis(2500)).await {
+                        if q.name.is_empty() {
+                            q.name = name;
+                        }
+                        if q.qth.is_empty() {
+                            q.qth = qth;
+                        }
+                    }
                     let _ = events.send(Event::QsoLogged(q));
                 }
                 Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}

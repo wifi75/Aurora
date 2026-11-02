@@ -518,6 +518,20 @@ export async function getDxcc(call: string): Promise<DxccInfo> {
   return (await (await request(`/dxcc/${encodeURIComponent(call)}`)).json()) as DxccInfo;
 }
 
+/** Chi c'e' dietro un nominativo: paese da cty.dat e, con le ricerche accese, nome e citta' da QRZ.com o HamQTH. */
+export interface CallsignInfo {
+  call: string;
+  dxcc: DxccInfo | null;
+  person: { fname: string; name: string; city: string; country: string; source: string } | null;
+  lookup: 'off' | 'found' | 'not_found' | 'error';
+  subscriber: boolean | null;
+  message: string | null;
+}
+
+export async function getCallsign(call: string): Promise<CallsignInfo> {
+  return (await (await request(`/callsign/${encodeURIComponent(call)}`)).json()) as CallsignInfo;
+}
+
 /** Prova un server: si collega e legge il benvenuto, senza dire chi siamo. */
 export async function testClusterServer(host: string, port: number): Promise<{ ok: boolean; ms: number | null; banner: string | null; error: string | null }> {
   return (await (await request('/dx-cluster/test', jsonInit({ host, port }))).json()) as { ok: boolean; ms: number | null; banner: string | null; error: string | null };
@@ -777,7 +791,7 @@ export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string
 }
 
 /** Il pulsante «Prova» dell'invio diretto dei QSO: controlla le impostazioni salvate senza registrare QSO. Un errore arriva come `ApiError` con il testo in `detail`. */
-export async function postUploadTest(service: 'wavelog' | 'clublog' | 'qrz' | 'lotw'): Promise<string> {
+export async function postUploadTest(service: import('../lib/engineSettingsLayout').UploadService): Promise<string> {
   return UploadTestSchema.parse(await (await request('/qso-upload/test', jsonInit({ service }))).json()).message;
 }
 

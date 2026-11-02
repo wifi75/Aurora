@@ -38,6 +38,7 @@ import { statsStrings } from './strings/stats';
 import { wikiStrings } from './strings/wiki';
 import { jtdxTabStrings } from './strings/jtdxtabs';
 import { audioSetStrings } from './strings/audioset';
+import { lookupStrings } from './strings/lookup';
 import { layoutStrings } from './strings/layout';
 import { soundStrings } from './strings/sounds';
 import { engineHintStrings } from './strings/enginehints';
@@ -49,7 +50,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...tooltipStrings } as const;
+export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...lookupStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...tooltipStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 

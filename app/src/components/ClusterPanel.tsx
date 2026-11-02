@@ -8,6 +8,7 @@ import { MultiPick } from './MultiPick';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
+import { CallsignTip } from './CallsignTip';
 import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
@@ -168,7 +169,7 @@ export function ClusterPanel() {
                   onDoubleClick={() => void tune(s)}
                 >
                   <td className="data cluster-de" title={`${spotAge(s)} s`}>
-                    {s.spotter}
+                    <CallsignTip call={s.spotter}>{s.spotter}</CallsignTip>
                   </td>
                   <td>
                     <span className="cluster-freq data">{formatKhzWhole(s.freq_khz)}</span>

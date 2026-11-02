@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+- **DX Cluster, chi ha fatto lo spot**: passando il mouse sul nominativo nella colonna DE compare un riquadro con bandiera, paese e continente e, con le ricerche accese, nome e citta'. Le ricerche partono dopo un breve ritardo e non si ripetono.
+- **Ricerca QRZ.com e HamQTH** (Impostazioni > Servizi online): nome e citta' dei nominativi da QRZ.com (utente e password; dati completi con l'abbonamento XML, ridotti senza) e da HamQTH (gratuito), usato se QRZ e' spento o non trova. Spente di base, password protette da Windows, «Prova», risultati in memoria tre giorni. Nuova rotta `GET /api/v1/callsign/{call}`.
+- **QRZ.com Logbook**: campo facoltativo «Nominativo registrato su QRZ», per i QSO fatti con /P, /QRP o prefissi esteri; rimandi fra le pagine Servizi di log e Servizi online.
+- **HRDLOG.NET**: invio diretto dei QSO (nominativo e codice di caricamento), con la stessa coda, i nuovi tentativi e lo stato degli altri servizi. Formato non confermato dalla documentazione ufficiale (non raggiungibile): da provare dal vivo.
+- **Password e chiavi nelle Impostazioni**: non spariscono piu' appena scritte. Si salvano uscendo dal campo o con Invio (non a ogni tasto), poi il campo mostra «Salvata ••••» con «Cambia» e «Togli», e la «Prova» del riquadro parte da sola con l'esito in verde o in rosso.
+
 ## 0.11.79 - 2026-11-02
 - **DX Cluster**: niente piu' striscia vuota accanto a «Modo» (si sposta il contenuto, non la cella); colonna Freq altri 5 px a sinistra.
 - **Display FT-2000**: tolta la scala di sintonia sotto la frequenza.

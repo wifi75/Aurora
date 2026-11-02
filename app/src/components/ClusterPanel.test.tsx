@@ -5,6 +5,7 @@ import type { ClusterSpot } from '../api/client';
 
 vi.mock('../api/client', () => ({
   getClusterSpots: vi.fn(),
+  getCallsign: vi.fn(async () => null),
   getDxped: vi.fn(async () => ({ dxped: { fetched_ms: 1, items: [{ call: 'JA1ABC', country: 'Japan', start: '2000-01-01', end: '2999-12-31', info: '' }], error: null } })),
   getStationInfo: vi.fn().mockResolvedValue({ rig_control: true }),
   postFrequency: vi.fn().mockResolvedValue({ dial_hz: 14_074_000 }),
