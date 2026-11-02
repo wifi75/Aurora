@@ -9,7 +9,7 @@ type Caller = FoxSnapshot['callers'][number];
 type SortKey = 'snr' | 'call' | 'freq_hz' | 'age';
 
 /** Prima del primo stato dal motore: Fox spento, valori di WSJT-X. */
-const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: '', auto_queue: false, callers: [], queue: [], in_progress: [], tx: [], periods: 0, logged: 0 };
+const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: 'CQ', auto_queue: false, ultra: false, callers: [], queue: [], in_progress: [], tx: [], periods: 0, logged: 0 };
 
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 
@@ -23,8 +23,8 @@ export function FoxPage() {
   const [sort, setSort] = useState<SortKey>('snr');
   const [filter, setFilter] = useState('');
 
-  const options = (o: Partial<{ slots: number; more_cqs: boolean; cq: string; auto_queue: boolean }>) =>
-    void postFox({ action: 'options', slots: fox.slots, more_cqs: fox.more_cqs, cq: fox.cq, auto_queue: fox.auto_queue, ...o });
+  const options = (o: Partial<{ slots: number; more_cqs: boolean; cq: string; auto_queue: boolean; ultra: boolean }>) =>
+    void postFox({ action: 'options', slots: fox.slots, more_cqs: fox.more_cqs, cq: fox.cq || 'CQ', auto_queue: fox.auto_queue, ultra: fox.ultra, ...o });
   const queued = new Set(fox.queue.map((q) => q.call));
   const callers = fox.callers
     .filter((c) => !queued.has(c.call) && c.call.toUpperCase().includes(filter.toUpperCase()))
@@ -45,11 +45,12 @@ export function FoxPage() {
         </label>
         <label>
           {t('fox.cq')}
-          <select value={fox.cq} onChange={(e) => options({ cq: e.target.value })}>
+          <select value={fox.cq.replace(/^CQ ?/, '')} onChange={(e) => options({ cq: e.target.value ? `CQ ${e.target.value}` : 'CQ' })}>
             {CQ_TARGETS.map((c) => <option key={c} value={c}>{c || 'CQ'}</option>)}
           </select>
         </label>
         <label><input type="checkbox" checked={fox.more_cqs} onChange={(e) => options({ more_cqs: e.target.checked })} /> {t('fox.moreCqs')}</label>
+        <label title={t('tip.fox.ultra')}><input type="checkbox" checked={fox.ultra} onChange={(e) => options({ ultra: e.target.checked })} /> UltraFOX</label>
         <label><input type="checkbox" checked={fox.auto_queue} onChange={(e) => options({ auto_queue: e.target.checked })} /> {t('fox.autoQueue')}</label>
         <button type="button" className="glass" onClick={() => void postFox({ action: 'reset' })}>{t('fox.reset')}</button>
       </header>

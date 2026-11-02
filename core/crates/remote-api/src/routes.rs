@@ -501,6 +501,8 @@ struct FoxBody {
     free_text: Option<String>,
     #[serde(default)]
     auto_queue: bool,
+    #[serde(default)]
+    ultra: bool,
 }
 
 /// I comandi della pagina Fox: `select` (in coda, `top` in testa), `unqueue`, `drop` (chiude un QSO in corso), `options`, `reset`.
@@ -522,7 +524,7 @@ async fn fox_command(State(state): State<AppState>, _: Authed, Json(body): Json<
                 Some(t) => Some(clean_free_text(t).ok_or_else(bad)?),
                 None => None,
             };
-            F::Options { slots: body.slots.unwrap_or(5).clamp(1, 5), more_cqs: body.more_cqs, cq, free_text, auto_queue: body.auto_queue }
+            F::Options { slots: body.slots.unwrap_or(5).clamp(1, 5), more_cqs: body.more_cqs, cq, free_text, auto_queue: body.auto_queue, ultra: body.ultra }
         }
         "reset" => F::Reset,
         _ => return Err(bad()),

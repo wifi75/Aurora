@@ -778,8 +778,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.fox.unqueue(&call);
                     }
                     F::Drop { call } => self.fox.drop_qso(&call),
-                    F::Options { slots, more_cqs, cq, free_text, auto_queue } => {
-                        self.fox.opts = crate::fox::FoxOptions { slots: slots.clamp(1, crate::fox::MAX_SLOTS), more_cqs, cq, free_text, auto_queue };
+                    F::Options { slots, more_cqs, cq, free_text, auto_queue, ultra } => {
+                        self.fox.opts = crate::fox::FoxOptions { slots: slots.clamp(1, crate::fox::MAX_SLOTS), more_cqs, cq, free_text, auto_queue, ultra };
                     }
                     F::Reset => self.fox.reset(),
                 }
@@ -876,7 +876,22 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             let tx_hz = self.controls.tx_df.load(Ordering::Relaxed);
             let mut waves = Vec::new();
             let mut sent = Vec::new();
-            for (i, m) in msgs.iter().enumerate() {
+            let ultra = self.fox.opts.ultra;
+            if ultra {
+                // UltraFOX: tutti i posti in un solo segnale compatibile con SuperFox (da 750 Hz, in FT8)
+                let extras = crate::ultrafox::Extras { more_cqs: false, free_text: self.fox.opts.free_text.clone(), otp: 0 };
+                match crate::ultrafox::content_from_fox(&msgs, &self.my_call, &self.fox.my_grid()) {
+                    Some((content, more_cqs)) => match crate::ultrafox::transmission(&content, &crate::ultrafox::Extras { more_cqs: more_cqs || self.fox.opts.more_cqs, ..extras }) {
+                        Ok(w) => {
+                            waves.push(w);
+                            sent.clone_from(&msgs);
+                        }
+                        Err(e) => log.push(format!("UltraFOX: messaggio non impacchettabile ({e:?}): {}", msgs.join(" | "))),
+                    },
+                    None => log.push("UltraFOX: niente da trasmettere in questo periodo".to_string()),
+                }
+            }
+            for (i, m) in msgs.iter().enumerate().filter(|_| !ultra) {
                 match self.encode(m, crate::fox::fox_wave_hz(tx_hz, i), false) {
                     Ok((w, s)) => {
                         waves.push(w);
@@ -932,6 +947,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             enabled: self.controls.switch_on("fox"),
             slots: f.opts.slots,
             more_cqs: f.opts.more_cqs,
+            ultra: f.opts.ultra,
             cq: f.opts.cq.clone(),
             auto_queue: f.opts.auto_queue,
             callers: f.callers.values().map(view).collect(),
@@ -2959,5 +2975,22 @@ mod tests {
         assert!(qsos.iter().any(|q| q.call == "K1ABC" && q.rst_rcvd == "-12"), "{log:?}");
         assert!(last_text(&port).iter().any(|t| t.starts_with("K1ABC RR73; W9XYZ")), "{:?}", last_text(&port));
         assert_eq!(controls.fox_view.lock().expect("fox").logged, 1);
+    }
+
+    #[test]
+    fn ultrafox_sends_one_superfox_signal_for_all_the_hounds() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("fox", true);
+        d.handle(TxCommand::Enable(true), BASE);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Options { slots: 5, more_cqs: false, cq: "CQ".into(), free_text: None, auto_queue: false, ultra: true }), BASE + 1.0);
+        let odd = SLOT_MS + 15_000;
+        d.after_slot(odd, &[("IU3ABC K1ABC FN42".to_string(), -10, 1500), ("IU3ABC W9XYZ EN52".to_string(), -14, 1800)], BASE + 29.2, 14_090_000, "20m");
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "K1ABC".into(), top: false }), BASE + 29.5);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "W9XYZ".into(), top: false }), BASE + 29.6);
+        let (_, log) = d.after_slot(odd + 30_000, &[], BASE + 59.2, 14_090_000, "20m");
+        let requests = port.requests.lock().expect("richieste");
+        let last = requests.last().expect("una trasmissione");
+        assert_eq!(last.wave.len(), (crate::ultrafox::TONES + 2) * crate::ultrafox::NSPS, "{log:?}");
+        assert!(controls.fox_view.lock().expect("fox").ultra);
     }
 }

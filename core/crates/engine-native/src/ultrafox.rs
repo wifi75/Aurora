@@ -219,6 +219,44 @@ fn finalize(a: &mut u32, b: &mut u32, c: &mut u32) {
     *c ^= *b; *c = c.wrapping_sub(b.rotate_left(24));
 }
 
+/// Dai messaggi del Fox classico del periodo («CQ IU3ABC IO91», «K1ABC IU3ABC RR73», «K1ABC IU3ABC -12», «K1ABC RR73; DL1ABC <IU3ABC> -12»)
+/// al contenuto di UltraFOX, come `foxgen2.f90`: con almeno un Hound si mandano le stazioni (il CQ diventa il «piu' CQ»), senza nessuno il CQ.
+/// I testi che non tornano (testo libero, nominativi non standard) si saltano.
+pub fn content_from_fox(msgs: &[String], my_call: &str, my_grid: &str) -> Option<(Content, bool)> {
+    let mut rr73 = Vec::new();
+    let mut reports = Vec::new();
+    let mut cq = false;
+    let report = |w: &str| w.parse::<i32>().ok().filter(|_| w.starts_with('+') || w.starts_with('-'));
+    for m in msgs {
+        let w: Vec<&str> = m.split_whitespace().collect();
+        if w.first() == Some(&"CQ") {
+            cq = true;
+        } else if m.contains(';') && w.len() == 5 {
+            rr73.push(w[0].to_string());
+            if let Some(db) = report(w[4]) {
+                reports.push((w[2].to_string(), db));
+            }
+        } else if w.len() == 3 && w[2] == "RR73" {
+            rr73.push(w[0].to_string());
+        } else if w.len() == 3 && let Some(db) = report(w[2]) {
+            reports.push((w[0].to_string(), db));
+        }
+    }
+    rr73.truncate(MAX_RR73);
+    reports.truncate(MAX_REPORTS);
+    if rr73.is_empty() && reports.is_empty() {
+        let grid: String = my_grid.chars().take(4).collect();
+        return cq.then(|| (Content::Cq { call: my_call.to_string(), grid }, false));
+    }
+    Some((Content::Hounds { fox: my_call.to_string(), rr73, reports }, cq))
+}
+
+/// Il segnale da trasmettere per il periodo: messaggio, codice polare, toni e GFSK.
+pub fn transmission(content: &Content, extras: &Extras) -> Result<Vec<f32>, PackError> {
+    let symbols = pack(content, extras)?;
+    Ok(wave(&tones(&crate::qpc::encode(&symbols))))
+}
+
 /// Simboli trasmessi: 127 di dati e 24 di sincronismo (tono 0) nelle posizioni di `ISYNC` (da 1, come in `sftx_sub.f90`).
 pub const TONES: usize = 151;
 const ISYNC: [usize; 24] = [1, 2, 4, 7, 11, 16, 22, 29, 37, 39, 42, 43, 45, 48, 52, 57, 63, 70, 78, 80, 83, 84, 86, 89];
@@ -347,6 +385,18 @@ mod tests {
             s1 = s;
         }
         s1 * s1 + s2 * s2 - 2.0 * w.cos() * s1 * s2
+    }
+
+    #[test]
+    fn fox_messages_become_ultrafox_content() {
+        let msgs = vec!["K1ABC IU3ABC RR73".to_string(), "DL1ABC RR73; JA1XYZ <IU3ABC> -12".to_string(), "VK2AB IU3ABC +03".to_string(), "CQ IU3ABC IO91".to_string()];
+        let (c, more) = content_from_fox(&msgs, "IU3ABC", "IO91wm").expect("contenuto");
+        assert!(more);
+        assert_eq!(c, Content::Hounds { fox: "IU3ABC".into(), rr73: vec!["K1ABC".into(), "DL1ABC".into()], reports: vec![("JA1XYZ".into(), -12), ("VK2AB".into(), 3)] });
+        let (cq, _) = content_from_fox(&["CQ IU3ABC IO91".to_string()], "IU3ABC", "IO91wm").expect("CQ");
+        assert_eq!(cq, Content::Cq { call: "IU3ABC".into(), grid: "IO91".into() });
+        assert!(content_from_fox(&[], "IU3ABC", "IO91").is_none());
+        assert_eq!(transmission(&c, &Extras::default()).map(|w| w.len()), Ok((TONES + 2) * NSPS));
     }
 
     #[test]

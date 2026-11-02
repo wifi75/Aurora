@@ -33,7 +33,15 @@ pub enum FoxCommand {
     /// Chiude un QSO in corso.
     Drop { call: String },
     /// Le scelte dell'operatore.
-    Options { slots: usize, more_cqs: bool, cq: String, free_text: Option<String>, auto_queue: bool },
+    Options {
+        slots: usize,
+        more_cqs: bool,
+        cq: String,
+        free_text: Option<String>,
+        auto_queue: bool,
+        /// UltraFOX (compatibile con SuperFox): un solo segnale per periodo al posto dei posti FT8 affiancati.
+        ultra: bool,
+    },
     /// Tutto da capo.
     Reset,
 }
