@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.75 - 2026-11-02
+- **Etichetta FOX e Hound automatico**: chi manda R+rapporto o RRR non e' mai considerato una Fox (niente piu' FOX su stazioni normali che usano il messaggio doppio).
+
 ## 0.11.74 - 2026-11-02
 - **Pagina Fox con un aspetto proprio, «Neon UltraFOX»**: viola e ciano su fondo scuro in ogni tema, numeri e pulsanti luminosi, bordo rosa quando si e' in onda.
 - **Cascata della pagina Fox**: si alza e si abbassa trascinando la maniglia sotto (l'altezza si ricorda).
