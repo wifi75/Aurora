@@ -16,7 +16,7 @@ export interface SettingRow {
 }
 
 /** I servizi dell'invio diretto dei QSO (pulsante «Prova» e stato dell'ultimo invio). */
-export type UploadService = 'wavelog' | 'clublog' | 'qrz' | 'lotw';
+export type UploadService = 'wavelog' | 'clublog' | 'qrz' | 'lotw' | 'hrdlog' | 'qrzlookup' | 'hamqth';
 
 
 export interface SettingGroup {
@@ -26,6 +26,8 @@ export interface SettingGroup {
   upload?: { service: UploadService; help: Key };
   /** La spiegazione del riquadro, nel «?» del titolo. */
   help?: Key;
+  /** Una riga breve sotto le voci (per esempio il rimando a un'altra pagina). */
+  note?: Key;
 }
 
 /** Scheda «Servizi di log»: un riquadro per servizio esterno, in ordine. */
@@ -64,9 +66,20 @@ export const LOG_SERVICE_GROUPS: readonly SettingGroup[] = [
   {
     title: 'ens.g.qrz',
     upload: { service: 'qrz', help: 'ens.up.qrz.help' },
+    note: 'ens.qrz.seeOnline',
     rows: [
       { key: 'QRZLogSend', kind: 'bool' },
       { key: 'QRZLogKey', kind: 'secret' },
+      { key: 'QRZLogCall', kind: 'text' },
+    ],
+  },
+  {
+    title: 'ens.g.hrdlog',
+    upload: { service: 'hrdlog', help: 'ens.up.hrdlog.help' },
+    rows: [
+      { key: 'HrdlogSend', kind: 'bool' },
+      { key: 'HrdlogCall', kind: 'text' },
+      { key: 'HrdlogCode', kind: 'secret' },
     ],
   },
   {
@@ -126,6 +139,30 @@ export const SPOT_GROUP: SettingGroup = {
     { key: 'AllowSpotsDXSummit', kind: 'bool' },
   ],
 };
+
+/** Le ricerche dei nominativi (riquadro del nominativo nel DX Cluster): stanno nella scheda «Servizi online». */
+export const LOOKUP_GROUPS: readonly SettingGroup[] = [
+  {
+    title: 'ens.g.qrzlookup',
+    upload: { service: 'qrzlookup', help: 'ens.up.qrzlookup.help' },
+    note: 'ens.qrz.seeLog',
+    rows: [
+      { key: 'QRZLookup', kind: 'bool' },
+      { key: 'QRZUser', kind: 'text' },
+      { key: 'QRZPasswd', kind: 'secret' },
+      { key: 'LookupToQso', kind: 'bool' },
+    ],
+  },
+  {
+    title: 'ens.g.hamqth',
+    upload: { service: 'hamqth', help: 'ens.up.hamqth.help' },
+    rows: [
+      { key: 'HamQTHLookup', kind: 'bool' },
+      { key: 'HamQTHUser', kind: 'text' },
+      { key: 'HamQTHPasswd', kind: 'secret' },
+    ],
+  },
+];
 
 /** Come si registra il QSO e il file ALL.TXT: stanno nella scheda «Sequenza». */
 export const QSO_LOG_GROUPS: readonly SettingGroup[] = [

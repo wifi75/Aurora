@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ApiError, getEngineSettings, getStationInfo, postUploadTest, putEngineSettings } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
 import { Help } from './layout';
@@ -75,8 +75,69 @@ export function useDraft(): Draft & { clear(): void } {
   };
 }
 
+/** Evento: un campo segreto e' stato confermato (uscendo dal campo o con Invio); `detail` e' la voce. */
+export const SECRET_COMMITTED = 'aurora-secret-committed';
+/** Valore «attuale» di un segreto per la bozza: non coincide mai con un testo scritto, cosi' anche «Togli» (testo vuoto) conta come modifica. */
+const NO_SECRET = '\u0000';
+
+/**
+ * Un campo segreto (password, chiave). Il server non restituisce mai il segreto, solo se e' salvato: salvato si mostra «Salvata ••••»
+ * con «Cambia» e «Togli»; mentre si scrive non si salva niente, si conferma uscendo dal campo o con Invio.
+ */
+export function SecretInput({ id, label, saved, pending, disabled, onCommit }: { id: string; label: string; saved: boolean; pending: string | undefined; disabled: boolean; onCommit(v: string): void }) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+  const commit = () => {
+    setEditing(false);
+    const v = text.trim();
+    setText('');
+    if (v) onCommit(v);
+  };
+  if (pending !== undefined && !editing) {
+    return (
+      <span className="ens-secret" id={id} role="status" aria-label={label}>
+        {pending === '' ? t('ens.pw.removing') : t('ens.pw.saving')}
+      </span>
+    );
+  }
+  if (saved && !editing) {
+    return (
+      <span className="ens-secret" id={id} aria-label={label}>
+        <span className="ens-secret-state" data-testid={`${id}-saved`}>{t('ens.pw.savedShort')} ••••</span>{' '}
+        <button type="button" className="glass" disabled={disabled} title={t('ens.pw.changeTip')} onClick={(e) => { e.preventDefault(); setEditing(true); }}>
+          {t('ens.pw.change')}
+        </button>{' '}
+        <button type="button" className="glass" disabled={disabled} title={t('ens.pw.removeTip')} onClick={(e) => { e.preventDefault(); onCommit(''); }}>
+          {t('ens.pw.remove')}
+        </button>
+      </span>
+    );
+  }
+  return (
+    <input
+      id={id}
+      aria-label={label}
+      type="password"
+      className="jx-text"
+      disabled={disabled}
+      maxLength={200}
+      value={text}
+      autoFocus={editing}
+      placeholder={t('ens.pw.type')}
+      autoComplete="off"
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { setText(''); setEditing(false); }
+      }}
+    />
+  );
+}
+
 /** Una voce: viva (si modifica) o non disponibile (spenta, con il motivo). */
-export function SettingField({ row, label, doc, draft, locked = false }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
+export function SettingField({ row, label, doc, draft, locked = false, className = '', shown }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean; className?: string; shown?: string }) {
   const t = useT();
   const item = doc.items[row.key];
   const live = item?.state === 'live';
@@ -120,16 +181,17 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
   } else if (row.key === 'WavelogStation') {
     const url = draft.changes.WavelogUrl ?? doc.values.WavelogUrl ?? '';
     control = <WavelogStationSelect id={id} label={label} url={url} value={live ? value : ''} disabled={!live || locked} onChange={change} />;
+  } else if (row.kind === 'secret') {
+    control = <SecretInput id={id} label={label} saved={Boolean(doc.secrets?.[row.key])} pending={changed} disabled={!live || locked} onCommit={(v) => { draft.set(row.key, v, NO_SECRET); window.dispatchEvent(new CustomEvent(SECRET_COMMITTED, { detail: row.key })); }} />;
   } else {
-    // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
-    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} placeholder={row.kind === 'secret' && doc.secrets?.[row.key] ? t('ens.pw.saved') : undefined} autoComplete="off" onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type="text" className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} autoComplete="off" onChange={(e) => change(e.target.value)} />;
   }
   const note = live ? (item?.apply === 'restart' ? t('ens.restart') : '') : t(`ens.r.${item?.reason ?? 'own_decoder'}` as Key);
   const liveNote = live && item?.note ? t(`ens.n.${item.note}` as Key) : '';
   return (
-    <label className={`jx-row${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
+    <label className={`jx-row${className ? ` ${className}` : ''}${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
       <span className="jx-name">
-        {label}
+        {shown ?? label}
         <Help tip={engineHint(row.key, t)} />
         {note ? <small className="ens-note">{live ? ` (${note})` : ` — ${t('ens.off')}`}</small> : null}
       </span>
@@ -200,6 +262,7 @@ const STATUS_OF: Record<string, string> = {
   ClublogSend: 'clublog',
   QRZLogSend: 'qrz',
   LoTWSend: 'lotw',
+  HrdlogSend: 'hrdlog',
 };
 
 /** L'esito dell'ultimo invio di un servizio (ok o errore, e quando). */
@@ -217,10 +280,43 @@ function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
 }
 
 /** Il pulsante «Prova» di un servizio dell'invio diretto: controlla le impostazioni gia' salvate, senza registrare QSO. */
-function UploadTest({ service, waiting }: { service: UploadService; waiting: boolean }) {
+/** L'esito di una prova. */
+export interface TestResult {
+  ok: boolean;
+  text: string;
+}
+
+/** Il colore della spia di un servizio: spento o non configurato, da provare, ultima prova o invio riuscito, fallito. */
+export type Led = 'off' | 'untested' | 'ok' | 'err';
+
+export function ledOf(enabled: boolean, result: TestResult | null, status: { ok: boolean | null; message: string } | undefined): { led: Led; why: string } {
+  if (!enabled) return { led: 'off', why: '' };
+  if (result) return { led: result.ok ? 'ok' : 'err', why: result.text };
+  if (status && status.ok !== null) return { led: status.ok ? 'ok' : 'err', why: status.message };
+  return { led: 'untested', why: '' };
+}
+
+/** La spia nel titolo del riquadro. */
+export function StatusLed({ led, why }: { led: Led; why: string }) {
+  const t = useT();
+  const label = t(`ens.led.${led}` as Key);
+  return <span className={`ens-led ens-led--${led}`} role="img" aria-label={label} title={why ? `${label}: ${why}` : label} data-testid="ens-led" data-led={led} />;
+}
+
+function UploadTest({ service, waiting, keys, result, setResult, autoStart }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean }) {
   const t = useT();
   const client = useQueryClient();
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  // dopo aver confermato una password o una chiave del riquadro, appena e' salvata parte da sola la prova
+  // all'apertura della pagina, se il servizio e' acceso, si prova una volta da solo
+  const [auto, setAuto] = useState(autoStart);
+  const keyList = keys.join(',');
+  useEffect(() => {
+    const on = (e: Event) => {
+      if (keyList.split(',').includes(String((e as CustomEvent).detail))) setAuto(true);
+    };
+    window.addEventListener(SECRET_COMMITTED, on);
+    return () => window.removeEventListener(SECRET_COMMITTED, on);
+  }, [keyList]);
   const test = useMutation({
     mutationFn: () => postUploadTest(service),
     onSuccess: (text) => setResult({ ok: true, text }),
@@ -228,6 +324,12 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
     // la prova puo' far ripartire un servizio fermo: si rilegge lo stato
     onSettled: () => void client.invalidateQueries({ queryKey: ['engine-settings'] }),
   });
+  useEffect(() => {
+    if (auto && !waiting && !test.isPending) {
+      setAuto(false);
+      test.mutate();
+    }
+  }, [auto, waiting, test]);
   return (
     <div className="ens-test">
       <button type="button" className="glass" disabled={waiting || test.isPending} title={waiting ? t('ens.test.saveFirst') : undefined} onClick={() => test.mutate()} data-testid={`test-${service}`}>
@@ -235,7 +337,7 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
       </button>
       {waiting ? <span className="muted"> {t('ens.test.saveFirst')}</span> : null}
       {result && !waiting ? (
-        <span className={result.ok ? 'muted' : 'live-note'} role="status">
+        <span className={result.ok ? 'ens-test-ok' : 'live-note'} role="status" data-testid={`test-result-${service}`}>
           {' '}
           {result.ok ? t('ens.test.ok') : t('ens.test.err')}: {result.text}
         </span>
@@ -245,9 +347,18 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
 }
 
 /** I riquadri di voci del motore (una pagina o parte di una): interruttore e campi, «?» con la spiegazione, «Prova» e stato dell'ultimo invio, errore accanto. */
-export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readonly SettingGroup[]; doc: EngineSettings; draft: Draft; span?: 1 | 2 | 3 }) {
+/** La larghezza di un campo nella riga di un servizio: nominativi stretti, indirizzi ed email larghi, chiavi medie. */
+function fieldWidth(row: SettingRow): string {
+  if (row.kind === 'bool') return 'svc-w-bool';
+  if (/Call$|Station$/.test(row.key)) return 'svc-w-s';
+  if (/Email|Url|Tqsl|Location/.test(row.key)) return 'svc-w-l';
+  return 'svc-w-m';
+}
+
+export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }: { groups: readonly SettingGroup[]; doc: EngineSettings; draft: Draft; span?: 1 | 2 | 3; layout?: 'boxes' | 'rows' }) {
   const t = useT();
-  return (
+  const [results, setResults] = useState<Record<string, TestResult>>({});
+  const body = (
     <>
       {groups.map((group) => {
         const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
@@ -255,14 +366,46 @@ export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readon
         const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
         const waiting = group.rows.some((r) => draft.changes[r.key] !== undefined);
         const help = group.upload?.help ?? group.help;
+        // acceso = il primo interruttore del riquadro (salvato); i riquadri senza interruttore o senza servizio non hanno la spia
+        const toggle = rows.find((r) => r.kind === 'bool');
+        const enabled = toggle ? doc.values[toggle.key] === 'true' : false;
+        const service = group.upload?.service ?? kinds[0];
+        const result = service ? (results[service] ?? null) : null;
+        const led = service ? ledOf(enabled, result, kinds[0] ? doc.status?.[kinds[0]] : undefined) : null;
+        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled} /> : null;
+        if (layout === 'rows') {
+          // un servizio per riga: spia, nome con «?», campi in linea, «Prova» ed esito; su schermi stretti va a capo
+          return (
+            <div key={group.title} className="svc-row" role="group" aria-label={t(group.title)} data-testid={`svc-${service ?? group.title}`}>
+              <div className="svc-head">
+                {led ? <StatusLed led={led.led} why={led.why} /> : null}
+                <strong>{t(group.title)}</strong>
+                <Help tip={help ? t(help) : undefined} />
+              </div>
+              <div className="svc-fields">
+                {rows.map((row) => (
+                  <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} shown={row === toggle ? t('ens.svc.on') : undefined} doc={doc} draft={draft} className={`svc-field ${fieldWidth(row)}`} />
+                ))}
+              </div>
+              <div className="svc-side">
+                {test}
+                {kinds.map((k) => (
+                  <SendStatus key={k} doc={doc} kind={k} />
+                ))}
+                {group.note ? <small className="muted ens-note-line">{t(group.note)}</small> : null}
+              </div>
+            </div>
+          );
+        }
         return (
-          <Group key={group.title} title={<>{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
+          <Group key={group.title} title={<>{led ? <StatusLed led={led.led} why={led.why} /> : null}{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
             <Cells min={15}>
               {rows.map((row) => (
                 <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
               ))}
             </Cells>
-            {group.upload ? <UploadTest service={group.upload.service} waiting={waiting} /> : null}
+            {group.note ? <p className="muted ens-note-line">{t(group.note)}</p> : null}
+            {test}
             {kinds.map((k) => (
               <SendStatus key={k} doc={doc} kind={k} />
             ))}
@@ -271,17 +414,18 @@ export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readon
       })}
     </>
   );
+  return layout === 'rows' ? <div className="svc-table sx-span-3">{body}</div> : body;
 }
 
 /** Riquadri del motore dentro un'altra pagina (spot in «Servizi online», registrazione del QSO in «Sequenza»), con la loro barra del salvataggio. */
-export function EngineGroups({ groups }: { groups: readonly SettingGroup[] }) {
+export function EngineGroups({ groups, layout }: { groups: readonly SettingGroup[]; layout?: 'boxes' | 'rows' }) {
   const settings = useSettings();
   const draft = useDraft();
   const native = useIsNative();
   if (!native || !settings.data) return null;
   return (
     <>
-      <SettingGroups groups={groups} doc={settings.data} draft={draft} />
+      <SettingGroups groups={groups} doc={settings.data} draft={draft} layout={layout} />
       <div className="sx-span-3">
         <ApplyBar draft={draft} doc={settings.data} />
       </div>
@@ -290,7 +434,7 @@ export function EngineGroups({ groups }: { groups: readonly SettingGroup[] }) {
 }
 
 /** Una pagina fatta solo di riquadri del motore, con la barra del salvataggio. */
-export function NativeGroupsPage({ groups, label, children }: { groups: readonly SettingGroup[]; label: string; children?: (doc: EngineSettings, draft: Draft) => ReactNode }) {
+export function NativeGroupsPage({ groups, label, children, layout }: { groups: readonly SettingGroup[]; label: string; children?: (doc: EngineSettings, draft: Draft) => ReactNode; layout?: 'boxes' | 'rows' }) {
   const t = useT();
   const settings = useSettings();
   const draft = useDraft();
@@ -300,7 +444,7 @@ export function NativeGroupsPage({ groups, label, children }: { groups: readonly
   return (
     <section aria-label={label}>
       <Page>
-        <SettingGroups groups={groups} doc={doc} draft={draft} />
+        <SettingGroups groups={groups} doc={doc} draft={draft} layout={layout} />
         {children?.(doc, draft)}
         <Notes span={2}>
           <Note>{t('ens.note', { file: doc.file })}</Note>

@@ -8,5 +8,5 @@ export function LogServicesTab() {
   const native = useIsNative();
   if (native === undefined) return <p className="muted">{t('set.loading')}</p>;
   if (!native) return <p className="muted">{t('ens.unavailable')}</p>;
-  return <NativeGroupsPage groups={LOG_SERVICE_GROUPS} label={t('tab.logservices')} />;
+  return <NativeGroupsPage groups={LOG_SERVICE_GROUPS} label={t('tab.logservices')} layout="rows" />;
 }

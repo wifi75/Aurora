@@ -80,6 +80,7 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `GET /dx-cluster/catalog` · `POST /dx-cluster/test` | Server pubblici noti; prova di raggiungibilita' `{host, port}` → `{ok, ms, banner, error}` (non entra nel cluster) |
 | `POST /dx-cluster/command` | `{server, text}` solo consultazione e impostazioni (`sh/`, `set/`, `unset/`, `accept/`, `reject/`, `clear/`); `400 bad_command`, `409 not_connected` |
 | `GET /dxcc/{call}` | Paese, continente, prefisso e zone dal `cty.dat`; `404 dxcc_unknown` |
+| `GET /callsign/{call}` | `{call, dxcc, person, lookup, subscriber, message}`: `dxcc` come sopra (o null); `person` = `{fname, name, city, country, source}` da QRZ.com (prima) o HamQTH, solo con le ricerche accese; `lookup` = `off`/`found`/`not_found`/`error`; `subscriber` = abbonamento XML di QRZ (null se non si sa). Mai email o indirizzo |
 | `GET/PUT /ui-settings/{kind}` | Preferenze dell'interfaccia (`desktop` o `mobile`), chiavi `aurora-*`; `400 bad_kind`/`bad_settings` |
 | `GET /stream` | WebSocket: eventi e spettro |
 

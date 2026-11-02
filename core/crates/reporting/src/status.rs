@@ -6,7 +6,7 @@ use std::{collections::BTreeMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use serde_json::{json, Value};
 
 /// I servizi di cui si tiene lo stato.
-pub const KINDS: [&str; 8] = ["psk", "dxsummit", "eqsl", "tcp", "wavelog", "clublog", "qrz", "lotw"];
+pub const KINDS: [&str; 9] = ["psk", "dxsummit", "eqsl", "tcp", "wavelog", "clublog", "qrz", "lotw", "hrdlog"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SendState {
