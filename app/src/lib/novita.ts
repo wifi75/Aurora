@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.78',
-    released: '2026-11-02T22:30:00Z',
+    released: '2026-11-02T20:57:00Z',
     kind: 'new',
     title: ['Dove si trova il paese, a colpo d’occhio', 'Where the country is, at a glance', 'Wo das Land liegt, auf einen Blick', 'Où se trouve le pays, d’un coup d’œil', 'Dónde está el país, de un vistazo', 'Onde fica o país, num relance'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.78',
-    released: '2026-11-02T22:30:00Z',
+    released: '2026-11-02T20:57:00Z',
     kind: 'changed',
     title: ['Display FT-2000 più chiaro', 'Clearer FT-2000 display', 'Klarere FT-2000-Anzeige', 'Afficheur FT-2000 plus clair', 'Display FT-2000 más claro', 'Visor FT-2000 mais claro'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.78',
-    released: '2026-11-02T22:30:00Z',
+    released: '2026-11-02T20:57:00Z',
     kind: 'changed',
     title: ['Suggerimenti ovunque e telefono più comodo', 'Tooltips everywhere and a handier phone view', 'Hinweise überall und bessere Handy-Ansicht', 'Infobulles partout et téléphone plus pratique', 'Ayudas en todas partes y teléfono más cómodo', 'Dicas em todo o lado e telemóvel mais prático'],
     text: [
