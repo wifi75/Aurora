@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.81',
+    released: '2026-11-02T23:00:00Z',
+    kind: 'fixed',
+    title: ['Spettro di nuovo in movimento', 'Spectrum moving again', 'Spektrum bewegt sich wieder', 'Spectre de nouveau en mouvement', 'Espectro de nuevo en movimiento', 'Espetro de novo em movimento'],
+    text: [
+      'Lo spettro sotto la cascata torna su «Attuale» e segue il segnale in tempo reale (con «Cumulativo» restava quasi fermo). Nella finestra CQ il nome del paese si legge intero; il riquadro del nominativo non mostra più la fonte dei dati.',
+      'The spectrum under the waterfall is back on «Current» and follows the signal in real time (with «Cumulative» it barely moved). In the CQ window the country name is shown in full; the callsign box no longer shows the data source.',
+      'Das Spektrum unter dem Wasserfall steht wieder auf «Aktuell» und folgt dem Signal in Echtzeit (mit «Kumulativ» bewegte es sich kaum). Im CQ-Fenster ist der Ländername ganz lesbar; der Rufzeichen-Kasten zeigt die Datenquelle nicht mehr.',
+      'Le spectre sous la cascade revient sur « Actuel » et suit le signal en temps réel (en « Cumulatif » il bougeait à peine). Dans la fenêtre CQ le nom du pays se lit en entier ; l’encadré de l’indicatif n’affiche plus la source.',
+      'El espectro bajo la cascada vuelve a «Actual» y sigue la señal en tiempo real (con «Acumulado» casi no se movía). En la ventana CQ el nombre del país se lee entero; el recuadro del indicativo ya no muestra la fuente.',
+      'O espetro por baixo da cascata volta a «Atual» e segue o sinal em tempo real (com «Cumulativo» quase não mexia). Na janela CQ o nome do país lê-se inteiro; a caixa do indicativo já não mostra a fonte.',
+    ],
+  },
+  {
     version: '0.11.80',
     released: '2026-11-02T22:12:00Z',
     kind: 'new',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'En les faisant glisser sur la cascade, les barres suivent aussitôt la souris. Dans le cadre CQ le message se lit en entier.',
       'Al arrastrarlas en la cascada las barras siguen al ratón al momento. En el recuadro CQ el mensaje se lee entero.',
       'Ao arrastá-las na cascata as barras seguem logo o rato. No quadro CQ a mensagem lê-se inteira.',
-    ],
-  },
-  {
-    version: '0.11.57',
-    released: '2026-11-01T14:50:23Z',
-    kind: 'new',
-    title: ['Anteprima dal vivo della cascata', 'Live waterfall preview', 'Live-Vorschau des Wasserfalls', 'Aperçu en direct de la cascade', 'Vista previa en directo de la cascada', 'Pré-visualização ao vivo da cascata'],
-    text: [
-      'In Impostazioni > Cascata il pulsante «Mostra anteprima dal vivo» apre cascata e spettro veri: ogni modifica si vede subito. Uscendo dalla pagina si spegne e non consuma risorse.',
-      'In Settings > Waterfall the “Show live preview” button opens the real waterfall and spectrum: every change shows at once. Leaving the page switches it off, so it uses no resources.',
-      'Unter Einstellungen > Wasserfall öffnet „Live-Vorschau zeigen“ den echten Wasserfall und das Spektrum: jede Änderung ist sofort sichtbar. Beim Verlassen der Seite schaltet sie ab und verbraucht nichts.',
-      'Dans Réglages > Cascade, le bouton « Afficher l’aperçu en direct » ouvre la vraie cascade et le spectre : chaque changement se voit aussitôt. En quittant la page il s’éteint et ne consomme rien.',
-      'En Ajustes > Cascada el botón «Mostrar vista previa en directo» abre la cascada y el espectro reales: cada cambio se ve al momento. Al salir de la página se apaga y no consume recursos.',
-      'Em Definições > Cascata o botão «Mostrar pré-visualização ao vivo» abre a cascata e o espetro reais: cada alteração vê-se logo. Ao sair da página desliga-se e não gasta recursos.',
     ],
   },
 ];

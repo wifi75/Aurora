@@ -39,6 +39,8 @@ export interface WfPrefs {
   speed: WfSpeed;
   /** Lo stile WSJT-X e' gia' stato applicato una volta all'aggiornamento: da qui in poi valgono le scelte dell'utente. */
   styleApplied: boolean;
+  /** Lo spettro sotto la cascata e' tornato su «Attuale» una volta (con «Cumulativo» restava quasi fermo). */
+  spectrumLive: boolean;
 }
 
 export type WfSpeed = 'wsjtx' | 'jtdx';
@@ -78,7 +80,7 @@ export type WfStyle = Pick<
 export const WF_STYLES: Record<WfSpeed, WfStyle> = {
   wsjtx: {
     speed: 'wsjtx', binsPerPixel: 4, startHz: 0, navg: 1, palette: DEFAULT_PALETTE, scale: true, flatten: true,
-    gain: 0, zero: 0, spectrumPercent: 30, spectrumMode: 'cumulative', gain2d: 0, zero2d: 0, periodLine: true,
+    gain: 0, zero: 0, spectrumPercent: 30, spectrumMode: 'current', gain2d: 0, zero2d: 0, periodLine: true,
   },
   jtdx: {
     speed: 'jtdx', binsPerPixel: 5, startHz: 0, navg: 1, palette: DEFAULT_PALETTE, scale: true, flatten: false,
@@ -101,6 +103,7 @@ export function defaultWfPrefs(): WfPrefs {
     bars: true,
     freq: false,
     styleApplied: true,
+    spectrumLive: true,
   };
 }
 
@@ -152,6 +155,8 @@ export function readWfPrefs(storage: ReadableStorage): WfPrefs {
       Object.assign(prefs, WF_STYLES.wsjtx);
     }
     prefs.styleApplied = true;
+    if (parsed.spectrumLive !== true) prefs.spectrumMode = 'current';
+    prefs.spectrumLive = true;
   } catch {
     return defaultWfPrefs();
   }

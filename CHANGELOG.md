@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.81 - 2026-11-02
+- **Spettro sotto la cascata**: di nuovo su «Attuale» (anche nello stile WSJT-X e una volta per chi aveva «Cumulativo»): segue il segnale in tempo reale invece di restare quasi fermo.
+- **Finestra CQ**: colonna del paese larga, il nome si legge intero.
+- **Riquadro del nominativo nel DX Cluster**: tolte le righe della fonte e dei dati ridotti.
+
 ## 0.11.80 - 2026-11-02
 - **Pannello Comandi**: righe compatte (proposta 1): Call e locatore su una riga, rapporto con Lookup, Gen.Msgs e Canc DX, Tx con Tx=Rx e Split, Rx con Rx=Tx e Hold Tx.
 - **Display FT-2000**: barre PO e SWR a segmenti con la scala graduata (0-50-100 W, 1-1.5-2-3-∞) e il valore a fianco.
