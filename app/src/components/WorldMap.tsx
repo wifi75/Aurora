@@ -165,7 +165,11 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     const m = map.current;
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
-    replace('tiles', tiles ? L.tileLayer(tileUrl, { attribution: ATTRIBUTION, maxNativeZoom: 10, maxZoom: 10, noWrap: true, bounds: WORLD }) : null);
+    m.getContainer().classList.remove('worldmap--tiles-failed');
+    const layer = tiles ? L.tileLayer(tileUrl, { attribution: ATTRIBUTION, maxNativeZoom: 10, maxZoom: 10, noWrap: true, bounds: WORLD }) : null;
+    // senza internet le tessere non arrivano: allora si mostra la terra disegnata dal programma (prima appariva sempre per un attimo)
+    layer?.on('tileerror', () => m.getContainer().classList.add('worldmap--tiles-failed'));
+    replace('tiles', layer);
   }, [tiles, tileUrl]);
 
   // la notte e le linee fisse: tropici e circoli polari

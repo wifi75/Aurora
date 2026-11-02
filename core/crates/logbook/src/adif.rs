@@ -362,7 +362,7 @@ mod tests {
         assert!(f.contains("<stx_string:6>579 MA <state:2>CT"), "{f}");
     }
 
-    use super::{jtdx_file_record, jtdx_record, utc_date, utc_datetime, Station};
+    use super::{jtdx_file_record, jtdx_file_record_with, jtdx_record, utc_date, utc_datetime, Station};
 
     #[test]
     fn name_and_qth_from_the_lookup_go_in_the_record() {
