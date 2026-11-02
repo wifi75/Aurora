@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.75',
+    released: '2026-11-02T23:30:00Z',
+    kind: 'fixed',
+    title: ['FOX solo per le vere Fox', 'FOX only for real Foxes', 'FOX nur für echte Foxes', 'FOX seulement pour les vrais Fox', 'FOX solo para los Fox reales', 'FOX só para os Fox reais'],
+    text: [
+      'Le stazioni normali che mandano R+rapporto o RRR non vengono più segnate come FOX e non accendono il modo Hound.',
+      'Normal stations that send R+report or RRR are no longer marked FOX and do not turn on Hound mode.',
+      'Normale Stationen, die R+Rapport oder RRR senden, werden nicht mehr als FOX markiert und schalten Hound nicht ein.',
+      'Les stations normales qui envoient R+report ou RRR ne sont plus marquées FOX et n’activent plus le mode Hound.',
+      'Las estaciones normales que envían R+reporte o RRR ya no se marcan como FOX ni encienden el modo Hound.',
+      'As estações normais que enviam R+relatório ou RRR já não são marcadas como FOX nem ligam o modo Hound.',
+    ],
+  },
+  {
     version: '0.11.74',
     released: '2026-11-02T18:13:22Z',
     kind: 'changed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Comme WSJT-X 3, Aurora essaie les messages attendus : les réponses de ton correspondant près de la barre Rx (a8) et la suite des QSO de la période précédente (a7). En test elle lit des signaux jusqu’à 3-4 dB plus faibles.',
       'Como WSJT-X 3, Aurora prueba los mensajes esperados: las respuestas de tu corresponsal cerca de la barra Rx (a8) y la continuación de los QSO del periodo anterior (a7). En pruebas lee señales hasta 3-4 dB más débiles.',
       'Como o WSJT-X 3, a Aurora experimenta as mensagens esperadas: as respostas do teu correspondente perto da barra Rx (a8) e a continuação dos QSO do período anterior (a7). Nos testes lê sinais até 3-4 dB mais fracos.',
-    ],
-  },
-  {
-    version: '0.11.55',
-    released: '2026-11-01T13:20:31Z',
-    kind: 'new',
-    title: ['Decodifica FT8 su più processori', 'FT8 decoding on several processors', 'FT8-Dekodierung auf mehreren Prozessoren', 'Décodage FT8 sur plusieurs processeurs', 'Decodificación FT8 en varios procesadores', 'Descodificação FT8 em vários processadores'],
-    text: [
-      'Con la banda piena la decodifica usa tutti i processori del PC e finisce prima, con gli stessi risultati di prima.',
-      'With a busy band decoding uses all the PC’s processors and finishes sooner, with the same results as before.',
-      'Bei vollem Band nutzt die Dekodierung alle Prozessoren und ist früher fertig, mit denselben Ergebnissen.',
-      'Avec une bande chargée, le décodage utilise tous les processeurs du PC et finit plus tôt, avec les mêmes résultats.',
-      'Con la banda llena la decodificación usa todos los procesadores del PC y termina antes, con los mismos resultados.',
-      'Com a banda cheia a descodificação usa todos os processadores do PC e acaba mais cedo, com os mesmos resultados.',
     ],
   },
 ];
