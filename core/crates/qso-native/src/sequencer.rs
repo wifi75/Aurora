@@ -25,6 +25,9 @@
 //!
 //! Nessun orologio e nessun I/O: il chiamante passa i periodi (`Slot`) e i secondi UTC.
 
+/// Chiusure (RRR/RR73/73) ripetute al massimo per un QSO gia' a log quando non c'e' un limite scelto.
+const LOGGED_CLOSING_TRIES: u32 = 3;
+
 use std::collections::{HashMap, HashSet};
 
 use crate::classify::{DisplayState, RxContext, classify_rx, classify_tx, de_call_and_grid, report as decoded_report, words};
@@ -906,10 +909,14 @@ impl Sequencer {
                 if self.opts.single_qso {
                     counters = false;
                 }
-            } else if matches!(st, Status::Rrr | Status::Rrr73 | Status::R73 | Status::Srr73 | Status::S73) && let Some(limit) = limits.closing && limit as i32 <= count {
+            } else if matches!(st, Status::Rrr | Status::Rrr73 | Status::R73 | Status::Srr73 | Status::S73)
+                && let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call)
+                // anche senza limite scelto, un QSO gia' a log non ripete la chiusura all'infinito: dopo 3 tentativi si pulisce tutto
+                && let Some(limit) = limits.closing.or(logged.then_some(LOGGED_CLOSING_TRIES))
+                && limit as i32 <= count
+            {
                 let old = his_call.clone();
                 // un QSO chiuso da noi (RR73/73 inviato) che non riceve il 73 e' comunque concluso: non e' un tentativo fallito
-                let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
                 self.clear_dx_inner();
                 if !logged {
                     self.events.push(Event::Abandoned { call: old.clone(), reason: AbandonReason::NoReply });
