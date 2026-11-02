@@ -15,18 +15,20 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione pubblicata**: **0.11.77** (2026-11-03): TUNER tenuto premuto 1 s nei display FT-2000/IC-7610 (`holdToTune` in `RigFaceDisplays.tsx`), riquadri Fox allungabili, STOP neon, contatori download e visite nel README. Prima, 0.11.76: TUNE e PWR −/+ sotto il display (`extras.rs`: `ExtraItem::Tune`, `PowerUp`, `PowerDown`), SWR nel display piccolo. Prima, 0.11.75: FOX mai per chi manda R+rapporto o RRR. Prima, 0.11.74: pagina Fox in stile «Neon UltraFOX» (classe `foxc--neon` in `styles/fox.css`) con maniglia per la cascata. Prima, 0.11.73: pagina Informazioni centrata con il link al sito. Prima, 0.11.72: Abilita Tx al primo clic nel modo Fox, pagina Fox in una schermata con cascata ridimensionabile, FOX solo sotto 1000 Hz. Prima, 0.11.71: pagina Fox completa e ridisegnata (`pages/FoxPage.tsx`, `styles/fox.css`), niente 73 dopo il nostro RRR, forma del paese nella scheda DXpedition (`components/CountryShape.tsx`), avvisi GPL nella pagina Informazioni. Prima, 0.11.70: UltraFOX (`qpc.rs`, `ultrafox.rs`, `ultrafox_rx.rs`). Da provare in aria: Fox/UltraFOX; mancano firma digitale UltraFOX e rimozione dei segnali FT8 prima della decodifica UltraFOX.
-- **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
+- **Ultima versione**: **0.11.79** (2026-11-02, in pubblicazione): display FT-2000 con RX/TX in alto dopo la frequenza e senza scala di sintonia, potenza riletta dopo − e + con avviso se la radio non la cambia (FT-2000: decide la manopola RF PWR), DX Cluster allineato, Aggiornamenti senza voci per sviluppatori, log senza i messaggi innocui di WebView2. Prima, 0.11.78: riquadro del paese con regione e mondo in miniatura (`components/CountryShape.tsx`, d3-geo), tooltip in sei lingue ovunque, telefono piu' comodo, Integrazioni con un pulsante per tipo di programma.
+- **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
-## Lavoro in corso (non finito)
+## Lavoro in corso (rami non ancora uniti a main)
 
-- Il ramo `resti-motore` e' unito a `main` e pubblicato nella 0.11.61 (Hound automatico, FOX, Wait and Pounce, ALL.TXT, scambi di contest). Scelta del proprietario: l'R+rapporto subito dopo il nostro Tx1 chiude con RR73 come WSJT-X 3.3.
-- **UltraFOX**: pubblicato nella 0.11.70 (compatibile con SuperFox); il ramo locale `superfox-rx` non serve piu'.
+- `cluster-qrz` (`D:uild\wt-qrz`, finito, da unire): ricerca QRZ.com XML e HamQTH (rotta `GET /api/v1/callsign/{call}`), suggerimento sul nominativo DE nel DX Cluster, invio a HRDLOG.NET, NAME e QTH nei QSO, LED di stato e «Prova» nei servizi, campi segreti con «Chiave salvata» e Cambia/Togli, un servizio per riga in Servizi di log e Servizi online. Prima di unirlo: `cargo test -p logbook -p aurora-core -p aurora -p reporting -p remote-api --target-dir target/testrun`. Mancano ancora le prove per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP.
+- `cascata-wsjtx` (`D:uild\wt-cascata`, in lavorazione): cascata come WSJT-X 3.3 (righe per periodo, pixel netti, blocchi compatti), pulsanti «Stile WSJT-X / Stile JTDX», WSJT-X attivo da subito anche per chi aggiorna.
+- `grafica-impostazioni` (`D:uild\wt-grafica`, in lavorazione): revisione grafica di tutte le pagine delle Impostazioni (testi tagliati, larghezze, allineamenti), screenshot prima/dopo.
 
 ## Prossimo passo
 
-2. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`).
-3. Regola del proprietario: si parte sempre da WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`); cio' che WSJT-X 3.3 non ha non si aggiunge (per questo «Sinc» di JTDX e' tolto).
+1. Finire la pubblicazione della 0.11.79 e l'ora vera nelle Novita'.
+2. Unire `cluster-qrz`, poi gli altri due rami quando finiscono; mostrare al proprietario le immagini prima di pubblicare la 0.11.80.
+3. Poi le voci aperte di `docs/tasks.md` (TCI, Q65, MSK144, pulsanti dei modi, QMAP).
 
 ## Da provare dal vivo (proprietario)
 
