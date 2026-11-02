@@ -989,11 +989,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         (qsos, log)
     }
 
-    /// `acceptQSO2`: con «Cancella i dati dopo aver loggato» acceso e senza AutoTX ne AutoSeq si avvia il timer di fine periodo (`logClearDXTimer`,
-    /// `|periodo - secondi trascorsi|`), se non e' gia' attivo.
+    /// `acceptQSO2`: dopo il log si avvia il timer di fine periodo (`logClearDXTimer`, `|periodo - secondi trascorsi|`), se non e' gia' attivo.
+    /// JTDX lo fa solo con «Cancella i dati dopo aver loggato» e senza AutoTX ne AutoSeq; per scelta del proprietario Aurora pulisce sempre la
+    /// zona di trasmissione a QSO finito: l'ultima chiusura parte nel periodo in corso, a fine periodo DX e messaggi si azzerano.
     fn arm_clear_dx(&mut self, qsos: &[QsoRecord], now_s: f64) {
         let Some(last) = qsos.last() else { return };
-        if !self.opts.clear_dx || self.auto_tx || self.opts.auto_seq || self.clear_dx_due.is_some() {
+        if self.clear_dx_due.is_some() {
             return;
         }
         let period = self.mode.period_ms() as f64 / 1000.0;
@@ -1006,8 +1007,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if now_s + 0.5 < due {
             return;
         }
+        let same = self.seq.dx().is_some_and(|d| d.eq_ignore_ascii_case(&call));
+        // finche' la sequenza trasmette ancora verso di lui (ultima chiusura, fermo a fine QSO in arrivo) si aspetta il periodo dopo:
+        // pulire prima annullerebbe l'arresto a fine QSO
+        if same && self.seq.is_enabled() && (self.auto_tx || self.opts.auto_seq) {
+            return;
+        }
         self.clear_dx_due = None;
-        if self.seq.dx().is_some_and(|d| d.eq_ignore_ascii_case(&call)) {
+        if same {
             self.seq.clear_dx();
             log.push(format!("DX {call} azzerato a fine periodo dopo il log (logClearDXTimer)"));
         }
@@ -2626,7 +2633,7 @@ mod tests {
     /// `logClearDXTimer` (`acceptQSO2` + `logClearDX`): con «Cancella i dati dopo aver loggato» acceso e senza AutoTX ne AutoSeq, a fine periodo dopo
     /// il log il DX si libera, ma solo se e' ancora quello del QSO; con AutoSeq o AutoTX acceso il timer non parte.
     #[test]
-    fn clear_dx_after_the_log_frees_the_dx_at_the_end_of_the_period_only_without_autoseq_and_autotx() {
+    fn clear_dx_after_the_log_frees_the_dx_at_the_end_of_the_period_once_the_transmission_is_over() {
         let qso = |call: &str| aurora_core::QsoRecord { call: call.into(), ..Default::default() };
         let mut b = Bench::new();
         b.d = TxDriver::with_options("IU3ABC", "IO91", Arc::clone(&b.port), Arc::clone(&b.controls), Options { autolog: false, clear_dx: true, auto_seq: false, ..Options::default() }).expect("pilota");
@@ -2649,21 +2656,17 @@ mod tests {
         b.d.arm_clear_dx(&[qso("K1ABC")], BASE + 33.0);
         b.d.fire_clear_dx(BASE + 59.9, &mut log);
         assert_eq!(b.d.seq.dx(), Some("DL1ABC"), "il DX di adesso non e' quello del QSO");
-        // con AutoTX acceso il timer non parte
+        // scelta del proprietario: il timer parte sempre, anche con AutoTX e AutoSeq; se la sequenza trasmette ancora verso di lui si aspetta
         b.d.clear_dx_due = None;
         b.d.auto_tx = true;
+        b.d.seq.set_enabled(true);
         b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
-        assert!(b.d.clear_dx_due.is_none());
-        // con AutoSeq acceso neppure
-        b.d.auto_tx = false;
-        b.d.opts.auto_seq = true;
-        b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
-        assert!(b.d.clear_dx_due.is_none());
-        // spenta l'opzione, niente
-        b.d.opts.auto_seq = false;
-        b.d.opts.clear_dx = false;
-        b.d.arm_clear_dx(&[qso("DL1ABC")], BASE + 70.0);
-        assert!(b.d.clear_dx_due.is_none());
+        assert!(b.d.clear_dx_due.is_some());
+        b.d.fire_clear_dx(BASE + 95.0, &mut log);
+        assert_eq!(b.d.seq.dx(), Some("DL1ABC"), "trasmette ancora: si aspetta");
+        b.d.seq.set_enabled(false);
+        b.d.fire_clear_dx(BASE + 105.0, &mut log);
+        assert_eq!(b.d.seq.dx(), None, "a trasmissione finita la zona si pulisce");
     }
 
     #[test]
