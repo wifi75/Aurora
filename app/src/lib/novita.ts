@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.73',
+    released: '2026-11-02T22:00:00Z',
+    kind: 'changed',
+    title: ['Pagina Informazioni rinnovata', 'Refreshed About page', 'Neue Info-Seite', 'Page Informations renouvelée', 'Página Información renovada', 'Página Informações renovada'],
+    text: [
+      'La pagina Informazioni è centrata e più ordinata, con il collegamento al sito web di Aurora.',
+      'The About page is centred and tidier, with a link to the Aurora website.',
+      'Die Info-Seite ist zentriert und übersichtlicher, mit einem Link zur Aurora-Webseite.',
+      'La page Informations est centrée et plus claire, avec un lien vers le site web d’Aurora.',
+      'La página Información está centrada y más ordenada, con el enlace al sitio web de Aurora.',
+      'A página Informações está centrada e mais arrumada, com a ligação ao site de Aurora.',
+    ],
+  },
+  {
     version: '0.11.72',
     released: '2026-11-02T17:56:15Z',
     kind: 'fixed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Si la radio lit un ROS au-dessus du seuil (2,5 par défaut, dans Réglages > Généraux), l’émission s’arrête aussitôt avec un avertissement.',
       'Si la radio lee una ROE por encima del límite (2,5 de serie, en Ajustes > Generales) la transmisión se detiene al momento con un aviso.',
       'Se o rádio ler uma ROE acima do limite (2,5 de origem, em Definições > Gerais) a transmissão para logo e aparece um aviso.',
-    ],
-  },
-  {
-    version: '0.11.55',
-    released: '2026-11-01T13:20:31Z',
-    kind: 'new',
-    title: ['Messaggi sbagliati non partono', 'Wrong messages are not sent', 'Fehlerhafte Nachrichten gehen nicht raus', 'Les messages erronés ne partent pas', 'Los mensajes erróneos no salen', 'As mensagens erradas não saem'],
-    text: [
-      'Prima di trasmettere Aurora controlla che il messaggio arrivi esattamente come è scritto: se un nominativo non si può codificare non parte niente e il pannello Tx lo dice. Un programma esterno può anche bloccare la trasmissione via UDP, come in WSJT-X 3.',
-      'Before transmitting Aurora checks the message arrives exactly as written: if a callsign cannot be encoded nothing goes out and the Tx panel says so. An external program can also block transmitting over UDP, as in WSJT-X 3.',
-      'Vor dem Senden prüft Aurora, dass die Nachricht genau wie geschrieben ankommt: lässt sich ein Rufzeichen nicht kodieren, geht nichts raus und das Tx-Feld sagt es. Ein externes Programm kann das Senden auch per UDP sperren, wie in WSJT-X 3.',
-      'Avant d’émettre, Aurora vérifie que le message arrive exactement comme écrit : si un indicatif ne peut pas être codé rien ne part et le panneau Tx l’indique. Un programme externe peut aussi bloquer l’émission par UDP, comme dans WSJT-X 3.',
-      'Antes de transmitir Aurora comprueba que el mensaje llegue exactamente como está escrito: si un indicativo no se puede codificar no sale nada y el panel Tx lo dice. Un programa externo también puede bloquear la transmisión por UDP, como en WSJT-X 3.',
-      'Antes de transmitir a Aurora verifica que a mensagem chega exatamente como está escrita: se um indicativo não puder ser codificado nada sai e o painel Tx diz isso. Um programa externo também pode bloquear a transmissão por UDP, como no WSJT-X 3.',
     ],
   },
 ];

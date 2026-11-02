@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.73 - 2026-11-02
 - **Pagina Informazioni** centrata e ridisegnata (testata con logo e versione, dedica, quattro riquadri, collegamenti), con il collegamento al sito web di Aurora.
 - **Sito web**: scheda «Fox e UltraFOX per le DXpedition» nelle sei lingue (gia' pubblicata).
 
