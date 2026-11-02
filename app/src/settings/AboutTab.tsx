@@ -4,12 +4,14 @@ import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
 
 const REPO = 'https://github.com/wifi75/Aurora';
+const SITE = 'https://wifi75.github.io/Aurora/';
 
 /** La pagina di presentazione: logo, versione dal core, autore, licenza, collegamenti e ringraziamenti. */
 export function AboutTab() {
   const t = useT();
   const { data } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
   const links: Array<[string, string]> = [
+    [t('about.site'), SITE],
     [t('about.repo'), REPO],
     [t('about.releases'), `${REPO}/releases`],
     [t('about.issues'), `${REPO}/issues`],
@@ -23,7 +25,7 @@ export function AboutTab() {
           <h2 className="about-name">AURORA</h2>
           <p className="about-tagline">{t('about.tagline')}</p>
           <p className="about-version">
-            {t('about.version')} <strong className="data">{data?.version ?? '—'}</strong>
+            {t('about.version')} <strong className="data about-version-n">{data?.version ?? '—'}</strong>
           </p>
         </div>
       </header>
@@ -33,20 +35,28 @@ export function AboutTab() {
         <blockquote>{t('about.dedica')}</blockquote>
         <figcaption>{t('about.dedicaFirma')}</figcaption>
       </figure>
-      <dl className="about-facts">
-        <dt>{t('about.author')}</dt>
-        <dd>
-          Tiziano Cassone · <strong className="data">IU3WJQ</strong>
-        </dd>
-        <dt>{t('about.license')}</dt>
-        <dd>
-          © 2026 Tiziano Cassone (IU3WJQ). <strong>GPL-3.0</strong> — {t('about.licenseText')} {t('about.warranty')}
-        </dd>
-        <dt>{t('about.derived')}</dt>
-        <dd>{t('about.derivedText')}</dd>
-        <dt>{t('about.thanks')}</dt>
-        <dd>{t('about.thanksText')}</dd>
-      </dl>
+      <div className="about-facts">
+        <section className="about-fact">
+          <h3>{t('about.author')}</h3>
+          <p>
+            Tiziano Cassone · <strong className="data">IU3WJQ</strong>
+          </p>
+        </section>
+        <section className="about-fact">
+          <h3>{t('about.license')}</h3>
+          <p>
+            © 2026 Tiziano Cassone (IU3WJQ). <strong>GPL-3.0</strong> — {t('about.licenseText')} {t('about.warranty')}
+          </p>
+        </section>
+        <section className="about-fact">
+          <h3>{t('about.derived')}</h3>
+          <p>{t('about.derivedText')}</p>
+        </section>
+        <section className="about-fact">
+          <h3>{t('about.thanks')}</h3>
+          <p>{t('about.thanksText')}</p>
+        </section>
+      </div>
       <nav className="about-links" aria-label={t('about.links')}>
         {links.map(([label, href]) => (
           <a key={href} className="glass about-link" href={href} target="_blank" rel="noreferrer">
