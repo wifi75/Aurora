@@ -5716,3 +5716,32 @@
 .dxd-shape-dot { fill: #e8a317; }
 .dxd-shape figcaption { font-size: 0.72rem; color: var(--muted, #5b6b80); text-align: center; }
 @media (max-width: 520px) { .dxd-facts-row { grid-template-columns: 1fr; } }
+
+/* DX Cluster, allineamenti chiesti dal proprietario: Freq, DX e Paese 7px a sinistra, Modo 2px a destra, UTC allineato all'ora */
+.cluster-table th:nth-child(2),
+.cluster-table td:nth-child(2),
+.cluster-table th:nth-child(3),
+.cluster-table td:nth-child(3),
+.cluster-table th:nth-child(4),
+.cluster-table td:nth-child(4),
+.cluster-table td:nth-child(5) {
+  position: relative;
+  left: -7px;
+}
+
+.cluster-table th.cluster-th-country {
+  overflow: visible;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.cluster-table th:nth-child(6),
+.cluster-table td:nth-child(6) {
+  position: relative;
+  left: 2px;
+}
+
+.cluster-table th:last-child,
+.cluster-table td.cluster-utc {
+  text-align: left;
+}
