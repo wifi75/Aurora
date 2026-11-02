@@ -1294,7 +1294,7 @@
 
 .cat-link > .sx-field {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: min(100%, max-content);
 }
 
 .cat-link > .cat-w-l {
@@ -1306,7 +1306,7 @@
 }
 
 .cat-link > .cat-w-s {
-  flex-basis: 9.5rem;
+  flex-basis: 12.5rem;
 }
 
 .cat-link > .sx-field--plain {
@@ -1329,11 +1329,12 @@
 }
 
 .cat-link .cat-w-m .sx-control {
-  min-width: 7rem;
+  min-width: 11.5rem;
 }
 
+/* «Predefinito del modello» deve leggersi per intero anche nelle tendine piccole (velocita', bit) */
 .cat-link .cat-w-s .sx-control {
-  min-width: 4rem;
+  min-width: 11.5rem;
 }
 
 /* Le pagine riempiono i vuoti: i riquadri bassi salgono accanto a quelli alti invece di lasciare spazio in mezzo */
@@ -1525,4 +1526,125 @@
   background: var(--accent);
   color: var(--accent-ink, #fff);
   border-color: var(--accent);
+}
+
+/*
+ * Regole comuni contro i testi tagliati (revisione grafica delle Impostazioni).
+ * - L'etichetta va a capo per intero: niente taglio a due righe ne' puntini.
+ * - I campi di testo cedono spazio all'etichetta fino a una larghezza minima leggibile, invece di
+ *   schiacciarla a poche lettere per riga; le tendine si allargano fino alla scelta piu' lunga.
+ */
+.sx-label,
+.sx-body .jx-name {
+  display: block;
+  overflow: visible;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+}
+
+.sx-field input[type='text'],
+.sx-field input[type='search'],
+.sx-field input[type='password'],
+.sx-field input[type='url'] {
+  flex: 0 1 var(--sx-ctl, 10rem);
+  min-width: 6.5rem;
+}
+
+.sx-control:has(> select:not(.snd-select)) {
+  flex-shrink: 1;
+}
+
+.sx-field select:not(.snd-select) {
+  width: auto;
+  min-width: min(var(--sx-ctl, 10rem), 100%);
+  max-width: 100%;
+}
+
+.sx-body .jx-row input[type='text'],
+.sx-body .jx-row input[type='password'] {
+  flex: 0 1 auto;
+  width: 9rem;
+  min-width: 6.5rem;
+  max-width: 100%;
+}
+
+/* Un indirizzo o un percorso gia' scritto allarga il campo quanto serve (entro la cella) */
+@supports (field-sizing: content) {
+  .sx-body .jx-row input[type='text'] {
+    field-sizing: content;
+    width: auto;
+    min-width: 8rem;
+    max-width: 100%;
+  }
+}
+
+/* Tendine e campi di testo del motore: se nella cella non c'e' posto per nome e valore interi,
+   il valore scende sotto il nome (allineato a destra) invece di tagliarsi o di uscire dalla cella */
+.sx-body .jx-row:has(> select),
+.sx-body .jx-row:has(> input[type='text']),
+.sx-body .jx-row:has(> input[type='password']) {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  padding-block: 0.35rem;
+}
+
+.sx-body .jx-name {
+  flex: 1 1 6rem;
+}
+
+.sx-body .jx-row > select,
+.sx-body .jx-row > input[type='text'],
+.sx-body .jx-row > input[type='password'] {
+  margin-left: auto;
+}
+
+.sx-body .jx-row select {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: min(9rem, 100%);
+  max-width: 100%;
+}
+
+/* Colori e anteprima: il nome del tipo di messaggio va a capo invece di finire con i puntini */
+.jt-colors .sx-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* Collegamento della radio: la tendina riempie la cella ma non scende sotto il testo della scelta */
+.cat-link .sx-control select {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Regole di Aurora nella scheda Sequenza: righe di testo normali, l'elenco delle escluse largo, «Salva» fuori dalle celle */
+.sx-rules > .auto-field,
+.sx-rules > .auto-wanted {
+  line-height: 1.2;
+}
+
+.sx-rules > .auto-field:has(input[type='text']) {
+  grid-column: span 2;
+}
+
+.sx-rules > .auto-field input[type='text'] {
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 9rem;
+  max-width: 24rem;
+}
+
+.sx-rules > button {
+  align-self: center;
+  justify-self: start;
+}
+
+/* Due pagine una sotto l'altra nella stessa scheda (impostazioni e, sotto, informazioni): stessa distanza dei riquadri */
+.sx-page + .sx-page,
+.sx-page--follow {
+  margin-top: var(--space-3);
 }

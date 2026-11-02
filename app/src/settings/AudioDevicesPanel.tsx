@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ApiError, getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { Help } from './common';
@@ -121,7 +121,8 @@ export function resultLines(result: AudioResult, t: T): { text: string; bad: boo
 }
 
 /** Scheda Audio con il motore proprio: ingresso e uscita a tendina, canali, file audio; l'esito dell'applicazione si legge subito sotto. */
-export function AudioDevicesPanel() {
+/** `notes`: altre note della scheda, nello stesso riquadro «Note» invece che sciolte sotto la pagina. */
+export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
   const t = useT();
   const client = useQueryClient();
   const devices = useQuery({ queryKey: ['audio-devices'], queryFn: getAudioDevices, retry: false });
@@ -241,6 +242,7 @@ export function AudioDevicesPanel() {
 
       <Notes span={3}>
         <Help>{t('aud.intro')}</Help>
+        {notes}
       </Notes>
     </Page>
   );
