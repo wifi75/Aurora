@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.71 - 2026-11-02
+- **Pagina Fox ridisegnata e completa**: testata con lo stato (spento, trasmissione spenta, pronto, in onda) e i comandi Fox, Abilita Tx e STOP; opzioni a pulsanti e interruttori; numeri della sessione; cascata con le barre Rx/Tx e i comandi di ricezione; messaggi ricevuti; tabella di chi chiama con SNR colorato; in onda adesso, QSO in corso con i passi e coda. Non serve piu' passare dalla pagina Stazione.
+- **Sequenza**: dopo il nostro RRR il 73 del DX chiude e registra il QSO senza mandare un altro 73.
+- **Scheda DXpedition**: riquadro con la forma del paese (solo il contorno).
+- **Pagina Informazioni**: copyright, licenza GPL-3, assenza di garanzia e codice derivato; crediti completi in `THIRD-PARTY-NOTICES.md`.
+
 ## 0.11.70 - 2026-11-02
 - **UltraFOX** (compatibile con SuperFox di WSJT-X 3.3): nella pagina Fox la casella «UltraFOX» manda tutte le stazioni del periodo in un solo segnale largo (da 750 a 2260 Hz, circa 13 s); in Hound (FT8) Aurora decodifica anche le Fox UltraFOX/SuperFox e risponde come a quelle classiche. In fase di prova; la firma digitale non e' ancora gestita.
 - **Zona di trasmissione**: a QSO finito e registrato DX e messaggi si cancellano da soli appena la sequenza smette di trasmettere verso quella stazione; le chiusure (RRR/RR73/73) verso una stazione gia' a log non si ripetono piu' all'infinito (al massimo 3, o il limite scelto).
