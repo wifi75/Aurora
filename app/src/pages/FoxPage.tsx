@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getCat, postControl, postFox, postRxFrequency, postTxFrequency } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
@@ -23,6 +23,23 @@ const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: 'CQ'
 
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 
+const WF_KEY = 'aurora-fox-wf-height';
+const readHeight = (): number => {
+  try {
+    const v = Number(window.localStorage.getItem(WF_KEY));
+    return v >= 120 && v <= 1200 ? v : 256;
+  } catch {
+    return 256;
+  }
+};
+const saveHeight = (h: number) => {
+  try {
+    if (h >= 120) window.localStorage.setItem(WF_KEY, String(h));
+  } catch {
+    // senza archivio del browser l'altezza non si ricorda
+  }
+};
+
 const snr = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 
 /**
@@ -39,6 +56,11 @@ export function FoxPage() {
   const [sort, setSort] = useState<SortKey>('snr');
   const [filter, setFilter] = useState('');
 
+  // il pulsante cambia subito, senza aspettare lo stato del motore; se il comando fallisce torna com'era
+  const toggleTx = (on: boolean) => {
+    useStation.getState().patchStatus({ tx_enabled: on });
+    postControl('enable_tx', on).catch(() => useStation.getState().patchStatus({ tx_enabled: !on }));
+  };
   const options = (o: Partial<{ slots: number; more_cqs: boolean; cq: string; auto_queue: boolean; ultra: boolean }>) =>
     void postFox({ action: 'options', slots: fox.slots, more_cqs: fox.more_cqs, cq: fox.cq || 'CQ', auto_queue: fox.auto_queue, ultra: fox.ultra, ...o });
   const queued = new Set(fox.queue.map((q) => q.call));
@@ -66,12 +88,19 @@ export function FoxPage() {
         </div>
         <div className="foxc-state" role="status">
           <span className={`foxc-pill foxc-pill--${state}`}>{t(`fox.state.${state}`)}</span>
+          <div className="foxc-kpis">
+            <Kpi tone="ok" label={t('fox.logged')} value={fox.logged} />
+            <Kpi tone="accent" label={t('fox.inProgress')} value={fox.in_progress.length} />
+            <Kpi tone="warn" label={t('fox.queue')} value={fox.queue.length} />
+            <Kpi tone="muted" label={t('fox.callers')} value={fox.callers.length} />
+            <Kpi tone="muted" label={t('fox.periods')} value={fox.periods} />
+          </div>
         </div>
         <div className="foxc-main-actions">
           <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} onClick={() => void postControl('fox', !fox.enabled)}>
             {fox.enabled ? t('fox.on') : t('fox.off')}
           </button>
-          <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} onClick={() => void postControl('enable_tx', !txOn)}>
+          <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} onClick={() => toggleTx(!txOn)}>
             {t('fox.enableTx')}
           </button>
           <StopButton variant="bar" />
@@ -112,20 +141,8 @@ export function FoxPage() {
         </button>
       </div>
 
-      <div className="foxc-kpis">
-        <Kpi tone="ok" label={t('fox.logged')} value={fox.logged} />
-        <Kpi tone="accent" label={t('fox.inProgress')} value={fox.in_progress.length} />
-        <Kpi tone="warn" label={t('fox.queue')} value={fox.queue.length} />
-        <Kpi tone="muted" label={t('fox.callers')} value={fox.callers.length} />
-        <Kpi tone="muted" label={t('fox.periods')} value={fox.periods} />
-      </div>
 
-      <div className="foxc-grid foxc-grid--top">
-        <Spectrum />
-        <Received />
-      </div>
-
-      <div className="foxc-grid">
+      <div className="foxc-grid foxc-grid--main">
         <section className="foxc-card">
           <header className="foxc-card-head">
             <h2>{t('fox.callers')}</h2>
@@ -184,24 +201,6 @@ export function FoxPage() {
         <div className="foxc-stack">
           <section className="foxc-card">
             <header className="foxc-card-head">
-              <h2>{t('fox.onAir')}</h2>
-              <span className="foxc-count data">{fox.tx.length}</span>
-            </header>
-            {fox.tx.length === 0 ? (
-              <Empty text={t('fox.empty')} />
-            ) : (
-              <ol className="foxc-slots">
-                {fox.tx.map((m, i) => (
-                  <li key={i}>
-                    <span className="foxc-slot">{i + 1}</span>
-                    <span className="data">{m}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-          <section className="foxc-card">
-            <header className="foxc-card-head">
               <h2>{t('fox.inProgress')}</h2>
               <span className="foxc-count data">{fox.in_progress.length}</span>
             </header>
@@ -228,6 +227,24 @@ export function FoxPage() {
           </section>
           <section className="foxc-card">
             <header className="foxc-card-head">
+              <h2>{t('fox.onAir')}</h2>
+              <span className="foxc-count data">{fox.tx.length}</span>
+            </header>
+            {fox.tx.length === 0 ? (
+              <Empty text={t('fox.empty')} />
+            ) : (
+              <ol className="foxc-slots">
+                {fox.tx.map((m, i) => (
+                  <li key={i}>
+                    <span className="foxc-slot">{i + 1}</span>
+                    <span className="data">{m}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+          <section className="foxc-card">
+            <header className="foxc-card-head">
               <h2>{t('fox.queue')}</h2>
               <span className="foxc-count data">{fox.queue.length}</span>
             </header>
@@ -249,7 +266,10 @@ export function FoxPage() {
             )}
           </section>
         </div>
+        <Received />
       </div>
+
+      <Spectrum />
     </section>
   );
 }
@@ -266,6 +286,14 @@ function Spectrum() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
+  const [height] = useState(readHeight);
+  // l'altezza scelta trascinando l'angolo in basso si ricorda
+  const resizer = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const watch = new ResizeObserver(() => saveHeight(el.offsetHeight));
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
   return (
     <section className="foxc-card foxc-card--flush">
       <header className="foxc-card-head">
@@ -273,7 +301,10 @@ function Spectrum() {
         <span className="foxc-chip data">Tx {status?.tx_df ?? '—'} Hz</span>
         <span className="foxc-chip foxc-chip--rx data">Rx {status?.rx_df ?? '—'} Hz</span>
       </header>
-      <div className="foxc-wf">
+      <div className="foxc-rx-controls">
+        <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
+      </div>
+      <div className="foxc-wf" ref={resizer} style={{ height }}>
         <div className="wf-stack">
           <Waterfall register={registerSpectrum} mode={status?.mode} />
           <FrequencyMarkers
@@ -290,9 +321,6 @@ function Spectrum() {
           />
         </div>
         <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} />
-      </div>
-      <div className="foxc-rx-controls">
-        <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
       </div>
     </section>
   );
