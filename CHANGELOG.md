@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.74 - 2026-11-02
+- **Pagina Fox con un aspetto proprio, «Neon UltraFOX»**: viola e ciano su fondo scuro in ogni tema, numeri e pulsanti luminosi, bordo rosa quando si e' in onda.
+- **Cascata della pagina Fox**: si alza e si abbassa trascinando la maniglia sotto (l'altezza si ricorda).
+
 ## 0.11.73 - 2026-11-02
 - **Pagina Informazioni** centrata e ridisegnata (testata con logo e versione, dedica, quattro riquadri, collegamenti), con il collegamento al sito web di Aurora.
 - **Sito web**: scheda «Fox e UltraFOX per le DXpedition» nelle sei lingue (gia' pubblicata).
