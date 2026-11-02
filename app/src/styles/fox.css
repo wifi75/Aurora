@@ -157,7 +157,8 @@
 /* disposizione in una schermata: testata con i numeri, tre colonne, cascata sotto */
 .foxc-state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .foxc-grid--main { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr); align-items: stretch; }
-.foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: 22rem; }
+.foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: var(--main-h, 22rem); }
+.foxc > .foxc-wf-handle { border-radius: 0.5rem; margin-top: calc(-1 * var(--space-2)); }
 .foxc-grid--main > .foxc-card { display: flex; flex-direction: column; }
 .foxc-grid--main .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
 .foxc-grid--main .foxc-stack > .foxc-card { flex: 0 1 auto; display: flex; flex-direction: column; min-height: 0; }
@@ -261,5 +262,7 @@
 .foxc--neon .foxc-rx-controls .chip { background: rgba(80, 50, 180, 0.2); border-color: #5a3fd1; color: var(--text); }
 .foxc--neon .foxc-rx-controls .chip.glass--on { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 10px rgba(65, 240, 224, 0.5); }
 .foxc--neon .foxc-rx-controls .chip.chip--warn { background: var(--nx-pink); border-color: var(--nx-pink); color: #2a0620; }
-.foxc--neon .foxc-main-actions .stop-btn--idle { background: transparent; border: 1px solid #ff3d71; color: #ff8fb0; }
-.foxc--neon .foxc-main-actions .stop-btn:not(.stop-btn--idle) { box-shadow: 0 0 18px rgba(255, 61, 113, 0.6); }
+.foxc--neon .foxc-main-actions .stop-btn { width: auto; min-height: 0; height: 2.4rem; padding: 0 1.1rem; border-radius: 0.6rem; font: 700 var(--text-sm) var(--font-ui); letter-spacing: 0.04em; opacity: 1; background: #ff3d71 !important; color: #fff !important; border: 1px solid #ff3d71 !important; box-shadow: 0 0 18px rgba(255, 61, 113, 0.6) !important; }
+.foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle { background: transparent !important; color: #ff8fb0 !important; box-shadow: none !important; }
+.foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle:hover { background: rgba(255, 61, 113, 0.15) !important; }
+.foxc-main-actions .stop-bar { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
