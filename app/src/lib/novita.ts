@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.82',
-    released: '2026-11-02T23:30:00Z',
+    released: '2026-11-02T22:30:10Z',
     kind: 'fixed',
     title: ['Ricerca QRZ.com e HamQTH non si blocca più', 'QRZ.com and HamQTH lookup no longer hangs', 'QRZ.com- und HamQTH-Suche hängt nicht mehr', 'La recherche QRZ.com et HamQTH ne se bloque plus', 'La búsqueda QRZ.com y HamQTH ya no se bloquea', 'A pesquisa QRZ.com e HamQTH já não bloqueia'],
     text: [
