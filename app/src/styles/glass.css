@@ -1037,3 +1037,36 @@ button.glass.chip.chip--main {
   letter-spacing: 0.06em;
   opacity: 1;
 }
+
+/* Telefono (sotto 40rem): niente spazio sprecato e niente testo tagliato */
+@media (max-width: 40rem) {
+  /* l'icona di Aurora andava su una riga tutta sua: il nome AURORA c'e' gia' in alto */
+  .app-header .app-logo-link {
+    display: none;
+  }
+
+  /* il menu delle pagine scorre di lato: la sfumatura a destra fa capire che ce ne sono altre */
+  .app-nav {
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+  }
+
+  /* le dodici bande in una riga sola, senza tagliare l'ultima */
+  .band-bar {
+    gap: 2px;
+  }
+
+  .band-bar > * {
+    min-width: 0 !important;
+    padding-right: 0.3rem !important;
+    padding-left: 0.3rem !important;
+  }
+
+  /* il messaggio va a capo invece di finire nei «…»: si leggono locatore e rapporto */
+  .decode-row .decode-text .data {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+}
