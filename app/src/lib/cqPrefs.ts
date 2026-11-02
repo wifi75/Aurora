@@ -62,8 +62,9 @@ export function saveCqPrefs(storage: WritableStorage, prefs: CqPrefs): void {
   }
 }
 
-/** I messaggi da elencare in «CQ e novità» secondo le scelte; ordine invariato. */
+/** I messaggi da elencare in «CQ e novità» secondo le scelte; ordine invariato, una sola riga per stazione (la prima, cioè la più recente). */
 export function applyCqPrefs(decodes: DecodedMessage[], prefs: CqPrefs): DecodedMessage[] {
+  const seen = new Set<string>();
   return decodes
     .filter((d) => {
       if (d.tag === null || !prefs.tags[d.tag as CqTag]) return false;
@@ -71,6 +72,13 @@ export function applyCqPrefs(decodes: DecodedMessage[], prefs: CqPrefs): Decoded
       const call = callOf(d.text);
       if (prefs.hide.some((p) => callMatches(call, p))) return false;
       return prefs.only.length === 0 || prefs.only.some((p) => callMatches(call, p));
+    })
+    .filter((d) => {
+      const call = callOf(d.text);
+      if (!call) return true;
+      if (seen.has(call)) return false;
+      seen.add(call);
+      return true;
     })
     .slice(0, prefs.limit);
 }
