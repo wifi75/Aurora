@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster**: la frequenza non viene piu' tagliata a sinistra.
+- **Scheda DXpedition**: niente cartina scura provvisoria prima di quella vera, e il riquadro del paese ha gia' il suo posto mentre si carica.
 
 - **DX Cluster, chi ha fatto lo spot**: passando il mouse sul nominativo nella colonna DE compare un riquadro con bandiera, paese e continente e, con le ricerche accese, nome e citta'. Le ricerche partono dopo un breve ritardo e non si ripetono.
 - **Ricerca QRZ.com e HamQTH** (Impostazioni > Servizi online): nome e citta' dei nominativi da QRZ.com (utente e password; dati completi con l'abbonamento XML, ridotti senza) e da HamQTH (gratuito), usato se QRZ e' spento o non trova. Spente di base, password protette da Windows, «Prova», risultati in memoria tre giorni. Nuova rotta `GET /api/v1/callsign/{call}`.

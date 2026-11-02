@@ -2358,6 +2358,19 @@
   background: #a9cde0;
 }
 
+/* con le tessere la terra del programma non serve: si vede solo se le tessere non arrivano */
+.worldmap--tiles:not(.worldmap--tiles-failed) .leaflet-landPane-pane,
+.worldmap--tiles:not(.worldmap--tiles-failed) .leaflet-pane.leaflet-landPane-pane {
+  opacity: 0;
+}
+
+/* riquadro del paese in caricamento: occupa gia' il suo posto, cosi' la scheda non cambia forma */
+.dxd-shape--loading {
+  min-height: 10rem;
+  background: var(--panel-2, rgba(127, 127, 127, 0.12));
+  border-radius: 0.6rem;
+}
+
 /* la notte: velo scuro con un leggero bordo luminoso lungo la linea alba-tramonto */
 .worldmap-night {
   mix-blend-mode: multiply;
@@ -5724,13 +5737,10 @@
 
 /* DX Cluster, allineamenti chiesti dal proprietario: Freq 12px a sinistra, DX e Paese 7px, Modo 2px a destra, UTC allineato all'ora.
    Si sposta il contenuto, non la cella: spostando la cella restava una striscia vuota nello sfondo della riga */
-.cluster-table th:nth-child(2) {
-  text-indent: -12px;
-}
-
-.cluster-table td:nth-child(2) > * {
-  position: relative;
-  left: -12px;
+/* Freq: si toglie lo spazio interno a sinistra invece di spostare il contenuto, che veniva tagliato dal bordo della cella */
+.cluster-table th:nth-child(2),
+.cluster-table td:nth-child(2) {
+  padding-left: 0;
 }
 
 .cluster-table th:nth-child(3),

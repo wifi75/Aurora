@@ -47,7 +47,7 @@ export function CountryShape({ lat, lon, label, ariaLabel }: { lat: number; lon:
       alive = false;
     };
   }, [lat, lon]);
-  if (!drawing) return null;
+  if (!drawing) return <figure className="dxd-shape dxd-shape--loading" aria-busy="true" aria-label={ariaLabel ?? label} />;
   const f = drawing.frame;
   return (
     <figure className="dxd-shape">
