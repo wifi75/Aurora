@@ -140,7 +140,8 @@ function ControlBox({ id, label }: { id: ControlId; label: string }) {
  * La scheda Sequenza come nel motore: i quattro scenari brevi con il numero di volte, «ferma il Tx se...» e «operazione CQ rigorosa».
  * `extra` sono altri riquadri (le regole di Aurora) che finiscono nella stessa griglia.
  */
-export function NativeSequence({ extra }: { extra?: ReactNode }) {
+/** `notes`: altre note della pagina, nello stesso riquadro «Note» (due riquadri «Note» nella stessa pagina erano un doppione). */
+export function NativeSequence({ extra, notes }: { extra?: ReactNode; notes?: ReactNode }) {
   const t = useT();
   const { settings, draft } = useDoc();
   if (settings.isError || !settings.data) {
@@ -203,6 +204,7 @@ export function NativeSequence({ extra }: { extra?: ReactNode }) {
       <Notes span={2}>
         <Help>{t('seq2.switchHelp')}</Help>
         <Help>{t('seq2.help')}</Help>
+        {notes}
       </Notes>
       <ApplyBar draft={draft} doc={doc} />
     </Page>

@@ -45,11 +45,9 @@ export function SequenceTab() {
             {rules}
             <EngineGroups groups={QSO_LOG_GROUPS} />
             <NativeTxOptions />
-            <Notes>
-              <Help>{t('seq.intro')}</Help>
-            </Notes>
           </>
         }
+        notes={<Help>{t('seq.intro')}</Help>}
       />
     );
   }
