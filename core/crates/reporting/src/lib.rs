@@ -13,6 +13,7 @@ pub mod eqsl;
 pub mod lotw;
 pub mod psk;
 pub mod qrz;
+pub mod qrz_xml;
 pub mod secret;
 pub mod status;
 pub mod tcp;

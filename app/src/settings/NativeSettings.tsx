@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ApiError, getEngineSettings, getStationInfo, postUploadTest, putEngineSettings } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
 import { Help } from './layout';
@@ -75,6 +75,67 @@ export function useDraft(): Draft & { clear(): void } {
   };
 }
 
+/** Evento: un campo segreto e' stato confermato (uscendo dal campo o con Invio); `detail` e' la voce. */
+export const SECRET_COMMITTED = 'aurora-secret-committed';
+/** Valore «attuale» di un segreto per la bozza: non coincide mai con un testo scritto, cosi' anche «Togli» (testo vuoto) conta come modifica. */
+const NO_SECRET = '\u0000';
+
+/**
+ * Un campo segreto (password, chiave). Il server non restituisce mai il segreto, solo se e' salvato: salvato si mostra «Salvata ••••»
+ * con «Cambia» e «Togli»; mentre si scrive non si salva niente, si conferma uscendo dal campo o con Invio.
+ */
+export function SecretInput({ id, label, saved, pending, disabled, onCommit }: { id: string; label: string; saved: boolean; pending: string | undefined; disabled: boolean; onCommit(v: string): void }) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+  const commit = () => {
+    setEditing(false);
+    const v = text.trim();
+    setText('');
+    if (v) onCommit(v);
+  };
+  if (pending !== undefined && !editing) {
+    return (
+      <span className="ens-secret" id={id} role="status" aria-label={label}>
+        {pending === '' ? t('ens.pw.removing') : t('ens.pw.saving')}
+      </span>
+    );
+  }
+  if (saved && !editing) {
+    return (
+      <span className="ens-secret" id={id} aria-label={label}>
+        <span className="ens-secret-state" data-testid={`${id}-saved`}>{t('ens.pw.savedShort')} ••••</span>{' '}
+        <button type="button" className="glass" disabled={disabled} title={t('ens.pw.changeTip')} onClick={(e) => { e.preventDefault(); setEditing(true); }}>
+          {t('ens.pw.change')}
+        </button>{' '}
+        <button type="button" className="glass" disabled={disabled} title={t('ens.pw.removeTip')} onClick={(e) => { e.preventDefault(); onCommit(''); }}>
+          {t('ens.pw.remove')}
+        </button>
+      </span>
+    );
+  }
+  return (
+    <input
+      id={id}
+      aria-label={label}
+      type="password"
+      className="jx-text"
+      disabled={disabled}
+      maxLength={200}
+      value={text}
+      autoFocus={editing}
+      placeholder={t('ens.pw.type')}
+      autoComplete="off"
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { setText(''); setEditing(false); }
+      }}
+    />
+  );
+}
+
 /** Una voce: viva (si modifica) o non disponibile (spenta, con il motivo). */
 export function SettingField({ row, label, doc, draft, locked = false }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
   const t = useT();
@@ -120,9 +181,10 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
   } else if (row.key === 'WavelogStation') {
     const url = draft.changes.WavelogUrl ?? doc.values.WavelogUrl ?? '';
     control = <WavelogStationSelect id={id} label={label} url={url} value={live ? value : ''} disabled={!live || locked} onChange={change} />;
+  } else if (row.kind === 'secret') {
+    control = <SecretInput id={id} label={label} saved={Boolean(doc.secrets?.[row.key])} pending={changed} disabled={!live || locked} onCommit={(v) => { draft.set(row.key, v, NO_SECRET); window.dispatchEvent(new CustomEvent(SECRET_COMMITTED, { detail: row.key })); }} />;
   } else {
-    // le credenziali di eQSL non si salvano: il campo resta vuoto e spento
-    control = <input id={id} aria-label={label} type={row.kind === 'secret' ? 'password' : 'text'} className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} placeholder={row.kind === 'secret' && doc.secrets?.[row.key] ? t('ens.pw.saved') : undefined} autoComplete="off" onChange={(e) => change(e.target.value)} />;
+    control = <input id={id} aria-label={label} type="text" className="jx-text" disabled={!live || locked} maxLength={200} value={live ? value : ''} autoComplete="off" onChange={(e) => change(e.target.value)} />;
   }
   const note = live ? (item?.apply === 'restart' ? t('ens.restart') : '') : t(`ens.r.${item?.reason ?? 'own_decoder'}` as Key);
   const liveNote = live && item?.note ? t(`ens.n.${item.note}` as Key) : '';
@@ -217,10 +279,20 @@ function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
 }
 
 /** Il pulsante «Prova» di un servizio dell'invio diretto: controlla le impostazioni gia' salvate, senza registrare QSO. */
-function UploadTest({ service, waiting }: { service: UploadService; waiting: boolean }) {
+function UploadTest({ service, waiting, keys }: { service: UploadService; waiting: boolean; keys: readonly string[] }) {
   const t = useT();
   const client = useQueryClient();
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  // dopo aver confermato una password o una chiave del riquadro, appena e' salvata parte da sola la prova
+  const [auto, setAuto] = useState(false);
+  const keyList = keys.join(',');
+  useEffect(() => {
+    const on = (e: Event) => {
+      if (keyList.split(',').includes(String((e as CustomEvent).detail))) setAuto(true);
+    };
+    window.addEventListener(SECRET_COMMITTED, on);
+    return () => window.removeEventListener(SECRET_COMMITTED, on);
+  }, [keyList]);
   const test = useMutation({
     mutationFn: () => postUploadTest(service),
     onSuccess: (text) => setResult({ ok: true, text }),
@@ -228,6 +300,12 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
     // la prova puo' far ripartire un servizio fermo: si rilegge lo stato
     onSettled: () => void client.invalidateQueries({ queryKey: ['engine-settings'] }),
   });
+  useEffect(() => {
+    if (auto && !waiting && !test.isPending) {
+      setAuto(false);
+      test.mutate();
+    }
+  }, [auto, waiting, test]);
   return (
     <div className="ens-test">
       <button type="button" className="glass" disabled={waiting || test.isPending} title={waiting ? t('ens.test.saveFirst') : undefined} onClick={() => test.mutate()} data-testid={`test-${service}`}>
@@ -235,7 +313,7 @@ function UploadTest({ service, waiting }: { service: UploadService; waiting: boo
       </button>
       {waiting ? <span className="muted"> {t('ens.test.saveFirst')}</span> : null}
       {result && !waiting ? (
-        <span className={result.ok ? 'muted' : 'live-note'} role="status">
+        <span className={result.ok ? 'ens-test-ok' : 'live-note'} role="status" data-testid={`test-result-${service}`}>
           {' '}
           {result.ok ? t('ens.test.ok') : t('ens.test.err')}: {result.text}
         </span>
@@ -262,7 +340,7 @@ export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readon
                 <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
               ))}
             </Cells>
-            {group.upload ? <UploadTest service={group.upload.service} waiting={waiting} /> : null}
+            {group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} /> : null}
             {kinds.map((k) => (
               <SendStatus key={k} doc={doc} kind={k} />
             ))}
