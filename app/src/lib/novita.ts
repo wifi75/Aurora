@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.71',
-    released: '2026-11-02T20:00:00Z',
+    released: '2026-11-02T17:42:24Z',
     kind: 'changed',
     title: ['Pagina Fox completa', 'Complete Fox page', 'Vollständige Fox-Seite', 'Page Fox complète', 'Página Fox completa', 'Página Fox completa'],
     text: [
