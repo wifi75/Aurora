@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Suggerimenti ovunque**: nella pagina Fox ogni contatore, pulsante, interruttore, riquadro e colonna spiega cosa fa passandoci sopra; suggerimenti anche sulle spie e sugli strumenti dei display della radio e sui controlli di Storico, Esporta, Mappa, Propagazione, Statistiche, cluster, DXCC e Impostazioni, in tutte e sei le lingue.
 - **Display FT-2000**: RX e TX accanto alla frequenza principale; spie e riquadri spenti ben visibili; al posto del riquadro FT8/AGC (gia' mostrati altrove) la potenza della radio con i pulsanti − e +.
 
 ## 0.11.77 - 2026-11-03

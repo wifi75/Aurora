@@ -100,10 +100,10 @@ export function FrequenciesTab() {
                       </select>
                     </td>
                     <td>
-                      <input type="checkbox" aria-label={t('freq.preferred')} checked={r.preferred} onChange={(e) => change(i, { preferred: e.target.checked })} />
+                      <input title={t('tip.ui.freqPreferred')} type="checkbox" aria-label={t('freq.preferred')} checked={r.preferred} onChange={(e) => change(i, { preferred: e.target.checked })} />
                     </td>
                     <td>
-                      <button type="button" className="glass" aria-label={`${t('set.remove')} ${r.band} ${r.mode} ${(r.hz / 1e6).toFixed(3)}`} onClick={() => setDraft(rows.filter((_, k) => k !== i))}>
+                      <button title={t('tip.ui.remove')} type="button" className="glass" aria-label={`${t('set.remove')} ${r.band} ${r.mode} ${(r.hz / 1e6).toFixed(3)}`} onClick={() => setDraft(rows.filter((_, k) => k !== i))}>
                         {t('set.remove')}
                       </button>
                     </td>
@@ -116,13 +116,13 @@ export function FrequenciesTab() {
       </Group>
       <Group title={t('lay.actions')}>
         <Actions>
-          <button type="button" className="glass" onClick={() => setDraft([...rows, { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true }])}>
+          <button title={t('tip.ui.add')} type="button" className="glass" onClick={() => setDraft([...rows, { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true }])}>
             {t('freq.addRow')}
           </button>
-          <button type="button" className="glass" disabled={defaults.isPending} onClick={() => defaults.mutate()}>
+          <button title={t('tip.ui.reset')} type="button" className="glass" disabled={defaults.isPending} onClick={() => defaults.mutate()}>
             {t('freq.reset')}
           </button>
-          <button type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
+          <button title={t('tip.ui.save')} type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
             {t('set.save')}
           </button>
         </Actions>

@@ -79,7 +79,7 @@ export function UpdateBar() {
       <strong>{banner}</strong>
       {release.name && release.name !== release.tag ? <span className="muted">{release.name}</span> : null}
       {update.data?.can_install ? (
-        <button type="button" className="glass glass--on" disabled={installing} onClick={() => void install()}>
+        <button type="button" className="glass glass--on" disabled={installing} title={t('tip.ui.install')} onClick={() => void install()}>
           {t('upd.install')}
         </button>
       ) : null}
@@ -93,6 +93,7 @@ export function UpdateBar() {
       <button
         type="button"
         className="glass"
+        title={t('tip.ui.later')}
         onClick={() => {
           try {
             browserStorage()?.setItem(KEY, release.version);

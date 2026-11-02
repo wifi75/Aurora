@@ -143,7 +143,7 @@ export function PropagationPage() {
     <div className="prop-page">
       <header className="prop-head">
         <h1 className="page-title">{t('prop.title')}</h1>
-        <button type="button" className="glass" onClick={() => refresh.mutate()} disabled={refresh.isPending}>
+        <button type="button" className="glass" onClick={() => refresh.mutate()} title={t('tip.ui.refresh')} disabled={refresh.isPending}>
           {t('prop.refresh')}
         </button>
       </header>
@@ -241,10 +241,10 @@ export function PropagationPage() {
                           <thead>
                             <tr>
                               <th>{t('prop.col.when')}</th>
-                              <th>{t('prop.col.who')}</th>
+                              <th title={t('tip.ui.colWho')}>{t('prop.col.who')}</th>
                               <th>{t('prop.col.band')}</th>
-                              <th className="num">{t('prop.col.snr')}</th>
-                              <th className="num">{t('prop.col.distance')}</th>
+                              <th className="num" title={t('tip.ui.colSnr')}>{t('prop.col.snr')}</th>
+                              <th className="num" title={t('tip.ui.colDistance')}>{t('prop.col.distance')}</th>
                             </tr>
                           </thead>
                           <tbody>

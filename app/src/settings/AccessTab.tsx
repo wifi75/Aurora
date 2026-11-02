@@ -81,7 +81,7 @@ export function AccessTab() {
           </Cell>
         </Cells>
         <Actions>
-          <button type="button" className="glass glass--on" disabled={minutes === null || !inRange} onClick={() => saveTtl.mutate(secs)}>
+          <button title={t('tip.ui.save')} type="button" className="glass glass--on" disabled={minutes === null || !inRange} onClick={() => saveTtl.mutate(secs)}>
             {t('set.save')}
           </button>
         </Actions>

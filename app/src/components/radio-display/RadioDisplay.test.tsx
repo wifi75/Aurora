@@ -71,8 +71,8 @@ describe('RadioDisplay', () => {
     const { container } = render(<RadioDisplay model={{ ...DEMO_MODEL, transmitting: true }} style="fluorescent" size="mini" />);
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('trasmissione');
     const groups = [...container.querySelectorAll('g[opacity]')];
-    const rx = groups.find((g) => g.textContent === 'RX');
-    const tx = groups.find((g) => g.textContent === 'TX');
+    const rx = groups.find((g) => g.querySelector('text')?.textContent === 'RX');
+    const tx = groups.find((g) => g.querySelector('text')?.textContent === 'TX');
     expect(rx?.getAttribute('opacity')).toBe('0.22');
     expect(tx?.getAttribute('opacity')).toBe('1');
   });

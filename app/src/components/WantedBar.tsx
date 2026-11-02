@@ -63,11 +63,11 @@ export function WantedBar() {
       {banner.text ? <span className="data wanted-text">{banner.text}</span> : null}
       {details.length > 0 ? <span className="muted">{details.join(' · ')}</span> : null}
       {banner.source === 'cluster' && banner.freq_hz ? (
-        <button type="button" className="glass" onClick={() => void postFrequency(banner.freq_hz as number).catch(() => undefined)}>
+        <button type="button" className="glass" title={t('tip.ui.wishTune')} onClick={() => void postFrequency(banner.freq_hz as number).catch(() => undefined)}>
           {t('wish.tune')}
         </button>
       ) : null}
-      <button type="button" className="glass" onClick={dismiss}>
+      <button type="button" className="glass" title={t('tip.ui.wishClose')} onClick={dismiss}>
         {t('wish.close')}
       </button>
     </div>

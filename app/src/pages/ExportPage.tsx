@@ -117,6 +117,7 @@ export function ExportPage() {
                   ref={headBox}
                   type="checkbox"
                   aria-label={t('exp.selectShown')}
+                  title={t('tip.ui.selectShown')}
                   checked={shown.length > 0 && shownSelected === shown.length}
                   onChange={(e) => selectShown(e.target.checked)}
                 />
@@ -126,12 +127,12 @@ export function ExportPage() {
               <th>{t('exp.col.call')}</th>
               <th>{t('exp.col.band')}</th>
               <th>{t('exp.col.mode')}</th>
-              <th className="num">{t('exp.col.sent')}</th>
+              <th className="num" title={t('tip.ui.colSent')}>{t('exp.col.sent')}</th>
               <th className="num">
                 {t('exp.col.rcvd')}
                 <Help tip={t('exp.rstTip')} />
               </th>
-              <th className="export-grid">{t('exp.col.grid')}</th>
+              <th className="export-grid" title={t('tip.ui.colGrid')}>{t('exp.col.grid')}</th>
               <th>{t('exp.col.country')}</th>
             </tr>
           </thead>
@@ -141,7 +142,7 @@ export function ExportPage() {
               return (
                 <tr key={q.id} className={on ? 'export-row export-row--on' : 'export-row'} onClick={() => toggle(q.id)}>
                   <td className="export-check">
-                    <input type="checkbox" aria-label={t('exp.selectRow', { call: q.call })} checked={on} onChange={() => toggle(q.id)} onClick={(e) => e.stopPropagation()} />
+                    <input type="checkbox" title={t('tip.ui.selectRow')} aria-label={t('exp.selectRow', { call: q.call })} checked={on} onChange={() => toggle(q.id)} onClick={(e) => e.stopPropagation()} />
                   </td>
                   <td className="data">{q.date}</td>
                   <td className="data">{q.time.slice(0, 5)}</td>
@@ -179,10 +180,10 @@ export function ExportPage() {
       {hasLog ? (
         <>
           <div className="export-bar">
-            <input type="search" aria-label={t('exp.search')} placeholder={t('exp.search')} value={filter.call} onChange={(e) => set({ call: e.target.value })} />
+            <input type="search" title={t('tip.ui.search')} aria-label={t('exp.search')} placeholder={t('exp.search')} value={filter.call} onChange={(e) => set({ call: e.target.value })} />
             <label className="map-select">
               {t('exp.from')}
-              <input type="date" value={filter.from} max={filter.to || undefined} onChange={(e) => set({ from: e.target.value })} />
+              <input type="date" title={t('tip.ui.dateFrom')} value={filter.from} max={filter.to || undefined} onChange={(e) => set({ from: e.target.value })} />
             </label>
             <label className="map-select">
               {t('exp.to')}
@@ -191,7 +192,7 @@ export function ExportPage() {
             </label>
             <label className="map-select">
               {t('exp.band')}
-              <select value={filter.band} onChange={(e) => set({ band: e.target.value })}>
+              <select title={t('tip.ui.band')} value={filter.band} onChange={(e) => set({ band: e.target.value })}>
                 <option value="">{t('exp.any')}</option>
                 {bands.map((b) => (
                   <option key={b} value={b}>
@@ -202,7 +203,7 @@ export function ExportPage() {
             </label>
             <label className="map-select">
               {t('exp.mode')}
-              <select value={filter.mode} onChange={(e) => set({ mode: e.target.value })}>
+              <select title={t('tip.ui.mode')} value={filter.mode} onChange={(e) => set({ mode: e.target.value })}>
                 <option value="">{t('exp.anyMode')}</option>
                 {modes.map((m) => (
                   <option key={m} value={m}>
@@ -212,7 +213,7 @@ export function ExportPage() {
               </select>
             </label>
             {filtered ? (
-              <button type="button" className="glass" onClick={() => setFilter(NO_FILTER)}>
+              <button type="button" className="glass" title={t('tip.ui.clearFilters')} onClick={() => setFilter(NO_FILTER)}>
                 {t('exp.clear')}
               </button>
             ) : null}

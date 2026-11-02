@@ -178,10 +178,10 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
       {count > 0 ? <strong>{t('ens.pending', { n: count })}</strong> : null}
       {count > 0 ? (
         <>
-          <button type="button" className="glass glass--on" disabled={apply.isPending} onClick={() => apply.mutate()}>
+          <button title={t('tip.ui.apply')} type="button" className="glass glass--on" disabled={apply.isPending} onClick={() => apply.mutate()}>
             {t('ens.apply')}
           </button>
-          <button type="button" className="glass" disabled={apply.isPending} onClick={() => { draft.clear(); setNote(''); }}>
+          <button title={t('tip.ui.discard')} type="button" className="glass" disabled={apply.isPending} onClick={() => { draft.clear(); setNote(''); }}>
             {t('ens.discard')}
           </button>
         </>

@@ -11,10 +11,10 @@ export function DxccCountries({ matrix }: { matrix: DxccMatrix }) {
   return (
     <div className="dxcc-countries">
       <div className="dxcc-countries-bar">
-        <input type="search" value={text} placeholder={t('dxcc.countries.filter')} aria-label={t('dxcc.countries.filter')} onChange={(e) => setText(e.target.value)} />
+        <input type="search" value={text} placeholder={t('dxcc.countries.filter')} aria-label={t('dxcc.countries.filter')} title={t('tip.ui.search')} onChange={(e) => setText(e.target.value)} />
         <label className="dxcc-countries-mode">
           {t('dxcc.countries.mode')}
-          <select value={row} onChange={(e) => setRow(e.target.value)}>
+          <select value={row} title={t('tip.ui.dxccRow')} onChange={(e) => setRow(e.target.value)}>
             {['ALL', ...matrix.rows].map((r) => (
               <option key={r} value={r}>
                 {t(`dxcc.row.${r}` as Key)}

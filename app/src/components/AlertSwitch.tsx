@@ -32,7 +32,7 @@ export function AlertSwitch({ value, onChange }: Props) {
           )}
         </svg>
       </button>
-      <label>
+      <label title={t('tip.ui.alertVolume')}>
         <span className="visually-hidden">{t('alert.volume')}</span>
         <input
           type="range"

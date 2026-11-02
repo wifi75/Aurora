@@ -106,7 +106,7 @@ export function WaterfallPreview() {
   return (
     <div className="wfs-preview-box">
       <div className="wfs-preview-head">
-        <button type="button" className="glass wfs-preview-toggle" aria-pressed={open} onClick={toggle}>
+        <button title={t('tip.ui.preview')} type="button" className="glass wfs-preview-toggle" aria-pressed={open} onClick={toggle}>
           {open ? t('wfs.preview.hide') : t('wfs.preview.show')}
         </button>
         <Help tip={t('tip.wfs.preview')} />

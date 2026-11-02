@@ -84,6 +84,7 @@ export function AutomationRulesForm({ rules: saved, onSave, error = false }: Pro
         type="button"
         className="glass"
         disabled={!draft}
+        title={t('tip.ui.saveRules')}
         onClick={() => {
           if (draft) {
             onSave(draft);

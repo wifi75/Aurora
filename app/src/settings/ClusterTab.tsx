@@ -160,10 +160,10 @@ export function ClusterTab() {
               </span>
               <span className="sx-control">
                 <label className="set-check">
-                  <input type="checkbox" checked={s.enabled} onChange={(e) => changeServer(i, { enabled: e.target.checked })} />
+                  <input title={t('tip.ui.serverOn')} type="checkbox" checked={s.enabled} onChange={(e) => changeServer(i, { enabled: e.target.checked })} />
                   <span>{t('cluster.server.on')}</span>
                 </label>
-                <button type="button" className="glass chip" onClick={() => { setNote(t('cluster.removed')); set({ servers: shown.servers.filter((_, k) => k !== i) }); }}>
+                <button title={t('tip.ui.remove')} type="button" className="glass chip" onClick={() => { setNote(t('cluster.removed')); set({ servers: shown.servers.filter((_, k) => k !== i) }); }}>
                   {t('cluster.server.remove')}
                 </button>
               </span>

@@ -47,7 +47,7 @@ function JtdxNotificationsTab() {
           />
         </Cell>
         <Actions>
-          <button
+          <button title={t('tip.ui.reset')}
             type="button"
             className="glass"
             onClick={() => {
@@ -80,7 +80,7 @@ function JtdxNotificationsTab() {
                     </th>
                     <td title={t('tip.not.color')}>
                       <span className="sx-cellbox">
-                        <input type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
+                        <input title={t('tip.ui.notifyColor')} type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
                       </span>
                     </td>
                     <td title={t('tip.not.highlight')}>

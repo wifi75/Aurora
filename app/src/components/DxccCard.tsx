@@ -163,6 +163,7 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
         value={typed}
         placeholder={t('dxcc.tryCall')}
         aria-label={t('dxcc.tryCall')}
+        title={t('tip.ui.dxccTry')}
         maxLength={20}
         autoCapitalize="characters"
         spellCheck={false}
@@ -172,7 +173,7 @@ export function DxccCard({ call = '', grid, band, mode, matrix: given, panel = f
       {panel ? null : (
         <div className="dxcc-view" role="group">
           {(['station', 'totals'] as const).map((v) => (
-            <button key={v} type="button" className={`glass${(showStation ? 'station' : 'totals') === v ? ' glass--on' : ''}`} aria-pressed={(showStation ? 'station' : 'totals') === v} disabled={v === 'station' && !(s && s.country)} onClick={() => setView(v)}>
+            <button key={v} type="button" className={`glass${(showStation ? 'station' : 'totals') === v ? ' glass--on' : ''}`} aria-pressed={(showStation ? 'station' : 'totals') === v} disabled={v === 'station' && !(s && s.country)} title={t('tip.ui.dxccView')} onClick={() => setView(v)}>
               {t(`dxcc.view.${v}` as Key)}
             </button>
           ))}

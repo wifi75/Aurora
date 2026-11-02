@@ -116,20 +116,20 @@ export function FoxPage() {
           </div>
         </div>
         <div className="foxc-state" role="status">
-          <span className={`foxc-pill foxc-pill--${state}`}>{t(`fox.state.${state}`)}</span>
+          <span className={`foxc-pill foxc-pill--${state}`} title={t('tip.fox.state')}>{t(`fox.state.${state}`)}</span>
           <div className="foxc-kpis">
-            <Kpi tone="ok" label={t('fox.logged')} value={fox.logged} />
-            <Kpi tone="accent" label={t('fox.inProgress')} value={fox.in_progress.length} />
-            <Kpi tone="warn" label={t('fox.queue')} value={fox.queue.length} />
-            <Kpi tone="muted" label={t('fox.callers')} value={fox.callers.length} />
-            <Kpi tone="muted" label={t('fox.periods')} value={fox.periods} />
+            <Kpi tone="ok" label={t('fox.logged')} title={t('tip.fox.logged')} value={fox.logged} />
+            <Kpi tone="accent" label={t('fox.inProgress')} title={t('tip.fox.inProgress')} value={fox.in_progress.length} />
+            <Kpi tone="warn" label={t('fox.queue')} title={t('tip.fox.queue')} value={fox.queue.length} />
+            <Kpi tone="muted" label={t('fox.callers')} title={t('tip.fox.callers')} value={fox.callers.length} />
+            <Kpi tone="muted" label={t('fox.periods')} title={t('tip.fox.periods')} value={fox.periods} />
           </div>
         </div>
         <div className="foxc-main-actions">
-          <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} onClick={() => void postControl('fox', !fox.enabled)}>
+          <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} onClick={() => void postControl('fox', !fox.enabled)}>
             {fox.enabled ? t('fox.on') : t('fox.off')}
           </button>
-          <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} onClick={() => toggleTx(!txOn)}>
+          <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} title={t('tip.fox.enableTx')} onClick={() => toggleTx(!txOn)}>
             {t('fox.enableTx')}
           </button>
           <StopButton variant="bar" />
@@ -141,8 +141,8 @@ export function FoxPage() {
 
       <div className="foxc-options">
         <div className="foxc-field">
-          <span className="foxc-label">{t('fox.slots')}</span>
-          <div className="foxc-seg" role="group" aria-label={t('fox.slots')}>
+          <span className="foxc-label" title={t('tip.fox.slots')}>{t('fox.slots')}</span>
+          <div className="foxc-seg" role="group" aria-label={t('fox.slots')} title={t('tip.fox.slots')}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button key={n} type="button" aria-pressed={fox.slots === n} className={fox.slots === n ? 'on' : undefined} onClick={() => options({ slots: n })}>
                 {n}
@@ -151,8 +151,8 @@ export function FoxPage() {
           </div>
         </div>
         <div className="foxc-field">
-          <span className="foxc-label">{t('fox.cq')}</span>
-          <div className="foxc-seg" role="group" aria-label={t('fox.cq')}>
+          <span className="foxc-label" title={t('tip.fox.cq')}>{t('fox.cq')}</span>
+          <div className="foxc-seg" role="group" aria-label={t('fox.cq')} title={t('tip.fox.cq')}>
             {CQ_TARGETS.map((c) => (
               <button key={c || 'cq'} type="button" aria-pressed={target === c} className={target === c ? 'on' : undefined} onClick={() => options({ cq: c ? `CQ ${c}` : 'CQ' })}>
                 {c || 'CQ'}
@@ -162,10 +162,10 @@ export function FoxPage() {
         </div>
         <div className="foxc-switches">
           <Switch on={fox.ultra} label="UltraFOX" title={t('tip.fox.ultra')} onChange={(v) => options({ ultra: v })} />
-          <Switch on={fox.more_cqs} label={t('fox.moreCqs')} onChange={(v) => options({ more_cqs: v })} />
-          <Switch on={fox.auto_queue} label={t('fox.autoQueue')} onChange={(v) => options({ auto_queue: v })} />
+          <Switch on={fox.more_cqs} label={t('fox.moreCqs')} title={t('tip.fox.moreCqs')} onChange={(v) => options({ more_cqs: v })} />
+          <Switch on={fox.auto_queue} label={t('fox.autoQueue')} title={t('tip.fox.autoQueue')} onChange={(v) => options({ auto_queue: v })} />
         </div>
-        <button type="button" className="foxc-btn foxc-btn--ghost" onClick={() => void postFox({ action: 'reset' })}>
+        <button type="button" className="foxc-btn foxc-btn--ghost" title={t('tip.fox.reset')} onClick={() => void postFox({ action: 'reset' })}>
           {t('fox.reset')}
         </button>
       </div>
@@ -174,17 +174,17 @@ export function FoxPage() {
       <div className="foxc-grid foxc-grid--main" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
         <section className="foxc-card foxc-tone--lilac">
           <header className="foxc-card-head">
-            <h2>{t('fox.callers')}</h2>
+            <h2 title={t('tip.fox.callers')}>{t('fox.callers')}</h2>
             <span className="foxc-count data">{callers.length}</span>
             <div className="foxc-tools">
-              <input className="foxc-input" type="search" placeholder={t('fox.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
-              <select className="foxc-input" aria-label={t('fox.sort')} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+              <input className="foxc-input" type="search" placeholder={t('fox.filter')} aria-label={t('fox.filter')} title={t('tip.fox.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <select className="foxc-input" aria-label={t('fox.sort')} title={t('tip.fox.sort')} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
                 <option value="snr">SNR</option>
                 <option value="call">{t('fox.col.call')}</option>
                 <option value="freq_hz">Hz</option>
                 <option value="age">{t('fox.age')}</option>
               </select>
-              <button type="button" className="foxc-btn foxc-btn--small" disabled={callers.length === 0} onClick={() => callers.slice(0, 5).forEach((c) => void postFox({ action: 'select', call: c.call }))}>
+              <button type="button" className="foxc-btn foxc-btn--small" disabled={callers.length === 0} title={t('tip.fox.addBest')} onClick={() => callers.slice(0, 5).forEach((c) => void postFox({ action: 'select', call: c.call }))}>
                 {t('fox.addBest')}
               </button>
             </div>
@@ -193,11 +193,11 @@ export function FoxPage() {
             <table className="foxc-table">
               <thead>
                 <tr>
-                  <th>{t('fox.col.call')}</th>
-                  <th>{t('fox.col.grid')}</th>
-                  <th className="num">SNR</th>
-                  <th className="num">Hz</th>
-                  <th className="num">{t('fox.age')}</th>
+                  <th title={t('tip.fox.colCall')}>{t('fox.col.call')}</th>
+                  <th title={t('tip.fox.colGrid')}>{t('fox.col.grid')}</th>
+                  <th className="num" title={t('tip.fox.colSnr')}>SNR</th>
+                  <th className="num" title={t('tip.fox.colHz')}>Hz</th>
+                  <th className="num" title={t('tip.fox.colAge')}>{t('fox.age')}</th>
                   <th aria-label={t('fox.add')} />
                 </tr>
               </thead>
@@ -212,10 +212,10 @@ export function FoxPage() {
                     <td className="num data">{c.freq_hz}</td>
                     <td className="num data">{c.age}</td>
                     <td className="foxc-actions">
-                      <button type="button" className="foxc-btn foxc-btn--small" onClick={() => void postFox({ action: 'select', call: c.call })}>
+                      <button type="button" className="foxc-btn foxc-btn--small" title={t('tip.fox.add')} onClick={() => void postFox({ action: 'select', call: c.call })}>
                         {t('fox.add')}
                       </button>
-                      <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" onClick={() => void postFox({ action: 'select', call: c.call, top: true })}>
+                      <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" title={t('tip.fox.top')} onClick={() => void postFox({ action: 'select', call: c.call, top: true })}>
                         {t('fox.top')}
                       </button>
                     </td>
@@ -230,7 +230,7 @@ export function FoxPage() {
         <div className="foxc-stack">
           <section className="foxc-card foxc-tone--mint">
             <header className="foxc-card-head">
-              <h2>{t('fox.inProgress')}</h2>
+              <h2 title={t('tip.fox.inProgress')}>{t('fox.inProgress')}</h2>
               <span className="foxc-count data">{fox.in_progress.length}</span>
             </header>
             {fox.in_progress.length === 0 ? (
@@ -243,10 +243,10 @@ export function FoxPage() {
                     <span className="foxc-steps" aria-label={t('fox.progress')}>
                       <i className="done" title={t('fox.sent')}>{q.sent}</i>
                       <i className={q.rcvd ? 'done' : undefined} title={t('fox.rcvd')}>{q.rcvd ?? '…'}</i>
-                      <i className={q.rr73_sent ? 'done' : undefined}>RR73</i>
+                      <i className={q.rr73_sent ? 'done' : undefined} title={t('tip.fox.rr73')}>RR73</i>
                     </span>
-                    <span className="muted data">×{q.tries}</span>
-                    <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" onClick={() => void postFox({ action: 'drop', call: q.call })}>
+                    <span className="muted data" title={t('tip.fox.tries')}>×{q.tries}</span>
+                    <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" title={t('tip.fox.drop')} onClick={() => void postFox({ action: 'drop', call: q.call })}>
                       {t('fox.drop')}
                     </button>
                   </li>
@@ -256,7 +256,7 @@ export function FoxPage() {
           </section>
           <section className="foxc-card foxc-tone--peach">
             <header className="foxc-card-head">
-              <h2>{t('fox.onAir')}</h2>
+              <h2 title={t('tip.fox.onAir')}>{t('fox.onAir')}</h2>
               <span className="foxc-count data">{fox.tx.length}</span>
             </header>
             {fox.tx.length === 0 ? (
@@ -274,7 +274,7 @@ export function FoxPage() {
           </section>
           <section className="foxc-card foxc-tone--sky">
             <header className="foxc-card-head">
-              <h2>{t('fox.queue')}</h2>
+              <h2 title={t('tip.fox.queue')}>{t('fox.queue')}</h2>
               <span className="foxc-count data">{fox.queue.length}</span>
             </header>
             {fox.queue.length === 0 ? (
@@ -286,7 +286,7 @@ export function FoxPage() {
                     <span className="foxc-slot">{i + 1}</span>
                     <span className="data foxc-call">{q.call}</span>
                     <span className={`foxc-snr foxc-snr--${q.snr >= -5 ? 'hi' : q.snr >= -15 ? 'mid' : 'lo'}`}>{snr(q.snr)}</span>
-                    <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" onClick={() => void postFox({ action: 'unqueue', call: q.call })}>
+                    <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" title={t('tip.fox.remove')} onClick={() => void postFox({ action: 'unqueue', call: q.call })}>
                       {t('fox.remove')}
                     </button>
                   </li>
@@ -321,9 +321,9 @@ function Spectrum() {
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
-        <h2>{t('fox.waterfall')}</h2>
-        <span className="foxc-chip data">Tx {status?.tx_df ?? '—'} Hz</span>
-        <span className="foxc-chip foxc-chip--rx data">Rx {status?.rx_df ?? '—'} Hz</span>
+        <h2 title={t('tip.fox.waterfall')}>{t('fox.waterfall')}</h2>
+        <span className="foxc-chip data" title={t('tip.fox.txChip')}>Tx {status?.tx_df ?? '—'} Hz</span>
+        <span className="foxc-chip foxc-chip--rx data" title={t('tip.fox.rxChip')}>Rx {status?.rx_df ?? '—'} Hz</span>
       </header>
       <div className="foxc-rx-controls">
         <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
@@ -360,7 +360,7 @@ function Received() {
   return (
     <section className="foxc-card foxc-tone--lemon">
       <header className="foxc-card-head">
-        <h2>{t('fox.received')}</h2>
+        <h2 title={t('tip.fox.received')}>{t('fox.received')}</h2>
       </header>
       <div className="foxc-scroll foxc-scroll--rx">
         {recent.length === 0 ? (
@@ -392,9 +392,9 @@ function Switch({ on, label, title, onChange }: { on: boolean; label: string; ti
   );
 }
 
-function Kpi({ tone, label, value }: { tone: 'ok' | 'accent' | 'warn' | 'muted'; label: string; value: number }) {
+function Kpi({ tone, label, title, value }: { tone: 'ok' | 'accent' | 'warn' | 'muted'; label: string; title?: string; value: number }) {
   return (
-    <div className={`foxc-kpi foxc-kpi--${tone}`}>
+    <div className={`foxc-kpi foxc-kpi--${tone}`} title={title}>
       <span className="foxc-kpi-label">{label}</span>
       <strong className="data">{value}</strong>
     </div>

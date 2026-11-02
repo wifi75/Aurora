@@ -19,6 +19,7 @@ import {
   polar,
   arcPath,
   SegBar,
+  SpyTip,
 } from "./instruments";
 import { SevenSegment } from "./SevenSegment";
 
@@ -187,6 +188,7 @@ function FtSpy({
 }) {
   return (
     <g aria-hidden="true">
+      <SpyTip text={text} />
       <rect
         x={x}
         y={y}
@@ -362,6 +364,7 @@ export function Ft2000Display({
         {/* riquadri con etichetta e valore */}
         {boxes.map((b, i) => (
           <g key={b.label} aria-hidden="true">
+            <SpyTip text={b.label} />
             <rect
               x={12 + i * 38}
               y={9}
@@ -794,6 +797,7 @@ function IcTag({
 }) {
   return (
     <g aria-hidden="true" opacity={on ? 1 : 0.3}>
+      <SpyTip text={text} />
       <rect
         x={x}
         y={y}
@@ -1022,6 +1026,7 @@ export function Ic7610Display({
           const p = pos(i);
           return (
             <g key={b.label} aria-hidden="true">
+            <SpyTip text={b.label} />
               <rect
                 x={p.x}
                 y={p.y}

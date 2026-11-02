@@ -31,7 +31,7 @@ export function Wiki() {
   return (
     <div className="guide">
       <aside className="guide-index" aria-label={t('wiki.title')}>
-        <input type="search" className="guide-search" placeholder={t('guide.search')} aria-label={t('guide.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" className="guide-search" title={t('tip.ui.search')} placeholder={t('guide.search')} aria-label={t('guide.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
         <nav>
           <ol>
             {GUIDE.map((c) => (
