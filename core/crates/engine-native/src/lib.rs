@@ -497,7 +497,18 @@ pub fn start_with_save(
                 let started = Instant::now();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
                 let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
-                let mut decoded = decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history);
+                // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
+                let mut early: Vec<String> = Vec::new();
+                let mut decoded = if mode == Mode::Ft8 && let Some(l) = live.as_ref() {
+                    let mut on_pass = |batch: &[ft8::decode::DecodedInfo]| {
+                        let fresh: Vec<ft8::decode::Decoded> = batch.iter().map(|i| i.decoded.clone()).filter(|d| !early.contains(&d.text)).collect();
+                        early.extend(fresh.iter().map(|d| d.text.clone()));
+                        publish(l, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &fresh);
+                    };
+                    ft8::decode::decode_slot_streaming(&slot.samples, &options, &mut hashes, Some(&mut ft8_history), &mut on_pass).into_iter().map(|d| d.decoded).collect()
+                } else {
+                    decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history)
+                };
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 let other_mode = match mode {
                     Mode::Jt65 => Some(Mode::Jt9),
@@ -560,7 +571,8 @@ pub fn start_with_save(
                     }
                 }
                 if let Some(live) = &live {
-                    publish(live, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &decoded);
+                    let rest: Vec<ft8::decode::Decoded> = decoded.iter().filter(|d| !early.contains(&d.text)).cloned().collect();
+                    publish(live, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &rest);
                 }
                 // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
                 while let Ok(command) = command_rx.try_recv() {

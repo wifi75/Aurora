@@ -221,6 +221,19 @@ struct Pending {
 /// Come [`decode_slot`], con le grandezze di accettazione di ogni messaggio e, se data, la cronologia tra periodi
 /// (`None` = nessuna sottopassata 3-11, come prima).
 pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut CallHashes, history: Option<&mut PeriodHistory>) -> Vec<DecodedInfo> {
+    decode_slot_streaming(samples, options, hashes, history, &mut |_| {})
+}
+
+/// Come [`decode_slot_with_history`], ma a fine di ogni passata chiama `on_pass` con i messaggi nuovi di quella passata:
+/// chi mostra l'elenco non aspetta tutte le passate (le decodifiche a liste "a7"/"a8" arrivano solo nel risultato finale).
+pub fn decode_slot_streaming(
+    samples: &[f32],
+    options: &Options,
+    hashes: &mut CallHashes,
+    history: Option<&mut PeriodHistory>,
+    on_pass: &mut dyn FnMut(&[DecodedInfo]),
+) -> Vec<DecodedInfo> {
+    let mut reported = 0usize;
     let mut audio: Vec<f32> = samples.iter().take(SLOT_SAMPLES).map(|&x| x * SCALE).collect();
     audio.resize(SLOT_SAMPLES, 0.0);
     // AGCc: come JTDX una volta sola sull'audio del periodo, prima di tutte le passate; se il rumore e' uniforme (`lagccbail`) resta tutto com'e'
@@ -381,6 +394,10 @@ pub fn decode_slot_detailed(samples: &[f32], options: &Options, hashes: &mut Cal
         }
         if subtracted {
             residual.clone_from(&audio);
+        }
+        if found.len() > reported {
+            on_pass(&found[reported..]);
+            reported = found.len();
         }
     }
     if let Some(h) = history.as_deref_mut() {

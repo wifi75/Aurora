@@ -5841,3 +5841,22 @@
 .tx-commands .cmd-row .cmd-free {
   flex: 1 1 0;
 }
+
+/* elenco stretto (CQ e novita'): piu' posto a bandiera e paese, che prima si riducevano a tre lettere; il messaggio cede spazio */
+@container (max-width: 40rem) {
+  .decode-list .decode-row,
+  .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) minmax(0, 14rem) 6.2rem;
+  }
+
+  .decode-list .decode-row .decode-where {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .decode-list .decode-row .decode-where > :nth-child(n + 3) {
+    display: none;
+  }
+}
