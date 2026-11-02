@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.79 - 2026-11-02
 - **DX Cluster**: niente piu' striscia vuota accanto a «Modo» (si sposta il contenuto, non la cella); colonna Freq altri 5 px a sinistra.
 - **Display FT-2000**: tolta la scala di sintonia sotto la frequenza.
 - **Potenza della radio (PWR −/+)**: dopo il comando Aurora rilegge la potenza; se la radio non l'ha cambiata (per esempio la FT-2000 con la manopola RF PWR) lo dice invece di far credere che sia cambiata. Il log registra potenza chiesta e potenza letta.
