@@ -102,7 +102,7 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
     <div className="rd-face-row">
       <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>
       {/* la potenza della radio, a passi del 5%: nel pannello disegnato non c'e' posto per i pulsanti */}
-      {power != null ? (
+      {power != null && style !== 'ft2000' ? (
         <div className="rd-pwr" role="group" aria-label="PWR">
           <span className="rd-pwr-val data">{Math.round(power * 100)}%</span>
           <div className="rd-pwr-btns">

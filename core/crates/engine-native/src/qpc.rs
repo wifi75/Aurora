@@ -1,4 +1,5 @@
 //! Codice polare q-ario (127, 50) su simboli da 7 bit (q = 128) di SuperFox. Il codice polare, le sue tabelle e il decodificatore sono di
+//! l'autore (WSJT-X, `lib/superfox/qpc`).
 //!
 //! Codifica: i 50 simboli del messaggio vanno nelle posizioni `XPOS[..K]`, le altre restano congelate a zero; poi la trasformata polare
 //! (7 stadi a farfalla come una FFT, `y[b + passo] ^= y[b]`). Il simbolo 0 non si trasmette: restano 127 simboli.

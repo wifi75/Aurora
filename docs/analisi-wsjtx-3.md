@@ -6,6 +6,7 @@ Stato al 2026-11-01. Confronto tra le novita' di WSJT-X dalla 2.7.0 alla 3.3.0-b
 
 - Sorgenti: clone di `github.com/WSJTX/wsjtx` in `D:\build\analisi-wsjtx\sorgenti`, tag `v3.0.2` (stabile) e `v3.3.0-beta5` (ultima beta, `release-state.txt`: 3.3.0 BETA 5). Note lette: `NEWS` (2.7.0-rc1 ... 3.0.0-rc1), `Release_Notes.txt` (3.2.0-rc1, novita' dopo la 3.0.2), `doc/user_guide/en/new_features.adoc`, `Network/NetworkMessage.hpp`.
 - Binari analizzati: WSJT-X 3.0.2 per Windows, `wsjtx.exe` e `jt9.exe` in `D:\build\analisi-wsjtx\binari`.
+- Licenza: WSJT-X e' GPL-3 (`COPYING`). Il codice polare q-ario di SuperFox (`lib/superfox/qpc`) e' in Aurora come UltraFOX (`engine-native/src/qpc.rs`).
 - Nota sulla storia git: il tag `v3.3.0-beta5` e' un unico commit ("Cut 3.3.0-beta5 from develop") senza storia comune con `v3.0.2`; le differenze si leggono con `git diff v3.0.2 v3.3.0-beta5`, non con `git log`.
 
 ## Verifica con Ghidra (REA)

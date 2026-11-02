@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display FT-2000**: RX e TX accanto alla frequenza principale; spie e riquadri spenti ben visibili; al posto del riquadro FT8/AGC (gia' mostrati altrove) la potenza della radio con i pulsanti − e +.
 
 ## 0.11.77 - 2026-11-03
 - **Display FT-2000 e IC-7610**: il TUNER/ATU tenuto premuto 1 secondo avvia l'accordatura, come il tasto della radio; la pressione breve lo accende o spegne.
