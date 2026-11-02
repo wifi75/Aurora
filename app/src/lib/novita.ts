@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.81',
-    released: '2026-11-02T23:00:00Z',
+    released: '2026-11-02T22:25:04Z',
     kind: 'fixed',
     title: ['Spettro di nuovo in movimento', 'Spectrum moving again', 'Spektrum bewegt sich wieder', 'Spectre de nouveau en mouvement', 'Espectro de nuevo en movimiento', 'Espetro de novo em movimento'],
     text: [
