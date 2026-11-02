@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.75',
-    released: '2026-11-02T23:30:00Z',
+    released: '2026-11-02T18:30:55Z',
     kind: 'fixed',
     title: ['FOX solo per le vere Fox', 'FOX only for real Foxes', 'FOX nur für echte Foxes', 'FOX seulement pour les vrais Fox', 'FOX solo para los Fox reales', 'FOX só para os Fox reais'],
     text: [
