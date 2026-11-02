@@ -25,3 +25,15 @@
 .fox-queue li { display: flex; align-items: center; gap: 0.4rem; }
 .fox-queue button { margin-left: auto; }
 @media (max-width: 760px) { .fox-cols { grid-template-columns: 1fr; } .fox-stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* pagina Fox completa: comandi, cascata e messaggi */
+.fox-station { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.75rem; }
+.fox-station-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.fox-tx--on { background: #c0392b; color: #fff; border-color: #c0392b; }
+.fox-freq { font-size: 0.85rem; }
+.fox-wf { min-width: 0; height: 15rem; display: flex; flex-direction: column; border-radius: 0.7rem; overflow: hidden; }
+.fox-wf .wf-stack { flex: 1; min-height: 0; position: relative; }
+.fox-rx { max-height: 15rem; overflow: auto; }
+.fox-rx-list { margin: 0; padding: 0; list-style: none; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.fox-rx--mine { background: rgba(232, 163, 23, 0.18); border-radius: 0.3rem; }
+@media (max-width: 900px) { .fox-station { grid-template-columns: 1fr; } }
