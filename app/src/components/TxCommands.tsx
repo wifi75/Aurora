@@ -181,65 +181,54 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
         {!reachable && <p className="muted tx-note">{t('ctl.unavailable')}</p>}
 
         <p className="cmd-cap">{t('cmd.cap.dx')}</p>
-        <div className="cmd-line cmd-dx" role="group" aria-label={t('ctl.sec.dx')}>
-          <label className="cmd-field" title={t('tip.cmd.dxCall')}>
-            <span>{t('cmd.dxCall')}</span>
-            <input type="text" className="data cmd-call" value={dxInput} maxLength={12} onChange={(e) => setDxInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
-          </label>
-          <label className="cmd-field" title={t('tip.cmd.dxGrid')}>
-            <span>{t('cmd.dxGrid')}</span>
-            <input type="text" className="data cmd-grid" value={gridInput} maxLength={6} onChange={(e) => setGridInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
-          </label>
+        {/* proposta 1: due righe per la stazione, una riga per Tx e una per Rx, ogni pulsante accanto al suo campo */}
+        <div className="cmd-line cmd-row" role="group" aria-label={t('ctl.sec.dx')}>
+          <span className="cmd-lab">Call</span>
+          <input type="text" className="data cmd-call" aria-label={t('cmd.dxCall')} title={t('tip.cmd.dxCall')} placeholder={t('cmd.dxCall')} value={dxInput} maxLength={12} onChange={(e) => setDxInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
+          <input type="text" className="data cmd-grid" aria-label={t('cmd.dxGrid')} title={t('tip.cmd.dxGrid')} placeholder={t('cmd.dxGrid')} value={gridInput} maxLength={6} onChange={(e) => setGridInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
+        </div>
+        <div className="cmd-line cmd-row" role="group" aria-label={t('cmd.report')}>
+          <span className="cmd-lab" title={t('tip.cmd.report')}>{t('cmd.report')}</span>
+          <input type="number" className="cmd-report" aria-label={t('cmd.report')} title={t('tip.cmd.report')} min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
           <a className="glass chip" href={dxCall ? `https://www.qrz.com/db/${encodeURIComponent(dxCall)}` : undefined} target="_blank" rel="noreferrer" title={t('tip.cmd.lookup')} aria-disabled={!dxCall}>
             {t('cmd.lookup')}
           </a>
+          {press('gen_msgs')}
           {press('clear_dx')}
         </div>
-        <div className="cmd-line" role="group" aria-label={t('cmd.report')}>
-          <label className="cmd-field" title={t('tip.cmd.report')}>
-            <span>{t('cmd.report')}</span>
-            <input type="number" className="cmd-report" min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
-            <span className="muted">dB</span>
-          </label>
-          {press('gen_msgs')}
-          {spotOn && dxCall !== '' ? (
-            <>
-              <input
-                type="text"
-                className="cmd-free cmd-spot-text"
-                value={spotText}
-                maxLength={MAX_SPOT_TEXT}
-                aria-label={t('ctl.spotText')}
-                title={t('tip.ctl.spotText')}
-                placeholder={t('ctl.spotText')}
-                onChange={(e) => setSpotText(e.target.value)}
-              />
-              <button type="button" className="glass chip" disabled={spotting || spottedDx === dxCall} title={t('tip.ctl.spot')} onClick={() => void spot()}>
-                {spotting ? t('ctl.spotSending') : spottedDx === dxCall ? t('ctl.spotted') : t('ctl.spot')}
-              </button>
-            </>
-          ) : null}
-        </div>
+        {spotOn && dxCall !== '' ? (
+          <div className="cmd-line cmd-row">
+            <input
+              type="text"
+              className="cmd-free cmd-spot-text"
+              value={spotText}
+              maxLength={MAX_SPOT_TEXT}
+              aria-label={t('ctl.spotText')}
+              title={t('tip.ctl.spotText')}
+              placeholder={t('ctl.spotText')}
+              onChange={(e) => setSpotText(e.target.value)}
+            />
+            <button type="button" className="glass chip" disabled={spotting || spottedDx === dxCall} title={t('tip.ctl.spot')} onClick={() => void spot()}>
+              {spotting ? t('ctl.spotSending') : spottedDx === dxCall ? t('ctl.spotted') : t('ctl.spot')}
+            </button>
+          </div>
+        ) : null}
 
         <p className="cmd-cap">{t('cmd.cap.freq')}</p>
-        <div className="cmd-line" role="group" aria-label={t('ctl.sec.freq')}>
-          <label className="cmd-hz" title={t('tip.ctl.tx')}>
-            <span>Tx</span>
-            <input type="number" min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
-          </label>
+        <div className="cmd-line cmd-row" role="group" aria-label={t('ctl.sec.freq')}>
+          <span className="cmd-lab">Tx</span>
+          <input type="number" className="cmd-hzin" aria-label="Tx" title={t('tip.ctl.tx')} min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
           <button type="button" className="glass chip" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} onClick={() => void setControl('rx_to_tx')}>
             ▲ Tx=Rx
           </button>
+          {toggle('split')}
+        </div>
+        <div className="cmd-line cmd-row">
+          <span className="cmd-lab">Rx</span>
+          <input type="number" className="cmd-hzin" aria-label="Rx" title={t('tip.ctl.rx')} min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
           <button type="button" className="glass chip" disabled={!reachable} title={t('tip.ctl.tx_to_rx')} onClick={() => void setControl('tx_to_rx')}>
             ▼ Rx=Tx
           </button>
-          <label className="cmd-hz" title={t('tip.ctl.rx')}>
-            <span>Rx</span>
-            <input type="number" min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
-          </label>
-        </div>
-        <div className="cmd-line">
-          {toggle('split')}
           {toggle('hold_tx')}
         </div>
 

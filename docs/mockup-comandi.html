@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Comandi: tre proposte</title>
+<style>
+body{margin:0;padding:18px;background:#e8ecf1;font:13px "Segoe UI",system-ui,sans-serif;color:#1c2733}
+h1{font-size:15px;margin:0 0 12px}
+.g{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.p{width:290px;background:#fff;border:1px solid #c9d2dc;border-radius:10px;padding:10px;box-sizing:border-box}
+.t{font-weight:700;font-size:13px;margin:0 0 8px}
+.s{font-size:11px;font-weight:700;color:#5a6876;margin:8px 0 4px;letter-spacing:.04em}
+.r{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.i{border:1px solid #9aa7b4;border-radius:6px;height:26px;padding:0 6px;display:flex;align-items:center;color:#1c2733;font-size:12px;min-width:0;background:#fff;box-sizing:border-box}
+.ph{color:#8a96a2}
+.b{border:1px solid #9aa7b4;border-radius:6px;height:26px;padding:0 7px;display:flex;align-items:center;justify-content:center;font-size:12px;white-space:nowrap;background:#f4f6f8;box-sizing:border-box}
+.a{background:#0f6e64;color:#fff;border-color:#0f6e64;font-weight:700}
+.l{font-size:12px;color:#5a6876;width:40px;flex:none}
+.c{border:1px solid #dbe2e9;border-radius:8px;padding:6px;margin-bottom:6px}
+.n{font-size:12px;color:#4a5866;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>Pannello Comandi: tre proposte più compatte (larghezza reale 290 px)</h1>
+<div class="g">
+
+<div><div class="p"><p class="t">1 · Righe compatte</p>
+<div class="s">STAZIONE DX</div>
+<div class="r"><span class="l">Call</span><div class="i ph" style="flex:2">DX Call</div><div class="i ph" style="flex:1.3">Locatore</div></div>
+<div class="r"><span class="l">Rapp.</span><div class="i" style="width:40px">-10</div><div class="b" style="flex:1">Lookup</div><div class="b" style="flex:1">Gen.Msgs</div><div class="b" title="Canc DX">✕</div></div>
+<div class="s">FREQUENZE</div>
+<div class="r"><span class="l">Tx</span><div class="i" style="width:50px">1196</div><div class="b">▲ Tx=Rx</div><div class="b a" style="flex:1">Split</div></div>
+<div class="r"><span class="l">Rx</span><div class="i" style="width:50px">1196</div><div class="b">▼ Rx=Tx</div><div class="b" style="flex:1">Hold Tx</div></div>
+<div class="s">CQ E TRASMISSIONE</div>
+<div class="r"><div class="b a">CQ</div><div class="i" style="flex:1">CQ ▾</div></div>
+<div class="s">MESSAGGIO LIBERO</div>
+<div class="r"><div class="i ph" style="flex:1">Messaggio libero</div><div class="b">Prepara</div><div class="b a">Invia</div></div>
+<div class="r" style="flex-wrap:wrap"><div class="b">TNX 73</div><div class="b">TU 73</div><div class="b">@ &amp;</div><div class="b">@ #</div><div class="b">@ R#</div></div>
+</div><p class="n">Stesso ordine di adesso, metà dell'altezza.</p></div>
+
+<div><div class="p"><p class="t">2 · Riquadri a due colonne</p>
+<div class="c"><div class="r"><div class="i ph" style="flex:2">DX Call</div><div class="i ph" style="flex:1">Locatore</div></div>
+<div class="r"><div class="i" style="width:38px">-10</div><span class="l" style="width:auto">dB</span><div class="b" style="flex:1">Lookup</div><div class="b">Gen.Msgs</div><div class="b" title="Canc DX">✕</div></div></div>
+<div class="c"><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+<div class="r" style="margin:0"><span style="width:18px">Tx</span><div class="i" style="flex:1">1196</div></div>
+<div class="r" style="margin:0"><span style="width:18px">Rx</span><div class="i" style="flex:1">1196</div></div>
+<div class="b">▲ Tx=Rx</div><div class="b">▼ Rx=Tx</div>
+<div class="b a">Split</div><div class="b">Hold Tx</div></div></div>
+<div class="c"><div class="r"><div class="b a">CQ</div><div class="i" style="flex:1">CQ ▾</div></div>
+<div class="r"><div class="i ph" style="flex:1">Messaggio libero</div><div class="b a">Invia</div></div>
+<div class="r" style="flex-wrap:wrap"><div class="b">TNX 73</div><div class="b">TU 73</div><div class="b">@ &amp;</div><div class="b">@ #</div><div class="b">@ R#</div></div></div>
+</div><p class="n">Tre riquadri, Tx e Rx affiancati.</p></div>
+
+<div><div class="p"><p class="t">3 · Tabella densa</p>
+<div class="r"><div class="i ph" style="flex:2">DX Call</div><div class="i ph" style="flex:1">Loc</div><div class="i" style="width:36px">-10</div></div>
+<div class="r"><div class="b" style="flex:1">Lookup</div><div class="b" style="flex:1">Gen.Msgs</div><div class="b" style="flex:1">Canc DX</div></div>
+<div style="height:6px"></div>
+<div class="r"><span style="width:16px">Tx</span><div class="i" style="width:48px">1196</div><div class="b" title="Tx=Rx">▲</div><span style="width:16px;margin-left:6px">Rx</span><div class="i" style="width:48px">1196</div><div class="b" title="Rx=Tx">▼</div></div>
+<div class="r"><div class="b a" style="flex:1">Split</div><div class="b" style="flex:1">Hold Tx</div><div class="b a">CQ</div><div class="i" style="flex:1">CQ ▾</div></div>
+<div style="height:6px"></div>
+<div class="r"><div class="i ph" style="flex:1">Messaggio libero</div><div class="b a">Invia</div></div>
+<div class="r"><div class="b">TNX 73</div><div class="b">TU 73</div><div class="b">@ &amp;</div><div class="b">@ #</div><div class="b">@ R#</div></div>
+</div><p class="n">La più bassa: quasi senza titoli.</p></div>
+
+</div>
+</body>
+</html>

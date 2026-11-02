@@ -5792,3 +5792,52 @@
 }
 .calltip-country { display: flex; align-items: center; gap: 0.3rem; }
 .calltip-name { font-weight: 600; }
+
+/* Pannello Comandi, proposta 1: righe compatte senza a capo, etichetta corta a sinistra e campi che riempiono la riga */
+.tx-commands .cmd-row {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.tx-commands .cmd-row > * {
+  flex: none;
+}
+
+.tx-commands .cmd-lab {
+  width: 2.6rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  color: var(--muted, #6b7a8f);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tx-commands .cmd-row .cmd-call {
+  flex: 2 1 0;
+  min-width: 4rem;
+}
+
+.tx-commands .cmd-row .cmd-grid {
+  flex: 1.3 1 0;
+  min-width: 3.5rem;
+}
+
+.tx-commands .cmd-row .cmd-report {
+  width: 3rem;
+}
+
+.tx-commands .cmd-row .cmd-hzin {
+  width: 3.6rem;
+}
+
+.tx-commands .cmd-row .chip {
+  padding-inline: 0.45rem;
+}
+
+.tx-commands .cmd-row > .chip:last-child {
+  flex: 1 1 auto;
+}
+
+.tx-commands .cmd-row .cmd-free {
+  flex: 1 1 0;
+}
