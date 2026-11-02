@@ -71,11 +71,13 @@ pub struct FoxOptions {
     pub free_text: Option<String>,
     /// Aggiunge da solo in coda il primo dei chiamanti quando la coda e' vuota.
     pub auto_queue: bool,
+    /// UltraFOX: un solo segnale compatibile con SuperFox al posto dei posti FT8 affiancati.
+    pub ultra: bool,
 }
 
 impl Default for FoxOptions {
     fn default() -> Self {
-        FoxOptions { slots: MAX_SLOTS, more_cqs: false, cq: "CQ".into(), free_text: None, auto_queue: false }
+        FoxOptions { slots: MAX_SLOTS, more_cqs: false, cq: "CQ".into(), free_text: None, auto_queue: false, ultra: false }
     }
 }
 
@@ -111,6 +113,11 @@ pub fn hound_report(snr: i32) -> String {
 }
 
 impl Fox {
+    /// Il proprio locatore (per il CQ di UltraFOX).
+    pub fn my_grid(&self) -> String {
+        self.my_grid.clone()
+    }
+
     pub fn new(my_call: &str, my_grid: &str) -> Fox {
         Fox { my_call: my_call.to_uppercase(), base_call: base_call(&my_call.to_uppercase()), my_grid: my_grid.to_uppercase(), t_since_cq: FOX_CQ_TIME, ..Fox::default() }
     }

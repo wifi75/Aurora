@@ -371,6 +371,9 @@ pub struct FoxSnapshot {
     pub more_cqs: bool,
     pub cq: String,
     pub auto_queue: bool,
+    /// UltraFOX acceso.
+    #[serde(default)]
+    pub ultra: bool,
     pub callers: Vec<FoxCallerView>,
     pub queue: Vec<FoxCallerView>,
     pub in_progress: Vec<FoxQsoView>,

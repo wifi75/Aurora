@@ -125,7 +125,7 @@ export async function postTune(on: boolean): Promise<void> {
 }
 
 /** Un comando della pagina Fox: select (in coda), unqueue, drop (chiude un QSO), options, reset. */
-export async function postFox(body: { action: 'select' | 'unqueue' | 'drop' | 'options' | 'reset'; call?: string; top?: boolean; slots?: number; more_cqs?: boolean; cq?: string; free_text?: string | null; auto_queue?: boolean }): Promise<void> {
+export async function postFox(body: { action: 'select' | 'unqueue' | 'drop' | 'options' | 'reset'; call?: string; top?: boolean; slots?: number; more_cqs?: boolean; cq?: string; free_text?: string | null; auto_queue?: boolean; ultra?: boolean }): Promise<void> {
   await request('/fox', jsonInit(body));
 }
 

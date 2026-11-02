@@ -150,6 +150,7 @@ export const FoxSnapshotSchema = z.object({
   more_cqs: z.boolean(),
   cq: z.string(),
   auto_queue: z.boolean(),
+  ultra: z.boolean().optional().default(false),
   callers: z.array(FoxCallerSchema),
   queue: z.array(FoxCallerSchema),
   in_progress: z.array(z.object({ call: z.string(), sent: z.string(), rcvd: z.string().nullable().optional(), tries: z.number(), rr73_sent: z.boolean() })),
