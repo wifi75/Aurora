@@ -1473,3 +1473,8 @@
   right: auto;
   min-width: 12rem;
 }
+
+/* campo segreto salvato: stato, «Cambia», «Togli»; esito della prova in verde */
+.ens-secret { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.ens-secret-state { color: var(--ok, #2e9d5b); font-weight: 600; }
+.ens-test-ok { color: var(--ok, #2e9d5b); }
