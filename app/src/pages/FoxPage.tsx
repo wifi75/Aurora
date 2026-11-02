@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getCat, postControl, postFox, postRxFrequency, postTxFrequency } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
@@ -143,7 +143,7 @@ export function FoxPage() {
 
 
       <div className="foxc-grid foxc-grid--main">
-        <section className="foxc-card">
+        <section className="foxc-card foxc-tone--lilac">
           <header className="foxc-card-head">
             <h2>{t('fox.callers')}</h2>
             <span className="foxc-count data">{callers.length}</span>
@@ -199,7 +199,7 @@ export function FoxPage() {
         </section>
 
         <div className="foxc-stack">
-          <section className="foxc-card">
+          <section className="foxc-card foxc-tone--mint">
             <header className="foxc-card-head">
               <h2>{t('fox.inProgress')}</h2>
               <span className="foxc-count data">{fox.in_progress.length}</span>
@@ -225,7 +225,7 @@ export function FoxPage() {
               </ul>
             )}
           </section>
-          <section className="foxc-card">
+          <section className="foxc-card foxc-tone--peach">
             <header className="foxc-card-head">
               <h2>{t('fox.onAir')}</h2>
               <span className="foxc-count data">{fox.tx.length}</span>
@@ -243,7 +243,7 @@ export function FoxPage() {
               </ol>
             )}
           </section>
-          <section className="foxc-card">
+          <section className="foxc-card foxc-tone--sky">
             <header className="foxc-card-head">
               <h2>{t('fox.queue')}</h2>
               <span className="foxc-count data">{fox.queue.length}</span>
@@ -286,16 +286,24 @@ function Spectrum() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
-  const [height] = useState(readHeight);
-  // l'altezza scelta trascinando l'angolo in basso si ricorda
-  const resizer = useCallback((el: HTMLDivElement | null) => {
-    if (!el) return;
-    const watch = new ResizeObserver(() => saveHeight(el.offsetHeight));
-    watch.observe(el);
-    return () => watch.disconnect();
-  }, []);
+  const [height, setHeight] = useState(readHeight);
+  // la maniglia sotto la cascata: si trascina col mouse (o col dito) e l'altezza si ricorda
+  const drag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const startY = e.clientY;
+    const startH = height;
+    const el = e.currentTarget;
+    el.setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => setHeight(Math.min(1200, Math.max(120, startH + ev.clientY - startY)));
+    const up = (ev: PointerEvent) => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      saveHeight(Math.min(1200, Math.max(120, startH + ev.clientY - startY)));
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+  };
   return (
-    <section className="foxc-card foxc-card--flush">
+    <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
         <h2>{t('fox.waterfall')}</h2>
         <span className="foxc-chip data">Tx {status?.tx_df ?? '—'} Hz</span>
@@ -304,7 +312,7 @@ function Spectrum() {
       <div className="foxc-rx-controls">
         <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
       </div>
-      <div className="foxc-wf" ref={resizer} style={{ height }}>
+      <div className="foxc-wf" style={{ height }}>
         <div className="wf-stack">
           <Waterfall register={registerSpectrum} mode={status?.mode} />
           <FrequencyMarkers
@@ -322,6 +330,9 @@ function Spectrum() {
         </div>
         <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} />
       </div>
+      <div className="foxc-wf-handle" role="separator" aria-orientation="horizontal" aria-label={t('fox.resize')} title={t('fox.resize')} onPointerDown={drag}>
+        <span />
+      </div>
     </section>
   );
 }
@@ -333,7 +344,7 @@ function Received() {
   const decodes = useStation((s) => s.decodes);
   const recent = decodes.slice(0, 60);
   return (
-    <section className="foxc-card">
+    <section className="foxc-card foxc-tone--lemon">
       <header className="foxc-card-head">
         <h2>{t('fox.received')}</h2>
       </header>

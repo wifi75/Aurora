@@ -102,7 +102,7 @@
 .foxc-empty { margin: 0; padding: var(--space-3); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
 
 /* cascata */
-.foxc-wf { height: 16rem; min-height: 120px; max-height: 1200px; display: flex; flex-direction: column; background: var(--wf-bg); resize: vertical; overflow: hidden; }
+.foxc-wf { height: 16rem; min-height: 120px; max-height: 1200px; display: flex; flex-direction: column; background: var(--wf-bg); overflow: hidden; }
 .foxc-wf .wf-stack { flex: 1; min-height: 0; position: relative; }
 .foxc-rx-controls { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--fx-line); }
 
@@ -173,3 +173,27 @@
   .foxc-grid--main { grid-template-columns: 1fr; }
   .foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: auto; max-height: 26rem; }
 }
+
+/* maniglia per l'altezza della cascata */
+.foxc-wf-handle { height: 0.9rem; display: grid; place-items: center; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--text) 6%, transparent); border-top: 1px solid var(--fx-line); }
+.foxc-wf-handle span { width: 3rem; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 35%, transparent); }
+.foxc-wf-handle:hover span { background: var(--mode-ft8); }
+
+/* colori pastello delle sezioni: la scheda prende una tinta leggera, la testata una piu' piena */
+.foxc-card[class*='foxc-tone--'] { background: color-mix(in srgb, var(--tone) 12%, transparent); border-color: color-mix(in srgb, var(--tone) 35%, transparent); }
+.foxc-card[class*='foxc-tone--'] > .foxc-card-head { background: color-mix(in srgb, var(--tone) 24%, transparent); border-bottom-color: color-mix(in srgb, var(--tone) 35%, transparent); }
+.foxc-card[class*='foxc-tone--'] h2 { color: color-mix(in srgb, var(--tone) 55%, var(--text)); }
+.foxc-tone--lilac { --tone: #b39dfc; }
+.foxc-tone--mint { --tone: #7fdcb5; }
+.foxc-tone--peach { --tone: #ffb38a; }
+.foxc-tone--sky { --tone: #8ec8ff; }
+.foxc-tone--lemon { --tone: #f2d16b; }
+.foxc-tone--slate { --tone: #9fb3cf; }
+.foxc-options { background: linear-gradient(100deg, color-mix(in srgb, #b39dfc 12%, transparent), color-mix(in srgb, #8ec8ff 12%, transparent)); }
+.foxc-table th { background: color-mix(in srgb, #b39dfc 20%, var(--panel-raised)); }
+
+/* pulsanti di ricezione nella pagina Fox: pastello, acceso in lilla pieno */
+.foxc-rx-controls .chip { background: color-mix(in srgb, #8ec8ff 18%, transparent); border-color: color-mix(in srgb, #8ec8ff 45%, transparent); color: var(--text); }
+.foxc-rx-controls .chip:hover { background: color-mix(in srgb, #8ec8ff 30%, transparent); }
+.foxc-rx-controls .chip.glass--on { background: #a993f5; border-color: #a993f5; color: #1d1442; }
+.foxc-rx-controls .chip.chip--warn { background: #ffc58a; border-color: #ffc58a; color: #3a2000; }
