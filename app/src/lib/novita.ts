@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.72',
-    released: '2026-11-02T21:00:00Z',
+    released: '2026-11-02T17:56:15Z',
     kind: 'fixed',
     title: ['Fox più comodo', 'Easier Fox', 'Bequemerer Fox', 'Fox plus pratique', 'Fox más cómodo', 'Fox mais cómodo'],
     text: [
