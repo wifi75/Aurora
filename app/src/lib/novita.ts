@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.82',
+    released: '2026-11-02T23:30:00Z',
+    kind: 'fixed',
+    title: ['Ricerca QRZ.com e HamQTH non si blocca più', 'QRZ.com and HamQTH lookup no longer hangs', 'QRZ.com- und HamQTH-Suche hängt nicht mehr', 'La recherche QRZ.com et HamQTH ne se bloque plus', 'La búsqueda QRZ.com y HamQTH ya no se bloquea', 'A pesquisa QRZ.com e HamQTH já não bloqueia'],
+    text: [
+      'La prima ricerca senza sessione aperta bloccava il servizio: da lì «Prova» restava su «Prova in corso…» e nome e città non arrivavano più. Ora l’accesso si fa e la ricerca continua.',
+      'The first lookup without an open session locked up the service: after that «Test» stayed on «Testing…» and name and town no longer arrived. Now it logs in and the lookup goes on.',
+      'Die erste Suche ohne offene Sitzung blockierte den Dienst: danach blieb «Test» auf «Test läuft…» und Name und Ort kamen nicht mehr. Jetzt meldet er sich an und sucht weiter.',
+      'La première recherche sans session ouverte bloquait le service : ensuite « Tester » restait sur « Test en cours… » et le nom et la ville n’arrivaient plus. Désormais la connexion se fait et la recherche continue.',
+      'La primera búsqueda sin sesión abierta bloqueaba el servicio: después «Probar» se quedaba en «Prueba en curso…» y ya no llegaban nombre y ciudad. Ahora inicia sesión y la búsqueda sigue.',
+      'A primeira pesquisa sem sessão aberta bloqueava o serviço: depois «Testar» ficava em «Teste em curso…» e o nome e a cidade já não chegavam. Agora entra e a pesquisa continua.',
+    ],
+  },
+  {
     version: '0.11.81',
     released: '2026-11-02T22:25:04Z',
     kind: 'fixed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Les spots des DXpéditions en l’air selon NG3K ont une ligne colorée et l’étiquette « DXped ». La couleur se choisit dans Réglages > DX Cluster, avec une palette fluo.',
       'Los spots de las DXpediciones en el aire según NG3K tienen la fila coloreada y la etiqueta «DXped». El color se elige en Ajustes > DX Cluster, con una paleta flúor.',
       'Os spots das DXpedições no ar segundo o NG3K têm a linha colorida e a etiqueta «DXped». A cor escolhe-se em Definições > DX Cluster, com uma paleta flúor.',
-    ],
-  },
-  {
-    version: '0.11.58',
-    released: '2026-11-01T14:54:24Z',
-    kind: 'changed',
-    title: ['Barre Rx e Tx fluide', 'Smooth Rx and Tx bars', 'Flüssige Rx- und Tx-Balken', 'Barres Rx et Tx fluides', 'Barras Rx y Tx fluidas', 'Barras Rx e Tx fluidas'],
-    text: [
-      'Trascinando le barre sulla cascata seguono subito il mouse. Nel riquadro CQ il messaggio si legge intero.',
-      'Dragged on the waterfall, the bars follow the mouse at once. In the CQ box the message is shown in full.',
-      'Beim Ziehen im Wasserfall folgen die Balken sofort der Maus. Im CQ-Feld ist die Nachricht ganz lesbar.',
-      'En les faisant glisser sur la cascade, les barres suivent aussitôt la souris. Dans le cadre CQ le message se lit en entier.',
-      'Al arrastrarlas en la cascada las barras siguen al ratón al momento. En el recuadro CQ el mensaje se lee entero.',
-      'Ao arrastá-las na cascata as barras seguem logo o rato. No quadro CQ a mensagem lê-se inteira.',
     ],
   },
 ];

@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.82 - 2026-11-02
+- **Ricerca QRZ.com e HamQTH**: la prima ricerca senza sessione aperta bloccava il servizio per sempre («Prova in corso…», nome e citta' mai arrivati). Il lucchetto dei dati ora si lascia prima dell'accesso.
+
 ## 0.11.81 - 2026-11-02
 - **Spettro sotto la cascata**: di nuovo su «Attuale» (anche nello stile WSJT-X e una volta per chi aveva «Cumulativo»): segue il segnale in tempo reale invece di restare quasi fermo.
 - **Finestra CQ**: colonna del paese larga, il nome si legge intero.
