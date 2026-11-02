@@ -46,4 +46,13 @@ export const dxpedStrings = {
   'dxd.tune': ['Vai su {khz} kHz', 'Tune to {khz} kHz', 'Auf {khz} kHz', 'Aller sur {khz} kHz', 'Ir a {khz} kHz', 'Ir para {khz} kHz'],
   'tip.dxd.tune': ['Porta la radio sulla frequenza dell’ultimo spot del DX Cluster per questa DXpedition.', 'Tunes the radio to the latest DX Cluster spot for this DXpedition.', 'Stellt das Funkgerät auf den letzten DX-Cluster-Spot dieser DXpedition.', 'Règle le poste sur le dernier spot DX Cluster de cette DXpédition.', 'Lleva la radio a la frecuencia del último spot del DX Cluster de esta DXpedición.', 'Leva o rádio à frequência do último spot do DX Cluster desta DXpedição.'],
   'tip.dxp.open': ['Clic per la scheda con mappa e dettagli.', 'Click for the card with map and details.', 'Klick für die Karte mit Details.', 'Clic pour la fiche avec carte et détails.', 'Clic para la ficha con mapa y detalles.', 'Clique para a ficha com mapa e detalhes.'],
+  'dxd.state': ['Stato', 'Status', 'Status', 'État', 'Estado', 'Estado'],
+  'dxd.live': ['In onda', 'On air', 'In der Luft', 'En l’air', 'En el aire', 'No ar'],
+  'dxd.soon': ['In arrivo', 'Coming', 'Kommt', 'À venir', 'Próxima', 'Em breve'],
+  'dxd.over': ['Finita', 'Ended', 'Beendet', 'Terminée', 'Terminada', 'Terminada'],
+  'dxd.left': ['Mancano', 'Left', 'Noch', 'Reste', 'Quedan', 'Faltam'],
+  'dxd.startsIn': ['Inizia tra', 'Starts in', 'Beginnt in', 'Commence dans', 'Empieza en', 'Começa em'],
+  'dxd.days': ['{n} giorni', '{n} days', '{n} Tage', '{n} jours', '{n} días', '{n} dias'],
+  'dxd.no': ['no', 'no', 'nein', 'non', 'no', 'não'],
+  'dxd.spot': ['Spot', 'Spot', 'Spot', 'Spot', 'Spot', 'Spot'],
 } as const;

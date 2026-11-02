@@ -5695,3 +5695,15 @@
   height: 100%;
 }
 
+
+/* scheda DXpedition: lo stato in quattro riquadri */
+.dxd-state { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin: 0 0 0.6rem; }
+.dxd-st { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.45rem 0.6rem; border-radius: 0.6rem; background: rgba(127, 140, 160, 0.12); min-width: 0; }
+.dxd-st small { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted, #5b6b80); }
+.dxd-st b { font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dxd-st--active { background: rgba(15, 110, 86, 0.13); }
+.dxd-st--active b { color: #0f6e56; }
+.dxd-st--warn { background: rgba(232, 163, 23, 0.16); }
+.dxd-st--warn b { color: #9a5b00; }
+.dxd-st--soon b { color: #185fa5; }
+@media (max-width: 520px) { .dxd-state { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
