@@ -513,6 +513,17 @@ pub fn start_with_save(
                         }
                     }
                 }
+                // Hound in FT8: si cerca anche una Fox UltraFOX/SuperFox (un solo segnale largo da 750 Hz); i suoi messaggi arrivano come quelli FT8
+                if mode == Mode::Ft8 && live.as_ref().is_some_and(|l| l.controls.switch_on("hound"))
+                    && let Some(fox) = ultrafox_rx::decode(&slot.samples, ultrafox::F0_HZ as f32, 200.0)
+                {
+                    tracing::info!("UltraFOX: {} messaggi da {} ({} dB)", fox.messages.len(), fox.fox, fox.snr);
+                    for text in fox.messages.iter().chain(fox.free_text.iter()) {
+                        if !decoded.iter().any(|x| &x.text == text) {
+                            decoded.push(as_decoded(fox.freq_hz, fox.dt, fox.snr, text.clone()));
+                        }
+                    }
+                }
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
                 // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
