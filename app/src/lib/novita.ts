@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.79',
-    released: '2026-11-02T23:30:00Z',
+    released: '2026-11-02T21:25:56Z',
     kind: 'changed',
     title: ['Display FT-2000 più pulito', 'Cleaner FT-2000 display', 'Aufgeräumte FT-2000-Anzeige', 'Afficheur FT-2000 plus net', 'Display FT-2000 más limpio', 'Visor FT-2000 mais limpo'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.79',
-    released: '2026-11-02T23:30:00Z',
+    released: '2026-11-02T21:25:56Z',
     kind: 'fixed',
     title: ['Cluster, aggiornamenti e log più ordinati', 'Tidier cluster, updates and log', 'Aufgeräumter Cluster, Updates und Log', 'Cluster, mises à jour et journal plus ordonnés', 'Clúster, actualizaciones y registro más ordenados', 'Cluster, atualizações e registo mais arrumados'],
     text: [
