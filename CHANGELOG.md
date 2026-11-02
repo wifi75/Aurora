@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni, revisione grafica di tutte le pagine**: le etichette vanno a capo per intero invece di troncarsi a due righe o con i puntini (Generali, Filtri, Sequenza, Servizi di log, Programmi collegati, colori di Notifiche); i campi di testo cedono spazio al nome fino a una larghezza leggibile e un indirizzo gia' scritto allarga il campo; le tendine mostrano per intero la scelta («Predefinito del modello» in Radio, «Nominativo completo in Tx3» in Generali); quando nome e valore non stanno su una riga il valore scende sotto invece di uscire dalla cella. Sequenza: un solo riquadro «Note» (erano due), regole di Aurora con righe normali e l'elenco delle stazioni escluse largo. Audio: la nota sciolta sotto la pagina e' nel riquadro «Note». Programmi collegati: le informazioni (cty.dat, log letto) in un riquadro come gli altri.
 - **DX Cluster**: niente piu' striscia vuota accanto a «Modo» (si sposta il contenuto, non la cella); colonna Freq altri 5 px a sinistra.
 - **Display FT-2000**: tolta la scala di sintonia sotto la frequenza.
 - **Potenza della radio (PWR −/+)**: dopo il comando Aurora rilegge la potenza; se la radio non l'ha cambiata (per esempio la FT-2000 con la manopola RF PWR) lo dice invece di far credere che sia cambiata. Il log registra potenza chiesta e potenza letta.
