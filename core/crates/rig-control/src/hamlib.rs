@@ -260,6 +260,12 @@ impl RigctldClient {
         self.ask_vfo("U", &format!("{name} {}", u8::from(on)), 0).map(|_| ())
     }
 
+    /// Un'operazione sul VFO di Hamlib (`G TUNE` fa partire l'accordatore automatico della radio).
+    pub fn vfo_op(&self, op: &str) -> Result<(), RigError> {
+        check_token(op, "operazione")?;
+        self.ask_vfo("G", op, 0).map(|_| ())
+    }
+
     /// Scrive uno spostamento RIT (`J`) o XIT (`Z`) in Hz.
     pub fn set_offset(&self, xit: bool, hz: i32) -> Result<(), RigError> {
         self.ask_vfo(if xit { "Z" } else { "J" }, &hz.to_string(), 0).map(|_| ())

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.76',
+    released: '2026-11-03T00:00:00Z',
+    kind: 'new',
+    title: ['Accordatore, potenza e SWR', 'Tuner, power and SWR', 'Tuner, Leistung und SWR', 'Boîte d’accord, puissance et ROS', 'Acoplador, potencia y ROE', 'Sintonizador, potência e ROE'],
+    text: [
+      'Sotto il display: TUNE avvia l’accordatore della radio e PWR − / + cambia la potenza a passi del 5%. In trasmissione il display piccolo mostra anche lo SWR.',
+      'Below the display: TUNE starts the radio tuner and PWR − / + changes the power in 5% steps. While transmitting the small display also shows the SWR.',
+      'Unter dem Display: TUNE startet den Tuner des Funkgeräts, PWR − / + ändert die Leistung in 5-%-Schritten. Beim Senden zeigt das kleine Display auch das SWR.',
+      'Sous l’affichage : TUNE lance la boîte d’accord du poste et PWR − / + change la puissance par pas de 5 %. En émission le petit affichage montre aussi le ROS.',
+      'Bajo el display: TUNE inicia el acoplador de la radio y PWR − / + cambia la potencia en pasos del 5 %. Al transmitir el display pequeño muestra también la ROE.',
+      'Por baixo do visor: TUNE inicia o sintonizador do rádio e PWR − / + muda a potência em passos de 5 %. Ao transmitir o visor pequeno mostra também a ROE.',
+    ],
+  },
+  {
     version: '0.11.75',
     released: '2026-11-02T18:30:55Z',
     kind: 'fixed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'La cascade garde ses lignes quand tu déplaces ou recrées le panneau. Hamlib 4.7.2 officiel ; profils DATA2/DATA3 conservés après un changement de bande ; en split avec réception sur VFO B on émet sur VFO A ; PSK Reporter à la bonne heure même à minuit.',
       'La cascada conserva sus líneas al mover o recrear el panel. Hamlib 4.7.2 oficial; los perfiles DATA2/DATA3 se mantienen tras cambiar de banda; en split recibiendo en VFO B se transmite en VFO A; PSK Reporter con la hora correcta incluso a medianoche.',
       'A cascata mantém as linhas ao mover ou recriar o painel. Hamlib 4.7.2 oficial; os perfis DATA2/DATA3 mantêm-se após mudar de banda; em split a receber no VFO B transmite-se no VFO A; PSK Reporter com a hora certa mesmo à meia-noite.',
-    ],
-  },
-  {
-    version: '0.11.55',
-    released: '2026-11-01T13:20:31Z',
-    kind: 'new',
-    title: ['FT8 più sensibile: a7 e a8', 'More sensitive FT8: a7 and a8', 'Empfindlicheres FT8: a7 und a8', 'FT8 plus sensible : a7 et a8', 'FT8 más sensible: a7 y a8', 'FT8 mais sensível: a7 e a8'],
-    text: [
-      'Come WSJT-X 3, Aurora prova i messaggi attesi: le risposte del tuo corrispondente vicino alla barra Rx (a8) e il seguito dei QSO del periodo precedente (a7). Nelle prove legge segnali fino a 3-4 dB più deboli.',
-      'Like WSJT-X 3, Aurora tries the expected messages: your partner’s replies near the Rx bar (a8) and the next messages of the previous period’s QSOs (a7). In tests it reads signals up to 3-4 dB weaker.',
-      'Wie WSJT-X 3 probiert Aurora die erwarteten Nachrichten: die Antworten der Gegenstation nahe dem Rx-Balken (a8) und die Fortsetzung der QSOs des vorigen Durchgangs (a7). In Tests liest es bis zu 3-4 dB schwächere Signale.',
-      'Comme WSJT-X 3, Aurora essaie les messages attendus : les réponses de ton correspondant près de la barre Rx (a8) et la suite des QSO de la période précédente (a7). En test elle lit des signaux jusqu’à 3-4 dB plus faibles.',
-      'Como WSJT-X 3, Aurora prueba los mensajes esperados: las respuestas de tu corresponsal cerca de la barra Rx (a8) y la continuación de los QSO del periodo anterior (a7). En pruebas lee señales hasta 3-4 dB más débiles.',
-      'Como o WSJT-X 3, a Aurora experimenta as mensagens esperadas: as respostas do teu correspondente perto da barra Rx (a8) e a continuação dos QSO do período anterior (a7). Nos testes lê sinais até 3-4 dB mais fracos.',
     ],
   },
 ];

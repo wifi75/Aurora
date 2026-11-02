@@ -15,6 +15,9 @@ const ACTION_TIP = {
   nr: 'rx.act.nr',
   notch: 'rx.act.notch',
   atu: 'rx.act.atu',
+  tune: 'rx.act.tune',
+  pwr_up: 'rx.act.pwrUp',
+  pwr_down: 'rx.act.pwrDown',
   vfo: 'rx.act.vfo',
   rit: 'rx.act.rit',
   xit: 'rx.act.xit',
@@ -89,7 +92,16 @@ export function RadioExtras() {
     if (x.nr != null) chips.push({ key: 'nr', text: 'NR', on: x.nr });
     if (x.notch != null) chips.push({ key: 'notch', text: 'NOTCH', on: x.notch });
   }
-  if (prefs.tuner && x.tuner != null) chips.push({ key: 'atu', text: 'ATU', on: x.tuner });
+  if (prefs.tuner && x.tuner != null) {
+    chips.push({ key: 'atu', text: 'ATU', on: x.tuner });
+    // avvia l'accordatura: la radio emette da sola una portante bassa per qualche secondo
+    chips.push({ key: 'tune', text: 'TUNE', on: false });
+  }
+  // potenza RF impostata, a passi del 5%
+  if (x.power_set != null) {
+    chips.push({ key: 'pwr_down', text: `PWR ${Math.round(x.power_set * 100)}% −`, on: false });
+    chips.push({ key: 'pwr_up', text: '+', on: false });
+  }
   if (prefs.ritXit) {
     if (x.rit_hz != null) chips.push({ key: 'rit', text: `RIT ${x.rit_hz > 0 ? '+' : ''}${x.rit_hz}`, on: x.rit_hz !== 0 });
     if (x.xit_hz != null) chips.push({ key: 'xit', text: `XIT ${x.xit_hz > 0 ? '+' : ''}${x.xit_hz}`, on: x.xit_hz !== 0 });
