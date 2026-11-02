@@ -5,6 +5,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 ## Aperti (2026-11-01)
 - [ ] Riordino del menu Impostazioni (gruppi per funzione, pagina Servizi di log, via Avanzate, errori di salvataggio col nome del campo): in lavorazione
 - [ ] Hound automatico, etichetta FOX, Tx sopra 1000 Hz e Salta Tx1 disattivato in Hound: in lavorazione
+- [x] SuperFox: fatto come UltraFOX nella 0.11.70 (trasmissione, ricezione in Hound); manca la firma digitale.
 - [ ] Lavori grandi da WSJT-X 3: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza approvata `docs/mockup-fox.html`)
 - [ ] Prove dal vivo del proprietario: a7/a8, stop per ROS, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, display Yaesu/Icom, barre Rx/Tx
 

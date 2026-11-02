@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-01, versione 0.11.69. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-01, versione 0.11.70. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -151,6 +151,7 @@ Stato al 2026-11-01, versione 0.11.69. Per riprendere il lavoro leggi anche `doc
 ## Come riprendere (passaggio di sessione, 2026-11-01 sera)
 - **Ultima versione pubblicata**: vedi riga 3 e `docs/ripresa.md`.
 - **Ramo `resti-motore`**: unito a `main` e pubblicato nella 0.11.61 (Hound automatico, FOX, Wait and Pounce, ALL.TXT, scambi di contest). Scelta del proprietario: l'R+rapporto subito dopo il nostro Tx1 chiude con RR73 come WSJT-X 3.3 (`history.rs`), non come JTDX.
+- **Ramo `superfox-rx`**: superato da UltraFOX, non serve piu'.
 - **Elenco dei lavori**: `docs/tasks.md` (WSJT-X 3.x) e `TODO.md`. Bozza approvata della pagina Fox: `docs/mockup-fox.html`.
 - **Regole che contano**: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero (nello screenshot del sito e' nascosto); compilare l'installatore da solo (antivirus escluso su `D:\progetti` e `D:build`); giro di commit ogni 30 minuti; il proprietario fa le prove dal vivo.
 
@@ -161,6 +162,6 @@ Stato al 2026-11-01, versione 0.11.69. Per riprendere il lavoro leggi anche `doc
 - **Display**: zoom = lente (CSS `zoom: 2` sulla copia identica), non una versione allargata.
 - **Scheda DXpedition**: usa `WorldMap` della Propagazione; coordinate del paese da `cty.dat` (`/api/v1/dxcc` con `lat`/`lon`). Nella 0.11.64 la mappa disegnata a mano svuotava la pagina: le finestre sopra a tutto vanno in `createPortal` con una rete di sicurezza (error boundary).
 - **Anteprime**: quando il proprietario chiede di vedere prima di pubblicare, una pagina di prova temporanea in `app/` (non salvata) con i dati finti mostra il componente nel browser; l'interfaccia di sviluppo vera chiede l'associazione del dispositivo.
-- **Modo Fox classico (0.11.68)**: port di `foxTxSequencer` di WSJT-X 3.3 in `engine-native/src/fox.rs` (5 posti, 3 tentativi, CQ ogni 10 periodi se libero, coda di 10, posti a +60 Hz, segnali sommati e normalizzati); acceso dall'interruttore `fox`, stato con l'evento `fox` (mandato ogni 2 s, dalla 0.11.69), comandi `POST /api/v1/fox` (select, unqueue, drop, options, reset); pagina `#/fox`, nel menu dopo Stazione con la spiegazione al passaggio del mouse. SuperFox escluso finche' l'autore non da' il permesso.
+- **Modo Fox classico (0.11.68)**: port di `foxTxSequencer` di WSJT-X 3.3 in `engine-native/src/fox.rs` (5 posti, 3 tentativi, CQ ogni 10 periodi se libero, coda di 10, posti a +60 Hz, segnali sommati e normalizzati); acceso dall'interruttore `fox`, stato con l'evento `fox` (mandato ogni 2 s, dalla 0.11.69), comandi `POST /api/v1/fox` (select, unqueue, drop, options, reset); pagina `#/fox`, nel menu dopo Stazione con la spiegazione al passaggio del mouse. La versione larga e' UltraFOX (0.11.70).
 - **Scheda DXpedition (0.11.69)**: mappa `WorldMap` senza tessere NatGeo (`tiles={false}`) e senza tropici ed equatore (nuova prop `parallels={false}`); la Propagazione resta com'era.
 - **Scelte del proprietario**: l'AGC del display e la riorganizzazione della parte alta non si fanno (non sono lavori aperti); i pulsanti dei modi restano come sono.

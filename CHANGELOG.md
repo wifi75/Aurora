@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.70 - 2026-11-02
+- **UltraFOX** (compatibile con SuperFox di WSJT-X 3.3): nella pagina Fox la casella «UltraFOX» manda tutte le stazioni del periodo in un solo segnale largo (da 750 a 2260 Hz, circa 13 s); in Hound (FT8) Aurora decodifica anche le Fox UltraFOX/SuperFox e risponde come a quelle classiche. In fase di prova; la firma digitale non e' ancora gestita.
+- **Zona di trasmissione**: a QSO finito e registrato DX e messaggi si cancellano da soli appena la sequenza smette di trasmettere verso quella stazione; le chiusure (RRR/RR73/73) verso una stazione gia' a log non si ripetono piu' all'infinito (al massimo 3, o il limite scelto).
+- **CAT**: se la radio o il programma che la condivide (es. Log4OM) non risponde, Aurora riprova da sola ogni 5 s finche' non si preme Scollega.
+- **Scheda DXpedition**: cartina chiara (Esri) senza linee e stato in quattro riquadri (stato, giorni mancanti, sentita, ultimo spot).
+- Pagina Fox: corretta la tendina «CQ verso» (le opzioni venivano rifiutate).
+
 ## 0.11.69 - 2026-11-01
 - **Fox**: la pagina si apre subito (prima restava su «Il motore non ha ancora mandato lo stato Fox»); il motore manda lo stato ogni 2 s con l'interruttore letto subito. Nel menu Fox sta dopo Stazione, con la spiegazione al passaggio del mouse.
 - **Scheda DXpedition**: mappa disegnata dal programma, senza la cartina National Geographic e senza tropici, equatore e circoli polari.

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.70',
+    released: '2026-11-02T12:00:00Z',
+    kind: 'new',
+    title: ['UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX'],
+    text: [
+      'Nuovo modo per le DXpedition, compatibile con SuperFox: un solo segnale con fino a 9 stazioni, anche in ricezione come Hound. In più: la zona di trasmissione si pulisce da sola a QSO finito e il CAT si ricollega da solo.',
+      'New DXpedition mode, compatible with SuperFox: one signal with up to 9 stations, also received as Hound. Plus: the transmit area clears itself after a QSO and the CAT reconnects by itself.',
+      'Neuer DXpedition-Modus, kompatibel mit SuperFox: ein Signal mit bis zu 9 Stationen, auch als Hound empfangen. Dazu: der Sendebereich leert sich nach dem QSO selbst und CAT verbindet sich selbst neu.',
+      'Nouveau mode DXpédition, compatible SuperFox : un seul signal avec jusqu’à 9 stations, reçu aussi en Hound. En plus : la zone d’émission se vide seule après le QSO et le CAT se reconnecte seul.',
+      'Nuevo modo para DXpediciones, compatible con SuperFox: una sola señal con hasta 9 estaciones, también en recepción como Hound. Además: la zona de transmisión se limpia sola al acabar el QSO y el CAT se reconecta solo.',
+      'Novo modo para DXpedições, compatível com SuperFox: um só sinal com até 9 estações, também recebido como Hound. Além disso: a zona de transmissão limpa-se sozinha no fim do QSO e o CAT volta a ligar-se sozinho.',
+    ],
+  },
+  {
     version: '0.11.69',
     released: '2026-11-01T21:38:33Z',
     kind: 'fixed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Le bouton « Exporter ADIF » du panneau Log ouvre une page avec tous les QSO : filtres, sélection ligne par ligne et « Enregistrer ADIF… » avec la fenêtre Windows pour choisir l’emplacement.',
       'El botón «Exportar ADIF» del panel Log abre una página con todos los QSO: filtros, selección fila a fila y «Guardar ADIF…» con la ventana de Windows para elegir dónde guardar.',
       'O botão «Exportar ADIF» do painel Log abre uma página com todos os QSO: filtros, seleção linha a linha e «Guardar ADIF…» com a janela do Windows para escolher onde guardar.',
-    ],
-  },
-  {
-    version: '0.11.54',
-    released: '2026-11-01T10:55:52Z',
-    kind: 'new',
-    title: ['Invio diretto a Wavelog, ClubLog, QRZ e LoTW', 'Direct upload to Wavelog, ClubLog, QRZ and LoTW', 'Direkter Upload zu Wavelog, ClubLog, QRZ und LoTW', 'Envoi direct vers Wavelog, ClubLog, QRZ et LoTW', 'Envío directo a Wavelog, ClubLog, QRZ y LoTW', 'Envio direto para Wavelog, ClubLog, QRZ e LoTW'],
-    text: [
-      'In Impostazioni > Segnalazioni ogni servizio ha il suo riquadro con «Prova»: i QSO messi a log partono subito, restano in coda se manca la rete e le chiavi sono salvate cifrate. LoTW passa da TQSL.',
-      'In Settings > Reporting each service has its own box with “Test”: logged QSOs go out at once, stay queued if the network is down, and keys are stored encrypted. LoTW goes through TQSL.',
-      'Unter Einstellungen > Meldungen hat jeder Dienst sein Feld mit „Test“: geloggte QSOs gehen sofort raus, bleiben ohne Netz in der Warteschlange, Schlüssel werden verschlüsselt gespeichert. LoTW läuft über TQSL.',
-      'Dans Réglages > Signalements chaque service a son cadre avec « Tester » : les QSO enregistrés partent aussitôt, restent en file sans réseau et les clés sont chiffrées. LoTW passe par TQSL.',
-      'En Ajustes > Informes cada servicio tiene su recuadro con «Probar»: los QSO registrados salen al momento, quedan en cola sin red y las claves se guardan cifradas. LoTW pasa por TQSL.',
-      'Em Definições > Relatórios cada serviço tem o seu quadro com «Testar»: os QSO registados saem logo, ficam em fila sem rede e as chaves são guardadas cifradas. O LoTW passa pelo TQSL.',
     ],
   },
 ];

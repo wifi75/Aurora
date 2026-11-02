@@ -15,11 +15,13 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
+- **Ultima versione pubblicata**: **0.11.70** (2026-11-02): UltraFOX (compatibile con SuperFox: `qpc.rs`, `ultrafox.rs`, `ultrafox_rx.rs` in `engine-native`; casella nella pagina Fox; ricezione in Hound FT8), pulizia automatica della zona di trasmissione, CAT che riprova ogni 5 s, scheda DXpedition con stato in riquadri. Da provare in aria: UltraFOX con una vera SuperFox; mancano la firma digitale (OTP) e la rimozione dei segnali FT8 prima della decodifica UltraFOX.
 - **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
 
 ## Lavoro in corso (non finito)
 
 - Il ramo `resti-motore` e' unito a `main` e pubblicato nella 0.11.61 (Hound automatico, FOX, Wait and Pounce, ALL.TXT, scambi di contest). Scelta del proprietario: l'R+rapporto subito dopo il nostro Tx1 chiude con RR73 come WSJT-X 3.3.
+- **UltraFOX**: pubblicato nella 0.11.70 (compatibile con SuperFox); il ramo locale `superfox-rx` non serve piu'.
 
 ## Prossimo passo
 
