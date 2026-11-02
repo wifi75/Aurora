@@ -23,22 +23,50 @@ const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: 'CQ'
 
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 
-const WF_KEY = 'aurora-fox-wf-height';
-const readHeight = (): number => {
+const readHeight = (key: string, fallback: number): number => {
   try {
-    const v = Number(window.localStorage.getItem(WF_KEY));
-    return v >= 120 && v <= 1200 ? v : 256;
+    const v = Number(window.localStorage.getItem(key));
+    return v >= 120 && v <= 1600 ? v : fallback;
   } catch {
-    return 256;
+    return fallback;
   }
 };
-const saveHeight = (h: number) => {
+const saveHeight = (key: string, h: number) => {
   try {
-    if (h >= 120) window.localStorage.setItem(WF_KEY, String(h));
+    if (h >= 120) window.localStorage.setItem(key, String(h));
   } catch {
     // senza archivio del browser l'altezza non si ricorda
   }
 };
+
+/** Un'altezza che si cambia trascinando una maniglia col mouse (o col dito) e che si ricorda. */
+function useDragHeight(key: string, fallback: number) {
+  const [height, setHeight] = useState(() => readHeight(key, fallback));
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const startY = e.clientY;
+    const startH = height;
+    const el = e.currentTarget;
+    el.setPointerCapture?.(e.pointerId);
+    const at = (y: number) => Math.min(1600, Math.max(120, startH + y - startY));
+    const move = (ev: PointerEvent) => setHeight(at(ev.clientY));
+    const up = (ev: PointerEvent) => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      saveHeight(key, at(ev.clientY));
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+  };
+  return { height, onPointerDown };
+}
+
+function DragHandle({ label, onPointerDown }: { label: string; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
+  return (
+    <div className="foxc-wf-handle" role="separator" aria-orientation="horizontal" aria-label={label} title={label} onPointerDown={onPointerDown}>
+      <span />
+    </div>
+  );
+}
 
 const snr = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 
@@ -54,6 +82,7 @@ export function FoxPage() {
   const txOn = status?.tx_enabled ?? false;
   const transmitting = status?.transmitting ?? false;
   const [sort, setSort] = useState<SortKey>('snr');
+  const main = useDragHeight('aurora-fox-main-height', 352);
   const [filter, setFilter] = useState('');
 
   // il pulsante cambia subito, senza aspettare lo stato del motore; se il comando fallisce torna com'era
@@ -142,7 +171,7 @@ export function FoxPage() {
       </div>
 
 
-      <div className="foxc-grid foxc-grid--main">
+      <div className="foxc-grid foxc-grid--main" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
         <section className="foxc-card foxc-tone--lilac">
           <header className="foxc-card-head">
             <h2>{t('fox.callers')}</h2>
@@ -269,6 +298,8 @@ export function FoxPage() {
         <Received />
       </div>
 
+      <DragHandle label={t('fox.resizeMain')} onPointerDown={main.onPointerDown} />
+
       <Spectrum />
     </section>
   );
@@ -286,22 +317,7 @@ function Spectrum() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
-  const [height, setHeight] = useState(readHeight);
-  // la maniglia sotto la cascata: si trascina col mouse (o col dito) e l'altezza si ricorda
-  const drag = (e: React.PointerEvent<HTMLDivElement>) => {
-    const startY = e.clientY;
-    const startH = height;
-    const el = e.currentTarget;
-    el.setPointerCapture?.(e.pointerId);
-    const move = (ev: PointerEvent) => setHeight(Math.min(1200, Math.max(120, startH + ev.clientY - startY)));
-    const up = (ev: PointerEvent) => {
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerup', up);
-      saveHeight(Math.min(1200, Math.max(120, startH + ev.clientY - startY)));
-    };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', up);
-  };
+  const { height, onPointerDown } = useDragHeight('aurora-fox-wf-height', 256);
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
@@ -330,9 +346,7 @@ function Spectrum() {
         </div>
         <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} />
       </div>
-      <div className="foxc-wf-handle" role="separator" aria-orientation="horizontal" aria-label={t('fox.resize')} title={t('fox.resize')} onPointerDown={drag}>
-        <span />
-      </div>
+      <DragHandle label={t('fox.resize')} onPointerDown={onPointerDown} />
     </section>
   );
 }
