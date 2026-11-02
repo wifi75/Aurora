@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.72',
+    released: '2026-11-02T21:00:00Z',
+    kind: 'fixed',
+    title: ['Fox più comodo', 'Easier Fox', 'Bequemerer Fox', 'Fox plus pratique', 'Fox más cómodo', 'Fox mais cómodo'],
+    text: [
+      'Abilita Tx si accende al primo clic nel modo Fox, la pagina Fox sta in una schermata con la cascata ridimensionabile e l’etichetta FOX non compare più per stazioni normali.',
+      'Enable Tx turns on at the first click in Fox mode, the Fox page fits one screen with a resizable waterfall and the FOX label no longer appears for normal stations.',
+      'Tx aktivieren geht im Fox-Modus beim ersten Klick an, die Fox-Seite passt auf einen Bildschirm mit verstellbarem Wasserfall und das FOX-Etikett erscheint nicht mehr bei normalen Stationen.',
+      'Activer Tx s’allume au premier clic en mode Fox, la page Fox tient sur un écran avec une cascade redimensionnable et l’étiquette FOX n’apparaît plus pour les stations normales.',
+      'Habilitar Tx se enciende al primer clic en modo Fox, la página Fox cabe en una pantalla con la cascada redimensionable y la etiqueta FOX ya no aparece en estaciones normales.',
+      'Ativar Tx liga ao primeiro clique no modo Fox, a página Fox cabe num ecrã com a cascata redimensionável e a etiqueta FOX já não aparece em estações normais.',
+    ],
+  },
+  {
     version: '0.11.71',
     released: '2026-11-02T17:42:24Z',
     kind: 'changed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Avant d’émettre, Aurora vérifie que le message arrive exactement comme écrit : si un indicatif ne peut pas être codé rien ne part et le panneau Tx l’indique. Un programme externe peut aussi bloquer l’émission par UDP, comme dans WSJT-X 3.',
       'Antes de transmitir Aurora comprueba que el mensaje llegue exactamente como está escrito: si un indicativo no se puede codificar no sale nada y el panel Tx lo dice. Un programa externo también puede bloquear la transmisión por UDP, como en WSJT-X 3.',
       'Antes de transmitir a Aurora verifica que a mensagem chega exatamente como está escrita: se um indicativo não puder ser codificado nada sai e o painel Tx diz isso. Um programa externo também pode bloquear a transmissão por UDP, como no WSJT-X 3.',
-    ],
-  },
-  {
-    version: '0.11.54',
-    released: '2026-11-01T10:55:52Z',
-    kind: 'new',
-    title: ['Dedicato ad Aura', 'Dedicated to Aura', 'Für Aura', 'Dédié à Aura', 'Dedicado a Aura', 'Dedicado à Aura'],
-    text: [
-      'Aurora porta il nome di Aura, la figlia dell’autore: la dedica è nella pagina Informazioni.',
-      'Aurora is named after Aura, the author’s daughter: the dedication is on the About page.',
-      'Aurora trägt den Namen von Aura, der Tochter des Autors: die Widmung steht auf der Seite Info.',
-      'Aurora porte le nom d’Aura, la fille de l’auteur : la dédicace est dans la page Informations.',
-      'Aurora lleva el nombre de Aura, la hija del autor: la dedicatoria está en la página Información.',
-      'A Aurora tem o nome da Aura, filha do autor: a dedicatória está na página Informações.',
     ],
   },
 ];
