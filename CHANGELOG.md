@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cascata come WSJT-X**: di fabbrica una riga ogni 0,288 s (mezzo simbolo FT8, ~52 righe per periodo di 15 s invece di ~225), 4 canali per pixel, Flatten, spettro Cumulative, linea verde di periodo; pixel netti (filtro NEAREST, nessuna interpolazione) e segnali FT8 come blocchi compatti. In Impostazioni > Cascata la scelta «Velocità della cascata» (come WSJT-X / più veloce come JTDX) e i pulsanti «Stile WSJT-X» e «Stile JTDX» che impostano tutto in un clic (quello attivo si vede selezionato). Chi aggiorna passa allo stile WSJT-X una sola volta; le modifiche fatte dopo restano.
 - **DX Cluster**: niente piu' striscia vuota accanto a «Modo» (si sposta il contenuto, non la cella); colonna Freq altri 5 px a sinistra.
 - **Display FT-2000**: tolta la scala di sintonia sotto la frequenza.
 - **Potenza della radio (PWR −/+)**: dopo il comando Aurora rilegge la potenza; se la radio non l'ha cambiata (per esempio la FT-2000 con la manopola RF PWR) lo dice invece di far credere che sia cambiata. Il log registra potenza chiesta e potenza letta.
