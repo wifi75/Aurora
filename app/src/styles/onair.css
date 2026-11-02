@@ -5860,3 +5860,8 @@
     display: none;
   }
 }
+
+/* elenchi dei messaggi: bandiera e paese 15 px piu' a destra, lo spazio si toglie al messaggio */
+.decode-list .decode-row .decode-where {
+  margin-left: 15px;
+}
