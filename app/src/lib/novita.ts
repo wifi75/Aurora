@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.80',
-    released: '2026-11-03T00:00:00Z',
+    released: '2026-11-02T22:12:00Z',
     kind: 'new',
     title: ['QRZ.com, HamQTH e HRDLOG.NET', 'QRZ.com, HamQTH and HRDLOG.NET', 'QRZ.com, HamQTH und HRDLOG.NET', 'QRZ.com, HamQTH et HRDLOG.NET', 'QRZ.com, HamQTH y HRDLOG.NET', 'QRZ.com, HamQTH e HRDLOG.NET'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.80',
-    released: '2026-11-03T00:00:00Z',
+    released: '2026-11-02T22:12:00Z',
     kind: 'changed',
     title: ['Cascata come WSJT-X, display e Comandi più compatti', 'WSJT-X style waterfall, tighter display and Commands', 'Wasserfall wie WSJT-X, kompaktere Anzeige und Befehle', 'Cascade comme WSJT-X, afficheur et Commandes plus compacts', 'Cascada como WSJT-X, visor y Comandos más compactos', 'Cascata como WSJT-X, visor e Comandos mais compactos'],
     text: [
@@ -49,7 +49,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.80',
-    released: '2026-11-03T00:00:00Z',
+    released: '2026-11-02T22:12:00Z',
     kind: 'fixed',
     title: ['DX Cluster e DXpedition corretti', 'DX Cluster and DXpedition fixed', 'DX-Cluster und DXpedition korrigiert', 'DX Cluster et DXpédition corrigés', 'DX Cluster y DXpedición corregidos', 'DX Cluster e DXpedição corrigidos'],
     text: [

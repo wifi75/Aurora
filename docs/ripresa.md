@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-03)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-02 sera)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.80** (2026-11-03, installatore in compilazione): pannello Comandi su righe compatte (proposta 1 di `docs/mockup-comandi.html`), barre PO e SWR con scala nel display FT-2000, QRZ.com, HamQTH e HRDLOG.NET, cascata come WSJT-X, revisione grafica delle Impostazioni, DX Cluster senza colonne tagliate. Prima, 0.11.79: RX/TX dopo la frequenza nel display FT-2000, potenza riletta dopo − e +.
+- **Ultima versione**: **0.11.80** (2026-11-02, pubblicata): pannello Comandi su righe compatte (proposta 1 di `docs/mockup-comandi.html`), barre PO e SWR con scala nel display FT-2000, QRZ.com, HamQTH e HRDLOG.NET, cascata come WSJT-X, revisione grafica delle Impostazioni, DX Cluster senza colonne tagliate. Prima, 0.11.79: RX/TX dopo la frequenza nel display FT-2000, potenza riletta dopo − e +.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
