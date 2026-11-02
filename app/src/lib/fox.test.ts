@@ -17,4 +17,9 @@ describe('stazioni Fox/Hound', () => {
     expect(foxCalls([{ text: m, freq_hz: 1650 }]).has('G3VCQ')).toBe(false);
     expect(foxCalls([{ text: m, freq_hz: 600 }]).has('G3VCQ')).toBe(true);
   });
+
+  it('a station that sends R+report is never a Fox', () => {
+    const items = [{ text: 'SP6PST RR73; K1ABC <N2BJ> -07', freq_hz: 600 }, { text: 'DG7RF N2BJ R-12', freq_hz: 1450 }];
+    expect(foxCalls(items).has('N2BJ')).toBe(false);
+  });
 });
