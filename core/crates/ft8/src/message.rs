@@ -415,6 +415,21 @@ pub fn pack_text71(testo: &str) -> Option<u128> {
     Some(v)
 }
 
+/// Il nominativo di 28 bit senza memoria degli hash (UltraFOX usa solo nominativi standard).
+pub fn unpack28_standard(n28: u32) -> Option<String> {
+    unpack28(n28, &CallHashes::default())
+}
+
+/// Il testo di 13 caratteri da 71 bit (`unpacktext77`), senza gli spazi in testa.
+pub fn unpack_text71(mut v: u128) -> String {
+    let mut out = [b' '; 13];
+    for c in out.iter_mut().rev() {
+        *c = ALFA_TESTO[(v % 42) as usize];
+        v /= 42;
+    }
+    String::from_utf8_lossy(&out).trim_start().to_string()
+}
+
 /// Nominativo standard (si codifica nei 28 bit senza hash): `stdcall` di WSJT-X.
 pub fn is_standard_call(c: &str) -> bool {
     codifica_standard(c).is_some()
