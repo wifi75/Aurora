@@ -5743,19 +5743,14 @@
   padding-left: 0;
 }
 
+/* DX, bandiera e Paese piu' a sinistra togliendo lo spazio interno: spostare il contenuto lo faceva tagliare dal bordo della cella */
 .cluster-table th:nth-child(3),
-.cluster-table th:nth-child(4) {
-  text-indent: -7px;
-}
-
-.cluster-table td:nth-child(3) > *,
-.cluster-table td:nth-child(4) > * {
-  position: relative;
-  left: -7px;
-}
-
+.cluster-table td:nth-child(3),
+.cluster-table th:nth-child(4),
+.cluster-table td:nth-child(4),
+.cluster-table th:nth-child(5),
 .cluster-table td:nth-child(5) {
-  text-indent: -7px;
+  padding-left: 0;
 }
 
 .cluster-table th.cluster-th-country {
