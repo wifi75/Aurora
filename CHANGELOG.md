@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.77 - 2026-11-03
 - **Display FT-2000 e IC-7610**: il TUNER/ATU tenuto premuto 1 secondo avvia l'accordatura, come il tasto della radio; la pressione breve lo accende o spegne.
 - **Pagina Fox**: STOP TX nello stile neon; riquadri centrali allungabili con la maniglia sotto (l'altezza si ricorda).
 - **Sito**: titolo e testi con FT8, FT4, JT65 e JT9, Fox e UltraFOX, scheda CAT con SWR, TUNE e potenza (gia' pubblicato).

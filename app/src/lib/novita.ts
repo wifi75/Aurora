@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.77',
+    released: '2026-11-03T01:00:00Z',
+    kind: 'changed',
+    title: ['TUNER tenuto premuto', 'Hold TUNER to tune', 'TUNER gedrückt halten', 'TUNER maintenu', 'TUNER mantenido', 'TUNER premido'],
+    text: [
+      'Nei display FT-2000 e IC-7610 il TUNER tenuto premuto 1 secondo avvia l’accordatura, come sulla radio. Nella pagina Fox i riquadri si allungano con la maniglia e lo STOP segue lo stile neon.',
+      'On the FT-2000 and IC-7610 displays, holding TUNER for 1 second starts tuning, like on the radio. On the Fox page the panels stretch with the handle and STOP follows the neon style.',
+      'In den FT-2000- und IC-7610-Displays startet TUNER, 1 Sekunde gedrückt, die Abstimmung wie am Funkgerät. Auf der Fox-Seite lassen sich die Felder am Griff verlängern und STOP folgt dem Neon-Stil.',
+      'Sur les affichages FT-2000 et IC-7610, TUNER maintenu 1 seconde lance l’accord, comme sur le poste. Sur la page Fox les panneaux s’allongent avec la poignée et STOP suit le style néon.',
+      'En los displays FT-2000 e IC-7610, TUNER mantenido 1 segundo inicia la sintonía, como en la radio. En la página Fox los paneles se alargan con el tirador y STOP sigue el estilo neón.',
+      'Nos visores FT-2000 e IC-7610, TUNER premido 1 segundo inicia a sintonia, como no rádio. Na página Fox os painéis alongam-se com a pega e o STOP segue o estilo néon.',
+    ],
+  },
+  {
     version: '0.11.76',
     released: '2026-11-02T18:45:58Z',
     kind: 'new',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Filtres : n’afficher que certains indicatifs ou préfixes (JA*), en afficher toujours certains, masquer tous les messages des stations déjà contactées, suspendre tous les filtres et surligner en violet indicatifs, préfixes ou pays.',
       'En Ajustes > Filtros: mostrar solo ciertos indicativos o prefijos (JA*), mostrar siempre algunos, ocultar todos los mensajes de los ya trabajados, suspender todos los filtros y resaltar en violeta indicativos, prefijos o países.',
       'Em Definições > Filtros: mostrar só certos indicativos ou prefixos (JA*), mostrar sempre alguns, esconder todas as mensagens dos já contactados, suspender todos os filtros e realçar a roxo indicativos, prefixos ou países.',
-    ],
-  },
-  {
-    version: '0.11.55',
-    released: '2026-11-01T13:20:31Z',
-    kind: 'changed',
-    title: ['Cascata e CAT più solidi', 'Sturdier waterfall and CAT', 'Stabilerer Wasserfall und CAT', 'Cascade et CAT plus solides', 'Cascada y CAT más sólidos', 'Cascata e CAT mais sólidos'],
-    text: [
-      'La cascata non perde le righe quando sposti o ricrei il pannello. Hamlib 4.7.2 ufficiale; i profili DATA2/DATA3 restano dopo un cambio di banda; in split con VFO B in ricezione si trasmette sul VFO A; PSK Reporter con l’ora giusta anche a mezzanotte.',
-      'The waterfall keeps its lines when you move or recreate the panel. Official Hamlib 4.7.2; DATA2/DATA3 profiles stay after a band change; in split receiving on VFO B transmits on VFO A; PSK Reporter with the right time even at midnight.',
-      'Der Wasserfall behält seine Zeilen beim Verschieben oder Neuerstellen des Felds. Offizielles Hamlib 4.7.2; DATA2/DATA3-Profile bleiben nach Bandwechsel; im Split mit Empfang auf VFO B wird auf VFO A gesendet; PSK Reporter mit richtiger Zeit auch um Mitternacht.',
-      'La cascade garde ses lignes quand tu déplaces ou recrées le panneau. Hamlib 4.7.2 officiel ; profils DATA2/DATA3 conservés après un changement de bande ; en split avec réception sur VFO B on émet sur VFO A ; PSK Reporter à la bonne heure même à minuit.',
-      'La cascada conserva sus líneas al mover o recrear el panel. Hamlib 4.7.2 oficial; los perfiles DATA2/DATA3 se mantienen tras cambiar de banda; en split recibiendo en VFO B se transmite en VFO A; PSK Reporter con la hora correcta incluso a medianoche.',
-      'A cascata mantém as linhas ao mover ou recriar o painel. Hamlib 4.7.2 oficial; os perfis DATA2/DATA3 mantêm-se após mudar de banda; em split a receber no VFO B transmite-se no VFO A; PSK Reporter com a hora certa mesmo à meia-noite.',
     ],
   },
 ];
