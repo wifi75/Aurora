@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.72 - 2026-11-02
+- **Fox**: «Abilita Tx» resta acceso al primo clic (nel modo Fox la sequenza normale non parte piu' e non lo rispegne) e il pulsante cambia subito.
+- **Pagina Fox in una schermata**: numeri nella testata, poi chi chiama, QSO in corso ben in vista, in onda e coda, messaggi ricevuti; la cascata sotto a tutta larghezza, ridimensionabile trascinando l'angolo (l'altezza si ricorda).
+- **Etichetta FOX e Hound automatico**: solo per i messaggi DXpedition sotto i 1000 Hz; le risposte doppie di stazioni normali non sono piu' scambiate per una Fox.
+
 ## 0.11.71 - 2026-11-02
 - **Pagina Fox ridisegnata e completa**: testata con lo stato (spento, trasmissione spenta, pronto, in onda) e i comandi Fox, Abilita Tx e STOP; opzioni a pulsanti e interruttori; numeri della sessione; cascata con le barre Rx/Tx e i comandi di ricezione; messaggi ricevuti; tabella di chi chiama con SNR colorato; in onda adesso, QSO in corso con i passi e coda. Non serve piu' passare dalla pagina Stazione.
 - **Sequenza**: dopo il nostro RRR il 73 del DX chiude e registra il QSO senza mandare un altro 73.
