@@ -18,13 +18,18 @@ export const FOX_MAX_HZ = 1000;
 /** I nominativi che nei messaggi ricevuti trasmettono come Fox (messaggio DXpedition sotto i 1000 Hz, se la frequenza e' nota). */
 export function foxCalls(items: Array<string | { text: string; freq_hz?: number }>): Set<string> {
   const out = new Set<string>();
+  // chi manda R+rapporto o RRR fa la parte di chi chiama (Hound o stazione normale): una Fox non li manda mai
+  const notFox = new Set<string>();
   for (const item of items) {
     const text = typeof item === 'string' ? item : item.text;
+    const w = text.trim().toUpperCase().split(/\s+/);
+    if (w.length === 3 && w[0] !== 'CQ' && /^(R[+-]\d{2}|RRR)$/.test(w[2]!)) notFox.add(w[1]!.replace(/[<>]/g, ''));
     const hz = typeof item === 'string' ? undefined : item.freq_hz;
     if (hz !== undefined && hz >= FOX_MAX_HZ) continue;
     const f = foxSender(text);
     if (f) out.add(f);
   }
+  for (const c of notFox) out.delete(c);
   return out;
 }
 

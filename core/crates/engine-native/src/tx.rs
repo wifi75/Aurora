@@ -1184,6 +1184,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
             }
         }
+        // chi manda R+rapporto o RRR fa la parte di chi chiama: non e' una Fox (come l'etichetta FOX della pagina)
+        for (text, _, _) in decoded {
+            let w: Vec<&str> = text.split_whitespace().collect();
+            let hound_like = w.len() == 3 && w[0] != "CQ" && (w[2] == "RRR" || (w[2].len() == 4 && w[2].starts_with('R') && w[2][1..].parse::<i32>().is_ok()));
+            if hound_like {
+                let call = w[1].trim_matches(|c| c == '<' || c == '>');
+                self.foxes.retain(|f| !f.eq_ignore_ascii_case(call));
+            }
+        }
         let dx = self.seq.dx().map(str::to_string);
         if self.hound_manual.as_deref().is_some_and(|m| Some(m) != dx.as_deref()) {
             self.hound_manual = None;
