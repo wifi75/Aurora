@@ -46,6 +46,8 @@ interface Props {
   night: boolean;
   /** Piu' bassa, per stare dentro una pagina con altro. */
   compact?: boolean;
+  /** Tessere diverse da quelle di base (es. la cartina stradale chiara di Esri). */
+  tileUrl?: string;
   /** Tropici, equatore e circoli polari (di base si'). */
   parallels?: boolean;
   labels: Labels;
@@ -74,7 +76,7 @@ function cssColor(variable: string | null, fallback: string): string {
  * lavorati in giallo, le stazioni che si ricevono ora, chi ci ha ricevuto con le sue linee e la lettura sotto il cursore.
  * Si trascina e si ingrandisce con la rotella.
  */
-export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, labels }: Props) {
+export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, tileUrl = TILES_URL, labels }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<'tiles' | 'lines' | 'worked' | 'stations' | 'receivers' | 'home', L.Layer | null>>({
@@ -163,8 +165,8 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     const m = map.current;
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
-    replace('tiles', tiles ? L.tileLayer(TILES_URL, { attribution: ATTRIBUTION, maxNativeZoom: 10, maxZoom: 10, noWrap: true, bounds: WORLD }) : null);
-  }, [tiles]);
+    replace('tiles', tiles ? L.tileLayer(tileUrl, { attribution: ATTRIBUTION, maxNativeZoom: 10, maxZoom: 10, noWrap: true, bounds: WORLD }) : null);
+  }, [tiles, tileUrl]);
 
   // la notte e le linee fisse: tropici e circoli polari
   useEffect(() => {

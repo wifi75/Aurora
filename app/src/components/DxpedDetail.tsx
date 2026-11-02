@@ -5,12 +5,21 @@ import { getClusterSpots, getDxcc, postFrequency, type Dxpedition } from '../api
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { bearingDeg, distanceKm, latLonToGrid } from '../lib/geo';
-import { readMapOptions } from '../lib/mapOptions';
 import { mapLabels } from '../pages/MapPage';
 import { WorldMap } from './WorldMap';
 import { gridToLatLon } from '../lib/maidenhead';
 import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
+
+/** Cartina chiara con confini e nomi (Esri World Street Map, senza chiave). */
+const STREET_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+
+/** Giorni interi da oggi a una data «2026-11-20» (negativi se passata). */
+function daysTo(date: string): number {
+  const end = Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)));
+  const now = new Date();
+  return Math.round((end - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) / 86_400_000);
+}
 
 /** «2026-11-20» → «20/11». */
 const short = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
@@ -50,7 +59,6 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
   const dxcc = useQuery({ queryKey: ['dxcc', d.call], queryFn: () => getDxcc(d.call), retry: false, staleTime: Infinity });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false });
   const home = status?.de_grid ? gridToLatLon(status.de_grid) : null;
-  const mapOptions = readMapOptions();
   const info = dxcc.data;
   const target = info && info.lat != null && info.lon != null ? { lat: info.lat, lon: info.lon } : null;
   const heard = decodes.find((m) => m.id >= 0 && senderOf(m.text)?.call.toUpperCase() === d.call.toUpperCase());
@@ -77,9 +85,10 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
               homeGrid={status?.de_grid}
               selected={d.call}
               onSelect={() => undefined}
-              tiles={false}
+              tiles
+              tileUrl={STREET_TILES}
               parallels={false}
-              night={mapOptions.night}
+              night={false}
               compact
               labels={mapLabels(t)}
             />
@@ -98,6 +107,24 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
             {code ? <span className={`fi fi-${code}`} aria-hidden="true" /> : null}
             {d.country}
             {info ? <span className="muted"> · {info.continent} · CQ {info.cq_zone} · ITU {info.itu_zone}</span> : null}
+          </div>
+          <div className="dxd-state">
+            <div className={`dxd-st dxd-st--${d.state}`}>
+              <small>{t('dxd.state')}</small>
+              <b>{d.state === 'active' ? t('dxd.live') : d.state === 'soon' ? t('dxd.soon') : t('dxd.over')}</b>
+            </div>
+            <div className={`dxd-st${d.state === 'ended' ? '' : ' dxd-st--warn'}`}>
+              <small>{d.state === 'soon' ? t('dxd.startsIn') : t('dxd.left')}</small>
+              <b>{d.state === 'ended' ? '—' : t('dxd.days', { n: Math.max(0, d.state === 'soon' ? daysTo(d.start) : daysTo(d.end)) })}</b>
+            </div>
+            <div className={`dxd-st${heard ? ' dxd-st--active' : ''}`}>
+              <small>{t('dxd.heard')}</small>
+              <b>{heard ? `${heard.snr} dB` : t('dxd.no')}</b>
+            </div>
+            <div className="dxd-st">
+              <small>{t('dxd.spot')}</small>
+              <b className="data">{spot ? spot.freq_khz.toFixed(1) : '—'}</b>
+            </div>
           </div>
           <dl className="dxd-facts">
             <dt>{t('dxd.dates')}</dt>
