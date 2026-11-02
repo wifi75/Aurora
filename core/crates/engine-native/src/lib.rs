@@ -5,6 +5,7 @@
 
 pub mod fox;
 pub mod qpc;
+pub mod ultrafox;
 mod alltxt;
 pub mod features;
 mod parity;
