@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.71',
+    released: '2026-11-02T20:00:00Z',
+    kind: 'changed',
+    title: ['Pagina Fox completa', 'Complete Fox page', 'Vollständige Fox-Seite', 'Page Fox complète', 'Página Fox completa', 'Página Fox completa'],
+    text: [
+      'La pagina Fox ha tutto: stato, Abilita Tx e STOP, cascata, messaggi e liste. In più: niente 73 dopo il tuo RRR e la forma del paese nella scheda DXpedition.',
+      'The Fox page has everything: status, Enable Tx and STOP, waterfall, messages and lists. Also: no 73 after your RRR and the country outline in the DXpedition card.',
+      'Die Fox-Seite hat alles: Status, Tx aktivieren und STOP, Wasserfall, Nachrichten und Listen. Außerdem: kein 73 nach deinem RRR und die Landesform in der DXpedition-Karte.',
+      'La page Fox a tout : état, Activer Tx et STOP, cascade, messages et listes. En plus : plus de 73 après ton RRR et la forme du pays dans la fiche DXpédition.',
+      'La página Fox lo tiene todo: estado, Habilitar Tx y STOP, cascada, mensajes y listas. Además: sin 73 tras tu RRR y la forma del país en la ficha DXpedición.',
+      'A página Fox tem tudo: estado, Ativar Tx e STOP, cascata, mensagens e listas. Além disso: sem 73 depois do teu RRR e a forma do país na ficha da DXpedição.',
+    ],
+  },
+  {
     version: '0.11.70',
     released: '2026-11-02T17:21:43Z',
     kind: 'new',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora porte le nom d’Aura, la fille de l’auteur : la dédicace est dans la page Informations.',
       'Aurora lleva el nombre de Aura, la hija del autor: la dedicatoria está en la página Información.',
       'A Aurora tem o nome da Aura, filha do autor: a dedicatória está na página Informações.',
-    ],
-  },
-  {
-    version: '0.11.54',
-    released: '2026-11-01T10:55:52Z',
-    kind: 'new',
-    title: ['Esporta ADIF: scegli QSO e cartella', 'ADIF export: pick QSOs and folder', 'ADIF-Export: QSOs und Ordner wählen', 'Export ADIF : choisis QSO et dossier', 'Exportar ADIF: elige QSO y carpeta', 'Exportar ADIF: escolhe QSO e pasta'],
-    text: [
-      'Il pulsante «Esporta ADIF» del pannello Log apre una pagina con tutti i QSO: filtri, selezione riga per riga e «Salva ADIF…» con la finestra di Windows per scegliere dove salvare.',
-      'The “Export ADIF” button in the Log panel opens a page with every QSO: filters, row-by-row selection and “Save ADIF…” with the Windows window to choose where to save.',
-      'Die Taste „ADIF exportieren“ im Log-Feld öffnet eine Seite mit allen QSOs: Filter, Auswahl Zeile für Zeile und „ADIF speichern…“ mit dem Windows-Fenster zum Speicherort.',
-      'Le bouton « Exporter ADIF » du panneau Log ouvre une page avec tous les QSO : filtres, sélection ligne par ligne et « Enregistrer ADIF… » avec la fenêtre Windows pour choisir l’emplacement.',
-      'El botón «Exportar ADIF» del panel Log abre una página con todos los QSO: filtros, selección fila a fila y «Guardar ADIF…» con la ventana de Windows para elegir dónde guardar.',
-      'O botão «Exportar ADIF» do painel Log abre uma página com todos os QSO: filtros, seleção linha a linha e «Guardar ADIF…» com a janela do Windows para escolher onde guardar.',
     ],
   },
 ];

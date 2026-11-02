@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione pubblicata**: **0.11.70** (2026-11-02): UltraFOX (compatibile con SuperFox: `qpc.rs`, `ultrafox.rs`, `ultrafox_rx.rs` in `engine-native`; casella nella pagina Fox; ricezione in Hound FT8), pulizia automatica della zona di trasmissione, CAT che riprova ogni 5 s, scheda DXpedition con stato in riquadri. Da provare in aria: UltraFOX con una vera SuperFox; mancano la firma digitale (OTP) e la rimozione dei segnali FT8 prima della decodifica UltraFOX.
+- **Ultima versione pubblicata**: **0.11.71** (2026-11-02): pagina Fox completa e ridisegnata (`pages/FoxPage.tsx`, `styles/fox.css`), niente 73 dopo il nostro RRR, forma del paese nella scheda DXpedition (`components/CountryShape.tsx`), avvisi GPL nella pagina Informazioni. Prima, 0.11.70: UltraFOX (`qpc.rs`, `ultrafox.rs`, `ultrafox_rx.rs`). Da provare in aria: Fox/UltraFOX; mancano firma digitale UltraFOX e rimozione dei segnali FT8 prima della decodifica UltraFOX.
 - **Cosa c'e' nella 0.11.60**: Impostazioni riordinate in sei gruppi (Servizi di log, Programmi collegati), «Log» nel menu in alto al posto di «Storico», display Yaesu FT-2000 e Icom IC-7610, DXpedition evidenziate nel DX Cluster con colore a scelta, barre Rx/Tx fluide, decodifica FT8 a7/a8 e multithread, protezioni in trasmissione, invio diretto a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, diagnostica dei crash. Dettaglio in `CHANGELOG.md`.
 
 ## Lavoro in corso (non finito)
