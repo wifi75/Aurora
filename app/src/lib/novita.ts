@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.74',
+    released: '2026-11-02T23:00:00Z',
+    kind: 'changed',
+    title: ['Pagina Fox in stile neon', 'Neon-style Fox page', 'Fox-Seite im Neon-Stil', 'Page Fox style néon', 'Página Fox estilo neón', 'Página Fox estilo néon'],
+    text: [
+      'La pagina Fox ha un aspetto tutto suo, viola e ciano luminosi, e la cascata si ridimensiona trascinando la maniglia.',
+      'The Fox page has a look of its own, glowing violet and cyan, and the waterfall resizes by dragging its handle.',
+      'Die Fox-Seite hat ein eigenes Aussehen in leuchtendem Violett und Cyan, und der Wasserfall lässt sich am Griff in der Höhe ziehen.',
+      'La page Fox a son propre style, violet et cyan lumineux, et la cascade se redimensionne en tirant la poignée.',
+      'La página Fox tiene un aspecto propio, violeta y cian luminosos, y la cascada se redimensiona arrastrando el tirador.',
+      'A página Fox tem um aspeto próprio, violeta e ciano luminosos, e a cascata redimensiona-se arrastando a pega.',
+    ],
+  },
+  {
     version: '0.11.73',
     released: '2026-11-02T18:01:25Z',
     kind: 'changed',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec une bande chargée, le décodage utilise tous les processeurs du PC et finit plus tôt, avec les mêmes résultats.',
       'Con la banda llena la decodificación usa todos los procesadores del PC y termina antes, con los mismos resultados.',
       'Com a banda cheia a descodificação usa todos os processadores do PC e acaba mais cedo, com os mesmos resultados.',
-    ],
-  },
-  {
-    version: '0.11.55',
-    released: '2026-11-01T13:20:31Z',
-    kind: 'new',
-    title: ['Stop della trasmissione con ROS alto', 'Transmit stop on high SWR', 'Sendestopp bei hohem SWR', 'Arrêt de l’émission si ROS élevé', 'Parada de la transmisión con ROE alta', 'Paragem da transmissão com ROE alta'],
-    text: [
-      'Se la radio legge un ROS oltre la soglia (2,5 di base, in Impostazioni > Generali) la trasmissione si ferma subito e compare un avviso.',
-      'If the radio reads an SWR above the limit (2.5 by default, in Settings > General) transmitting stops at once and a warning appears.',
-      'Liest das Funkgerät ein SWR über der Grenze (Standard 2,5, in Einstellungen > Allgemein), stoppt das Senden sofort mit einem Hinweis.',
-      'Si la radio lit un ROS au-dessus du seuil (2,5 par défaut, dans Réglages > Généraux), l’émission s’arrête aussitôt avec un avertissement.',
-      'Si la radio lee una ROE por encima del límite (2,5 de serie, en Ajustes > Generales) la transmisión se detiene al momento con un aviso.',
-      'Se o rádio ler uma ROE acima do limite (2,5 de origem, em Definições > Gerais) a transmissão para logo e aparece um aviso.',
     ],
   },
 ];
