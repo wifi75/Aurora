@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.74',
-    released: '2026-11-02T23:00:00Z',
+    released: '2026-11-02T18:13:22Z',
     kind: 'changed',
     title: ['Pagina Fox in stile neon', 'Neon-style Fox page', 'Fox-Seite im Neon-Stil', 'Page Fox style néon', 'Página Fox estilo neón', 'Página Fox estilo néon'],
     text: [
