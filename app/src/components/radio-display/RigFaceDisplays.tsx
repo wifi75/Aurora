@@ -331,7 +331,6 @@ export function Ft2000Display({
   });
 
   const rit = x.rit_hz;
-  const ritPos = 361 + Math.max(-1, Math.min(1, (rit ?? 0) / 1000)) * 100;
   if (rit != null)
     hits.push({
       key: "rit",
@@ -453,45 +452,8 @@ export function Ft2000Display({
           glow={FT.glow}
           offOpacity={0.1}
         />
-        {known ? (
-          <g aria-hidden="true" opacity={rit == null ? 0.35 : 1}>
-            <text
-              x={252}
-              y={80}
-              fontSize={14}
-              fontWeight={700}
-              fill={FT.ink}
-              fontFamily={FONT_UI}
-            >
-              −
-            </text>
-            <text
-              x={462}
-              y={80}
-              fontSize={14}
-              fontWeight={700}
-              fill={FT.ink}
-              fontFamily={FONT_UI}
-            >
-              +
-            </text>
-            <rect x={263} y={75} width={196} height={1.4} fill={FT.ink} />
-            {Array.from({ length: 21 }, (_, i) => (
-              <rect
-                key={i}
-                x={263 + i * 9.7}
-                y={i % 5 === 0 ? 68 : 71}
-                width={1.2}
-                height={i % 5 === 0 ? 8 : 5}
-                fill={FT.ink}
-              />
-            ))}
-            <polygon
-              points={`${ritPos - 5},86 ${ritPos + 5},86 ${ritPos},78`}
-              fill={FT.red}
-            />
-          </g>
-        ) : (
+        {/* la scala di sintonia - ... + sotto la frequenza non serviva (scelta del proprietario): resta solo l'avviso senza radio */}
+        {known ? null : (
           <Label
             x={252}
             y={78}
