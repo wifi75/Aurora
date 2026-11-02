@@ -289,7 +289,18 @@ impl ExtrasPoll {
                 let step = if item == ExtraItem::PowerUp { POWER_STEP } else { -POWER_STEP };
                 // a passi interi del 5%: 0,37 sale a 0,40 e scende a 0,35
                 let next = (((now / POWER_STEP).round() * POWER_STEP) + step).clamp(POWER_STEP, 1.0);
-                client.set_level("RFPOWER", (next * 100.0).round() / 100.0)?;
+                let wanted = (next * 100.0).round() / 100.0;
+                client.set_level("RFPOWER", wanted)?;
+                // si rilegge: alcune radio (FT-2000 con la manopola RF PWR) rispondono al comando ma tengono la potenza della manopola
+                let read = client.level("RFPOWER").map_err(|e| cannot_read(e, "potenza"))?;
+                tracing::info!("potenza RF: chiesta {:.0}%, la radio ora dice {:.0}%", wanted * 100.0, read * 100.0);
+                if (read - wanted).abs() > 0.03 {
+                    return Err(RigError(format!(
+                        "la radio non ha cambiato la potenza (chiesta {:.0}%, resta {:.0}%): su questa radio si regola dalla manopola RF PWR",
+                        wanted * 100.0,
+                        read * 100.0
+                    )));
+                }
             }
             ExtraItem::Vfo => {
                 let current = client.vfo().map_err(|e| cannot_read(e, "VFO"))?;
