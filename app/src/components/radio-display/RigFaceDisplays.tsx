@@ -8,6 +8,7 @@ import {
   meterReadouts,
   S_TICKS,
   S9_FRACTION,
+  swrFraction,
   type DisplayModel,
 } from "../../lib/radioDisplay";
 import { actionTip } from "./RadioExtras";
@@ -216,6 +217,53 @@ function FtSpy({
   );
 }
 
+/** Barre PO e SWR del pannello FT-2000: 20 segmenti, scala sopra (0-50-100 W, o 200 W se la radio supera i 100) e sotto (1-1.5-2-3-∞). */
+function FtMeters({ powerW, swr, powerText, swrText }: { powerW: number | null; swr: number | null; powerText: string | null; swrText: string | null }) {
+  const X = 278;
+  const W = 140;
+  const N = 20;
+  const full = powerW != null && powerW > 100 ? 200 : 100;
+  const poLit = powerW == null ? 0 : Math.round(Math.max(0, Math.min(1, powerW / full)) * N);
+  const swrLit = Math.round((swrFraction({ swr: swr ?? undefined } as never) ?? 0) * N);
+  const segW = (W - (N - 1) * 1.5) / N;
+  const bar = (y: number, lit: number, color: (i: number) => string) =>
+    Array.from({ length: N }, (_, i) => (
+      <rect key={i} x={X + i * (segW + 1.5)} y={y} width={segW} height={7} rx={1} fill={i < lit ? color(i) : FT.dim} />
+    ));
+  const swrColor = (i: number) => (i < 7 ? "#47d13a" : i < 12 ? FT.amber : FT.red);
+  const label = (x: number, y: number, text: string) => (
+    <text x={x} y={y} fontSize={7} fill={FT.ink} opacity={0.75} textAnchor="middle" fontFamily={FONT_UI}>
+      {text}
+    </text>
+  );
+  return (
+    <g aria-hidden="true">
+      {label(X, 63, "0")}
+      {label(X + W / 2, 63, String(full / 2))}
+      {label(X + W, 63, String(full))}
+      <text x={252} y={72} fontSize={9} fontWeight={700} fill={FT.cyan} fontFamily={FONT_UI}>
+        PO
+      </text>
+      {bar(65, poLit, () => FT.cyan)}
+      <text x={X + W + 6} y={72} fontSize={10} fontWeight={700} fill={FT.cyan} fontFamily={FONT_UI}>
+        {powerText ?? "—"}
+      </text>
+      <text x={252} y={84} fontSize={9} fontWeight={700} fill={FT.amber} fontFamily={FONT_UI}>
+        SWR
+      </text>
+      {bar(77, swrLit, swrColor)}
+      <text x={X + W + 6} y={84} fontSize={10} fontWeight={700} fill={FT.amber} fontFamily={FONT_UI}>
+        {swrText ?? "—"}
+      </text>
+      {label(X, 93, "1")}
+      {label(X + W * 0.25, 93, "1.5")}
+      {label(X + W * 0.5, 93, "2")}
+      {label(X + W * 0.75, 93, "3")}
+      {label(X + W, 93, "∞")}
+    </g>
+  );
+}
+
 export function Ft2000Display({
   model,
   noRadio,
@@ -413,13 +461,12 @@ export function Ft2000Display({
         ))}
         <FtSpy x={spyX} y={12} text="RX" color="#47d13a" on={link.rx && known} />
         <FtSpy x={spyX} y={30} text="TX" color={FT.red} on={link.tx} />
-        <Label
-          x={12}
-          y={82}
-          text={readouts.map((r) => `${r.key} ${r.text}`).join("  ")}
-          fill={FT.cyan}
-          size={10}
-          weight={600}
+        {/* PO e SWR: due barre a segmenti con la scala graduata, come lo strumento della radio, e il valore a fianco */}
+        <FtMeters
+          powerW={model.meters?.power_w ?? null}
+          swr={model.meters?.swr ?? null}
+          powerText={readouts.find((r) => r.key === "PO")?.text ?? null}
+          swrText={readouts.find((r) => r.key === "SWR")?.text ?? null}
         />
 
         {/* VFO A */}
