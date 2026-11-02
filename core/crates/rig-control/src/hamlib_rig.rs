@@ -482,22 +482,38 @@ impl Inner {
                 return false;
             }
         }
-        self.update(|s| {
-            s.state = LinkState::Error;
-            s.message = friendly_error(&last);
-        });
-        false
+        // finiti i tentativi a gradini si continua ogni `reconnect_step`, senza arrendersi
+        loop {
+            let wait = self.timing.reconnect_step;
+            self.update(|s| {
+                s.state = LinkState::Error;
+                s.message = format!("{} Nuovo tentativo tra {} s.", friendly_error(&last), wait.as_secs_f32().ceil());
+            });
+            if !self.sleep(wait) || self.stop.load(Ordering::SeqCst) {
+                return false;
+            }
+            match self.open() {
+                Ok(()) => return true,
+                Err(e) => last = e.0,
+            }
+        }
     }
 
     fn run(&self) {
-        if let Err(e) = self.open() {
-            if !self.stop.load(Ordering::SeqCst) {
-                self.update(|s| {
-                    s.state = LinkState::Error;
-                    s.message = friendly_error(&e.0);
-                });
+        // se la radio (o il programma che la condivide, es. Log4OM) non c'e' ancora, si riprova da soli ogni `reconnect_step`
+        // finche' non risponde o finche' non si preme Scollega
+        while let Err(e) = self.open() {
+            if self.stop.load(Ordering::SeqCst) {
+                return;
             }
-            return;
+            let wait = self.timing.reconnect_step;
+            self.update(|s| {
+                s.state = LinkState::Error;
+                s.message = format!("{} Nuovo tentativo tra {} s.", friendly_error(&e.0), wait.as_secs_f32().ceil());
+            });
+            if !self.sleep(wait) {
+                return;
+            }
         }
         let mut failures = 0u32;
         while self.wait_next() {
