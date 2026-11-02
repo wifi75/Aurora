@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.76 - 2026-11-02
+- **Accordatore della radio**: accanto ad ATU il pulsante **TUNE** avvia l'accordatura automatica (Hamlib `G TUNE`; provato con Hamlib per FT-2000 e IC-7610, da verificare in aria). Mai durante una trasmissione di Aurora.
+- **Potenza dalla radio**: pulsanti **PWR −** e **+** a passi del 5% (Hamlib `L RFPOWER`), con la potenza impostata in percentuale.
+- **SWR nel display piccolo**: in trasmissione al posto del modo, ambra da 2 e rosso da 3.
+
 ## 0.11.75 - 2026-11-02
 - **Etichetta FOX e Hound automatico**: chi manda R+rapporto o RRR non e' mai considerato una Fox (niente piu' FOX su stazioni normali che usano il messaggio doppio).
 

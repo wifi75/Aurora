@@ -155,6 +155,11 @@ pub enum ExtraItem {
     Nr,
     Notch,
     Atu,
+    /// Avvia l'accordatura automatica (`G TUNE`): la radio emette da sola una portante bassa per qualche secondo.
+    Tune,
+    /// Potenza RF impostata piu' alta / piu' bassa del 5% (`L RFPOWER`, da 0 a 1).
+    PowerUp,
+    PowerDown,
     Preamp,
     Att,
     Agc,
@@ -171,6 +176,9 @@ impl ExtraItem {
             "nr" => ExtraItem::Nr,
             "notch" => ExtraItem::Notch,
             "atu" => ExtraItem::Atu,
+            "tune" => ExtraItem::Tune,
+            "pwr_up" => ExtraItem::PowerUp,
+            "pwr_down" => ExtraItem::PowerDown,
             "preamp" => ExtraItem::Preamp,
             "att" => ExtraItem::Att,
             "agc" => ExtraItem::Agc,
@@ -186,7 +194,8 @@ impl ExtraItem {
             ExtraItem::Nb => &[Item::Nb],
             ExtraItem::Nr => &[Item::Nr],
             ExtraItem::Notch => &[Item::Notch],
-            ExtraItem::Atu => &[Item::Tuner],
+            ExtraItem::Atu | ExtraItem::Tune => &[Item::Tuner],
+            ExtraItem::PowerUp | ExtraItem::PowerDown => &[Item::PowerSet],
             ExtraItem::Preamp => &[Item::Preamp],
             ExtraItem::Att => &[Item::Att],
             ExtraItem::Agc => &[Item::Agc],
@@ -198,6 +207,9 @@ impl ExtraItem {
 }
 
 /// I valori che il clic prova in ordine: lo spento (0) e poi quelli che le radio accettano (10/20 dB; 6/12/18 dB).
+/// Il passo della potenza impostata (frazione di quella massima).
+const POWER_STEP: f32 = 0.05;
+
 const PREAMP_CYCLE: [i32; 3] = [0, 10, 20];
 const ATT_CYCLE: [i32; 6] = [0, 10, 20, 6, 12, 18];
 /// AGC come lo numera Hamlib: auto, fast, medium, slow, spento.
@@ -268,6 +280,16 @@ impl ExtrasPoll {
                 if !done {
                     return Err(last_refusal.unwrap_or_else(|| RigError(format!("la radio non accetta nessun altro valore per {label}"))));
                 }
+            }
+            ExtraItem::Tune => {
+                client.vfo_op("TUNE").map_err(|e| if is_unsupported(&e) || is_refusal(&e) { RigError("la radio non accetta l'avvio dell'accordatore da CAT".into()) } else { e })?;
+            }
+            ExtraItem::PowerUp | ExtraItem::PowerDown => {
+                let now = client.level("RFPOWER").map_err(|e| cannot_read(e, "potenza"))?;
+                let step = if item == ExtraItem::PowerUp { POWER_STEP } else { -POWER_STEP };
+                // a passi interi del 5%: 0,37 sale a 0,40 e scende a 0,35
+                let next = (((now / POWER_STEP).round() * POWER_STEP) + step).clamp(POWER_STEP, 1.0);
+                client.set_level("RFPOWER", (next * 100.0).round() / 100.0)?;
             }
             ExtraItem::Vfo => {
                 let current = client.vfo().map_err(|e| cannot_read(e, "VFO"))?;
@@ -340,6 +362,31 @@ mod tests {
         assert_eq!(fake.func("NB"), Some(false));
         assert_eq!(poll.cache.nb, Some(false));
         assert!(fake.commands().contains(&"U NB 1".to_string()));
+    }
+
+    #[test]
+    fn tune_starts_the_radio_tuner_only_when_the_radio_has_one() {
+        let fake = FakeRigctld::start(14_074_000);
+        let client = RigctldClient::connect(fake.addr, Duration::from_secs(2)).expect("collegato");
+        let mut poll = ExtrasPoll::default();
+        assert!(poll.apply(&client, ExtraItem::Tune).is_err(), "senza accordatore il comando e' rifiutato");
+        fake.set_func("TUNER", true);
+        poll.apply(&client, ExtraItem::Tune).expect("accordatura avviata");
+        assert_eq!(fake.ops(), vec!["TUNE".to_string()]);
+        assert_eq!(ExtraItem::parse("tune"), Some(ExtraItem::Tune));
+    }
+
+    #[test]
+    fn power_goes_up_and_down_in_five_percent_steps() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER", "0.37");
+        let client = RigctldClient::connect(fake.addr, Duration::from_secs(2)).expect("collegato");
+        let mut poll = ExtrasPoll::default();
+        poll.apply(&client, ExtraItem::PowerUp).expect("su");
+        assert!((client.level("RFPOWER").expect("letta") - 0.40).abs() < 0.001);
+        poll.apply(&client, ExtraItem::PowerDown).expect("giu");
+        poll.apply(&client, ExtraItem::PowerDown).expect("giu");
+        assert!((client.level("RFPOWER").expect("letta") - 0.30).abs() < 0.001);
     }
 
     #[test]

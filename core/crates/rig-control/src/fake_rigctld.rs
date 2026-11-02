@@ -35,6 +35,8 @@ pub struct FakeState {
     full_power_mw: AtomicU64,
     /// Le funzioni acceso/spento che la finta radio sa dare (`u NB`...): nome e stato. Le altre rispondono `RPRT -11`.
     funcs: Mutex<Vec<(String, bool)>>,
+    /// Le operazioni VFO ricevute (`G TUNE`...), accettate solo se la radio finta ha la funzione TUNER.
+    ops: Mutex<Vec<String>>,
     /// Coppie (livello, valore) che `L` rifiuta con `RPRT -9`.
     refused: Mutex<Vec<(String, String)>>,
     /// RIT e XIT in Hz.
@@ -63,6 +65,7 @@ impl FakeRigctld {
             levels: Mutex::new(Vec::new()),
             full_power_mw: AtomicU64::new(0),
             funcs: Mutex::new(Vec::new()),
+            ops: Mutex::new(Vec::new()),
             refused: Mutex::new(Vec::new()),
             offsets: Mutex::new([0, 0]),
             vfo: Mutex::new("VFOA".into()),
@@ -148,6 +151,11 @@ impl FakeRigctld {
     }
 
     /// La finta radio da' (o cambia) questa funzione acceso/spento, ad esempio `set_func("NB", true)`.
+    /// Le operazioni VFO ricevute finora.
+    pub fn ops(&self) -> Vec<String> {
+        self.state.ops.lock().map(|o| o.clone()).unwrap_or_default()
+    }
+
     pub fn set_func(&self, name: &str, on: bool) {
         if let Ok(mut funcs) = self.state.funcs.lock() {
             match funcs.iter_mut().find(|(n, _)| n == name) {
@@ -290,6 +298,19 @@ fn serve(stream: TcpStream, state: &FakeState) {
                         }
                         None => "RPRT -11
 ".to_string(),
+                    }
+                }
+                "G" => {
+                    let tuner = state.funcs.lock().is_ok_and(|f| f.iter().any(|(n, _)| n == "TUNER"));
+                    if arg == "TUNE" && tuner {
+                        if let Ok(mut o) = state.ops.lock() {
+                            o.push(arg.to_string());
+                        }
+                        "RPRT 0
+".into()
+                    } else {
+                        "RPRT -11
+".into()
                     }
                 }
                 "u" => {
