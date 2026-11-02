@@ -99,12 +99,15 @@ export function MiniDisplay({ model, noRadio, ariaLabel, style }: StyleProps & {
       <SevenSegment text={formatRadioFrequency(model.dialHz)} x={11} y={13} w={13} h={26} t={2.8} gap={3.5} skew={p.skew} on={p.digits} glow={p.glow} offOpacity={0.14} />
       <Chip x={MX} y={8} w={28} h={14} text="RX" bg={p.rx} fg={p.rxInk} fontSize={10} rx={3} dim={!link.rx} />
       <Chip x={MX + 32} y={8} w={28} h={14} text="TX" bg={p.tx} fg={p.txInk} fontSize={10} rx={3} dim={!link.tx} />
-      {known ? (
+      {/* in trasmissione al posto del modo si legge il ROS (ambra da 2, rosso da 3) */}
+      {known && link.tx && typeof model.meters?.swr === 'number' ? (
+        <Label x={MX + 64} y={19} text={`SWR ${model.meters.swr.toFixed(1)}`} fill={model.meters.swr >= 3 ? '#ff4a3a' : model.meters.swr >= 2 ? '#ffb020' : p.ink} size={11} weight={700} />
+      ) : known ? (
         <Label x={MX + 70} y={19} text={model.mode || '—'} fill={p.ink} size={12} weight={600} />
       ) : (
         <Label x={MX + 66} y={19} text={noRadio} fill={p.ink} size={10} weight={600} />
       )}
-      {main.label ? <Label x={312} y={20} text={main.kind === 'S' ? main.label : `PO ${main.label}`} fill={p.ink} size={12} weight={600} anchor="end" /> : null}
+      {main.label ? <Label x={312} y={20} text={main.kind === 'S' || typeof model.meters?.swr === 'number' ? main.label : `PO ${main.label}`} fill={p.ink} size={12} weight={600} anchor="end" /> : null}
       <MiniMeter kind={p.meter} p={p} fraction={main.fraction} />
     </DisplayFrame>
   );
