@@ -484,6 +484,7 @@ dependencies = [
  "qso-export",
  "qso-native",
  "rig-control",
+ "rustfft",
  "serde",
  "serde_json",
  "tokio",
