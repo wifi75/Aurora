@@ -55,6 +55,7 @@ export const aboutStrings = {
     'Partes do Aurora são algoritmos do WSJT-X (© Joe Taylor K1JT e o WSJT Development Group) e do JTDX (© os autores do JTDX), GPL-3, traduzidos para Rust e modificados por Tiziano Cassone. Lista completa em THIRD-PARTY-NOTICES.md.',
   ],
   'about.links': ['Collegamenti', 'Links', 'Links', 'Liens', 'Enlaces', 'Ligações'],
+  'about.site': ['Sito web di Aurora', 'Aurora website', 'Aurora-Webseite', 'Site web d’Aurora', 'Sitio web de Aurora', 'Site de Aurora'],
   'about.repo': ['Sorgenti su GitHub', 'Source on GitHub', 'Quellcode auf GitHub', 'Sources sur GitHub', 'Código en GitHub', 'Código no GitHub'],
   'about.releases': ['Versioni pubblicate', 'Releases', 'Veröffentlichungen', 'Versions publiées', 'Versiones publicadas', 'Versões publicadas'],
   'about.issues': ['Segnala un problema o scrivi all’autore', 'Report a problem or contact the author', 'Problem melden oder den Autor kontaktieren', 'Signaler un problème ou écrire à l’auteur', 'Informar de un problema o escribir al autor', 'Comunicar um problema ou escrever ao autor'],
