@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-01 sera)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-03)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,14 +15,14 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.79** (2026-11-02, in pubblicazione): display FT-2000 con RX/TX in alto dopo la frequenza e senza scala di sintonia, potenza riletta dopo − e + con avviso se la radio non la cambia (FT-2000: decide la manopola RF PWR), DX Cluster allineato, Aggiornamenti senza voci per sviluppatori, log senza i messaggi innocui di WebView2. Prima, 0.11.78: riquadro del paese con regione e mondo in miniatura (`components/CountryShape.tsx`, d3-geo), tooltip in sei lingue ovunque, telefono piu' comodo, Integrazioni con un pulsante per tipo di programma.
+- **Ultima versione**: **0.11.80** (2026-11-03, installatore in compilazione): pannello Comandi su righe compatte (proposta 1 di `docs/mockup-comandi.html`), barre PO e SWR con scala nel display FT-2000, QRZ.com, HamQTH e HRDLOG.NET, cascata come WSJT-X, revisione grafica delle Impostazioni, DX Cluster senza colonne tagliate. Prima, 0.11.79: RX/TX dopo la frequenza nel display FT-2000, potenza riletta dopo − e +.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
-## Lavoro in corso (rami non ancora uniti a main)
+## Lavoro in corso
 
-- `cluster-qrz` (`D:\build\wt-qrz`, finito, da unire): ricerca QRZ.com XML e HamQTH (rotta `GET /api/v1/callsign/{call}`), suggerimento sul nominativo DE nel DX Cluster, invio a HRDLOG.NET, NAME e QTH nei QSO, LED di stato e «Prova» nei servizi, campi segreti con «Chiave salvata» e Cambia/Togli, un servizio per riga in Servizi di log e Servizi online. Prima di unirlo: `cargo test -p logbook -p aurora-core -p aurora -p reporting -p remote-api --target-dir target/testrun`. Mancano ancora le prove per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP.
-- `cascata-wsjtx` (`D:\build\wt-cascata`, in lavorazione): cascata come WSJT-X 3.3 (righe per periodo, pixel netti, blocchi compatti), pulsanti «Stile WSJT-X / Stile JTDX», WSJT-X attivo da subito anche per chi aggiorna.
-- `grafica-impostazioni` (`D:\build\wt-grafica`, in lavorazione): revisione grafica di tutte le pagine delle Impostazioni (testi tagliati, larghezze, allineamenti), screenshot prima/dopo.
+- Nessun ramo aperto: `cluster-qrz`, `cascata-wsjtx` e `grafica-impostazioni` sono uniti a main; i worktree in `D:uild\wt-*` si possono togliere.
+- Restano da fare: «Prova» per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP; NAME e QTH per i QSO registrati a mano.
+- I test li lancia il proprietario: prima di pubblicare solo `tsc` e `cargo check`.
 
 ## Prossimo passo
 
