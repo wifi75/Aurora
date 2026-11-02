@@ -3,6 +3,7 @@ import { EngineValues } from './EngineValues';
 import { AudioDevicesPanel } from './AudioDevicesPanel';
 import { Help, InfoTab, Row } from './common';
 import { NativeReports, useIsNative } from './NativeSettings';
+import { Cell, Cells, Group, Page } from './layout';
 
 /** Scheda Audio: con il motore proprio ingresso, uscita, canali e file audio si scelgono qui; con JTDX mostra da dove arriva la cascata. */
 export function AudioTab() {
@@ -10,10 +11,7 @@ export function AudioTab() {
   const native = useIsNative();
   if (native) {
     return (
-      <>
-        <AudioDevicesPanel />
-        <Help>{t('ens.audio.help')}</Help>
-      </>
+      <AudioDevicesPanel notes={<Help>{t('ens.audio.help')}</Help>} />
     );
   }
   return (
@@ -72,12 +70,16 @@ function NativeReportsTab() {
       <NativeReports />
       <InfoTab
         render={(info) => (
-          <>
-            <h3 className="set-sub">{t('ens.info')}</h3>
-            {info.export_file ? <Row name={t('rep.file')}>{info.export_file}</Row> : null}
-            <Row name={t('rep.cty')}>{info.cty_loaded > 0 ? t('rep.countries', { n: info.cty_loaded }) : t('rep.notLoaded')}</Row>
-            <Row name={t('rep.log')}>{info.worked_qsos > 0 ? t('rep.qsos', { n: info.worked_qsos }) : t('rep.notRead')}</Row>
-          </>
+          // un riquadro come gli altri della pagina, non un titolo e delle righe sciolte in fondo
+          <Page className="sx-page--follow">
+            <Group title={t('ens.info')} span={3}>
+              <Cells min={20}>
+                {info.export_file ? <Cell label={t('rep.file')}>{info.export_file}</Cell> : null}
+                <Cell label={t('rep.cty')}>{info.cty_loaded > 0 ? t('rep.countries', { n: info.cty_loaded }) : t('rep.notLoaded')}</Cell>
+                <Cell label={t('rep.log')}>{info.worked_qsos > 0 ? t('rep.qsos', { n: info.worked_qsos }) : t('rep.notRead')}</Cell>
+              </Cells>
+            </Group>
+          </Page>
         )}
       />
     </>
