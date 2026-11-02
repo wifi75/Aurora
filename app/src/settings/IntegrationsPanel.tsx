@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { EngineSettings } from '../api/schemas';
 import { useT, type Key } from '../i18n';
-import { Help as Note } from './common';
-import { Cells, Field, Group, Message } from './layout';
+import { Cells, Field, Group, Help, Message } from './layout';
 import type { Draft } from './NativeSettings';
 
 /** La voce delle impostazioni con l'elenco dei destinatari (JSON). */
@@ -73,7 +72,6 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
   const current = doc.values[DESTINATIONS_KEY] ?? '[]';
   const pending = draft.changes[DESTINATIONS_KEY];
   const [rows, setRows] = useState<UdpDestination[]>(() => parseDestinations(pending ?? current));
-  const [preset, setPreset] = useState('wsjtx');
   // dopo il salvataggio (o un cambio da un'altra pagina) l'elenco mostrato riparte da quello salvato
   useEffect(() => {
     if (pending === undefined) setRows(parseDestinations(current));
@@ -91,27 +89,34 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
 
   return (
     <Group
-      title={t('int.title')}
-      span={2}
-      aside={
-        live ? (
-          <span className="int-add">
-            <select aria-label={t('int.preset')} value={preset} onChange={(e) => setPreset(e.target.value)}>
-              {Object.entries(PRESETS).map(([id, p]) => (
-                <option key={id} value={id}>
-                  {t(p.label)}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="glass" disabled={rows.length >= MAX_DESTINATIONS} title={t('int.max', { n: MAX_DESTINATIONS })} onClick={() => update([...rows, { ...BLANK, ...(PRESETS[preset]?.value ?? {}) }])}>
-              {t('int.add')}
-            </button>
-          </span>
-        ) : null
+      title={
+        <>
+          {t('int.title')}
+          {/* la spiegazione lunga e l'avviso sui doppioni stanno nel «?», non sotto il riquadro */}
+          <Help tip={`${t('int.help')} ${t('int.doubles')}`} />
+        </>
       }
+      span={2}
     >
       {!live ? <Message kind="muted">{t(`ens.r.${doc.items[DESTINATIONS_KEY]?.reason ?? 'own_decoder'}` as Key)}</Message> : null}
-      {live && rows.length === 0 ? <Message kind="muted">{t('int.empty')}</Message> : null}
+      {live ? (
+        <div className="int-add">
+          {/* un pulsante per ogni tipo di programma, con i valori di partenza giusti: niente menu a tendina da capire */}
+          <span className="muted">{rows.length === 0 ? t('int.empty') : t('int.addMore')}</span>
+          {Object.entries(PRESETS).map(([id, p]) => (
+            <button
+              key={id}
+              type="button"
+              className="glass"
+              disabled={rows.length >= MAX_DESTINATIONS}
+              title={rows.length >= MAX_DESTINATIONS ? t('int.max', { n: MAX_DESTINATIONS }) : t(`int.tip.${id}` as Key)}
+              onClick={() => update([...rows, { ...BLANK, ...(p.value ?? {}) }])}
+            >
+              + {t(p.label)}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {live
         ? rows.map((d, i) => {
             const error = destinationError(d);
@@ -168,8 +173,6 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
           })
         : null}
       {invalid ? <Message kind="muted">{t('int.err.wait')}</Message> : null}
-      <Note>{t('int.help')}</Note>
-      <Note>{t('int.doubles')}</Note>
     </Group>
   );
 }

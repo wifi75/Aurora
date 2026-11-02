@@ -1394,10 +1394,16 @@
 
 /* Riquadro «Integrazioni»: un destinatario UDP per cornice */
 .int-add {
-  display: inline-flex;
+  display: flex;
   gap: 0.4rem;
   align-items: center;
   flex-wrap: wrap;
+  margin: 0 0 0.6rem;
+}
+
+.int-add > .muted {
+  flex: 0 0 auto;
+  margin-right: 0.2rem;
 }
 
 .int-dest {

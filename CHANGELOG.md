@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Programmi collegati, riquadro Integrazioni**: al posto del menu a tendina un pulsante per ogni tipo di programma (flusso WSJT-X, multicast, ADIF su UDP, XML di N1MM) con la sua spiegazione; i testi lunghi passano nel «?».
 - **DX Cluster**: colonne Freq, DX e Paese allineate meglio, titolo «Paese» sopra le bandierine, Modo spostato a destra, UTC allineato all'ora.
 - **Suggerimenti ovunque**: nella pagina Fox ogni contatore, pulsante, interruttore, riquadro e colonna spiega cosa fa passandoci sopra; suggerimenti anche sulle spie e sugli strumenti dei display della radio e sui controlli di Storico, Esporta, Mappa, Propagazione, Statistiche, cluster, DXCC e Impostazioni, in tutte e sei le lingue.
 - **Display FT-2000**: RX e TX accanto alla frequenza principale; spie e riquadri spenti ben visibili; al posto del riquadro FT8/AGC (gia' mostrati altrove) la potenza della radio con i pulsanti − e +.
