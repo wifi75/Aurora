@@ -5,6 +5,7 @@
 ## 0.11.80 - 2026-11-03
 - **Pannello Comandi**: righe compatte (proposta 1): Call e locatore su una riga, rapporto con Lookup, Gen.Msgs e Canc DX, Tx con Tx=Rx e Split, Rx con Rx=Tx e Hold Tx.
 - **Display FT-2000**: barre PO e SWR a segmenti con la scala graduata (0-50-100 W, 1-1.5-2-3-∞) e il valore a fianco.
+- **CQ e novita'**: ogni stazione compare una sola volta, con la chiamata piu' recente.
 - **DX Cluster**: DX, bandiera e paese non piu' tagliati a sinistra.
 - **DX Cluster**: la frequenza non viene piu' tagliata a sinistra.
 - **Scheda DXpedition**: niente cartina scura provvisoria prima di quella vera, e il riquadro del paese ha gia' il suo posto mentre si carica.
