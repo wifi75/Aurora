@@ -1042,6 +1042,19 @@ impl Sequencer {
                         self.auto_stop_tx(StopReason::QsoFinished, false);
                     }
                 }
+                // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra e ci si ferma senza mandare un altro 73 (scelta del
+                // proprietario: JTDX e WSJT-X rispondono ancora 73 con il Tx5)
+                Status::R73 if self.opts.use_rrr && self.ntx == 4 => {
+                    self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    if self.opts.autolog {
+                        if self.enabled || self.rx_transmitting {
+                            self.halt_tx_reason(StopReason::QsoFinished);
+                        }
+                    } else {
+                        // come dopo il Tx5: si torna al CQ
+                        self.clear_dx_inner();
+                    }
+                }
                 Status::R73 => self.txb(5),
                 Status::S73 => self.auto_stop_tx(StopReason::QsoFinished, false),
                 Status::Fin => {
