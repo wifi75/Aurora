@@ -1,6 +1,6 @@
 import { useT } from '../i18n';
 import { JTDX_PALETTE_NAMES } from '../render/wfPalettes';
-import { USER_PALETTE, WF_LIMITS, clampWf, paletteColors, useWfPrefs, type PaletteColor, type WfPrefs } from '../lib/wfPrefs';
+import { USER_PALETTE, WF_LIMITS, activeStyle, clampWf, paletteColors, useWfPrefs, type PaletteColor, type WfPrefs } from '../lib/wfPrefs';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Notes, Page } from './layout';
 import { WaterfallPreview } from './WaterfallPreview';
@@ -61,6 +61,12 @@ export function WaterfallTab() {
           {number('binsPerPixel', t('wfs.bpp'), t('tip.wfs.bpp'))}
           {number('startHz', t('wfs.start'), t('tip.wfs.start'))}
           {number('navg', t('wfs.navg'), t('tip.wfs.navg'))}
+          <Field label={t('wfs.speed')} hint={t('tip.wfs.speed')}>
+            <select value={prefs.speed} onChange={(e) => set({ speed: e.target.value === 'jtdx' ? 'jtdx' : 'wsjtx' })}>
+              <option value="wsjtx">{t('wfs.speedWsjtx')}</option>
+              <option value="jtdx">{t('wfs.speedJtdx')}</option>
+            </select>
+          </Field>
         </Cells>
       </Group>
 
@@ -106,10 +112,13 @@ export function WaterfallTab() {
           <Check label={t('wfs.periodLine')} hint={t('tip.wfs.periodLine')} checked={prefs.periodLine} onChange={(v) => set({ periodLine: v })} />
           <Check label={t('wfs.freqOn')} hint={t('tip.wfs.freqOn')} checked={prefs.freq} onChange={(v) => set({ freq: v })} />
           <Cell>
-            {/* come la cascata di WSJT-X: righe a blocchi (media su 5 righe), fondo appiattito, tavolozza Default, riga d'inizio periodo */}
-        <button type="button" className="glass" title={t('tip.wfs.wsjtx')} onClick={() => set({ navg: 5, flatten: true, scale: true, palette: 'Default', periodLine: true, gain: 0, zero: 0 })}>
-          {t('wfs.wsjtx')}
-        </button>
+            {/* i valori di fabbrica dei due programmi in un clic (WF_STYLES in lib/wfPrefs.ts) */}
+            <button type="button" className="glass wfs-style" aria-pressed={activeStyle(prefs) === 'wsjtx'} title={t('tip.wfs.wsjtx')} onClick={() => useWfPrefs.getState().applyStyle('wsjtx')}>
+              {t('wfs.wsjtx')}
+            </button>
+            <button type="button" className="glass wfs-style" aria-pressed={activeStyle(prefs) === 'jtdx'} title={t('tip.wfs.jtdx')} onClick={() => useWfPrefs.getState().applyStyle('jtdx')}>
+              {t('wfs.jtdx')}
+            </button>
         <button type="button" className="glass" onClick={() => useWfPrefs.getState().reset()}>
               {t('set.reset')}
             </button>
