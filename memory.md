@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-01, versione 0.11.76. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-03, versione 0.11.76. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -170,3 +170,4 @@ Stato al 2026-11-01, versione 0.11.76. Per riprendere il lavoro leggi anche `doc
 - **Sequenza**: dopo il nostro RRR il 73 del DX registra senza mandare il Tx5 (scelta del proprietario, diversa da JTDX); a QSO registrato la zona di trasmissione si pulisce da sola appena la sequenza smette di trasmettere verso di lui.
 - **Licenza e crediti**: `THIRD-PARTY-NOTICES.md` ha la sezione del codice derivato (WSJT-X, JTDX, codice polare); la pagina Informazioni mostra copyright, GPL-3 e assenza di garanzia. Resta da scegliere tra «GPL-3 o successiva» (notices) e «solo GPL-3» (`core/Cargo.toml`).
 - **Sito web** (https://wifi75.github.io/Aurora/, `docs/index.html`): da allineare a ogni versione con funzioni nuove, poi `scripts/pubblica-sito.ps1`.
+- **Accordatore e potenza (0.11.76)**: `ExtraItem::Tune` manda `G TUNE` (vfo_op di Hamlib; FT-2000 e IC-7610 lo dichiarano), `PowerUp`/`PowerDown` portano `L RFPOWER` al multiplo di 5% piu' vicino +/- 5% (tra 5% e 100%); pulsanti TUNE e PWR −/+ in `RadioExtras.tsx`, visibili solo con la lettura dei dati in piu' accesa. Da verificare in aria con le due radio.
