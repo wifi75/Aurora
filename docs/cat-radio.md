@@ -168,6 +168,8 @@ Funziona solo con il CAT Hamlib (con OmniRig risponde «non supportato»), solo 
 | Indicatore | Clic | Comandi Hamlib (rigctld) |
 |---|---|---|
 | NB, NR, NOTCH, ATU | inverte | `u NB` poi `U NB 0/1`; `NR`; `ANF` per il notch; `TUNER` per l'ATU |
+| TUNE | avvia l'accordatura | `G TUNE` (la radio emette da sola una portante bassa); rifiutato se la radio non ha l'accordatore o sta trasmettendo |
+| PWR −, + | potenza -/+ 5% | `l RFPOWER` poi `L RFPOWER` al multiplo di 0,05 piu' vicino, tra 0,05 e 1 |
 | PRE | spento, 10, 20 dB, spento... | `l PREAMP` poi `L PREAMP 0/10/20` |
 | ATT | spento, 10, 20, 6, 12, 18 dB, spento... | `l ATT` poi `L ATT valore` |
 | AGC | auto (6), fast (2), medium (5), slow (3), spento (0), auto... | `l AGC` poi `L AGC valore` |
