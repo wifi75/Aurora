@@ -2,7 +2,7 @@
 
 ## Non rilasciato
 
-## 0.11.80 - 2026-11-03
+## 0.11.80 - 2026-11-02
 - **Pannello Comandi**: righe compatte (proposta 1): Call e locatore su una riga, rapporto con Lookup, Gen.Msgs e Canc DX, Tx con Tx=Rx e Split, Rx con Rx=Tx e Hold Tx.
 - **Display FT-2000**: barre PO e SWR a segmenti con la scala graduata (0-50-100 W, 1-1.5-2-3-∞) e il valore a fianco.
 - **Elenco dei messaggi piu' veloce**: in FT8 i messaggi entrano nell'elenco a fine di ogni passata del decodificatore, senza aspettare l'ultima; nella finestra CQ bandiera e paese hanno piu' posto.
