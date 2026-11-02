@@ -264,6 +264,14 @@ Col motore proprio ogni QSO messo a log (evento `QsoLogged`, dopo la guardia ant
 - **Prova**: `ACTION=STATUS` con la chiave (non scrive niente); il contenuto di `DATA` non e' garantito dalla documentazione.
 - **Abbonamento**: l'inserimento via API richiede un abbonamento a QRZ.
 
+- **Nominativo registrato** (`QRZLogCall`, facoltativo): se compilato, nel record mandato a QRZ `STATION_CALLSIGN` diventa quel nominativo (aggiunto se manca), cosi' i QSO fatti come `IU3ABC/P` o `EA3/IU3ABC` entrano nel logbook di `IU3ABC` invece di essere scartati.
+
+### HRDLOG.NET
+- **Richiesta** (come la usano altri programmi di log): `POST https://robot.hrdlog.net/NewEntry.aspx`, modulo con `Callsign` (nominativo del log; vuoto nelle impostazioni = il proprio), `Code` (il codice di caricamento, «upload code», del profilo), `App` (il programma) e `ADIFData` (un record).
+- **Risposte lette**: `<insert>N</insert>` con N >= 1 = registrato; `<insert>0</insert>` = gia' presente; `<error>` con «duplicat»/«already» = doppione, con «code», «token», «callsign», «user», «auth» = invio fermo per credenziali, altro = scartato; 408/429/5xx o risposta illeggibile = nuovo tentativo.
+- **Non verificabile**: le pagine di aiuto di HRDLOG.NET (`Help/Default.aspx` e `robot.hrdlog.net`) davano errore o «manutenzione» il 2026-11-02, quindi indirizzo, nomi dei campi e testi delle risposte **non sono confermati dalla documentazione ufficiale**. Va provato dal vivo con un QSO vero.
+- **Prova**: HRDLOG.NET non ha una verifica documentata senza invio: «Prova» controlla solo nominativo e codice presenti; il codice si verifica al primo QSO.
+
 ### LoTW (TQSL)
 - **Comando**: `tqsl -d -u -a compliant -x -l <posizione> <file.adi>` (fonte: https://lotw.arrl.org/lotw-help/cmdline). I QSO in attesa (fino a 50) vanno in un solo file ADIF temporaneo accanto alla coda, cancellato a fine invio; i messaggi di TQSL vanno in un file temporaneo da cui si prende l'ultima riga per lo stato. Su Windows TQSL parte senza finestra di console.
 - **TQSL**: percorso configurabile; vuoto = cercato in `%ProgramFiles(x86)%\TrustedQSL\tqsl.exe`, `%ProgramFiles%\TrustedQSL\tqsl.exe`, `%LOCALAPPDATA%\Programs\TrustedQSL\tqsl.exe` (altrove `/usr/bin/tqsl`, `/usr/local/bin/tqsl`, il pacchetto di macOS). Un percorso scritto e sbagliato non viene sostituito dalla ricerca.
@@ -278,6 +286,18 @@ Col motore proprio ogni QSO messo a log (evento `QsoLogged`, dopo la guardia ant
 4. QRZ: «Prova» (stato del logbook) e un QSO; lo stesso QSO inviato di nuovo deve risultare doppione.
 5. LoTW: «Prova» con la posizione di TQSL, poi un QSO; controllare il messaggio nello stato e il QSO su LoTW.
 6. Credenziali sbagliate (una per servizio): lo stato dice «invio fermo», i QSO restano in coda; corrette le credenziali, ripartono.
+7. HRDLOG.NET: nominativo e codice, un QSO; controllare che compaia nel log e il testo della risposta nello stato (da confrontare con quanto scritto sopra).
+8. QRZ con «Nominativo registrato» compilato e un QSO fatto da /P: deve entrare nel logbook del nominativo base.
+
+## 7. Ricerca dei nominativi (QRZ.com XML e HamQTH)
+- **Dove**: Impostazioni > Servizi online, riquadri «Ricerca QRZ.com» e «Ricerca HamQTH»; serve al riquadro che compare passando il mouse sul nominativo DE nel DX Cluster (rotta `GET /api/v1/callsign/{call}`).
+- **QRZ.com XML** (fonte: https://www.qrz.com/docs/xml/current_spec.html, versione 1.34): accesso `https://xmldata.qrz.com/xml/current/?username=..&password=..&agent=..` -> `<Session><Key>`; ricerca `?s=KEY&callsign=..` -> `<Callsign>`. Senza `<Key>` nella risposta («Session Timeout», «Invalid session key») si rifa' l'accesso una volta. «Not found: ...» = non trovato. Con credenziali sbagliate `<Error>` senza `<Key>`.
+- **Abbonamento**: senza l'abbonamento «XML Logbook Data» QRZ risponde `SubExp` = `non-subscriber` e `<Message>A subscription is required to obtain the complete data</Message>`; la documentazione dice solo che i campi sono ridotti, non quali: Aurora prende quello che arriva e lo dice nel riquadro («dati ridotti»).
+- **HamQTH** (fonte: https://www.hamqth.com/developers.php, API v1): `https://www.hamqth.com/xml.php?u=..&p=..` -> `<session><session_id>` (vale un'ora); `?id=..&callsign=..&prg=..` -> `<search>`. Errori «Wrong user name or password», «Session does not exist or expired» (sessione rinnovata una volta), «Callsign not found». Si usa se QRZ e' spento o non trova il nominativo.
+- **Dati tenuti**: solo nome, cognome, citta' e paese (QRZ `fname`, `name`, `addr2`, `country`; HamQTH `nick`/`adr_name`, `adr_city`/`qth`, `country`). Email, indirizzo, telefono e il resto non si leggono. Risultati (anche «non trovato») in memoria per tre giorni, al massimo 5000 nominativi; si dimenticano cambiando utente o password.
+- **Spente di base**; spente, nessuna richiesta. Password nella protezione dei segreti (`qrz-xml`, `hamqth`), mai nel file.
+- **Prova**: un accesso nuovo con utente e password salvati; per QRZ dice se c'e' l'abbonamento XML e fino a quando.
+
 
 ## Fonti
 
@@ -314,6 +334,8 @@ Col motore proprio ogni QSO messo a log (evento `QsoLogged`, dopo la guardia ant
 - LoTW, riga di comando di TQSL: https://lotw.arrl.org/lotw-help/cmdline
 - PSK Reporter, guida per sviluppatori: https://pskreporter.info/pskdev.html
 - HamQTH, per sviluppatori: https://www.hamqth.com/developers.php
+- QRZ XML Logbook Data Specification 1.34: https://www.qrz.com/docs/xml/current_spec.html
+- HRDLOG.NET (pagine di aiuto non raggiungibili il 2026-11-02): http://www.hrdlog.net/
 - HamAlert: https://hamalert.org/about e https://forum.hamalert.org/t/how-to-make-this-work-on-a-computer/191
 - OpenHamClock, segnalazione sulla porta 2237: https://github.com/accius/openhamclock/issues/577
 - Codice di Aurora letto per questo documento: `core/crates/udp-bridge`, `core/crates/udp-emitter`, `core/crates/qso-export`, `core/crates/reporting`, `docs/udp-flussi.md`, `.env.example`.

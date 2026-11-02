@@ -183,6 +183,9 @@ pub struct QsoRecord {
     /// Nome dell'operatore (campo `NAME` del log; si scrive nella finestra di conferma del log).
     #[serde(default)]
     pub name: String,
+    /// Citta' del corrispondente (campo `QTH`), dalla ricerca QRZ.com/HamQTH se accesa; vuota altrimenti.
+    #[serde(default)]
+    pub qth: String,
     /// Potenza in watt scritta nel QSO (`TX_PWR`); vuota = quella della stazione.
     #[serde(default)]
     pub tx_power: String,

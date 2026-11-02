@@ -5745,3 +5745,27 @@
 .cluster-table td.cluster-utc {
   text-align: left;
 }
+
+/* riquadro del nominativo (colonna DE del DX Cluster): fisso sullo schermo, cosi' la tabella non lo taglia */
+.calltip-anchor { position: relative; }
+.calltip {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 11rem;
+  max-width: 18rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.35));
+  background: var(--panel, #1c2430);
+  color: var(--text, inherit);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  font-family: inherit;
+  font-size: 0.85rem;
+  white-space: normal;
+  pointer-events: none;
+}
+.calltip-country { display: flex; align-items: center; gap: 0.3rem; }
+.calltip-name { font-weight: 600; }

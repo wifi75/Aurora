@@ -240,6 +240,9 @@ pub fn jtdx_record_with(q: &QsoRecord, station: &Station, fallback_date: &str, e
     if !q.name.is_empty() {
         jtdx_field(&mut r, "NAME", &q.name);
     }
+    if !q.qth.is_empty() {
+        jtdx_field(&mut r, "QTH", &q.qth);
+    }
     if !q.comment.is_empty() {
         jtdx_field(&mut r, "COMMENT", &q.comment);
     }
@@ -288,6 +291,9 @@ pub fn jtdx_file_record_with(q: &QsoRecord, station: &Station, fallback_date: &s
     }
     if !q.name.is_empty() {
         jtdx_field(&mut r, "name", &q.name);
+    }
+    if !q.qth.is_empty() {
+        jtdx_field(&mut r, "qth", &q.qth);
     }
     r.push_str(&contest_suffix(q, true));
     if eqsl {
@@ -357,6 +363,17 @@ mod tests {
     }
 
     use super::{jtdx_file_record, jtdx_record, utc_date, utc_datetime, Station};
+
+    #[test]
+    fn name_and_qth_from_the_lookup_go_in_the_record() {
+        let mut q = sample("FT8");
+        q.name = "Mario Rossi".into();
+        q.qth = "Padova".into();
+        let udp = jtdx_record(&q, &station(), "20000101");
+        assert!(udp.contains("<NAME:11>Mario Rossi <QTH:6>Padova"), "{udp}");
+        let file = jtdx_file_record_with(&q, &station(), "20000101", false);
+        assert!(file.contains("<qth:6>Padova"), "{file}");
+    }
 
     fn sample(mode: &str) -> QsoRecord {
         QsoRecord {

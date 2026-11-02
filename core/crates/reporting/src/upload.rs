@@ -30,10 +30,11 @@ pub enum Target {
     Clublog,
     Qrz,
     Lotw,
+    Hrdlog,
 }
 
 impl Target {
-    pub const ALL: [Target; 4] = [Target::Wavelog, Target::Clublog, Target::Qrz, Target::Lotw];
+    pub const ALL: [Target; 5] = [Target::Wavelog, Target::Clublog, Target::Qrz, Target::Lotw, Target::Hrdlog];
 
     /// Il nome nello stato degli invii e nell'API.
     pub fn kind(self) -> &'static str {
@@ -42,6 +43,7 @@ impl Target {
             Target::Clublog => "clublog",
             Target::Qrz => "qrz",
             Target::Lotw => "lotw",
+            Target::Hrdlog => "hrdlog",
         }
     }
 
@@ -63,6 +65,7 @@ impl Target {
             Target::Clublog => 1,
             Target::Qrz => 2,
             Target::Lotw => 3,
+            Target::Hrdlog => 4,
         }
     }
 }
@@ -125,7 +128,7 @@ pub struct Queue {
     items: Mutex<Vec<Pending>>,
     file: Option<PathBuf>,
     changed: watch::Sender<u64>,
-    blocked: Mutex<[bool; 4]>,
+    blocked: Mutex<[bool; 5]>,
 }
 
 impl Queue {
@@ -141,7 +144,7 @@ impl Queue {
             tracing::info!("invio diretto dei QSO: {} invii in coda dalla volta scorsa", items.len());
         }
         let (changed, _) = watch::channel(0);
-        Queue { items: Mutex::new(items), file, changed, blocked: Mutex::new([false; 4]) }
+        Queue { items: Mutex::new(items), file, changed, blocked: Mutex::new([false; 5]) }
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Vec<Pending>> {
@@ -294,6 +297,7 @@ pub fn enabled(config: &Config, target: Target) -> bool {
         Target::Clublog => config.clublog.is_some(),
         Target::Qrz => config.qrz,
         Target::Lotw => config.lotw.is_some(),
+        Target::Hrdlog => config.hrdlog.is_some(),
     }
 }
 
@@ -302,8 +306,9 @@ fn part(config: &Config, target: Target) -> String {
     match target {
         Target::Wavelog => format!("{:?}", config.wavelog),
         Target::Clublog => format!("{:?}{}", config.clublog, config.call),
-        Target::Qrz => format!("{}", config.qrz),
+        Target::Qrz => format!("{}{}", config.qrz, config.qrz_call),
         Target::Lotw => format!("{:?}", config.lotw),
+        Target::Hrdlog => format!("{:?}", config.hrdlog),
     }
 }
 
@@ -410,7 +415,14 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
             }
             Target::Qrz => {
                 let Some(key) = secrets.get(crate::QRZ_SECRET) else { return Outcome::Blocked("chiave del logbook QRZ non impostata".into()) };
-                crate::qrz::insert(&endpoints.qrz_url, &key, record, endpoints.upload_timeout, &endpoints.user_agent)
+                let record = crate::qrz::force_station_call(record, &config.qrz_call);
+                crate::qrz::insert(&endpoints.qrz_url, &key, &record, endpoints.upload_timeout, &endpoints.user_agent)
+            }
+            Target::Hrdlog => {
+                let Some(account) = &config.hrdlog else { return Outcome::Blocked("HRDLOG.NET spento".into()) };
+                let Some(code) = secrets.get(crate::HRDLOG_SECRET) else { return Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into()) };
+                let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
+                crate::hrdlog::upload(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent)
             }
             Target::Lotw => {
                 let Some(setup) = &config.lotw else { return Outcome::Blocked("LoTW spento".into()) };
@@ -463,6 +475,11 @@ pub(crate) async fn test(service: &Service, target: Target) -> Result<String, St
             }
             let key = secrets.get(crate::QRZ_SECRET).ok_or("chiave del logbook non impostata")?;
             crate::qrz::status(&endpoints.qrz_url, &key, endpoints.upload_timeout, &endpoints.user_agent)
+        }
+        Target::Hrdlog => {
+            let account = config.hrdlog.as_ref().ok_or("accendi l'invio a HRDLOG.NET")?;
+            let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
+            crate::hrdlog::check(&call, secrets.has(crate::HRDLOG_SECRET))
         }
         Target::Lotw => {
             let setup = config.lotw.as_ref().ok_or("accendi l'invio e scrivi la posizione di stazione di TQSL")?;

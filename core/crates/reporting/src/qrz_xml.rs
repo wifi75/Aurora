@@ -253,10 +253,10 @@ impl Lookup {
             if st.user != user {
                 *st = State::default();
             }
-            if let Some((at, found)) = st.cache.get(&call) {
-                if now_secs.saturating_sub(*at) < CACHE_SECS {
-                    return Ok(found.clone());
-                }
+            if let Some((at, found)) = st.cache.get(&call)
+                && now_secs.saturating_sub(*at) < CACHE_SECS
+            {
+                return Ok(found.clone());
             }
         }
         for attempt in 0..2 {
@@ -294,11 +294,11 @@ impl Lookup {
 
     fn remember(&self, call: &str, now_secs: u64, found: &Found, session: Option<&Session>) {
         let mut st = self.state();
-        if let Some(s) = session {
-            if s.key.is_some() {
-                st.key.clone_from(&s.key);
-                st.subscriber = Some(s.subscriber);
-            }
+        if let Some(s) = session
+            && s.key.is_some()
+        {
+            st.key.clone_from(&s.key);
+            st.subscriber = Some(s.subscriber);
         }
         if st.cache.len() >= CACHE_MAX {
             st.cache.retain(|_, (at, _)| now_secs.saturating_sub(*at) < CACHE_SECS);

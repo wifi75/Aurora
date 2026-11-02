@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -93,6 +93,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/audio/settings", axum::routing::put(audio_settings_put))
         .route("/api/v1/dx-cluster", get(cluster_get).put(cluster_put))
         .route("/api/v1/dxcc/{call}", get(dxcc_lookup))
+        .route("/api/v1/callsign/{call}", get(callsign_lookup))
         .route("/api/v1/dx-cluster/catalog", get(cluster_catalog))
         .route("/api/v1/dx-cluster/test", post(cluster_test))
         .route("/api/v1/dx-cluster/command", post(cluster_command))
@@ -1121,6 +1122,49 @@ async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Pa
     state.dxcc.as_ref().and_then(|lookup| lookup(&call)).map(Json).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "dxcc_unknown"))
 }
 
+/// Paese da `cty.dat` e, se accese, nome e citta' da QRZ.com (prima) o HamQTH (se QRZ e' spento o non lo trova). Del nominativo cercato
+/// si restituiscono solo nome, cognome, citta' e paese. Nessuna richiesta verso internet con le ricerche spente.
+#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`"), (status = 400, description = "Nominativo non valido (bad_call)")))]
+async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
+    if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_call"));
+    }
+    let call = call.to_uppercase();
+    let dxcc = state.dxcc.as_ref().and_then(|lookup| lookup(&call));
+    let mut out = json!({ "call": call, "dxcc": dxcc, "person": null, "lookup": "off", "subscriber": null, "message": null });
+    let Some(settings) = state.engine_settings.clone() else { return Ok(Json(out)) };
+    let now = unix_ms() / 1000;
+    for provider in [reporting::qrz_xml::Provider::Qrz, reporting::qrz_xml::Provider::HamQth] {
+        let Some((user, password)) = settings.lookup_credentials(provider) else { continue };
+        let lookup = match provider {
+            reporting::qrz_xml::Provider::Qrz => std::sync::Arc::clone(&settings.lookups().qrz),
+            reporting::qrz_xml::Provider::HamQth => std::sync::Arc::clone(&settings.lookups().hamqth),
+        };
+        let wanted = call.clone();
+        let result = tokio::task::spawn_blocking(move || (lookup.lookup(&user, &password, &wanted, now), lookup.subscriber())).await;
+        let Ok((result, subscriber)) = result else { continue };
+        if provider == reporting::qrz_xml::Provider::Qrz {
+            out["subscriber"] = json!(subscriber);
+        }
+        match result {
+            Ok(reporting::qrz_xml::Found::Yes(p)) => {
+                out["person"] = json!({ "fname": p.fname, "name": p.name, "city": p.city, "country": p.country, "source": provider.name() });
+                out["lookup"] = json!("found");
+                return Ok(Json(out));
+            }
+            Ok(reporting::qrz_xml::Found::NotFound) => out["lookup"] = json!("not_found"),
+            Err(e) => {
+                tracing::debug!("ricerca di {call} su {} non riuscita: {}", provider.name(), e.message());
+                if out["lookup"] == "off" {
+                    out["lookup"] = json!("error");
+                    out["message"] = json!(format!("{}: {}", provider.name(), e.message()));
+                }
+            }
+        }
+    }
+    Ok(Json(out))
+}
+
 fn cluster_service(state: &AppState) -> Result<std::sync::Arc<dx_cluster::ClusterService>, ApiError> {
     state.cluster.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cluster_unavailable"))
 }
@@ -1342,6 +1386,26 @@ struct QsoUploadTestBody {
 async fn qso_upload_test(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<QsoUploadTestBody>) -> Result<Json<Value>, ApiError> {
     if !from_home_network(peer, &headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    // le ricerche dei nominativi hanno la loro prova: un accesso nuovo con utente e password salvati
+    if let Some(provider) = match body.service.as_str() {
+        "qrzlookup" => Some(reporting::qrz_xml::Provider::Qrz),
+        "hamqth" => Some(reporting::qrz_xml::Provider::HamQth),
+        _ => None,
+    } {
+        let settings = state.engine_settings.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "upload_unavailable"))?;
+        let Some((user, password)) = settings.lookup_saved_credentials(provider) else {
+            return Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message("servono utente e password salvati"));
+        };
+        let lookup = match provider {
+            reporting::qrz_xml::Provider::Qrz => std::sync::Arc::clone(&settings.lookups().qrz),
+            reporting::qrz_xml::Provider::HamQth => std::sync::Arc::clone(&settings.lookups().hamqth),
+        };
+        return match tokio::task::spawn_blocking(move || lookup.test(&user, &password)).await {
+            Ok(Ok(message)) => Ok(Json(json!({ "ok": true, "message": message }))),
+            Ok(Err(message)) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message(message)),
+            Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "upload_task")),
+        };
     }
     let service = state.engine_settings.as_ref().and_then(|s| s.reporting()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "upload_unavailable"))?;
     let target = reporting::upload::Target::parse(&body.service).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_service"))?;
