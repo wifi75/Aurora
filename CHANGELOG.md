@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 - **Programmi collegati, riquadro Integrazioni**: al posto del menu a tendina un pulsante per ogni tipo di programma (flusso WSJT-X, multicast, ADIF su UDP, XML di N1MM) con la sua spiegazione; i testi lunghi passano nel «?».
+- **Scheda DXpedition, riquadro del paese**: ora e' una mappa della regione centrata sul paese, con il mare, il reticolo, le terre vicine in grigio, il paese in verde e un punto rosso sulla DXpedition; in basso a destra un mondo in miniatura con un riquadro rosso su dove si trova. Lo zoom segue la grandezza del paese (piu' largo per Russia o Brasile, stretto per le isole piccole) e funziona anche vicino all'antimeridiano (Vanuatu, Fiji).
 - **DX Cluster**: colonne Freq, DX e Paese allineate meglio, titolo «Paese» sopra le bandierine, Modo spostato a destra, UTC allineato all'ora.
 - **Suggerimenti ovunque**: nella pagina Fox ogni contatore, pulsante, interruttore, riquadro e colonna spiega cosa fa passandoci sopra; suggerimenti anche sulle spie e sugli strumenti dei display della radio e sui controlli di Storico, Esporta, Mappa, Propagazione, Statistiche, cluster, DXCC e Impostazioni, in tutte e sei le lingue.
 - **Display FT-2000**: RX e TX accanto alla frequenza principale; spie e riquadri spenti ben visibili; al posto del riquadro FT8/AGC (gia' mostrati altrove) la potenza della radio con i pulsanti − e +.

@@ -34,6 +34,7 @@ export const dxpedStrings = {
     'Cuántos días siguen al final de la lista las DXpediciones terminadas.',
     'Quantos dias as DXpedições terminadas ficam no fim da lista.',
   ],
+  'dxd.countryMap': ['Mappa di {country}: la regione e, in basso a destra, dove si trova nel mondo', 'Map of {country}: the region and, bottom right, where it is in the world', 'Karte von {country}: die Region und unten rechts die Lage in der Welt', 'Carte de {country} : la région et, en bas à droite, sa place dans le monde', 'Mapa de {country}: la región y, abajo a la derecha, dónde está en el mundo', 'Mapa de {country}: a região e, em baixo à direita, onde fica no mundo'],
   'dxd.close': ['Chiudi', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar'],
   'dxd.noPlace': ['Posizione del paese non nota.', 'Country position unknown.', 'Position des Landes unbekannt.', 'Position du pays inconnue.', 'Posición del país desconocida.', 'Posição do país desconhecida.'],
   'dxd.dates': ['Date', 'Dates', 'Daten', 'Dates', 'Fechas', 'Datas'],
