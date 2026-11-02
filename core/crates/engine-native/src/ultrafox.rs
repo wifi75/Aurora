@@ -219,6 +219,64 @@ fn finalize(a: &mut u32, b: &mut u32, c: &mut u32) {
     *c ^= *b; *c = c.wrapping_sub(b.rotate_left(24));
 }
 
+/// Simboli trasmessi: 127 di dati e 24 di sincronismo (tono 0) nelle posizioni di `ISYNC` (da 1, come in `sftx_sub.f90`).
+pub const TONES: usize = 151;
+const ISYNC: [usize; 24] = [1, 2, 4, 7, 11, 16, 22, 29, 37, 39, 42, 43, 45, 48, 52, 57, 63, 70, 78, 80, 83, 84, 86, 89];
+/// Campioni per simbolo a 12 kHz: 11,72 baud, 128 toni di dati piu' quello del sincronismo (circa 1,5 kHz di banda).
+pub const NSPS: usize = 1024;
+/// La frequenza del tono 0: il segnale va da 750 a circa 2260 Hz, sempre li' (non segue la frequenza Tx scelta).
+pub const F0_HZ: f64 = 750.0;
+const BT: f64 = 8.0;
+
+/// Dai 127 simboli del codice polare ai 151 toni (il dato 0 va sul tono 1, il tono 0 e' del sincronismo).
+pub fn tones(code: &[u8; crate::qpc::NP]) -> [u8; TONES] {
+    let mut out = [0u8; TONES];
+    let mut data = code.iter();
+    for (i, t) in out.iter_mut().enumerate() {
+        if !ISYNC.contains(&(i + 1)) {
+            *t = data.next().map_or(0, |&s| s + 1);
+        }
+    }
+    out
+}
+
+/// Il segnale GFSK (BT 8, indice 1) a 12 kHz, con un simbolo vuoto prima e dopo per le rampe (`sfox_gen_gfsk.f90`): (151 + 2) x 1024
+/// campioni, circa 13 s.
+pub fn wave(tones: &[u8; TONES]) -> Vec<f32> {
+    let n = (TONES + 2) * NSPS;
+    let two_pi = std::f64::consts::TAU;
+    let peak = two_pi / NSPS as f64;
+    let pulse: Vec<f64> = (1..=3 * NSPS).map(|i| f64::from(ft8::modem::gfsk_pulse(BT as f32, ((i as f64 - 1.5 * NSPS as f64) / NSPS as f64) as f32))).collect();
+    let mut dphi = vec![0f64; n];
+    for (j, &t) in tones.iter().enumerate() {
+        let base = j * NSPS;
+        for (k, p) in pulse.iter().enumerate() {
+            dphi[base + k] += peak * p * f64::from(t);
+        }
+    }
+    let (first, last) = (f64::from(tones[0]), f64::from(tones[TONES - 1]));
+    for k in 0..2 * NSPS {
+        dphi[k] += peak * first * pulse[NSPS + k];
+        dphi[TONES * NSPS + k] += peak * last * pulse[k];
+    }
+    let step = two_pi * F0_HZ / 12_000.0;
+    let mut out = vec![0f32; n];
+    let mut phi = 0f64;
+    for k in 0..n - 1 {
+        out[k] = phi.sin() as f32;
+        phi += dphi[k + 1] + step;
+    }
+    let ramp = (NSPS as f64 / BT) as usize;
+    for (k, s) in out.iter_mut().take(NSPS).enumerate() {
+        *s *= if k < NSPS - ramp { 0.0 } else { ((1.0 - (two_pi * (k - (NSPS - ramp)) as f64 / (2.0 * ramp as f64)).cos()) / 2.0) as f32 };
+    }
+    let k1 = (TONES + 1) * NSPS;
+    for (k, s) in out.iter_mut().skip(k1).enumerate() {
+        *s *= if k < ramp { ((1.0 + (two_pi * k as f64 / (2.0 * ramp as f64)).cos()) / 2.0) as f32 } else { 0.0 };
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -277,5 +335,48 @@ mod tests {
         let x = pack(&cq, &Extras { more_cqs: false, free_text: Some("QSL VIA LOTW".into()), otp: 0 }).expect("CQ con testo");
         assert!(crc_ok(&x));
         assert_eq!(pack(&cq, &Extras { free_text: Some("minuscole".into()), ..Extras::default() }), Err(PackError::BadFreeText));
+    }
+
+    /// Energia di una frequenza in un tratto (Goertzel).
+    fn power(x: &[f32], hz: f64) -> f64 {
+        let w = std::f64::consts::TAU * hz / 12_000.0;
+        let (mut s1, mut s2) = (0f64, 0f64);
+        for &v in x {
+            let s = f64::from(v) + 2.0 * w.cos() * s1 - s2;
+            s2 = s1;
+            s1 = s;
+        }
+        s1 * s1 + s2 * s2 - 2.0 * w.cos() * s1 * s2
+    }
+
+    #[test]
+    fn tones_put_sync_on_zero_and_data_one_above() {
+        let x = pack(&hounds(), &Extras::default()).expect("impacchettato");
+        let code = crate::qpc::encode(&x);
+        let t = tones(&code);
+        for &i in &ISYNC {
+            assert_eq!(t[i - 1], 0);
+        }
+        let data: Vec<u8> = t.iter().enumerate().filter(|(i, _)| !ISYNC.contains(&(i + 1))).map(|(_, &v)| v - 1).collect();
+        assert_eq!(data, code.to_vec());
+    }
+
+    #[test]
+    fn the_wave_lasts_153_symbols_and_each_symbol_sits_on_its_tone() {
+        let x = pack(&hounds(), &Extras::default()).expect("impacchettato");
+        let t = tones(&crate::qpc::encode(&x));
+        let w = wave(&t);
+        assert_eq!(w.len(), (TONES + 2) * NSPS);
+        assert!(w.iter().all(|v| v.abs() <= 1.0));
+        assert!(w[..NSPS / 2].iter().all(|&v| v == 0.0), "silenzio prima della rampa");
+        let baud = 12_000.0 / NSPS as f64;
+        for j in [5usize, 40, 100, 140] {
+            // centro del simbolo j (il primo simbolo vero e' il secondo blocco)
+            let start = (j + 1) * NSPS + NSPS / 4;
+            let seg = &w[start..start + NSPS / 2];
+            let right = power(seg, F0_HZ + baud * f64::from(t[j]));
+            let other = power(seg, F0_HZ + baud * f64::from((t[j] + 40) % 129));
+            assert!(right > 10.0 * other, "simbolo {j}");
+        }
     }
 }
