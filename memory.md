@@ -138,6 +138,7 @@ Stato al 2026-11-03, versione 0.11.77. Per riprendere il lavoro leggi anche `doc
 
 ## Versioni 0.11.52-0.11.58 (2026-11-01, pomeriggio e sera)
 - **WSJT-X 3.x come riferimento**: sorgenti (tag v3.0.2 e v3.3.0-beta5) e binari 3.0.2 in `D:\build\analisi-wsjtx`; analisi in `docs/analisi-wsjtx-3.md`, elenco dei lavori in `docs/tasks.md` (ogni voce si cancella quando e' integrata). Integrati: a7/a8, decodifica multithread, avvio della decodifica, TxInhibit UDP, messaggi non rappresentabili bloccati, stop per ROS alto, filtri come WSJT-X 3, rifiniture CAT 3.2, Hamlib 4.7.2, verifica OTP della Fox (Hound classico), Wait and Reply/Call, Band Hopping, full duplex.
+- **UltraFOX** (0.11.70): UltraFOX e' nel motore (`qpc.rs`, `ultrafox.rs`, `ultrafox_rx.rs`).
 - **Fox/Hound**: una Fox di WSJT-X scrive righe con «;» e «<FOX>» e rapporti senza R; le DXpedition che rispondono a molti con messaggi normali (es. V26JJ con MSHV) si chiamano con Hound spento. In Hound «Salta Tx1» non vale. In lavorazione: Hound automatico, etichetta FOX, Tx sopra 1000 Hz da sola.
 - **Log esterni**: invio diretto a Wavelog/Cloudlog, ClubLog, QRZ, LoTW (coda su disco, chiavi cifrate); integrazioni UDP con multicast e destinatari; pagina `#/esporta` per l'ADIF con «Salva con nome».
 - **Diagnostica sempre accesa**: guardiano dei blocchi e dump in `%APPDATA%\Aurora\crash` (`docs/diagnostica.md`). Il blocco delle 13:01 del 2026-11-01 era sulla 0.11.42 rimasta aperta dopo l'aggiornamento.

@@ -10,7 +10,7 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 
 - Cosa fare: portare in Rust codifica e decodifica del Q-ary Polar Code e il CRC a 21 bit (`lookup3` `hashlittle`, seme 571, maschera `0x1FFFFF` sui primi 47 simboli).
 - Aurora: nuovo crate `core/crates/superfox` (`qpc.rs`, `crc.rs`).
-- WSJT-X: `lib/superfox/qpc/np_qpc.c`, `lib/superfox/qpc`, `qpc_fwht.c`, `qpc_subs.c`, `nhash2.c`, `lookup3.c`, `lib/superfox/qpc_decode2.f90` (controllo CRC).
+- WSJT-X: `lib/superfox/qpc`, `nhash2.c`, `lookup3.c`, `lib/superfox/qpc_decode2.f90` (controllo CRC).
 - Verifica: test di andata e ritorno codifica/decodifica su messaggi casuali; CRC confrontato con valori calcolati da `nhash2` della 3.3.0-beta5 compilato a parte.
 
 ## 2. SuperFox: ricezione (sincronismo, demodulazione, decodifica)

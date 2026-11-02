@@ -25,7 +25,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Prossimo passo
 
-2. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`), SuperFox quando arriva il permesso.
+2. Voci aperte di `docs/tasks.md`: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza `docs/mockup-fox.html`).
 3. Regola del proprietario: si parte sempre da WSJT-X 3.3 (`D:\build\analisi-wsjtx\sorgenti`); cio' che WSJT-X 3.3 non ha non si aggiunge (per questo «Sinc» di JTDX e' tolto).
 
 ## Da provare dal vivo (proprietario)

@@ -6,7 +6,7 @@ Stato al 2026-11-01. Confronto tra le novita' di WSJT-X dalla 2.7.0 alla 3.3.0-b
 
 - Sorgenti: clone di `github.com/WSJTX/wsjtx` in `D:\build\analisi-wsjtx\sorgenti`, tag `v3.0.2` (stabile) e `v3.3.0-beta5` (ultima beta, `release-state.txt`: 3.3.0 BETA 5). Note lette: `NEWS` (2.7.0-rc1 ... 3.0.0-rc1), `Release_Notes.txt` (3.2.0-rc1, novita' dopo la 3.0.2), `doc/user_guide/en/new_features.adoc`, `Network/NetworkMessage.hpp`.
 - Binari analizzati: WSJT-X 3.0.2 per Windows, `wsjtx.exe` e `jt9.exe` in `D:\build\analisi-wsjtx\binari`.
-- Licenza: WSJT-X e' GPL-3 (`COPYING`). Il codice polare q-ario di SuperFox (`lib/superfox/qpc`) e' in Aurora come UltraFOX (`engine-native/src/qpc.rs`).
+- Licenza: WSJT-X e' GPL-3 (`COPYING`). L'UltraFOX di Aurora (`engine-native/src/qpc.rs`) e' compatibile con SuperFox.
 - Nota sulla storia git: il tag `v3.3.0-beta5` e' un unico commit ("Cut 3.3.0-beta5 from develop") senza storia comune con `v3.0.2`; le differenze si leggono con `git diff v3.0.2 v3.3.0-beta5`, non con `git log`.
 
 ## Verifica con Ghidra (REA)
@@ -21,7 +21,7 @@ Stato al 2026-11-01. Confronto tra le novita' di WSJT-X dalla 2.7.0 alla 3.3.0-b
 ### 1.1 Forma d'onda e decodifica (lato Hound)
 
 WSJT-X (`lib/superfox/`):
-- Codice: Q-ary Polar Code (n,k)=(127,50) su GF(128) (`qpc/lib/superfox/qpc`, `qpc/np_qpc.c`, `qpc/qpc_fwht.c`, `qpc/qpc_subs.c`), simboli da 7 bit. 47 simboli di informazione = 329 bit di carico, gli ultimi 3 simboli sono un CRC da 21 bit: `nhash2(xdec, 47, 571) & 0x1FFFFF` (`qpc_decode2.f90`, `qpc/nhash2.c` = `hashlittle` di `lookup3.c`).
+- Codice: Q-ary Polar Code (n,k)=(127,50) su GF(128) (`lib/superfox/qpc`), simboli da 7 bit. 47 simboli di informazione = 329 bit di carico, gli ultimi 3 simboli sono un CRC da 21 bit: `nhash2(xdec, 47, 571) & 0x1FFFFF` (`qpc_decode2.f90`, `qpc/nhash2.c` = `hashlittle` di `lookup3.c`).
 - Forma d'onda (`sfox_mod.f90`, `sfox_gen_gfsk.f90`): 128 toni, 127 simboli dati + 24 di sincronismo = 151 simboli, 1024 campioni per simbolo a 12 kHz (11,72 baud, circa 1500 Hz di banda), durata circa 12,9 s (in Tx `1.0+151*1024/12000`). Simboli di sincronismo nelle posizioni `isync = 1,2,4,7,11,16,22,29,37,39,42,43,45,48,52,57,63,70,78,80,83,84,86,89`; tono di sincronismo a 750 Hz nominali.
 - Ricezione (`sfrx_sub.f90` -> `sfrx_decode`): sottrazione dei segnali FT8 presenti (`sfox_remove_ft8.f90`), segnale analitico (`sfox_ana.f90`), rimozione di un tono fisso (`sfox_remove_tone.f90`), sincronismo (`qpc_sync.f90`: picco dello spettro in `fsync +- ftol`, poi correlazione sui 24 simboli di sync, lag +-1,5 s, `snrsync`), demodulazione (`sfox_demod.f90`), verosimiglianze (`qpc_likelihoods2.f90`, EsNo 3,16), decodifica con "dither" (`qpc_decode2.f90`: fino a 100 spostamenti in frequenza/tempo `idf/idt`, 4 pesi di smussamento, fino a 5000 perturbazioni casuali con semi fissi `nseed`), scarto se `snr < -16.5` dB (`qpc_snr.f90`).
 - Quando: solo FT8, solo con `b_superfox` (Hound o Fox con SuperFox attivo), solo nel periodo pari e a fine periodo (`nzhsym >= 50`), al posto della decodifica FT8 normale di quel periodo (`lib/ft8_engine_kernel.f90` righe 232-236; in 3.0.2 `lib/decoder.f90`). Con SuperHound il decodificatore multithread non si usa per la passata iniziale (`mainwindow.cpp` 5396, 11280).
