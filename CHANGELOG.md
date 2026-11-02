@@ -5,6 +5,7 @@
 ## 0.11.81 - 2026-11-02
 - **Spettro sotto la cascata**: di nuovo su «Attuale» (anche nello stile WSJT-X e una volta per chi aveva «Cumulativo»): segue il segnale in tempo reale invece di restare quasi fermo.
 - **Finestra CQ**: colonna del paese larga, il nome si legge intero.
+- **Elenchi dei messaggi**: bandiera e paese 15 px piu' a destra.
 - **Riquadro del nominativo nel DX Cluster**: tolte le righe della fonte e dei dati ridotti.
 
 ## 0.11.80 - 2026-11-02
