@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.76',
-    released: '2026-11-03T00:00:00Z',
+    released: '2026-11-02T18:45:58Z',
     kind: 'new',
     title: ['Accordatore, potenza e SWR', 'Tuner, power and SWR', 'Tuner, Leistung und SWR', 'Boîte d’accord, puissance et ROS', 'Acoplador, potencia y ROE', 'Sintonizador, potência e ROE'],
     text: [
