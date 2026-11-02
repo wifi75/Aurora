@@ -7,7 +7,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 ```text
 Riprendi il lavoro su Aurora nella cartella D:\progetti\Aurora.
 1. Leggi AGENTS.md, docs/ripresa.md, memory.md (sezione «Come riprendere»), TODO.md e docs/tasks.md.
-2. Allineati: git fetch, controlla main e il ramo resti-motore (anche nella copia di lavoro D:\build\wt-resti1).
+2. Allineati: git fetch, controlla main e i rami in corso elencati sotto.
 3. Dimmi in breve a che punto siamo, poi riprendi dal punto «Prossimo passo» di docs/ripresa.md.
 Regole: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero; il push e le release sono autorizzati;
 le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
@@ -20,9 +20,9 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Lavoro in corso (rami non ancora uniti a main)
 
-- `cluster-qrz` (`D:uild\wt-qrz`, finito, da unire): ricerca QRZ.com XML e HamQTH (rotta `GET /api/v1/callsign/{call}`), suggerimento sul nominativo DE nel DX Cluster, invio a HRDLOG.NET, NAME e QTH nei QSO, LED di stato e «Prova» nei servizi, campi segreti con «Chiave salvata» e Cambia/Togli, un servizio per riga in Servizi di log e Servizi online. Prima di unirlo: `cargo test -p logbook -p aurora-core -p aurora -p reporting -p remote-api --target-dir target/testrun`. Mancano ancora le prove per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP.
-- `cascata-wsjtx` (`D:uild\wt-cascata`, in lavorazione): cascata come WSJT-X 3.3 (righe per periodo, pixel netti, blocchi compatti), pulsanti «Stile WSJT-X / Stile JTDX», WSJT-X attivo da subito anche per chi aggiorna.
-- `grafica-impostazioni` (`D:uild\wt-grafica`, in lavorazione): revisione grafica di tutte le pagine delle Impostazioni (testi tagliati, larghezze, allineamenti), screenshot prima/dopo.
+- `cluster-qrz` (`D:\build\wt-qrz`, finito, da unire): ricerca QRZ.com XML e HamQTH (rotta `GET /api/v1/callsign/{call}`), suggerimento sul nominativo DE nel DX Cluster, invio a HRDLOG.NET, NAME e QTH nei QSO, LED di stato e «Prova» nei servizi, campi segreti con «Chiave salvata» e Cambia/Togli, un servizio per riga in Servizi di log e Servizi online. Prima di unirlo: `cargo test -p logbook -p aurora-core -p aurora -p reporting -p remote-api --target-dir target/testrun`. Mancano ancora le prove per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP.
+- `cascata-wsjtx` (`D:\build\wt-cascata`, in lavorazione): cascata come WSJT-X 3.3 (righe per periodo, pixel netti, blocchi compatti), pulsanti «Stile WSJT-X / Stile JTDX», WSJT-X attivo da subito anche per chi aggiorna.
+- `grafica-impostazioni` (`D:\build\wt-grafica`, in lavorazione): revisione grafica di tutte le pagine delle Impostazioni (testi tagliati, larghezze, allineamenti), screenshot prima/dopo.
 
 ## Prossimo passo
 
@@ -40,4 +40,4 @@ Pannello Comandi (DX scritto a mano, rapporto, Hold Tx Freq, tipo di CQ, Tune e 
 - Codice: `D:\progetti\Aurora` (repository pubblico github.com/wifi75/Aurora). Compilazione dell'installatore: `D:\build\Aurora-0.11.1` (cartella di rilascio, si porta sul commit con `git checkout --detach`).
 - Analisi di WSJT-X 3: `D:\build\analisi-wsjtx` (sorgenti e binari), `docs/analisi-wsjtx-3.md`.
 - Chiave di firma degli aggiornamenti: `%USERPROFILE%\.aurora-signing\aurora.key` (fuori dal repository).
-- Le copie di lavoro `D:\build\wt-*` diverse da `wt-resti1` e `wt-superfox` sono gia' unite a `main` e si possono cancellare.
+- Le copie di lavoro `D:\build\wt-*` non elencate sopra sono gia' unite a `main` e si possono cancellare.
