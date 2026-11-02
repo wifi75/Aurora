@@ -5722,16 +5722,30 @@
 .dxd-shape figcaption { position: absolute; left: 0.5rem; bottom: 0.3rem; max-width: 55%; font-size: 0.72rem; font-weight: 600; color: var(--text, #1c2733); text-shadow: 0 0 3px var(--panel, #fff), 0 0 3px var(--panel, #fff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 520px) { .dxd-facts-row { grid-template-columns: 1fr; } }
 
-/* DX Cluster, allineamenti chiesti dal proprietario: Freq, DX e Paese 7px a sinistra, Modo 2px a destra, UTC allineato all'ora */
-.cluster-table th:nth-child(2),
-.cluster-table td:nth-child(2),
+/* DX Cluster, allineamenti chiesti dal proprietario: Freq 12px a sinistra, DX e Paese 7px, Modo 2px a destra, UTC allineato all'ora.
+   Si sposta il contenuto, non la cella: spostando la cella restava una striscia vuota nello sfondo della riga */
+.cluster-table th:nth-child(2) {
+  text-indent: -12px;
+}
+
+.cluster-table td:nth-child(2) > * {
+  position: relative;
+  left: -12px;
+}
+
 .cluster-table th:nth-child(3),
-.cluster-table td:nth-child(3),
-.cluster-table th:nth-child(4),
-.cluster-table td:nth-child(4),
-.cluster-table td:nth-child(5) {
+.cluster-table th:nth-child(4) {
+  text-indent: -7px;
+}
+
+.cluster-table td:nth-child(3) > *,
+.cluster-table td:nth-child(4) > * {
   position: relative;
   left: -7px;
+}
+
+.cluster-table td:nth-child(5) {
+  text-indent: -7px;
 }
 
 .cluster-table th.cluster-th-country {
@@ -5742,8 +5756,7 @@
 
 .cluster-table th:nth-child(6),
 .cluster-table td:nth-child(6) {
-  position: relative;
-  left: 2px;
+  text-indent: 2px;
 }
 
 .cluster-table th:last-child,
