@@ -329,13 +329,14 @@ fn full_qso_in_jt65_and_jt9_closes_with_rrr() {
         assert!(tx.even_slot);
         b.rx(3, &[("IU3ABC LZ2KSQ R-02", -5)]);
         assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RRR"), "{mode:?}");
-        // con RRR il QSO non e' chiuso: il DX risponde con il 73, si trasmette il 73 e solo allora si registra
+        // con RRR il QSO non e' chiuso: il DX risponde con il 73 e si registra senza mandare un altro 73 (scelta del proprietario)
         assert!(b.records().is_empty(), "{mode:?}");
         b.rx(5, &[("IU3ABC LZ2KSQ 73", -5)]);
-        assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"), "{mode:?}");
         assert_eq!(b.records().len(), 1, "{mode:?}");
         assert_eq!(b.records()[0].mode, mode);
+        assert_eq!(b.tx(6), None, "{mode:?}");
         // la finestra di avvio e' la durata del messaggio (1 s + i simboli): dopo non parte piu', dentro si
+        b.seq.call_cq(None).expect("cq");
         assert_eq!(b.tx_at(8, window_s + 0.1), None, "{mode:?}");
         assert!(b.tx_at(8, window_s - 0.1).is_some(), "{mode:?}");
     }
@@ -615,8 +616,8 @@ fn partner_sends_rrr_instead_of_rr73() {
     assert_eq!(b.records().len(), 1);
 }
 
-/// Casella RRR (`rrr1CheckBox`): il Tx4 e' RRR, non si registra alla partenza (non e' un 73); il
-/// 73 del DX chiude e il nostro 73 parte una volta, e il QSO si registra li' (`case R73` -> Tx5).
+/// Casella RRR (`rrr1CheckBox`): il Tx4 e' RRR, non si registra alla partenza (non e' un 73); il 73 del DX chiude e registra il QSO
+/// senza mandare un altro 73 (scelta del proprietario; JTDX e WSJT-X mandano il Tx5), poi si torna al CQ.
 #[test]
 fn our_rrr_closes_when_partner_sends_73() {
     let mut b = Bench::ft8(Options {
@@ -631,9 +632,8 @@ fn our_rrr_closes_when_partner_sends_73() {
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RRR"));
     assert!(b.records().is_empty(), "RRR non e' ancora la chiusura");
     b.rx(5, &[("IU3ABC LZ2KSQ 73", -12)]);
-    assert!(b.records().is_empty());
-    assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC 73"));
-    assert_eq!(b.records().len(), 1, "con la casella RRR si registra al Tx5");
+    assert_eq!(b.records().len(), 1, "il 73 del DX chiude e registra");
+    assert_eq!(b.tx(6).as_deref(), Some("CQ IU3ABC JN55"), "niente 73 dopo il nostro RRR");
     b.idle(7);
     assert_eq!(b.tx(8).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.records().len(), 1);
