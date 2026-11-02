@@ -97,5 +97,25 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
   const { rig, waiting, click } = useCatExtras();
   const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
   const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
-  return <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
+  const power = rig?.extras?.power_set;
+  return (
+    <div className="rd-face-row">
+      <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>
+      {/* la potenza della radio, a passi del 5%: nel pannello disegnato non c'e' posto per i pulsanti */}
+      {power != null ? (
+        <div className="rd-pwr" role="group" aria-label="PWR">
+          <span className="rd-pwr-val data">{Math.round(power * 100)}%</span>
+          <div className="rd-pwr-btns">
+            <button type="button" className="rd-pwr-btn" title={t('rx.act.pwrDown')} aria-label={t('rx.act.pwrDown')} disabled={waiting !== null} onClick={() => void click('pwr_down')}>
+              −
+            </button>
+            <button type="button" className="rd-pwr-btn" title={t('rx.act.pwrUp')} aria-label={t('rx.act.pwrUp')} disabled={waiting !== null} onClick={() => void click('pwr_up')}>
+              +
+            </button>
+          </div>
+          <span className="rd-pwr-lbl">PWR</span>
+        </div>
+      ) : null}
+    </div>
+  );
 }
