@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Riquadro del paese: tre proposte</title>
+<style>
+  body { margin: 0; padding: 18px; background: #e8ecf1; font: 13px "Segoe UI", system-ui, sans-serif; color: #1c2733; }
+  h1 { font-size: 15px; margin: 0 0 12px; }
+  .row { display: flex; gap: 18px; margin-bottom: 18px; }
+  .opt { width: 260px; }
+  .opt h2 { font-size: 13px; margin: 0 0 6px; }
+  .opt p { margin: 6px 0 0; color: #4a5866; font-size: 12px; line-height: 1.35; }
+  .box { width: 260px; height: 190px; border-radius: 10px; background: #f1f3f5; border: 1px solid #d5dbe1; overflow: hidden; position: relative; }
+  .cap { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; color: #4a5866; }
+  .country { fill: #1e8a6a; stroke: #0b5a43; stroke-width: 0.8; }
+  .land { fill: #c9d3da; stroke: #9fb0bd; stroke-width: 0.4; }
+  .sea { fill: #cfe6f5; }
+  .grat { fill: none; stroke: #b8d4e6; stroke-width: 0.4; }
+  .ring { fill: none; stroke: #ff5a36; stroke-width: 2; }
+  .pin { fill: #ff5a36; stroke: #fff; stroke-width: 1.5; }
+  .frame { fill: none; stroke: #ff5a36; stroke-width: 1.5; }
+  .who { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Riquadro del paese nella scheda DXpedition: tre proposte (esempi: Vanuatu e Italia)</h1>
+<div id="out"></div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const W = 260, H = 190;
+const SAMPLES = [
+  { name: 'Vanuatu', id: '548', lat: -17.7, lon: 168.3 },
+  { name: 'Italy', id: '380', lat: 42.5, lon: 12.5 },
+];
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json').then((world) => {
+  const countries = topojson.feature(world, world.objects.countries).features;
+  const land = topojson.feature(world, world.objects.land);
+  const out = d3.select('#out');
+  for (const s of SAMPLES) {
+    const target = countries.find((c) => c.id === s.id);
+    const row = out.append('div').attr('class', 'row');
+
+    // 1. globo centrato sul paese
+    {
+      const o = row.append('div').attr('class', 'opt');
+      o.append('h2').text('1 · Globo centrato sul paese');
+      const svg = o.append('div').attr('class', 'box').append('svg').attr('width', W).attr('height', H);
+      const proj = d3.geoOrthographic().rotate([-s.lon, -s.lat]).fitExtent([[40, 8], [W - 40, H - 22]], { type: 'Sphere' });
+      const path = d3.geoPath(proj);
+      svg.append('path').datum({ type: 'Sphere' }).attr('class', 'sea').attr('d', path);
+      svg.append('path').datum(d3.geoGraticule10()).attr('class', 'grat').attr('d', path);
+      svg.append('path').datum(land).attr('class', 'land').attr('d', path);
+      svg.append('path').datum(target).attr('class', 'country').attr('d', path);
+      const [x, y] = proj([s.lon, s.lat]);
+      svg.append('circle').attr('class', 'ring').attr('cx', x).attr('cy', y).attr('r', 11);
+      o.select('.box').append('div').attr('class', 'cap').html(`<span class="who">${s.name}</span> · si vede dove sta nel mondo`);
+      o.append('p').text('Il globo ruota verso il paese, che è colorato; un cerchio lo indica anche quando è piccolo come un’isola.');
+    }
+
+    // 2. regione con i paesi vicini + mondo in miniatura
+    {
+      const o = row.append('div').attr('class', 'opt');
+      o.append('h2').text('2 · Regione e mondo in miniatura');
+      const svg = o.append('div').attr('class', 'box').append('svg').attr('width', W).attr('height', H);
+      const span = 14;
+      const region = { type: 'Polygon', coordinates: [[[s.lon - span, s.lat - span * 0.7], [s.lon - span, s.lat + span * 0.7], [s.lon + span, s.lat + span * 0.7], [s.lon + span, s.lat - span * 0.7], [s.lon - span, s.lat - span * 0.7]]] };
+      const proj = d3.geoMercator().rotate([-s.lon, 0]).center([0, s.lat]).scale(W / ((2 * span * Math.PI) / 180)).translate([W / 2, H / 2]);
+      const path = d3.geoPath(proj);
+      svg.append('rect').attr('class', 'sea').attr('width', W).attr('height', H);
+      svg.append('path').datum(d3.geoGraticule10()).attr('class', 'grat').attr('d', path);
+      svg.append('path').datum(land).attr('class', 'land').attr('d', path);
+      svg.append('path').datum(target).attr('class', 'country').attr('d', path);
+      const [x, y] = proj([s.lon, s.lat]);
+      svg.append('circle').attr('class', 'pin').attr('cx', x).attr('cy', y).attr('r', 4);
+      const g = svg.append('g').attr('transform', `translate(${W - 96},${H - 56})`);
+      g.append('rect').attr('width', 90).attr('height', 50).attr('fill', '#fff').attr('stroke', '#b9c6d0');
+      const mp = d3.geoEquirectangular().fitExtent([[2, 2], [88, 48]], { type: 'Sphere' });
+      const mpath = d3.geoPath(mp);
+      g.append('path').datum(land).attr('class', 'land').attr('d', mpath);
+      const [mx, my] = mp([s.lon, s.lat]);
+      g.append('rect').attr('class', 'frame').attr('x', mx - 6).attr('y', my - 4).attr('width', 12).attr('height', 8);
+      o.select('.box').append('div').attr('class', 'cap').style('text-align', 'left').style('left', '8px').html(`<span class="who">${s.name}</span>`);
+      o.append('p').text('Il paese in mezzo ai suoi vicini, e in basso un mondo in miniatura con il riquadro rosso su dove si trova.');
+    }
+
+    // 3. mondo intero con il paese evidenziato e il punto pulsante
+    {
+      const o = row.append('div').attr('class', 'opt');
+      o.append('h2').text('3 · Mondo intero con il paese acceso');
+      const svg = o.append('div').attr('class', 'box').append('svg').attr('width', W).attr('height', H);
+      const proj = d3.geoNaturalEarth1().rotate([-s.lon + 0, 0]).fitExtent([[6, 10], [W - 6, H - 24]], { type: 'Sphere' });
+      const path = d3.geoPath(proj);
+      svg.append('path').datum({ type: 'Sphere' }).attr('class', 'sea').attr('d', path);
+      svg.append('path').datum(land).attr('class', 'land').attr('d', path);
+      svg.append('path').datum(target).attr('class', 'country').attr('d', path);
+      const [x, y] = proj([s.lon, s.lat]);
+      svg.append('circle').attr('class', 'ring').attr('cx', x).attr('cy', y).attr('r', 9);
+      svg.append('circle').attr('class', 'pin').attr('cx', x).attr('cy', y).attr('r', 3.5);
+      o.select('.box').append('div').attr('class', 'cap').html(`<span class="who">${s.name}</span> · centrato sul paese`);
+      o.append('p').text('Tutto il mondo, centrato sulla longitudine del paese, con il paese colorato e un cerchio rosso sopra.');
+    }
+  }
+  document.body.dataset.ready = '1';
+});
+</script>
+</body>
+</html>
