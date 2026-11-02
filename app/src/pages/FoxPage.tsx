@@ -3,6 +3,7 @@ import { postControl, postFox } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
 import { useT } from '../i18n';
 import { useFox } from '../state/fox';
+import { useStation } from '../state/station';
 import '../styles/fox.css';
 
 type Caller = FoxSnapshot['callers'][number];
@@ -20,6 +21,7 @@ const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 export function FoxPage() {
   const t = useT();
   const fox = useFox((s) => s.fox) ?? EMPTY;
+  const txEnabled = useStation((s) => s.status?.tx_enabled ?? false);
   const [sort, setSort] = useState<SortKey>('snr');
   const [filter, setFilter] = useState('');
 
@@ -55,6 +57,15 @@ export function FoxPage() {
         <button type="button" className="glass" onClick={() => void postFox({ action: 'reset' })}>{t('fox.reset')}</button>
       </header>
       <p className="muted fox-dev">{t('fox.dev')}</p>
+      {fox.enabled && !txEnabled ? (
+        <p className="fox-hint" role="status">
+          {t('fox.needTx')}{' '}
+          <button type="button" className="glass glass--on chip" onClick={() => void postControl('enable_tx', true)}>
+            {t('fox.enableTx')}
+          </button>
+        </p>
+      ) : null}
+      {!fox.enabled ? <p className="fox-hint" role="status">{t('fox.offHint')}</p> : null}
 
       <div className="fox-stats">
         <Stat label={t('fox.logged')} value={fox.logged} />
