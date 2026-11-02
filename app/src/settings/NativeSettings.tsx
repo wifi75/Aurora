@@ -137,7 +137,7 @@ export function SecretInput({ id, label, saved, pending, disabled, onCommit }: {
 }
 
 /** Una voce: viva (si modifica) o non disponibile (spenta, con il motivo). */
-export function SettingField({ row, label, doc, draft, locked = false }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean }) {
+export function SettingField({ row, label, doc, draft, locked = false, className = '', shown }: { row: SettingRow; label: string; doc: EngineSettings; draft: Draft; locked?: boolean; className?: string; shown?: string }) {
   const t = useT();
   const item = doc.items[row.key];
   const live = item?.state === 'live';
@@ -189,9 +189,9 @@ export function SettingField({ row, label, doc, draft, locked = false }: { row: 
   const note = live ? (item?.apply === 'restart' ? t('ens.restart') : '') : t(`ens.r.${item?.reason ?? 'own_decoder'}` as Key);
   const liveNote = live && item?.note ? t(`ens.n.${item.note}` as Key) : '';
   return (
-    <label className={`jx-row${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
+    <label className={`jx-row${className ? ` ${className}` : ''}${changed !== undefined ? ' jx-row--changed' : ''}${live ? '' : ' jx-row--off'}`} htmlFor={id} title={live ? undefined : note}>
       <span className="jx-name">
-        {label}
+        {shown ?? label}
         <Help tip={engineHint(row.key, t)} />
         {note ? <small className="ens-note">{live ? ` (${note})` : ` — ${t('ens.off')}`}</small> : null}
       </span>
@@ -262,6 +262,7 @@ const STATUS_OF: Record<string, string> = {
   ClublogSend: 'clublog',
   QRZLogSend: 'qrz',
   LoTWSend: 'lotw',
+  HrdlogSend: 'hrdlog',
 };
 
 /** L'esito dell'ultimo invio di un servizio (ok o errore, e quando). */
@@ -279,12 +280,35 @@ function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
 }
 
 /** Il pulsante «Prova» di un servizio dell'invio diretto: controlla le impostazioni gia' salvate, senza registrare QSO. */
-function UploadTest({ service, waiting, keys }: { service: UploadService; waiting: boolean; keys: readonly string[] }) {
+/** L'esito di una prova. */
+export interface TestResult {
+  ok: boolean;
+  text: string;
+}
+
+/** Il colore della spia di un servizio: spento o non configurato, da provare, ultima prova o invio riuscito, fallito. */
+export type Led = 'off' | 'untested' | 'ok' | 'err';
+
+export function ledOf(enabled: boolean, result: TestResult | null, status: { ok: boolean | null; message: string } | undefined): { led: Led; why: string } {
+  if (!enabled) return { led: 'off', why: '' };
+  if (result) return { led: result.ok ? 'ok' : 'err', why: result.text };
+  if (status && status.ok !== null) return { led: status.ok ? 'ok' : 'err', why: status.message };
+  return { led: 'untested', why: '' };
+}
+
+/** La spia nel titolo del riquadro. */
+export function StatusLed({ led, why }: { led: Led; why: string }) {
+  const t = useT();
+  const label = t(`ens.led.${led}` as Key);
+  return <span className={`ens-led ens-led--${led}`} role="img" aria-label={label} title={why ? `${label}: ${why}` : label} data-testid="ens-led" data-led={led} />;
+}
+
+function UploadTest({ service, waiting, keys, result, setResult, autoStart }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean }) {
   const t = useT();
   const client = useQueryClient();
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   // dopo aver confermato una password o una chiave del riquadro, appena e' salvata parte da sola la prova
-  const [auto, setAuto] = useState(false);
+  // all'apertura della pagina, se il servizio e' acceso, si prova una volta da solo
+  const [auto, setAuto] = useState(autoStart);
   const keyList = keys.join(',');
   useEffect(() => {
     const on = (e: Event) => {
@@ -323,9 +347,18 @@ function UploadTest({ service, waiting, keys }: { service: UploadService; waitin
 }
 
 /** I riquadri di voci del motore (una pagina o parte di una): interruttore e campi, «?» con la spiegazione, «Prova» e stato dell'ultimo invio, errore accanto. */
-export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readonly SettingGroup[]; doc: EngineSettings; draft: Draft; span?: 1 | 2 | 3 }) {
+/** La larghezza di un campo nella riga di un servizio: nominativi stretti, indirizzi ed email larghi, chiavi medie. */
+function fieldWidth(row: SettingRow): string {
+  if (row.kind === 'bool') return 'svc-w-bool';
+  if (/Call$|Station$/.test(row.key)) return 'svc-w-s';
+  if (/Email|Url|Tqsl|Location/.test(row.key)) return 'svc-w-l';
+  return 'svc-w-m';
+}
+
+export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }: { groups: readonly SettingGroup[]; doc: EngineSettings; draft: Draft; span?: 1 | 2 | 3; layout?: 'boxes' | 'rows' }) {
   const t = useT();
-  return (
+  const [results, setResults] = useState<Record<string, TestResult>>({});
+  const body = (
     <>
       {groups.map((group) => {
         const rows = group.rows.filter((r) => doc.items[r.key]?.state === 'live');
@@ -333,14 +366,46 @@ export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readon
         const kinds = [...new Set(rows.map((r) => STATUS_OF[r.key]).filter((k): k is string => Boolean(k)))];
         const waiting = group.rows.some((r) => draft.changes[r.key] !== undefined);
         const help = group.upload?.help ?? group.help;
+        // acceso = il primo interruttore del riquadro (salvato); i riquadri senza interruttore o senza servizio non hanno la spia
+        const toggle = rows.find((r) => r.kind === 'bool');
+        const enabled = toggle ? doc.values[toggle.key] === 'true' : false;
+        const service = group.upload?.service ?? kinds[0];
+        const result = service ? (results[service] ?? null) : null;
+        const led = service ? ledOf(enabled, result, kinds[0] ? doc.status?.[kinds[0]] : undefined) : null;
+        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled} /> : null;
+        if (layout === 'rows') {
+          // un servizio per riga: spia, nome con «?», campi in linea, «Prova» ed esito; su schermi stretti va a capo
+          return (
+            <div key={group.title} className="svc-row" role="group" aria-label={t(group.title)} data-testid={`svc-${service ?? group.title}`}>
+              <div className="svc-head">
+                {led ? <StatusLed led={led.led} why={led.why} /> : null}
+                <strong>{t(group.title)}</strong>
+                <Help tip={help ? t(help) : undefined} />
+              </div>
+              <div className="svc-fields">
+                {rows.map((row) => (
+                  <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} shown={row === toggle ? t('ens.svc.on') : undefined} doc={doc} draft={draft} className={`svc-field ${fieldWidth(row)}`} />
+                ))}
+              </div>
+              <div className="svc-side">
+                {test}
+                {kinds.map((k) => (
+                  <SendStatus key={k} doc={doc} kind={k} />
+                ))}
+                {group.note ? <small className="muted ens-note-line">{t(group.note)}</small> : null}
+              </div>
+            </div>
+          );
+        }
         return (
-          <Group key={group.title} title={<>{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
+          <Group key={group.title} title={<>{led ? <StatusLed led={led.led} why={led.why} /> : null}{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
             <Cells min={15}>
               {rows.map((row) => (
                 <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
               ))}
             </Cells>
-            {group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} /> : null}
+            {group.note ? <p className="muted ens-note-line">{t(group.note)}</p> : null}
+            {test}
             {kinds.map((k) => (
               <SendStatus key={k} doc={doc} kind={k} />
             ))}
@@ -349,17 +414,18 @@ export function SettingGroups({ groups, doc, draft, span = 1 }: { groups: readon
       })}
     </>
   );
+  return layout === 'rows' ? <div className="svc-table sx-span-3">{body}</div> : body;
 }
 
 /** Riquadri del motore dentro un'altra pagina (spot in «Servizi online», registrazione del QSO in «Sequenza»), con la loro barra del salvataggio. */
-export function EngineGroups({ groups }: { groups: readonly SettingGroup[] }) {
+export function EngineGroups({ groups, layout }: { groups: readonly SettingGroup[]; layout?: 'boxes' | 'rows' }) {
   const settings = useSettings();
   const draft = useDraft();
   const native = useIsNative();
   if (!native || !settings.data) return null;
   return (
     <>
-      <SettingGroups groups={groups} doc={settings.data} draft={draft} />
+      <SettingGroups groups={groups} doc={settings.data} draft={draft} layout={layout} />
       <div className="sx-span-3">
         <ApplyBar draft={draft} doc={settings.data} />
       </div>
@@ -368,7 +434,7 @@ export function EngineGroups({ groups }: { groups: readonly SettingGroup[] }) {
 }
 
 /** Una pagina fatta solo di riquadri del motore, con la barra del salvataggio. */
-export function NativeGroupsPage({ groups, label, children }: { groups: readonly SettingGroup[]; label: string; children?: (doc: EngineSettings, draft: Draft) => ReactNode }) {
+export function NativeGroupsPage({ groups, label, children, layout }: { groups: readonly SettingGroup[]; label: string; children?: (doc: EngineSettings, draft: Draft) => ReactNode; layout?: 'boxes' | 'rows' }) {
   const t = useT();
   const settings = useSettings();
   const draft = useDraft();
@@ -378,7 +444,7 @@ export function NativeGroupsPage({ groups, label, children }: { groups: readonly
   return (
     <section aria-label={label}>
       <Page>
-        <SettingGroups groups={groups} doc={doc} draft={draft} />
+        <SettingGroups groups={groups} doc={doc} draft={draft} layout={layout} />
         {children?.(doc, draft)}
         <Notes span={2}>
           <Note>{t('ens.note', { file: doc.file })}</Note>

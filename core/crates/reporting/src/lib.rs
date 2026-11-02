@@ -10,6 +10,7 @@
 pub mod clublog;
 pub mod dxsummit;
 pub mod eqsl;
+pub mod hrdlog;
 pub mod lotw;
 pub mod psk;
 pub mod qrz;
@@ -44,6 +45,14 @@ pub const CLUBLOG_SECRET: &str = "clublog";
 pub const CLUBLOG_API_SECRET: &str = "clublog-api";
 /// La chiave del logbook di QRZ.com.
 pub const QRZ_SECRET: &str = "qrz";
+/// Il codice di caricamento («upload code») di HRDLOG.NET.
+pub const HRDLOG_SECRET: &str = "hrdlog";
+
+/// HRDLOG.NET: nominativo del log (vuoto = il proprio); il codice di caricamento sta nei segreti.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HrdlogAccount {
+    pub callsign: String,
+}
 
 /// Wavelog o Cloudlog: indirizzo e numero della stazione (la chiave API sta nei segreti).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -92,7 +101,10 @@ pub struct Config {
     pub wavelog: Option<WavelogAccount>,
     pub clublog: Option<ClublogAccount>,
     pub qrz: bool,
+    /// Il nominativo registrato su QRZ (vuoto = quello del QSO): QRZ scarta i QSO con `STATION_CALLSIGN` diverso dal logbook.
+    pub qrz_call: String,
     pub lotw: Option<LotwSetup>,
+    pub hrdlog: Option<HrdlogAccount>,
 }
 
 impl Config {
@@ -118,6 +130,7 @@ pub struct Endpoints {
     /// Invio diretto: indirizzi fissi di ClubLog e QRZ, attese massime, il programma dichiarato (User-Agent).
     pub clublog_url: String,
     pub qrz_url: String,
+    pub hrdlog_url: String,
     pub upload_timeout: Duration,
     pub lotw_timeout: Duration,
     pub user_agent: String,
@@ -140,6 +153,7 @@ impl Default for Endpoints {
             software: format!("Aurora v{}", aurora_core::version::APP_VERSION),
             clublog_url: clublog::URL.to_string(),
             qrz_url: qrz::URL.to_string(),
+            hrdlog_url: hrdlog::URL.to_string(),
             upload_timeout: upload::HTTP_TIMEOUT,
             lotw_timeout: lotw::TIMEOUT,
             user_agent: format!("Aurora/{}", aurora_core::version::APP_VERSION),

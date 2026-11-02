@@ -79,6 +79,46 @@ pub fn read_insert(status: u16, body: &str) -> Outcome {
     }
 }
 
+/// Il record con `STATION_CALLSIGN` sostituito (o aggiunto) dal nominativo registrato su QRZ, se dato: i QSO fatti come
+/// `IU3ABC/P` o `EA3/IU3ABC` vanno nel logbook di `IU3ABC`, che QRZ altrimenti scarterebbe.
+pub fn force_station_call(record: &str, call: &str) -> String {
+    let call = call.trim().to_uppercase();
+    if call.is_empty() {
+        return record.to_string();
+    }
+    let field = format!("<STATION_CALLSIGN:{}>{call} ", call.len());
+    let mut out = String::with_capacity(record.len() + field.len());
+    let mut rest = record;
+    let mut replaced = false;
+    while let Some(start) = rest.find('<') {
+        out.push_str(&rest[..start]);
+        let tail = &rest[start..];
+        let Some(close) = tail.find('>') else { break };
+        let head = &tail[1..close];
+        let mut parts = head.split(':');
+        let name = parts.next().unwrap_or("").to_ascii_uppercase();
+        let len: usize = parts.next().and_then(|l| l.trim().parse().ok()).unwrap_or(0);
+        let value_end = (close + 1 + len).min(tail.len());
+        if !tail.is_char_boundary(value_end) {
+            break;
+        }
+        if name == "STATION_CALLSIGN" {
+            out.push_str(&field);
+            replaced = true;
+            rest = tail[value_end..].trim_start_matches(' ');
+            continue;
+        }
+        if name == "EOR" && !replaced {
+            out.push_str(&field);
+            replaced = true;
+        }
+        out.push_str(&tail[..value_end]);
+        rest = &tail[value_end..];
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Inserisce un QSO (bloccante).
 pub fn insert(url: &str, key: &str, record: &str, timeout: Duration, user_agent: &str) -> Outcome {
     match agent(timeout, user_agent).post(url).send_form([("KEY", key), ("ACTION", "INSERT"), ("ADIF", record)]) {
@@ -139,6 +179,14 @@ mod tests {
         assert!(matches!(read_insert(200, "RESULT=FAIL&REASON=wrong station_callsign"), Outcome::Rejected(m) if m == "wrong station_callsign"));
         assert!(matches!(read_insert(503, ""), Outcome::Retry(_)));
         assert!(matches!(read_insert(200, "<html>"), Outcome::Retry(_)));
+    }
+
+    #[test]
+    fn the_registered_callsign_replaces_the_portable_one() {
+        let r = "<CALL:6>IU3XYZ <STATION_CALLSIGN:8>IU3ABC/P <BAND:3>20m <EOR>";
+        assert_eq!(force_station_call(r, "iu3abc"), "<CALL:6>IU3XYZ <STATION_CALLSIGN:6>IU3ABC <BAND:3>20m <EOR>");
+        assert_eq!(force_station_call(r, ""), r);
+        assert_eq!(force_station_call("<CALL:6>IU3XYZ <EOR>", "IU3ABC"), "<CALL:6>IU3XYZ <STATION_CALLSIGN:6>IU3ABC <EOR>");
     }
 
     #[test]

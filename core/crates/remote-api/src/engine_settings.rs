@@ -83,6 +83,18 @@ pub const EXTRA_KEYS: &[&str] = &[
     "ClublogApiKey",
     "QRZLogSend",
     "QRZLogKey",
+    "QRZLogCall",
+    "HrdlogSend",
+    "HrdlogCall",
+    "HrdlogCode",
+    // ricerca dei nominativi (tooltip del DX Cluster): QRZ.com XML e HamQTH
+    "QRZLookup",
+    "QRZUser",
+    "QRZPasswd",
+    "HamQTHLookup",
+    "HamQTHUser",
+    "HamQTHPasswd",
+    "LookupToQso",
     "LoTWSend",
     "LoTWTqsl",
     "LoTWLocation",
@@ -212,7 +224,7 @@ pub fn seed_destinations(env_forward: &[SocketAddr], env_export: &[SocketAddr], 
 }
 
 /// Le voci che non finiscono mai nel file delle impostazioni ne' nelle risposte dell'API: hanno un posto protetto (`SecretStore`).
-pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "QRZLogKey"];
+pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "QRZLogKey", "HrdlogCode", "QRZPasswd", "HamQTHPasswd"];
 
 /// Il nome con cui una voce segreta si salva nella protezione dei segreti.
 pub fn secret_name(key: &str) -> Option<&'static str> {
@@ -222,7 +234,26 @@ pub fn secret_name(key: &str) -> Option<&'static str> {
         "ClublogPasswd" => Some(reporting::CLUBLOG_SECRET),
         "ClublogApiKey" => Some(reporting::CLUBLOG_API_SECRET),
         "QRZLogKey" => Some(reporting::QRZ_SECRET),
+        "HrdlogCode" => Some(reporting::HRDLOG_SECRET),
+        "QRZPasswd" => Some(reporting::qrz_xml::SECRET),
+        "HamQTHPasswd" => Some(reporting::qrz_xml::HAMQTH_SECRET),
         _ => None,
+    }
+}
+
+/// Le due ricerche dei nominativi.
+pub struct Lookups {
+    pub qrz: Arc<reporting::qrz_xml::Lookup>,
+    pub hamqth: Arc<reporting::qrz_xml::Lookup>,
+}
+
+impl Default for Lookups {
+    fn default() -> Lookups {
+        let agent = format!("Aurora{}", aurora_core::version::APP_VERSION);
+        Lookups {
+            qrz: Arc::new(reporting::qrz_xml::Lookup::new(reporting::qrz_xml::Provider::Qrz, reporting::qrz_xml::URL, &agent, reporting::qrz_xml::TIMEOUT)),
+            hamqth: Arc::new(reporting::qrz_xml::Lookup::new(reporting::qrz_xml::Provider::HamQth, reporting::qrz_xml::HAMQTH_URL, &agent, reporting::qrz_xml::TIMEOUT)),
+        }
     }
 }
 
@@ -296,7 +327,9 @@ pub fn support(key: &str) -> Support {
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         // invio diretto dei QSO: chiavi e password solo nella protezione dei segreti; LoTW usa il certificato di TQSL e non ne ha bisogno
         "WavelogSend" | "WavelogUrl" | "WavelogKey" | "WavelogStation" | "ClublogSend" | "ClublogEmail" | "ClublogPasswd" | "ClublogCall" | "ClublogApiKey" | "QRZLogSend"
-        | "QRZLogKey" => Support::Needs(Feature::Secrets, "upload_secrets", Apply::Now),
+        | "QRZLogKey" | "QRZLogCall" | "HrdlogSend" | "HrdlogCall" | "HrdlogCode" | "QRZLookup" | "QRZUser" | "QRZPasswd" | "HamQTHLookup" | "HamQTHUser" | "HamQTHPasswd" | "LookupToQso" => {
+            Support::Needs(Feature::Secrets, "upload_secrets", Apply::Now)
+        }
         "LoTWSend" | "LoTWTqsl" | "LoTWLocation" => Support::Live(Apply::Now),
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
@@ -462,6 +495,18 @@ pub struct Reports {
     pub clublog_call: String,
     /// Invio diretto al logbook di QRZ.com (la chiave sta nei segreti).
     pub qrz: bool,
+    /// Il nominativo registrato su QRZ (vuoto = quello del QSO).
+    pub qrz_call: String,
+    /// Invio diretto a HRDLOG.NET: nominativo del log (vuoto nelle impostazioni = il proprio); il codice sta nei segreti.
+    pub hrdlog: bool,
+    pub hrdlog_call: String,
+    /// Ricerca dei nominativi: accesa con l'utente (la password sta nei segreti).
+    pub qrz_lookup: bool,
+    pub qrz_user: String,
+    pub hamqth_lookup: bool,
+    pub hamqth_user: String,
+    /// «Aggiungi nome e QTH ai QSO» (vale solo con una ricerca accesa).
+    pub lookup_to_qso: bool,
     /// Invio a LoTW con TQSL: percorso di `tqsl` (vuoto = cercato da solo) e posizione di stazione di TQSL.
     pub lotw: bool,
     pub lotw_tqsl: String,
@@ -565,6 +610,15 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("ClublogEmail", ""),
         ("ClublogCall", ""),
         ("QRZLogSend", "false"),
+        ("QRZLogCall", ""),
+        ("HrdlogSend", "false"),
+        ("HrdlogCall", ""),
+        // ricerca dei nominativi: spenta di fabbrica
+        ("QRZLookup", "false"),
+        ("QRZUser", ""),
+        ("HamQTHLookup", "false"),
+        ("HamQTHUser", ""),
+        ("LookupToQso", "true"),
         ("LoTWSend", "false"),
         ("LoTWTqsl", ""),
         ("LoTWLocation", ""),
@@ -715,7 +769,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
         && matches!(
             key,
             "MyCall" | "MyGrid" | "BandHopList" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
-                | "LoTWTqsl" | "LoTWLocation"
+                | "LoTWTqsl" | "LoTWLocation" | "QRZLogCall" | "HrdlogCall" | "QRZUser" | "HamQTHUser"
         )
     {
         return Ok(());
@@ -782,10 +836,13 @@ fn validate_upload(key: &str, value: &str) -> Option<Result<(), SettingsError>> 
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     let path_ok = |v: &str| v.chars().count() <= 260 && !v.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '|' | '?' | '*'));
     match key {
-        "WavelogSend" | "ClublogSend" | "QRZLogSend" | "LoTWSend" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "WavelogSend" | "ClublogSend" | "QRZLogSend" | "LoTWSend" | "HrdlogSend" | "QRZLookup" | "HamQTHLookup" | "LookupToQso" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "WavelogUrl" if value.chars().count() > 200 || reporting::wavelog::api_base(value).is_none() => bad("serve un indirizzo che comincia con http:// o https://"),
         "WavelogStation" if value.len() > 10 || !value.chars().all(|c| c.is_ascii_digit()) => bad("il numero della stazione ha solo cifre"),
         "ClublogEmail" if value.len() > 100 || !value.contains('@') || value.chars().any(|c| c.is_whitespace() || c.is_control()) => bad("email non valida"),
+        "QRZLogCall" | "HrdlogCall" if value.len() > 20 || !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') => bad("nominativo non valido"),
+        "QRZUser" | "HamQTHUser" if value.len() > 40 || !value.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '_' | '-' | '.' | '@')) => bad("nome utente non valido"),
+        "QRZLogCall" | "HrdlogCall" | "QRZUser" | "HamQTHUser" => Some(Ok(())),
         "ClublogCall" if value.len() > 20 || !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') => bad("nominativo non valido"),
         "LoTWTqsl" if !path_ok(value) => bad("percorso non valido"),
         "LoTWLocation" if value.chars().count() > 80 || value.chars().any(|c| c.is_control() || c == '"') => bad("nome della posizione non valido"),
@@ -858,6 +915,14 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         clublog_email: get("ClublogEmail").to_string(),
         clublog_call: if get("ClublogCall").is_empty() { get("MyCall").to_uppercase() } else { get("ClublogCall").to_uppercase() },
         qrz: truthy(values.get("QRZLogSend")),
+        qrz_call: get("QRZLogCall").trim().to_uppercase(),
+        hrdlog: truthy(values.get("HrdlogSend")),
+        hrdlog_call: if get("HrdlogCall").is_empty() { get("MyCall").to_uppercase() } else { get("HrdlogCall").to_uppercase() },
+        qrz_lookup: truthy(values.get("QRZLookup")) && !get("QRZUser").trim().is_empty(),
+        qrz_user: get("QRZUser").trim().to_string(),
+        hamqth_lookup: truthy(values.get("HamQTHLookup")) && !get("HamQTHUser").trim().is_empty(),
+        hamqth_user: get("HamQTHUser").trim().to_string(),
+        lookup_to_qso: values.get("LookupToQso").is_none_or(|v| v == "true"),
         lotw: truthy(values.get("LoTWSend")) && !get("LoTWLocation").trim().is_empty(),
         lotw_tqsl: get("LoTWTqsl").trim().to_string(),
         lotw_location: get("LoTWLocation").trim().to_string(),
@@ -923,6 +988,8 @@ pub struct EngineSettingsStore {
     window_control: AtomicBool,
     /// Dove sta la password di eQSL (la protezione dei segreti del sistema); `None` finche' nessuno la collega.
     secrets: Mutex<Option<Arc<dyn SecretStore>>>,
+    /// Le ricerche dei nominativi (QRZ.com XML e HamQTH), con sessione e risultati in memoria.
+    lookups: Lookups,
     /// Il servizio degli invii verso l'esterno (per lo spot su DXSummit a richiesta); `None` finche' nessuno lo collega.
     reporting: Mutex<Option<Arc<reporting::Service>>>,
     /// Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP).
@@ -966,7 +1033,7 @@ impl EngineSettingsStore {
         }
         values.extend(present);
         let (revision, _) = watch::channel(0);
-        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false), secrets_ready: AtomicBool::new(false), window_control: AtomicBool::new(false), secrets: Mutex::new(None), reporting: Mutex::new(None), status: Arc::new(ReportStatus::new()) };
+        let store = EngineSettingsStore { path: path.to_path_buf(), values: Mutex::new(values), revision, udp_emitter: AtomicBool::new(false), all_txt: AtomicBool::new(false), audio_control: AtomicBool::new(false), secrets_ready: AtomicBool::new(false), window_control: AtomicBool::new(false), secrets: Mutex::new(None), lookups: Lookups::default(), reporting: Mutex::new(None), status: Arc::new(ReportStatus::new()) };
         if missing && let Err(e) = store.write() {
             tracing::warn!("impostazioni del motore non scritte: {e}");
         }
@@ -1051,6 +1118,66 @@ impl EngineSettingsStore {
 
     pub fn reporting(&self) -> Option<Arc<reporting::Service>> {
         self.reporting.lock().unwrap_or_else(|p| p.into_inner()).clone()
+    }
+
+    /// Le ricerche dei nominativi (per le prove si cambiano gli indirizzi).
+    pub fn lookups(&self) -> &Lookups {
+        &self.lookups
+    }
+
+    pub fn set_lookups(&mut self, lookups: Lookups) {
+        self.lookups = lookups;
+    }
+
+    /// Utente e password di una ricerca, solo se accesa e con la password salvata.
+    pub fn lookup_credentials(&self, provider: reporting::qrz_xml::Provider) -> Option<(String, String)> {
+        let r = self.reports();
+        let (on, user, key) = match provider {
+            reporting::qrz_xml::Provider::Qrz => (r.qrz_lookup, r.qrz_user, "QRZPasswd"),
+            reporting::qrz_xml::Provider::HamQth => (r.hamqth_lookup, r.hamqth_user, "HamQTHPasswd"),
+        };
+        if !on {
+            return None;
+        }
+        let password = self.secret_store()?.get(secret_name(key)?)?;
+        Some((user, password))
+    }
+
+    /// Nome e citta' del corrispondente per il QSO registrato: dalla memoria della ricerca o con una ricerca al momento, al piu' `wait`
+    /// (poi si registra senza). `None` con l'opzione spenta, le ricerche spente o niente trovato.
+    pub async fn name_and_qth(&self, call: &str, now_secs: u64, wait: std::time::Duration) -> Option<(String, String)> {
+        if !self.reports().lookup_to_qso {
+            return None;
+        }
+        for provider in [reporting::qrz_xml::Provider::Qrz, reporting::qrz_xml::Provider::HamQth] {
+            let Some((user, password)) = self.lookup_credentials(provider) else { continue };
+            let lookup = match provider {
+                reporting::qrz_xml::Provider::Qrz => Arc::clone(&self.lookups.qrz),
+                reporting::qrz_xml::Provider::HamQth => Arc::clone(&self.lookups.hamqth),
+            };
+            let wanted = call.to_string();
+            let task = tokio::task::spawn_blocking(move || lookup.lookup(&user, &password, &wanted, now_secs));
+            if let Ok(Ok(Ok(reporting::qrz_xml::Found::Yes(p)))) = tokio::time::timeout(wait, task).await {
+                let name = [p.fname.as_str(), p.name.as_str()].iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" ");
+                if !name.is_empty() || !p.city.is_empty() {
+                    return Some((name, p.city));
+                }
+            }
+        }
+        None
+    }
+
+    /// Utente e password salvati di una ricerca anche se spenta (per «Prova»).
+    pub fn lookup_saved_credentials(&self, provider: reporting::qrz_xml::Provider) -> Option<(String, String)> {
+        let r = self.reports();
+        let (user, key) = match provider {
+            reporting::qrz_xml::Provider::Qrz => (r.qrz_user, "QRZPasswd"),
+            reporting::qrz_xml::Provider::HamQth => (r.hamqth_user, "HamQTHPasswd"),
+        };
+        if user.is_empty() {
+            return None;
+        }
+        Some((user, self.secret_store()?.get(secret_name(key)?)?))
     }
 
     fn secret_store(&self) -> Option<Arc<dyn SecretStore>> {
@@ -1154,6 +1281,15 @@ impl EngineSettingsStore {
         if touches(&["QRZLogSend", "QRZLogKey"]) && truthy(next.get("QRZLogSend")) && !has_secret("QRZLogKey") {
             return Err(SettingsError::BadValue("QRZLogSend: serve la chiave del logbook per accendere l'invio".into()));
         }
+        if touches(&["HrdlogSend", "HrdlogCall", "HrdlogCode", "MyCall"]) && truthy(next.get("HrdlogSend")) && (r.hrdlog_call.is_empty() || !has_secret("HrdlogCode")) {
+            return Err(SettingsError::BadValue("HrdlogSend: servono nominativo e codice di caricamento per accendere l'invio".into()));
+        }
+        if touches(&["QRZLookup", "QRZUser", "QRZPasswd"]) && truthy(next.get("QRZLookup")) && (!r.qrz_lookup || !has_secret("QRZPasswd")) {
+            return Err(SettingsError::BadValue("QRZLookup: servono utente e password di QRZ.com per accendere la ricerca".into()));
+        }
+        if touches(&["HamQTHLookup", "HamQTHUser", "HamQTHPasswd"]) && truthy(next.get("HamQTHLookup")) && (!r.hamqth_lookup || !has_secret("HamQTHPasswd")) {
+            return Err(SettingsError::BadValue("HamQTHLookup: servono utente e password di HamQTH per accendere la ricerca".into()));
+        }
         if touches(&["LoTWSend", "LoTWTqsl", "LoTWLocation"]) && truthy(next.get("LoTWSend")) {
             if !r.lotw {
                 return Err(SettingsError::BadValue("LoTWSend: serve la posizione di stazione di TQSL per accendere l'invio".into()));
@@ -1171,6 +1307,13 @@ impl EngineSettingsStore {
             if let Some(service) = self.reporting() {
                 service.credentials_changed();
             }
+        }
+        // utente, password o interruttore della ricerca cambiati: sessione e risultati si dimenticano
+        if touches(&["QRZLookup", "QRZUser", "QRZPasswd"]) {
+            self.lookups.qrz.reset();
+        }
+        if touches(&["HamQTHLookup", "HamQTHUser", "HamQTHPasswd"]) {
+            self.lookups.hamqth.reset();
         }
         let previous = std::mem::replace(&mut *self.lock(), next);
         if let Err(e) = self.write() {

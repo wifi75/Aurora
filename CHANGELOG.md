@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster, chi ha fatto lo spot**: passando il mouse sul nominativo nella colonna DE compare un riquadro con bandiera, paese e continente e, con le ricerche accese, nome e citta'. Le ricerche partono dopo un breve ritardo e non si ripetono.
+- **Ricerca QRZ.com e HamQTH** (Impostazioni > Servizi online): nome e citta' dei nominativi da QRZ.com (utente e password; dati completi con l'abbonamento XML, ridotti senza) e da HamQTH (gratuito), usato se QRZ e' spento o non trova. Spente di base, password protette da Windows, «Prova», risultati in memoria tre giorni. Nuova rotta `GET /api/v1/callsign/{call}`.
+- **QRZ.com Logbook**: campo facoltativo «Nominativo registrato su QRZ», per i QSO fatti con /P, /QRP o prefissi esteri; rimandi fra le pagine Servizi di log e Servizi online.
+- **HRDLOG.NET**: invio diretto dei QSO (nominativo e codice di caricamento), con la stessa coda, i nuovi tentativi e lo stato degli altri servizi. Formato non confermato dalla documentazione ufficiale (non raggiungibile): da provare dal vivo.
+- **Password e chiavi nelle Impostazioni**: non spariscono piu' appena scritte. Si salvano uscendo dal campo o con Invio (non a ogni tasto), poi il campo mostra «Salvata ••••» con «Cambia» e «Togli», e la «Prova» del riquadro parte da sola con l'esito in verde o in rosso.
 - **DX Cluster**: colonne Freq, DX e Paese allineate meglio, titolo «Paese» sopra le bandierine, Modo spostato a destra, UTC allineato all'ora.
 - **Suggerimenti ovunque**: nella pagina Fox ogni contatore, pulsante, interruttore, riquadro e colonna spiega cosa fa passandoci sopra; suggerimenti anche sulle spie e sugli strumenti dei display della radio e sui controlli di Storico, Esporta, Mappa, Propagazione, Statistiche, cluster, DXCC e Impostazioni, in tutte e sei le lingue.
 - **Display FT-2000**: RX e TX accanto alla frequenza principale; spie e riquadri spenti ben visibili; al posto del riquadro FT8/AGC (gia' mostrati altrove) la potenza della radio con i pulsanti − e +.

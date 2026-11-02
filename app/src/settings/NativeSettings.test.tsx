@@ -29,6 +29,7 @@ import { translate } from '../i18n';
 import { EngineValues } from './EngineValues';
 import { ReportsTab } from './InfoTabs';
 import { LogServicesTab } from './LogServicesTab';
+import { ledOf } from './NativeSettings';
 import { OnlineTab } from './OnlineTab';
 
 const it_ = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate('it', key, vars);
@@ -192,7 +193,7 @@ describe('Direct QSO upload with the built-in engine', () => {
     render(<LogServicesTab />);
     expect(await screen.findByText(it_('ens.g.qrz'))).toBeInTheDocument();
     expect(screen.getByLabelText(it_('ens.k.QRZLogSend'))).toBeChecked();
-    expect(screen.getByLabelText(it_('ens.k.QRZLogKey'))).toHaveAttribute('placeholder', it_('ens.pw.saved'));
+    expect(screen.getByTestId('ens-QRZLogKey-saved')).toHaveTextContent(it_('ens.pw.savedShort'));
     expect(screen.getByTestId('status-qrz')).toHaveTextContent(it_('ens.st.pending', { n: 2 }));
     // la spiegazione lunga sta nel «?», non sotto i campi
     expect(screen.queryByText(it_('ens.up.qrz.help'))).toBeNull();
@@ -201,5 +202,48 @@ describe('Direct QSO upload with the built-in engine', () => {
     expect(await screen.findByText(/chiave valida, logbook K1ABC/)).toBeInTheDocument();
     // senza la protezione dei segreti Wavelog non e' un controllo vivo
     expect(screen.queryByTestId('test-wavelog')).toBeNull();
+  });
+  it('a new key is saved only on Enter, then shown as saved and tested by itself', async () => {
+    const before = withQrz();
+    const after: EngineSettings = { ...before, secrets: { QRZLogKey: true } };
+    vi.mocked(api.getEngineSettings).mockResolvedValue({ ...before, secrets: {} });
+    vi.mocked(api.putEngineSettings).mockImplementation(async () => {
+      vi.mocked(api.getEngineSettings).mockResolvedValue(after);
+      return after;
+    });
+    vi.mocked(api.postUploadTest).mockReset().mockResolvedValue('chiave valida');
+    render(<LogServicesTab />);
+    const field = await screen.findByLabelText(it_('ens.k.QRZLogKey'));
+    fireEvent.change(field, { target: { value: 'ABCD-1234' } });
+    // mentre si scrive non parte niente
+    await new Promise((r) => setTimeout(r, 900));
+    expect(api.putEngineSettings).not.toHaveBeenCalled();
+    fireEvent.keyDown(field, { key: 'Enter' });
+    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ QRZLogKey: 'ABCD-1234' }));
+    expect(await screen.findByTestId('ens-QRZLogKey-saved')).toBeInTheDocument();
+    await waitFor(() => expect(api.postUploadTest).toHaveBeenCalledWith('qrz'));
+    expect(await screen.findByTestId('test-result-qrz')).toHaveTextContent('chiave valida');
+  });
+
+  it('the title LED goes red with the reason, green after a passing test', async () => {
+    vi.mocked(api.getEngineSettings).mockResolvedValue(withQrz());
+    vi.mocked(api.postUploadTest).mockReset().mockRejectedValue(new (api.ApiError as unknown as new (s: number, c: string, r?: number, d?: string) => Error)(502, 'upload_test_failed', undefined, 'QRZ ha risposto 503'));
+    render(<LogServicesTab />);
+    const qrzLed = () => screen.getAllByTestId('ens-led').find((l) => l.getAttribute('title')?.includes('503'));
+    await waitFor(() => expect(qrzLed()).toHaveAttribute('data-led', 'err'));
+    vi.mocked(api.postUploadTest).mockReset().mockResolvedValue('chiave valida');
+    fireEvent.click(screen.getByTestId('test-qrz'));
+    await waitFor(() => expect(screen.getAllByTestId('ens-led').some((l) => l.getAttribute('data-led') === 'ok')).toBe(true));
+    // spento = grigio, acceso e mai provato = giallo
+    expect(ledOf(false, null, undefined).led).toBe('off');
+    expect(ledOf(true, null, { ok: null, message: '' }).led).toBe('untested');
+  });
+
+  it('«Remove» deletes the saved key', async () => {
+    vi.mocked(api.getEngineSettings).mockResolvedValue(withQrz());
+    vi.mocked(api.putEngineSettings).mockResolvedValue({ ...withQrz(), secrets: {} });
+    render(<LogServicesTab />);
+    fireEvent.click(await screen.findByText(it_('ens.pw.remove')));
+    await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ QRZLogKey: '' }));
   });
 });
