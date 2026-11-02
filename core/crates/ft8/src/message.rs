@@ -395,6 +395,26 @@ fn codifica_standard(c: &str) -> Option<u32> {
     Some(n28 + NTOKENS + MAX22)
 }
 
+/// I 28 bit di un nominativo standard (senza hash), per chi impacchetta messaggi propri (UltraFOX).
+pub fn pack28_standard(c: &str) -> Option<u32> {
+    codifica_standard(c)
+}
+
+/// I 71 bit di un testo libero di 13 caratteri al massimo (allineato a destra come nel tipo 0.0): `packtext77` di WSJT-X.
+pub fn pack_text71(testo: &str) -> Option<u128> {
+    let b = testo.as_bytes();
+    if b.len() > 13 {
+        return None;
+    }
+    let mut v: u128 = 0;
+    for i in 0..13 {
+        let pos = i as isize - (13 - b.len() as isize);
+        let c = if pos >= 0 { b[pos as usize] } else { b' ' };
+        v = v * 42 + indice(ALFA_TESTO, c)? as u128;
+    }
+    Some(v)
+}
+
 /// Nominativo standard (si codifica nei 28 bit senza hash): `stdcall` di WSJT-X.
 pub fn is_standard_call(c: &str) -> bool {
     codifica_standard(c).is_some()
