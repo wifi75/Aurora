@@ -247,13 +247,13 @@ matchit 0.8.4
 
 </details>
 
-## Interfaccia (solo cio' che finisce nel programma): 14 pacchetti
+## Interfaccia (solo cio' che finisce nel programma): 17 pacchetti
 
 | Licenza | Pacchetti |
 |---|---|
 | MIT | 9 |
+| ISC | 5 |
 | OFL-1.1 | 2 |
-| ISC | 2 |
 | BSD-2-Clause | 1 |
 
 <details><summary>MIT (9)</summary>
@@ -262,9 +262,9 @@ matchit 0.8.4
 
 </details>
 
-<details><summary>ISC (2)</summary>
+<details><summary>ISC (5)</summary>
 
-topojson-client 3.1.0, world-atlas 2.0.2
+d3-array 3.2.4, d3-geo 3.1.1, internmap 2.0.3, topojson-client 3.1.0, world-atlas 2.0.2
 
 </details>
 
