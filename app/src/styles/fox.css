@@ -197,3 +197,69 @@
 .foxc-rx-controls .chip:hover { background: color-mix(in srgb, #8ec8ff 30%, transparent); }
 .foxc-rx-controls .chip.glass--on { background: #a993f5; border-color: #a993f5; color: #1d1442; }
 .foxc-rx-controls .chip.chip--warn { background: #ffc58a; border-color: #ffc58a; color: #3a2000; }
+
+/* ===== Aspetto «Neon UltraFOX» (bozza 3, scelta del proprietario): viola e ciano su fondo scuro, sempre, anche col tema chiaro ===== */
+.foxc--neon {
+  --text: #efe8ff;
+  --text-muted: #a99be0;
+  --nx-cyan: #41f0e0;
+  --nx-violet: #b06bff;
+  --nx-pink: #ff5fd2;
+  --nx-line: #3b2a86;
+  --fx-surface: rgba(30, 18, 70, 0.6);
+  --fx-surface-2: rgba(80, 50, 180, 0.22);
+  --fx-line: #3b2a86;
+  --panel-raised: #1d1245;
+  color: var(--text);
+  color-scheme: dark;
+  background: radial-gradient(120% 70% at 50% 0%, #24124a, #0b0716 60%);
+  border-radius: 1rem;
+  max-width: none;
+}
+.foxc--neon h1 { font-size: 1.5rem; letter-spacing: 0.18em; text-transform: uppercase; background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet), var(--nx-pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.foxc--neon h2 { color: var(--nx-cyan); letter-spacing: 0.12em; }
+.foxc--neon .foxc-hero { background: rgba(20, 10, 50, 0.55); border: 1px solid #5a3fd1; box-shadow: inset 0 0 0 1px #2a1b66, 0 0 30px rgba(140, 90, 255, 0.3); }
+.foxc--neon.foxc--onair .foxc-hero { border-color: var(--nx-pink); box-shadow: inset 0 0 0 1px #5a1b4e, 0 0 34px rgba(255, 95, 210, 0.45); }
+.foxc--neon .foxc-badge { background: linear-gradient(140deg, var(--nx-cyan), var(--nx-violet)); color: #0b0716; box-shadow: 0 0 20px rgba(65, 240, 224, 0.5); }
+.foxc--neon .foxc-pill { background: rgba(80, 50, 180, 0.25); }
+.foxc--neon .foxc-pill--ready { color: var(--nx-cyan); text-shadow: 0 0 10px var(--nx-cyan); background: rgba(65, 240, 224, 0.12); }
+.foxc--neon .foxc-pill--onair { color: var(--nx-pink); text-shadow: 0 0 10px var(--nx-pink); background: rgba(255, 95, 210, 0.14); }
+.foxc--neon .foxc-pill--waiting { color: #ffd166; background: rgba(255, 209, 102, 0.12); }
+.foxc--neon .foxc-btn { background: transparent; border-color: #6b52e6; color: var(--text); }
+.foxc--neon .foxc-btn:hover { background: rgba(107, 82, 230, 0.25); }
+.foxc--neon .foxc-btn--accent { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 18px rgba(65, 240, 224, 0.55); }
+.foxc--neon .foxc-btn--tx { background: #ff3d71; border-color: #ff3d71; color: #fff; box-shadow: 0 0 18px rgba(255, 61, 113, 0.5); }
+.foxc--neon .foxc-kpi { background: rgba(80, 50, 180, 0.12); border-color: var(--nx-line); border-left-color: var(--k, var(--nx-violet)); }
+.foxc--neon .foxc-kpi strong { color: #fff; text-shadow: 0 0 12px var(--nx-violet); }
+.foxc--neon .foxc-kpi--ok { --k: var(--nx-cyan); }
+.foxc--neon .foxc-kpi--accent { --k: var(--nx-violet); }
+.foxc--neon .foxc-kpi--warn { --k: var(--nx-pink); }
+.foxc--neon .foxc-options { background: rgba(30, 18, 70, 0.55); border-color: var(--nx-line); }
+.foxc--neon .foxc-seg { background: rgba(80, 50, 180, 0.2); }
+.foxc--neon .foxc-seg button.on, .foxc--neon .foxc-switch.on .foxc-switch-track { background: var(--nx-violet); border-color: var(--nx-violet); color: #12052a; box-shadow: 0 0 12px rgba(176, 107, 255, 0.6); }
+.foxc--neon .foxc-card[class*='foxc-tone--'] { background: rgba(30, 18, 70, 0.6); border-color: var(--nx-line); }
+.foxc--neon .foxc-card[class*='foxc-tone--'] > .foxc-card-head { background: rgba(80, 50, 180, 0.16); border-bottom-color: var(--nx-line); }
+.foxc--neon .foxc-card[class*='foxc-tone--'] h2 { color: var(--nx-cyan); }
+.foxc--neon .foxc-tone--mint h2 { color: var(--nx-pink) !important; }
+.foxc--neon .foxc-table th { background: #1d1245; color: var(--text-muted); }
+.foxc--neon .foxc-table td { border-bottom-color: #2a1e5e; }
+.foxc--neon .foxc-snr--hi { background: rgba(65, 240, 224, 0.18); color: var(--nx-cyan); }
+.foxc--neon .foxc-snr--mid { background: rgba(176, 107, 255, 0.22); color: #d8b9ff; }
+.foxc--neon .foxc-snr--lo { background: rgba(255, 95, 210, 0.18); color: #ffb3ea; }
+.foxc--neon .foxc-steps i.done { background: rgba(65, 240, 224, 0.2); color: var(--nx-cyan); }
+.foxc--neon .foxc-slots .foxc-slot { background: rgba(255, 95, 210, 0.25); color: #fff; }
+.foxc--neon .foxc-rx li.mine { box-shadow: inset 3px 0 0 var(--nx-pink); }
+.foxc--neon .foxc-rx li:nth-child(even) { background: rgba(80, 50, 180, 0.1); }
+.foxc--neon .foxc-input { background: rgba(80, 50, 180, 0.2); border-color: var(--nx-line); color: var(--text); }
+.foxc--neon .foxc-chip { background: rgba(255, 95, 210, 0.18); }
+.foxc--neon .foxc-chip--rx { background: rgba(65, 240, 224, 0.15); }
+.foxc--neon .foxc-wf { border-radius: 0; }
+.foxc--neon .foxc-wf-handle { background: rgba(80, 50, 180, 0.2); border-top-color: var(--nx-line); }
+.foxc--neon .foxc-wf-handle span { background: var(--nx-violet); box-shadow: 0 0 8px var(--nx-violet); }
+.foxc--neon .foxc-note { background: rgba(255, 209, 102, 0.1); border-left-color: #ffd166; }
+.foxc--neon .foxc-note--info { background: rgba(65, 240, 224, 0.08); border-left-color: var(--nx-cyan); }
+.foxc--neon .foxc-rx-controls .chip { background: rgba(80, 50, 180, 0.2); border-color: #5a3fd1; color: var(--text); }
+.foxc--neon .foxc-rx-controls .chip.glass--on { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 10px rgba(65, 240, 224, 0.5); }
+.foxc--neon .foxc-rx-controls .chip.chip--warn { background: var(--nx-pink); border-color: var(--nx-pink); color: #2a0620; }
+.foxc--neon .foxc-main-actions .stop-btn--idle { background: transparent; border: 1px solid #ff3d71; color: #ff8fb0; }
+.foxc--neon .foxc-main-actions .stop-btn:not(.stop-btn--idle) { box-shadow: 0 0 18px rgba(255, 61, 113, 0.6); }
