@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Pagina Informazioni** centrata e ridisegnata (testata con logo e versione, dedica, quattro riquadri, collegamenti), con il collegamento al sito web di Aurora.
+- **Sito web**: scheda «Fox e UltraFOX per le DXpedition» nelle sei lingue (gia' pubblicata).
 
 ## 0.11.72 - 2026-11-02
 - **Fox**: «Abilita Tx» resta acceso al primo clic (nel modo Fox la sequenza normale non parte piu' e non lo rispegne) e il pulsante cambia subito.
