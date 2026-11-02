@@ -21,7 +21,7 @@ import {
   SegBar,
   SpyTip,
 } from "./instruments";
-import { SevenSegment } from "./SevenSegment";
+import { SevenSegment, digitsWidth } from "./SevenSegment";
 
 /**
  * Display a pannello unico ispirati a due radio vere: un solo schermo largo con VFO A, VFO B, strumenti e indicatori.
@@ -350,6 +350,8 @@ export function Ft2000Display({
     hits.push({ key: "pwr_down", x: 838, y: 60, w: 48, h: 22, text: "PWR −" });
     hits.push({ key: "pwr_up", x: 894, y: 60, w: 48, h: 22, text: "PWR +" });
   }
+  // RX e TX in alto, subito dopo l'ultima cifra della frequenza principale (e mai sopra il VFO B)
+  const spyX = Math.min(570, 300 + digitsWidth(formatRadioFrequency(model.dialHz), { w: 26, h: 44, t: 4.6, gap: 7, skew: 0.08 }) + 6);
   const bHz = x.vfo_b_hz ?? 0;
   return (
     <div className="rd-face">
@@ -410,8 +412,8 @@ export function Ft2000Display({
             on={s.on}
           />
         ))}
-        <FtSpy x={250} y={42} text="RX" color="#47d13a" on={link.rx && known} />
-        <FtSpy x={250} y={58} text="TX" color={FT.red} on={link.tx} />
+        <FtSpy x={spyX} y={12} text="RX" color="#47d13a" on={link.rx && known} />
+        <FtSpy x={spyX} y={30} text="TX" color={FT.red} on={link.tx} />
         <Label
           x={12}
           y={82}

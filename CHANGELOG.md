@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display FT-2000**: RX e TX in alto subito dopo l'ultima cifra della frequenza principale (prima coprivano il modo).
 - **Aggiornamenti**: tolte le voci per chi sviluppa (repository, versioni di prova, token di lettura); restano «Controlla le nuove versioni» e ogni quante ore.
 - **Programma Windows**: WebView2 non scrive piu' in stderr.log il messaggio innocuo «Failed to unregister class Chrome_WidgetWin_0. Error = 1412» a ogni chiusura.
 
