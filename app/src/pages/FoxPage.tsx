@@ -4,6 +4,7 @@ import type { FoxSnapshot } from '../api/schemas';
 import { useT } from '../i18n';
 import { useFox } from '../state/fox';
 import { useStation } from '../state/station';
+import { FoxStation } from '../components/FoxStation';
 import '../styles/fox.css';
 
 type Caller = FoxSnapshot['callers'][number];
@@ -66,6 +67,8 @@ export function FoxPage() {
         </p>
       ) : null}
       {!fox.enabled ? <p className="fox-hint" role="status">{t('fox.offHint')}</p> : null}
+
+      <FoxStation />
 
       <div className="fox-stats">
         <Stat label={t('fox.logged')} value={fox.logged} />
