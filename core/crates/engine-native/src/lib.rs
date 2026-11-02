@@ -4,6 +4,7 @@
 //! che vede l'utente. Quando il confronto e' abbastanza buono il motore proprio prendera' il posto di JTDX.
 
 pub mod fox;
+pub mod qpc;
 mod alltxt;
 pub mod features;
 mod parity;
