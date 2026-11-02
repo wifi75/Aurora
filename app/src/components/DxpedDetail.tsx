@@ -6,6 +6,7 @@ import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { bearingDeg, distanceKm, latLonToGrid } from '../lib/geo';
 import { mapLabels } from '../pages/MapPage';
+import { CountryShape } from './CountryShape';
 import { WorldMap } from './WorldMap';
 import { gridToLatLon } from '../lib/maidenhead';
 import { senderOf } from '../lib/wishlist';
@@ -126,6 +127,7 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
               <b className="data">{spot ? spot.freq_khz.toFixed(1) : '—'}</b>
             </div>
           </div>
+          <div className="dxd-facts-row">
           <dl className="dxd-facts">
             <dt>{t('dxd.dates')}</dt>
             <dd>
@@ -144,6 +146,8 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
             <dt>{t('dxd.heard')}</dt>
             <dd>{heard ? t('dxd.heardAt', { snr: heard.snr, hz: heard.freq_hz }) : t('dxd.notHeard')}</dd>
           </dl>
+            {target ? <CountryShape lat={target.lat} lon={target.lon} label={d.country} /> : null}
+          </div>
           <div className="dxd-actions">
             {spot ? (
               <button type="button" className="glass glass--on chip" title={t('tip.dxd.tune')} onClick={() => void postFrequency(Math.round(spot.freq_khz * 1000))}>
