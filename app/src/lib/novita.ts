@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.77',
-    released: '2026-11-03T01:00:00Z',
+    released: '2026-11-02T19:51:57Z',
     kind: 'changed',
     title: ['TUNER tenuto premuto', 'Hold TUNER to tune', 'TUNER gedrückt halten', 'TUNER maintenu', 'TUNER mantenido', 'TUNER premido'],
     text: [
