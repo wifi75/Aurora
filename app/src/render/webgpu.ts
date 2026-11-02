@@ -101,8 +101,9 @@ export class WebGpuWaterfall implements WaterfallBackend {
 
     this.uniforms = device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const sampler = device.createSampler({
-      magFilter: 'linear',
-      minFilter: 'linear',
+      // NEAREST come i pixel di WSJT-X (`drawPoint`): nessuna sfocatura
+      magFilter: 'nearest',
+      minFilter: 'nearest',
       addressModeU: 'clamp-to-edge',
       addressModeV: 'repeat',
     });

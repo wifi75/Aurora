@@ -5,6 +5,7 @@ import {
   FAC2,
   PeriodAverage,
   RowAverager,
+  RowPacer,
   amplitudeOfByte,
   codeOfY,
   columnCount,
@@ -206,5 +207,29 @@ describe('flatten sul tratto visibile (WSJT-X plotter.cpp, izVisible)', () => {
     for (let i = 0; i < 1000; i++) max = Math.max(max, Math.abs(row.y[i]!));
     expect(max).toBeLessThan(0.5);
     for (let i = 1000; i < 1500; i++) expect(Number.isFinite(row.y[i]!)).toBe(true);
+  });
+});
+
+describe('RowPacer', () => {
+  const count = (rowSecs: number, navg: number, coreRows: number) => {
+    const pacer = new RowPacer();
+    let n = 0;
+    for (let i = 0; i < coreRows; i++) if (pacer.add(Uint8Array.from([100, 120]), rowSecs, navg)) n++;
+    return n;
+  };
+  it('WSJT-X pace: one row every 0.288 s, 52 rows in a 15 s period', () => {
+    expect(count(0.288, 1, 225)).toBe(52);
+    expect(count(0.288, 2, 225)).toBe(26);
+  });
+  it('JTDX pace: every core row, or one every N with N Avg', () => {
+    expect(count(1 / 15, 1, 225)).toBe(225);
+    expect(count(1 / 15, 3, 225)).toBe(75);
+  });
+  it('averages the amplitudes of the collected rows', () => {
+    const pacer = new RowPacer();
+    expect(pacer.add(Uint8Array.from([255]), 0.2, 1)).toBeNull();
+    expect(pacer.add(Uint8Array.from([255]), 0.2, 1)).toBeNull();
+    const out = pacer.add(Uint8Array.from([255]), 0.2, 1)!;
+    expect(out[0]).toBeCloseTo(amplitudeOfByte(255), 5);
   });
 });

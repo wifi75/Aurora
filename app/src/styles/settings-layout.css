@@ -1480,6 +1480,7 @@
   min-width: 12rem;
 }
 
+<<<<<<< HEAD
 /* campo segreto salvato: stato, «Cambia», «Togli»; esito della prova in verde */
 .ens-secret { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .ens-secret-state { color: var(--ok, #2e9d5b); font-weight: 600; }
@@ -1518,4 +1519,11 @@
 @media (max-width: 900px) {
   .svc-row { grid-template-columns: 1fr; }
   .svc-head, .svc-side { padding-top: 0; }
+=======
+/* pulsanti «Stile WSJT-X» / «Stile JTDX»: quello che corrisponde alle opzioni attuali si vede selezionato */
+.wfs-style[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  border-color: var(--accent);
+>>>>>>> cascata-wsjtx
 }

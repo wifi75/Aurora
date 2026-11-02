@@ -7,6 +7,7 @@
 - **QRZ.com Logbook**: campo facoltativo «Nominativo registrato su QRZ», per i QSO fatti con /P, /QRP o prefissi esteri; rimandi fra le pagine Servizi di log e Servizi online.
 - **HRDLOG.NET**: invio diretto dei QSO (nominativo e codice di caricamento), con la stessa coda, i nuovi tentativi e lo stato degli altri servizi. Formato non confermato dalla documentazione ufficiale (non raggiungibile): da provare dal vivo.
 - **Password e chiavi nelle Impostazioni**: non spariscono piu' appena scritte. Si salvano uscendo dal campo o con Invio (non a ogni tasto), poi il campo mostra «Salvata ••••» con «Cambia» e «Togli», e la «Prova» del riquadro parte da sola con l'esito in verde o in rosso.
+- **Cascata come WSJT-X**: di fabbrica una riga ogni 0,288 s (mezzo simbolo FT8, ~52 righe per periodo di 15 s invece di ~225), 4 canali per pixel, Flatten, spettro Cumulative, linea verde di periodo; pixel netti (filtro NEAREST, nessuna interpolazione) e segnali FT8 come blocchi compatti. In Impostazioni > Cascata la scelta «Velocità della cascata» (come WSJT-X / più veloce come JTDX) e i pulsanti «Stile WSJT-X» e «Stile JTDX» che impostano tutto in un clic (quello attivo si vede selezionato). Chi aggiorna passa allo stile WSJT-X una sola volta; le modifiche fatte dopo restano.
 
 ## 0.11.79 - 2026-11-02
 - **DX Cluster**: niente piu' striscia vuota accanto a «Modo» (si sposta il contenuto, non la cella); colonna Freq altri 5 px a sinistra.
