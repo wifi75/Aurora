@@ -43,6 +43,44 @@ export function paletteIndex(y: number, gainSlider: number, zeroSlider: number):
   return Math.min(254, Math.max(0, Math.trunc(y1)));
 }
 
+/** Le righe che il core manda ogni secondo (`ROWS_PER_SECOND` di `core/crates/audio-spectrum/src/analyzer.rs`). */
+export const CORE_ROWS_PER_SECOND = 15;
+
+/**
+ * Il ritmo della cascata: raccoglie le righe del core (1/15 s ciascuna) e restituisce la loro media ogni `rowSecs * navg`
+ * secondi. Con 1/15 s e' la media di N righe di JTDX; con 0,288 s (mezzo simbolo FT8, il passo di `symspec.f90` di WSJT-X)
+ * ogni riga raccoglie 4 o 5 righe del core, con l'avanzo portato avanti, cosi' un periodo di 15 s fa ~52 righe come WSJT-X.
+ */
+export class RowPacer {
+  private sum: Float32Array | null = null;
+  private count = 0;
+  private elapsed = 0;
+
+  constructor(private readonly coreRowSecs = 1 / CORE_ROWS_PER_SECOND) {}
+
+  /** Una riga del core; la media (unita' di `sx`) quando la riga della cascata e' completa, altrimenti null. */
+  add(row: Uint8Array, rowSecs: number, navg: number): Float32Array | null {
+    if (row.length === 0) return null;
+    if (!this.sum || this.sum.length !== row.length) {
+      this.sum = new Float32Array(row.length);
+      this.count = 0;
+      this.elapsed = 0;
+    }
+    for (let i = 0; i < row.length; i++) this.sum[i]! += AMPLITUDE[row[i]!]!;
+    this.count++;
+    this.elapsed += this.coreRowSecs;
+    const step = Math.max(this.coreRowSecs, rowSecs * Math.max(1, navg));
+    // tolleranza per gli errori di arrotondamento (15 righe da 1/15 s devono fare 1 s esatto)
+    if (this.elapsed + 1e-9 < step) return null;
+    const out = new Float32Array(row.length);
+    for (let i = 0; i < row.length; i++) out[i] = this.sum[i]! / this.count;
+    this.sum.fill(0);
+    this.count = 0;
+    this.elapsed = Math.min(this.elapsed - step, step);
+    return out;
+  }
+}
+
 export interface ColumnOptions {
   /** Canali sommati in un pixel (1-100). */
   binsPerPixel: number;

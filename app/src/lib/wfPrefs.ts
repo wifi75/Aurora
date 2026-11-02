@@ -32,7 +32,19 @@ export interface WfPrefs {
   periodLine: boolean;
   /** «Freq»: la frequenza sotto il puntatore. */
   freq: boolean;
+  /**
+   * Velocita' della cascata. `wsjtx`: una riga ogni mezzo simbolo FT8 (0,288 s, `jstep = nsps/2` con `nsps = 6912` di
+   * `symspec.f90`) per N Avg, ~52 righe a periodo di 15 s con N Avg 1. `jtdx`: 15 righe al secondo per N Avg (~225 a periodo).
+   */
+  speed: WfSpeed;
+  /** Lo stile WSJT-X e' gia' stato applicato una volta all'aggiornamento: da qui in poi valgono le scelte dell'utente. */
+  styleApplied: boolean;
 }
+
+export type WfSpeed = 'wsjtx' | 'jtdx';
+
+/** Durata di una riga (s) con N Avg 1 per ciascuna velocita'. */
+export const ROW_SECS: Record<WfSpeed, number> = { wsjtx: 6912 / 2 / 12000, jtdx: 1 / 15 };
 
 export const WF_LIMITS = {
   binsPerPixel: [1, 100],
@@ -51,24 +63,44 @@ const KEY = 'aurora-wf-prefs';
 type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
+/** Le opzioni che i pulsanti «Stile WSJT-X» e «Stile JTDX» impostano in un clic. */
+export type WfStyle = Pick<
+  WfPrefs,
+  'speed' | 'binsPerPixel' | 'startHz' | 'navg' | 'palette' | 'scale' | 'flatten' | 'gain' | 'zero' | 'spectrumPercent' | 'spectrumMode' | 'gain2d' | 'zero2d' | 'periodLine'
+>;
+
+/**
+ * I valori di fabbrica dei due programmi. WSJT-X 3.3 (`WideGraph::WideGraph`): BinsPerPixel 4, StartFreq 0, Flatten acceso,
+ * Cumulative, Percent2D 30, tavolozza Default, Gain/Zero 0. N Avg: l'ini di WSJT-X parte da 2 (~26 righe a periodo), ma la
+ * cascata di riferimento del proprietario (~52-55 righe a periodo) e' con N Avg 1, che qui e' il valore di fabbrica.
+ * JTDX 2.2.159: Bins/Pixel 5, N Avg 1, Flatten spento, Current, 15 righe al secondo (la cascata di Aurora fino a prima).
+ */
+export const WF_STYLES: Record<WfSpeed, WfStyle> = {
+  wsjtx: {
+    speed: 'wsjtx', binsPerPixel: 4, startHz: 0, navg: 1, palette: DEFAULT_PALETTE, scale: true, flatten: true,
+    gain: 0, zero: 0, spectrumPercent: 30, spectrumMode: 'cumulative', gain2d: 0, zero2d: 0, periodLine: true,
+  },
+  jtdx: {
+    speed: 'jtdx', binsPerPixel: 5, startHz: 0, navg: 1, palette: DEFAULT_PALETTE, scale: true, flatten: false,
+    gain: 0, zero: 0, spectrumPercent: 30, spectrumMode: 'current', gain2d: 0, zero2d: 0, periodLine: true,
+  },
+};
+
+const STYLE_KEYS = Object.keys(WF_STYLES.jtdx) as Array<keyof WfStyle>;
+
+/** Lo stile che corrisponde esattamente alle opzioni attuali (per mostrare il pulsante selezionato), o null. */
+export function activeStyle(prefs: WfPrefs): WfSpeed | null {
+  for (const style of ['wsjtx', 'jtdx'] as const) if (STYLE_KEYS.every((k) => prefs[k] === WF_STYLES[style][k])) return style;
+  return null;
+}
+
 export function defaultWfPrefs(): WfPrefs {
   return {
-    binsPerPixel: 5,
-    startHz: 0,
-    navg: 1,
-    palette: DEFAULT_PALETTE,
+    ...WF_STYLES.wsjtx,
     userPalette: JTDX_PALETTES[DEFAULT_PALETTE]!.map((c) => [...c] as unknown as PaletteColor),
-    scale: true,
-    flatten: false,
-    gain: 0,
-    zero: 0,
-    spectrumPercent: 30,
-    spectrumMode: 'current',
-    gain2d: 0,
-    zero2d: 0,
     bars: true,
-    periodLine: true,
     freq: false,
+    styleApplied: true,
   };
 }
 
@@ -114,6 +146,12 @@ export function readWfPrefs(storage: ReadableStorage): WfPrefs {
     const user = readPalette(parsed.userPalette);
     if (user) prefs.userPalette = user;
     if (typeof parsed.palette === 'string' && (parsed.palette === USER_PALETTE || parsed.palette in JTDX_PALETTES)) prefs.palette = parsed.palette;
+    if (parsed.speed === 'wsjtx' || parsed.speed === 'jtdx') prefs.speed = parsed.speed;
+    if (parsed.styleApplied !== true) {
+      // primo avvio dopo l'aggiornamento: lo stile WSJT-X una sola volta (tavolozza personale, Bars e Freq restano)
+      Object.assign(prefs, WF_STYLES.wsjtx);
+    }
+    prefs.styleApplied = true;
   } catch {
     return defaultWfPrefs();
   }
@@ -138,10 +176,19 @@ interface WfState {
   prefs: WfPrefs;
   set(change: Partial<WfPrefs>): void;
   reset(): void;
+  /** Applica lo stile WSJT-X o JTDX in un clic (tavolozza personale, Bars e Freq restano). */
+  applyStyle(style: WfSpeed): void;
+}
+
+function initialPrefs(): WfPrefs {
+  const prefs = readWfPrefs(browserStorage());
+  // l'eventuale passaggio allo stile WSJT-X si salva subito, cosi' non si ripete al prossimo avvio
+  saveWfPrefs(browserStorage(), prefs);
+  return prefs;
 }
 
 export const useWfPrefs = create<WfState>((set, get) => ({
-  prefs: readWfPrefs(browserStorage()),
+  prefs: initialPrefs(),
   set(change) {
     const next = { ...get().prefs, ...change };
     saveWfPrefs(browserStorage(), next);
@@ -151,5 +198,8 @@ export const useWfPrefs = create<WfState>((set, get) => ({
     const next = defaultWfPrefs();
     saveWfPrefs(browserStorage(), next);
     set({ prefs: next });
+  },
+  applyStyle(style) {
+    get().set({ ...WF_STYLES[style] });
   },
 }));

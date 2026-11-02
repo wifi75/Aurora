@@ -1479,3 +1479,10 @@
   right: auto;
   min-width: 12rem;
 }
+
+/* pulsanti «Stile WSJT-X» / «Stile JTDX»: quello che corrisponde alle opzioni attuali si vede selezionato */
+.wfs-style[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  border-color: var(--accent);
+}

@@ -38,7 +38,7 @@ void main() {
 // Una riga vale un pixel (niente compressione verticale che farebbe tremolare i segnali); u_frac e' la frazione di riga
 // gia' scorsa dall'ultima riga arrivata, cosi' la cascata scende in modo continuo. La texture tiene il livello `y` del Wide Graph
 // di JTDX (byte = (y + 24) * 4); il colore e' quello di `CPlotter::draw`: `10 * gain * y + 10 * zero + 40` tenuto in 0-254,
-// cercato nella tavolozza da 256 colori. In orizzontale si mediano quattro punti (i canali possono essere piu' dei pixel).
+// cercato nella tavolozza da 256 colori. Filtri NEAREST come i pixel di WSJT-X (`drawPoint`, nessuna interpolazione). In orizzontale si mediano quattro punti (i canali possono essere piu' dei pixel).
 // u_flags: una colonna per riga (verde = inizio del periodo, giallo = periodo in cui si e' trasmesso), come le righe di JTDX.
 const FRAGMENT = `#version 300 es
 precision highp float;
@@ -135,8 +135,8 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
     // la storia gia' ricevuta (anello condiviso): un renderer nuovo dopo un ridimensionamento non parte vuoto
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, WATERFALL_WIDTH, WATERFALL_HEIGHT, 0, gl.RED, gl.UNSIGNED_BYTE, this.ring.data);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
@@ -144,8 +144,8 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.lut);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, LUT_SIZE, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, jtdxPaletteLut(JTDX_PALETTES[DEFAULT_PALETTE]!));
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -153,8 +153,8 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this.flagTex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8, 1, WATERFALL_HEIGHT, 0, gl.RG, gl.UNSIGNED_BYTE, this.ring.flags);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 

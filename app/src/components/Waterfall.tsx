@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
 import { jtdxPaletteLut } from '../render/colormap';
-import { PeriodAverage, RowAverager, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
+import { PeriodAverage, RowPacer, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
 import { drawSpectrum } from '../render/spectrumPlot';
 import { WATERFALL_WIDTH } from '../render/webgl2';
 import { periodSecs } from '../lib/period';
 import { type SpectrumListener, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
-import { WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
+import { ROW_SECS, WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
 
 interface Props {
   /** Registra la funzione che riceve ogni riga di spettro; restituisce come annullare. */
@@ -94,9 +94,11 @@ export function Waterfall({ register, mode }: Props) {
         observer.observe(canvas);
         if (plotRef.current) observer.observe(plotRef.current);
 
-        const averager = new RowAverager();
+        const pacer = new RowPacer();
         const periodAverage = new PeriodAverage();
         let lastPhase = 0;
+        // l'inizio del periodo resta in attesa finche' non e' pronta una riga (con WSJT-X una ogni 0,288 s)
+        let pendingWrap = false;
         unregister = register((bins, fMinHz, fMaxHz) => {
           const { prefs: p, from, to, mode: m } = live.current;
           // inizio del periodo (come `tr < m_tr0` di WideGraph::dataSink2): una riga verde al posto dei dati
@@ -105,11 +107,14 @@ export function Waterfall({ register, mode }: Props) {
           const wrapped = inPeriod < lastPhase;
           lastPhase = inPeriod;
           if (wrapped) periodAverage.reset();
+          if (wrapped) pendingWrap = true;
           periodAverage.add(bins);
-          const average = averager.add(bins, p.navg);
+          const average = pacer.add(bins, ROW_SECS[p.speed], p.navg);
           if (!average) return;
+          const startsPeriod = pendingWrap;
+          pendingWrap = false;
           // la riga si puo' spegnere (Impostazioni > Cascata): il periodo nuovo comincia comunque
-          if (wrapped && p.periodLine) {
+          if (startsPeriod && p.periodLine) {
             b.pushRow(new Uint8Array(1), 1);
             return;
           }
