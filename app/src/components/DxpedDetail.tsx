@@ -146,7 +146,7 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
             <dt>{t('dxd.heard')}</dt>
             <dd>{heard ? t('dxd.heardAt', { snr: heard.snr, hz: heard.freq_hz }) : t('dxd.notHeard')}</dd>
           </dl>
-            {target ? <CountryShape lat={target.lat} lon={target.lon} label={d.country} /> : null}
+            {target ? <CountryShape lat={target.lat} lon={target.lon} label={d.country} ariaLabel={t('dxd.countryMap', { country: d.country })} /> : null}
           </div>
           <div className="dxd-actions">
             {spot ? (
