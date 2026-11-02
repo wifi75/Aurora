@@ -260,7 +260,9 @@ impl Lookup {
             }
         }
         for attempt in 0..2 {
-            let key = match self.state().key.clone() {
+            // la chiave si legge e il lucchetto si lascia subito: dentro il `match` resterebbe chiuso e `login` lo aspetterebbe per sempre
+            let saved = self.state().key.clone();
+            let key = match saved {
                 Some(k) => k,
                 None => self.login(user, password)?.key.unwrap_or_default(),
             };
