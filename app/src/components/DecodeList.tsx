@@ -226,7 +226,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
       </section>
     );
   }
-  const foxSet = foxCalls(decodes.map((d) => d.text));
+  const foxSet = foxCalls(decodes);
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
       {decodes.map((d) => {

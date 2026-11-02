@@ -11,4 +11,10 @@ describe('stazioni Fox/Hound', () => {
     expect(lineSender('IU3ABC KH1/KH7Z -12')).toBe('KH1/KH7Z');
     expect(lineSender('CQ DX V26JJ FK97')).toBe('V26JJ');
   });
+
+  it('ignores the DXpedition message of a normal station above 1000 Hz', () => {
+    const m = 'SP6PST RR73; K1ABC <G3VCQ> -07';
+    expect(foxCalls([{ text: m, freq_hz: 1650 }]).has('G3VCQ')).toBe(false);
+    expect(foxCalls([{ text: m, freq_hz: 600 }]).has('G3VCQ')).toBe(true);
+  });
 });

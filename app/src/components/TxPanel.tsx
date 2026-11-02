@@ -106,7 +106,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
               <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
             </span>
             {/* in Hound lo si vede sempre accanto alle frequenze: chiama sopra 1000 Hz e risponde solo al Fox */}
-            {status.dx_call && foxCalls(decodes.map((d) => d.text)).has(status.dx_call.toUpperCase()) ? (
+            {status.dx_call && foxCalls(decodes).has(status.dx_call.toUpperCase()) ? (
               <span className="hound-badge hound-badge--fox" role="status" title={t('tip.foxBadge')}>
                 {controls.data?.hound === true ? t('tx.foxHoundOn') : t('tx.foxHoundOff')}
               </span>

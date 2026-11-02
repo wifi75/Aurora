@@ -678,7 +678,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
-                if on {
+                // nel modo Fox la trasmissione la decide la Fox a ogni periodo pari: la sequenza normale non parte (senza un DX si
+                // spegnerebbe subito e «Abilita Tx» tornerebbe spento al primo clic)
+                if on && self.controls.switch_on("fox") {
+                    self.publish_view();
+                } else if on {
                     log.extend(self.start_now(now_s));
                 } else {
                     self.halt_tx();
@@ -852,6 +856,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     pub fn begin_slot(&mut self, rx_slot_start_ms: u64, now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         if self.opts.call_mode == 2 {
+            return (Vec::new(), log);
+        }
+        if self.controls.switch_on("fox") {
+            // la Fox trasmette da after_slot (fox_slot): qui niente avvio anticipato della sequenza normale
             return (Vec::new(), log);
         }
         let slot = Slot(rx_slot_start_ms / self.mode.period_ms()).next();
@@ -1167,7 +1175,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Acceso o spento a mano, l'automatico non lo tocca finche' resta lo stesso DX (salvo l'R+rapporto). Con «Hound automatico» spento resta solo la
     /// regola dell'R+rapporto.
     fn auto_hound(&mut self, decoded: &[(String, i32, u32)], log: &mut Vec<String>) {
-        for f in decoded.iter().filter_map(|(text, _, _)| crate::features::fox_sender(text)) {
+        // una Fox vera trasmette sotto i 1000 Hz: un messaggio doppio piu' in alto e' la risposta multipla di una stazione normale
+        for f in decoded.iter().filter(|(_, _, hz)| *hz < crate::features::HOUND_MIN_TX_HZ).filter_map(|(text, _, _)| crate::features::fox_sender(text)) {
             if !self.foxes.iter().any(|x| x.eq_ignore_ascii_case(&f)) {
                 self.foxes.push(f);
                 if self.foxes.len() > 50 {
@@ -2992,5 +3001,15 @@ mod tests {
         let last = requests.last().expect("una trasmissione");
         assert_eq!(last.wave.len(), (crate::ultrafox::TONES + 2) * crate::ultrafox::NSPS, "{log:?}");
         assert!(controls.fox_view.lock().expect("fox").ultra);
+    }
+
+    #[test]
+    fn in_fox_mode_enable_tx_stays_on_with_one_click() {
+        let (mut d, _port, controls) = driver();
+        controls.set_switch("fox", true);
+        d.handle(TxCommand::Enable(true), BASE);
+        assert!(view_of(&controls).enabled, "acceso al primo clic");
+        let (_, _) = d.begin_slot(SLOT_MS, BASE + 15.1, 14_090_000, "20m");
+        assert!(view_of(&controls).enabled, "resta acceso");
     }
 }

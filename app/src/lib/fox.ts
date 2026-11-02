@@ -12,11 +12,17 @@ export function foxSender(text: string): string | null {
   return fox === '' || fox === '...' ? null : fox;
 }
 
-/** I nominativi che nei messaggi ricevuti trasmettono come Fox. */
-export function foxCalls(texts: string[]): Set<string> {
+/** Una Fox vera trasmette sotto i 1000 Hz (gli Hound sopra): un messaggio doppio piu' in alto e' una risposta multipla di una stazione normale. */
+export const FOX_MAX_HZ = 1000;
+
+/** I nominativi che nei messaggi ricevuti trasmettono come Fox (messaggio DXpedition sotto i 1000 Hz, se la frequenza e' nota). */
+export function foxCalls(items: Array<string | { text: string; freq_hz?: number }>): Set<string> {
   const out = new Set<string>();
-  for (const t of texts) {
-    const f = foxSender(t);
+  for (const item of items) {
+    const text = typeof item === 'string' ? item : item.text;
+    const hz = typeof item === 'string' ? undefined : item.freq_hz;
+    if (hz !== undefined && hz >= FOX_MAX_HZ) continue;
+    const f = foxSender(text);
     if (f) out.add(f);
   }
   return out;
