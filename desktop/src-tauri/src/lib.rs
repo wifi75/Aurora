@@ -208,6 +208,9 @@ fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn 
         .inner_size(1360.0, 860.0)
         .min_inner_size(f64::from(window_state::MIN_WIDTH), f64::from(window_state::MIN_HEIGHT))
         .visible(false)
+        // gli argomenti di base di Tauri piu' il silenzio dei messaggi interni di WebView2: alla chiusura scriveva sempre in stderr.log
+        // «Failed to unregister class Chrome_WidgetWin_0. Error = 1412», innocuo ma scambiato per un errore di Aurora
+        .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3")
         // i link a siti (note di versione, guida) si aprono nel browser di Windows, non in una finestra nuova
         .on_new_window(|url, _| {
             links::open_in_browser(url.as_str());

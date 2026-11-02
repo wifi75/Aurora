@@ -127,31 +127,10 @@ export function UpdatesTab() {
       <Group title={t('lay.settings')} span={2}>
         <Cells min={17}>
           <Check label={t('upd.enabled')} hint={t('tip.upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
-          <Check label={t('upd.prereleases')} hint={t('tip.upd.prereleases')} checked={shown.prereleases} onChange={(v) => set({ prereleases: v })} />
-          <Field label={t('upd.repo')} hint={t('tip.upd.repo')}>
-            <input type="text" className="jx-text" value={shown.repo} spellCheck={false} onChange={(e) => set({ repo: e.target.value })} />
-          </Field>
+          {/* repository, versioni di prova e token restano quelli di fabbrica: servono solo a chi sviluppa, non a chi usa Aurora */}
           <Field label={t('upd.interval')} hint={t('tip.upd.interval')}>
             <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
           </Field>
-          <Field label={t('upd.token')} hint={t('tip.upd.token')}>
-            <input
-              type="password"
-              className="jx-text"
-              value={shown.token}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={status.has_token ? t('upd.tokenPlaceholder') : ''}
-              onChange={(e) => set({ token: e.target.value, removeToken: false })}
-            />
-          </Field>
-          {status.has_token ? (
-            <Cell label={t('upd.tokenSaved')}>
-              <button type="button" className="glass" onClick={() => set({ token: '', removeToken: true })}>
-                {t('upd.tokenRemove')}
-              </button>
-            </Cell>
-          ) : null}
         </Cells>
         {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : <Message kind="muted">{t('upd.autosave')}</Message>}
         {note ? <Message>{note}</Message> : null}

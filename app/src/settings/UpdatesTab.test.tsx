@@ -44,12 +44,12 @@ describe('UpdatesTab', () => {
     await waitFor(() => expect(putUpdate).toHaveBeenCalledWith({ enabled: true, repo: 'wifi75/Aurora', interval_hours: 12, prereleases: false }), { timeout: 3000 });
   });
 
-  it('never shows the token: only that one is saved, with a way to remove it', async () => {
+  it('shows only the settings an operator needs: no repository, test versions or token', async () => {
     vi.mocked(getUpdate).mockResolvedValue({ ...base, has_token: true });
     render(<UpdatesTab />);
-    expect(await screen.findByText(/Un token è salvato/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Togli il token' }));
-    await waitFor(() => expect(putUpdate).toHaveBeenCalledWith(expect.objectContaining({ token: '' })), { timeout: 3000 });
+    await screen.findByRole('button', { name: 'Controlla ora' });
+    expect(screen.queryByDisplayValue('wifi75/Aurora')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Togli il token' })).not.toBeInTheDocument();
   });
 
   it('checks now and says when a newer version is out or why the check failed', async () => {
@@ -66,7 +66,8 @@ describe('UpdatesTab', () => {
 
   it('says so when a value is not valid and does not save it', async () => {
     render(<UpdatesTab />);
-    fireEvent.change(await screen.findByDisplayValue('wifi75/Aurora'), { target: { value: 'senza-barra' } });
+    const hours = await screen.findByDisplayValue(String(base.interval_hours));
+    fireEvent.change(hours, { target: { value: '0' } });
     expect(await screen.findByText(/Un valore non va/)).toBeInTheDocument();
     await new Promise((r) => setTimeout(r, 900));
     expect(putUpdate).not.toHaveBeenCalled();

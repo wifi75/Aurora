@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Aggiornamenti**: tolte le voci per chi sviluppa (repository, versioni di prova, token di lettura); restano «Controlla le nuove versioni» e ogni quante ore.
+- **Programma Windows**: WebView2 non scrive piu' in stderr.log il messaggio innocuo «Failed to unregister class Chrome_WidgetWin_0. Error = 1412» a ogni chiusura.
 
 ## 0.11.78 - 2026-11-02
 - **Telefono**: le bande stanno in una riga, i messaggi vanno a capo invece di finire nei «…», niente riga vuota con l'icona in testata, sfumatura che indica il menu delle pagine da scorrere.
