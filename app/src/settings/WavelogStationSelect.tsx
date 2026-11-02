@@ -22,7 +22,7 @@ export function WavelogStationSelect({ id, label, url, value, disabled, onChange
         <input id={id} aria-label={label} type="text" className="jx-text" disabled={disabled} maxLength={200} value={value} autoComplete="off" onChange={(e) => onChange(e.target.value)} />
         {query.isError ? <small className="ens-reason muted">{t('ens.wl.noList')}</small> : null}
         {!disabled && url.trim() !== '' ? (
-          <button type="button" className="glass" onClick={() => void query.refetch()} disabled={query.isFetching}>
+          <button title={t('tip.ui.wavelogRefresh')} type="button" className="glass" onClick={() => void query.refetch()} disabled={query.isFetching}>
             {query.isFetching ? t('ens.wl.reading') : t('ens.wl.read')}
           </button>
         ) : null}

@@ -15,7 +15,7 @@ export function WindowsTab() {
     <Page>
       <Group title={t('tab.windows')}>
         <Actions>
-          <button
+          <button title={t('tip.ui.reset')}
             type="button"
             className="glass"
             onClick={() => {
@@ -48,13 +48,13 @@ export function BandsTab() {
         <div className="band-choice">
           {BAND_NAMES.map((name) => (
             <label key={name} className={`glass${bands.includes(name) ? ' glass--on' : ''}`}>
-              <input type="checkbox" checked={bands.includes(name)} onChange={() => toggle(name)} aria-label={name} />
+              <input title={t('tip.ui.bandShown')} type="checkbox" checked={bands.includes(name)} onChange={() => toggle(name)} aria-label={name} />
               <span>{name}</span>
             </label>
           ))}
         </div>
         <Actions>
-          <button type="button" className="glass" onClick={reset}>
+          <button title={t('tip.ui.allBands')} type="button" className="glass" onClick={reset}>
             {t('bands.all')}
           </button>
         </Actions>

@@ -119,7 +119,7 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
               <fieldset key={i} className="int-dest" aria-label={d.name || d.host}>
                 <legend>
                   {d.name || `${d.host}:${d.port}`}{' '}
-                  <button type="button" className="glass int-remove" onClick={() => update(rows.filter((_, j) => j !== i))}>
+                  <button title={t('tip.ui.remove')} type="button" className="glass int-remove" onClick={() => update(rows.filter((_, j) => j !== i))}>
                     {t('int.remove')}
                   </button>
                 </legend>

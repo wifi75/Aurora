@@ -17,7 +17,7 @@ export function MacrosTab() {
           {macros.map((m) => (
             <li key={m}>
               <span className="data">{m}</span>
-              <button type="button" className="glass" aria-label={`${t('set.remove')} ${m}`} onClick={() => useMacros.getState().remove(m)}>
+              <button title={t('tip.ui.remove')} type="button" className="glass" aria-label={`${t('set.remove')} ${m}`} onClick={() => useMacros.getState().remove(m)}>
                 {t('set.remove')}
               </button>
             </li>
@@ -29,7 +29,7 @@ export function MacrosTab() {
           <input type="text" aria-label={t('macro.new')} placeholder={t('macro.new')} maxLength={30} value={text} onChange={(e) => setText(e.target.value)} />
         </div>
         <Actions>
-          <button
+          <button title={t('tip.ui.macroAdd')}
             type="button"
             className="glass"
             disabled={text.trim() === ''}
@@ -40,7 +40,7 @@ export function MacrosTab() {
           >
             {t('set.add')}
           </button>
-          <button type="button" className="glass" onClick={() => useMacros.getState().reset()}>
+          <button title={t('tip.ui.reset')} type="button" className="glass" onClick={() => useMacros.getState().reset()}>
             {t('set.reset')}
           </button>
         </Actions>

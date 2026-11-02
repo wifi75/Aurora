@@ -153,7 +153,7 @@ export function Waterfall({ register, mode }: Props) {
   }, [prefs.spectrumPercent, range.from, range.to]);
 
   const quick = (name: 'gain' | 'zero') => (
-    <label key={name} className="wf-slider">
+    <label key={name} className="wf-slider" title={t(name === 'gain' ? 'tip.ui.wfGain' : 'tip.ui.wfZero')}>
       <span>{`${t(`wf.${name}`)} ${prefs[name]}`}</span>
       <input
         type="range"

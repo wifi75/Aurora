@@ -128,7 +128,7 @@ export function ClusterPanel() {
           selected={filters.modes}
           onChange={(modes) => change({ ...filters, modes })}
         />
-        <input type="search" aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+        <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
         </span>
@@ -142,13 +142,13 @@ export function ClusterPanel() {
         <table className="cluster-table">
           <thead>
             <tr>
-              <th>{t('cluster.col.by')}</th>
+              <th title={t('tip.ui.clusterBy')}>{t('cluster.col.by')}</th>
               <th>{t('cluster.col.freq')}</th>
               <th>{t('cluster.col.call')}</th>
               <th aria-hidden="true" />
               <th>{t('cluster.col.country')}</th>
               <th>{t('cluster.col.mode')}</th>
-              <th>{t('cluster.col.comment')}</th>
+              <th title={t('tip.ui.clusterComment')}>{t('cluster.col.comment')}</th>
               <th>{t('cluster.col.time')}</th>
             </tr>
           </thead>

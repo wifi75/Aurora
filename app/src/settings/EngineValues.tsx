@@ -90,7 +90,7 @@ function ApplyBar() {
       {count > 0 ? <strong>{t('jx.pending', { n: count })}</strong> : null}
       {count > 0 ? (
         <>
-          <button
+          <button title={t('tip.ui.apply')}
             type="button"
             className="glass glass--on"
             disabled={apply.isPending}
@@ -100,7 +100,7 @@ function ApplyBar() {
           >
             {t('jx.apply')}
           </button>
-          <button type="button" className="glass" disabled={apply.isPending} onClick={() => { clear(); setNote(''); }}>
+          <button title={t('tip.ui.discard')} type="button" className="glass" disabled={apply.isPending} onClick={() => { clear(); setNote(''); }}>
             {t('jx.discard')}
           </button>
         </>

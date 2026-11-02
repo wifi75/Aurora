@@ -53,12 +53,12 @@ export function MapPage() {
       <h1 className="page-title">{t('map.title')}</h1>
       <div className="map-bar" title={t('tip.map')}>
         <div className="map-bar-group">
-          <label className="map-check">
+          <label className="map-check" title={t('tip.ui.mapWorked')}>
             <input type="checkbox" checked={showWorked} onChange={(e) => setShowWorked(e.target.checked)} />
             <span className="map-swatch map-swatch--worked" aria-hidden="true" />
             {t('map.worked')}
           </label>
-          <label className="map-check">
+          <label className="map-check" title={t('tip.ui.mapLive')}>
             <input type="checkbox" checked={showLive} onChange={(e) => setShowLive(e.target.checked)} />
             <span className="map-swatch map-swatch--cq" aria-hidden="true" />
             {t('map.live')}
@@ -69,14 +69,14 @@ export function MapPage() {
             <input type="checkbox" checked={options.tiles} onChange={(e) => change({ tiles: e.target.checked })} />
             {t('map.tiles')}
           </label>
-          <label className="map-check">
+          <label className="map-check" title={t('tip.ui.mapNight')}>
             <input type="checkbox" checked={options.night} onChange={(e) => change({ night: e.target.checked })} />
             {t('map.night')}
           </label>
         </div>
         <label className="map-select">
           {t('map.band')}
-          <select value={band} onChange={(e) => setBand(e.target.value)} disabled={bands.length === 0}>
+          <select title={t('tip.ui.band')} value={band} onChange={(e) => setBand(e.target.value)} disabled={bands.length === 0}>
             <option value="all">{t('map.allBands')}</option>
             {bands.map((b) => (
               <option key={b} value={b}>

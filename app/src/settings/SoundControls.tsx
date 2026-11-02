@@ -85,13 +85,13 @@ export function SoundsGroup() {
             <span className="muted">{Math.round(volume * 100)}%</span>
           </Cell>
           <Actions>
-            <button type="button" className="glass" onClick={() => useSoundAssign.getState().setAll({ ...AUTO_SOUNDS })}>
+            <button title={t('tip.ui.soundAuto')} type="button" className="glass" onClick={() => useSoundAssign.getState().setAll({ ...AUTO_SOUNDS })}>
               {t('snd.auto')}
             </button>
-            <button type="button" className="glass" onClick={() => useSoundAssign.getState().clear()}>
+            <button title={t('tip.ui.soundClear')} type="button" className="glass" onClick={() => useSoundAssign.getState().clear()}>
               {t('snd.clear')}
             </button>
-            <button type="button" className="glass" onClick={() => stopAll()}>
+            <button title={t('tip.ui.soundStop')} type="button" className="glass" onClick={() => stopAll()}>
               {t('snd.stop')}
             </button>
           </Actions>
@@ -134,7 +134,7 @@ export function SoundsGroup() {
               <h4>{categoryName(c.id, lang)}</h4>
               <div className="snd-grid">
                 {SOUNDS.filter((s) => s.category === c.id).map((s) => (
-                  <button key={s.id} type="button" className="glass" onClick={() => previewSound(s.id, volume)}>
+                  <button title={t('tip.ui.soundPreview')} key={s.id} type="button" className="glass" onClick={() => previewSound(s.id, volume)}>
                     <span aria-hidden="true">▶ </span>
                     {soundName(s.id, lang)}
                   </button>

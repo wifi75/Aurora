@@ -108,7 +108,7 @@ export function Settings({ initialTab }: { initialTab?: string }) {
     <div className="settings settings-layout">
       <aside className="settings-nav">
         <h1 className="settings-nav-title">{t('set.title')}</h1>
-        <input type="search" className="settings-search" placeholder={t('set.search')} aria-label={t('set.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" className="settings-search" title={t('tip.ui.search')} placeholder={t('set.search')} aria-label={t('set.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
         {ROWS.map((row) => {
           const shown = row.tabs.map((tid) => TAB[tid]!).filter(matches);
           if (shown.length === 0) return null;

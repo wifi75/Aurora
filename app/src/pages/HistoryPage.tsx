@@ -50,10 +50,10 @@ export function HistoryPage() {
       <h1 className="page-title">{t('hist.title')}</h1>
       <p className="muted history-help">{t('hist.help')}</p>
       <div className="history-bar">
-        <input type="search" aria-label={t('hist.search')} placeholder={t('hist.search')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input type="search" title={t('tip.ui.search')} aria-label={t('hist.search')} placeholder={t('hist.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <label className="map-select">
           {t('hist.band')}
-          <select value={band} onChange={(e) => setBand(e.target.value)}>
+          <select title={t('tip.ui.band')} value={band} onChange={(e) => setBand(e.target.value)}>
             <option value="">{t('hist.all')}</option>
             {BAND_NAMES.map((b) => (
               <option key={b} value={b}>
@@ -64,7 +64,7 @@ export function HistoryPage() {
         </label>
         <label className="map-select">
           {t('hist.mode')}
-          <select value={mode} onChange={(e) => setMode(e.target.value)}>
+          <select title={t('tip.ui.mode')} value={mode} onChange={(e) => setMode(e.target.value)}>
             <option value="">{t('hist.all')}</option>
             {MODES.map((m) => (
               <option key={m} value={m}>
@@ -75,7 +75,7 @@ export function HistoryPage() {
         </label>
         <label className="map-select">
           {t('hist.period')}
-          <select value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
+          <select title={t('tip.ui.period')} value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
             {PERIODS.map((p) => (
               <option key={p} value={p}>
                 {t(`hist.p.${p}` as Key)}
@@ -83,7 +83,7 @@ export function HistoryPage() {
             ))}
           </select>
         </label>
-        <button type="button" className="glass" onClick={() => void wipe()} disabled={rows.isError}>
+        <button type="button" className="glass" onClick={() => void wipe()} title={t('tip.ui.histClear')} disabled={rows.isError}>
           {t('hist.clear')}
         </button>
       </div>
@@ -102,9 +102,9 @@ export function HistoryPage() {
                 <th>{t('hist.col.when')}</th>
                 <th>{t('hist.col.band')}</th>
                 <th>{t('hist.col.mode')}</th>
-                <th className="num">{t('hist.col.snr')}</th>
-                <th className="num">{t('hist.col.freq')}</th>
-                <th>{t('hist.col.text')}</th>
+                <th className="num" title={t('tip.ui.colSnr')}>{t('hist.col.snr')}</th>
+                <th className="num" title={t('tip.ui.colFreq')}>{t('hist.col.freq')}</th>
+                <th title={t('tip.ui.colText')}>{t('hist.col.text')}</th>
                 <th>{t('hist.col.country')}</th>
               </tr>
             </thead>
@@ -128,7 +128,7 @@ export function HistoryPage() {
       <div className="history-foot muted">
         {!rows.isError && !rows.isPending ? <span>{t('hist.count', { shown: loaded.length, total })}</span> : null}
         {rows.hasNextPage ? (
-          <button type="button" className="glass" onClick={() => void rows.fetchNextPage()} disabled={rows.isFetchingNextPage}>
+          <button type="button" className="glass" onClick={() => void rows.fetchNextPage()} title={t('tip.ui.more')} disabled={rows.isFetchingNextPage}>
             {t('hist.more')}
           </button>
         ) : null}

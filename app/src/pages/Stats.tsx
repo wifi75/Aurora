@@ -105,7 +105,7 @@ function Bands({ data }: { data: StatsResponse }) {
         <thead>
           <tr>
             <th>{t('stats.band')}</th>
-            <th className="num">{t('stats.bandDxcc')}</th>
+            <th className="num" title={t('tip.ui.colCountries')}>{t('stats.bandDxcc')}</th>
             <th className="num">{t('stats.bandQsos')}</th>
             <th aria-hidden="true" />
           </tr>

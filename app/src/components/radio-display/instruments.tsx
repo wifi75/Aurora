@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useT, type Key } from '../../i18n';
 import type { DisplayModel } from '../../lib/radioDisplay';
 
 /** Pezzi di SVG condivisi dai cinque stili: cornice, spie, archi e barre a segmenti. */
@@ -53,9 +54,34 @@ interface ChipProps {
   rx?: number;
 }
 
+
+/** Il suggerimento di una spia o di uno strumento, riconosciuto dalla prima parola della scritta (es. «SWR 1.2» -> SWR). */
+const SPY_TIPS: Record<string, Key> = {
+  RX: 'tip.rd.rx', TX: 'tip.rd.tx', DEC: 'tip.rd.dec', BUSY: 'tip.rd.busy', 'TX EN': 'tip.rd.txEn',
+  'VFO A': 'tip.rd.vfoA', 'VFO-A': 'tip.rd.vfoA', VFOA: 'tip.rd.vfoA', 'VFO-B': 'tip.rd.vfoB', 'VFO B': 'tip.rd.vfoB', VFOB: 'tip.rd.vfoB',
+  S: 'tip.rd.s', PO: 'tip.rd.po', PWR: 'tip.rd.po', SWR: 'tip.rd.swr', ALC: 'tip.rd.alc', COMP: 'tip.rd.comp', ID: 'tip.rd.id', VDD: 'tip.rd.vdd',
+  NB: 'tip.rd.nb', NR: 'tip.rd.nr', NOTCH: 'tip.rd.notch', ATU: 'tip.rd.atu', TUNER: 'tip.rd.atu', PROC: 'tip.rd.proc', CLAR: 'tip.rd.clar', RIT: 'tip.rd.clar',
+  SPLIT: 'tip.rd.split', 'DUAL-W': 'tip.rd.dual', ANT1: 'tip.rd.ant', ANT2: 'tip.rd.ant', AGC: 'tip.rd.agc', ATT: 'tip.rd.att', IPO: 'tip.rd.pre', PRE: 'tip.rd.pre', AMP: 'tip.rd.pre', 'R.FLT': 'tip.rd.rflt',
+};
+export function spyTipKey(text: string): Key | null {
+  const up = text.trim().toUpperCase();
+  if (SPY_TIPS[up]) return SPY_TIPS[up];
+  if (up.startsWith('TX EN')) return 'tip.rd.txEn';
+  if (up.startsWith('S ') || /^S\d/.test(up)) return 'tip.rd.s';
+  const first = up.split(/\s+/)[0] ?? '';
+  return SPY_TIPS[first] ?? null;
+}
+/** `<title>` SVG: il browser lo mostra come suggerimento passando sopra la spia. */
+export function SpyTip({ text }: { text: string }) {
+  const t = useT();
+  const key = spyTipKey(text);
+  return key ? <title>{t(key)}</title> : null;
+}
+
 export function Chip({ x, y, w, h = 15, text, bg, fg, dim = false, fontSize = 10, rx = 2 }: ChipProps) {
   return (
     <g opacity={dim ? 0.22 : 1} aria-hidden="true">
+      <SpyTip text={text} />
       <rect x={x} y={y} width={w} height={h} rx={rx} fill={bg} />
       <text x={x + w / 2} y={y + h / 2 + fontSize * 0.36} textAnchor="middle" fontSize={fontSize} fontWeight={600} fill={fg} fontFamily={FONT_UI}>
         {text}
@@ -79,6 +105,7 @@ interface TextProps {
 export function Label({ x, y, text, fill, size = 10, weight = 500, anchor = 'start', opacity = 1, spacing }: TextProps) {
   return (
     <text x={x} y={y} fontSize={size} fontWeight={weight} fill={fill} textAnchor={anchor} opacity={opacity} fontFamily={FONT_DATA} letterSpacing={spacing} aria-hidden="true">
+      <SpyTip text={text} />
       {text}
     </text>
   );

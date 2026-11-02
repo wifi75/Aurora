@@ -48,7 +48,7 @@ export function Log4omPanel() {
             <th>{t('log.col.call')}</th>
             <th>{t('log.col.band')}</th>
             <th>{t('log.col.mode')}</th>
-            <th>{t('log.col.rst')}</th>
+            <th title={t('tip.ui.colRst')}>{t('log.col.rst')}</th>
             <th>{t('log.col.country')}</th>
           </tr>
         </thead>

@@ -75,7 +75,7 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
   return (
     <div className="dxd-backdrop" onClick={onClose}>
       <div className="dxd" role="dialog" aria-label={d.call} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="dxd-close" aria-label={t('dxd.close')} onClick={onClose}>
+        <button type="button" className="dxd-close" aria-label={t('dxd.close')} title={t('dxd.close')} onClick={onClose}>
           ×
         </button>
         <div className="dxd-map">

@@ -217,10 +217,10 @@ export function AudioDevicesPanel() {
 
       <Group title={t('aud.apply')} span={3}>
         <Actions>
-          <button type="button" className="glass glass--on" disabled={apply.isPending || pending === 0} onClick={() => apply.mutate(data)}>
+          <button title={t('tip.ui.apply')} type="button" className="glass glass--on" disabled={apply.isPending || pending === 0} onClick={() => apply.mutate(data)}>
             {t('aud.apply')}
           </button>
-          <button type="button" className="glass" disabled={apply.isPending || pending === 0} onClick={() => { setDraft({}); setLines([]); }}>
+          <button title={t('tip.ui.discard')} type="button" className="glass" disabled={apply.isPending || pending === 0} onClick={() => { setDraft({}); setLines([]); }}>
             {t('aud.discard')}
           </button>
           <button type="button" className="glass" title={t('tip.aud.refresh')} disabled={devices.isFetching} onClick={() => void devices.refetch()}>
