@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.79',
+    released: '2026-11-02T23:30:00Z',
+    kind: 'changed',
+    title: ['Display FT-2000 più pulito', 'Cleaner FT-2000 display', 'Aufgeräumte FT-2000-Anzeige', 'Afficheur FT-2000 plus net', 'Display FT-2000 más limpio', 'Visor FT-2000 mais limpo'],
+    text: [
+      'RX e TX in alto subito dopo la frequenza, tolta la scala di sintonia. Dopo − o + Aurora rilegge la potenza e avvisa se la radio non l’ha cambiata (sulla FT-2000 decide la manopola RF PWR).',
+      'RX and TX at the top right after the frequency, tuning scale removed. After − or + Aurora reads the power back and warns if the radio did not change it (on the FT-2000 the RF PWR knob decides).',
+      'RX und TX oben direkt nach der Frequenz, Abstimmskala entfernt. Nach − oder + liest Aurora die Leistung zurück und warnt, wenn das Gerät sie nicht geändert hat (beim FT-2000 entscheidet der RF-PWR-Knopf).',
+      'RX et TX en haut juste après la fréquence, échelle d’accord retirée. Après − ou + Aurora relit la puissance et prévient si la radio ne l’a pas changée (sur le FT-2000 c’est le bouton RF PWR qui décide).',
+      'RX y TX arriba justo después de la frecuencia, quitada la escala de sintonía. Tras − o + Aurora vuelve a leer la potencia y avisa si la radio no la cambió (en el FT-2000 manda el mando RF PWR).',
+      'RX e TX em cima logo a seguir à frequência, escala de sintonia retirada. Depois de − ou + a Aurora relê a potência e avisa se o rádio não a mudou (no FT-2000 manda o botão RF PWR).',
+    ],
+  },
+  {
+    version: '0.11.79',
+    released: '2026-11-02T23:30:00Z',
+    kind: 'fixed',
+    title: ['Cluster, aggiornamenti e log più ordinati', 'Tidier cluster, updates and log', 'Aufgeräumter Cluster, Updates und Log', 'Cluster, mises à jour et journal plus ordonnés', 'Clúster, actualizaciones y registro más ordenados', 'Cluster, atualizações e registo mais arrumados'],
+    text: [
+      'Nel DX Cluster niente più striscia vuota accanto a Modo e colonne meglio allineate. Negli Aggiornamenti restano solo le voci utili. Il log degli errori non si riempie più di messaggi innocui di WebView2.',
+      'In the DX Cluster no more empty strip next to Mode and better aligned columns. Updates keep only the useful settings. The error log no longer fills with harmless WebView2 messages.',
+      'Im DX-Cluster kein leerer Streifen mehr neben Modus und besser ausgerichtete Spalten. Bei den Updates bleiben nur die nützlichen Einstellungen. Das Fehlerprotokoll füllt sich nicht mehr mit harmlosen WebView2-Meldungen.',
+      'Dans le DX Cluster plus de bande vide à côté de Mode et colonnes mieux alignées. Les mises à jour ne gardent que les réglages utiles. Le journal d’erreurs ne se remplit plus de messages WebView2 inoffensifs.',
+      'En el DX Cluster ya no hay franja vacía junto a Modo y las columnas están mejor alineadas. En Actualizaciones quedan solo los ajustes útiles. El registro de errores ya no se llena de mensajes inofensivos de WebView2.',
+      'No DX Cluster já não há faixa vazia junto a Modo e as colunas estão mais alinhadas. Nas Atualizações ficam só as opções úteis. O registo de erros já não se enche de mensagens inofensivas do WebView2.',
+    ],
+  },
+  {
     version: '0.11.78',
     released: '2026-11-02T20:57:00Z',
     kind: 'new',
@@ -542,34 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'En Hound, Aurora vérifie en ligne le code à 6 chiffres de l’expédition et la page Station affiche en vert si le Fox est authentique, en rouge si c’est un pirate.',
       'En Hound Aurora comprueba en línea el código de 6 cifras de la expedición y la página Estación muestra en verde si el Fox es auténtico, en rojo si es un pirata.',
       'Em Hound a Aurora verifica em linha o código de 6 dígitos da expedição e a página Estação mostra a verde se o Fox é verdadeiro, a vermelho se é um pirata.',
-    ],
-  },
-  {
-    version: '0.11.56',
-    released: '2026-11-01T13:30:02Z',
-    kind: 'new',
-    title: ['Wait and Reply e Wait and Call', 'Wait and Reply and Wait and Call', 'Wait and Reply und Wait and Call', 'Wait and Reply et Wait and Call', 'Wait and Reply y Wait and Call', 'Wait and Reply e Wait and Call'],
-    text: [
-      'Come WSJT-X 3: se il DX ti chiama con la trasmissione spenta il QSO riparte da solo; con «Wait and Call» Aurora chiama il DX appena fa CQ o chiude il suo QSO.',
-      'Like WSJT-X 3: if the DX calls you with transmit off the QSO resumes by itself; with “Wait and Call” Aurora calls the DX as soon as he calls CQ or ends his QSO.',
-      'Wie WSJT-X 3: ruft dich der DX bei ausgeschaltetem Senden, läuft das QSO von selbst weiter; mit „Wait and Call“ ruft Aurora den DX, sobald er CQ ruft oder sein QSO beendet.',
-      'Comme WSJT-X 3 : si le DX t’appelle émission coupée, le QSO reprend tout seul ; avec « Wait and Call » Aurora appelle le DX dès qu’il lance appel ou termine son QSO.',
-      'Como WSJT-X 3: si el DX te llama con la transmisión apagada el QSO sigue solo; con «Wait and Call» Aurora llama al DX en cuanto hace CQ o termina su QSO.',
-      'Como o WSJT-X 3: se o DX te chamar com a transmissão desligada o QSO continua sozinho; com «Wait and Call» a Aurora chama o DX assim que ele fizer CQ ou acabar o QSO.',
-    ],
-  },
-  {
-    version: '0.11.56',
-    released: '2026-11-01T13:30:02Z',
-    kind: 'new',
-    title: ['Cambio banda automatico', 'Automatic band hopping', 'Automatischer Bandwechsel', 'Changement de bande automatique', 'Cambio de banda automático', 'Mudança de banda automática'],
-    text: [
-      'Un elenco di bande e modi (FT8/FT4) da girare ogni due minuti; spento di base, non cambia mai banda mentre trasmetti.',
-      'A list of bands and modes (FT8/FT4) to cycle every two minutes; off by default, it never changes band while you transmit.',
-      'Eine Liste von Bändern und Modi (FT8/FT4), alle zwei Minuten gewechselt; standardmäßig aus, nie während des Sendens.',
-      'Une liste de bandes et modes (FT8/FT4) parcourue toutes les deux minutes ; désactivé par défaut, jamais pendant l’émission.',
-      'Una lista de bandas y modos (FT8/FT4) que se recorre cada dos minutos; apagado de serie, nunca cambia de banda mientras transmites.',
-      'Uma lista de bandas e modos (FT8/FT4) percorrida a cada dois minutos; desligada de origem, nunca muda de banda enquanto transmites.',
     ],
   },
 ];
