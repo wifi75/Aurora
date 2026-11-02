@@ -69,7 +69,7 @@ export function FoxPage() {
   const state = !fox.enabled ? 'off' : !txOn ? 'waiting' : transmitting ? 'onair' : 'ready';
 
   return (
-    <section className="foxc">
+    <section className={`foxc foxc--neon foxc--${state}`}>
       <header className={`foxc-hero foxc-hero--${state}`}>
         <div className="foxc-id">
           <span className="foxc-badge" aria-hidden="true">
