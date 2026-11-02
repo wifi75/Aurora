@@ -196,7 +196,7 @@ function FtSpy({
         fill={on ? color : "none"}
         stroke={color}
         strokeWidth={1}
-        opacity={on ? 1 : 0.25}
+        opacity={on ? 1 : 0.6}
       />
       <text
         x={x + 18}
@@ -206,7 +206,7 @@ function FtSpy({
         fontWeight={700}
         fontFamily={FONT_UI}
         fill={on ? "#05080a" : color}
-        opacity={on ? 1 : 0.35}
+        opacity={on ? 1 : 0.75}
       >
         {text}
       </text>
@@ -343,6 +343,11 @@ export function Ft2000Display({
   if (vfoTag)
     hits.push({ key: "vfo", x: 246, y: 8, w: 48, h: 16, text: vfoTag });
 
+  const power = x.power_set ?? null;
+  if (power != null) {
+    hits.push({ key: "pwr_down", x: 838, y: 60, w: 48, h: 22, text: "PWR −" });
+    hits.push({ key: "pwr_up", x: 894, y: 60, w: 48, h: 22, text: "PWR +" });
+  }
   const bHz = x.vfo_b_hz ?? 0;
   return (
     <div className="rd-face">
@@ -375,7 +380,7 @@ export function Ft2000Display({
               fontWeight={600}
               fontFamily={FONT_UI}
               fill={FT.ink}
-              opacity={b.value === null ? 0.45 : 1}
+              opacity={b.value === null ? 0.75 : 1}
             >
               {b.label}
             </text>
@@ -402,10 +407,10 @@ export function Ft2000Display({
             on={s.on}
           />
         ))}
-        <FtSpy x={12} y={72} text="RX" color="#47d13a" on={link.rx && known} />
-        <FtSpy x={50} y={72} text="TX" color={FT.red} on={link.tx} />
+        <FtSpy x={250} y={42} text="RX" color="#47d13a" on={link.rx && known} />
+        <FtSpy x={250} y={58} text="TX" color={FT.red} on={link.tx} />
         <Label
-          x={94}
+          x={12}
           y={82}
           text={readouts.map((r) => `${r.key} ${r.text}`).join("  ")}
           fill={FT.cyan}
@@ -609,7 +614,7 @@ export function Ft2000Display({
           offOpacity={0.1}
         />
 
-        {/* modo e AGC */}
+        {/* potenza della radio con - e +: il modo e' accanto al VFO A, l'AGC nei riquadri a sinistra */}
         <rect
           x={830}
           y={9}
@@ -621,31 +626,46 @@ export function Ft2000Display({
         />
         <Label
           x={890}
-          y={40}
-          text={model.mode || "—"}
-          fill={model.mode ? FT.ink : FT.dim}
+          y={24}
+          text="PWR"
+          fill={FT.ink}
+          size={9}
+          weight={700}
+          anchor="middle"
+        />
+        <Label
+          x={890}
+          y={50}
+          text={power == null ? "—" : `${Math.round(power * 100)}%`}
+          fill={power == null ? FT.dim : FT.amber}
           size={22}
           weight={700}
           anchor="middle"
         />
-        <Label
-          x={890}
-          y={60}
-          text="AGC"
-          fill={FT.ink}
-          size={9}
-          weight={600}
-          anchor="middle"
-        />
-        <Label
-          x={890}
-          y={78}
-          text={x.agc == null ? "—" : agcName(x.agc)}
-          fill={x.agc == null ? FT.dim : FT.amber}
-          size={13}
-          weight={700}
-          anchor="middle"
-        />
+        {(["-", "+"] as const).map((sign, i) => (
+          <g key={sign} aria-hidden="true" opacity={power == null ? 0.6 : 1}>
+            <rect
+              x={838 + i * 56}
+              y={60}
+              width={48}
+              height={22}
+              rx={2}
+              fill="#0d1d24"
+              stroke={FT.box}
+            />
+            <text
+              x={862 + i * 56}
+              y={76}
+              textAnchor="middle"
+              fontSize={16}
+              fontWeight={700}
+              fontFamily={FONT_UI}
+              fill={FT.ink}
+            >
+              {sign === "-" ? "−" : "+"}
+            </text>
+          </g>
+        ))}
       </DisplayFrame>
       <FaceHits hits={hits} onAction={onAction} waiting={waiting} />
     </div>
@@ -1018,7 +1038,7 @@ export function Ic7610Display({
                 fontWeight={700}
                 fontFamily={FONT_UI}
                 fill={IC.label}
-                opacity={b.value === null ? 0.45 : 1}
+                opacity={b.value === null ? 0.75 : 1}
               >
                 {b.label}
               </text>
