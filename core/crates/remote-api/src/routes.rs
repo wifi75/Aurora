@@ -17,7 +17,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use utoipa::OpenApi;
 
-use crate::{policy::transport_of, ws, AppState};
+use crate::{lan, policy::transport_of, ws, AppState};
 
 const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
@@ -240,16 +240,63 @@ async fn pair_start(
         .auth
         .start_pairing()
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "pairing_unavailable"))?;
-    let qr_text = match body.and_then(|Json(b)| b.base_url) {
-        Some(base) => format!("{}/#/pair/{}", base.trim_end_matches('/'), pairing.code),
-        None => pairing.code.clone(),
-    };
+    let base = body.and_then(|Json(b)| b.base_url);
+    let addresses = phone_addresses(&state, base.as_deref());
+    let mdns = state.lan.host();
+    // il link porta all'IP attuale (sempre raggiungibile) e si porta dietro il nome mDNS come alternativa da ricordare
+    let link = addresses.first().map(|first| {
+        let mut l = format!("{first}/#/associa?codice={}", pairing.code);
+        if let Some(name) = &mdns {
+            l.push_str(&format!("&nome={name}"));
+        }
+        l
+    });
+    let qr_text = link.clone().unwrap_or_else(|| pairing.code.clone());
     let qr_svg = qrcode::QrCode::new(qr_text.as_bytes())
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "qr_failed"))?
         .render::<qrcode::render::svg::Color>()
         .min_dimensions(200, 200)
         .build();
-    Ok(Json(json!({ "code": pairing.code, "expires_in": pairing.expires_in_secs, "qr_svg": qr_svg })))
+    Ok(Json(json!({ "code": pairing.code, "expires_in": pairing.expires_in_secs, "qr_svg": qr_svg, "link": link, "addresses": addresses, "mdns": mdns_url(&state) })))
+}
+
+/// `http://aurora.local:8787` se l'annuncio mDNS e' attivo.
+fn mdns_url(state: &AppState) -> Option<String> {
+    let port = state.lan.port();
+    state.lan.host().filter(|_| port != 0).map(|h| format!("http://{h}:{port}"))
+}
+
+/// Gli indirizzi con cui il telefono puo' raggiungere Aurora: gli IP della rete di casa e, se c'e', il nome mDNS.
+/// Se la pagina e' aperta gia' da un indirizzo di rete (non dal PC stesso) quello viene per primo.
+fn phone_addresses(state: &AppState, base: Option<&str>) -> Vec<String> {
+    let base = base.map(|b| b.trim_end_matches('/').to_string());
+    let base_port = base
+        .as_deref()
+        .and_then(|b| b.rsplit(':').next())
+        .and_then(|p| p.parse::<u16>().ok());
+    let port = match state.lan.port() {
+        0 => base_port.unwrap_or(8787),
+        p => p,
+    };
+    let mut out = Vec::new();
+    if let Some(b) = &base {
+        let local = ["//localhost", "//127.", "//[::1]", "tauri:"].iter().any(|m| b.contains(m));
+        if !local && b.starts_with("http") {
+            out.push(b.clone());
+        }
+    }
+    for ip in lan::lan_ipv4s() {
+        let url = format!("http://{ip}:{port}");
+        if !out.contains(&url) {
+            out.push(url);
+        }
+    }
+    if let Some(m) = mdns_url(state) {
+        if !out.contains(&m) {
+            out.push(m);
+        }
+    }
+    out
 }
 
 #[derive(Deserialize)]
@@ -2180,7 +2227,7 @@ async fn pairing_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer,
 
 #[utoipa::path(get, path = "/api/v1/access", responses((status = 200, description = "Se l'accesso senza codice e' acceso")))]
 async fn access_get(State(state): State<AppState>) -> Json<Value> {
-    Json(json!({ "open": state.open_access.load(std::sync::atomic::Ordering::SeqCst) }))
+    Json(json!({ "open": state.open_access.load(std::sync::atomic::Ordering::SeqCst), "mdns": mdns_url(&state) }))
 }
 
 #[derive(Deserialize)]

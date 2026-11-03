@@ -37,7 +37,7 @@ import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
-import { usePhone, useRemotePhone } from '../lib/phone';
+import { usePhone, useStationView } from '../lib/phone';
 import { PhoneLive } from './PhoneLive';
 import { useRadioDisplay } from '../lib/radioDisplay';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
@@ -56,7 +56,7 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 export function Live() {
   const t = useT();
   const phone = usePhone();
-  const remotePhone = useRemotePhone();
+  const view = useStationView();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
@@ -280,10 +280,11 @@ export function Live() {
     [t],
   );
 
-  // sotto i 768 px: il telecomando compatto, con gli stessi dati e gli stessi comandi di questa pagina
-  if (remotePhone) {
+  // sotto i 768 px (o su un tablet in orizzontale, a due colonne): il telecomando compatto, con gli stessi dati e comandi di questa pagina
+  if (view !== 'desktop') {
     return (
       <PhoneLive
+        tablet={view === 'tablet'}
         waterfall={
           <div className="wf-stack">
             <Waterfall register={registerSpectrum} mode={status?.mode} spectrumPx={22} />
