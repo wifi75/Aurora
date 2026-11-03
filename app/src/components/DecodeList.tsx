@@ -1,5 +1,5 @@
 import { foxCalls, lineSender } from '../lib/fox';
-import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -166,6 +166,16 @@ interface Props {
 }
 
 export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false }: Props) {
+  // telefono: un tocco chiama la stazione; un secondo tocco sulla stessa riga subito dopo (o un doppio tocco) non richiama,
+  // altrimenti la sequenza ripartiva a ogni richiesta e la trasmissione non partiva
+  const lastTap = useRef<{ id: number; at: number } | null>(null);
+  const tapOnce = (id: number) => {
+    const now = Date.now();
+    if (lastTap.current && lastTap.current.id === id && now - lastTap.current.at < 2000) return;
+    lastTap.current = { id, at: now };
+    setSelected(id);
+    onReply(id);
+  };
   const t = useT();
   // in JT65 e JT9 si decodifica a fine minuto: lo si dice invece di lasciare una pagina vuota che sembra rotta
   const mode = useStation((st) => st.status?.mode ?? '');
@@ -300,8 +310,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
             className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
-            onClick={() => (tapReply && !own ? onReply(d.id) : setSelected(d.id))}
-            onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
+            onClick={() => (tapReply && !own ? tapOnce(d.id) : setSelected(d.id))}
+            onDoubleClick={() => (tapReply ? undefined : own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
             onContextMenu={(e) => {
               // tasto destro: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)
               if (own || !talker || !onQueue) return;
