@@ -64,6 +64,22 @@ impl Fetch for HttpFetch {
     }
 }
 
+/// Il sito di PSK Reporter (per la «Prova»: la pagina principale, senza chiedere rapporti).
+pub const PSK_HOME: &str = "https://pskreporter.info/";
+/// Gli ultimi spot di DXSummit in JSON (per la «Prova»: uno solo).
+pub const DXSUMMIT_PROBE: &str = "https://www.dxsummit.fi/api/v1/spots?limit=1";
+
+/// La «Prova» delle Impostazioni: una richiesta sola, al piu' `timeout`, e il corpo della risposta (200) da leggere. Bloccante.
+pub fn probe(url: &str, timeout: Duration, app_version: &str) -> Result<String, String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(timeout)).http_status_as_error(false).build().into();
+    let mut response = agent.get(url).header("User-Agent", &format!("Aurora/{app_version}")).call().map_err(|e| e.to_string())?;
+    let status = response.status().as_u16();
+    if status != 200 {
+        return Err(format!("il servizio ha risposto {status}"));
+    }
+    response.body_mut().read_to_string().map_err(|e| e.to_string())
+}
+
 /// Quali servizi sono accesi. Tutti spenti finche' non si decide.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]

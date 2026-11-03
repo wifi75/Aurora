@@ -1412,6 +1412,7 @@ dependencies = [
  "tokio-tungstenite 0.30.0",
  "tower",
  "tracing",
+ "udp-bridge",
  "updater",
  "utoipa",
  "wishlist",

@@ -15,15 +15,32 @@ export interface SettingRow {
   options?: readonly { value: string; label: Key }[];
 }
 
-/** I servizi dell'invio diretto dei QSO (pulsante «Prova» e stato dell'ultimo invio). */
-export type UploadService = 'wavelog' | 'clublog' | 'qrz' | 'lotw' | 'hrdlog' | 'qrzlookup' | 'hamqth';
+/** I servizi con il pulsante «Prova»: invio diretto dei QSO, ricerche, spot, dati online, orologio e programmi collegati. */
+export type UploadService =
+  | 'wavelog'
+  | 'clublog'
+  | 'qrz'
+  | 'lotw'
+  | 'hrdlog'
+  | 'qrzlookup'
+  | 'hamqth'
+  | 'eqsl'
+  | 'pskreporter'
+  | 'dxsummit'
+  | 'ng3k'
+  | 'solar'
+  | 'ntp'
+  | 'udp'
+  | 'udp2'
+  | 'tcp';
 
 
 export interface SettingGroup {
   title: Key;
   rows: readonly SettingRow[];
   /** Invio diretto dei QSO: il servizio da provare e la spiegazione (nel «?» del titolo). */
-  upload?: { service: UploadService; help: Key };
+  /** `tip`: il suggerimento del pulsante; `auto: false`: niente prova da sola all'apertura; `always`: servizio sempre attivo (spia senza interruttore). */
+  upload?: { service: UploadService; help: Key; tip?: Key; auto?: boolean; always?: boolean };
   /** La spiegazione del riquadro, nel «?» del titolo. */
   help?: Key;
   /** Una riga breve sotto le voci (per esempio il rimando a un'altra pagina). */
@@ -34,7 +51,7 @@ export interface SettingGroup {
 export const LOG_SERVICE_GROUPS: readonly SettingGroup[] = [
   {
     title: 'ens.g.eqsl',
-    help: 'ens.eqsl.help',
+    upload: { service: 'eqsl', help: 'ens.eqsl.help', tip: 'tip.test.eqsl' },
     rows: [
       { key: 'EQSLSend', kind: 'bool' },
       { key: 'EQSLUser', kind: 'text' },
@@ -97,7 +114,8 @@ export const LOG_SERVICE_GROUPS: readonly SettingGroup[] = [
 export const LINK_GROUPS: readonly SettingGroup[] = [
   {
     title: 'ens.g.udp',
-    help: 'ens.udp.help',
+    // il server primario riceve sempre: la spia non segue il primo interruttore (le richieste del programma); nessuna prova da sola all'apertura
+    upload: { service: 'udp', help: 'ens.udp.help', tip: 'tip.test.udp', auto: false, always: true },
     rows: [
       { key: 'UDPServer', kind: 'text' },
       { key: 'UDPServerPort', kind: 'num' },
@@ -112,7 +130,7 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
   },
   {
     title: 'ens.g.adif',
-    help: 'ens.rep.help',
+    upload: { service: 'udp2', help: 'ens.rep.help', tip: 'tip.test.udp2', auto: false },
     rows: [
       { key: 'EnableUDP2adifBroadcast', kind: 'bool' },
       { key: 'UDP2Server', kind: 'text' },
@@ -121,7 +139,7 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
   },
   {
     title: 'ens.g.tcp',
-    help: 'ens.tcp.help',
+    upload: { service: 'tcp', help: 'ens.tcp.help', tip: 'tip.test.tcp', auto: false },
     rows: [
       { key: 'EnableTCPConnection', kind: 'bool' },
       { key: 'TCPServer', kind: 'text' },
@@ -130,15 +148,19 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
   },
 ];
 
-/** Gli spot (PSK Reporter e DXSummit): stanno nella scheda «Servizi online». */
-export const SPOT_GROUP: SettingGroup = {
-  title: 'ens.g.spot',
-  help: 'ens.dxsummit.help',
-  rows: [
-    { key: 'PSKReporter', kind: 'bool' },
-    { key: 'AllowSpotsDXSummit', kind: 'bool' },
-  ],
-};
+/** Gli spot (PSK Reporter e DXSummit), un riquadro ciascuno con la sua spia: stanno nella scheda «Servizi online». */
+export const SPOT_GROUPS: readonly SettingGroup[] = [
+  {
+    title: 'ens.g.pskspot',
+    upload: { service: 'pskreporter', help: 'ens.dxsummit.help', tip: 'tip.test.pskreporter' },
+    rows: [{ key: 'PSKReporter', kind: 'bool' }],
+  },
+  {
+    title: 'ens.g.dxsummit',
+    upload: { service: 'dxsummit', help: 'ens.dxsummit.help', tip: 'tip.test.dxsummit' },
+    rows: [{ key: 'AllowSpotsDXSummit', kind: 'bool' }],
+  },
+];
 
 /** Le ricerche dei nominativi (riquadro del nominativo nel DX Cluster): stanno nella scheda «Servizi online». */
 export const LOOKUP_GROUPS: readonly SettingGroup[] = [
@@ -188,4 +210,4 @@ export const QSO_LOG_GROUPS: readonly SettingGroup[] = [
 ];
 
 /** Tutte le voci che una volta stavano nella scheda Segnalazioni (per i controlli e la ricerca). */
-export const REPORT_GROUPS: readonly SettingGroup[] = [...LINK_GROUPS, ...LOG_SERVICE_GROUPS, SPOT_GROUP, ...QSO_LOG_GROUPS];
+export const REPORT_GROUPS: readonly SettingGroup[] = [...LINK_GROUPS, ...LOG_SERVICE_GROUPS, ...SPOT_GROUPS, ...QSO_LOG_GROUPS];
