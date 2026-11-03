@@ -663,3 +663,8 @@
   font-size: 0.7rem;
   color: var(--text-muted, #6b7a8f);
 }
+
+/* iPhone con isola e barra in basso: niente sotto le zone di sistema */
+.phone-bar {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
