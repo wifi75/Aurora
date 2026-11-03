@@ -1,6 +1,6 @@
 // Service worker di Aurora: tiene in cache solo l'interfaccia (rete prima, cache come ripiego).
 // Le chiamate /api non passano mai di qui: i dati della stazione arrivano sempre dal vivo.
-const CACHE = 'aurora-shell-v1';
+const CACHE = 'aurora-shell-v2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok) {
+        if (response.ok && url.pathname !== '/' && !url.pathname.endsWith('.html')) {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
         }
