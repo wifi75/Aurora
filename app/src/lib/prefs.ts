@@ -1,7 +1,4 @@
 import { create } from 'zustand';
-
-/** Dove arrivano di fabbrica i pacchetti per l'assistenza (scelta del proprietario di Aurora): si puo' cambiare in Impostazioni > Informazioni. */
-export const SUPPORT_EMAIL = 'iu3wjq@gmail.com';
 import { browserStorage } from './theme';
 
 /** Come si mostrano i messaggi (scheda Generali del motore): unita', paese, bandiera, distanza, DT. */
@@ -41,7 +38,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, supportEmail: SUPPORT_EMAIL };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, supportEmail: '' };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -55,8 +52,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));
-  // vuoto = l'indirizzo dell'assistenza di fabbrica
-  if (typeof parsed.supportEmail === 'string' && parsed.supportEmail.trim() !== '') prefs.supportEmail = parsed.supportEmail.trim().slice(0, 200);
+  if (typeof parsed.supportEmail === 'string') prefs.supportEmail = parsed.supportEmail.trim().slice(0, 200);
   if (typeof parsed.log4omCount === 'number' && Number.isFinite(parsed.log4omCount)) prefs.log4omCount = Math.min(200, Math.max(1, Math.round(parsed.log4omCount)));
   } catch {
     return defaultPrefs();
