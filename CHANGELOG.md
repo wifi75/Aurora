@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.97 - 2026-11-04
+- **Rapporti degli errori** (Impostazioni > Assistenza, spenti di fabbrica): dopo un crash e automatici anonimi, con anteprima e pulizia dei dati personali; Worker Cloudflare in servizi/rapporti (non ancora online: finche' l'indirizzo e' il segnaposto non parte niente); informativa privacy in docs/privacy.md.
+- **Bandiere**: grafie di NG3K e del cluster (Rodrigues I, Tokelau, Swains I, Pitcairn e altre).
+
 ## 0.11.96 - 2026-11-04
 - **Assistenza**: scheda a se' nelle Impostazioni; «Manda per email» apre Gmail in Chrome gia' compilato; il campo email e' vuoto di fabbrica.
 - **Attivita' di banda**: km visibili anche con il pannello stretto, colonna larga quanto il numero, niente doppia linea quando manca la distanza.

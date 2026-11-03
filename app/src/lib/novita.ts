@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.97',
+    released: '2026-11-04T02:30:00Z',
+    kind: 'new',
+    title: ['Rapporti degli errori (facoltativi)', 'Error reports (optional)', 'Fehlerberichte (freiwillig)', 'Rapports d’erreur (facultatifs)', 'Informes de errores (opcionales)', 'Relatórios de erros (opcionais)'],
+    text: [
+      'In Impostazioni > Assistenza puoi scegliere, spenti di fabbrica, di mandare il rapporto dopo un crash e gli errori anonimi a chi sviluppa Aurora, con «Vedi cosa mando». Nominativo, locatore, messaggi e indirizzi vengono tolti. Più bandiere nel pannello DXpedition (Rodrigues, Tokelau, Pitcairn e altre).',
+      'In Settings > Support you can choose, off by default, to send the report after a crash and anonymous errors to Aurora’s developer, with «See what I send». Callsign, locator, messages and addresses are removed. More flags in the DXpedition panel (Rodrigues, Tokelau, Pitcairn and others).',
+      'Unter Einstellungen > Support kannst du (standardmäßig aus) den Bericht nach einem Absturz und anonyme Fehler an den Entwickler von Aurora senden, mit «Zeigen, was ich sende». Rufzeichen, Locator, Meldungen und Adressen werden entfernt. Mehr Flaggen im DXpedition-Bereich (Rodrigues, Tokelau, Pitcairn und andere).',
+      'Dans Réglages > Assistance tu peux choisir, désactivé par défaut, d’envoyer le rapport après un plantage et les erreurs anonymes au développeur d’Aurora, avec « Voir ce que j’envoie ». Indicatif, locator, messages et adresses sont retirés. Plus de drapeaux dans le panneau DXpédition (Rodrigues, Tokelau, Pitcairn et d’autres).',
+      'En Ajustes > Asistencia puedes elegir, apagado de fábrica, enviar el informe tras un fallo y los errores anónimos a quien desarrolla Aurora, con «Ver lo que envío». Se quitan indicativo, locator, mensajes y direcciones. Más banderas en el panel DXpedición (Rodrigues, Tokelau, Pitcairn y otras).',
+      'Em Definições > Assistência podes escolher, desligado de fábrica, enviar o relatório após uma falha e os erros anónimos a quem desenvolve a Aurora, com «Ver o que envio». Indicativo, locator, mensagens e endereços são retirados. Mais bandeiras no painel DXpedição (Rodrigues, Tokelau, Pitcairn e outras).',
+    ],
+  },
+  {
     version: '0.11.96',
     released: '2026-11-03T21:57:13Z',
     kind: 'changed',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'Les stations normales qui envoient R+report ou RRR ne sont plus marquées FOX et n’activent plus le mode Hound.',
       'Las estaciones normales que envían R+reporte o RRR ya no se marcan como FOX ni encienden el modo Hound.',
       'As estações normais que enviam R+relatório ou RRR já não são marcadas como FOX nem ligam o modo Hound.',
-    ],
-  },
-  {
-    version: '0.11.74',
-    released: '2026-11-02T18:13:22Z',
-    kind: 'changed',
-    title: ['Pagina Fox in stile neon', 'Neon-style Fox page', 'Fox-Seite im Neon-Stil', 'Page Fox style néon', 'Página Fox estilo neón', 'Página Fox estilo néon'],
-    text: [
-      'La pagina Fox ha un aspetto tutto suo, viola e ciano luminosi, e la cascata si ridimensiona trascinando la maniglia.',
-      'The Fox page has a look of its own, glowing violet and cyan, and the waterfall resizes by dragging its handle.',
-      'Die Fox-Seite hat ein eigenes Aussehen in leuchtendem Violett und Cyan, und der Wasserfall lässt sich am Griff in der Höhe ziehen.',
-      'La page Fox a son propre style, violet et cyan lumineux, et la cascade se redimensionne en tirant la poignée.',
-      'La página Fox tiene un aspecto propio, violeta y cian luminosos, y la cascada se redimensiona arrastrando el tirador.',
-      'A página Fox tem um aspeto próprio, violeta e ciano luminosos, e a cascata redimensiona-se arrastando a pega.',
     ],
   },
 ];
