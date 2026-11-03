@@ -266,9 +266,20 @@ const STATUS_OF: Record<string, string> = {
 };
 
 /** L'esito dell'ultimo invio di un servizio (ok o errore, e quando). */
-function SendStatus({ doc, kind }: { doc: EngineSettings; kind: string }) {
+function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind: string; compact?: boolean }) {
   const t = useT();
   const st = doc.status?.[kind];
+  // riga dei servizi: niente «Ultimo invio: mai»; dopo un invio solo l'esito in breve, il dettaglio nel suggerimento
+  if (compact) {
+    if (!st || st.ok === null) return null;
+    const detail = `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
+    return (
+      <small className={`ens-reason ${st.ok ? 'muted' : 'live-note'}`} role="status" title={detail} data-testid={`status-${kind}`}>
+        {t('ens.st.title')}: {st.ok ? t('ens.st.ok') : t('ens.st.err')} {new Date(st.at_ms).toLocaleTimeString()}
+        {st.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : ''}
+      </small>
+    );
+  }
   const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
   const pending = st?.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : '';
   return (
@@ -303,7 +314,7 @@ export function StatusLed({ led, why }: { led: Led; why: string }) {
   return <span className={`ens-led ens-led--${led}`} role="img" aria-label={label} title={why ? `${label}: ${why}` : label} data-testid="ens-led" data-led={led} />;
 }
 
-function UploadTest({ service, waiting, keys, result, setResult, autoStart, tip }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean; tip?: Key }) {
+function UploadTest({ service, waiting, keys, result, setResult, autoStart, tip, compact = false }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean; tip?: Key; compact?: boolean }) {
   const t = useT();
   const client = useQueryClient();
   // dopo aver confermato una password o una chiave del riquadro, appena e' salvata parte da sola la prova
@@ -337,9 +348,9 @@ function UploadTest({ service, waiting, keys, result, setResult, autoStart, tip 
       </button>
       {waiting ? <span className="muted"> {t('ens.test.saveFirst')}</span> : null}
       {result && !waiting ? (
-        <span className={result.ok ? 'ens-test-ok' : 'live-note'} role="status" data-testid={`test-result-${service}`}>
+        <span className={result.ok ? 'ens-test-ok' : 'live-note'} role="status" title={result.text} data-testid={`test-result-${service}`}>
           {' '}
-          {result.ok ? t('ens.test.ok') : t('ens.test.err')}: {result.text}
+          {compact ? (result.ok ? t('ens.test.ok') : t('ens.test.err')) : `${result.ok ? t('ens.test.ok') : t('ens.test.err')}: ${result.text}`}
         </span>
       ) : null}
     </div>
@@ -382,7 +393,7 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
         const service = group.upload?.service ?? kinds[0];
         const result = service ? (results[service] ?? null) : null;
         const led = service ? ledOf(enabled, result, kinds[0] ? doc.status?.[kinds[0]] : undefined) : null;
-        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled && group.upload.auto !== false} tip={group.upload.tip} /> : null;
+        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled && group.upload.auto !== false} tip={group.upload.tip} compact={layout === 'rows'} /> : null;
         if (layout === 'rows') {
           // un servizio per riga: spia, nome con «?», campi in linea, «Prova» ed esito; su schermi stretti va a capo
           return (
@@ -390,7 +401,7 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
               <div className="svc-head">
                 {led ? <StatusLed led={led.led} why={led.why} /> : null}
                 <strong>{t(group.title)}</strong>
-                <Help tip={help ? t(help) : undefined} />
+                <Help tip={[help ? t(help) : '', group.note ? t(group.note) : ''].filter(Boolean).join(' ') || undefined} />
               </div>
               <div className="svc-fields">
                 {rows.map((row) => (
@@ -400,9 +411,8 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
               <div className="svc-side">
                 {test}
                 {kinds.map((k) => (
-                  <SendStatus key={k} doc={doc} kind={k} />
+                  <SendStatus key={k} doc={doc} kind={k} compact />
                 ))}
-                {group.note ? <small className="muted ens-note-line">{t(group.note)}</small> : null}
               </div>
             </div>
           );
