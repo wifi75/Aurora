@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.99',
-    released: '2026-11-04T03:30:00Z',
+    released: '2026-11-03T22:16:50Z',
     kind: 'fixed',
     title: ['Paese e km senza accavallarsi', 'Country and km no longer overlap', 'Land und km überlappen nicht mehr', 'Pays et km ne se chevauchent plus', 'País y km ya no se solapan', 'País e km já não se sobrepõem'],
     text: [
