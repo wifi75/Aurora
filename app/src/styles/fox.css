@@ -102,7 +102,7 @@
 .foxc-empty { margin: 0; padding: var(--space-3); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
 
 /* cascata */
-.foxc-wf { height: 16rem; min-height: 120px; max-height: 1200px; display: flex; flex-direction: column; background: var(--wf-bg); overflow: hidden; }
+.foxc-wf { height: 16rem; min-height: 80px; max-height: 1200px; display: flex; flex-direction: column; background: var(--wf-bg); overflow: hidden; }
 .foxc-wf .wf-stack { flex: 1; min-height: 0; position: relative; }
 .foxc-rx-controls { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--fx-line); }
 
