@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.95 - 2026-11-04
+- **Pacchetto per l'assistenza** (Impostazioni > Informazioni): zip sul Desktop con log, crash, configurazioni senza segreti, ultime righe di ALL.TXT e info.txt (versione, PTT effettivo, audio, porte, stato Tx); «Manda per email» con posta gia' compilata (indirizzo scelto dall'utente); voce nella Guida.
+- **PTT**: senza PTT da JTDX si decide a ogni trasmissione da Impostazioni > Radio, senza riavvio.
+- **Radio**: riquadro «Impostazioni consigliate» con elenchi allineati a sinistra.
+
 ## 0.11.94 - 2026-11-04
 - **Guida riorganizzata** in sei gruppi con passi brevi e «Se non va»; nuove voci per Log4OM, LogHX3 e BBLogger2 via UDP (lato Aurora e lato log); docs/integrazioni-log.md aggiornato.
 - **Fox**: cascata larga solo fino a «Messaggi ricevuti», che scende fino in fondo.
