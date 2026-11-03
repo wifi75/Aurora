@@ -75,6 +75,47 @@ pub fn upload(url: &str, adif: &str, timeout: Duration) -> Result<String, String
     read_reply(&body)
 }
 
+/// La pagina di eQSL che dice l'ultimo invio: controlla utente e password **senza mandare QSO** (per la «Prova»).
+pub const LAST_UPLOAD_URL: &str = "https://www.eqsl.cc/qslcard/DisplayLastUploadDate.cfm";
+
+/// La «Prova»: un accesso con utente, password e nickname salvati (bloccante). `Ok` con la risposta di eQSL in una riga.
+pub fn test_login(url: &str, user: &str, password: &str, nick: &str, timeout: Duration) -> Result<String, String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(timeout)).http_status_as_error(false).build().into();
+    let mut request = agent.get(url).query("UserName", user).query("Password", password);
+    if !nick.is_empty() {
+        request = request.query("QTHNickname", nick);
+    }
+    let mut response = request.call().map_err(|e| describe(&e))?;
+    let status = response.status().as_u16();
+    if status != 200 {
+        return Err(format!("eQSL ha risposto {status}"));
+    }
+    let body = response.body_mut().read_to_string().map_err(|e| describe(&e))?;
+    read_login_reply(&body)
+}
+
+/// Cosa ha risposto la pagina dell'ultimo invio: il testo senza i tag; `Error:` vuol dire credenziali rifiutate.
+pub fn read_login_reply(body: &str) -> Result<String, String> {
+    let mut text = String::new();
+    let mut in_tag = false;
+    for c in body.chars() {
+        match c {
+            '<' => in_tag = true,
+            '>' => {
+                in_tag = false;
+                text.push(' ');
+            }
+            _ if !in_tag => text.push(if c.is_whitespace() { ' ' } else { c }),
+            _ => {}
+        }
+    }
+    let line: String = text.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(120).collect();
+    if line.to_lowercase().contains("error") {
+        return Err(format!("eQSL ha rifiutato l'accesso ({line})"));
+    }
+    if line.is_empty() { Ok("accesso riuscito".to_string()) } else { Ok(line) }
+}
+
 /// Un errore di rete senza indirizzo (la richiesta porta la password): solo il tipo di problema.
 pub(crate) fn describe(e: &ureq::Error) -> String {
     match e {
