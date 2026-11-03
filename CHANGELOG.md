@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.96 - 2026-11-04
+- **Assistenza**: scheda a se' nelle Impostazioni; «Manda per email» apre Gmail in Chrome gia' compilato; il campo email e' vuoto di fabbrica.
+- **Attivita' di banda**: km visibili anche con il pannello stretto, colonna larga quanto il numero, niente doppia linea quando manca la distanza.
+- **Telefono**: bandiera e paese seguono le opzioni di Schermo.
+
 ## 0.11.95 - 2026-11-04
 - **Pacchetto per l'assistenza** (Impostazioni > Informazioni): zip sul Desktop con log, crash, configurazioni senza segreti, ultime righe di ALL.TXT e info.txt (versione, PTT effettivo, audio, porte, stato Tx); «Manda per email» con posta gia' compilata (indirizzo scelto dall'utente); voce nella Guida.
 - **PTT**: senza PTT da JTDX si decide a ogni trasmissione da Impostazioni > Radio, senza riavvio.

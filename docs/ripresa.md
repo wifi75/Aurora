@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.95** (2026-11-04, pubblicata). Dalla 0.11.92: PTT dalla radio senza JTDX (`CatPtt`/`AutoPtt` e `ptt_method_for` in `core/crates/aurora/src/lib.rs`: con `AURORA_PTT_METHOD` da JTDX vale quello, altrimenti si decide a ogni trasmissione da Impostazioni > Radio); configurazione guidata della radio (`app/src/lib/rigPresets.ts`); Guida riorganizzata in sei gruppi (`app/src/i18n/guide.ts`); pacchetto per l'assistenza (`core/crates/aurora/src/support.rs`, zip sul Desktop senza segreti); stderr.log senza righe innocue di WebView2.
+- **Ultima versione**: **0.11.96** (2026-11-04, pubblicata; dalla 0.11.95: scheda Assistenza, km, bandiere del telefono). Dalla 0.11.92: PTT dalla radio senza JTDX (`CatPtt`/`AutoPtt` e `ptt_method_for` in `core/crates/aurora/src/lib.rs`: con `AURORA_PTT_METHOD` da JTDX vale quello, altrimenti si decide a ogni trasmissione da Impostazioni > Radio); configurazione guidata della radio (`app/src/lib/rigPresets.ts`); Guida riorganizzata in sei gruppi (`app/src/i18n/guide.ts`); pacchetto per l'assistenza (`core/crates/aurora/src/support.rs`, zip sul Desktop senza segreti); stderr.log senza righe innocue di WebView2.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
