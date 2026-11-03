@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.94 - 2026-11-04
+- **Guida riorganizzata** in sei gruppi con passi brevi e «Se non va»; nuove voci per Log4OM, LogHX3 e BBLogger2 via UDP (lato Aurora e lato log); docs/integrazioni-log.md aggiornato.
+- **Fox**: cascata larga solo fino a «Messaggi ricevuti», che scende fino in fondo.
+- **Attivita' di banda**: piu' spazio al messaggio ricevuto, carattere mezzo punto piu' piccolo.
+- **Messaggi**: percorso giusto per «qualsiasi messaggio» (Programmi collegati) e per lo spot DXSummit (Servizi online).
+
 ## 0.11.93 - 2026-11-04
 - **Aggiornamenti**: la versione nuova trovata ha la stella e la targhetta NEW.
 - **crash\stderr.log**: via le righe di avvio e l'avviso innocuo di WebView2 «Failed to unregister class Chrome_WidgetWin_0» (compare alla chiusura della finestra e non e' un guasto); restano solo gli errori veri.
