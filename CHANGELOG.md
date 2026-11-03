@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Telefono e tablet sempre aggiornati**: la pagina confronta la sua versione con quella di Aurora sul PC (all'avvio, quando torna in primo piano e ogni minuto); se Aurora e' stata aggiornata toglie service worker e cache e si ricarica da sola.
+
 
 ## 0.11.87 - 2026-11-03
 - **Telefono**: la pagina principale arriva sempre dalla rete (cache nuova del service worker), niente piu' versione vecchia dopo un aggiornamento; testata e pie' di pagina non disegnati; cluster con gli ultimi 5 spot; barra dei pulsanti piu' bassa.
