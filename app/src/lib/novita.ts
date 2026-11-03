@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.99',
+    released: '2026-11-04T03:30:00Z',
+    kind: 'fixed',
+    title: ['Paese e km senza accavallarsi', 'Country and km no longer overlap', 'Land und km überlappen nicht mehr', 'Pays et km ne se chevauchent plus', 'País y km ya no se solapan', 'País e km já não se sobrepõem'],
+    text: [
+      'Nell’attività di banda la colonna con bandiera, paese e km è più larga verso sinistra: nomi come «European Russia» stanno interi accanto alla distanza.',
+      'In band activity the flag, country and km column is wider to the left: names like «European Russia» fit in full next to the distance.',
+      'In der Bandaktivität ist die Spalte mit Flagge, Land und km nach links breiter: Namen wie «European Russia» passen ganz neben die Entfernung.',
+      'Dans l’activité de bande la colonne drapeau, pays et km est plus large vers la gauche : des noms comme « European Russia » tiennent en entier à côté de la distance.',
+      'En la actividad de banda la columna de bandera, país y km es más ancha hacia la izquierda: nombres como «European Russia» caben enteros junto a la distancia.',
+      'Na atividade de banda a coluna de bandeira, país e km é mais larga para a esquerda: nomes como «European Russia» cabem inteiros ao lado da distância.',
+    ],
+  },
+  {
     version: '0.11.98',
     released: '2026-11-03T22:10:59Z',
     kind: 'new',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur les affichages FT-2000 et IC-7610, TUNER maintenu 1 seconde lance l’accord, comme sur le poste. Sur la page Fox les panneaux s’allongent avec la poignée et STOP suit le style néon.',
       'En los displays FT-2000 e IC-7610, TUNER mantenido 1 segundo inicia la sintonía, como en la radio. En la página Fox los paneles se alargan con el tirador y STOP sigue el estilo neón.',
       'Nos visores FT-2000 e IC-7610, TUNER premido 1 segundo inicia a sintonia, como no rádio. Na página Fox os painéis alongam-se com a pega e o STOP segue o estilo néon.',
-    ],
-  },
-  {
-    version: '0.11.76',
-    released: '2026-11-02T18:45:58Z',
-    kind: 'new',
-    title: ['Accordatore, potenza e SWR', 'Tuner, power and SWR', 'Tuner, Leistung und SWR', 'Boîte d’accord, puissance et ROS', 'Acoplador, potencia y ROE', 'Sintonizador, potência e ROE'],
-    text: [
-      'Sotto il display: TUNE avvia l’accordatore della radio e PWR − / + cambia la potenza a passi del 5%. In trasmissione il display piccolo mostra anche lo SWR.',
-      'Below the display: TUNE starts the radio tuner and PWR − / + changes the power in 5% steps. While transmitting the small display also shows the SWR.',
-      'Unter dem Display: TUNE startet den Tuner des Funkgeräts, PWR − / + ändert die Leistung in 5-%-Schritten. Beim Senden zeigt das kleine Display auch das SWR.',
-      'Sous l’affichage : TUNE lance la boîte d’accord du poste et PWR − / + change la puissance par pas de 5 %. En émission le petit affichage montre aussi le ROS.',
-      'Bajo el display: TUNE inicia el acoplador de la radio y PWR − / + cambia la potencia en pasos del 5 %. Al transmitir el display pequeño muestra también la ROE.',
-      'Por baixo do visor: TUNE inicia o sintonizador do rádio e PWR − / + muda a potência em passos de 5 %. Ao transmitir o visor pequeno mostra também a ROE.',
     ],
   },
 ];
