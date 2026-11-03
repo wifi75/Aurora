@@ -853,3 +853,9 @@ body:has(.phone-live) .toaster {
 .app-shell:has(.phone-live) {
   padding-top: calc(env(safe-area-inset-top) + 0.75rem);
 }
+
+/* bandiere un po' piu' grandi nell'attivita' di banda del telefono */
+.phone-list .decode-list .decode-row .decode-flag {
+  width: 1.55em;
+  height: 1.15em;
+}
