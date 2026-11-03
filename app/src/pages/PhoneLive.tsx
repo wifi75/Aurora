@@ -18,7 +18,6 @@ import { MODES } from '../components/ModeSwitch';
 import { distanceKm, gridCenter } from '../lib/geo';
 import { periodPosition } from '../lib/period';
 import { replyErrorMessage } from '../lib/replyError';
-import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
@@ -28,7 +27,6 @@ import '../styles/phone.css';
 
 /** I modi del telecomando: gli stessi del selettore del PC. */
 const PHONE_MODES = MODES;
-const OPEN_KEY = 'aurora-phone-open';
 /** La descrizione corta di ciascuno dei sei messaggi Tx. */
 const TX_KINDS = ['phone.kind.grid', 'phone.kind.report', 'phone.kind.rreport', 'phone.kind.rr73', 'phone.kind.73', 'phone.kind.cq'] as const;
 
@@ -91,11 +89,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
     if (tablet) return;
     const next = { ...savedOpen, [box]: !savedOpen[box] };
     setOpen(next);
-    try {
-      browserStorage()?.setItem(OPEN_KEY, JSON.stringify(next));
-    } catch {
-      // senza archivio alla prossima visita ripartono chiusi
-    }
   };
 
   const seq = useTxSequence(status, allDecodes);
@@ -110,7 +103,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   // gli ultimi 5 spot, con i filtri banda/modo salvati nel cluster di Aurora; se con quei filtri sono meno di 5, si completa con gli ultimi arrivati
   const saved = readClusterFilters();
   const all = cluster.data?.spots ?? [];
-  const filtered = saved.bands.length > 0 || saved.modes.length > 0 ? filterSpots(all, saved, band) : all;
+  const filtered = saved.bands.length > 0 || saved.modes.length > 0 ? filterSpots(all, { ...saved, search: '' }, band) : all;
   const spots = (filtered.length >= 5 ? filtered : [...filtered, ...all.filter((s) => !filtered.includes(s))]).slice(0, 5);
   const log = useQuery({ queryKey: ['log4om', 3], queryFn: () => getLog4om(3), refetchInterval: 10_000, retry: false });
 

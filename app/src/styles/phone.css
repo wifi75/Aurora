@@ -993,8 +993,7 @@ body:has(.phone-live) .toaster {
 
 /* appena tocchi una riga per chiamare, la stazione si evidenzia subito, senza aspettare la conferma di Aurora */
 .phone-list .decode-list .decode-row--picked,
-.phone-list .decode-list .decode-row--selected,
-.phone-list .decode-list .decode-row--queued {
+.phone-list .decode-list .decode-row--selected {
   background: #ffd84d;
   color: #1c1400;
   font-weight: 700;
