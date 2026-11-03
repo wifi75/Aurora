@@ -198,7 +198,12 @@ impl AudioManager {
         let in_channel = InputChannel::parse(&initial.input_channel).unwrap_or_default();
         let out_channel = OutputChannel::parse(&initial.output_channel).unwrap_or_default();
         let default_save_dir = data_dir.join("save");
-        let dir = if initial.save_dir.trim().is_empty() { default_save_dir.clone() } else { PathBuf::from(initial.save_dir.trim()) };
+        // i file audio stanno sempre nella cartella di Aurora: una cartella copiata da JTDX (o comunque fuori da Aurora) non vale
+        let dir = if initial.save_dir.trim().is_empty() || !PathBuf::from(initial.save_dir.trim()).starts_with(data_dir) {
+            default_save_dir.clone()
+        } else {
+            PathBuf::from(initial.save_dir.trim())
+        };
         Arc::new(AudioManager {
             backend,
             tap,
@@ -413,7 +418,9 @@ impl AudioManager {
 
     fn apply_save(&self, w: &AudioValues) -> AudioPart {
         let mode = SaveMode::parse(&w.save_mode);
-        let dir = if w.save_dir.trim().is_empty() { self.default_save_dir.clone() } else { PathBuf::from(w.save_dir.trim()) };
+        // solo dentro la cartella di Aurora (quella che contiene `save`): altrimenti si torna a quella di Aurora
+        let inside = self.default_save_dir.parent().is_some_and(|root| PathBuf::from(w.save_dir.trim()).starts_with(root));
+        let dir = if w.save_dir.trim().is_empty() || !inside { self.default_save_dir.clone() } else { PathBuf::from(w.save_dir.trim()) };
         if mode != SaveMode::None
             && let Err(e) = check_writable(&dir)
         {
