@@ -1147,11 +1147,48 @@ impl engine_native::TxPort for WindowsVolumePort {
 }
 
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
-fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
+/// PTT comandato attraverso la radio collegata con Hamlib (`T 1` / `T 0` di rigctld): rigctld usa il PTT scelto in Impostazioni > Radio
+/// (CAT, oppure DTR/RTS sulla porta indicata). Se la radio non e' collegata la trasmissione non parte.
+struct CatPtt {
+    cat: Arc<rig_control::cat::CatService>,
+    on: std::sync::atomic::AtomicBool,
+}
+
+impl tx_native::Ptt for CatPtt {
+    fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        let rig = self.cat.hamlib().map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+        rig.set_ptt(on).map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+        self.on.store(on, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn is_on(&self) -> bool {
+        self.on.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+/// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
+/// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
+fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
+    if config.ptt_method != "vox" {
+        return config.ptt_method.clone();
+    }
+    let radio = cat.config();
+    match (radio.backend, radio.ptt) {
+        (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
+        (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
+        (rig_control::cat_config::Backend::Hamlib, _) if radio.model != 0 => "cat".to_string(),
+        _ => "vox".to_string(),
+    }
+}
+
+fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
     let port = config.ptt_port.clone().unwrap_or_default();
-    let ptt: Arc<dyn tx_native::Ptt> = match config.ptt_method.as_str() {
+    let method = ptt_method_for(config, cat);
+    let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
+        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
-            let line = if config.ptt_method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
+            let line = if method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
             match tx_native::SerialLinePtt::open(&port, line) {
                 Ok(ptt) => Arc::new(ptt),
                 Err(e) => {
@@ -1179,7 +1216,7 @@ fn build_transmitter(config: &Config, controls: &Arc<engine_native::NativeContro
             transmitter.set_listener(Some(Arc::new(move |state| {
                 flag.transmitting.store(state == tx_native::TxState::Transmitting, std::sync::atomic::Ordering::Relaxed);
             })));
-            tracing::info!("trasmissione pronta: PTT {}{}", config.ptt_method, config.ptt_port.as_deref().map(|p| format!(" su {p}")).unwrap_or_default());
+            tracing::info!("trasmissione pronta: PTT {}{}", method, config.ptt_port.as_deref().filter(|_| method == "rts" || method == "dtr").map(|p| format!(" su {p}")).unwrap_or_default());
             Some(Arc::new(transmitter))
         }
         Err(e) => {
@@ -1626,7 +1663,7 @@ pub async fn run(
                 dial_hz: Arc::clone(&dial_hz),
                 controls: Arc::clone(&native_controls),
                 transmitter: audio_manager.as_ref().and_then(|m| {
-                    let transmitter = build_transmitter(&config, &native_controls, &tx_interlock, m.build_output()?);
+                    let transmitter = build_transmitter(&config, &cat, &native_controls, &tx_interlock, m.build_output()?);
                     if transmitter.is_none() {
                         m.output_closed();
                     }
