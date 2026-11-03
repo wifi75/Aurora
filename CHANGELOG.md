@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.91 - 2026-11-03
+- **Revisione del codice**: giallo solo per la stazione chiamata e la riga toccata (non per quelle in coda); il cluster del telefono non usa il testo cercato sul PC; l'accesso senza codice si cambia in memoria solo dopo averlo salvato.
+
 ## 0.11.90 - 2026-11-03
 - **Telefono**: cluster con modo e chi ha fatto lo spot; log con bandiera; colonne allineate; stazione chiamata in giallo (anche appena toccata) e nel riquadro Tx; blocchi con bordo e titolo del loro colore; barra con la frequenza 2 px piu' in basso.
 
