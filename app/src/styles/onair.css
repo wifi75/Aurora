@@ -6046,3 +6046,18 @@
   text-align: left;
   white-space: normal;
 }
+
+/* attivita' di banda stretta: i km restano (in CQ e novita' no, li' serve il posto per il paese) */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+  }
+
+  .dock-panel--all .decode-list .decode-row .decode-where .w-km {
+    display: flex;
+  }
+
+  .dock-panel--all .decode-list .decode-row .decode-where .w-km:empty {
+    display: none;
+  }
+}
