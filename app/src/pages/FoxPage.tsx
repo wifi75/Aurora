@@ -171,7 +171,10 @@ export function FoxPage() {
       </div>
 
 
-      <div className="foxc-grid foxc-grid--main" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
+      {/* a sinistra chi chiama, QSO in corso e cascata (larga solo fin li'); a destra «Messaggi ricevuti» alto fino in fondo */}
+      <div className="foxc-body">
+        <div className="foxc-left">
+      <div className="foxc-grid foxc-grid--main foxc-grid--two" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
         <section className="foxc-card foxc-tone--lilac">
           <header className="foxc-card-head">
             <h2 title={t('tip.fox.callers')}>{t('fox.callers')}</h2>
@@ -295,12 +298,16 @@ export function FoxPage() {
             )}
           </section>
         </div>
-        <Received />
       </div>
 
       <DragHandle label={t('fox.resizeMain')} onPointerDown={main.onPointerDown} />
 
       <Spectrum />
+        </div>
+        <div className="foxc-right">
+          <Received />
+        </div>
+      </div>
     </section>
   );
 }

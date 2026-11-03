@@ -266,3 +266,15 @@
 .foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle { background: transparent !important; color: #ff8fb0 !important; box-shadow: none !important; }
 .foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle:hover { background: rgba(255, 61, 113, 0.15) !important; }
 .foxc-main-actions .stop-bar { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
+
+/* Fox: la cascata e' larga solo fino a «Messaggi ricevuti», che scende fino in fondo alla pagina */
+.foxc-body { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 3fr); gap: var(--space-3); align-items: stretch; }
+.foxc-left { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.foxc-grid--main.foxc-grid--two { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); }
+.foxc-right { display: flex; min-width: 0; }
+.foxc-right > .foxc-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.foxc-right > .foxc-card .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
+@media (max-width: 63.99rem) {
+  .foxc-body { grid-template-columns: 1fr; }
+  .foxc-right > .foxc-card { max-height: 22rem; }
+}
