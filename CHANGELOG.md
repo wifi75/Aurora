@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.83 - 2026-11-03
+- **«Prova» e spia** anche per eQSL (accesso senza invio), spot su PSK Reporter e DXSummit (riquadri separati), NG3K, propagazione, orologio NTP (scarto), uscite UDP (Heartbeat) e TCP (connessione).
+- **Scheda DXpedition**: si apre una volta sola gia' completa (cartina creata prima del primo disegno, riquadro del paese con segnaposto uguale a quello vero, scheda rimontata per ogni stazione).
+- **Pagina Fox/DXpedition**: cascata piu' bassa (150 px) ed elenco dei messaggi piu' lungo (560 px).
+
 ## 0.11.82 - 2026-11-02
 - **Ricerca QRZ.com e HamQTH**: la prima ricerca senza sessione aperta bloccava il servizio per sempre («Prova in corso…», nome e citta' mai arrivati). Il lucchetto dei dati ora si lascia prima dell'accesso.
 

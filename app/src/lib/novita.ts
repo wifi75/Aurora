@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.83',
+    released: '2026-11-03T17:30:00Z',
+    kind: 'new',
+    title: ['«Prova» per tutti i servizi', '«Test» for every service', '«Test» für alle Dienste', '« Tester » pour tous les services', '«Probar» para todos los servicios', '«Testar» para todos os serviços'],
+    text: [
+      'Spia e «Prova» anche per eQSL, spot su PSK Reporter e DXSummit, NG3K, propagazione, orologio NTP e uscite UDP e TCP: Aurora controlla il servizio senza inviare QSO né spot.',
+      'Light and «Test» also for eQSL, spots on PSK Reporter and DXSummit, NG3K, propagation, NTP clock and UDP and TCP outputs: Aurora checks the service without sending QSOs or spots.',
+      'Lampe und «Test» auch für eQSL, Spots auf PSK Reporter und DXSummit, NG3K, Ausbreitung, NTP-Uhr und UDP- und TCP-Ausgänge: Aurora prüft den Dienst, ohne QSOs oder Spots zu senden.',
+      'Voyant et « Tester » aussi pour eQSL, spots PSK Reporter et DXSummit, NG3K, propagation, horloge NTP et sorties UDP et TCP : Aurora vérifie le service sans envoyer de QSO ni de spot.',
+      'Luz y «Probar» también para eQSL, spots en PSK Reporter y DXSummit, NG3K, propagación, reloj NTP y salidas UDP y TCP: Aurora comprueba el servicio sin enviar QSO ni spots.',
+      'Luz e «Testar» também para eQSL, spots no PSK Reporter e DXSummit, NG3K, propagação, relógio NTP e saídas UDP e TCP: a Aurora verifica o serviço sem enviar QSO nem spots.',
+    ],
+  },
+  {
+    version: '0.11.83',
+    released: '2026-11-03T17:30:00Z',
+    kind: 'fixed',
+    title: ['Scheda DXpedition senza fantasmi', 'DXpedition card without ghosts', 'DXpedition-Karte ohne Geister', 'Fiche DXpédition sans fantômes', 'Ficha DXpedición sin fantasmas', 'Ficha DXpedição sem fantasmas'],
+    text: [
+      'La scheda si apre una volta sola, già completa: niente più cartina scura né riquadro del paese vuoto prima di quella vera. Nella pagina Fox la cascata è più bassa e l’elenco dei messaggi più lungo.',
+      'The card opens once, already complete: no more dark map or empty country box before the real one. On the Fox page the waterfall is lower and the message list longer.',
+      'Die Karte öffnet sich einmal und vollständig: keine dunkle Karte und kein leerer Länderkasten mehr vor der echten. Auf der Fox-Seite ist der Wasserfall niedriger und die Nachrichtenliste länger.',
+      'La fiche s’ouvre une seule fois, déjà complète : plus de carte sombre ni d’encadré pays vide avant la vraie. Sur la page Fox la cascade est plus basse et la liste des messages plus longue.',
+      'La ficha se abre una sola vez, ya completa: sin mapa oscuro ni recuadro del país vacío antes del real. En la página Fox la cascada es más baja y la lista de mensajes más larga.',
+      'A ficha abre uma só vez, já completa: sem mapa escuro nem caixa do país vazia antes da verdadeira. Na página Fox a cascata é mais baixa e a lista de mensagens mais longa.',
+    ],
+  },
+  {
     version: '0.11.82',
     released: '2026-11-02T22:30:10Z',
     kind: 'fixed',
@@ -542,34 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'Plus d’étiquette à côté de l’indicatif, qui se lit en entier : la ligne prend la couleur choisie.',
       'Ya no hay etiqueta junto al indicativo, que ahora se lee entero: la fila tiene el color elegido.',
       'Já não há etiqueta junto ao indicativo, que agora se lê inteiro: a linha fica com a cor escolhida.',
-    ],
-  },
-  {
-    version: '0.11.58',
-    released: '2026-11-01T14:54:24Z',
-    kind: 'new',
-    title: ['Display Yaesu FT-2000 e Icom IC-7610', 'Yaesu FT-2000 and Icom IC-7610 displays', 'Anzeigen Yaesu FT-2000 und Icom IC-7610', 'Afficheurs Yaesu FT-2000 et Icom IC-7610', 'Displays Yaesu FT-2000 e Icom IC-7610', 'Visores Yaesu FT-2000 e Icom IC-7610'],
-    text: [
-      'Due nuovi stili del display della radio in Impostazioni > Radio: a pannello unico come una FT-2000 (VFO A grande, VFO B e S-meter a destra) o come una IC-7610 (MAIN e SUB con S-meter ad arco). I pulsanti restano cliccabili.',
-      'Two new radio display styles in Settings > Radio: a single panel like an FT-2000 (large VFO A, VFO B and S-meter on the right) or like an IC-7610 (MAIN and SUB with arc S-meters). The buttons stay clickable.',
-      'Zwei neue Stile der Funkanzeige unter Einstellungen > Radio: ein Feld wie beim FT-2000 (großer VFO A, VFO B und S-Meter rechts) oder wie beim IC-7610 (MAIN und SUB mit Bogen-S-Meter). Die Tasten bleiben anklickbar.',
-      'Deux nouveaux styles d’afficheur dans Réglages > Radio : un panneau comme un FT-2000 (grand VFO A, VFO B et S-mètre à droite) ou comme un IC-7610 (MAIN et SUB avec S-mètres en arc). Les boutons restent cliquables.',
-      'Dos nuevos estilos de display en Ajustes > Radio: un panel como un FT-2000 (VFO A grande, VFO B y S-meter a la derecha) o como un IC-7610 (MAIN y SUB con S-meter de arco). Los botones siguen siendo clicables.',
-      'Dois novos estilos de visor em Definições > Rádio: um painel como um FT-2000 (VFO A grande, VFO B e S-meter à direita) ou como um IC-7610 (MAIN e SUB com S-meter em arco). Os botões continuam clicáveis.',
-    ],
-  },
-  {
-    version: '0.11.58',
-    released: '2026-11-01T14:54:24Z',
-    kind: 'new',
-    title: ['DXpedition evidenziate nel cluster', 'DXpeditions highlighted in the cluster', 'DXpeditionen im Cluster hervorgehoben', 'DXpéditions en évidence dans le cluster', 'DXpediciones resaltadas en el clúster', 'DXpedições realçadas no cluster'],
-    text: [
-      'Gli spot delle DXpedition in onda secondo NG3K hanno la riga colorata e l’etichetta «DXped». Il colore si sceglie in Impostazioni > DX Cluster, con una tavolozza fluo.',
-      'Spots of DXpeditions on the air according to NG3K get a coloured row and a “DXped” tag. The colour is picked in Settings > DX Cluster, with a fluorescent palette.',
-      'Spots von DXpeditionen laut NG3K bekommen eine farbige Zeile und die Marke „DXped“. Die Farbe wählst du unter Einstellungen > DX Cluster, mit Neonpalette.',
-      'Les spots des DXpéditions en l’air selon NG3K ont une ligne colorée et l’étiquette « DXped ». La couleur se choisit dans Réglages > DX Cluster, avec une palette fluo.',
-      'Los spots de las DXpediciones en el aire según NG3K tienen la fila coloreada y la etiqueta «DXped». El color se elige en Ajustes > DX Cluster, con una paleta flúor.',
-      'Os spots das DXpedições no ar segundo o NG3K têm a linha colorida e a etiqueta «DXped». A cor escolhe-se em Definições > DX Cluster, com uma paleta flúor.',
     ],
   },
 ];
