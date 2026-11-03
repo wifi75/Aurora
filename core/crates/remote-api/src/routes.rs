@@ -2241,7 +2241,6 @@ async fn access_put(State(state): State<AppState>, Peer(peer): Peer, headers: He
     if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
-    state.open_access.store(body.open, std::sync::atomic::Ordering::SeqCst);
     if let Some(path) = &state.open_access_file
         && let Err(e) = std::fs::write(path, if body.open { "1
 " } else { "0
@@ -2250,6 +2249,7 @@ async fn access_put(State(state): State<AppState>, Peer(peer): Peer, headers: He
         tracing::error!("accesso senza codice non salvato in {}: {e}", path.display());
         return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "storage"));
     }
+    state.open_access.store(body.open, std::sync::atomic::Ordering::SeqCst);
     tracing::warn!("accesso senza codice {}", if body.open { "ACCESO (rete di casa)" } else { "spento" });
     Ok(Json(json!({ "ok": true, "open": body.open })))
 }
