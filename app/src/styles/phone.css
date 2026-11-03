@@ -906,3 +906,57 @@ body:has(.phone-live) .toaster {
 .phone-live .phone-top {
   min-height: 2.6rem;
 }
+
+/* cluster e log sul telefono: colonne fisse e centrate in verticale, tutto su una riga */
+.phone-row--spot,
+.phone-row--qso {
+  display: grid;
+  align-items: center;
+  column-gap: 0.35rem;
+  min-height: 2.2rem;
+  height: 2.2rem;
+  padding: 0 0.4rem;
+  white-space: nowrap;
+}
+
+/* frequenza | bandiera | DX | modo | chi ha fatto lo spot | ora */
+.phone-row--spot {
+  grid-template-columns: 3.4rem 1.4rem minmax(0, 1fr) 2.3rem minmax(0, 4.6rem) 2.6rem;
+}
+
+/* ora | bandiera | nominativo | banda e modo | rapporti */
+.phone-row--qso {
+  grid-template-columns: 2.6rem 1.4rem minmax(0, 1fr) 5rem 4.6rem;
+}
+
+.phone-row--spot > *,
+.phone-row--qso > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-row--spot .phone-row-t,
+.phone-row--qso .phone-row-t {
+  width: auto;
+}
+
+.phone-row--spot .phone-flag,
+.phone-row--qso .phone-flag {
+  width: 1.4rem;
+  height: 1rem;
+  justify-self: center;
+}
+
+.phone-row-mode {
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.phone-row-de,
+.phone-row-time,
+.phone-row-rst {
+  font-size: 0.7rem;
+  text-align: right;
+}
