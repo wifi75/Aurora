@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.101** (2026-11-04, pubblicata; 0.11.101 = file audio in Aurora, paese, impostazioni consigliate): rapporti degli errori accesi di fabbrica con avviso una tantum al primo avvio (`app/src/components/ReportsNotice.tsx`, `Impostazioni` di default in `core/crates/aurora/src/rapporti.rs`). 0.11.99: colonna del paese piu' larga. 0.11.98: PTT dalla radio quando un vecchio JTDX.ini dice OmniRig (confermato dal vivo sull'IC-7300 di un utente).
+- **Ultima versione**: **0.11.101** (2026-11-04, pubblicata; 0.11.101 = file audio in Aurora, paese, colonna dei km sempre presente, impostazioni consigliate): rapporti degli errori accesi di fabbrica con avviso una tantum al primo avvio (`app/src/components/ReportsNotice.tsx`, `Impostazioni` di default in `core/crates/aurora/src/rapporti.rs`). 0.11.99: colonna del paese piu' larga. 0.11.98: PTT dalla radio quando un vecchio JTDX.ini dice OmniRig (confermato dal vivo sull'IC-7300 di un utente).
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
