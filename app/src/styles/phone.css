@@ -619,3 +619,47 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
+
+/* attivita' di banda sul telefono: tutto su una riga sola, colonne fisse e allineate
+   ora | dB | messaggio | bandiera + paese; l'etichetta (Nuova staz., Gia' lavorata) si vede dal colore della riga */
+.phone-list .decode-list .decode-row {
+  display: grid;
+  grid-template-columns: 4.1rem 2.2rem minmax(0, 1fr) 6.2rem;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: 0.35rem;
+  row-gap: 0;
+  white-space: nowrap;
+}
+
+.phone-list .decode-list .decode-row > * {
+  grid-row: 1;
+  min-width: 0;
+}
+
+.phone-list .decode-list .decode-row .c-time { grid-column: 1; }
+.phone-list .decode-list .decode-row .c-snr { grid-column: 2; text-align: right; }
+.phone-list .decode-list .decode-row .decode-text { grid-column: 3; overflow: hidden; text-overflow: ellipsis; }
+.phone-list .decode-list .decode-row .decode-where {
+  grid-column: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  overflow: hidden;
+}
+
+.phone-list .decode-list .decode-row .decode-where .w-km,
+.phone-list .decode-list .decode-row .badge-cell,
+.phone-list .decode-list .decode-row .c-dt,
+.phone-list .decode-list .decode-row .c-freq,
+.phone-list .decode-list .decode-row .decode-gap {
+  display: none;
+}
+
+.phone-list .decode-list .decode-row .w-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.7rem;
+  color: var(--text-muted, #6b7a8f);
+}
