@@ -67,16 +67,16 @@ export function ClusterPanel() {
   const status = useStation((s) => s.status);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
-  // le informazioni (paese, nome, citta') degli spot piu' recenti si caricano in anticipo, DX e chi ha fatto lo spot
-  useEffect(() => {
-    const recent = cluster.data?.spots.slice(0, 30) ?? [];
-    prefetchCallsigns(recent.flatMap((s) => [s.dx_call, s.spotter]));
-  }, [cluster.data]);
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
   const [note, setNote] = useState('');
   const wishlist = useWishlist((s) => s.list);
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
+  // tutto quello che si vede nel cluster (DX e chi ha fatto lo spot) si carica in anticipo: al passaggio del mouse il riquadro e' gia' pronto
+  useEffect(() => {
+    const visible = cluster.data ? filterSpots(cluster.data.spots, filters, myBand) : [];
+    prefetchCallsigns(visible.flatMap((s) => [s.dx_call, s.spotter]));
+  }, [cluster.data, filters, myBand]);
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {

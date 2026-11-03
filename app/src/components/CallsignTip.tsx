@@ -5,17 +5,25 @@ import { useT } from '../i18n';
 
 /** Le ricerche gia' fatte (o in corso): lo stesso nominativo non si chiede due volte finche' la pagina resta aperta. */
 const cache = new Map<string, Promise<CallsignInfo | null>>();
+/** Le risposte gia' arrivate: il riquadro di questi nominativi si apre subito, senza attesa. */
+const ready = new Map<string, CallsignInfo | null>();
 
 /** Solo per le prove. */
 export function clearCallsignCache(): void {
   cache.clear();
+  ready.clear();
 }
 
 export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
   const key = call.toUpperCase();
   let p = cache.get(key);
   if (!p) {
-    p = getCallsign(key).catch(() => null);
+    p = getCallsign(key)
+      .catch(() => null)
+      .then((v) => {
+        ready.set(key, v);
+        return v;
+      });
     cache.set(key, p);
   }
   return p;
@@ -75,6 +83,14 @@ export function CallsignTip({ call, children }: { call: string; children: ReactN
     const r = e.currentTarget.getBoundingClientRect();
     const target = { x: r.left, y: r.bottom + 4 };
     if (timer.current) clearTimeout(timer.current);
+    // gia' precaricato: si mostra subito
+    const known = ready.get(call.toUpperCase());
+    if (known !== undefined) {
+      setPos(target);
+      setInfo(known);
+      setOpen(true);
+      return;
+    }
     timer.current = setTimeout(() => {
       setPos(target);
       setOpen(true);
