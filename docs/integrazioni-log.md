@@ -98,6 +98,36 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 | OpenHamClock | Ascolta 2237 (segnalazione su GitHub); alla ricezione del traffico FT8 mostra gli spot | - | **OK** (non verificato dal vivo) | Multicast se 2237 e' occupata |
 | SDR-Control e simili | Nessuna fonte trovata | - | **?** | Verificare |
 
+## 2bis. Collegare i log via UDP: configurazione passo passo (Log4OM, LogHX3, BBLogger2)
+
+Stessa sostanza della voce «Collegare i programmi di log (UDP)» della Guida dell'app.
+
+### Lato Aurora (Impostazioni > Programmi collegati)
+- **Server UDP primario**: `UDPServer` 127.0.0.1, `UDPServerPort` 2237 (valori di fabbrica). Manda il flusso binario WSJT-X: Heartbeat, Status, Decode, Clear, QSO Logged (5), Close; con «Abilita l'invio del file ADIF per il log» (`EnableUDP1adifSending`, di fabbrica acceso) anche il Logged ADIF (12). Unicast o, se l'indirizzo e' un gruppo, multicast (TTL 1).
+- **Server UDP secondario** (riquadro «Invia file ADIF del QSO per il log»): `EnableUDP2adifBroadcast` (di fabbrica acceso), `UDP2Server` 127.0.0.1, `UDP2ServerPort` 2237. Solo il record ADIF in testo, un datagramma per QSO, come `UDP2Server` di JTDX.
+- **Attenzione**: di fabbrica primario e secondario puntano entrambi a 127.0.0.1:2237. Lasciare acceso solo quello che serve al log, o spostare l'altro su un'altra porta.
+- **Riquadro «Integrazioni»**: destinatari in piu' (al piu' 16). Pulsanti: «Flusso WSJT-X» (127.0.0.1:2237, flusso acceso), «Gruppo multicast» (239.255.0.1:2237, interfaccia 127.0.0.1, TTL 1), «ADIF su UDP» (127.0.0.1:2333, nome Log4OM), «XML stile N1MM» (12060). Per ogni destinatario: flusso WSJT-X, Logged ADIF (12), ADIF su UDP, XML N1MM, multicast.
+- **«Gia' lavorato» da Log4OM**: variabile d'ambiente `AURORA_LOG4OM_DB` con il percorso del database SQLite di Log4OM 2; lettura sola, il pannello Log mostra i QSO di Log4OM.
+
+### Log4OM 2
+1. Aurora: secondario acceso su 127.0.0.1:2237; primario spostato su un'altra porta (es. 2238 o quella di GridTracker) per lasciare 2237 a Log4OM. In alternativa «+ ADIF su UDP» (2333) con la stessa porta in Log4OM.
+2. Log4OM: Settings > Program Configuration > Software Integration > Connections *(nome indicativo, controllare la versione)*.
+3. Connessione UDP in entrata, tipo `ADIF_MESSAGE`, porta uguale ad Aurora, attiva; «Save and apply».
+4. Oppure tipo `JT_MESSAGE` sulla porta del primario per avere anche lo stato. Una sola delle due strade.
+5. La radio si collega a parte: CAT interface > Hamlib, «Connect to active HAMLIB instance» 127.0.0.1:4532 (CAT condiviso di Aurora).
+
+### LogHX3 e BBLogger2
+1. Aurora: «Integrazioni» > «+ Flusso WSJT-X», 127.0.0.1, porta 2237 o un'altra libera (es. 2239), flusso acceso, multicast spento. Se il QSO non arriva ma lo stato si', accendere anche «Logged ADIF (12)».
+2. Nel log: impostazione dell'interfaccia WSJT-X/JTDX via UDP, ricezione attiva, 127.0.0.1 e la stessa porta, registrazione automatica dei QSO ricevuti *(nomi delle voci indicativi, non verificati: controllare la versione del programma)*.
+3. Multicast solo se il log lo supporta (non verificato per LogHX3 e BBLogger2).
+
+### Verifica e problemi tipici
+- Prova: un QSO (anche su carico fittizio) e la riga deve comparire nel log.
+- Una porta unicast la apre un solo programma: con JTDX, GridTracker o JTAlert aperti la 2237 e' spesso occupata. Soluzioni: un destinatario per programma con porte diverse, oppure il gruppo multicast se tutti i programmi lo ascoltano.
+- QSO doppi: lo stesso log riceve per due strade (flusso + ADIF, o inoltro di GridTracker/JTAlert). Tenerne una.
+- Log su un altro PC: indirizzo IP di quel PC e regola del firewall di Windows per UDP in entrata sulla porta.
+- Nessun preset dedicato a LogHX3 o BBLogger2 nell'interfaccia: si usa «Flusso WSJT-X» (porte e voci di quei programmi non verificate).
+
 ## 3. Programma per programma
 
 ### GridTracker 2 (e 1)
