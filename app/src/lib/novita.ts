@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.92',
-    released: '2026-11-03T23:50:00Z',
+    released: '2026-11-03T20:48:57Z',
     kind: 'fixed',
     title: ['La radio va in trasmissione con il PTT scelto', 'The radio keys with the chosen PTT', 'Das Funkgerät sendet mit der gewählten PTT', 'La radio passe en émission avec le PTT choisi', 'La radio transmite con el PTT elegido', 'O rádio transmite com o PTT escolhido'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.92',
-    released: '2026-11-03T23:50:00Z',
+    released: '2026-11-03T20:48:57Z',
     kind: 'new',
     title: ['Configurazione guidata della radio', 'Guided radio setup', 'Geführte Funkgeräte-Einrichtung', 'Configuration guidée de la radio', 'Configuración guiada de la radio', 'Configuração guiada do rádio'],
     text: [
