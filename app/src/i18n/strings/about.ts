@@ -1,5 +1,14 @@
 /** Informazioni sul programma: autore, versione, licenza e collegamenti. [it, en, de, fr, es, pt] */
 export const aboutStrings = {
+  'tab.support': ['Assistenza', 'Support', 'Support', 'Assistance', 'Asistencia', 'Assistência'],
+  'tip.tab.support': [
+    'Manda log ed errori a chi ti aiuta: pacchetto sul Desktop e posta già pronta.',
+    'Send log and errors to whoever helps you: package on the Desktop and a ready-made email.',
+    'Log und Fehler an deinen Helfer senden: Paket auf dem Desktop und fertige E-Mail.',
+    'Envoie journal et erreurs à la personne qui t’aide : paquet sur le Bureau et e-mail prêt.',
+    'Envía registro y errores a quien te ayuda: paquete en el Escritorio y correo listo.',
+    'Envia registo e erros a quem te ajuda: pacote no Ambiente de trabalho e email pronto.',
+  ],
   'tab.about': ['Informazioni', 'About', 'Über', 'À propos', 'Acerca de', 'Sobre'],
   'tip.tab.about': [
     'Chi ha fatto Aurora, la versione in uso, la licenza e dove trovare sorgenti e aggiornamenti.',

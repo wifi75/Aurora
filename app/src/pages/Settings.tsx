@@ -22,6 +22,7 @@ import { OnlineTab } from '../settings/OnlineTab';
 import { UpdatesTab } from '../settings/UpdatesTab';
 import { AboutTab } from '../settings/AboutTab';
 import { WishlistTab } from '../settings/WishlistTab';
+import { SupportTab } from '../settings/SupportBox';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
 
 interface TabDef {
@@ -55,6 +56,7 @@ const TAB: Record<string, TabDef> = Object.fromEntries(
       ['updates', <UpdatesTab />],
       ['access', <AccessTab />],
       ['windows', <WindowsTab />],
+      ['support', <SupportTab />],
       ['about', <AboutTab />],
     ] as const
   ).map(([id, node]) => [id, { id, label: `tab.${id}` as Key, tip: `tip.tab.${id}` as Key, render: () => node }]),
@@ -73,7 +75,7 @@ const ROWS: readonly TabRow[] = [
   { id: 'tx', title: 'tabg.tx', tabs: ['sequence', 'macros', 'schedule'] },
   { id: 'alerts', title: 'tabg.alerts', tabs: ['notifications', 'wishlist', 'dxcc'] },
   { id: 'net', title: 'tabg.net', tabs: ['cluster', 'online', 'logservices', 'reports'] },
-  { id: 'system', title: 'tabg.system', tabs: ['access', 'windows', 'updates', 'about'] },
+  { id: 'system', title: 'tabg.system', tabs: ['access', 'windows', 'updates', 'support', 'about'] },
 ];
 
 /** Le voci di ogni scheda che la ricerca trova oltre al nome e alla descrizione (anche quelle spostate da una scheda all'altra). */

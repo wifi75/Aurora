@@ -12,7 +12,21 @@ export function supportMailto(to: string, subject: string, body: string): string
   return `mailto:${encodeURIComponent(to.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-/** Riquadro «Assistenza» di Impostazioni > Informazioni: prepara lo zip per chi aiuta e, se si vuole, apre la posta gia' scritta. */
+/** Lo stesso messaggio in Gmail sul web (si apre in Chrome): niente programma di posta da configurare. */
+export function supportGmail(to: string, subject: string, body: string): string {
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to.trim())}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+/** Scheda «Assistenza» delle Impostazioni (pagina a se'). */
+export function SupportTab() {
+  return (
+    <div className="sx-page">
+      <SupportBox />
+    </div>
+  );
+}
+
+/** Riquadro «Assistenza»: prepara lo zip per chi aiuta e, se si vuole, apre la posta gia' scritta. */
 export function SupportBox() {
   const t = useT();
   const lang = useLang((s) => s.lang);
@@ -51,8 +65,8 @@ export function SupportBox() {
     else bundle = await prepare();
     if (!bundle) return;
     const vars = { version: bundle.version || '—', call: bundle.call || '—', radio: bundle.radio || '—', ptt: bundle.ptt || '—', name: bundle.name };
-    // nel programma Windows la finestra nuova diventa il programma di posta (i mailto passano al sistema)
-    window.open(supportMailto(email, t('sup.mailSubject', vars), t('sup.mailBody', vars)), '_blank');
+    // la posta si apre in Gmail nel browser (Chrome nel programma Windows): niente programma di posta da configurare
+    window.open(supportGmail(email, t('sup.mailSubject', vars), t('sup.mailBody', vars)), '_blank');
   };
 
   return (
