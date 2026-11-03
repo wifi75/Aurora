@@ -42,6 +42,8 @@ interface Props {
   rigControl: boolean;
   /** La trasmissione e' aperta (AURORA_ALLOW_TX=1). */
   txAllowed: boolean;
+  /** Tablet in orizzontale: due colonne (a sinistra l'attivita' di banda, a destra cluster, log, Tx e cascata), riquadri sempre aperti. */
+  tablet?: boolean;
 }
 
 /** Quali riquadri richiudibili sono aperti (cluster e log), ricordato sul telefono. */
@@ -71,7 +73,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
  * La pagina Stazione sul telefono: un telecomando compatto al posto dei pannelli. Dati e comandi sono quelli della pagina a finestre
  * (li passa Live): qui cambia solo la disposizione, dall'alto in basso come nel prototipo approvato.
  */
-export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pickMode, rigControl, txAllowed }: Props) {
+export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pickMode, rigControl, txAllowed, tablet = false }: Props) {
   const t = useT();
   const client = useQueryClient();
   const status = useStation((s) => s.status);
@@ -82,9 +84,12 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const period = usePeriod(mode);
   const seconds = `${pad2(period.seconds)}/${pad2(Math.round(period.length))}`;
   const band = pendingBand ?? (status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null);
-  const [open, setOpen] = useState(readOpen);
+  const [savedOpen, setOpen] = useState(readOpen);
+  // sul tablet c'e' spazio: cluster e log restano sempre aperti
+  const open = tablet ? { cluster: true, log: true } : savedOpen;
   const toggleBox = (box: 'cluster' | 'log') => {
-    const next = { ...open, [box]: !open[box] };
+    if (tablet) return;
+    const next = { ...savedOpen, [box]: !savedOpen[box] };
     setOpen(next);
     try {
       browserStorage()?.setItem(OPEN_KEY, JSON.stringify(next));
@@ -167,7 +172,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const dxInfo = [dxCountry, dxGrid || null, km !== null ? t('phone.km', { km }) : null, dxSnr !== undefined ? String(dxSnr) : null].filter(Boolean).join(' · ');
 
   return (
-    <div className={`phone-live${transmitting ? ' phone-live--tx' : ''}`}>
+    <div className={`phone-live${transmitting ? ' phone-live--tx' : ''}${tablet ? ' phone-live--tablet' : ''}`}>
       <div className="phone-top">
         <span className="data phone-freq">{status && status.dial_hz > 0 ? (status.dial_hz / 1e6).toFixed(3) : '—'}</span>
         <span className={`phone-pill phone-pill--${transmitting ? 'tx' : 'rx'}`}>{transmitting ? t('status.tx') : t('status.rx')}</span>
@@ -217,6 +222,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
       </div>
 
+      {/* sul telefono le colonne non contano (display: contents); sul tablet sono due */}
+      <div className="phone-col phone-col--band">
       {/* in ricezione: chi si sente adesso */}
       {transmitting ? null : (
         <div className="phone-now">
@@ -248,6 +255,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
       </div>
 
+      </div>
+      <div className="phone-col phone-col--side">
       <section className="phone-box phone-box--cluster">
         <button type="button" className="phone-bh" aria-expanded={open.cluster} onClick={() => toggleBox('cluster')}>
           <span>{t('phone.cluster', { band: band ?? '—', mode: mode || '' })}</span>
@@ -335,6 +344,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       </section>
 
       <div className="phone-wf">{waterfall}</div>
+      </div>
 
       <div className="phone-bar">
         <button type="button" className="phone-btn phone-btn--go" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={cq}>

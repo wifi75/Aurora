@@ -25,4 +25,6 @@ tower-http = { version = "0.7.1", features = ["fs"] }
 tokio-tungstenite = "0.30.0"
 futures-util = "0.3.34"
 qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+mdns-sd = "0.21.7"
+if-addrs = "0.15.0"
 utoipa = "6.0.0"

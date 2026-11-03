@@ -5875,3 +5875,51 @@
   padding-left: calc(0.4rem - 3px);
   margin-right: -3px;
 }
+
+/* Anteprime dal vivo della scheda Accesso: la stessa Aurora in una cornice da telefono e da tablet, rimpicciolita */
+.live-previews-badge {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #0f6e64) 18%, transparent);
+  font-size: var(--text-sm);
+}
+
+.live-previews-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.live-device {
+  margin: 0;
+}
+
+.live-device-frame {
+  position: relative;
+  overflow: hidden;
+  box-sizing: content-box;
+  border: 10px solid #15191f;
+  border-radius: 28px;
+  background: #000;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.live-device--tablet .live-device-frame {
+  border-width: 12px;
+  border-radius: 20px;
+}
+
+.live-device-frame iframe {
+  display: block;
+  border: 0;
+  background: var(--panel);
+}
+
+.live-device figcaption {
+  margin-top: 0.35rem;
+  text-align: center;
+  font-size: var(--text-sm);
+}

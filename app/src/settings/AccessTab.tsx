@@ -66,6 +66,17 @@ export function AccessTab() {
         {toggle.isError ? <Message kind="alert">{errorText(toggle.error, t)}</Message> : null}
       </Group>
 
+      <Group title={t('acc.home')}>
+        {access.data?.mdns ? (
+          <p title={t('tip.acc.home')}>
+            <strong className="data">{access.data.mdns}</strong>
+          </p>
+        ) : (
+          <Message kind="muted">{t('acc.noHome')}</Message>
+        )}
+        <Help>{t('tip.acc.home')}</Help>
+      </Group>
+
       <Group title={t('acc.ttl')}>
         <Cells min={12}>
           <Cell label={t('acc.ttl')} hint={t('tip.acc.ttl')}>
@@ -102,12 +113,22 @@ export function AccessTab() {
               {t('acc.code')}: <strong className="data offer-code">{offer.code}</strong>
             </p>
             <p className="muted">{t('acc.validFor', { n: Math.round(offer.expires_in / 60) })}</p>
-            <p>
-              {t('acc.link')}: <span className="data">{`${window.location.origin}/#/pair/${offer.code}`}</span>
-            </p>
             <img className="offer-qr" alt="QR" src={`data:image/svg+xml;utf8,${encodeURIComponent(offer.qr_svg)}`} />
+            <p className="muted">{t('acc.qrHint')}</p>
+            <p>
+              {t('acc.link')}: <span className="data">{offer.link ?? `${window.location.origin}/#/pair/${offer.code}`}</span>
+            </p>
+            {offer.addresses && offer.addresses.length > 0 ? (
+              <p>
+                {t('acc.addresses')}: <span className="data">{offer.addresses.join(' · ')}</span>
+              </p>
+            ) : null}
           </div>
         ) : null}
+      </Group>
+
+      <Group title={t('acc.preview')} span={2}>
+        <LivePreviews />
       </Group>
 
       <Group title={t('acc.devices')} span={2}>
@@ -124,5 +145,37 @@ export function AccessTab() {
         </ul>
       </Group>
     </Page>
+  );
+}
+
+/** Una cornice a forma di telefono o tablet con dentro la stessa Aurora (stessa origine), rimpicciolita. */
+function Device({ kind, width, height, scale, label }: { kind: 'phone' | 'tablet'; width: number; height: number; scale: number; label: string }) {
+  const vista = kind === 'phone' ? 'telefono' : 'tablet';
+  return (
+    <figure className={`live-device live-device--${kind}`}>
+      <div className="live-device-frame" style={{ width: width * scale, height: height * scale }}>
+        <iframe
+          title={label}
+          src={`/?vista=${vista}#/`}
+          loading="lazy"
+          style={{ width, height, transform: `scale(${scale})`, transformOrigin: '0 0' }}
+        />
+      </div>
+      <figcaption className="muted">{`${label} · ${width}×${height}`}</figcaption>
+    </figure>
+  );
+}
+
+/** Le anteprime dal vivo: l'app che gira adesso, con i dati veri, come la vedono il telefono e il tablet in orizzontale. */
+function LivePreviews() {
+  const t = useT();
+  return (
+    <div className="live-previews" title={t('tip.acc.preview')}>
+      <p className="live-previews-badge">{t('acc.preview')}</p>
+      <div className="live-previews-row">
+        <Device kind="phone" width={390} height={844} scale={0.5} label={t('acc.previewPhone')} />
+        <Device kind="tablet" width={1180} height={820} scale={0.42} label={t('acc.previewTablet')} />
+      </div>
+    </div>
   );
 }
