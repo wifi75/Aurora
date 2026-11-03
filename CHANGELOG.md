@@ -5,6 +5,7 @@
 ## 0.11.101 - 2026-11-04
 - **File audio**: sempre nella cartella di Aurora (una cartella fuori, per esempio copiata da JTDX, torna a quella di Aurora).
 - **Attivita' di banda**: bandiera e paese piu' a sinistra, nome del paese mezzo punto piu' piccolo.
+- **Attivita' di banda**: colonna dei km sempre presente e larga uguale, linee dritte anche nelle righe senza distanza.
 - **Radio**: «Impostazioni consigliate» allineate in alto a sinistra.
 
 ## 0.11.100 - 2026-11-04
