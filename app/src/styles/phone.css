@@ -1004,3 +1004,8 @@ body:has(.phone-live) .toaster {
 .phone-list .decode-list .decode-row:active {
   background: #ffe88a;
 }
+
+/* barra con la frequenza 2 px piu' in basso */
+.app-shell:has(.phone-live) {
+  padding-top: calc(env(safe-area-inset-top) + 0.5rem + 2px);
+}
