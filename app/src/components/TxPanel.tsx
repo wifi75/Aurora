@@ -33,12 +33,13 @@ export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
   return t('tx.alert.unrepresentable', { text: a.detail ?? '' });
 }
 
-/** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
-export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
-  const t = useT();
+/**
+ * I sei messaggi Tx del QSO in corso e a che punto si e': quello che sta uscendo (`active`), quello che partira' (`next`) e
+ * quello scelto nel motore (`selected`), tutti come indice 0-5 o -1. Lo usano il pannello Trasmissione e la vista del telefono.
+ */
+export function useTxSequence(status: StationStatus | null, decodes: DecodedMessage[]) {
   const pendingDx = useStation((s) => s.pendingDx);
   const engineTx = useEngineTx((s) => s.tx);
-  const [note, setNote] = useState('');
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const skipTx1 = controls.data?.skip_tx1 === true;
   const hound = controls.data?.hound === true;
@@ -69,20 +70,37 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
     if (next === 0 && skipTx1) next = 1;
   }
   if (active < 0 && next < 0 && transmitting && selected >= 0) active = selected;
+  return { messages, selected, active, next, hound, skipTx1, controls, pendingDx, transmitting };
+}
+
+/**
+ * Sceglie a mano il messaggio Tx (indice 0-5) da cui il motore parte, come il pallino del pannello Trasmissione: si vede subito e,
+ * se il comando fallisce, torna quello di prima e l'errore passa a chi chiama. In Hound il CQ non si sceglie.
+ */
+export async function chooseTxMessage(i: number, messages: string[], selected: number, hound: boolean): Promise<void> {
+  if (i === 5 && hound) return;
+  if (messages[i] === '' || i === selected) return;
+  useEngineTx.getState().choose(i + 1);
+  try {
+    await postTxMessage(i + 1);
+  } catch (error) {
+    useEngineTx.getState().unchoose();
+    throw error;
+  }
+}
+
+/** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
+export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
+  const t = useT();
+  const [note, setNote] = useState('');
+  const { messages, selected, active, next, hound, skipTx1, controls, pendingDx } = useTxSequence(status, decodes);
 
   /** Sceglie a mano il messaggio da cui il motore parte: si vede subito e, se il comando fallisce, torna quello di prima. */
-  const choose = async (i: number) => {
-    if (i === 5 && hound) return;
-    if (messages[i] === '' || i === selected) return;
-    useEngineTx.getState().choose(i + 1);
-    try {
-      await postTxMessage(i + 1);
-      setNote('');
-    } catch (error) {
-      useEngineTx.getState().unchoose();
-      setNote(replyErrorMessage(error, t));
-    }
-  };
+  const choose = (i: number) =>
+    chooseTxMessage(i, messages, selected, hound)
+      .then(() => setNote(''))
+      .catch((error: unknown) => setNote(replyErrorMessage(error, t)));
+
 
   return (
     <div className="tx-panel">

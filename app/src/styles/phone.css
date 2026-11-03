@@ -1,0 +1,518 @@
+/* Telecomando compatto della pagina Stazione sotto i 768 px (pages/PhoneLive.tsx), come il prototipo docs/mockup-telefono-2.html */
+
+.phone-live {
+  --phone-bar: #0c1418;
+  --phone-bar-ink: #d8f4ff;
+  --phone-freq: #5ce8ff;
+  --phone-rx: #1f7a3d;
+  --phone-tx: #ff3b2f;
+  --phone-tx-deep: #7a0f0f;
+  --phone-tx-soft: color-mix(in srgb, var(--phone-tx) 12%, var(--panel));
+  --phone-go: #0f6e64;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: var(--panel);
+  font-size: var(--text-sm);
+}
+
+/* Barra in alto: frequenza, RX/TX, banda, modo, potenza, secondi del periodo; tutta rossa in trasmissione */
+.phone-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0 0.6rem;
+  background: var(--phone-bar);
+  color: var(--phone-bar-ink);
+}
+
+.phone-live--tx .phone-top {
+  background: var(--phone-tx-deep);
+}
+
+.phone-freq {
+  font-size: 1.35rem;
+  color: var(--phone-freq);
+}
+
+.phone-live--tx .phone-freq {
+  color: #fff;
+}
+
+.phone-pill {
+  flex: none;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.phone-pill--rx {
+  background: var(--phone-rx);
+  color: #e6ffe9;
+}
+
+.phone-pill--tx {
+  background: var(--phone-tx);
+  color: #fff;
+  animation: phone-blink 1s infinite;
+}
+
+@keyframes phone-blink {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-pill--tx {
+    animation: none;
+  }
+}
+
+/* le tendine banda e modo: piccole come la pillola, ma l'area di tocco e' alta 44 px grazie al padding del contenitore */
+.phone-sel {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.1rem;
+}
+
+.phone-sel select {
+  appearance: none;
+  height: 1.3rem;
+  padding: 0 1rem 0 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--phone-bar-ink) 35%, transparent);
+  border-radius: 999px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0h8L4 5z' fill='%23d8f4ff'/%3E%3C/svg%3E") no-repeat right 0.35rem center;
+  color: inherit;
+  font: 700 0.75rem var(--font-data);
+}
+
+.phone-sel select:disabled {
+  opacity: 0.6;
+}
+
+.phone-sel option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.phone-pwr-host {
+  position: relative;
+  display: flex;
+}
+
+.phone-pwr {
+  min-height: 2.75rem;
+  padding: 0 0.3rem;
+  border: 0;
+  background: transparent;
+  color: #ffb428;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.phone-pwr:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.phone-pwr-pop {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  transform: translateX(-50%);
+  border-radius: 10px;
+  background: var(--phone-bar);
+  color: var(--phone-bar-ink);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+}
+
+.phone-pwr-pop button {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid color-mix(in srgb, var(--phone-bar-ink) 35%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
+}
+
+.phone-secs {
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+.phone-prog {
+  height: 4px;
+  background: #26333a;
+}
+
+.phone-prog i {
+  display: block;
+  height: 100%;
+  background: #47d13a;
+}
+
+.phone-live--tx .phone-prog i {
+  background: var(--phone-tx);
+}
+
+/* Striscia di cascata bassa con la linea dello spettro sotto (22 px, in Waterfall) */
+.phone-wf {
+  display: flex;
+  height: 84px;
+}
+
+.phone-wf .waterfall {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.phone-wf .wf-controls {
+  display: none;
+}
+
+/* «In onda» in ricezione */
+.phone-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.phone-now-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.phone-now-call {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.phone-country {
+  min-width: 0;
+  max-width: 9rem;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-flag {
+  flex: none;
+  width: 1.1rem;
+  height: 0.8rem;
+  border-radius: 2px;
+}
+
+/* Riquadro dei sei messaggi Tx: sempre visibile, rosso in trasmissione */
+.phone-txbox {
+  margin: 0.3rem 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+}
+
+.phone-txbox--tx {
+  border-color: var(--phone-tx);
+  background: var(--phone-tx-soft);
+}
+
+.phone-txh {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.phone-txbox--tx .phone-txh {
+  color: var(--phone-tx);
+}
+
+.phone-dxline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0.15rem 0 0.2rem;
+  font-size: 0.72rem;
+}
+
+.phone-dxline b {
+  font-size: 1rem;
+}
+
+.phone-txbox--tx .phone-dxline b {
+  color: var(--phone-tx);
+}
+
+.phone-dxinfo {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-txgrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-txl {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 1.15rem;
+  margin: 1px 0;
+  padding: 0 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.72rem;
+  line-height: 1rem;
+  text-align: left;
+}
+
+.phone-txgrid li:nth-child(even) .phone-txl {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.phone-txl b {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: #46566a;
+  color: #fff;
+  font-size: 0.55rem;
+}
+
+.phone-txl span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.phone-txl em {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-style: normal;
+}
+
+.phone-txl--cur {
+  border: 1.5px dashed var(--phone-rx);
+  font-weight: 700;
+}
+
+.phone-txl--cur b {
+  background: var(--phone-rx);
+}
+
+.phone-txbox--tx .phone-txl--cur {
+  border-color: var(--phone-tx);
+}
+
+.phone-txbox--tx .phone-txl--cur b {
+  background: var(--phone-tx);
+}
+
+.phone-txl--done {
+  opacity: 0.55;
+}
+
+.phone-txl--done span {
+  text-decoration: line-through;
+}
+
+.phone-txbar {
+  height: 3px;
+  margin-top: 0.2rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--phone-tx) 25%, transparent);
+}
+
+.phone-txbar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--phone-tx);
+}
+
+/* Elenco dei messaggi ricevuti: ora, segnale, testo, bandiera e paese piccolo a destra */
+.phone-list .decode-list {
+  max-height: 46dvh;
+  border: 0;
+  border-radius: 0;
+}
+
+.phone-list .decode-row {
+  grid-template-columns: auto 3ch minmax(0, 1fr) minmax(0, 6.5rem);
+  gap: 0.4rem;
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+}
+
+.phone-list .c-freq,
+.phone-list .c-dt,
+.phone-list .w-km {
+  display: none;
+}
+
+.phone-list .decode-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-list .decode-where {
+  grid-template-columns: 1.3rem minmax(0, 1fr);
+}
+
+.phone-list .decode-country {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* Cluster e log richiudibili */
+.phone-box {
+  border-top: 1px solid var(--border);
+}
+
+.phone-bh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  border: 0;
+  background: var(--panel-raised);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.phone-row--static {
+  min-height: 2.25rem;
+}
+
+.phone-row-t {
+  flex: none;
+  width: 3.4rem;
+  color: var(--text-muted);
+}
+
+.phone-row-m {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-empty {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+}
+
+/* I tre pulsanti grandi, sempre visibili in fondo */
+.phone-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.phone-btn {
+  flex: 1;
+  min-height: 2.9rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.phone-btn:disabled {
+  opacity: 0.5;
+}
+
+.phone-btn--go {
+  border-color: var(--phone-go);
+  background: var(--phone-go);
+  color: #fff;
+}
+
+.phone-btn--on {
+  border-color: var(--phone-rx);
+  background: var(--phone-rx);
+  color: #fff;
+}
+
+.phone-btn--stop {
+  border-color: #c62828;
+  background: #c62828;
+  color: #fff;
+}
+
+.phone-btn--hot {
+  box-shadow: 0 0 0 3px #ffb3ad;
+}

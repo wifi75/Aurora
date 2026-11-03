@@ -37,7 +37,8 @@ import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
 import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
-import { usePhone } from '../lib/phone';
+import { usePhone, useRemotePhone } from '../lib/phone';
+import { PhoneLive } from './PhoneLive';
 import { useRadioDisplay } from '../lib/radioDisplay';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
@@ -55,6 +56,7 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 export function Live() {
   const t = useT();
   const phone = usePhone();
+  const remotePhone = useRemotePhone();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
@@ -277,6 +279,38 @@ export function Live() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t],
   );
+
+  // sotto i 768 px: il telecomando compatto, con gli stessi dati e gli stessi comandi di questa pagina
+  if (remotePhone) {
+    return (
+      <PhoneLive
+        waterfall={
+          <div className="wf-stack">
+            <Waterfall register={registerSpectrum} mode={status?.mode} spectrumPx={22} />
+            <FrequencyMarkers
+              fMinHz={F_MIN_HZ}
+              fMaxHz={F_MAX_HZ}
+              rxHz={status?.rx_df}
+              txHz={status?.tx_df}
+              bandwidthHz={signalBandwidthHz(status?.mode)}
+              filter={filterWindow}
+              showBars
+              showFreq={false}
+              onRx={(hz) => void setFrequency('Rx', hz, postRxFrequency)}
+              onTx={(hz) => void setFrequency('Tx', hz, postTxFrequency)}
+            />
+          </div>
+        }
+        decodes={withOwnTx(shown, txLog)}
+        onReply={(id) => void onReply(id)}
+        onQueue={(id) => void onQueue(id)}
+        pickBand={(band) => void pickBand(band)}
+        pickMode={(mode) => void pickMode(mode)}
+        rigControl={info.data?.rig_control === true}
+        txAllowed={info.data?.tx_allowed ?? false}
+      />
+    );
+  }
 
   return (
     <div className="live">
