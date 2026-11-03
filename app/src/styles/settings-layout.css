@@ -1676,3 +1676,39 @@
   align-items: center;
   column-gap: 0.6rem;
 }
+
+/* Aggiornamenti: la versione nuova si vede subito, stella gialla e targhetta NEW */
+.upd-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #fff3c4;
+  color: #7a4a00;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px #ffb300 inset;
+}
+
+.upd-new-star {
+  color: #ff9800;
+  font-size: 1.1em;
+  animation: upd-star 1.6s ease-in-out infinite;
+}
+
+.upd-new-tag {
+  padding: 0 0.35rem;
+  border-radius: 0.3rem;
+  background: #e53935;
+  color: #fff;
+  font-size: 0.7em;
+  letter-spacing: 0.06em;
+}
+
+@keyframes upd-star {
+  50% { transform: scale(1.25) rotate(15deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upd-new-star { animation: none; }
+}
