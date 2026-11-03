@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -79,6 +79,12 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/diagnostics/crash-folder", post(diagnostics_crash_folder))
         .route("/api/v1/diagnostics/support-bundle", post(diagnostics_support_bundle))
         .route("/api/v1/diagnostics/support-bundle/reveal", post(diagnostics_support_reveal))
+        .route("/api/v1/reports", get(reports_get).put(reports_put))
+        .route("/api/v1/reports/install-id", post(reports_new_id))
+        .route("/api/v1/reports/crash/preview", post(reports_crash_preview))
+        .route("/api/v1/reports/crash/send", post(reports_crash_send))
+        .route("/api/v1/reports/crash/dismiss", post(reports_crash_dismiss))
+        .route("/api/v1/reports/bundle/send", post(reports_bundle_send))
         .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
@@ -1858,6 +1864,79 @@ async fn diagnostics_support_reveal(State(state): State<AppState>, _: Authed, Pe
         Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
         _ => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "open_failed")),
     }
+}
+
+/// I rapporti degli errori: solo dal PC stesso e solo dove il programma li sa fare.
+fn error_reports(state: &AppState, peer: Option<SocketAddr>, headers: &HeaderMap) -> Result<crate::ErrorReportsHandle, ApiError> {
+    if !from_this_pc(peer, headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    state.error_reports.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "reports_unavailable"))
+}
+
+/// Una chiamata bloccante dei rapporti fuori dal ciclo asincrono.
+async fn reports_blocking(work: impl FnOnce() -> Result<Value, String> + Send + 'static) -> Result<Json<Value>, ApiError> {
+    tokio::task::spawn_blocking(work)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "reports_failed"))?
+        .map(Json)
+        .map_err(|e| {
+            tracing::warn!("rapporti degli errori: {e}");
+            ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "reports_failed")
+        })
+}
+
+/// Impostazioni dei rapporti degli errori, identificativo dell'installazione, coda e crash da segnalare.
+#[utoipa::path(get, path = "/api/v1/reports", responses((status = 200, description = "{ask_after_crash, auto_errors, install_id, configured, crash_pending, queue, sample}"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn reports_get(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || Ok(reports.state())).await
+}
+
+/// Accende o spegne la domanda dopo un crash (`ask_after_crash`) e gli errori automatici (`auto_errors`).
+#[utoipa::path(put, path = "/api/v1/reports", responses((status = 200, description = "Lo stato aggiornato"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn reports_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<Value>) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || reports.update(&body)).await
+}
+
+/// Un identificativo dell'installazione nuovo.
+#[utoipa::path(post, path = "/api/v1/reports/install-id", responses((status = 200, description = "Lo stato con il nuovo identificativo"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn reports_new_id(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || Ok(reports.new_install_id())).await
+}
+
+/// «Vedi cosa mando»: i file del rapporto del crash, gia' ripuliti, con il loro testo.
+#[utoipa::path(post, path = "/api/v1/reports/crash/preview", responses((status = 200, description = "{files: [{name, bytes, text}], bytes}"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn reports_crash_preview(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || reports.crash_preview()).await
+}
+
+/// «Manda il rapporto»: lo zip senza dati personali va a chi sviluppa Aurora.
+#[utoipa::path(post, path = "/api/v1/reports/crash/send", responses((status = 200, description = "{ok}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Invio non riuscito (reports_failed)")))]
+async fn reports_crash_send(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || reports.crash_send()).await
+}
+
+/// «Manda il pacchetto a chi sviluppa Aurora»: lo zip senza dati personali e un codice breve da comunicare a chi aiuta.
+#[utoipa::path(post, path = "/api/v1/reports/bundle/send", responses((status = 200, description = "{ok, code, bytes}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Invio non riuscito (reports_failed)")))]
+async fn reports_bundle_send(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || reports.bundle_send()).await
+}
+
+/// «No»: il crash resta sul PC e il riquadro non torna.
+#[utoipa::path(post, path = "/api/v1/reports/crash/dismiss", responses((status = 200, description = "{ok}"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn reports_crash_dismiss(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let reports = error_reports(&state, peer, &headers)?;
+    reports_blocking(move || {
+        reports.crash_dismiss();
+        Ok(json!({ "ok": true }))
+    })
+    .await
 }
 
 /// Apre Esplora file con il file selezionato (`explorer.exe /select,<percorso>`).

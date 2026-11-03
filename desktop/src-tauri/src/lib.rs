@@ -92,10 +92,12 @@ fn init_logging(data_dir: &Path) {
         let _ = std::fs::rename(&path, dir.join("aurora.vecchio.log"));
     }
     if let Ok(file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")))
-            .with_ansi(false)
-            .with_writer(Mutex::new(file))
+        use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
+        // accanto al file, lo strato dei rapporti degli errori (non tiene niente finche' l'operatore non li accende)
+        let _ = tracing_subscriber::registry()
+            .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")))
+            .with(tracing_subscriber::fmt::layer().with_ansi(false).with_writer(Mutex::new(file)))
+            .with(aurora::rapporti::Strato)
             .try_init();
     }
 }
