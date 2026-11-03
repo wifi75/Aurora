@@ -32,6 +32,30 @@ function readFilters(): SpotFilters {
   }
 }
 
+/**
+ * Porta la radio sulla frequenza esatta di uno spot (kHz -> Hz), cambiando prima il modo se lo spot e' FT4 o FT8 e si e' nell'altro:
+ * cosi' il cambio di modo non riporta la radio sulla frequenza standard del modo nuovo. La frequenza si vede subito; se il comando
+ * fallisce torna quella di prima e l'errore passa a chi chiama.
+ */
+export async function tuneSpot(spot: ClusterSpot): Promise<void> {
+  const hz = Math.round(spot.freq_khz * 1000);
+  const before = useStation.getState().status?.dial_hz;
+  useStation.getState().patchStatus({ dial_hz: hz });
+  try {
+    const want = (spot.mode ?? '').toUpperCase();
+    const now = (useStation.getState().status?.mode ?? '').toUpperCase();
+    if ((want === 'FT4' || want === 'FT8') && want !== now) {
+      useStation.getState().patchStatus({ mode: want });
+      await postMode(want);
+    }
+    const done = await postFrequency(hz);
+    if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+  } catch (error) {
+    if (before !== undefined) useStation.getState().revertStatus(['dial_hz'], { dial_hz: before });
+    throw error;
+  }
+}
+
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
 export function ClusterPanel() {
   const t = useT();
@@ -94,25 +118,10 @@ export function ClusterPanel() {
       setNote(t('cluster.noRig'));
       return;
     }
-    // la frequenza esatta dello spot (kHz -> Hz); la radio non si sposta mai fuori dalle bande dei radioamatori
-    const hz = Math.round(spot.freq_khz * 1000);
-    const before = useStation.getState().status?.dial_hz;
-    // la nuova frequenza si vede subito; se il comando fallisce torna quella di prima
-    useStation.getState().patchStatus({ dial_hz: hz });
     try {
-      // uno spot di un altro modo digitale (FT4 mentre si e' in FT8, o il contrario): prima si cambia modo, poi la frequenza,
-      // cosi' il cambio di modo non riporta la radio sulla frequenza standard del modo nuovo
-      const want = (spot.mode ?? '').toUpperCase();
-      const now = (useStation.getState().status?.mode ?? '').toUpperCase();
-      if ((want === 'FT4' || want === 'FT8') && want !== now) {
-        useStation.getState().patchStatus({ mode: want });
-        await postMode(want);
-      }
-      const done = await postFrequency(hz);
-      if (done.dial_hz) useStation.getState().patchStatus({ dial_hz: done.dial_hz });
+      await tuneSpot(spot);
       setNote(t('cluster.tuned', { freq: formatKhz(spot.freq_khz) }));
     } catch (error) {
-      if (before !== undefined) useStation.getState().revertStatus(['dial_hz'], { dial_hz: before });
       setNote(replyErrorMessage(error, t));
     }
   };
