@@ -66,13 +66,13 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
   const spot = cluster.data?.spots.find((s) => s.dx_call.toUpperCase() === d.call.toUpperCase());
   const code = flagCode(d.country) ?? flagCode(info?.country);
   // la scheda si mostra una volta sola, gia' completa: finche' non arrivano paese (cty.dat) e riquadro del paese resta invisibile,
-  // cosi' non si vedono prima il testo «caricamento», poi la cartina e infine il riquadro che sposta tutto (al piu' dopo un secondo e mezzo si mostra comunque)
+  // cosi' non si vedono prima il testo «caricamento», poi la cartina e infine il riquadro che sposta tutto (al piu' dopo 0,4 s si mostra comunque)
   const [shapeReady, setShapeReady] = useState(false);
   const [late, setLate] = useState(false);
   const onShapeReady = useCallback(() => setShapeReady(true), []);
   useEffect(() => {
     void loadAtlas();
-    const timer = setTimeout(() => setLate(true), 1500);
+    const timer = setTimeout(() => setLate(true), 400);
     return () => clearTimeout(timer);
   }, []);
   const ready = late || (!dxcc.isPending && (target === null || shapeReady));

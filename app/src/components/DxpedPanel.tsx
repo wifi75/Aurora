@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { DxpedDetail } from './DxpedDetail';
-import { getDxped, type Dxpedition } from '../api/client';
+import { getDxcc, getDxped, type Dxpedition } from '../api/client';
+import { loadAtlas } from './CountryShape';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 
@@ -42,6 +43,21 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
   const [open, setOpen] = useState<(Dxpedition & { state: DxpedState }) | null>(null);
   const heard = new Set(heardCalls.map((c) => c.toUpperCase()));
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays);
+  // la scheda si apre subito: confini del mondo e paese di ogni DXpedition si preparano in anticipo, appena c'e' il calendario
+  const client = useQueryClient();
+  const calls = items.map((d) => d.call).join(' ');
+  useEffect(() => {
+    if (calls === '') return;
+    const run = () => {
+      void loadAtlas();
+      for (const call of calls.split(' ')) {
+        void client.prefetchQuery({ queryKey: ['dxcc', call], queryFn: () => getDxcc(call), staleTime: Infinity, retry: false });
+      }
+    };
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    if (idle) idle(run);
+    else setTimeout(run, 500);
+  }, [calls, client]);
   return (
     <section className="dxped" aria-label={t('dxp.title')}>
       <header className="dxped-head">
