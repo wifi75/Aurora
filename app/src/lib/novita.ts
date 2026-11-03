@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.95',
+    released: '2026-11-04T01:30:00Z',
+    kind: 'new',
+    title: ['Pacchetto per l’assistenza', 'Support package', 'Paket für den Support', 'Paquet pour l’assistance', 'Paquete para la asistencia', 'Pacote para a assistência'],
+    text: [
+      'In Impostazioni > Informazioni il pulsante «Prepara il pacchetto per l’assistenza» crea sul Desktop uno zip con log, errori e impostazioni (senza password) e apre la cartella; con «Manda per email» si apre anche la posta già compilata per chi ti aiuta.',
+      'In Settings > About the «Prepare the support package» button creates a zip on the Desktop with log, errors and settings (no passwords) and opens the folder; «Send by email» also opens a ready-made email to whoever helps you.',
+      'Unter Einstellungen > Info erstellt die Taste «Support-Paket vorbereiten» auf dem Desktop eine ZIP-Datei mit Log, Fehlern und Einstellungen (ohne Passwörter) und öffnet den Ordner; «Per E-Mail senden» öffnet zusätzlich eine fertige E-Mail an deinen Helfer.',
+      'Dans Réglages > À propos le bouton « Préparer le paquet d’assistance » crée sur le Bureau un zip avec journal, erreurs et réglages (sans mots de passe) et ouvre le dossier ; « Envoyer par e-mail » ouvre aussi un e-mail prêt pour la personne qui t’aide.',
+      'En Ajustes > Información el botón «Preparar el paquete de asistencia» crea en el Escritorio un zip con registro, errores y ajustes (sin contraseñas) y abre la carpeta; «Enviar por email» abre también un correo listo para quien te ayuda.',
+      'Em Definições > Sobre o botão «Preparar o pacote de assistência» cria no Ambiente de trabalho um zip com registo, erros e definições (sem palavras-passe) e abre a pasta; «Enviar por email» abre também um email pronto para quem te ajuda.',
+    ],
+  },
+  {
+    version: '0.11.95',
+    released: '2026-11-04T01:30:00Z',
+    kind: 'fixed',
+    title: ['PTT applicato subito', 'PTT applied at once', 'PTT sofort übernommen', 'PTT appliqué tout de suite', 'PTT aplicado al momento', 'PTT aplicado logo'],
+    text: [
+      'Senza PTT preso da JTDX Aurora guarda Impostazioni > Radio a ogni trasmissione: la scelta vale subito, senza riavviare. Riquadro «Impostazioni consigliate» più leggibile.',
+      'Without a PTT taken from JTDX Aurora checks Settings > Radio at each transmission: the choice applies at once, with no restart. Clearer «Recommended settings» box.',
+      'Ohne von JTDX übernommene PTT prüft Aurora bei jeder Sendung Einstellungen > Radio: die Wahl gilt sofort, ohne Neustart. Übersichtlicherer Kasten «Empfohlene Einstellungen».',
+      'Sans PTT repris de JTDX Aurora regarde Réglages > Radio à chaque émission : le choix vaut tout de suite, sans redémarrer. Encadré « Réglages conseillés » plus lisible.',
+      'Sin PTT tomado de JTDX Aurora mira Ajustes > Radio en cada transmisión: la elección vale al momento, sin reiniciar. Recuadro «Ajustes recomendados» más legible.',
+      'Sem PTT vindo do JTDX a Aurora vê Definições > Rádio em cada transmissão: a escolha vale logo, sem reiniciar. Caixa «Definições recomendadas» mais legível.',
+    ],
+  },
+  {
     version: '0.11.94',
     released: '2026-11-03T21:11:53Z',
     kind: 'changed',
@@ -465,34 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Informations est centrée et plus claire, avec un lien vers le site web d’Aurora.',
       'La página Información está centrada y más ordenada, con el enlace al sitio web de Aurora.',
       'A página Informações está centrada e mais arrumada, com a ligação ao site de Aurora.',
-    ],
-  },
-  {
-    version: '0.11.72',
-    released: '2026-11-02T17:56:15Z',
-    kind: 'fixed',
-    title: ['Fox più comodo', 'Easier Fox', 'Bequemerer Fox', 'Fox plus pratique', 'Fox más cómodo', 'Fox mais cómodo'],
-    text: [
-      'Abilita Tx si accende al primo clic nel modo Fox, la pagina Fox sta in una schermata con la cascata ridimensionabile e l’etichetta FOX non compare più per stazioni normali.',
-      'Enable Tx turns on at the first click in Fox mode, the Fox page fits one screen with a resizable waterfall and the FOX label no longer appears for normal stations.',
-      'Tx aktivieren geht im Fox-Modus beim ersten Klick an, die Fox-Seite passt auf einen Bildschirm mit verstellbarem Wasserfall und das FOX-Etikett erscheint nicht mehr bei normalen Stationen.',
-      'Activer Tx s’allume au premier clic en mode Fox, la page Fox tient sur un écran avec une cascade redimensionnable et l’étiquette FOX n’apparaît plus pour les stations normales.',
-      'Habilitar Tx se enciende al primer clic en modo Fox, la página Fox cabe en una pantalla con la cascada redimensionable y la etiqueta FOX ya no aparece en estaciones normales.',
-      'Ativar Tx liga ao primeiro clique no modo Fox, a página Fox cabe num ecrã com a cascata redimensionável e a etiqueta FOX já não aparece em estações normais.',
-    ],
-  },
-  {
-    version: '0.11.71',
-    released: '2026-11-02T17:42:24Z',
-    kind: 'changed',
-    title: ['Pagina Fox completa', 'Complete Fox page', 'Vollständige Fox-Seite', 'Page Fox complète', 'Página Fox completa', 'Página Fox completa'],
-    text: [
-      'La pagina Fox ha tutto: stato, Abilita Tx e STOP, cascata, messaggi e liste. In più: niente 73 dopo il tuo RRR e la forma del paese nella scheda DXpedition.',
-      'The Fox page has everything: status, Enable Tx and STOP, waterfall, messages and lists. Also: no 73 after your RRR and the country outline in the DXpedition card.',
-      'Die Fox-Seite hat alles: Status, Tx aktivieren und STOP, Wasserfall, Nachrichten und Listen. Außerdem: kein 73 nach deinem RRR und die Landesform in der DXpedition-Karte.',
-      'La page Fox a tout : état, Activer Tx et STOP, cascade, messages et listes. En plus : plus de 73 après ton RRR et la forme du pays dans la fiche DXpédition.',
-      'La página Fox lo tiene todo: estado, Habilitar Tx y STOP, cascada, mensajes y listas. Además: sin 73 tras tu RRR y la forma del país en la ficha DXpedición.',
-      'A página Fox tem tudo: estado, Ativar Tx e STOP, cascata, mensagens e listas. Além disso: sem 73 depois do teu RRR e a forma do país na ficha da DXpedição.',
     ],
   },
 ];
