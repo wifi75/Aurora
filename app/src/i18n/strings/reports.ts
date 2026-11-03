@@ -1,13 +1,23 @@
 /** Rapporti degli errori: domanda dopo un crash, errori automatici anonimi, invio del pacchetto. [it, en, de, fr, es, pt] */
 export const reportStrings = {
   'rep.title': ['Rapporti degli errori', 'Error reports', 'Fehlerberichte', 'Rapports d’erreurs', 'Informes de errores', 'Relatórios de erros'],
+  'rep.notice': [
+    'Aurora manda in forma anonima gli errori a chi la sviluppa, per correggerli: senza nominativo, locatore, messaggi né password. Puoi spegnerlo quando vuoi.',
+    'Aurora sends errors anonymously to its developer so they can be fixed: no callsign, locator, messages or passwords. You can switch it off at any time.',
+    'Aurora sendet Fehler anonym an den Entwickler, damit sie behoben werden: ohne Rufzeichen, Locator, Meldungen oder Passwörter. Du kannst es jederzeit ausschalten.',
+    'Aurora envoie les erreurs de façon anonyme à son développeur pour les corriger : sans indicatif, locator, messages ni mots de passe. Tu peux le désactiver quand tu veux.',
+    'Aurora envía los errores de forma anónima a quien la desarrolla para corregirlos: sin indicativo, localizador, mensajes ni contraseñas. Puedes apagarlo cuando quieras.',
+    'A Aurora envia os erros de forma anónima a quem a desenvolve para os corrigir: sem indicativo, locator, mensagens nem palavras-passe. Podes desligá-lo quando quiseres.',
+  ],
+  'rep.notice.open': ['Impostazioni > Assistenza', 'Settings > Support', 'Einstellungen > Support', 'Réglages > Assistance', 'Ajustes > Asistencia', 'Definições > Assistência'],
+  'rep.notice.ok': ['Ho capito', 'Got it', 'Verstanden', 'Compris', 'Entendido', 'Percebi'],
   'rep.intro': [
-    'Facoltativi e spenti di fabbrica. Aiutano chi sviluppa Aurora a trovare e correggere i problemi. Nominativi, locatori, messaggi, indirizzi IP, email, password e il tuo nome utente vengono tolti prima dell’invio.',
-    'Optional and off by default. They help whoever develops Aurora find and fix problems. Callsigns, locators, messages, IP addresses, emails, passwords and your user name are removed before sending.',
-    'Freiwillig und ab Werk aus. Sie helfen dem Entwickler von Aurora, Probleme zu finden und zu beheben. Rufzeichen, Locator, Meldungen, IP-Adressen, E-Mails, Passwörter und dein Benutzername werden vor dem Senden entfernt.',
-    'Facultatifs et désactivés par défaut. Ils aident qui développe Aurora à trouver et corriger les problèmes. Indicatifs, locators, messages, adresses IP, e-mails, mots de passe et ton nom d’utilisateur sont retirés avant l’envoi.',
-    'Opcionales y apagados de fábrica. Ayudan a quien desarrolla Aurora a encontrar y corregir problemas. Indicativos, localizadores, mensajes, direcciones IP, correos, contraseñas y tu nombre de usuario se quitan antes del envío.',
-    'Opcionais e desligados de fábrica. Ajudam quem desenvolve a Aurora a encontrar e corrigir problemas. Indicativos, locators, mensagens, endereços IP, emails, palavras-passe e o teu nome de utilizador são removidos antes do envio.',
+    'Accesi di fabbrica, si possono spegnere. Aiutano chi sviluppa Aurora a trovare e correggere i problemi. Nominativi, locatori, messaggi, indirizzi IP, email, password e il tuo nome utente vengono tolti prima dell’invio.',
+    'On by default, you can switch them off. They help whoever develops Aurora find and fix problems. Callsigns, locators, messages, IP addresses, emails, passwords and your user name are removed before sending.',
+    'Ab Werk an, du kannst sie ausschalten. Sie helfen dem Entwickler von Aurora, Probleme zu finden und zu beheben. Rufzeichen, Locator, Meldungen, IP-Adressen, E-Mails, Passwörter und dein Benutzername werden vor dem Senden entfernt.',
+    'Activés par défaut, tu peux les désactiver. Ils aident qui développe Aurora à trouver et corriger les problèmes. Indicatifs, locators, messages, adresses IP, e-mails, mots de passe et ton nom d’utilisateur sont retirés avant l’envoi.',
+    'Encendidos de fábrica, puedes apagarlos. Ayudan a quien desarrolla Aurora a encontrar y corregir problemas. Indicativos, localizadores, mensajes, direcciones IP, correos, contraseñas y tu nombre de usuario se quitan antes del envío.',
+    'Ligados de fábrica, podes desligá-los. Ajudam quem desenvolve a Aurora a encontrar e corrigir problemas. Indicativos, locators, mensagens, endereços IP, emails, palavras-passe e o teu nome de utilizador são removidos antes do envio.',
   ],
   'rep.ask': [
     'Chiedimi di mandare il rapporto dopo un crash',

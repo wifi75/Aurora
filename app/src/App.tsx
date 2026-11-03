@@ -32,6 +32,7 @@ import { ExportPage } from './pages/ExportPage';
 import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
+import { ReportsNotice } from './components/ReportsNotice';
 import { CrashPrompt } from './settings/ReportsBox';
 
 /**
@@ -166,6 +167,7 @@ export function App() {
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
+      {session.data && !REMOTE ? <ReportsNotice /> : null}
     </div>
   );
 }

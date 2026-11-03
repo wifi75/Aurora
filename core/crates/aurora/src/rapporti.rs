@@ -414,12 +414,24 @@ pub struct Contesto {
 
 pub type FonteContesto = Arc<dyn Fn() -> Contesto + Send + Sync>;
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+/// Accesi di fabbrica (scelta del proprietario): la domanda dopo un crash e gli errori anonimi; al primo avvio l'interfaccia lo dice
+/// una volta e si spengono in Impostazioni > Assistenza.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct Impostazioni {
-    #[serde(default)]
+    #[serde(default = "acceso")]
     ask_after_crash: bool,
-    #[serde(default)]
+    #[serde(default = "acceso")]
     auto_errors: bool,
+}
+
+fn acceso() -> bool {
+    true
+}
+
+impl Default for Impostazioni {
+    fn default() -> Self {
+        Impostazioni { ask_after_crash: true, auto_errors: true }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
