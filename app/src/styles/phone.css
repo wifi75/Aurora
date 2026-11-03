@@ -686,3 +686,33 @@ body:has(.phone-live) {
 .phone-live .decode-list {
   touch-action: pan-y;
 }
+
+/* telefono: la pagina non deve mai spostarsi a destra e a sinistra; quello che e' piu' largo dello schermo si taglia o scorre dentro di se' */
+html:has(.phone-live),
+body:has(.phone-live),
+.app-shell:has(.phone-live) {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.phone-live {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.phone-live * {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.phone-live canvas {
+  max-width: 100%;
+}
+
+.app-shell:has(.phone-live) .app-header,
+.app-shell:has(.phone-live) .app-nav {
+  max-width: 100vw;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
