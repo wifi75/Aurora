@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
@@ -8,7 +8,7 @@ import { MultiPick } from './MultiPick';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
-import { CallsignTip } from './CallsignTip';
+import { CallsignTip, prefetchCallsigns } from './CallsignTip';
 import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
@@ -43,6 +43,11 @@ export function ClusterPanel() {
   const status = useStation((s) => s.status);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
+  // le informazioni (paese, nome, citta') degli spot piu' recenti si caricano in anticipo, DX e chi ha fatto lo spot
+  useEffect(() => {
+    const recent = cluster.data?.spots.slice(0, 30) ?? [];
+    prefetchCallsigns(recent.flatMap((s) => [s.dx_call, s.spotter]));
+  }, [cluster.data]);
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
   const [note, setNote] = useState('');
   const wishlist = useWishlist((s) => s.list);
@@ -175,7 +180,7 @@ export function ClusterPanel() {
                     <span className="cluster-freq data">{formatKhzWhole(s.freq_khz)}</span>
                   </td>
                   <td>
-                    <strong className="data cluster-dx">{s.dx_call}</strong>
+                    <CallsignTip call={s.dx_call}><strong className="data cluster-dx">{s.dx_call}</strong></CallsignTip>
                   </td>
                   <td className="cluster-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</td>
                   <td className="cluster-country">{s.country ?? ''}</td>

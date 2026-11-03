@@ -21,6 +21,35 @@ export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
   return p;
 }
 
+/** Nominativi in coda per il precaricamento: uno alla volta, senza ripetere quelli gia' cercati. */
+const queue: string[] = [];
+let draining = false;
+/** Pausa fra due ricerche di precaricamento, per non tempestare QRZ.com o HamQTH. */
+const PREFETCH_GAP_MS = 250;
+
+/** Precarica in sottofondo le informazioni dei nominativi in vista: al passaggio del mouse il riquadro e' gia' pronto. */
+export function prefetchCallsigns(calls: readonly string[]): void {
+  for (const c of calls) {
+    const key = c.trim().toUpperCase();
+    if (key !== '' && !cache.has(key) && !queue.includes(key)) queue.push(key);
+  }
+  if (draining) return;
+  draining = true;
+  const next = () => {
+    const call = queue.shift();
+    if (!call) {
+      draining = false;
+      return;
+    }
+    if (cache.has(call)) {
+      next();
+      return;
+    }
+    void lookupCallsign(call).finally(() => setTimeout(next, PREFETCH_GAP_MS));
+  };
+  next();
+}
+
 /** Attesa prima della ricerca: passando veloci sulla tabella non parte niente. */
 export const TIP_DELAY_MS = 350;
 
