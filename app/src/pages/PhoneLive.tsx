@@ -23,6 +23,7 @@ import { toast } from '../lib/toast';
 import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
 import { forceFreshUi } from '../lib/freshUi';
+import { ThemeToggle } from '../components/ThemeToggle';
 import '../styles/phone.css';
 
 /** I modi del telecomando: gli stessi del selettore del PC. */
@@ -221,6 +222,9 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <button type="button" className="phone-refresh" aria-label={t('phone.refresh')} title={t('phone.refresh')} onClick={() => void forceFreshUi()}>
           ⟳
         </button>
+        <span className="phone-theme">
+          <ThemeToggle />
+        </span>
       </div>
       <div className="phone-prog" aria-hidden="true">
         <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />

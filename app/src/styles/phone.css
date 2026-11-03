@@ -882,3 +882,18 @@ body:has(.phone-live) .toaster {
   font-size: 1rem;
   line-height: 1;
 }
+
+/* cambio tema in alto a destra nella barra del telefono */
+.phone-theme {
+  flex: none;
+  display: inline-flex;
+  margin-left: 0.2rem;
+}
+
+.phone-theme button {
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  border-radius: 50%;
+}
