@@ -160,6 +160,53 @@ Verificato sull'installazione del proprietario (VSPE 1.5.8, driver 4.61):
 Prova a mano dal pacchetto, senza Aurora: `rigctld.exe -m 1029 -r COM3 -s 38400 --set-conf=stop_bits=2 -t 4532`.
 Senza radio si prova con il modello **1 (Dummy)**: `rigctld.exe -m 1 -t 4532`.
 
+## Icom IC-7300 e IC-7610
+
+Se la radio non va in trasmissione, quasi sempre manca una di queste tre cose: PTT, audio verso la radio, menu della radio.
+
+**1. In Aurora: Impostazioni > Radio**
+
+- Sistema di controllo: Hamlib.
+- Radio: Icom IC-7300, oppure Icom IC-7610.
+- Porta: la COM della radio collegata via USB. Su Windows compare come «Silicon Labs CP210x»; il 7610 ne crea due, e va scelta la prima.
+- Velocità: 115200, uguale a quella impostata nella radio.
+- Indirizzo CI-V: 94h per il 7300, 98h per il 7610. Di solito «Predefinito del modello» va già bene.
+- PTT, Metodo del PTT: CAT.
+- Linee DTR e RTS: lasciale come sono (Bassa e Automatica).
+
+Con «Prova» nel riquadro Stato e prova deve risultare «Collegata» e la frequenza deve seguire la radio.
+
+**2. In Aurora: Impostazioni > Audio**
+
+- Uscita (trasmissione): «Altoparlanti (USB Audio CODEC)».
+- Ingresso (ricezione): «Microfono (USB Audio CODEC)».
+
+Se l'uscita è sbagliata, la radio va in TX ma non esce potenza.
+
+**3. Nella radio: menu SET > Connectors**
+
+- CI-V USB Port: Unlink from [REMOTE].
+- CI-V USB Baud Rate: 115200.
+- CI-V USB Echo Back: OFF.
+- CI-V Transceive: ON.
+- MOD Input > DATA MOD: USB. Per sicurezza metti USB anche in DATA OFF MOD.
+- USB MOD Level: circa 50%. Si regola in trasmissione con l'ALC al minimo.
+
+Il modo radio deve essere USB-D (DATA). Se Aurora mette solo USB, con DATA OFF MOD su USB va bene lo stesso.
+
+**4. Per trasmettere**
+
+- Deve essere acceso «Abilita Tx» (si accende da solo chiamando una stazione o con CQ).
+- Se nel pannello Comandi compare «trasmissione chiusa», la trasmissione è bloccata nelle impostazioni del motore e va aperta lì.
+
+**Dove si blocca**
+
+- La radio non passa in TX: è il CAT (punto 1 e menu CI-V).
+- La radio passa in TX ma la potenza è 0: è l'audio (punto 2, DATA MOD = USB, USB MOD Level).
+- Se non va ancora: screenshot di Impostazioni > Radio e il file `aurora.log` della cartella dati di Aurora (`%APPDATA%\Aurora\logs`).
+
+Indicazioni non ancora provate dal vivo su queste due radio.
+
 ## Display esteso cliccabile
 
 Gli indicatori sotto il display (PRE, ATT, AGC, NB, NR, NOTCH, ATU, RIT, XIT, VFO) sono pulsanti: un clic cambia l'impostazione sulla radio, con `POST /api/v1/cat/extra`.
