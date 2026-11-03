@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.94',
-    released: '2026-11-04T00:40:00Z',
+    released: '2026-11-03T21:11:53Z',
     kind: 'changed',
     title: ['Guida riorganizzata', 'Guide reorganised', 'Anleitung neu geordnet', 'Guide réorganisé', 'Guía reorganizada', 'Guia reorganizado'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.94',
-    released: '2026-11-04T00:40:00Z',
+    released: '2026-11-03T21:11:53Z',
     kind: 'fixed',
     title: ['Fox e attività di banda più comodi', 'Handier Fox page and band activity', 'Bequemere Fox-Seite und Bandaktivität', 'Page Fox et activité de bande plus pratiques', 'Página Fox y actividad de banda más cómodas', 'Página Fox e atividade de banda mais práticas'],
     text: [
