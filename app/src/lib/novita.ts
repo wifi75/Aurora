@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.86',
-    released: '2026-11-03T21:00:00Z',
+    released: '2026-11-03T18:14:32Z',
     kind: 'changed',
     title: ['Telefono: solo la Stazione', 'Phone: Station only', 'Telefon: nur die Station', 'Téléphone : seulement la Station', 'Teléfono: solo la Estación', 'Telemóvel: só a Estação'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.86',
-    released: '2026-11-03T21:00:00Z',
+    released: '2026-11-03T18:14:32Z',
     kind: 'fixed',
     title: ['DXpedition più rapida', 'Faster DXpedition card', 'Schnellere DXpedition-Karte', 'Fiche DXpédition plus rapide', 'Ficha DXpedición más rápida', 'Ficha DXpedição mais rápida'],
     text: [
