@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.90 - 2026-11-03
+- **Telefono**: cluster con modo e chi ha fatto lo spot; log con bandiera; colonne allineate; stazione chiamata in giallo (anche appena toccata) e nel riquadro Tx; blocchi con bordo e titolo del loro colore; barra con la frequenza 2 px piu' in basso.
+
 ## 0.11.89 - 2026-11-03
 - **Telefono**: cluster e log aperti all'avvio; cambio tema chiaro/scuro in alto a destra; barra con la frequenza un po' piu' su.
 

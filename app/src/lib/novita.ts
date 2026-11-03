@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.90',
+    released: '2026-11-03T23:00:00Z',
+    kind: 'changed',
+    title: ['Telefono: cluster, log e chiamata in evidenza', 'Phone: cluster, log and highlighted call', 'Telefon: Cluster, Log und hervorgehobener Anruf', 'Téléphone : cluster, journal et appel en évidence', 'Teléfono: clúster, registro y llamada resaltada', 'Telemóvel: cluster, registo e chamada em destaque'],
+    text: [
+      'Sul telefono il cluster mostra anche modo e chi ha fatto lo spot, il log ha la bandiera, le colonne sono allineate; la stazione chiamata è in giallo nell’elenco e nel riquadro Tx; i blocchi hanno bordo e titolo del loro colore.',
+      'On the phone the cluster also shows mode and spotter, the log has the flag, columns are aligned; the called station is yellow in the list and in the Tx box; blocks have border and heading in their own colour.',
+      'Auf dem Telefon zeigt der Cluster auch Betriebsart und Spotter, das Log hat die Flagge, die Spalten sind ausgerichtet; die gerufene Station ist gelb in der Liste und im Tx-Kasten; die Blöcke haben Rahmen und Titel in eigener Farbe.',
+      'Sur le téléphone le cluster montre aussi le mode et l’auteur du spot, le journal a le drapeau, les colonnes sont alignées ; la station appelée est en jaune dans la liste et dans l’encadré Tx ; les blocs ont bordure et titre de leur couleur.',
+      'En el teléfono el clúster muestra también modo y quién hizo el spot, el registro tiene la bandera, las columnas están alineadas; la estación llamada está en amarillo en la lista y en el recuadro Tx; los bloques tienen borde y título de su color.',
+      'No telemóvel o cluster mostra também o modo e quem fez o spot, o registo tem a bandeira, as colunas estão alinhadas; a estação chamada está a amarelo na lista e na caixa Tx; os blocos têm borda e título da sua cor.',
+    ],
+  },
+  {
     version: '0.11.89',
     released: '2026-11-03T18:36:22Z',
     kind: 'changed',
@@ -544,33 +558,6 @@ export const NOVITA: readonly Novita[] = [
       'À gauche la séquence du QSO, à droite en colonne tout ce qui émet ; boutons tous de la même taille.',
       'A la izquierda la secuencia del QSO, a la derecha en columna todo lo que transmite; botones del mismo tamaño.',
       'À esquerda a sequência do QSO, à direita em coluna tudo o que transmite; botões todos do mesmo tamanho.',
-    ],
-  },
-  {
-    version: '0.11.62',
-    released: '2026-11-01T16:53:23Z',
-    kind: 'fixed',
-    title: ['Hound e righe Tx', 'Hound and Tx lines', 'Hound und Tx-Zeilen', 'Hound et lignes Tx', 'Hound y líneas Tx', 'Hound e linhas Tx'],
-    text: [
-      'In Hound il Tx1 non appare più barrato (come WSJT-X si manda sempre) e il CQ è spento. Le righe Tx mostrano paese, bandiera e distanza della stazione chiamata; le bandiere delle DXpedition non mancano più.',
-      'In Hound Tx1 no longer looks skipped (like WSJT-X it is always sent) and CQ is off. Tx lines show the country, flag and distance of the called station; DXpedition flags no longer go missing.',
-      'Im Hound-Modus wirkt Tx1 nicht mehr übersprungen (wie WSJT-X wird er immer gesendet), CQ ist aus. Tx-Zeilen zeigen Land, Flagge und Entfernung der gerufenen Station; DXpedition-Flaggen fehlen nicht mehr.',
-      'En Hound le Tx1 ne paraît plus sauté (comme WSJT-X il est toujours émis) et le CQ est coupé. Les lignes Tx montrent pays, drapeau et distance de la station appelée ; les drapeaux des DXpéditions ne manquent plus.',
-      'En Hound el Tx1 ya no parece saltado (como WSJT-X siempre se envía) y el CQ está apagado. Las líneas Tx muestran país, bandera y distancia de la estación llamada; ya no faltan banderas de DXpediciones.',
-      'Em Hound o Tx1 já não parece saltado (como no WSJT-X é sempre enviado) e o CQ está desligado. As linhas Tx mostram país, bandeira e distância da estação chamada; já não faltam bandeiras das DXpedições.',
-    ],
-  },  {
-    version: '0.11.61',
-    released: '2026-11-01T16:08:51Z',
-    kind: 'new',
-    title: ['Hound automatico', 'Automatic Hound', 'Hound automatisch', 'Hound automatique', 'Hound automático', 'Hound automático'],
-    text: [
-      'Se la stazione scelta trasmette come Fox di WSJT-X, Hound si accende da solo, la Tx sale sopra 1000 Hz e Split si accende; con una stazione normale si spegne. Le righe delle Fox hanno l’etichetta FOX.',
-      'If the chosen station transmits as a WSJT-X Fox, Hound turns on by itself, Tx moves above 1000 Hz and Split turns on; with a normal station it turns off. Fox lines carry the FOX label.',
-      'Sendet die gewählte Station als WSJT-X-Fox, schaltet sich Hound selbst ein, Tx geht über 1000 Hz und Split wird eingeschaltet; bei einer normalen Station schaltet es sich aus. Fox-Zeilen tragen das Etikett FOX.',
-      'Si la station choisie émet en Fox WSJT-X, Hound s’active seul, Tx passe au-dessus de 1000 Hz et Split s’active ; avec une station normale il se coupe. Les lignes Fox portent l’étiquette FOX.',
-      'Si la estación elegida transmite como Fox de WSJT-X, Hound se enciende solo, Tx sube por encima de 1000 Hz y se enciende Split; con una estación normal se apaga. Las líneas Fox llevan la etiqueta FOX.',
-      'Se a estação escolhida transmitir como Fox do WSJT-X, o Hound liga-se sozinho, a Tx sobe acima de 1000 Hz e o Split liga-se; com uma estação normal desliga-se. As linhas Fox têm a etiqueta FOX.',
     ],
   },
 ];
