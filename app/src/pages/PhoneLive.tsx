@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { getClusterSpots, getControls, getLog4om, postControl, postCq, type ClusterSpot } from '../api/client';
 import type { DecodedMessage } from '../api/schemas';
-import { tuneSpot } from '../components/ClusterPanel';
+import { readFilters as readClusterFilters, tuneSpot } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
 import { useCatExtras } from '../components/radio-display/RadioExtras';
 import { displayModel } from '../lib/radioDisplay';
@@ -12,7 +12,9 @@ import { useT } from '../i18n';
 import { filterSpots } from '../lib/cluster';
 import { countryOfCall } from '../lib/dxCountry';
 import { flagCode } from '../lib/flags';
-import { BAND_NAMES, bandOf } from '../lib/format';
+import { bandOf } from '../lib/format';
+import { useBandFilter, visibleBands } from '../lib/bandFilter';
+import { MODES } from '../components/ModeSwitch';
 import { distanceKm, gridCenter } from '../lib/geo';
 import { periodPosition } from '../lib/period';
 import { replyErrorMessage } from '../lib/replyError';
@@ -22,9 +24,8 @@ import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
 import '../styles/phone.css';
 
-/** Le bande del telecomando: quelle HF fino ai 6 m, come il selettore della radio. */
-const PHONE_BANDS = BAND_NAMES.filter((b) => b !== '2m');
-const PHONE_MODES = ['FT8', 'FT4'] as const;
+/** I modi del telecomando: gli stessi del selettore del PC. */
+const PHONE_MODES = MODES;
 const OPEN_KEY = 'aurora-phone-open';
 /** La descrizione corta di ciascuno dei sei messaggi Tx. */
 const TX_KINDS = ['phone.kind.grid', 'phone.kind.report', 'phone.kind.rreport', 'phone.kind.rr73', 'phone.kind.73', 'phone.kind.cq'] as const;
@@ -84,6 +85,9 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const period = usePeriod(mode);
   const seconds = `${pad2(period.seconds)}/${pad2(Math.round(period.length))}`;
   const band = pendingBand ?? (status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null);
+  // le bande sono quelle scelte in Aurora (Impostazioni > Bande), come la barra della pagina Stazione
+  const chosenBands = useBandFilter((s) => s.bands);
+  const phoneBands = visibleBands(chosenBands, band);
   const [savedOpen, setOpen] = useState(readOpen);
   // sul tablet c'e' spazio: cluster e log restano sempre aperti
   const open = tablet ? { cluster: true, log: true } : savedOpen;
@@ -107,7 +111,10 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const txOn = controls.data?.enable_tx === true;
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
-  const spots = cluster.data ? filterSpots(cluster.data.spots, { bands: ['now'], modes: mode ? [mode] : [], search: '' }, band).slice(0, 5) : [];
+  // gli stessi filtri banda/modo salvati nel cluster di Aurora; senza filtri, la banda e il modo in uso
+  const saved = readClusterFilters();
+  const spotFilters = saved.bands.length > 0 || saved.modes.length > 0 ? saved : { bands: ['now'], modes: mode ? [mode] : [], search: '' };
+  const spots = cluster.data ? filterSpots(cluster.data.spots, spotFilters, band).slice(0, 5) : [];
   const log = useQuery({ queryKey: ['log4om', 3], queryFn: () => getLog4om(3), refetchInterval: 10_000, retry: false });
 
   const fail = (error: unknown) => toast(replyErrorMessage(error, t), 'error');
@@ -172,7 +179,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <label className="phone-sel" title={t('phone.band')}>
           <select aria-label={t('phone.band')} value={band ?? ''} disabled={!rigControl} onChange={(e) => onBand(e.target.value)}>
             {band === null ? <option value="">—</option> : null}
-            {PHONE_BANDS.map((b) => (
+            {phoneBands.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>

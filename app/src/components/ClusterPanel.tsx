@@ -19,7 +19,8 @@ import { useWishlist } from '../state/wishlist';
 const KEY = 'aurora-cluster-filters';
 const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
 
-function readFilters(): SpotFilters {
+/** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
+export function readFilters(): SpotFilters {
   const defaults: SpotFilters = { bands: [], modes: [], search: '' };
   try {
     const raw = browserStorage()?.getItem(KEY);

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
@@ -50,7 +50,18 @@ export function App() {
   useEffect(() => {
     applyColors(document.documentElement, readColors(browserStorage()));
   }, []);
-  const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false });
+  // finche' il dispositivo non e' associato si riprova: se dal PC si accende l'accesso senza codice, il telefono entra da solo
+  const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false, refetchInterval: (q) => (q.state.data === false ? 3000 : false) });
+  // appena entra si ricarica la pagina: cosi' prende dal server le impostazioni di Aurora (bande, macro, filtri, tema, lingua)
+  const wasUnpaired = useRef(false);
+  useEffect(() => {
+    if (session.data === false) wasUnpaired.current = true;
+    else if (session.data === true && wasUnpaired.current) {
+      wasUnpaired.current = false;
+      if (location.hash.startsWith('#/pair') || location.hash.startsWith('#/associa')) history.replaceState(null, '', '#/');
+      location.reload();
+    }
+  }, [session.data]);
 
   // Il flusso dei dati sta qui e non nella pagina della stazione: cambiando pagina (per esempio sulla mappa) i messaggi
   // continuano ad arrivare e non si perde nulla.
@@ -75,7 +86,7 @@ export function App() {
   };
 
   let content;
-  if (route.name === 'pair') {
+  if (route.name === 'pair' && session.data !== true) {
     content = <Pair initialCode={route.code} autoSubmit={route.code.length === 8} onPaired={onPaired} />;
   } else if (session.isPending) {
     content = <p className="muted">{t('app.verifying')}</p>;
