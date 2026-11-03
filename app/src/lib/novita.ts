@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.98',
+    released: '2026-11-04T03:00:00Z',
+    kind: 'new',
+    title: ['Rapporti degli errori attivi', 'Error reports active', 'Fehlerberichte aktiv', 'Rapports d’erreur actifs', 'Informes de errores activos', 'Relatórios de erros ativos'],
+    text: [
+      'Il servizio che riceve i rapporti è online: se li accendi in Impostazioni > Assistenza (sono spenti di fabbrica), il rapporto dopo un crash e gli errori anonimi arrivano davvero a chi sviluppa Aurora, e «Manda il pacchetto a chi sviluppa Aurora» ti dà un codice da comunicare.',
+      'The service that receives reports is online: if you switch them on in Settings > Support (off by default), the report after a crash and anonymous errors really reach Aurora’s developer, and «Send the package to Aurora’s developer» gives you a code to share.',
+      'Der Dienst für die Berichte ist online: wenn du sie unter Einstellungen > Support einschaltest (standardmäßig aus), erreichen der Bericht nach einem Absturz und anonyme Fehler wirklich den Entwickler von Aurora, und «Paket an den Entwickler senden» gibt dir einen Code zum Weitergeben.',
+      'Le service qui reçoit les rapports est en ligne : si tu les actives dans Réglages > Assistance (désactivés par défaut), le rapport après un plantage et les erreurs anonymes arrivent vraiment au développeur d’Aurora, et « Envoyer le paquet au développeur » te donne un code à communiquer.',
+      'El servicio que recibe los informes está en línea: si los activas en Ajustes > Asistencia (apagados de fábrica), el informe tras un fallo y los errores anónimos llegan de verdad a quien desarrolla Aurora, y «Enviar el paquete a quien desarrolla Aurora» te da un código para comunicar.',
+      'O serviço que recebe os relatórios está online: se os ligares em Definições > Assistência (desligados de fábrica), o relatório após uma falha e os erros anónimos chegam mesmo a quem desenvolve a Aurora, e «Enviar o pacote a quem desenvolve a Aurora» dá-te um código para comunicar.',
+    ],
+  },
+  {
     version: '0.11.97',
     released: '2026-11-03T22:01:54Z',
     kind: 'new',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'Sous l’affichage : TUNE lance la boîte d’accord du poste et PWR − / + change la puissance par pas de 5 %. En émission le petit affichage montre aussi le ROS.',
       'Bajo el display: TUNE inicia el acoplador de la radio y PWR − / + cambia la potencia en pasos del 5 %. Al transmitir el display pequeño muestra también la ROE.',
       'Por baixo do visor: TUNE inicia o sintonizador do rádio e PWR − / + muda a potência em passos de 5 %. Ao transmitir o visor pequeno mostra também a ROE.',
-    ],
-  },
-  {
-    version: '0.11.75',
-    released: '2026-11-02T18:30:55Z',
-    kind: 'fixed',
-    title: ['FOX solo per le vere Fox', 'FOX only for real Foxes', 'FOX nur für echte Foxes', 'FOX seulement pour les vrais Fox', 'FOX solo para los Fox reales', 'FOX só para os Fox reais'],
-    text: [
-      'Le stazioni normali che mandano R+rapporto o RRR non vengono più segnate come FOX e non accendono il modo Hound.',
-      'Normal stations that send R+report or RRR are no longer marked FOX and do not turn on Hound mode.',
-      'Normale Stationen, die R+Rapport oder RRR senden, werden nicht mehr als FOX markiert und schalten Hound nicht ein.',
-      'Les stations normales qui envoient R+report ou RRR ne sont plus marquées FOX et n’activent plus le mode Hound.',
-      'Las estaciones normales que envían R+reporte o RRR ya no se marcan como FOX ni encienden el modo Hound.',
-      'As estações normais que enviam R+relatório ou RRR já não são marcadas como FOX nem ligam o modo Hound.',
     ],
   },
 ];

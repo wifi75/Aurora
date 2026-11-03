@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.98 - 2026-11-04
+- **Rapporti degli errori attivi**: servizio online (aurora-rapporti.tizianocassone.workers.dev, R2 + D1, riepilogo protetto da ADMIN_TOKEN); i rapporti partono per chi li accende in Impostazioni > Assistenza.
+
 ## 0.11.97 - 2026-11-04
 - **Rapporti degli errori** (Impostazioni > Assistenza, spenti di fabbrica): dopo un crash e automatici anonimi, con anteprima e pulizia dei dati personali; Worker Cloudflare in servizi/rapporti (non ancora online: finche' l'indirizzo e' il segnaposto non parte niente); informativa privacy in docs/privacy.md.
 - **Bandiere**: grafie di NG3K e del cluster (Rodrigues I, Tokelau, Swains I, Pitcairn e altre).
