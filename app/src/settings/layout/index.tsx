@@ -1,6 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useT } from '../../i18n';
 
 /**
  * L'icona «?» con la spiegazione di una voce: passandoci sopra (o con la tastiera) la spiegazione compare subito in una nuvoletta.
@@ -170,13 +169,7 @@ export function Message({ children, kind = 'note' }: { children: ReactNode; kind
   return <p className="sx-message live-note" role="status">{children}</p>;
 }
 
-/** Note lunghe: un riquadro comprimibile, da mettere in fondo a una colonna invece di spargerle tra le voci. */
-export function Notes({ children, title, span = 1 }: { children: ReactNode; title?: ReactNode; span?: 1 | 2 | 3 }) {
-  const t = useT();
-  return (
-    <details className={`sx-group sx-notes sx-span-${span}`}>
-      <summary className="sx-title">{title ?? t('lay.notes')}</summary>
-      <div className="sx-body sx-notes-body">{children}</div>
-    </details>
-  );
+/** Note lunghe delle pagine: per scelta del proprietario non si mostrano piu' (le spiegazioni restano nei «?» delle voci). */
+export function Notes(_props: { children: ReactNode; title?: ReactNode; span?: 1 | 2 | 3 }) {
+  return null;
 }
