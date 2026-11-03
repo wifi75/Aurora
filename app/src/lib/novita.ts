@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.100',
-    released: '2026-11-04T04:00:00Z',
+    released: '2026-11-03T22:22:32Z',
     kind: 'changed',
     title: ['Rapporti degli errori accesi', 'Error reports on', 'Fehlerberichte an', 'Rapports d’erreur activés', 'Informes de errores activos', 'Relatórios de erros ligados'],
     text: [
