@@ -49,15 +49,9 @@ interface Props {
   tablet?: boolean;
 }
 
-/** Quali riquadri richiudibili sono aperti (cluster e log), ricordato sul telefono. */
+/** All'avvio cluster e log sono sempre aperti (scelta del proprietario); si possono chiudere con un tocco finche' la pagina resta aperta. */
 function readOpen(): { cluster: boolean; log: boolean } {
-  try {
-    const raw = browserStorage()?.getItem(OPEN_KEY);
-    const parsed = raw ? (JSON.parse(raw) as { cluster?: boolean; log?: boolean }) : {};
-    return { cluster: parsed.cluster === true, log: parsed.log === true };
-  } catch {
-    return { cluster: false, log: false };
-  }
+  return { cluster: true, log: true };
 }
 
 /** I secondi del periodo, aggiornati quattro volte al secondo perche' la barretta scorra. */
