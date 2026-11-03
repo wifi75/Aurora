@@ -111,10 +111,11 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const txOn = controls.data?.enable_tx === true;
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
-  // gli stessi filtri banda/modo salvati nel cluster di Aurora; senza filtri, la banda e il modo in uso
+  // gli ultimi 5 spot, con i filtri banda/modo salvati nel cluster di Aurora; se con quei filtri sono meno di 5, si completa con gli ultimi arrivati
   const saved = readClusterFilters();
-  const spotFilters = saved.bands.length > 0 || saved.modes.length > 0 ? saved : { bands: ['now'], modes: mode ? [mode] : [], search: '' };
-  const spots = cluster.data ? filterSpots(cluster.data.spots, spotFilters, band).slice(0, 5) : [];
+  const all = cluster.data?.spots ?? [];
+  const filtered = saved.bands.length > 0 || saved.modes.length > 0 ? filterSpots(all, saved, band) : all;
+  const spots = (filtered.length >= 5 ? filtered : [...filtered, ...all.filter((s) => !filtered.includes(s))]).slice(0, 5);
   const log = useQuery({ queryKey: ['log4om', 3], queryFn: () => getLog4om(3), refetchInterval: 10_000, retry: false });
 
   const fail = (error: unknown) => toast(replyErrorMessage(error, t), 'error');
@@ -232,7 +233,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       <div className="phone-col phone-col--side">
       <section className="phone-box phone-box--cluster">
         <button type="button" className="phone-bh" aria-expanded={open.cluster} onClick={() => toggleBox('cluster')}>
-          <span>{t('phone.cluster', { band: band ?? '—', mode: mode || '' })}</span>
+          <span>{t('panel.cluster')}</span>
           <span aria-hidden="true">{open.cluster ? '▾' : '▸'}</span>
         </button>
         {open.cluster ? (
