@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.94',
+    released: '2026-11-04T00:40:00Z',
+    kind: 'changed',
+    title: ['Guida riorganizzata', 'Guide reorganised', 'Anleitung neu geordnet', 'Guide réorganisé', 'Guía reorganizada', 'Guia reorganizado'],
+    text: [
+      'La Guida è divisa in sei gruppi (primi passi, radio e audio, operare, programmi collegati e log, telefono e tablet, problemi comuni) con passi brevi e «Se non va». Nuove voci per collegare Log4OM, LogHX3 e BBLogger2 via UDP, lato Aurora e lato log.',
+      'The Guide is split into six groups (first steps, radio and audio, operating, connected programs and logs, phone and tablet, common problems) with short steps and «If it does not work». New entries to connect Log4OM, LogHX3 and BBLogger2 over UDP, on the Aurora side and on the log side.',
+      'Die Anleitung ist in sechs Gruppen geteilt (erste Schritte, Funkgerät und Audio, Betrieb, verbundene Programme und Logs, Telefon und Tablet, häufige Probleme) mit kurzen Schritten und «Wenn es nicht geht». Neue Einträge zum Verbinden von Log4OM, LogHX3 und BBLogger2 über UDP, auf Aurora- und auf Log-Seite.',
+      'Le Guide est divisé en six groupes (premiers pas, radio et audio, trafic, programmes connectés et journaux, téléphone et tablette, problèmes courants) avec des étapes courtes et « Si ça ne marche pas ». Nouvelles entrées pour relier Log4OM, LogHX3 et BBLogger2 en UDP, côté Aurora et côté journal.',
+      'La Guía está dividida en seis grupos (primeros pasos, radio y audio, operar, programas conectados y registros, teléfono y tableta, problemas comunes) con pasos breves y «Si no funciona». Nuevas entradas para conectar Log4OM, LogHX3 y BBLogger2 por UDP, del lado de Aurora y del lado del registro.',
+      'O Guia está dividido em seis grupos (primeiros passos, rádio e áudio, operar, programas ligados e registos, telemóvel e tablet, problemas comuns) com passos curtos e «Se não funcionar». Novas entradas para ligar Log4OM, LogHX3 e BBLogger2 por UDP, do lado da Aurora e do lado do registo.',
+    ],
+  },
+  {
+    version: '0.11.94',
+    released: '2026-11-04T00:40:00Z',
+    kind: 'fixed',
+    title: ['Fox e attività di banda più comodi', 'Handier Fox page and band activity', 'Bequemere Fox-Seite und Bandaktivität', 'Page Fox et activité de bande plus pratiques', 'Página Fox y actividad de banda más cómodas', 'Página Fox e atividade de banda mais práticas'],
+    text: [
+      'Nella pagina Fox la cascata è larga solo fino a «Messaggi ricevuti», che scende fino in fondo. Nell’attività di banda il messaggio ricevuto ha più spazio e un carattere un po’ più piccolo. Il messaggio su «qualsiasi messaggio» indica la scheda giusta (Programmi collegati).',
+      'On the Fox page the waterfall only goes as far as «Received messages», which now runs to the bottom. In band activity the received message has more room and a slightly smaller font. The «any message» notice points to the right tab (Connected programs).',
+      'Auf der Fox-Seite reicht der Wasserfall nur bis «Empfangene Meldungen», das jetzt bis unten geht. In der Bandaktivität hat die empfangene Meldung mehr Platz und eine etwas kleinere Schrift. Der Hinweis zu «jede Nachricht» zeigt auf den richtigen Reiter (Verbundene Programme).',
+      'Sur la page Fox la cascade ne va que jusqu’à « Messages reçus », qui descend jusqu’en bas. Dans l’activité de bande le message reçu a plus de place et une police un peu plus petite. L’avis sur « tout message » indique le bon onglet (Programmes connectés).',
+      'En la página Fox la cascada llega solo hasta «Mensajes recibidos», que baja hasta el final. En la actividad de banda el mensaje recibido tiene más espacio y una letra algo más pequeña. El aviso de «cualquier mensaje» indica la pestaña correcta (Programas conectados).',
+      'Na página Fox a cascata vai só até «Mensagens recebidas», que desce até ao fundo. Na atividade de banda a mensagem recebida tem mais espaço e letra um pouco mais pequena. O aviso de «qualquer mensagem» indica o separador certo (Programas ligados).',
+    ],
+  },
+  {
     version: '0.11.93',
     released: '2026-11-03T20:52:59Z',
     kind: 'changed',
@@ -465,34 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Fox a tout : état, Activer Tx et STOP, cascade, messages et listes. En plus : plus de 73 après ton RRR et la forme du pays dans la fiche DXpédition.',
       'La página Fox lo tiene todo: estado, Habilitar Tx y STOP, cascada, mensajes y listas. Además: sin 73 tras tu RRR y la forma del país en la ficha DXpedición.',
       'A página Fox tem tudo: estado, Ativar Tx e STOP, cascata, mensagens e listas. Além disso: sem 73 depois do teu RRR e a forma do país na ficha da DXpedição.',
-    ],
-  },
-  {
-    version: '0.11.70',
-    released: '2026-11-02T17:21:43Z',
-    kind: 'new',
-    title: ['UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX', 'UltraFOX'],
-    text: [
-      'Nuovo modo per le DXpedition, compatibile con SuperFox: un solo segnale con fino a 9 stazioni, anche in ricezione come Hound. In più: la zona di trasmissione si pulisce da sola a QSO finito e il CAT si ricollega da solo.',
-      'New DXpedition mode, compatible with SuperFox: one signal with up to 9 stations, also received as Hound. Plus: the transmit area clears itself after a QSO and the CAT reconnects by itself.',
-      'Neuer DXpedition-Modus, kompatibel mit SuperFox: ein Signal mit bis zu 9 Stationen, auch als Hound empfangen. Dazu: der Sendebereich leert sich nach dem QSO selbst und CAT verbindet sich selbst neu.',
-      'Nouveau mode DXpédition, compatible SuperFox : un seul signal avec jusqu’à 9 stations, reçu aussi en Hound. En plus : la zone d’émission se vide seule après le QSO et le CAT se reconnecte seul.',
-      'Nuevo modo para DXpediciones, compatible con SuperFox: una sola señal con hasta 9 estaciones, también en recepción como Hound. Además: la zona de transmisión se limpia sola al acabar el QSO y el CAT se reconecta solo.',
-      'Novo modo para DXpedições, compatível com SuperFox: um só sinal com até 9 estações, também recebido como Hound. Além disso: a zona de transmissão limpa-se sozinha no fim do QSO e o CAT volta a ligar-se sozinho.',
-    ],
-  },
-  {
-    version: '0.11.69',
-    released: '2026-11-01T21:38:33Z',
-    kind: 'fixed',
-    title: ['Pagina Fox e mappa DXpedition', 'Fox page and DXpedition map', 'Fox-Seite und DXpedition-Karte', 'Page Fox et carte DXpédition', 'Página Fox y mapa DXpedición', 'Página Fox e mapa DXpedição'],
-    text: [
-      'La pagina Fox si apre subito ed è dopo Stazione, con la spiegazione sul nome. La scheda DXpedition ha la mappa semplice, senza tropici ed equatore.',
-      'The Fox page opens straight away and sits after Station, with an explanation on its name. The DXpedition card has the plain map, without tropics and equator.',
-      'Die Fox-Seite öffnet sofort und steht nach Station, mit Erklärung am Namen. Die DXpedition-Karte zeigt die einfache Karte ohne Wendekreise und Äquator.',
-      'La page Fox s’ouvre tout de suite et se trouve après Station, avec une explication sur son nom. La fiche DXpédition a la carte simple, sans tropiques ni équateur.',
-      'La página Fox se abre enseguida y está después de Estación, con la explicación en su nombre. La ficha DXpedición tiene el mapa simple, sin trópicos ni ecuador.',
-      'A página Fox abre logo e fica depois de Estação, com a explicação no nome. A ficha da DXpedição tem o mapa simples, sem trópicos nem equador.',
     ],
   },
 ];
