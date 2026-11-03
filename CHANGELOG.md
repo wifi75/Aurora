@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.93 - 2026-11-04
+- **Aggiornamenti**: la versione nuova trovata ha la stella e la targhetta NEW.
+- **crash\stderr.log**: via le righe di avvio e l'avviso innocuo di WebView2 «Failed to unregister class Chrome_WidgetWin_0» (compare alla chiusura della finestra e non e' un guasto); restano solo gli errori veri.
+
 ## 0.11.92 - 2026-11-03
 - **Trasmissione senza JTDX**: il motore usava solo il PTT di JTDX (RTS/DTR/OmniRig) o il VOX; ora, senza PTT da JTDX, usa quello di Impostazioni > Radio (CAT attraverso Hamlib con `T 1`/`T 0`, oppure OmniRig). Era il motivo per cui IC-7300 e IC-7610 non andavano in TX.
 - **Configurazione guidata della radio**: riquadro «Impostazioni consigliate per questa radio» con pulsante Applica (Icom, Yaesu, Kenwood), voce «Configurare la radio» nella Guida, avviso Icom sotto 115200 baud.
