@@ -812,3 +812,9 @@ body:has(.phone-live),
 .app-shell:has(.phone-live) {
   padding-top: env(safe-area-inset-top);
 }
+
+/* telefono e tablet: niente messaggi a comparsa (toast) */
+.app-shell:has(.phone-live) .toaster,
+body:has(.phone-live) .toaster {
+  display: none;
+}
