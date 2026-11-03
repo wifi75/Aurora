@@ -217,8 +217,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
       </div>
 
-      <div className="phone-wf">{waterfall}</div>
-
       {/* in ricezione: chi si sente adesso */}
       {transmitting ? null : (
         <div className="phone-now">
@@ -244,6 +242,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           )}
         </div>
       )}
+
+      <div className="phone-wf">{waterfall}</div>
 
       {/* i sei messaggi Tx, sempre visibili come sul PC: un tocco sceglie il prossimo; in trasmissione il riquadro diventa rosso */}
       <section className={`phone-txbox${transmitting ? ' phone-txbox--tx' : ''}`} aria-live="polite">
