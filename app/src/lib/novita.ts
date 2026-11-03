@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.90',
-    released: '2026-11-03T23:00:00Z',
+    released: '2026-11-03T18:54:59Z',
     kind: 'changed',
     title: ['Telefono: cluster, log e chiamata in evidenza', 'Phone: cluster, log and highlighted call', 'Telefon: Cluster, Log und hervorgehobener Anruf', 'Téléphone : cluster, journal et appel en évidence', 'Teléfono: clúster, registro y llamada resaltada', 'Telemóvel: cluster, registo e chamada em destaque'],
     text: [
