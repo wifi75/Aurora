@@ -148,8 +148,10 @@ pub struct AppState {
     pub schedule: Arc<Mutex<Schedule>>,
     /// Chiamato dopo ogni modifica di frequenze o programmazione, per salvarle.
     pub settings_saver: Option<Arc<dyn Fn() + Send + Sync>>,
-    /// Accesso senza codice per le prove, solo dalla rete di casa. Mai salvato: al riavvio e' sempre spento.
+    /// Accesso senza codice dalla rete di casa (mai da internet, tunnel o proxy). Di fabbrica spento.
     pub open_access: Arc<std::sync::atomic::AtomicBool>,
+    /// Dove si ricorda la scelta dell'accesso senza codice (`accesso-libero.txt` nella cartella dati), se c'e'.
+    pub open_access_file: Option<std::path::PathBuf>,
     /// Il programma Windows entra senza codice: vale solo per chi arriva da questo PC (loopback, mai da un proxy). I telefoni chiedono sempre il codice.
     pub local_trust: bool,
     /// Stato del motore proprio (decodifica in ombra e confronto con JTDX), se e' acceso: lo mette chi lo avvia.
@@ -205,7 +207,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -224,6 +226,12 @@ impl AppState {
     /// Parte con l'accesso senza codice acceso o spento (scelta dell'operatore all'avvio).
     pub fn with_open_access(self, open: bool) -> AppState {
         self.open_access.store(open, std::sync::atomic::Ordering::SeqCst);
+        self
+    }
+
+    /// La scelta dell'accesso senza codice si salva in questo file e si rilegge all'avvio.
+    pub fn with_open_access_file(mut self, path: std::path::PathBuf) -> AppState {
+        self.open_access_file = Some(path);
         self
     }
 

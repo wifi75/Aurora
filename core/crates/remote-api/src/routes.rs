@@ -191,7 +191,7 @@ impl FromRequestParts<AppState> for Authed {
                 return Ok(Authed(DeviceId(0)));
             }
         }
-        // prove: con l'accesso senza codice acceso entra chi e' sulla rete di casa e non arriva da un proxy
+        // accesso senza codice acceso: entra chi e' sulla rete di casa e non arriva da un proxy
         if state.open_access.load(std::sync::atomic::Ordering::SeqCst) {
             let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
             if peer.is_some_and(is_home_network) && !is_proxied(&parts.headers) {
@@ -2235,14 +2235,22 @@ struct AccessBody {
     open: bool,
 }
 
-/// Accesso senza codice, solo per le prove: si accende e si spegne dal PC, non resta al riavvio.
+/// Accesso senza codice dalla rete di casa: si accende e si spegne solo dal PC e resta al riavvio.
 #[utoipa::path(put, path = "/api/v1/access", responses((status = 200, description = "Impostato"), (status = 403, description = "Solo dal PC (local_only)")))]
 async fn access_put(State(state): State<AppState>, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<AccessBody>) -> Result<Json<Value>, ApiError> {
     if !peer.is_some_and(|p| p.ip().is_loopback()) || is_proxied(&headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
     state.open_access.store(body.open, std::sync::atomic::Ordering::SeqCst);
-    tracing::warn!("accesso senza codice {}", if body.open { "ACCESO (solo prove, rete di casa)" } else { "spento" });
+    if let Some(path) = &state.open_access_file
+        && let Err(e) = std::fs::write(path, if body.open { "1
+" } else { "0
+" })
+    {
+        tracing::error!("accesso senza codice non salvato in {}: {e}", path.display());
+        return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "storage"));
+    }
+    tracing::warn!("accesso senza codice {}", if body.open { "ACCESO (rete di casa)" } else { "spento" });
     Ok(Json(json!({ "ok": true, "open": body.open })))
 }
 

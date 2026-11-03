@@ -794,3 +794,10 @@ body:has(.phone-live),
   min-width: 0;
   display: block;
 }
+
+/* telefono e tablet: solo la pagina Stazione, niente barra delle pagine in alto e niente pie' di pagina */
+.app-shell:has(.phone-live) .app-header,
+.app-shell:has(.phone-live) .app-footer,
+.app-shell:has(.phone-live) footer {
+  display: none;
+}
