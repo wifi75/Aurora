@@ -801,3 +801,14 @@ body:has(.phone-live),
 .app-shell:has(.phone-live) footer {
   display: none;
 }
+
+/* senza la testata lo spazio in alto torna alla pagina */
+.app-shell:has(.phone-live) main,
+.app-shell:has(.phone-live) .app-main {
+  margin: 0;
+  padding: 0;
+}
+
+.app-shell:has(.phone-live) {
+  padding-top: env(safe-area-inset-top);
+}
