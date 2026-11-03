@@ -5923,3 +5923,12 @@
   text-align: center;
   font-size: var(--text-sm);
 }
+
+/* colonna dei km 10 px piu' larga verso sinistra: lo spazio si toglie al nome del paese */
+.decode-list .decode-row .decode-where .w-km {
+  margin-left: -10px;
+}
+
+.decode-list .decode-row .decode-where .w-country {
+  padding-right: 10px;
+}
