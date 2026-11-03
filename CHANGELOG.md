@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.87 - 2026-11-03
+- **Telefono**: la pagina principale arriva sempre dalla rete (cache nuova del service worker), niente piu' versione vecchia dopo un aggiornamento; testata e pie' di pagina non disegnati; cluster con gli ultimi 5 spot; barra dei pulsanti piu' bassa.
+
 ## 0.11.86 - 2026-11-03
 - **Telefono e tablet**: solo la pagina Stazione, senza testata, pie' di pagina e toast; bande, modi, filtri, macro, lingua e tema presi da Aurora sul PC; titoli e colonne compatti; la pagina non scorre di lato; doppio tocco su STOP = Canc DX.
 - **Smartphone/Tablet** (Impostazioni): pagina compatta, QR piccolo; accesso senza codice dalla rete di casa che funziona e resta al riavvio (accesso-libero.txt).
