@@ -192,18 +192,18 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
             ))}
           </select>
         </label>
-        {/* la potenza: impostata in % come il display della radio, in trasmissione quella misurata (PO); un tocco apre − e + */}
+        {/* la potenza che la radio sta davvero mandando (PO, in W), non la percentuale impostata; un tocco apre − e + */}
         {powerSet != null || poW != null ? (
           <span className="phone-pwr-host">
             <button type="button" className="phone-pwr data" aria-expanded={pwrOpen} disabled={powerSet == null} onClick={() => setPwrOpen(!pwrOpen)}>
-              {transmitting && poW != null ? `${Math.round(poW)} W` : powerSet != null ? `${t('phone.pwr')} ${Math.round(powerSet * 100)}%` : `${Math.round(poW ?? 0)} W`}
+              {poW != null ? `${Math.round(poW)} W` : '— W'}
             </button>
             {pwrOpen && powerSet != null ? (
               <span className="phone-pwr-pop" role="group" aria-label={t('phone.pwr')}>
                 <button type="button" aria-label={t('rx.act.pwrDown')} disabled={waiting !== null} onClick={() => void click('pwr_down')}>
                   −
                 </button>
-                <span className="data">{Math.round(powerSet * 100)}%</span>
+                <span className="data">{poW != null ? `${Math.round(poW)} W` : '— W'}</span>
                 <button type="button" aria-label={t('rx.act.pwrUp')} disabled={waiting !== null} onClick={() => void click('pwr_up')}>
                   +
                 </button>
@@ -242,52 +242,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           )}
         </div>
       )}
-
-      <div className="phone-wf">{waterfall}</div>
-
-      {/* i sei messaggi Tx, sempre visibili come sul PC: un tocco sceglie il prossimo; in trasmissione il riquadro diventa rosso */}
-      <section className={`phone-txbox${transmitting ? ' phone-txbox--tx' : ''}`} aria-live="polite">
-        <div className="phone-txh">
-          <span>{transmitting ? `${t('phone.transmitting')} · ${status?.tx_df ?? '—'} Hz` : `${t('phone.txMessages')} · ${status?.tx_df ?? '—'} Hz`}</span>
-          {transmitting ? <span className="data">{seconds}</span> : null}
-        </div>
-        {isCq ? (
-          <div className="phone-dxline">
-            <b>{t('phone.cqCall')}</b>
-          </div>
-        ) : (
-          <div className="phone-dxline">
-            {transmitting ? <span>{t('phone.calling')}</span> : <span>{t('phone.dx')}</span>}
-            <b className="data">{dxCall}</b>
-            {dxFlag ? <span className={`fi fi-${dxFlag} phone-flag`} aria-hidden="true" /> : null}
-            <span className="phone-dxinfo">{dxInfo}</span>
-          </div>
-        )}
-        <ol className="phone-txgrid">
-          {seq.messages.map((m, i) => {
-            const done = transmitting && current >= 0 && current < 5 && i < current;
-            const cur = i === current || (!transmitting && current < 0 && i === seq.selected);
-            return (
-              <li key={i}>
-                <button type="button" className={`phone-txl${cur ? ' phone-txl--cur' : ''}${done ? ' phone-txl--done' : ''}`} disabled={m === ''} onClick={() => void pickTx(i)}>
-                  <b>{i + 1}</b>
-                  <span className="data">{m || '—'}</span>
-                  <em>{t(TX_KINDS[i] ?? 'phone.kind.cq')}</em>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-        {transmitting ? (
-          <div className="phone-txbar" aria-hidden="true">
-            <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
-          </div>
-        ) : null}
-      </section>
-
-      <div className="phone-list">
-        <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
-      </div>
 
       <section className="phone-box">
         <button type="button" className="phone-bh" aria-expanded={open.cluster} onClick={() => toggleBox('cluster')}>
@@ -334,6 +288,52 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           )
         ) : null}
       </section>
+
+      {/* i sei messaggi Tx, sempre visibili come sul PC: un tocco sceglie il prossimo; in trasmissione il riquadro diventa rosso */}
+      <section className={`phone-txbox${transmitting ? ' phone-txbox--tx' : ''}`} aria-live="polite">
+        <div className="phone-txh">
+          <span>{transmitting ? `${t('phone.transmitting')} · ${status?.tx_df ?? '—'} Hz` : `${t('phone.txMessages')} · ${status?.tx_df ?? '—'} Hz`}</span>
+          {transmitting ? <span className="data">{seconds}</span> : null}
+        </div>
+        {isCq ? (
+          <div className="phone-dxline">
+            <b>{t('phone.cqCall')}</b>
+          </div>
+        ) : (
+          <div className="phone-dxline">
+            {transmitting ? <span>{t('phone.calling')}</span> : <span>{t('phone.dx')}</span>}
+            <b className="data">{dxCall}</b>
+            {dxFlag ? <span className={`fi fi-${dxFlag} phone-flag`} aria-hidden="true" /> : null}
+            <span className="phone-dxinfo">{dxInfo}</span>
+          </div>
+        )}
+        <ol className="phone-txgrid">
+          {seq.messages.map((m, i) => {
+            const done = transmitting && current >= 0 && current < 5 && i < current;
+            const cur = i === current || (!transmitting && current < 0 && i === seq.selected);
+            return (
+              <li key={i}>
+                <button type="button" className={`phone-txl${cur ? ' phone-txl--cur' : ''}${done ? ' phone-txl--done' : ''}`} disabled={m === ''} onClick={() => void pickTx(i)}>
+                  <b>{i + 1}</b>
+                  <span className="data">{m || '—'}</span>
+                  <em>{t(TX_KINDS[i] ?? 'phone.kind.cq')}</em>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        {transmitting ? (
+          <div className="phone-txbar" aria-hidden="true">
+            <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
+          </div>
+        ) : null}
+      </section>
+
+      <div className="phone-wf">{waterfall}</div>
+
+      <div className="phone-list">
+        <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
+      </div>
 
       <div className="phone-bar">
         <button type="button" className="phone-btn phone-btn--go" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={cq}>
