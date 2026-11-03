@@ -716,3 +716,38 @@ body:has(.phone-live),
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
+
+/* attivita' di banda sul telefono: ora e dB stretti e attaccati al bordo, piu' posto al messaggio e al paese */
+.phone-list .decode-list .decode-row {
+  grid-template-columns: 3.6rem 1.9rem minmax(0, 1fr) 5.6rem;
+  column-gap: 0.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.76rem;
+}
+
+.phone-list .decode-list .decode-row .c-time,
+.phone-list .decode-list .decode-row .c-snr {
+  padding: 0;
+  font-size: 0.72rem;
+}
+
+.phone-list .decode-list .decode-row .decode-flag {
+  width: 1.2em;
+  height: 0.9em;
+  flex: none;
+}
+
+/* titoli delle sezioni (Attivita' di banda, DX Cluster, Log, Messaggi Tx) molto piu' bassi */
+.phone-live .phone-bh,
+.phone-live .phone-bh--static,
+.phone-live .phone-txh {
+  min-height: 0;
+  height: 1.35rem;
+  padding: 0 0.5rem;
+  font-size: 0.62rem;
+  line-height: 1.35rem;
+}
+
+.phone-live .phone-box .phone-bh {
+  min-height: 1.35rem;
+}
