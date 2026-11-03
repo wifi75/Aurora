@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.88',
-    released: '2026-11-03T22:00:00Z',
+    released: '2026-11-03T18:26:38Z',
     kind: 'new',
     title: ['Telefono: si aggiorna da solo', 'Phone updates itself', 'Telefon aktualisiert sich selbst', 'Le téléphone se met à jour seul', 'El teléfono se actualiza solo', 'O telemóvel atualiza-se sozinho'],
     text: [
