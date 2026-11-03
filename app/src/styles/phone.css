@@ -668,3 +668,21 @@
 .phone-bar {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
+
+/* schermata fissa sul telefono: niente zoom col doppio tocco o col pizzico, niente zoom di Safari quando si tocca un menu */
+html:has(.phone-live),
+body:has(.phone-live) {
+  touch-action: pan-y;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.phone-live,
+.phone-live * {
+  touch-action: manipulation;
+}
+
+.phone-live .decode-list {
+  touch-action: pan-y;
+}
