@@ -150,14 +150,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
     }
   };
 
-  // «In onda»: le stazioni sentite nell'ultimo periodo decodificato, ognuna una volta, dalla piu' forte
-  const lastTime = allDecodes.find((d) => senderOf(d.text) !== null)?.time_ms;
-  const onAir = allDecodes
-    .filter((d) => d.time_ms === lastTime && senderOf(d.text) !== null)
-    .filter((d, i, all) => all.findIndex((o) => senderOf(o.text)?.call === senderOf(d.text)?.call) === i)
-    .sort((a, b) => b.snr - a.snr)
-    .slice(0, 6);
-
   // a chi si trasmette: la stazione scelta, o un CQ se non c'e' o se esce il messaggio 6
   const dxCall = (seq.pendingDx || status?.dx_call || '').toUpperCase();
   const current = seq.active >= 0 ? seq.active : seq.next;
@@ -224,32 +216,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
 
       {/* sul telefono le colonne non contano (display: contents); sul tablet sono due */}
       <div className="phone-col phone-col--band">
-      {/* in ricezione: chi si sente adesso */}
-      {transmitting ? null : (
-        <div className="phone-now">
-          <span className="muted">{t('phone.onAir')}</span>
-          {onAir.length > 0 ? (
-            onAir.map((d) => {
-              const flag = flagCode(d.country);
-              return (
-                <span key={d.id} className="phone-now-item">
-                  {flag ? <span className={`fi fi-${flag} phone-flag`} aria-hidden="true" /> : null}
-                  <span className="data phone-now-call">{senderOf(d.text)?.call}</span>
-                  <span className="data muted">{d.snr}</span>
-                  {d.country ? (
-                    <span className="phone-country" title={d.country}>
-                      {d.country}
-                    </span>
-                  ) : null}
-                </span>
-              );
-            })
-          ) : (
-            <span className="muted">{t('phone.nobody')}</span>
-          )}
-        </div>
-      )}
-
       <div className="phone-list">
         <div className="phone-bh phone-bh--static">{t('panel.all')}</div>
         <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
