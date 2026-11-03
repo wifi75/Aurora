@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.88',
+    released: '2026-11-03T22:00:00Z',
+    kind: 'new',
+    title: ['Telefono: si aggiorna da solo', 'Phone updates itself', 'Telefon aktualisiert sich selbst', 'Le téléphone se met à jour seul', 'El teléfono se actualiza solo', 'O telemóvel atualiza-se sozinho'],
+    text: [
+      'Quando aggiorni Aurora sul PC il telefono si ricarica da solo senza cache; in alto c’è anche il pulsante ⟳ per farlo a mano. Su iPhone la pagina parte sotto ora e batteria (niente sfocatura), bandiere più grandi e paese più largo nell’attività di banda, titoli un po’ più alti.',
+      'When you update Aurora on the PC the phone reloads by itself without cache; at the top there is also the ⟳ button to do it by hand. On iPhone the page starts below time and battery (no blur), bigger flags and wider country in band activity, slightly taller headings.',
+      'Wenn Aurora auf dem PC aktualisiert wird, lädt das Telefon von selbst ohne Cache neu; oben gibt es auch die Taste ⟳ dafür. Auf dem iPhone beginnt die Seite unter Uhrzeit und Akku (keine Unschärfe), größere Flaggen und breiteres Land in der Bandaktivität, etwas höhere Überschriften.',
+      'Quand tu mets Aurora à jour sur le PC, le téléphone se recharge seul sans cache ; en haut il y a aussi le bouton ⟳ pour le faire à la main. Sur iPhone la page commence sous l’heure et la batterie (pas de flou), drapeaux plus grands et pays plus large dans l’activité de bande, titres un peu plus hauts.',
+      'Cuando actualizas Aurora en el PC el teléfono se recarga solo sin caché; arriba también está el botón ⟳ para hacerlo a mano. En iPhone la página empieza bajo la hora y la batería (sin desenfoque), banderas más grandes y país más ancho en la actividad de banda, títulos algo más altos.',
+      'Quando atualizas a Aurora no PC o telemóvel recarrega sozinho sem cache; em cima há também o botão ⟳ para o fazer à mão. No iPhone a página começa abaixo da hora e da bateria (sem desfoque), bandeiras maiores e país mais largo na atividade de banda, títulos um pouco mais altos.',
+    ],
+  },
+  {
     version: '0.11.87',
     released: '2026-11-03T18:19:47Z',
     kind: 'fixed',
@@ -557,20 +571,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouveau bouton parmi les interrupteurs QSO : armé, en fin de période il répond seul au CQ choisi (le premier, le plus lointain, le plus fort ou le plus faible, dans Réglages), en sautant les stations déjà contactées.',
       'Nuevo botón entre los interruptores del QSO: armado, al final del periodo responde solo al CQ elegido (el primero, el más lejano, el más fuerte o el más débil, en Ajustes), saltando las estaciones ya trabajadas.',
       'Novo botão entre os interruptores do QSO: armado, no fim do período responde sozinho ao CQ escolhido (o primeiro, o mais distante, o mais forte ou o mais fraco, nas Definições), saltando as estações já trabalhadas.',
-    ],
-  },
-  {
-    version: '0.11.61',
-    released: '2026-11-01T16:08:51Z',
-    kind: 'fixed',
-    title: ['R+rapporto dopo il Tx1', 'R+report after Tx1', 'R+Rapport nach Tx1', 'R+rapport après Tx1', 'R+reporte tras Tx1', 'R+relatório após Tx1'],
-    text: [
-      'Se la stazione chiamata risponde subito con R+rapporto (MSHV, molte DXpedition), Aurora chiude con RR73 e registra, come WSJT-X 3.3, invece di continuare a chiamare.',
-      'If the called station answers straight away with R+report (MSHV, many DXpeditions), Aurora closes with RR73 and logs, like WSJT-X 3.3, instead of calling again.',
-      'Antwortet die gerufene Station sofort mit R+Rapport (MSHV, viele DXpeditionen), schließt Aurora mit RR73 und loggt, wie WSJT-X 3.3, statt weiter zu rufen.',
-      'Si la station appelée répond directement par R+rapport (MSHV, beaucoup de DXpéditions), Aurora clôt par RR73 et enregistre, comme WSJT-X 3.3, au lieu de rappeler.',
-      'Si la estación llamada responde enseguida con R+reporte (MSHV, muchas DXpediciones), Aurora cierra con RR73 y registra, como WSJT-X 3.3, en lugar de seguir llamando.',
-      'Se a estação chamada responder logo com R+relatório (MSHV, muitas DXpedições), o Aurora fecha com RR73 e regista, como o WSJT-X 3.3, em vez de continuar a chamar.',
     ],
   },
 ];
