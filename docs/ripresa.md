@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-02 sera)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-03)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,14 +15,14 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.82** (2026-11-02, pubblicata): ricerca QRZ.com/HamQTH senza blocco (il lucchetto in `reporting/src/qrz_xml.rs` restava chiuso dentro il `match` e `login` lo aspettava per sempre). 0.11.81: spettro sotto la cascata di nuovo su «Attuale» (`spectrumLive` in `lib/wfPrefs.ts`), paese intero nella finestra CQ, bandiera e paese 15 px a destra, riquadro del nominativo senza la fonte. 0.11.80: pannello Comandi compatto, barre PO/SWR, messaggi FT8 pubblicati a ogni passata (`decode_slot_streaming`).
+- **Ultima versione**: **0.11.84** (2026-11-03, pubblicata): telefono e tablet come telecomando (`app/src/pages/PhoneLive.tsx`, `styles/phone.css`; sotto 768 px, tablet 768-1366 px se remoto o a tocco, `?vista=telefono|tablet`), associazione con QR e annuncio mDNS `aurora.local` (`core/crates/remote-api/src/lan.rs`, crate `mdns-sd`), indirizzi ricordati sul telefono (`lib/knownAddresses.ts`), anteprime dal vivo in Impostazioni > Smartphone/Tablet; da remoto niente Impostazioni (`REMOTE` in `App.tsx`); Impostazioni senza note ne' spiegazioni fisse (`Notes` e `Help` di `settings/common.tsx` non mostrano niente); precaricamento delle informazioni di tutti gli spot visibili nel cluster. 0.11.83: «Prova» per tutti i servizi, DXpedition senza fantasmi.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
 
 - Nessun ramo aperto: `cluster-qrz`, `cascata-wsjtx` e `grafica-impostazioni` sono uniti a main; i worktree in `D:\build\wt-*` si possono togliere.
 - Restano da fare: «Prova» per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP; NAME e QTH per i QSO registrati a mano.
-- Da sistemare: la scheda DXpedition carica ancora due volte (cartina provvisoria, poi quella vera); la correzione della 0.11.80 non basta.
+- Da provare dal vivo: vista telefono e tablet su dispositivi veri; Android spesso non risolve `aurora.local` (il QR usa l'IP); le anteprime dal vivo nelle Impostazioni sono l'app vera (anche la trasmissione).
 - I test li lancia il proprietario: prima di pubblicare solo `tsc` e `cargo check`.
 
 ## Prossimo passo
