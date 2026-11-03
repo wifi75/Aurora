@@ -137,7 +137,7 @@ function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatCon
   const done = presetApplied(config, preset);
   return (
     <Group title={t('cat.preset.title')} span={2}>
-      <Cells min={16}>
+      <Cells min={16} className="cat-preset-cells">
         <Cell label={t('cat.preset.aurora')} hint={t('tip.cat.preset')}>
           <ul className="cat-preset">
             {a.baud ? <li>{t('cat.baud')}: {a.baud}</li> : null}

@@ -6016,3 +6016,28 @@
 .decode-list .decode-row .decode-text {
   font-size: calc(1em - 0.5pt);
 }
+
+/* impostazioni consigliate: titolo sopra, elenco allineato a sinistra su tutta la larghezza della colonna (non centrato e spezzato) */
+.cat-preset-cells .sx-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.cat-preset-cells .sx-label {
+  font-weight: 700;
+}
+
+.cat-preset-cells .sx-control {
+  display: block;
+  width: 100%;
+  max-width: none;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.cat-preset-cells .cat-preset li {
+  text-align: left;
+  white-space: normal;
+}
