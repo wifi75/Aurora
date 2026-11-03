@@ -4698,6 +4698,26 @@
   border-radius: 0.3rem;
 }
 
+/* «Se non va»: i controlli quando qualcosa non funziona, distinti dal consiglio */
+.guide-fix {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  border-left: 3px solid var(--warn, var(--accent));
+  background: color-mix(in srgb, var(--warn, var(--accent)) 10%, transparent);
+  border-radius: 0.3rem;
+}
+
+.guide-fix h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+
+.guide-fix ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
 @media (max-width: 50rem) {
   .guide {
     grid-template-columns: minmax(0, 1fr);
