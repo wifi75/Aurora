@@ -2,7 +2,7 @@ import type { Entry } from '../core';
 
 /** Scheda Accesso: codice di associazione, accesso senza codice per le prove, dispositivi. [it, en, de, fr, es, pt] */
 export const accessStrings = {
-  'tab.access': ['Accesso', 'Access', 'Zugang', 'Accès', 'Acceso', 'Acesso'],
+  'tab.access': ['Smartphone/Tablet', 'Smartphone/Tablet', 'Smartphone/Tablet', 'Smartphone/Tablette', 'Smartphone/Tableta', 'Smartphone/Tablet'],
   'tip.tab.access': [
     'Come ci si collega ad Aurora: codice di associazione, accesso senza codice per le prove e dispositivi collegati.',
     'How to connect to Aurora: pairing code, code-free access for testing and connected devices.',
