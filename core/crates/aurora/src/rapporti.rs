@@ -27,7 +27,7 @@ use serde_json::{json, Value};
 
 /// L'indirizzo del servizio che raccoglie i rapporti (il Worker in `servizi/rapporti`). Finche' contiene il segnaposto non parte nulla:
 /// dopo `npx wrangler deploy` si mette qui l'indirizzo vero (`https://aurora-rapporti.<sottodominio>.workers.dev`).
-pub const INDIRIZZO: &str = "https://aurora-rapporti.SOTTODOMINIO.workers.dev";
+pub const INDIRIZZO: &str = "https://aurora-rapporti.tizianocassone.workers.dev";
 const SEGNAPOSTO: &str = "SOTTODOMINIO";
 /// La chiave di ingresso: pubblica, non e' un segreto. Serve solo al servizio per scartare il rumore; deve essere uguale a
 /// `CHIAVE_INGRESSO` in `servizi/rapporti/wrangler.toml`.
