@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Telefono: tre proposte</title>
+<style>
+body{margin:0;padding:18px;background:#e8ecf1;font:13px "Segoe UI",system-ui,sans-serif;color:#1c2733}
+h1{font-size:15px;margin:0 0 14px}
+.g{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.ph{width:390px;height:780px;background:#f4f6f9;border:10px solid #1c2733;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;position:relative}
+.cap{width:390px;font-size:13px;margin-top:8px;color:#3b4856}
+.cap b{color:#1c2733}
+.mono{font-family:Consolas,"JetBrains Mono",monospace}
+.top{background:#0c1418;color:#d8f4ff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.freq{font-size:26px;color:#5ce8ff;letter-spacing:.02em}
+.pill{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.rx{background:#1f7a3d;color:#e6ffe9}.tx{background:#c62828;color:#fff}
+.row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #dde3ea;background:#fff;font-size:13px}
+.row .t{color:#6b7a8f;width:58px;flex:none}.row .s{width:30px;flex:none;text-align:right;color:#344}
+.row .m{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .f{width:20px;height:14px;border-radius:2px;flex:none}
+.cq{background:#fff7d6}.me{background:#ffe1e1}.new{background:#e2f4e6}
+.list{flex:1;overflow:hidden}
+.bar{display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #cfd8e2}
+.b{flex:1;height:48px;border-radius:12px;border:1px solid #9aa7b4;background:#f4f6f8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.b.go{background:#0f6e64;color:#fff;border-color:#0f6e64}
+.b.stop{background:#c62828;color:#fff;border-color:#c62828}
+.chips{display:flex;gap:6px;padding:8px 10px;overflow:hidden;background:#fff;border-bottom:1px solid #dde3ea}
+.chip{border:1px solid #9aa7b4;border-radius:999px;padding:4px 10px;font-size:12px;white-space:nowrap;background:#f4f6f8}
+.chip.on{background:#0f6e64;color:#fff;border-color:#0f6e64}
+.tabs{display:flex;background:#fff;border-top:1px solid #cfd8e2}
+.tab{flex:1;text-align:center;padding:8px 0 10px;font-size:11px;color:#6b7a8f}
+.tab.on{color:#0f6e64;font-weight:700;border-top:3px solid #0f6e64;margin-top:-1px}
+.ic{font-size:18px;display:block}
+.qso{background:#fff;margin:8px 10px;border:1px solid #cfd8e2;border-radius:12px;padding:10px}
+.qso .call{font-size:22px;font-weight:700;color:#0f6e64}
+.step{display:flex;gap:4px;margin-top:8px}.step span{flex:1;height:6px;border-radius:3px;background:#dde3ea}.step span.d{background:#0f6e64}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.18);padding:12px 14px 16px}
+.grab{width:40px;height:4px;border-radius:2px;background:#b8c2cc;margin:0 auto 10px}
+.mut{color:#6b7a8f;font-size:12px}
+.sec{padding:6px 10px 2px;font-size:11px;font-weight:700;color:#5a6876;letter-spacing:.05em;background:#eef2f6}
+</style>
+</head>
+<body>
+<h1>Aurora sul telefono come telecomando: tre proposte (larghezza vera 390 px)</h1>
+<div class="g">
+
+<!-- 1 -->
+<div><div class="ph">
+  <div class="top"><span class="mono freq">14.074</span><span class="pill rx">RX</span><span class="mono" style="color:#ffb428">FT8 · 20m</span><span style="margin-left:auto" class="mono">17:12:30</span></div>
+  <div class="chips"><span class="chip on">Tutti</span><span class="chip">CQ</span><span class="chip">Nuovi</span><span class="chip">A me</span></div>
+  <div class="list">
+    <div class="row cq"><span class="t mono">17:12:30</span><span class="s mono">-11</span><span class="f" style="background:#c8102e"></span><span class="m mono">CQ 4O5JD JN92</span></div>
+    <div class="row me"><span class="t mono">17:12:30</span><span class="s mono">-8</span><span class="f" style="background:#009246"></span><span class="m mono">IZ2JPN IU3WJQ R-12</span></div>
+    <div class="row"><span class="t mono">17:12:30</span><span class="s mono">-19</span><span class="f" style="background:#c8102e"></span><span class="m mono">K0DEQ 4O5JD -19</span></div>
+    <div class="row new"><span class="t mono">17:12:30</span><span class="s mono">-15</span><span class="f" style="background:#e30a17"></span><span class="m mono">CQ TA3KAN KM38</span></div>
+    <div class="row"><span class="t mono">17:12:00</span><span class="s mono">-7</span><span class="f" style="background:#009246"></span><span class="m mono">PY5ZD IZ3XAN JN55</span></div>
+    <div class="row cq"><span class="t mono">17:12:00</span><span class="s mono">-10</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">CQ KE8ZLT EN81</span></div>
+    <div class="row"><span class="t mono">17:12:00</span><span class="s mono">-12</span><span class="f" style="background:#e30a17"></span><span class="m mono">IW6ASD TA3KAN RR73</span></div>
+    <div class="row"><span class="t mono">17:11:30</span><span class="s mono">-5</span><span class="f" style="background:#009246"></span><span class="m mono">IZ2JPN TA3KAN 73</span></div>
+  </div>
+  <div class="bar"><div class="b go">CQ</div><div class="b">Abilita Tx</div><div class="b stop">STOP</div></div>
+</div><p class="cap"><b>1 · Elenco a tutto schermo.</b> In alto frequenza, RX/TX, modo e ora; filtri a un tocco. Si tocca una riga per rispondere. In basso tre pulsanti grandi sempre a portata di pollice.</p></div>
+
+<!-- 2 -->
+<div><div class="ph">
+  <div class="top"><span class="mono freq">14.074</span><span class="pill tx">TX</span><span class="mono" style="color:#ffb428">FT8 · 20m</span><span style="margin-left:auto" class="mono">12/15</span></div>
+  <div class="qso"><div class="mut">QSO in corso</div><div class="call mono">TA3KAN</div><div class="mut">Asiatic Turkey · KM38 · 1471 km · rapporto -12</div>
+    <div class="step"><span class="d"></span><span class="d"></span><span class="d"></span><span></span><span></span></div>
+    <div style="display:flex;gap:6px;margin-top:10px"><div class="b" style="height:38px">Tx1</div><div class="b" style="height:38px">Tx2</div><div class="b go" style="height:38px">Tx3</div><div class="b" style="height:38px">73</div></div></div>
+  <div class="sec">CHI CHIAMA CQ</div>
+  <div class="list">
+    <div class="row cq"><span class="t mono">17:12:30</span><span class="s mono">-11</span><span class="f" style="background:#c8102e"></span><span class="m mono">CQ 4O5JD JN92</span></div>
+    <div class="row new"><span class="t mono">17:12:30</span><span class="s mono">-15</span><span class="f" style="background:#e30a17"></span><span class="m mono">CQ TA3KAN KM38</span></div>
+    <div class="row cq"><span class="t mono">17:12:00</span><span class="s mono">-10</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">CQ KE8ZLT EN81</span></div>
+    <div class="row cq"><span class="t mono">17:11:30</span><span class="s mono">-16</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">CQ N4DWD EM73</span></div>
+  </div>
+  <div class="bar"><div class="b go">CQ</div><div class="b">Abilita Tx</div><div class="b stop">STOP</div></div>
+  <div class="tabs"><div class="tab on"><span class="ic">◉</span>Stazione</div><div class="tab"><span class="ic">≡</span>Banda</div><div class="tab"><span class="ic">✦</span>Cluster</div><div class="tab"><span class="ic">☰</span>Log</div></div>
+</div><p class="cap"><b>2 · Il QSO al centro.</b> In alto il QSO in corso con i passi e i messaggi Tx; sotto solo chi chiama CQ. Le altre cose (attività di banda, cluster, log) in schede in basso come un'app.</p></div>
+
+<!-- 3 -->
+<div><div class="ph">
+  <div class="top"><span class="mono freq">14.074</span><span class="pill rx">RX</span><span class="mono" style="color:#ffb428">FT8 · 20m</span><span style="margin-left:auto" class="mono">17:12:30</span></div>
+  <div class="list">
+    <div class="row cq"><span class="t mono">17:12:30</span><span class="s mono">-11</span><span class="f" style="background:#c8102e"></span><span class="m mono">CQ 4O5JD JN92</span></div>
+    <div class="row me"><span class="t mono">17:12:30</span><span class="s mono">-8</span><span class="f" style="background:#009246"></span><span class="m mono">IZ2JPN IU3WJQ R-12</span></div>
+    <div class="row"><span class="t mono">17:12:30</span><span class="s mono">-19</span><span class="f" style="background:#c8102e"></span><span class="m mono">K0DEQ 4O5JD -19</span></div>
+    <div class="row new"><span class="t mono">17:12:30</span><span class="s mono">-15</span><span class="f" style="background:#e30a17"></span><span class="m mono">CQ TA3KAN KM38</span></div>
+    <div class="row"><span class="t mono">17:12:00</span><span class="s mono">-7</span><span class="f" style="background:#009246"></span><span class="m mono">PY5ZD IZ3XAN JN55</span></div>
+  </div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="display:flex;align-items:baseline;gap:8px"><span class="mono" style="font-size:20px;font-weight:700;color:#0f6e64">TA3KAN</span><span class="mut">KM38 · -15 dB · Asiatic Turkey</span></div>
+    <div style="display:flex;gap:6px;margin:10px 0"><span class="chip">20m</span><span class="chip">40m</span><span class="chip on">FT8</span><span class="chip">FT4</span><span class="chip">Tx 1196</span></div>
+    <div style="display:flex;gap:8px"><div class="b go">Chiama</div><div class="b">CQ</div><div class="b">Abilita Tx</div></div>
+    <div style="margin-top:8px"><div class="b stop">STOP TX</div></div>
+  </div>
+</div><p class="cap"><b>3 · Elenco e pannello che sale.</b> Si vede l'elenco; toccando una stazione sale dal basso un pannello con la stazione scelta, banda, modo, frequenza Tx e i comandi. Trascinandolo giù torna piccolo.</p></div>
+
+</div>
+</body>
+</html>
