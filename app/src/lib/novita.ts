@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.96',
+    released: '2026-11-04T02:00:00Z',
+    kind: 'changed',
+    title: ['Assistenza in una scheda a sé', 'Support in its own tab', 'Support im eigenen Reiter', 'Assistance dans un onglet à part', 'Asistencia en su propia pestaña', 'Assistência num separador próprio'],
+    text: [
+      'In Impostazioni c’è la scheda «Assistenza»: pacchetto con il log sul Desktop e «Manda per email», che apre Gmail in Chrome già compilato. Nell’attività di banda tornano i km anche con il pannello stretto e non c’è più la doppia linea; sul telefono bandiera e paese seguono le opzioni di Schermo.',
+      'Settings now has a «Support» tab: log package on the Desktop and «Send by email», which opens a ready-made Gmail message in Chrome. Band activity shows km again in a narrow panel with no double line; on the phone flag and country follow the Display options.',
+      'Die Einstellungen haben jetzt den Reiter «Support»: Log-Paket auf dem Desktop und «Per E-Mail senden», das eine fertige Gmail-Nachricht in Chrome öffnet. Die Bandaktivität zeigt km auch im schmalen Bereich ohne doppelte Linie; auf dem Telefon folgen Flagge und Land den Anzeige-Optionen.',
+      'Les Réglages ont un onglet « Assistance » : paquet du journal sur le Bureau et « Envoyer par e-mail », qui ouvre un message Gmail prêt dans Chrome. L’activité de bande affiche de nouveau les km dans un panneau étroit, sans double ligne ; sur le téléphone drapeau et pays suivent les options d’affichage.',
+      'Ajustes tiene ahora la pestaña «Asistencia»: paquete del registro en el Escritorio y «Enviar por email», que abre un Gmail listo en Chrome. La actividad de banda vuelve a mostrar los km en un panel estrecho y sin línea doble; en el teléfono bandera y país siguen las opciones de Pantalla.',
+      'As Definições têm agora o separador «Assistência»: pacote do registo no Ambiente de trabalho e «Enviar por email», que abre um Gmail pronto no Chrome. A atividade de banda volta a mostrar os km num painel estreito e sem linha dupla; no telemóvel bandeira e país seguem as opções de Ecrã.',
+    ],
+  },
+  {
     version: '0.11.95',
     released: '2026-11-03T21:37:15Z',
     kind: 'new',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Fox a son propre style, violet et cyan lumineux, et la cascade se redimensionne en tirant la poignée.',
       'La página Fox tiene un aspecto propio, violeta y cian luminosos, y la cascada se redimensiona arrastrando el tirador.',
       'A página Fox tem um aspeto próprio, violeta e ciano luminosos, e a cascata redimensiona-se arrastando a pega.',
-    ],
-  },
-  {
-    version: '0.11.73',
-    released: '2026-11-02T18:01:25Z',
-    kind: 'changed',
-    title: ['Pagina Informazioni rinnovata', 'Refreshed About page', 'Neue Info-Seite', 'Page Informations renouvelée', 'Página Información renovada', 'Página Informações renovada'],
-    text: [
-      'La pagina Informazioni è centrata e più ordinata, con il collegamento al sito web di Aurora.',
-      'The About page is centred and tidier, with a link to the Aurora website.',
-      'Die Info-Seite ist zentriert und übersichtlicher, mit einem Link zur Aurora-Webseite.',
-      'La page Informations est centrée et plus claire, avec un lien vers le site web d’Aurora.',
-      'La página Información está centrada y más ordenada, con el enlace al sitio web de Aurora.',
-      'A página Informações está centrada e mais arrumada, com a ligação ao site de Aurora.',
     ],
   },
 ];
