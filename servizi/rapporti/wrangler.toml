@@ -1,0 +1,32 @@
+# Worker che raccoglie i rapporti degli errori di Aurora (facoltativi, spenti di fabbrica nel programma).
+name = "aurora-rapporti"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Pulizia periodica: ogni notte si cancellano rapporti e righe dell'indice piu' vecchi di GIORNI_CONSERVAZIONE.
+[triggers]
+crons = ["17 3 * * *"]
+
+[vars]
+# Chiave di ingresso PUBBLICA (non e' un segreto): deve essere uguale a CHIAVE_INGRESSO in core/crates/aurora/src/rapporti.rs.
+CHIAVE_INGRESSO = "aurora-rapporti-v1"
+GIORNI_CONSERVAZIONE = "90"
+
+[[r2_buckets]]
+binding = "RAPPORTI"
+bucket_name = "aurora-rapporti"
+
+[[d1_databases]]
+binding = "INDICE"
+database_name = "aurora-rapporti"
+# dopo `npx wrangler d1 create aurora-rapporti` incollare qui l'id che stampa
+database_id = "INCOLLA-QUI-L-ID-DEL-DATABASE"
+
+# Limite per mittente (l'indirizzo IP si usa solo come chiave del contatore, non si registra ne' si salva)
+[[ratelimits]]
+name = "LIMITE"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
+[observability]
+enabled = false

@@ -4,8 +4,11 @@ use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+    use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
+    tracing_subscriber::registry()
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with(tracing_subscriber::fmt::layer())
+        .with(aurora::rapporti::Strato)
         .init();
 
     let config = match Config::from_env() {

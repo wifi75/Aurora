@@ -67,6 +67,7 @@ dependencies = [
  "engine-native",
  "engine-sim",
  "futures-util",
+ "getrandom 0.4.3",
  "input-level",
  "logbook",
  "online-info",
@@ -88,6 +89,7 @@ dependencies = [
  "udp-emitter",
  "udp-hub",
  "updater",
+ "ureq",
  "wishlist",
  "zip",
 ]

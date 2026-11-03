@@ -32,6 +32,7 @@ import { ExportPage } from './pages/ExportPage';
 import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
+import { CrashPrompt } from './settings/ReportsBox';
 
 /**
  * Telefono, tablet o un altro PC sulla rete sono un telecomando: le Impostazioni si cambiano solo dalla finestra di Aurora
@@ -164,6 +165,7 @@ export function App() {
       <main className="app-main">{content}</main>
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
+      {session.data && !REMOTE ? <CrashPrompt /> : null}
     </div>
   );
 }
