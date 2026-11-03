@@ -164,7 +164,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const to = dxGrid ? gridCenter(dxGrid) : null;
   const km = from && to ? distanceKm(from, to) : null;
   const dxSnr = allDecodes.find((d) => senderOf(d.text)?.call === dxCall)?.snr;
-  const dxInfo = [dxCountry, dxGrid || null, km !== null ? `${km} km` : null, dxSnr !== undefined ? String(dxSnr) : null].filter(Boolean).join(' · ');
+  const dxInfo = [dxCountry, dxGrid || null, km !== null ? t('phone.km', { km }) : null, dxSnr !== undefined ? String(dxSnr) : null].filter(Boolean).join(' · ');
 
   return (
     <div className={`phone-live${transmitting ? ' phone-live--tx' : ''}`}>
@@ -196,10 +196,10 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         {powerSet != null || poW != null ? (
           <span className="phone-pwr-host">
             <button type="button" className="phone-pwr data" aria-expanded={pwrOpen} disabled={powerSet == null} onClick={() => setPwrOpen(!pwrOpen)}>
-              {transmitting && poW != null ? `${Math.round(poW)} W` : powerSet != null ? `PWR ${Math.round(powerSet * 100)}%` : `${Math.round(poW ?? 0)} W`}
+              {transmitting && poW != null ? `${Math.round(poW)} W` : powerSet != null ? `${t('phone.pwr')} ${Math.round(powerSet * 100)}%` : `${Math.round(poW ?? 0)} W`}
             </button>
             {pwrOpen && powerSet != null ? (
-              <span className="phone-pwr-pop" role="group" aria-label="PWR">
+              <span className="phone-pwr-pop" role="group" aria-label={t('phone.pwr')}>
                 <button type="button" aria-label={t('rx.act.pwrDown')} disabled={waiting !== null} onClick={() => void click('pwr_down')}>
                   −
                 </button>
@@ -257,7 +257,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           </div>
         ) : (
           <div className="phone-dxline">
-            {transmitting ? <span>{t('phone.calling')}</span> : <span>DX</span>}
+            {transmitting ? <span>{t('phone.calling')}</span> : <span>{t('phone.dx')}</span>}
             <b className="data">{dxCall}</b>
             {dxFlag ? <span className={`fi fi-${dxFlag} phone-flag`} aria-hidden="true" /> : null}
             <span className="phone-dxinfo">{dxInfo}</span>
@@ -337,7 +337,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
 
       <div className="phone-bar">
         <button type="button" className="phone-btn phone-btn--go" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={cq}>
-          CQ
+          {t('phone.cq')}
         </button>
         <button type="button" className={`phone-btn${txOn ? ' phone-btn--on' : ''}`} aria-pressed={txOn} disabled={!txAllowed || controls.isError} onClick={() => void toggleTx()}>
           {txOn ? t('phone.txOn') : t('ctl.enable_tx')}
