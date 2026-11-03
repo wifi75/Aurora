@@ -36,5 +36,9 @@ export const phoneStrings = {
   'phone.kind.rr73': ['RR73', 'RR73', 'RR73', 'RR73', 'RR73', 'RR73'],
   'phone.kind.73': ['73', '73', '73', '73', '73', '73'],
   'phone.kind.cq': ['CQ', 'CQ', 'CQ', 'CQ', 'CQ', 'CQ'],
+  'phone.cq': ['CQ', 'CQ', 'CQ', 'CQ', 'CQ', 'CQ'],
+  'phone.dx': ['DX', 'DX', 'DX', 'DX', 'DX', 'DX'],
+  'phone.pwr': ['PWR', 'PWR', 'PWR', 'PWR', 'PWR', 'PWR'],
+  'phone.km': ['{km} km', '{km} km', '{km} km', '{km} km', '{km} km', '{km} km'],
   'phone.stop': ['STOP', 'STOP', 'STOP', 'STOP', 'STOP', 'STOP'],
 } as const satisfies Record<string, Entry>;
