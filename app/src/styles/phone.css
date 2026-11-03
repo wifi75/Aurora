@@ -818,3 +818,15 @@ body:has(.phone-live),
 body:has(.phone-live) .toaster {
   display: none;
 }
+
+/* barra in fondo del telefono piu' bassa: pulsanti meno alti e solo il margine che chiede l'iPhone */
+.phone-live .phone-bar {
+  padding: 0.3rem 0.4rem max(0.3rem, calc(env(safe-area-inset-bottom) - 0.6rem));
+  gap: 0.35rem;
+}
+
+.phone-live .phone-bar .phone-btn {
+  min-height: 2.6rem;
+  height: 2.6rem;
+  font-size: 0.85rem;
+}
