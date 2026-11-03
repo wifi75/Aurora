@@ -16,6 +16,7 @@ import './styles/news.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { watchFreshUi } from './lib/freshUi';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 
 const queryClient = new QueryClient();
@@ -53,6 +54,9 @@ async function start() {
   }
 }
 void start();
+
+// aggiornamento di Aurora sul PC: il telefono si ricarica da solo con la pagina nuova, senza cache
+if (import.meta.env.PROD) watchFreshUi();
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
