@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getHealth } from '../api/client';
 import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
-import { SupportBox } from './SupportBox';
 
 const REPO = 'https://github.com/wifi75/Aurora';
 const SITE = 'https://wifi75.github.io/Aurora/';
@@ -58,7 +57,6 @@ export function AboutTab() {
           <p>{t('about.thanksText')}</p>
         </section>
       </div>
-      <SupportBox />
       <nav className="about-links" aria-label={t('about.links')}>
         {links.map(([label, href]) => (
           <a key={href} className="glass about-link" href={href} target="_blank" rel="noreferrer">
