@@ -42,7 +42,7 @@ describe('Wiki', () => {
   it('filters the sections with the search box', () => {
     render(<Wiki />);
     fireEvent.change(screen.getByRole('searchbox', { name: 'Cerca nella guida…' }), { target: { value: 'Log4OM' } });
-    expect(screen.getByRole('heading', { level: 3, name: 'Log4OM' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Log4OM: la radio tramite Aurora' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3, name: 'La scheda audio' })).toBeNull();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Cerca nella guida…' }), { target: { value: 'zzzz-niente' } });
     expect(screen.getByText('Niente trovato per questa ricerca.')).toBeInTheDocument();

@@ -9,7 +9,7 @@ export function guideText(entry: Entry, lang: Lang): string {
 }
 
 function sectionText(s: GuideSection, lang: Lang): string {
-  return [s.title, s.text, s.tip, ...(s.steps ?? [])].filter((e): e is Entry => !!e).map((e) => guideText(e, lang)).join(' ');
+  return [s.title, s.text, s.tip, ...(s.steps ?? []), ...(s.fix ?? [])].filter((e): e is Entry => !!e).map((e) => guideText(e, lang)).join(' ');
 }
 
 /** Guida: capitoli con indice, ricerca e passi numerati (cosa premere e dove), nella lingua scelta. */
@@ -71,6 +71,16 @@ export function Wiki() {
                     </ol>
                   ) : null}
                   {s.tip ? <p className="guide-tip">{guideText(s.tip, lang)}</p> : null}
+                  {s.fix ? (
+                    <div className="guide-fix">
+                      <h4>{t('guide.fix')}</h4>
+                      <ul>
+                        {s.fix.map((f, i) => (
+                          <li key={i}>{guideText(f, lang)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>
