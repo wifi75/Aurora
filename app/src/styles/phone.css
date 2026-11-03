@@ -606,3 +606,16 @@
 .phone-live--tablet .phone-wf {
   margin-top: auto;
 }
+
+/* attivita' di banda sul telefono: al massimo 10 righe in vista, le altre si scorrono col dito */
+.phone-list .decode-row {
+  min-height: 2.6rem;
+  height: 2.6rem;
+}
+
+.phone-list .decode-list {
+  max-height: calc(10 * 2.6rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
