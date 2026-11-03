@@ -1648,3 +1648,13 @@
 .sx-page--follow {
   margin-top: var(--space-3);
 }
+
+/* Servizi di log e Servizi online: righe basse, tutto su una linea con nome, campi e Prova allineati al centro */
+.svc-row { align-items: center; padding: 0.3rem 0.75rem; gap: 0.3rem 0.75rem; }
+.svc-head, .svc-side { padding-top: 0; }
+.svc-side { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.3rem 0.5rem; }
+.svc-fields { align-items: center; gap: 0.3rem 0.75rem; }
+.sx-body .svc-fields .jx-row.svc-field,
+.svc-fields .jx-row.svc-field { flex-direction: row; align-items: center; gap: 0.35rem; }
+.svc-fields .ens-reason { display: none; }
+.svc-side .ens-test button { min-height: 1.8rem; padding: 0 0.7rem; }
