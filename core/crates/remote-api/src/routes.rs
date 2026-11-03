@@ -1375,17 +1375,25 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
 
 #[derive(Deserialize)]
 struct QsoUploadTestBody {
-    /// `wavelog`, `clublog`, `qrz` o `lotw`.
+    /// `wavelog`, `clublog`, `qrz`, `lotw`, `hrdlog`, `qrzlookup`, `hamqth`, `eqsl`, `pskreporter`, `dxsummit`, `ng3k`, `solar`, `ntp`, `udp`, `udp2` o `tcp`.
     service: String,
 }
 
 /// Il pulsante «Prova» dell'invio diretto dei QSO: controlla le impostazioni salvate **senza registrare QSO** (Wavelog/Cloudlog: elenco delle
 /// stazioni della chiave; QRZ: `ACTION=STATUS`; LoTW: TQSL e posizione di stazione presenti; ClubLog: solo i dati, perche' non ha una prova
-/// senza invio). Se va bene, un servizio fermo per un errore di credenziali riparte. Solo dalla rete di casa.
+/// senza invio). Se va bene, un servizio fermo per un errore di credenziali riparte. Gli altri servizi esterni hanno una prova leggera
+/// ([`service_test`]). Solo dalla rete di casa.
 #[utoipa::path(post, path = "/api/v1/qso-upload/test", responses((status = 200, description = "Prova riuscita: `{ok, message}`"), (status = 400, description = "Servizio sconosciuto (bad_service)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Solo con il motore proprio (upload_unavailable)"), (status = 502, description = "Prova non riuscita (upload_test_failed, con `message`)")))]
 async fn qso_upload_test(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<QsoUploadTestBody>) -> Result<Json<Value>, ApiError> {
     if !from_home_network(peer, &headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    // gli altri servizi esterni (eQSL, spot, dati online, orologio, programmi collegati): una prova leggera, senza mandare QSO
+    if SERVICE_TESTS.contains(&body.service.as_str()) {
+        return match service_test(&state, body.service).await {
+            Ok(message) => Ok(Json(json!({ "ok": true, "message": message }))),
+            Err(message) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message(message)),
+        };
     }
     // le ricerche dei nominativi hanno la loro prova: un accesso nuovo con utente e password salvati
     if let Some(provider) = match body.service.as_str() {
@@ -1413,6 +1421,95 @@ async fn qso_upload_test(State(state): State<AppState>, _: Authed, Peer(peer): P
         Ok(message) => Ok(Json(json!({ "ok": true, "message": message }))),
         Err(message) => Err(ApiError::new(StatusCode::BAD_GATEWAY, "upload_test_failed").with_message(message)),
     }
+}
+
+/// I servizi con una «Prova» fuori dall'invio dei QSO.
+const SERVICE_TESTS: [&str; 9] = ["eqsl", "pskreporter", "dxsummit", "ng3k", "solar", "ntp", "udp", "udp2", "tcp"];
+
+/// Attesa massima di una prova.
+const SERVICE_TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8);
+
+/// La prova di un servizio esterno. Le impostazioni si leggono **prima** (nessun lucchetto durante la rete) e la richiesta, bloccante,
+/// gira in un thread a parte: eQSL = accesso con le credenziali salvate (pagina dell'ultimo invio, nessun QSO); PSK Reporter, DXSummit,
+/// NG3K e hamqsl.com = una pagina letta e riconosciuta; NTP = una misura dello scarto; UDP = un Heartbeat al server; TCP = la connessione.
+async fn service_test(state: &AppState, service: String) -> Result<String, String> {
+    use online_info as oi;
+    let timeout = SERVICE_TEST_TIMEOUT;
+    if service == "ntp" {
+        let clock = state.clock.clone().ok_or_else(|| "orologio non disponibile".to_string())?;
+        let m = tokio::task::spawn_blocking(move || clock.check_now()).await.map_err(|_| "prova interrotta".to_string())?;
+        return match (m.offset_ms, m.server) {
+            (Some(offset), Some(server)) => Ok(format!("scarto {offset:+.0} ms da {server} (ritardo {:.0} ms, {}/{} server)", m.delay_ms.unwrap_or_default(), m.servers_ok, m.servers_tried)),
+            _ => Err(m.error.filter(|e| !e.is_empty()).unwrap_or_else(|| "nessun server ha risposto".to_string())),
+        };
+    }
+    // i valori salvati, letti adesso e copiati: il lucchetto delle impostazioni non resta preso durante la prova
+    let settings = state.engine_settings.clone();
+    let values = settings.as_ref().map(|s| s.values()).unwrap_or_default();
+    let eqsl = if service == "eqsl" { settings.as_ref().and_then(|s| s.eqsl_saved_credentials()) } else { None };
+    let get = move |k: &str| values.get(k).cloned().unwrap_or_default();
+    let server = |host: &str, port: &str| crate::engine_settings::parse_server(&get(host), &get(port)).ok_or_else(|| "indirizzo o porta non validi".to_string());
+    let target = match service.as_str() {
+        "udp" => Some(server("UDPServer", "UDPServerPort")?),
+        "udp2" => Some(server("UDP2Server", "UDP2ServerPort")?),
+        "tcp" => Some(server("TCPServer", "TCPServerPort")?),
+        _ => None,
+    };
+    if service == "eqsl" && eqsl.is_none() {
+        return Err("servono utente e password salvati".to_string());
+    }
+    let job = move || -> Result<String, String> {
+        match service.as_str() {
+            "eqsl" => {
+                let (user, password, nick) = eqsl.unwrap_or_default();
+                reporting::eqsl::test_login(reporting::eqsl::LAST_UPLOAD_URL, &user, &password, &nick, timeout)
+            }
+            "pskreporter" => {
+                // gli spot partono in UDP verso questo nome: deve risolversi; poi il sito deve rispondere
+                use std::net::ToSocketAddrs;
+                let addr = (reporting::psk::HOST, reporting::psk::PORT).to_socket_addrs().map_err(|e| format!("{}: {e}", reporting::psk::HOST))?.next().ok_or_else(|| format!("{}: indirizzo non trovato", reporting::psk::HOST))?;
+                let body = oi::probe(oi::PSK_HOME, timeout, APP_VERSION)?;
+                if body.to_lowercase().contains("pskreporter") { Ok(format!("raggiungibile ({} = {})", reporting::psk::HOST, addr.ip())) } else { Err("risposta non riconosciuta da PSK Reporter".to_string()) }
+            }
+            "dxsummit" => {
+                let body = oi::probe(oi::DXSUMMIT_PROBE, timeout, APP_VERSION)?;
+                match serde_json::from_str::<Vec<Value>>(&body) {
+                    Ok(list) => Ok(match list.first().and_then(|s| s.get("dx_call")).and_then(Value::as_str) {
+                        Some(call) => format!("raggiungibile (ultimo spot: {call})"),
+                        None => "raggiungibile".to_string(),
+                    }),
+                    Err(_) => Err("risposta non riconosciuta da DXSummit".to_string()),
+                }
+            }
+            "ng3k" => {
+                let items = oi::dxped::parse(&oi::probe(oi::dxped::URL, timeout, APP_VERSION)?);
+                if items.is_empty() { Err("risposta non riconosciuta da NG3K".to_string()) } else { Ok(format!("{} DXpedition nel calendario", items.len())) }
+            }
+            "solar" => {
+                let data = oi::solar::parse(&oi::probe(oi::solar::URL, timeout, APP_VERSION)?).ok_or_else(|| "risposta non riconosciuta da hamqsl.com".to_string())?;
+                Ok(match data.sfi { Some(sfi) => format!("dati letti (SFI {sfi}, aggiornati {})", data.updated), None => format!("dati letti (aggiornati {})", data.updated) })
+            }
+            "udp" | "udp2" => {
+                let addr = target.ok_or_else(|| "indirizzo o porta non validi".to_string())?;
+                let bind: std::net::SocketAddr = if addr.is_ipv4() { ([0, 0, 0, 0], 0).into() } else { (std::net::Ipv6Addr::UNSPECIFIED, 0).into() };
+                let socket = std::net::UdpSocket::bind(bind).map_err(|e| format!("socket non aperto: {e}"))?;
+                if addr.ip().is_multicast() || addr.ip() == std::net::IpAddr::V4(std::net::Ipv4Addr::BROADCAST) {
+                    let _ = socket.set_broadcast(true);
+                }
+                let packet = udp_bridge::emit::encode_heartbeat("JTDX", udp_bridge::emit::INITIAL_SCHEMA, udp_bridge::emit::MAX_SCHEMA, "2.2.159");
+                let sent = socket.send_to(&packet, addr).map_err(|e| format!("pacchetto non partito verso {addr}: {e}"))?;
+                Ok(format!("Heartbeat di {sent} byte partito verso {addr}"))
+            }
+            "tcp" => {
+                let addr = target.ok_or_else(|| "indirizzo o porta non validi".to_string())?;
+                let stream = std::net::TcpStream::connect_timeout(&addr, timeout).map_err(|e| format!("connessione a {addr} non riuscita: {e}"))?;
+                let _ = stream.shutdown(std::net::Shutdown::Both);
+                Ok(format!("connessione a {addr} aperta"))
+            }
+            _ => Err("servizio sconosciuto".to_string()),
+        }
+    };
+    tokio::task::spawn_blocking(job).await.map_err(|_| "prova interrotta".to_string())?
 }
 
 #[derive(Deserialize, Default)]

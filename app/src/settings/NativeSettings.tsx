@@ -303,7 +303,7 @@ export function StatusLed({ led, why }: { led: Led; why: string }) {
   return <span className={`ens-led ens-led--${led}`} role="img" aria-label={label} title={why ? `${label}: ${why}` : label} data-testid="ens-led" data-led={led} />;
 }
 
-function UploadTest({ service, waiting, keys, result, setResult, autoStart }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean }) {
+function UploadTest({ service, waiting, keys, result, setResult, autoStart, tip }: { service: UploadService; waiting: boolean; keys: readonly string[]; result: TestResult | null; setResult(r: TestResult): void; autoStart: boolean; tip?: Key }) {
   const t = useT();
   const client = useQueryClient();
   // dopo aver confermato una password o una chiave del riquadro, appena e' salvata parte da sola la prova
@@ -332,7 +332,7 @@ function UploadTest({ service, waiting, keys, result, setResult, autoStart }: { 
   }, [auto, waiting, test]);
   return (
     <div className="ens-test">
-      <button type="button" className="glass" disabled={waiting || test.isPending} title={waiting ? t('ens.test.saveFirst') : undefined} onClick={() => test.mutate()} data-testid={`test-${service}`}>
+      <button type="button" className="glass" disabled={waiting || test.isPending} title={waiting ? t('ens.test.saveFirst') : tip ? t(tip) : undefined} onClick={() => test.mutate()} data-testid={`test-${service}`}>
         {test.isPending ? t('ens.test.running') : t('ens.test')}
       </button>
       {waiting ? <span className="muted"> {t('ens.test.saveFirst')}</span> : null}
@@ -344,6 +344,16 @@ function UploadTest({ service, waiting, keys, result, setResult, autoStart }: { 
       ) : null}
     </div>
   );
+}
+
+/** «Prova» e spia per un riquadro fuori dalle voci del motore (dati online, orologio): `led` va nel titolo, `test` sotto le voci. */
+export function useServiceTest(service: UploadService, enabled: boolean, tip: Key): { led: ReactNode; test: ReactNode } {
+  const [result, setResult] = useState<TestResult | null>(null);
+  const { led, why } = ledOf(enabled, result, undefined);
+  return {
+    led: <StatusLed led={led} why={why} />,
+    test: <UploadTest service={service} waiting={false} keys={[]} result={result} setResult={setResult} autoStart={enabled} tip={tip} />,
+  };
 }
 
 /** I riquadri di voci del motore (una pagina o parte di una): interruttore e campi, «?» con la spiegazione, «Prova» e stato dell'ultimo invio, errore accanto. */
@@ -368,11 +378,11 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
         const help = group.upload?.help ?? group.help;
         // acceso = il primo interruttore del riquadro (salvato); i riquadri senza interruttore o senza servizio non hanno la spia
         const toggle = rows.find((r) => r.kind === 'bool');
-        const enabled = toggle ? doc.values[toggle.key] === 'true' : false;
+        const enabled = group.upload?.always === true || (toggle ? doc.values[toggle.key] === 'true' : false);
         const service = group.upload?.service ?? kinds[0];
         const result = service ? (results[service] ?? null) : null;
         const led = service ? ledOf(enabled, result, kinds[0] ? doc.status?.[kinds[0]] : undefined) : null;
-        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled} /> : null;
+        const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled && group.upload.auto !== false} tip={group.upload.tip} /> : null;
         if (layout === 'rows') {
           // un servizio per riga: spia, nome con «?», campi in linea, «Prova» ed esito; su schermi stretti va a capo
           return (

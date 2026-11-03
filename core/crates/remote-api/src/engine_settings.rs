@@ -1180,6 +1180,15 @@ impl EngineSettingsStore {
         Some((user, self.secret_store()?.get(secret_name(key)?)?))
     }
 
+    /// Utente, password e nickname di eQSL salvati, anche se l'invio e' spento (per «Prova»).
+    pub fn eqsl_saved_credentials(&self) -> Option<(String, String, String)> {
+        let r = self.reports();
+        if r.eqsl_user.is_empty() {
+            return None;
+        }
+        Some((r.eqsl_user, self.secret_store()?.get(secret_name("EQSLPasswd")?)?, r.eqsl_nick))
+    }
+
     fn secret_store(&self) -> Option<Arc<dyn SecretStore>> {
         self.secrets.lock().unwrap_or_else(|p| p.into_inner()).clone()
     }
