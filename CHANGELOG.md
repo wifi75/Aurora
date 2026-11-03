@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni**: tolti tutti i riquadri «Note» dalle pagine.
+
 - **Servizi di log e Servizi online**: colonna a destra pulita: solo «Prova» con «riuscita» o «non riuscita» (il messaggio completo passando il mouse), niente «Ultimo invio: mai», le note dentro il «?» del titolo.
 
 - **DX Cluster**: riquadro con bandiera, paese, nome e citta' anche sul nominativo DX; le informazioni degli ultimi 30 spot (DX e chi li ha fatti) si caricano in anticipo, una alla volta.
