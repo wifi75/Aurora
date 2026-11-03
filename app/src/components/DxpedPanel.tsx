@@ -84,7 +84,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
           </li>
         ))}
       </ul>
-      {open ? <DxpedDetail d={open} onClose={() => setOpen(null)} /> : null}
+      {open ? <DxpedDetail key={open.call} d={open} onClose={() => setOpen(null)} /> : null}
     </section>
   );
 }

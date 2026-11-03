@@ -36,17 +36,24 @@ interface Drawing {
  * in mare, le terre entro 1,5 gradi. Confini a 1:10 milioni e terre a 1:110 milioni di Natural Earth (`world-atlas`, caricati solo
  * quando servono).
  */
-export function CountryShape({ lat, lon, label, ariaLabel }: { lat: number; lon: number; label: string; ariaLabel?: string }) {
-  const [drawing, setDrawing] = useState<Drawing | null>(null);
+export function CountryShape({ lat, lon, label, ariaLabel, onReady }: { lat: number; lon: number; label: string; ariaLabel?: string; onReady?(): void }) {
+  // il disegno porta con se' il punto per cui e' stato fatto: cambiando DXpedition non si mostra mai quello della precedente
+  const [done, setDone] = useState<{ key: string; drawing: Drawing } | null>(null);
+  const key = `${lat},${lon}`;
   useEffect(() => {
     let alive = true;
-    void Promise.all([import('world-atlas/countries-10m.json'), import('world-atlas/land-110m.json')]).then(([big, small]) => {
-      if (alive) setDrawing(draw(big.default as unknown as Topology, small.default as unknown as Topology, lat, lon));
+    void loadAtlas().then(([big, small]) => {
+      if (alive) setDone({ key, drawing: draw(big, small, lat, lon) });
     });
     return () => {
       alive = false;
     };
-  }, [lat, lon]);
+  }, [key, lat, lon]);
+  const drawing = done?.key === key ? done.drawing : null;
+  const ready = drawing !== null;
+  useEffect(() => {
+    if (ready) onReady?.();
+  }, [ready, onReady]);
   if (!drawing) return <figure className="dxd-shape dxd-shape--loading" aria-busy="true" aria-label={ariaLabel ?? label} />;
   const f = drawing.frame;
   return (
@@ -66,6 +73,16 @@ export function CountryShape({ lat, lon, label, ariaLabel }: { lat: number; lon:
       <figcaption>{label}</figcaption>
     </figure>
   );
+}
+
+let atlas: Promise<[Topology, Topology]> | null = null;
+
+/** I confini e le terre di Natural Earth, caricati una volta sola (si possono chiedere in anticipo, all'apertura della scheda). */
+export function loadAtlas(): Promise<[Topology, Topology]> {
+  atlas ??= Promise.all([import('world-atlas/countries-10m.json'), import('world-atlas/land-110m.json')]).then(
+    ([big, small]) => [big.default as unknown as Topology, small.default as unknown as Topology],
+  );
+  return atlas;
 }
 
 /** Prepara i tracciati della regione e del mondo in miniatura. */

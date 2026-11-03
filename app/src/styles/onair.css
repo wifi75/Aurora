@@ -2353,6 +2353,8 @@
   stroke: #46597a;
 }
 
+/* la classe sta sullo stesso elemento contenitore di Leaflet: senza il selettore composto restava il grigio di Leaflet finche' arrivavano le tessere */
+.leaflet-container.worldmap--tiles,
 .worldmap--tiles .leaflet-container,
 .worldmap--tiles .worldmap-view {
   background: #a9cde0;
@@ -2365,9 +2367,10 @@
 }
 
 /* riquadro del paese in caricamento: occupa gia' il suo posto, cosi' la scheda non cambia forma */
+/* il segnaposto ha lo stesso aspetto del riquadro finito: stesse proporzioni (260x180) e lo stesso mare */
 .dxd-shape--loading {
-  min-height: 10rem;
-  background: var(--panel-2, rgba(127, 127, 127, 0.12));
+  aspect-ratio: 260 / 180;
+  background: color-mix(in srgb, #3d8fd6 30%, var(--panel, #f1f3f5));
   border-radius: 0.6rem;
 }
 
@@ -5604,6 +5607,7 @@
 .dxped-item { cursor: pointer; }
 .dxd-backdrop { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgb(0 0 0 / 0.45); }
 .dxd { position: relative; width: min(34rem, 94vw); max-height: 92vh; overflow: auto; background: var(--panel, #fff); color: var(--text, #1b2430); border-radius: 1rem; box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6); }
+.dxd--wait { visibility: hidden; }
 .dxd-close { position: absolute; top: 0.4rem; right: 0.5rem; z-index: 5; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 1.2rem; cursor: pointer; }
 .dxd-map { position: relative; height: 15rem; background: #0f2a44; }
 .dxd-map-big { position: absolute; inset: 0; background: #0f2a44; }

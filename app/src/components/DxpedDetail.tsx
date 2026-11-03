@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Component, useEffect, type ReactNode } from 'react';
+import { Component, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { getClusterSpots, getDxcc, postFrequency, type Dxpedition } from '../api/client';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { bearingDeg, distanceKm, latLonToGrid } from '../lib/geo';
 import { mapLabels } from '../pages/MapPage';
-import { CountryShape } from './CountryShape';
+import { CountryShape, loadAtlas } from './CountryShape';
 import { WorldMap } from './WorldMap';
 import { gridToLatLon } from '../lib/maidenhead';
 import { senderOf } from '../lib/wishlist';
@@ -65,6 +65,17 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
   const heard = decodes.find((m) => m.id >= 0 && senderOf(m.text)?.call.toUpperCase() === d.call.toUpperCase());
   const spot = cluster.data?.spots.find((s) => s.dx_call.toUpperCase() === d.call.toUpperCase());
   const code = flagCode(d.country) ?? flagCode(info?.country);
+  // la scheda si mostra una volta sola, gia' completa: finche' non arrivano paese (cty.dat) e riquadro del paese resta invisibile,
+  // cosi' non si vedono prima il testo «caricamento», poi la cartina e infine il riquadro che sposta tutto (al piu' dopo un secondo e mezzo si mostra comunque)
+  const [shapeReady, setShapeReady] = useState(false);
+  const [late, setLate] = useState(false);
+  const onShapeReady = useCallback(() => setShapeReady(true), []);
+  useEffect(() => {
+    void loadAtlas();
+    const timer = setTimeout(() => setLate(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+  const ready = late || (!dxcc.isPending && (target === null || shapeReady));
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -74,7 +85,7 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
 
   return (
     <div className="dxd-backdrop" onClick={onClose}>
-      <div className="dxd" role="dialog" aria-label={d.call} onClick={(e) => e.stopPropagation()}>
+      <div className={`dxd${ready ? '' : ' dxd--wait'}`} role="dialog" aria-busy={!ready} aria-label={d.call} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="dxd-close" aria-label={t('dxd.close')} title={t('dxd.close')} onClick={onClose}>
           ×
         </button>
@@ -146,7 +157,7 @@ function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(
             <dt>{t('dxd.heard')}</dt>
             <dd>{heard ? t('dxd.heardAt', { snr: heard.snr, hz: heard.freq_hz }) : t('dxd.notHeard')}</dd>
           </dl>
-            {target ? <CountryShape lat={target.lat} lon={target.lon} label={d.country} ariaLabel={t('dxd.countryMap', { country: d.country })} /> : null}
+            {target ? <CountryShape lat={target.lat} lon={target.lon} label={d.country} ariaLabel={t('dxd.countryMap', { country: d.country })} onReady={onShapeReady} /> : null}
           </div>
           <div className="dxd-actions">
             {spot ? (

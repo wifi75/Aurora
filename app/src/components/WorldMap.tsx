@@ -1,6 +1,6 @@
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import countries from 'world-atlas/countries-110m.json';
@@ -94,8 +94,8 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
   homeRef.current = home;
   const [readout, setReadout] = useState('');
 
-  // la mappa si crea una volta sola
-  useEffect(() => {
+  // la mappa si crea una volta sola, prima del primo disegno (con useEffect si vedeva per un fotogramma il riquadro scuro senza tessere)
+  useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
     const m = L.map(el, {
@@ -160,8 +160,8 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     next?.addTo(m);
   };
 
-  // sfondo con terreno e confini
-  useEffect(() => {
+  // sfondo con terreno e confini: anche questo prima del disegno, cosi' la terra vettoriale non compare mai sotto le tessere in arrivo
+  useLayoutEffect(() => {
     const m = map.current;
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
