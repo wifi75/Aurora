@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-03)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-04)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,11 +15,14 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.91** (2026-11-03, pubblicata; 0.11.91 = correzioni della revisione). Telefono come telecomando rifinito dalla 0.11.85 alla 0.11.90: solo la pagina Stazione (`REMOTE_TOUCH` in `App.tsx`, niente testata, pie' di pagina e toast), ordine attivita' di banda > cluster (ultimi 5 spot, modo e spotter) > log (con bandiera) > messaggi Tx > cascata, blocchi con bordo e titolo colorati, stazione chiamata in giallo, doppio tocco su STOP = Canc DX, cambio tema e ⟳ in alto a destra, barra di stato iPhone piena (`apple-mobile-web-app-status-bar-style` = black). Aggiornamento automatico del telefono: `app/src/lib/freshUi.ts` confronta la versione dell'interfaccia (`__AURORA_UI_VERSION__` da `vite.config.ts`) con `/api/v1/health` e ricarica senza cache. Accesso senza codice dalla rete di casa salvato in `accesso-libero.txt`. Il telefono usa le preferenze del PC tranne quelle in `PHONE_OWN` di `lib/syncSettings.ts`.
+- **Ultima versione**: **0.11.95** (2026-11-04, pubblicata). Dalla 0.11.92: PTT dalla radio senza JTDX (`CatPtt`/`AutoPtt` e `ptt_method_for` in `core/crates/aurora/src/lib.rs`: con `AURORA_PTT_METHOD` da JTDX vale quello, altrimenti si decide a ogni trasmissione da Impostazioni > Radio); configurazione guidata della radio (`app/src/lib/rigPresets.ts`); Guida riorganizzata in sei gruppi (`app/src/i18n/guide.ts`); pacchetto per l'assistenza (`core/crates/aurora/src/support.rs`, zip sul Desktop senza segreti); stderr.log senza righe innocue di WebView2.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
 
+- Non pubblicato su main: scheda Impostazioni > Assistenza (`SupportTab` in `app/src/settings/SupportBox.tsx`, campo email vuoto di fabbrica, «Manda per email» apre Gmail in Chrome via `links.rs`); bandiera e paese sul telefono seguono le preferenze; colonna dei km nell'attivita' di banda (vuota = nascosta, visibile anche sotto 40rem; in CQ e novita' resta nascosta).
+- In lavorazione sul ramo `rapporti` (`D:uild\wt-rapporti`): rapporti degli errori, livello 1 dopo un crash e livello 2 automatico anonimo, entrambi spenti di fabbrica, verso un Worker Cloudflare del proprietario (`servizi/rapporti/`, da mettere online lui con wrangler); pulsante «Manda il pacchetto a chi sviluppa Aurora».
+- Aperti: l'IC-7300 di un amico del proprietario non va in TX nemmeno con la 0.11.93 (serve il pacchetto/log); CAT4OM: proposto di collegarlo con il ponte Hamlib (modello «Hamlib NET rigctl», 127.0.0.1:4532), non provato; i server UDP primario e secondario di fabbrica mandano entrambi a 127.0.0.1:2237 (QSO doppi), da decidere; tema del telefono condiviso con il PC, da decidere.
 - Nessun ramo aperto: `cluster-qrz`, `cascata-wsjtx` e `grafica-impostazioni` sono uniti a main; i worktree in `D:\build\wt-*` si possono togliere.
 - Restano da fare: «Prova» per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP; NAME e QTH per i QSO registrati a mano.
 - Decisione aperta: il tema scelto sul telefono oggi cambia anche il PC (`aurora-theme` non e' in `PHONE_OWN`); chiedere al proprietario se separarlo.
