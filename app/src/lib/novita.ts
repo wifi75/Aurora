@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.85',
-    released: '2026-11-03T20:00:00Z',
+    released: '2026-11-03T18:01:42Z',
     kind: 'changed',
     title: ['Telefono più ordinato', 'Tidier phone view', 'Aufgeräumtere Telefonansicht', 'Vue téléphone plus ordonnée', 'Vista del teléfono más ordenada', 'Vista do telemóvel mais arrumada'],
     text: [
