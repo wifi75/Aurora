@@ -516,3 +516,46 @@
 .phone-btn--hot {
   box-shadow: 0 0 0 3px #ffb3ad;
 }
+
+/* sezioni ben separate: ognuna e' una scheda con margine, bordo e una striscia di colore sua nel titolo */
+.phone-list,
+.phone-box,
+.phone-txbox {
+  margin: 6px 6px 0;
+  border: 1px solid var(--line, #cfd8e2);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel, #fff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.phone-list .phone-bh,
+.phone-box .phone-bh {
+  border-left: 5px solid var(--phone-accent);
+  font-weight: 700;
+}
+
+.phone-list { --phone-accent: #0f6e64; }
+.phone-box--cluster { --phone-accent: #2f6fd6; }
+.phone-box--log { --phone-accent: #7a4fd0; }
+
+.phone-bh--static {
+  display: flex;
+  align-items: center;
+  padding: 4px 9px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #5a6876);
+  background: var(--row-a, #eef2f6);
+}
+
+.phone-txbox {
+  border-width: 1.5px;
+  border-left-width: 5px;
+  border-left-color: #46566a;
+}
+
+.phone-txbox--tx {
+  border-color: #c62828;
+}

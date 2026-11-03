@@ -244,10 +244,11 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       )}
 
       <div className="phone-list">
+        <div className="phone-bh phone-bh--static">{t('panel.all')}</div>
         <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
       </div>
 
-      <section className="phone-box">
+      <section className="phone-box phone-box--cluster">
         <button type="button" className="phone-bh" aria-expanded={open.cluster} onClick={() => toggleBox('cluster')}>
           <span>{t('phone.cluster', { band: band ?? '—', mode: mode || '' })}</span>
           <span aria-hidden="true">{open.cluster ? '▾' : '▸'}</span>
@@ -271,7 +272,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         ) : null}
       </section>
 
-      <section className="phone-box">
+      <section className="phone-box phone-box--log">
         <button type="button" className="phone-bh" aria-expanded={open.log} onClick={() => toggleBox('log')}>
           <span>{t('phone.log')}</span>
           <span aria-hidden="true">{open.log ? '▾' : '▸'}</span>
