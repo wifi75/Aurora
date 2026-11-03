@@ -20,7 +20,7 @@ bucket_name = "aurora-rapporti"
 binding = "INDICE"
 database_name = "aurora-rapporti"
 # dopo `npx wrangler d1 create aurora-rapporti` incollare qui l'id che stampa
-database_id = "INCOLLA-QUI-L-ID-DEL-DATABASE"
+database_id = "350890b5-10b1-4915-8040-91d07e61b624"
 
 # Limite per mittente (l'indirizzo IP si usa solo come chiave del contatore, non si registra ne' si salva)
 [[ratelimits]]
