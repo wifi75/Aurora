@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.87',
-    released: '2026-11-03T21:30:00Z',
+    released: '2026-11-03T18:19:47Z',
     kind: 'fixed',
     title: ['Telefono sempre aggiornato', 'Phone always up to date', 'Telefon immer aktuell', 'Téléphone toujours à jour', 'Teléfono siempre actualizado', 'Telemóvel sempre atualizado'],
     text: [
