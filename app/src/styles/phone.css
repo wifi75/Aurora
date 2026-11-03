@@ -751,3 +751,28 @@ body:has(.phone-live),
 .phone-live .phone-box .phone-bh {
   min-height: 1.35rem;
 }
+
+/* titoli delle sezioni sempre su una riga sola */
+.phone-live .phone-bh,
+.phone-live .phone-bh--static,
+.phone-live .phone-txh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.phone-live .phone-bh > *,
+.phone-live .phone-txh > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-live .phone-bh > :last-child,
+.phone-live .phone-txh > :last-child {
+  flex: none;
+}
