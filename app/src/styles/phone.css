@@ -960,3 +960,33 @@ body:has(.phone-live) .toaster {
   font-size: 0.7rem;
   text-align: right;
 }
+
+/* la stazione che si sta chiamando, ben in evidenza: le sue righe nell'attivita' di banda e il nominativo nel riquadro Tx */
+.phone-list .decode-list .decode-row--dx {
+  background: #ffd84d;
+  color: #1c1400;
+  font-weight: 700;
+  box-shadow: inset 5px 0 0 #e65c00;
+}
+
+.phone-list .decode-list .decode-row--dx .w-country,
+.phone-list .decode-list .decode-row--dx .c-time,
+.phone-list .decode-list .decode-row--dx .c-snr {
+  color: #3a2c00;
+}
+
+.phone-live .phone-dxline b {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.35rem;
+  background: #ffd84d;
+  color: #1c1400;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.phone-live .phone-txbox--tx .phone-dxline b {
+  background: #ff3b2f;
+  color: #fff;
+}
