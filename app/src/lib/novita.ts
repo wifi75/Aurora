@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.101',
-    released: '2026-11-04T04:30:00Z',
+    released: '2026-11-03T22:29:49Z',
     kind: 'fixed',
     title: ['File audio nella cartella di Aurora', 'Audio files in Aurora’s folder', 'Audiodateien im Aurora-Ordner', 'Fichiers audio dans le dossier d’Aurora', 'Archivos de audio en la carpeta de Aurora', 'Ficheiros de áudio na pasta da Aurora'],
     text: [
