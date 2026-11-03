@@ -1658,3 +1658,21 @@
 .svc-fields .jx-row.svc-field { flex-direction: row; align-items: center; gap: 0.35rem; }
 .svc-fields .ens-reason { display: none; }
 .svc-side .ens-test button { min-height: 1.8rem; padding: 0 0.7rem; }
+
+/* Radio > Collegamento: il nome di ogni voce resta su una riga (niente «Velo/cità/(ba/ud)» lettera per lettera) e la cella si allarga per contenerlo */
+.cat-link > .sx-field .sx-label {
+  flex: none;
+  white-space: nowrap;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.cat-link > .cat-w-s { flex-basis: 19rem; }
+.cat-link > .cat-w-m { flex-basis: 22rem; }
+.cat-link > .cat-w-l { flex-basis: 28rem; }
+
+.cat-link > .sx-field {
+  align-items: center;
+  column-gap: 0.6rem;
+}
