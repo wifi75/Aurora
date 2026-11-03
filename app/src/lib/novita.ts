@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.96',
-    released: '2026-11-04T02:00:00Z',
+    released: '2026-11-03T21:57:13Z',
     kind: 'changed',
     title: ['Assistenza in una scheda a sé', 'Support in its own tab', 'Support im eigenen Reiter', 'Assistance dans un onglet à part', 'Asistencia en su propia pestaña', 'Assistência num separador próprio'],
     text: [
