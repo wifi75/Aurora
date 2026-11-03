@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.84',
-    released: '2026-11-03T19:00:00Z',
+    released: '2026-11-03T17:50:56Z',
     kind: 'new',
     title: ['Telefono e tablet come telecomando', 'Phone and tablet as a remote', 'Telefon und Tablet als Fernbedienung', 'Téléphone et tablette comme télécommande', 'Teléfono y tableta como mando', 'Telemóvel e tablet como comando'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.84',
-    released: '2026-11-03T19:00:00Z',
+    released: '2026-11-03T17:50:56Z',
     kind: 'changed',
     title: ['Impostazioni e cluster più puliti', 'Cleaner settings and cluster', 'Aufgeräumte Einstellungen und Cluster', 'Réglages et cluster plus nets', 'Ajustes y clúster más limpios', 'Definições e cluster mais limpos'],
     text: [
