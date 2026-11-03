@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster**: riquadro con bandiera, paese, nome e citta' anche sul nominativo DX; le informazioni degli ultimi 30 spot (DX e chi li ha fatti) si caricano in anticipo, una alla volta.
+
 
 ## 0.11.83 - 2026-11-03
 - **«Prova» e spia** anche per eQSL (accesso senza invio), spot su PSK Reporter e DXSummit (riquadri separati), NG3K, propagazione, orologio NTP (scarto), uscite UDP (Heartbeat) e TCP (connessione).
