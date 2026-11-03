@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.87',
+    released: '2026-11-03T21:30:00Z',
+    kind: 'fixed',
+    title: ['Telefono sempre aggiornato', 'Phone always up to date', 'Telefon immer aktuell', 'Téléphone toujours à jour', 'Teléfono siempre actualizado', 'Telemóvel sempre atualizado'],
+    text: [
+      'Il telefono non resta più alla pagina vecchia dopo un aggiornamento. Sul telefono niente barra in alto (logo, lingua, volume) né piè di pagina; il cluster mostra gli ultimi 5 spot; barra dei pulsanti più bassa.',
+      'The phone no longer keeps the old page after an update. On the phone no top bar (logo, language, volume) and no footer; the cluster shows the last 5 spots; lower button bar.',
+      'Das Telefon behält nach einem Update nicht mehr die alte Seite. Auf dem Telefon keine Leiste oben (Logo, Sprache, Lautstärke) und keine Fußzeile; der Cluster zeigt die letzten 5 Spots; niedrigere Tastenleiste.',
+      'Le téléphone ne garde plus l’ancienne page après une mise à jour. Sur le téléphone ni barre en haut (logo, langue, volume) ni pied de page ; le cluster montre les 5 derniers spots ; barre de boutons plus basse.',
+      'El teléfono ya no se queda con la página vieja tras una actualización. En el teléfono sin barra arriba (logo, idioma, volumen) ni pie de página; el clúster muestra los últimos 5 spots; barra de botones más baja.',
+      'O telemóvel já não fica com a página antiga depois de uma atualização. No telemóvel sem barra em cima (logo, idioma, volume) nem rodapé; o cluster mostra os últimos 5 spots; barra de botões mais baixa.',
+    ],
+  },
+  {
     version: '0.11.86',
     released: '2026-11-03T18:14:32Z',
     kind: 'changed',
