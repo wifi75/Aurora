@@ -381,6 +381,13 @@ fn apply_jtdx_settings(path: &Path, changes: &std::collections::BTreeMap<String,
     written
 }
 
+/// La scelta dell'accesso senza codice fatta dal PC (Impostazioni > Smartphone/Tablet): «1» acceso, altrimenti spento.
+const OPEN_ACCESS_FILE: &str = "accesso-libero.txt";
+
+fn read_open_access(path: &Path) -> bool {
+    std::fs::read_to_string(path).is_ok_and(|s| s.trim() == "1")
+}
+
 fn open_storage(data_dir: &Path, pair_ttl_secs: u64) -> Result<(Arc<DeviceStore>, Arc<Logbook>), StartError> {
     std::fs::create_dir_all(data_dir).map_err(|e| StartError::Io(format!("{}: {e}", data_dir.display())))?;
     let auth = DeviceStore::open(&data_dir.join("devices.db"), Arc::new(SystemClock))
@@ -1435,7 +1442,8 @@ pub async fn run(
     let own_log = Arc::clone(&logbook);
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
-        .with_open_access(config.open_access)
+        .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
+        .with_open_access_file(config.data_dir.join(OPEN_ACCESS_FILE))
         .with_local_trust(config.local_trust)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
