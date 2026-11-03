@@ -776,3 +776,21 @@ body:has(.phone-live),
 .phone-live .phone-txh > :last-child {
   flex: none;
 }
+
+/* bandiera e paese sulla stessa riga: la bandiera non va mai a capo */
+.phone-list .decode-list .decode-row .decode-where {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.phone-list .decode-list .decode-row .decode-where .w-flag {
+  flex: none;
+  display: inline-flex;
+  max-width: none;
+}
+
+.phone-list .decode-list .decode-row .decode-where .w-country {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+}
