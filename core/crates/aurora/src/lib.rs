@@ -12,6 +12,7 @@ pub mod audio_control;
 pub mod band_hop;
 pub mod history;
 pub mod online;
+pub mod support;
 pub mod updates;
 pub mod wanted;
 
@@ -1489,6 +1490,21 @@ pub async fn run(
         .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
         .with_save_dialog_if(config.save_dialog.clone().map(|h| h.0))
         .with_crash_folder_if(config.crash_folder.clone().map(|h| h.0))
+        .with_support_bundle_if(Some({
+            // il PTT si ricalcola a ogni pacchetto: la scelta in Impostazioni > Radio puo' essere cambiata
+            let config = config.clone();
+            let cat = Arc::clone(&cat);
+            Arc::new(move |req: remote_api::SupportRequest| {
+                let ctx = support::Context {
+                    data_dir: config.data_dir.clone(),
+                    engine: match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
+                    ptt_method: if matches!(config.engine, EngineKind::Native) { ptt_method_for(&config, &cat) } else { "quello di JTDX".to_string() },
+                    ptt_port: config.ptt_port.clone(),
+                    version: aurora_core::version::APP_VERSION.to_string(),
+                };
+                support::build(&ctx, &req)
+            }) as remote_api::SupportBundle
+        }))
         .with_online(online)
         .with_history_if(history)
         .with_updates(Arc::clone(&updates))

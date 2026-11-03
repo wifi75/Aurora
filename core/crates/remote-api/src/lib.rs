@@ -7,6 +7,7 @@ mod frames;
 pub mod lan;
 mod policy;
 mod routes;
+pub use routes::{is_secret_name, redact_json};
 pub mod ui_settings;
 mod ws;
 
@@ -64,6 +65,27 @@ pub type SaveFileDialog = Arc<dyn Fn(&str) -> Option<std::path::PathBuf> + Send 
 /// Apre in Esplora risorse la cartella dei crash del programma Windows (solo dal PC stesso).
 pub type OpenCrashFolder = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
 
+/// Quello che il pacchetto per l'assistenza riceve dalla rotta: lo stato del momento (gia' raccolto, senza segreti) e cosa sa la pagina.
+#[derive(Debug, Clone, Default)]
+pub struct SupportRequest {
+    /// Stato del momento: collegamento della radio, trasmissione, audio, orologio, servizi.
+    pub live: serde_json::Value,
+    /// Lingua dell'interfaccia.
+    pub lang: String,
+    /// Scarto dell'ora locale da UTC in minuti, come lo vede la pagina (+60 = ora italiana d'inverno).
+    pub local_offset_min: i32,
+}
+
+/// Il pacchetto creato: dove sta e il PTT in uso (per il messaggio di posta).
+#[derive(Debug, Clone)]
+pub struct SupportMade {
+    pub path: std::path::PathBuf,
+    pub ptt: String,
+}
+
+/// Crea il pacchetto per l'assistenza (zip sul Desktop). E' bloccante: si chiama fuori dal thread asincrono.
+pub type SupportBundle = Arc<dyn Fn(SupportRequest) -> Result<SupportMade, String> + Send + Sync>;
+
 const MAX_KNOWN_DECODES: usize = 500;
 
 #[derive(Default)]
@@ -114,6 +136,10 @@ pub struct AppState {
     pub save_dialog: Option<SaveFileDialog>,
     /// «Apri la cartella dei crash» (solo nel programma Windows).
     pub crash_folder: Option<OpenCrashFolder>,
+    /// «Prepara il pacchetto per l'assistenza» (solo dal PC stesso).
+    pub support_bundle: Option<SupportBundle>,
+    /// L'ultimo pacchetto creato, per «Apri la cartella».
+    pub(crate) last_bundle: Arc<Mutex<Option<std::path::PathBuf>>>,
     /// Vero mentre la finestra «Salva con nome» e' aperta: un secondo clic non ne apre un'altra.
     pub(crate) save_open: Arc<std::sync::atomic::AtomicBool>,
     /// La lista dei desiderati, con i suoi avvisi.
@@ -207,7 +233,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, support_bundle: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -358,6 +384,11 @@ impl AppState {
 
     pub fn with_crash_folder_if(mut self, open: Option<OpenCrashFolder>) -> AppState {
         self.crash_folder = open;
+        self
+    }
+
+    pub fn with_support_bundle_if(mut self, bundle: Option<SupportBundle>) -> AppState {
+        self.support_bundle = bundle;
         self
     }
 

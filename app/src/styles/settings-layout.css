@@ -1712,3 +1712,49 @@
 @media (prefers-reduced-motion: reduce) {
   .upd-new-star { animation: none; }
 }
+
+/* Riquadro «Assistenza» di Informazioni: il pulsante del pacchetto ben visibile, email e posta sotto */
+.about-support {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.about-support-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.about-support-main {
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  background: linear-gradient(100deg, var(--accent), #8e7bff);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+.about-support-email {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1 1 16rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.about-support-email input {
+  width: 100%;
+}
+
+.about-support .about-support-ready {
+  font-weight: 600;
+}
+
+.about-support .about-support-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.about-support .about-support-alert {
+  color: var(--danger, #e5484d);
+}
