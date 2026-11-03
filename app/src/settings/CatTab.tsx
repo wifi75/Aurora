@@ -22,6 +22,7 @@ import {
 } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { BAUDS, applyCandidate, catIssue, filterModels, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
+import { icomBaudWarning, presetApplied, presetFor, type RigPreset } from '../lib/rigPresets';
 import { Check, Help, Row } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
@@ -129,6 +130,48 @@ function Detected({ detection, onUse }: { detection: CatDetection; onUse(c: CatC
   );
 }
 
+/** Le impostazioni consigliate per una radio nota: cosa mettere in Aurora (con il pulsante che le scrive), nella radio e in Audio. */
+function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatConfig; onApply(): void }) {
+  const t = useT();
+  const a = preset.aurora;
+  const done = presetApplied(config, preset);
+  return (
+    <Group title={t('cat.preset.title')} span={2}>
+      <Cells min={16}>
+        <Cell label={t('cat.preset.aurora')} hint={t('tip.cat.preset')}>
+          <ul className="cat-preset">
+            {a.baud ? <li>{t('cat.baud')}: {a.baud}</li> : null}
+            {a.ptt ? <li>{t('cat.ptt.method')}: {a.ptt.toUpperCase()}</li> : null}
+            {preset.civFactory !== undefined ? <li>{t('cat.civ')}: {t('cat.preset.civ', { n: `${preset.civFactory} = ${preset.civFactory.toString(16).toUpperCase()}h` })}</li> : null}
+            {a.force_dtr === undefined && a.force_rts === undefined ? <li>{t('cat.preset.lines')}</li> : null}
+          </ul>
+        </Cell>
+        <Cell label={t('cat.preset.radio')}>
+          <ul className="cat-preset">
+            {preset.radio.map((v) => (
+              <li key={v}>{v}</li>
+            ))}
+          </ul>
+          {preset.generic ? <p className="muted">{t('cat.preset.generic')}</p> : null}
+        </Cell>
+        <Cell label={t('cat.preset.audio')}>
+          <p>{t(preset.audio === 'codec' ? 'cat.preset.codec' : 'cat.preset.external')}</p>
+          <a href="#/impostazioni/audio">{t('cat.preset.openAudio')}</a>
+        </Cell>
+      </Cells>
+      <Actions>
+        {done ? (
+          <span className="muted">{t('cat.preset.done')}</span>
+        ) : (
+          <button type="button" className="glass" onClick={onApply}>
+            {t('cat.preset.apply')}
+          </button>
+        )}
+      </Actions>
+    </Group>
+  );
+}
+
 /** I riquadri della scheda Radio: collegamento, PTT, split, lettura, profili, prova, condivisione. Si mettono nella griglia di una pagina. */
 export function CatGroups() {
   const t = useT();
@@ -231,6 +274,7 @@ export function CatGroups() {
   const busy = apply.isPending || connect.isPending || disconnect.isPending;
   const state = snap.data.status.state;
   const active_ = state === 'connected' || state === 'connecting' || state === 'reconnecting';
+  const preset = hamlib ? presetFor(config.rig_name) : undefined;
   const useCandidate = (c: CatCandidate) => {
     setDraft(applyCandidate(config, c, modelForCandidate(modelList, c)));
     setNote(t('cat.detected.pick'));
@@ -401,8 +445,21 @@ export function CatGroups() {
     <>
       {link}
 
+      {preset ? (
+        <Preset
+          preset={preset}
+          config={config}
+          onApply={() => {
+            set(preset.aurora);
+            setNote(t('cat.preset.set'));
+          }}
+        />
+      ) : null}
+
       <Group title={t('cat.grp.test')}>
         <Status snap={snap.data} />
+        {/* la trasmissione che non parte con le Icom: quasi sempre la velocita' diversa da quella della radio */}
+        {state === 'connected' && icomBaudWarning(snap.data.config) ? <Message kind="alert">{t('cat.warn.icomBaud')}</Message> : null}
         <Actions>
           <button type="button" className="glass" title={t('tip.cat.connect')} disabled={busy || issue !== null || (config.backend === 'hamlib' && config.model === 0)} onClick={() => connect.mutate()}>
             {t('cat.connect')}

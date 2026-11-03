@@ -5972,3 +5972,10 @@
   gap: var(--space-3);
   overflow-x: auto;
 }
+
+/* impostazioni consigliate per la radio scelta: elenchi corti, senza rientro grande */
+.cat-preset {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.45;
+}
