@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.93',
+    released: '2026-11-04T00:10:00Z',
+    kind: 'changed',
+    title: ['Versione nuova ben visibile', 'New version clearly shown', 'Neue Version gut sichtbar', 'Nouvelle version bien visible', 'Versión nueva bien visible', 'Versão nova bem visível'],
+    text: [
+      'In Impostazioni > Aggiornamenti la versione nuova trovata ha la stella e la targhetta NEW. Il file degli errori (crash\\stderr.log) non accumula più le righe di avvio né l’avviso innocuo di WebView2 alla chiusura.',
+      'In Settings > Updates the new version found has a star and a NEW tag. The error file (crash\\stderr.log) no longer piles up start lines or the harmless WebView2 notice at close.',
+      'In Einstellungen > Updates trägt die gefundene neue Version einen Stern und das Schild NEW. Die Fehlerdatei (crash\\stderr.log) sammelt keine Startzeilen und keinen harmlosen WebView2-Hinweis beim Schließen mehr.',
+      'Dans Réglages > Mises à jour la nouvelle version trouvée a une étoile et l’étiquette NEW. Le fichier d’erreurs (crash\\stderr.log) n’accumule plus les lignes de démarrage ni l’avis inoffensif de WebView2 à la fermeture.',
+      'En Ajustes > Actualizaciones la versión nueva encontrada tiene una estrella y la etiqueta NEW. El archivo de errores (crash\\stderr.log) ya no acumula las líneas de inicio ni el aviso inofensivo de WebView2 al cerrar.',
+      'Em Definições > Atualizações a versão nova encontrada tem uma estrela e a etiqueta NEW. O ficheiro de erros (crash\\stderr.log) já não acumula as linhas de arranque nem o aviso inofensivo do WebView2 ao fechar.',
+    ],
+  },
+  {
     version: '0.11.92',
     released: '2026-11-03T20:48:57Z',
     kind: 'fixed',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Fox s’ouvre tout de suite et se trouve après Station, avec une explication sur son nom. La fiche DXpédition a la carte simple, sans tropiques ni équateur.',
       'La página Fox se abre enseguida y está después de Estación, con la explicación en su nombre. La ficha DXpedición tiene el mapa simple, sin trópicos ni ecuador.',
       'A página Fox abre logo e fica depois de Estação, com a explicação no nome. A ficha da DXpedição tem o mapa simples, sem trópicos nem equador.',
-    ],
-  },
-  {
-    version: '0.11.68',
-    released: '2026-11-01T21:07:47Z',
-    kind: 'new',
-    title: ['Modo Fox per le DXpedition', 'Fox mode for DXpeditions', 'Fox-Modus für DXpeditionen', 'Mode Fox pour les DXpéditions', 'Modo Fox para DXpediciones', 'Modo Fox para DXpedições'],
-    text: [
-      'Nuova pagina Fox: coda dei Hound, fino a 5 stazioni per trasmissione e RR73 combinato, come WSJT-X 3.3. In fase di prova. Anche: splash con tutti i modi, pulsante «Stile WSJT-X» nella cascata.',
-      'New Fox page: Hound queue, up to 5 stations per transmission and combined RR73, as in WSJT-X 3.3. Under testing. Also: splash with all modes, “WSJT-X style” button in the waterfall.',
-      'Neue Fox-Seite: Hound-Warteschlange, bis zu 5 Stationen pro Aussendung und kombiniertes RR73 wie in WSJT-X 3.3. Im Test. Außerdem: Startbild mit allen Modi, Knopf „WSJT-X-Stil“ im Wasserfall.',
-      'Nouvelle page Fox : file des Hound, jusqu’à 5 stations par émission et RR73 combiné, comme WSJT-X 3.3. En test. Aussi : écran d’accueil avec tous les modes, bouton « Style WSJT-X » dans la cascade.',
-      'Nueva página Fox: cola de Hound, hasta 5 estaciones por transmisión y RR73 combinado, como WSJT-X 3.3. En pruebas. Además: pantalla inicial con todos los modos, botón «Estilo WSJT-X» en la cascada.',
-      'Nova página Fox: fila dos Hound, até 5 estações por transmissão e RR73 combinado, como no WSJT-X 3.3. Em teste. Também: ecrã inicial com todos os modos, botão «Estilo WSJT-X» na cascata.',
     ],
   },
 ];
