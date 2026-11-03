@@ -28,6 +28,8 @@ axum = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 qrcode = { workspace = true }
+mdns-sd = { workspace = true }
+if-addrs = { workspace = true }
 utoipa = { workspace = true }
 tracing = { workspace = true }
 

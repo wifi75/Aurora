@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
+  // link del QR: `#/associa?codice=12345678&nome=aurora.local` (il nome e' l'indirizzo fisso da ricordare)
+  const assoc = /^#\/associa(?:\?(.*))?$/.exec(hash);
+  if (assoc) {
+    const q = new URLSearchParams(assoc[1] ?? '');
+    const alt = (q.get('nome') ?? '').replace(/[^a-zA-Z0-9.-]/g, '');
+    return alt ? { name: 'pair', code: (q.get('codice') ?? '').replace(/\D/g, ''), alt } : { name: 'pair', code: (q.get('codice') ?? '').replace(/\D/g, '') };
+  }
   const match = /^#\/pair(?:\/(.*))?$/.exec(hash);
   if (match) return { name: 'pair', code: (match[1] ?? '').replace(/\D/g, '') };
   const settings = /^#\/impostazioni(?:\/([a-z]+))?$/.exec(hash);

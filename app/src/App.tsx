@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
@@ -13,6 +13,8 @@ import { WantedBar } from './components/WantedBar';
 import { applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
 import { rememberRoute, rememberedTab } from './lib/lastPage';
+import { addressFromName, findOtherAddress, rememberAddresses } from './lib/knownAddresses';
+import { REMOTE_HOST } from './lib/phone';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
@@ -35,10 +37,7 @@ import { Toaster } from './components/Toaster';
  * Telefono, tablet o un altro PC sulla rete sono un telecomando: le Impostazioni si cambiano solo dalla finestra di Aurora
  * (Tauri) o da un browser sullo stesso computer.
  */
-const REMOTE =
-  typeof window !== 'undefined' &&
-  !('__TAURI_INTERNALS__' in window) &&
-  !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+const REMOTE = REMOTE_HOST;
 
 export function App() {
   const t = useT();
@@ -57,13 +56,20 @@ export function App() {
   // continuano ad arrivare e non si perde nulla.
   const paired = !!session.data;
   useEffect(() => {
+    if (paired) rememberAddresses(browserStorage(), [window.location.origin]);
+  }, [paired]);
+  useEffect(() => {
     if (!paired) return;
     const { apply, setConnection } = useStation.getState();
     const stream = openStream({ onEvent: apply, onSpectrum: (frame) => emitSpectrum(frame.bins, frame.fMinHz, frame.fMaxHz), onState: setConnection });
     return () => stream.close();
   }, [paired]);
 
+  // dopo l'associazione il telefono si ricorda questo indirizzo e quello fisso del QR (aurora.local)
+  const pairAlt = route.name === 'pair' ? route.alt : undefined;
   const onPaired = () => {
+    const alt = pairAlt ? addressFromName(pairAlt, window.location) : null;
+    rememberAddresses(browserStorage(), alt ? [window.location.origin, alt] : [window.location.origin]);
     location.hash = '#/';
     void queryClient.invalidateQueries({ queryKey: ['session'] });
   };
@@ -77,6 +83,7 @@ export function App() {
     content = (
       <div className="notice">
         <p>{t('app.noCore')}</p>
+        {REMOTE ? <OtherAddress /> : null}
         <button type="button" onClick={() => session.refetch()}>
           {t('app.retry')}
         </button>
@@ -141,5 +148,27 @@ export function App() {
       <Footer />
       <Toaster />
     </div>
+  );
+}
+
+/** Aurora non risponde a questo indirizzo: si provano quelli ricordati e, se uno risponde, si propone di passarci. */
+function OtherAddress() {
+  const t = useT();
+  const [found, setFound] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void findOtherAddress(browserStorage(), window.location.origin).then((o) => alive && setFound(o));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!found) return null;
+  return (
+    <p>
+      {t('app.moved')}{' '}
+      <a className="glass" href={`${found}/#/`} title={t('tip.app.moved')}>
+        {t('app.moveTo', { url: found.replace(/^https?:\/\//, '') })}
+      </a>
+    </p>
   );
 }

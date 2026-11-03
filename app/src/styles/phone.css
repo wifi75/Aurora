@@ -559,3 +559,50 @@
 .phone-txbox--tx {
   border-color: #c62828;
 }
+
+/* Colonne della vista tablet: sul telefono non esistono, i riquadri restano uno sotto l'altro */
+.phone-col {
+  display: contents;
+}
+
+/* Tablet in orizzontale (fra 768 e 1366 px, dispositivo remoto o a tocco): barra in alto, due colonne, pulsanti in basso */
+.phone-live--tablet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  height: calc(100dvh - 4.5rem);
+  min-height: 32rem;
+}
+
+.phone-live--tablet .phone-top,
+.phone-live--tablet .phone-prog,
+.phone-live--tablet .phone-bar {
+  grid-column: 1 / -1;
+}
+
+.phone-live--tablet .phone-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.phone-live--tablet .phone-col--band .phone-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.phone-live--tablet .phone-col--side {
+  border-left: 1px solid var(--border, rgba(127, 127, 127, 0.25));
+}
+
+/* sul tablet i riquadri sono sempre aperti: la freccia non serve */
+.phone-live--tablet .phone-box .phone-bh span[aria-hidden='true'] {
+  display: none;
+}
+
+.phone-live--tablet .phone-wf {
+  margin-top: auto;
+}
