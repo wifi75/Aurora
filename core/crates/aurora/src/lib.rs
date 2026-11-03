@@ -1167,6 +1167,32 @@ impl tx_native::Ptt for CatPtt {
     }
 }
 
+/// PTT senza scelta da JTDX: a ogni trasmissione guarda Impostazioni > Radio, cosi' vale anche una radio scelta dopo l'avvio
+/// (senza riavviare Aurora). Con Hamlib e una radio scelta il PTT passa da rigctld; con «VOX» o senza radio nessun comando.
+struct AutoPtt {
+    cat: Arc<rig_control::cat::CatService>,
+    on: std::sync::atomic::AtomicBool,
+}
+
+impl tx_native::Ptt for AutoPtt {
+    fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        let radio = self.cat.config();
+        let by_rig = radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0 && radio.ptt != rig_control::cat_config::PttMethod::Vox;
+        if by_rig {
+            let rig = self.cat.hamlib().map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+            rig.set_ptt(on).map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+        } else if on {
+            tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni > Radio");
+        }
+        self.on.store(on, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn is_on(&self) -> bool {
+        self.on.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
 /// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
 /// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
 fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
@@ -1187,6 +1213,8 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
     let method = ptt_method_for(config, cat);
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
         "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
+        // nessun PTT da JTDX e nessuna radio ancora scelta all'avvio: si decide a ogni trasmissione
+        "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
             let line = if method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
             match tx_native::SerialLinePtt::open(&port, line) {
