@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ApiError, getDiagnostics, prepareSupportBundle, revealSupportBundle, type SupportBundle } from '../api/client';
 import { useLang, useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
+import { ReportsBox } from './ReportsBox';
 
 /** Un pacchetto fatto da meno di cosi' si riusa per «Manda per email» invece di rifarlo. */
 const FRESH_MS = 5 * 60_000;
@@ -22,6 +23,7 @@ export function SupportTab() {
   return (
     <div className="sx-page">
       <SupportBox />
+      <ReportsBox />
     </div>
   );
 }

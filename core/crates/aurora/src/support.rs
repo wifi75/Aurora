@@ -259,7 +259,7 @@ fn info_text(pack: &Pack, ctx: &Context, req: &SupportRequest, now: i64) -> Stri
 }
 
 /// I file di una cartella, dal piu' recente.
-fn newest_first(dir: &Path) -> Vec<(PathBuf, String)> {
+pub(crate) fn newest_first(dir: &Path) -> Vec<(PathBuf, String)> {
     let Ok(entries) = std::fs::read_dir(dir) else { return Vec::new() };
     let mut files: Vec<(SystemTime, PathBuf, String)> = entries
         .flatten()
@@ -296,7 +296,7 @@ fn newest_all_txt(dir: &Path, now: i64) -> Option<PathBuf> {
 }
 
 /// Gli ultimi `max` byte di un file.
-fn read_tail(path: &Path, max: u64) -> std::io::Result<Vec<u8>> {
+pub(crate) fn read_tail(path: &Path, max: u64) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(path)?;
     let size = file.metadata()?.len();
     if size > max {
@@ -312,7 +312,7 @@ fn mb(bytes: u64) -> String {
 }
 
 /// Anno, mese, giorno, ora, minuto, secondo dai secondi Unix (calendario gregoriano).
-fn civil(secs: i64) -> (i64, u32, u32, u32, u32, u32) {
+pub(crate) fn civil(secs: i64) -> (i64, u32, u32, u32, u32, u32) {
     let days = secs.div_euclid(86_400);
     let rest = secs.rem_euclid(86_400);
     let z = days + 719_468;
@@ -350,7 +350,7 @@ fn reg_value(key: &str, name: &str) -> Option<String> {
 }
 
 /// «Windows 11 Pro 24H2 (build 26100.1234)».
-fn windows_version() -> String {
+pub(crate) fn windows_version() -> String {
     const KEY: &str = r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
     let product = reg_value(KEY, "ProductName").unwrap_or_else(|| "Windows".into());
     let release = reg_value(KEY, "DisplayVersion").unwrap_or_default();

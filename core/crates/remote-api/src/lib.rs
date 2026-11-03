@@ -86,6 +86,28 @@ pub struct SupportMade {
 /// Crea il pacchetto per l'assistenza (zip sul Desktop). E' bloccante: si chiama fuori dal thread asincrono.
 pub type SupportBundle = Arc<dyn Fn(SupportRequest) -> Result<SupportMade, String> + Send + Sync>;
 
+/// I rapporti degli errori facoltativi (spenti di fabbrica): la segnalazione dopo un crash (livello 1) e gli errori automatici
+/// anonimi (livello 2). Le chiamate che vanno in rete o leggono file sono bloccanti: le rotte le chiamano fuori dal ciclo asincrono.
+pub trait ErrorReports: Send + Sync {
+    /// Impostazioni, identificativo dell'installazione, coda, crash da segnalare e se l'indirizzo del servizio e' configurato.
+    fn state(&self) -> serde_json::Value;
+    /// Cambia le impostazioni (`ask_after_crash`, `auto_errors`) e restituisce lo stato.
+    fn update(&self, patch: &serde_json::Value) -> Result<serde_json::Value, String>;
+    /// Un identificativo dell'installazione nuovo (quello vecchio si butta).
+    fn new_install_id(&self) -> serde_json::Value;
+    /// Esattamente cosa partirebbe con il rapporto del crash: i file dello zip con il loro testo.
+    fn crash_preview(&self) -> Result<serde_json::Value, String>;
+    /// Manda il rapporto del crash (bloccante, va in rete).
+    fn crash_send(&self) -> Result<serde_json::Value, String>;
+    /// «Manda il pacchetto a chi sviluppa Aurora» dalla scheda Assistenza: lo stesso zip senza dati personali, con un codice breve
+    /// da dire a chi aiuta (bloccante, va in rete).
+    fn bundle_send(&self) -> Result<serde_json::Value, String>;
+    /// «No»: il crash si considera visto e il riquadro non torna.
+    fn crash_dismiss(&self);
+}
+
+pub type ErrorReportsHandle = Arc<dyn ErrorReports>;
+
 const MAX_KNOWN_DECODES: usize = 500;
 
 #[derive(Default)]
@@ -138,6 +160,8 @@ pub struct AppState {
     pub crash_folder: Option<OpenCrashFolder>,
     /// «Prepara il pacchetto per l'assistenza» (solo dal PC stesso).
     pub support_bundle: Option<SupportBundle>,
+    /// I rapporti degli errori (solo dal PC stesso).
+    pub error_reports: Option<ErrorReportsHandle>,
     /// L'ultimo pacchetto creato, per «Apri la cartella».
     pub(crate) last_bundle: Arc<Mutex<Option<std::path::PathBuf>>>,
     /// Vero mentre la finestra «Salva con nome» e' aperta: un secondo clic non ne apre un'altra.
@@ -233,7 +257,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, support_bundle: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, support_bundle: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -384,6 +408,11 @@ impl AppState {
 
     pub fn with_crash_folder_if(mut self, open: Option<OpenCrashFolder>) -> AppState {
         self.crash_folder = open;
+        self
+    }
+
+    pub fn with_error_reports_if(mut self, reports: Option<ErrorReportsHandle>) -> AppState {
+        self.error_reports = reports;
         self
     }
 
