@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.98** (2026-11-04, pubblicata). 0.11.98: PTT dalla radio quando `AURORA_PTT_METHOD`=omnirig (da un vecchio JTDX.ini) ma la radio e' su Hamlib (`ptt_method_for` in `core/crates/aurora/src/lib.rs`; caso IC-7300 «PTT: radio non in linea»); rapporti degli errori attivi. 0.11.97: rapporti degli errori (`core/crates/aurora/src/rapporti.rs`, `app/src/settings/ReportsBox.tsx`), piu' bandiere NG3K. 0.11.96: scheda Assistenza.
+- **Ultima versione**: **0.11.99** (2026-11-04, pubblicata; 0.11.99 = colonna del paese piu' larga). 0.11.98: PTT dalla radio quando `AURORA_PTT_METHOD`=omnirig (da un vecchio JTDX.ini) ma la radio e' su Hamlib (`ptt_method_for` in `core/crates/aurora/src/lib.rs`; caso IC-7300 «PTT: radio non in linea»); rapporti degli errori attivi. 0.11.97: rapporti degli errori (`core/crates/aurora/src/rapporti.rs`, `app/src/settings/ReportsBox.tsx`), piu' bandiere NG3K. 0.11.96: scheda Assistenza.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
