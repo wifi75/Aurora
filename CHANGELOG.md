@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.92 - 2026-11-03
+- **Trasmissione senza JTDX**: il motore usava solo il PTT di JTDX (RTS/DTR/OmniRig) o il VOX; ora, senza PTT da JTDX, usa quello di Impostazioni > Radio (CAT attraverso Hamlib con `T 1`/`T 0`, oppure OmniRig). Era il motivo per cui IC-7300 e IC-7610 non andavano in TX.
+- **Configurazione guidata della radio**: riquadro «Impostazioni consigliate per questa radio» con pulsante Applica (Icom, Yaesu, Kenwood), voce «Configurare la radio» nella Guida, avviso Icom sotto 115200 baud.
+- **Impostazioni > Radio**: nomi delle voci su una riga.
+- **Telefono**: un tocco chiama la stazione, i tocchi ripetuti non fanno ripartire la sequenza.
+- **Documenti**: sezione Icom IC-7300 e IC-7610 in docs/cat-radio.md.
+
 ## 0.11.91 - 2026-11-03
 - **Revisione del codice**: giallo solo per la stazione chiamata e la riga toccata (non per quelle in coda); il cluster del telefono non usa il testo cercato sul PC; l'accesso senza codice si cambia in memoria solo dopo averlo salvato.
 
