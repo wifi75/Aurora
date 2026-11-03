@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.86',
+    released: '2026-11-03T21:00:00Z',
+    kind: 'changed',
+    title: ['Telefono: solo la Stazione', 'Phone: Station only', 'Telefon: nur die Station', 'Téléphone : seulement la Station', 'Teléfono: solo la Estación', 'Telemóvel: só a Estação'],
+    text: [
+      'Dal telefono e dal tablet Aurora mostra solo la pagina Stazione, senza menu in alto né messaggi a comparsa; bande, modi, filtri e macro sono quelli impostati sul PC; due tocchi su STOP svuotano anche i messaggi Tx. La pagina Smartphone/Tablet è compatta e l’accesso senza codice dalla rete di casa funziona e resta al riavvio.',
+      'From phone and tablet Aurora shows only the Station page, with no top menu or pop-up messages; bands, modes, filters and macros are those set on the PC; two taps on STOP also clear the Tx messages. The Smartphone/Tablet page is compact and code-free access from the home network works and survives a restart.',
+      'Auf Telefon und Tablet zeigt Aurora nur die Seite Station, ohne Menü oben und ohne Einblendungen; Bänder, Betriebsarten, Filter und Makros sind die des PCs; zweimal STOP tippen leert auch die Tx-Meldungen. Die Seite Smartphone/Tablet ist kompakt, und der Zugang ohne Code aus dem Heimnetz funktioniert und bleibt nach dem Neustart.',
+      'Sur téléphone et tablette Aurora n’affiche que la page Station, sans menu en haut ni messages surgissants ; bandes, modes, filtres et macros sont ceux du PC ; deux appuis sur STOP vident aussi les messages Tx. La page Smartphone/Tablette est compacte et l’accès sans code depuis le réseau domestique fonctionne et reste au redémarrage.',
+      'Desde el teléfono y la tableta Aurora muestra solo la página Estación, sin menú arriba ni mensajes emergentes; bandas, modos, filtros y macros son los del PC; dos toques en STOP vacían también los mensajes Tx. La página Smartphone/Tableta es compacta y el acceso sin código desde la red de casa funciona y se mantiene al reiniciar.',
+      'No telemóvel e no tablet a Aurora mostra só a página Estação, sem menu em cima nem mensagens a surgir; bandas, modos, filtros e macros são os do PC; dois toques em STOP esvaziam também as mensagens Tx. A página Smartphone/Tablet é compacta e o acesso sem código a partir da rede de casa funciona e mantém-se ao reiniciar.',
+    ],
+  },
+  {
+    version: '0.11.86',
+    released: '2026-11-03T21:00:00Z',
+    kind: 'fixed',
+    title: ['DXpedition più rapida', 'Faster DXpedition card', 'Schnellere DXpedition-Karte', 'Fiche DXpédition plus rapide', 'Ficha DXpedición más rápida', 'Ficha DXpedição mais rápida'],
+    text: [
+      'La scheda DXpedition si apre subito: confini e paesi si preparano in anticipo. Nell’attività di banda la colonna dei km è più larga.',
+      'The DXpedition card opens at once: borders and countries are prepared in advance. In band activity the km column is wider.',
+      'Die DXpedition-Karte öffnet sofort: Grenzen und Länder werden vorab vorbereitet. In der Bandaktivität ist die km-Spalte breiter.',
+      'La fiche DXpédition s’ouvre tout de suite : frontières et pays sont préparés à l’avance. Dans l’activité de bande la colonne des km est plus large.',
+      'La ficha DXpedición se abre al momento: fronteras y países se preparan por adelantado. En la actividad de banda la columna de km es más ancha.',
+      'A ficha DXpedição abre logo: fronteiras e países preparam-se com antecedência. Na atividade de banda a coluna dos km é mais larga.',
+    ],
+  },
+  {
     version: '0.11.85',
     released: '2026-11-03T18:01:42Z',
     kind: 'changed',
@@ -529,47 +557,6 @@ export const NOVITA: readonly Novita[] = [
       'Si la station appelée répond directement par R+rapport (MSHV, beaucoup de DXpéditions), Aurora clôt par RR73 et enregistre, comme WSJT-X 3.3, au lieu de rappeler.',
       'Si la estación llamada responde enseguida con R+reporte (MSHV, muchas DXpediciones), Aurora cierra con RR73 y registra, como WSJT-X 3.3, en lugar de seguir llamando.',
       'Se a estação chamada responder logo com R+relatório (MSHV, muitas DXpedições), o Aurora fecha com RR73 e regista, como o WSJT-X 3.3, em vez de continuar a chamar.',
-    ],
-  },
-  {
-    version: '0.11.61',
-    released: '2026-11-01T16:08:51Z',
-    kind: 'changed',
-    title: ['Log più completo', 'Fuller log', 'Vollständigeres Log', 'Journal plus complet', 'Log más completo', 'Log mais completo'],
-    text: [
-      'ALL.TXT scrive i messaggi sotto la banda del periodo in cui sono arrivati, anche dopo un cambio di banda; gli scambi di contest ricevuti entrano nel QSO e nei record ADIF. Tolto il pulsante Sinc, che non faceva nulla; DXpedition più compatte.',
-      'ALL.TXT writes messages under the band of the period they arrived in, even after a band change; received contest exchanges go into the QSO and ADIF records. The Sync button, which did nothing, is gone; DXpeditions are more compact.',
-      'ALL.TXT schreibt Nachrichten unter dem Band ihrer Periode, auch nach einem Bandwechsel; empfangene Contest-Austausche kommen ins QSO und in die ADIF-Datensätze. Der wirkungslose Sync-Schalter ist weg; DXpeditionen sind kompakter.',
-      'ALL.TXT écrit les messages sous la bande de leur période, même après un changement de bande ; les échanges de contest reçus vont dans le QSO et l’ADIF. Le bouton Sync, sans effet, disparaît ; DXpéditions plus compactes.',
-      'ALL.TXT escribe los mensajes bajo la banda de su periodo, incluso tras un cambio de banda; los intercambios de concurso recibidos entran en el QSO y en el ADIF. Se quita el botón Sinc, que no hacía nada; DXpediciones más compactas.',
-      'O ALL.TXT escreve as mensagens sob a banda do seu período, mesmo após mudar de banda; as trocas de concurso recebidas entram no QSO e no ADIF. Sai o botão Sinc, que não fazia nada; DXpedições mais compactas.',
-    ],
-  },  {
-    version: '0.11.60',
-    released: '2026-11-01T15:25:09Z',
-    kind: 'changed',
-    title: ['Impostazioni in ordine', 'Settings in order', 'Einstellungen geordnet', 'Réglages en ordre', 'Ajustes en orden', 'Definições em ordem'],
-    text: [
-      'Il menu è diviso in sei gruppi (Stazione, Ricezione, Trasmissione e QSO, Avvisi, Rete e log, Sistema), ogni voce sta nella sua pagina, c’è la nuova pagina Servizi di log e sparisce Avanzate. Se un valore non va, l’errore compare accanto al campo giusto.',
-      'The menu has six groups (Station, Receive, Transmit and QSO, Alerts, Network and logs, System), every item sits on its page, there is a new Log services page and Advanced is gone. If a value is wrong, the error shows next to the right field.',
-      'Das Menü hat sechs Gruppen (Station, Empfang, Senden und QSO, Hinweise, Netz und Logs, System), jede Einstellung steht auf ihrer Seite, es gibt die neue Seite Log-Dienste und Erweitert entfällt. Stimmt ein Wert nicht, erscheint der Fehler beim richtigen Feld.',
-      'Le menu a six groupes (Station, Réception, Émission et QSO, Alertes, Réseau et logs, Système), chaque réglage est sur sa page, il y a une nouvelle page Services de log et Avancés disparaît. Si une valeur ne va pas, l’erreur s’affiche à côté du bon champ.',
-      'El menú tiene seis grupos (Estación, Recepción, Transmisión y QSO, Avisos, Red y logs, Sistema), cada ajuste está en su página, hay una nueva página Servicios de log y desaparece Avanzados. Si un valor no vale, el error aparece junto al campo correcto.',
-      'O menu tem seis grupos (Estação, Receção, Transmissão e QSO, Avisos, Rede e logs, Sistema), cada definição está na sua página, há uma nova página Serviços de log e Avançadas desaparece. Se um valor não estiver certo, o erro aparece junto ao campo certo.',
-    ],
-  },
-  {
-    version: '0.11.60',
-    released: '2026-11-01T15:25:09Z',
-    kind: 'changed',
-    title: ['«Log» nel menu in alto', '“Log” in the top menu', '„Log“ im Menü oben', '« Journal » dans le menu', '«Log» en el menú superior', '«Log» no menu de cima'],
-    text: [
-      'Al posto di «Storico» c’è «Log»: tutti i tuoi QSO con ricerca ed esportazione ADIF. Il pulsante Esporta ADIF esce dalla pagina Stazione.',
-      '“Log” replaces “History”: all your QSOs with search and ADIF export. The Export ADIF button leaves the Station page.',
-      '„Log“ ersetzt „Verlauf“: alle deine QSOs mit Suche und ADIF-Export. Die Taste ADIF exportieren verschwindet von der Seite Station.',
-      '« Journal » remplace « Historique » : tous tes QSO avec recherche et export ADIF. Le bouton Exporter ADIF quitte la page Station.',
-      '«Log» sustituye a «Historial»: todos tus QSO con búsqueda y exportación ADIF. El botón Exportar ADIF sale de la página Estación.',
-      '«Log» substitui «Histórico»: todos os teus QSO com pesquisa e exportação ADIF. O botão Exportar ADIF sai da página Estação.',
     ],
   },
 ];
