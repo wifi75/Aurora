@@ -990,3 +990,17 @@ body:has(.phone-live) .toaster {
   background: #ff3b2f;
   color: #fff;
 }
+
+/* appena tocchi una riga per chiamare, la stazione si evidenzia subito, senza aspettare la conferma di Aurora */
+.phone-list .decode-list .decode-row--picked,
+.phone-list .decode-list .decode-row--selected,
+.phone-list .decode-list .decode-row--queued {
+  background: #ffd84d;
+  color: #1c1400;
+  font-weight: 700;
+  box-shadow: inset 5px 0 0 #e65c00;
+}
+
+.phone-list .decode-list .decode-row:active {
+  background: #ffe88a;
+}
