@@ -883,7 +883,7 @@ body:has(.phone-live) .toaster {
   line-height: 1;
 }
 
-/* cambio tema in alto a destra nella barra del telefono */
+/* cambio tema chiaro/scuro in alto a destra nella barra del telefono */
 .phone-theme {
   flex: none;
   display: inline-flex;
