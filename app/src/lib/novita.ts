@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.91',
+    released: '2026-11-03T23:30:00Z',
+    kind: 'fixed',
+    title: ['Correzioni per il telefono', 'Phone fixes', 'Korrekturen für das Telefon', 'Corrections pour le téléphone', 'Correcciones para el teléfono', 'Correções para o telemóvel'],
+    text: [
+      'Solo la stazione chiamata è in giallo (non quelle in coda); il cluster del telefono non usa il testo cercato sul PC; l’accesso senza codice cambia solo se la scelta viene salvata.',
+      'Only the called station is yellow (not queued ones); the phone cluster ignores the text searched on the PC; code-free access changes only if the choice is saved.',
+      'Nur die gerufene Station ist gelb (nicht die in der Warteschlange); der Telefon-Cluster ignoriert den am PC gesuchten Text; der Zugang ohne Code ändert sich nur, wenn die Wahl gespeichert wird.',
+      'Seule la station appelée est en jaune (pas celles en file) ; le cluster du téléphone ignore le texte cherché sur le PC ; l’accès sans code ne change que si le choix est enregistré.',
+      'Solo la estación llamada está en amarillo (no las de la cola); el clúster del teléfono ignora el texto buscado en el PC; el acceso sin código solo cambia si la elección se guarda.',
+      'Só a estação chamada fica a amarelo (não as em fila); o cluster do telemóvel ignora o texto procurado no PC; o acesso sem código só muda se a escolha for guardada.',
+    ],
+  },
+  {
     version: '0.11.90',
     released: '2026-11-03T18:54:59Z',
     kind: 'changed',
@@ -544,20 +558,6 @@ export const NOVITA: readonly Novita[] = [
       'Saisis DX Call et locator, choisis le rapport, garde la Tx fixe avec Hold Tx Freq, choisis le type de CQ (DX, continents, POTA, SOTA, contest). Tune et Log QSO s’activent dans Réglages > Général.',
       'Escribe DX Call y cuadrícula, elige el reporte, fija la Tx con Hold Tx Freq, elige el tipo de CQ (DX, continentes, POTA, SOTA, concurso). Tune y Log QSO se activan en Ajustes > General.',
       'Escreve DX Call e locator, escolhe o relatório, fixa a Tx com Hold Tx Freq, escolhe o tipo de CQ (DX, continentes, POTA, SOTA, concurso). Tune e Log QSO ligam-se em Definições > Geral.',
-    ],
-  },
-  {
-    version: '0.11.62',
-    released: '2026-11-01T16:53:23Z',
-    kind: 'changed',
-    title: ['Pannello QSO in due colonne', 'QSO panel in two columns', 'QSO-Feld in zwei Spalten', 'Panneau QSO en deux colonnes', 'Panel QSO en dos columnas', 'Painel QSO em duas colunas'],
-    text: [
-      'A sinistra la sequenza del QSO, a destra in colonna tutto ciò che fa trasmettere; pulsanti tutti della stessa misura.',
-      'On the left the QSO sequence, on the right in a column everything that transmits; all buttons the same size.',
-      'Links die QSO-Sequenz, rechts in einer Spalte alles, was sendet; alle Schalter gleich groß.',
-      'À gauche la séquence du QSO, à droite en colonne tout ce qui émet ; boutons tous de la même taille.',
-      'A la izquierda la secuencia del QSO, a la derecha en columna todo lo que transmite; botones del mismo tamaño.',
-      'À esquerda a sequência do QSO, à direita em coluna tudo o que transmite; botões todos do mesmo tamanho.',
     ],
   },
 ];
