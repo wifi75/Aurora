@@ -161,7 +161,7 @@ interface Props {
   onQueue?: (id: number) => void;
   /** Telefono: un tocco sulla riga risponde subito (lo stesso del doppio clic sul PC). */
   tapReply?: boolean;
-  /** Bandiera e nome del paese sempre, anche se spenti nelle preferenze (telefono). */
+  /** Telefono: il nome del paese anche come suggerimento (la colonna e' stretta). Bandiera e paese seguono comunque le preferenze. */
   forceFlag?: boolean;
 }
 
@@ -287,7 +287,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const theirs = own ? (targetGrid ? gridCenter(targetGrid) : null) : null;
         const km = prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
         const azimuth = prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
-        const code = prefs.showFlag || forceFlag ? flagCode(country) : null;
+        const code = prefs.showFlag ? flagCode(country) : null;
         const gap = prefs.insertBlank && previousTime !== null && previousTime !== d.time_ms;
         previousTime = d.time_ms;
         // «Evidenzia i messaggi con il nominativo DX»: spento, la stazione chiamata non si distingue dagli altri messaggi
@@ -331,7 +331,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">
-                {(prefs.showCountry || forceFlag) && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}
+                {prefs.showCountry && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}
               </span>
               <span className="w-km num muted">
                 {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
