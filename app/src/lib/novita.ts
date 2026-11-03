@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.89',
-    released: '2026-11-03T22:30:00Z',
+    released: '2026-11-03T18:36:22Z',
     kind: 'changed',
     title: ['Telefono: tema e riquadri aperti', 'Phone: theme and open boxes', 'Telefon: Design und offene Kästen', 'Téléphone : thème et encadrés ouverts', 'Teléfono: tema y recuadros abiertos', 'Telemóvel: tema e caixas abertas'],
     text: [
