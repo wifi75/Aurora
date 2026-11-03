@@ -31,6 +31,15 @@ import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 
+/**
+ * Telefono, tablet o un altro PC sulla rete sono un telecomando: le Impostazioni si cambiano solo dalla finestra di Aurora
+ * (Tauri) o da un browser sullo stesso computer.
+ */
+const REMOTE =
+  typeof window !== 'undefined' &&
+  !('__TAURI_INTERNALS__' in window) &&
+  !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+
 export function App() {
   const t = useT();
   const route = useRoute();
@@ -75,7 +84,7 @@ export function App() {
     );
   } else if (!session.data) {
     content = <Pair onPaired={onPaired} />;
-  } else if (route.name === 'settings') {
+  } else if (route.name === 'settings' && !REMOTE) {
     content = <Settings key={route.tab ?? ''} initialTab={route.tab ?? rememberedTab(browserStorage())} />;
   } else if (route.name === 'automation') {
     content = <Automation />;
@@ -115,7 +124,9 @@ export function App() {
           {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}
           <a className={`glass${route.name === 'export' ? ' glass--on' : ''}`} aria-current={route.name === 'export' ? 'page' : undefined} href="#/esporta">{t('nav.log')}</a>
           <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
-          <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
+          {REMOTE ? null : (
+            <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
+          )}
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
           <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
         </nav>

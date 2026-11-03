@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Telefono, tablet e altri PC**: niente menu Impostazioni (si cambiano dalla finestra di Aurora o da un browser sullo stesso computer).
+
 - **Impostazioni**: tolti tutti i riquadri «Note» dalle pagine.
 
 - **Servizi di log e Servizi online**: colonna a destra pulita: solo «Prova» con «riuscita» o «non riuscita» (il messaggio completo passando il mouse), niente «Ultimo invio: mai», le note dentro il «?» del titolo.
