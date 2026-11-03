@@ -1009,3 +1009,26 @@ body:has(.phone-live) .toaster {
 .app-shell:has(.phone-live) {
   padding-top: calc(env(safe-area-inset-top) + 0.5rem + 2px);
 }
+
+/* blocchi del telefono ben staccati: piu' spazio fra uno e l'altro, bordo pieno del colore della sezione, titolo colorato */
+.phone-list,
+.phone-box,
+.phone-txbox {
+  margin: 10px 6px 0;
+  border: 2px solid var(--phone-accent, #46566a);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.phone-txbox { --phone-accent: #46566a; }
+.phone-txbox--tx { --phone-accent: #c62828; }
+
+.phone-list .phone-bh,
+.phone-box .phone-bh,
+.phone-txbox .phone-txh {
+  border-left: 0;
+  background: var(--phone-accent, #46566a);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
