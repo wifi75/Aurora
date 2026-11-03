@@ -6076,3 +6076,44 @@
     grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 15rem 6.2rem;
   }
 }
+
+/* attivita' di banda: bandiera e paese ancora piu' a sinistra, nome del paese mezzo punto piu' piccolo */
+@container (min-width: 40.01rem) and (max-width: 54rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--all .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 18rem 7rem;
+  }
+}
+
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--all .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 17rem 6.2rem;
+  }
+}
+
+.dock-panel--all .decode-list .decode-row .decode-country {
+  font-size: calc(1em - 0.5pt);
+}
+
+/* impostazioni consigliate: le tre colonne partono tutte in alto e il testo e' allineato a sinistra */
+.cat-preset-cells {
+  align-items: start;
+}
+
+.cat-preset-cells .sx-field {
+  justify-content: flex-start;
+  height: auto;
+}
+
+.cat-preset-cells .sx-control,
+.cat-preset-cells .sx-control p,
+.cat-preset-cells .sx-control a {
+  display: block;
+  margin: 0;
+  text-align: left;
+}
+
+.cat-preset-cells .cat-preset {
+  margin-top: 0.15rem;
+}
