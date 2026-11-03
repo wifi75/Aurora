@@ -82,7 +82,7 @@ export function FoxPage() {
   const txOn = status?.tx_enabled ?? false;
   const transmitting = status?.transmitting ?? false;
   const [sort, setSort] = useState<SortKey>('snr');
-  const main = useDragHeight('aurora-fox-main-height-v2', 560);
+  const main = useDragHeight('aurora-fox-main-height-v3', 620);
   const [filter, setFilter] = useState('');
 
   // il pulsante cambia subito, senza aspettare lo stato del motore; se il comando fallisce torna com'era
@@ -317,7 +317,7 @@ function Spectrum() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
-  const { height, onPointerDown } = useDragHeight('aurora-fox-wf-height-v2', 150);
+  const { height, onPointerDown } = useDragHeight('aurora-fox-wf-height-v3', 110);
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
