@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.89',
+    released: '2026-11-03T22:30:00Z',
+    kind: 'changed',
+    title: ['Telefono: tema e riquadri aperti', 'Phone: theme and open boxes', 'Telefon: Design und offene Kästen', 'Téléphone : thème et encadrés ouverts', 'Teléfono: tema y recuadros abiertos', 'Telemóvel: tema e caixas abertas'],
+    text: [
+      'Sul telefono cluster e log sono aperti all’avvio, in alto a destra c’è il cambio tema chiaro/scuro accanto a ⟳, e la barra con la frequenza è un po’ più su per lasciare più spazio.',
+      'On the phone cluster and log are open at start, top right there is the light/dark theme switch next to ⟳, and the frequency bar sits a little higher to leave more room.',
+      'Auf dem Telefon sind Cluster und Log beim Start offen, oben rechts gibt es neben ⟳ den Wechsel hell/dunkel, und die Frequenzleiste sitzt etwas höher für mehr Platz.',
+      'Sur le téléphone le cluster et le journal sont ouverts au démarrage, en haut à droite il y a le choix clair/sombre à côté de ⟳, et la barre de fréquence est un peu plus haute pour laisser plus de place.',
+      'En el teléfono el clúster y el registro están abiertos al inicio, arriba a la derecha está el cambio de tema claro/oscuro junto a ⟳, y la barra de frecuencia está un poco más arriba para dejar más espacio.',
+      'No telemóvel o cluster e o registo estão abertos ao arranque, em cima à direita há a troca de tema claro/escuro ao lado de ⟳, e a barra da frequência está um pouco mais acima para deixar mais espaço.',
+    ],
+  },
+  {
     version: '0.11.88',
     released: '2026-11-03T18:26:38Z',
     kind: 'new',
@@ -557,20 +571,6 @@ export const NOVITA: readonly Novita[] = [
       'Si la station choisie émet en Fox WSJT-X, Hound s’active seul, Tx passe au-dessus de 1000 Hz et Split s’active ; avec une station normale il se coupe. Les lignes Fox portent l’étiquette FOX.',
       'Si la estación elegida transmite como Fox de WSJT-X, Hound se enciende solo, Tx sube por encima de 1000 Hz y se enciende Split; con una estación normal se apaga. Las líneas Fox llevan la etiqueta FOX.',
       'Se a estação escolhida transmitir como Fox do WSJT-X, o Hound liga-se sozinho, a Tx sobe acima de 1000 Hz e o Split liga-se; com uma estação normal desliga-se. As linhas Fox têm a etiqueta FOX.',
-    ],
-  },
-  {
-    version: '0.11.61',
-    released: '2026-11-01T16:08:51Z',
-    kind: 'new',
-    title: ['Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce'],
-    text: [
-      'Nuovo pulsante tra gli interruttori del QSO: armato, a fine periodo risponde da solo al CQ scelto (il primo, il più lontano, il più forte o il più debole, in Impostazioni), saltando chi hai già collegato.',
-      'New button among the QSO switches: when armed, at the end of the period it answers the chosen CQ by itself (first, farthest, strongest or weakest, in Settings), skipping stations already worked.',
-      'Neuer Schalter bei den QSO-Schaltern: scharf geschaltet antwortet er am Periodenende selbst auf den gewählten CQ (erster, weitester, stärkster oder schwächster, in den Einstellungen) und überspringt bereits gearbeitete Stationen.',
-      'Nouveau bouton parmi les interrupteurs QSO : armé, en fin de période il répond seul au CQ choisi (le premier, le plus lointain, le plus fort ou le plus faible, dans Réglages), en sautant les stations déjà contactées.',
-      'Nuevo botón entre los interruptores del QSO: armado, al final del periodo responde solo al CQ elegido (el primero, el más lejano, el más fuerte o el más débil, en Ajustes), saltando las estaciones ya trabajadas.',
-      'Novo botão entre os interruptores do QSO: armado, no fim do período responde sozinho ao CQ escolhido (o primeiro, o mais distante, o mais forte ou o mais fraco, nas Definições), saltando as estações já trabalhadas.',
     ],
   },
 ];

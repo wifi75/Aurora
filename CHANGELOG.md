@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.89 - 2026-11-03
+- **Telefono**: cluster e log aperti all'avvio; cambio tema chiaro/scuro in alto a destra; barra con la frequenza un po' piu' su.
+
 ## 0.11.88 - 2026-11-03
 - **Telefono e tablet sempre aggiornati**: la pagina confronta la sua versione con quella di Aurora sul PC (all'avvio, quando torna in primo piano e ogni minuto); se Aurora e' stata aggiornata toglie service worker e cache e si ricarica da sola.
 - **Telefono**: pulsante ⟳ per ricaricare dal PC; barra di stato dell'iPhone piena e pagina piu' in basso (niente sfocatura); bandiere piu' grandi e colonna del paese piu' larga; titoli piu' alti.
