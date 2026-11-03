@@ -1198,10 +1198,19 @@ impl tx_native::Ptt for AutoPtt {
 /// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
 /// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
 fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
+    let radio = cat.config();
+    // OmniRig preso da JTDX ma la radio e' collegata con Hamlib: OmniRig non comanda la radio, il PTT passa da rigctld
+    // (caso reale: un vecchio JTDX.ini con PTT OmniRig e Aurora su Hamlib, la radio non andava mai in trasmissione)
+    if config.ptt_method == "omnirig"
+        && radio.backend == rig_control::cat_config::Backend::Hamlib
+        && radio.model != 0
+        && radio.ptt != rig_control::cat_config::PttMethod::Vox
+    {
+        return "cat".to_string();
+    }
     if config.ptt_method != "vox" {
         return config.ptt_method.clone();
     }
-    let radio = cat.config();
     match (radio.backend, radio.ptt) {
         (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
         (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
