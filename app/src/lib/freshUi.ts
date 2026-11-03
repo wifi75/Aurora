@@ -47,3 +47,18 @@ export function watchFreshUi(): void {
   });
   setInterval(() => void checkFreshUi(), 60_000);
 }
+
+/** Il pulsante «Aggiorna» del telefono: toglie service worker e cache e ricarica la pagina dal PC, subito. */
+export async function forceFreshUi(): Promise<void> {
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations?.()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    const keys = (await caches?.keys?.()) ?? [];
+    await Promise.all(keys.map((k) => caches.delete(k)));
+  } catch {
+    // si ricarica lo stesso
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set('v', String(Date.now()));
+  window.location.replace(url.toString());
+}

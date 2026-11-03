@@ -20,6 +20,7 @@ export const phoneStrings = {
     'Estás transmitiendo: ¿pasar a {mode}?',
     'Está a transmitir: passar para {mode}?',
   ],
+  'phone.refresh': ['Aggiorna la pagina dal PC', 'Reload the page from the PC', 'Seite vom PC neu laden', 'Recharger la page depuis le PC', 'Recargar la página desde el PC', 'Recarregar a página a partir do PC'],
   'phone.onAir': ['In onda', 'On air', 'Auf Sendung', 'En l’air', 'En el aire', 'No ar'],
   'phone.nobody': ['nessuno per ora', 'nobody yet', 'noch niemand', 'personne pour l’instant', 'nadie por ahora', 'ninguém por agora'],
   'phone.transmitting': ['In trasmissione', 'Transmitting', 'Sendung läuft', 'En émission', 'Transmitiendo', 'A transmitir'],
