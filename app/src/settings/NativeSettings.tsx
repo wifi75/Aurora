@@ -424,7 +424,6 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
                 <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />
               ))}
             </Cells>
-            {group.note ? <p className="muted ens-note-line">{t(group.note)}</p> : null}
             {test}
             {kinds.map((k) => (
               <SendStatus key={k} doc={doc} kind={k} />

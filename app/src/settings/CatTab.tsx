@@ -371,7 +371,6 @@ export function CatGroups() {
         ) : null}
       </Cells>
       {fields.rig ? <Message kind="muted">{models.isLoading ? t('cat.rig.loading') : models.isError ? t('cat.rig.failed') : t('cat.rig.count', { n: modelList.length })}</Message> : null}
-      {!hamlib ? <Message kind="muted">{t('cat.omnirig.help')}</Message> : null}
       <datalist id="cat-ports">
         {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (
           <option key={p.port} value={p.port}>

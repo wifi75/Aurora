@@ -152,7 +152,7 @@ export function ClockTab() {
             <textarea rows={4} value={shown.servers} spellCheck={false} onChange={(e) => set({ servers: e.target.value })} />
           </Field>
         </Cells>
-        {!parsed ? <Message kind="alert">{t('clock.invalid')}</Message> : <Message kind="muted">{t('clock.autosave')}</Message>}
+        {!parsed ? <Message kind="alert">{t('clock.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>
 

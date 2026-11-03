@@ -146,7 +146,6 @@ export function Settings({ initialTab }: { initialTab?: string }) {
       </aside>
       <section className="settings-content" role="tabpanel" id="settings-panel" aria-label={t(tab.label)}>
         <h2 className="settings-content-title">{t(tab.label)}</h2>
-        <p className="muted settings-content-tip">{t(tab.tip)}</p>
         {tab.render()}
       </section>
     </div>
