@@ -217,6 +217,10 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
       </div>
 
+      <div className="phone-list">
+        <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
+      </div>
+
       {/* in ricezione: chi si sente adesso */}
       {transmitting ? null : (
         <div className="phone-now">
@@ -330,10 +334,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       </section>
 
       <div className="phone-wf">{waterfall}</div>
-
-      <div className="phone-list">
-        <DecodeList decodes={decodes} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} tapReply forceFlag />
-      </div>
 
       <div className="phone-bar">
         <button type="button" className="phone-btn phone-btn--go" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={cq}>
