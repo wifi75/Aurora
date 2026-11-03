@@ -5880,7 +5880,7 @@
     gap: 0.35rem;
   }
 
-  .dock-panel .decode-list .decode-row .decode-where > :nth-child(n + 3) {
+  .dock-panel--cq .decode-list .decode-row .decode-where > :nth-child(n + 3) {
     display: none;
   }
 }
