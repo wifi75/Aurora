@@ -859,3 +859,12 @@ body:has(.phone-live) .toaster {
   width: 1.55em;
   height: 1.15em;
 }
+
+/* parte iniziale piu' alta: la barra con la frequenza scende ancora sotto la zona dell'iPhone */
+.app-shell:has(.phone-live) {
+  padding-top: calc(env(safe-area-inset-top) + 1.6rem);
+}
+
+.phone-live .phone-top {
+  min-height: 3rem;
+}
