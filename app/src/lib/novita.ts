@@ -20,6 +20,34 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.84',
+    released: '2026-11-03T19:00:00Z',
+    kind: 'new',
+    title: ['Telefono e tablet come telecomando', 'Phone and tablet as a remote', 'Telefon und Tablet als Fernbedienung', 'Téléphone et tablette comme télécommande', 'Teléfono y tableta como mando', 'Telemóvel e tablet como comando'],
+    text: [
+      'Sul telefono e sul tablet Aurora diventa un telecomando: chi è in onda, attività di banda, cluster, log, i sei messaggi Tx, cascata e CQ, Abilita Tx e STOP. Si associa inquadrando un QR e si ritrova come aurora.local anche se il PC cambia indirizzo. Anteprime dal vivo in Impostazioni > Smartphone/Tablet.',
+      'On phone and tablet Aurora becomes a remote: who is on air, band activity, cluster, log, the six Tx messages, waterfall and CQ, Enable Tx and STOP. Pair by scanning a QR code; Aurora is found as aurora.local even if the PC changes address. Live previews in Settings > Smartphone/Tablet.',
+      'Auf Telefon und Tablet wird Aurora zur Fernbedienung: wer sendet, Bandaktivität, Cluster, Log, die sechs Tx-Meldungen, Wasserfall sowie CQ, Tx frei und STOP. Koppeln per QR-Code; Aurora ist als aurora.local erreichbar, auch wenn der PC die Adresse wechselt. Live-Vorschau unter Einstellungen > Smartphone/Tablet.',
+      'Sur téléphone et tablette Aurora devient une télécommande : qui émet, activité de bande, cluster, journal, les six messages Tx, cascade et CQ, Activer Tx et STOP. Association en scannant un QR ; Aurora se retrouve en aurora.local même si le PC change d’adresse. Aperçus en direct dans Réglages > Smartphone/Tablette.',
+      'En el teléfono y la tableta Aurora se convierte en un mando: quién transmite, actividad de banda, clúster, registro, los seis mensajes Tx, cascada y CQ, Activar Tx y STOP. Se empareja escaneando un QR y se encuentra como aurora.local aunque el PC cambie de dirección. Vistas en directo en Ajustes > Smartphone/Tableta.',
+      'No telemóvel e no tablet a Aurora torna-se um comando: quem está no ar, atividade de banda, cluster, registo, as seis mensagens Tx, cascata e CQ, Ativar Tx e STOP. Associa-se lendo um QR e encontra-se como aurora.local mesmo se o PC mudar de endereço. Pré-visualizações ao vivo em Definições > Smartphone/Tablet.',
+    ],
+  },
+  {
+    version: '0.11.84',
+    released: '2026-11-03T19:00:00Z',
+    kind: 'changed',
+    title: ['Impostazioni e cluster più puliti', 'Cleaner settings and cluster', 'Aufgeräumte Einstellungen und Cluster', 'Réglages et cluster plus nets', 'Ajustes y clúster más limpios', 'Definições e cluster mais limpos'],
+    text: [
+      'Tolte le note e le spiegazioni fisse dalle Impostazioni (restano i «?»), righe dei servizi più basse con esito della «Prova» in breve. Nel DX Cluster il riquadro con nome e città compare anche sul DX e si apre subito: le informazioni di tutti gli spot visibili si caricano in anticipo. Pagina Fox con cascata più bassa.',
+      'Notes and fixed explanations removed from Settings (the «?» remain), lower service rows with a short «Test» result. In the DX Cluster the box with name and town also appears on the DX and opens at once: info for all visible spots is preloaded. Fox page with a lower waterfall.',
+      'Notizen und feste Erklärungen aus den Einstellungen entfernt (die «?» bleiben), niedrigere Dienstzeilen mit kurzem «Test»-Ergebnis. Im DX-Cluster erscheint der Kasten mit Name und Ort auch beim DX und öffnet sofort: Infos aller sichtbaren Spots werden vorab geladen. Fox-Seite mit niedrigerem Wasserfall.',
+      'Notes et explications fixes retirées des Réglages (les « ? » restent), lignes des services plus basses avec un résultat de « Tester » court. Dans le DX Cluster l’encadré nom et ville apparaît aussi sur le DX et s’ouvre aussitôt : les infos de tous les spots visibles sont préchargées. Page Fox avec cascade plus basse.',
+      'Quitadas las notas y explicaciones fijas de Ajustes (quedan los «?»), filas de servicios más bajas con resultado de «Probar» breve. En el DX Cluster el recuadro con nombre y ciudad aparece también en el DX y se abre al momento: la información de todos los spots visibles se carga por adelantado. Página Fox con cascada más baja.',
+      'Retiradas as notas e explicações fixas das Definições (ficam os «?»), linhas dos serviços mais baixas com resultado de «Testar» curto. No DX Cluster a caixa com nome e cidade aparece também no DX e abre logo: a informação de todos os spots visíveis é pré-carregada. Página Fox com cascata mais baixa.',
+    ],
+  },
+  {
     version: '0.11.83',
     released: '2026-11-03T17:11:10Z',
     kind: 'new',
@@ -542,34 +570,6 @@ export const NOVITA: readonly Novita[] = [
       'En faisant glisser la barre Rx ou Tx, l’étiquette des Hz se remplit de sa couleur ; au relâchement elle redevient transparente.',
       'Mientras arrastras la barra Rx o Tx la etiqueta de los Hz se llena de su color; al soltar vuelve a ser transparente.',
       'Enquanto arrastas a barra Rx ou Tx a etiqueta dos Hz enche-se da sua cor; ao largar volta a ficar transparente.',
-    ],
-  },
-  {
-    version: '0.11.59',
-    released: '2026-11-01T15:21:41Z',
-    kind: 'changed',
-    title: ['Display della radio più reattivo', 'More responsive radio display', 'Reaktionsschnellere Funkanzeige', 'Afficheur radio plus réactif', 'Display de la radio más reactivo', 'Visor do rádio mais reativo'],
-    text: [
-      'Con il CAT su USB, rete o seriale veloce i valori del display (PRE, ATT, AGC, NB, NR, VFO B…) si aggiornano in circa metà del tempo.',
-      'With CAT over USB, network or a fast serial port the display values (PRE, ATT, AGC, NB, NR, VFO B…) update in about half the time.',
-      'Mit CAT über USB, Netzwerk oder schnelle Seriell aktualisieren sich die Werte der Anzeige (PRE, ATT, AGC, NB, NR, VFO B…) in etwa der halben Zeit.',
-      'Avec le CAT en USB, réseau ou série rapide, les valeurs de l’afficheur (PRE, ATT, AGC, NB, NR, VFO B…) se mettent à jour deux fois plus vite.',
-      'Con el CAT por USB, red o serie rápida los valores del display (PRE, ATT, AGC, NB, NR, VFO B…) se actualizan en la mitad de tiempo.',
-      'Com o CAT por USB, rede ou série rápida os valores do visor (PRE, ATT, AGC, NB, NR, VFO B…) atualizam-se em cerca de metade do tempo.',
-    ],
-  },
-  {
-    version: '0.11.59',
-    released: '2026-11-01T15:21:41Z',
-    kind: 'changed',
-    title: ['DXpedition nel cluster solo evidenziate', 'DXpeditions in the cluster just highlighted', 'DXpeditionen im Cluster nur hervorgehoben', 'DXpéditions du cluster seulement surlignées', 'DXpediciones del clúster solo resaltadas', 'DXpedições no cluster só realçadas'],
-    text: [
-      'Niente più etichetta accanto al nominativo, che ora si legge intero: la riga è colorata con il colore scelto.',
-      'No more tag next to the callsign, which now reads in full: the row is coloured with the chosen colour.',
-      'Keine Marke mehr neben dem Rufzeichen, das jetzt ganz lesbar ist: die Zeile hat die gewählte Farbe.',
-      'Plus d’étiquette à côté de l’indicatif, qui se lit en entier : la ligne prend la couleur choisie.',
-      'Ya no hay etiqueta junto al indicativo, que ahora se lee entero: la fila tiene el color elegido.',
-      'Já não há etiqueta junto ao indicativo, que agora se lê inteiro: a linha fica com a cor escolhida.',
     ],
   },
 ];
