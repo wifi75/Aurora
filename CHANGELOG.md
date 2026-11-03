@@ -3,6 +3,7 @@
 ## Non rilasciato
 
 ## 0.11.98 - 2026-11-04
+- **Trasmissione con Hamlib e un vecchio JTDX.ini**: se il PTT preso da JTDX e' OmniRig ma la radio e' collegata con Hamlib, Aurora usa il PTT della radio. Era il motivo per cui l'IC-7300 di un utente non andava in TX («PTT: radio non in linea»).
 - **Rapporti degli errori attivi**: servizio online (aurora-rapporti.tizianocassone.workers.dev, R2 + D1, riepilogo protetto da ADMIN_TOKEN); i rapporti partono per chi li accende in Impostazioni > Assistenza.
 
 ## 0.11.97 - 2026-11-04
