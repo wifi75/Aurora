@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 
-const MODES = ['FT8', 'FT4', 'JT65', 'JT9'] as const;
+/** I modi che Aurora propone: gli stessi sul PC e sul telefono. */
+export const MODES = ['FT8', 'FT4', 'JT65', 'JT9'] as const;
 
 /** Il modo in uso: JTDX con il pulsante JT puo' riportare «JT65+JT9» (si accendono tutti e due) o «JT» (il vecchio nome, acceso JT65). */
 const isActive = (m: string, mode: string) => {

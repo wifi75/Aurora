@@ -12,15 +12,15 @@ import {
   type PairingOffer,
 } from '../api/client';
 import { useT, type T } from '../i18n';
-import { Check, Help } from './common';
-import { Actions, Cell, Cells, Group, Message, Page } from './layout';
+import { Check } from './common';
+import { Cell, Cells, Group, Message, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 function errorText(error: unknown, t: T): string {
   return error instanceof ApiError && error.code === 'local_only' ? t('acc.pcOnly') : t('set.saveFailed');
 }
 
-/** Scheda Accesso: accesso senza codice per le prove, durata dei codici, nuovo codice con QR, dispositivi. */
+/** Scheda Smartphone/Tablet: indirizzo fisso e accesso senza codice, associazione con QR piccolo, dispositivi, anteprime. */
 export function AccessTab() {
   const t = useT();
   const client = useQueryClient();
@@ -57,29 +57,25 @@ export function AccessTab() {
   useAutosave(minutes !== null && inRange ? secs : null, minutes !== null, (v) => saveTtl.mutate(v), (v) => saveTtl.mutate(v), 900);
 
   return (
-    <Page>
-      <Group title={t('acc.open')}>
-        <Cells min={12}>
+    <Page className="acc-page">
+      {/* in alto: l'indirizzo fisso e l'accesso senza codice, una riga sola */}
+      <Group title={t('acc.home')} span={2}>
+        <Cells min={14}>
+          <Cell label={t('acc.home')} hint={t('tip.acc.home')}>
+            {access.data?.mdns ? <strong className="data">{access.data.mdns}</strong> : <span className="muted">{t('acc.noHome')}</span>}
+          </Cell>
           <Check label={t('acc.open')} hint={t('tip.acc.open')} checked={access.data?.open ?? false} onChange={(v) => toggle.mutate(v)} />
         </Cells>
-        <Help>{t('acc.openWarn')}</Help>
         {toggle.isError ? <Message kind="alert">{errorText(toggle.error, t)}</Message> : null}
       </Group>
 
-      <Group title={t('acc.home')}>
-        {access.data?.mdns ? (
-          <p title={t('tip.acc.home')}>
-            <strong className="data">{access.data.mdns}</strong>
-          </p>
-        ) : (
-          <Message kind="muted">{t('acc.noHome')}</Message>
-        )}
-        <Help>{t('tip.acc.home')}</Help>
-      </Group>
-
-      <Group title={t('acc.ttl')}>
-        <Cells min={12}>
-          <Cell label={t('acc.ttl')} hint={t('tip.acc.ttl')}>
+      <Group title={t('acc.pair')} span={2}>
+        <div className="acc-pair-bar">
+          <button type="button" className="glass" title={t('tip.acc.showCode')} onClick={() => show.mutate()}>
+            {t('acc.showCode')}
+          </button>
+          <label className="acc-ttl" title={t('tip.acc.ttl')}>
+            <span>{t('acc.ttl')}</span>
             <input
               type="number"
               className="ttl-input"
@@ -89,46 +85,30 @@ export function AccessTab() {
               value={shownMinutes}
               onChange={(e) => setMinutes(e.target.value)}
             />
-          </Cell>
-        </Cells>
-        <Actions>
-          <button title={t('tip.ui.save')} type="button" className="glass glass--on" disabled={minutes === null || !inRange} onClick={() => saveTtl.mutate(secs)}>
-            {t('set.save')}
-          </button>
-        </Actions>
-        {saveTtl.isSuccess && minutes === null ? <Message>{t('acc.ttlSaved')}</Message> : null}
+          </label>
+          {saveTtl.isSuccess && minutes === null ? <span className="muted">{t('acc.ttlSaved')}</span> : null}
+        </div>
         {saveTtl.isError ? <Message kind="alert">{errorText(saveTtl.error, t)}</Message> : null}
-      </Group>
-
-      <Group title={t('acc.showCode')} rows={2}>
-        <Actions>
-          <button type="button" className="glass" title={t('tip.acc.showCode')} onClick={() => show.mutate()}>
-            {t('acc.showCode')}
-          </button>
-        </Actions>
         {show.isError ? <Message kind="alert">{errorText(show.error, t)}</Message> : null}
         {offer ? (
-          <div className="offer">
-            <p>
-              {t('acc.code')}: <strong className="data offer-code">{offer.code}</strong>
-            </p>
-            <p className="muted">{t('acc.validFor', { n: Math.round(offer.expires_in / 60) })}</p>
-            <img className="offer-qr" alt="QR" src={`data:image/svg+xml;utf8,${encodeURIComponent(offer.qr_svg)}`} />
-            <p className="muted">{t('acc.qrHint')}</p>
-            <p>
-              {t('acc.link')}: <span className="data">{offer.link ?? `${window.location.origin}/#/pair/${offer.code}`}</span>
-            </p>
-            {offer.addresses && offer.addresses.length > 0 ? (
+          <div className="offer acc-offer">
+            <img className="offer-qr" alt="QR" title={t('acc.qrHint')} src={`data:image/svg+xml;utf8,${encodeURIComponent(offer.qr_svg)}`} />
+            <div className="acc-offer-info">
               <p>
-                {t('acc.addresses')}: <span className="data">{offer.addresses.join(' · ')}</span>
+                {t('acc.code')}: <strong className="data offer-code">{offer.code}</strong>
               </p>
-            ) : null}
+              <p className="muted">{t('acc.validFor', { n: Math.round(offer.expires_in / 60) })}</p>
+              <p>
+                {t('acc.link')}: <span className="data">{offer.link ?? `${window.location.origin}/#/pair/${offer.code}`}</span>
+              </p>
+              {offer.addresses && offer.addresses.length > 0 ? (
+                <p>
+                  {t('acc.addresses')}: <span className="data">{offer.addresses.join(' · ')}</span>
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
-      </Group>
-
-      <Group title={t('acc.preview')} span={2}>
-        <LivePreviews />
       </Group>
 
       <Group title={t('acc.devices')} span={2}>
@@ -143,6 +123,10 @@ export function AccessTab() {
             </li>
           ))}
         </ul>
+      </Group>
+
+      <Group title={t('acc.preview')} span={2}>
+        <LivePreviews />
       </Group>
     </Page>
   );
@@ -171,10 +155,9 @@ function LivePreviews() {
   const t = useT();
   return (
     <div className="live-previews" title={t('tip.acc.preview')}>
-      <p className="live-previews-badge">{t('acc.preview')}</p>
       <div className="live-previews-row">
-        <Device kind="phone" width={390} height={844} scale={0.5} label={t('acc.previewPhone')} />
-        <Device kind="tablet" width={1180} height={820} scale={0.42} label={t('acc.previewTablet')} />
+        <Device kind="phone" width={390} height={844} scale={0.34} label={t('acc.previewPhone')} />
+        <Device kind="tablet" width={1180} height={820} scale={0.3} label={t('acc.previewTablet')} />
       </div>
     </div>
   );

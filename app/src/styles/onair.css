@@ -495,8 +495,8 @@
 }
 
 .offer-qr {
-  width: 12rem;
-  height: 12rem;
+  width: 150px;
+  height: 150px;
   background: #fff;
   border-radius: 0.5rem;
 }
@@ -5922,4 +5922,44 @@
   margin-top: 0.35rem;
   text-align: center;
   font-size: var(--text-sm);
+}
+
+/* Scheda Smartphone/Tablet compatta: pulsante e durata del codice su una riga, QR piccolo con accanto i dati */
+.acc-pair-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.acc-ttl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acc-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.acc-offer-info {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1 1 14rem;
+  overflow-wrap: anywhere;
+}
+
+.acc-offer-info p {
+  margin: 0;
+}
+
+.acc-page .live-previews-row {
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
 }
