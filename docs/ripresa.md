@@ -15,13 +15,15 @@ le prove dal vivo con la radio le faccio io; giro di commit ogni 30 minuti.
 
 ## Stato
 
-- **Ultima versione**: **0.11.84** (2026-11-03, pubblicata): telefono e tablet come telecomando (`app/src/pages/PhoneLive.tsx`, `styles/phone.css`; sotto 768 px, tablet 768-1366 px se remoto o a tocco, `?vista=telefono|tablet`), associazione con QR e annuncio mDNS `aurora.local` (`core/crates/remote-api/src/lan.rs`, crate `mdns-sd`), indirizzi ricordati sul telefono (`lib/knownAddresses.ts`), anteprime dal vivo in Impostazioni > Smartphone/Tablet; da remoto niente Impostazioni (`REMOTE` in `App.tsx`); Impostazioni senza note ne' spiegazioni fisse (`Notes` e `Help` di `settings/common.tsx` non mostrano niente); precaricamento delle informazioni di tutti gli spot visibili nel cluster. 0.11.83: «Prova» per tutti i servizi, DXpedition senza fantasmi.
+- **Ultima versione**: **0.11.90** (2026-11-03, pubblicata). Telefono come telecomando rifinito dalla 0.11.85 alla 0.11.90: solo la pagina Stazione (`REMOTE_TOUCH` in `App.tsx`, niente testata, pie' di pagina e toast), ordine attivita' di banda > cluster (ultimi 5 spot, modo e spotter) > log (con bandiera) > messaggi Tx > cascata, blocchi con bordo e titolo colorati, stazione chiamata in giallo, doppio tocco su STOP = Canc DX, cambio tema e ⟳ in alto a destra, barra di stato iPhone piena (`apple-mobile-web-app-status-bar-style` = black). Aggiornamento automatico del telefono: `app/src/lib/freshUi.ts` confronta la versione dell'interfaccia (`__AURORA_UI_VERSION__` da `vite.config.ts`) con `/api/v1/health` e ricarica senza cache. Accesso senza codice dalla rete di casa salvato in `accesso-libero.txt`. Il telefono usa le preferenze del PC tranne quelle in `PHONE_OWN` di `lib/syncSettings.ts`.
 - **Storico pulito**: il 2026-11-02 lo storico di GitHub e' stato riscritto (git filter-repo, push forzato di main, gh-pages e tag) per togliere ogni riferimento all'autore delle tabelle del codice polare dell'UltraFOX. Regola: non citarlo mai (vedi memoria privata). Copia dello storico vecchio solo in locale: `D:\progetti\Aurora-backup-prima-pulizia-qpc.bundle`.
 
 ## Lavoro in corso
 
 - Nessun ramo aperto: `cluster-qrz`, `cascata-wsjtx` e `grafica-impostazioni` sono uniti a main; i worktree in `D:\build\wt-*` si possono togliere.
 - Restano da fare: «Prova» per eQSL, PSK Reporter, DXSummit, NG3K, propagazione, NTP, UDP/TCP; NAME e QTH per i QSO registrati a mano.
+- Decisione aperta: il tema scelto sul telefono oggi cambia anche il PC (`aurora-theme` non e' in `PHONE_OWN`); chiedere al proprietario se separarlo.
+- Da riordinare: `app/src/styles/phone.css` ha molte regole aggiunte in coda che si sovrascrivono; la regola larga `.phone-live * { max-width:100% }` andrebbe ristretta ai contenitori.
 - Da provare dal vivo: vista telefono e tablet su dispositivi veri; Android spesso non risolve `aurora.local` (il QR usa l'IP); le anteprime dal vivo nelle Impostazioni sono l'app vera (anche la trasmissione).
 - I test li lancia il proprietario: prima di pubblicare solo `tsc` e `cargo check`.
 
