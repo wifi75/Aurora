@@ -868,3 +868,17 @@ body:has(.phone-live) .toaster {
 .phone-live .phone-top {
   min-height: 3rem;
 }
+
+/* pulsante «Aggiorna» nella barra in alto del telefono */
+.phone-refresh {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0.2rem;
+  border: 1px solid #3b5560;
+  border-radius: 50%;
+  background: transparent;
+  color: #d8f4ff;
+  font-size: 1rem;
+  line-height: 1;
+}
