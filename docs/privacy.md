@@ -7,8 +7,8 @@ regole di quei servizi.
 
 ## Rapporti degli errori
 
-I rapporti degli errori servono a chi sviluppa Aurora per trovare e correggere i problemi. Sono **facoltativi e spenti di
-fabbrica**: si accendono e si spengono in Impostazioni → Assistenza → «Rapporti degli errori».
+I rapporti degli errori servono a chi sviluppa Aurora per trovare e correggere i problemi. Sono **accesi di fabbrica**: l'installatore e il primo avvio lo dicono, e si spengono in qualunque momento in
+Impostazioni → Assistenza → «Rapporti degli errori».
 
 - **Dopo un crash** («Chiedimi di mandare il rapporto dopo un crash»): al riavvio Aurora chiede se mandare il rapporto. Parte
   solo se premi «Manda il rapporto». Lo stesso pacchetto parte con «Manda il pacchetto a chi sviluppa Aurora».

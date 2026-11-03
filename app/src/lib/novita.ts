@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.100',
+    released: '2026-11-04T04:00:00Z',
+    kind: 'changed',
+    title: ['Rapporti degli errori accesi', 'Error reports on', 'Fehlerberichte an', 'Rapports d’erreur activés', 'Informes de errores activos', 'Relatórios de erros ligados'],
+    text: [
+      'I rapporti degli errori (domanda dopo un crash ed errori anonimi) sono accesi di fabbrica: al primo avvio Aurora lo dice una volta. Si spengono in Impostazioni > Assistenza.',
+      'Error reports (question after a crash and anonymous errors) are on by default: Aurora says so once at first start. Switch them off in Settings > Support.',
+      'Fehlerberichte (Frage nach einem Absturz und anonyme Fehler) sind ab Werk an: Aurora sagt es einmal beim ersten Start. Ausschalten unter Einstellungen > Support.',
+      'Les rapports d’erreur (question après un plantage et erreurs anonymes) sont activés par défaut : Aurora le dit une fois au premier démarrage. Désactivation dans Réglages > Assistance.',
+      'Los informes de errores (pregunta tras un fallo y errores anónimos) están encendidos de fábrica: Aurora lo dice una vez al primer inicio. Se apagan en Ajustes > Asistencia.',
+      'Os relatórios de erros (pergunta após uma falha e erros anónimos) estão ligados de fábrica: a Aurora diz isso uma vez no primeiro arranque. Desligam-se em Definições > Assistência.',
+    ],
+  },
+  {
     version: '0.11.99',
     released: '2026-11-03T22:16:50Z',
     kind: 'fixed',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'Chaque bouton et compteur a son explication au survol, en six langues. Sur le téléphone les bandes tiennent sur une ligne, les messages passent à la ligne et l’en-tête est plus bas. Colonnes du DX Cluster alignées ; dans Programmes reliés un bouton par type de programme.',
       'Cada botón y contador tiene su explicación al pasar el ratón, en seis idiomas. En el teléfono las bandas caben en una fila, los mensajes saltan de línea y la cabecera es más baja. Columnas del DX Cluster alineadas; en Programas conectados un botón por tipo de programa.',
       'Cada botão e contador tem a sua explicação ao passar o rato, em seis línguas. No telemóvel as bandas cabem numa linha, as mensagens mudam de linha e o cabeçalho é mais baixo. Colunas do DX Cluster alinhadas; em Programas ligados um botão por tipo de programa.',
-    ],
-  },
-  {
-    version: '0.11.77',
-    released: '2026-11-02T19:51:57Z',
-    kind: 'changed',
-    title: ['TUNER tenuto premuto', 'Hold TUNER to tune', 'TUNER gedrückt halten', 'TUNER maintenu', 'TUNER mantenido', 'TUNER premido'],
-    text: [
-      'Nei display FT-2000 e IC-7610 il TUNER tenuto premuto 1 secondo avvia l’accordatura, come sulla radio. Nella pagina Fox i riquadri si allungano con la maniglia e lo STOP segue lo stile neon.',
-      'On the FT-2000 and IC-7610 displays, holding TUNER for 1 second starts tuning, like on the radio. On the Fox page the panels stretch with the handle and STOP follows the neon style.',
-      'In den FT-2000- und IC-7610-Displays startet TUNER, 1 Sekunde gedrückt, die Abstimmung wie am Funkgerät. Auf der Fox-Seite lassen sich die Felder am Griff verlängern und STOP folgt dem Neon-Stil.',
-      'Sur les affichages FT-2000 et IC-7610, TUNER maintenu 1 seconde lance l’accord, comme sur le poste. Sur la page Fox les panneaux s’allongent avec la poignée et STOP suit le style néon.',
-      'En los displays FT-2000 e IC-7610, TUNER mantenido 1 segundo inicia la sintonía, como en la radio. En la página Fox los paneles se alargan con el tirador y STOP sigue el estilo neón.',
-      'Nos visores FT-2000 e IC-7610, TUNER premido 1 segundo inicia a sintonia, como no rádio. Na página Fox os painéis alongam-se com a pega e o STOP segue o estilo néon.',
     ],
   },
 ];
