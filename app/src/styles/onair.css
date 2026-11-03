@@ -6117,3 +6117,23 @@
 .cat-preset-cells .cat-preset {
   margin-top: 0.15rem;
 }
+
+/* colonna dei km sempre presente e della stessa larghezza in ogni riga (anche vuota): le linee restano dritte e una sola */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 2.1rem minmax(0, 1fr) 5.4rem;
+}
+
+.decode-list .decode-row .decode-where .w-km:empty {
+  display: flex;
+}
+
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row .decode-where {
+    grid-template-columns: 2.1rem minmax(0, 1fr) 5.4rem;
+  }
+
+  .dock-panel--all .decode-list .decode-row .decode-where .w-km:empty {
+    display: flex;
+  }
+}
