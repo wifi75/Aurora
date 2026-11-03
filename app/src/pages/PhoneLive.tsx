@@ -217,8 +217,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
       </div>
 
-      <div className="phone-wf">{waterfall}</div>
-
       {/* in ricezione: chi si sente adesso */}
       {transmitting ? null : (
         <div className="phone-now">
@@ -334,6 +332,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           </div>
         ) : null}
       </section>
+
+      <div className="phone-wf">{waterfall}</div>
 
       <div className="phone-bar">
         <button type="button" className="phone-btn phone-btn--go" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={cq}>
