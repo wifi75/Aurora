@@ -170,7 +170,7 @@ Se la radio non va in trasmissione, quasi sempre manca una di queste tre cose: P
 - Radio: Icom IC-7300, oppure Icom IC-7610.
 - Porta: la COM della radio collegata via USB. Su Windows compare come «Silicon Labs CP210x»; il 7610 ne crea due, e va scelta la prima.
 - Velocità: 115200, uguale a quella impostata nella radio.
-- Indirizzo CI-V: 94h per il 7300, 98h per il 7610. Di solito «Predefinito del modello» va già bene.
+- Indirizzo CI-V (Icom): compare solo dopo aver scelto una radio Icom. Lascia 0, che vuol dire «quello di fabbrica del modello». Se nella radio è stato cambiato, si scrive in decimale: 148 per il 7300 (94h), 152 per il 7610 (98h).
 - PTT, Metodo del PTT: CAT.
 - Linee DTR e RTS: lasciale come sono (Bassa e Automatica).
 
