@@ -5979,3 +5979,20 @@
   padding-left: 1.1rem;
   line-height: 1.45;
 }
+
+/* attivita' di banda (pannello medio): piu' posto al messaggio ricevuto, bandiera e paese piu' a destra in una colonna piu' stretta */
+@container (min-width: 40.01rem) and (max-width: 54rem) {
+  .dock-panel .decode-list .decode-row,
+  .dock-panel .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 12.5rem 7rem;
+  }
+
+  .dock-panel .decode-list .decode-row .decode-where {
+    margin-left: 0;
+  }
+}
+
+/* il messaggio ricevuto mezzo punto piu' piccolo, cosi' entra intero */
+.decode-list .decode-row .decode-text {
+  font-size: calc(1em - 0.5pt);
+}
