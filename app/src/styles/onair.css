@@ -5869,3 +5869,9 @@
 .decode-list .decode-row .decode-where {
   margin-left: 15px;
 }
+
+/* distanza: 3 px in piu' per il testo («1471 km» non si taglia) */
+.decode-list .decode-row .decode-where .w-km {
+  padding-left: calc(0.4rem - 3px);
+  margin-right: -3px;
+}
