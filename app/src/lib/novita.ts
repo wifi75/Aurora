@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.95',
-    released: '2026-11-04T01:30:00Z',
+    released: '2026-11-03T21:37:15Z',
     kind: 'new',
     title: ['Pacchetto per l’assistenza', 'Support package', 'Paket für den Support', 'Paquet pour l’assistance', 'Paquete para la asistencia', 'Pacote para a assistência'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.95',
-    released: '2026-11-04T01:30:00Z',
+    released: '2026-11-03T21:37:15Z',
     kind: 'fixed',
     title: ['PTT applicato subito', 'PTT applied at once', 'PTT sofort übernommen', 'PTT appliqué tout de suite', 'PTT aplicado al momento', 'PTT aplicado logo'],
     text: [
