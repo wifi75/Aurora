@@ -830,3 +830,26 @@ body:has(.phone-live) .toaster {
   height: 2.6rem;
   font-size: 0.85rem;
 }
+
+/* attivita' di banda sul telefono: bandiera e paese molto piu' a sinistra (colonna del paese piu' larga) */
+.phone-list .decode-list .decode-row {
+  grid-template-columns: 3.6rem 1.9rem minmax(0, 1fr) 8.2rem;
+}
+
+/* titoli delle sezioni un po' piu' alti */
+.phone-live .phone-bh,
+.phone-live .phone-bh--static,
+.phone-live .phone-txh {
+  height: 1.75rem;
+  line-height: 1.75rem;
+  font-size: 0.66rem;
+}
+
+.phone-live .phone-box .phone-bh {
+  min-height: 1.75rem;
+}
+
+/* iPhone: tutto un po' piu' in basso, fuori dalla zona sfocata dell'ora e della batteria */
+.app-shell:has(.phone-live) {
+  padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+}
