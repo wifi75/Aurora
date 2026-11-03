@@ -6061,3 +6061,18 @@
     display: none;
   }
 }
+
+/* attivita' di banda: bandiera, paese e km partono piu' a sinistra (colonna piu' larga), cosi' il paese non si accavalla con i km */
+@container (min-width: 40.01rem) and (max-width: 54rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--all .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 16rem 7rem;
+  }
+}
+
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--all .decode-list--no-dt .decode-row {
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 15rem 6.2rem;
+  }
+}
