@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.85 - 2026-11-03
+- **Telefono**: attivita' di banda su una riga con colonne allineate, al massimo 10 righe in vista; tolta la riga «In onda»; schermata fissa senza zoom; spazio per la barra dell'iPhone.
+
 ## 0.11.84 - 2026-11-03
 - **QR e aurora.local**: associazione del telefono inquadrando un QR; Aurora si annuncia in rete come aurora.local; il telefono ricorda gli indirizzi; vista tablet in orizzontale; anteprime dal vivo in Impostazioni > Smartphone/Tablet.
 - **Impostazioni**: tolte le spiegazioni fisse e i sottotitoli delle pagine; righe dei servizi basse.

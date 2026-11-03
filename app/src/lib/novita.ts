@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.85',
+    released: '2026-11-03T20:00:00Z',
+    kind: 'changed',
+    title: ['Telefono più ordinato', 'Tidier phone view', 'Aufgeräumtere Telefonansicht', 'Vue téléphone plus ordonnée', 'Vista del teléfono más ordenada', 'Vista do telemóvel mais arrumada'],
+    text: [
+      'Sul telefono l’attività di banda ha ogni messaggio su una riga con colonne allineate e al massimo 10 righe in vista (le altre si scorrono); tolta la riga «In onda»; la schermata resta fissa senza zoom e rispetta la barra dell’iPhone.',
+      'On the phone band activity shows each message on one line with aligned columns and at most 10 rows in view (scroll for more); the «On air» line is gone; the screen stays fixed with no zoom and respects the iPhone bar.',
+      'Auf dem Telefon zeigt die Bandaktivität jede Meldung in einer Zeile mit ausgerichteten Spalten und höchstens 10 sichtbaren Zeilen (der Rest wird gescrollt); die Zeile «Auf Sendung» ist weg; der Bildschirm bleibt fest ohne Zoom und achtet auf die iPhone-Leiste.',
+      'Sur le téléphone l’activité de bande affiche chaque message sur une ligne avec colonnes alignées et au plus 10 lignes visibles (le reste défile) ; la ligne « En l’air » est retirée ; l’écran reste fixe sans zoom et respecte la barre de l’iPhone.',
+      'En el teléfono la actividad de banda muestra cada mensaje en una línea con columnas alineadas y como máximo 10 filas a la vista (el resto se desplaza); quitada la línea «En el aire»; la pantalla queda fija sin zoom y respeta la barra del iPhone.',
+      'No telemóvel a atividade de banda mostra cada mensagem numa linha com colunas alinhadas e no máximo 10 linhas à vista (o resto desliza); retirada a linha «No ar»; o ecrã fica fixo sem zoom e respeita a barra do iPhone.',
+    ],
+  },
+  {
     version: '0.11.84',
     released: '2026-11-03T17:50:56Z',
     kind: 'new',
@@ -556,20 +570,6 @@ export const NOVITA: readonly Novita[] = [
       '« Journal » remplace « Historique » : tous tes QSO avec recherche et export ADIF. Le bouton Exporter ADIF quitte la page Station.',
       '«Log» sustituye a «Historial»: todos tus QSO con búsqueda y exportación ADIF. El botón Exportar ADIF sale de la página Estación.',
       '«Log» substitui «Histórico»: todos os teus QSO com pesquisa e exportação ADIF. O botão Exportar ADIF sai da página Estação.',
-    ],
-  },
-  {
-    version: '0.11.59',
-    released: '2026-11-01T15:21:41Z',
-    kind: 'changed',
-    title: ['Hz leggibili mentre sposti le barre', 'Readable Hz while dragging the bars', 'Hz lesbar beim Ziehen der Balken', 'Hz lisibles en déplaçant les barres', 'Hz legibles al mover las barras', 'Hz legíveis ao mover as barras'],
-    text: [
-      'Mentre trascini la barra Rx o Tx l’etichetta con gli Hz diventa piena del suo colore; al rilascio torna trasparente.',
-      'While you drag the Rx or Tx bar its Hz label fills with its colour; on release it turns transparent again.',
-      'Beim Ziehen des Rx- oder Tx-Balkens füllt sich die Hz-Marke mit seiner Farbe; beim Loslassen wird sie wieder durchsichtig.',
-      'En faisant glisser la barre Rx ou Tx, l’étiquette des Hz se remplit de sa couleur ; au relâchement elle redevient transparente.',
-      'Mientras arrastras la barra Rx o Tx la etiqueta de los Hz se llena de su color; al soltar vuelve a ser transparente.',
-      'Enquanto arrastas a barra Rx ou Tx a etiqueta dos Hz enche-se da sua cor; ao largar volta a ficar transparente.',
     ],
   },
 ];
