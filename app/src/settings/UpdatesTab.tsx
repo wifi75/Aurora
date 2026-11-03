@@ -132,7 +132,7 @@ export function UpdatesTab() {
             <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
           </Field>
         </Cells>
-        {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : <Message kind="muted">{t('upd.autosave')}</Message>}
+        {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>
 

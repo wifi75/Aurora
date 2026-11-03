@@ -302,7 +302,6 @@ export function NativeGeneral() {
           {field('gridLogFiltering', 'bool', 'gen2.useGrid', { locked: !isOn(doc, draft, 'callsignLogFiltering') })}
           {field('timeFromLogFiltering', 'text', 'gen2.fromDate')}
         </Cells>
-        <Message kind="muted">{t('gen2.logHelp')}</Message>
       </Group>
 
       <Group title={t('gen2.iaru')}>

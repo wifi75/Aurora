@@ -41,6 +41,7 @@ export function Check({ label, hint, checked, onChange }: { label: string; hint?
   );
 }
 
-export function Help({ children }: { children: ReactNode }) {
-  return <p className="muted settings-hint">{children}</p>;
+/** Spiegazioni lunghe sotto le voci: per scelta del proprietario non si mostrano piu' (restano i «?»). */
+export function Help(_props: { children: ReactNode }) {
+  return null;
 }

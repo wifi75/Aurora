@@ -134,7 +134,7 @@ export function WishlistTab() {
             <input type="number" className="set-number" min={1} max={240} value={shown.cooldown} onChange={(e) => set({ cooldown: e.target.value })} />
           </Field>
         </Cells>
-        {!parsed ? <Message kind="alert">{t('wish.invalid')}</Message> : <Message kind="muted">{t('wish.autosave')}</Message>}
+        {!parsed ? <Message kind="alert">{t('wish.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>
 

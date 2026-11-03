@@ -193,7 +193,7 @@ export function ClusterTab() {
             <textarea rows={3} value={shown.login} spellCheck={false} onChange={(e) => set({ login: e.target.value })} />
           </Field>
         </Cells>
-        {!parsed ? <Message kind="alert">{t('cluster.invalid')}</Message> : <Message kind="muted">{t('cluster.autosave')}</Message>}
+        {!parsed ? <Message kind="alert">{t('cluster.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>
 
