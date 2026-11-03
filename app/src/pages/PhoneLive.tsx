@@ -245,11 +245,13 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
             spots.map((s) => {
               const flag = flagCode(s.country);
               return (
-                <button key={s.id} type="button" className="phone-row" onClick={() => void tune(s)}>
+                <button key={s.id} type="button" className="phone-row phone-row--spot" onClick={() => void tune(s)}>
                   <span className="data phone-row-t">{(s.freq_khz / 1000).toFixed(3)}</span>
                   {flag ? <span className={`fi fi-${flag} phone-flag`} aria-hidden="true" /> : <span className="phone-flag" />}
                   <span className="data phone-row-m">{s.dx_call}</span>
-                  <span className="muted">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2, 4)}</span>
+                  <span className="data phone-row-mode">{s.mode ?? ''}</span>
+                  <span className="data muted phone-row-de" title={s.spotter}>{s.spotter}</span>
+                  <span className="data muted phone-row-time">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2, 4)}</span>
                 </button>
               );
             })
@@ -267,10 +269,12 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
             <p className="muted phone-empty">{t('log.unavailable')}</p>
           ) : log.data && log.data.qsos.length > 0 ? (
             log.data.qsos.slice(0, 3).map((q, i) => (
-              <div key={`${q.date}-${q.call}-${i}`} className="phone-row phone-row--static">
+              <div key={`${q.date}-${q.call}-${i}`} className="phone-row phone-row--static phone-row--qso">
                 <span className="data phone-row-t">{q.date.slice(11, 16)}</span>
-                <span className="data phone-row-m">{`${q.call} · ${q.band} ${q.mode}`}</span>
-                <span className="data muted">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join(' / ')}</span>
+                {flagCode(q.country) ? <span className={`fi fi-${flagCode(q.country)} phone-flag`} aria-hidden="true" title={q.country} /> : <span className="phone-flag" />}
+                <span className="data phone-row-m">{q.call}</span>
+                <span className="data phone-row-mode">{`${q.band} ${q.mode}`}</span>
+                <span className="data muted phone-row-rst">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join(' / ')}</span>
               </div>
             ))
           ) : (
