@@ -62,4 +62,21 @@ export const appStrings = {
     'Elige el idioma de la interfaz; se recuerda en este dispositivo.',
     'Escolhe o idioma da interface; fica guardado neste dispositivo.',
   ],
+  'app.moved': [
+    'Aurora ha cambiato indirizzo: inquadra di nuovo il QR dal PC (Impostazioni > Accesso), oppure prova qui:',
+    'Aurora has changed address: scan the QR again from the PC (Settings > Access), or try here:',
+    'Aurora hat die Adresse gewechselt: scanne den QR erneut am PC (Einstellungen > Zugang) oder versuche es hier:',
+    "Aurora a changé d'adresse : scanne à nouveau le QR depuis le PC (Réglages > Accès), ou essaie ici :",
+    'Aurora ha cambiado de dirección: escanea de nuevo el QR desde el PC (Ajustes > Acceso), o prueba aquí:',
+    'A Aurora mudou de endereço: lê de novo o QR a partir do PC (Definições > Acesso), ou experimenta aqui:',
+  ],
+  'app.moveTo': ['Apri {url}', 'Open {url}', '{url} öffnen', 'Ouvrir {url}', 'Abrir {url}', 'Abrir {url}'],
+  'tip.app.moved': [
+    'Un indirizzo già usato da questo telefono risponde. Se è diverso da aurora.local potrebbe chiedere di associarti di nuovo.',
+    'An address this phone used before answers. If it is not aurora.local it may ask you to pair again.',
+    'Eine Adresse, die dieses Telefon schon benutzt hat, antwortet. Ist es nicht aurora.local, musst du dich eventuell neu koppeln.',
+    "Une adresse déjà utilisée par ce téléphone répond. Si ce n'est pas aurora.local, il faudra peut-être t'associer à nouveau.",
+    'Responde una dirección que este teléfono ya usó. Si no es aurora.local puede pedirte que te vincules de nuevo.',
+    'Responde um endereço que este telemóvel já usou. Se não for aurora.local pode pedir para te associares de novo.',
+  ],
 } as const satisfies Record<string, Entry>;

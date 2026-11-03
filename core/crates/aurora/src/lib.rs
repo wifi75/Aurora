@@ -1836,6 +1836,19 @@ pub async fn run(
         .await
         .map_err(|e| StartError::Io(format!("{}: {e}", config.bind)))?;
     let addr = listener.local_addr().map_err(|e| StartError::Io(e.to_string()))?;
+    state.lan.set_port(addr.port());
+    // nome fisso in casa (aurora.local): solo se il server e' raggiungibile dalla rete; parte in disparte per non ritardare l'avvio
+    let announcer: Arc<std::sync::Mutex<Option<remote_api::lan::Announcer>>> = Arc::default();
+    if !addr.ip().is_loopback() {
+        let slot = Arc::clone(&announcer);
+        let lan = Arc::clone(&state.lan);
+        tokio::task::spawn_blocking(move || {
+            let started = remote_api::lan::Announcer::start(addr.port(), &lan);
+            if let Ok(mut s) = slot.lock() {
+                *s = started;
+            }
+        });
+    }
 
     let closing = state.clone();
     let hub_for_task = hub.clone();
@@ -1852,6 +1865,10 @@ pub async fn run(
             tracing::error!("server terminato con errore: {e}");
         }
         engine_task.abort();
+        // l'annuncio mDNS si spegne con Aurora
+        if let Ok(mut s) = announcer.lock() {
+            s.take();
+        }
         if let Some(hub) = hub_for_task {
             hub.stop();
         }

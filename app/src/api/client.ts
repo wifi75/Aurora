@@ -220,8 +220,9 @@ export async function putSchedule(state: ScheduleState): Promise<void> {
   await request('/schedule', { ...jsonInit(state), method: 'PUT' });
 }
 
-export async function getAccess(): Promise<{ open: boolean }> {
-  return (await (await request('/access')).json()) as { open: boolean };
+/** `mdns`: l'indirizzo fisso in casa (`http://aurora.local:8787`), se l'annuncio e' attivo. */
+export async function getAccess(): Promise<{ open: boolean; mdns?: string | null }> {
+  return (await (await request('/access')).json()) as { open: boolean; mdns?: string | null };
 }
 
 export async function putAccess(open: boolean): Promise<void> {
@@ -260,6 +261,11 @@ export interface PairingOffer {
   code: string;
   expires_in: number;
   qr_svg: string;
+  /** Il link del QR: `http://<IP>:8787/#/associa?codice=...&nome=aurora.local`. */
+  link?: string | null;
+  /** Gli indirizzi con cui il telefono raggiunge Aurora (IP della rete di casa e nome mDNS). */
+  addresses?: string[];
+  mdns?: string | null;
 }
 
 /** Un codice nuovo con il QR; il link punta all'indirizzo da cui si sta guardando la pagina. */
