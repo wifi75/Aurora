@@ -1,6 +1,12 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.84 - 2026-11-03
+- **QR e aurora.local**: associazione del telefono inquadrando un QR; Aurora si annuncia in rete come aurora.local; il telefono ricorda gli indirizzi; vista tablet in orizzontale; anteprime dal vivo in Impostazioni > Smartphone/Tablet.
+- **Impostazioni**: tolte le spiegazioni fisse e i sottotitoli delle pagine; righe dei servizi basse.
+- **Pagina Fox**: cascata 110 px, chi chiama 620 px.
+- **DX Cluster**: precaricate le informazioni di tutti gli spot visibili, riquadro subito aperto.
 - **Telefono come telecomando** (schermi sotto 768 px): barra con frequenza, RX/TX, banda, modo e potenza; cascata e spettro; chi e' in onda con bandiera e paese; i sei messaggi Tx sempre visibili e il riquadro «In trasmissione» con la stazione chiamata; elenco dei messaggi con un tocco per chiamare; 5 spot del cluster e ultimi 3 QSO richiudibili; CQ, Abilita Tx e STOP sempre in fondo.
 
 - **Telefono, tablet e altri PC**: niente menu Impostazioni (si cambiano dalla finestra di Aurora o da un browser sullo stesso computer).
