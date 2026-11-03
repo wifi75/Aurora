@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.86 - 2026-11-03
+- **Telefono e tablet**: solo la pagina Stazione, senza testata, pie' di pagina e toast; bande, modi, filtri, macro, lingua e tema presi da Aurora sul PC; titoli e colonne compatti; la pagina non scorre di lato; doppio tocco su STOP = Canc DX.
+- **Smartphone/Tablet** (Impostazioni): pagina compatta, QR piccolo; accesso senza codice dalla rete di casa che funziona e resta al riavvio (accesso-libero.txt).
+- **DXpedition**: confini e paesi preparati in anticipo, la scheda si apre subito.
+- **Elenchi**: colonna dei km 10 px piu' larga.
+
 ## 0.11.85 - 2026-11-03
 - **Telefono**: attivita' di banda su una riga con colonne allineate, al massimo 10 righe in vista; tolta la riga «In onda»; schermata fissa senza zoom; spazio per la barra dell'iPhone.
 
