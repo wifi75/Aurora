@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ApiError, postHalt } from '../api/client';
+import { useRef, useState } from 'react';
+import { ApiError, postControl, postHalt } from '../api/client';
 import { useT, type T } from '../i18n';
 import { useStation } from '../state/station';
 
@@ -31,13 +31,29 @@ export function StopButton({ variant = 'bar' }: Props) {
     }
   };
 
+  // telecomando: due tocchi ravvicinati su STOP fermano e liberano anche la stazione (come il doppio Esc del PC, «Canc DX»): i messaggi Tx si svuotano
+  const lastTap = useRef(0);
+  const stopPhone = async () => {
+    const now = Date.now();
+    const second = now - lastTap.current < 700;
+    lastTap.current = second ? 0 : now;
+    await stop();
+    if (second) {
+      try {
+        await postControl('clear_dx');
+      } catch {
+        // senza collegamento resta solo lo stop
+      }
+    }
+  };
+
   if (variant === 'phone') {
     // nel telecomando: «STOP» a riposo, «STOP TX» evidenziato mentre si trasmette; l'esito si legge nel suggerimento
     return (
       <button
         type="button"
         className={`phone-btn phone-btn--stop${transmitting ? ' phone-btn--hot' : ''}`}
-        onClick={stop}
+        onClick={() => void stopPhone()}
         title={phase.kind === 'ok' ? t('stop.ok') : phase.kind === 'error' ? phase.message : t('tip.stop')}
       >
         {transmitting ? t('stop.button') : t('phone.stop')}
