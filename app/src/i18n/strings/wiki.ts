@@ -12,5 +12,6 @@ export const wikiStrings = {
     'A Aurora é o ecrã e o cérebro da estação: descodifica, transmite e comanda o rádio.',
   ],
   'guide.search': ['Cerca nella guida…', 'Search the guide…', 'In der Anleitung suchen…', 'Chercher dans le guide…', 'Buscar en la guía…', 'Pesquisar no guia…'],
+  'guide.fix': ['Se non va', 'If it does not work', 'Wenn es nicht geht', 'Si ça ne marche pas', 'Si no funciona', 'Se não funcionar'],
   'guide.none': ['Niente trovato per questa ricerca.', 'Nothing found for this search.', 'Nichts gefunden.', 'Rien trouvé pour cette recherche.', 'Nada encontrado para esta búsqueda.', 'Nada encontrado para esta pesquisa.'],
 } as const satisfies Record<string, Entry>;
