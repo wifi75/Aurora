@@ -12,6 +12,7 @@ pub mod audio_control;
 pub mod band_hop;
 pub mod history;
 pub mod online;
+pub mod rapporti;
 pub mod support;
 pub mod updates;
 pub mod wanted;
@@ -1506,6 +1507,8 @@ pub async fn run(
     }
     cluster.restart();
     let own_log = Arc::clone(&logbook);
+    // i rapporti degli errori: spenti di fabbrica, si accendono in Impostazioni > Assistenza
+    let rapporti = rapporti::Rapporti::avvia(&config.data_dir);
     let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
@@ -1533,6 +1536,7 @@ pub async fn run(
                 support::build(&ctx, &req)
             }) as remote_api::SupportBundle
         }))
+        .with_error_reports_if(Some(Arc::clone(&rapporti) as remote_api::ErrorReportsHandle))
         .with_online(online)
         .with_history_if(history)
         .with_updates(Arc::clone(&updates))
@@ -1971,6 +1975,32 @@ pub async fn run(
         // alla chiusura il PTT si spegne e la radio si libera
         let _ = tokio::task::spawn_blocking(move || cat_for_task.shutdown()).await;
     });
+    {
+        // radio, PTT, audio e i valori personali da togliere si rileggono a ogni rapporto
+        let state = state.clone();
+        let config = config.clone();
+        let cat = Arc::clone(&cat);
+        rapporti.imposta_contesto(Arc::new(move || {
+            let radio = cat.config();
+            let audio = state.audio.as_ref().map(|a| a.devices());
+            let mut noti: Vec<String> = Vec::new();
+            if let Some(s) = state.current_status() {
+                noti.push(s.de_call);
+                noti.push(s.de_grid);
+            }
+            rapporti::Contesto {
+                versione: aurora_core::version::APP_VERSION.to_string(),
+                sistema: String::new(),
+                motore: match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
+                radio: if radio.rig_name.is_empty() && radio.model != 0 { format!("hamlib {}", radio.model) } else { radio.rig_name.clone() },
+                ptt: if matches!(config.engine, EngineKind::Native) { ptt_method_for(&config, &cat) } else { "jtdx".to_string() },
+                cat: format!("{:?}", radio.backend).to_ascii_lowercase(),
+                audio_in: audio.as_ref().and_then(|a| a.input_in_use.clone()).or_else(|| config.audio_device.clone()).unwrap_or_default(),
+                audio_out: audio.as_ref().and_then(|a| a.output_in_use.clone()).or_else(|| config.audio_out_device.clone()).unwrap_or_default(),
+                noti,
+            }
+        }));
+    }
     Ok(RunningServer { addr, state, hub, task })
 }
 

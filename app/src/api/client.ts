@@ -1093,3 +1093,59 @@ export async function getControls(): Promise<Partial<Record<ControlId, boolean>>
 export async function postControl(id: ControlId, on?: boolean): Promise<void> {
   await request('/commands/control', jsonInit(on === undefined ? { id } : { id, on }));
 }
+
+/** I rapporti degli errori (facoltativi, spenti di fabbrica): impostazioni, identificativo anonimo, coda e crash da segnalare. */
+export interface ReportsState {
+  ask_after_crash: boolean;
+  auto_errors: boolean;
+  install_id: string;
+  /** L'indirizzo del servizio e' stato scritto nel programma (non e' il segnaposto): senza, non parte niente. */
+  configured: boolean;
+  endpoint: string;
+  crash_pending: boolean;
+  /** I rapporti che aspettano la rete, esattamente come partiranno. */
+  queue: unknown[];
+  waiting: number;
+  sent_today: number;
+  max_per_day: number;
+  /** Un rapporto d'esempio con i dati di questa stazione, gia' ripulito. */
+  sample: unknown;
+}
+
+/** I file del pacchetto senza dati personali, con il testo che partirebbe. */
+export interface ReportsPreview {
+  files: { name: string; bytes: number; text: string }[];
+  bytes: number;
+  configured: boolean;
+  endpoint: string;
+}
+
+export async function getReports(): Promise<ReportsState> {
+  return (await (await request('/reports')).json()) as ReportsState;
+}
+
+export async function putReports(input: { ask_after_crash?: boolean; auto_errors?: boolean }): Promise<ReportsState> {
+  return (await (await request('/reports', { ...jsonInit(input), method: 'PUT' })).json()) as ReportsState;
+}
+
+/** Un identificativo dell'installazione nuovo. */
+export async function newReportsId(): Promise<ReportsState> {
+  return (await (await request('/reports/install-id', { method: 'POST' })).json()) as ReportsState;
+}
+
+export async function previewCrashReport(): Promise<ReportsPreview> {
+  return (await (await request('/reports/crash/preview', { method: 'POST' })).json()) as ReportsPreview;
+}
+
+export async function sendCrashReport(): Promise<{ ok: boolean; code: string }> {
+  return (await (await request('/reports/crash/send', { method: 'POST' })).json()) as { ok: boolean; code: string };
+}
+
+export async function dismissCrashReport(): Promise<void> {
+  await request('/reports/crash/dismiss', { method: 'POST' });
+}
+
+/** Manda a chi sviluppa Aurora il pacchetto senza dati personali; il codice breve si dice a chi aiuta. */
+export async function sendSupportBundle(): Promise<{ ok: boolean; code: string }> {
+  return (await (await request('/reports/bundle/send', { method: 'POST' })).json()) as { ok: boolean; code: string };
+}
