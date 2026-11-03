@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.101',
+    released: '2026-11-04T04:30:00Z',
+    kind: 'fixed',
+    title: ['File audio nella cartella di Aurora', 'Audio files in Aurora’s folder', 'Audiodateien im Aurora-Ordner', 'Fichiers audio dans le dossier d’Aurora', 'Archivos de audio en la carpeta de Aurora', 'Ficheiros de áudio na pasta da Aurora'],
+    text: [
+      'I file audio si salvano sempre nella cartella di Aurora, mai in quella di JTDX o altrove. Nell’attività di banda bandiera e paese partono più a sinistra con il nome un po’ più piccolo; il riquadro «Impostazioni consigliate» è allineato in alto a sinistra.',
+      'Audio files are always saved in Aurora’s folder, never in JTDX’s or elsewhere. In band activity flag and country start further left with a slightly smaller name; the «Recommended settings» box is aligned top-left.',
+      'Audiodateien werden immer im Aurora-Ordner gespeichert, nie bei JTDX oder anderswo. In der Bandaktivität beginnen Flagge und Land weiter links mit etwas kleinerem Namen; der Kasten «Empfohlene Einstellungen» ist oben links ausgerichtet.',
+      'Les fichiers audio sont toujours enregistrés dans le dossier d’Aurora, jamais dans celui de JTDX ou ailleurs. Dans l’activité de bande drapeau et pays commencent plus à gauche avec un nom un peu plus petit ; l’encadré « Réglages conseillés » est aligné en haut à gauche.',
+      'Los archivos de audio se guardan siempre en la carpeta de Aurora, nunca en la de JTDX ni en otra. En la actividad de banda bandera y país empiezan más a la izquierda con el nombre algo más pequeño; el recuadro «Ajustes recomendados» está alineado arriba a la izquierda.',
+      'Os ficheiros de áudio são sempre gravados na pasta da Aurora, nunca na do JTDX nem noutra. Na atividade de banda bandeira e país começam mais à esquerda com o nome um pouco mais pequeno; a caixa «Definições recomendadas» está alinhada em cima à esquerda.',
+    ],
+  },
+  {
     version: '0.11.100',
     released: '2026-11-03T22:22:32Z',
     kind: 'changed',
@@ -479,20 +493,6 @@ export const NOVITA: readonly Novita[] = [
       'RX et TX à côté de la fréquence, voyants éteints bien visibles et la puissance avec − et + à la place du cadre FT8/AGC.',
       'RX y TX junto a la frecuencia, indicadores apagados bien visibles y la potencia con − y + en lugar del recuadro FT8/AGC.',
       'RX e TX ao lado da frequência, indicadores apagados bem visíveis e a potência com − e + em vez do quadro FT8/AGC.',
-    ],
-  },
-  {
-    version: '0.11.78',
-    released: '2026-11-02T20:57:00Z',
-    kind: 'changed',
-    title: ['Suggerimenti ovunque e telefono più comodo', 'Tooltips everywhere and a handier phone view', 'Hinweise überall und bessere Handy-Ansicht', 'Infobulles partout et téléphone plus pratique', 'Ayudas en todas partes y teléfono más cómodo', 'Dicas em todo o lado e telemóvel mais prático'],
-    text: [
-      'Ogni pulsante e contatore ha la sua spiegazione al passaggio del mouse, in sei lingue. Sul telefono le bande stanno in una riga, i messaggi vanno a capo e la testata è più bassa. Nel DX Cluster colonne allineate; in Programmi collegati un pulsante per ogni tipo di programma.',
-      'Every button and counter has its explanation on hover, in six languages. On the phone the bands fit in one row, messages wrap and the header is lower. DX Cluster columns aligned; in Connected programs one button per program type.',
-      'Jede Taste und jeder Zähler hat seine Erklärung beim Überfahren, in sechs Sprachen. Am Handy passen die Bänder in eine Zeile, Nachrichten brechen um und die Kopfzeile ist niedriger. DX-Cluster-Spalten ausgerichtet; unter Verbundene Programme eine Taste je Programmart.',
-      'Chaque bouton et compteur a son explication au survol, en six langues. Sur le téléphone les bandes tiennent sur une ligne, les messages passent à la ligne et l’en-tête est plus bas. Colonnes du DX Cluster alignées ; dans Programmes reliés un bouton par type de programme.',
-      'Cada botón y contador tiene su explicación al pasar el ratón, en seis idiomas. En el teléfono las bandas caben en una fila, los mensajes saltan de línea y la cabecera es más baja. Columnas del DX Cluster alineadas; en Programas conectados un botón por tipo de programa.',
-      'Cada botão e contador tem a sua explicação ao passar o rato, em seis línguas. No telemóvel as bandas cabem numa linha, as mensagens mudam de linha e o cabeçalho é mais baixo. Colunas do DX Cluster alinhadas; em Programas ligados um botão por tipo de programa.',
     ],
   },
 ];
