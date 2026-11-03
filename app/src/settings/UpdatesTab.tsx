@@ -94,7 +94,22 @@ export function UpdatesTab() {
       <Group title={t('lay.status')}>
         <Cells min={17}>
           <Row name={t('upd.current')}>{status.current}</Row>
-          <Row name={t('upd.latest')}>{status.latest ? status.latest.version : '—'}</Row>
+          <Row name={t('upd.latest')}>
+            {status.latest ? (
+              status.available ? (
+                // versione nuova: ben visibile, con la stella e «NEW»
+                <span className="upd-new">
+                  <span className="upd-new-star" aria-hidden="true">★</span>
+                  {status.latest.version}
+                  <span className="upd-new-tag">NEW</span>
+                </span>
+              ) : (
+                status.latest.version
+              )
+            ) : (
+              '—'
+            )}
+          </Row>
           <Row name={t('upd.lastCheck')}>{status.checked_at_ms > 0 ? new Date(status.checked_at_ms).toLocaleString() : t('upd.never')}</Row>
         </Cells>
         {status.available ? (

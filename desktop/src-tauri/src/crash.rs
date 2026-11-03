@@ -428,6 +428,14 @@ mod platform {
         if std::fs::metadata(path).is_ok_and(|m| m.len() > MAX_STDERR_BYTES) {
             let _ = std::fs::remove_file(path);
         }
+        // il file deve contenere solo errori veri: via le righe di avvio delle versioni vecchie e l'avviso innocuo di WebView2
+        // alla chiusura della finestra («Failed to unregister class Chrome_WidgetWin_0»), che non indica nessun guasto
+        if let Ok(old) = std::fs::read_to_string(path) {
+            let kept: Vec<&str> = old.lines().filter(|l| !harmless(l)).collect();
+            let _ = std::fs::write(path, if kept.is_empty() { String::new() } else { kept.join("
+") + "
+" });
+        }
         let Ok(file) = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -442,12 +450,12 @@ mod platform {
         unsafe {
             SetStdHandle(STD_ERROR_HANDLE, handle as HANDLE);
         }
-        eprintln!(
-            "--- Aurora {} avviata alle {} (processo {}) ---",
-            super::VERSION,
-            timestamp(),
-            std::process::id()
-        );
+    }
+
+    /// Righe che non sono errori: l'intestazione di avvio scritta dalle versioni fino alla 0.11.92 e l'avviso di WebView2 alla chiusura.
+    pub(crate) fn harmless(line: &str) -> bool {
+        let line = line.trim();
+        line.is_empty() || (line.starts_with("--- Aurora ") && line.ends_with(" ---")) || line.contains("Failed to unregister class Chrome_WidgetWin")
     }
 
     /// Chiede a Windows Error Reporting di tenere un dump locale. Funziona solo per le app impacchettate (MSIX): per un programma
