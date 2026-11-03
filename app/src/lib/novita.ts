@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.83',
-    released: '2026-11-03T17:30:00Z',
+    released: '2026-11-03T17:11:10Z',
     kind: 'new',
     title: ['«Prova» per tutti i servizi', '«Test» for every service', '«Test» für alle Dienste', '« Tester » pour tous les services', '«Probar» para todos los servicios', '«Testar» para todos os serviços'],
     text: [
@@ -35,7 +35,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.83',
-    released: '2026-11-03T17:30:00Z',
+    released: '2026-11-03T17:11:10Z',
     kind: 'fixed',
     title: ['Scheda DXpedition senza fantasmi', 'DXpedition card without ghosts', 'DXpedition-Karte ohne Geister', 'Fiche DXpédition sans fantômes', 'Ficha DXpedición sin fantasmas', 'Ficha DXpedição sem fantasmas'],
     text: [
