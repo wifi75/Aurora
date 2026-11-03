@@ -14,6 +14,8 @@ interface Props {
   register(push: SpectrumListener): () => void;
   /** Il modo in uso (FT8, FT4...): da qui la durata del periodo per le righe verdi e per la media «Cumulative». */
   mode?: string;
+  /** Telefono: lo spettro sempre visibile sotto la cascata, alto questi pixel (invece della quota `Spec %`). */
+  spectrumPx?: number;
 }
 
 /** Quota massima dell'altezza per lo spettro (%). */
@@ -25,7 +27,7 @@ type Phase = 'loading' | 'ready' | 'unsupported';
  * La cascata e lo spettro del Wide Graph di JTDX: le righe del core (canali da 0,732 Hz) diventano pixel con le opzioni
  * delle Impostazioni → Cascata (Bins/Pixel, Start, N Avg, Scale, Flatten, tavolozza, Gain, Zero, spettro Current/Cumulative).
  */
-export function Waterfall({ register, mode }: Props) {
+export function Waterfall({ register, mode, spectrumPx }: Props) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>('loading');
   const [kind, setKind] = useState('');
@@ -174,12 +176,12 @@ export function Waterfall({ register, mode }: Props) {
 
   return (
     <div className="waterfall" data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       <canvas
         ref={plotRef}
         className="wf-spectrum"
         aria-hidden="true"
-        style={{ flex: `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
+        style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: 'block' } : { flex: `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
       />
       {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
       <div className="wf-controls">

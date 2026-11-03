@@ -159,9 +159,13 @@ interface Props {
   emptyText?: string;
   /** Tasto destro su una stazione: la mette in coda per il prossimo QSO. */
   onQueue?: (id: number) => void;
+  /** Telefono: un tocco sulla riga risponde subito (lo stesso del doppio clic sul PC). */
+  tapReply?: boolean;
+  /** Bandiera e nome del paese sempre, anche se spenti nelle preferenze (telefono). */
+  forceFlag?: boolean;
 }
 
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText }: Props) {
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false }: Props) {
   const t = useT();
   // in JT65 e JT9 si decodifica a fine minuto: lo si dice invece di lasciare una pagina vuota che sembra rotta
   const mode = useStation((st) => st.status?.mode ?? '');
@@ -273,7 +277,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const theirs = own ? (targetGrid ? gridCenter(targetGrid) : null) : null;
         const km = prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
         const azimuth = prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
-        const code = prefs.showFlag ? flagCode(country) : null;
+        const code = prefs.showFlag || forceFlag ? flagCode(country) : null;
         const gap = prefs.insertBlank && previousTime !== null && previousTime !== d.time_ms;
         previousTime = d.time_ms;
         // «Evidenzia i messaggi con il nominativo DX»: spento, la stazione chiamata non si distingue dagli altri messaggi
@@ -296,7 +300,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
             className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
-            onClick={() => setSelected(d.id)}
+            onClick={() => (tapReply && !own ? onReply(d.id) : setSelected(d.id))}
             onDoubleClick={() => (own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
             onContextMenu={(e) => {
               // tasto destro: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)
@@ -317,7 +321,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">
-                {prefs.showCountry && country ? <span className="decode-country">{country}</span> : null}
+                {(prefs.showCountry || forceFlag) && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}
               </span>
               <span className="w-km num muted">
                 {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}

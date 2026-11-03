@@ -11,8 +11,8 @@ function messageFor(error: unknown, t: T): string {
 }
 
 interface Props {
-  /** `bar`: barra fissa in fondo (telefono). `compact`: pulsante grande nella barra in alto (PC). */
-  variant?: 'bar' | 'compact';
+  /** `bar`: barra fissa in fondo (telefono). `compact`: pulsante grande nella barra in alto (PC). `phone`: uno dei tre pulsanti del telecomando. */
+  variant?: 'bar' | 'compact' | 'phone';
 }
 
 /** Sempre attivo, anche con il collegamento caduto: un tocco, nessuna conferma. */
@@ -30,6 +30,20 @@ export function StopButton({ variant = 'bar' }: Props) {
       setPhase({ kind: 'error', message: messageFor(error, t) });
     }
   };
+
+  if (variant === 'phone') {
+    // nel telecomando: «STOP» a riposo, «STOP TX» evidenziato mentre si trasmette; l'esito si legge nel suggerimento
+    return (
+      <button
+        type="button"
+        className={`phone-btn phone-btn--stop${transmitting ? ' phone-btn--hot' : ''}`}
+        onClick={stop}
+        title={phase.kind === 'ok' ? t('stop.ok') : phase.kind === 'error' ? phase.message : t('tip.stop')}
+      >
+        {transmitting ? t('stop.button') : t('phone.stop')}
+      </button>
+    );
+  }
 
   return (
     <div className={variant === 'bar' ? 'stop-bar' : 'stop-compact'}>
