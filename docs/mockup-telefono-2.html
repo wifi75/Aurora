@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Telefono: schermata completa</title>
+<style>
+body{margin:0;padding:18px;background:#e8ecf1;font:13px "Segoe UI",system-ui,sans-serif;color:#1c2733}
+h1{font-size:15px;margin:0 0 14px}
+.g{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.ph{width:390px;height:844px;background:#f4f6f9;border:10px solid #1c2733;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box}
+.cap{width:390px;font-size:13px;margin-top:8px;color:#3b4856}
+.mono{font-family:Consolas,"JetBrains Mono",monospace}
+.top{background:#0c1418;color:#d8f4ff;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.top.txing{background:#7a0f0f}
+.freq{font-size:24px;color:#5ce8ff}
+.top.txing .freq{color:#fff}
+.pill{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.rx{background:#1f7a3d;color:#e6ffe9}.tx{background:#ff3b2f;color:#fff;animation:p 1s infinite}
+@keyframes p{50%{opacity:.55}}
+.prog{height:4px;background:#26333a}.prog i{display:block;height:100%;background:#47d13a}
+.top.txing + .prog i{background:#ff3b2f}
+.bands{display:flex;gap:5px;padding:6px 8px;background:#fff;border-bottom:1px solid #dde3ea;overflow:hidden}
+.c{border:1px solid #9aa7b4;border-radius:999px;padding:3px 8px;font-size:12px;white-space:nowrap;background:#f4f6f8}
+.c.on{background:#0f6e64;color:#fff;border-color:#0f6e64}
+.c.m{border-radius:8px;font-weight:700}
+.sel{flex:1;height:34px;border:1px solid #9aa7b4;border-radius:8px;background:#f4f6f8;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:13px}
+.wf{height:62px;position:relative;background:linear-gradient(90deg,#0a1a6b,#0b2a9a 30%,#0a1a6b 60%,#0b2a9a);overflow:hidden}
+.wf span{position:absolute;top:6px;bottom:6px;width:10px;background:#ffd400;border-radius:2px;opacity:.85}
+.wf .rxm{position:absolute;top:0;bottom:0;width:14px;border:2px solid #47d13a}
+.wf .txm{position:absolute;top:0;bottom:0;width:14px;border:2px solid #ff3b2f;background:rgba(255,59,47,.25)}
+.now{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border-bottom:1px solid #dde3ea}
+.now.me{background:#ffe1e1;border-bottom-color:#f0a0a0}
+.big{font-size:18px;font-weight:700;color:#0f6e64}
+.now.me .big{color:#b71c1c}
+.mut{color:#6b7a8f;font-size:12px}
+.steps{display:flex;gap:3px;margin-left:auto}.steps span{width:22px;height:6px;border-radius:3px;background:#dde3ea}.steps span.d{background:#0f6e64}
+.now.me .steps span.d{background:#c62828}
+.list{flex:1;overflow:hidden;background:#fff}
+.row{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #eef1f4;font-size:12.5px}
+.row .t{color:#6b7a8f;width:52px;flex:none}.row .s{width:26px;flex:none;text-align:right}
+.row .m{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f{width:18px;height:12px;border-radius:2px;flex:none}
+.cq{background:#fff7d6}.mee{background:#ffe1e1}.new{background:#e2f4e6}.mytx{background:#ffd9d6;font-weight:700}
+.box{background:#fff;border-top:1px solid #cfd8e2}
+.bh{display:flex;justify-content:space-between;padding:4px 10px;font-size:11px;font-weight:700;color:#5a6876;background:#eef2f6;letter-spacing:.04em}
+.bar{display:flex;gap:7px;padding:8px;background:#fff;border-top:1px solid #cfd8e2}
+.b{flex:1;height:46px;border-radius:12px;border:1px solid #9aa7b4;background:#f4f6f8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.b.go{background:#0f6e64;color:#fff;border-color:#0f6e64}
+.b.on{background:#1f7a3d;color:#fff;border-color:#1f7a3d}
+.b.stop{background:#c62828;color:#fff;border-color:#c62828}
+.b.stop.hot{box-shadow:0 0 0 3px #ffb3ad}
+.txbox{margin:4px 6px;border:1.5px solid #c62828;border-radius:8px;background:#fff4f3;padding:4px 6px}
+.txh{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#b71c1c;letter-spacing:.04em}
+.txmsg{font-size:22px;font-weight:700;color:#7a0f0f;margin:4px 0 6px}
+.txbar{height:5px;border-radius:3px;background:#f3c9c5}.txbar i{display:block;height:100%;border-radius:3px;background:#c62828}
+.txfoot{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px}
+.txnext{margin-top:4px}
+.txl{display:flex;align-items:center;gap:5px;margin:1px 0;padding:1px 5px;border:1px solid #e3e8ee;border-radius:5px;background:#fff;font-size:11.5px;line-height:16px}
+.txl b{width:14px;height:14px;border-radius:50%;background:#46566a;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.txl span{flex:1;min-width:0;white-space:nowrap;overflow:hidden}
+.txl em{display:none;font-style:normal;font-size:10.5px;color:#6b7a8f;white-space:nowrap}
+.txl.done{opacity:.55}.txl.done span{text-decoration:line-through}
+.txl.cur{border:1.5px dashed #c62828;background:#ffe9e7;font-weight:700}.txl.cur b{background:#c62828}
+.txbox .txbar{margin-top:3px;height:3px}
+.txgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 4px}
+.dxline{display:flex;align-items:center;gap:5px;font-size:11.5px;margin:2px 0 3px;color:#5a2a2a}
+.dxline b{font-size:16px;color:#b71c1c}
+.dxline .fl{width:16px;height:11px;border-radius:2px;background:#e30a17}
+</style>
+</head>
+<body>
+<h1>Telefono, schermata completa: in ricezione (sinistra) e mentre trasmetti (destra)</h1>
+<div class="g">
+
+<div><div class="ph">
+  <div class="top"><span class="mono freq">14.074</span><span class="pill rx">RX</span><span class="mono" style="color:#ffb428">FT8</span><span style="margin-left:auto" class="mono">09/15</span></div>
+  <div class="prog"><i style="width:60%"></i></div>
+  <div class="bands"><span class="sel">Banda: <b>20 m</b> ▾</span><span class="sel">Modo: <b>FT8</b> ▾</span></div>
+  <div class="wf"><span style="left:40px"></span><span style="left:95px"></span><span style="left:160px"></span><span style="left:230px"></span><span style="left:300px"></span><div class="rxm" style="left:180px"></div><div class="txm" style="left:250px;background:none"></div></div>
+  <div class="now"><span class="mut">In onda</span><span class="big mono">TA3KAN</span><span class="mut">-15 · Turchia</span></div>
+  <div class="list">
+    <div class="row cq"><span class="t mono">17:12:30</span><span class="s mono">-11</span><span class="f" style="background:#c8102e"></span><span class="m mono">CQ 4O5JD JN92</span></div>
+    <div class="row mee"><span class="t mono">17:12:30</span><span class="s mono">-8</span><span class="f" style="background:#009246"></span><span class="m mono">IZ2JPN IU3WJQ R-12</span></div>
+    <div class="row"><span class="t mono">17:12:30</span><span class="s mono">-19</span><span class="f" style="background:#c8102e"></span><span class="m mono">K0DEQ 4O5JD -19</span></div>
+    <div class="row new"><span class="t mono">17:12:30</span><span class="s mono">-15</span><span class="f" style="background:#e30a17"></span><span class="m mono">CQ TA3KAN KM38</span></div>
+    <div class="row"><span class="t mono">17:12:00</span><span class="s mono">-7</span><span class="f" style="background:#009246"></span><span class="m mono">PY5ZD IZ3XAN JN55</span></div>
+    <div class="row cq"><span class="t mono">17:12:00</span><span class="s mono">-10</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">CQ KE8ZLT EN81</span></div>
+  </div>
+  <div class="box"><div class="bh"><span>DX CLUSTER · 20m FT8</span><span>▾</span></div>
+    <div class="row"><span class="t mono">14.074</span><span class="f" style="background:#009c3b"></span><span class="m mono">PY1SX</span><span class="mut">17:06</span></div>
+    <div class="row"><span class="t mono">14.074</span><span class="f" style="background:#d52b1e"></span><span class="m mono">CA6SNT</span><span class="mut">17:06</span></div>
+    <div class="row"><span class="t mono">14.076</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">N4DWD</span><span class="mut">17:05</span></div>
+    <div class="row"><span class="t mono">14.074</span><span class="f" style="background:#e30a17"></span><span class="m mono">TA3TY</span><span class="mut">17:05</span></div>
+    <div class="row"><span class="t mono">14.075</span><span class="f" style="background:#ed2939"></span><span class="m mono">3B9FR</span><span class="mut">17:00</span></div>
+  </div>
+  <div class="box"><div class="bh"><span>LOG · ULTIMI 3</span><span>▾</span></div>
+    <div class="row"><span class="t mono">17:08</span><span class="m mono">IZ2JPN · 20m FT8</span><span class="mut mono">-12 / -08</span></div>
+    <div class="row"><span class="t mono">16:58</span><span class="m mono">EW4DX · 40m FT8</span><span class="mut mono">-15 / -10</span></div>
+    <div class="row"><span class="t mono">16:51</span><span class="m mono">KE8ZLT · 20m FT8</span><span class="mut mono">-18 / -14</span></div>
+  </div>
+  <div class="bar"><div class="b go">CQ</div><div class="b">Abilita Tx</div><div class="b stop">STOP</div></div>
+</div><p class="cap"><b>In ricezione.</b> Barra scura con RX verde e il tempo del periodo; «In onda» dice chi si sente adesso. Tocchi una riga o uno spot per chiamare.</p></div>
+
+<div><div class="ph">
+  <div class="top txing"><span class="mono freq">14.074</span><span class="pill tx">TX</span><span class="mono" style="color:#ffd7d2">FT8</span><span style="margin-left:auto" class="mono">05/15</span></div>
+  <div class="prog"><i style="width:33%"></i></div>
+  <div class="bands"><span class="sel">Banda: <b>20 m</b> ▾</span><span class="sel">Modo: <b>FT8</b> ▾</span></div>
+  <div class="wf"><span style="left:40px"></span><span style="left:95px"></span><span style="left:160px"></span><span style="left:300px"></span><div class="rxm" style="left:180px"></div><div class="txm" style="left:250px"></div></div>
+  <div class="txbox">
+    <div class="txh"><span>IN TRASMISSIONE · 1196 Hz</span><span class="mono">05/15</span></div>
+    <div class="dxline"><span>Chiami</span><b class="mono">TA3KAN</b><span class="fl"></span><span>Turchia · KM38 · 1471 km · -15</span></div>
+    <div class="txgrid"><div class="txl done"><b>1</b><span class="mono">TA3KAN IU3WJQ JN55</span><em>Risposta con locatore</em></div>
+    <div class="txl cur"><b>2</b><span class="mono">TA3KAN IU3WJQ -15</span><em>Rapporto</em></div>
+    <div class="txl"><b>3</b><span class="mono">TA3KAN IU3WJQ R-15</span><em>Rapporto con R</em></div>
+    <div class="txl"><b>4</b><span class="mono">TA3KAN IU3WJQ RRR</span><em>Chiusura RR73</em></div>
+    <div class="txl"><b>5</b><span class="mono">TA3KAN IU3WJQ 73</span><em>Saluto 73</em></div>
+    <div class="txl"><b>6</b><span class="mono">CQ IU3WJQ JN55</span><em>Chiamata CQ</em></div>
+    </div>
+    <div class="txbar"><i style="width:33%"></i></div>
+  </div>
+  <div class="list">
+    <div class="row mytx"><span class="t mono">17:12:45</span><span class="s mono">Tx</span><span class="f" style="background:#e30a17"></span><span class="m mono">TA3KAN IU3WJQ -15</span></div>
+    <div class="row new"><span class="t mono">17:12:30</span><span class="s mono">-15</span><span class="f" style="background:#e30a17"></span><span class="m mono">CQ TA3KAN KM38</span></div>
+    <div class="row cq"><span class="t mono">17:12:30</span><span class="s mono">-11</span><span class="f" style="background:#c8102e"></span><span class="m mono">CQ 4O5JD JN92</span></div>
+    <div class="row"><span class="t mono">17:12:30</span><span class="s mono">-19</span><span class="f" style="background:#c8102e"></span><span class="m mono">K0DEQ 4O5JD -19</span></div>
+    <div class="row"><span class="t mono">17:12:00</span><span class="s mono">-7</span><span class="f" style="background:#009246"></span><span class="m mono">PY5ZD IZ3XAN JN55</span></div>
+    <div class="row cq"><span class="t mono">17:12:00</span><span class="s mono">-10</span><span class="f" style="background:#3c3b6e"></span><span class="m mono">CQ KE8ZLT EN81</span></div>
+  </div>
+  <div class="box"><div class="bh"><span>DX CLUSTER · 20m FT8</span><span>▸</span></div></div>
+  <div class="box"><div class="bh"><span>LOG · ULTIMI 3</span><span>▸</span></div></div>
+  <div class="bar"><div class="b go">CQ</div><div class="b on">Tx acceso</div><div class="b stop hot">STOP TX</div></div>
+</div><p class="cap"><b>Mentre trasmetti.</b> La barra diventa rossa con TX che lampeggia e il tempo del periodo in rosso. Sopra l'elenco il riquadro rosso «In trasmissione»: il messaggio che sta uscendo in grande, quale Tx e su che frequenza, quanto manca alla fine, a chi lo mandi, i passi del QSO e cosa partira' dopo. La tua riga Tx è in cima all'elenco; sulla cascata la frequenza Tx è piena di rosso. «Abilita Tx» diventa «Tx acceso» e STOP TX è evidenziato. Cluster e log chiusi qui per esempio.</p></div>
+
+</div>
+</body>
+</html>
