@@ -132,6 +132,7 @@ export function App() {
 
   return (
     <div className="app-shell">
+      {REMOTE_TOUCH ? null : (
       <header className="app-header">
         <a className="app-brand" href="#/">
           AURORA
@@ -158,9 +159,10 @@ export function App() {
         <ThemeToggle />
         <a className="app-logo-link" href="#/" aria-label="Aurora"><Logo size={36} animated /></a>
       </header>
+      )}
       {session.data ? <WantedBar /> : null}
       <main className="app-main">{content}</main>
-      <Footer />
+      {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
     </div>
   );
