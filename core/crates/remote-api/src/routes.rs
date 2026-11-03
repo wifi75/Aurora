@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -77,6 +77,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/log/export-save", post(log_export_save))
         .route("/api/v1/diagnostics", get(diagnostics_get))
         .route("/api/v1/diagnostics/crash-folder", post(diagnostics_crash_folder))
+        .route("/api/v1/diagnostics/support-bundle", post(diagnostics_support_bundle))
+        .route("/api/v1/diagnostics/support-bundle/reveal", post(diagnostics_support_reveal))
         .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
@@ -1746,7 +1748,135 @@ fn update_service(state: &AppState) -> Result<std::sync::Arc<updater::UpdateServ
 /// Cosa offre la diagnostica da qui: `crash_folder` vero se si puo' aprire la cartella dei crash (programma Windows, richiesta dal PC stesso).
 #[utoipa::path(get, path = "/api/v1/diagnostics", responses((status = 200, description = "{crash_folder}")))]
 async fn diagnostics_get(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Json<Value> {
-    Json(json!({ "crash_folder": state.crash_folder.is_some() && from_this_pc(peer, &headers) }))
+    let here = from_this_pc(peer, &headers);
+    Json(json!({ "crash_folder": state.crash_folder.is_some() && here, "support_bundle": state.support_bundle.is_some() && here }))
+}
+
+#[derive(Deserialize, Default)]
+struct SupportBody {
+    #[serde(default)]
+    lang: String,
+    #[serde(default)]
+    local_offset_min: i32,
+}
+
+/// Parti di nome di campo che possono nascondere un segreto: il loro valore diventa «***».
+const SECRET_WORDS: [&str; 8] = ["password", "passwd", "key", "token", "secret", "code", "pin", "credential"];
+
+/// Vero se il nome del campo (o della variabile d'ambiente) fa pensare a un segreto.
+pub fn is_secret_name(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    SECRET_WORDS.iter().any(|w| lower.contains(w))
+}
+
+/// Sostituisce con «***» i valori dei campi segreti, a ogni livello.
+pub fn redact_json(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            for (k, v) in map.iter_mut() {
+                if is_secret_name(k) && !v.is_null() && v.as_str() != Some("") {
+                    *v = json!("***");
+                } else {
+                    redact_json(v);
+                }
+            }
+        }
+        Value::Array(items) => items.iter_mut().for_each(redact_json),
+        _ => {}
+    }
+}
+
+/// Lo stato del momento per il pacchetto. Radio, audio e controlli possono rispondere lenti: si chiama fuori dal ciclo di rete.
+fn support_live(state: &AppState) -> Value {
+    let status = state.current_status();
+    let mut live = json!({
+        "station": *state.station_info,
+        "tx_allowed_policy": state.policy.live_tx(),
+        "status": status.map(|s| json!({ "dial_hz": s.dial_hz, "mode": s.mode, "tx_enabled": s.tx_enabled, "transmitting": s.transmitting, "decoding": s.decoding })),
+        "cat": state.cat.as_ref().map(|c| json!(c.status())),
+        "controls": state.rig.as_ref().map(|r| match r.controls_and_tx() {
+            Ok(reading) => json!(format!("{reading:?}")),
+            Err(e) => json!(format!("errore: {e}")),
+        }),
+        "audio": state.audio.as_ref().map(|a| json!(a.devices())),
+        "clock": state.clock.as_ref().map(|c| json!({ "last": c.last(), "last_good_ms": c.last_good_ms() })),
+        "cluster": state.cluster.as_ref().map(|c| json!({ "config": c.config(), "servers": c.statuses() })),
+        "lan": { "port": state.lan.port(), "mdns_host": state.lan.host() },
+        "paired_devices": state.auth.list().map(|l| l.len()).ok(),
+        "open_access": state.open_access.load(std::sync::atomic::Ordering::Relaxed),
+        "local_trust": state.local_trust,
+        "native_engine": state.native_status.read().ok().and_then(|f| f.as_ref().map(|f| f())),
+    });
+    redact_json(&mut live);
+    live
+}
+
+/// Prepara sul Desktop lo zip per l'assistenza (log, crash, impostazioni senza segreti, info.txt) e lo mostra in Esplora file.
+#[utoipa::path(post, path = "/api/v1/diagnostics/support-bundle", responses((status = 200, description = "{ok, name, path, version, call, radio, ptt}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Solo nel programma Windows (support_unavailable)"), (status = 500, description = "Pacchetto non creato (bundle_failed)")))]
+async fn diagnostics_support_bundle(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: Option<Json<SupportBody>>) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let build = state.support_bundle.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "support_unavailable"))?;
+    let body = body.map(|Json(b)| b).unwrap_or_default();
+    let worker = state.clone();
+    let made = tokio::task::spawn_blocking(move || {
+        let request = crate::SupportRequest { live: support_live(&worker), lang: body.lang, local_offset_min: body.local_offset_min.clamp(-14 * 60, 14 * 60) };
+        let made = build(request)?;
+        if let Err(e) = reveal_in_explorer(&made.path) {
+            tracing::warn!("pacchetto per l'assistenza non mostrato: {e}");
+        }
+        Ok::<_, String>(made)
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "bundle_failed"))?
+    .map_err(|e| {
+        tracing::warn!("pacchetto per l'assistenza non creato: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "bundle_failed")
+    })?;
+    tracing::info!("pacchetto per l'assistenza creato: {}", made.path.display());
+    let name = made.path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let path = made.path.display().to_string();
+    // quanto basta per il messaggio di posta: versione, nominativo, radio e PTT
+    let call = state.current_status().map(|s| s.de_call).unwrap_or_default();
+    let radio = state.cat.as_ref().map(|c| c.config().rig_name).unwrap_or_default();
+    let version = state.station_info["version"].as_str().unwrap_or_default().to_string();
+    if let Ok(mut last) = state.last_bundle.lock() {
+        *last = Some(made.path);
+    }
+    Ok(Json(json!({ "ok": true, "name": name, "path": path, "version": version, "call": call, "radio": radio, "ptt": made.ptt })))
+}
+
+/// Riapre Esplora file sull'ultimo pacchetto creato («Apri la cartella»).
+#[utoipa::path(post, path = "/api/v1/diagnostics/support-bundle/reveal", responses((status = 200, description = "{ok}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Nessun pacchetto (no_bundle)"), (status = 500, description = "Cartella non aperta (open_failed)")))]
+async fn diagnostics_support_reveal(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let path = state.last_bundle.lock().ok().and_then(|l| l.clone()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "no_bundle"))?;
+    match tokio::task::spawn_blocking(move || reveal_in_explorer(&path)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
+        _ => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "open_failed")),
+    }
+}
+
+/// Apre Esplora file con il file selezionato (`explorer.exe /select,<percorso>`).
+fn reveal_in_explorer(path: &std::path::Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt as _;
+        let mut command = std::process::Command::new("explorer.exe");
+        // il percorso tra virgolette dentro l'argomento, come lo vuole Explorer: gli spazi del nome utente non lo spezzano
+        command.raw_arg(format!("/select,\"{}\"", path.display()));
+        // CREATE_NO_WINDOW: nessuna console di passaggio
+        command.creation_flags(0x0800_0000);
+        command.spawn().map(|_| ()).map_err(|e| e.to_string())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        Err("solo su Windows".to_string())
+    }
 }
 
 /// Apre in Esplora risorse la cartella dei crash (minidump e rapporti dei blocchi, delle eccezioni e dei panic).

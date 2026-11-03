@@ -935,9 +935,30 @@ export async function installUpdate(): Promise<{ version: string }> {
   return (await (await request('/update/install', { method: 'POST' })).json()) as { version: string };
 }
 
-/** Cosa offre la diagnostica da qui (`crash_folder`: solo nel programma Windows, dal PC stesso). */
-export async function getDiagnostics(): Promise<{ crash_folder: boolean }> {
-  return (await (await request('/diagnostics')).json()) as { crash_folder: boolean };
+/** Cosa offre la diagnostica da qui (`crash_folder`, `support_bundle`: solo dal PC stesso). */
+export async function getDiagnostics(): Promise<{ crash_folder: boolean; support_bundle?: boolean }> {
+  return (await (await request('/diagnostics')).json()) as { crash_folder: boolean; support_bundle?: boolean };
+}
+
+/** Il pacchetto per l'assistenza appena creato sul Desktop, con quanto serve al messaggio di posta. */
+export interface SupportBundle {
+  name: string;
+  path: string;
+  version: string;
+  call: string;
+  radio: string;
+  ptt: string;
+}
+
+/** Crea sul Desktop lo zip per l'assistenza (log, crash, impostazioni senza password) e lo mostra in Esplora file. */
+export async function prepareSupportBundle(lang: string): Promise<SupportBundle> {
+  const body = JSON.stringify({ lang, local_offset_min: -new Date().getTimezoneOffset() });
+  return (await (await request('/diagnostics/support-bundle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })).json()) as SupportBundle;
+}
+
+/** Riapre Esplora file sull'ultimo pacchetto creato. */
+export async function revealSupportBundle(): Promise<void> {
+  await request('/diagnostics/support-bundle/reveal', { method: 'POST' });
 }
 
 /** Apre in Esplora risorse la cartella dei crash (minidump e rapporti). */
