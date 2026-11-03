@@ -6,6 +6,7 @@ import { clockInTolerance, offsetLabel } from '../lib/clock';
 import { Check, Help, Row } from './common';
 import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
+import { useServiceTest } from './NativeSettings';
 
 interface Draft {
   enabled: boolean;
@@ -100,6 +101,9 @@ export function ClockTab() {
     onError: (e) => setNote(errorText(e, t)),
   });
 
+  // «Prova» e spia: una misura dello scarto, come «Misura ora», con l'esito accanto
+  const ntpTest = useServiceTest('ntp', clock.data?.config.enabled === true, 'tip.test.ntp');
+
   useAutosave(
     parsed,
     draft !== null,
@@ -113,7 +117,14 @@ export function ClockTab() {
 
   return (
     <Page>
-      <Group title={t('clock.state')}>
+      <Group
+        title={
+          <>
+            {ntpTest.led}
+            {t('clock.state')}
+          </>
+        }
+      >
         <Status last={clock.data.last} warnMs={clock.data.config.warn_ms} />
         <Actions>
           <button type="button" className="glass" title={t('tip.clock.check')} disabled={measure.isPending} onClick={() => measure.mutate()}>
@@ -123,6 +134,7 @@ export function ClockTab() {
             {t('clock.correct')}
           </button>
         </Actions>
+        {ntpTest.test}
       </Group>
 
       <Group title={t('lay.settings')} span={2}>

@@ -5,8 +5,8 @@ import { useT } from '../i18n';
 import { Check, Help } from './common';
 import { Cells, Field, Group, Message, Notes, Page } from './layout';
 import { usePrefs } from '../lib/prefs';
-import { SPOT_GROUP, LOOKUP_GROUPS } from '../lib/engineSettingsLayout';
-import { EngineGroups } from './NativeSettings';
+import { SPOT_GROUPS, LOOKUP_GROUPS } from '../lib/engineSettingsLayout';
+import { EngineGroups, useServiceTest } from './NativeSettings';
 
 /** Scheda Servizi online: PSK Reporter e propagazione, spenti finche' non si accendono; ognuno dice cosa vede il sito. */
 export function OnlineTab() {
@@ -27,6 +27,10 @@ export function OnlineTab() {
     onError: () => setNote(t('onl.error')),
   });
 
+  // «Prova» e spia di propagazione e calendario NG3K: una richiesta sola, a parte da quelle periodiche
+  const solarTest = useServiceTest('solar', online.data?.solar === true, 'tip.test.solar');
+  const dxpedTest = useServiceTest('ng3k', online.data?.dxped === true, 'tip.test.ng3k');
+
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">{t('set.loading')}</p>;
   const settings = online.data;
@@ -39,14 +43,29 @@ export function OnlineTab() {
         </Cells>
         <Help>{t('onl.psk.note')}</Help>
       </Group>
-      <EngineGroups groups={[SPOT_GROUP, ...LOOKUP_GROUPS]} layout="rows" />
-      <Group title={t('onl.grpSolar')}>
+      <EngineGroups groups={[...SPOT_GROUPS, ...LOOKUP_GROUPS]} layout="rows" />
+      <Group
+        title={
+          <>
+            {solarTest.led}
+            {t('onl.grpSolar')}
+          </>
+        }
+      >
         <Cells min={12}>
           <Check label={t('onl.solar')} hint={t('tip.onl.solar')} checked={settings.solar} onChange={(solar) => save.mutate({ ...settings, solar })} />
         </Cells>
         <Help>{t('onl.solar.note')}</Help>
+        {solarTest.test}
       </Group>
-      <Group title={t('onl.grpDxped')}>
+      <Group
+        title={
+          <>
+            {dxpedTest.led}
+            {t('onl.grpDxped')}
+          </>
+        }
+      >
         <Cells min={12}>
           <Check label={t('onl.dxped')} hint={t('tip.onl.dxped')} checked={settings.dxped === true} onChange={(dxped) => save.mutate({ ...settings, dxped })} />
           <Field label={t('onl.dxpedDays')} hint={t('tip.onl.dxpedDays')}>
@@ -64,6 +83,7 @@ export function OnlineTab() {
           </Field>
         </Cells>
         <Help>{t('onl.dxped.note')}</Help>
+        {dxpedTest.test}
       </Group>
       <Notes>
         <Help>{t('onl.intro')}</Help>
