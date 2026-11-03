@@ -4,19 +4,30 @@ import type { PanelId } from './layout';
 /** Larghezza oltre la quale la pagina Stazione e' quella a finestre; sotto, a schede una alla volta. */
 export const PHONE_QUERY = '(max-width: 40rem)';
 
-function query(): MediaQueryList | null {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(PHONE_QUERY) : null;
+/** Sotto i 768 px la pagina Stazione diventa il telecomando compatto (PhoneLive) al posto dei pannelli. */
+export const REMOTE_QUERY = '(max-width: 767.98px)';
+
+function query(text: string): MediaQueryList | null {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(text) : null;
 }
 
-function subscribe(onChange: () => void): () => void {
-  const list = query();
-  list?.addEventListener('change', onChange);
-  return () => list?.removeEventListener('change', onChange);
+function useMedia(text: string): boolean {
+  const subscribe = (onChange: () => void) => {
+    const list = query(text);
+    list?.addEventListener('change', onChange);
+    return () => list?.removeEventListener('change', onChange);
+  };
+  return useSyncExternalStore(subscribe, () => query(text)?.matches ?? false, () => false);
 }
 
 /** Vero su uno schermo stretto (telefono): cambia con la rotazione o il ridimensionamento. */
 export function usePhone(): boolean {
-  return useSyncExternalStore(subscribe, () => query()?.matches ?? false, () => false);
+  return useMedia(PHONE_QUERY);
+}
+
+/** Vero sotto i 768 px: la pagina Stazione si mostra come telecomando compatto. */
+export function useRemotePhone(): boolean {
+  return useMedia(REMOTE_QUERY);
 }
 
 /** Le schede della pagina Stazione sul telefono, nell'ordine in cui servono durante un collegamento. */
