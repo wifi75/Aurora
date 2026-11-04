@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.115 - 2026-11-04
+- **Menu Radio**: le anteprime degli stili estesi (`.rd-card--wide`) hanno la misura vera 640 x 70 invece della larghezza della pagina.
+
 ## 0.11.114 - 2026-11-04
 - **Locandina della versione nuova** (`UpdatePoster.tsx`): al centro all'apertura, con le note della release, la data, «Note e download», «Piu' tardi» (fino alla versione dopo) e «Installa e riavvia» (aggiornamento firmato). Sei lingue.
 

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.115',
+    released: '2026-11-04T13:32:56Z',
+    kind: 'fixed',
+    title: ['Anteprime dei display tutte uguali', 'Display previews all the same size', 'Anzeige-Vorschauen gleich groß', 'Aperçus des afficheurs à la même taille', 'Vistas previas de pantallas del mismo tamaño', 'Pré-visualizações dos ecrãs do mesmo tamanho'],
+    text: [
+      "In Impostazioni › Radio le anteprime dei display estesi hanno tutte la misura vera della testata (640 × 70): i pannelli FT-2000 e IC-7610 non si allargano più per tutta la pagina.",
+      "In Settings › Radio all wide display previews have the real header size (640 × 70): the FT-2000 and IC-7610 panels no longer stretch across the whole page.",
+      "Unter Einstellungen › Funkgerät haben alle breiten Anzeige-Vorschauen die echte Größe der Kopfzeile (640 × 70): die Felder FT-2000 und IC-7610 ziehen sich nicht mehr über die ganze Seite.",
+      "Dans Réglages › Radio tous les aperçus des afficheurs larges ont la vraie taille de l’en-tête (640 × 70) : les panneaux FT-2000 et IC-7610 ne s’étirent plus sur toute la page.",
+      "En Ajustes › Radio todas las vistas previas de las pantallas anchas tienen el tamaño real de la cabecera (640 × 70): los paneles FT-2000 e IC-7610 ya no se estiran por toda la página.",
+      "Em Definições › Rádio todas as pré-visualizações dos ecrãs largos têm o tamanho real do cabeçalho (640 × 70): os painéis FT-2000 e IC-7610 já não se esticam pela página toda.",
+    ],
+  },
+  {
     version: '0.11.114',
     released: '2026-11-04T13:19:51Z',
     kind: 'new',
