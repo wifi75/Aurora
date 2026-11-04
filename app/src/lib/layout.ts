@@ -10,6 +10,8 @@ export interface Layout {
   split: number;
   /** Pannelli ridotti alla sola barra del titolo. */
   collapsed: PanelId[];
+  /** Pannelli tolti dalla schermata (Impostazioni › Finestre); assente nelle disposizioni salvate prima = nessuno. */
+  hidden?: PanelId[];
 }
 
 export const ALL_PANELS: readonly PanelId[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster'];
@@ -27,7 +29,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultLayout(): Layout {
-  return { left: ['all', 'log', 'waterfall'], right: ['cluster', 'station', 'tx', 'cq'], heights: { all: ALL_HEIGHT, cluster: CLUSTER_HEIGHT }, split: 0.5, collapsed: [] };
+  return { left: ['all', 'log', 'waterfall'], right: ['cluster', 'station', 'tx', 'cq'], heights: { all: ALL_HEIGHT, cluster: CLUSTER_HEIGHT }, split: 0.5, collapsed: [], hidden: [] };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -53,6 +55,12 @@ export function clearHeight(layout: Layout, id: PanelId): Layout {
 export function toggleCollapsed(layout: Layout, id: PanelId): Layout {
   const collapsed = layout.collapsed.includes(id) ? layout.collapsed.filter((p) => p !== id) : [...layout.collapsed, id];
   return { ...layout, collapsed };
+}
+
+/** Mostra o toglie un pannello dalla schermata della stazione. */
+export function toggleHidden(layout: Layout, id: PanelId): Layout {
+  const now = layout.hidden ?? [];
+  return { ...layout, hidden: now.includes(id) ? now.filter((p) => p !== id) : [...now, id] };
 }
 
 export function setSplit(layout: Layout, split: number): Layout {
@@ -103,7 +111,8 @@ export function readLayout(storage: ReadableStorage): Layout {
     if (heights.cluster === undefined) heights.cluster = CLUSTER_HEIGHT;
     const split = typeof parsed.split === 'number' && Number.isFinite(parsed.split) ? clamp(parsed.split, MIN_SPLIT, MAX_SPLIT) : defaultLayout().split;
     const collapsed = Array.isArray(parsed.collapsed) ? ALL_PANELS.filter((p) => (parsed.collapsed as unknown[]).includes(p)) : [];
-    return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split, collapsed };
+    const hidden = Array.isArray(parsed.hidden) ? ALL_PANELS.filter((p) => (parsed.hidden as unknown[]).includes(p)) : [];
+    return { left: parsed.left as PanelId[], right: parsed.right as PanelId[], heights, split, collapsed, hidden };
   } catch {
     return defaultLayout();
   }

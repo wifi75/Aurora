@@ -2,17 +2,37 @@ import { useState } from 'react';
 import { useT } from '../i18n';
 import { useBandFilter } from '../lib/bandFilter';
 import { BAND_NAMES } from '../lib/format';
-import { defaultLayout, saveLayout } from '../lib/layout';
+import { ALL_PANELS, defaultLayout, readLayout, saveLayout, toggleHidden } from '../lib/layout';
+import type { Key } from '../i18n';
 import { browserStorage } from '../lib/theme';
-import { Help } from './common';
-import { Actions, Group, Notes, Page } from './layout';
+import { Check, Help } from './common';
+import { Actions, Cells, Group, Notes, Page } from './layout';
 
 /** Scheda Finestre: ripristina la disposizione dei pannelli. */
 export function WindowsTab() {
   const t = useT();
   const [note, setNote] = useState('');
+  const [layout, setLayout] = useState(() => readLayout(browserStorage()));
+  const hidden = layout.hidden ?? [];
   return (
     <Page>
+      <Group title={t('win.shown')}>
+        <Cells min={12}>
+          {ALL_PANELS.map((id) => (
+            <Check
+              key={id}
+              label={t(`panel.${id}` as Key)}
+              hint={t('tip.win.shown')}
+              checked={!hidden.includes(id)}
+              onChange={() => {
+                const next = toggleHidden(layout, id);
+                saveLayout(browserStorage(), next);
+                setLayout(next);
+              }}
+            />
+          ))}
+        </Cells>
+      </Group>
       <Group title={t('tab.windows')}>
         <Actions>
           <button title={t('tip.ui.reset')}
@@ -20,6 +40,7 @@ export function WindowsTab() {
             className="glass"
             onClick={() => {
               saveLayout(browserStorage(), defaultLayout());
+              setLayout(defaultLayout());
               setNote(t('win.done'));
             }}
           >
