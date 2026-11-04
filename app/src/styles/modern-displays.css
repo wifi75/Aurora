@@ -154,3 +154,13 @@ body.rd-square .live-top { padding-right: 21.2rem; }
 }
 /* il menu non si allarga piu' fino al bordo: le icone gli stanno subito dopo */
 .app-header .app-nav { flex: 0 1 auto; }
+
+/* display esteso: icone in fondo a destra, senza pallino; con il quasi quadrato restano dopo «Novita'» con il pallino */
+body:not(.rd-square) .app-header .app-tools {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+body:not(.rd-square) .app-header .app-tools-dot {
+  display: none;
+}

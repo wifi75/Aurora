@@ -6275,28 +6275,28 @@
 
 /* la sto chiamando e non ha ancora risposto: gialla */
 .decode-list .decode-row.decode-row--pin-call,
-.decode-list .decode-row.decode-row--pin-call > * {
+.decode-list .decode-row.decode-row--pin-call > *:not(.badge) {
   background: #fff3b0 !important;
   color: #2a2000;
 }
 
 /* a ogni sua risposta un colore: risponde col locatore o altro, rapporto, R+rapporto, chiusura */
 .decode-list .decode-row.decode-row--pin-reply,
-.decode-list .decode-row.decode-row--pin-reply > *,
+.decode-list .decode-row.decode-row--pin-reply > *:not(.badge),
 .decode-list .decode-row.decode-row--pin-report,
-.decode-list .decode-row.decode-row--pin-report > * {
+.decode-list .decode-row.decode-row--pin-report > *:not(.badge) {
   background: #ffd9a8 !important;
   color: #2e1500;
 }
 
 .decode-list .decode-row.decode-row--pin-roger,
-.decode-list .decode-row.decode-row--pin-roger > * {
+.decode-list .decode-row.decode-row--pin-roger > *:not(.badge) {
   background: #b8f0c8 !important;
   color: #062b12;
 }
 
 .decode-list .decode-row.decode-row--pin-end,
-.decode-list .decode-row.decode-row--pin-end > * {
+.decode-list .decode-row.decode-row--pin-end > *:not(.badge) {
   background: #b9d8ff !important;
   color: #04203f;
 }

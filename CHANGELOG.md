@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.127 - 2026-11-04
+- **QSL da HamQTH**: se QRZ.com (senza abbonamento XML) non manda LoTW/eQSL/diretta/manager, `GET /api/v1/callsign/{call}` completa con HamQTH (`Person::fill_from`), nome e città restano di QRZ; nuovo campo `bureau` (`qsl` di HamQTH) e lettera **B**.
+- **Precaricamento** dei nominativi di Attività di banda (i 60 più recenti), come nel DX Cluster.
+- **Testata**: con il display esteso lingua, volume e tema in fondo a destra, senza pallino; con il quasi quadrato restano dopo «Novità» col pallino.
+- **Riga del QSO in corso**: l'etichetta (NUOVA STAZ. ecc.) tiene i suoi colori e resta leggibile.
+
 ## 0.11.126 - 2026-11-04
 - **Display quasi quadrati** 330 × 130 (prima 110), centrati fra il bordo della finestra e i pannelli; la barra del menu si ferma prima del display con l'angolo arrotondato.
 - **Display estesi**: stesso spazio sopra e sotto per ogni tipo (la regola prima valeva solo per l'invito «Clicca per configurare»).
