@@ -517,6 +517,31 @@ export interface ClusterCatalogEntry {
 }
 
 /** Impostazioni, stato dei collegamenti e spot recenti del DX Cluster (`limit` spot al massimo). */
+/** Un QSO concluso che aspetta la conferma («Richiedimi di loggare il QSO»). */
+export interface PendingQso {
+  id: number;
+  qso: { call: string; grid: string; band: string; mode: string; freq_hz: number; rst_sent: string; rst_rcvd: string; time_on_unix_ms: number; name: string; qth: string; comment: string };
+}
+
+export async function getPendingQsos(): Promise<PendingQso[]> {
+  return ((await (await request('/log/pending')).json()) as { pending: PendingQso[] }).pending;
+}
+
+/** Correzioni della finestra di conferma; un campo assente resta come l'ha scritto il motore. */
+export interface PendingEdits {
+  call?: string;
+  grid?: string;
+  rst_sent?: string;
+  rst_rcvd?: string;
+  name?: string;
+  qth?: string;
+  comment?: string;
+}
+
+export async function answerPendingQso(id: number, action: 'log' | 'discard', edits: PendingEdits = {}): Promise<void> {
+  await request(`/log/pending/${id}`, jsonInit({ action, edits }));
+}
+
 /** `callsign`: il nominativo con cui si entra davvero (quello dei dati di stazione). */
 export async function getClusterSpots(limit = 200): Promise<{ config: ClusterConfig; callsign?: string; servers: ClusterServerStatus[]; spots: ClusterSpot[] }> {
   return (await (await request(`/dx-cluster?limit=${limit}`)).json()) as { config: ClusterConfig; callsign?: string; servers: ClusterServerStatus[]; spots: ClusterSpot[] };
