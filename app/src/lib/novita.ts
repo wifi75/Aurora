@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.102',
-    released: '2026-11-04T11:12:55Z',
+    released: '2026-11-04T11:20:49Z',
     kind: 'new',
     title: ['Aurora indipendente e guida al primo avvio', 'Independent Aurora and first-run guide', 'Unabhängiges Aurora und Einrichtungsassistent', 'Aurora indépendante et guide du premier lancement', 'Aurora independiente y guía del primer inicio', 'Aurora independente e guia do primeiro arranque'],
     text: [
