@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.109',
-    released: '2026-11-04T12:21:24Z',
+    released: '2026-11-04T12:23:47Z',
     kind: 'changed',
     title: ['«Clicca per configurare» su radio e log', '«Click to set up» on radio and log', '«Klicken zum Einrichten» bei Funkgerät und Log', '« Clique pour configurer » sur radio et journal', '«Haz clic para configurar» en radio y log', '«Clica para configurar» no rádio e no log'],
     text: [
