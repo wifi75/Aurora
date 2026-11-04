@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io.
 
 ## Stato
 
-- **Ultima versione**: **0.11.106** (2026-11-04, pubblicata). Le versioni del 2026-11-04:
+- **Ultima versione**: **0.11.107** (2026-11-04, pubblicata: Guida aggiornata). Le versioni del 2026-11-04:
   - 0.11.102: Aurora indipendente (non legge piu' nulla da JTDX o WSJT-X; `cty.dat` e Hamlib dentro l'installatore), guida al primo avvio (`app/src/components/FirstRun.tsx`, compare finche' manca il nominativo), servizi pubblici accesi di fabbrica, BBLogger, prima versione Linux.
   - 0.11.103: modo, periodo e frequenza si pubblicano anche senza ingresso audio (`engine_native::publish_status`, avviato dal core prima del motore).
   - 0.11.104: copia delle impostazioni (Impostazioni > Assistenza, `core/crates/aurora/src/backup.rs`: zip sul Desktop, ripristino in `<dati>\ripristino` applicato al prossimo avvio da `backup::apply_pending`); suono dello splash (`--autoplay-policy=no-user-gesture-required` in `desktop/src-tauri/src/lib.rs`).
