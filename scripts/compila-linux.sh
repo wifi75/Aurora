@@ -64,9 +64,22 @@ if ! command -v cargo >/dev/null; then
         export PATH="$HOME/.cargo/bin:$PATH"
     fi
 fi
-command -v node >/dev/null || errore "Node.js non c'e': installa Node.js 20 o piu' recente (https://nodejs.org o il gestore dei pacchetti), poi rilancia"
-node_major="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$node_major" -ge 20 ] || errore "Serve Node.js 20 o piu' recente (hai la $(node -v))"
+node_major=0
+if command -v node >/dev/null; then node_major="$(node -p 'process.versions.node.split(".")[0]')"; fi
+if [ "$node_major" -lt 20 ]; then
+    # le distribuzioni hanno spesso un Node.js troppo vecchio: si installa il 22 solo per il tuo utente, con nvm (in ~/.nvm)
+    echo "Node.js 20 o piu' recente non c'e': installo Node.js 22 con nvm (solo per il tuo utente, in ~/.nvm)."
+    export NVM_DIR="$HOME/.nvm"
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+        curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    fi
+    set +u
+    # shellcheck disable=SC1091
+    . "$NVM_DIR/nvm.sh"
+    nvm install 22
+    nvm use 22
+    set -u
+fi
 echo "Rust: $(cargo --version)"
 echo "Node: $(node -v)"
 
