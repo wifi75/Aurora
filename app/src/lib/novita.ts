@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.105',
-    released: '2026-11-04T11:45:45Z',
+    released: '2026-11-04T11:47:42Z',
     kind: 'fixed',
     title: ['Scheda audio trovata anche con nomi vecchi', 'Sound card found even with old names', 'Soundkarte auch mit alten Namen gefunden', 'Carte son trouvée même avec d’anciens noms', 'Tarjeta de sonido encontrada también con nombres antiguos', 'Placa de som encontrada mesmo com nomes antigos'],
     text: [
