@@ -170,7 +170,7 @@ se un messaggio verra' ignorato.
 | `SkipTx1` | true | si parte da Tx2 |
 | `TxWatchdogTimer` | 6 | minuti senza risposta dopo i quali JTDX smette di trasmettere |
 | `AutoQSOLogging` | true | registra da solo a QSO chiuso |
-| `PromptToLog` | false | nessuna finestra di conferma |
+| `PromptToLog` | false | nessuna finestra di conferma (in Aurora dal 0.11.123 la finestra c'e'; non esclude `AutoQSOLogging`, scelta del 2026-11-04) |
 | `ClearCallGrid`, `ClearWCallAtLog` | true | libera DX e griglia dopo il log |
 | `AcceptUDPRequests` | true | accetta i comandi UDP |
 | `AcceptUDPReplyMessages` | 1 | i `Reply` valgono solo per i CQ |
