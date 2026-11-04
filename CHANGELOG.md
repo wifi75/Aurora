@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.129 - 2026-11-04
+- **Frontalini FT-2000 / IC-7610**: altezza del disegno (`height: auto`) invece del riquadro di 90, niente striscia vuota sotto; PWR alto quanto il frontalino.
+- **Attività di banda / CQ**: colonne della distanza e dell'etichetta 7 px più strette in tutte le larghezze.
+
 ## 0.11.128 - 2026-11-04
 - **Display estesi** 640 × 90 punti (prima 80), anche anteprime, invito «Clicca per configurare» e blocco PWR.
 - **Attività di banda / CQ** (solo PC): testo del messaggio 1 punto più piccolo (`calc(0.8rem - 1px)`).
