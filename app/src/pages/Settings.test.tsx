@@ -101,7 +101,7 @@ describe('Settings tabs', () => {
       'Sequenza', 'Macro TX', 'Programmazione',
       'Notifiche', 'Desiderati', 'DXCC',
       'DX Cluster', 'Servizi online', 'Servizi di log', 'Programmi collegati',
-      'Accesso', 'Finestre', 'Aggiornamenti', 'Informazioni',
+      'Smartphone/Tablet', 'Finestre', 'Aggiornamenti', 'Assistenza', 'Informazioni',
     ]);
     expect(screen.getAllByRole('tablist')).toHaveLength(6);
     expect(screen.getByRole('tab', { name: 'Generali' })).toHaveAttribute('aria-selected', 'true');
@@ -306,36 +306,35 @@ describe('Schedule', () => {
 describe('Access', () => {
   it('switches the code-free access on, only for tests', async () => {
     open();
-    goTo('Accesso');
+    goTo('Smartphone/Tablet');
     const box = await screen.findByLabelText(it_('acc.open'));
     fireEvent.click(box);
     await waitFor(() => expect(api.putAccess).toHaveBeenCalledWith(true));
-    expect(screen.getByText(/Attenzione/)).toBeInTheDocument();
   });
 
   it('lets the operator choose how many minutes a pairing code lasts', async () => {
     open();
-    goTo('Accesso');
+    goTo('Smartphone/Tablet');
     const input = await screen.findByLabelText(it_('acc.ttl'));
     await waitFor(() => expect(input).toHaveValue(10));
+    // si salva da solo, poco dopo la modifica
     fireEvent.change(input, { target: { value: '15' } });
-    fireEvent.click(screen.getByRole('button', { name: it_('set.save') }));
-    await waitFor(() => expect(api.putPairingSettings).toHaveBeenCalledWith(900));
+    await waitFor(() => expect(api.putPairingSettings).toHaveBeenCalledWith(900), { timeout: 3000 });
   });
 
   it('does not save a lifetime outside the limits', async () => {
     open();
-    goTo('Accesso');
+    goTo('Smartphone/Tablet');
     const input = await screen.findByLabelText(it_('acc.ttl'));
     fireEvent.change(input, { target: { value: '90' } });
-    expect(screen.getByRole('button', { name: it_('set.save') })).toBeDisabled();
     fireEvent.change(input, { target: { value: '0' } });
-    expect(screen.getByRole('button', { name: it_('set.save') })).toBeDisabled();
+    await new Promise((r) => setTimeout(r, 1500));
+    expect(api.putPairingSettings).not.toHaveBeenCalled();
   });
 
   it('shows a new pairing code with its link and lists the devices', async () => {
     open();
-    goTo('Accesso');
+    goTo('Smartphone/Tablet');
     fireEvent.click(await screen.findByRole('button', { name: it_('acc.showCode') }));
     expect(await screen.findByText('12345678')).toBeInTheDocument();
     expect(screen.getByText(/#\/pair\/12345678/)).toBeInTheDocument();

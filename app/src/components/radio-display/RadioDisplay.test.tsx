@@ -24,11 +24,12 @@ describe('RadioDisplay', () => {
   it.each(RADIO_DISPLAY_STYLES)('draws the %s style at both sizes with a text alternative', (style) => {
     for (const size of ['mini', 'full'] as const) {
       const { container, unmount } = render(<RadioDisplay model={DEMO_MODEL} style={style} size={size} />);
-      const svg = container.querySelector('svg');
-      expect(svg).toHaveAttribute('role', 'img');
-      expect(svg?.getAttribute('aria-label')).toContain('21.074.00');
-      expect(svg?.getAttribute('aria-label')).toContain('S7');
-      expect(svg?.getAttribute('viewBox')).toBeTruthy();
+      // i display disegnati sono un svg, quelli nuovi (estesi e quasi quadrati) un riquadro: tutti hanno il ruolo immagine e il testo alternativo
+      const shown = container.querySelector('[role="img"]');
+      expect(shown).not.toBeNull();
+      expect(shown?.getAttribute('aria-label')).toContain('21.074.00');
+      expect(shown?.getAttribute('aria-label')).toContain('S7');
+      if (shown?.tagName.toLowerCase() === 'svg') expect(shown.getAttribute('viewBox')).toBeTruthy();
       unmount();
     }
   });
@@ -79,11 +80,11 @@ describe('RadioDisplay', () => {
 });
 
 describe('RadioDisplayPicker', () => {
-  it('offers the seven styles with a preview each and saves the choice', () => {
+  it('offers every style with a preview each and saves the choice', () => {
     render(<RadioDisplayPicker />);
     const radios = within(screen.getByRole('radiogroup', { name: 'Stile del display della radio' })).getAllByRole('radio');
-    expect(radios).toHaveLength(7);
-    expect(screen.getAllByRole('img')).toHaveLength(7);
+    expect(radios).toHaveLength(RADIO_DISPLAY_STYLES.length);
+    expect(screen.getAllByRole('img')).toHaveLength(RADIO_DISPLAY_STYLES.length);
     expect(screen.getByRole('radio', { name: 'Fluorescente Yaesu' })).toBeChecked();
     fireEvent.click(screen.getByRole('radio', { name: 'LCD ambra Kenwood' }));
     expect(useRadioDisplay.getState().pref.style).toBe('amber');
