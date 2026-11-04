@@ -15,7 +15,9 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
 - **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura.
 
 Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,
-ricerca dei nominativi su QRZ.com e HamQTH.
+ricerca dei nominativi su QRZ.com e HamQTH. Con la ricerca accesa Aurora manda a quei servizi solo il nominativo da cercare (anche in
+anticipo, per i nominativi visibili nel DX Cluster e in Attivita' di banda); se sono accese tutte e due e QRZ.com non da' le informazioni
+QSL, lo stesso nominativo si chiede anche a HamQTH.
 
 ## Rapporti degli errori
 
