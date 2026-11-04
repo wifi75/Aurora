@@ -116,6 +116,7 @@ fn powershell(script: &str) -> Option<String> {
 /// Controlla rete e firewall (solo Windows; altrove restano «non si sa»). Si chiama dalla scheda di associazione.
 pub fn network_check() -> NetworkCheck {
     let named = lan_ipv4s_named();
+    #[cfg_attr(not(windows), allow(unused_mut))]
     let mut check = NetworkCheck { addresses: named.iter().map(|(ip, n)| (ip.to_string(), n.clone())).collect(), ..NetworkCheck::default() };
     #[cfg(windows)]
     {
