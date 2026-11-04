@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.118',
+    released: '2026-11-04T17:19:21Z',
+    kind: 'new',
+    title: ["Pannelli da togliere e log grandi", "Removable panels and large logs", "Ausblendbare Felder und große Logs", "Panneaux masquables et gros journaux", "Paneles que se quitan y logs grandes", "Painéis removíveis e logs grandes"],
+    text: [
+      "In Impostazioni › Finestre scegli quali pannelli della stazione mostrare (cascata, attività di banda, log, DX Cluster…) e li rimetti quando vuoi. L’importazione ADIF accetta file fino a 256 MB e, se il file è troppo grande, lo dice chiaramente.",
+      "In Settings › Windows you choose which station panels to show (waterfall, band activity, log, DX Cluster…) and bring them back whenever you like. ADIF import accepts files up to 256 MB and clearly says so if a file is too large.",
+      "Unter Einstellungen › Fenster wählst du, welche Felder der Station angezeigt werden (Wasserfall, Bandaktivität, Log, DX-Cluster…), und holst sie jederzeit zurück. Der ADIF-Import nimmt Dateien bis 256 MB an und sagt klar, wenn eine Datei zu groß ist.",
+      "Dans Réglages › Fenêtres tu choisis quels panneaux de la station afficher (chute d’eau, activité de bande, journal, DX Cluster…) et tu les remets quand tu veux. L’import ADIF accepte des fichiers jusqu’à 256 Mo et le dit clairement si un fichier est trop gros.",
+      "En Ajustes › Ventanas eliges qué paneles de la estación mostrar (cascada, actividad de banda, log, DX Cluster…) y los vuelves a poner cuando quieras. La importación ADIF acepta archivos de hasta 256 MB y avisa claramente si un archivo es demasiado grande.",
+      "Em Definições › Janelas escolhes que painéis da estação mostrar (cascata, atividade de banda, log, DX Cluster…) e voltas a pô-los quando quiseres. A importação ADIF aceita ficheiros até 256 MB e diz claramente se um ficheiro é grande demais.",
+    ],
+  },
+  {
     version: '0.11.117',
     released: '2026-11-04T17:13:57Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Notes et explications fixes retirées des Réglages (les « ? » restent), lignes des services plus basses avec un résultat de « Tester » court. Dans le DX Cluster l’encadré nom et ville apparaît aussi sur le DX et s’ouvre aussitôt : les infos de tous les spots visibles sont préchargées. Page Fox avec cascade plus basse.',
       'Quitadas las notas y explicaciones fijas de Ajustes (quedan los «?»), filas de servicios más bajas con resultado de «Probar» breve. En el DX Cluster el recuadro con nombre y ciudad aparece también en el DX y se abre al momento: la información de todos los spots visibles se carga por adelantado. Página Fox con cascada más baja.',
       'Retiradas as notas e explicações fixas das Definições (ficam os «?»), linhas dos serviços mais baixas com resultado de «Testar» curto. No DX Cluster a caixa com nome e cidade aparece também no DX e abre logo: a informação de todos os spots visíveis é pré-carregada. Página Fox com cascata mais baixa.',
-    ],
-  },
-  {
-    version: '0.11.83',
-    released: '2026-11-03T17:11:10Z',
-    kind: 'new',
-    title: ['«Prova» per tutti i servizi', '«Test» for every service', '«Test» für alle Dienste', '« Tester » pour tous les services', '«Probar» para todos los servicios', '«Testar» para todos os serviços'],
-    text: [
-      'Spia e «Prova» anche per eQSL, spot su PSK Reporter e DXSummit, NG3K, propagazione, orologio NTP e uscite UDP e TCP: Aurora controlla il servizio senza inviare QSO né spot.',
-      'Light and «Test» also for eQSL, spots on PSK Reporter and DXSummit, NG3K, propagation, NTP clock and UDP and TCP outputs: Aurora checks the service without sending QSOs or spots.',
-      'Lampe und «Test» auch für eQSL, Spots auf PSK Reporter und DXSummit, NG3K, Ausbreitung, NTP-Uhr und UDP- und TCP-Ausgänge: Aurora prüft den Dienst, ohne QSOs oder Spots zu senden.',
-      'Voyant et « Tester » aussi pour eQSL, spots PSK Reporter et DXSummit, NG3K, propagation, horloge NTP et sorties UDP et TCP : Aurora vérifie le service sans envoyer de QSO ni de spot.',
-      'Luz y «Probar» también para eQSL, spots en PSK Reporter y DXSummit, NG3K, propagación, reloj NTP y salidas UDP y TCP: Aurora comprueba el servicio sin enviar QSO ni spots.',
-      'Luz e «Testar» também para eQSL, spots no PSK Reporter e DXSummit, NG3K, propagação, relógio NTP e saídas UDP e TCP: a Aurora verifica o serviço sem enviar QSO nem spots.',
     ],
   },
 ];
