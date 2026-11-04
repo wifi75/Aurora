@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_config, engine_config_apply, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -93,7 +93,6 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/update", get(update_get).put(update_put))
         .route("/api/v1/update/check", post(update_check))
         .route("/api/v1/update/install", post(update_install))
-        .route("/api/v1/engine-config", get(engine_config).post(engine_config_apply))
         .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
         .route("/api/v1/spot/dxsummit", post(spot_dxsummit))
         .route("/api/v1/qso-upload/test", post(qso_upload_test))
@@ -1150,35 +1149,6 @@ async fn stats(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, 
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "stats_task"))
 }
 
-#[derive(Deserialize)]
-struct JtdxApplyBody {
-    changes: std::collections::BTreeMap<String, String>,
-}
-
-/// Cambia impostazioni di JTDX: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. Solo dalla rete di casa
-/// e mai mentre si trasmette: JTDX resta spento qualche secondo.
-#[utoipa::path(post, path = "/api/v1/engine-config", responses((status = 200, description = "Impostazioni applicate e JTDX riavviato"), (status = 400, description = "Voce o valore non ammessi (bad_setting)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Non disponibile (engine_config_unavailable)"), (status = 409, description = "Si sta trasmettendo (transmitting)"), (status = 502, description = "Applicazione non riuscita (engine_apply_failed)")))]
-async fn engine_config_apply(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<JtdxApplyBody>) -> Result<Json<Value>, ApiError> {
-    let apply = state.engine_apply.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_config_unavailable"))?;
-    if !from_home_network(peer, &headers) {
-        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
-    }
-    if body.changes.is_empty() || body.changes.len() > 100 || body.changes.iter().any(|(k, v)| engine_jtdx::ini_edit::check_value(k, v).is_err()) {
-        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_setting"));
-    }
-    if state.current_status().is_some_and(|s| s.transmitting) {
-        return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
-    }
-    match tokio::task::spawn_blocking(move || apply(body.changes)).await {
-        Ok(Ok(())) => Ok(Json(json!({ "ok": true }))),
-        Ok(Err(e)) => {
-            tracing::warn!("applicazione delle impostazioni di JTDX fallita: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "engine_apply_failed"))
-        }
-        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "jtdx_task")),
-    }
-}
-
 #[utoipa::path(get, path = "/api/v1/dxcc/{call}", responses((status = 200, description = "Paese, continente e zone del nominativo (dal file cty.dat)"), (status = 400, description = "Nominativo non valido (bad_call)"), (status = 404, description = "Sconosciuto o file non caricato (dxcc_unknown)")))]
 async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
     if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
@@ -1352,15 +1322,6 @@ async fn clock_correct(State(state): State<AppState>, _: Authed, Peer(peer): Pee
     }
 }
 
-#[utoipa::path(get, path = "/api/v1/engine-config", responses((status = 200, description = "Impostazioni di JTDX lette dal suo file (sola lettura, senza segreti)"), (status = 404, description = "File non configurato (engine_config_unavailable)"), (status = 502, description = "File non leggibile (engine_config_read)")))]
-async fn engine_config(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    let read = state.engine_config.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "engine_config_unavailable"))?;
-    tokio::task::spawn_blocking(move || read())
-        .await
-        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "engine_config_task"))?
-        .map(Json)
-        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "engine_config_read"))
-}
 
 #[utoipa::path(get, path = "/api/v1/engine-settings", responses((status = 200, description = "Impostazioni di Aurora per il motore proprio: valori e, per ogni voce, se e' viva o non disponibile (con il motivo)"), (status = 404, description = "Solo con il motore proprio (engine_settings_unavailable)")))]
 async fn engine_settings_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
