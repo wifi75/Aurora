@@ -49,7 +49,7 @@ impl ServerCfg {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
-    /// Collegamento acceso. Spento per impostazione predefinita: si accende dalle impostazioni.
+    /// Collegamento acceso. Acceso di fabbrica: si collega appena c'e' il nominativo di stazione; si spegne dalle impostazioni.
     pub enabled: bool,
     /// Nominativo con cui si entra nei cluster.
     pub callsign: String,
@@ -66,7 +66,7 @@ impl Default for Config {
     fn default() -> Config {
         let server = |name: &str, host: &str, port: u16| ServerCfg { name: name.into(), host: host.into(), port, enabled: true };
         Config {
-            enabled: false,
+            enabled: true,
             callsign: String::new(),
             servers: vec![server("HamQTH", "hamqth.com", 7300), server("N2KI New York", "dxc.n2ki.com", 7300), server("Hamcloud", "dx.hamnet.network", 7300)],
             login_commands: Vec::new(),
@@ -245,6 +245,8 @@ pub struct ClusterService {
     senders: Mutex<BTreeMap<String, mpsc::UnboundedSender<String>>>,
     tasks: Mutex<Vec<JoinHandle<()>>>,
     enricher: Mutex<Option<Enricher>>,
+    /// Il nominativo dei dati di stazione: e' quello con cui si entra nei cluster (quello del file vale solo se questo manca).
+    station_call: Mutex<String>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -268,6 +270,7 @@ impl ClusterService {
             senders: Mutex::new(BTreeMap::new()),
             tasks: Mutex::new(Vec::new()),
             enricher: Mutex::new(None),
+            station_call: Mutex::new(String::new()),
         })
     }
 
@@ -279,12 +282,25 @@ impl ClusterService {
         *lock(&self.enricher) = Some(enricher);
     }
 
-    /// Se il nominativo non e' ancora impostato usa questo (quello di JTDX).
-    pub fn default_callsign(&self, call: &str) {
-        let mut config = lock(&self.config);
-        if config.callsign.is_empty() && valid_callsign(call) {
-            config.callsign = call.to_uppercase();
+    /// Il nominativo dei dati di stazione (Impostazioni › Stazione): lo si usa sempre per entrare nei cluster, senza doverlo scrivere qui.
+    /// Se cambia mentre il cluster e' acceso i collegamenti si rifanno con quello nuovo.
+    pub fn set_station_call(self: &Arc<Self>, call: &str) {
+        let call = call.trim().to_uppercase();
+        let changed = {
+            let mut now = lock(&self.station_call);
+            let changed = *now != call;
+            *now = call;
+            changed
+        };
+        if changed && lock(&self.config).enabled {
+            self.restart();
         }
+    }
+
+    /// Il nominativo con cui si entra: quello di stazione; se manca o non e' valido, quello scritto nelle impostazioni del cluster.
+    pub fn callsign(&self) -> String {
+        let station = lock(&self.station_call).clone();
+        if valid_callsign(&station) { station } else { lock(&self.config).callsign.trim().to_uppercase() }
     }
 
     /// Valida, salva su disco e rifa' i collegamenti con le impostazioni nuove.
@@ -306,12 +322,13 @@ impl ClusterService {
         lock(&self.senders).clear();
         lock(&self.status).clear();
         let config = self.config();
-        if !config.enabled || !valid_callsign(&config.callsign) {
+        let callsign = self.callsign();
+        if !config.enabled || !valid_callsign(&callsign) {
             return;
         }
         let mut tasks = lock(&self.tasks);
         for server in config.servers.iter().filter(|s| s.enabled) {
-            let (svc, server, call, commands) = (Arc::clone(self), server.clone(), config.callsign.clone(), config.login_commands.clone());
+            let (svc, server, call, commands) = (Arc::clone(self), server.clone(), callsign.clone(), config.login_commands.clone());
             tasks.push(tokio::spawn(run_server(svc, server, call, commands)));
         }
     }
@@ -530,7 +547,7 @@ mod tests {
     fn the_defaults_are_valid_and_off() {
         let c = Config::default();
         assert!(c.validate().is_ok());
-        assert!(!c.enabled, "non si collega a nessuno finche' non lo si accende");
+        assert!(c.enabled, "acceso di fabbrica: si collega appena c'e' il nominativo di stazione");
         assert!(c.servers.len() <= MAX_SERVERS);
     }
 
@@ -669,11 +686,14 @@ mod tests {
     }
 
     #[test]
-    fn the_callsign_of_jtdx_fills_an_empty_one_only() {
+    fn the_station_callsign_is_used_and_the_written_one_only_without_it() {
         let svc = ClusterService::open(&temp("default"));
-        svc.default_callsign("iu3abc");
-        assert_eq!(svc.config().callsign, "IU3ABC");
-        svc.default_callsign("K1XYZ");
-        assert_eq!(svc.config().callsign, "IU3ABC");
+        // spento, per non collegarsi davvero durante la prova
+        svc.set_config(Config { enabled: false, ..Config::default() }).expect("salvato");
+        assert_eq!(svc.callsign(), "", "nessun nominativo: non si entra");
+        svc.set_station_call("iu3abc");
+        assert_eq!(svc.callsign(), "IU3ABC", "quello dei dati di stazione, senza scriverlo nel cluster");
+        svc.set_station_call("");
+        assert_eq!(svc.callsign(), "");
     }
 }
