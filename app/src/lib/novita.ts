@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.125',
-    released: '2026-11-04T21:11:52Z',
+    released: '2026-11-04T21:15:10Z',
     kind: 'new',
     title: ['QSO in corso in vista, LoTW ed eQSL da QRZ', 'Current QSO in view, LoTW and eQSL from QRZ', 'Laufendes QSO im Blick, LoTW und eQSL von QRZ', 'QSO en cours en vue, LoTW et eQSL depuis QRZ', 'QSO en curso a la vista, LoTW y eQSL de QRZ', 'QSO em curso à vista, LoTW e eQSL do QRZ'],
     text: [
