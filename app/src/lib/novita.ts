@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.104',
-    released: '2026-11-04T11:38:26Z',
+    released: '2026-11-04T11:40:40Z',
     kind: 'new',
     title: ['Copia delle impostazioni e suono di avvio', 'Settings backup and start-up sound', 'Sicherung der Einstellungen und Startton', 'Copie des réglages et son de démarrage', 'Copia de los ajustes y sonido de inicio', 'Cópia das definições e som de arranque'],
     text: [
