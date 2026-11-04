@@ -511,8 +511,8 @@ impl Drop for Rigctld {
     }
 }
 
-/// Dove si trova `rigctld`: cartella accanto al programma (e la sua sottocartella `hamlib`), poi la variabile `AURORA_RIGCTLD` (file o cartella),
-/// poi, solo per lo sviluppo, le installazioni di JTDX e WSJT-X gia' presenti sul PC. La distribuzione portera' il suo Hamlib accanto al programma.
+/// Dove si trova `rigctld`: cartella accanto al programma (e la sua sottocartella `hamlib`, dove l'installatore mette l'Hamlib ufficiale incluso
+/// in Aurora), poi la variabile `AURORA_RIGCTLD` (file o cartella), poi, su Linux, l'Hamlib del sistema. Mai le cartelle di altri programmi.
 pub fn locate_rigctld() -> Option<PathBuf> {
     let mut dirs: Vec<PathBuf> = Vec::new();
     if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)) {
@@ -520,29 +520,16 @@ pub fn locate_rigctld() -> Option<PathBuf> {
         dirs.push(dir);
     }
     let env = std::env::var("AURORA_RIGCTLD").ok().filter(|v| !v.trim().is_empty()).map(PathBuf::from);
-    locate_rigctld_in(&dirs, env.as_deref(), &dev_install_dirs())
+    locate_rigctld_in(&dirs, env.as_deref(), &system_dirs())
 }
 
-/// Le cartelle `bin` di JTDX e WSJT-X (solo sviluppo); su Linux le cartelle dove il gestore dei pacchetti installa Hamlib.
-fn dev_install_dirs() -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    #[cfg(not(windows))]
-    {
-        out.push(PathBuf::from("/usr/local/bin"));
-        out.push(PathBuf::from("/usr/bin"));
-    }
-    if let Ok(entries) = std::fs::read_dir("C:/JTDX64") {
-        let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).map(|e| e.path().join("bin")).collect();
-        found.sort();
-        // la versione piu' alta per prima
-        out.extend(found.into_iter().rev());
-    }
-    out.push(PathBuf::from("C:/WSJT/wsjtx/bin"));
-    out
+/// Le cartelle dove il gestore dei pacchetti di Linux installa Hamlib (su Windows nessuna: Hamlib e' nell'installatore).
+fn system_dirs() -> Vec<PathBuf> {
+    if cfg!(windows) { Vec::new() } else { vec![PathBuf::from("/usr/local/bin"), PathBuf::from("/usr/bin")] }
 }
 
 /// Il nucleo della ricerca, con gli elenchi passati da fuori (cosi' si prova senza toccare il disco vero).
-pub fn locate_rigctld_in(beside: &[PathBuf], env: Option<&Path>, dev_dirs: &[PathBuf]) -> Option<PathBuf> {
+pub fn locate_rigctld_in(beside: &[PathBuf], env: Option<&Path>, system: &[PathBuf]) -> Option<PathBuf> {
     if let Some(found) = beside.iter().find_map(|dir| rigctld_in_dir(dir)) {
         return Some(found);
     }
@@ -554,7 +541,7 @@ pub fn locate_rigctld_in(beside: &[PathBuf], env: Option<&Path>, dev_dirs: &[Pat
             return Some(found);
         }
     }
-    dev_dirs.iter().find_map(|dir| rigctld_in_dir(dir))
+    system.iter().find_map(|dir| rigctld_in_dir(dir))
 }
 
 fn rigctld_in_dir(dir: &Path) -> Option<PathBuf> {
@@ -718,7 +705,7 @@ mod tests {
     }
 
     #[test]
-    fn rigctld_is_searched_beside_the_program_then_in_the_variable_then_in_the_dev_installs() {
+    fn rigctld_is_searched_beside_the_program_then_in_the_variable_then_in_the_system() {
         let beside = temp_bin("beside", &["rigctld.exe", "rigctl.exe", "rigctlcom.exe", "altro.txt"]);
         let env_dir = temp_bin("env", &["rigctld-custom.exe"]);
         let dev = temp_bin("dev", &["rigctld-jtdx.exe", "rigctl-jtdx.exe", "rigctlcom-jtdx.exe"]);
