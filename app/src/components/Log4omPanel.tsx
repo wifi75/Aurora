@@ -64,7 +64,7 @@ export function Log4omPanel() {
               <td className="data">{q.band}</td>
               <td className="data">{q.mode}</td>
               <td className="data log4om-rst">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join('/')}</td>
-              <td>{q.country}</td>
+              <td className="log4om-country" title={q.country}>{q.country}</td>
             </tr>
           ))}
         </tbody>

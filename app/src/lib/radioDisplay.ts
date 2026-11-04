@@ -18,7 +18,7 @@ export function isSquareStyle(style: RadioDisplayStyle): style is 'icblueq' | 'i
 
 /** Le misure in testata, in punti: estesi 640 x 70, quasi quadrati 330 x 140. */
 export function displaySize(style: RadioDisplayStyle): { w: number; h: number } {
-  return isSquareStyle(style) ? { w: 330, h: 120 } : { w: 640, h: 70 };
+  return isSquareStyle(style) ? { w: 330, h: 120 } : { w: 640, h: 75 };
 }
 
 export interface RadioDisplayPref {

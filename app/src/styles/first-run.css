@@ -218,7 +218,7 @@
 .setup-cta__text { display: grid; gap: 0.1rem; line-height: 1.25; }
 .setup-cta__text strong { font-weight: 600; }
 .setup-cta__text span { color: var(--accent); font-size: 0.88rem; }
-.setup-cta--radio { height: 4.375rem; box-sizing: border-box; min-width: 19rem; }
+.setup-cta--radio { height: 4.6875rem; box-sizing: border-box; min-width: 19rem; }
 .setup-cta--log { margin: 1.2rem auto; width: fit-content; max-width: calc(100% - 2rem); }
 
 /* Locandina della versione nuova */

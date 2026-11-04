@@ -6243,3 +6243,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* bandiera, paese e distanza 10 px piu' a destra: il messaggio ha piu' spazio */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  margin-left: 10px;
+}
+
+/* paese nel Log: prende lo spazio che resta, se non ci sta finisce con i puntini (il nome intero nel suggerimento) */
+.log4om-table {
+  table-layout: auto;
+}
+
+.log4om-table td.log4om-country {
+  width: 100%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
