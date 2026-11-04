@@ -344,7 +344,7 @@ fn da_segnalare(livello: tracing::Level, origine: &str) -> bool {
     }
     match livello {
         tracing::Level::ERROR => true,
-        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
+        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum", "remote_api::associazione"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
         _ => false,
     }
 }
@@ -363,6 +363,8 @@ fn area(origine: &str, messaggio: &str) -> &'static str {
     let m = messaggio.to_ascii_lowercase();
     if m.starts_with("panic") {
         "panic"
+    } else if origine.starts_with("remote_api::associazione") {
+        "telefono"
     } else if origine.starts_with("tx_native") || m.contains("ptt") {
         "ptt"
     } else if origine.starts_with("rig_control") || m.contains("omnirig") || m.contains("hamlib") || m.contains("rigctld") {
@@ -1024,6 +1026,13 @@ mod tests {
     #[test]
     fn valori_noti_senza_maiuscole() {
         assert_eq!(pulisci("utente tiziano su PC-SALA", &["Tiziano".into(), "pc-sala".into()]), "utente <personale> su <personale>");
+    }
+
+    #[test]
+    fn l_associazione_non_riuscita_va_nei_rapporti_come_telefono() {
+        assert!(da_segnalare(tracing::Level::WARN, "remote_api::associazione"));
+        assert!(!da_segnalare(tracing::Level::WARN, "remote_api::routes"), "gli altri avvisi del server no");
+        assert_eq!(area("remote_api::associazione", "associazione dal telefono non riuscita"), "telefono");
     }
 
     #[test]
