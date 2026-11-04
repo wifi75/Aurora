@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.130',
+    released: '2026-11-04T21:56:21Z',
+    kind: 'fixed',
+    title: ['Display centrato al suo posto', 'Display centred in its place', 'Anzeige mittig an ihrem Platz', 'Afficheur centré à sa place', 'Pantalla centrada en su sitio', 'Ecrã centrado no seu lugar'],
+    text: [
+      "Il display della radio sta centrato dentro lo spazio fra la barra del menu e i pannelli, senza sovrapporsi e senza spostare nulla: i frontalini FT-2000 e IC-7610 con lo stesso spazio sopra e sotto. Con i display estesi da 90 la riga si allunga solo quanto serve.",
+      "The radio display sits centred in the space between the menu bar and the panels, without overlapping or moving anything: FT-2000 and IC-7610 faces with the same space above and below. With 90-point wide displays the row grows only as needed.",
+      "Die Radioanzeige sitzt mittig im Raum zwischen Menüleiste und Feldern, ohne Überlappung und ohne etwas zu verschieben: FT-2000- und IC-7610-Fronten mit gleichem Abstand oben und unten. Mit 90 Punkte hohen breiten Anzeigen wächst die Zeile nur so weit wie nötig.",
+      "L’afficheur de la radio est centré dans l’espace entre la barre du menu et les panneaux, sans chevauchement ni déplacement : façades FT-2000 et IC-7610 avec le même espace dessus et dessous. Avec les afficheurs larges de 90 points la ligne grandit seulement du nécessaire.",
+      "La pantalla de la radio queda centrada en el espacio entre la barra del menú y los paneles, sin solaparse ni mover nada: frontales FT-2000 e IC-7610 con el mismo espacio arriba y abajo. Con las pantallas anchas de 90 puntos la fila crece solo lo necesario.",
+      "O ecrã do rádio fica centrado no espaço entre a barra do menu e os painéis, sem sobrepor nem mover nada: frontais FT-2000 e IC-7610 com o mesmo espaço em cima e em baixo. Com os ecrãs largos de 90 pontos a linha cresce só o necessário.",
+    ],
+  },
+  {
     version: '0.11.129',
     released: '2026-11-04T21:53:24Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Mises à jour la nouvelle version trouvée a une étoile et l’étiquette NEW. Le fichier d’erreurs (crash\\stderr.log) n’accumule plus les lignes de démarrage ni l’avis inoffensif de WebView2 à la fermeture.',
       'En Ajustes > Actualizaciones la versión nueva encontrada tiene una estrella y la etiqueta NEW. El archivo de errores (crash\\stderr.log) ya no acumula las líneas de inicio ni el aviso inofensivo de WebView2 al cerrar.',
       'Em Definições > Atualizações a versão nova encontrada tem uma estrela e a etiqueta NEW. O ficheiro de erros (crash\\stderr.log) já não acumula as linhas de arranque nem o aviso inofensivo do WebView2 ao fechar.',
-    ],
-  },
-  {
-    version: '0.11.92',
-    released: '2026-11-03T20:48:57Z',
-    kind: 'fixed',
-    title: ['La radio va in trasmissione con il PTT scelto', 'The radio keys with the chosen PTT', 'Das Funkgerät sendet mit der gewählten PTT', 'La radio passe en émission avec le PTT choisi', 'La radio transmite con el PTT elegido', 'O rádio transmite com o PTT escolhido'],
-    text: [
-      'Senza JTDX installato Aurora restava sul VOX e la radio non andava in TX: ora usa il PTT scelto in Impostazioni > Radio (CAT attraverso Hamlib, oppure OmniRig). Sul telefono un tocco chiama la stazione e i tocchi ripetuti non fanno ripartire la sequenza.',
-      'Without JTDX installed Aurora stayed on VOX and the radio never keyed: now it uses the PTT chosen in Settings > Radio (CAT through Hamlib, or OmniRig). On the phone one tap calls the station and repeated taps no longer restart the sequence.',
-      'Ohne installiertes JTDX blieb Aurora auf VOX und das Funkgerät sendete nie: jetzt wird die in Einstellungen > Radio gewählte PTT benutzt (CAT über Hamlib oder OmniRig). Auf dem Telefon ruft ein Tippen die Station, wiederholtes Tippen startet die Folge nicht neu.',
-      'Sans JTDX installé Aurora restait en VOX et la radio ne passait jamais en émission : désormais elle utilise le PTT choisi dans Réglages > Radio (CAT via Hamlib, ou OmniRig). Sur le téléphone un appui appelle la station et les appuis répétés ne relancent plus la séquence.',
-      'Sin JTDX instalado Aurora se quedaba en VOX y la radio nunca transmitía: ahora usa el PTT elegido en Ajustes > Radio (CAT mediante Hamlib, u OmniRig). En el teléfono un toque llama a la estación y los toques repetidos ya no reinician la secuencia.',
-      'Sem o JTDX instalado a Aurora ficava em VOX e o rádio nunca transmitia: agora usa o PTT escolhido em Definições > Rádio (CAT via Hamlib, ou OmniRig). No telemóvel um toque chama a estação e toques repetidos já não reiniciam a sequência.',
     ],
   },
 ];
