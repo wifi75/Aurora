@@ -275,7 +275,6 @@ dependencies = [
  "tx-native",
  "udp-bridge",
  "udp-emitter",
- "udp-hub",
  "updater",
  "ureq",
  "wishlist",
@@ -296,7 +295,6 @@ version = "0.11.101"
 dependencies = [
  "aurora",
  "aurora-core",
- "engine-jtdx",
  "remote-api",
  "rfd",
  "serde",
@@ -1248,10 +1246,6 @@ dependencies = [
  "aurora-core",
  "dxcc",
  "serde",
- "tokio",
- "tracing",
- "udp-bridge",
- "udp-hub",
 ]
 
 [[package]]
@@ -5337,15 +5331,6 @@ dependencies = [
  "aurora-core",
  "logbook",
  "socket2",
- "tokio",
- "tracing",
- "udp-bridge",
-]
-
-[[package]]
-name = "udp-hub"
-version = "0.11.101"
-dependencies = [
  "tokio",
  "tracing",
  "udp-bridge",
