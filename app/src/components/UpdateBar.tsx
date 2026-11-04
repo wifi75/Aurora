@@ -21,7 +21,7 @@ function dismissedVersion(): string {
  */
 export function UpdateBar() {
   const t = useT();
-  const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: 10 * 60_000 });
+  const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: (q) => ((q.state.data?.checked_at_ms ?? 0) === 0 ? 5_000 : 10 * 60_000) });
   const [hidden, setHidden] = useState(dismissedVersion);
   const notice = useStation((s) => s.updateNotice);
   const [installing, setInstalling] = useState(false);
