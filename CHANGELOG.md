@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **QR del telefono più sicuro**: con il PC su più reti (cavo e Wi-Fi) nel QR va per primo l'indirizzo della Wi-Fi, dove è quasi sempre il telefono; sotto il QR compaiono gli altri indirizzi del PC, ognuno con il suo QR piccolo («il telefono non apre la pagina? prova il successivo»), e il consiglio di inquadrarlo con la fotocamera e aprirlo in Chrome o Safari, non dentro Messenger o WhatsApp. Sei lingue.
 - **Diagnosi dell'associazione dal telefono**: se un codice scade senza associazione, Aurora manda un rapporto anonimo con la causa probabile: telefono mai arrivato (rete diversa, dati mobili, isolamento della Wi-Fi), rete di Windows «Pubblica», firewall senza regola, indirizzo del QR di un adattatore virtuale o senza indirizzo dal router; oppure telefono arrivato ma codice sbagliato o scaduto. Solo tipi, mai indirizzi o nomi (informativa privacy aggiornata).
 - **Finestra di conferma del log rifinita**: nominativo in evidenza, banda, modo, frequenza e ora a etichette, campi in due colonne anche sul telefono, «Scarta» e «Registra» affiancati; provata su PC (chiaro e scuro), iPhone 13 e iPhone SE.
 - **Telefono**: nel DX Cluster e nel Log il nome del paese accanto al nominativo, dopo la bandiera (più piccolo; accorciato con i puntini se non c'è spazio).
