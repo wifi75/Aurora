@@ -34,7 +34,6 @@ audio-spectrum = { path = "../audio-spectrum" }
 engine-native = { path = "../engine-native" }
 tx-native = { path = "../tx-native" }
 udp-bridge = { path = "../udp-bridge" }
-udp-hub = { path = "../udp-hub" }
 udp-emitter = { path = "../udp-emitter" }
 reporting = { path = "../reporting" }
 qso-native = { path = "../qso-native" }

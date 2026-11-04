@@ -19,10 +19,10 @@ pub mod wanted;
 
 use audio_spectrum::run_capture_tapped;
 use auth::{DeviceStore, SystemClock};
-use aurora_core::{Bus, Engine, EngineIo, Event, StationStatus};
+use aurora_core::{Bus, Engine, EngineIo, Event};
 use axum::{http::StatusCode, routing::any};
 use dxcc::DxccDb;
-use engine_jtdx::{enrich::SharedWorked, worked::WorkedLog, JtdxConfig, JtdxEngine, SystemClock as EngineClock};
+use engine_jtdx::{enrich::SharedWorked, worked::WorkedLog};
 use engine_sim::{SimConfig, SimEngine};
 use logbook::{adif::Station, Logbook};
 use qso_export::{Exporter, Target};
@@ -31,14 +31,11 @@ use qso_engine::{Automation, AutomationConfig, Limits, Rules};
 use remote_api::{build_router, AppState, TxPolicy};
 use tokio::{net::TcpListener, sync::broadcast, task::JoinHandle};
 use tower_http::services::{ServeDir, ServeFile};
-use udp_hub::{Hub, HubConfig};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EngineKind {
     /// Stazione simulata, senza radio.
     Sim,
-    /// JTDX reale, tramite l'hub UDP.
-    Jtdx,
     /// Il motore proprio di Aurora (crate `ft8`): ascolta l'ingresso audio e decodifica da solo, senza JTDX. Per ora in sola ricezione.
     Native,
 }
@@ -137,8 +134,6 @@ pub struct Config {
     pub ptt_port: Option<String>,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
-    /// `JTDX.ini` di JTDX, letto in sola lettura per mostrare le sue impostazioni.
-    pub jtdx_ini: Option<PathBuf>,
     /// Con il motore proprio: Aurora manda a `udp_forward` il flusso WSJT-X che mandava JTDX (Heartbeat, Status, Decode, QSO Logged...).
     /// Di base acceso; `AURORA_UDP_EMIT=0` lo spegne. Con il motore JTDX non serve: l'hub inoltra i pacchetti di JTDX.
     pub udp_emit: bool,
@@ -205,7 +200,6 @@ impl Config {
             ptt_method: "vox".to_string(),
             ptt_port: None,
             log4om_db: None,
-            jtdx_ini: None,
             udp_emit: true,
             udp_accept_requests: false,
             udp_accept_reply: 1,
@@ -225,7 +219,7 @@ impl Config {
             .map_err(|_| StartError::BadConfig(format!("AURORA_BIND non e' un indirizzo valido: {bind_text}")))?;
         let engine = match get("AURORA_ENGINE").as_deref() {
             None | Some("sim") => EngineKind::Sim,
-            Some("jtdx") => EngineKind::Jtdx,
+            Some("jtdx") => return Err(StartError::BadConfig("AURORA_ENGINE=jtdx non esiste piu': Aurora ha il suo motore (AURORA_ENGINE=native)".into())),
             Some("native") => EngineKind::Native,
             Some(other) => return Err(StartError::BadConfig(format!("AURORA_ENGINE sconosciuto: {other}"))),
         };
@@ -292,7 +286,6 @@ impl Config {
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
-            jtdx_ini: get("AURORA_JTDX_INI").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             log4om_db: get("AURORA_LOG4OM_DB").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             export_udp,
             open_access: match get("AURORA_OPEN_ACCESS").as_deref() {
@@ -357,8 +350,6 @@ impl Config {
 pub struct RunningServer {
     pub addr: SocketAddr,
     pub state: AppState,
-    /// Presente solo con il motore JTDX.
-    pub hub: Option<Arc<Hub>>,
     task: JoinHandle<()>,
 }
 
@@ -367,20 +358,6 @@ impl RunningServer {
     pub async fn join(self) {
         let _ = self.task.await;
     }
-}
-
-/// Applica le impostazioni a JTDX: lo chiude (se e' acceso), scrive il suo file con una copia di sicurezza e lo riavvia
-/// come stava. Se la scrittura fallisce JTDX viene comunque riavviato, cosi' non si resta senza.
-fn apply_jtdx_settings(path: &Path, changes: &std::collections::BTreeMap<String, String>) -> Result<(), String> {
-    let running = rig_control::jtdx_process::find().map_err(|e| e.to_string())?;
-    if let Some(r) = &running {
-        rig_control::jtdx_process::stop(r.id, 25).map_err(|e| e.to_string())?;
-    }
-    let written = engine_jtdx::ini_edit::apply_changes(path, changes);
-    if let Some(r) = &running {
-        rig_control::jtdx_process::start(r).map_err(|e| format!("JTDX non riavviato: {e}"))?;
-    }
-    written
 }
 
 /// La scelta dell'accesso senza codice fatta dal PC (Impostazioni > Smartphone/Tablet): «1» acceso, altrimenti spento.
@@ -444,10 +421,9 @@ fn export_targets(config: &Config) -> (Vec<Target>, Vec<PathBuf>) {
 /// primo (flusso WSJT-X, con il Logged ADIF se il server primario lo riceve) e `AURORA_EXPORT_UDP` (record ADIF). Poi vale il file.
 fn open_engine_settings(config: &Config) -> Arc<remote_api::engine_settings::EngineSettingsStore> {
     use remote_api::engine_settings::{import_from_ini, interpret, seed_destinations, EngineSettingsStore, FILE_NAME, UDP_DESTINATIONS};
-    let (ini, listen, forward, export) = (config.jtdx_ini.clone(), config.udp_listen, config.udp_forward.clone(), config.export_udp.clone());
+    let (listen, forward, export) = (config.udp_listen, config.udp_forward.clone(), config.export_udp.clone());
     Arc::new(EngineSettingsStore::open(&config.data_dir.join(FILE_NAME), move || {
-        let shown = ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
-        let mut seed = import_from_ini(&shown, listen, &forward);
+        let mut seed = import_from_ini(&Default::default(), listen, &forward);
         let r = interpret(&seed);
         // il secondo server delle impostazioni riceve gia' l'ADIF: lo stesso indirizzo dell'ambiente non diventa un altro destinatario
         let export: Vec<SocketAddr> = export.into_iter().filter(|a| r.secondary != Some(*a)).collect();
@@ -909,64 +885,6 @@ fn save_settings(dir: &Path, auth: &DeviceStore, frequencies: &Mutex<FrequencyTa
 }
 
 /// Ogni 15 secondi guarda l'ora UTC: al minuto di una riga porta la radio sulla banda, se non si trasmette.
-/// Lo stato di partenza dalla finestra di JTDX. Dopo un riavvio di Aurora, JTDX manda il suo stato UDP solo a fine periodo (fino
-/// a 15 secondi dopo) e nel frattempo la pagina resta vuota: lo si legge subito dalla sua finestra, una volta; il primo stato vero
-/// lo sostituisce. Se JTDX non e' ancora pronto si riprova per un po'.
-fn spawn_status_bootstrap(state: AppState, events: broadcast::Sender<Event>, rig: Arc<dyn Rig>, ini: Option<std::path::PathBuf>) {
-    tokio::spawn(async move {
-        let (call, grid) = ini
-            .as_deref()
-            .and_then(|path| engine_jtdx::ini::read_shown(path).ok())
-            .map(|settings| (settings.get("MyCall").cloned().unwrap_or_default(), settings.get("MyGrid").cloned().unwrap_or_default()))
-            .unwrap_or_default();
-        for _ in 0..8 {
-            if state.has_status() {
-                return;
-            }
-            let reader = Arc::clone(&rig);
-            match tokio::task::spawn_blocking(move || reader.engine_snapshot()).await {
-                Ok(Ok(snapshot)) if snapshot.dial_hz.is_some() => {
-                    // nel frattempo puo' essere arrivato lo stato vero: quello vale di piu'
-                    if !state.has_status() {
-                        tracing::info!("stato iniziale letto dalla finestra di JTDX: {} Hz", snapshot.dial_hz.unwrap_or_default());
-                        let _ = events.send(Event::Status(snapshot_to_status(&snapshot, &call, &grid)));
-                    }
-                    return;
-                }
-                Ok(Ok(_)) => tracing::debug!("la finestra di JTDX non ha dato la frequenza: si riprova"),
-                Ok(Err(e)) => tracing::debug!("stato iniziale di JTDX non letto: {e}"),
-                Err(e) => tracing::debug!("lettura dello stato iniziale interrotta: {e}"),
-            }
-            tokio::time::sleep(Duration::from_secs(2)).await;
-        }
-    });
-}
-
-/// Lo stato per l'interfaccia a partire da quello letto dalla finestra di JTDX e dal suo file di impostazioni.
-fn snapshot_to_status(snapshot: &rig_control::snapshot::Snapshot, de_call: &str, de_grid: &str) -> StationStatus {
-    StationStatus {
-        dial_hz: snapshot.dial_hz.unwrap_or_default(),
-        mode: snapshot.mode.clone().unwrap_or_default(),
-        tx_enabled: snapshot.tx_enabled,
-        transmitting: snapshot.transmitting,
-        decoding: false,
-        de_call: de_call.to_string(),
-        de_grid: de_grid.to_string(),
-        dx_call: snapshot.dx_call.clone(),
-        dx_grid: snapshot.dx_grid.clone(),
-        report: snapshot.report.clone(),
-        tx_df: snapshot.tx_df,
-        rx_df: snapshot.rx_df,
-        tx_message: None,
-        tr_period: None,
-        own_continent: None,
-        meters: None,
-        queue: Vec::new(),
-        tx_alerts: Vec::new(),
-        fox_verification: None,
-    }
-}
-
 /// Le voci delle funzioni di WSJT-X 3.x che il motore legge dai pulsanti: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox.
 fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_api::engine_settings::Reports) {
     use std::sync::atomic::Ordering;
@@ -1298,7 +1216,6 @@ pub async fn run(
     let tx_interlock = Arc::new(tx_native::TxInterlock::new());
     let live_tx = match config.engine {
         EngineKind::Sim => true,
-        EngineKind::Jtdx => config.allow_tx,
         EngineKind::Native => true,
     };
     let frequencies = Arc::new(Mutex::new(load_frequencies(&config.data_dir.join("frequencies.json"))));
@@ -1328,10 +1245,7 @@ pub async fn run(
             let r = store.reports();
             (r.call, r.grid)
         }
-        None => {
-            let shown = config.jtdx_ini.as_deref().and_then(|p| engine_jtdx::ini::read_shown(p).ok()).unwrap_or_default();
-            (shown.get("MyCall").cloned().unwrap_or_default(), shown.get("MyGrid").cloned().unwrap_or_default())
-        }
+        None => (String::new(), String::new()),
     };
     // finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
     let station = Station { call: my_call.clone(), grid: my_grid.clone(), tx_power: config.tx_power.clone().unwrap_or_default() };
@@ -1423,7 +1337,7 @@ pub async fn run(
     let worked_qsos = enrichment.as_ref().map_or(0, |(_, w)| w.read().map_or(0, |w| w.len()));
     let info = serde_json::json!({
         "version": aurora_core::version::APP_VERSION,
-        "engine": match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" },
+        "engine": match config.engine { EngineKind::Native => "native", EngineKind::Sim => "sim" },
         "tx_allowed": live_tx,
         "udp_listen": config.udp_listen.to_string(),
         "udp_forward": config.udp_forward.iter().map(ToString::to_string).collect::<Vec<_>>(),
@@ -1537,7 +1451,7 @@ pub async fn run(
             Arc::new(move |req: remote_api::SupportRequest| {
                 let ctx = support::Context {
                     data_dir: config.data_dir.clone(),
-                    engine: match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
+                    engine: match config.engine { EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
                     ptt_method: if matches!(config.engine, EngineKind::Native) { ptt_method_for(&config, &cat) } else { "quello di JTDX".to_string() },
                     ptt_port: config.ptt_port.clone(),
                     version: aurora_core::version::APP_VERSION.to_string(),
@@ -1624,12 +1538,6 @@ pub async fn run(
                     .map_err(|e| e.to_string())
             }) as remote_api::WorkedMapProvider
         }))
-        .with_engine_apply_if(config.jtdx_ini.clone().map(|path| {
-            Arc::new(move |changes: std::collections::BTreeMap<String, String>| apply_jtdx_settings(&path, &changes)) as remote_api::JtdxApplier
-        }))
-        .with_engine_config_if(config.jtdx_ini.clone().map(|path| {
-            Arc::new(move || engine_jtdx::ini::read_shown(&path).map(|settings| serde_json::json!(settings))) as remote_api::JtdxConfigProvider
-        }))
         .with_frequencies(Arc::clone(&frequencies))
         .with_schedule(Arc::clone(&schedule))
         .with_settings_saver(settings_saver)
@@ -1641,14 +1549,7 @@ pub async fn run(
                 let radio = Some(Arc::clone(&cat) as Arc<dyn rig_control::Rig>);
                 Some(Arc::new(engine_native::NativeRig::new(Arc::clone(&native_controls), radio)) as Arc<dyn rig_control::Rig>)
             }
-            _ => config
-                .rig_omnirig
-                .then(|| {
-                    // le sessioni PowerShell verso JTDX si aprono subito: il primo comando (Abilita Tx...) non deve aspettarle
-                    rig_control::WindowsRig::keep_warm();
-                    Arc::new(rig_control::WindowsRig) as Arc<dyn rig_control::Rig>
-                })
-                .or_else(|| config.rig_hamlib.then(|| Arc::clone(&cat) as Arc<dyn rig_control::Rig>)),
+            EngineKind::Sim => config.rig_hamlib.then(|| Arc::clone(&cat) as Arc<dyn rig_control::Rig>),
         })
         .with_cat(Arc::clone(&cat))
         .with_automation(automation);
@@ -1688,7 +1589,7 @@ pub async fn run(
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };
     let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(0));
     let mut native_live: Option<engine_native::LiveConfig> = None;
-    let (engine_task, hub) = match config.engine {
+    let engine_task = match config.engine {
         EngineKind::Native => {
             // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
             let (call, grid) = (my_call.clone(), my_grid.clone());
@@ -1769,27 +1670,9 @@ pub async fn run(
                     }
                 }
             });
-            (task, None)
+            task
         }
-        EngineKind::Sim => (tokio::spawn(SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io)), None),
-        EngineKind::Jtdx => {
-            let hub = Arc::new(
-                Hub::start(HubConfig { listen: config.udp_listen, forward: config.udp_forward.clone() })
-                    .await
-                    .map_err(|e| StartError::Io(e.to_string()))?,
-            );
-            let engine_config = JtdxConfig {
-                allow_tx: config.allow_tx,
-                replay_on_connect: config.replay_on_connect,
-                peer_cache: Some(config.data_dir.join("jtdx-peer.txt")),
-                ..JtdxConfig::default()
-            };
-            let mut engine = JtdxEngine::new(Arc::clone(&hub), engine_config, Arc::new(EngineClock));
-            if let Some((db, worked)) = enrichment {
-                engine = engine.with_shared_enrichment(db, worked).with_highlight_flags(Arc::clone(&highlight_flags));
-            }
-            (tokio::spawn(engine.run(io)), Some(hub))
-        }
+        EngineKind::Sim => tokio::spawn(SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io)),
     };
 
     // con il motore proprio non c'e' JTDX a parlare il protocollo UDP di WSJT-X con GridTracker (e, tramite lui, Log4OM2): lo fa Aurora.
@@ -1882,9 +1765,6 @@ pub async fn run(
     if let Some(rig) = state.rig.clone() {
         spawn_scheduler(state.clone(), rig.clone());
         band_hop::spawn(state.clone(), rig.clone());
-        if config.engine == EngineKind::Jtdx {
-            spawn_status_bootstrap(state.clone(), bus.events(), rig, config.jtdx_ini.clone());
-        }
     }
 
     let mut app = build_router(state.clone()).route("/api/{*rest}", any(|| async { StatusCode::NOT_FOUND }));
@@ -1953,7 +1833,6 @@ pub async fn run(
     }
 
     let closing = state.clone();
-    let hub_for_task = hub.clone();
     let cat_for_task = Arc::clone(&cat);
     let audio_for_task = audio_manager.clone();
     let task = tokio::spawn(async move {
@@ -1970,9 +1849,6 @@ pub async fn run(
         // l'annuncio mDNS si spegne con Aurora
         if let Ok(mut s) = announcer.lock() {
             s.take();
-        }
-        if let Some(hub) = hub_for_task {
-            hub.stop();
         }
         if let Some(emitter) = udp_emitter.lock().await.take() {
             emitter.shutdown().await;
@@ -2000,7 +1876,7 @@ pub async fn run(
             rapporti::Contesto {
                 versione: aurora_core::version::APP_VERSION.to_string(),
                 sistema: String::new(),
-                motore: match config.engine { EngineKind::Jtdx => "jtdx", EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
+                motore: match config.engine { EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
                 radio: if radio.rig_name.is_empty() && radio.model != 0 { format!("hamlib {}", radio.model) } else { radio.rig_name.clone() },
                 ptt: if matches!(config.engine, EngineKind::Native) { ptt_method_for(&config, &cat) } else { "jtdx".to_string() },
                 cat: format!("{:?}", radio.backend).to_ascii_lowercase(),
@@ -2010,7 +1886,7 @@ pub async fn run(
             }
         }));
     }
-    Ok(RunningServer { addr, state, hub, task })
+    Ok(RunningServer { addr, state, task })
 }
 
 #[cfg(test)]
@@ -2081,13 +1957,11 @@ mod tests {
     }
 
     #[test]
-    fn with_jtdx_aurora_writes_no_file_of_its_own_and_an_explicit_file_is_not_duplicated() {
-        let (targets, worked) = export_targets(&config_for(EngineKind::Jtdx));
-        assert_eq!(targets.len(), 1, "il file di JTDX non si tocca e non se ne crea un altro");
-        assert_eq!(worked, vec![PathBuf::from("jtdx/wsjtx_log.adi")]);
+    fn an_explicit_log_file_is_not_duplicated_and_the_jtdx_engine_is_gone() {
         let mut c = config_for(EngineKind::Native);
         c.export_file = Some(PathBuf::from("dati").join("aurora_log.adi"));
         assert_eq!(export_targets(&c).0.len(), 2, "lo stesso file non va due volte");
+        assert!(Config::from_lookup(|k| (k == "AURORA_ENGINE").then(|| "jtdx".to_string())).is_err(), "Aurora ha solo il suo motore");
     }
 
     #[test]
@@ -2106,27 +1980,5 @@ mod tests {
         assert_eq!((set.udp_emit, set.udp_accept_requests, set.udp_accept_reply, set.udp_adif), (false, true, 3, true));
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ACCEPT_REPLY").then(|| "4".to_string())).is_err());
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ADIF").then(|| "si".to_string())).is_err());
-    }
-
-    #[test]
-    fn the_status_read_from_the_jtdx_window_fills_the_page_until_the_real_one_arrives() {
-        let snapshot = rig_control::snapshot::Snapshot {
-            dial_hz: Some(14_080_000),
-            mode: Some("FT4".into()),
-            dx_call: Some("M7SZY".into()),
-            dx_grid: None,
-            tx_df: Some(1084),
-            rx_df: Some(1034),
-            report: Some("-2".into()),
-            transmitting: false,
-            tx_enabled: true,
-        };
-        let status = snapshot_to_status(&snapshot, "IU3ABC", "IO91wm");
-        assert_eq!((status.dial_hz, status.mode.as_str()), (14_080_000, "FT4"));
-        assert_eq!((status.de_call.as_str(), status.de_grid.as_str()), ("IU3ABC", "IO91wm"));
-        assert_eq!(status.dx_call.as_deref(), Some("M7SZY"));
-        assert_eq!((status.tx_df, status.rx_df), (Some(1084), Some(1034)));
-        assert!(status.tx_enabled && !status.transmitting && !status.decoding);
-        assert!(status.tx_message.is_none());
     }
 }

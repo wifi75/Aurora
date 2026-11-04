@@ -32,7 +32,7 @@
 >
 > 🐧 **[Linux (não testada pelo autor, sem suporte): AppImage, .deb ou compilação com um comando](docs/linux.pt.md)**
 
-Uma estação digital FT8, FT4, JT65 e JT9 de nova concepção: interface de impacto, automação dos QSO e controle remoto pelo telefone. Tem um motor próprio de decodificação e transmissão FT8 (o JTDX continua sendo uma comparação opcional); o Aurora é cérebro, motor e tela.
+Uma estação digital FT8, FT4, JT65 e JT9 de nova concepção: interface de impacto, automação dos QSO e controle remoto pelo telefone. Tem um motor próprio de decodificação e transmissão FT8; o Aurora é cérebro, motor e tela.
 
 Projeto e desenvolvimento: Tiziano Cassone (IU3WJQ)
 
@@ -49,7 +49,7 @@ Versão 0.11.101: motor próprio FT8, FT4, JT65 e JT9 com recepção e transmiss
 - **Definições por tema**: seis grupos (Estação, Receção, Transmissão e QSO, Avisos, Rede e logs, Sistema) com páginas como Rádio, Cascata, Sequência, Serviços de log e Programas ligados; pesquisa em todas as definições, erros junto ao campo.
 - **Seis idiomas** (italiano, inglês, alemão, francês, espanhol, português) e uma dica em cada controle.
 - **Ajuda e estatísticas**: ajuda breve integrada em seis idiomas; página Estatísticas com prêmios, QSO por banda e países que faltam; suas mensagens transmitidas aparecem como linhas `Tx`.
-- **DX Cluster, relógio, log**: janela DX Cluster (servidores telnet públicos ou próprios, clique duplo = o rádio vai para a frequência do spot), cliente NTP com indicador do relógio, configurações reais do JTDX lidas do seu arquivo e janela Log do Log4OM2 somente leitura.
+- **DX Cluster, relógio, log**: janela DX Cluster (servidores telnet públicos ou próprios, clique duplo = o rádio vai para a frequência do spot), cliente NTP com indicador do relógio, janela Log do Log4OM2 somente leitura.
 - **Ferramentas da estação**: nível do áudio de entrada com cursor e AUTO sobre o volume de gravação do Windows, histórico das mensagens recebidas (30 dias, com busca), spots do cluster na cascata, diagnóstico automático (relógio, áudio, indicativo), página Propagação com PSK Reporter e hamqsl.com (**desligados até você ligá-los**) e mapa dos QSO e das estações recebidas.
 - **Rádio**: display do rádio no alto com o display estendido (segundo VFO, instrumentos, PRE/ATT, AGC, NB/NR/notch, ganhos, RIT/XIT), cada item pode ser ligado em Configurações > Geral; a cascata acompanha a largura do filtro do rádio lida via CAT; um rigctld órfão se fecha sozinho.
 - **DXpedições**: calendário NG3K (Serviços online, desligado por padrão) ao lado dos CQ: no ar, ouvidas agora, próximas e histórico.
@@ -68,10 +68,10 @@ O modo mais simples: o instalador `Aurora_X.Y.Z_x64-setup.exe` (programa com íc
 ## Início rápido (Windows)
 
 ```
-.\scripts\avvia-sviluppo.ps1 -Jtdx
+.\scripts\avvia-sviluppo.ps1 -Motore
 ```
 
-Inicia o core (porta 8787) e a interface (porta 5173) em uma única aba do Windows Terminal; com `-Jtdx` ele se conecta ao JTDX real e encontra sozinho o `cty.dat` e o log dos QSO. Abra a página **pelo endereço IP do PC** (por exemplo `http://192.168.1.225:8787`), não por `localhost`: é o mesmo endereço que o telefone usa.
+Inicia o core (porta 8787) e a interface (porta 5173) em uma única aba do Windows Terminal; com `-Motore` usa o motor do Aurora na placa de som (`-Audio "USB Audio"` para a escolher). Abra a página **pelo endereço IP do PC** (por exemplo `http://192.168.1.225:8787`), não por `localhost`: é o mesmo endereço que o telefone usa.
 
 Para ter também a cascata, defina `AURORA_AUDIO_DEVICE` (parte do nome da entrada de áudio, por exemplo `USB Audio`): sem ela, a cascata fica vazia.
 
@@ -87,17 +87,13 @@ Mostra um código de 8 dígitos e um QR; o código vale pelo tempo que você dec
 
 Durante os testes é possível ligar o **acesso sem código** (Configurações → Acesso, ou `AURORA_OPEN_ACCESS=1`): vale somente para quem está na rede doméstica, nunca para a internet ou proxies, e pode ser desligado a qualquer momento pelo PC.
 
-### Com o JTDX real
-
-Veja `docs/guida-collegamento-jtdx.md` (documentação em italiano): o Aurora se coloca entre o JTDX e o GridTracker2 (hub UDP) sem tirar nada de nenhum dos dois, e o QSO registrado chega ao Log4OM2 como antes. A troca de banda e modo usa o mesmo OmniRig do JTDX (`AURORA_RIG=omnirig`).
-
 ### CAT: o rádio para todos os modelos
 
 Em Configurações → Radio CAT escolhe-se como comandar o rádio (frequência, modo, PTT, split): **Hamlib** por meio do `rigctld` (mais de 300 modelos, a escolha padrão) ou OmniRig. Perfis com nome, detecção do rádio e estado em tempo real. Guia do usuário e testes com o rádio real em `docs/cat-radio.md` (documentação em italiano).
 
 ## Configuração
 
-Variáveis de ambiente (lista completa em `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`sim` / `jtdx`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
+Variáveis de ambiente (lista completa em `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`native` / `sim`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
 As preferências de visualização (cores, filtros, idioma, bandas, macros) ficam no navegador; frequências, programação, regras da automação, duração do código e rádio (`radio.json`: modelo, porta, perfis) ficam em `data/`.
 
 ## Estrutura
@@ -108,7 +104,7 @@ core/crates/   aurora-core  udp-bridge  udp-hub  engine-jtdx  engine-sim
                rig-control  auth  remote-api  aurora
 app/src/       pages  components  settings  lib  i18n  render  state  api
 scripts/       avvia-sviluppo.ps1  associa-telefono.ps1
-docs/          especificação, planos, relatórios, API, guia JTDX, mancante.md (em italiano)
+docs/          especificação, planos, relatórios, API, mancante.md (em italiano)
 ```
 
 ## Documentação (em italiano)
