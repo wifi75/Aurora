@@ -1099,6 +1099,8 @@ export async function postControl(id: ControlId, on?: boolean): Promise<void> {
 export interface ReportsState {
   ask_after_crash: boolean;
   auto_errors: boolean;
+  /** Una volta al giorno «questa installazione e' aperta» (codice casuale, versione, sistema). */
+  count_active?: boolean;
   install_id: string;
   /** L'indirizzo del servizio e' stato scritto nel programma (non e' il segnaposto): senza, non parte niente. */
   configured: boolean;
@@ -1125,7 +1127,7 @@ export async function getReports(): Promise<ReportsState> {
   return (await (await request('/reports')).json()) as ReportsState;
 }
 
-export async function putReports(input: { ask_after_crash?: boolean; auto_errors?: boolean }): Promise<ReportsState> {
+export async function putReports(input: { ask_after_crash?: boolean; auto_errors?: boolean; count_active?: boolean }): Promise<ReportsState> {
   return (await (await request('/reports', { ...jsonInit(input), method: 'PUT' })).json()) as ReportsState;
 }
 

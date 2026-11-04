@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.116',
+    released: '2026-11-04T13:38:09Z',
+    kind: 'new',
+    title: ['Conteggio anonimo delle installazioni attive', 'Anonymous count of active installations', 'Anonyme Zählung aktiver Installationen', 'Comptage anonyme des installations actives', 'Recuento anónimo de instalaciones activas', 'Contagem anónima das instalações ativas'],
+    text: [
+      "Una volta al giorno Aurora dice in forma anonima «questa installazione è aperta» (solo un codice casuale, la versione di Aurora e quella di Windows): serve a sapere quante persone la usano. Si spegne in Impostazioni › Assistenza.",
+      "Once a day Aurora anonymously says «this installation is open» (only a random code, the Aurora version and the Windows version): it tells how many people use it. It can be switched off in Settings › Support.",
+      "Einmal täglich meldet Aurora anonym «diese Installation ist offen» (nur ein Zufallscode, die Aurora- und die Windows-Version): so weiß man, wie viele sie nutzen. Abschaltbar unter Einstellungen › Support.",
+      "Une fois par jour Aurora signale de façon anonyme « cette installation est ouverte » (seulement un code aléatoire, la version d’Aurora et celle de Windows) : cela permet de savoir combien de personnes l’utilisent. Désactivable dans Réglages › Assistance.",
+      "Una vez al día Aurora indica de forma anónima «esta instalación está abierta» (solo un código aleatorio, la versión de Aurora y la de Windows): sirve para saber cuántas personas la usan. Se apaga en Ajustes › Asistencia.",
+      "Uma vez por dia a Aurora indica de forma anónima «esta instalação está aberta» (só um código aleatório, a versão da Aurora e a do Windows): serve para saber quantas pessoas a usam. Desliga-se em Definições › Assistência.",
+    ],
+  },
+  {
     version: '0.11.115',
     released: '2026-11-04T13:35:19Z',
     kind: 'fixed',

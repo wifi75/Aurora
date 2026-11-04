@@ -422,6 +422,9 @@ struct Impostazioni {
     ask_after_crash: bool,
     #[serde(default = "acceso")]
     auto_errors: bool,
+    /// Una volta al giorno «questa installazione e' aperta» (codice casuale, versione, sistema): serve solo a contare chi usa Aurora.
+    #[serde(default = "acceso")]
+    count_active: bool,
 }
 
 fn acceso() -> bool {
@@ -430,7 +433,7 @@ fn acceso() -> bool {
 
 impl Default for Impostazioni {
     fn default() -> Self {
-        Impostazioni { ask_after_crash: true, auto_errors: true }
+        Impostazioni { ask_after_crash: true, auto_errors: true, count_active: true }
     }
 }
 
@@ -539,6 +542,33 @@ impl Rapporti {
         c
     }
 
+    /// Una volta al giorno, se acceso: «questa installazione e' aperta». Il giorno dell'ultimo invio riuscito sta in `rapporti-attivo.txt`.
+    fn segnala_attivo(&self) {
+        let (acceso, id) = match self.stato.lock() {
+            Ok(s) => (s.impostazioni.count_active, s.id.clone()),
+            Err(_) => return,
+        };
+        if !acceso || !configurato() {
+            return;
+        }
+        let file = self.dir.join("rapporti-attivo.txt");
+        let oggi = giorno_utc();
+        if std::fs::read_to_string(&file).is_ok_and(|g| g.trim() == oggi) {
+            return;
+        }
+        let corpo = json!({ "installazione": id, "versione": aurora_core::version::APP_VERSION, "sistema": sistema() }).to_string();
+        let inviato = agente(TIMEOUT)
+            .post(&format!("{INDIRIZZO}/v1/attivo"))
+            .header("X-Aurora-Key", CHIAVE_INGRESSO)
+            .header("Content-Type", "application/json")
+            .header("User-Agent", "Aurora-rapporti")
+            .send(corpo.as_str())
+            .is_ok_and(|r| r.status().is_success());
+        if inviato {
+            let _ = std::fs::write(&file, &oggi);
+        }
+    }
+
     fn lavora(self: Arc<Self>) {
         loop {
             let eventi = {
@@ -551,6 +581,7 @@ impl Rapporti {
                 }
                 std::mem::take(&mut *attesa)
             };
+            self.segnala_attivo();
             let acceso = self.stato.lock().map(|s| s.impostazioni.auto_errors).unwrap_or(false);
             if !acceso {
                 continue;
@@ -733,6 +764,7 @@ impl remote_api::ErrorReports for Rapporti {
         json!({
             "ask_after_crash": s.impostazioni.ask_after_crash,
             "auto_errors": s.impostazioni.auto_errors,
+            "count_active": s.impostazioni.count_active,
             "install_id": s.id,
             "configured": configurato(),
             "endpoint": INDIRIZZO,
@@ -750,6 +782,9 @@ impl remote_api::ErrorReports for Rapporti {
             let mut s = self.stato.lock().map_err(|_| "stato non leggibile".to_string())?;
             if let Some(v) = patch.get("ask_after_crash").and_then(Value::as_bool) {
                 s.impostazioni.ask_after_crash = v;
+            }
+            if let Some(v) = patch.get("count_active").and_then(Value::as_bool) {
+                s.impostazioni.count_active = v;
             }
             if let Some(v) = patch.get("auto_errors").and_then(Value::as_bool) {
                 s.impostazioni.auto_errors = v;
@@ -1004,4 +1039,11 @@ mod tests {
         assert_eq!(u.len(), 36);
         assert_eq!(&u[14..15], "4");
     }
+}
+
+/// La data di oggi in UTC, `AAAA-MM-GG`.
+fn giorno_utc() -> String {
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    let (y, m, d, ..) = crate::support::civil(secs);
+    format!("{y:04}-{m:02}-{d:02}")
 }
