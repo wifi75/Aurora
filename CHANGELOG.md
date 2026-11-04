@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.121 - 2026-11-04
+- **OmniRig che non risponde**: il PTT spiega di controllare porta e modello di Rig1 e la radio accesa, o di passare a Hamlib (dai rapporti: mezz'ora di trasmissioni fallite su una stazione).
+- **Telefono**: il riquadro del DX Cluster non compare se il cluster e' spento in Aurora.
+
 ## 0.11.120 - 2026-11-04
 - **Associazione del telefono**: indirizzi del QR senza adattatori virtuali (WSL, Hyper-V, VirtualBox, VPN, tunnel) e con prima 192.168.x; nella scheda la rete Wi-Fi del PC, l'indirizzo scelto, l'avviso se la rete e' «Pubblica» o il firewall blocca Aurora con «Consenti Aurora» (`GET /api/v1/lan/check`, `POST /api/v1/lan/allow`), i consigli per il telefono.
 - **Finestra**: si ricollega da sola se il flusso resta muto per 8 s (prima si fermava finche' non la si ricaricava).
