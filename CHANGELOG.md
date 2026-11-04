@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.108 - 2026-11-04
+- **Due schede audio uguali**: `match_device_name` prova prima il nome esatto (con il «2- »), poi il nome ripulito solo se una scheda sola corrisponde; prima la 0.11.105 poteva aprire la scheda sbagliata e la ricezione si fermava.
+
 ## 0.11.107 - 2026-11-04
 - **Guida**: la voce «Installare Aurora» racconta la guida al primo avvio; nuova voce «Copia delle impostazioni» nei Problemi comuni (6 lingue).
 - **Documentazione**: `docs/ripresa.md` allineata alla 0.11.106; TODO dai rapporti degli errori.
