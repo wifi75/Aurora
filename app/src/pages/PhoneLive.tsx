@@ -245,7 +245,10 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
                 <button key={s.id} type="button" className="phone-row phone-row--spot" onClick={() => void tune(s)}>
                   <span className="data phone-row-t">{(s.freq_khz / 1000).toFixed(3)}</span>
                   {flag ? <span className={`fi fi-${flag} phone-flag`} aria-hidden="true" /> : <span className="phone-flag" />}
-                  <span className="data phone-row-m">{s.dx_call}</span>
+                  <span className="phone-row-m">
+                    <span className="data">{s.dx_call}</span>
+                    {s.country ? <span className="phone-row-country" title={s.country}>{s.country}</span> : null}
+                  </span>
                   <span className="data phone-row-mode">{s.mode ?? ''}</span>
                   <span className="data muted phone-row-de" title={s.spotter}>{s.spotter}</span>
                   <span className="data muted phone-row-time">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2, 4)}</span>
@@ -270,7 +273,10 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
               <div key={`${q.date}-${q.call}-${i}`} className="phone-row phone-row--static phone-row--qso">
                 <span className="data phone-row-t">{q.date.slice(11, 16)}</span>
                 {flagCode(q.country) ? <span className={`fi fi-${flagCode(q.country)} phone-flag`} aria-hidden="true" title={q.country} /> : <span className="phone-flag" />}
-                <span className="data phone-row-m">{q.call}</span>
+                <span className="phone-row-m">
+                  <span className="data">{q.call}</span>
+                  {q.country ? <span className="phone-row-country" title={q.country}>{q.country}</span> : null}
+                </span>
                 <span className="data phone-row-mode">{`${q.band} ${q.mode}`}</span>
                 <span className="data muted phone-row-rst">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join(' / ')}</span>
               </div>
