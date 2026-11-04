@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.106',
-    released: '2026-11-04T11:52:35Z',
+    released: '2026-11-04T11:54:55Z',
     kind: 'fixed',
     title: ['Decodifica in tempo anche sui PC lenti', 'Decoding on time even on slow PCs', 'Dekodierung auch auf langsamen PCs rechtzeitig', 'Décodage à temps même sur les PC lents', 'Decodificación a tiempo también en PC lentos', 'Descodificação a tempo também em PC lentos'],
     text: [
