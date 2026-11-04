@@ -643,6 +643,9 @@ mod tests {
 fn explain_omnirig(why: &str) -> String {
     if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || (why.contains("CLSID") && why.contains("New-Object")) {
         "OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig".to_string()
+    } else if why.contains("non risponde") {
+        // OmniRig c'e' ma non risponde in tempo: di solito la radio non e' in linea in OmniRig (porta o modello sbagliati, radio spenta)
+        "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora)".to_string()
     } else {
         why.to_string()
     }

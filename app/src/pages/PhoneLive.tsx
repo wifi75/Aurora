@@ -228,6 +228,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
 
       </div>
       <div className="phone-col phone-col--side">
+      {/* chi non usa il DX Cluster in Aurora non lo vede neanche sul telefono */}
+      {cluster.data?.config.enabled === false ? null : (
       <section className="phone-box phone-box--cluster">
         <button type="button" className="phone-bh" aria-expanded={open.cluster} onClick={() => toggleBox('cluster')}>
           <span>{t('panel.cluster')}</span>
@@ -253,6 +255,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           )
         ) : null}
       </section>
+      )}
 
       <section className="phone-box phone-box--log">
         <button type="button" className="phone-bh" aria-expanded={open.log} onClick={() => toggleBox('log')}>
