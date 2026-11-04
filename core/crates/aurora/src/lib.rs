@@ -1791,6 +1791,10 @@ pub async fn run(
 
     // la cascata viene dall'audio; se l'ingresso non c'e' Aurora parte lo stesso e lo dice
     // il motore proprio decodifica l'audio della cascata (e in ombra, con `AURORA_NATIVE_DECODE`, si confronta con JTDX)
+    // modo, frequenza e trasmissione si pubblicano subito, anche se l'ingresso audio non c'e' (il motore che decodifica parte con l'audio)
+    if let Some(live) = native_live.clone() {
+        engine_native::publish_status(bus.events(), live);
+    }
     let start_engine = {
         let (events, dir, record, live, engine_state) = (bus.events(), config.data_dir.clone(), config.native_record, native_live.take(), state.clone());
         move |save: Option<Arc<engine_native::SaveSettings>>| {

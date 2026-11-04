@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.103',
+    released: '2026-11-04T11:30:54Z',
+    kind: 'fixed',
+    title: ['Modo visibile anche senza audio', 'Mode shown even without audio', 'Modus auch ohne Audio sichtbar', 'Mode visible même sans audio', 'Modo visible incluso sin audio', 'Modo visível mesmo sem áudio'],
+    text: [
+      'Senza una scheda audio collegata il selettore del modo mostrava «—» e non si apriva: ora FT8, FT4, JT65 e JT9 si vedono e si cambiano sempre, anche con il PC senza radio né audio.',
+      'Without a connected sound card the mode selector showed «—» and did not open: now FT8, FT4, JT65 and JT9 are always shown and can be changed, even on a PC with no radio or audio.',
+      'Ohne angeschlossene Soundkarte zeigte die Modusauswahl «—» und öffnete sich nicht: jetzt sind FT8, FT4, JT65 und JT9 immer sichtbar und wählbar, auch an einem PC ohne Funkgerät und Audio.',
+      'Sans carte son connectée le sélecteur de mode affichait « — » et ne s’ouvrait pas : désormais FT8, FT4, JT65 et JT9 s’affichent et se changent toujours, même sur un PC sans radio ni audio.',
+      'Sin una tarjeta de sonido conectada el selector de modo mostraba «—» y no se abría: ahora FT8, FT4, JT65 y JT9 se ven y se cambian siempre, incluso en un PC sin radio ni audio.',
+      'Sem uma placa de som ligada o seletor de modo mostrava «—» e não abria: agora FT8, FT4, JT65 e JT9 veem-se e mudam-se sempre, mesmo num PC sem rádio nem áudio.',
+    ],
+  },
+  {
     version: '0.11.102',
     released: '2026-11-04T11:20:49Z',
     kind: 'new',
