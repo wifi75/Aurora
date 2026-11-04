@@ -1,18 +1,15 @@
 # Prepara Hamlib (rigctld) per l'installatore di Windows: copia i file in desktop\src-tauri\hamlib-bundle\ (esclusa da git).
 #
 #   .\scripts\prepara-hamlib.ps1                       -> Hamlib ufficiale 4.7.2 (scaricato da GitHub, SHA-256 verificato)
-#   .\scripts\prepara-hamlib.ps1 -Hamlib C:\JTDX64\159\bin
-#   .\scripts\prepara-hamlib.ps1 -SoloLocale           -> come prima: JTDX o WSJT-X installati, niente download
+#   .\scripts\prepara-hamlib.ps1 -Hamlib <cartella>   -> una cartella con l'Hamlib ufficiale gia' scaricato
 #
 # La cartella sorgente (cartella con rigctld*.exe, rigctl*.exe e le DLL di Hamlib) si sceglie, nell'ordine: parametro -Hamlib,
 # variabile d'ambiente AURORA_HAMLIB_SRC, pacchetto Windows ufficiale di Hamlib (solo da https://github.com/Hamlib/Hamlib/releases,
-# con l'hash SHA-256 fissato qui sotto: se non coincide lo script si ferma). Con -SoloLocale, invece del download: ultima versione
-# di JTDX (C:\JTDX64\<versione>\bin), WSJT-X (C:\WSJT\wsjtx\bin).
+# con l'hash SHA-256 fissato qui sotto: se non coincide lo script si ferma). Mai da altri programmi installati: Aurora e' indipendente.
 # Le DLL necessarie si ricavano leggendo le importazioni dei due eseguibili (e, a catena, delle DLL):
 # si copiano solo quelle che non sono di Windows. Se manca qualcosa lo script si ferma con un messaggio chiaro.
 param(
-    [string]$Hamlib = $env:AURORA_HAMLIB_SRC,
-    [switch]$SoloLocale
+    [string]$Hamlib = $env:AURORA_HAMLIB_SRC
 )
 
 # Hamlib ufficiale: ultima stabile al 2026-11-01 (WSJT-X 3.3 porta una 4.7.3~rc, non ancora rilasciata).
@@ -34,7 +31,7 @@ function Cartella-Valida([string]$dir) {
 }
 
 $origine = 'cartella locale'
-if (-not $Hamlib -and -not $SoloLocale) {
+if (-not $Hamlib) {
     # download dalla release ufficiale in target\hamlib-ufficiale (fuori da git), riusato se c'e' gia' e l'hash torna
     $cache = Join-Path $root "target\hamlib-ufficiale\$HamlibVersione"
     $zip = Join-Path $cache $HamlibZip
@@ -54,19 +51,11 @@ if (-not $Hamlib -and -not $SoloLocale) {
     $Hamlib = Join-Path $estratto "hamlib-w64-$HamlibVersione\bin"
     $origine = "$HamlibUrl (SHA-256 $HamlibSha256)"
 }
-if (-not $Hamlib) {
-    $candidate = @()
-    if (Test-Path 'C:\JTDX64') {
-        $candidate += Get-ChildItem 'C:\JTDX64' -Directory | Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName 'bin' }
-    }
-    $candidate += 'C:\WSJT\wsjtx\bin'
-    $Hamlib = $candidate | Where-Object { Cartella-Valida $_ } | Select-Object -First 1
-}
 if (-not (Cartella-Valida $Hamlib)) {
     throw @"
-Hamlib non trovato: serve una cartella con rigctld.exe (o rigctld-jtdx.exe), rigctl.exe e le DLL di Hamlib.
+Hamlib non trovato: serve una cartella con rigctld.exe, rigctl.exe e le DLL di Hamlib.
 Indicala con  .\scripts\prepara-hamlib.ps1 -Hamlib <cartella>  oppure con la variabile AURORA_HAMLIB_SRC
-(di base si cerca in C:\JTDX64\<versione>\bin e C:\WSJT\wsjtx\bin: installa JTDX o WSJT-X, oppure usa il pacchetto Windows ufficiale di Hamlib, https://github.com/Hamlib/Hamlib/releases).
+(di base si scarica il pacchetto Windows ufficiale di Hamlib, https://github.com/Hamlib/Hamlib/releases).
 "@
 }
 $Hamlib = (Resolve-Path -LiteralPath $Hamlib).Path
