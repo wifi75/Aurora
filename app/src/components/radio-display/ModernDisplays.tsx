@@ -7,6 +7,7 @@ import {
   hasFrequency,
   powerFraction,
   sFraction,
+  sIsEstimated,
   sLabel,
   swrFraction,
   type DisplayModel,
@@ -128,6 +129,8 @@ function Needle({ model, height = 54, dim = false }: { model: DisplayModel; heig
       <g fontSize="9" fill={ink}><text x="8" y="54">1</text><text x="36" y="22">5</text><text x="66" y="12">9</text></g>
       <text x="92" y="20" fontSize="9" fill="#ff5252">+40</text>
       <line x1="60" y1="62" x2={x} y2={y} stroke={ink} strokeWidth="1.8" />
+      {/* la lettura, con la tilde se l'S-meter e' stimato dall'audio */}
+      {sIsEstimated(model.meters) ? <text x="60" y="44" fontSize="10" textAnchor="middle" fill={ink}>{sLabel(model.meters)}</text> : null}
     </svg>
   );
 }
