@@ -282,8 +282,13 @@ pub fn run_capture_with(
         let on_error = move |e: cpal::Error| {
             let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
             tracing::debug!("errore del flusso audio: {e}");
+            // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
             if is_power_of_ten(n) {
-                tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+                if n >= 100 {
+                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+                } else {
+                    tracing::info!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+                }
             }
         };
         let built = match format {
