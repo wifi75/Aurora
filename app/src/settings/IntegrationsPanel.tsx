@@ -29,6 +29,7 @@ const BLANK: UdpDestination = { name: '', host: '127.0.0.1', port: 2237, enabled
 /** I tipi proposti quando si aggiunge un destinatario: valori di partenza comuni. */
 const PRESETS: Record<string, { label: Key; value: Partial<UdpDestination> }> = {
   wsjtx: { label: 'int.p.wsjtx', value: { name: 'GridTracker', host: '127.0.0.1', port: 2237, wsjtx: true } },
+  bblogger: { label: 'int.p.bblogger', value: { name: 'BBLogger', host: '127.0.0.1', port: 2237, wsjtx: true, loggedAdif: true } },
   multicast: { label: 'int.p.multicast', value: { name: 'Multicast', host: '239.255.0.1', port: 2237, wsjtx: true, multicast: true, ttl: 1, iface: '127.0.0.1' } },
   adif: { label: 'int.p.adif', value: { name: 'Log4OM', host: '127.0.0.1', port: 2333, adif: true } },
   n1mm: { label: 'int.p.n1mm', value: { name: 'N1MM XML', host: '127.0.0.1', port: 12060, n1mm: true } },
