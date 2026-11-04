@@ -2,7 +2,7 @@
 
 **Italiano** · [English](linux.en.md) · [Deutsch](linux.de.md) · [Français](linux.fr.md) · [Español](linux.es.md) · [Português](linux.pt.md)
 
-Versione **della comunità**: è compilata dallo stesso codice della versione per Windows, quindi ogni novità arriva anche su Linux. Il programma è sviluppato e provato su Windows; la versione Linux la provano i suoi utenti, **senza assistenza ufficiale**.
+Versione Linux **non provata dall'autore e senza assistenza ufficiale**. È compilata in automatico da GitHub dallo stesso codice della versione per Windows, quindi ogni novità arriva anche su Linux; l'autore però sviluppa e prova Aurora solo su Windows.
 
 ## Scaricarla già pronta
 
