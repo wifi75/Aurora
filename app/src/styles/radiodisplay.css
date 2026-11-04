@@ -583,7 +583,7 @@
   gap: 0.4rem;
   align-items: stretch;
   width: auto;
-  height: 4rem;
+  height: 4.375rem; /* 70 px */
 }
 
 .rd-duo .rd-slot {
@@ -698,7 +698,7 @@
   flex: 0 0 auto;
   width: 40rem;
   max-width: 100%;
-  height: 4rem;
+  height: 4.375rem; /* 70 px */
 }
 
 .rd-face-slot .rd-face,
@@ -806,10 +806,13 @@
 
 /* potenza della radio accanto al pannello FT-2000 / IC-7610 */
 .rd-face-row { display: flex; align-items: stretch; gap: 0.35rem; max-width: 100%; }
-.rd-pwr { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; height: 4rem; padding: 0 0.4rem; border-radius: 0.5rem; background: #05080a; border: 1px solid #1f3a46; color: #5ce8ff; }
+.rd-pwr { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; height: 4.375rem; padding: 0 0.4rem; border-radius: 0.5rem; background: #05080a; border: 1px solid #1f3a46; color: #5ce8ff; }
 .rd-pwr-val { font-size: 0.85rem; font-weight: 700; line-height: 1; }
 .rd-pwr-lbl { font-size: 0.6rem; letter-spacing: 0.1em; color: #ffb428; line-height: 1; }
 .rd-pwr-btns { display: flex; gap: 0.2rem; }
 .rd-pwr-btn { width: 1.45rem; height: 1.3rem; padding: 0; border-radius: 0.3rem; border: 1px solid #2a6a80; background: #0d1d24; color: #d8f4ff; font: 700 0.85rem/1 var(--font-data); cursor: pointer; }
 .rd-pwr-btn:hover { background: #1a3a48; }
 .rd-pwr-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* misure del display accanto alla scelta */
+.rd-size { display: block; margin-top: 0.15rem; font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-data); }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.113 - 2026-11-04
+- **Sei display nuovi** (`ModernDisplays.tsx`, `modern-displays.css`): estesi `icdual`, `icblue`, `ledline` (640 x 70) e quasi quadrati `icblueq`, `icblackq`, `yaesuq` (330 x 140, fissi nell'angolo; con la classe `rd-square` le icone della testata si rimpiccioliscono). Indicatori solo se la radio da' il dato e se spuntati in «Display esteso: cosa mostrare»; clic che comanda la radio come gli altri pannelli.
+- **Altezza dei display estesi**: da 64 a 70 punti; misure accanto a ogni stile e disposizione in Impostazioni › Radio.
+
 ## 0.11.112 - 2026-11-04
 - **Log in una pagina**: `LogTransfer` (import/export ADIF) in cima a Impostazioni › Programmi collegati, sopra server UDP e invio ADIF; il riquadro del log vuoto porta li'.
 

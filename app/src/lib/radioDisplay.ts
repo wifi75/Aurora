@@ -3,12 +3,22 @@ import type { RadioMeters } from '../api/schemas';
 import { browserStorage } from './theme';
 
 /** Gli stili del display della radio, nell'ordine in cui si propongono nelle Impostazioni. */
-export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610'] as const;
+export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610', 'icdual', 'icblue', 'ledline', 'icblueq', 'icblackq', 'yaesuq'] as const;
 export type RadioDisplayStyle = (typeof RADIO_DISPLAY_STYLES)[number];
 
 /** Stili a pannello unico (un solo schermo largo con i due VFO e gli indicatori): in testata prendono il posto dei due blocchi. */
-export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' {
-  return style === 'ft2000' || style === 'ic7610';
+export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' | 'icdual' | 'icblue' | 'ledline' {
+  return style === 'ft2000' || style === 'ic7610' || style === 'icdual' || style === 'icblue' || style === 'ledline';
+}
+
+/** Stili quasi quadrati (330 x 140): stanno nell'angolo della testata, al posto delle icone, che diventano piccole. */
+export function isSquareStyle(style: RadioDisplayStyle): style is 'icblueq' | 'icblackq' | 'yaesuq' {
+  return style === 'icblueq' || style === 'icblackq' || style === 'yaesuq';
+}
+
+/** Le misure in testata, in punti: estesi 640 x 70, quasi quadrati 330 x 140. */
+export function displaySize(style: RadioDisplayStyle): { w: number; h: number } {
+  return isSquareStyle(style) ? { w: 330, h: 140 } : { w: 640, h: 70 };
 }
 
 export interface RadioDisplayPref {
