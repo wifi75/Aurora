@@ -1,4 +1,5 @@
 import { useT } from '../i18n';
+import { LogTransfer } from '../components/LogTransfer';
 import { EngineValues } from './EngineValues';
 import { AudioDevicesPanel } from './AudioDevicesPanel';
 import { Help, InfoTab, Row } from './common';
@@ -67,6 +68,12 @@ function NativeReportsTab() {
   const t = useT();
   return (
     <>
+      {/* il log in un posto solo: importare il proprio storico ADIF e, sotto, i log esterni collegati via UDP */}
+      <Page>
+        <Group title={t('cta.log.section')} span={3}>
+          <LogTransfer />
+        </Group>
+      </Page>
       <NativeReports />
       <InfoTab
         render={(info) => (
