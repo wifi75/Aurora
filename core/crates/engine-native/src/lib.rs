@@ -157,43 +157,13 @@ fn format_line(slot_unix_ms: u64, d: &ft8::decode::Decoded) -> String {
     format!("{:02}{:02}{:02} {:>4} {:>5.1} {:>4} ~  {}\n", secs / 3600, secs / 60 % 60, secs % 60, d.snr_db, d.dt_s, d.freq_hz.round() as i64, d.text)
 }
 
-/// Avvia il motore proprio: `tap` porta l'audio della scheda, `events` e' il bus da cui si leggono i messaggi di JTDX per il confronto.
-/// Va chiamato dentro il runtime di Tokio.
-/// Con `live` il motore proprio fa da unico motore: pubblica anche i messaggi e lo stato sul bus (senza `live` lavora solo in ombra).
-/// Con `record` ogni periodo si salva anche in WAV nella cartella `recordings` dei dati, per provare il decoder sulle stesse registrazioni.
-pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf, record: bool, live: Option<LiveConfig>) -> Arc<NativeEngine> {
-    start_with_save(events, tap, data_dir, record, live, None)
-}
-
-/// Come [`start`], con in piu' il salvataggio dei file audio della scheda Audio (come JTDX: Nessuno / Decodificati / Tutti, in una cartella a scelta).
-/// `save` si puo' cambiare mentre il motore gira (`SaveSettings::set`): vale dal periodo dopo.
-pub fn start_with_save(
-    events: broadcast::Sender<Event>,
-    tap: mpsc::Receiver<AudioChunk>,
-    data_dir: PathBuf,
-    record: bool,
-    live: Option<LiveConfig>,
-    save: Option<Arc<SaveSettings>>,
-) -> Arc<NativeEngine> {
-    let engine = Arc::new(NativeEngine { parity: Arc::new(Parity::default()), stats: Arc::new(Mutex::new(Stats::default())) });
-
-    // i messaggi di JTDX, per il confronto
-    let parity = Arc::clone(&engine.parity);
-    let mut rx = events.subscribe();
-    tokio::spawn(async move {
-        loop {
-            match rx.recv().await {
-                // i messaggi del motore proprio (id alti) non sono di JTDX: non entrano nel confronto
-                Ok(Event::Decode(m)) if m.id < 1_000_000_000 => parity.add_jtdx(slot_of_time_ms(m.time_ms, now_unix_ms()), &m.text, i64::from(m.freq_hz)),
-                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
-                Err(broadcast::error::RecvError::Closed) => break,
-            }
-        }
-    });
-
-    // lo stato della stazione, una volta al secondo, quando il motore proprio e' l'unico
-    if let Some(live) = live.clone() {
-        let events = events.clone();
+/// Pubblica lo stato della stazione (modo, frequenza, trasmissione, S-meter) quattro volte al secondo. Parte una volta sola per gli stessi
+/// controlli: Aurora lo avvia subito, cosi' modo e periodo si vedono e si cambiano anche senza un ingresso audio aperto (il motore che
+/// decodifica parte solo con l'audio).
+pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
+    if live.controls.status_published.swap(true, Ordering::SeqCst) {
+        return;
+    }
         tokio::spawn(async move {
             // lo stato (frequenza, S-meter, trasmissione) si pubblica quattro volte al secondo: a un secondo lo S-meter sembrava fermo
             let mut tick = tokio::time::interval(std::time::Duration::from_millis(250));
@@ -247,6 +217,45 @@ pub fn start_with_save(
                 }
             }
         });
+    }
+
+/// Avvia il motore proprio: `tap` porta l'audio della scheda, `events` e' il bus da cui si leggono i messaggi di JTDX per il confronto.
+/// Va chiamato dentro il runtime di Tokio.
+/// Con `live` il motore proprio fa da unico motore: pubblica anche i messaggi e lo stato sul bus (senza `live` lavora solo in ombra).
+/// Con `record` ogni periodo si salva anche in WAV nella cartella `recordings` dei dati, per provare il decoder sulle stesse registrazioni.
+pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf, record: bool, live: Option<LiveConfig>) -> Arc<NativeEngine> {
+    start_with_save(events, tap, data_dir, record, live, None)
+}
+
+/// Come [`start`], con in piu' il salvataggio dei file audio della scheda Audio (come JTDX: Nessuno / Decodificati / Tutti, in una cartella a scelta).
+/// `save` si puo' cambiare mentre il motore gira (`SaveSettings::set`): vale dal periodo dopo.
+pub fn start_with_save(
+    events: broadcast::Sender<Event>,
+    tap: mpsc::Receiver<AudioChunk>,
+    data_dir: PathBuf,
+    record: bool,
+    live: Option<LiveConfig>,
+    save: Option<Arc<SaveSettings>>,
+) -> Arc<NativeEngine> {
+    let engine = Arc::new(NativeEngine { parity: Arc::new(Parity::default()), stats: Arc::new(Mutex::new(Stats::default())) });
+
+    // i messaggi di JTDX, per il confronto
+    let parity = Arc::clone(&engine.parity);
+    let mut rx = events.subscribe();
+    tokio::spawn(async move {
+        loop {
+            match rx.recv().await {
+                // i messaggi del motore proprio (id alti) non sono di JTDX: non entrano nel confronto
+                Ok(Event::Decode(m)) if m.id < 1_000_000_000 => parity.add_jtdx(slot_of_time_ms(m.time_ms, now_unix_ms()), &m.text, i64::from(m.freq_hz)),
+                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    });
+
+    // lo stato della stazione, quando il motore proprio e' l'unico (se non lo pubblica gia' `publish_status`)
+    if let Some(live) = live.clone() {
+        publish_status(events.clone(), live);
     }
 
     // l'audio: resampling, periodi, decodifica
