@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.108',
-    released: '2026-11-04T12:05:14Z',
+    released: '2026-11-04T12:07:26Z',
     kind: 'fixed',
     title: ['Ricezione con due schede audio uguali', 'Receiving with two identical sound cards', 'Empfang mit zwei gleichen Soundkarten', 'Réception avec deux cartes son identiques', 'Recepción con dos tarjetas de sonido iguales', 'Receção com duas placas de som iguais'],
     text: [
