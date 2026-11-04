@@ -80,13 +80,19 @@ pub fn probe(url: &str, timeout: Duration, app_version: &str) -> Result<String, 
     response.body_mut().read_to_string().map_err(|e| e.to_string())
 }
 
-/// Quali servizi sono accesi. Tutti spenti finche' non si decide.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// Quali servizi sono accesi. Tutti accesi di fabbrica (PSK Reporter, propagazione, calendario delle DXpedition); si spengono dalla pagina.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub psk: bool,
     pub solar: bool,
     pub dxped: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Settings {
+        Settings { psk: true, solar: true, dxped: true }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]

@@ -50,10 +50,11 @@ fn on(psk: bool, solar: bool) -> Settings {
 }
 
 #[test]
-fn everything_is_off_until_it_is_turned_on_and_nothing_is_asked() {
+fn everything_is_on_from_the_factory_and_nothing_is_asked_once_switched_off() {
     let fake = Fake::new();
     let (s, path) = service("off", &fake);
-    assert_eq!(s.settings(), on(false, false));
+    assert_eq!(s.settings(), Settings { psk: true, solar: true, dxped: true }, "accesi di fabbrica");
+    s.set_settings(Settings { psk: false, solar: false, dxped: false }).expect("salvato");
     assert!(!s.refresh_due(1_000_000, "IU3ABC"));
     assert!(!s.refresh_now(1_000_000, "IU3ABC"));
     assert_eq!((fake.psk_calls.load(Ordering::SeqCst), fake.solar_calls.load(Ordering::SeqCst)), (0, 0));
