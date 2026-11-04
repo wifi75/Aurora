@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **BBLogger**: destinatario pronto in Impostazioni › Programmi collegati › Integrazioni («+ BBLogger»: 127.0.0.1:2237, flusso WSJT-X e Logged ADIF), voce della Guida aggiornata nelle sei lingue e passi in `docs/integrazioni-log.md`.
+- **Link Linux senza 404**: nei README i pulsanti AppImage e .deb aprono la pagina della release e la guida ha l'indirizzo completo; nella pagina web, finche' la release non ha i pacchetti Linux, i pulsanti portano alla release con un avviso.
 - **Paesi e bandiere senza altri programmi**: il file dei paesi `cty.dat` (AD1C, country-files.com) e' dentro Aurora, aggiornato a ogni versione; prima Aurora lo cercava solo nell'installazione di JTDX e, senza JTDX, non mostrava bandiere, paesi ne' NEW ONE/NEW BAND.
 - **Tolto il vecchio modo JTDX**: Aurora non fa piu' da schermo a JTDX (motore `AURORA_ENGINE=jtdx`, ponte UDP, comando della finestra di JTDX, lettura e modifica di `JTDX.ini`, riavvio di JTDX): resta solo il suo motore. OmniRig resta come driver della radio (solo frequenza).
 - **Aurora indipendente**: all'avvio non legge piu' JTDX (ne' `JTDX.ini` ne' il suo log) e non ne prende motore, radio OmniRig, PTT, audio o porte UDP; `rigctld` e' solo quello incluso in Aurora (o, su Linux, quello del sistema), mai quello di altri programmi. Chi aveva impostato audio e radio in Aurora li ritrova; chi li aveva solo in JTDX li sceglie una volta in Impostazioni.
