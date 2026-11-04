@@ -222,7 +222,6 @@ describe('CatTab', () => {
     expect(screen.queryByLabelText('Metodo del PTT')).toBeNull();
     expect(screen.getByLabelText('Split')).toBeInTheDocument();
     expect(screen.getByLabelText('Modo scritto nella radio')).toBeInTheDocument();
-    expect(screen.getByText(/si impostano nel programma OmniRig/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Rileva la mia radio' })).toBeNull();
   });
 
@@ -254,11 +253,10 @@ describe('CatTab', () => {
     expect(await screen.findByText(/Un valore non va/)).toBeInTheDocument();
   });
 
-  it('explains sharing and the COM port rule even before connecting', async () => {
+  it('offers sharing even before connecting, without the sharing port until it is on', async () => {
     render(<CatTab />);
     await screen.findByText('Non collegata');
     expect(screen.getByText(/Condividi la radio con altri programmi/)).toBeInTheDocument();
-    expect(screen.getByText(/porta occupata/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Porta di condivisione')).toBeNull();
   });
 });

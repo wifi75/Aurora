@@ -43,7 +43,8 @@ describe('syncSettings', () => {
       return reply({});
     }) as unknown as typeof fetch;
     await hydrate(store, 'mobile', fetcher);
-    const second = calls[1];
+    // il telefono legge le sue scelte, poi quelle condivise del PC; senza niente su tutti e due manda le sue
+    const second = calls.find(([, init]) => init?.method === 'PUT');
     expect(second?.[0]).toBe('/api/v1/ui-settings/mobile');
     expect(second?.[1]?.method).toBe('PUT');
     expect(JSON.parse(String(second?.[1]?.body))).toEqual({ 'aurora-prefs': 'mie' });

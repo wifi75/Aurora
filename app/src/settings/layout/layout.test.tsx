@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { translate } from '../../i18n';
 import { Cells, Field, Group, Notes, Page } from './index';
 
 describe('settings layout', () => {
@@ -42,7 +41,7 @@ describe('settings layout', () => {
     expect(cell).toHaveClass('sx-field--changed', 'sx-field--stack');
   });
 
-  it('notes are a collapsible box with a translated title', () => {
+  it('notes are not shown: the settings explain themselves with the tips', () => {
     render(
       <Page>
         <Notes>
@@ -50,10 +49,9 @@ describe('settings layout', () => {
         </Notes>
       </Page>,
     );
-    expect(screen.getByText(translate('it', 'lay.notes'))).toBeInTheDocument();
-    expect(document.querySelectorAll('details')).toHaveLength(1);
-    expect(screen.getByText('Una nota lunga')).toBeInTheDocument();
+    expect(screen.queryByText('Una nota lunga')).toBeNull();
   });
+
 
 
 });
