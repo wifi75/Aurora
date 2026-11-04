@@ -155,6 +155,7 @@ export function QslBadges({ person, long = false }: { person: Person; long?: boo
     { key: 'L', label: t('qsl.lotw'), on: person.lotw },
     { key: 'E', label: t('qsl.eqsl'), on: person.eqsl },
     { key: 'D', label: t('qsl.direct'), on: person.direct },
+    { key: 'B', label: t('qsl.bureau'), on: person.bureau },
   ].filter((i) => i.on === true || i.on === false);
   const via = person.qsl_via?.trim() ?? '';
   if (items.length === 0 && via === '') return null;

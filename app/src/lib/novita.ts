@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.127',
+    released: '2026-11-04T21:31:08Z',
+    kind: 'new',
+    title: ['LoTW, eQSL, diretta e bureau da HamQTH', 'LoTW, eQSL, direct and bureau from HamQTH', 'LoTW, eQSL, Direkt und Büro von HamQTH', 'LoTW, eQSL, directe et bureau depuis HamQTH', 'LoTW, eQSL, directa y buró de HamQTH', 'LoTW, eQSL, direta e bureau do HamQTH'],
+    text: [
+      "QRZ.com senza abbonamento non manda le informazioni QSL: Aurora le completa con HamQTH (gratis), lasciando nome e città di QRZ. Le lettere L E D B (LoTW, eQSL, diretta, bureau) compaiono accanto alla Stazione DX e nel riquadro del nominativo; i dati dei nominativi in Attività di banda si precaricano. Con il display esteso lingua, volume e tema stanno in fondo a destra; nella riga del QSO in corso l'etichetta resta leggibile.",
+      "QRZ.com without a subscription does not send QSL information: Aurora completes it with HamQTH (free), keeping name and city from QRZ. The L E D B letters (LoTW, eQSL, direct, bureau) appear next to the DX station and in the callsign box; callsigns in Band activity are prefetched. With the wide display language, volume and theme sit at the far right; in the current QSO row the label stays readable.",
+      "QRZ.com ohne Abo liefert keine QSL-Angaben: Aurora ergänzt sie mit HamQTH (kostenlos) und behält Name und Ort von QRZ. Die Buchstaben L E D B (LoTW, eQSL, Direkt, Büro) stehen neben der DX-Station und im Rufzeichen-Feld; Rufzeichen der Bandaktivität werden vorab geladen. Mit breiter Anzeige stehen Sprache, Lautstärke und Thema ganz rechts; in der Zeile des laufenden QSO bleibt das Etikett lesbar.",
+      "QRZ.com sans abonnement n’envoie pas les infos QSL : Aurora les complète avec HamQTH (gratuit), en gardant nom et ville de QRZ. Les lettres L E D B (LoTW, eQSL, directe, bureau) apparaissent à côté de la station DX et dans la bulle de l’indicatif ; les indicatifs de l’Activité de bande sont préchargés. Avec l’afficheur large langue, volume et thème sont tout à droite ; dans la ligne du QSO en cours l’étiquette reste lisible.",
+      "QRZ.com sin suscripción no manda la información QSL: Aurora la completa con HamQTH (gratis), manteniendo nombre y ciudad de QRZ. Las letras L E D B (LoTW, eQSL, directa, buró) aparecen junto a la estación DX y en el recuadro del indicativo; los indicativos de Actividad de banda se precargan. Con la pantalla ancha idioma, volumen y tema van a la derecha; en la fila del QSO en curso la etiqueta se lee bien.",
+      "O QRZ.com sem assinatura não manda a informação QSL: a Aurora completa-a com o HamQTH (grátis), mantendo nome e cidade do QRZ. As letras L E D B (LoTW, eQSL, direta, bureau) aparecem junto à estação DX e no quadro do indicativo; os indicativos da Atividade de banda são pré-carregados. Com o ecrã largo idioma, volume e tema ficam à direita; na linha do QSO em curso a etiqueta lê-se bem.",
+    ],
+  },
+  {
     version: '0.11.126',
     released: '2026-11-04T21:23:33Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Seule la station appelée est en jaune (pas celles en file) ; le cluster du téléphone ignore le texte cherché sur le PC ; l’accès sans code ne change que si le choix est enregistré.',
       'Solo la estación llamada está en amarillo (no las de la cola); el clúster del teléfono ignora el texto buscado en el PC; el acceso sin código solo cambia si la elección se guarda.',
       'Só a estação chamada fica a amarelo (não as em fila); o cluster do telemóvel ignora o texto procurado no PC; o acesso sem código só muda se a escolha for guardada.',
-    ],
-  },
-  {
-    version: '0.11.90',
-    released: '2026-11-03T18:54:59Z',
-    kind: 'changed',
-    title: ['Telefono: cluster, log e chiamata in evidenza', 'Phone: cluster, log and highlighted call', 'Telefon: Cluster, Log und hervorgehobener Anruf', 'Téléphone : cluster, journal et appel en évidence', 'Teléfono: clúster, registro y llamada resaltada', 'Telemóvel: cluster, registo e chamada em destaque'],
-    text: [
-      'Sul telefono il cluster mostra anche modo e chi ha fatto lo spot, il log ha la bandiera, le colonne sono allineate; la stazione chiamata è in giallo nell’elenco e nel riquadro Tx; i blocchi hanno bordo e titolo del loro colore.',
-      'On the phone the cluster also shows mode and spotter, the log has the flag, columns are aligned; the called station is yellow in the list and in the Tx box; blocks have border and heading in their own colour.',
-      'Auf dem Telefon zeigt der Cluster auch Betriebsart und Spotter, das Log hat die Flagge, die Spalten sind ausgerichtet; die gerufene Station ist gelb in der Liste und im Tx-Kasten; die Blöcke haben Rahmen und Titel in eigener Farbe.',
-      'Sur le téléphone le cluster montre aussi le mode et l’auteur du spot, le journal a le drapeau, les colonnes sont alignées ; la station appelée est en jaune dans la liste et dans l’encadré Tx ; les blocs ont bordure et titre de leur couleur.',
-      'En el teléfono el clúster muestra también modo y quién hizo el spot, el registro tiene la bandera, las columnas están alineadas; la estación llamada está en amarillo en la lista y en el recuadro Tx; los bloques tienen borde y título de su color.',
-      'No telemóvel o cluster mostra também o modo e quem fez o spot, o registo tem a bandeira, as colunas estão alinhadas; a estação chamada está a amarelo na lista e na caixa Tx; os blocos têm borda e título da sua cor.',
     ],
   },
 ];
