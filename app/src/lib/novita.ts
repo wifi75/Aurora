@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.123',
-    released: '2026-11-04T19:49:25Z',
+    released: '2026-11-04T19:52:42Z',
     kind: 'new',
     title: ["Conferma del log e telefono più sicuro", "Log confirmation and safer phone pairing", "Log-Bestätigung und sichereres Telefon-Koppeln", "Confirmation du journal et téléphone plus sûr", "Confirmación del log y teléfono más seguro", "Confirmação do log e telemóvel mais seguro"],
     text: [
