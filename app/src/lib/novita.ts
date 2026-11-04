@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.112',
-    released: '2026-11-04T12:32:44Z',
+    released: '2026-11-04T12:34:49Z',
     kind: 'changed',
     title: ['Log: import e collegamenti in una pagina', 'Log: import and links on one page', 'Log: Import und Verbindungen auf einer Seite', 'Journal : import et liaisons sur une page', 'Log: importación y conexiones en una página', 'Log: importação e ligações numa página'],
     text: [
