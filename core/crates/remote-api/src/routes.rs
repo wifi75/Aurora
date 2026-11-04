@@ -124,7 +124,26 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat/extra", post(crate::cat::cat_extra))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
+        .layer(axum::middleware::from_fn_with_state(state.clone(), mark_lan))
         .with_state(state)
+}
+
+/// Ogni richiesta arrivata da un altro dispositivo dice che il telefono raggiunge Aurora (per la diagnosi dell'associazione).
+async fn mark_lan(State(state): State<AppState>, req: axum::extract::Request, next: axum::middleware::Next) -> Response {
+    if let Some(ConnectInfo(addr)) = req.extensions().get::<ConnectInfo<std::net::SocketAddr>>()
+        && crate::pair_watch::from_lan(addr.ip())
+    {
+        state.pair_watch.seen_from_lan();
+    }
+    next.run(req).await
+}
+
+/// Il rapporto anonimo di un'associazione non riuscita, con la rete e il firewall di Windows letti adesso.
+fn report_pairing(outcome: crate::pair_watch::Outcome) {
+    tokio::spawn(async move {
+        let check = tokio::task::spawn_blocking(lan::network_check).await.unwrap_or_default();
+        tracing::warn!(target: "remote_api::associazione", "{}", outcome.message(check.category.as_deref(), check.firewall_allowed));
+    });
 }
 
 pub struct ApiError {
@@ -287,6 +306,26 @@ async fn pair_start(
         }
         l
     });
+    // si segue il codice: se allo scadere il telefono non si e' associato parte il rapporto anonimo con la causa probabile
+    let named = lan::lan_ipv4s_named();
+    let adapter = addresses
+        .first()
+        .and_then(|first| named.iter().find(|(ip, _)| first.contains(&format!("//{ip}:"))).map(|(_, n)| n.clone()))
+        .unwrap_or_default();
+    let (serial, previous) = state.pair_watch.start(link.as_deref(), &adapter, named.len());
+    if let Some(previous) = previous {
+        report_pairing(previous);
+    }
+    {
+        let watch = std::sync::Arc::clone(&state.pair_watch);
+        let wait = std::time::Duration::from_secs(pairing.expires_in_secs) + crate::pair_watch::GRACE;
+        tokio::spawn(async move {
+            tokio::time::sleep(wait).await;
+            if let Some(outcome) = watch.expire(serial) {
+                report_pairing(outcome);
+            }
+        });
+    }
     let qr_text = link.clone().unwrap_or_else(|| pairing.code.clone());
     let qr_svg = qrcode::QrCode::new(qr_text.as_bytes())
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "qr_failed"))?
@@ -343,7 +382,16 @@ struct PairFinishBody {
 
 #[utoipa::path(post, path = "/api/v1/pair/finish", responses((status = 204, description = "Dispositivo associato, cookie di sessione impostato"), (status = 400, description = "Codice o nome non validi"), (status = 410, description = "Codice scaduto"), (status = 429, description = "Troppi tentativi")))]
 async fn pair_finish(State(state): State<AppState>, Json(body): Json<PairFinishBody>) -> Response {
-    match state.auth.finish_pairing(&body.code, &body.device_name) {
+    let result = state.auth.finish_pairing(&body.code, &body.device_name);
+    state.pair_watch.finished(match &result {
+        Ok(_) => "ok",
+        Err(AuthError::BadCode) => "codice sbagliato",
+        Err(AuthError::BadName) => "nome non valido",
+        Err(AuthError::Expired) => "codice scaduto",
+        Err(AuthError::Locked { .. }) => "troppi tentativi",
+        Err(_) => "errore interno",
+    });
+    match result {
         Ok(token) => {
             let mut cookie = format!(
                 "{COOKIE_NAME}={}; HttpOnly; SameSite=Strict; Path=/; Max-Age={COOKIE_MAX_AGE_SECS}",
