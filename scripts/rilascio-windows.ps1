@@ -39,6 +39,12 @@ $pubFile = (Get-Content "$root\desktop\updater.pub" -Raw).Trim()
 if ($pubConf -ne $pubFile) { throw 'La chiave pubblica in tauri.conf.json non coincide con desktop\updater.pub' }
 if ($SoloControllo) { Write-Host 'Versioni allineate.'; return }
 
+Write-Host '0/3 File dei paesi (cty.dat di AD1C, country-files.com), incluso nel programma...'
+$ctyDir = "$root\desktop\src-tauri\cty"
+New-Item -ItemType Directory -Force $ctyDir | Out-Null
+Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile "$ctyDir\cty.dat" -UseBasicParsing
+if ((Get-Item "$ctyDir\cty.dat").Length -lt 50000) { throw 'cty.dat scaricato ma troppo piccolo: senza il file dei paesi non si fa l''installatore.' }
+
 Write-Host '0/3 Hamlib (rigctld per la radio CAT, incluso nell''installatore)...'
 & "$PSScriptRoot\prepara-hamlib.ps1" -Hamlib $Hamlib
 if (-not $?) { throw 'Preparazione di Hamlib fallita: senza non si fa l''installatore (vedi il messaggio sopra).' }
