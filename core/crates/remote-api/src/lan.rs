@@ -46,19 +46,117 @@ impl LanInfo {
     }
 }
 
-/// Gli IPv4 del PC sulla rete di casa (niente loopback ne' indirizzi automatici 169.254), prima quelli privati.
-pub fn lan_ipv4s() -> Vec<Ipv4Addr> {
-    let mut ips: Vec<Ipv4Addr> = if_addrs::get_if_addrs()
+/// Gli adattatori che non portano alla rete di casa: macchine virtuali, WSL, Docker, VPN, Bluetooth. Il loro indirizzo nel QR
+/// mandava il telefono su una rete che non raggiunge (per esempio `172.18.x.x` di WSL, che in ordine veniva prima di `192.168.1.x`).
+pub fn is_virtual_adapter(name: &str) -> bool {
+    let n = name.to_lowercase();
+    ["vethernet", "virtualbox", "vmware", "hyper-v", "wsl", "docker", "vpn", "tap-", "tap ", "tun", "wintun", "tailscale", "zerotier", "hamachi", "radmin", "bluetooth", "loopback", "npcap", "wireguard", "openvpn", "tunnel", "nordlynx", "virtual", "vbox", "utun", "br-", "veth", "virbr"]
+        .iter()
+        .any(|w| n.contains(w))
+}
+
+/// Quanto un indirizzo e' probabilmente quello della rete di casa: prima 192.168.x, poi 10.x, poi 172.16-31.x, poi gli altri.
+fn home_rank(ip: &Ipv4Addr) -> u8 {
+    match ip.octets() {
+        [192, 168, ..] => 0,
+        [10, ..] => 1,
+        [172, b, ..] if (16..=31).contains(&b) => 2,
+        _ if ip.is_private() => 3,
+        _ => 4,
+    }
+}
+
+/// Gli IPv4 del PC sulla rete di casa, con il nome dell'adattatore: niente loopback, 169.254 e adattatori virtuali (se resta almeno
+/// un adattatore vero), prima quelli che sembrano la rete di casa.
+pub fn lan_ipv4s_named() -> Vec<(Ipv4Addr, String)> {
+    let all: Vec<(Ipv4Addr, String)> = if_addrs::get_if_addrs()
         .unwrap_or_default()
         .into_iter()
         .filter_map(|iface| match iface.ip() {
-            IpAddr::V4(v4) if !v4.is_loopback() && !v4.is_link_local() && !v4.is_unspecified() => Some(v4),
+            IpAddr::V4(v4) if !v4.is_loopback() && !v4.is_link_local() && !v4.is_unspecified() => Some((v4, iface.name.clone())),
             _ => None,
         })
         .collect();
-    ips.sort_by_key(|ip| (!ip.is_private(), *ip));
-    ips.dedup();
+    let real: Vec<(Ipv4Addr, String)> = all.iter().filter(|(_, n)| !is_virtual_adapter(n)).cloned().collect();
+    let mut ips = if real.is_empty() { all } else { real };
+    ips.sort_by_key(|(ip, _)| (home_rank(ip), *ip));
+    ips.dedup_by(|a, b| a.0 == b.0);
     ips
+}
+
+/// Gli IPv4 del PC sulla rete di casa (vedi [`lan_ipv4s_named`]).
+pub fn lan_ipv4s() -> Vec<Ipv4Addr> {
+    lan_ipv4s_named().into_iter().map(|(ip, _)| ip).collect()
+}
+
+/// Cosa sa Windows della rete del PC: la Wi-Fi (SSID), se la rete e' «Pubblica» e se il firewall lascia entrare Aurora.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+pub struct NetworkCheck {
+    /// Il nome della rete Wi-Fi a cui e' collegato il PC (`None`: cavo, o non si sa).
+    pub ssid: Option<String>,
+    /// «Public», «Private», «DomainAuthenticated» (della rete con l'indirizzo scelto).
+    pub category: Option<String>,
+    /// Il firewall ha una regola che lascia entrare il programma (`None`: non si sa).
+    pub firewall_allowed: Option<bool>,
+    /// Gli indirizzi scelti, con il nome dell'adattatore.
+    pub addresses: Vec<(String, String)>,
+}
+
+#[cfg(windows)]
+fn powershell(script: &str) -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    let out = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
+        .creation_flags(0x0800_0000)
+        .output()
+        .ok()?;
+    out.status.success().then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// Controlla rete e firewall (solo Windows; altrove restano «non si sa»). Si chiama dalla scheda di associazione.
+pub fn network_check() -> NetworkCheck {
+    let named = lan_ipv4s_named();
+    let mut check = NetworkCheck { addresses: named.iter().map(|(ip, n)| (ip.to_string(), n.clone())).collect(), ..NetworkCheck::default() };
+    #[cfg(windows)]
+    {
+        let exe = std::env::current_exe().ok().map(|p| p.display().to_string()).unwrap_or_default().replace('\'', "''");
+        let script = format!(
+            "$ErrorActionPreference='SilentlyContinue'; \
+             $s = (netsh wlan show interfaces | Select-String '^\\s*SSID\\s*:' | Select-Object -First 1); if ($s) {{ 'SSID=' + ($s.ToString() -replace '^\\s*SSID\\s*:\\s*','') }}; \
+             $p = Get-NetConnectionProfile | Where-Object {{ $_.IPv4Connectivity -ne 'Disconnected' }} | Select-Object -First 1; if ($p) {{ 'CAT=' + $p.NetworkCategory }}; \
+             $r = Get-NetFirewallApplicationFilter -Program '{exe}' | Get-NetFirewallRule | Where-Object {{ $_.Enabled -eq 'True' -and $_.Direction -eq 'Inbound' }}; \
+             if ($r | Where-Object {{ $_.Action -eq 'Block' }}) {{ 'FW=block' }} elseif ($r | Where-Object {{ $_.Action -eq 'Allow' }}) {{ 'FW=allow' }} else {{ 'FW=none' }}"
+        );
+        if let Some(out) = powershell(&script) {
+            for line in out.lines() {
+                if let Some(v) = line.strip_prefix("SSID=") {
+                    check.ssid = Some(v.trim().to_string()).filter(|s| !s.is_empty());
+                } else if let Some(v) = line.strip_prefix("CAT=") {
+                    check.category = Some(v.trim().to_string());
+                } else if let Some(v) = line.strip_prefix("FW=") {
+                    check.firewall_allowed = match v.trim() {
+                        "allow" => Some(true),
+                        "block" | "none" => Some(false),
+                        _ => None,
+                    };
+                }
+            }
+        }
+    }
+    check
+}
+
+/// Aggiunge al firewall di Windows la regola che lascia entrare Aurora (Windows chiede la conferma da amministratore).
+pub fn allow_in_firewall() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?.display().to_string();
+        let args = format!("advfirewall firewall add rule name=\"Aurora\" dir=in action=allow program=\"{exe}\" enable=yes profile=any");
+        let script = format!("Start-Process netsh -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '{}'", args.replace('\'', "''"));
+        return powershell(&script).map(|_| ()).ok_or_else(|| "regola non aggiunta (conferma annullata?)".to_string());
+    }
+    #[cfg(not(windows))]
+    Err("solo su Windows".into())
 }
 
 /// Il nome del PC ridotto a lettere, cifre e trattini, come vuole un nome host.

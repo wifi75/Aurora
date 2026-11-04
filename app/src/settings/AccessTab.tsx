@@ -1,3 +1,5 @@
+import '../styles/first-run.css';
+import { NetworkChecklist } from './NetworkChecklist';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -109,6 +111,7 @@ export function AccessTab() {
             </div>
           </div>
         ) : null}
+        {offer ? <NetworkChecklist waiting /> : null}
       </Group>
 
       <Group title={t('acc.devices')} span={2}>
