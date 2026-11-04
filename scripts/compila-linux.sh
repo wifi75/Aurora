@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compila Aurora per Linux con un solo comando (versione della comunita', senza assistenza).
+# Compila Aurora per Linux con un solo comando (non provata dall'autore, senza assistenza).
 #
 #   ./scripts/compila-linux.sh                 -> installa i pacchetti di sistema, compila e prepara .deb e .AppImage
 #   ./scripts/compila-linux.sh --solo-deb      -> prepara solo il .deb (piu' veloce)

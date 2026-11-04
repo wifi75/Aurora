@@ -1,4 +1,4 @@
-# Versione Linux di Aurora (della comunita'): a ogni push controlla che compili anche su Linux; a ogni release pubblicata
+# Versione Linux di Aurora (non provata dall'autore, senza assistenza): a ogni push controlla che compili anche su Linux; a ogni release pubblicata
 # prepara l'AppImage e il .deb e li allega alla release con nomi fissi (cosi' i link "latest/download" della pagina restano validi).
 name: Linux
 
