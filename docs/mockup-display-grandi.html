@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Display grandi</title>
+<style>
+:root{--bg:#0d1117;--text:#e6edf8;--muted:#a3b3ca}
+body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+p.sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.w{display:grid;gap:18px;max-width:900px}
+.lab{font-size:14px;color:var(--muted);margin:0 0 6px}
+.d{border-radius:12px;padding:12px 14px;height:132px;box-sizing:border-box;display:grid;gap:10px;font-family:Consolas,ui-monospace,monospace;overflow:hidden;border:1px solid #2a3446}
+.k{font-size:12px}
+.big{line-height:1}
+@media (max-width:600px){.d{height:auto;min-height:132px;grid-template-columns:1fr!important}.big{font-size:28px!important}}
+</style>
+</head>
+<body>
+<h1>Display grandi per la testata di Aurora</h1>
+<p class="sub">Cinque proposte alte quanto le due righe di comandi; lingua, volume e tema si spostano a sinistra. Disegni nostri «nello stile» delle radio, senza marchi.</p>
+<div class="w">
+
+<div><p class="lab">1 · Icom touch a colori (IC-7300 MK2, IC-705, IC-905)</p>
+<div class="d" style="background:#0b1424;grid-template-columns:1fr 1.15fr">
+<div style="display:grid;gap:5px;align-content:start">
+<div class="k" style="display:flex;gap:6px;flex-wrap:wrap"><span style="background:#185FA5;padding:1px 6px;border-radius:3px">FT8</span><span style="color:#85B7EB">VFO A</span><span style="color:#5DCAA5">P.AMP1</span><span style="color:#EF9F27">AGC-F</span></div>
+<div class="big" style="font-size:36px">14.074.000</div>
+<div class="k" style="display:flex;align-items:center;gap:6px">S <span style="flex:1;height:7px;background:linear-gradient(90deg,#1D9E75 55%,#E24B4A 55% 70%,#2C2C2A 70%);border-radius:2px"></span> S9+10</div>
+<div class="k" style="display:flex;gap:10px;color:#B4B2A9"><span>PO 25 W</span><span>SWR 1.2</span><span>BW 3.0k</span></div>
+</div>
+<div style="border-radius:6px;background:#042C53;display:grid;grid-template-rows:1fr 1fr;overflow:hidden;min-height:90px">
+<div style="background:linear-gradient(0deg,#185FA5,transparent);clip-path:polygon(0 100%,8% 70%,14% 85%,22% 40%,30% 80%,38% 60%,46% 85%,55% 30%,63% 75%,72% 55%,80% 85%,88% 45%,100% 80%,100% 100%)"></div>
+<div style="background:repeating-linear-gradient(90deg,#0C447C 0 6px,#185FA5 6px 9px,#0C447C 9px 22px,#EF9F27 22px 24px,#0C447C 24px 40px)"></div>
+</div></div></div>
+
+<div><p class="lab">2 · Yaesu doppio ricevitore con cascata 3D (FTDX101, FTDX10)</p>
+<div class="d" style="background:#101010;grid-template-columns:1fr 1fr 0.9fr">
+<div style="display:grid;gap:4px;align-content:start"><span class="k" style="color:#EF9F27">MAIN · FT8</span><span class="big" style="font-size:30px;color:#FAC775">14.074.00</span><span class="k" style="color:#B4B2A9">AF 40  RF 100  SQL 0</span></div>
+<div style="display:grid;gap:4px;align-content:start"><span class="k" style="color:#85B7EB">SUB · USB</span><span class="big" style="font-size:30px;color:#B5D4F4">14.076.50</span><span class="k" style="color:#B4B2A9">AF 20  RF 100  SQL 0</span></div>
+<div style="border-radius:6px;min-height:80px;background:#0b0b0b;transform:perspective(160px) rotateX(28deg);background-image:repeating-linear-gradient(90deg,#1D9E75 0 2px,transparent 2px 13px),repeating-linear-gradient(0deg,#173404 0 3px,#0b0b0b 3px 8px)"></div>
+</div></div>
+
+<div><p class="lab">3 · Kenwood ambra a lancetta (TS-890, TS-990)</p>
+<div class="d" style="background:#1a1206;color:#FAC775;grid-template-columns:auto 1fr auto;align-items:center">
+<svg width="120" height="90" viewBox="0 0 120 90" aria-hidden="true"><path d="M10 80 A55 55 0 0 1 110 80" fill="none" stroke="#854F0B" stroke-width="2"/><path d="M85 33 A55 55 0 0 1 110 80" fill="none" stroke="#E24B4A" stroke-width="3"/><line x1="60" y1="80" x2="82" y2="30" stroke="#FAC775" stroke-width="2"/><text x="8" y="74" font-size="11" fill="#EF9F27">1</text><text x="54" y="20" font-size="11" fill="#EF9F27">9</text><text x="96" y="30" font-size="11" fill="#F09595">+40</text></svg>
+<div style="display:grid;gap:4px"><span class="k" style="color:#EF9F27">VFO A · FT8 · ATT OFF · NB ON</span><span class="big" style="font-size:38px">14.074.00</span>
+<svg width="160" height="20" viewBox="0 0 160 20" aria-hidden="true"><path d="M10 18 L35 3 L125 3 L150 18" fill="none" stroke="#EF9F27" stroke-width="1.5"/><text x="68" y="14" font-size="10" fill="#BA7517">3.0k</text></svg></div>
+<div class="k" style="display:grid;gap:4px;color:#EF9F27;text-align:right"><span>PO 25W</span><span>SWR 1.2</span><span>ALC —</span></div>
+</div></div>
+
+<div><p class="lab">4 · SDR panadapter (Flex, ANAN, Hermes Lite 2, SunSDR)</p>
+<div class="d" style="background:#050b14;grid-template-rows:1fr 1fr;padding:0;position:relative">
+<div style="background:linear-gradient(0deg,#0F6E56,transparent);clip-path:polygon(0 100%,5% 75%,11% 88%,17% 45%,23% 82%,30% 65%,36% 90%,44% 25%,50% 70%,57% 52%,64% 88%,71% 40%,79% 80%,86% 60%,93% 85%,100% 70%,100% 100%)"></div>
+<div style="background:repeating-linear-gradient(90deg,#04342C 0 9px,#1D9E75 9px 11px,#04342C 11px 30px,#5DCAA5 30px 32px,#04342C 32px 55px)"></div>
+<div style="position:absolute;left:44%;top:0;bottom:0;width:2px;background:#E24B4A"></div>
+<div style="position:absolute;left:12px;top:8px;font-size:24px;font-weight:600">14.074.000 <span class="k" style="color:#5DCAA5">FT8 · Rx 1500</span></div>
+</div></div>
+
+<div><p class="lab">5 · Essenziale a LED (Elecraft K4, KX3)</p>
+<div class="d" style="background:#000;grid-template-columns:1.2fr 1fr;align-items:center">
+<div style="display:grid;gap:5px"><span class="k" style="color:#FAC775">VFO A · FT8 · PRE · AGC-F</span><span class="big" style="font-size:40px">14.074.00</span><span class="k" style="color:#888780">VFO B 14.076.50 USB</span></div>
+<div class="k" style="display:grid;gap:7px">
+<div style="display:flex;gap:6px;align-items:center">S <span style="flex:1;height:8px;background:repeating-linear-gradient(90deg,#97C459 0 5px,#000 5px 7px);clip-path:inset(0 35% 0 0)"></span></div>
+<div style="display:flex;gap:6px;align-items:center">PO <span style="flex:1;height:8px;background:repeating-linear-gradient(90deg,#EF9F27 0 5px,#000 5px 7px);clip-path:inset(0 55% 0 0)"></span></div>
+<div style="display:flex;gap:6px;align-items:center">SWR <span style="flex:1;height:8px;background:repeating-linear-gradient(90deg,#E24B4A 0 5px,#000 5px 7px);clip-path:inset(0 85% 0 0)"></span></div>
+</div></div></div>
+
+</div>
+</body>
+</html>
