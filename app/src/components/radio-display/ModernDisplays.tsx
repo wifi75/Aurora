@@ -216,18 +216,18 @@ export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, wait
 
 /* ---------- Quasi quadrati (330 x 140) ---------- */
 
-/** Q1 · Icom blu. */
+/** Q1 · Icom blu: tasti su una riga, frequenza con la banda passante a fianco, strumenti sotto (sta in 330 x 120). */
 export function IcBlueSquare({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
-    <Frame cls="md-q md-icblue" ariaLabel={ariaLabel}>
-      <div className="md-row md-wrap"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+    <Frame cls="md-q md-icblue md-q1" ariaLabel={ariaLabel}>
+      <div className="md-row md-q1-chips"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
       <div className="md-row"><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}{s.split ? <span className="md-tag">SPLIT</span> : null}{s.vfoB ? <span className="md-soft md-push">B {freq(s.x.vfo_b_hz ?? 0)}</span> : null}</div>
-      <span className="md-freq md-freq--big">{freq(model.dialHz)}</span>
-      <div className="md-split">
-        <Passband hz={s.passband} height={30} />
-        {s.meters ? <Bars model={model} cls="md-bars--blue" /> : null}
+      <div className="md-q1-main">
+        <span className="md-freq md-freq--big">{freq(model.dialHz)}</span>
+        <Passband hz={s.passband} height={28} />
       </div>
+      {s.meters ? <Bars model={model} cls="md-bars--blue md-q1-bars" /> : null}
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>
   );

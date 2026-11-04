@@ -85,11 +85,11 @@ button.md-chip:disabled { cursor: progress; }
 
 /* In testata: estesi nella riga dei comandi, quasi quadrati nell'angolo (le icone della testata diventano piccole) */
 .rd-modern-slot { width: 40rem; max-width: 100%; height: 4.375rem; flex: none; }
-.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 8.75rem; z-index: 1050; }
+.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 7.5rem; z-index: 1050; }
 body.rd-square .app-header { padding-right: 21.6rem; }
 body.rd-square .live-top { padding-right: 21.2rem; }
 body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
-.rd-square-preview { width: 20.625rem; height: 8.75rem; max-width: 100%; }
+.rd-square-preview { width: 20.625rem; height: 7.5rem; max-width: 100%; }
 .md-chips-side { max-width: 9.5rem; justify-content: flex-end; gap: 0.15rem; }
 .md-chips-side .md-chip { font-size: 0.56rem; line-height: 0.95rem; }
 .md-icdual .md-half--sub .md-freq--sub { font-size: 1.3rem; }
@@ -98,3 +98,25 @@ body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
 /* con il quasi quadrato le icone della testata (lingua, volume, tema, logo) diventano piccole e stanno dopo il menu */
 body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
 body.rd-square .app-header .app-logo-link svg { width: 24px; height: 24px; }
+/* quasi quadrato alto 120: righe piu' strette perche' tutto ci stia */
+.md-q { gap: 0.1rem; padding: 0.3rem 0.5rem; }
+.md-q .md-freq--big { font-size: 1.8rem; }
+.md-q .md-tag, .md-q .md-chip { line-height: 1rem; font-size: 0.6rem; }
+.md-q .md-bars { font-size: 0.55rem; gap: 0.1rem 0.3rem; }
+.md-q .md-pb { max-height: 1.6rem; }
+.md-icblack .md-needle { height: 2.6rem; }
+.md-icblack .md-keys { overflow: hidden; gap: 0.1rem; }
+.md-icblack .md-keys .md-chip { line-height: 0.85rem; font-size: 0.5rem; }
+.md-icblack .md-body { grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; padding: 0.2rem 0.4rem; }
+.md-icblack .md-needle { height: 2.3rem; width: auto; justify-self: center; }
+.md-icblack .md-freq { font-size: 1.5rem; }
+.md-q.md-icblack { grid-template-rows: minmax(0, 100%); align-content: stretch; }
+.md-icblack .md-body, .md-icblack .md-keys { height: 100%; box-sizing: border-box; }
+
+/* Q1 in 330 x 120: niente righe che vanno a capo, niente tagliato in basso */
+.md-q1 { grid-template-rows: auto auto minmax(0, 1fr) auto; height: 100%; align-content: stretch; }
+.md-q1-chips { flex-wrap: nowrap; overflow: hidden; }
+.md-q1-main { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 0; }
+.md-q1-main .md-pb { width: 100%; max-width: 7rem; height: 1.75rem; justify-self: end; }
+.md-q1-bars { grid-template-columns: auto 1fr 2.2rem; }
+.md-q1 .md-freq--big { font-size: 1.75rem; }
