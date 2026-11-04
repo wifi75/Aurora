@@ -104,7 +104,7 @@ mod tests {
         let snap = s.snapshot();
         assert_eq!(snap["psk"]["sent"], 2);
         assert_eq!(snap["eqsl"]["ok"], Value::Null, "un servizio mai usato ha ok nullo");
-        assert_eq!(snap.as_object().map(serde_json::Map::len), Some(8));
+        assert_eq!(snap.as_object().map(serde_json::Map::len), Some(KINDS.len()));
         s.set_pending("qrz", 3);
         assert_eq!((s.get("qrz").pending, s.get("qrz").ok), (3, None), "la coda non e' un esito");
     }
