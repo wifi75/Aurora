@@ -308,6 +308,7 @@ export function Live() {
         pickBand={(band) => void pickBand(band)}
         pickMode={(mode) => void pickMode(mode)}
         rigControl={info.data?.rig_control === true}
+        modeControl={info.data?.rig_control === true || info.data?.engine === 'native'}
         txAllowed={info.data?.tx_allowed ?? false}
       />
     );
@@ -323,7 +324,7 @@ export function Live() {
           <ModeSwitch
             mode={status?.mode ?? ''}
             locked={status?.transmitting ?? false}
-            onPick={info.data?.rig_control ? (mode) => void pickMode(mode) : undefined}
+            onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
           />
           <BandBar
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
