@@ -28,6 +28,8 @@
 >
 > **[Installateur Windows (dernière version)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Page de la dernière version](https://github.com/wifi75/Aurora/releases/latest)
 >
+> [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Linux .deb](https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Linux](https://img.shields.io/badge/Guide-Linux-E95420?logo=ubuntu&logoColor=white)](docs/linux.fr.md)
+>
 > 🐧 **[Linux (version communautaire, sans assistance) : AppImage, .deb ou compilation en une commande](docs/linux.fr.md)**
 
 Une station numérique FT8, FT4, JT65 et JT9 d'un genre nouveau : interface percutante, automatisation des QSO et commande à distance depuis un téléphone. Elle possède son propre moteur de décodage et d'émission FT8 (JTDX reste une comparaison facultative) ; Aurora est cerveau, moteur et écran.
