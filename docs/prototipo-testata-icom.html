@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo testata</title>
+<style>
+body{margin:0;background:#c9d3e3;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1b2536}
+.note{background:#0d1117;color:#e6edf8;font-size:13px;padding:8px 16px}
+.ap{background:#dfe5ef;padding:8px 10px}
+.brand{font-size:16px;letter-spacing:4px;color:#5b6fd6;line-height:1}.brand small{display:block;font-size:10px;letter-spacing:1px;color:#7a5bd6}
+.nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}.nav span{padding:6px 8px}.nav span.on{background:#0f6e56;color:#fff;border-radius:4px}
+.mini{display:flex;align-items:center;gap:9px;background:#eef2f8;border:1px solid #c9d3e3;border-radius:999px;padding:3px 10px}
+.flag{width:20px;height:14px;background:linear-gradient(90deg,#009246 33%,#fff 33% 66%,#ce2b37 66%);border-radius:2px}
+.sl{width:60px;height:4px;background:#9aa8c0;border-radius:2px;position:relative}.sl::after{content:'';position:absolute;left:60%;top:-4px;width:12px;height:12px;border-radius:50%;background:#3d4d69}
+.logo{width:20px;height:20px;border-radius:4px;background:repeating-linear-gradient(90deg,#1D9E75 0 2px,#0b1424 2px 4px)}
+.ico{font-size:15px;color:#3d4d69}
+.b{display:inline-block;border:1px solid #9aa8c0;border-radius:14px;padding:3px 10px;font-size:13px;background:#fff;margin:0 3px 4px 0}
+.b.g{background:#0f6e56;color:#fff;border-color:#0f6e56}.b.p{background:#534AB7;color:#fff;border-color:#534AB7;border-radius:8px;padding:6px 14px}
+.ic{background:#000;border-radius:8px;border:1px solid #1b2a44;font-family:'Segoe UI',system-ui,sans-serif;color:#fff;overflow:hidden;display:grid;grid-template-columns:44px 1fr}
+.fk{display:grid;gap:3px;align-content:start;padding:4px;background:#05070c;border-right:1px solid #1d3b78}
+.fk span{border:1px solid #2f5cb8;border-radius:2px;padding:1px 2px;font-size:9px;line-height:1.15;color:#cfe0ff;background:#0a1a3a;text-align:center}
+.fk b{display:block;color:#fff;font-weight:500;font-size:10px}
+.sb{display:flex;gap:5px;align-items:center;font-size:9px;color:#cfe0ff;padding:2px 6px;background:linear-gradient(180deg,#0d2c74,#06183f)}
+.ch{border:1px solid #6f92d8;border-radius:2px;padding:0 3px}
+.panels{display:grid;grid-template-columns:1.1fr 0.8fr 1fr 0.7fr;gap:8px;margin-top:8px}.panels div{height:260px;background:#fff;border:1px solid #c9d3e3;border-radius:8px;font-size:12px;padding:6px 8px;color:#5f6b80}
+</style>
+</head>
+<body>
+<div class="note">Prototipo della testata (non è Aurora vera e non è pubblicato): display quasi quadrato in stile Icom al posto delle icone; lingua, volume, tema e logo piccoli dopo «Novità».</div>
+<div class="ap">
+ <div style="display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:10px">
+  <div style="display:grid;gap:8px;align-content:start">
+   <div style="display:flex;align-items:center;gap:16px"><div class="brand">AURORA<small>by IU3CYV</small></div><div class="nav"><span class="on">Stazione</span><span>Fox</span><span>Automazioni</span><span>Statistiche</span><span>Mappa</span><span>Log</span><span>Propagazione</span><span>Impostazioni</span><span>Guida</span><span>Novità</span></div><div class="mini"><span class="flag"></span><span class="ico">▾</span><span class="ico">🔈</span><span class="sl"></span><span class="ico">☾</span><span class="logo"></span></div></div>
+   <div><span class="b p">FT8 ▾</span><span class="b">160</span><span class="b">80</span><span class="b">60</span><span class="b">40</span><span class="b">30</span><span class="b">20</span><span class="b">17</span><span class="b">15</span><span class="b">12</span><span class="b">10</span><span class="b">6</span><span class="b">2</span></div>
+   <div><span class="b">Hound</span><span class="b">Modo SWL</span><span class="b g">Monitora</span><span class="b g">AGCc</span><span class="b">Filtro</span><span class="b g">a7/a8</span><span class="b g">Multithread</span><span class="b">Ferma</span><span class="b">Decodifica</span><span class="b">Cancella</span><span class="b" style="background:#1D9E75;color:#fff">9/15</span><span class="b" style="background:#1b2536;color:#fff">12:32:39</span></div>
+  </div>
+  <div class="ic" style="height:150px">
+   <div class="fk"><span>ANT<b>1</b></span><span>P.AMP<b>2</b></span><span>ATT<b>OFF</b></span><span>AGC<b>FAST</b></span><span>COMP<b>OFF</b></span><span>VOX<b>OFF</b></span></div>
+   <div style="display:grid;grid-template-rows:auto 1fr auto auto">
+    <div class="sb"><span class="ch">ANT 1</span><span class="ch">BW 3.0k</span><span class="ch">SFT 0</span><span style="margin-left:auto">12:32 UTC</span></div>
+    <svg viewBox="0 0 240 70" width="100%" height="56" aria-hidden="true"><path d="M20 66 A100 100 0 0 1 220 66" fill="none" stroke="#fff" stroke-width="1.4"/><path d="M150 22 A100 100 0 0 1 220 66" fill="none" stroke="#ff5252" stroke-width="4"/><g font-size="11" fill="#fff"><text x="24" y="58">1</text><text x="56" y="34">3</text><text x="88" y="22">5</text><text x="118" y="17">7</text><text x="142" y="18">9</text></g><g font-size="11" fill="#ff5252"><text x="170" y="27">+20</text><text x="196" y="46">+40</text></g><text x="4" y="12" font-size="9" fill="#cfe0ff">MET Po</text><line x1="120" y1="80" x2="150" y2="14" stroke="#fff" stroke-width="2"/></svg>
+    <div style="display:flex;gap:5px;align-items:center;padding:0 6px;font-size:10px"><span style="color:#cfe0ff">VFO</span><span style="background:#2f6fd8;padding:0 5px;border-radius:2px">USB-D</span><span style="color:#cfe0ff">FIL2</span><span class="ch" style="margin-left:auto;background:#c62828;border-color:#c62828">TX</span></div>
+    <div style="padding:0 6px 4px"><span style="font-size:28px;font-weight:300;line-height:1">14.074.000</span><div style="font-size:9px;color:#9fb8ee">B 14.076.500 USB-D</div></div>
+   </div>
+  </div>
+ </div>
+ <div class="panels"><div>Attività di banda</div><div>Log</div><div>DX Cluster</div><div>Comandi</div></div>
+</div>
+</body>
+</html>

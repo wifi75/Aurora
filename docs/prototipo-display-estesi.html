@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo display estesi</title>
+<style>
+body{margin:0;background:#c9d3e3;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1b2536}
+.note{background:#0d1117;color:#e6edf8;font-size:13px;padding:8px 16px}
+h2{font-size:14px;margin:14px 10px 4px;color:#1b2536}
+.ap{background:#dfe5ef;padding:8px 10px;border-bottom:1px solid #b6c1d4}
+.brand{font-size:16px;letter-spacing:4px;color:#5b6fd6;line-height:1}.brand small{display:block;font-size:10px;letter-spacing:1px;color:#7a5bd6}
+.nav{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}.nav span{padding:6px 8px}.nav span.on{background:#0f6e56;color:#fff;border-radius:4px}
+.icons{display:flex;align-items:center;gap:10px;margin-left:auto}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid #9aa8c0;background:#fff;display:grid;place-items:center;font-size:16px}
+.flag{width:22px;height:15px;background:linear-gradient(90deg,#009246 33%,#fff 33% 66%,#ce2b37 66%);border-radius:2px}
+.sl{width:90px;height:4px;background:#9aa8c0;border-radius:2px;position:relative}.sl::after{content:'';position:absolute;left:60%;top:-5px;width:14px;height:14px;border-radius:50%;background:#3d4d69}
+.logo{width:28px;height:28px;border-radius:5px;background:repeating-linear-gradient(90deg,#1D9E75 0 3px,#0b1424 3px 6px)}
+.b{display:inline-block;border:1px solid #9aa8c0;border-radius:14px;padding:3px 10px;font-size:13px;background:#fff;margin:0 3px 4px 0}
+.b.g{background:#0f6e56;color:#fff;border-color:#0f6e56}.b.p{background:#534AB7;color:#fff;border-color:#534AB7;border-radius:8px;padding:6px 14px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-top:8px;align-items:center}
+.ext{height:66px;width:640px;border-radius:10px;overflow:hidden;box-sizing:border-box}
+.m{font-family:Consolas,ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="note">Prototipo (non è Aurora vera e non è pubblicato): tre display estesi, bassi, nella riga dei comandi. Le icone della testata restano grandi al loro posto.</div>
+
+<script>
+const head = `<div style="display:flex;align-items:center;gap:16px"><div class="brand">AURORA<small>by IU3CYV</small></div><div class="nav"><span class="on">Stazione</span><span>Fox</span><span>Automazioni</span><span>Statistiche</span><span>Mappa</span><span>Log</span><span>Propagazione</span><span>Impostazioni</span><span>Guida</span><span>Novità</span></div><div class="icons"><span class="ib"><span class="flag"></span></span><span class="ib">🔈</span><span class="sl"></span><span class="ib">☾</span><span class="ib"><span class="logo"></span></span></div></div>`;
+const left = `<div><div><span class="b p">FT8 ▾</span><span class="b">160</span><span class="b">80</span><span class="b">60</span><span class="b">40</span><span class="b">30</span><span class="b">20</span><span class="b">17</span><span class="b">15</span><span class="b">12</span><span class="b">10</span><span class="b">6</span><span class="b">2</span></div><div><span class="b">Hound</span><span class="b">Modo SWL</span><span class="b g">Monitora</span><span class="b g">AGCc</span><span class="b">Filtro</span><span class="b g">a7/a8</span><span class="b">Ferma</span><span class="b">Decodifica</span><span class="b" style="background:#1D9E75;color:#fff">9/15</span><span class="b" style="background:#1b2536;color:#fff">12:32:39</span></div></div>`;
+const ext = [
+['A · Icom doppio ricevitore (stile IC-7610)', `<div class="ext m" style="background:#000;color:#fff;display:grid;grid-template-columns:1fr 1fr;border:1px solid #1b2a44">
+ <div style="display:grid;grid-template-columns:1fr 92px;align-items:center;padding:4px 10px;border-right:1px solid #1d3b78"><div><div style="font-size:10px;display:flex;gap:5px"><span style="background:#2f6fd8;padding:0 5px;border-radius:2px">MAIN</span><span>USB-D</span><span style="color:#cfe0ff">FIL2 · BW 3.0k</span></div><span style="font-size:28px;font-weight:300;font-family:Segoe UI,sans-serif;line-height:1.05">14.074.000</span></div>
+ <svg viewBox="0 0 120 60" width="92" height="50"><path d="M10 56 A55 55 0 0 1 110 56" fill="none" stroke="#fff"/><path d="M80 18 A55 55 0 0 1 110 56" fill="none" stroke="#ff5252" stroke-width="3"/><line x1="60" y1="62" x2="76" y2="12" stroke="#fff" stroke-width="1.6"/></svg></div>
+ <div style="display:grid;grid-template-columns:1fr 92px;align-items:center;padding:4px 10px;opacity:.85"><div><div style="font-size:10px;display:flex;gap:5px"><span style="border:1px solid #2f6fd8;padding:0 5px;border-radius:2px">SUB</span><span>USB</span><span style="color:#cfe0ff">BW 2.4k</span></div><span style="font-size:24px;font-weight:300;font-family:Segoe UI,sans-serif;line-height:1.05">14.076.500</span></div>
+ <svg viewBox="0 0 120 60" width="92" height="50"><path d="M10 56 A55 55 0 0 1 110 56" fill="none" stroke="#9fb8ee"/><line x1="60" y1="62" x2="40" y2="14" stroke="#9fb8ee" stroke-width="1.6"/></svg></div></div>`],
+['B · Yaesu ambra a barre (stile FTDX101)', `<div class="ext m" style="background:#101010;color:#FAC775;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:6px 12px">
+ <div style="display:grid"><span style="font-size:10px;color:#EF9F27">MAIN · FT8 · IPO · AGC-F</span><span style="font-size:30px;line-height:1">14.074.00</span></div>
+ <div style="display:grid;gap:5px;font-size:10px"><div style="display:flex;gap:6px;align-items:center">S <span style="flex:1;height:7px;background:repeating-linear-gradient(90deg,#FAC775 0 4px,#101010 4px 6px);clip-path:inset(0 40% 0 0)"></span></div><div style="display:flex;gap:6px;align-items:center">PO <span style="flex:1;height:7px;background:repeating-linear-gradient(90deg,#FAC775 0 4px,#101010 4px 6px);clip-path:inset(0 60% 0 0)"></span></div><div style="display:flex;gap:6px;align-items:center">SWR <span style="flex:1;height:7px;background:repeating-linear-gradient(90deg,#F09595 0 4px,#101010 4px 6px);clip-path:inset(0 88% 0 0)"></span></div></div>
+ <div style="display:grid;text-align:right"><span style="font-size:10px;color:#85B7EB">SUB · USB</span><span style="font-size:20px;color:#B5D4F4;line-height:1">14.076.50</span></div></div>`],
+['C · LED essenziale (stile K4)', `<div class="ext m" style="background:#000;color:#fff;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:6px 12px">
+ <div style="display:grid"><span style="font-size:10px;color:#FAC775">VFO A · FT8 · PRE · NB</span><span style="font-size:32px;line-height:1">14.074.00</span></div>
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10px;text-align:center"><div>S<div style="height:22px;margin-top:2px;background:repeating-linear-gradient(0deg,#97C459 0 3px,#000 3px 5px);clip-path:inset(30% 0 0 0)"></div></div><div>PO<div style="height:22px;margin-top:2px;background:repeating-linear-gradient(0deg,#EF9F27 0 3px,#000 3px 5px);clip-path:inset(50% 0 0 0)"></div></div><div>SWR<div style="height:22px;margin-top:2px;background:repeating-linear-gradient(0deg,#E24B4A 0 3px,#000 3px 5px);clip-path:inset(85% 0 0 0)"></div></div></div>
+ <div style="display:grid;text-align:right;font-size:10px;color:#888780"><span>VFO B</span><span style="font-size:18px;color:#d3d1c7">14.076.50</span></div></div>`]
+];
+for (const [t, d] of ext) document.write(`<h2>${t}</h2><div class="ap">${head}<div class="row">${left}${d}</div></div>`);
+</script>
+</body>
+</html>
