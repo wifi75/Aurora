@@ -35,12 +35,8 @@ pub type RulesSaver = Arc<dyn Fn(&Rules) + Send + Sync>;
 pub type Log4omProvider = Arc<dyn Fn(usize) -> Result<serde_json::Value, String> + Send + Sync>;
 /// I quadrati locatore gia' lavorati (per la mappa), dal log.
 pub type WorkedMapProvider = Arc<dyn Fn() -> Result<serde_json::Value, String> + Send + Sync>;
-/// Legge le impostazioni di JTDX dal suo file di configurazione (sola lettura).
-pub type JtdxConfigProvider = Arc<dyn Fn() -> Result<serde_json::Value, String> + Send + Sync>;
 /// Dato un nominativo, paese e zone dal file cty.dat.
 pub type DxccProvider = Arc<dyn Fn(&str) -> Option<serde_json::Value> + Send + Sync>;
-/// Applica modifiche alle impostazioni di JTDX (chiude JTDX, scrive il suo file, lo riavvia).
-pub type JtdxApplier = Arc<dyn Fn(std::collections::BTreeMap<String, String>) -> Result<(), String> + Send + Sync>;
 pub type StatsProvider = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
 /// Di quale stazione la scheda DXCC deve dire le etichette (tutti i campi sono facoltativi).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -178,8 +174,6 @@ pub struct AppState {
     pub updates: Option<Arc<updater::UpdateService>>,
     /// Chi sa installare un aggiornamento (il programma Windows); senza, l'aggiornamento si scarica a mano.
     pub update_installer: Option<Arc<dyn UpdateInstaller>>,
-    pub engine_config: Option<JtdxConfigProvider>,
-    pub engine_apply: Option<JtdxApplier>,
     /// Impostazioni di Aurora per il motore proprio (al posto del `JTDX.ini`); solo con `AURORA_ENGINE=native`.
     pub engine_settings: Option<Arc<engine_settings::EngineSettingsStore>>,
     /// Chi apre e chiude i dispositivi audio (scheda Audio); solo con il motore proprio.
@@ -257,7 +251,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, support_bundle: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_config: None, engine_apply: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, save_dialog: None, crash_folder: None, support_bundle: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -356,11 +350,6 @@ impl AppState {
         self
     }
 
-    pub fn with_engine_apply_if(mut self, applier: Option<JtdxApplier>) -> AppState {
-        self.engine_apply = applier;
-        self
-    }
-
     pub fn with_engine_settings(mut self, store: Arc<engine_settings::EngineSettingsStore>) -> AppState {
         self.engine_settings = Some(store);
         self
@@ -368,11 +357,6 @@ impl AppState {
 
     pub fn with_audio(mut self, control: Arc<dyn audio_api::AudioControl>) -> AppState {
         self.audio = Some(control);
-        self
-    }
-
-    pub fn with_engine_config_if(mut self, reader: Option<JtdxConfigProvider>) -> AppState {
-        self.engine_config = reader;
         self
     }
 
