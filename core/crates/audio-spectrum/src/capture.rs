@@ -138,12 +138,24 @@ fn card_of(normalized: &str) -> Option<&str> {
 /// (lo stesso «USB Audio CODEC» con Windows in un'altra lingua o ricollegato con un altro numero). Serve a non confondere
 /// «Microfono (USB)» con «Microfono (USB) 2» quando il nome arriva da un elenco.
 pub fn match_device_name(names: &[String], hint: &str) -> Option<usize> {
+    // prima il nome scritto esattamente cosi' (anche con il «2- »): con due schede uguali e' l'unico modo di aprire quella giusta
+    let exact = hint.trim().to_lowercase();
+    if let Some(i) = names.iter().position(|n| n.trim().to_lowercase() == exact) {
+        return Some(i);
+    }
     let wanted = normalized(hint);
     if wanted.is_empty() {
         return None;
     }
     let all: Vec<String> = names.iter().map(|n| normalized(n)).collect();
-    if let Some(i) = all.iter().position(|n| *n == wanted).or_else(|| all.iter().position(|n| n.contains(&wanted))) {
+    // poi il nome ripulito, ma solo se una scheda sola gli corrisponde: con due «USB Audio Device» non si indovina
+    let same_name: Vec<usize> = all.iter().enumerate().filter(|(_, n)| **n == wanted).map(|(i, _)| i).collect();
+    if same_name.len() == 1 {
+        return Some(same_name[0]);
+    }
+    if same_name.is_empty()
+        && let Some(i) = names.iter().position(|n| n.to_lowercase().contains(&exact)).or_else(|| all.iter().position(|n| n.contains(&wanted)))
+    {
         return Some(i);
     }
     let card = card_of(&wanted)?;
