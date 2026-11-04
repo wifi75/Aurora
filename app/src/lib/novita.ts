@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.108',
+    released: '2026-11-04T12:05:14Z',
+    kind: 'fixed',
+    title: ['Ricezione con due schede audio uguali', 'Receiving with two identical sound cards', 'Empfang mit zwei gleichen Soundkarten', 'Réception avec deux cartes son identiques', 'Recepción con dos tarjetas de sonido iguales', 'Receção com duas placas de som iguais'],
+    text: [
+      "Con due schede USB uguali (per esempio «USB Audio Device» e «2- USB Audio Device») la 0.11.105 poteva aprire quella sbagliata e la cascata restava muta. Ora vince sempre il nome esatto scelto in Impostazioni.",
+      "With two identical USB cards (for example «USB Audio Device» and «2- USB Audio Device») version 0.11.105 could open the wrong one and the waterfall stayed silent. Now the exact name chosen in Settings always wins.",
+      "Mit zwei gleichen USB-Karten (z. B. «USB Audio Device» und «2- USB Audio Device») konnte die 0.11.105 die falsche öffnen und der Wasserfall blieb stumm. Jetzt gilt immer der in den Einstellungen gewählte genaue Name.",
+      "Avec deux cartes USB identiques (par exemple « USB Audio Device » et « 2- USB Audio Device ») la 0.11.105 pouvait ouvrir la mauvaise et la chute d’eau restait muette. Désormais le nom exact choisi dans les Réglages l’emporte toujours.",
+      "Con dos tarjetas USB iguales (por ejemplo «USB Audio Device» y «2- USB Audio Device») la 0.11.105 podía abrir la equivocada y la cascada se quedaba muda. Ahora siempre gana el nombre exacto elegido en Ajustes.",
+      "Com duas placas USB iguais (por exemplo «USB Audio Device» e «2- USB Audio Device») a 0.11.105 podia abrir a errada e a cascata ficava muda. Agora ganha sempre o nome exato escolhido nas Definições.",
+    ],
+  },
+  {
     version: '0.11.107',
     released: '2026-11-04T12:03:16Z',
     kind: 'changed',
