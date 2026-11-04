@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SetupCta } from './SetupCta';
 import { useEffect, useRef, useState } from 'react';
 import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
@@ -38,7 +39,7 @@ export function Log4omPanel() {
 
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
-  if (log.data.qsos.length === 0) return <p className="muted log4om-note">{t('log.empty')}</p>;
+  if (log.data.qsos.length === 0) return <SetupCta className="setup-cta--log" href="#/statistiche" title="cta.log.none" action="cta.log.go" />;
   return (
     <div className="log4om">
       <table className="log4om-table">
