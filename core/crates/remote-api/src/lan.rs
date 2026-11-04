@@ -55,6 +55,12 @@ pub fn is_virtual_adapter(name: &str) -> bool {
         .any(|w| n.contains(w))
 }
 
+/// Un adattatore Wi-Fi (dal nome che gli da' il sistema).
+pub fn is_wifi_adapter(name: &str) -> bool {
+    let n = name.to_lowercase();
+    ["wi-fi", "wifi", "wlan", "wireless", "wlp", "wlo", "airport"].iter().any(|w| n.contains(w))
+}
+
 /// Quanto un indirizzo e' probabilmente quello della rete di casa: prima 192.168.x, poi 10.x, poi 172.16-31.x, poi gli altri.
 fn home_rank(ip: &Ipv4Addr) -> u8 {
     match ip.octets() {
@@ -79,7 +85,8 @@ pub fn lan_ipv4s_named() -> Vec<(Ipv4Addr, String)> {
         .collect();
     let real: Vec<(Ipv4Addr, String)> = all.iter().filter(|(_, n)| !is_virtual_adapter(n)).cloned().collect();
     let mut ips = if real.is_empty() { all } else { real };
-    ips.sort_by_key(|(ip, _)| (home_rank(ip), *ip));
+    // la Wi-Fi per prima: il telefono e' quasi sempre in Wi-Fi, e con PC su cavo e Wi-Fi insieme l'indirizzo del cavo puo' essere di un'altra rete
+    ips.sort_by_key(|(ip, name)| (!is_wifi_adapter(name), home_rank(ip), *ip));
     ips.dedup_by(|a, b| a.0 == b.0);
     ips
 }
@@ -234,5 +241,20 @@ impl Announcer {
 impl Drop for Announcer {
     fn drop(&mut self) {
         let _ = self.daemon.shutdown();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_wifi_adapter_is_recognised_by_its_name() {
+        for n in ["Wi-Fi", "WiFi 2", "WLAN", "Wireless Network Connection", "wlp3s0", "wlo1"] {
+            assert!(is_wifi_adapter(n), "{n}");
+        }
+        for n in ["Ethernet", "eth0", "enp2s0", "vEthernet (WSL)"] {
+            assert!(!is_wifi_adapter(n), "{n}");
+        }
     }
 }

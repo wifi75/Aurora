@@ -332,7 +332,24 @@ async fn pair_start(
         .render::<qrcode::render::svg::Color>()
         .min_dimensions(200, 200)
         .build();
-    Ok(Json(json!({ "code": pairing.code, "expires_in": pairing.expires_in_secs, "qr_svg": qr_svg, "link": link, "addresses": addresses, "mdns": mdns_url(&state) })))
+    // tutti gli indirizzi, ognuno con il suo QR: se il primo non si apre sul telefono (PC su due reti, Wi-Fi diversa) si prova il successivo
+    let options: Vec<Value> = addresses
+        .iter()
+        .map(|url| {
+            let mut l = format!("{url}/#/associa?codice={}", pairing.code);
+            if let Some(name) = &mdns {
+                l.push_str(&format!("&nome={name}"));
+            }
+            let kind = if url.contains(".local") {
+                "mdns"
+            } else {
+                named.iter().find(|(ip, _)| url.contains(&format!("//{ip}:"))).map_or("other", |(_, n)| if lan::is_wifi_adapter(n) { "wifi" } else if lan::is_virtual_adapter(n) { "virtual" } else { "cable" })
+            };
+            let svg = qrcode::QrCode::new(l.as_bytes()).ok().map(|q| q.render::<qrcode::render::svg::Color>().min_dimensions(120, 120).build());
+            json!({ "url": url, "link": l, "kind": kind, "qr_svg": svg })
+        })
+        .collect();
+    Ok(Json(json!({ "code": pairing.code, "expires_in": pairing.expires_in_secs, "qr_svg": qr_svg, "link": link, "addresses": addresses, "options": options, "mdns": mdns_url(&state) })))
 }
 
 /// `http://aurora.local:8787` se l'annuncio mDNS e' attivo.
