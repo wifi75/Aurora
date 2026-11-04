@@ -34,7 +34,7 @@
     "homepage": "https://github.com/wifi75/Aurora",
     "category": "Utility",
     "shortDescription": "Stazione digitale FT8/FT4",
-    "longDescription": "Aurora è una stazione digitale FT8/FT4 con automazione dei QSO e controllo da telefono. Usa JTDX come motore di decodifica e trasmissione; Aurora è il cervello e lo schermo.",
+    "longDescription": "Aurora è una stazione digitale FT8/FT4 con un motore proprio di decodifica e trasmissione, automazione dei QSO e controllo da telefono. Funziona da sola, senza altri programmi.",
     "licenseFile": "../../LICENSE",
     "windows": {
       "nsis": {
