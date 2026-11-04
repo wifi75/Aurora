@@ -17,7 +17,7 @@ import type { FaceExtras } from './RigFaceDisplays';
 import { useT } from '../../i18n';
 
 /**
- * Sei display «moderni»: tre estesi (640 x 70, nella riga dei comandi) e tre quasi quadrati (330 x 140, nell'angolo della testata
+ * Sei display «moderni»: tre estesi (640 x 90, nella riga dei comandi) e tre quasi quadrati (330 x 130, nell'angolo della testata
  * al posto delle icone). Ogni indicatore compare solo se la radio lo da' (il dato c'e') e se e' spuntato in
  * Impostazioni > Radio > «Display esteso: cosa mostrare»; con il clic (solo in testata) comanda la radio.
  */
@@ -149,7 +149,7 @@ function NoRadio({ model, noRadio }: { model: DisplayModel; noRadio: string }) {
   return hasFrequency(model.dialHz) ? null : <span className="md-noradio">{noRadio}</span>;
 }
 
-/* ---------- Estesi (640 x 70) ---------- */
+/* ---------- Estesi (640 x 90) ---------- */
 
 /** E1 · Icom doppio ricevitore (stile IC-7610). */
 export function IcDualDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
@@ -218,7 +218,7 @@ export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, wait
 
 /* ---------- Quasi quadrati (330 x 140) ---------- */
 
-/** Q1 · Icom blu: tasti su una riga, frequenza con la banda passante a fianco, strumenti sotto (sta in 330 x 120). */
+/** Q1 · Icom blu: tasti su una riga, frequenza con la banda passante a fianco, strumenti sotto (sta in 330 x 130). */
 export function IcBlueSquare({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
