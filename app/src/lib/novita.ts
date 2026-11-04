@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.124',
-    released: '2026-11-04T20:40:14Z',
+    released: '2026-11-04T20:43:34Z',
     kind: 'new',
     title: ['Log anche senza il 73, Split sul telefono', 'Logged even without the 73, Split on the phone', 'Log auch ohne 73, Split am Telefon', 'Log même sans le 73, Split sur le téléphone', 'Log incluso sin el 73, Split en el teléfono', 'Log mesmo sem o 73, Split no telemóvel'],
     text: [
