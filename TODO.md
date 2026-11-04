@@ -3,6 +3,7 @@
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-01, v0.11.60.
 
 ## Aperti (2026-11-01)
+- [ ] Linux: alla prossima release controllare che il lavoro `Linux` di GitHub Actions alleghi AppImage e `.deb` e che i link della pagina web funzionino.
 - [ ] **CAT4OM** (cat4om.com, dello stesso autore di Log4OM, IW3HMH): richiesto da un utente. Oggi dovrebbe funzionare con il ponte Hamlib/rigctld di CAT4OM (Aurora: Hamlib, radio «Hamlib NET rigctl», porta 127.0.0.1:4532, PTT CAT), ma non e' provato. Da fare: provarlo (anche senza radio), poi aggiungerlo come scelta pronta in Impostazioni > Radio e nella Guida; valutare il protocollo nativo di CAT4OM con l'autore se da' piu' funzioni del ponte.
 - [ ] Pagina dei rapporti degli errori nell'installatore (informativa e due caselle gia' spuntate); oggi c'e' solo l'avviso al primo avvio.
 - [ ] Server UDP primario e secondario di fabbrica sulla stessa porta 127.0.0.1:2237 (QSO doppi nei log): decidere se spegnere il secondario.

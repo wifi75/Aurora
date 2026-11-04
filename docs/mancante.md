@@ -43,5 +43,6 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 
+- **Linux** (versione della comunita'): mancano OmniRig (solo Windows), PTT diretto su RTS/DTR della seriale, regolazione del volume di registrazione e aggiornamento automatico. Il PTT su seriale si potrebbe portare con `ioctl(TIOCMSET)` se qualcuno lo chiede.
 - JTDX 159 non accetta `Configure` via UDP: livello di decodifica, cicli FT8, filtri RX e altre impostazioni del motore restano nella finestra di JTDX.
 - Un Reply fa trasmettere JTDX; i comandi di GridTracker2 passano dall'hub senza il cancello di Aurora.
