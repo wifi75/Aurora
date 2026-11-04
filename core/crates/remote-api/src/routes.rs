@@ -270,11 +270,15 @@ async fn lan_check(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, 
 
 /// «Consenti Aurora»: aggiunge la regola del firewall di Windows (chiede la conferma da amministratore; solo dal PC stesso).
 #[utoipa::path(post, path = "/api/v1/lan/allow", responses((status = 200, description = "Regola aggiunta"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Non aggiunta (firewall_failed)")))]
-async fn lan_allow(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+async fn lan_allow(State(state): State<AppState>, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
     if !from_this_pc(peer, &headers) {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
-    tokio::task::spawn_blocking(lan::allow_in_firewall)
+    let port = match state.lan.port() {
+        0 => 8787,
+        p => p,
+    };
+    tokio::task::spawn_blocking(move || lan::allow_in_firewall(port))
         .await
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "firewall_failed"))?
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "firewall_failed").with_message(e))?;
