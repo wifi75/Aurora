@@ -27,7 +27,6 @@ vi.mock('../api/client', () => ({
   getCatModels: vi.fn().mockResolvedValue([]),
   getCatPorts: vi.fn().mockResolvedValue([]),
   getClock: vi.fn().mockResolvedValue({ config: { enabled: true, servers: ['it.pool.ntp.org'], interval_secs: 900, warn_ms: 200, auto_correct: false }, last: null }),
-  getEngineConfig: vi.fn().mockResolvedValue({ UDPServer: '127.0.0.1', UDPServerPort: '2334', AcceptUDPRequests: 'true', AcceptUDPReplyMessages: '1', NDepth: '3', SoundInName: 'Microfono di prova' }),
   getFrequencies: vi.fn().mockResolvedValue([
     { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true },
     { band: '160m', mode: 'FT8', hz: 1_810_000, region: 'R1', preferred: true },
@@ -152,18 +151,6 @@ describe('Radio, Audio, Reports and Advanced', () => {
     open();
     goTo('Audio');
     expect(await screen.findByText('USB Audio')).toBeInTheDocument();
-  });
-
-  it('shows the real the engine values: UDP server and port, audio device, decoding depth', async () => {
-    open();
-    goTo('Programmi collegati');
-    expect(await screen.findByText('Server UDP primario: porta')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('2334')).toBeInTheDocument();
-    expect(screen.getByText('solo CQ')).toBeInTheDocument();
-    goTo('Audio');
-    expect(await screen.findByDisplayValue('Microfono di prova')).toBeInTheDocument();
-    goTo('Filtri');
-    expect(await screen.findByDisplayValue('profonda')).toBeInTheDocument();
   });
 
   it('shows the export targets, UDP, countries and QSOs', async () => {

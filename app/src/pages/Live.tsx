@@ -1,7 +1,7 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { getCat, getControls, getOnline, getEngineConfig, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
@@ -31,7 +31,6 @@ import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
 import { armAudio, playSound } from '../lib/soundBank';
-import { replyAccepted } from '../lib/replyMode';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
@@ -97,7 +96,6 @@ export function Live() {
     });
   }, []);
 
-  const engineConfig = useQuery({ queryKey: ['engine-config'], queryFn: getEngineConfig, retry: false, staleTime: 30_000 });
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   // la cascata mostra quello che passa dal filtro della radio (letto con il CAT), 0-3000 Hz se non si sa
   const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
@@ -248,8 +246,6 @@ export function Live() {
       // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che il motore la riporti
       const call = target ? callOf(target.text) : null;
       if (call) useStation.getState().setPendingDx(call);
-      // se il motore ignorera' quel tipo di messaggio lo si dice a parte, chiaro, invece di non fare nulla in silenzio
-      if (!replyAccepted(engineConfig.data?.AcceptUDPReplyMessages, target?.text ?? '')) toast(t('note.replyMode'), 'info');
       await attempt(
         async () => {
           // la stazione e' scelta: perche' il motore la chiami serve anche Abilita Tx. Prima la risposta (il motore sceglie il messaggio e il periodo),
@@ -265,7 +261,7 @@ export function Live() {
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, info.data?.tx_allowed, engineConfig.data?.AcceptUDPReplyMessages, client],
+    [t, info.data?.tx_allowed, client],
   );
 
   // tasto destro su una stazione: in coda per il prossimo QSO (subito, se non ce n'e' uno in corso); di nuovo la toglie
