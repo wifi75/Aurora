@@ -1,4 +1,5 @@
 import '../styles/first-run.css';
+import '../styles/log-prompt.css';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { ApiError, answerPendingQso, getPendingQsos, type PendingEdits, type PendingQso } from '../api/client';
@@ -47,26 +48,35 @@ function LogPromptCard({ item, waiting }: { item: PendingQso; waiting: number })
 
   const when = item.qso.time_on_unix_ms > 0 ? new Date(item.qso.time_on_unix_ms).toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : '';
   const freq = item.qso.freq_hz > 0 ? `${(item.qso.freq_hz / 1e6).toFixed(3)} MHz` : '';
+  const mono = (f: Field) => f === 'call' || f === 'grid' || f === 'rst_sent' || f === 'rst_rcvd';
   return (
     <div className="first-run log-prompt" role="dialog" aria-modal="true" aria-labelledby="log-prompt-title">
-      <div className="first-run__card">
+      <div className="first-run__card lp-card">
         <div className="first-run__glow" aria-hidden="true" />
-        <header className="first-run__head">
+        <header className="lp-head">
           <span className="first-run__brand">Aurora</span>
-          {waiting > 1 ? <span className="muted">{t('lp.waiting', { n: waiting })}</span> : null}
+          {waiting > 1 ? <span className="lp-waiting">{t('lp.waiting', { n: waiting })}</span> : null}
         </header>
-        <div className="first-run__body">
-          <h2 id="log-prompt-title">{t('lp.title', { call: item.qso.call })}</h2>
-          <p className="first-run__lead">{[item.qso.band, item.qso.mode, freq, when].filter(Boolean).join(' · ')}</p>
-          <div className="first-run__fields log-prompt__fields">
+        <div className="lp-body">
+          <h2 id="log-prompt-title" className="lp-title">
+            {t('lp.title.lead')} <span className="lp-call">{item.qso.call}</span>?
+          </h2>
+          <ul className="lp-chips" aria-label={t('lp.summary')}>
+            {[item.qso.band, item.qso.mode, freq, when].filter(Boolean).map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+          <div className="lp-fields">
             {FIELDS.map((f) => (
-              <label key={f} className={f === 'comment' ? 'log-prompt__wide' : undefined}>
+              <label key={f} className={`lp-field${f === 'comment' ? ' lp-field--wide' : ''}`}>
                 <span>{t(`lp.f.${f}`)}</span>
                 <input
+                  className={mono(f) ? 'lp-mono' : undefined}
                   value={values[f]}
                   autoFocus={f === 'call'}
                   spellCheck={false}
                   autoComplete="off"
+                  inputMode={f === 'rst_sent' || f === 'rst_rcvd' ? 'numeric' : undefined}
                   maxLength={f === 'comment' ? 200 : f === 'name' || f === 'qth' ? 60 : 20}
                   onChange={(e) => setValues({ ...values, [f]: f === 'call' || f === 'grid' ? e.target.value.toUpperCase() : e.target.value })}
                 />
@@ -74,16 +84,16 @@ function LogPromptCard({ item, waiting }: { item: PendingQso; waiting: number })
             ))}
           </div>
           {error ? (
-            <p className="live-note" role="alert">
+            <p className="first-run__error" role="alert">
               {error}
             </p>
           ) : null}
         </div>
-        <footer className="first-run__foot">
-          <button type="button" className="first-run__back" disabled={answer.isPending} onClick={() => answer.mutate('discard')}>
+        <footer className="lp-foot">
+          <button type="button" className="lp-discard" disabled={answer.isPending} onClick={() => answer.mutate('discard')}>
             {t('lp.discard')}
           </button>
-          <button type="button" className="first-run__next" disabled={answer.isPending || values.call.trim() === ''} onClick={() => answer.mutate('log')}>
+          <button type="button" className="first-run__next lp-log" disabled={answer.isPending || values.call.trim() === ''} onClick={() => answer.mutate('log')}>
             {t('lp.log')}
           </button>
         </footer>
