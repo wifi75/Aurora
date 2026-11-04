@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.121',
+    released: '2026-11-04T17:58:20Z',
+    kind: 'fixed',
+    title: ["OmniRig spiegato e cluster solo se serve", "OmniRig explained and cluster only when needed", "OmniRig erklärt, Cluster nur bei Bedarf", "OmniRig expliqué et cluster seulement si utile", "OmniRig explicado y cluster solo si hace falta", "OmniRig explicado e cluster só quando faz falta"],
+    text: [
+      "Quando OmniRig non risponde, Aurora dice cosa controllare (porta e modello di Rig1, radio accesa) o suggerisce Hamlib. Sul telefono il DX Cluster compare solo se è acceso in Aurora.",
+      "When OmniRig does not answer, Aurora tells you what to check (Rig1 port and model, radio switched on) or suggests Hamlib. On the phone the DX Cluster appears only if it is on in Aurora.",
+      "Wenn OmniRig nicht antwortet, sagt Aurora, was zu prüfen ist (Port und Modell von Rig1, Funkgerät an), oder schlägt Hamlib vor. Auf dem Telefon erscheint der DX-Cluster nur, wenn er in Aurora an ist.",
+      "Quand OmniRig ne répond pas, Aurora dit quoi vérifier (port et modèle de Rig1, radio allumée) ou propose Hamlib. Sur le téléphone le DX Cluster n’apparaît que s’il est activé dans Aurora.",
+      "Cuando OmniRig no responde, Aurora dice qué revisar (puerto y modelo de Rig1, radio encendida) o sugiere Hamlib. En el teléfono el DX Cluster aparece solo si está activado en Aurora.",
+      "Quando o OmniRig não responde, a Aurora diz o que verificar (porta e modelo do Rig1, rádio ligado) ou sugere o Hamlib. No telemóvel o DX Cluster só aparece se estiver ligado na Aurora.",
+    ],
+  },
+  {
     version: '0.11.120',
     released: '2026-11-04T17:57:04Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'La fiche DXpédition s’ouvre tout de suite : frontières et pays sont préparés à l’avance. Dans l’activité de bande la colonne des km est plus large.',
       'La ficha DXpedición se abre al momento: fronteras y países se preparan por adelantado. En la actividad de banda la columna de km es más ancha.',
       'A ficha DXpedição abre logo: fronteiras e países preparam-se com antecedência. Na atividade de banda a coluna dos km é mais larga.',
-    ],
-  },
-  {
-    version: '0.11.85',
-    released: '2026-11-03T18:01:42Z',
-    kind: 'changed',
-    title: ['Telefono più ordinato', 'Tidier phone view', 'Aufgeräumtere Telefonansicht', 'Vue téléphone plus ordonnée', 'Vista del teléfono más ordenada', 'Vista do telemóvel mais arrumada'],
-    text: [
-      'Sul telefono l’attività di banda ha ogni messaggio su una riga con colonne allineate e al massimo 10 righe in vista (le altre si scorrono); tolta la riga «In onda»; la schermata resta fissa senza zoom e rispetta la barra dell’iPhone.',
-      'On the phone band activity shows each message on one line with aligned columns and at most 10 rows in view (scroll for more); the «On air» line is gone; the screen stays fixed with no zoom and respects the iPhone bar.',
-      'Auf dem Telefon zeigt die Bandaktivität jede Meldung in einer Zeile mit ausgerichteten Spalten und höchstens 10 sichtbaren Zeilen (der Rest wird gescrollt); die Zeile «Auf Sendung» ist weg; der Bildschirm bleibt fest ohne Zoom und achtet auf die iPhone-Leiste.',
-      'Sur le téléphone l’activité de bande affiche chaque message sur une ligne avec colonnes alignées et au plus 10 lignes visibles (le reste défile) ; la ligne « En l’air » est retirée ; l’écran reste fixe sans zoom et respecte la barre de l’iPhone.',
-      'En el teléfono la actividad de banda muestra cada mensaje en una línea con columnas alineadas y como máximo 10 filas a la vista (el resto se desplaza); quitada la línea «En el aire»; la pantalla queda fija sin zoom y respeta la barra del iPhone.',
-      'No telemóvel a atividade de banda mostra cada mensagem numa linha com colunas alinhadas e no máximo 10 linhas à vista (o resto desliza); retirada a linha «No ar»; o ecrã fica fixo sem zoom e respeita a barra do iPhone.',
     ],
   },
 ];
