@@ -167,6 +167,14 @@ export const dxccStrings = {
     'A importação só se faz a partir do PC ou da rede de casa.',
   ],
   'logio.import.empty': ['Il file è vuoto.', 'The file is empty.', 'Die Datei ist leer.', 'Le fichier est vide.', 'El archivo está vacío.', 'O ficheiro está vazio.'],
+  'logio.import.tooBig': [
+    'Il file supera 256 MB: esportalo in due parti (per esempio per anni) e importale una dopo l’altra.',
+    'The file is over 256 MB: export it in two parts (for example by years) and import them one after the other.',
+    'Die Datei ist größer als 256 MB: in zwei Teilen exportieren (z. B. nach Jahren) und nacheinander importieren.',
+    'Le fichier dépasse 256 Mo : exporte-le en deux parties (par exemple par années) et importe-les l’une après l’autre.',
+    'El archivo supera 256 MB: expórtalo en dos partes (por ejemplo por años) e impórtalas una tras otra.',
+    'O ficheiro tem mais de 256 MB: exporta-o em duas partes (por exemplo por anos) e importa-as uma depois da outra.',
+  ],
   'logio.import.error': [
     'Non è stato possibile importare il file.',
     'The file could not be imported.',

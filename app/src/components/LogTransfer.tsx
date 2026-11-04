@@ -24,7 +24,8 @@ export function LogTransfer() {
     } catch (error) {
       if (error instanceof ApiError && error.code === 'local_only') setNote(t('logio.import.local'));
       else if (error instanceof ApiError && error.code === 'empty_file') setNote(t('logio.import.empty'));
-      else setNote(t('logio.import.error'));
+      else if (error instanceof ApiError && error.status === 413) setNote(t('logio.import.tooBig'));
+      else setNote(error instanceof ApiError ? `${t('logio.import.error')} (${error.status} ${error.code})` : t('logio.import.error'));
     } finally {
       setBusy(false);
       if (input.current) input.current.value = '';
