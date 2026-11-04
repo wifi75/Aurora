@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.104 - 2026-11-04
+- **Copia delle impostazioni** (Impostazioni › Assistenza): zip sul Desktop con i file di configurazione e una copia coerente del log dei QSO; il ripristino controlla lo zip, mette i file in `ripristino` e li applica al prossimo avvio. Fuori password e chiavi (`*.secret`), dispositivi associati, storico e file dei rapporti.
+- **Suono della schermata di avvio**: WebView2 bloccava l'audio prima di un clic; ora si sente.
+
 ## 0.11.103 - 2026-11-04
 - **Modo senza audio**: lo stato della stazione (modo, periodo, frequenza) si pubblica subito, anche se nessun ingresso audio si apre; prima il selettore del modo restava «—» e non si apriva.
 

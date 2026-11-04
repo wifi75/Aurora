@@ -363,7 +363,7 @@ pub(crate) fn windows_version() -> String {
 }
 
 /// Il Desktop vero dell'utente (anche se spostato in OneDrive); `None` se non c'e'.
-fn desktop_dir() -> Option<PathBuf> {
+pub(crate) fn desktop_dir() -> Option<PathBuf> {
     let from_shell = reg_value(r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "Desktop").map(PathBuf::from);
     let fallback = std::env::var_os("USERPROFILE").map(|home| PathBuf::from(home).join("Desktop"));
     from_shell.into_iter().chain(fallback).find(|p| p.is_dir())

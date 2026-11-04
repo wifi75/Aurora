@@ -9,6 +9,7 @@ use std::{
 };
 
 pub mod audio_control;
+pub mod backup;
 pub mod band_hop;
 pub mod history;
 pub mod online;
@@ -1189,6 +1190,8 @@ pub async fn run(
     shutdown: impl Future<Output = ()> + Send + 'static,
 ) -> Result<RunningServer, StartError> {
     let pair_ttl = load_pair_ttl(&config.data_dir.join("pairing.json"), config.pair_ttl_secs);
+    // un ripristino fatto da Impostazioni > Sistema si applica qui, prima di aprire log e impostazioni
+    backup::apply_pending(&config.data_dir);
     let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
     // il CAT: configurazione e profili in radio.json; la scelta salvata con «collega all'avvio» vale come AURORA_RIG
     let cat = rig_control::cat::CatService::open(&config.data_dir.join("radio.json"));
@@ -1439,7 +1442,7 @@ pub async fn run(
     let own_log = Arc::clone(&logbook);
     // i rapporti degli errori: spenti di fabbrica, si accendono in Impostazioni > Assistenza
     let rapporti = rapporti::Rapporti::avvia(&config.data_dir);
-    let state = AppState::new(bus.clone(), auth, logbook, TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
+    let state = AppState::new(bus.clone(), auth, Arc::clone(&logbook), TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
         .with_open_access_file(config.data_dir.join(OPEN_ACCESS_FILE))
@@ -1451,6 +1454,19 @@ pub async fn run(
         .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
         .with_save_dialog_if(config.save_dialog.clone().map(|h| h.0))
         .with_crash_folder_if(config.crash_folder.clone().map(|h| h.0))
+        .with_settings_backup(
+            {
+                let (dir, book) = (config.data_dir.clone(), Arc::clone(&logbook));
+                Arc::new(move || {
+                    let dest = support::desktop_dir().unwrap_or_else(|| dir.clone());
+                    backup::make(&dir, &book, &dest, env!("CARGO_PKG_VERSION"))
+                })
+            },
+            {
+                let dir = config.data_dir.clone();
+                Arc::new(move |bytes: Vec<u8>| backup::stage(&dir, &bytes))
+            },
+        )
         .with_support_bundle_if(Some({
             // il PTT si ricalcola a ogni pacchetto: la scelta in Impostazioni > Radio puo' essere cambiata
             let config = config.clone();

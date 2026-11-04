@@ -1,0 +1,42 @@
+/** Copia delle impostazioni: zip sul Desktop e ripristino. [it, en, de, fr, es, pt] */
+export const backupStrings = {
+  'bak.title': ['Copia delle impostazioni', 'Settings backup', 'Sicherung der Einstellungen', 'Copie des réglages', 'Copia de los ajustes', 'Cópia das definições'],
+  'bak.intro': [
+    'Salva in uno zip sul Desktop tutte le impostazioni di Aurora (stazione, radio, audio, avvisi, colori, pannelli) e il log dei QSO. Con lo stesso zip le ritrovi su un altro PC o dopo una reinstallazione.',
+    'Saves all of Aurora’s settings (station, radio, audio, alerts, colours, panels) and the QSO log in a zip on the Desktop. With the same zip you get them back on another PC or after reinstalling.',
+    'Speichert alle Einstellungen von Aurora (Station, Funkgerät, Audio, Hinweise, Farben, Bereiche) und das QSO-Log in einer ZIP-Datei auf dem Desktop. Mit derselben Datei hast du sie auf einem anderen PC oder nach einer Neuinstallation wieder.',
+    'Enregistre dans un zip sur le Bureau tous les réglages d’Aurora (station, radio, audio, alertes, couleurs, panneaux) et le journal des QSO. Avec ce zip tu les retrouves sur un autre PC ou après une réinstallation.',
+    'Guarda en un zip en el Escritorio todos los ajustes de Aurora (estación, radio, audio, avisos, colores, paneles) y el log de QSO. Con el mismo zip los recuperas en otro PC o tras reinstalar.',
+    'Guarda num zip no Ambiente de trabalho todas as definições da Aurora (estação, rádio, áudio, avisos, cores, painéis) e o log dos QSO. Com o mesmo zip recuperas tudo noutro PC ou depois de reinstalar.',
+  ],
+  'bak.make': ['Salva una copia', 'Save a backup', 'Sicherung speichern', 'Enregistrer une copie', 'Guardar una copia', 'Guardar uma cópia'],
+  'bak.restore': ['Ripristina da una copia…', 'Restore from a backup…', 'Aus Sicherung wiederherstellen…', 'Restaurer depuis une copie…', 'Restaurar desde una copia…', 'Restaurar de uma cópia…'],
+  'bak.working': ['Un momento…', 'One moment…', 'Einen Moment…', 'Un instant…', 'Un momento…', 'Um momento…'],
+  'bak.made': ['Copia salvata sul Desktop: {name} ({files} file).', 'Backup saved on the Desktop: {name} ({files} files).', 'Sicherung auf dem Desktop: {name} ({files} Dateien).', 'Copie enregistrée sur le Bureau : {name} ({files} fichiers).', 'Copia guardada en el Escritorio: {name} ({files} archivos).', 'Cópia guardada no Ambiente de trabalho: {name} ({files} ficheiros).'],
+  'bak.confirm': [
+    'Le impostazioni e il log di adesso saranno sostituiti da quelli della copia alla prossima apertura di Aurora. Continuare?',
+    'Current settings and log will be replaced by those in the backup the next time Aurora opens. Continue?',
+    'Die aktuellen Einstellungen und das Log werden beim nächsten Start von Aurora durch die der Sicherung ersetzt. Fortfahren?',
+    'Les réglages et le journal actuels seront remplacés par ceux de la copie à la prochaine ouverture d’Aurora. Continuer ?',
+    'Los ajustes y el log actuales se sustituirán por los de la copia la próxima vez que se abra Aurora. ¿Continuar?',
+    'As definições e o log atuais serão substituídos pelos da cópia na próxima abertura da Aurora. Continuar?',
+  ],
+  'bak.restored': [
+    'Copia pronta ({files} file): chiudi Aurora dal vassoio (tasto destro › Esci) e riaprila per applicarla.',
+    'Backup ready ({files} files): close Aurora from the tray (right click › Exit) and open it again to apply it.',
+    'Sicherung bereit ({files} Dateien): Aurora im Infobereich schließen (Rechtsklick › Beenden) und wieder öffnen.',
+    'Copie prête ({files} fichiers) : ferme Aurora depuis la zone de notification (clic droit › Quitter) et rouvre-la pour l’appliquer.',
+    'Copia lista ({files} archivos): cierra Aurora desde la bandeja (clic derecho › Salir) y ábrela de nuevo para aplicarla.',
+    'Cópia pronta ({files} ficheiros): fecha a Aurora na área de notificação (botão direito › Sair) e abre-a de novo para a aplicar.',
+  ],
+  'bak.notBackup': ['Questo file non è una copia delle impostazioni di Aurora.', 'This file is not an Aurora settings backup.', 'Diese Datei ist keine Sicherung der Aurora-Einstellungen.', 'Ce fichier n’est pas une copie des réglages d’Aurora.', 'Este archivo no es una copia de los ajustes de Aurora.', 'Este ficheiro não é uma cópia das definições da Aurora.'],
+  'bak.failed': ['Non riuscito: {message}', 'Failed: {message}', 'Fehlgeschlagen: {message}', 'Échec : {message}', 'No se pudo: {message}', 'Não foi possível: {message}'],
+  'bak.note': [
+    'Password e chiavi dei servizi (QRZ, LoTW, ClubLog…) non entrano nella copia: dopo un ripristino si riscrivono.',
+    'Service passwords and keys (QRZ, LoTW, ClubLog…) are not in the backup: enter them again after restoring.',
+    'Passwörter und Schlüssel der Dienste (QRZ, LoTW, ClubLog…) sind nicht in der Sicherung: nach dem Wiederherstellen neu eingeben.',
+    'Les mots de passe et clés des services (QRZ, LoTW, ClubLog…) ne sont pas dans la copie : ressaisis-les après la restauration.',
+    'Las contraseñas y claves de los servicios (QRZ, LoTW, ClubLog…) no entran en la copia: se vuelven a escribir tras restaurar.',
+    'As palavras-passe e chaves dos serviços (QRZ, LoTW, ClubLog…) não entram na cópia: voltam a escrever-se depois de restaurar.',
+  ],
+} as const;
