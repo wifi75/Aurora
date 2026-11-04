@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.121',
-    released: '2026-11-04T17:58:20Z',
+    released: '2026-11-04T18:01:02Z',
     kind: 'fixed',
     title: ["OmniRig spiegato e cluster solo se serve", "OmniRig explained and cluster only when needed", "OmniRig erklärt, Cluster nur bei Bedarf", "OmniRig expliqué et cluster seulement si utile", "OmniRig explicado y cluster solo si hace falta", "OmniRig explicado e cluster só quando faz falta"],
     text: [
