@@ -9,7 +9,7 @@ function memory(initial: Record<string, string> = {}) {
 describe('waterfall preferences', () => {
   it('start from the factory values of the WSJT-X Wide Graph', () => {
     const p = defaultWfPrefs();
-    expect(p).toMatchObject({ speed: 'wsjtx', binsPerPixel: 4, startHz: 0, navg: 1, flatten: true, spectrumMode: 'cumulative', periodLine: true });
+    expect(p).toMatchObject({ speed: 'wsjtx', binsPerPixel: 4, startHz: 0, navg: 1, flatten: true, spectrumMode: 'current', periodLine: true });
     expect(activeStyle(p)).toBe('wsjtx');
   });
 

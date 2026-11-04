@@ -110,7 +110,8 @@ describe('Connected programs tab with the built-in engine', () => {
     const box = await screen.findByLabelText(it_('ens.k.AllowSpotsDXSummit'));
     expect(box).toBeEnabled();
     expect(box).toBeChecked();
-    expect(screen.getByTestId('status-dxsummit')).toHaveTextContent(/spot inviato: DL1ABC su 14075.5 kHz/);
+    // in breve l'esito; il dettaglio (cosa e' stato inviato) sta nel suggerimento
+    expect(screen.getByTestId('status-dxsummit').getAttribute('title')).toMatch(/spot inviato: DL1ABC su 14075.5 kHz/);
     expect(screen.queryByLabelText(it_('ens.k.PSKReporter'))).toBeNull();
   });
 
@@ -187,7 +188,7 @@ describe('Direct QSO upload with the built-in engine', () => {
     expect(screen.queryByText(it_('ens.up.qrz.help'))).toBeNull();
     fireEvent.click(screen.getByTestId('test-qrz'));
     await waitFor(() => expect(api.postUploadTest).toHaveBeenCalledWith('qrz'));
-    expect(await screen.findByText(/chiave valida, logbook K1ABC/)).toBeInTheDocument();
+    expect((await screen.findByTestId('test-result-qrz')).getAttribute('title')).toBe('chiave valida, logbook K1ABC');
     // senza la protezione dei segreti Wavelog non e' un controllo vivo
     expect(screen.queryByTestId('test-wavelog')).toBeNull();
   });
@@ -210,7 +211,7 @@ describe('Direct QSO upload with the built-in engine', () => {
     await waitFor(() => expect(api.putEngineSettings).toHaveBeenCalledWith({ QRZLogKey: 'ABCD-1234' }));
     expect(await screen.findByTestId('ens-QRZLogKey-saved')).toBeInTheDocument();
     await waitFor(() => expect(api.postUploadTest).toHaveBeenCalledWith('qrz'));
-    expect(await screen.findByTestId('test-result-qrz')).toHaveTextContent('chiave valida');
+    expect((await screen.findByTestId('test-result-qrz')).getAttribute('title')).toMatch(/chiave valida/);
   });
 
   it('the title LED goes red with the reason, green after a passing test', async () => {

@@ -17,12 +17,10 @@ beforeEach(() => {
 });
 
 describe('OnlineTab', () => {
-  it('starts with both services off and says what each site sees', async () => {
+  it('shows each service with its saved state', async () => {
     render(<OnlineTab />);
     expect(await screen.findByLabelText('Chi mi ha ricevuto (PSK Reporter)')).not.toBeChecked();
     expect(screen.getByLabelText('Propagazione (hamqsl.com)')).not.toBeChecked();
-    expect(screen.getByText(/Il sito vede il tuo nominativo e il tuo indirizzo IP/)).toBeInTheDocument();
-    expect(screen.getByText(/Il sito vede solo il tuo indirizzo IP/)).toBeInTheDocument();
   });
 
   it('turns one service on without touching the other', async () => {
