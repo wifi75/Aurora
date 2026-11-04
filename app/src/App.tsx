@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
-import { Logo } from './components/Logo';
 import { LanguageSelect } from './components/LanguageSelect';
 import { HeaderAlertSwitch } from './components/AlertSwitch';
 import { useT } from './i18n';
@@ -158,11 +157,14 @@ export function App() {
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
           <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
         </nav>
-        {session.data ? <UpdateBar /> : null}
-        <LanguageSelect />
-        <HeaderAlertSwitch />
-        <ThemeToggle />
-        <a className="app-logo-link" href="#/" aria-label="Aurora"><Logo size={36} animated /></a>
+        {/* lingua, volume, tema: piccoli, subito dopo il menu, staccati da un pallino colorato */}
+        <span className="app-tools">
+          <span className="app-tools-dot" aria-hidden="true" />
+          {session.data ? <UpdateBar /> : null}
+          <LanguageSelect />
+          <HeaderAlertSwitch />
+          <ThemeToggle />
+        </span>
       </header>
       )}
       {session.data ? <WantedBar /> : null}

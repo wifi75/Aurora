@@ -1257,7 +1257,7 @@ async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Pa
 
 /// Paese da `cty.dat` e, se accese, nome e citta' da QRZ.com (prima) o HamQTH (se QRZ e' spento o non lo trova). Del nominativo cercato
 /// si restituiscono solo nome, cognome, citta' e paese. Nessuna richiesta verso internet con le ricerche spente.
-#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`"), (status = 400, description = "Nominativo non valido (bad_call)")))]
+#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `lotw`, `eqsl`, `direct` (true/false/null), `qsl_via`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`"), (status = 400, description = "Nominativo non valido (bad_call)")))]
 async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
     if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_call"));
@@ -1281,7 +1281,7 @@ async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract
         }
         match result {
             Ok(reporting::qrz_xml::Found::Yes(p)) => {
-                out["person"] = json!({ "fname": p.fname, "name": p.name, "city": p.city, "country": p.country, "source": provider.name() });
+                out["person"] = json!({ "fname": p.fname, "name": p.name, "city": p.city, "country": p.country, "lotw": p.lotw, "eqsl": p.eqsl, "direct": p.direct, "qsl_via": p.qsl_via, "source": provider.name() });
                 out["lookup"] = json!("found");
                 return Ok(Json(out));
             }

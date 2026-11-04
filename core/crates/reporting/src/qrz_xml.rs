@@ -67,6 +67,23 @@ pub struct Person {
     /// Citta' (`addr2`).
     pub city: String,
     pub country: String,
+    /// Usa LoTW (`lotw` di QRZ, `lotw` di HamQTH); `None` se il servizio non lo dice.
+    pub lotw: Option<bool>,
+    /// Accetta eQSL (`eqsl`).
+    pub eqsl: Option<bool>,
+    /// Accetta la QSL diretta per posta (`mqsl` di QRZ, `qsldirect` di HamQTH).
+    pub direct: Option<bool>,
+    /// Il QSL manager (`qslmgr` di QRZ, `qsl_via` di HamQTH), vuoto se non c'e'.
+    pub qsl_via: String,
+}
+
+/// «1»/«Y» = si', «0»/«N» = no, altro o assente = non si sa.
+fn yes_no(v: Option<String>) -> Option<bool> {
+    match v?.trim().to_ascii_uppercase().as_str() {
+        "1" | "Y" | "YES" => Some(true),
+        "0" | "N" | "NO" => Some(false),
+        _ => None,
+    }
 }
 
 /// L'esito di una ricerca.
@@ -168,14 +185,34 @@ pub fn read_person(body: &str) -> Option<Person> {
         let full = get("adr_name");
         let city = if get("adr_city").is_empty() { get("qth") } else { get("adr_city") };
         let (fname, name) = if full.is_empty() { (get("nick"), String::new()) } else { (String::new(), full) };
-        return Some(Person { call: get("callsign").to_uppercase(), fname, name, city, country: get("country") });
+        return Some(Person {
+            call: get("callsign").to_uppercase(),
+            fname,
+            name,
+            city,
+            country: get("country"),
+            lotw: yes_no(tag(h, "lotw")),
+            eqsl: yes_no(tag(h, "eqsl")),
+            direct: yes_no(tag(h, "qsldirect")),
+            qsl_via: get("qsl_via"),
+        });
     }
     let c = block(body, "Callsign");
     if c.is_empty() {
         return None;
     }
     let get = |n: &str| short(&tag(c, n).unwrap_or_default(), 60);
-    Some(Person { call: get("call").to_uppercase(), fname: get("fname"), name: get("name"), city: get("addr2"), country: get("country") })
+    Some(Person {
+        call: get("call").to_uppercase(),
+        fname: get("fname"),
+        name: get("name"),
+        city: get("addr2"),
+        country: get("country"),
+        lotw: yes_no(tag(c, "lotw")),
+        eqsl: yes_no(tag(c, "eqsl")),
+        direct: yes_no(tag(c, "mqsl")),
+        qsl_via: get("qslmgr"),
+    })
 }
 
 impl Lookup {
@@ -411,7 +448,7 @@ mod tests {
         let expired = read_session("<HamQTH><session><error>Session does not exist or expired</error></session></HamQTH>").unwrap();
         assert!(expired.key.is_none());
         let p = read_person("<HamQTH><search><callsign>iu3abc</callsign><nick>Mario</nick><qth>Padova</qth><country>Italy</country><adr_name></adr_name><email>x@y</email></search></HamQTH>").unwrap();
-        assert_eq!(p, Person { call: "IU3ABC".into(), fname: "Mario".into(), name: String::new(), city: "Padova".into(), country: "Italy".into() });
+        assert_eq!(p, Person { call: "IU3ABC".into(), fname: "Mario".into(), name: String::new(), city: "Padova".into(), country: "Italy".into(), ..Person::default() });
     }
 
     #[test]

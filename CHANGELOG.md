@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.125 - 2026-11-04
+- **QSO in corso**: in Attività di banda/CQ la stazione chiamata compare in una sola riga ferma (in cima, in fondo se l'elenco è rovesciato) con il messaggio più recente; colore per fase: giallo chiamata, arancio rapporto, verde R+rapporto, blu chiusura; a DX libero torna a scorrere (`DecodeList`).
+- **QSL da QRZ.com e HamQTH**: `lotw`, `eqsl`, `mqsl`/`qsldirect`, `qslmgr`/`qsl_via` letti e passati in `GET /api/v1/callsign/{call}`; lettere L E D accanto alla Stazione DX nei Comandi, righe ✔/✖ nel riquadro del nominativo, che ora c'è anche in Attività di banda (non sul telefono).
+- **Display**: estesi 640 × 80 centrati fra menu e pannelli; quasi quadrati 330 × 110.
+- **Testata**: lingua, volume e tema piccoli con ogni display, subito dopo «Novità» e staccati da un pallino colorato; tolto il logo a destra.
+- **Telefono**: tacca rossa di chi mi chiama sottile e dentro la riga; sotto il QR il consiglio per Chrome su Android (connessioni sicure, rete locale, Firefox).
+
 ## 0.11.124 - 2026-11-04
 - **Log dopo RRR senza 73**: molte stazioni non rispondono al RRR; all'ultimo tentativo di chiusura (o dopo 3 senza limite scelto) il QSO va a log, o si apre la conferma, invece di essere abbandonato (`qso-native/src/sequencer.rs`).
 - **Telefono**: tasto «Tx/Rx Split» a destra sulla riga della stazione chiamata nel riquadro Messaggi Tx.

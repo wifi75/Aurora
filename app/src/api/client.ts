@@ -573,7 +573,7 @@ export async function getDxcc(call: string): Promise<DxccInfo> {
 export interface CallsignInfo {
   call: string;
   dxcc: DxccInfo | null;
-  person: { fname: string; name: string; city: string; country: string; source: string } | null;
+  person: { fname: string; name: string; city: string; country: string; lotw?: boolean | null; eqsl?: boolean | null; direct?: boolean | null; qsl_via?: string; source: string } | null;
   lookup: 'off' | 'found' | 'not_found' | 'error';
   subscriber: boolean | null;
   message: string | null;

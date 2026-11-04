@@ -1,4 +1,4 @@
-/* Display «moderni»: estesi 640 x 70 (40rem x 4.6875rem) e quasi quadrati 330 x 140 (20.625rem x 8.75rem) */
+/* Display «moderni»: estesi 640 x 70 (40rem x 5rem) e quasi quadrati 330 x 140 (20.625rem x 8.75rem) */
 .md {
   position: relative;
   box-sizing: border-box;
@@ -84,20 +84,17 @@ button.md-chip:disabled { cursor: progress; }
 .md-bars--yaesu .md-bar--swr i { background: repeating-linear-gradient(90deg, #f09595 0 4px, transparent 4px 6px); }
 
 /* In testata: estesi nella riga dei comandi, quasi quadrati nell'angolo (le icone della testata diventano piccole) */
-.rd-modern-slot { width: 40rem; max-width: 100%; height: 4.6875rem; flex: none; }
-.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 7.5rem; z-index: 1050; }
+.rd-modern-slot { width: 40rem; max-width: 100%; height: 5rem; flex: none; }
+.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 6.875rem; z-index: 1050; }
 body.rd-square .app-header { padding-right: 21.6rem; }
 body.rd-square .live-top { padding-right: 21.2rem; }
-body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
-.rd-square-preview { width: 20.625rem; height: 7.5rem; max-width: 100%; }
+.rd-square-preview { width: 20.625rem; height: 6.875rem; max-width: 100%; }
 .md-chips-side { max-width: 9.5rem; justify-content: flex-end; gap: 0.15rem; }
 .md-chips-side .md-chip { font-size: 0.56rem; line-height: 0.95rem; }
 .md-icdual .md-half--sub .md-freq--sub { font-size: 1.3rem; }
 .md-icblue .md-mid .md-pb { height: 1.9rem; width: auto; max-width: 100%; }
 
 /* con il quasi quadrato le icone della testata (lingua, volume, tema, logo) diventano piccole e stanno dopo il menu */
-body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
-body.rd-square .app-header .app-logo-link svg { width: 24px; height: 24px; }
 /* quasi quadrato alto 120: righe piu' strette perche' tutto ci stia */
 .md-q { gap: 0.1rem; padding: 0.3rem 0.5rem; }
 .md-q .md-freq--big { font-size: 1.8rem; }
@@ -127,3 +124,28 @@ body.rd-square .app-header .app-logo-link svg { width: 24px; height: 24px; }
 .md-led-chips { flex-wrap: nowrap; overflow: hidden; }
 .md-led-line { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
 .md-led-bars { flex: 1 1 auto; max-width: 15rem; }
+
+/* lingua, volume e tema: piccoli con ogni display, subito dopo «Novita'», separati da un pallino colorato */
+.app-header .app-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+  zoom: 0.72;
+}
+
+.app-header .app-tools-dot {
+  display: block;
+  flex: none;
+  align-self: center;
+  width: 0.6rem;
+  height: 0.6rem;
+  /* stesso spazio a sinistra (da «Novita'») e a destra (dall'icona dopo) */
+  margin: 0 1.3rem 0 0.3rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8e7bff, #2dd4bf);
+  box-shadow: 0 0 6px rgba(142, 123, 255, 0.6);
+}
+/* il menu non si allarga piu' fino al bordo: le icone gli stanno subito dopo */
+.app-header .app-nav { flex: 0 1 auto; }

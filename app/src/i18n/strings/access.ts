@@ -111,12 +111,12 @@ export const accessStrings = {
     'Nome fixo não ativo (a Aurora só escuta neste PC, ou a rede não permite o anúncio). Usa o IP abaixo.',
   ],
   'acc.camera': [
-    'Inquadra il QR con la fotocamera del telefono e apri il link in Chrome o Safari: dentro Messenger o WhatsApp spesso la pagina non si apre. Telefono e PC sulla stessa Wi-Fi.',
-    'Scan the QR with the phone camera and open the link in Chrome or Safari: inside Messenger or WhatsApp the page often does not open. Phone and PC on the same Wi-Fi.',
-    'Den QR mit der Kamera des Telefons scannen und den Link in Chrome oder Safari öffnen: in Messenger oder WhatsApp öffnet sich die Seite oft nicht. Telefon und PC im selben WLAN.',
-    'Scanne le QR avec l’appareil photo du téléphone et ouvre le lien dans Chrome ou Safari : dans Messenger ou WhatsApp la page ne s’ouvre souvent pas. Téléphone et PC sur le même Wi-Fi.',
-    'Escanea el QR con la cámara del teléfono y abre el enlace en Chrome o Safari: dentro de Messenger o WhatsApp la página a menudo no se abre. Teléfono y PC en la misma Wi-Fi.',
-    'Lê o QR com a câmara do telemóvel e abre o link no Chrome ou Safari: dentro do Messenger ou WhatsApp a página muitas vezes não abre. Telemóvel e PC na mesma Wi-Fi.',
+    'Inquadra il QR con la fotocamera del telefono e apri il link in Chrome o Safari: dentro Messenger o WhatsApp spesso la pagina non si apre. Telefono e PC sulla stessa Wi-Fi. Chrome su Android non apre la pagina? Spegni ⋮ › Impostazioni › Privacy e sicurezza › «Usa sempre connessioni sicure» e consenti «Rete locale» dal lucchetto, oppure usa Firefox.',
+    'Scan the QR with the phone camera and open the link in Chrome or Safari: inside Messenger or WhatsApp the page often does not open. Phone and PC on the same Wi-Fi. Chrome on Android does not open the page? Turn off ⋮ › Settings › Privacy and security › «Always use secure connections» and allow «Local network» from the lock icon, or use Firefox.',
+    'Den QR mit der Kamera des Telefons scannen und den Link in Chrome oder Safari öffnen: in Messenger oder WhatsApp öffnet sich die Seite oft nicht. Telefon und PC im selben WLAN. Chrome unter Android öffnet die Seite nicht? ⋮ › Einstellungen › Datenschutz und Sicherheit › „Immer sichere Verbindungen verwenden“ ausschalten und „Lokales Netzwerk“ über das Schloss erlauben, oder Firefox verwenden.',
+    'Scanne le QR avec l’appareil photo du téléphone et ouvre le lien dans Chrome ou Safari : dans Messenger ou WhatsApp la page ne s’ouvre souvent pas. Téléphone et PC sur le même Wi-Fi. Chrome sur Android n’ouvre pas la page ? Désactive ⋮ › Paramètres › Confidentialité et sécurité › « Toujours utiliser des connexions sécurisées » et autorise « Réseau local » via le cadenas, ou utilise Firefox.',
+    'Escanea el QR con la cámara del teléfono y abre el enlace en Chrome o Safari: dentro de Messenger o WhatsApp la página a menudo no se abre. Teléfono y PC en la misma Wi-Fi. ¿Chrome en Android no abre la página? Desactiva ⋮ › Configuración › Privacidad y seguridad › «Usar siempre conexiones seguras» y permite «Red local» desde el candado, o usa Firefox.',
+    'Lê o QR com a câmara do telemóvel e abre o link no Chrome ou Safari: dentro do Messenger ou WhatsApp a página muitas vezes não abre. Telemóvel e PC na mesma Wi-Fi. O Chrome no Android não abre a página? Desliga ⋮ › Definições › Privacidade e segurança › «Usar sempre ligações seguras» e permite «Rede local» no cadeado, ou usa o Firefox.',
   ],
   'acc.alt.title': [
     'Il telefono non apre la pagina? Il PC ha anche questi indirizzi: prova il QR del successivo.',

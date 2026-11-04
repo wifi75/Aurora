@@ -79,4 +79,10 @@ export const commandStrings = {
   'pref.cmdLogQso': ['Pulsante Log QSO nel pannello Comandi', 'Log QSO button in the Commands panel', 'Log-QSO-Schalter im Feld Befehle', 'Bouton Log QSO dans le panneau Commandes', 'Botón Log QSO en el panel Comandos', 'Botão Log QSO no painel Comandos'],
   'tip.pref.cmdLogQso': ['Mostra «Log QSO» (registra a mano il QSO in corso). Spento di base.', 'Shows “Log QSO” (log the current QSO by hand). Off by default.', 'Zeigt „Log QSO“ (laufendes QSO von Hand loggen). Standardmäßig aus.', 'Affiche « Log QSO » (enregistrer le QSO à la main). Désactivé par défaut.', 'Muestra «Log QSO» (registrar a mano el QSO). Apagado por defecto.', 'Mostra «Log QSO» (registar à mão o QSO). Desligado por omissão.'],
   'tip.tx.cqHound': ['In Hound il CQ non si trasmette (come WSJT-X): si risponde solo alla Fox.', 'In Hound mode CQ is not transmitted (as in WSJT-X): you only answer the Fox.', 'Im Hound-Modus wird kein CQ gesendet (wie WSJT-X): man antwortet nur dem Fox.', 'En Hound le CQ n’est pas émis (comme WSJT-X) : on répond seulement au Fox.', 'En Hound no se transmite CQ (como WSJT-X): solo se responde al Fox.', 'Em Hound o CQ não é transmitido (como no WSJT-X): só se responde ao Fox.'],
+  'qsl.lotw': ['LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW'],
+  'qsl.eqsl': ['eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL'],
+  'qsl.direct': ['Diretta', 'Direct', 'Direkt', 'Directe', 'Directa', 'Direta'],
+  'qsl.yes': ['{what}: sì', '{what}: yes', '{what}: ja', '{what} : oui', '{what}: sí', '{what}: sim'],
+  'qsl.no': ['{what}: no', '{what}: no', '{what}: nein', '{what} : non', '{what}: no', '{what}: não'],
+  'qsl.via': ['QSL via {call}', 'QSL via {call}', 'QSL via {call}', 'QSL via {call}', 'QSL vía {call}', 'QSL via {call}'],
 } as const;

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.125',
+    released: '2026-11-04T21:11:52Z',
+    kind: 'new',
+    title: ['QSO in corso in vista, LoTW ed eQSL da QRZ', 'Current QSO in view, LoTW and eQSL from QRZ', 'Laufendes QSO im Blick, LoTW und eQSL von QRZ', 'QSO en cours en vue, LoTW et eQSL depuis QRZ', 'QSO en curso a la vista, LoTW y eQSL de QRZ', 'QSO em curso à vista, LoTW e eQSL do QRZ'],
+    text: [
+      "In Attività di banda la stazione che chiami resta in una sola riga ferma in cima e cambia colore a ogni sua risposta fino al log. Da QRZ.com e HamQTH arrivano LoTW, eQSL, QSL diretta e QSL manager: lettere L E D accanto alla Stazione DX e nel riquadro del nominativo, ora anche in Attività di banda. Display estesi 640 × 80 centrati, quasi quadrati 330 × 110; lingua, volume e tema piccoli dopo Novità. Sotto il QR il consiglio per Chrome su Android.",
+      "In Band activity the station you call stays in a single row pinned at the top and changes colour at each reply until it is logged. From QRZ.com and HamQTH come LoTW, eQSL, direct QSL and QSL manager: L E D letters next to the DX station and in the callsign box, now also in Band activity. Wide displays 640 × 80 centred, near-square 330 × 110; language, volume and theme small after News. Under the QR a tip for Chrome on Android.",
+      "In der Bandaktivität bleibt die gerufene Station in einer festen Zeile oben und wechselt bei jeder Antwort die Farbe bis zum Log. Von QRZ.com und HamQTH kommen LoTW, eQSL, Direkt-QSL und QSL-Manager: Buchstaben L E D neben der DX-Station und im Rufzeichen-Feld, jetzt auch in der Bandaktivität. Breite Anzeigen 640 × 80 zentriert, fast quadratische 330 × 110; Sprache, Lautstärke und Thema klein nach Neuigkeiten. Unter dem QR ein Tipp für Chrome auf Android.",
+      "Dans Activité de bande la station appelée reste sur une seule ligne fixée en haut et change de couleur à chaque réponse jusqu’au log. De QRZ.com et HamQTH arrivent LoTW, eQSL, QSL directe et QSL manager : lettres L E D à côté de la station DX et dans la bulle de l’indicatif, aussi dans Activité de bande. Afficheurs larges 640 × 80 centrés, presque carrés 330 × 110 ; langue, volume et thème petits après Nouveautés. Sous le QR un conseil pour Chrome sur Android.",
+      "En Actividad de banda la estación que llamas queda en una sola fila fija arriba y cambia de color con cada respuesta hasta el log. De QRZ.com y HamQTH llegan LoTW, eQSL, QSL directa y QSL manager: letras L E D junto a la estación DX y en el recuadro del indicativo, ahora también en Actividad de banda. Pantallas anchas 640 × 80 centradas, casi cuadradas 330 × 110; idioma, volumen y tema pequeños tras Novedades. Bajo el QR un consejo para Chrome en Android.",
+      "Na Atividade de banda a estação que chamas fica numa só linha fixa em cima e muda de cor a cada resposta até ao log. Do QRZ.com e HamQTH chegam LoTW, eQSL, QSL direta e QSL manager: letras L E D junto à estação DX e no quadro do indicativo, agora também na Atividade de banda. Ecrãs largos 640 × 80 centrados, quase quadrados 330 × 110; idioma, volume e tema pequenos depois de Novidades. Sob o QR um conselho para o Chrome no Android.",
+    ],
+  },
+  {
     version: '0.11.124',
     released: '2026-11-04T20:43:34Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur le téléphone le cluster et le journal sont ouverts au démarrage, en haut à droite il y a le choix clair/sombre à côté de ⟳, et la barre de fréquence est un peu plus haute pour laisser plus de place.',
       'En el teléfono el clúster y el registro están abiertos al inicio, arriba a la derecha está el cambio de tema claro/oscuro junto a ⟳, y la barra de frecuencia está un poco más arriba para dejar más espacio.',
       'No telemóvel o cluster e o registo estão abertos ao arranque, em cima à direita há a troca de tema claro/escuro ao lado de ⟳, e a barra da frequência está um pouco mais acima para deixar mais espaço.',
-    ],
-  },
-  {
-    version: '0.11.88',
-    released: '2026-11-03T18:26:38Z',
-    kind: 'new',
-    title: ['Telefono: si aggiorna da solo', 'Phone updates itself', 'Telefon aktualisiert sich selbst', 'Le téléphone se met à jour seul', 'El teléfono se actualiza solo', 'O telemóvel atualiza-se sozinho'],
-    text: [
-      'Quando aggiorni Aurora sul PC il telefono si ricarica da solo senza cache; in alto c’è anche il pulsante ⟳ per farlo a mano. Su iPhone la pagina parte sotto ora e batteria (niente sfocatura), bandiere più grandi e paese più largo nell’attività di banda, titoli un po’ più alti.',
-      'When you update Aurora on the PC the phone reloads by itself without cache; at the top there is also the ⟳ button to do it by hand. On iPhone the page starts below time and battery (no blur), bigger flags and wider country in band activity, slightly taller headings.',
-      'Wenn Aurora auf dem PC aktualisiert wird, lädt das Telefon von selbst ohne Cache neu; oben gibt es auch die Taste ⟳ dafür. Auf dem iPhone beginnt die Seite unter Uhrzeit und Akku (keine Unschärfe), größere Flaggen und breiteres Land in der Bandaktivität, etwas höhere Überschriften.',
-      'Quand tu mets Aurora à jour sur le PC, le téléphone se recharge seul sans cache ; en haut il y a aussi le bouton ⟳ pour le faire à la main. Sur iPhone la page commence sous l’heure et la batterie (pas de flou), drapeaux plus grands et pays plus large dans l’activité de bande, titres un peu plus hauts.',
-      'Cuando actualizas Aurora en el PC el teléfono se recarga solo sin caché; arriba también está el botón ⟳ para hacerlo a mano. En iPhone la página empieza bajo la hora y la batería (sin desenfoque), banderas más grandes y país más ancho en la actividad de banda, títulos algo más altos.',
-      'Quando atualizas a Aurora no PC o telemóvel recarrega sozinho sem cache; em cima há também o botão ⟳ para o fazer à mão. No iPhone a página começa abaixo da hora e da bateria (sem desfoque), bandeiras maiores e país mais largo na atividade de banda, títulos um pouco mais altos.',
     ],
   },
 ];
