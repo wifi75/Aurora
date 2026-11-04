@@ -28,9 +28,14 @@ Impostazioni → Assistenza → «Rapporti degli errori».
   Errori uguali si raggruppano: al massimo un invio per errore ogni ora e 20 al giorno; senza rete aspettano in una coda sul PC.
 
 **Cosa contengono**: versione di Aurora e di Windows, motore, modello della radio, metodo di PTT, backend del CAT, nome della
-scheda audio, area del problema (CAT, PTT, audio, decodifica, UDP, servizi…), il messaggio d'errore ripulito, quante volte è
+scheda audio, area del problema (CAT, PTT, audio, decodifica, UDP, servizi, associazione del telefono…), il messaggio d'errore ripulito, quante volte è
 successo, il giorno e un identificativo casuale dell'installazione. Il pacchetto dopo un crash aggiunge il log del programma
 ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash.
+
+**Associazione del telefono non riuscita** (dalla 0.11.123): se un codice scade senza che il telefono si associ, il rapporto dice solo il
+*tipo* di indirizzo messo nel QR (per esempio «192.168, rete di casa» o «adattatore virtuale»), il tipo di adattatore (Wi-Fi, cavo,
+virtuale), quanti indirizzi ha il PC, se la rete di Windows è Pubblica o Privata, se il firewall ha la regola per Aurora, se il
+telefono è arrivato ad Aurora e come è finita. Mai l'indirizzo IP, il nome della rete Wi-Fi o il nome degli adattatori.
 
 **Cosa non contengono mai**: nominativo, locatore, messaggi decodificati, log dei QSO, `ALL.TXT`, impostazioni, password, chiavi
 e token, indirizzi IP, email, il nome utente di Windows e il nome del PC, i minidump (contengono la memoria del programma). Prima
