@@ -135,6 +135,9 @@ pub struct Options {
     pub period_key: Option<u64>,
     /// Thread per la decodifica (1 = un solo thread). I decode sono gli stessi con qualunque numero di thread.
     pub threads: usize,
+    /// Oltre questo momento non si comincia un'altra passata: su un PC lento il periodo finisce in tempo con i messaggi gia' trovati,
+    /// invece di accumulare ritardo un periodo dopo l'altro. `None`: tutte le passate.
+    pub deadline: Option<std::time::Instant>,
 }
 
 impl Default for Options {
@@ -172,6 +175,7 @@ impl Options {
             a8: None,
             period_key: None,
             threads: 1,
+            deadline: None,
         }
     }
 }
@@ -261,6 +265,9 @@ pub fn decode_slot_streaming(
     let batch = if pool.is_some() { 2 * threads } else { 1 };
 
     for ipass in 1..=npass {
+        if ipass > 1 && options.deadline.is_some_and(|d| std::time::Instant::now() >= d) {
+            break;
+        }
         let subtract_on = !(ipass > 5 || (ipass == 3 && npass == 3 && !options.swl));
         // syncmin: 1,5 oppure, con la soglia bassa, 1,225 / 1,5 / 1,1 a rotazione
         let syncmin = if options.low_threshold || options.swl {
