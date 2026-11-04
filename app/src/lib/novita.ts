@@ -579,18 +579,4 @@ export const NOVITA: readonly Novita[] = [
       'Luz e «Testar» também para eQSL, spots no PSK Reporter e DXSummit, NG3K, propagação, relógio NTP e saídas UDP e TCP: a Aurora verifica o serviço sem enviar QSO nem spots.',
     ],
   },
-  {
-    version: '0.11.83',
-    released: '2026-11-03T17:11:10Z',
-    kind: 'fixed',
-    title: ['Scheda DXpedition senza fantasmi', 'DXpedition card without ghosts', 'DXpedition-Karte ohne Geister', 'Fiche DXpédition sans fantômes', 'Ficha DXpedición sin fantasmas', 'Ficha DXpedição sem fantasmas'],
-    text: [
-      'La scheda si apre una volta sola, già completa: niente più cartina scura né riquadro del paese vuoto prima di quella vera. Nella pagina Fox la cascata è più bassa e l’elenco dei messaggi più lungo.',
-      'The card opens once, already complete: no more dark map or empty country box before the real one. On the Fox page the waterfall is lower and the message list longer.',
-      'Die Karte öffnet sich einmal und vollständig: keine dunkle Karte und kein leerer Länderkasten mehr vor der echten. Auf der Fox-Seite ist der Wasserfall niedriger und die Nachrichtenliste länger.',
-      'La fiche s’ouvre une seule fois, déjà complète : plus de carte sombre ni d’encadré pays vide avant la vraie. Sur la page Fox la cascade est plus basse et la liste des messages plus longue.',
-      'La ficha se abre una sola vez, ya completa: sin mapa oscuro ni recuadro del país vacío antes del real. En la página Fox la cascada es más baja y la lista de mensajes más larga.',
-      'A ficha abre uma só vez, já completa: sem mapa escuro nem caixa do país vazia antes da verdadeira. Na página Fox a cascata é mais baixa e a lista de mensagens mais longa.',
-    ],
-  },
 ];
