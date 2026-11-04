@@ -40,9 +40,11 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 | 25 ✔ | **Priorita' tra piu' CQ** nello stesso ciclo, riapplicazione del modo dopo il cambio banda, comandi a JTDX rapidi | M | Fatti (0.10.x); il modo della radio e la scelta del CQ vanno provati con la radio |
 | 26 ✔ | **Coda delle stazioni** (tasto destro) e **Rispondi a tutti** | A | 0.11.23, solo motore proprio |
 | 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
-| 27 | **Info QSL da QRZ.com** (LoTW, eQSL, diretta, QSL manager) accanto al nome della stazione | M | Il lookup XML le manda gia' (`lotw`, `eqsl`, `mqsl`, `qslmgr`); oggi `reporting/src/qrz_xml.rs` le scarta. Il bureau non e' un campo: solo testo libero. Prima il prototipo |
+| 27 ◐ | **Info QSL** (LoTW, eQSL, diretta, bureau, manager) accanto al nome della stazione | M | Fatto (0.11.125-127): lettere L E D B; QRZ.com senza abbonamento XML non le manda, si completano con HamQTH. Resta da valutare: liste pubbliche gratuite LoTW (ARRL `lotw-user-activity.csv`) ed eQSL per chi non ha HamQTH |
 | 28 | **Capacita' Hamlib per modello** per le opzioni dei display | M | Mostrare nei display solo i comandi che il modello supporta |
 | 29 | **Blocchi colorati del telefono** (stazione chiamata, chi mi chiama) troppo grandi | M | Il proprietario deve mandare uno screenshot dal telefono; poi prototipo |
+| 31 | **CAT4OM nativo** (WebSocket JSON): 1) tipo di CAT «CAT4OM»; 2) scelta fra piu' radio dalla pagina; 3) audio RX/TX in rete | A | Protocollo in `docs/cat4om-protocollo.md`; lacune del manuale da chiedere all'autore (rilascio dell'ownership, frequenze audio, riconnessione) |
+| 32 | **HTTPS per il telefono** | B | Scelta del proprietario (2026-11-04): per ora http con il consiglio per Chrome su Android sotto il QR; l'HTTPS vero richiede un dominio |
 | 30 | **Prove dal vivo** di CAT4OM, dell'associazione del telefono con gli utenti e del log dopo RRR senza 73 (0.11.124) | A | Le fa il proprietario |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
