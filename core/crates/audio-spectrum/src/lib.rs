@@ -12,5 +12,5 @@ mod level;
 pub use analyzer::{AnalyzerError, SpectrumAnalyzer, F_MAX_HZ, OUTPUT_BINS};
 pub use endpoint_volume::{clamp_unit, InputEndpoint, OutputEndpoint, VolumeError};
 pub use level::LevelMeter;
-pub use capture::{list_input_devices, list_input_devices_info, match_device_name, run_capture, run_capture_tapped, run_capture_with, AudioChunk, CaptureError, CaptureHandle, InputDeviceInfo};
+pub use capture::{list_input_devices, list_input_devices_info, is_default_name, match_device_name, run_capture, run_capture_tapped, run_capture_with, AudioChunk, CaptureError, CaptureHandle, InputDeviceInfo};
 pub use channel::{pick_channel, InputChannel};
