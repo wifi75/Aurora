@@ -82,3 +82,10 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [x] Livello RX: indicatore e avvisi, cursore e AUTO sul volume di registrazione di Windows (da provare dal vivo con la radio: AUTO in ricezione, che non tocchi nulla in TX)
 - [ ] Decidere cosa integrare da Decodium (fatti: livello RX, storico decode, nascondi gia' lavorate, spot del cluster sulla cascata, PSK Reporter + propagazione, diagnosi automatica, automazioni piu' sicure (filtro dei falsi decode, risposta ai desiderati, priorita' tra piu' CQ nello stesso ciclo; da provare dal vivo in prova a vuoto prima del modo reale), comandi a JTDX rapidi (sessione fissa), riapplicazione del modo della radio dopo il cambio banda (da provare con la radio); scelti: livello RX, storico decode + spot su cascata, PSK Reporter + propagazione, automazioni piu' sicure; ordine: prima queste, poi il programma Windows): elenco in `docs/confronto-decodium.md` (slider livello RX, storico decode, PSK 'chi mi ha sentito', propagazione, spot cluster sulla cascata...)
 - [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA
+
+## Dai rapporti degli errori (2026-11-04)
+- [ ] Decodifica lenta su un PC Windows 10 con IC-7300: «0 messaggi nel periodo in 66598 ms» (un periodo FT8 dura 15 s). Capire se e' la CPU o un blocco del motore (pacchetto DDB54164, anche un blocco della finestra di 20 s all'avvio).
+- [ ] Avvio fallito su Windows 11 Dev (build 29698): WebView2 «handle della finestra non valido» (0x80070578), quattro volte di fila (pacchetto B04AE563).
+- [ ] Avvio fallito 0.11.102: porta 8787 gia' in uso (seconda copia di Aurora o altro programma): dirlo in chiaro e proporre un'altra porta.
+- [ ] «trasmissione non attiva: InvalidCall("")» su piu' installazioni: la guida del primo avvio (0.11.102) dovrebbe bastare, ricontrollare i rapporti.
+- [ ] «l'audio ha perso un blocco di campioni»: 66 volte su una installazione; capire se basta un buffer piu' grande.
