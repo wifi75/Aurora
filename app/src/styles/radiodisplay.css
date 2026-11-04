@@ -830,10 +830,14 @@
 
 /* nella Stazione il display sta al centro fra la barra del menu e i pannelli, con lo stesso spazio sopra e sotto */
 /* vale per ogni tipo di display: l'ultimo elemento della riga in alto e' sempre il display (o il suo invito a configurarlo) */
+/* il display (alto 90) non deve spostare ne' la barra del menu ne' i pannelli: la riga resta alta quanto i comandi a sinistra e il display
+   sale di 22 px sul bordo basso della barra (dove a destra non c'e' niente), in primo piano */
 .live-top > :last-child {
-  align-self: center;
-  margin-top: 0;
-  margin-bottom: 0.55rem;
+  align-self: flex-start;
+  position: relative;
+  z-index: 1001;
+  margin-top: -1.375rem;
+  margin-bottom: -0.15rem;
 }
 
 /* frontalini FT-2000 e IC-7610: disegni a proporzioni fisse; l'altezza la da' il disegno (niente spazio vuoto sotto), PWR alto quanto lui */
