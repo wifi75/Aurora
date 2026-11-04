@@ -2,7 +2,7 @@
 
 [Italiano](linux.md) · **English** · [Deutsch](linux.de.md) · [Français](linux.fr.md) · [Español](linux.es.md) · [Português](linux.pt.md)
 
-**Community** version: it is built from the same code as the Windows version, so every new feature reaches Linux too. The program is developed and tested on Windows; the Linux version is tested by its users, **without official support**.
+Linux version **not tested by the author, without official support**. GitHub builds it automatically from the same code as the Windows version, so every new feature reaches Linux too; the author, however, develops and tests Aurora only on Windows.
 
 ## Download it ready-made
 

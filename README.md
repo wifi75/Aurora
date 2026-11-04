@@ -30,7 +30,7 @@
 >
 > [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Linux .deb](https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Linux](https://img.shields.io/badge/Guide-Linux-E95420?logo=ubuntu&logoColor=white)](docs/linux.en.md)
 >
-> 🐧 **[Linux (community version, without support): AppImage, .deb or one-command build](docs/linux.en.md)**
+> 🐧 **[Linux (not tested by the author, no support): AppImage, .deb or one-command build](docs/linux.en.md)**
 
 A new kind of FT8, FT4, JT65 and JT9 digital station: a striking interface, QSO automation and remote control from your phone. It has its own FT8 decode and transmit engine (JTDX remains an optional comparison); Aurora is brain, engine and screen.
 

@@ -30,7 +30,7 @@
 >
 > [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Linux .deb](https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Linux](https://img.shields.io/badge/Guida-Linux-E95420?logo=ubuntu&logoColor=white)](docs/linux.md)
 >
-> 🐧 **[Linux (versione della comunità, senza assistenza): AppImage, .deb o compilazione con un comando](docs/linux.md)**
+> 🐧 **[Linux (non provata dall'autore, senza assistenza): AppImage, .deb o compilazione con un comando](docs/linux.md)**
 
 Stazione digitale FT8, FT4, JT65 e JT9 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8 (JTDX resta un confronto facoltativo); Aurora è cervello, motore e schermo.
 
