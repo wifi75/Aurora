@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.105 - 2026-11-04
+- **Schede audio, dai rapporti degli errori**: il nome salvato si confronta decodificando `\xNN`, senza il numero «2- » che Windows aggiunge, e come ultima prova con la sola scheda tra parentesi (Windows in altre lingue); «Default Input/Output Device» e «predefinito» vogliono dire il dispositivo predefinito di Windows. Vale per cascata, trasmissione e livelli.
+- **OmniRig assente**: «classe COM non registrata» diventa «OmniRig non e' installato: scegli Hamlib in Impostazioni > Radio».
+
 ## 0.11.104 - 2026-11-04
 - **Copia delle impostazioni** (Impostazioni › Assistenza): zip sul Desktop con i file di configurazione e una copia coerente del log dei QSO; il ripristino controlla lo zip, mette i file in `ripristino` e li applica al prossimo avvio. Fuori password e chiavi (`*.secret`), dispositivi associati, storico e file dei rapporti.
 - **Suono della schermata di avvio**: WebView2 bloccava l'audio prima di un clic; ora si sente.
