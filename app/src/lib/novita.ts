@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.116',
-    released: '2026-11-04T13:38:09Z',
+    released: '2026-11-04T13:40:20Z',
     kind: 'new',
     title: ['Conteggio anonimo delle installazioni attive', 'Anonymous count of active installations', 'Anonyme Zählung aktiver Installationen', 'Comptage anonyme des installations actives', 'Recuento anónimo de instalaciones activas', 'Contagem anónima das instalações ativas'],
     text: [
