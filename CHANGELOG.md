@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.112 - 2026-11-04
+- **Log in una pagina**: `LogTransfer` (import/export ADIF) in cima a Impostazioni › Programmi collegati, sopra server UDP e invio ADIF; il riquadro del log vuoto porta li'.
+
 ## 0.11.111 - 2026-11-04
 - **Avvisi della stazione**: la barra della diagnosi (`DiagnosisBar`) diventa una pila di schede fisse in basso a destra con chiusura per avviso (riappare se cambia); i pannelli non si spostano piu'.
 

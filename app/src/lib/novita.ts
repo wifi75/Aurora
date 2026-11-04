@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.112',
+    released: '2026-11-04T12:32:07Z',
+    kind: 'changed',
+    title: ['Log: import e collegamenti in una pagina', 'Log: import and links on one page', 'Log: Import und Verbindungen auf einer Seite', 'Journal : import et liaisons sur une page', 'Log: importación y conexiones en una página', 'Log: importação e ligações numa página'],
+    text: [
+      "Con il log vuoto, il clic sul pannello Log apre Impostazioni › Programmi collegati: in cima l’importazione ed esportazione ADIF del tuo log, subito sotto il collegamento a un log esterno via UDP (Log4OM, GridTracker, BBLogger…).",
+      "With an empty log, clicking the Log panel opens Settings › Connected programs: at the top importing and exporting your ADIF log, right below the link to an external log via UDP (Log4OM, GridTracker, BBLogger…).",
+      "Bei leerem Log öffnet ein Klick auf das Log-Feld Einstellungen › Verbundene Programme: oben Import und Export deines ADIF-Logs, direkt darunter die Verbindung zu einem externen Log über UDP (Log4OM, GridTracker, BBLogger…).",
+      "Avec un journal vide, un clic sur le panneau Journal ouvre Réglages › Programmes connectés : en haut l’import et l’export ADIF de ton journal, juste en dessous la liaison vers un journal externe par UDP (Log4OM, GridTracker, BBLogger…).",
+      "Con el log vacío, el clic en el panel Log abre Ajustes › Programas conectados: arriba la importación y exportación ADIF de tu log, justo debajo la conexión a un log externo por UDP (Log4OM, GridTracker, BBLogger…).",
+      "Com o log vazio, o clique no painel Log abre Definições › Programas ligados: em cima a importação e exportação ADIF do teu log, logo abaixo a ligação a um log externo por UDP (Log4OM, GridTracker, BBLogger…).",
+    ],
+  },
+  {
     version: '0.11.111',
     released: '2026-11-04T12:30:25Z',
     kind: 'changed',
