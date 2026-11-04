@@ -1,6 +1,8 @@
 // Finestra di conferma del log («Richiedimi di loggare il QSO»): it, en, de, fr, es, pt.
 export const logPromptStrings = {
   'lp.title': ['Registrare il QSO con {call}?', 'Log the QSO with {call}?', 'QSO mit {call} loggen?', 'Enregistrer le QSO avec {call} ?', '¿Registrar el QSO con {call}?', 'Registar o QSO com {call}?'],
+  'lp.title.lead': ['Registrare il QSO con', 'Log the QSO with', 'QSO loggen mit', 'Enregistrer le QSO avec', '¿Registrar el QSO con', 'Registar o QSO com'],
+  'lp.summary': ['Banda, modo, frequenza e ora del QSO', 'Band, mode, frequency and time of the QSO', 'Band, Betriebsart, Frequenz und Zeit des QSO', 'Bande, mode, fréquence et heure du QSO', 'Banda, modo, frecuencia y hora del QSO', 'Banda, modo, frequência e hora do QSO'],
   'lp.waiting': ['{n} QSO in attesa', '{n} QSOs waiting', '{n} QSOs warten', '{n} QSO en attente', '{n} QSO en espera', '{n} QSO à espera'],
   'lp.log': ['Registra', 'Log it', 'Loggen', 'Enregistrer', 'Registrar', 'Registar'],
   'lp.discard': ['Scarta', 'Discard', 'Verwerfen', 'Ignorer', 'Descartar', 'Descartar'],
