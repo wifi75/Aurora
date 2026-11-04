@@ -13,7 +13,7 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://
 - Logiche di QSO e trasmissione: leggere `docs/logiche-jtdx.md` prima di toccarle; il comportamento di JTDX/Decodium si verifica con REA, non si indovina.
 - Ogni testo dell'interfaccia, della Guida e delle Novita' e' in sei lingue (it, en, de, fr, es, pt).
 - A ogni versione si seguono i passi di `TASK.md`.
-- Linux (versione della comunita') usa lo stesso codice: ogni API di Windows va in `#[cfg(windows)]`; il controllo `Linux` di GitHub Actions deve restare verde (vedi `docs/sviluppo.md`).
+- Linux (non provata dall'autore, senza assistenza) usa lo stesso codice: ogni API di Windows va in `#[cfg(windows)]`; il controllo `Linux` di GitHub Actions deve restare verde (vedi `docs/sviluppo.md`).
 
 ## Per riprendere il lavoro
 Leggi per primo `docs/ripresa.md`: stato attuale, lavoro in corso e prossimo passo.

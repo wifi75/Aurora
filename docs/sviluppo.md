@@ -23,7 +23,7 @@ Dettagli che servono solo quando si lavora su quella parte. Le regole sempre val
 - Ogni processo figlio (PowerShell, cmd) parte con `CREATE_NO_WINDOW`; l'installatore dell'aggiornamento parte staccato da Aurora (`cmd /C start`) e la riga di chiusura dell'installatore non deve uccidere i processi figli.
 - La trasmissione e' aperta di default (`AURORA_ALLOW_TX=0` la chiude): STOP TX, tetti, dead-man e automazioni spente di default restano.
 
-## Linux (versione della comunita')
+## Linux (non provata dall'autore, senza assistenza)
 - Stesso codice e stesso ramo di Windows: nessun ramo separato. Ogni uso di API di Windows (`std::os::windows`, `windows`, `windows-sys`, `cmd`, percorsi `C:\`) va dentro `#[cfg(windows)]`, con la sua alternativa `#[cfg(not(windows))]` se serve.
 - Il controllo `Linux` di GitHub Actions (`.github/workflows/linux.yml`) compila a ogni push: se diventa rosso, quasi sempre e' una riga di Windows senza `#[cfg(windows)]`.
 - Compilazione locale: `./scripts/compila-linux.sh`; impostazioni del pacchetto in `desktop/src-tauri/tauri.linux.conf.json` (solo Linux, si somma a `tauri.conf.json`). Guida per gli utenti: `docs/linux.md` (sei lingue).

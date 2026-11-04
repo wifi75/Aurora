@@ -69,7 +69,7 @@ Stato al 2026-11-04, versione 0.11.101. Per riprendere il lavoro leggi anche `do
 - Nei repository niente nominativi reali, niente riferimenti a strumenti di assistenza, niente segreti.
 
 ## Linux (2026-11-04)
-- Versione della comunita', senza assistenza: **stesso codice e stesso ramo** di Windows, nessun ramo separato. Il codice solo Windows sta in `#[cfg(windows)]` (regola in `docs/sviluppo.md`).
+- Versione non provata dall'autore e senza assistenza (i pacchetti li compila GitHub dallo stesso codice): **stesso codice e stesso ramo** di Windows, nessun ramo separato. Il codice solo Windows sta in `#[cfg(windows)]` (regola in `docs/sviluppo.md`).
 - `scripts/compila-linux.sh` (apt/dnf/pacman/zypper, Rust se manca) prepara `.deb` e AppImage; `desktop/src-tauri/tauri.linux.conf.json` sceglie i formati e spegne i file d'aggiornamento firmati.
 - GitHub Actions `.github/workflows/linux.yml` (Ubuntu 22.04): `cargo check` a ogni push; a ogni release pubblicata allega `Aurora-Linux-x86_64.AppImage`, `Aurora-Linux-amd64.deb`, `SHA256SUMS-linux.txt` (nomi fissi per i link `latest/download`).
 - Su Linux mancano OmniRig, PTT su RTS/DTR, volume di registrazione, aggiornamento automatico (errore chiaro). `rigctld` si cerca anche in `/usr/bin` e `/usr/local/bin`; dati in `~/.local/share/Aurora`. Nessun trattamento di dati nuovo: l'informativa privacy non cambia.
