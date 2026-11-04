@@ -1,7 +1,7 @@
 # Changelog
 
 ## Non rilasciato
-- **Linux** (versione della comunita', senza assistenza): compila dallo stesso codice di Windows; `scripts/compila-linux.sh` prepara AppImage e `.deb` con un comando, guida in sei lingue (`docs/linux.md`), sezione Linux nella pagina web e nei README; GitHub Actions controlla Linux a ogni push e allega AppImage e `.deb` a ogni release.
+- **Linux** (non provata dall'autore, senza assistenza): compila dallo stesso codice di Windows; `scripts/compila-linux.sh` prepara AppImage e `.deb` con un comando, guida in sei lingue (`docs/linux.md`), sezione Linux nella pagina web e nei README; GitHub Actions controlla Linux a ogni push e allega AppImage e `.deb` a ogni release.
 - **Pagina web**: download con linguette Windows / Linux e passi per Ubuntu·Debian·Mint, Fedora, Arch·Manjaro e compilazione, con pulsante «Copia» per ogni comando; pulsanti grafici Linux nei README; guida Linux ampliata (passo passo per distribuzione, primo avvio, disinstallazione, problemi comuni). Lo script installa anche Node.js 22 se manca o è troppo vecchio.
 
 ## 0.11.101 - 2026-11-04
