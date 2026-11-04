@@ -10,7 +10,8 @@ L'elenco dei compiti da chiudere a ogni versione e' in `TASK.md`; qui i comandi.
    (il nome dell'installatore deve finire in `-setup.exe`; guida in `docs/installer-windows.md`).
 5. Copia `Aurora-Setup.exe` dell'installatore e `SHA256SUMS.txt` dei file; tag `vX.Y.Z`, push del tag, `gh release create` con installatore, `.sig`, `SHA256SUMS.txt` e `Aurora-Setup.exe` (il link `releases/latest/download/Aurora-Setup.exe` scarica sempre l'ultima).
 6. Ora vera nelle Novita' (`gh release view vX.Y.Z --json publishedAt`), commit e push; pagina web con `scripts/pubblica-sito.ps1`.
-7. Linux: niente da fare. Alla pubblicazione della release GitHub Actions (`Linux`) allega da sola `Aurora-Linux-x86_64.AppImage`, `Aurora-Linux-amd64.deb` e `SHA256SUMS-linux.txt`; si controlla solo che il lavoro sia verde.
+7. File dei paesi: `rilascio-windows.ps1` scarica da solo `cty.dat` da country-files.com in `desktop/src-tauri/cty/` (si ferma se non ci riesce); GitHub Actions fa lo stesso per Linux.
+8. Linux: niente da fare. Alla pubblicazione della release GitHub Actions (`Linux`) allega da sola `Aurora-Linux-x86_64.AppImage`, `Aurora-Linux-amd64.deb` e `SHA256SUMS-linux.txt`; si controlla solo che il lavoro sia verde.
 
 ## Velocita' della compilazione
 

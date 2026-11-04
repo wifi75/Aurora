@@ -46,7 +46,7 @@ Aurora lancia `rigctld` come programma a parte e gli parla su TCP. Si possono so
 
 - **Sfondo della mappa** (facoltativo, si spegne con «Sfondo reale»): tessere *National Geographic World Map* di **Esri** (`server.arcgisonline.com`), con l'attribuzione «© Esri — National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC» mostrata sulla mappa. Le tessere restano soggette ai termini di Esri; non sono incluse nel programma.
 - **PSK Reporter** (`pskreporter.info`) e **hamqsl.com** (dati di N0NBH): facoltativi, spenti di default, solo lettura; i dati restano dei loro autori.
-- **cty.dat** (elenco dei prefissi): non incluso; lo legge dall'installazione di JTDX dell'utente.
+- **cty.dat** (elenco dei prefissi e dei paesi DXCC) di Jim Reisert AD1C, <https://www.country-files.com>: incluso nel programma, scaricato a ogni versione dagli script di compilazione. Il file e' distribuito liberamente dal suo autore; Aurora non lo prende da nessun altro programma.
 - **JTDX** e **WSJT-X** come programmi: Aurora puo' anche comandarli dall'esterno (UDP e accessibilita' di Windows); appartengono ai rispettivi autori.
 - **Decodium** (GPL-3.0): studiato come ispirazione (`docs/confronto-decodium.md`), nessun suo codice e' stato copiato.
 - **Microsoft Edge WebView2**: usato dal programma Windows per mostrare la finestra; non incluso (e' un componente di Windows).
