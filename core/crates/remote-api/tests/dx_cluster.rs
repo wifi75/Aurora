@@ -31,10 +31,11 @@ async fn needs_a_paired_device() {
 }
 
 #[tokio::test]
-async fn shows_the_defaults_switched_off_with_no_spots() {
+async fn shows_the_defaults_switched_on_with_no_spots_and_no_callsign_yet() {
     let s = cluster_state("defaults");
     let v = body_json(send(&s, Method::GET, "/api/v1/dx-cluster", None).await).await;
-    assert_eq!(v["config"]["enabled"], false);
+    assert_eq!(v["config"]["enabled"], true, "acceso di fabbrica");
+    assert_eq!(v["callsign"], "", "senza nominativo di stazione non entra in nessun cluster");
     assert!(!v["config"]["servers"].as_array().unwrap().is_empty());
     assert_eq!(v["spots"].as_array().unwrap().len(), 0);
     assert_eq!(v["servers"].as_array().unwrap().len(), 0);
