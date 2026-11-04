@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.122',
-    released: '2026-11-04T18:02:23Z',
+    released: '2026-11-04T18:05:13Z',
     kind: 'fixed',
     title: ["La locandina arriva subito", "The poster comes right away", "Das Plakat kommt sofort", "L’affiche arrive tout de suite", "El cartel llega enseguida", "O cartaz chega logo"],
     text: [
