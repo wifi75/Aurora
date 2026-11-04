@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Linux** (versione della comunita', senza assistenza): compila dallo stesso codice di Windows; `scripts/compila-linux.sh` prepara AppImage e `.deb` con un comando, guida in sei lingue (`docs/linux.md`), sezione Linux nella pagina web e nei README; GitHub Actions controlla Linux a ogni push e allega AppImage e `.deb` a ogni release.
 
 ## 0.11.101 - 2026-11-04
 - **File audio**: sempre nella cartella di Aurora (una cartella fuori, per esempio copiata da JTDX, torna a quella di Aurora).

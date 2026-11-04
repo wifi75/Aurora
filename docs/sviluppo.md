@@ -23,5 +23,11 @@ Dettagli che servono solo quando si lavora su quella parte. Le regole sempre val
 - Ogni processo figlio (PowerShell, cmd) parte con `CREATE_NO_WINDOW`; l'installatore dell'aggiornamento parte staccato da Aurora (`cmd /C start`) e la riga di chiusura dell'installatore non deve uccidere i processi figli.
 - La trasmissione e' aperta di default (`AURORA_ALLOW_TX=0` la chiude): STOP TX, tetti, dead-man e automazioni spente di default restano.
 
+## Linux (versione della comunita')
+- Stesso codice e stesso ramo di Windows: nessun ramo separato. Ogni uso di API di Windows (`std::os::windows`, `windows`, `windows-sys`, `cmd`, percorsi `C:\`) va dentro `#[cfg(windows)]`, con la sua alternativa `#[cfg(not(windows))]` se serve.
+- Il controllo `Linux` di GitHub Actions (`.github/workflows/linux.yml`) compila a ogni push: se diventa rosso, quasi sempre e' una riga di Windows senza `#[cfg(windows)]`.
+- Compilazione locale: `./scripts/compila-linux.sh`; impostazioni del pacchetto in `desktop/src-tauri/tauri.linux.conf.json` (solo Linux, si somma a `tauri.conf.json`). Guida per gli utenti: `docs/linux.md` (sei lingue).
+- Su Linux mancano OmniRig, il PTT su RTS/DTR, il volume di registrazione e l'aggiornamento automatico (l'installatore risponde con un errore chiaro).
+
 ## Documenti per riprendere
 `memory.md` (stato e decisioni), `docs/mancante.md` (cosa manca), `CHANGELOG.md`; per il motore proprio `docs/2026-10-24-aurora-motore-ft8.md` e le analisi `docs/analisi-decodium-*.md` (CAT, cascata, banda satura); per i log esterni `docs/integrazioni-log.md`.
