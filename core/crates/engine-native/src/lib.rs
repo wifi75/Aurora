@@ -508,9 +508,21 @@ pub fn start_with_save(
                 let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)
                 options.deadline = Some(started + std::time::Duration::from_secs(11));
+                // senza un segnale vero (nessuna radio, microfono del PC) le ricerche «a priori» trovano messaggi nel rumore:
+                // con l'audio debole si decodifica solo cio' che c'e' davvero, con l'audio muto il periodo non si decodifica
+                let peak = slot.samples.iter().fold(0.0f32, |m, &x| m.max(x.abs()));
+                let silent = peak < 0.0005;
+                if peak < 0.02 {
+                    options.a7 = false;
+                    options.a8 = None;
+                    options.ap = None;
+                    options.ap_cq = false;
+                }
                 // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
                 let mut early: Vec<String> = Vec::new();
-                let mut decoded = if mode == Mode::Ft8 && let Some(l) = live.as_ref() {
+                let mut decoded = if silent {
+                    Vec::new()
+                } else if mode == Mode::Ft8 && let Some(l) = live.as_ref() {
                     let mut on_pass = |batch: &[ft8::decode::DecodedInfo]| {
                         let fresh: Vec<ft8::decode::Decoded> = batch.iter().map(|i| i.decoded.clone()).filter(|d| !early.contains(&d.text)).collect();
                         early.extend(fresh.iter().map(|d| d.text.clone()));
