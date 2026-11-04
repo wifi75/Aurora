@@ -7,8 +7,6 @@ vi.mock('../api/client', () => ({
   getStationInfo: vi.fn(),
   getEngineSettings: vi.fn(),
   putEngineSettings: vi.fn(),
-  getEngineConfig: vi.fn(),
-  applyEngineConfig: vi.fn(),
   getAutomation: vi.fn(),
   getControls: vi.fn(),
   postControl: vi.fn(),

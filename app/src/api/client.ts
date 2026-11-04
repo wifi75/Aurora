@@ -776,17 +776,7 @@ export async function detectCat(): Promise<CatDetection> {
   return (await (await request('/cat/detect', { method: 'POST' })).json()) as CatDetection;
 }
 
-/** Le impostazioni del motore, per nome, come testo (dal suo file di configurazione). */
-export async function getEngineConfig(): Promise<Record<string, string>> {
-  return (await (await request('/engine-config')).json()) as Record<string, string>;
-}
-
-/** Applica modifiche alle impostazioni del motore: lo chiude, scrive il suo file (con copia di sicurezza) e lo riavvia. */
-export async function applyEngineConfig(changes: Record<string, string>): Promise<void> {
-  await request('/engine-config', jsonInit({ changes }));
-}
-
-/** Le impostazioni del motore proprio (di Aurora, nel suo file); 404 `engine_settings_unavailable` con il motore JTDX. */
+/** Le impostazioni del motore di Aurora (nel suo file). */
 export async function getEngineSettings(): Promise<EngineSettings> {
   return EngineSettingsSchema.parse(await (await request('/engine-settings')).json());
 }

@@ -8,10 +8,8 @@ vi.mock('../api/client', () => ({
   getEngineSettings: vi.fn(),
   putEngineSettings: vi.fn(),
   postUploadTest: vi.fn(),
-  getEngineConfig: vi.fn(),
   getOnline: vi.fn(() => Promise.resolve({ psk: false, solar: false })),
   putOnline: vi.fn(),
-  applyEngineConfig: vi.fn(),
   ApiError: class extends Error {
     constructor(
       readonly status: number,
@@ -90,7 +88,6 @@ beforeEach(() => {
   vi.mocked(api.getStationInfo).mockReset().mockResolvedValue(info);
   vi.mocked(api.getEngineSettings).mockReset().mockResolvedValue(doc());
   vi.mocked(api.putEngineSettings).mockReset();
-  vi.mocked(api.getEngineConfig).mockReset().mockResolvedValue({});
 });
 
 describe('Connected programs tab with the built-in engine', () => {
@@ -106,7 +103,6 @@ describe('Connected programs tab with the built-in engine', () => {
     expect(screen.queryByText(it_('ens.g.qrz'))).toBeNull();
     expect(screen.queryByLabelText(it_('ens.k.AllowSpotsDXSummit'))).toBeNull();
     expect(screen.queryByText(/riavvia il motore/i)).toBeNull();
-    expect(api.getEngineConfig).not.toHaveBeenCalled();
   });
 
   it('has the DXSummit spotting in Online services, on, with the last send', async () => {
@@ -164,14 +160,6 @@ describe('Other tabs with the built-in engine', () => {
     expect(await screen.findByText(it_('ens.title'))).toBeInTheDocument();
     expect(screen.queryByText(/Non disponibili/)).toBeNull();
     expect(screen.queryByRole('button', { name: it_('ens.apply') })).toBeNull();
-  });
-
-  it('with JTDX as the engine the old behaviour stays', async () => {
-    vi.mocked(api.getStationInfo).mockResolvedValue({ ...info, engine: 'jtdx' });
-    vi.mocked(api.getEngineConfig).mockResolvedValue({ MyCall: 'IU3ABC' });
-    render(<EngineValues group="general" />);
-    expect(await screen.findByLabelText(it_('jx.MyCall'))).toHaveValue('IU3ABC');
-    expect(api.getEngineSettings).not.toHaveBeenCalled();
   });
 });
 
