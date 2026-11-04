@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Servizi accesi di fabbrica**: PSK Reporter (chi ti ha ricevuto), propagazione (hamqsl.com), calendario delle DXpedition (NG3K) e DX Cluster partono accesi; si spengono dalle impostazioni. Chi li aveva gia' scelti trova le sue scelte. Restano spenti solo i servizi che chiedono un account (QRZ, LoTW, eQSL, ClubLog, HRDLog, Wavelog). Informativa privacy aggiornata.
+- **DX Cluster con il nominativo di stazione**: non si scrive piu' nella scheda del cluster; Aurora usa quello dei dati di stazione (Impostazioni › Generali) e lo segue se cambia.
 - **BBLogger**: destinatario pronto in Impostazioni › Programmi collegati › Integrazioni («+ BBLogger»: 127.0.0.1:2237, flusso WSJT-X e Logged ADIF), voce della Guida aggiornata nelle sei lingue e passi in `docs/integrazioni-log.md`.
 - **Link Linux senza 404**: nei README i pulsanti AppImage e .deb aprono la pagina della release e la guida ha l'indirizzo completo; nella pagina web, finche' la release non ha i pacchetti Linux, i pulsanti portano alla release con un avviso.
 - **Paesi e bandiere senza altri programmi**: il file dei paesi `cty.dat` (AD1C, country-files.com) e' dentro Aurora, aggiornato a ogni versione; prima Aurora lo cercava solo nell'installazione di JTDX e, senza JTDX, non mostrava bandiere, paesi ne' NEW ONE/NEW BAND.

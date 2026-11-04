@@ -75,6 +75,10 @@ Stato al 2026-11-04, versione 0.11.101. Per riprendere il lavoro leggi anche `do
 - Il cambio FT8/FT4 funziona senza CAT con il motore proprio (`switch_mode` non sposta la radio se non risponde); le bande restano legate al CAT.
 - Hamlib: l'installatore porta l'Hamlib ufficiale 4.7.2 (scaricato da GitHub con SHA-256 verificato da `prepara-hamlib.ps1`); tolta l'opzione che lo prendeva da JTDX/WSJT-X. `rigctld` si cerca accanto al programma, in `AURORA_RIGCTLD` e (Linux) nel sistema, mai nelle cartelle di altri programmi.
 
+## Servizi online di fabbrica (2026-11-04, decisione del proprietario)
+- Accesi di fabbrica: `online_info::Settings` (psk, solar, dxped), `dx_cluster::Config::enabled`, spotting PSK Reporter e DXSummit (gia' prima), NTP. Spenti solo quelli con account. `docs/privacy.md` lo dice (sezione «Servizi accesi di fabbrica»).
+- DX Cluster: `ClusterService::set_station_call` (nominativo di `engine_settings.reports().call`, seguito con `subscribe`); `callsign()` = stazione, poi quello del file. `GET /dx-cluster` da' anche `callsign`. La scheda mostra il nominativo in sola lettura.
+
 ## Linux (2026-11-04)
 - Versione non provata dall'autore e senza assistenza (i pacchetti li compila GitHub dallo stesso codice): **stesso codice e stesso ramo** di Windows, nessun ramo separato. Il codice solo Windows sta in `#[cfg(windows)]` (regola in `docs/sviluppo.md`).
 - `scripts/compila-linux.sh` (apt/dnf/pacman/zypper, Rust se manca) prepara `.deb` e AppImage; `desktop/src-tauri/tauri.linux.conf.json` sceglie i formati e spegne i file d'aggiornamento firmati.
