@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.122',
+    released: '2026-11-04T18:02:23Z',
+    kind: 'fixed',
+    title: ["La locandina arriva subito", "The poster comes right away", "Das Plakat kommt sofort", "L’affiche arrive tout de suite", "El cartel llega enseguida", "O cartaz chega logo"],
+    text: [
+      "Quando c’è una versione nuova, la locandina compare pochi secondi dopo l’apertura di Aurora: prima poteva aspettare fino a 10 minuti se l’avviso era già stato dato a un avvio precedente.",
+      "When a new version is out, the poster appears a few seconds after Aurora opens: before, it could wait up to 10 minutes if the notice had already been given at an earlier start.",
+      "Gibt es eine neue Version, erscheint das Plakat wenige Sekunden nach dem Öffnen von Aurora: vorher konnte es bis zu 10 Minuten dauern, wenn der Hinweis schon bei einem früheren Start kam.",
+      "Quand une nouvelle version existe, l’affiche apparaît quelques secondes après l’ouverture d’Aurora : avant, elle pouvait attendre jusqu’à 10 minutes si l’avis avait déjà été donné lors d’un démarrage précédent.",
+      "Cuando hay una versión nueva, el cartel aparece pocos segundos después de abrir Aurora: antes podía tardar hasta 10 minutos si el aviso ya se había dado en un inicio anterior.",
+      "Quando há uma versão nova, o cartaz aparece poucos segundos depois de abrir a Aurora: antes podia demorar até 10 minutos se o aviso já tivesse sido dado num arranque anterior.",
+    ],
+  },
+  {
     version: '0.11.121',
     released: '2026-11-04T18:01:02Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur téléphone et tablette Aurora n’affiche que la page Station, sans menu en haut ni messages surgissants ; bandes, modes, filtres et macros sont ceux du PC ; deux appuis sur STOP vident aussi les messages Tx. La page Smartphone/Tablette est compacte et l’accès sans code depuis le réseau domestique fonctionne et reste au redémarrage.',
       'Desde el teléfono y la tableta Aurora muestra solo la página Estación, sin menú arriba ni mensajes emergentes; bandas, modos, filtros y macros son los del PC; dos toques en STOP vacían también los mensajes Tx. La página Smartphone/Tableta es compacta y el acceso sin código desde la red de casa funciona y se mantiene al reiniciar.',
       'No telemóvel e no tablet a Aurora mostra só a página Estação, sem menu em cima nem mensagens a surgir; bandas, modos, filtros e macros são os do PC; dois toques em STOP esvaziam também as mensagens Tx. A página Smartphone/Tablet é compacta e o acesso sem código a partir da rede de casa funciona e mantém-se ao reiniciar.',
-    ],
-  },
-  {
-    version: '0.11.86',
-    released: '2026-11-03T18:14:32Z',
-    kind: 'fixed',
-    title: ['DXpedition più rapida', 'Faster DXpedition card', 'Schnellere DXpedition-Karte', 'Fiche DXpédition plus rapide', 'Ficha DXpedición más rápida', 'Ficha DXpedição mais rápida'],
-    text: [
-      'La scheda DXpedition si apre subito: confini e paesi si preparano in anticipo. Nell’attività di banda la colonna dei km è più larga.',
-      'The DXpedition card opens at once: borders and countries are prepared in advance. In band activity the km column is wider.',
-      'Die DXpedition-Karte öffnet sofort: Grenzen und Länder werden vorab vorbereitet. In der Bandaktivität ist die km-Spalte breiter.',
-      'La fiche DXpédition s’ouvre tout de suite : frontières et pays sont préparés à l’avance. Dans l’activité de bande la colonne des km est plus large.',
-      'La ficha DXpedición se abre al momento: fronteras y países se preparan por adelantado. En la actividad de banda la columna de km es más ancha.',
-      'A ficha DXpedição abre logo: fronteiras e países preparam-se com antecedência. Na atividade de banda a coluna dos km é mais larga.',
     ],
   },
 ];
