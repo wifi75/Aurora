@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.111',
+    released: '2026-11-04T12:30:25Z',
+    kind: 'changed',
+    title: ['Avvisi che non spostano i pannelli', 'Notices that do not move the panels', 'Hinweise, die die Felder nicht verschieben', 'Des avis qui ne déplacent plus les panneaux', 'Avisos que no mueven los paneles', 'Avisos que não mexem nos painéis'],
+    text: [
+      "Gli avvisi della stazione (segnale debole, nessun messaggio decodificato, orologio…) compaiono ora come piccole schede in basso a destra, ognuna con la sua ✕: i pannelli non scendono più ogni volta che ne arriva uno.",
+      "Station notices (weak signal, no decoded messages, clock…) now appear as small cards at the bottom right, each with its own ✕: the panels no longer move down every time one arrives.",
+      "Stationshinweise (schwaches Signal, keine dekodierten Meldungen, Uhr…) erscheinen jetzt als kleine Karten unten rechts, jede mit ihrem ✕: die Felder rutschen nicht mehr nach unten, wenn einer kommt.",
+      "Les avis de la station (signal faible, aucun message décodé, horloge…) apparaissent maintenant en petites cartes en bas à droite, chacune avec sa ✕ : les panneaux ne descendent plus à chaque avis.",
+      "Los avisos de la estación (señal débil, ningún mensaje decodificado, reloj…) aparecen ahora como pequeñas tarjetas abajo a la derecha, cada una con su ✕: los paneles ya no bajan cada vez que llega uno.",
+      "Os avisos da estação (sinal fraco, nenhuma mensagem descodificada, relógio…) aparecem agora como pequenos cartões em baixo à direita, cada um com o seu ✕: os painéis já não descem sempre que chega um.",
+    ],
+  },
+  {
     version: '0.11.110',
     released: '2026-11-04T12:28:05Z',
     kind: 'fixed',
