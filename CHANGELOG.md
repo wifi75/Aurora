@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.111 - 2026-11-04
+- **Avvisi della stazione**: la barra della diagnosi (`DiagnosisBar`) diventa una pila di schede fisse in basso a destra con chiusura per avviso (riappare se cambia); i pannelli non si spostano piu'.
+
 ## 0.11.110 - 2026-11-04
 - **Decodifiche false senza radio**: un «CQ SU3NRA» a -25 dB su un PC senza radio (solo microfono). Con il picco del periodo sotto 0,02 (lo stesso «debole» della diagnosi) si spengono a7, a8 e l'analisi a priori; sotto 0,0005 (muto) il periodo non si decodifica ma la sequenza del QSO avanza lo stesso.
 

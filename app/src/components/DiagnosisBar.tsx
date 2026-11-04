@@ -21,6 +21,8 @@ export function DiagnosisBar() {
   const sessionStartAt = useStation((s) => s.sessionStartAt);
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });
   const [now, setNow] = useState(() => Date.now());
+  // gli avvisi chiusi restano chiusi finche' non cambiano (un altro problema, o lo stesso con un altro stato)
+  const [closed, setClosed] = useState<string[]>([]);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 10_000);
     return () => clearInterval(id);
@@ -35,18 +37,24 @@ export function DiagnosisBar() {
     lastDecodeAt,
     sessionStartAt,
   });
-  if (issues.length === 0) return null;
+  const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? '')}`;
+  const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));
+  if (visible.length === 0) return null;
 
+  // schede che galleggiano in basso a destra: compaiono e spariscono senza spostare i pannelli della stazione
   return (
-    <ul className="diag" aria-label={t('diag.aria')}>
-      {issues.map((issue) => (
-        <li key={`${issue.id}-${String(issue.vars.state ?? '')}`} className={`diag-item diag-item--${issue.severity}`}>
+    <ul className="diag" aria-label={t('diag.aria')} aria-live="polite">
+      {visible.map((issue) => (
+        <li key={keyOf(issue)} className={`diag-item diag-item--${issue.severity}`}>
           <span className="diag-text">{t(messageKey(issue), issue.vars)}</span>
           {issue.href ? (
-            <a className="glass glass--link" href={issue.href}>
+            <a className="diag-fix" href={issue.href}>
               {t('diag.fix')}
             </a>
           ) : null}
+          <button type="button" className="diag-close" aria-label={t('diag.close')} title={t('diag.close')} onClick={() => setClosed((c) => [...c, keyOf(issue)])}>
+            ×
+          </button>
         </li>
       ))}
     </ul>

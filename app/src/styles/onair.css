@@ -3521,38 +3521,81 @@
 
 /* Diagnosi della stazione */
 .diag {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 55;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  align-items: flex-end;
+  gap: 0.45rem;
+  width: min(26rem, calc(100vw - 2rem));
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
 .diag-item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.9rem;
-  padding: 0.35rem 0.8rem;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.6rem 0.6rem 0.85rem;
   font-size: 0.85rem;
-  background: var(--glass-lo);
-  border: 1px solid var(--glass-edge);
-  border-left-width: 4px;
-  border-radius: 0.5rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  box-shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 0.35);
+  pointer-events: auto;
+  animation: diag-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.diag-item--problem {
-  border-left-color: var(--danger);
+.diag-item::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: var(--text-muted);
 }
 
-.diag-item--warning {
-  border-left-color: var(--warn);
-}
+.diag-item--problem::before { background: var(--danger); }
+.diag-item--warning::before { background: var(--warn); }
+.diag-item--info::before { background: var(--accent); }
 
-.diag-item--info {
-  border-left-color: var(--text-muted);
+.diag-text { flex: 1 1 auto; min-width: 0; }
+
+.diag-fix {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
 }
+.diag-fix:hover { text-decoration: underline; }
+
+.diag-close {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.diag-close:hover { color: var(--text); background: var(--panel); }
+
+@keyframes diag-in { from { opacity: 0; transform: translateY(0.5rem); } }
+@media (prefers-reduced-motion: reduce) { .diag-item { animation: none; } }
 
 .auto-wanted {
   display: flex;
