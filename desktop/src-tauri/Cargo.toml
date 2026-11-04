@@ -29,11 +29,17 @@ engine-jtdx = { path = "../../core/crates/engine-jtdx" }
 tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# la finestra «Salva con nome» di Windows (pagina di esportazione del log)
-rfd = { version = "0.17.2", default-features = false }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_ProcessStatus", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_SystemInformation", "Win32_System_ErrorReporting", "Win32_System_Console", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_Storage_FileSystem"] }
+# la finestra «Salva con nome» di Windows (pagina di esportazione del log)
+rfd = { version = "0.17.2", default-features = false }
+
+# su Linux la stessa finestra passa da GTK 3
+[target.'cfg(not(windows))'.dependencies]
+rfd = { version = "0.17.2", default-features = false, features = ["gtk3"] }
 
 [profile.release]
 strip = true

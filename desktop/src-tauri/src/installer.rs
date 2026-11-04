@@ -1,11 +1,18 @@
 //! L'installazione di un aggiornamento: scarica il pacchetto e la sua firma dalla release, controlla la firma con la chiave pubblica di
 //! Aurora, avvia l'installatore e chiude il programma, che l'installatore riapre. **Senza firma valida non si installa mai nulla.**
 
-use std::{path::PathBuf, process::Command, sync::Arc, time::Duration};
+// su Linux resta solo il rifiuto: le parti dell'installatore di Windows non si usano
+#![cfg_attr(not(windows), allow(dead_code))]
+
+use std::sync::Arc;
+#[cfg(windows)]
+use std::{path::PathBuf, process::Command, time::Duration};
 
 use remote_api::UpdateInstaller;
 use tauri::AppHandle;
-use updater::{installer_assets, verify_signature, UpdateService};
+#[cfg(windows)]
+use updater::installer_assets;
+use updater::{verify_signature, UpdateService};
 
 /// La chiave pubblica con cui sono firmati i pacchetti (la privata sta fuori dal repository, sul PC di chi rilascia).
 const PUBLIC_KEY: &str = include_str!("../../updater.pub");
@@ -50,6 +57,14 @@ pub fn verify_package(data: &[u8], signature: &str) -> Result<(), String> {
 }
 
 impl UpdateInstaller for DesktopInstaller {
+    /// Fuori da Windows non c'e' un installatore da lanciare: chi usa Linux aggiorna ricompilando (vedi `docs/linux.md`).
+    #[cfg(not(windows))]
+    fn install(&self, _updates: Arc<UpdateService>) -> Result<String, String> {
+        let _ = &self.app;
+        Err("su Linux l'aggiornamento automatico non c'e': si aggiorna ricompilando con scripts/compila-linux.sh".to_string())
+    }
+
+    #[cfg(windows)]
     fn install(&self, updates: Arc<UpdateService>) -> Result<String, String> {
         let release = updates.available().ok_or("nessuna versione nuova trovata")?;
         let (setup, sig) = installer_assets(&release).ok_or("la release non ha il pacchetto di installazione con la sua firma")?;

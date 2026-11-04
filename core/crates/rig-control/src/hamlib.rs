@@ -523,9 +523,14 @@ pub fn locate_rigctld() -> Option<PathBuf> {
     locate_rigctld_in(&dirs, env.as_deref(), &dev_install_dirs())
 }
 
-/// Le cartelle `bin` di JTDX e WSJT-X (solo sviluppo).
+/// Le cartelle `bin` di JTDX e WSJT-X (solo sviluppo); su Linux le cartelle dove il gestore dei pacchetti installa Hamlib.
 fn dev_install_dirs() -> Vec<PathBuf> {
     let mut out = Vec::new();
+    #[cfg(not(windows))]
+    {
+        out.push(PathBuf::from("/usr/local/bin"));
+        out.push(PathBuf::from("/usr/bin"));
+    }
     if let Ok(entries) = std::fs::read_dir("C:/JTDX64") {
         let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).map(|e| e.path().join("bin")).collect();
         found.sort();
