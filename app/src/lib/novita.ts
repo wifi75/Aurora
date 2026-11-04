@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.119',
+    released: '2026-11-04T17:26:51Z',
+    kind: 'fixed',
+    title: ["Porta di rete per il CAT", "Network port for CAT", "Netzwerkport für CAT", "Port réseau pour le CAT", "Puerto de red para el CAT", "Porta de rede para o CAT"],
+    text: [
+      "Nel campo Porta della radio ora si può scrivere un indirizzo di rete, come 127.0.0.1:4532 per «Hamlib NET rigctl» o flrig, oltre a scegliere una COM. Nel pannello «CQ e novità» il nome del paese resta leggibile, e il display quasi quadrato sta sopra la testata.",
+      "In the radio Port field you can now type a network address, such as 127.0.0.1:4532 for «Hamlib NET rigctl» or flrig, as well as pick a COM port. In the «CQ and news» panel the country name stays readable, and the near-square display sits above the header.",
+      "Im Feld Port des Funkgeräts kann man jetzt eine Netzwerkadresse eingeben, etwa 127.0.0.1:4532 für «Hamlib NET rigctl» oder flrig, oder einen COM-Port wählen. Im Feld «CQ und Neues» bleibt der Ländername lesbar, und die fast quadratische Anzeige liegt über der Kopfzeile.",
+      "Dans le champ Port de la radio on peut maintenant écrire une adresse réseau, comme 127.0.0.1:4532 pour « Hamlib NET rigctl » ou flrig, en plus de choisir un port COM. Dans le panneau « CQ et nouveautés » le nom du pays reste lisible, et l’afficheur presque carré se place au-dessus de l’en-tête.",
+      "En el campo Puerto de la radio ahora se puede escribir una dirección de red, como 127.0.0.1:4532 para «Hamlib NET rigctl» o flrig, además de elegir un COM. En el panel «CQ y novedades» el nombre del país sigue siendo legible, y la pantalla casi cuadrada queda sobre la cabecera.",
+      "No campo Porta do rádio agora pode-se escrever um endereço de rede, como 127.0.0.1:4532 para «Hamlib NET rigctl» ou flrig, além de escolher uma COM. No painel «CQ e novidades» o nome do país continua legível, e o ecrã quase quadrado fica por cima do cabeçalho.",
+    ],
+  },
+  {
     version: '0.11.118',
     released: '2026-11-04T17:21:58Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur téléphone et tablette Aurora devient une télécommande : qui émet, activité de bande, cluster, journal, les six messages Tx, cascade et CQ, Activer Tx et STOP. Association en scannant un QR ; Aurora se retrouve en aurora.local même si le PC change d’adresse. Aperçus en direct dans Réglages > Smartphone/Tablette.',
       'En el teléfono y la tableta Aurora se convierte en un mando: quién transmite, actividad de banda, clúster, registro, los seis mensajes Tx, cascada y CQ, Activar Tx y STOP. Se empareja escaneando un QR y se encuentra como aurora.local aunque el PC cambie de dirección. Vistas en directo en Ajustes > Smartphone/Tableta.',
       'No telemóvel e no tablet a Aurora torna-se um comando: quem está no ar, atividade de banda, cluster, registo, as seis mensagens Tx, cascata e CQ, Ativar Tx e STOP. Associa-se lendo um QR e encontra-se como aurora.local mesmo se o PC mudar de endereço. Pré-visualizações ao vivo em Definições > Smartphone/Tablet.',
-    ],
-  },
-  {
-    version: '0.11.84',
-    released: '2026-11-03T17:50:56Z',
-    kind: 'changed',
-    title: ['Impostazioni e cluster più puliti', 'Cleaner settings and cluster', 'Aufgeräumte Einstellungen und Cluster', 'Réglages et cluster plus nets', 'Ajustes y clúster más limpios', 'Definições e cluster mais limpos'],
-    text: [
-      'Tolte le note e le spiegazioni fisse dalle Impostazioni (restano i «?»), righe dei servizi più basse con esito della «Prova» in breve. Nel DX Cluster il riquadro con nome e città compare anche sul DX e si apre subito: le informazioni di tutti gli spot visibili si caricano in anticipo. Pagina Fox con cascata più bassa.',
-      'Notes and fixed explanations removed from Settings (the «?» remain), lower service rows with a short «Test» result. In the DX Cluster the box with name and town also appears on the DX and opens at once: info for all visible spots is preloaded. Fox page with a lower waterfall.',
-      'Notizen und feste Erklärungen aus den Einstellungen entfernt (die «?» bleiben), niedrigere Dienstzeilen mit kurzem «Test»-Ergebnis. Im DX-Cluster erscheint der Kasten mit Name und Ort auch beim DX und öffnet sofort: Infos aller sichtbaren Spots werden vorab geladen. Fox-Seite mit niedrigerem Wasserfall.',
-      'Notes et explications fixes retirées des Réglages (les « ? » restent), lignes des services plus basses avec un résultat de « Tester » court. Dans le DX Cluster l’encadré nom et ville apparaît aussi sur le DX et s’ouvre aussitôt : les infos de tous les spots visibles sont préchargées. Page Fox avec cascade plus basse.',
-      'Quitadas las notas y explicaciones fijas de Ajustes (quedan los «?»), filas de servicios más bajas con resultado de «Probar» breve. En el DX Cluster el recuadro con nombre y ciudad aparece también en el DX y se abre al momento: la información de todos los spots visibles se carga por adelantado. Página Fox con cascada más baja.',
-      'Retiradas as notas e explicações fixas das Definições (ficam os «?»), linhas dos serviços mais baixas com resultado de «Testar» curto. No DX Cluster a caixa com nome e cidade aparece também no DX e abre logo: a informação de todos os spots visíveis é pré-carregada. Página Fox com cascata mais baixa.',
     ],
   },
 ];
