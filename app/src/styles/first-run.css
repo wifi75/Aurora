@@ -233,3 +233,17 @@
 .upd-poster__ver { margin: 0.9rem 0 0; color: var(--text-muted); font-family: var(--font-data); font-size: 0.82rem; }
 .upd-poster__actions { display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; margin-top: 1rem; }
 .upd-poster__actions a.first-run__later { text-decoration: none; margin-right: auto; }
+
+/* Controllo di rete durante l'associazione del telefono */
+.net-check { margin-top: 0.8rem; display: grid; gap: 0.5rem; }
+.net-check__wait { margin: 0; color: var(--warn); font-weight: 600; }
+.net-check ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
+.net-check li { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.7rem; border-radius: 0.5rem; background: var(--panel-raised); border: 1px solid var(--border); font-size: 0.9rem; line-height: 1.4; }
+.net-check li > span:first-child { flex: none; width: 1.3rem; height: 1.3rem; display: grid; place-items: center; border-radius: 50%; font-weight: 700; font-size: 0.8rem; }
+.net-check li.is-ok > span:first-child { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+.net-check li.is-ko { border-color: var(--danger); }
+.net-check li.is-ko > span:first-child { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+.net-check li.is-info > span:first-child { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.net-check li button { margin-left: auto; white-space: nowrap; }
+.net-check__err { margin: 0; color: var(--danger); font-size: 0.85rem; }
+.net-check__tip { margin: 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
