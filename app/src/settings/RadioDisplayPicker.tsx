@@ -5,8 +5,8 @@ import { Check, Help } from './common';
 
 /** Scelta dello stile del display della radio, con un'anteprima (dati di prova) per ognuno, e l'opzione per nasconderlo. */
 /** Le misure in testata (in punti), scritte accanto alla scelta: servono a dire «piu' largo», «piu' basso» sapendo da dove si parte. */
-const LAYOUT_SIZE: Record<string, { w: number; h: number }> = { pair: { w: 614, h: 75 }, single: { w: 640, h: 75 } };
-const FACE_SIZE = { w: 640, h: 75 };
+const LAYOUT_SIZE: Record<string, { w: number; h: number }> = { pair: { w: 614, h: 80 }, single: { w: 640, h: 80 } };
+const FACE_SIZE = { w: 640, h: 80 };
 
 export function RadioDisplayPicker() {
   const t = useT();

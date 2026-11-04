@@ -7,6 +7,7 @@ import { expandMacro, useMacros } from '../lib/macros';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
+import { DxQsl } from './CallsignTip';
 
 interface Props {
   /** La trasmissione e' aperta su questo PC (AURORA_ALLOW_TX=1). */
@@ -186,6 +187,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
           <span className="cmd-lab">Call</span>
           <input type="text" className="data cmd-call" aria-label={t('cmd.dxCall')} title={t('tip.cmd.dxCall')} placeholder={t('cmd.dxCall')} value={dxInput} maxLength={12} onChange={(e) => setDxInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
           <input type="text" className="data cmd-grid" aria-label={t('cmd.dxGrid')} title={t('tip.cmd.dxGrid')} placeholder={t('cmd.dxGrid')} value={gridInput} maxLength={6} onChange={(e) => setGridInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
+          <DxQsl call={dxCall} />
         </div>
         <div className="cmd-line cmd-row" role="group" aria-label={t('cmd.report')}>
           <span className="cmd-lab" title={t('tip.cmd.report')}>{t('cmd.report')}</span>

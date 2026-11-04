@@ -15,6 +15,7 @@ import { useStation, type CallHighlight } from '../state/station';
 import { senderOf, wishReason } from '../lib/wishlist';
 import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
+import { CallsignTip } from './CallsignTip';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
 const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
@@ -241,9 +242,27 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     );
   }
   const foxSet = foxCalls(decodes);
+  // QSO in corso: la stazione chiamata compare una volta sola, in cima (in fondo con l'elenco rovesciato) e ferma, con il messaggio piu'
+  // recente fra i nostri e i suoi; finche' non risponde e' gialla, quando risponde cambia colore; a QSO concluso (DX libero) torna a scorrere
+  const dxUp = dxCall?.trim().toUpperCase() ?? '';
+  const inQso = (d: DecodedMessage): boolean => {
+    if (dxUp === '') return false;
+    if (d.id < 0) return (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase() === dxUp;
+    return senderOf(d.text)?.call.toUpperCase() === dxUp;
+  };
+  const qsoRows = decodes.filter(inQso);
+  const calling = qsoRows.some((d) => d.id < 0);
+  const pin = calling ? qsoRows.reduce((a, b) => (b.time_ms > a.time_ms || (b.time_ms === a.time_ms && b.id >= 0 && a.id < 0) ? b : a)) : null;
+  // a ogni sua risposta cambia colore: rapporto, R+rapporto, chiusura (RRR, RR73, 73)
+  const hisLast = calling ? qsoRows.filter((d) => d.id >= 0 && isCallToMe(d.text, myCall)).reduce<DecodedMessage | null>((a, b) => (!a || b.time_ms >= a.time_ms ? b : a), null) : null;
+  const hisWord = hisLast ? (hisLast.text.trim().split(/\s+/).pop() ?? '').toUpperCase() : '';
+  const stage = !hisLast ? 'call' : /^(RRR|RR73|73)$/.test(hisWord) ? 'end' : /^R[+-]\d+$/.test(hisWord) ? 'roger' : /^[+-]\d+$/.test(hisWord) ? 'report' : 'reply';
+  const rest = pin ? decodes.filter((d) => !inQso(d)) : decodes;
+  const rows = pin ? (view.invert ? [...rest, pin] : [pin, ...rest]) : decodes;
+  const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
-      {decodes.map((d) => {
+      {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
         const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');
         const own = d.id < 0;
@@ -308,7 +327,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}`}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}${d === pin ? pinClass : ''}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => (tapReply && !own ? tapOnce(d.id) : setSelected(d.id))}
             onDoubleClick={() => (tapReply ? undefined : own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
@@ -324,10 +343,13 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
+            {/* passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta) */}
+            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? '')}>
             <span className="decode-text">
               {queueMark}
               <span className="data">{view.highlightDxCall || view.highlightDxGrid || answered ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined) : d.text}</span>
             </span>
+            </CallsignTip>
             <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">

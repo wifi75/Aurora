@@ -632,7 +632,8 @@
   white-space: nowrap;
 }
 
-.phone-list .decode-list .decode-row > * {
+.phone-list .decode-list .decode-row > *,
+.phone-list .decode-list .decode-row > .calltip-anchor > .decode-text {
   grid-row: 1;
   min-width: 0;
 }
@@ -1070,4 +1071,17 @@ body:has(.phone-live) .toaster {
   border-color: #0f6e64;
   background: #0f6e64;
   color: #fff;
+}
+
+/* chi mi chiama: sul telefono la tacca rossa a destra e' sottile e resta dentro la riga (niente alone che esce sopra e sotto) */
+.phone-list .decode-list .me-mark {
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.phone-list .decode-list .decode-row--me {
+  overflow: hidden;
 }
