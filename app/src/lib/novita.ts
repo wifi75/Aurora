@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.120',
+    released: '2026-11-04T17:54:22Z',
+    kind: 'fixed',
+    title: ["Telefono più facile da collegare", "Easier phone connection", "Telefon leichter verbinden", "Téléphone plus facile à connecter", "Teléfono más fácil de conectar", "Telemóvel mais fácil de ligar"],
+    text: [
+      "Il QR dell’associazione usa l’indirizzo vero del PC (non più quelli di WSL, Hyper-V, VirtualBox o VPN), e la scheda dice la rete Wi-Fi del PC e se Windows blocca il telefono, con il pulsante «Consenti Aurora». La pagina Novità è compatta, la finestra si ricollega da sola se il collegamento resta muto, il display quasi quadrato è alto 120 punti e il suono dello splash si sente una volta per avvio.",
+      "The pairing QR uses the PC’s real address (no longer WSL, Hyper-V, VirtualBox or VPN ones), and the card shows the PC’s Wi-Fi network and whether Windows blocks the phone, with an «Allow Aurora» button. The News page is compact, the window reconnects by itself if the link goes silent, the near-square display is 120 points tall and the splash sound plays once per start.",
+      "Der QR der Kopplung nutzt die echte Adresse des PCs (nicht mehr die von WSL, Hyper-V, VirtualBox oder VPN), und die Karte zeigt das WLAN des PCs und ob Windows das Telefon blockiert, mit der Taste «Aurora zulassen». Die Neuigkeiten-Seite ist kompakt, das Fenster verbindet sich selbst neu, wenn die Verbindung verstummt, die fast quadratische Anzeige ist 120 Punkte hoch und der Startton erklingt einmal pro Start.",
+      "Le QR de l’association utilise la vraie adresse du PC (plus celles de WSL, Hyper-V, VirtualBox ou VPN), et la carte indique le réseau Wi-Fi du PC et si Windows bloque le téléphone, avec le bouton « Autoriser Aurora ». La page Nouveautés est compacte, la fenêtre se reconnecte seule si la liaison devient muette, l’afficheur presque carré fait 120 points de haut et le son de démarrage ne joue qu’une fois par lancement.",
+      "El QR del emparejamiento usa la dirección real del PC (ya no las de WSL, Hyper-V, VirtualBox o VPN), y la tarjeta indica la red Wi-Fi del PC y si Windows bloquea el teléfono, con el botón «Permitir Aurora». La página Novedades es compacta, la ventana se reconecta sola si la conexión se queda muda, la pantalla casi cuadrada mide 120 puntos de alto y el sonido de inicio suena una vez por arranque.",
+      "O QR da associação usa o endereço verdadeiro do PC (já não os de WSL, Hyper-V, VirtualBox ou VPN), e o cartão indica a rede Wi-Fi do PC e se o Windows bloqueia o telemóvel, com o botão «Permitir Aurora». A página Novidades é compacta, a janela volta a ligar-se sozinha se a ligação ficar muda, o ecrã quase quadrado tem 120 pontos de altura e o som de arranque toca uma vez por arranque.",
+    ],
+  },
+  {
     version: '0.11.119',
     released: '2026-11-04T17:29:39Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur le téléphone l’activité de bande affiche chaque message sur une ligne avec colonnes alignées et au plus 10 lignes visibles (le reste défile) ; la ligne « En l’air » est retirée ; l’écran reste fixe sans zoom et respecte la barre de l’iPhone.',
       'En el teléfono la actividad de banda muestra cada mensaje en una línea con columnas alineadas y como máximo 10 filas a la vista (el resto se desplaza); quitada la línea «En el aire»; la pantalla queda fija sin zoom y respeta la barra del iPhone.',
       'No telemóvel a atividade de banda mostra cada mensagem numa linha com colunas alinhadas e no máximo 10 linhas à vista (o resto desliza); retirada a linha «No ar»; o ecrã fica fixo sem zoom e respeita a barra do iPhone.',
-    ],
-  },
-  {
-    version: '0.11.84',
-    released: '2026-11-03T17:50:56Z',
-    kind: 'new',
-    title: ['Telefono e tablet come telecomando', 'Phone and tablet as a remote', 'Telefon und Tablet als Fernbedienung', 'Téléphone et tablette comme télécommande', 'Teléfono y tableta como mando', 'Telemóvel e tablet como comando'],
-    text: [
-      'Sul telefono e sul tablet Aurora diventa un telecomando: chi è in onda, attività di banda, cluster, log, i sei messaggi Tx, cascata e CQ, Abilita Tx e STOP. Si associa inquadrando un QR e si ritrova come aurora.local anche se il PC cambia indirizzo. Anteprime dal vivo in Impostazioni > Smartphone/Tablet.',
-      'On phone and tablet Aurora becomes a remote: who is on air, band activity, cluster, log, the six Tx messages, waterfall and CQ, Enable Tx and STOP. Pair by scanning a QR code; Aurora is found as aurora.local even if the PC changes address. Live previews in Settings > Smartphone/Tablet.',
-      'Auf Telefon und Tablet wird Aurora zur Fernbedienung: wer sendet, Bandaktivität, Cluster, Log, die sechs Tx-Meldungen, Wasserfall sowie CQ, Tx frei und STOP. Koppeln per QR-Code; Aurora ist als aurora.local erreichbar, auch wenn der PC die Adresse wechselt. Live-Vorschau unter Einstellungen > Smartphone/Tablet.',
-      'Sur téléphone et tablette Aurora devient une télécommande : qui émet, activité de bande, cluster, journal, les six messages Tx, cascade et CQ, Activer Tx et STOP. Association en scannant un QR ; Aurora se retrouve en aurora.local même si le PC change d’adresse. Aperçus en direct dans Réglages > Smartphone/Tablette.',
-      'En el teléfono y la tableta Aurora se convierte en un mando: quién transmite, actividad de banda, clúster, registro, los seis mensajes Tx, cascada y CQ, Activar Tx y STOP. Se empareja escaneando un QR y se encuentra como aurora.local aunque el PC cambie de dirección. Vistas en directo en Ajustes > Smartphone/Tableta.',
-      'No telemóvel e no tablet a Aurora torna-se um comando: quem está no ar, atividade de banda, cluster, registo, as seis mensagens Tx, cascata e CQ, Ativar Tx e STOP. Associa-se lendo um QR e encontra-se como aurora.local mesmo se o PC mudar de endereço. Pré-visualizações ao vivo em Definições > Smartphone/Tablet.',
     ],
   },
 ];

@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.120 - 2026-11-04
+- **Associazione del telefono**: indirizzi del QR senza adattatori virtuali (WSL, Hyper-V, VirtualBox, VPN, tunnel) e con prima 192.168.x; nella scheda la rete Wi-Fi del PC, l'indirizzo scelto, l'avviso se la rete e' «Pubblica» o il firewall blocca Aurora con «Consenti Aurora» (`GET /api/v1/lan/check`, `POST /api/v1/lan/allow`), i consigli per il telefono.
+- **Finestra**: si ricollega da sola se il flusso resta muto per 8 s (prima si fermava finche' non la si ricaricava).
+- **Novita'**: una riga per versione, filtri per tipo, la versione in uso aperta.
+- **Display quasi quadrato** alto 120 punti, banda passante visibile; **suono dello splash** una volta per avvio; controllo della versione nuova 8 s dopo l'apertura.
+
 ## 0.11.119 - 2026-11-04
 - **Porta del CAT scrivibile**: oltre alle COM accetta un indirizzo di rete (`127.0.0.1:4532` per «Hamlib NET rigctl», flrig, rigctld di un altro programma); avviso se la condivisione della radio usa la stessa porta.
 - **CQ e novita'**: colonna del paese con larghezza minima (niente piu' «S..»).
