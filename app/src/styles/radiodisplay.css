@@ -583,7 +583,7 @@
   gap: 0.4rem;
   align-items: stretch;
   width: auto;
-  height: 5rem; /* 80 px */
+  height: 5.625rem; /* 90 px */
 }
 
 .rd-duo .rd-slot {
@@ -698,7 +698,7 @@
   flex: 0 0 auto;
   width: 40rem;
   max-width: 100%;
-  height: 5rem; /* 80 px */
+  height: 5.625rem; /* 90 px */
 }
 
 .rd-face-slot .rd-face,
@@ -806,7 +806,7 @@
 
 /* potenza della radio accanto al pannello FT-2000 / IC-7610 */
 .rd-face-row { display: flex; align-items: stretch; gap: 0.35rem; max-width: 100%; }
-.rd-pwr { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; height: 5rem; padding: 0 0.4rem; border-radius: 0.5rem; background: #05080a; border: 1px solid #1f3a46; color: #5ce8ff; }
+.rd-pwr { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; height: 5.625rem; padding: 0 0.4rem; border-radius: 0.5rem; background: #05080a; border: 1px solid #1f3a46; color: #5ce8ff; }
 .rd-pwr-val { font-size: 0.85rem; font-weight: 700; line-height: 1; }
 .rd-pwr-lbl { font-size: 0.6rem; letter-spacing: 0.1em; color: #ffb428; line-height: 1; }
 .rd-pwr-btns { display: flex; gap: 0.2rem; }
@@ -821,7 +821,7 @@
 .rd-card--wide > :not(input):not(.rd-card-name) {
   width: 40rem;
   max-width: 100%;
-  height: 5rem;
+  height: 5.625rem;
 }
 .rd-card--wide > svg,
 .rd-card--wide > .rd-face {

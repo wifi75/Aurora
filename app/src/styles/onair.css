@@ -6354,3 +6354,11 @@
 .decode-list .decode-row > .calltip-anchor {
   display: contents;
 }
+
+/* Attivita' di banda e CQ: il testo del messaggio 1 punto piu' piccolo, cosi' i messaggi lunghi si tagliano meno */
+.dock-panel--all .decode-list .decode-text,
+.dock-panel--cq .decode-list .decode-text,
+.dock-panel--all .decode-list .decode-text .data,
+.dock-panel--cq .decode-list .decode-text .data {
+  font-size: calc(0.8rem - 1px);
+}
