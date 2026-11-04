@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { getHealth } from '../api/client';
 import { useLang, useT, type Key } from '../i18n';
 import { pick } from '../i18n/core';
@@ -24,49 +25,62 @@ export function releaseLabel(iso: string, lang: string): string {
   return d.toLocaleString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-/** Novita': le ultime 20 funzioni aggiunte, modificate o corrette, a gruppi per versione, con data e ora del rilascio. */
+/** «4 nov 2026, 18:08»: corta, per la riga. */
+function shortLabel(iso: string, lang: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(lang, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Novita': le ultime voci, una riga per versione (tipo, versione, titolo, data); il testo si apre con un clic. Filtri per tipo. */
 export function News() {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const health = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
-  const groups = groupByVersion(NOVITA);
+  const [shown, setShown] = useState<Record<NovitaKind, boolean>>({ new: true, changed: true, fixed: true });
+  const items = NOVITA.filter((n) => shown[n.kind]);
   return (
-    <div className="news">
+    <div className="news news--compact">
       <header className="news-head">
         <h1>{t('news.title')}</h1>
         <p className="muted">{t('news.intro', { n: NOVITA.length })}</p>
-        <ul className="news-legend" aria-label={t('news.legend')}>
+        <div className="news-legend" role="group" aria-label={t('news.legend')}>
           {(['new', 'changed', 'fixed'] as const).map((k) => (
-            <li key={k} className={`news-kind news-kind--${k}`}>
+            <button
+              key={k}
+              type="button"
+              aria-pressed={shown[k]}
+              className={`news-kind news-kind--${k}${shown[k] ? '' : ' news-kind--off'}`}
+              onClick={() => setShown((v) => ({ ...v, [k]: !v[k] }))}
+            >
               <span aria-hidden="true">{ICON[k]}</span> {t(`news.kind.${k}` as Key)}
-            </li>
+            </button>
           ))}
-        </ul>
+        </div>
       </header>
-      <ol className="news-timeline">
-        {groups.map((g) => (
-          <li key={g.version} className="news-release">
-            <div className="news-release-head">
-              <span className="news-version">v{g.version}</span>
-              {health.data?.version === g.version ? <span className="news-current">{t('news.current')}</span> : null}
-              <time className="news-date" dateTime={g.released} title={g.released}>
-                {t('news.released', { when: releaseLabel(g.released, lang) })}
-              </time>
-            </div>
-            <ul className="news-items">
-              {g.items.map((n) => (
-                <li key={pick(n.title, 'it')} className={`news-card news-card--${n.kind}`}>
-                  <span className={`news-badge news-kind--${n.kind}`}>
-                    <span aria-hidden="true">{ICON[n.kind]}</span> {t(`news.kind.${n.kind}` as Key)}
+      <ul className="news-rows">
+        {items.map((n) => {
+          const current = health.data?.version === n.version;
+          return (
+            <li key={`${n.version}-${pick(n.title, 'it')}`}>
+              <details className={`news-row news-row--${n.kind}`} open={current}>
+                <summary>
+                  <span className={`news-badge news-kind--${n.kind}`} title={t(`news.kind.${n.kind}` as Key)}>
+                    <span aria-hidden="true">{ICON[n.kind]}</span>
                   </span>
-                  <h2>{pick(n.title, lang)}</h2>
-                  <p>{pick(n.text, lang)}</p>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ol>
+                  <span className="news-version">v{n.version}</span>
+                  {current ? <span className="news-current">{t('news.current')}</span> : null}
+                  <span className="news-title">{pick(n.title, lang)}</span>
+                  <time className="news-date" dateTime={n.released} title={releaseLabel(n.released, lang)}>
+                    {shortLabel(n.released, lang)}
+                  </time>
+                </summary>
+                <p>{pick(n.text, lang)}</p>
+              </details>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

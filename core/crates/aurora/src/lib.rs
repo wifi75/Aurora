@@ -1741,7 +1741,7 @@ pub async fn run(
     // le nuove versioni sul repository: un controllo poco dopo l'avvio e poi ogni qualche ora
     {
         let phone = Arc::clone(&wishlist);
-        updates::spawn_checker(Arc::clone(&updates), bus.events(), Arc::new(move || phone.config().notify_url), Duration::from_secs(45));
+        updates::spawn_checker(Arc::clone(&updates), bus.events(), Arc::new(move || phone.config().notify_url), Duration::from_secs(8));
     }
 
     // la frequenza della radio per il motore proprio. Il CAT la tiene gia' in memoria (la lettura costa niente) e si rilegge ogni quarto di secondo;
