@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.129',
+    released: '2026-11-04T21:42:20Z',
+    kind: 'fixed',
+    title: ['Frontalini senza spazio vuoto', 'Rig faces without empty space', 'Frontplatten ohne Leerraum', 'Façades sans espace vide', 'Frontales sin espacio vacío', 'Frontais sem espaço vazio'],
+    text: [
+      "I frontalini FT-2000 e IC-7610 hanno l'altezza del loro disegno: niente più striscia vuota sotto e pannelli di nuovo su. In Attività di banda e CQ le colonne della distanza e dell'etichetta sono 7 px più strette, più spazio al messaggio.",
+      "FT-2000 and IC-7610 faces take the height of their drawing: no more empty strip below and the panels back up. In Band activity and CQ the distance and label columns are 7 px narrower, more room for the message.",
+      "Die Frontplatten FT-2000 und IC-7610 haben die Höhe ihrer Zeichnung: kein leerer Streifen mehr darunter, die Felder wieder oben. In Bandaktivität und CQ sind Entfernungs- und Etikettspalte 7 px schmaler, mehr Platz für die Nachricht.",
+      "Les façades FT-2000 et IC-7610 prennent la hauteur de leur dessin : plus de bande vide dessous et les panneaux remontent. Dans Activité de bande et CQ les colonnes distance et étiquette sont plus étroites de 7 px, plus de place au message.",
+      "Los frontales FT-2000 e IC-7610 tienen la altura de su dibujo: ya no hay franja vacía debajo y los paneles vuelven arriba. En Actividad de banda y CQ las columnas de distancia y etiqueta son 7 px más estrechas, más espacio para el mensaje.",
+      "Os frontais FT-2000 e IC-7610 têm a altura do seu desenho: já não há faixa vazia por baixo e os painéis voltam para cima. Na Atividade de banda e CQ as colunas da distância e da etiqueta são 7 px mais estreitas, mais espaço para a mensagem.",
+    ],
+  },
+  {
     version: '0.11.128',
     released: '2026-11-04T21:39:51Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sans JTDX installé Aurora restait en VOX et la radio ne passait jamais en émission : désormais elle utilise le PTT choisi dans Réglages > Radio (CAT via Hamlib, ou OmniRig). Sur le téléphone un appui appelle la station et les appuis répétés ne relancent plus la séquence.',
       'Sin JTDX instalado Aurora se quedaba en VOX y la radio nunca transmitía: ahora usa el PTT elegido en Ajustes > Radio (CAT mediante Hamlib, u OmniRig). En el teléfono un toque llama a la estación y los toques repetidos ya no reinician la secuencia.',
       'Sem o JTDX instalado a Aurora ficava em VOX e o rádio nunca transmitia: agora usa o PTT escolhido em Definições > Rádio (CAT via Hamlib, ou OmniRig). No telemóvel um toque chama a estação e toques repetidos já não reiniciam a sequência.',
-    ],
-  },
-  {
-    version: '0.11.92',
-    released: '2026-11-03T20:48:57Z',
-    kind: 'new',
-    title: ['Configurazione guidata della radio', 'Guided radio setup', 'Geführte Funkgeräte-Einrichtung', 'Configuration guidée de la radio', 'Configuración guiada de la radio', 'Configuração guiada do rádio'],
-    text: [
-      'In Impostazioni > Radio, per Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 e Kenwood TS-590SG, TS-890 compare cosa impostare in Aurora, nella radio e nell’audio, con un pulsante per applicarlo. Nuova voce «Configurare la radio» nella Guida; pagina Radio più ordinata.',
-      'In Settings > Radio, for Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 and Kenwood TS-590SG, TS-890 you see what to set in Aurora, in the radio and in audio, with a button to apply it. New «Setting up the radio» entry in the Guide; tidier Radio page.',
-      'In Einstellungen > Radio erscheint für Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 und Kenwood TS-590SG, TS-890, was in Aurora, im Funkgerät und beim Audio einzustellen ist, mit einer Taste zum Übernehmen. Neuer Eintrag «Funkgerät einrichten» in der Anleitung; aufgeräumte Seite Radio.',
-      'Dans Réglages > Radio, pour Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 et Kenwood TS-590SG, TS-890 apparaît ce qu’il faut régler dans Aurora, dans la radio et pour l’audio, avec un bouton pour l’appliquer. Nouvelle entrée « Configurer la radio » dans le Guide ; page Radio plus ordonnée.',
-      'En Ajustes > Radio, para Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 y Kenwood TS-590SG, TS-890 aparece qué ajustar en Aurora, en la radio y en el audio, con un botón para aplicarlo. Nueva entrada «Configurar la radio» en la Guía; página Radio más ordenada.',
-      'Em Definições > Rádio, para Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 e Kenwood TS-590SG, TS-890 aparece o que configurar na Aurora, no rádio e no áudio, com um botão para aplicar. Nova entrada «Configurar o rádio» no Guia; página Rádio mais arrumada.',
     ],
   },
 ];

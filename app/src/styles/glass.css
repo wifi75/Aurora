@@ -436,7 +436,7 @@ button.glass,
 
 /* Elenco delle stazioni nello stile del motore: righe colorate per tipo, paese e distanza a destra */
 .decode-row {
-  grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) 17.5rem 9rem;
+  grid-template-columns: 4.6rem 2.6rem 2.4rem 3.2rem minmax(0, 1fr) calc(17.5rem - 7px) calc(9rem - 7px);
   gap: var(--space-2);
   min-height: 1.9rem;
   padding-block: 0.15rem;
@@ -613,7 +613,7 @@ button.glass,
 
 /* Senza la colonna DT */
 .decode-list--no-dt .decode-row {
-  grid-template-columns: 4.6rem 2.6rem 3.2rem minmax(0, 1fr) 17.5rem 9rem;
+  grid-template-columns: 4.6rem 2.6rem 3.2rem minmax(0, 1fr) calc(17.5rem - 7px) calc(9rem - 7px);
 }
 
 @media (max-width: 63.99rem) {
@@ -625,7 +625,7 @@ button.glass,
 /* Paese: bandiera, nome e distanza in celle di larghezza fissa */
 .decode-where {
   display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr) 6.5rem;
+  grid-template-columns: 1.6rem minmax(0, 1fr) calc(6.5rem - 7px);
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
@@ -683,7 +683,7 @@ button.glass,
 
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.4rem minmax(0, 1fr) 14rem 8.5rem;
+    grid-template-columns: 4.4rem 2.4rem minmax(0, 1fr) calc(14rem - 7px) calc(8.5rem - 7px);
   }
 
   .decode-where {
