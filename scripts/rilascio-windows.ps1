@@ -9,7 +9,7 @@
 param(
     [string]$Chiave = (Join-Path $env:USERPROFILE '.aurora-signing\aurora.key'),
     [switch]$SoloControllo,
-    # cartella locale con Hamlib da includere (rigctld, rigctl e le DLL): di base AURORA_HAMLIB_SRC, poi JTDX o WSJT-X installati
+    # cartella locale con Hamlib da includere (rigctld, rigctl e le DLL): di base AURORA_HAMLIB_SRC, altrimenti l'Hamlib ufficiale scaricato da GitHub
     [string]$Hamlib = $env:AURORA_HAMLIB_SRC,
     [switch]$SoloHamlib
 )
