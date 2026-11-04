@@ -558,6 +558,15 @@ export const settingsStrings = {
     'Arrastra los paneles por su barra de título (también a la otra columna o abajo), cambia su tamaño desde el borde inferior, mueve el divisor entre columnas. Doble clic en el título reduce el panel.',
     'Arrasta os painéis pela barra de título (também para a outra coluna ou para baixo), redimensiona-os pelo bordo inferior, move o divisor entre colunas. Duplo clique no título reduz o painel.',
   ],
+  'win.shown': ['Pannelli mostrati', 'Panels shown', 'Angezeigte Felder', 'Panneaux affichés', 'Paneles mostrados', 'Painéis mostrados'],
+  'tip.win.shown': [
+    'Togli il segno per levare il pannello dalla schermata della stazione; rimettilo per riaverlo. «Ripristina la disposizione» li rimostra tutti.',
+    'Untick to remove the panel from the station screen; tick it again to bring it back. “Restore the layout” shows them all again.',
+    'Haken entfernen, um das Feld vom Stationsbildschirm zu nehmen; wieder setzen, um es zurückzuholen. „Anordnung zurücksetzen“ zeigt wieder alle.',
+    'Décoche pour retirer le panneau de l’écran de la station ; recoche pour le retrouver. « Rétablir la disposition » les réaffiche tous.',
+    'Quita la marca para sacar el panel de la pantalla de la estación; vuelve a marcarla para recuperarlo. «Restablecer la disposición» los muestra todos.',
+    'Tira a marca para retirar o painel do ecrã da estação; volta a marcar para o recuperar. «Repor a disposição» volta a mostrá-los todos.',
+  ],
   'win.reset': ['Ripristina la disposizione', 'Restore the layout', 'Anordnung zurücksetzen', 'Rétablir la disposition', 'Restaurar la disposición', 'Repor a disposição'],
   'win.done': [
     'Disposizione ripristinata: si vede riaprendo la stazione.',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearHeight, defaultLayout, movePanel, toggleCollapsed, readLayout, resizePanel, saveLayout, setSplit } from './layout';
+import { clearHeight, defaultLayout, movePanel, toggleCollapsed, toggleHidden, readLayout, resizePanel, saveLayout, setSplit } from './layout';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -106,5 +106,13 @@ describe('layout saved before the DX Cluster window existed', () => {
     const l = readLayout(memory({ 'aurora-layout': JSON.stringify(old) }));
     expect(l.left).toEqual(['all', 'log', 'waterfall']);
     expect(l.right).toEqual(['cluster', 'station', 'tx', 'cq']);
+  });
+  it('removes a panel from the screen and brings it back, remembered', () => {
+    const store = memory({});
+    const off = toggleHidden(defaultLayout(), 'cluster');
+    expect(off.hidden).toEqual(['cluster']);
+    saveLayout(store, off);
+    expect(readLayout(store).hidden).toEqual(['cluster']);
+    expect(toggleHidden(off, 'cluster').hidden).toEqual([]);
   });
 });
