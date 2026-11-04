@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Diagnosi dell'associazione dal telefono**: se un codice scade senza associazione, Aurora manda un rapporto anonimo con la causa probabile: telefono mai arrivato (rete diversa, dati mobili, isolamento della Wi-Fi), rete di Windows «Pubblica», firewall senza regola, indirizzo del QR di un adattatore virtuale o senza indirizzo dal router; oppure telefono arrivato ma codice sbagliato o scaduto. Solo tipi, mai indirizzi o nomi (informativa privacy aggiornata).
+- **Finestra di conferma del log rifinita**: nominativo in evidenza, banda, modo, frequenza e ora a etichette, campi in due colonne anche sul telefono, «Scarta» e «Registra» affiancati; provata su PC (chiaro e scuro), iPhone 13 e iPhone SE.
 - **Telefono**: nel DX Cluster e nel Log il nome del paese accanto al nominativo, dopo la bandiera (più piccolo; accorciato con i puntini se non c'è spazio).
 - **Conferma prima di registrare il QSO** (Impostazioni › Sequenza › «Registrazione log» › «Richiedimi di loggare il QSO», spento di fabbrica): a QSO concluso si apre una finestra con nominativo, locatore, rapporti, nome, città e commento correggibili, «Registra» (anche con Invio) o «Scarta». Prima la voce esisteva ma non faceva nulla. Diversamente da JTDX non esclude «Messa a log automatica», che decide solo come finisce la trasmissione. Se la voce si spegne con QSO in attesa, vanno a log; oltre 20 in attesa il più vecchio va a log da solo. Sei lingue.
 - **Prove dell'interfaccia** allineate alla pagina Novità compatta e al controllo della rete nella scheda Smartphone/Tablet (850 su 850).
