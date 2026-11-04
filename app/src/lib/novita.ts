@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.115',
-    released: '2026-11-04T13:32:56Z',
+    released: '2026-11-04T13:35:19Z',
     kind: 'fixed',
     title: ['Anteprime dei display tutte uguali', 'Display previews all the same size', 'Anzeige-Vorschauen gleich groß', 'Aperçus des afficheurs à la même taille', 'Vistas previas de pantallas del mismo tamaño', 'Pré-visualizações dos ecrãs do mesmo tamanho'],
     text: [
