@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.127',
-    released: '2026-11-04T21:31:08Z',
+    released: '2026-11-04T21:34:00Z',
     kind: 'new',
     title: ['LoTW, eQSL, diretta e bureau da HamQTH', 'LoTW, eQSL, direct and bureau from HamQTH', 'LoTW, eQSL, Direkt und Büro von HamQTH', 'LoTW, eQSL, directe et bureau depuis HamQTH', 'LoTW, eQSL, directa y buró de HamQTH', 'LoTW, eQSL, direta e bureau do HamQTH'],
     text: [
