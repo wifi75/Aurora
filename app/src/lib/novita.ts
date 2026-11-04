@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.126',
+    released: '2026-11-04T21:20:44Z',
+    kind: 'changed',
+    title: ['Display quasi quadrati più alti e ben centrati', 'Taller, well-centred near-square displays', 'Höhere, gut zentrierte fast quadratische Anzeigen', 'Afficheurs presque carrés plus hauts et bien centrés', 'Pantallas casi cuadradas más altas y bien centradas', 'Ecrãs quase quadrados mais altos e bem centrados'],
+    text: [
+      "I display quasi quadrati sono 330 × 130 e stanno al centro fra il bordo della finestra e i pannelli; la barra del menu finisce prima del display, con l'angolo arrotondato. Anche i display estesi, di ogni tipo, hanno lo stesso spazio sopra e sotto.",
+      "Near-square displays are 330 × 130 and sit centred between the window edge and the panels; the menu bar ends before the display, with a rounded corner. Wide displays of every kind also have the same space above and below.",
+      "Fast quadratische Anzeigen sind 330 × 130 und sitzen mittig zwischen Fensterrand und Feldern; die Menüleiste endet vor der Anzeige, mit abgerundeter Ecke. Auch breite Anzeigen jeder Art haben oben und unten gleich viel Platz.",
+      "Les afficheurs presque carrés font 330 × 130 et sont centrés entre le bord de la fenêtre et les panneaux ; la barre du menu s’arrête avant l’afficheur, avec un coin arrondi. Les afficheurs larges de tout type ont aussi le même espace dessus et dessous.",
+      "Las pantallas casi cuadradas son 330 × 130 y quedan centradas entre el borde de la ventana y los paneles; la barra del menú termina antes de la pantalla, con la esquina redondeada. Las pantallas anchas de cualquier tipo también tienen el mismo espacio arriba y abajo.",
+      "Os ecrãs quase quadrados são 330 × 130 e ficam centrados entre a borda da janela e os painéis; a barra do menu acaba antes do ecrã, com o canto arredondado. Os ecrãs largos de qualquer tipo também têm o mesmo espaço em cima e em baixo.",
+    ],
+  },
+  {
     version: '0.11.125',
     released: '2026-11-04T21:15:10Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur le téléphone le cluster montre aussi le mode et l’auteur du spot, le journal a le drapeau, les colonnes sont alignées ; la station appelée est en jaune dans la liste et dans l’encadré Tx ; les blocs ont bordure et titre de leur couleur.',
       'En el teléfono el clúster muestra también modo y quién hizo el spot, el registro tiene la bandera, las columnas están alineadas; la estación llamada está en amarillo en la lista y en el recuadro Tx; los bloques tienen borde y título de su color.',
       'No telemóvel o cluster mostra também o modo e quem fez o spot, o registo tem a bandeira, as colunas estão alinhadas; a estação chamada está a amarelo na lista e na caixa Tx; os blocos têm borda e título da sua cor.',
-    ],
-  },
-  {
-    version: '0.11.89',
-    released: '2026-11-03T18:36:22Z',
-    kind: 'changed',
-    title: ['Telefono: tema e riquadri aperti', 'Phone: theme and open boxes', 'Telefon: Design und offene Kästen', 'Téléphone : thème et encadrés ouverts', 'Teléfono: tema y recuadros abiertos', 'Telemóvel: tema e caixas abertas'],
-    text: [
-      'Sul telefono cluster e log sono aperti all’avvio, in alto a destra c’è il cambio tema chiaro/scuro accanto a ⟳, e la barra con la frequenza è un po’ più su per lasciare più spazio.',
-      'On the phone cluster and log are open at start, top right there is the light/dark theme switch next to ⟳, and the frequency bar sits a little higher to leave more room.',
-      'Auf dem Telefon sind Cluster und Log beim Start offen, oben rechts gibt es neben ⟳ den Wechsel hell/dunkel, und die Frequenzleiste sitzt etwas höher für mehr Platz.',
-      'Sur le téléphone le cluster et le journal sont ouverts au démarrage, en haut à droite il y a le choix clair/sombre à côté de ⟳, et la barre de fréquence est un peu plus haute pour laisser plus de place.',
-      'En el teléfono el clúster y el registro están abiertos al inicio, arriba a la derecha está el cambio de tema claro/oscuro junto a ⟳, y la barra de frecuencia está un poco más arriba para dejar más espacio.',
-      'No telemóvel o cluster e o registo estão abertos ao arranque, em cima à direita há a troca de tema claro/escuro ao lado de ⟳, e a barra da frequência está um pouco mais acima para deixar mais espaço.',
     ],
   },
 ];

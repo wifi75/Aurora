@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.126 - 2026-11-04
+- **Display quasi quadrati** 330 × 130 (prima 110), centrati fra il bordo della finestra e i pannelli; la barra del menu si ferma prima del display con l'angolo arrotondato.
+- **Display estesi**: stesso spazio sopra e sotto per ogni tipo (la regola prima valeva solo per l'invito «Clicca per configurare»).
+- **Documentazione**: `docs/cat4om-protocollo.md`, il protocollo nativo di CAT4OM (WebSocket JSON, canali Control e Management, comandi, eventi, audio in rete) per l'integrazione.
+
 ## 0.11.125 - 2026-11-04
 - **QSO in corso**: in Attività di banda/CQ la stazione chiamata compare in una sola riga ferma (in cima, in fondo se l'elenco è rovesciato) con il messaggio più recente; colore per fase: giallo chiamata, arancio rapporto, verde R+rapporto, blu chiusura; a DX libero torna a scorrere (`DecodeList`).
 - **QSL da QRZ.com e HamQTH**: `lotw`, `eqsl`, `mqsl`/`qsldirect`, `qslmgr`/`qsl_via` letti e passati in `GET /api/v1/callsign/{call}`; lettere L E D accanto alla Stazione DX nei Comandi, righe ✔/✖ nel riquadro del nominativo, che ora c'è anche in Attività di banda (non sul telefono).
