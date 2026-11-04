@@ -13,7 +13,7 @@ import {
   startPairing,
   type PairingOffer,
 } from '../api/client';
-import { useT, type T } from '../i18n';
+import { useT, type Key, type T } from '../i18n';
 import { Check } from './common';
 import { Cell, Cells, Group, Message, Page } from './layout';
 import { useAutosave } from './useAutosave';
@@ -108,7 +108,25 @@ export function AccessTab() {
                   {t('acc.addresses')}: <span className="data">{offer.addresses.join(' · ')}</span>
                 </p>
               ) : null}
+              <p className="muted acc-camera">{t('acc.camera')}</p>
             </div>
+          </div>
+        ) : null}
+        {/* gli altri indirizzi del PC, ognuno con il suo QR: se il primo non si apre sul telefono si prova il successivo */}
+        {offer && (offer.options?.length ?? 0) > 1 ? (
+          <div className="acc-alt">
+            <p className="acc-alt-title">{t('acc.alt.title')}</p>
+            <ul className="acc-alt-list">
+              {offer.options!.slice(1).map((o) => (
+                <li key={o.url} className="acc-alt-item">
+                  {o.qr_svg ? <img className="acc-alt-qr" alt="QR" src={`data:image/svg+xml;utf8,${encodeURIComponent(o.qr_svg)}`} /> : null}
+                  <span className="acc-alt-text">
+                    <strong>{t(`acc.kind.${['wifi', 'cable', 'mdns', 'virtual'].includes(o.kind) ? o.kind : 'other'}` as Key)}</strong>
+                    <span className="data">{o.url.replace(/^https?:\/\//, '')}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
         {offer ? <NetworkChecklist waiting /> : null}
