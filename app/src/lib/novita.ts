@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.113',
+    released: '2026-11-04T13:09:48Z',
+    kind: 'new',
+    title: ['Sei display nuovi', 'Six new displays', 'Sechs neue Anzeigen', 'Six nouveaux afficheurs', 'Seis pantallas nuevas', 'Seis ecrãs novos'],
+    text: [
+      "In Impostazioni › Radio ci sono sei display nuovi: tre estesi (Icom doppio ricevitore, Icom blu con banda passante, LED essenziale) e tre quasi quadrati che stanno nell’angolo della testata (Icom blu, Icom nero con lancetta, Yaesu ambra). Mostrano solo ciò che la radio dà e che scegli tu. Tutti i display estesi ora sono alti 70 punti, con le misure scritte accanto a ogni scelta.",
+      "Settings › Radio has six new displays: three wide ones (Icom dual receiver, Icom blue with passband, essential LED) and three near-square ones in the header corner (Icom blue, Icom black with needle, Yaesu amber). They show only what the radio provides and what you choose. All wide displays are now 70 points tall, with the size written next to each choice.",
+      "In Einstellungen › Funkgerät gibt es sechs neue Anzeigen: drei breite (Icom Doppelempfänger, Icom blau mit Durchlassbereich, schlichte LED) und drei fast quadratische in der Ecke der Kopfzeile (Icom blau, Icom schwarz mit Zeiger, Yaesu bernstein). Sie zeigen nur, was das Funkgerät liefert und du wählst. Alle breiten Anzeigen sind jetzt 70 Punkte hoch, die Maße stehen neben jeder Wahl.",
+      "Réglages › Radio propose six nouveaux afficheurs : trois larges (Icom double récepteur, Icom bleu avec bande passante, LED essentiel) et trois presque carrés dans le coin de l’en-tête (Icom bleu, Icom noir à aiguille, Yaesu ambre). Ils ne montrent que ce que la radio donne et ce que tu choisis. Tous les afficheurs larges font maintenant 70 points de haut, avec la taille indiquée à côté de chaque choix.",
+      "En Ajustes › Radio hay seis pantallas nuevas: tres anchas (Icom doble receptor, Icom azul con banda de paso, LED esencial) y tres casi cuadradas en la esquina de la cabecera (Icom azul, Icom negro con aguja, Yaesu ámbar). Muestran solo lo que da la radio y lo que eliges. Todas las pantallas anchas miden ahora 70 puntos de alto, con la medida junto a cada opción.",
+      "Em Definições › Rádio há seis ecrãs novos: três largos (Icom recetor duplo, Icom azul com banda passante, LED essencial) e três quase quadrados no canto do cabeçalho (Icom azul, Icom preto com ponteiro, Yaesu âmbar). Mostram só o que o rádio dá e o que escolhes. Todos os ecrãs largos têm agora 70 pontos de altura, com a medida escrita ao lado de cada escolha.",
+    ],
+  },
+  {
     version: '0.11.112',
     released: '2026-11-04T12:34:49Z',
     kind: 'changed',

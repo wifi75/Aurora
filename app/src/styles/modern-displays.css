@@ -1,0 +1,96 @@
+/* Display «moderni»: estesi 640 x 70 (40rem x 4.375rem) e quasi quadrati 330 x 140 (20.625rem x 8.75rem) */
+.md {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  color: #fff;
+  font-family: 'Segoe UI', var(--font-ui);
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+.md-e { display: grid; align-items: center; gap: 0.75rem; padding: 0.25rem 0.65rem; }
+.md-q { display: grid; gap: 0.2rem; padding: 0.4rem 0.55rem; align-content: start; }
+.md-row { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+.md-wrap { flex-wrap: wrap; }
+.md-col { align-content: center; }
+.md-base { align-items: baseline; }
+.md-push { margin-left: auto; }
+.md-soft { color: #cfe0ff; }
+.md-amber { color: #ef9f27; }
+.md-blue { color: #b5d4f4; }
+.md-mono { font-family: var(--font-data); }
+.md-freq { display: block; font-size: 1.85rem; font-weight: 300; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.md-freq--big { font-size: 2.1rem; }
+.md-freq--sub { font-size: 1.45rem; }
+.md-tag, .md-chip { border: 1px solid #6f92d8; border-radius: 2px; padding: 0 0.25rem; font: inherit; line-height: 1.15rem; color: #cfe0ff; background: transparent; white-space: nowrap; }
+.md-tag--on, .md-chip--on { background: #e6edf8; color: #0a2a6b; border-color: #e6edf8; }
+.md-tag--tx { background: #c62828; border-color: #c62828; color: #fff; }
+button.md-chip { cursor: pointer; }
+button.md-chip:hover { border-color: #fff; }
+button.md-chip:disabled { cursor: progress; }
+.md-chip--wait { opacity: 0.55; }
+.md-noradio { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / 0.55); color: #cfe0ff; font-size: 0.8rem; }
+.md-pb { width: 100%; display: block; }
+.md-needle { display: block; }
+.md-bars { display: grid; grid-template-columns: auto 1fr 2.4rem; gap: 0.15rem 0.35rem; align-items: center; font-size: 0.6rem; }
+.md-bars b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.md-bar { position: relative; height: 0.4rem; border-radius: 1px; overflow: hidden; background: rgb(255 255 255 / 0.12); }
+.md-bar i { position: absolute; inset: 0 auto 0 0; background: #fff; transition: width 120ms linear; }
+.md-bar i.md-bar--over { background: linear-gradient(90deg, #fff 0 calc(0.6 / var(--s, 1) * 100%), #ff5252 0); }
+.md-bar--swr i { background: #ffd54f; }
+
+/* Icom blu */
+.md-icblue { background: linear-gradient(180deg, #0a2a6b, #061a45); border: 1px solid #1b2a44; }
+.md-e.md-icblue { grid-template-columns: auto minmax(0, 1fr) 11rem; }
+.md-icblue .md-mid { display: grid; gap: 0.15rem; min-width: 0; }
+.md-icblue .md-bars { color: #cfe0ff; }
+.md-icblue .md-bar { background: #03133a; }
+.md-q.md-icblue .md-split { display: grid; grid-template-columns: 1fr 1.1fr; gap: 0.5rem; align-items: end; }
+
+/* Icom doppio ricevitore, fondo nero */
+.md-icdual { background: #000; border: 1px solid #1b2a44; grid-template-columns: 1fr 1fr; padding: 0; gap: 0; }
+.md-icdual .md-half { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; height: 100%; padding: 0.2rem 0.6rem; box-sizing: border-box; }
+.md-icdual .md-half + .md-half { border-left: 1px solid #1d3b78; }
+.md-icdual .md-half--sub { opacity: 0.9; }
+.md-icdual .md-tag--on { background: #2f6fd8; border-color: #2f6fd8; color: #fff; }
+
+/* LED essenziale */
+.md-ledline { background: #000; grid-template-columns: auto minmax(0, 1fr) auto; font-family: var(--font-data); }
+.md-ledline .md-chip { border-color: #5f5e5a; color: #d3d1c7; }
+.md-ledline .md-chip--on { background: #fac775; border-color: #fac775; color: #241604; }
+.md-ledline .md-right { display: grid; text-align: right; }
+.md-bars--led .md-bar { background: #1b1b1b; height: 0.45rem; }
+.md-bars--led .md-bar i { background: repeating-linear-gradient(90deg, #97c459 0 4px, transparent 4px 6px); }
+.md-bars--led .md-bar--swr i { background: repeating-linear-gradient(90deg, #e24b4a 0 4px, transparent 4px 6px); }
+
+/* Icom nero con lancetta (quasi quadrato) */
+.md-icblack { background: #000; border: 1px solid #1b2a44; grid-template-columns: 2.6rem 1fr; padding: 0; gap: 0; }
+.md-icblack .md-keys { display: grid; gap: 0.15rem; align-content: start; padding: 0.25rem; background: #05070c; border-right: 1px solid #1d3b78; }
+.md-icblack .md-keys .md-chip { font-size: 0.55rem; text-align: center; padding: 0 0.1rem; border-color: #2f5cb8; background: #0a1a3a; }
+.md-icblack .md-keys .md-chip--on { background: #2f6fd8; color: #fff; border-color: #2f6fd8; }
+.md-icblack .md-body { display: grid; grid-template-rows: auto 1fr auto; padding: 0.25rem 0.45rem; min-width: 0; }
+.md-icblack .md-tag--on { background: #2f6fd8; border-color: #2f6fd8; color: #fff; }
+
+/* Yaesu ambra */
+.md-yaesu { background: #101010; color: #fac775; font-family: var(--font-data); }
+.md-yaesu .md-chip { border-color: #854f0b; color: #fac775; }
+.md-yaesu .md-chip--on { background: #fac775; color: #241604; border-color: #fac775; }
+.md-bars--yaesu { color: #ef9f27; }
+.md-bars--yaesu .md-bar { background: #1f1a12; }
+.md-bars--yaesu .md-bar i { background: repeating-linear-gradient(90deg, #fac775 0 4px, transparent 4px 6px); }
+.md-bars--yaesu .md-bar--swr i { background: repeating-linear-gradient(90deg, #f09595 0 4px, transparent 4px 6px); }
+
+/* In testata: estesi nella riga dei comandi, quasi quadrati nell'angolo (le icone della testata diventano piccole) */
+.rd-modern-slot { width: 40rem; max-width: 100%; height: 4.375rem; flex: none; }
+.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 8.75rem; z-index: 30; }
+body.rd-square .app-header { padding-right: 21.6rem; }
+body.rd-square .live-top { padding-right: 21.2rem; }
+body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
+.rd-square-preview { width: 20.625rem; height: 8.75rem; max-width: 100%; }
+.md-chips-side { max-width: 9.5rem; justify-content: flex-end; gap: 0.15rem; }
+.md-chips-side .md-chip { font-size: 0.56rem; line-height: 0.95rem; }
+.md-icdual .md-half--sub .md-freq--sub { font-size: 1.3rem; }
+.md-icblue .md-mid .md-pb { height: 1.9rem; width: auto; max-width: 100%; }
