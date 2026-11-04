@@ -72,7 +72,7 @@ export function ReportsBox() {
   const data = reports.data;
 
   const apply = (next: ReportsState) => client.setQueryData(KEY, next);
-  const change = (input: { ask_after_crash?: boolean; auto_errors?: boolean }) => {
+  const change = (input: { ask_after_crash?: boolean; auto_errors?: boolean; count_active?: boolean }) => {
     setFailure('');
     putReports(input).then(apply, (e: unknown) => setFailure(failureText(t, e)));
   };
@@ -108,6 +108,10 @@ export function ReportsBox() {
           <label className="rep-check">
             <input type="checkbox" checked={data.auto_errors} onChange={(e) => change({ auto_errors: e.target.checked })} />
             <span>{t('rep.auto')}</span>
+          </label>
+          <label className="rep-check" title={t('rep.activeTip')}>
+            <input type="checkbox" checked={data.count_active ?? true} onChange={(e) => change({ count_active: e.target.checked })} />
+            <span>{t('rep.active')}</span>
           </label>
           <p className="about-support-note">{t('rep.autoHint', { max: data.max_per_day })}</p>
           {data.auto_errors ? <p className="about-support-note">{t('rep.queue', { n: data.queue.length, sent: data.sent_today, max: data.max_per_day })}</p> : null}

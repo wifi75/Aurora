@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.116 - 2026-11-04
+- **Installazioni attive**: `POST /v1/attivo` nel Worker (tabella D1 `attivi`, una riga per installazione e giorno, 90 giorni) e `GET /v1/attivi` per il proprietario; nel core `Rapporti::segnala_attivo` una volta al giorno se `count_active` (acceso di fabbrica, si spegne in Impostazioni > Assistenza). Informativa privacy aggiornata.
+
 ## 0.11.115 - 2026-11-04
 - **Menu Radio**: le anteprime degli stili estesi (`.rd-card--wide`) hanno la misura vera 640 x 70 invece della larghezza della pagina.
 

@@ -46,6 +46,16 @@ l'indirizzo IP del mittente: lo usa solo per limitare le richieste.
 
 **Come spegnerli**: togli il segno alle due opzioni. Spegnendo gli errori automatici si svuota anche la coda sul PC.
 
+## Conteggio delle installazioni attive
+
+Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Serve
+solo a sapere quante persone usano Aurora e con quale versione. È **acceso di fabbrica** e si spegne in Impostazioni → Assistenza
+→ «Conta questa installazione tra quelle attive».
+
+**Cosa contiene**: l'identificativo casuale dell'installazione (lo stesso dei rapporti, rigenerabile), la versione di Aurora e
+quella di Windows, il giorno. **Niente altro**: nessun nominativo, locatore, radio, log o impostazione. Il servizio non registra
+l'indirizzo IP. Le righe restano 90 giorni, poi la pulizia notturna le cancella.
+
 ## Pacchetto per l'assistenza
 
 «Prepara il pacchetto per l'assistenza» crea uno zip sul Desktop e non lo manda a nessuno: lo mandi tu, a chi vuoi. Quel
