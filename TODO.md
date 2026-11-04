@@ -91,6 +91,8 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] «l'audio ha perso un blocco di campioni»: 66 volte su una installazione; capire se basta un buffer piu' grande.
 
 ## Display grandi in testata (deciso il 2026-11-04, non ancora fatto)
-- [ ] Testata: lingua, volume con cursore, tema e logo piccoli (16-18 px) in fila nella barra del menu, subito dopo «Novità»; il display grande occupa l'angolo in alto a destra, alto quanto le due righe di comandi.
+- [x] (0.11.113) Testata: lingua, volume con cursore, tema e logo piccoli (16-18 px) in fila nella barra del menu, subito dopo «Novità»; il display grande occupa l'angolo in alto a destra, alto quanto le due righe di comandi.
 - [ ] Opzioni del display prese da Hamlib per ogni modello (Get/Set functions, Get/Set level con i loro intervalli, VFO Ops, split): in Impostazioni > Radio compaiono solo quelle che la radio ha; il display mostra solo quelle spuntate.
-- [ ] Display da scegliere tra le bozze `docs/mockup-display-grandi.html` (8) e `docs/mockup-display-icom.html` (Icom blu con banda passante e strumento multiplo). Niente spettro ne' cascata nel display.
+- [x] (0.11.113, scelti tutti e sei) Display da scegliere tra le bozze `docs/mockup-display-grandi.html` (8) e `docs/mockup-display-icom.html` (Icom blu con banda passante e strumento multiplo). Niente spettro ne' cascata nel display.
+- [ ] Provare dal vivo i display quasi quadrati in testata (compaiono solo con la radio collegata) e i clic sui tasti dei sei display nuovi.
+- [ ] Le note della locandina degli aggiornamenti sono il testo della release (italiano): valutare note in sei lingue.
