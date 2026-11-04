@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.110 - 2026-11-04
+- **Decodifiche false senza radio**: un «CQ SU3NRA» a -25 dB su un PC senza radio (solo microfono). Con il picco del periodo sotto 0,02 (lo stesso «debole» della diagnosi) si spengono a7, a8 e l'analisi a priori; sotto 0,0005 (muto) il periodo non si decodifica ma la sequenza del QSO avanza lo stesso.
+
 ## 0.11.109 - 2026-11-04
 - **Radio e log da configurare**: componente `SetupCta`; il display in testata, con il CAT scollegato o in errore, mostra solo «Radio non configurata / non collegata · Clicca per configurarla» (verso Impostazioni › Radio); il pannello Log vuoto porta a Statistiche › importazione del log. Sei lingue.
 

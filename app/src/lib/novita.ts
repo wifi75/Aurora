@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.110',
+    released: '2026-11-04T12:25:53Z',
+    kind: 'fixed',
+    title: ['Niente messaggi falsi senza radio', 'No false messages without a radio', 'Keine falschen Meldungen ohne Funkgerät', 'Plus de faux messages sans radio', 'Sin mensajes falsos sin radio', 'Sem mensagens falsas sem rádio'],
+    text: [
+      "Con il microfono del PC o un ingresso quasi muto, le ricerche dei messaggi attesi (a7, a8, a priori) potevano «trovare» stazioni nel rumore, per esempio un CQ a -25 dB. Ora con l’audio debole si decodifica solo ciò che c’è davvero, e con l’audio muto il periodo resta vuoto.",
+      "With the PC microphone or an almost silent input, the searches for expected messages (a7, a8, a priori) could «find» stations in the noise, for example a CQ at -25 dB. Now with weak audio only what is really there is decoded, and with silent audio the period stays empty.",
+      "Mit dem PC-Mikrofon oder einem fast stummen Eingang konnten die Suchen nach erwarteten Meldungen (a7, a8, a priori) Stationen im Rauschen «finden», etwa ein CQ bei -25 dB. Jetzt wird bei schwachem Audio nur dekodiert, was wirklich da ist, und bei stummem Audio bleibt der Durchgang leer.",
+      "Avec le micro du PC ou une entrée presque muette, les recherches de messages attendus (a7, a8, a priori) pouvaient « trouver » des stations dans le bruit, par exemple un CQ à -25 dB. Désormais avec un audio faible on ne décode que ce qui est vraiment là, et avec un audio muet la période reste vide.",
+      "Con el micrófono del PC o una entrada casi muda, las búsquedas de mensajes esperados (a7, a8, a priori) podían «encontrar» estaciones en el ruido, por ejemplo un CQ a -25 dB. Ahora con audio débil solo se decodifica lo que hay de verdad, y con audio mudo el periodo queda vacío.",
+      "Com o microfone do PC ou uma entrada quase muda, as pesquisas de mensagens esperadas (a7, a8, a priori) podiam «encontrar» estações no ruído, por exemplo um CQ a -25 dB. Agora com áudio fraco só se descodifica o que existe de facto, e com áudio mudo o período fica vazio.",
+    ],
+  },
+  {
     version: '0.11.109',
     released: '2026-11-04T12:23:47Z',
     kind: 'changed',
