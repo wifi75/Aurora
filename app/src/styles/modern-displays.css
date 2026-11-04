@@ -85,7 +85,7 @@ button.md-chip:disabled { cursor: progress; }
 
 /* In testata: estesi nella riga dei comandi, quasi quadrati nell'angolo (le icone della testata diventano piccole) */
 .rd-modern-slot { width: 40rem; max-width: 100%; height: 4.375rem; flex: none; }
-.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 8.75rem; z-index: 30; }
+.rd-square-slot { position: fixed; top: 0.4rem; right: 0.5rem; width: 20.625rem; height: 8.75rem; z-index: 1050; }
 body.rd-square .app-header { padding-right: 21.6rem; }
 body.rd-square .live-top { padding-right: 21.2rem; }
 body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
@@ -94,3 +94,7 @@ body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
 .md-chips-side .md-chip { font-size: 0.56rem; line-height: 0.95rem; }
 .md-icdual .md-half--sub .md-freq--sub { font-size: 1.3rem; }
 .md-icblue .md-mid .md-pb { height: 1.9rem; width: auto; max-width: 100%; }
+
+/* con il quasi quadrato le icone della testata (lingua, volume, tema, logo) diventano piccole e stanno dopo il menu */
+body.rd-square .app-header > :not(.app-brand):not(.app-nav) { zoom: 0.72; }
+body.rd-square .app-header .app-logo-link svg { width: 24px; height: 24px; }

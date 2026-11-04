@@ -6180,3 +6180,18 @@
     display: flex;
   }
 }
+
+/* CQ e novita': il paese non si riduce piu' a «S..»; nel pannello stretto la colonna del paese resta leggibile (il messaggio cede spazio) */
+.dock-panel.dock-panel--cq .decode-list .decode-row,
+.dock-panel.dock-panel--cq .decode-list--no-dt .decode-row {
+  grid-template-columns: 4.4rem 2.1rem minmax(7rem, 1fr) minmax(10.5rem, 13rem) auto;
+}
+.dock-panel.dock-panel--cq .decode-list .decode-row .decode-where {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+}
+.dock-panel.dock-panel--cq .decode-where .decode-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

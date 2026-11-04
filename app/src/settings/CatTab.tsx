@@ -336,16 +336,16 @@ export function CatGroups() {
         ) : null}
         {fields.port ? (
           <Field label={t('cat.port')} className="cat-w-l" hint={t('tip.cat.port')}>
-            {/* un menu delle porte trovate: la casella di testo sembrava un campo per scrivere un nome */}
-            <select value={config.port} onChange={(e) => set({ port: e.target.value })}>
-              <option value="">{t('cat.port.pick')}</option>
-              {config.port !== '' && !(ports.data ?? []).some((p) => p.port === config.port) ? <option value={config.port}>{config.port}</option> : null}
-              {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (
-                <option key={p.port} value={p.port}>
-                  {p.port} — {p.virtual_kind === 'vspe' ? t('cat.port.vspe') : p.virtual ? t('cat.port.virtual') : p.name}
-                </option>
-              ))}
-            </select>
+            {/* le porte trovate si scelgono dall'elenco; si puo' anche scrivere un indirizzo di rete (127.0.0.1:4532 per «Hamlib NET rigctl», flrig, un rigctld di un altro programma) */}
+            <input
+              type="text"
+              list="cat-ports"
+              value={config.port}
+              spellCheck={false}
+              autoComplete="off"
+              placeholder={t('cat.port.placeholder')}
+              onChange={(e) => set({ port: e.target.value.trim() })}
+            />
           </Field>
         ) : null}
         {fields.port && fields.baud ? (
