@@ -1007,6 +1007,16 @@ export async function importLog(file: Blob): Promise<LogImportResult> {
   return (await (await request('/log/import', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: file })).json()) as LogImportResult;
 }
 
+/** Copia delle impostazioni sul Desktop (solo dal PC stesso). */
+export async function makeSettingsBackup(): Promise<{ ok: boolean; path: string; name: string; files: number }> {
+  return (await (await request('/settings-backup', { method: 'POST' })).json()) as { ok: boolean; path: string; name: string; files: number };
+}
+
+/** Ripristino da una copia: i file si applicano alla prossima apertura di Aurora. */
+export async function restoreSettingsBackup(file: Blob): Promise<{ ok: boolean; files: number }> {
+  return (await (await request('/settings-restore', { method: 'POST', headers: { 'content-type': 'application/zip' }, body: file })).json()) as { ok: boolean; files: number };
+}
+
 /** I numeri dei QSO in forma corta, a intervalli: `[1,2,3,7,9,10]` -> `1-3,7,9-10` (l'indirizzo resta corto anche con migliaia di QSO). */
 export function compactIds(ids: Iterable<number>): string {
   const sorted = [...new Set(ids)].sort((a, b) => a - b);
