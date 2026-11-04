@@ -130,7 +130,6 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
         let _ = std::fs::write(&env_path, settings::sample_env_file());
     }
     let places = settings::Places {
-        local_app_data: std::env::var_os("LOCALAPPDATA").map(PathBuf::from),
         documents: handle.path().document_dir().ok(),
         bundled_cty: handle.path().resource_dir().ok().map(|d| d.join("cty").join("cty.dat")).filter(|p| p.is_file()).or_else(|| Some(PathBuf::from("cty/cty.dat"))),
     };

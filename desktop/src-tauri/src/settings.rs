@@ -2,7 +2,7 @@
 //!
 //! 1. dalle variabili d'ambiente `AURORA_*` del processo;
 //! 2. dal file `aurora.env` nella cartella dei dati (`CHIAVE=valore`, `#` per i commenti);
-//! 3. dal rilevamento automatico di JTDX e di Log4OM2 (se ci sono: facoltativi) e dal file dei paesi incluso in Aurora.
+//! 3. dal file dei paesi incluso in Aurora e, se c'e', dall'archivio di Log4OM2 (facoltativo). Aurora non dipende da nessun altro programma.
 //!
 //! Tutto cio' che non si trova resta al valore predefinito del core. La trasmissione nel programma Windows e' **aperta** (scelta del proprietario); per chiuderla
 //! senza opzioni. STOP, tetti, dead-man e automazioni spente di default restano.
@@ -16,8 +16,6 @@ pub type Values = BTreeMap<String, String>;
 
 /// Dove si cerca: le cartelle di Windows, passate dal chiamante cosi' le prove usano cartelle finte.
 pub struct Places {
-    /// `%LOCALAPPDATA%`: li' JTDX tiene `JTDX.ini` e il suo log.
-    pub local_app_data: Option<PathBuf>,
     /// La cartella Documenti: li' Log4OM2 tiene il suo archivio.
     pub documents: Option<PathBuf>,
     /// Il file dei paesi `cty.dat` incluso in Aurora (cartella delle risorse del programma): Aurora non lo prende da nessun altro programma.
@@ -58,75 +56,10 @@ fn text(path: &Path) -> String {
     path.display().to_string()
 }
 
-/// Il metodo del PTT e la porta come li scrive `JTDX.ini` (`PTTMethod=@Variant(...PTT_method_RTS...)`, `PTTport=COM9`).
-pub fn ptt_from_ini(raw: &str) -> (Option<&'static str>, Option<String>) {
-    let value = |key: &str| raw.lines().find_map(|l| l.strip_prefix(key).and_then(|r| r.strip_prefix('='))).map(str::trim);
-    let method = value("PTTMethod").and_then(|v| {
-        let v = v.to_ascii_uppercase();
-        if v.contains("PTT_METHOD_RTS") {
-            Some("rts")
-        } else if v.contains("PTT_METHOD_DTR") {
-            Some("dtr")
-        } else if v.contains("PTT_METHOD_CAT") {
-            Some("omnirig")
-        } else if v.contains("PTT_METHOD_VOX") {
-            Some("vox")
-        } else {
-            None
-        }
-    });
-    let port = value("PTTport").filter(|p| !p.is_empty()).map(str::to_string);
-    (method, port)
-}
-
-/// Le opzioni del primo server UDP di JTDX che contano per il flusso verso GridTracker: `AcceptUDPRequests`, `AcceptUDPReplyMessages` (1-3, di fabbrica 1)
-/// e `EnableUDP1adifSending`. Con il motore proprio le usa l'emettitore UDP di Aurora (`AURORA_UDP_ACCEPT`, `AURORA_UDP_ACCEPT_REPLY`, `AURORA_UDP_ADIF`).
-pub fn udp1_options_from_ini(raw: &str) -> (bool, u8, bool) {
-    let value = |key: &str| raw.lines().find_map(|l| l.strip_prefix(key).and_then(|r| r.strip_prefix('='))).map(str::trim);
-    let on = |key: &str| value(key).is_some_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
-    let reply = value("AcceptUDPReplyMessages").and_then(|v| v.parse::<u8>().ok()).filter(|n| (1..=3).contains(n)).unwrap_or(1);
-    (on("AcceptUDPRequests"), reply, on("EnableUDP1adifSending"))
-}
-
-/// Cio' che si ricava da JTDX e dagli altri programmi installati. Senza `JTDX.ini` resta il simulatore.
+/// Cio' che Aurora trova da sola: il suo file dei paesi e, se c'e', l'archivio di Log4OM2 (solo per sapere chi e' gia' stato lavorato).
+/// **Nessun altro programma serve**: Aurora non legge piu' JTDX (ne' `JTDX.ini` ne' il suo log) e non ne prende audio, PTT o radio.
 pub fn detect(places: &Places) -> Values {
     let mut v = Values::new();
-    if let Some(local) = &places.local_app_data {
-        let ini = local.join("JTDX").join("JTDX.ini");
-        if ini.is_file() {
-            v.insert("AURORA_ENGINE".into(), "jtdx".into());
-            v.insert("AURORA_JTDX_INI".into(), text(&ini));
-            v.insert("AURORA_UDP_LISTEN".into(), "127.0.0.1:2334".into());
-            // il flusso identico per GridTracker2, come in JTDX
-            v.insert("AURORA_UDP_FORWARD".into(), "127.0.0.1:2333".into());
-            v.insert("AURORA_RIG".into(), "omnirig".into());
-            let log = local.join("JTDX").join("wsjtx_log.adi");
-            if log.is_file() {
-                v.insert("AURORA_WORKED_ADIF".into(), text(&log));
-            }
-            // uscita audio e PTT come li ha impostati JTDX (PTT sulla linea RTS o DTR di una COM, CAT/OmniRig, VOX)
-            if let Ok(raw) = std::fs::read_to_string(&ini) {
-                let (accept, reply, adif) = udp1_options_from_ini(&raw);
-                v.insert("AURORA_UDP_ACCEPT".into(), u8::from(accept).to_string());
-                v.insert("AURORA_UDP_ACCEPT_REPLY".into(), reply.to_string());
-                v.insert("AURORA_UDP_ADIF".into(), u8::from(adif).to_string());
-                let (method, port) = ptt_from_ini(&raw);
-                if let Some(method) = method {
-                    v.insert("AURORA_PTT_METHOD".into(), method.into());
-                }
-                if let Some(port) = port {
-                    v.insert("AURORA_PTT_PORT".into(), port);
-                }
-            }
-            if let Some(device) = engine_jtdx::ini::read_shown(&ini).ok().and_then(|m| m.get("SoundOutName").cloned()).filter(|d| !d.trim().is_empty()) {
-                v.insert("AURORA_AUDIO_OUT_DEVICE".into(), device);
-            }
-            // l'ingresso audio e' quello scelto in JTDX
-            if let Some(device) = engine_jtdx::ini::read_shown(&ini).ok().and_then(|m| m.get("SoundInName").cloned()).filter(|d| !d.trim().is_empty()) {
-                v.insert("AURORA_AUDIO_DEVICE".into(), device);
-            }
-        }
-    }
     if let Some(cty) = places.bundled_cty.as_deref().filter(|p| p.is_file()) {
         v.insert("AURORA_CTY_PATH".into(), text(cty));
     }
@@ -148,7 +81,7 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_BIND".into(), "0.0.0.0:8787".into());
     // la finestra del programma entra senza codice (solo da questo PC); i telefoni lo chiedono sempre
     v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
-    // il motore proprio decodifica in ombra accanto a JTDX e si confronta con lui (`AURORA_NATIVE_DECODE=0` lo spegne)
+    // il motore proprio decodifica (`AURORA_NATIVE_DECODE=0` lo spegne)
     v.insert("AURORA_NATIVE_DECODE".into(), "1".into());
     // gli ultimi 400 periodi (circa 144 MB) si tengono in WAV nella cartella dei dati: servono a misurare il motore proprio sulle stesse registrazioni
     v.insert("AURORA_NATIVE_RECORD".into(), "1".into());
@@ -156,8 +89,7 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
         v.extend(parse_env_file(file));
     }
     v.extend(process_env.into_iter().filter(|(k, _)| k.starts_with("AURORA_")));
-    // il secondo server UDP (Log4OM2) non si decide piu' qui: con il motore proprio e' una impostazione di Aurora (`settings-motore.json`),
-    // importata una volta dal `JTDX.ini`; `AURORA_EXPORT_UDP` resta solo per destinatari in piu'.
+    // il secondo server UDP (Log4OM2) e' una impostazione di Aurora (`settings-motore.json`); `AURORA_EXPORT_UDP` resta solo per destinatari in piu'.
     v
 }
 
@@ -179,7 +111,7 @@ pub fn sample_env_file() -> &'static str {
      # Porta e indirizzo (predefinito 0.0.0.0:8787, raggiungibile dal telefono):\n\
      # AURORA_BIND=0.0.0.0:8787\n\
      #\n\
-     # Ingresso audio per la cascata (parte del nome); di norma e' quello scelto in JTDX:\n\
+     # Ingresso audio per la cascata (parte del nome); di norma si sceglie in Impostazioni:\n\
      # AURORA_AUDIO_DEVICE=USB Audio\n\
      #\n\
      # Non mettere Aurora tra i programmi che partono con Windows (al primo avvio lo e' di norma):\n\
@@ -205,8 +137,8 @@ mod tests {
         std::fs::write(path, content).unwrap();
     }
 
-    fn places(local: &Path, docs: &Path, bundled_cty: Option<PathBuf>) -> Places {
-        Places { local_app_data: Some(local.to_path_buf()), documents: Some(docs.to_path_buf()), bundled_cty }
+    fn places(docs: &Path, bundled_cty: Option<PathBuf>) -> Places {
+        Places { documents: Some(docs.to_path_buf()), bundled_cty }
     }
 
     #[test]
@@ -218,61 +150,49 @@ mod tests {
     }
 
     #[test]
-    fn without_jtdx_it_stays_the_simulator_and_finds_nothing() {
-        let local = temp("nojtdx-local");
-        let docs = temp("nojtdx-docs");
-        assert!(detect(&places(&local, &docs, None)).is_empty());
+    fn on_an_empty_pc_it_finds_nothing_and_needs_nothing() {
+        let docs = temp("empty-docs");
+        assert!(detect(&places(&docs, None)).is_empty());
     }
 
     #[test]
-    fn finds_jtdx_its_log_the_audio_input_the_countries_file_and_the_log4om_archive() {
-        let local = temp("found-local");
+    fn it_finds_its_own_countries_file_and_the_log4om_archive() {
         let docs = temp("found-docs");
         let res = temp("found-res");
-        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nSoundInName=Microfono (2- USB Audio Device)\nMyCall=AA1AA\n");
-        touch(&local.join("JTDX").join("wsjtx_log.adi"), "<eoh>");
         touch(&res.join("cty").join("cty.dat"), "x");
         touch(&docs.join("LOG4OM2").join("piccolo.sqlite"), "1");
         touch(&docs.join("LOG4OM2").join("grande.sqlite"), "123456789");
         touch(&docs.join("LOG4OM2").join("altro.txt"), "123456789012345");
-        let v = detect(&places(&local, &docs, Some(res.join("cty").join("cty.dat"))));
-        assert_eq!(v["AURORA_ENGINE"], "jtdx");
-        assert_eq!(v["AURORA_RIG"], "omnirig");
-        assert_eq!(v["AURORA_UDP_LISTEN"], "127.0.0.1:2334");
-        assert_eq!(v["AURORA_UDP_FORWARD"], "127.0.0.1:2333");
-        assert_eq!(v["AURORA_AUDIO_DEVICE"], "Microfono (2- USB Audio Device)");
-        assert!(v["AURORA_JTDX_INI"].ends_with("JTDX.ini"));
-        assert!(v["AURORA_WORKED_ADIF"].ends_with("wsjtx_log.adi"));
+        let v = detect(&places(&docs, Some(res.join("cty").join("cty.dat"))));
         assert!(v["AURORA_CTY_PATH"].ends_with("cty.dat"), "il file incluso in Aurora: {}", v["AURORA_CTY_PATH"]);
         assert!(v["AURORA_LOG4OM_DB"].ends_with("grande.sqlite"));
+        assert_eq!(v.len(), 2);
     }
 
     #[test]
-    fn the_countries_file_is_the_one_inside_aurora_even_without_jtdx() {
-        let local = temp("cty-local");
+    fn jtdx_installed_on_the_pc_changes_nothing() {
+        // Aurora e' indipendente: un JTDX presente non le cambia motore, radio, PTT, audio, UDP o log
+        let docs = temp("jtdx-docs");
+        let local = temp("jtdx-local");
+        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nSoundInName=USB\nPTTMethod=@Variant(xPTT_method_RTS\0)\nPTTport=COM9\n");
+        touch(&local.join("JTDX").join("wsjtx_log.adi"), "<eoh>");
+        let v = build(&places(&docs, None), Path::new("d"), Path::new("u"), None, vec![]);
+        assert_eq!(v["AURORA_ENGINE"], "native");
+        for key in ["AURORA_JTDX_INI", "AURORA_RIG", "AURORA_PTT_METHOD", "AURORA_PTT_PORT", "AURORA_AUDIO_DEVICE", "AURORA_AUDIO_OUT_DEVICE", "AURORA_WORKED_ADIF", "AURORA_UDP_LISTEN", "AURORA_UDP_FORWARD"] {
+            assert!(!v.contains_key(key), "{key} non deve venire da JTDX");
+        }
+    }
+
+    #[test]
+    fn a_missing_countries_file_is_just_left_out() {
         let res = temp("cty-res");
-        touch(&res.join("cty").join("cty.dat"), "x");
-        let v = detect(&Places { local_app_data: Some(local.clone()), documents: None, bundled_cty: Some(res.join("cty").join("cty.dat")) });
-        assert!(v["AURORA_CTY_PATH"].ends_with("cty.dat"));
-        assert!(!v.contains_key("AURORA_ENGINE"), "nessun JTDX: nessun legame");
-        let missing = detect(&Places { local_app_data: Some(local), documents: None, bundled_cty: Some(res.join("manca.dat")) });
-        assert!(!missing.contains_key("AURORA_CTY_PATH"));
-    }
-
-    #[test]
-    fn a_missing_audio_device_or_adif_just_leaves_those_values_out() {
-        let local = temp("partial-local");
-        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nMyCall=AA1AA\n");
-        let v = detect(&Places { local_app_data: Some(local), documents: None, bundled_cty: None });
-        assert_eq!(v["AURORA_ENGINE"], "jtdx");
-        assert!(!v.contains_key("AURORA_AUDIO_DEVICE") && !v.contains_key("AURORA_WORKED_ADIF") && !v.contains_key("AURORA_LOG4OM_DB"));
+        let v = detect(&Places { documents: None, bundled_cty: Some(res.join("manca.dat")) });
+        assert!(!v.contains_key("AURORA_CTY_PATH"));
     }
 
     #[test]
     fn the_file_beats_the_detection_and_the_environment_beats_the_file() {
-        let local = temp("prec-local");
-        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nSoundInName=Rilevato\n");
-        let p = Places { local_app_data: Some(local), documents: None, bundled_cty: None };
+        let p = Places { documents: None, bundled_cty: None };
         let env = vec![("AURORA_BIND".to_string(), "127.0.0.1:9000".to_string()), ("PATH".to_string(), "non conta".to_string())];
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), Some("AURORA_AUDIO_DEVICE=Dal file\nAURORA_BIND=1.2.3.4:1\n"), env);
         assert_eq!(v["AURORA_AUDIO_DEVICE"], "Dal file");
@@ -284,7 +204,7 @@ mod tests {
 
     #[test]
     fn the_defaults_reach_the_phone_and_open_transmission() {
-        let p = Places { local_app_data: None, documents: None, bundled_cty: None };
+        let p = Places { documents: None, bundled_cty: None };
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), None, vec![]);
         assert_eq!(v["AURORA_BIND"], "0.0.0.0:8787");
         assert!(!v.contains_key("AURORA_ALLOW_TX"), "la trasmissione non ha opzioni");
@@ -297,37 +217,12 @@ mod tests {
     }
 
     #[test]
-    fn the_second_udp_server_is_not_injected_from_the_ini_any_more() {
-        let local = temp("udp2-local");
-        touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nUDP2Server=127.0.0.1\nUDP2ServerPort=2237\nEnableUDP2adifBroadcast=true\n");
-        let p = Places { local_app_data: Some(local), documents: None, bundled_cty: None };
+    fn the_second_udp_server_comes_only_from_aurora_settings() {
+        let p = Places { documents: None, bundled_cty: None };
         let native = build(&p, Path::new("d"), Path::new("u"), None, vec![]);
         assert!(!native.contains_key("AURORA_EXPORT_UDP"), "il secondo server e' una impostazione di Aurora: si puo' spegnere dalla scheda Segnalazioni");
         let own = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_EXPORT_UDP".to_string(), "127.0.0.1:2240".to_string())]);
         assert_eq!(own["AURORA_EXPORT_UDP"], "127.0.0.1:2240", "un destinatario in piu' scelto dall'ambiente resta valido");
-    }
-
-    #[test]
-    fn the_first_udp_server_options_of_jtdx_drive_the_gridtracker_flow() {
-        let ini = "AcceptUDPReplyMessages=2
-AcceptUDPRequests=true
-EnableUDP1adifSending=true
-";
-        assert_eq!(udp1_options_from_ini(ini), (true, 2, true));
-        // di fabbrica: niente comandi, solo CQ, niente ADIF; un valore fuori scala torna a 1
-        assert_eq!(udp1_options_from_ini(""), (false, 1, false));
-        assert_eq!(udp1_options_from_ini("AcceptUDPReplyMessages=9
-AcceptUDPRequests=false
-"), (false, 1, false));
-    }
-
-    #[test]
-    fn the_ptt_method_and_port_are_read_from_the_jtdx_ini() {
-        let rts = "PTTMethod=@Variant(\0\0\0\x7f\0\0\0\x1eTransceiverFactory::PTTMethod\0\0\0\0\x0fPTT_method_RTS\0)\nPTTport=COM9\n";
-        assert_eq!(ptt_from_ini(rts), (Some("rts"), Some("COM9".to_string())));
-        assert_eq!(ptt_from_ini("PTTMethod=@Variant(xPTT_method_CAT\0)\n").0, Some("omnirig"));
-        assert_eq!(ptt_from_ini("PTTMethod=@Variant(xPTT_method_VOX\0)\n").0, Some("vox"));
-        assert_eq!(ptt_from_ini("niente"), (None, None));
     }
 
     #[test]
@@ -338,7 +233,7 @@ AcceptUDPRequests=false
 
     #[test]
     fn a_bad_value_in_the_file_is_reported_not_ignored() {
-        let p = Places { local_app_data: None, documents: None, bundled_cty: None };
+        let p = Places { documents: None, bundled_cty: None };
         let v = build(&p, Path::new("d"), Path::new("u"), Some("AURORA_BIND=non un indirizzo"), vec![]);
         assert!(config_from(&v).is_err());
     }
