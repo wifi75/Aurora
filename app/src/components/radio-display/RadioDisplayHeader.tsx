@@ -8,6 +8,9 @@ import { useMeterBallistics } from '../../lib/meterBallistics';
 import { displayModel, isFaceStyle, useRadioDisplay, type DisplayModel } from '../../lib/radioDisplay';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
+import { useQuery } from '@tanstack/react-query';
+import { getCat } from '../../api/client';
+import { SetupCta } from '../SetupCta';
 
 /**
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
@@ -19,8 +22,15 @@ export function RadioDisplayHeader() {
   const status = useStation((s) => s.status);
   const raw = displayModel(status);
   const meters = useMeterBallistics(raw.meters);
+  const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
   if (pref.hidden) return null;
   const model = { ...raw, meters };
+  // senza radio collegata niente display vuoto e scritte sparse: un solo riquadro che porta alla configurazione
+  const state = cat.data?.status.state;
+  if (!phone && cat.data && (state === 'disconnected' || state === 'error')) {
+    const configured = cat.data.config.backend === 'omnirig' || cat.data.config.model !== 0;
+    return <SetupCta className="setup-cta--radio" href="#/impostazioni/radio" title={configured ? 'cta.radio.off' : 'cta.radio.none'} action="cta.radio.go" />;
+  }
 
   if (phone) {
     return (
