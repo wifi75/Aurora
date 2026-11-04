@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.120',
-    released: '2026-11-04T17:54:22Z',
+    released: '2026-11-04T17:57:04Z',
     kind: 'fixed',
     title: ["Telefono più facile da collegare", "Easier phone connection", "Telefon leichter verbinden", "Téléphone plus facile à connecter", "Teléfono más fácil de conectar", "Telemóvel mais fácil de ligar"],
     text: [
