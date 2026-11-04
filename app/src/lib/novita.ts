@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.118',
-    released: '2026-11-04T17:19:21Z',
+    released: '2026-11-04T17:21:58Z',
     kind: 'new',
     title: ["Pannelli da togliere e log grandi", "Removable panels and large logs", "Ausblendbare Felder und große Logs", "Panneaux masquables et gros journaux", "Paneles que se quitan y logs grandes", "Painéis removíveis e logs grandes"],
     text: [
