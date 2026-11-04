@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.130',
-    released: '2026-11-04T21:56:21Z',
+    released: '2026-11-04T21:59:09Z',
     kind: 'fixed',
     title: ['Display centrato al suo posto', 'Display centred in its place', 'Anzeige mittig an ihrem Platz', 'Afficheur centré à sa place', 'Pantalla centrada en su sitio', 'Ecrã centrado no seu lugar'],
     text: [
