@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.103 - 2026-11-04
+- **Modo senza audio**: lo stato della stazione (modo, periodo, frequenza) si pubblica subito, anche se nessun ingresso audio si apre; prima il selettore del modo restava «—» e non si apriva.
+
 ## 0.11.102 - 2026-11-04
 - **Guida al primo avvio**: passo passo lingua, nominativo e locatore, scheda audio e radio (CAT o VOX), ogni passo saltabile; compare solo finche' manca il nominativo.
 - **Testi**: nessun testo dice piu' che i dati vengono da JTDX o `wsjtx_log.adi`; le fonti sono il log di Aurora e i software esterni collegati in Impostazioni.
