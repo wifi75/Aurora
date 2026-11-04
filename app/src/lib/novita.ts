@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.123',
+    released: '2026-11-04T19:49:25Z',
+    kind: 'new',
+    title: ["Conferma del log e telefono più sicuro", "Log confirmation and safer phone pairing", "Log-Bestätigung und sichereres Telefon-Koppeln", "Confirmation du journal et téléphone plus sûr", "Confirmación del log y teléfono más seguro", "Confirmação do log e telemóvel mais seguro"],
+    text: [
+      "Puoi farti chiedere conferma prima che un QSO entri nel log, con i campi da correggere (Impostazioni › Sequenza › «Richiedimi di loggare il QSO»). Il QR del telefono mette per prima la Wi-Fi e ne mostra uno per ogni indirizzo del PC; «Consenti Aurora» toglie anche i blocchi del firewall creati da un «Annulla». Sul telefono, accanto al nominativo, compare il paese.",
+      "You can be asked to confirm before a QSO goes into the log, with fields you can correct (Settings › Sequence › «Ask me to log the QSO»). The phone QR puts the Wi-Fi first and shows one for each PC address; «Allow Aurora» also removes firewall blocks created by a «Cancel». On the phone the country appears next to the callsign.",
+      "Du kannst dich vor dem Eintragen eines QSO fragen lassen, mit korrigierbaren Feldern (Einstellungen › Sequenz › «QSO-Eintrag bestätigen»). Der Telefon-QR nimmt zuerst das WLAN und zeigt einen pro PC-Adresse; «Aurora zulassen» entfernt auch Firewall-Sperren nach einem «Abbrechen». Auf dem Telefon steht das Land neben dem Rufzeichen.",
+      "Tu peux demander une confirmation avant qu’un QSO entre dans le journal, avec des champs corrigeables (Réglages › Séquence › « Me demander de journaliser le QSO »). Le QR du téléphone met le Wi-Fi en premier et en montre un par adresse du PC ; « Autoriser Aurora » retire aussi les blocages du pare-feu créés par un « Annuler ». Sur le téléphone le pays apparaît à côté de l’indicatif.",
+      "Puedes pedir confirmación antes de que un QSO entre en el log, con campos que se pueden corregir (Ajustes › Secuencia › «Pedirme registrar el QSO»). El QR del teléfono pone primero la Wi-Fi y muestra uno por cada dirección del PC; «Permitir Aurora» quita también los bloqueos del cortafuegos creados por un «Cancelar». En el teléfono aparece el país junto al indicativo.",
+      "Podes pedir confirmação antes de um QSO entrar no log, com campos corrigíveis (Definições › Sequência › «Pedir para registar o QSO»). O QR do telemóvel põe primeiro a Wi-Fi e mostra um por cada endereço do PC; «Permitir Aurora» tira também os bloqueios da firewall criados por um «Cancelar». No telemóvel aparece o país ao lado do indicativo.",
+    ],
+  },
+  {
     version: '0.11.122',
     released: '2026-11-04T18:05:13Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Le téléphone ne garde plus l’ancienne page après une mise à jour. Sur le téléphone ni barre en haut (logo, langue, volume) ni pied de page ; le cluster montre les 5 derniers spots ; barre de boutons plus basse.',
       'El teléfono ya no se queda con la página vieja tras una actualización. En el teléfono sin barra arriba (logo, idioma, volumen) ni pie de página; el clúster muestra los últimos 5 spots; barra de botones más baja.',
       'O telemóvel já não fica com a página antiga depois de uma atualização. No telemóvel sem barra em cima (logo, idioma, volume) nem rodapé; o cluster mostra os últimos 5 spots; barra de botões mais baixa.',
-    ],
-  },
-  {
-    version: '0.11.86',
-    released: '2026-11-03T18:14:32Z',
-    kind: 'changed',
-    title: ['Telefono: solo la Stazione', 'Phone: Station only', 'Telefon: nur die Station', 'Téléphone : seulement la Station', 'Teléfono: solo la Estación', 'Telemóvel: só a Estação'],
-    text: [
-      'Dal telefono e dal tablet Aurora mostra solo la pagina Stazione, senza menu in alto né messaggi a comparsa; bande, modi, filtri e macro sono quelli impostati sul PC; due tocchi su STOP svuotano anche i messaggi Tx. La pagina Smartphone/Tablet è compatta e l’accesso senza codice dalla rete di casa funziona e resta al riavvio.',
-      'From phone and tablet Aurora shows only the Station page, with no top menu or pop-up messages; bands, modes, filters and macros are those set on the PC; two taps on STOP also clear the Tx messages. The Smartphone/Tablet page is compact and code-free access from the home network works and survives a restart.',
-      'Auf Telefon und Tablet zeigt Aurora nur die Seite Station, ohne Menü oben und ohne Einblendungen; Bänder, Betriebsarten, Filter und Makros sind die des PCs; zweimal STOP tippen leert auch die Tx-Meldungen. Die Seite Smartphone/Tablet ist kompakt, und der Zugang ohne Code aus dem Heimnetz funktioniert und bleibt nach dem Neustart.',
-      'Sur téléphone et tablette Aurora n’affiche que la page Station, sans menu en haut ni messages surgissants ; bandes, modes, filtres et macros sont ceux du PC ; deux appuis sur STOP vident aussi les messages Tx. La page Smartphone/Tablette est compacte et l’accès sans code depuis le réseau domestique fonctionne et reste au redémarrage.',
-      'Desde el teléfono y la tableta Aurora muestra solo la página Estación, sin menú arriba ni mensajes emergentes; bandas, modos, filtros y macros son los del PC; dos toques en STOP vacían también los mensajes Tx. La página Smartphone/Tableta es compacta y el acceso sin código desde la red de casa funciona y se mantiene al reiniciar.',
-      'No telemóvel e no tablet a Aurora mostra só a página Estação, sem menu em cima nem mensagens a surgir; bandas, modos, filtros e macros são os do PC; dois toques em STOP esvaziam também as mensagens Tx. A página Smartphone/Tablet é compacta e o acesso sem código a partir da rede de casa funciona e mantém-se ao reiniciar.',
     ],
   },
 ];

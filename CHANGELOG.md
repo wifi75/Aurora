@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.123 - 2026-11-04
 - **Telefono bloccato dal firewall, corretto**: se alla domanda di Windows «Consenti l'accesso» si premeva Annulla, Windows creava regole di blocco che vincono su ogni permesso, e «Consenti Aurora» non bastava. Ora «Consenti Aurora» (Impostazioni › Smartphone/Tablet) toglie i blocchi su Aurora e aggiunge il permesso per il programma e per la porta TCP, su ogni rete (anche «Pubblica»); il controllo della rete riconosce anche la regola della porta e non segnala più la rete «Pubblica» quando il permesso c'è.
 - **QR del telefono più sicuro**: con il PC su più reti (cavo e Wi-Fi) nel QR va per primo l'indirizzo della Wi-Fi, dove è quasi sempre il telefono; sotto il QR compaiono gli altri indirizzi del PC, ognuno con il suo QR piccolo («il telefono non apre la pagina? prova il successivo»), e il consiglio di inquadrarlo con la fotocamera e aprirlo in Chrome o Safari, non dentro Messenger o WhatsApp. Sei lingue.
 - **Diagnosi dell'associazione dal telefono**: se un codice scade senza associazione, Aurora manda un rapporto anonimo con la causa probabile: telefono mai arrivato (rete diversa, dati mobili, isolamento della Wi-Fi), rete di Windows «Pubblica», firewall senza regola, indirizzo del QR di un adattatore virtuale o senza indirizzo dal router; oppure telefono arrivato ma codice sbagliato o scaduto. Solo tipi, mai indirizzi o nomi (informativa privacy aggiornata).
@@ -8,6 +10,7 @@
 - **Telefono**: nel DX Cluster e nel Log il nome del paese accanto al nominativo, dopo la bandiera (più piccolo; accorciato con i puntini se non c'è spazio).
 - **Conferma prima di registrare il QSO** (Impostazioni › Sequenza › «Registrazione log» › «Richiedimi di loggare il QSO», spento di fabbrica): a QSO concluso si apre una finestra con nominativo, locatore, rapporti, nome, città e commento correggibili, «Registra» (anche con Invio) o «Scarta». Prima la voce esisteva ma non faceva nulla. Diversamente da JTDX non esclude «Messa a log automatica», che decide solo come finisce la trasmissione. Se la voce si spegne con QSO in attesa, vanno a log; oltre 20 in attesa il più vecchio va a log da solo. Sei lingue.
 - **Prove dell'interfaccia** allineate alla pagina Novità compatta e al controllo della rete nella scheda Smartphone/Tablet (850 su 850).
+- **Rapporti audio**: poche perdite di campioni sono informazione nel registro; avviso (e rapporto) solo da 100 in su.
 
 ## 0.11.122 - 2026-11-04
 - **Locandina dell'aggiornamento**: finche' il primo controllo non e' fatto la finestra lo chiede ogni 5 s (`UpdatePoster`, `UpdateBar`); prima, con l'avviso gia' dato a un avvio precedente, aspettava la lettura ogni 10 minuti.
