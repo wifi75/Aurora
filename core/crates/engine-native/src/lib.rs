@@ -505,7 +505,9 @@ pub fn start_with_save(
                 }
                 let started = Instant::now();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
-                let options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
+                let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
+                // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)
+                options.deadline = Some(started + std::time::Duration::from_secs(11));
                 // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
                 let mut early: Vec<String> = Vec::new();
                 let mut decoded = if mode == Mode::Ft8 && let Some(l) = live.as_ref() {

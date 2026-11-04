@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.106 - 2026-11-04
+- **Decodifica FT8 a tempo**: dai rapporti degli errori, un PC impiegava fino a 66 s per periodo e restava indietro. Nuova `Options::deadline`: dopo 11 s dall'inizio della decodifica non si comincia un'altra passata; i messaggi gia' trovati restano.
+
 ## 0.11.105 - 2026-11-04
 - **Schede audio, dai rapporti degli errori**: il nome salvato si confronta decodificando `\xNN`, senza il numero «2- » che Windows aggiunge, e come ultima prova con la sola scheda tra parentesi (Windows in altre lingue); «Default Input/Output Device» e «predefinito» vogliono dire il dispositivo predefinito di Windows. Vale per cascata, trasmissione e livelli.
 - **OmniRig assente**: «classe COM non registrata» diventa «OmniRig non e' installato: scegli Hamlib in Impostazioni > Radio».

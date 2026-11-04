@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.106',
+    released: '2026-11-04T11:52:35Z',
+    kind: 'fixed',
+    title: ['Decodifica in tempo anche sui PC lenti', 'Decoding on time even on slow PCs', 'Dekodierung auch auf langsamen PCs rechtzeitig', 'Décodage à temps même sur les PC lents', 'Decodificación a tiempo también en PC lentos', 'Descodificação a tempo também em PC lentos'],
+    text: [
+      "Su un PC lento la decodifica di un periodo FT8 poteva durare più di un minuto, e Aurora restava sempre più indietro. Ora, passati 11 secondi, le passate in più si saltano: i messaggi trovati arrivano in tempo e il periodo dopo riparte puntuale.",
+      "On a slow PC decoding one FT8 period could take over a minute, and Aurora fell further and further behind. Now, after 11 seconds, the extra passes are skipped: the messages found arrive on time and the next period starts punctually.",
+      "Auf einem langsamen PC konnte die Dekodierung eines FT8-Durchgangs über eine Minute dauern, und Aurora geriet immer weiter in Rückstand. Jetzt werden nach 11 Sekunden die weiteren Durchläufe übersprungen: die gefundenen Meldungen kommen rechtzeitig und der nächste Durchgang beginnt pünktlich.",
+      "Sur un PC lent le décodage d’une période FT8 pouvait durer plus d’une minute, et Aurora prenait de plus en plus de retard. Désormais, après 11 secondes, les passes supplémentaires sont sautées : les messages trouvés arrivent à temps et la période suivante repart à l’heure.",
+      "En un PC lento la decodificación de un periodo FT8 podía durar más de un minuto, y Aurora se quedaba cada vez más atrás. Ahora, pasados 11 segundos, se saltan las pasadas extra: los mensajes encontrados llegan a tiempo y el periodo siguiente empieza puntual.",
+      "Num PC lento a descodificação de um período FT8 podia durar mais de um minuto, e a Aurora ficava cada vez mais para trás. Agora, passados 11 segundos, saltam-se as passagens extra: as mensagens encontradas chegam a tempo e o período seguinte começa pontual.",
+    ],
+  },
+  {
     version: '0.11.105',
     released: '2026-11-04T11:47:42Z',
     kind: 'fixed',
