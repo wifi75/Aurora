@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 - **Paesi e bandiere senza altri programmi**: il file dei paesi `cty.dat` (AD1C, country-files.com) e' dentro Aurora, aggiornato a ogni versione; prima Aurora lo cercava solo nell'installazione di JTDX e, senza JTDX, non mostrava bandiere, paesi ne' NEW ONE/NEW BAND.
+- **Aurora indipendente**: all'avvio non legge piu' JTDX (ne' `JTDX.ini` ne' il suo log) e non ne prende motore, radio OmniRig, PTT, audio o porte UDP; `rigctld` e' solo quello incluso in Aurora (o, su Linux, quello del sistema), mai quello di altri programmi. Chi aveva impostato audio e radio in Aurora li ritrova; chi li aveva solo in JTDX li sceglie una volta in Impostazioni.
 - **FT8/FT4 senza radio collegata**: il modo si cambia anche senza CAT (radioascolto), la radio resta dov'e'.
 - **Bande bloccate**: il suggerimento spiega che si sbloccano collegando la radio in Impostazioni › Radio (prima diceva «AURORA_RIG=omnirig»), nelle sei lingue.
 - **Linux** (non provata dall'autore, senza assistenza): compila dallo stesso codice di Windows; `scripts/compila-linux.sh` prepara AppImage e `.deb` con un comando, guida in sei lingue (`docs/linux.md`), sezione Linux nella pagina web e nei README; GitHub Actions controlla Linux a ogni push e allega AppImage e `.deb` a ogni release.
