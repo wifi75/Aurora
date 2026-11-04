@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.118 - 2026-11-04
 - **Pannelli da togliere**: Impostazioni › Finestre › «Pannelli mostrati» toglie o rimette ogni pannello della stazione (cascata, attività di banda, log, DX Cluster…); «Ripristina la disposizione» li rimostra tutti (richiesta di un utente). Sei lingue.
 - **Import ADIF grandi**: limite del file portato da 64 a 256 MB (un log di 70 mila QSO esportato con tutti i campi superava i 64 MB); se il file è troppo grande il messaggio lo dice chiaramente invece di un errore generico.
 
