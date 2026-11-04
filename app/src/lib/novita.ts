@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.114',
-    released: '2026-11-04T13:17:28Z',
+    released: '2026-11-04T13:19:51Z',
     kind: 'new',
     title: ['Locandina della versione nuova', 'New version poster', 'Plakat der neuen Version', 'Affiche de la nouvelle version', 'Cartel de la versión nueva', 'Cartaz da versão nova'],
     text: [
