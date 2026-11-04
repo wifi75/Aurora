@@ -1,7 +1,7 @@
 # Changelog
 
 ## Non rilasciato
-- **Conferma prima di registrare il QSO** (Impostazioni › Generali › «Richiedimi di loggare il QSO», spento di fabbrica): a QSO concluso si apre una finestra con nominativo, locatore, rapporti, nome, città e commento correggibili, «Registra» (anche con Invio) o «Scarta». Prima la voce esisteva ma non faceva nulla. Diversamente da JTDX non esclude «Messa a log automatica», che decide solo come finisce la trasmissione. Se la voce si spegne con QSO in attesa, vanno a log; oltre 20 in attesa il più vecchio va a log da solo. Sei lingue.
+- **Conferma prima di registrare il QSO** (Impostazioni › Sequenza › «Registrazione log» › «Richiedimi di loggare il QSO», spento di fabbrica): a QSO concluso si apre una finestra con nominativo, locatore, rapporti, nome, città e commento correggibili, «Registra» (anche con Invio) o «Scarta». Prima la voce esisteva ma non faceva nulla. Diversamente da JTDX non esclude «Messa a log automatica», che decide solo come finisce la trasmissione. Se la voce si spegne con QSO in attesa, vanno a log; oltre 20 in attesa il più vecchio va a log da solo. Sei lingue.
 - **Prove dell'interfaccia** allineate alla pagina Novità compatta e al controllo della rete nella scheda Smartphone/Tablet (850 su 850).
 
 ## 0.11.122 - 2026-11-04
