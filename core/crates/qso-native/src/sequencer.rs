@@ -912,9 +912,18 @@ impl Sequencer {
             } else if matches!(st, Status::Rrr | Status::Rrr73 | Status::R73 | Status::Srr73 | Status::S73)
                 && let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call)
                 // anche senza limite scelto, un QSO gia' a log non ripete la chiusura all'infinito: dopo 3 tentativi si pulisce tutto
-                && let Some(limit) = limits.closing.or(logged.then_some(LOGGED_CLOSING_TRIES))
+                // il nostro RRR e' gia' partito: il QSO e' valido anche se il suo 73 non arriva mai
+                && let rrr_sent = self.opts.use_rrr && self.ntx == 4
+                && let Some(limit) = limits.closing.or((logged || rrr_sent).then_some(LOGGED_CLOSING_TRIES))
                 && limit as i32 <= count
             {
+                // molte stazioni non rispondono al RRR: dopo l'ultimo tentativo il QSO si registra lo stesso (o si chiede conferma)
+                let logged = if rrr_sent && !logged {
+                    self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    true
+                } else {
+                    logged
+                };
                 let old = his_call.clone();
                 // un QSO chiuso da noi (RR73/73 inviato) che non riceve il 73 e' comunque concluso: non e' un tentativo fallito
                 self.clear_dx_inner();

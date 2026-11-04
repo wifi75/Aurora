@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.124',
+    released: '2026-11-04T20:40:14Z',
+    kind: 'new',
+    title: ['Log anche senza il 73, Split sul telefono', 'Logged even without the 73, Split on the phone', 'Log auch ohne 73, Split am Telefon', 'Log même sans le 73, Split sur le téléphone', 'Log incluso sin el 73, Split en el teléfono', 'Log mesmo sem o 73, Split no telemóvel'],
+    text: [
+      "Dopo il tuo RRR, se la stazione non manda il 73, all'ultimo tentativo il QSO va a log lo stesso (o si apre la conferma). Sul telefono il tasto Tx/Rx Split accanto alla stazione chiamata. Nel pannello Log c'è il paese; in Attività di banda bandiera e paese 10 px più a destra; i display estesi sono 640 × 75 e il LED essenziale ha S, Po e SWR sotto i pulsanti.",
+      "After your RRR, if the station never sends 73, the QSO is logged anyway at the last try (or the confirmation opens). On the phone a Tx/Rx Split button next to the called station. The Log panel shows the country; in Band activity flag and country sit 10 px further right; wide displays are 640 × 75 and the essential LED has S, Po and SWR under the buttons.",
+      "Nach deinem RRR wird das QSO beim letzten Versuch auch ohne 73 geloggt (oder die Bestätigung öffnet sich). Am Telefon ein Tx/Rx-Split-Schalter neben der gerufenen Station. Das Log-Feld zeigt das Land; in der Bandaktivität stehen Flagge und Land 10 px weiter rechts; breite Anzeigen sind 640 × 75, die LED-Anzeige hat S, Po und SWR unter den Tasten.",
+      "Après ton RRR, si la station n’envoie pas le 73, le QSO est enregistré au dernier essai (ou la confirmation s’ouvre). Sur le téléphone un bouton Tx/Rx Split à côté de la station appelée. Le panneau Log affiche le pays ; dans Activité de bande drapeau et pays 10 px plus à droite ; les afficheurs larges font 640 × 75 et le LED essentiel a S, Po et SWR sous les boutons.",
+      "Tras tu RRR, si la estación no manda el 73, en el último intento el QSO se registra igual (o se abre la confirmación). En el teléfono un botón Tx/Rx Split junto a la estación llamada. El panel Log muestra el país; en Actividad de banda bandera y país 10 px más a la derecha; las pantallas anchas son 640 × 75 y el LED esencial tiene S, Po y SWR bajo los botones.",
+      "Depois do teu RRR, se a estação não mandar o 73, na última tentativa o QSO vai para o log na mesma (ou abre-se a confirmação). No telemóvel um botão Tx/Rx Split junto à estação chamada. O painel Log mostra o país; na Atividade de banda bandeira e país 10 px mais à direita; os ecrãs largos são 640 × 75 e o LED essencial tem S, Po e SWR por baixo dos botões.",
+    ],
+  },
+  {
     version: '0.11.123',
     released: '2026-11-04T19:52:42Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Quand tu mets Aurora à jour sur le PC, le téléphone se recharge seul sans cache ; en haut il y a aussi le bouton ⟳ pour le faire à la main. Sur iPhone la page commence sous l’heure et la batterie (pas de flou), drapeaux plus grands et pays plus large dans l’activité de bande, titres un peu plus hauts.',
       'Cuando actualizas Aurora en el PC el teléfono se recarga solo sin caché; arriba también está el botón ⟳ para hacerlo a mano. En iPhone la página empieza bajo la hora y la batería (sin desenfoque), banderas más grandes y país más ancho en la actividad de banda, títulos algo más altos.',
       'Quando atualizas a Aurora no PC o telemóvel recarrega sozinho sem cache; em cima há também o botão ⟳ para o fazer à mão. No iPhone a página começa abaixo da hora e da bateria (sem desfoque), bandeiras maiores e país mais largo na atividade de banda, títulos um pouco mais altos.',
-    ],
-  },
-  {
-    version: '0.11.87',
-    released: '2026-11-03T18:19:47Z',
-    kind: 'fixed',
-    title: ['Telefono sempre aggiornato', 'Phone always up to date', 'Telefon immer aktuell', 'Téléphone toujours à jour', 'Teléfono siempre actualizado', 'Telemóvel sempre atualizado'],
-    text: [
-      'Il telefono non resta più alla pagina vecchia dopo un aggiornamento. Sul telefono niente barra in alto (logo, lingua, volume) né piè di pagina; il cluster mostra gli ultimi 5 spot; barra dei pulsanti più bassa.',
-      'The phone no longer keeps the old page after an update. On the phone no top bar (logo, language, volume) and no footer; the cluster shows the last 5 spots; lower button bar.',
-      'Das Telefon behält nach einem Update nicht mehr die alte Seite. Auf dem Telefon keine Leiste oben (Logo, Sprache, Lautstärke) und keine Fußzeile; der Cluster zeigt die letzten 5 Spots; niedrigere Tastenleiste.',
-      'Le téléphone ne garde plus l’ancienne page après une mise à jour. Sur le téléphone ni barre en haut (logo, langue, volume) ni pied de page ; le cluster montre les 5 derniers spots ; barre de boutons plus basse.',
-      'El teléfono ya no se queda con la página vieja tras una actualización. En el teléfono sin barra arriba (logo, idioma, volumen) ni pie de página; el clúster muestra los últimos 5 spots; barra de botones más baja.',
-      'O telemóvel já não fica com a página antiga depois de uma atualização. No telemóvel sem barra em cima (logo, idioma, volume) nem rodapé; o cluster mostra os últimos 5 spots; barra de botões mais baixa.',
     ],
   },
 ];

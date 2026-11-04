@@ -1047,3 +1047,27 @@ body:has(.phone-live) .toaster {
   font-weight: 800;
   letter-spacing: 0.05em;
 }
+
+/* Split Tx/Rx a destra, sulla riga della stazione chiamata */
+.phone-dxinfo {
+  flex: 1 1 auto;
+}
+
+.phone-split {
+  flex: none;
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+}
+
+.phone-split--on {
+  border-color: #0f6e64;
+  background: #0f6e64;
+  color: #fff;
+}
