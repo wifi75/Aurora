@@ -214,10 +214,93 @@ pub fn list_output_devices_info() -> Vec<OutputDeviceInfo> {
         .collect()
 }
 
-/// Sceglie un dispositivo per nome: prima il nome identico (senza distinzione di maiuscole), poi quello che lo contiene.
+/// Il nome vuol dire «il dispositivo predefinito del sistema» (anche come lo scrivevano JTDX e le versioni vecchie di Aurora)?
+pub fn is_default_name(hint: &str) -> bool {
+    let h = hint.trim().to_lowercase();
+    h.is_empty() || ["default", "default input device", "default output device", "predefinito", "predefinita", "predefinito del sistema", "predefinita del sistema", "system default"].contains(&h.as_str())
+}
+
+/// Un nome di dispositivo pronto da confrontare: le lettere scritte come `\xf3` (vecchie impostazioni copiate da JTDX) tornano lettere,
+/// il numero che Windows mette davanti quando la stessa scheda si ricollega («2- USB Audio CODEC») sparisce, minuscole e spazi semplici.
+fn normalized(name: &str) -> String {
+    let mut decoded = String::with_capacity(name.len());
+    let mut rest = name;
+    while let Some(i) = rest.find("\\x") {
+        decoded.push_str(&rest[..i]);
+        let hex = rest.get(i + 2..i + 4).filter(|h| h.chars().all(|c| c.is_ascii_hexdigit()));
+        match hex.and_then(|h| u8::from_str_radix(h, 16).ok()) {
+            Some(b) => {
+                decoded.push(char::from(b));
+                rest = &rest[i + 4..];
+            }
+            None => {
+                decoded.push_str("\\x");
+                rest = &rest[i + 2..];
+            }
+        }
+    }
+    decoded.push_str(rest);
+    let mut out = String::with_capacity(decoded.len());
+    let chars: Vec<char> = decoded.to_lowercase().chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        out.push(chars[i]);
+        if chars[i] == '(' {
+            let mut j = i + 1;
+            while j < chars.len() && chars[j].is_ascii_digit() {
+                j += 1;
+            }
+            if j > i + 1 && j + 1 < chars.len() && chars[j] == '-' && chars[j + 1] == ' ' {
+                i = j + 2;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// La parte tra parentesi, cioe' la scheda («USB Audio CODEC»), uguale in ogni lingua di Windows.
+fn card_of(normalized: &str) -> Option<&str> {
+    let start = normalized.find('(')?;
+    let end = normalized.rfind(')')?;
+    (end > start + 1).then(|| normalized[start + 1..end].trim())
+}
+
+/// Sceglie un dispositivo per nome: prima il nome identico, poi quello che lo contiene, poi l'unico con la stessa scheda tra parentesi
+/// (lo stesso «USB Audio CODEC» con Windows in un'altra lingua o ricollegato con un altro numero). Serve a non confondere
+/// «Microfono (USB)» con «Microfono (USB) 2» quando il nome arriva da un elenco.
 pub fn match_device_name(names: &[String], hint: &str) -> Option<usize> {
-    let wanted = hint.trim().to_lowercase();
-    names.iter().position(|n| n.to_lowercase() == wanted).or_else(|| names.iter().position(|n| n.to_lowercase().contains(&wanted)))
+    let wanted = normalized(hint);
+    if wanted.is_empty() {
+        return None;
+    }
+    let all: Vec<String> = names.iter().map(|n| normalized(n)).collect();
+    if let Some(i) = all.iter().position(|n| *n == wanted).or_else(|| all.iter().position(|n| n.contains(&wanted))) {
+        return Some(i);
+    }
+    let card = card_of(&wanted)?;
+    let same: Vec<usize> = all.iter().enumerate().filter(|(_, n)| card_of(n) == Some(card)).map(|(i, _)| i).collect();
+    (same.len() == 1).then(|| same[0])
+}
+
+#[cfg(test)]
+mod device_name_tests {
+    use super::*;
+
+    #[test]
+    fn old_names_still_find_the_card() {
+        let names = vec!["Micrófono (USB Audio Device)".to_string(), "Microphone (2- High Definition Audio Device)".to_string()];
+        assert_eq!(match_device_name(&names, "Micr\\xf3fono (USB Audio Device)"), Some(0));
+        let names = vec!["Microfono (USB Audio CODEC )".to_string(), "Microfono (Conexant ISST Audio)".to_string()];
+        assert_eq!(match_device_name(&names, "Microfono (2- USB Audio CODEC )"), Some(0));
+        let names = vec!["Microphone (USB Audio CODEC )".to_string()];
+        assert_eq!(match_device_name(&names, "Micrófono (USB Audio CODEC )"), Some(0));
+        let names = vec!["Microfono (USB Audio Device)".to_string(), "Altro (USB Audio Device)".to_string()];
+        assert_eq!(match_device_name(&names, "Mic (USB Audio Device)"), None, "due schede uguali: non si indovina");
+        assert!(is_default_name("Default Input Device"));
+        assert!(!is_default_name("Microfono (USB)"));
+    }
 }
 
 struct SinkShared {
@@ -272,7 +355,7 @@ impl CpalSink {
     /// Come `open`, con il guadagno e il canale che si tengono fuori dal dispositivo: cosi' sopravvivono al cambio di uscita.
     pub fn open_with(device_hint: Option<&str>, gain: Arc<AtomicU32>, channel: Arc<AtomicU8>) -> Result<CpalSink, TxError> {
         let host = cpal::default_host();
-        let device = match device_hint {
+        let device = match device_hint.filter(|h| !is_default_name(h)) {
             None => host.default_output_device(),
             Some(hint) => host.output_devices().ok().and_then(|it| {
                 let mut devices: Vec<cpal::Device> = it.collect();
