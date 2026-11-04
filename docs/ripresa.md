@@ -15,7 +15,7 @@ le prove dal vivo con la radio le faccio io.
 
 ## Stato
 
-- **Ultima versione**: **0.11.117** (2026-11-04, pubblicata; «gia' lavorato» solo per nominativi nel log, tilde dello S-meter stimato). Le versioni del 2026-11-04:
+- **Ultima versione**: **0.11.121** (2026-11-04). Le versioni del 2026-11-04:
   - 0.11.102: Aurora indipendente (non legge piu' nulla da JTDX o WSJT-X; `cty.dat` e Hamlib dentro l'installatore), guida al primo avvio (`app/src/components/FirstRun.tsx`, compare finche' manca il nominativo), servizi pubblici accesi di fabbrica, BBLogger, prima versione Linux.
   - 0.11.103: modo, periodo e frequenza si pubblicano anche senza ingresso audio (`engine_native::publish_status`, avviato dal core prima del motore).
   - 0.11.104: copia delle impostazioni (Impostazioni > Assistenza, `core/crates/aurora/src/backup.rs`: zip sul Desktop, ripristino in `<dati>\ripristino` applicato al prossimo avvio da `backup::apply_pending`); suono dello splash (`--autoplay-policy=no-user-gesture-required` in `desktop/src-tauri/src/lib.rs`).
@@ -26,6 +26,11 @@ le prove dal vivo con la radio le faccio io.
   - 0.11.111: avvisi della stazione in schede galleggianti in basso a destra (`DiagnosisBar`), i pannelli non si spostano.
   - 0.11.112: log vuoto -> Impostazioni > Programmi collegati con import ADIF e log esterni UDP nella stessa pagina.
   - 0.11.113: sei display nuovi (`ModernDisplays.tsx`): estesi 640x70 `icdual`/`icblue`/`ledline`, quasi quadrati 330x140 `icblueq`/`icblackq`/`yaesuq` (fissi nell'angolo, icone della testata piccole con `body.rd-square`); tutti i display estesi alti 70; misure accanto alle scelte.
+  - 0.11.121: OmniRig che non risponde spiegato in chiaro (`explain_omnirig` in `tx-native/src/ptt.rs`); DX Cluster nascosto sul telefono se spento.
+  - 0.11.120: telefono (QR senza adattatori virtuali, `lan::lan_ipv4s_named`; `GET /api/v1/lan/check` e `POST /api/v1/lan/allow` per rete «Pubblica» e firewall, `NetworkChecklist.tsx`), finestra che si ricollega se il flusso resta muto 8 s (`api/stream.ts`), Novita' compatte, quasi quadrato a 120, splash una volta per avvio (sessionStorage), controllo della versione nuova 8 s dopo l'avvio.
+  - 0.11.119: porta del CAT scrivibile (indirizzi di rete per Hamlib NET rigctl, avviso se la condivisione usa la stessa porta), paese leggibile nel pannello CQ, quasi quadrato sopra la testata (createPortal).
+  - 0.11.118: pannelli da togliere in Impostazioni > Finestre, import ADIF fino a 256 MB.
+  - 0.11.117: «gia' lavorato» solo per nominativi nel log, tilde dello S-meter stimato.
   - 0.11.116: conteggio anonimo delle installazioni attive (`Rapporti::segnala_attivo`, una volta al giorno, `count_active` acceso di fabbrica; Worker `POST /v1/attivo`, `GET /v1/attivi` con `ADMIN_TOKEN`, tabella D1 `attivi`).
   - 0.11.115: anteprime dei display estesi a 640x70 nel menu Radio.
   - 0.11.114: locandina della versione nuova all'apertura (`UpdatePoster.tsx`), «Piu' tardi» fino alla versione dopo.
@@ -36,6 +41,7 @@ le prove dal vivo con la radio le faccio io.
 ## Lavoro in corso
 
 - Prototipi grafici in `docs/prototipo-*.html` e `docs/mockup-display-*.html` (anche sul Desktop del PC di casa, cartella `Aurora-prototipi`): il proprietario vuole sempre un prototipo prima del codice grafico.
+- Rapporti su Cloudflare letti alle 18:00 del 2026-11-04: 16 installazioni attive; un pacchetto di assistenza (OmniRig non in linea). Le prove con il core di prova vanno fatte su un'altra porta (8799) se Aurora e' aperta: sulla 8787 il core di prova fallisce e manda un falso rapporto «porta in uso».
 - Nessun ramo aperto. Il proprietario deve rimettere il PTT della sua stazione su RTS / COM9 in Impostazioni > Radio: dalla 0.11.102 non viene piu' da JTDX.ini.
 - **Servizio dei rapporti** online: `https://aurora-rapporti.tizianocassone.workers.dev` (cartella `servizi/rapporti/`, R2 `aurora-rapporti`, D1 `aurora-rapporti`, segreto `ADMIN_TOKEN` impostato dal proprietario). Per leggerli: `npx wrangler d1 execute aurora-rapporti --remote --command "SELECT ..."` dalla cartella del servizio; i pacchetti si scaricano con `wrangler r2 object get aurora-rapporti/<chiave> --remote`.
 - **Linux**: versione dallo stesso codice, non provata dall'autore e senza assistenza; `scripts/compila-linux.sh`, AppImage e `.deb` allegati da GitHub Actions a ogni release.
