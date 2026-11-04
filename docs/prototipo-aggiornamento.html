@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avviso di aggiornamento</title>
+<style>
+body{margin:0;padding:16px;background:#0d1117;color:#e6edf8;font-family:'IBM Plex Sans',system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}.sub{color:#a3b3ca;margin:0 0 18px;font-size:13px}
+h2{font-size:15px;margin:24px 0 8px}
+.stage{position:relative;height:520px;border-radius:12px;overflow:hidden;border:1px solid #2a3446;background:#dfe5ef}
+.fake{position:absolute;inset:0;padding:10px;display:grid;grid-template-rows:40px 70px 1fr;gap:8px;filter:blur(1.5px)}
+.fake div{background:#fff;border:1px solid #c9d3e3;border-radius:8px}
+.veil{position:absolute;inset:0;background:rgb(9 12 18 / .62);display:grid;place-items:center}
+.card{background:#131b28;border:1px solid #3d4d69;border-radius:16px;box-shadow:0 24px 60px rgb(0 0 0 / .5);color:#e6edf8;overflow:hidden}
+.btn{border:0;border-radius:10px;padding:10px 18px;font:600 14px system-ui;cursor:pointer}
+.go{background:#3fd6c8;color:#04201d}.later{background:transparent;color:#a3b3ca}
+.pill{display:inline-block;background:color-mix(in srgb,#3fd6c8 18%,transparent);color:#3fd6c8;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+ul{margin:8px 0 0;padding-left:18px;line-height:1.55;font-size:14px;color:#cfd8e6}
+.ver{font-family:Consolas,monospace;color:#a3b3ca;font-size:13px}
+</style>
+</head>
+<body>
+<h1>Avviso di aggiornamento all'apertura</h1>
+<p class="sub">Tre proposte. All'avvio Aurora controlla se c'è una versione nuova: se c'è, compare al centro con le novità e il pulsante per installarla. «Più tardi» la nasconde fino alla versione dopo.</p>
+
+<h2>1 · Locandina con illustrazione</h2>
+<div class="stage"><div class="fake"><div></div><div></div><div></div></div><div class="veil">
+ <div class="card" style="width:min(560px,92%)">
+  <div style="height:150px;background:linear-gradient(135deg,#0a2a6b,#3fd6c8);position:relative">
+   <svg viewBox="0 0 560 150" width="100%" height="150" aria-hidden="true"><g fill="none" stroke="#fff" stroke-opacity=".35"><path d="M0 110 Q140 40 280 90 T560 60"/><path d="M0 130 Q140 70 280 110 T560 90"/></g><text x="28" y="70" fill="#fff" font-size="34" font-weight="700" font-family="system-ui">Aurora 0.11.114</text><text x="30" y="100" fill="#e6fffb" font-size="15" font-family="system-ui">È disponibile una nuova versione</text></svg>
+  </div>
+  <div style="padding:18px 22px">
+   <span class="pill">Novità</span>
+   <ul><li>Sei display nuovi per la radio</li><li>Opzioni del display lette da Hamlib</li><li>Avvisi che non spostano i pannelli</li></ul>
+   <p class="ver">Hai la 0.11.113 · pubblicata il 4/11/2026 alle 14:12</p>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn later">Più tardi</button><button class="btn go">Installa e riavvia</button></div>
+  </div>
+ </div></div></div>
+
+<h2>2 · Scheda essenziale</h2>
+<div class="stage"><div class="fake"><div></div><div></div><div></div></div><div class="veil">
+ <div class="card" style="width:min(440px,92%);padding:26px 26px 20px;text-align:center">
+  <div style="width:64px;height:64px;margin:0 auto 12px;border-radius:18px;background:repeating-linear-gradient(90deg,#3fd6c8 0 3px,#0b1424 3px 6px)"></div>
+  <div style="font-size:22px;font-weight:700">Nuova versione 0.11.114</div>
+  <p class="ver" style="margin:6px 0 14px">tu hai la 0.11.113</p>
+  <ul style="text-align:left;display:inline-block"><li>Sei display nuovi per la radio</li><li>Opzioni del display lette da Hamlib</li><li>Avvisi che non spostano i pannelli</li></ul>
+  <div style="display:grid;gap:6px;margin-top:18px"><button class="btn go">Installa ora</button><button class="btn later">Ricordamelo più tardi</button></div>
+ </div></div></div>
+
+<h2>3 · Due colonne con «cosa cambia»</h2>
+<div class="stage"><div class="fake"><div></div><div></div><div></div></div><div class="veil">
+ <div class="card" style="width:min(720px,94%);display:grid;grid-template-columns:240px 1fr">
+  <div style="background:linear-gradient(180deg,#534AB7,#0a2a6b);padding:24px;display:grid;align-content:space-between">
+   <div><div style="font-size:13px;color:#cecbf6">AURORA</div><div style="font-size:30px;font-weight:700;line-height:1.1;margin-top:6px">0.11.114</div><div style="color:#cecbf6;font-size:13px;margin-top:6px">pronta da installare</div></div>
+   <div class="ver" style="color:#cecbf6">attuale 0.11.113</div>
+  </div>
+  <div style="padding:22px">
+   <div style="font-size:18px;font-weight:700">Cosa cambia</div>
+   <div style="display:grid;gap:10px;margin-top:12px;font-size:14px">
+    <div><span class="pill">Nuovo</span> Sei display nuovi per la radio</div>
+    <div><span class="pill" style="color:#f2a93b;background:color-mix(in srgb,#f2a93b 18%,transparent)">Migliorato</span> Opzioni del display lette da Hamlib</div>
+    <div><span class="pill" style="color:#5fd38d;background:color-mix(in srgb,#5fd38d 18%,transparent)">Corretto</span> Avvisi che non spostano i pannelli</div>
+   </div>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:22px"><button class="btn later">Più tardi</button><button class="btn go">Installa e riavvia</button></div>
+  </div>
+ </div></div></div>
+</body>
+</html>
