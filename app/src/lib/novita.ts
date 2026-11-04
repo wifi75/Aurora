@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.109',
+    released: '2026-11-04T12:21:24Z',
+    kind: 'changed',
+    title: ['«Clicca per configurare» su radio e log', '«Click to set up» on radio and log', '«Klicken zum Einrichten» bei Funkgerät und Log', '« Clique pour configurer » sur radio et journal', '«Haz clic para configurar» en radio y log', '«Clica para configurar» no rádio e no log'],
+    text: [
+      "Senza radio collegata, al posto del display vuoto e delle scritte sparse c’è un solo riquadro «Radio non configurata · Clicca per configurarla» che apre Impostazioni › Radio. Con il log vuoto, il pannello Log porta all’importazione del tuo log.",
+      "Without a connected radio, instead of an empty display and scattered text there is a single «Radio not set up · Click to set it up» box that opens Settings › Radio. With an empty log, the Log panel takes you to importing your log.",
+      "Ohne verbundenes Funkgerät gibt es statt leerer Anzeige und verstreuter Texte ein einziges Feld «Funkgerät nicht eingerichtet · Klicken zum Einrichten», das Einstellungen › Funkgerät öffnet. Bei leerem Log führt das Log-Feld zum Import deines Logs.",
+      "Sans radio connectée, au lieu d’un afficheur vide et de textes épars il y a un seul cadre « Radio non configurée · Clique pour la configurer » qui ouvre Réglages › Radio. Avec un journal vide, le panneau Journal mène à l’import de ton journal.",
+      "Sin radio conectada, en lugar de la pantalla vacía y de textos sueltos hay un solo recuadro «Radio no configurada · Haz clic para configurarla» que abre Ajustes › Radio. Con el log vacío, el panel Log lleva a importar tu log.",
+      "Sem rádio ligado, em vez do ecrã vazio e de textos soltos há um só quadro «Rádio não configurado · Clica para o configurar» que abre Definições › Rádio. Com o log vazio, o painel Log leva à importação do teu log.",
+    ],
+  },
+  {
     version: '0.11.108',
     released: '2026-11-04T12:07:26Z',
     kind: 'fixed',

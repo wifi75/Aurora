@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.109 - 2026-11-04
+- **Radio e log da configurare**: componente `SetupCta`; il display in testata, con il CAT scollegato o in errore, mostra solo «Radio non configurata / non collegata · Clicca per configurarla» (verso Impostazioni › Radio); il pannello Log vuoto porta a Statistiche › importazione del log. Sei lingue.
+
 ## 0.11.108 - 2026-11-04
 - **Due schede audio uguali**: `match_device_name` prova prima il nome esatto (con il «2- »), poi il nome ripulito solo se una scheda sola corrisponde; prima la 0.11.105 poteva aprire la scheda sbagliata e la ricezione si fermava.
 
