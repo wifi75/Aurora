@@ -265,6 +265,8 @@ export interface PairingOffer {
   link?: string | null;
   /** Gli indirizzi con cui il telefono raggiunge Aurora (IP della rete di casa e nome mDNS). */
   addresses?: string[];
+  /** Ogni indirizzo con il suo link e il suo QR (il primo e' quello del QR grande); `kind`: wifi, cable, mdns, virtual, other. */
+  options?: { url: string; link: string; kind: string; qr_svg: string | null }[];
   mdns?: string | null;
 }
 

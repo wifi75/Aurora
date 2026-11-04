@@ -51,7 +51,7 @@ vi.mock('../api/client', () => ({
   revokeDevice: vi.fn().mockResolvedValue(undefined),
   getNetworkCheck: vi.fn().mockResolvedValue({ ssid: null, category: null, firewall_allowed: true, addresses: [] }),
   allowFirewall: vi.fn().mockResolvedValue(undefined),
-  startPairing: vi.fn().mockResolvedValue({ code: '12345678', expires_in: 600, qr_svg: '<svg/>' }),
+  startPairing: vi.fn().mockResolvedValue({ code: '12345678', expires_in: 600, qr_svg: '<svg/>', options: [{ url: 'http://192.168.1.10:8787', link: 'http://192.168.1.10:8787/#/associa?codice=12345678', kind: 'wifi', qr_svg: '<svg/>' }, { url: 'http://10.0.0.23:8787', link: 'http://10.0.0.23:8787/#/associa?codice=12345678', kind: 'cable', qr_svg: '<svg/>' }] }),
   ApiError: class extends Error {},
 }));
 import * as api from '../api/client';
@@ -340,6 +340,9 @@ describe('Access', () => {
     fireEvent.click(await screen.findByRole('button', { name: it_('acc.showCode') }));
     expect(await screen.findByText('12345678')).toBeInTheDocument();
     expect(screen.getByText(/#\/pair\/12345678/)).toBeInTheDocument();
+    // gli altri indirizzi del PC con il loro QR, per quando il primo non si apre sul telefono
+    expect(screen.getByText('Cavo di rete')).toBeInTheDocument();
+    expect(screen.getByText('10.0.0.23:8787')).toBeInTheDocument();
     expect(await screen.findByText('Telefono')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: `${it_('acc.revoke')} Telefono` }));
     await waitFor(() => expect(api.revokeDevice).toHaveBeenCalledWith(3));

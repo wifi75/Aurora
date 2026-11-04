@@ -6035,6 +6035,54 @@
   margin: 0;
 }
 
+.acc-camera {
+  font-size: 0.85rem;
+}
+
+/* gli altri indirizzi del PC, con un QR piccolo ciascuno */
+.acc-alt {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.acc-alt-title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9rem;
+}
+
+.acc-alt-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acc-alt-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.acc-alt-qr {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  background: #fff;
+  border-radius: 0.4rem;
+}
+
+.acc-alt-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
 .acc-page .live-previews-row {
   flex-wrap: nowrap;
   gap: var(--space-3);
