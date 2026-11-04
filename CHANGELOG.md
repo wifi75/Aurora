@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.128 - 2026-11-04
+- **Display estesi** 640 × 90 punti (prima 80), anche anteprime, invito «Clicca per configurare» e blocco PWR.
+- **Attività di banda / CQ** (solo PC): testo del messaggio 1 punto più piccolo (`calc(0.8rem - 1px)`).
+
 ## 0.11.127 - 2026-11-04
 - **QSL da HamQTH**: se QRZ.com (senza abbonamento XML) non manda LoTW/eQSL/diretta/manager, `GET /api/v1/callsign/{call}` completa con HamQTH (`Person::fill_from`), nome e città restano di QRZ; nuovo campo `bureau` (`qsl` di HamQTH) e lettera **B**.
 - **Precaricamento** dei nominativi di Attività di banda (i 60 più recenti), come nel DX Cluster.
