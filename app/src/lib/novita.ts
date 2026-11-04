@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.131',
-    released: '2026-11-04T22:02:22Z',
+    released: '2026-11-04T22:05:09Z',
     kind: 'fixed',
     title: ["Il display non copre più l'apertura", 'The display no longer covers the splash', 'Die Anzeige verdeckt den Start nicht mehr', 'L’afficheur ne couvre plus l’ouverture', 'La pantalla ya no tapa el inicio', 'O ecrã já não tapa a abertura'],
     text: [
