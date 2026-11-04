@@ -82,6 +82,7 @@ export const commandStrings = {
   'qsl.lotw': ['LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW'],
   'qsl.eqsl': ['eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL'],
   'qsl.direct': ['Diretta', 'Direct', 'Direkt', 'Directe', 'Directa', 'Direta'],
+  'qsl.bureau': ['Bureau', 'Bureau', 'Büro', 'Bureau', 'Buró', 'Bureau'],
   'qsl.yes': ['{what}: sì', '{what}: yes', '{what}: ja', '{what} : oui', '{what}: sí', '{what}: sim'],
   'qsl.no': ['{what}: no', '{what}: no', '{what}: nein', '{what} : non', '{what}: no', '{what}: não'],
   'qsl.via': ['QSL via {call}', 'QSL via {call}', 'QSL via {call}', 'QSL via {call}', 'QSL vía {call}', 'QSL via {call}'],

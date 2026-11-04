@@ -15,7 +15,7 @@ import { useStation, type CallHighlight } from '../state/station';
 import { senderOf, wishReason } from '../lib/wishlist';
 import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
-import { CallsignTip } from './CallsignTip';
+import { CallsignTip, prefetchCallsigns } from './CallsignTip';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
 const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
@@ -234,6 +234,11 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const [selected, setSelected] = useState<number | null>(null);
   // il periodo della riga mostrata prima: serve alla «riga vuota tra i periodi»
   let previousTime: number | null = null;
+  // precaricamento delle informazioni (QRZ.com, HamQTH) di chi trasmette in Attivita' di banda: al passaggio del mouse il riquadro e' gia' pronto
+  const senders = tapReply ? '' : [...new Set(decodes.slice(0, 60).map((d) => (d.id < 0 ? '' : (senderOf(d.text)?.call ?? '').toUpperCase())).filter(Boolean))].join(' ');
+  useEffect(() => {
+    if (senders !== '') prefetchCallsigns(senders.split(' '));
+  }, [senders]);
   if (decodes.length === 0) {
     return (
       <section className="decode-list decode-list--empty" aria-label={t('decode.aria')}>

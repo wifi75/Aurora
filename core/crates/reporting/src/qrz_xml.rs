@@ -75,6 +75,33 @@ pub struct Person {
     pub direct: Option<bool>,
     /// Il QSL manager (`qslmgr` di QRZ, `qsl_via` di HamQTH), vuoto se non c'e'.
     pub qsl_via: String,
+    /// Accetta la QSL via bureau (`qsl` di HamQTH; QRZ non lo dice).
+    pub bureau: Option<bool>,
+}
+
+impl Person {
+    /// Nessuna informazione sulle QSL: vale la pena chiedere a un altro servizio.
+    pub fn qsl_unknown(&self) -> bool {
+        self.lotw.is_none() && self.eqsl.is_none() && self.direct.is_none() && self.bureau.is_none() && self.qsl_via.is_empty()
+    }
+
+    /// Completa con un'altra ricerca le QSL (e nome/citta' se mancano), senza toccare quello che c'e' gia'.
+    pub fn fill_from(&mut self, other: &Person) {
+        self.lotw = self.lotw.or(other.lotw);
+        self.eqsl = self.eqsl.or(other.eqsl);
+        self.direct = self.direct.or(other.direct);
+        self.bureau = self.bureau.or(other.bureau);
+        if self.qsl_via.is_empty() {
+            self.qsl_via = other.qsl_via.clone();
+        }
+        if self.city.is_empty() {
+            self.city = other.city.clone();
+        }
+        if self.fname.is_empty() && self.name.is_empty() {
+            self.fname = other.fname.clone();
+            self.name = other.name.clone();
+        }
+    }
 }
 
 /// «1»/«Y» = si', «0»/«N» = no, altro o assente = non si sa.
@@ -195,6 +222,7 @@ pub fn read_person(body: &str) -> Option<Person> {
             eqsl: yes_no(tag(h, "eqsl")),
             direct: yes_no(tag(h, "qsldirect")),
             qsl_via: get("qsl_via"),
+            bureau: yes_no(tag(h, "qsl")),
         });
     }
     let c = block(body, "Callsign");
@@ -212,6 +240,7 @@ pub fn read_person(body: &str) -> Option<Person> {
         eqsl: yes_no(tag(c, "eqsl")),
         direct: yes_no(tag(c, "mqsl")),
         qsl_via: get("qslmgr"),
+        bureau: None,
     })
 }
 
