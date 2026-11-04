@@ -29,6 +29,7 @@ export const integrationStrings = {
   'int.remove': ['Togli', 'Remove', 'Entfernen', 'Retirer', 'Quitar', 'Retirar'],
   'int.preset': ['Tipo', 'Type', 'Art', 'Type', 'Tipo', 'Tipo'],
   'int.p.wsjtx': ['Flusso WSJT-X (GridTracker, JTAlert, QLog…)', 'WSJT-X stream (GridTracker, JTAlert, QLog…)', 'WSJT-X-Strom (GridTracker, JTAlert, QLog…)', 'Flux WSJT-X (GridTracker, JTAlert, QLog…)', 'Flujo WSJT-X (GridTracker, JTAlert, QLog…)', 'Fluxo WSJT-X (GridTracker, JTAlert, QLog…)'],
+  'int.p.bblogger': ['BBLogger (flusso WSJT-X sulla porta 2237)', 'BBLogger (WSJT-X stream on port 2237)', 'BBLogger (WSJT-X-Strom auf Port 2237)', 'BBLogger (flux WSJT-X sur le port 2237)', 'BBLogger (flujo WSJT-X en el puerto 2237)', 'BBLogger (fluxo WSJT-X na porta 2237)'],
   'int.p.multicast': ['Gruppo multicast (più programmi insieme)', 'Multicast group (several programs together)', 'Multicast-Gruppe (mehrere Programme zusammen)', 'Groupe multicast (plusieurs programmes ensemble)', 'Grupo multicast (varios programas juntos)', 'Grupo multicast (vários programas juntos)'],
   'int.p.adif': ['ADIF su UDP (Log4OM, WaveLogGate…)', 'ADIF over UDP (Log4OM, WaveLogGate…)', 'ADIF über UDP (Log4OM, WaveLogGate…)', 'ADIF sur UDP (Log4OM, WaveLogGate…)', 'ADIF por UDP (Log4OM, WaveLogGate…)', 'ADIF por UDP (Log4OM, WaveLogGate…)'],
   'int.p.n1mm': ['XML stile N1MM (HRD Logbook…)', 'N1MM-style XML (HRD Logbook…)', 'XML im N1MM-Stil (HRD Logbook…)', 'XML style N1MM (HRD Logbook…)', 'XML estilo N1MM (HRD Logbook…)', 'XML estilo N1MM (HRD Logbook…)'],
