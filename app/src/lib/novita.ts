@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.105',
+    released: '2026-11-04T11:45:45Z',
+    kind: 'fixed',
+    title: ['Scheda audio trovata anche con nomi vecchi', 'Sound card found even with old names', 'Soundkarte auch mit alten Namen gefunden', 'Carte son trouvée même avec d’anciens noms', 'Tarjeta de sonido encontrada también con nombres antiguos', 'Placa de som encontrada mesmo com nomes antigos'],
+    text: [
+      'Molte stazioni restavano senza cascata né trasmissione perché il nome salvato della scheda audio non corrispondeva più: «Default Input Device», lettere accentate salvate in modo sbagliato, il numero che Windows aggiunge quando ricollega la scheda, Windows in un’altra lingua. Ora Aurora la ritrova. Se OmniRig non è installato lo dice chiaramente.',
+      'Many stations had no waterfall or transmission because the saved sound card name no longer matched: «Default Input Device», accented letters saved wrongly, the number Windows adds when the card is reconnected, Windows in another language. Aurora now finds it. If OmniRig is not installed it says so clearly.',
+      'Viele Stationen hatten weder Wasserfall noch Senden, weil der gespeicherte Name der Soundkarte nicht mehr passte: «Default Input Device», falsch gespeicherte Umlaute, die Nummer, die Windows beim erneuten Anschließen hinzufügt, Windows in einer anderen Sprache. Aurora findet sie jetzt. Ist OmniRig nicht installiert, sagt Aurora das klar.',
+      'Beaucoup de stations restaient sans chute d’eau ni émission car le nom enregistré de la carte son ne correspondait plus : « Default Input Device », lettres accentuées mal enregistrées, le numéro ajouté par Windows à la reconnexion, Windows dans une autre langue. Aurora la retrouve désormais. Si OmniRig n’est pas installé, elle le dit clairement.',
+      'Muchas estaciones se quedaban sin cascada ni transmisión porque el nombre guardado de la tarjeta de sonido ya no coincidía: «Default Input Device», letras acentuadas mal guardadas, el número que Windows añade al reconectar la tarjeta, Windows en otro idioma. Ahora Aurora la encuentra. Si OmniRig no está instalado lo dice claramente.',
+      'Muitas estações ficavam sem cascata nem transmissão porque o nome guardado da placa de som já não correspondia: «Default Input Device», letras acentuadas mal guardadas, o número que o Windows junta ao religar a placa, Windows noutra língua. Agora a Aurora encontra-a. Se o OmniRig não estiver instalado, di-lo claramente.',
+    ],
+  },
+  {
     version: '0.11.104',
     released: '2026-11-04T11:40:40Z',
     kind: 'new',
