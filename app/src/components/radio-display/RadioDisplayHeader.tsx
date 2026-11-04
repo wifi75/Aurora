@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RadioExtras, useCatExtras } from './RadioExtras';
 import { describeDisplay } from './describe';
@@ -154,5 +155,7 @@ function ModernHeader({ model, style }: { model: DisplayModel; style: RadioDispl
     : style === 'icblueq' ? <IcBlueSquare {...props} />
     : style === 'icblackq' ? <IcBlackSquare {...props} />
     : <YaesuSquare {...props} />;
-  return <div className={square ? 'rd-square-slot' : 'rd-modern-slot'}>{view}</div>;
+  // il quasi quadrato va sulla pagina (non dentro la riga dei comandi, che fa da contenitore e lo spostava sotto la testata)
+  if (square) return createPortal(<div className="rd-square-slot">{view}</div>, document.body);
+  return <div className="rd-modern-slot">{view}</div>;
 }
