@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.107 - 2026-11-04
+- **Guida**: la voce «Installare Aurora» racconta la guida al primo avvio; nuova voce «Copia delle impostazioni» nei Problemi comuni (6 lingue).
+- **Documentazione**: `docs/ripresa.md` allineata alla 0.11.106; TODO dai rapporti degli errori.
+
 ## 0.11.106 - 2026-11-04
 - **Decodifica FT8 a tempo**: dai rapporti degli errori, un PC impiegava fino a 66 s per periodo e restava indietro. Nuova `Options::deadline`: dopo 11 s dall'inizio della decodifica non si comincia un'altra passata; i messaggi gia' trovati restano.
 

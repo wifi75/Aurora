@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.107',
+    released: '2026-11-04T12:00:40Z',
+    kind: 'changed',
+    title: ['Guida aggiornata', 'Updated guide', 'Aktualisierte Anleitung', 'Guide mis à jour', 'Guía actualizada', 'Guia atualizado'],
+    text: [
+      "La Guida spiega la configurazione guidata del primo avvio e ha una voce nuova, «Copia delle impostazioni», su come salvare e ripristinare impostazioni e log.",
+      "The Guide explains the first-start setup guide and has a new entry, «Settings backup», on how to save and restore settings and log.",
+      "Die Anleitung erklärt den Einrichtungsassistenten beim ersten Start und hat einen neuen Eintrag «Sicherung der Einstellungen» zum Speichern und Wiederherstellen von Einstellungen und Log.",
+      "Le Guide explique l’assistant du premier lancement et a une nouvelle entrée, « Copie des réglages », pour enregistrer et restaurer réglages et journal.",
+      "La Guía explica la configuración guiada del primer inicio y tiene una entrada nueva, «Copia de los ajustes», sobre cómo guardar y restaurar ajustes y log.",
+      "O Guia explica a configuração guiada do primeiro arranque e tem uma entrada nova, «Cópia das definições», sobre como guardar e restaurar definições e log.",
+    ],
+  },
+  {
     version: '0.11.106',
     released: '2026-11-04T11:54:55Z',
     kind: 'fixed',
