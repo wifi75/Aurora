@@ -66,6 +66,11 @@ export const TIP_DELAY_MS = 350;
  * nome e citta' da QRZ.com o HamQTH. La ricerca parte solo dopo un breve ritardo e si ricorda.
  */
 export function CallsignTip({ call, children }: { call: string; children: ReactNode }) {
+  if (call.trim() === '') return <>{children}</>;
+  return <CallsignTipInner call={call}>{children}</CallsignTipInner>;
+}
+
+function CallsignTipInner({ call, children }: { call: string; children: ReactNode }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<CallsignInfo | null | undefined>(undefined);
@@ -80,7 +85,9 @@ export function CallsignTip({ call, children }: { call: string; children: ReactN
     [],
   );
   const enter = (e: React.MouseEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
+    // dentro una riga dell'elenco il contenitore non ha una sua scatola (display: contents): si misura il primo figlio
+    const box = getComputedStyle(e.currentTarget).display === 'contents' ? (e.currentTarget.firstElementChild ?? e.currentTarget) : e.currentTarget;
+    const r = box.getBoundingClientRect();
     const target = { x: r.left, y: r.bottom + 4 };
     if (timer.current) clearTimeout(timer.current);
     // gia' precaricato: si mostra subito
@@ -127,10 +134,59 @@ export function CallsignTip({ call, children }: { call: string; children: ReactN
               ) : null}
               {fullName ? <span className="calltip-name">{fullName}</span> : null}
               {person?.city ? <span className="calltip-city">{person.city}</span> : null}
+              {person ? <QslBadges person={person} long /> : null}
             </>
           )}
         </span>
       ) : null}
     </span>
   );
+}
+
+type Person = NonNullable<CallsignInfo['person']>;
+
+/**
+ * Come la stazione conferma i QSO (da QRZ.com o HamQTH): LoTW, eQSL, QSL diretta e il QSL manager. Acceso = si', grigio = no, assente = il
+ * servizio non lo dice. Corto (L E D) nei Comandi, per esteso nel riquadro del nominativo.
+ */
+export function QslBadges({ person, long = false }: { person: Person; long?: boolean }) {
+  const t = useT();
+  const items = [
+    { key: 'L', label: t('qsl.lotw'), on: person.lotw },
+    { key: 'E', label: t('qsl.eqsl'), on: person.eqsl },
+    { key: 'D', label: t('qsl.direct'), on: person.direct },
+  ].filter((i) => i.on === true || i.on === false);
+  const via = person.qsl_via?.trim() ?? '';
+  if (items.length === 0 && via === '') return null;
+  return (
+    <span className={`qsl-badges${long ? ' qsl-badges--long' : ''}`}>
+      {items.map((i) => (
+        <span key={i.key} className={`qsl-badge${i.on ? ' qsl-badge--on' : ''}`} title={t(i.on ? 'qsl.yes' : 'qsl.no', { what: i.label })}>
+          {long ? `${i.on ? '✔' : '✖'} ${i.label}` : i.key}
+        </span>
+      ))}
+      {via !== '' ? (
+        <span className="qsl-via data" title={t('qsl.via', { call: via })}>
+          {long ? t('qsl.via', { call: via }) : `via ${via}`}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** Le lettere L E D della stazione che si sta lavorando: si cerca da sola (con la memoria delle ricerche gia' fatte). */
+export function DxQsl({ call }: { call: string }) {
+  const [person, setPerson] = useState<Person | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setPerson(null);
+    if (call.trim() === '') return;
+    void lookupCallsign(call).then((v) => {
+      if (alive) setPerson(v?.person ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [call]);
+  return person ? <QslBadges person={person} /> : null;
 }

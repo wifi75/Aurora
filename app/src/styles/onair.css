@@ -1606,7 +1606,9 @@
 
 /* le colonne sono separate da linee sottili, come in una tabella */
 .dock-panel--all .decode-row > *,
-.dock-panel--cq .decode-row > * {
+.dock-panel--cq .decode-row > *,
+.dock-panel--all .decode-row > .calltip-anchor > .decode-text,
+.dock-panel--cq .decode-row > .calltip-anchor > .decode-text {
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -6260,4 +6262,95 @@
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* QSO in corso: una sola riga della stazione chiamata, ferma in cima all'elenco (in fondo se rovesciato) */
+.decode-list .decode-row--pin {
+  position: sticky;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  font-weight: 700;
+}
+
+/* la sto chiamando e non ha ancora risposto: gialla */
+.decode-list .decode-row.decode-row--pin-call,
+.decode-list .decode-row.decode-row--pin-call > * {
+  background: #fff3b0 !important;
+  color: #2a2000;
+}
+
+/* a ogni sua risposta un colore: risponde col locatore o altro, rapporto, R+rapporto, chiusura */
+.decode-list .decode-row.decode-row--pin-reply,
+.decode-list .decode-row.decode-row--pin-reply > *,
+.decode-list .decode-row.decode-row--pin-report,
+.decode-list .decode-row.decode-row--pin-report > * {
+  background: #ffd9a8 !important;
+  color: #2e1500;
+}
+
+.decode-list .decode-row.decode-row--pin-roger,
+.decode-list .decode-row.decode-row--pin-roger > * {
+  background: #b8f0c8 !important;
+  color: #062b12;
+}
+
+.decode-list .decode-row.decode-row--pin-end,
+.decode-list .decode-row.decode-row--pin-end > * {
+  background: #b9d8ff !important;
+  color: #04203f;
+}
+
+.decode-list .decode-row--pin-reply,
+.decode-list .decode-row--pin-report { box-shadow: inset 0 -2px 0 #d9731a, inset 5px 0 0 #d9731a; }
+.decode-list .decode-row--pin-roger { box-shadow: inset 0 -2px 0 #1e8a46, inset 5px 0 0 #1e8a46; }
+.decode-list .decode-row--pin-end { box-shadow: inset 0 -2px 0 #2a6fd6, inset 5px 0 0 #2a6fd6; }
+
+/* come conferma la stazione: L E D (LoTW, eQSL, diretta) e il QSL manager */
+.qsl-badges {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
+.qsl-badge {
+  display: inline-block;
+  min-width: 1rem;
+  padding: 0 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1rem;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.qsl-badge--on {
+  border-color: #1e8a46;
+  background: #1e8a46;
+  color: #fff;
+  opacity: 1;
+}
+
+.qsl-via {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.qsl-badges--long {
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+
+.qsl-badges--long .qsl-badge {
+  padding: 0 0.35rem;
+}
+
+/* in Attività di banda il riquadro del nominativo non cambia le colonne della riga */
+.decode-list .decode-row > .calltip-anchor {
+  display: contents;
 }
