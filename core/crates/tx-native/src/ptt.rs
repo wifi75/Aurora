@@ -522,6 +522,11 @@ mod tests {
             while reader.read_line(&mut line).unwrap_or(0) > 0 {
                 let cmd = line.trim().to_string();
                 line.clear();
+                // il client chiede da solo, al collegamento, se rigctld e' in modalita' VFO: qui rispondiamo di no e non lo contiamo
+                if cmd == "\\chk_vfo" {
+                    let _ = writer.write_all(b"0\n");
+                    continue;
+                }
                 let _ = tx.send(cmd.clone());
                 if cmd == "q" {
                     return;
