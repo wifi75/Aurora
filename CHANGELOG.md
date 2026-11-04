@@ -1,6 +1,8 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.102 - 2026-11-04
+- **Guida al primo avvio**: passo passo lingua, nominativo e locatore, scheda audio e radio (CAT o VOX), ogni passo saltabile; compare solo finche' manca il nominativo.
+- **Testi**: nessun testo dice piu' che i dati vengono da JTDX o `wsjtx_log.adi`; le fonti sono il log di Aurora e i software esterni collegati in Impostazioni.
 - **Servizi accesi di fabbrica**: PSK Reporter (chi ti ha ricevuto), propagazione (hamqsl.com), calendario delle DXpedition (NG3K) e DX Cluster partono accesi; si spengono dalle impostazioni. Chi li aveva gia' scelti trova le sue scelte. Restano spenti solo i servizi che chiedono un account (QRZ, LoTW, eQSL, ClubLog, HRDLog, Wavelog). Informativa privacy aggiornata.
 - **DX Cluster con il nominativo di stazione**: non si scrive piu' nella scheda del cluster; Aurora usa quello dei dati di stazione (Impostazioni › Generali) e lo segue se cambia.
 - **BBLogger**: destinatario pronto in Impostazioni › Programmi collegati › Integrazioni («+ BBLogger»: 127.0.0.1:2237, flusso WSJT-X e Logged ADIF), voce della Guida aggiornata nelle sei lingue e passi in `docs/integrazioni-log.md`.
