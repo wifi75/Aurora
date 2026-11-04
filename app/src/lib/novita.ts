@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.129',
-    released: '2026-11-04T21:42:20Z',
+    released: '2026-11-04T21:53:24Z',
     kind: 'fixed',
     title: ['Frontalini senza spazio vuoto', 'Rig faces without empty space', 'Frontplatten ohne Leerraum', 'Façades sans espace vide', 'Frontales sin espacio vacío', 'Frontais sem espaço vazio'],
     text: [
