@@ -835,3 +835,17 @@
   margin-top: 0;
   margin-bottom: 0.55rem;
 }
+
+/* frontalini FT-2000 e IC-7610: disegni a proporzioni fisse; l'altezza la da' il disegno (niente spazio vuoto sotto), PWR alto quanto lui */
+.rd-face-slot {
+  height: auto;
+}
+
+.rd-face-slot .rd-face,
+.rd-face-slot .rd-svg {
+  height: auto;
+}
+
+.rd-face-row .rd-pwr {
+  height: auto;
+}

@@ -1087,7 +1087,7 @@
 
 /* Paese: bandiera grande, nome, distanza stretta e allineata a sinistra */
 .decode-list .decode-row .decode-where {
-  grid-template-columns: 2.2rem minmax(0, 1fr) 4.4rem;
+  grid-template-columns: 2.2rem minmax(0, 1fr) calc(4.4rem - 7px);
 }
 
 .decode-list .decode-row .decode-where .w-km {
@@ -1102,7 +1102,7 @@
 @container (max-width: 40rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) minmax(0, 11rem) 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) minmax(0, calc(11rem - 7px)) calc(6.2rem - 7px);
     row-gap: 0;
   }
 
@@ -1153,17 +1153,17 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .decode-list .decode-row,
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 2fr) calc(17rem - 7px) calc(6.2rem - 7px) minmax(0, 1fr);
   }
 }
 
 @container (min-width: 54.01rem) {
   .decode-list .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem 2.6rem 3.4rem minmax(0, 2fr) calc(17rem - 7px) calc(6.2rem - 7px) minmax(0, 1fr);
   }
 
   .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 2fr) 17rem 6.2rem minmax(0, 1fr);
+    grid-template-columns: 4.4rem 2.1rem 3.4rem minmax(0, 2fr) calc(17rem - 7px) calc(6.2rem - 7px) minmax(0, 1fr);
   }
 }
 
@@ -1375,7 +1375,7 @@
 
 @container (min-width: 40.01rem) {
   .decode-list .decode-row .decode-where {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 6.5rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) calc(6.5rem - 7px);
   }
 }
 
@@ -1586,7 +1586,7 @@
 /* Attivita' di banda: riga a colonne con griglia, spazi ordinati, etichette colorate grandi e leggibili */
 .dock-panel--all .decode-list .decode-row,
 .dock-panel--cq .decode-list .decode-row {
-  grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) 17rem 7rem;
+  grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) calc(17rem - 7px) calc(7rem - 7px);
   column-gap: 0;
   padding: 0 0.3rem 0 0;
   min-height: 1.95rem;
@@ -1595,12 +1595,12 @@
 @container (min-width: 54.01rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--cq .decode-list .decode-row {
-    grid-template-columns: 4.5rem 2.4rem 2.8rem 3.4rem minmax(0, 1fr) 17rem 7rem;
+    grid-template-columns: 4.5rem 2.4rem 2.8rem 3.4rem minmax(0, 1fr) calc(17rem - 7px) calc(7rem - 7px);
   }
 
   .dock-panel--all .decode-list--no-dt .decode-row,
   .dock-panel--cq .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.5rem 2.4rem 3.4rem minmax(0, 1fr) 17rem 7rem;
+    grid-template-columns: 4.5rem 2.4rem 3.4rem minmax(0, 1fr) calc(17rem - 7px) calc(7rem - 7px);
   }
 }
 
@@ -1632,7 +1632,7 @@
 .dock-panel--all .decode-list .decode-row .decode-where,
 .dock-panel--cq .decode-list .decode-row .decode-where {
   display: grid;
-  grid-template-columns: 2.1rem minmax(0, 1fr) 4.9rem;
+  grid-template-columns: 2.1rem minmax(0, 1fr) calc(4.9rem - 7px);
   gap: 0;
   padding: 0;
 }
@@ -1697,7 +1697,7 @@
 @container (max-width: 36rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--cq .decode-list .decode-row {
-    grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) 11rem 6.4rem;
+    grid-template-columns: 4.5rem 2.4rem minmax(0, 1fr) calc(11rem - 7px) calc(6.4rem - 7px);
   }
 
   .dock-panel--all .decode-list .decode-row .decode-where,
@@ -2166,7 +2166,7 @@
 @container (max-width: 28rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--cq .decode-list .decode-row {
-    grid-template-columns: 4.2rem 2rem minmax(0, 1fr) 8.5rem 5.6rem;
+    grid-template-columns: 4.2rem 2rem minmax(0, 1fr) calc(8.5rem - 7px) calc(5.6rem - 7px);
   }
 
   .dock-panel--all .decode-list .decode-row .decode-where,
@@ -5915,7 +5915,7 @@
 @container (max-width: 40rem) {
   .dock-panel .decode-list .decode-row,
   .dock-panel .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 11rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(11rem - 7px) calc(6.2rem - 7px);
   }
 
   .dock-panel .decode-list .decode-row .decode-where {
@@ -6102,7 +6102,7 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .dock-panel .decode-list .decode-row,
   .dock-panel .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 12.5rem 7rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(12.5rem - 7px) calc(7rem - 7px);
   }
 
   .dock-panel .decode-list .decode-row .decode-where {
@@ -6159,14 +6159,14 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--all .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 16rem 7rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(16rem - 7px) calc(7rem - 7px);
   }
 }
 
 @container (max-width: 40rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--all .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 15rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(15rem - 7px) calc(6.2rem - 7px);
   }
 }
 
@@ -6174,14 +6174,14 @@
 @container (min-width: 40.01rem) and (max-width: 54rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--all .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 18rem 7rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(18rem - 7px) calc(7rem - 7px);
   }
 }
 
 @container (max-width: 40rem) {
   .dock-panel--all .decode-list .decode-row,
   .dock-panel--all .decode-list--no-dt .decode-row {
-    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) 17rem 6.2rem;
+    grid-template-columns: 4.4rem 2.1rem minmax(0, 1fr) calc(17rem - 7px) calc(6.2rem - 7px);
   }
 }
 
