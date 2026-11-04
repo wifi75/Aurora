@@ -14,5 +14,9 @@ export const setupCtaStrings = {
   'rd.style.icblueq': ['Icom blu (quasi quadrato)', 'Icom blue (near square)', 'Icom blau (fast quadratisch)', 'Icom bleu (presque carré)', 'Icom azul (casi cuadrado)', 'Icom azul (quase quadrado)'],
   'rd.style.icblackq': ['Icom nero con lancetta (quasi quadrato)', 'Icom black with needle (near square)', 'Icom schwarz mit Zeiger (fast quadratisch)', 'Icom noir à aiguille (presque carré)', 'Icom negro con aguja (casi cuadrado)', 'Icom preto com ponteiro (quase quadrado)'],
   'rd.style.yaesuq': ['Yaesu ambra doppio ricevitore (quasi quadrato)', 'Yaesu amber dual receiver (near square)', 'Yaesu bernstein Doppelempfänger (fast quadratisch)', 'Yaesu ambre double récepteur (presque carré)', 'Yaesu ámbar doble receptor (casi cuadrado)', 'Yaesu âmbar recetor duplo (quase quadrado)'],
+  'upd.poster.available': ['È disponibile una nuova versione', 'A new version is available', 'Eine neue Version ist verfügbar', 'Une nouvelle version est disponible', 'Hay una versión nueva disponible', 'Há uma nova versão disponível'],
+  'upd.poster.news': ['Novità', 'What’s new', 'Neuigkeiten', 'Nouveautés', 'Novedades', 'Novidades'],
+  'upd.poster.current': ['Hai la {current} · nuova pubblicata il {when}', 'You have {current} · new one released {when}', 'Du hast {current} · neue veröffentlicht am {when}', 'Tu as la {current} · nouvelle publiée le {when}', 'Tienes la {current} · nueva publicada el {when}', 'Tens a {current} · nova publicada a {when}'],
+  'upd.poster.install': ['Installa e riavvia', 'Install and restart', 'Installieren und neu starten', 'Installer et redémarrer', 'Instalar y reiniciar', 'Instalar e reiniciar'],
   'diag.close': ['Chiudi l’avviso', 'Close the notice', 'Hinweis schließen', 'Fermer l’avis', 'Cerrar el aviso', 'Fechar o aviso'],
 } as const;
