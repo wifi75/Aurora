@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.117 - 2026-11-04
+- **«Già lavorato»** solo per un nominativo davvero nel log (non per ogni stazione di un paese gia' fatto), spiegazione nelle sei lingue.
+- **S-meter stimato** con la tilde anche nei display a lancetta nuovi.
+- **Novita'** tenute alle ultime 40 voci; link diretti ad AppImage e .deb nei README; prove dell'interfaccia allineate (846 su 846).
+
 ## 0.11.116 - 2026-11-04
 - **Installazioni attive**: `POST /v1/attivo` nel Worker (tabella D1 `attivi`, una riga per installazione e giorno, 90 giorni) e `GET /v1/attivi` per il proprietario; nel core `Rapporti::segnala_attivo` una volta al giorno se `count_active` (acceso di fabbrica, si spegne in Impostazioni > Assistenza). Informativa privacy aggiornata.
 
