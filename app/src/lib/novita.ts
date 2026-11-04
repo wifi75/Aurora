@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.131',
+    released: '2026-11-04T22:02:22Z',
+    kind: 'fixed',
+    title: ["Il display non copre più l'apertura", 'The display no longer covers the splash', 'Die Anzeige verdeckt den Start nicht mehr', 'L’afficheur ne couvre plus l’ouverture', 'La pantalla ya no tapa el inicio', 'O ecrã já não tapa a abertura'],
+    text: [
+      "All'avvio di Aurora il display della radio compariva sopra la schermata di apertura: ora resta sotto, come tutto il resto della pagina.",
+      "When Aurora started, the radio display appeared on top of the splash screen: now it stays below, like the rest of the page.",
+      "Beim Start von Aurora erschien die Radioanzeige über dem Startbildschirm: jetzt bleibt sie darunter, wie der Rest der Seite.",
+      "Au démarrage d’Aurora l’afficheur de la radio apparaissait au-dessus de l’écran d’ouverture : il reste maintenant dessous, comme le reste de la page.",
+      "Al iniciar Aurora la pantalla de la radio aparecía encima de la pantalla de inicio: ahora queda debajo, como el resto de la página.",
+      "Ao iniciar a Aurora o ecrã do rádio aparecia por cima do ecrã de abertura: agora fica por baixo, como o resto da página.",
+    ],
+  },
+  {
     version: '0.11.130',
     released: '2026-11-04T21:59:09Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur la page Fox la cascade ne va que jusqu’à « Messages reçus », qui descend jusqu’en bas. Dans l’activité de bande le message reçu a plus de place et une police un peu plus petite. L’avis sur « tout message » indique le bon onglet (Programmes connectés).',
       'En la página Fox la cascada llega solo hasta «Mensajes recibidos», que baja hasta el final. En la actividad de banda el mensaje recibido tiene más espacio y una letra algo más pequeña. El aviso de «cualquier mensaje» indica la pestaña correcta (Programas conectados).',
       'Na página Fox a cascata vai só até «Mensagens recebidas», que desce até ao fundo. Na atividade de banda a mensagem recebida tem mais espaço e letra um pouco mais pequena. O aviso de «qualquer mensagem» indica o separador certo (Programas ligados).',
-    ],
-  },
-  {
-    version: '0.11.93',
-    released: '2026-11-03T20:52:59Z',
-    kind: 'changed',
-    title: ['Versione nuova ben visibile', 'New version clearly shown', 'Neue Version gut sichtbar', 'Nouvelle version bien visible', 'Versión nueva bien visible', 'Versão nova bem visível'],
-    text: [
-      'In Impostazioni > Aggiornamenti la versione nuova trovata ha la stella e la targhetta NEW. Il file degli errori (crash\\stderr.log) non accumula più le righe di avvio né l’avviso innocuo di WebView2 alla chiusura.',
-      'In Settings > Updates the new version found has a star and a NEW tag. The error file (crash\\stderr.log) no longer piles up start lines or the harmless WebView2 notice at close.',
-      'In Einstellungen > Updates trägt die gefundene neue Version einen Stern und das Schild NEW. Die Fehlerdatei (crash\\stderr.log) sammelt keine Startzeilen und keinen harmlosen WebView2-Hinweis beim Schließen mehr.',
-      'Dans Réglages > Mises à jour la nouvelle version trouvée a une étoile et l’étiquette NEW. Le fichier d’erreurs (crash\\stderr.log) n’accumule plus les lignes de démarrage ni l’avis inoffensif de WebView2 à la fermeture.',
-      'En Ajustes > Actualizaciones la versión nueva encontrada tiene una estrella y la etiqueta NEW. El archivo de errores (crash\\stderr.log) ya no acumula las líneas de inicio ni el aviso inofensivo de WebView2 al cerrar.',
-      'Em Definições > Atualizações a versão nova encontrada tem uma estrela e a etiqueta NEW. O ficheiro de erros (crash\\stderr.log) já não acumula as linhas de arranque nem o aviso inofensivo do WebView2 ao fechar.',
     ],
   },
 ];
