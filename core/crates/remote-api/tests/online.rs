@@ -39,11 +39,13 @@ async fn needs_a_paired_device_and_says_when_the_service_is_not_there() {
 }
 
 #[tokio::test]
-async fn starts_off_and_asks_nothing_until_turned_on() {
+async fn starts_on_from_the_factory_and_asks_nothing_once_switched_off() {
     let (s, path) = with_service("off");
     let cookie = cookie_for(&s);
     let app = router(&s);
-    assert_eq!(body_json(call(&app, req(Method::GET, "/api/v1/online").cookie(&cookie)).await).await, json!({ "psk": false, "solar": false, "dxped": false }));
+    assert_eq!(body_json(call(&app, req(Method::GET, "/api/v1/online").cookie(&cookie)).await).await, json!({ "psk": true, "solar": true, "dxped": true }), "accesi di fabbrica");
+    let off = json!({ "psk": false, "solar": false, "dxped": false });
+    call(&app, req(Method::PUT, "/api/v1/online").cookie(&cookie).json(&off.to_string())).await;
     let psk = body_json(call(&app, req(Method::GET, "/api/v1/online/psk").cookie(&cookie)).await).await;
     assert_eq!((psk["enabled"].as_bool(), psk["psk"]["reports"].as_array().map(Vec::len)), (Some(false), Some(0)));
     let refreshed = body_json(call(&app, req(Method::POST, "/api/v1/online/refresh").cookie(&cookie)).await).await;
@@ -56,7 +58,7 @@ async fn turning_propagation_on_and_refreshing_brings_the_data() {
     let (s, path) = with_service("solar");
     let cookie = cookie_for(&s);
     let app = router(&s);
-    let put = call(&app, req(Method::PUT, "/api/v1/online").cookie(&cookie).json(&json!({ "solar": true }).to_string())).await;
+    let put = call(&app, req(Method::PUT, "/api/v1/online").cookie(&cookie).json(&json!({ "psk": false, "solar": true, "dxped": false }).to_string())).await;
     assert_eq!(body_json(put).await, json!({ "psk": false, "solar": true, "dxped": false }));
     let refreshed = body_json(call(&app, req(Method::POST, "/api/v1/online/refresh").cookie(&cookie)).await).await;
     assert_eq!(refreshed["asked"], true);
