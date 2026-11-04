@@ -4,7 +4,7 @@
 
 use std::{
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, Once},
+    sync::{Arc, Mutex},
 };
 
 use serde::Serialize;
@@ -122,8 +122,6 @@ pub struct CatService {
     models: Mutex<Option<Vec<RigModel>>>,
 }
 
-static OMNIRIG_WARM: Once = Once::new();
-
 impl CatService {
     /// Apre il servizio con il file `radio.json` indicato (se manca si parte dai valori di base).
     pub fn open(path: &Path) -> Arc<CatService> {
@@ -208,7 +206,6 @@ impl CatService {
                 }
             }
             Backend::Omnirig => {
-                OMNIRIG_WARM.call_once(WindowsRig::keep_warm);
                 self.set_omni(LinkState::Connecting, "Collegamento a OmniRig");
                 match WindowsRig.frequency() {
                     Ok(_) => self.set_omni(LinkState::Connected, ""),
@@ -361,45 +358,10 @@ impl Rig for CatService {
         }
     }
 
-    fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
-        match self.backend() {
-            Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),
-            Backend::Omnirig => WindowsRig.controls(),
-        }
-    }
-
-    fn controls_and_tx(&self) -> Result<crate::controls::Reading, RigError> {
-        match self.backend() {
-            Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),
-            Backend::Omnirig => WindowsRig.controls_and_tx(),
-        }
-    }
-
-    fn engine_snapshot(&self) -> Result<crate::snapshot::Snapshot, RigError> {
-        match self.backend() {
-            Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),
-            Backend::Omnirig => WindowsRig.engine_snapshot(),
-        }
-    }
-
-    fn select_tx_message(&self, n: u8) -> Result<(), RigError> {
-        match self.backend() {
-            Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),
-            Backend::Omnirig => WindowsRig.select_tx_message(n),
-        }
-    }
-
     fn set_extra(&self, item: crate::extras::ExtraItem) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_extra(item),
             Backend::Omnirig => WindowsRig.set_extra(item),
-        }
-    }
-
-    fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
-        match self.backend() {
-            Backend::Hamlib => Err(RigError("comando non supportato da questa radio".into())),
-            Backend::Omnirig => WindowsRig.set_control(id, on),
         }
     }
 }

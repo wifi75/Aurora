@@ -1,5 +1,4 @@
-//! Comando della radio condiviso con JTDX: JTDX usa OmniRig, che accetta piu' client insieme,
-//! quindi Aurora puo' cambiare frequenza senza togliere la radio a JTDX.
+//! Il comando della radio di Aurora: CAT con Hamlib (rigctld incluso) o, facoltativo su Windows, OmniRig.
 
 pub mod bands;
 pub mod cat;
@@ -16,10 +15,8 @@ pub mod modes;
 pub mod omnirig;
 pub mod schedule;
 pub mod session;
-pub mod snapshot;
 pub mod table;
 
-pub mod jtdx_process;
 pub use omnirig::WindowsRig;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,18 +45,18 @@ pub trait Rig: Send + Sync {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 
-    /// Imposta la frequenza audio di ricezione di JTDX (Hz).
+    /// Imposta la frequenza audio di ricezione del motore (Hz).
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError>;
 
-    /// Attenuazione dell'audio di uscita di JTDX (cursore Pwr), in decimi di dB: 0 = massimo livello.
+    /// Attenuazione dell'audio di uscita (cursore Pwr), in decimi di dB: 0 = massimo livello.
     fn output_attenuation(&self) -> Result<u32, RigError>;
 
     fn set_output_attenuation(&self, tenths: u32) -> Result<(), RigError>;
 
-    /// Cambia il modo di JTDX ("FT8" o "FT4").
+    /// Cambia il modo del motore ("FT8" o "FT4").
     fn set_mode(&self, mode: &str) -> Result<(), RigError>;
 
-    /// Stato degli interruttori di JTDX (`controls::CONTROLS`): coppie nome e acceso.
+    /// Stato degli interruttori del motore (`controls::CONTROLS`): coppie nome e acceso.
     fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
         Err(RigError("comando non supportato da questa radio".into()))
     }
@@ -67,11 +64,6 @@ pub trait Rig: Send + Sync {
     /// Gli interruttori e, se la radio li sa leggere, i sei messaggi Tx con quello selezionato, in una lettura sola.
     fn controls_and_tx(&self) -> Result<controls::Reading, RigError> {
         Ok((self.controls()?, None))
-    }
-
-    /// Lo stato di JTDX letto dalla sua finestra: serve subito dopo l'avvio, prima che mandi il suo stato UDP.
-    fn engine_snapshot(&self) -> Result<snapshot::Snapshot, RigError> {
-        Err(RigError("comando non supportato da questa radio".into()))
     }
 
     /// Seleziona il messaggio di trasmissione `n` (1-6): il motore trasmette da quello e poi prosegue da solo.
