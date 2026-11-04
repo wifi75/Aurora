@@ -141,7 +141,7 @@ Altre opzioni della stessa scheda: `SingleShotQSO` (il «1 QSO»), `SeqHaltTxRep
 ### La casella RRR
 
 Dal suggerimento di JTDX: **senza spunta il Tx4 e' `RR73`, con la spunta e' `RRR`** (`RRR\RR73` nel file delle impostazioni; qui false, quindi RR73).
-Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX e WSJT-X mandano ancora 73).
+Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX e WSJT-X mandano ancora 73). **Dalla 0.11.124**, se il suo 73 non arriva, all'ultimo tentativo di chiusura (o dopo 3 se non c'e' limite) il QSO si registra lo stesso invece di essere abbandonato: molte stazioni non rispondono al RRR (scelta del proprietario; JTDX in quel caso non registra).
 
 ### Il periodo (pari/dispari)
 

@@ -40,6 +40,10 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 | 25 ✔ | **Priorita' tra piu' CQ** nello stesso ciclo, riapplicazione del modo dopo il cambio banda, comandi a JTDX rapidi | M | Fatti (0.10.x); il modo della radio e la scelta del CQ vanno provati con la radio |
 | 26 ✔ | **Coda delle stazioni** (tasto destro) e **Rispondi a tutti** | A | 0.11.23, solo motore proprio |
 | 23 | ~~Righe Tx nell'elenco~~ | fatto | Un'unica riga per trasmissione, dal messaggio dello stato (0.7.0) |
+| 27 | **Info QSL da QRZ.com** (LoTW, eQSL, diretta, QSL manager) accanto al nome della stazione | M | Il lookup XML le manda gia' (`lotw`, `eqsl`, `mqsl`, `qslmgr`); oggi `reporting/src/qrz_xml.rs` le scarta. Il bureau non e' un campo: solo testo libero. Prima il prototipo |
+| 28 | **Capacita' Hamlib per modello** per le opzioni dei display | M | Mostrare nei display solo i comandi che il modello supporta |
+| 29 | **Blocchi colorati del telefono** (stazione chiamata, chi mi chiama) troppo grandi | M | Il proprietario deve mandare uno screenshot dal telefono; poi prototipo |
+| 30 | **Prove dal vivo** di CAT4OM, dell'associazione del telefono con gli utenti e del log dopo RRR senza 73 (0.11.124) | A | Le fa il proprietario |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 
