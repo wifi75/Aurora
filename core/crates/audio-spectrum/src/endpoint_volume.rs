@@ -37,7 +37,10 @@ impl InputEndpoint {
         let host = cpal::default_host();
         let devices: Vec<cpal::Device> = host.input_devices().map_err(|e| VolumeError::Unavailable(e.to_string()))?.collect();
         let names: Vec<String> = devices.iter().map(|d| d.description().map(|d| d.name().to_string()).unwrap_or_default()).collect();
-        let Some(index) = crate::match_device_name(&names, hint) else {
+        // «predefinito» (anche «Default Input Device» delle impostazioni vecchie) e' il dispositivo predefinito di Windows
+        let default_name = host.default_input_device().and_then(|d| d.description().ok().map(|d| d.name().to_string()));
+        let found = if crate::capture::is_default_name(hint) { default_name.and_then(|n| names.iter().position(|x| *x == n)) } else { crate::match_device_name(&names, hint) };
+        let Some(index) = found else {
             return Err(VolumeError::NoDevice(hint.to_string()));
         };
         let id = devices[index].id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;
@@ -80,7 +83,10 @@ impl OutputEndpoint {
         let host = cpal::default_host();
         let devices: Vec<cpal::Device> = host.output_devices().map_err(|e| VolumeError::Unavailable(e.to_string()))?.collect();
         let names: Vec<String> = devices.iter().map(|d| d.description().map(|d| d.name().to_string()).unwrap_or_default()).collect();
-        let Some(index) = crate::match_device_name(&names, hint) else {
+        // «predefinito» (anche «Default Input Device» delle impostazioni vecchie) e' il dispositivo predefinito di Windows
+        let default_name = host.default_output_device().and_then(|d| d.description().ok().map(|d| d.name().to_string()));
+        let found = if crate::capture::is_default_name(hint) { default_name.and_then(|n| names.iter().position(|x| *x == n)) } else { crate::match_device_name(&names, hint) };
+        let Some(index) = found else {
             return Err(VolumeError::NoDevice(hint.to_string()));
         };
         let id = devices[index].id().map_err(|e| VolumeError::Unavailable(e.to_string()))?;

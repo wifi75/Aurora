@@ -37,6 +37,15 @@ pub fn script(hz: u64) -> String {
     )
 }
 
+/// Un errore di PowerShell con OmniRig detto in chiaro: «classe non registrata» (in qualunque lingua di Windows) vuol dire che OmniRig non c'e'.
+pub fn explain_omnirig(why: &str) -> String {
+    if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || (why.contains("CLSID") && why.contains("New-Object")) {
+        "OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig".to_string()
+    } else {
+        why.to_string()
+    }
+}
+
 pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
     let mut command = Command::new("powershell.exe");
     command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script]);
@@ -51,7 +60,7 @@ pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
         let why = String::from_utf8_lossy(&out.stderr).trim().to_string();
-        Err(RigError(if why.is_empty() { "nessuna risposta".into() } else { why }))
+        Err(RigError(if why.is_empty() { "nessuna risposta".into() } else { explain_omnirig(&why) }))
     }
 }
 

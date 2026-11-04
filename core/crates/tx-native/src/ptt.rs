@@ -108,14 +108,14 @@ impl OmniRigPtt {
 
     /// Apre la sessione PowerShell e l'oggetto OmniRig in anticipo, cosi' il primo PTT non paga l'avvio.
     pub fn warm_up(&self) -> Result<(), TxError> {
-        PTT_SESSION.run_with_timeout("'ok'", OMNIRIG_TIMEOUT).map(|_| ()).map_err(|e| TxError::Ptt(e.0))
+        PTT_SESSION.run_with_timeout("'ok'", OMNIRIG_TIMEOUT).map(|_| ()).map_err(|e| TxError::Ptt(explain_omnirig(&e.0)))
     }
 }
 
 impl Ptt for OmniRigPtt {
     fn set(&self, on: bool) -> Result<(), TxError> {
         let script = omnirig_ptt_script(self.rig, on)?;
-        PTT_SESSION.run_with_timeout(&script, OMNIRIG_TIMEOUT).map_err(|e| TxError::Ptt(e.0))?;
+        PTT_SESSION.run_with_timeout(&script, OMNIRIG_TIMEOUT).map_err(|e| TxError::Ptt(explain_omnirig(&e.0)))?;
         self.on.store(on, Ordering::SeqCst);
         Ok(())
     }
@@ -630,5 +630,15 @@ mod tests {
         assert!(omnirig_ptt_script(3, false).is_err());
         assert!(OmniRigPtt::new(3).is_err());
         assert!(OmniRigPtt::new(1).is_ok());
+    }
+}
+
+
+/// Un errore di PowerShell con OmniRig detto in chiaro: «classe non registrata» (in qualunque lingua di Windows) vuol dire che OmniRig non c'e'.
+fn explain_omnirig(why: &str) -> String {
+    if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || (why.contains("CLSID") && why.contains("New-Object")) {
+        "OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig".to_string()
+    } else {
+        why.to_string()
     }
 }
