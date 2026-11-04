@@ -2136,7 +2136,8 @@ async fn map_worked(State(state): State<AppState>, _: Authed) -> Result<Json<Val
 }
 
 /// Il file ADIF di un log lungo anni sta in qualche megabyte: il limite ferma solo gli errori.
-const LOG_IMPORT_MAX_BYTES: usize = 64 * 1024 * 1024;
+// i log di una vita (70-100 mila QSO esportati da altri programmi con tutti i campi) superano i 64 MB
+const LOG_IMPORT_MAX_BYTES: usize = 256 * 1024 * 1024;
 
 #[derive(Deserialize)]
 struct MatrixParams {
