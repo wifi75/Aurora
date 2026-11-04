@@ -426,7 +426,7 @@ export function CatGroups() {
         <button type="button" className="glass glass--on" title={t('tip.cat.apply')} disabled={busy || !dirty || issue !== null} onClick={() => apply.mutate(config)}>
           {t('cat.apply')}
         </button>
-        {issue ? <span className="notice">{t('cat.invalid')}</span> : dirty ? <span className="muted">{t('cat.dirty')}</span> : null}
+        {issue === 'share_loop' ? <span className="notice">{t('cat.err.share_loop')}</span> : issue ? <span className="notice">{t('cat.invalid')}</span> : dirty ? <span className="muted">{t('cat.dirty')}</span> : null}
         {problem ? (
           <span className="notice" role="alert">
             {problem}

@@ -46,6 +46,8 @@ export function catIssue(c: CatConfig): string | null {
   if (!Number.isInteger(c.poll_secs) || c.poll_secs < 1 || c.poll_secs > 99) return 'bad_poll';
   if ((c.ptt === 'dtr' || c.ptt === 'rts') && c.port === '' && c.ptt_port === '') return 'bad_ptt';
   if (!Number.isInteger(c.share_port) || c.share_port < 1024 || c.share_port > 65535) return 'bad_share_port';
+  // la condivisione di Aurora aprirebbe la stessa porta a cui ci si vuole collegare: Aurora parlerebbe con se stessa
+  if (c.share_enabled && /^(127\.0\.0\.1|localhost):(\d+)$/i.test(c.port) && Number(c.port.split(':')[1]) === c.share_port) return 'share_loop';
   if (!Number.isInteger(c.civ_address) || c.civ_address < 0 || c.civ_address > 255) return 'bad_civ';
   return null;
 }
