@@ -30,6 +30,12 @@ const PALETTES: Record<RadioDisplayStyle, Palette> = {
   amber: { screen: '#3a2808', digits: '#ffb41f', glow: '#ff9a00', ink: '#ffc241', rx: '#ffb41f', rxInk: '#2b1d06', tx: '#ff5a1a', txInk: '#2b0d00', meter: 'ramp', lo: '#ffb41f', hi: '#ff5a1a', off: '#ffb41f', skew: 0 },
   ft2000: { screen: '#020405', digits: '#5ce8ff', glow: '#1aa8d0', ink: '#ffb428', rx: '#47d13a', rxInk: '#052200', tx: '#ff3b2f', txInk: '#2a0500', meter: 'bar', lo: '#5ce8ff', hi: '#ff3b2f', off: '#0e2630', skew: 0.08 },
   ic7610: { screen: '#000000', digits: '#f4f6fa', ink: '#7fd4ff', rx: '#1aa0e8', rxInk: '#02060c', tx: '#ff3a2a', txInk: '#ffffff', meter: 'ruler', lo: '#f4f6fa', hi: '#ff3a2a', off: '#3a4656', skew: 0 },
+  icdual: { screen: '#000000', digits: '#f4f6fa', ink: '#7fd4ff', rx: '#1aa0e8', rxInk: '#02060c', tx: '#ff3a2a', txInk: '#ffffff', meter: 'ruler', lo: '#f4f6fa', hi: '#ff3a2a', off: '#3a4656', skew: 0 },
+  icblue: { screen: '#061a45', digits: '#ffffff', glow: '#6f92d8', ink: '#cfe0ff', rx: '#2f6fd8', rxInk: '#ffffff', tx: '#c62828', txInk: '#ffffff', meter: 'bar', lo: '#ffffff', hi: '#ff5252', off: '#03133a', skew: 0 },
+  ledline: { screen: '#000000', digits: '#ffffff', glow: '#97c459', ink: '#fac775', rx: '#97c459', rxInk: '#0b1a02', tx: '#e24b4a', txInk: '#ffffff', meter: 'dots', lo: '#97c459', hi: '#e24b4a', off: '#1b1b1b', skew: 0 },
+  icblueq: { screen: '#061a45', digits: '#ffffff', glow: '#6f92d8', ink: '#cfe0ff', rx: '#2f6fd8', rxInk: '#ffffff', tx: '#c62828', txInk: '#ffffff', meter: 'bar', lo: '#ffffff', hi: '#ff5252', off: '#03133a', skew: 0 },
+  icblackq: { screen: '#000000', digits: '#f4f6fa', ink: '#7fd4ff', rx: '#1aa0e8', rxInk: '#02060c', tx: '#ff3a2a', txInk: '#ffffff', meter: 'ruler', lo: '#f4f6fa', hi: '#ff3a2a', off: '#3a4656', skew: 0 },
+  yaesuq: { screen: '#101010', digits: '#fac775', glow: '#ef9f27', ink: '#ef9f27', rx: '#fac775', rxInk: '#241604', tx: '#e24b4a', txInk: '#ffffff', meter: 'ramp', lo: '#fac775', hi: '#f09595', off: '#1f1a12', skew: 0 },
   led: { screen: '#0b0505', digits: '#ff3a22', glow: '#ff2a10', ink: '#ff7a5a', rx: '#3fd13a', rxInk: '#032200', tx: '#ff3a22', txInk: '#2a0500', meter: 'led', lo: '#3fd13a', hi: '#ff3a22', off: '#3a1410', skew: 0.1 },
 };
 

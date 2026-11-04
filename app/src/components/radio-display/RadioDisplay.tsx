@@ -8,6 +8,7 @@ import { FluorescentDisplay } from './FluorescentDisplay';
 import { LedDisplay } from './LedDisplay';
 import { MiniDisplay } from './MiniDisplay';
 import { DEMO_FACE_EXTRAS, Ft2000Display, Ic7610Display, type FaceExtras } from './RigFaceDisplays';
+import { IcBlackSquare, IcBlueDisplay, IcBlueSquare, IcDualDisplay, LedLineDisplay, YaesuSquare } from './ModernDisplays';
 
 interface Props {
   model: DisplayModel;
@@ -38,5 +39,17 @@ export function RadioDisplay({ model, style, size = 'full', face = DEMO_FACE_EXT
       return <Ft2000Display {...common} data={face} />;
     case 'ic7610':
       return <Ic7610Display {...common} data={face} />;
+    case 'icdual':
+      return <div className="rd-modern-slot"><IcDualDisplay {...common} data={face} /></div>;
+    case 'icblue':
+      return <div className="rd-modern-slot"><IcBlueDisplay {...common} data={face} /></div>;
+    case 'ledline':
+      return <div className="rd-modern-slot"><LedLineDisplay {...common} data={face} /></div>;
+    case 'icblueq':
+      return <div className="rd-square-preview"><IcBlueSquare {...common} data={face} /></div>;
+    case 'icblackq':
+      return <div className="rd-square-preview"><IcBlackSquare {...common} data={face} /></div>;
+    case 'yaesuq':
+      return <div className="rd-square-preview"><YaesuSquare {...common} data={face} /></div>;
   }
 }

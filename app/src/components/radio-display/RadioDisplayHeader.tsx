@@ -5,7 +5,8 @@ import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
 import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
 import { useMeterBallistics } from '../../lib/meterBallistics';
-import { displayModel, isFaceStyle, useRadioDisplay, type DisplayModel } from '../../lib/radioDisplay';
+import { displayModel, isFaceStyle, isSquareStyle, useRadioDisplay, type DisplayModel, type RadioDisplayStyle } from '../../lib/radioDisplay';
+import { IcBlackSquare, IcBlueDisplay, IcBlueSquare, IcDualDisplay, LedLineDisplay, YaesuSquare } from './ModernDisplays';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
 import { useQuery } from '@tanstack/react-query';
@@ -41,6 +42,10 @@ export function RadioDisplayHeader() {
         <RadioExtras />
       </div>
     );
+  }
+
+  if (isSquareStyle(pref.style) || pref.style === 'icdual' || pref.style === 'icblue' || pref.style === 'ledline') {
+    return <ModernHeader model={model} style={pref.style} />;
   }
 
   if (isFaceStyle(pref.style)) {
@@ -128,4 +133,26 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
       ) : null}
     </div>
   );
+}
+
+/** I display moderni in testata: gli estesi nella riga dei comandi, i quasi quadrati fissi nell'angolo (le icone diventano piccole). */
+function ModernHeader({ model, style }: { model: DisplayModel; style: RadioDisplayStyle }) {
+  const t = useT();
+  const { rig, waiting, click } = useCatExtras();
+  const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
+  const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
+  const square = isSquareStyle(style);
+  useEffect(() => {
+    if (!square) return;
+    document.body.classList.add('rd-square');
+    return () => document.body.classList.remove('rd-square');
+  }, [square]);
+  const view =
+    style === 'icdual' ? <IcDualDisplay {...props} />
+    : style === 'icblue' ? <IcBlueDisplay {...props} />
+    : style === 'ledline' ? <LedLineDisplay {...props} />
+    : style === 'icblueq' ? <IcBlueSquare {...props} />
+    : style === 'icblackq' ? <IcBlackSquare {...props} />
+    : <YaesuSquare {...props} />;
+  return <div className={square ? 'rd-square-slot' : 'rd-modern-slot'}>{view}</div>;
 }
