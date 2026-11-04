@@ -84,7 +84,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] Prove manuali ancora aperte: Reply con carico fittizio, H4 (JTDX ridotto a icona), installazione del telefono come PWA
 
 ## Dai rapporti degli errori (2026-11-04)
-- [ ] Decodifica lenta su un PC Windows 10 con IC-7300: «0 messaggi nel periodo in 66598 ms» (un periodo FT8 dura 15 s). Capire se e' la CPU o un blocco del motore (pacchetto DDB54164, anche un blocco della finestra di 20 s all'avvio).
+- [x] (0.11.106: tempo massimo di 11 s per le passate FT8; resta da capire perche' quel PC e' cosi' lento) Decodifica lenta su un PC Windows 10 con IC-7300: «0 messaggi nel periodo in 66598 ms» (un periodo FT8 dura 15 s). Capire se e' la CPU o un blocco del motore (pacchetto DDB54164, anche un blocco della finestra di 20 s all'avvio).
 - [ ] Avvio fallito su Windows 11 Dev (build 29698): WebView2 «handle della finestra non valido» (0x80070578), quattro volte di fila (pacchetto B04AE563).
 - [ ] Avvio fallito 0.11.102: porta 8787 gia' in uso (seconda copia di Aurora o altro programma): dirlo in chiaro e proporre un'altra porta.
 - [ ] «trasmissione non attiva: InvalidCall("")» su piu' installazioni: la guida del primo avvio (0.11.102) dovrebbe bastare, ricontrollare i rapporti.
