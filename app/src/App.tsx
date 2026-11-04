@@ -33,6 +33,7 @@ import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 import { ReportsNotice } from './components/ReportsNotice';
+import { FirstRun } from './components/FirstRun';
 import { CrashPrompt } from './settings/ReportsBox';
 
 /**
@@ -168,6 +169,7 @@ export function App() {
       <Toaster />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
+      {session.data && !REMOTE ? <FirstRun /> : null}
     </div>
   );
 }
