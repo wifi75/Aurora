@@ -40,7 +40,7 @@ describe('LogPrompt', () => {
     vi.mocked(getPendingQsos).mockResolvedValue([pending]);
     show();
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Registrare il QSO con K1ABC?')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Registrare il QSO con K1ABC?' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Rapporto ricevuto'), { target: { value: '-05' } });
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Joe' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registra' }));
