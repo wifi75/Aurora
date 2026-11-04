@@ -30,6 +30,8 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/api/v1/health", get(health))
         .route("/api/v1/pair/start", post(pair_start))
+        .route("/api/v1/lan/check", get(lan_check))
+        .route("/api/v1/lan/allow", post(lan_allow))
         .route("/api/v1/pair/finish", post(pair_finish))
         .route("/api/v1/devices", get(devices))
         .route("/api/v1/devices/{id}", delete(revoke_device))
@@ -233,6 +235,29 @@ async fn health() -> Json<Value> {
 #[derive(Deserialize, Default)]
 struct PairStartBody {
     base_url: Option<String>,
+}
+
+/// Rete del PC per l'associazione del telefono: Wi-Fi, rete «Pubblica», firewall, indirizzi scelti (solo dal PC stesso).
+#[utoipa::path(get, path = "/api/v1/lan/check", responses((status = 200, description = "{ssid, category, firewall_allowed, addresses}"), (status = 403, description = "Solo dal PC (local_only)")))]
+async fn lan_check(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let check = tokio::task::spawn_blocking(lan::network_check).await.unwrap_or_default();
+    Ok(Json(json!(check)))
+}
+
+/// «Consenti Aurora»: aggiunge la regola del firewall di Windows (chiede la conferma da amministratore; solo dal PC stesso).
+#[utoipa::path(post, path = "/api/v1/lan/allow", responses((status = 200, description = "Regola aggiunta"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Non aggiunta (firewall_failed)")))]
+async fn lan_allow(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    tokio::task::spawn_blocking(lan::allow_in_firewall)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "firewall_failed"))?
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "firewall_failed").with_message(e))?;
+    Ok(Json(json!({ "ok": true })))
 }
 
 #[utoipa::path(post, path = "/api/v1/pair/start", responses((status = 200, description = "Codice di associazione e QR (solo da loopback)"), (status = 403, description = "Richiesta non locale")))]

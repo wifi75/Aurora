@@ -269,6 +269,23 @@ export interface PairingOffer {
 }
 
 /** Un codice nuovo con il QR; il link punta all'indirizzo da cui si sta guardando la pagina. */
+/** Rete del PC per l'associazione del telefono (solo dal PC). */
+export interface NetworkCheck {
+  ssid: string | null;
+  category: string | null;
+  firewall_allowed: boolean | null;
+  addresses: [string, string][];
+}
+
+export async function getNetworkCheck(): Promise<NetworkCheck> {
+  return (await (await request('/lan/check')).json()) as NetworkCheck;
+}
+
+/** Aggiunge la regola del firewall di Windows per Aurora (Windows chiede la conferma). */
+export async function allowFirewall(): Promise<void> {
+  await request('/lan/allow', { method: 'POST' });
+}
+
 export async function startPairing(baseUrl: string): Promise<PairingOffer> {
   return (await (await request('/pair/start', jsonInit({ base_url: baseUrl }))).json()) as PairingOffer;
 }
