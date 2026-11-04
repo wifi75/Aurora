@@ -17,6 +17,8 @@ function chirp() {
     const Ctx = window.AudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
+    // un contesto nato sospeso (finestra non ancora attiva) si riaccende: senza, i toni partono ma non si sentono
+    if (ctx.state === 'suspended') void ctx.resume();
     const start = ctx.currentTime + 0.05;
     for (let i = 0; i < 8; i++) {
       const osc = ctx.createOscillator();

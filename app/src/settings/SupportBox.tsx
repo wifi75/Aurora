@@ -4,6 +4,7 @@ import { ApiError, getDiagnostics, prepareSupportBundle, revealSupportBundle, ty
 import { useLang, useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { ReportsBox } from './ReportsBox';
+import { BackupBox } from './BackupBox';
 
 /** Un pacchetto fatto da meno di cosi' si riusa per «Manda per email» invece di rifarlo. */
 const FRESH_MS = 5 * 60_000;
@@ -20,8 +21,10 @@ export function supportGmail(to: string, subject: string, body: string): string 
 
 /** Scheda «Assistenza» delle Impostazioni (pagina a se'). */
 export function SupportTab() {
+  const diagnostics = useQuery({ queryKey: ['diagnostics'], queryFn: getDiagnostics, retry: false });
   return (
     <div className="sx-page">
+      <BackupBox available={diagnostics.data?.support_bundle === true} />
       <SupportBox />
       <ReportsBox />
     </div>

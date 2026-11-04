@@ -86,6 +86,13 @@ impl Logbook {
         Self::from_connection(Connection::open(path)?)
     }
 
+    /// Una copia coerente del log in `path` (che non deve esistere), anche mentre e' aperto: per la copia delle impostazioni.
+    pub fn copy_to(&self, path: &Path) -> Result<(), LogError> {
+        let conn = self.conn.lock().unwrap_or_else(|p| p.into_inner());
+        conn.execute("VACUUM INTO ?1", [path.to_string_lossy().as_ref()])?;
+        Ok(())
+    }
+
     pub fn open_in_memory() -> Result<Logbook, LogError> {
         Self::from_connection(Connection::open_in_memory()?)
     }

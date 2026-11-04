@@ -78,6 +78,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/diagnostics", get(diagnostics_get))
         .route("/api/v1/diagnostics/crash-folder", post(diagnostics_crash_folder))
         .route("/api/v1/diagnostics/support-bundle", post(diagnostics_support_bundle))
+        .route("/api/v1/settings-backup", post(settings_backup))
+        .route("/api/v1/settings-restore", post(settings_restore).layer(axum::extract::DefaultBodyLimit::max(SETTINGS_RESTORE_MAX_BYTES)))
         .route("/api/v1/diagnostics/support-bundle/reveal", post(diagnostics_support_reveal))
         .route("/api/v1/reports", get(reports_get).put(reports_put))
         .route("/api/v1/reports/install-id", post(reports_new_id))
@@ -1789,6 +1791,49 @@ fn support_live(state: &AppState) -> Value {
 }
 
 /// Prepara sul Desktop lo zip per l'assistenza (log, crash, impostazioni senza segreti, info.txt) e lo mostra in Esplora file.
+/// Lo zip di una copia delle impostazioni non supera questo (log di molti QSO compreso).
+const SETTINGS_RESTORE_MAX_BYTES: usize = 200 * 1024 * 1024;
+
+/// Crea la copia delle impostazioni sul Desktop e la mostra (solo dal PC stesso).
+#[utoipa::path(post, path = "/api/v1/settings-backup", responses((status = 200, description = "{ok, path, name, files}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Non disponibile (backup_unavailable)"), (status = 500, description = "Copia non riuscita (backup_failed)")))]
+async fn settings_backup(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let make = state.settings_backup.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "backup_unavailable"))?;
+    let (path, files) = tokio::task::spawn_blocking(move || {
+        let made = make()?;
+        if let Err(e) = reveal_in_explorer(&made.0) {
+            tracing::warn!("copia delle impostazioni non mostrata: {e}");
+        }
+        Ok::<_, String>(made)
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "backup_failed"))?
+    .map_err(|e| {
+        tracing::warn!("copia delle impostazioni non riuscita: {e}");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "backup_failed").with_message(e)
+    })?;
+    tracing::info!("copia delle impostazioni: {} ({files} file)", path.display());
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    Ok(Json(json!({ "ok": true, "path": path.display().to_string(), "name": name, "files": files })))
+}
+
+/// Ripristina da una copia delle impostazioni: i file si applicano al prossimo avvio di Aurora (solo dal PC stesso).
+#[utoipa::path(post, path = "/api/v1/settings-restore", responses((status = 200, description = "{ok, files}: si applicano riavviando Aurora"), (status = 400, description = "Non e' una copia di Aurora (not_a_backup)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Non disponibile (backup_unavailable)")))]
+async fn settings_restore(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: axum::body::Bytes) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let restore = state.settings_restore.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "backup_unavailable"))?;
+    let files = tokio::task::spawn_blocking(move || restore(body.to_vec()))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "restore_failed"))?
+        .map_err(|e| if e == "not_a_backup" { ApiError::new(StatusCode::BAD_REQUEST, "not_a_backup") } else { ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "restore_failed").with_message(e) })?;
+    tracing::info!("ripristino pronto: {files} file al prossimo avvio");
+    Ok(Json(json!({ "ok": true, "files": files })))
+}
+
 #[utoipa::path(post, path = "/api/v1/diagnostics/support-bundle", responses((status = 200, description = "{ok, name, path, version, call, radio, ptt}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Solo nel programma Windows (support_unavailable)"), (status = 500, description = "Pacchetto non creato (bundle_failed)")))]
 async fn diagnostics_support_bundle(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: Option<Json<SupportBody>>) -> Result<Json<Value>, ApiError> {
     if !from_this_pc(peer, &headers) {

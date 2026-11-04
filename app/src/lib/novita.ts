@@ -20,8 +20,22 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.104',
+    released: '2026-11-04T11:38:26Z',
+    kind: 'new',
+    title: ['Copia delle impostazioni e suono di avvio', 'Settings backup and start-up sound', 'Sicherung der Einstellungen und Startton', 'Copie des réglages et son de démarrage', 'Copia de los ajustes y sonido de inicio', 'Cópia das definições e som de arranque'],
+    text: [
+      'In Impostazioni › Assistenza «Salva una copia» mette sul Desktop uno zip con tutte le impostazioni e il log dei QSO; «Ripristina da una copia» le rimette al posto alla prossima apertura (password dei servizi escluse). Il saluto sonoro della schermata di avvio si sente di nuovo.',
+      'In Settings › Support «Save a backup» puts a zip with all settings and the QSO log on the Desktop; «Restore from a backup» puts them back the next time Aurora opens (service passwords excluded). The start-up screen greeting sound plays again.',
+      'Unter Einstellungen › Support legt «Sicherung speichern» eine ZIP-Datei mit allen Einstellungen und dem QSO-Log auf den Desktop; «Aus Sicherung wiederherstellen» setzt sie beim nächsten Start zurück (ohne Passwörter der Dienste). Der Begrüßungston des Startbildschirms ist wieder zu hören.',
+      'Dans Réglages › Assistance « Enregistrer une copie » met sur le Bureau un zip avec tous les réglages et le journal des QSO ; « Restaurer depuis une copie » les remet en place à la prochaine ouverture (mots de passe des services exclus). Le son d’accueil de l’écran de démarrage s’entend de nouveau.',
+      'En Ajustes › Asistencia «Guardar una copia» deja en el Escritorio un zip con todos los ajustes y el log de QSO; «Restaurar desde una copia» los repone en la próxima apertura (sin contraseñas de servicios). El sonido de bienvenida de la pantalla de inicio vuelve a oírse.',
+      'Em Definições › Assistência «Guardar uma cópia» põe no Ambiente de trabalho um zip com todas as definições e o log dos QSO; «Restaurar de uma cópia» repõe-nas na próxima abertura (sem palavras-passe dos serviços). O som de boas-vindas do ecrã de arranque volta a ouvir-se.',
+    ],
+  },
+  {
     version: '0.11.103',
-    released: '2026-11-04T11:30:54Z',
+    released: '2026-11-04T11:33:12Z',
     kind: 'fixed',
     title: ['Modo visibile anche senza audio', 'Mode shown even without audio', 'Modus auch ohne Audio sichtbar', 'Mode visible même sans audio', 'Modo visible incluso sin audio', 'Modo visível mesmo sem áudio'],
     text: [
