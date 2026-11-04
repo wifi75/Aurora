@@ -136,6 +136,21 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       fail(error);
     }
   };
+  const splitOn = controls.data?.split === true;
+  const toggleSplit = async () => {
+    try {
+      await postControl('split', !splitOn);
+      client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, split: !splitOn }));
+      await client.invalidateQueries({ queryKey: ['controls'] });
+    } catch (error) {
+      fail(error);
+    }
+  };
+  const splitBtn = (
+    <button type="button" className={`phone-split${splitOn ? ' phone-split--on' : ''}`} aria-pressed={splitOn} title={t('tip.ctl.split')} onClick={() => void toggleSplit()}>
+      {t('ctl.split')}
+    </button>
+  );
   const pickTx = (i: number) => chooseTxMessage(i, seq.messages, seq.selected, seq.hound).catch(fail);
   const tune = async (spot: ClusterSpot) => {
     if (!rigControl) {
@@ -296,6 +311,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         {isCq ? (
           <div className="phone-dxline">
             <b>{t('phone.cqCall')}</b>
+            {splitBtn}
           </div>
         ) : (
           <div className="phone-dxline">
@@ -303,6 +319,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
             <b className="data">{dxCall}</b>
             {dxFlag ? <span className={`fi fi-${dxFlag} phone-flag`} aria-hidden="true" /> : null}
             <span className="phone-dxinfo">{dxInfo}</span>
+            {splitBtn}
           </div>
         )}
         <ol className="phone-txgrid">

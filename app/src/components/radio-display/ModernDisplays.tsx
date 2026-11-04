@@ -198,16 +198,18 @@ export function IcBlueDisplay({ model, noRadio, ariaLabel, data, onAction, waiti
   );
 }
 
-/** E3 · LED essenziale (stile K4). */
+/** E3 · LED essenziale (stile K4): tasti in alto, sotto la frequenza con gli strumenti in linea, a destra il VFO B. */
 export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
     <Frame cls="md-e md-ledline" ariaLabel={ariaLabel}>
-      <div>
-        <div className="md-row md-amber"><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
-        <span className="md-freq md-mono">{formatRadioFrequency(model.dialHz)}</span>
+      <div className="md-led-left">
+        <div className="md-row md-amber md-led-chips"><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+        <div className="md-led-line">
+          <span className="md-freq md-mono">{formatRadioFrequency(model.dialHz)}</span>
+          {s.meters ? <Bars model={model} cls="md-bars--led md-led-bars" /> : null}
+        </div>
       </div>
-      {s.meters ? <Bars model={model} cls="md-bars--led" /> : <span />}
       {s.vfoB ? <div className="md-right"><span className="md-soft">VFO B</span><span className="md-freq md-freq--sub md-mono">{formatRadioFrequency(s.x.vfo_b_hz ?? 0)}</span></div> : <span />}
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>

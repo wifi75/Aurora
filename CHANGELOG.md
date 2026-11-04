@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.124 - 2026-11-04
+- **Log dopo RRR senza 73**: molte stazioni non rispondono al RRR; all'ultimo tentativo di chiusura (o dopo 3 senza limite scelto) il QSO va a log, o si apre la conferma, invece di essere abbandonato (`qso-native/src/sequencer.rs`).
+- **Telefono**: tasto «Tx/Rx Split» a destra sulla riga della stazione chiamata nel riquadro Messaggi Tx.
+- **Pannello Log**: colonna del paese visibile anche nella finestra stretta (i rapporti si tolgono per primi), con i puntini se non ci sta.
+- **Attività di banda / CQ**: bandiera, paese e distanza 10 px più a destra, più spazio al messaggio.
+- **Display estesi** a 640 × 75 punti (prima 70); **LED essenziale** con S, Po e SWR sulla riga della frequenza, sotto i pulsanti.
+
 ## 0.11.123 - 2026-11-04
 - **Telefono bloccato dal firewall, corretto**: se alla domanda di Windows «Consenti l'accesso» si premeva Annulla, Windows creava regole di blocco che vincono su ogni permesso, e «Consenti Aurora» non bastava. Ora «Consenti Aurora» (Impostazioni › Smartphone/Tablet) toglie i blocchi su Aurora e aggiunge il permesso per il programma e per la porta TCP, su ogni rete (anche «Pubblica»); il controllo della rete riconosce anche la regola della porta e non segnala più la rete «Pubblica» quando il permesso c'è.
 - **QR del telefono più sicuro**: con il PC su più reti (cavo e Wi-Fi) nel QR va per primo l'indirizzo della Wi-Fi, dove è quasi sempre il telefono; sotto il QR compaiono gli altri indirizzi del PC, ognuno con il suo QR piccolo («il telefono non apre la pagina? prova il successivo»), e il consiglio di inquadrarlo con la fotocamera e aprirlo in Chrome o Safari, non dentro Messenger o WhatsApp. Sei lingue.

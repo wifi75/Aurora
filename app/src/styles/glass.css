@@ -924,10 +924,17 @@ button.glass.chip.chip--main {
   display: none;
 }
 
-/* nella finestra Log stretta restano data, nominativo, banda e modo */
+/* nella finestra Log stretta restano data, nominativo, banda, modo e paese (i rapporti si tolgono per primi) */
 @container (max-width: 28rem) {
-  .log4om-table th:nth-child(n + 5),
-  .log4om-table td:nth-child(n + 5) {
+  .log4om-table th:nth-child(5),
+  .log4om-table td:nth-child(5) {
+    display: none;
+  }
+}
+
+@container (max-width: 22rem) {
+  .log4om-table th:nth-child(6),
+  .log4om-table td:nth-child(6) {
     display: none;
   }
 }
