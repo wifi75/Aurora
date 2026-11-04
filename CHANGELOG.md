@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.130 - 2026-11-04
+- **Display in testata**: fuori dal flusso della riga (`position: absolute`), centrato fra il bordo della barra del menu e i pannelli; non si sovrappone e non sposta nulla. Frontalini FT-2000/IC-7610 8 px sopra e sotto; con gli estesi da 90 la riga ha `min-height` quanto basta (4 px sopra e sotto). Tolta la salita sul bordo della barra della 0.11.129.
+
 ## 0.11.129 - 2026-11-04
 - **Frontalini FT-2000 / IC-7610**: altezza del disegno (`height: auto`) invece del riquadro di 90, niente striscia vuota sotto; PWR alto quanto il frontalino.
 - **Attività di banda / CQ**: colonne della distanza e dell'etichetta 7 px più strette in tutte le larghezze.
