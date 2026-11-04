@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Display Icom</title>
+<style>
+:root{--bg:#0d1117;--muted:#a3b3ca}
+body{margin:0;padding:16px;background:var(--bg);color:#e6edf8;font-family:system-ui,sans-serif}
+h1{font-size:20px;margin:0 0 4px}
+p.sub{color:var(--muted);margin:0 0 16px;font-size:14px;max-width:900px}
+.icom{max-width:980px;border-radius:10px;border:2px solid #1b2a44;background:linear-gradient(180deg,#0a2a6b,#061a45);padding:8px 10px;font-family:'Segoe UI',system-ui,sans-serif;color:#fff;box-sizing:border-box}
+.bar{display:flex;gap:8px;align-items:center;font-size:12px;color:#cfe0ff}
+.chip{border:1px solid #6f92d8;border-radius:3px;padding:0 5px;font-size:11px;line-height:16px}
+.on{background:#e6edf8;color:#0a2a6b;border-color:#e6edf8}
+.tx{background:#d32f2f;border-color:#d32f2f;color:#fff}
+.main{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;margin-top:6px}
+.freq{font-size:52px;font-weight:300;letter-spacing:1px;line-height:1;font-variant-numeric:tabular-nums}
+.freq small{font-size:30px}
+.row{display:flex;gap:6px;align-items:center;margin:4px 0}
+.meter{display:grid;grid-template-columns:34px 1fr;gap:4px 6px;align-items:center;font-size:11px;color:#cfe0ff}
+.scale{height:9px;border-radius:2px;background:#03133a;position:relative;overflow:hidden}
+.fill{position:absolute;inset:0;width:var(--w);background:linear-gradient(90deg,#fff 0 72%,#ff5252 72%)}
+.ticks{display:flex;justify-content:space-between;font-size:10px;color:#9fb8ee;grid-column:2}
+.legend{max-width:980px;color:var(--muted);font-size:13px;margin-top:14px;line-height:1.6}
+.legend b{color:#e6edf8}
+</style>
+</head>
+<body>
+<h1>Display Icom (stile IC-7610 / IC-7760 / IC-7300MK2)</h1>
+<p class="sub">Sfondo blu come le Icom, frequenza grande in bianco, grafico della banda passante del filtro (PBT, shift e notch) e strumento multiplo. Ogni casella compare solo se Hamlib dice che la radio la ha e se è spuntata in Impostazioni › Radio › «Cosa mostrare sul display».</p>
+
+<div class="icom">
+  <div class="bar">
+    <span class="chip on">ANT1</span><span class="chip">P.AMP1</span><span class="chip">ATT OFF</span><span class="chip on">AGC-F</span>
+    <span class="chip">VOX</span><span class="chip">BK-IN</span><span class="chip">LAN</span>
+    <span style="flex:1"></span><span>OVF</span><span>12:34</span>
+  </div>
+  <div class="main">
+    <div>
+      <div class="row"><span class="chip on">VFO A</span><span class="chip on">USB-D</span><span class="chip">FIL2</span><span class="chip tx">TX</span><span class="chip">SPLIT</span><span class="chip">DUAL</span><span class="chip">RIT</span></div>
+      <div class="freq">14.074.<small>00</small></div>
+      <div class="row" style="font-size:12px;color:#cfe0ff">VFO B 14.076.50 USB-D · RIT +0.00</div>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 70" width="100%" height="70" aria-label="Banda passante del filtro">
+        <line x1="10" y1="60" x2="310" y2="60" stroke="#6f92d8" stroke-width="1"/>
+        <path d="M60 60 L95 14 L225 14 L260 60" fill="#1e4fb0" fill-opacity=".55" stroke="#fff" stroke-width="2"/>
+        <line x1="160" y1="8" x2="160" y2="64" stroke="#9fb8ee" stroke-dasharray="3 3"/>
+        <path d="M196 14 L200 40 L204 14" fill="none" stroke="#ff8a80" stroke-width="2"/>
+        <text x="12" y="12" font-size="11" fill="#cfe0ff">BW 3.0k</text>
+        <text x="250" y="12" font-size="11" fill="#cfe0ff">SFT 0</text>
+        <text x="190" y="54" font-size="10" fill="#ff8a80">AN</text>
+        <text x="112" y="54" font-size="10" fill="#cfe0ff">PBT1 ◂ ▸ PBT2</text>
+      </svg>
+      <div class="meter">
+        <span>S</span><div class="scale"><div class="fill" style="--w:62%"></div></div>
+        <span class="ticks"><i>1</i><i>3</i><i>5</i><i>7</i><i>9</i><i style="color:#ff8a80">+20</i><i style="color:#ff8a80">+40</i><i style="color:#ff8a80">+60</i></span>
+        <span>Po</span><div class="scale"><div class="fill" style="--w:45%;background:#fff"></div></div>
+        <span>SWR</span><div class="scale"><div class="fill" style="--w:12%;background:#ffd54f"></div></div>
+        <span>ALC</span><div class="scale"><div class="fill" style="--w:20%;background:#80cbc4"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="bar" style="margin-top:6px">
+    <span class="chip on">NB</span><span class="chip">NR</span><span class="chip on">NOTCH AN</span><span class="chip">APF</span><span class="chip">AUTOTUNE</span><span class="chip">LOCK</span>
+    <span style="flex:1"></span><span>RF ▾</span><span>PWR 50%</span>
+  </div>
+</div>
+
+<div class="legend">
+<b>Cosa c'è, preso dalle Icom vere</b> (manuale IC-7610): antenna, preamplificatore, attenuatore, AGC, VOX, BK-IN, LAN e orologio in alto; VFO/memoria, modo, filtro FIL1-3, stato TX (rosso), SPLIT, DUAL, RIT con lo scostamento; frequenza grande e VFO B sotto; <b>grafico della banda passante</b> con larghezza BW, SHIFT, i due PBT e il notch (AN/MN); <b>strumento multiplo</b> S, Po, SWR, ALC (anche COMP e Vd se la radio li dà); in basso NB, NR, NOTCH, APF, AUTOTUNE, LOCK, guadagno RF e potenza. Niente spettro né cascata.<br>
+<b>Regola</b>: ogni casella si vede solo se Hamlib dice che il modello la ha e se l'hai spuntata in Impostazioni › Radio; i tasti cliccabili (NB, NR, NOTCH, ATT, P.AMP, AGC, AUTOTUNE, PWR) comandano la radio via CAT.
+</div>
+
+<h1 style="margin-top:28px">Impostazioni › Radio › Cosa mostrare sul display</h1>
+<p class="sub">Le voci arrivano da Hamlib per il modello scelto: compaiono solo le funzioni che la radio ha. Esempio con tre radio.</p>
+<style>
+.menu{max-width:980px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{border:1px solid #2a3446;border-radius:10px;padding:10px 12px;background:#131b28}
+.card h3{margin:0 0 8px;font-size:15px}
+.opt{display:flex;gap:8px;align-items:center;font-size:13px;padding:3px 0}
+.box{width:14px;height:14px;border-radius:3px;border:1.5px solid #3fd6c8;display:inline-grid;place-items:center;font-size:11px;color:#04201d}
+.box.c{background:#3fd6c8}
+.no{color:#5c6b84;font-size:12px;margin-top:6px}
+@media(max-width:700px){.menu{grid-template-columns:1fr}}
+</style>
+<div class="menu">
+ <div class="card"><h3>Icom IC-7300</h3>
+  <div class="opt"><span class="box c">✓</span>S-meter, Po, SWR, ALC</div>
+  <div class="opt"><span class="box c">✓</span>P.AMP (0-20 dB) e ATT (0-12 dB)</div>
+  <div class="opt"><span class="box c">✓</span>NB, NR, notch (AN/MN)</div>
+  <div class="opt"><span class="box c">✓</span>Twin PBT e banda passante</div>
+  <div class="opt"><span class="box c">✓</span>Accordatore (AUTOTUNE)</div>
+  <div class="opt"><span class="box c">✓</span>OVF</div>
+  <div class="opt"><span class="box"></span>VOX, COMP, BK-IN</div>
+  <div class="opt"><span class="box"></span>RIT e XIT</div>
+  <div class="opt"><span class="box"></span>Guadagni AF, RF, SQL</div>
+  <div class="opt"><span class="box c">✓</span>Split</div>
+  <div class="no">Non compaiono: IF shift, APF, NB2</div>
+ </div>
+ <div class="card"><h3>Yaesu FTDX10</h3>
+  <div class="opt"><span class="box c">✓</span>S-meter, Po, SWR, ALC</div>
+  <div class="opt"><span class="box c">✓</span>IPO/AMP (0-20 dB) e ATT (0-18 dB)</div>
+  <div class="opt"><span class="box c">✓</span>NB, NR, notch</div>
+  <div class="opt"><span class="box c">✓</span>IF shift e banda passante</div>
+  <div class="opt"><span class="box c">✓</span>APF</div>
+  <div class="opt"><span class="box c">✓</span>Accordatore (TUNE)</div>
+  <div class="opt"><span class="box"></span>VOX, COMP, BK-IN</div>
+  <div class="opt"><span class="box"></span>RIT e XIT</div>
+  <div class="opt"><span class="box c">✓</span>Split (emulato)</div>
+  <div class="no">Non compaiono: Twin PBT, OVF, NB2</div>
+ </div>
+ <div class="card"><h3>Yaesu FT-2000</h3>
+  <div class="opt"><span class="box c">✓</span>S-meter, Po, SWR, ALC</div>
+  <div class="opt"><span class="box c">✓</span>IPO/AMP e ATT (0-18 dB)</div>
+  <div class="opt"><span class="box c">✓</span>NB, NB2, NR, notch</div>
+  <div class="opt"><span class="box c">✓</span>IF shift e banda passante</div>
+  <div class="opt"><span class="box"></span>APF</div>
+  <div class="opt"><span class="box c">✓</span>Accordatore (TUNE)</div>
+  <div class="opt"><span class="box"></span>VOX, COMP, BK-IN</div>
+  <div class="opt"><span class="box c">✓</span>Split (emulato)</div>
+  <div class="no">Non compaiono: Twin PBT, OVF</div>
+ </div>
+</div>
+<div class="legend">Una voce spuntata compare sul display e il suo tasto comanda la radio via CAT con i valori ammessi da quel modello. Con OmniRig (senza Hamlib) restano solo frequenza e modo.</div>
+</body>
+</html>
