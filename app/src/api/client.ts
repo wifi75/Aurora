@@ -1002,7 +1002,7 @@ export interface LogImportResult {
   skipped: number;
 }
 
-/** Aggiunge al log interno i QSO di un file ADIF (per esempio `wsjtx_log.adi` di JTDX), senza doppioni. Solo dalla rete di casa. */
+/** Aggiunge al log interno i QSO di un file ADIF scelto dall’utente, senza doppioni. Solo dalla rete di casa. */
 export async function importLog(file: Blob): Promise<LogImportResult> {
   return (await (await request('/log/import', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: file })).json()) as LogImportResult;
 }

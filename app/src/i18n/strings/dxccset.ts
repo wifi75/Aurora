@@ -19,12 +19,12 @@ export const dxccSetStrings = {
   ],
   'dxs.guide.title': ['Come funziona', 'How it works', 'So funktioniert es', 'Comment ça marche', 'Cómo funciona', 'Como funciona'],
   'dxs.guide.what': [
-    'La scheda DXCC (sotto il log, nella pagina Stazione) dice, per la stazione che stai chiamando, se il suo paese è nuovo e su quali bande e modi lo hai già collegato. I dati vengono dal log interno di Aurora, da wsjtx_log.adi e da Log4OM2.',
-    'The DXCC card (under the log, on the Station page) tells you, for the station you are calling, whether its country is new and on which bands and modes you have already worked it. The data comes from the Aurora log, wsjtx_log.adi and Log4OM2.',
-    'Die DXCC-Karte (unter dem Log, auf der Stationsseite) zeigt für die gerufene Station, ob ihr Land neu ist und auf welchen Bändern und Modi du es schon gearbeitet hast. Die Daten kommen aus dem Aurora-Log, wsjtx_log.adi und Log4OM2.',
-    'La fiche DXCC (sous le journal, sur la page Station) indique, pour la station appelée, si son pays est nouveau et sur quelles bandes et modes vous l’avez déjà contacté. Les données viennent du journal d’Aurora, de wsjtx_log.adi et de Log4OM2.',
-    'La ficha DXCC (bajo el log, en la página Estación) indica, para la estación que llamas, si su país es nuevo y en qué bandas y modos ya lo has contactado. Los datos vienen del log de Aurora, wsjtx_log.adi y Log4OM2.',
-    'A ficha DXCC (sob o log, na página Estação) indica, para a estação que chamas, se o país é novo e em que bandas e modos já o contactaste. Os dados vêm do log do Aurora, do wsjtx_log.adi e do Log4OM2.',
+    'La scheda DXCC (sotto il log, nella pagina Stazione) dice, per la stazione che stai chiamando, se il suo paese è nuovo e su quali bande e modi lo hai già collegato. I dati vengono dal log interno di Aurora e dai software esterni collegati in Impostazioni (per esempio Log4OM2).',
+    'The DXCC card (under the log, on the Station page) tells you, for the station you are calling, whether its country is new and on which bands and modes you have already worked it. The data comes from the Aurora log and from the external software connected in Settings (for example Log4OM2).',
+    'Die DXCC-Karte (unter dem Log, auf der Stationsseite) zeigt für die gerufene Station, ob ihr Land neu ist und auf welchen Bändern und Modi du es schon gearbeitet hast. Die Daten kommen aus dem Aurora-Log und aus der in den Einstellungen verbundenen externen Software (z. B. Log4OM2).',
+    'La fiche DXCC (sous le journal, sur la page Station) indique, pour la station appelée, si son pays est nouveau et sur quelles bandes et modes vous l’avez déjà contacté. Les données viennent du journal d’Aurora et des logiciels externes reliés dans les Réglages (par exemple Log4OM2).',
+    'La ficha DXCC (bajo el log, en la página Estación) indica, para la estación que llamas, si su país es nuevo y en qué bandas y modos ya lo has contactado. Los datos vienen del log de Aurora y de los programas externos conectados en Ajustes (por ejemplo Log4OM2).',
+    'A ficha DXCC (sob o log, na página Estação) indica, para a estação que chamas, se o país é novo e em que bandas e modos já o contactaste. Os dados vêm do log do Aurora e dos programas externos ligados nas Definições (por exemplo Log4OM2).',
   ],
   'dxs.guide.labels': [
     'Le sei etichette: NEW ONE = paese mai collegato; NEW BAND = paese già collegato, ma non su questa banda; NEW MODE = paese già collegato, ma non con questo modo. NEW GRID, GRID BAND e GRID MODE sono lo stesso per il locatore (quadrato di 4 caratteri). Si colorano con i colori «accesa» quando valgono per la stazione, altrimenti restano «spente».',
