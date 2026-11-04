@@ -26,7 +26,8 @@
     ],
     "resources": {
       "../../app/dist": "dist",
-      "hamlib-bundle": "hamlib"
+      "hamlib-bundle": "hamlib",
+      "cty": "cty"
     },
     "publisher": "Tiziano Cassone (IU3WJQ)",
     "copyright": "© 2026 Tiziano Cassone (IU3WJQ) — GNU GPL 3.0",
