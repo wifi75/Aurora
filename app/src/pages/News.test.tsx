@@ -5,16 +5,15 @@ import { NOVITA } from '../lib/novita';
 import { News, groupByVersion, releaseLabel } from './News';
 
 describe('News', () => {
-  it('shows every entry grouped by version, each release with its date and time', () => {
+  it('shows every entry as one compact row with its version, date and time', () => {
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <News />
       </QueryClientProvider>,
     );
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(NOVITA.length);
-    expect(document.querySelectorAll('.news-release')).toHaveLength(groupByVersion(NOVITA).length);
-    expect(document.querySelectorAll('time[datetime]').length).toBe(groupByVersion(NOVITA).length);
+    expect(document.querySelectorAll('.news-row')).toHaveLength(NOVITA.length);
+    expect(document.querySelectorAll('time[datetime]').length).toBe(NOVITA.length);
   });
 
   it('groups consecutive entries of the same version and formats the release time', () => {

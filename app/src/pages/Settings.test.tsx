@@ -49,6 +49,8 @@ vi.mock('../api/client', () => ({
   putPairingSettings: vi.fn().mockResolvedValue(undefined),
   getDevices: vi.fn().mockResolvedValue([{ id: 3, name: 'Telefono', created_at: 1 }]),
   revokeDevice: vi.fn().mockResolvedValue(undefined),
+  getNetworkCheck: vi.fn().mockResolvedValue({ ssid: null, category: null, firewall_allowed: true, addresses: [] }),
+  allowFirewall: vi.fn().mockResolvedValue(undefined),
   startPairing: vi.fn().mockResolvedValue({ code: '12345678', expires_in: 600, qr_svg: '<svg/>' }),
   ApiError: class extends Error {},
 }));
