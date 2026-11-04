@@ -25,6 +25,8 @@
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
 > **[Instalador para Windows (última versão)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Página da última versão](https://github.com/wifi75/Aurora/releases/latest)
+>
+> 🐧 **[Linux (versão da comunidade, sem suporte): AppImage, .deb ou compilação com um comando](docs/linux.pt.md)**
 
 Uma estação digital FT8, FT4, JT65 e JT9 de nova concepção: interface de impacto, automação dos QSO e controle remoto pelo telefone. Tem um motor próprio de decodificação e transmissão FT8 (o JTDX continua sendo uma comparação opcional); o Aurora é cérebro, motor e tela.
 
