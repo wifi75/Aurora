@@ -1425,8 +1425,15 @@ pub async fn run(
             })
         }));
     }
-    if !my_call.is_empty() {
-        cluster.default_callsign(&my_call);
+    // il DX Cluster entra con il nominativo dei dati di stazione e lo segue se cambia nelle impostazioni
+    cluster.set_station_call(&my_call);
+    if let Some(store) = engine_settings.clone() {
+        let (cluster, mut changes) = (Arc::clone(&cluster), store.subscribe());
+        tokio::spawn(async move {
+            while changes.changed().await.is_ok() {
+                cluster.set_station_call(&store.reports().call);
+            }
+        });
     }
     cluster.restart();
     let own_log = Arc::clone(&logbook);

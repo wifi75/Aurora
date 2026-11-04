@@ -1214,7 +1214,7 @@ struct ClusterQuery {
 async fn cluster_get(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<ClusterQuery>) -> Result<Json<Value>, ApiError> {
     let cluster = cluster_service(&state)?;
     let limit = q.limit.unwrap_or(200).clamp(1, dx_cluster::MAX_SPOTS);
-    Ok(Json(json!({ "config": cluster.config(), "servers": cluster.statuses(), "spots": cluster.spots_since(q.since.unwrap_or(0), limit) })))
+    Ok(Json(json!({ "config": cluster.config(), "callsign": cluster.callsign(), "servers": cluster.statuses(), "spots": cluster.spots_since(q.since.unwrap_or(0), limit) })))
 }
 
 #[utoipa::path(put, path = "/api/v1/dx-cluster", responses((status = 200, description = "Impostazioni salvate e collegamenti rifatti"), (status = 400, description = "Valori non validi (bad_cluster)"), (status = 404, description = "Non disponibile (cluster_unavailable)"), (status = 500, description = "Scrittura non riuscita (cluster_write)")))]
