@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.119',
-    released: '2026-11-04T17:26:51Z',
+    released: '2026-11-04T17:29:39Z',
     kind: 'fixed',
     title: ["Porta di rete per il CAT", "Network port for CAT", "Netzwerkport für CAT", "Port réseau pour le CAT", "Puerto de red para el CAT", "Porta de rede para o CAT"],
     text: [
