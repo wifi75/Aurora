@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.128',
+    released: '2026-11-04T21:36:46Z',
+    kind: 'changed',
+    title: ['Display estesi 640 × 90', 'Wide displays 640 × 90', 'Breite Anzeigen 640 × 90', 'Afficheurs larges 640 × 90', 'Pantallas anchas 640 × 90', 'Ecrãs largos 640 × 90'],
+    text: [
+      "I display estesi sono alti 90 punti (640 × 90), centrati fra la barra del menu e i pannelli. In Attività di banda e CQ il testo del messaggio è 1 punto più piccolo, così i messaggi lunghi si tagliano meno (solo sul PC).",
+      "Wide displays are 90 points high (640 × 90), centred between the menu bar and the panels. In Band activity and CQ the message text is 1 point smaller, so long messages are cut less (PC only).",
+      "Breite Anzeigen sind 90 Punkte hoch (640 × 90), mittig zwischen Menüleiste und Feldern. In Bandaktivität und CQ ist der Nachrichtentext 1 Punkt kleiner, lange Nachrichten werden weniger abgeschnitten (nur am PC).",
+      "Les afficheurs larges font 90 points de haut (640 × 90), centrés entre la barre du menu et les panneaux. Dans Activité de bande et CQ le texte du message est plus petit d’1 point, les messages longs sont moins coupés (PC seulement).",
+      "Las pantallas anchas miden 90 puntos de alto (640 × 90), centradas entre la barra del menú y los paneles. En Actividad de banda y CQ el texto del mensaje es 1 punto más pequeño, los mensajes largos se cortan menos (solo en el PC).",
+      "Os ecrãs largos têm 90 pontos de altura (640 × 90), centrados entre a barra do menu e os painéis. Na Atividade de banda e CQ o texto da mensagem é 1 ponto mais pequeno, as mensagens longas cortam-se menos (só no PC).",
+    ],
+  },
+  {
     version: '0.11.127',
     released: '2026-11-04T21:34:00Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Radio, pour Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 et Kenwood TS-590SG, TS-890 apparaît ce qu’il faut régler dans Aurora, dans la radio et pour l’audio, avec un bouton pour l’appliquer. Nouvelle entrée « Configurer la radio » dans le Guide ; page Radio plus ordonnée.',
       'En Ajustes > Radio, para Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 y Kenwood TS-590SG, TS-890 aparece qué ajustar en Aurora, en la radio y en el audio, con un botón para aplicarlo. Nueva entrada «Configurar la radio» en la Guía; página Radio más ordenada.',
       'Em Definições > Rádio, para Icom IC-7300, IC-7610, IC-705, IC-9700, Yaesu FT-991A, FT-710, FTDX10, FTDX101, FT-2000 e Kenwood TS-590SG, TS-890 aparece o que configurar na Aurora, no rádio e no áudio, com um botão para aplicar. Nova entrada «Configurar o rádio» no Guia; página Rádio mais arrumada.',
-    ],
-  },
-  {
-    version: '0.11.91',
-    released: '2026-11-03T19:38:11Z',
-    kind: 'fixed',
-    title: ['Correzioni per il telefono', 'Phone fixes', 'Korrekturen für das Telefon', 'Corrections pour le téléphone', 'Correcciones para el teléfono', 'Correções para o telemóvel'],
-    text: [
-      'Solo la stazione chiamata è in giallo (non quelle in coda); il cluster del telefono non usa il testo cercato sul PC; l’accesso senza codice cambia solo se la scelta viene salvata.',
-      'Only the called station is yellow (not queued ones); the phone cluster ignores the text searched on the PC; code-free access changes only if the choice is saved.',
-      'Nur die gerufene Station ist gelb (nicht die in der Warteschlange); der Telefon-Cluster ignoriert den am PC gesuchten Text; der Zugang ohne Code ändert sich nur, wenn die Wahl gespeichert wird.',
-      'Seule la station appelée est en jaune (pas celles en file) ; le cluster du téléphone ignore le texte cherché sur le PC ; l’accès sans code ne change que si le choix est enregistré.',
-      'Solo la estación llamada está en amarillo (no las de la cola); el clúster del teléfono ignora el texto buscado en el PC; el acceso sin código solo cambia si la elección se guarda.',
-      'Só a estação chamada fica a amarelo (não as em fila); o cluster do telemóvel ignora o texto procurado no PC; o acesso sem código só muda se a escolha for guardada.',
     ],
   },
 ];

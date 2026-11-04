@@ -84,7 +84,7 @@ button.md-chip:disabled { cursor: progress; }
 .md-bars--yaesu .md-bar--swr i { background: repeating-linear-gradient(90deg, #f09595 0 4px, transparent 4px 6px); }
 
 /* In testata: estesi nella riga dei comandi, quasi quadrati nell'angolo (le icone della testata diventano piccole) */
-.rd-modern-slot { width: 40rem; max-width: 100%; height: 5rem; flex: none; }
+.rd-modern-slot { width: 40rem; max-width: 100%; height: 5.625rem; flex: none; }
 .rd-square-slot { position: fixed; top: 0.4rem; right: 0.6rem; width: 20.625rem; height: 8.125rem; z-index: 1050; }
 /* la barra del menu finisce prima del display (sfondo e bordo si fermano li', angolo arrotondato): il display sta nel suo spazio, non sopra la barra */
 body.rd-square .app-header {
