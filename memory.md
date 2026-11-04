@@ -68,6 +68,12 @@ Stato al 2026-11-04, versione 0.11.101. Per riprendere il lavoro leggi anche `do
 - Automazioni: partono spente e in prova a vuoto; il modo reale solo dal PC con l'avviso confermato; limiti impostati sul PC.
 - Nei repository niente nominativi reali, niente riferimenti a strumenti di assistenza, niente segreti.
 
+## Nessun legame con altri programmi (2026-11-04, decisione del proprietario)
+- Aurora deve funzionare **da sola**: niente dati, file o funzioni che dipendono da JTDX, WSJT-X o altri programmi installati. Lettura di `JTDX.ini`/log di JTDX e di Log4OM2 solo come importazione facoltativa se presenti, mai come requisito.
+- `cty.dat` e' incluso (`desktop/src-tauri/cty/`, risorsa `cty`), scaricato da country-files.com da `rilascio-windows.ps1`, `compila-linux.sh` e GitHub Actions; non si committa. Prima veniva solo da JTDX: un utente SWL (IZ0008SWL) senza JTDX non vedeva bandiere ne' NEW ONE.
+- Il cambio FT8/FT4 funziona senza CAT con il motore proprio (`switch_mode` non sposta la radio se non risponde); le bande restano legate al CAT.
+- Da valutare: `prepara-hamlib.ps1` prende i binari di Hamlib anche da JTDX/WSJT-X installati sul PC di chi rilascia (solo compilazione); meglio la release ufficiale di Hamlib.
+
 ## Linux (2026-11-04)
 - Versione non provata dall'autore e senza assistenza (i pacchetti li compila GitHub dallo stesso codice): **stesso codice e stesso ramo** di Windows, nessun ramo separato. Il codice solo Windows sta in `#[cfg(windows)]` (regola in `docs/sviluppo.md`).
 - `scripts/compila-linux.sh` (apt/dnf/pacman/zypper, Rust se manca) prepara `.deb` e AppImage; `desktop/src-tauri/tauri.linux.conf.json` sceglie i formati e spegne i file d'aggiornamento firmati.

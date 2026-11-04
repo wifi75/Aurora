@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Paesi e bandiere senza altri programmi**: il file dei paesi `cty.dat` (AD1C, country-files.com) e' dentro Aurora, aggiornato a ogni versione; prima Aurora lo cercava solo nell'installazione di JTDX e, senza JTDX, non mostrava bandiere, paesi ne' NEW ONE/NEW BAND.
+- **FT8/FT4 senza radio collegata**: il modo si cambia anche senza CAT (radioascolto), la radio resta dov'e'.
+- **Bande bloccate**: il suggerimento spiega che si sbloccano collegando la radio in Impostazioni › Radio (prima diceva «AURORA_RIG=omnirig»), nelle sei lingue.
 - **Linux** (non provata dall'autore, senza assistenza): compila dallo stesso codice di Windows; `scripts/compila-linux.sh` prepara AppImage e `.deb` con un comando, guida in sei lingue (`docs/linux.md`), sezione Linux nella pagina web e nei README; GitHub Actions controlla Linux a ogni push e allega AppImage e `.deb` a ogni release.
 - **Pagina web**: download con linguette Windows / Linux e passi per Ubuntu·Debian·Mint, Fedora, Arch·Manjaro e compilazione, con pulsante «Copia» per ogni comando; pulsanti grafici Linux nei README; guida Linux ampliata (passo passo per distribuzione, primo avvio, disinstallazione, problemi comuni). Lo script installa anche Node.js 22 se manca o è troppo vecchio.
 
