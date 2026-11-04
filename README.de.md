@@ -32,7 +32,7 @@
 >
 > 🐧 **[Linux (vom Autor nicht getestet, ohne Support): AppImage, .deb oder Bauen mit einem Befehl](docs/linux.de.md)**
 
-Eine neuartige digitale Station für FT8, FT4, JT65 und JT9: eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden von FT8 (JTDX bleibt ein optionaler Vergleich); Aurora ist Gehirn, Motor und Bildschirm.
+Eine neuartige digitale Station für FT8, FT4, JT65 und JT9: eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden von FT8; Aurora ist Gehirn, Motor und Bildschirm.
 
 Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
@@ -49,7 +49,7 @@ Version 0.11.101: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Send
 - **Einstellungen nach Thema**: sechs Gruppen (Station, Empfang, Senden und QSO, Hinweise, Netz und Logs, System) mit Seiten wie Funkgerät, Wasserfall, Sequenz, Log-Dienste und Verbundene Programme; Suche über alle Einträge, Fehler direkt am Feld.
 - **Sechs Sprachen** (Italienisch, Englisch, Deutsch, Französisch, Spanisch, Portugiesisch) und ein Tooltip an jedem Bedienelement.
 - **Hilfe und Statistik**: kurze In-App-Hilfe in sechs Sprachen; Statistikseite mit Diplomen, QSOs pro Band und fehlenden Ländern; deine gesendeten Nachrichten erscheinen als `Tx`-Zeilen.
-- **DX-Cluster, Uhr, Log**: DX-Cluster-Fenster (öffentliche oder eigene Telnet-Server, Doppelklick = das Funkgerät geht auf die Frequenz des Spots), NTP-Client mit Uhrenanzeige, echte JTDX-Einstellungen aus seiner Datei gelesen und schreibgeschütztes Log-Fenster von Log4OM2.
+- **DX-Cluster, Uhr, Log**: DX-Cluster-Fenster (öffentliche oder eigene Telnet-Server, Doppelklick = das Funkgerät geht auf die Frequenz des Spots), NTP-Client mit Uhrenanzeige, schreibgeschütztes Log-Fenster von Log4OM2.
 - **Stationswerkzeuge**: Eingangspegel des Audiosignals mit Regler und AUTO auf der Windows-Aufnahmelautstärke, Verlauf der empfangenen Nachrichten (30 Tage, durchsuchbar), Cluster-Spots im Wasserfall, automatische Diagnose (Uhr, Audio, Rufzeichen), Ausbreitungsseite mit PSK Reporter und hamqsl.com (**aus, bis du sie einschaltest**) und Karte der QSOs und empfangenen Stationen.
 - **Funkgerät**: Anzeige des Funkgeräts oben mit erweiterter Anzeige (zweites VFO, Instrumente, PRE/ATT, AGC, NB/NR/Notch, Verstärkungen, RIT/XIT), jeder Eintrag unter Einstellungen > Allgemein einschaltbar; der Wasserfall folgt der per CAT gelesenen Filterbreite des Funkgeräts; ein verwaister rigctld beendet sich selbst.
 - **DXpeditionen**: NG3K-Kalender (Online-Dienste, standardmäßig aus) neben den CQs: in der Luft, jetzt gehört, kommende und Verlauf.
@@ -68,10 +68,10 @@ Der einfachste Weg: der Installer `Aurora_X.Y.Z_x64-setup.exe` (Programm mit Tra
 ## Schnellstart (Windows)
 
 ```
-.\scripts\avvia-sviluppo.ps1 -Jtdx
+.\scripts\avvia-sviluppo.ps1 -Motore
 ```
 
-Startet den Core (Port 8787) und die Oberfläche (Port 5173) in einem einzigen Tab von Windows Terminal; mit `-Jtdx` verbindet es sich mit dem echten JTDX und findet `cty.dat` und das QSO-Log selbst. Öffne die Seite **über die IP-Adresse des PCs** (zum Beispiel `http://192.168.1.225:8787`), nicht über `localhost`: es ist dieselbe Adresse, die das Smartphone verwendet.
+Startet den Core (Port 8787) und die Oberfläche (Port 5173) in einem einzigen Tab von Windows Terminal; mit `-Motore` nutzt es Auroras eigene Engine auf der Soundkarte (`-Audio "USB Audio"` zur Auswahl). Öffne die Seite **über die IP-Adresse des PCs** (zum Beispiel `http://192.168.1.225:8787`), nicht über `localhost`: es ist dieselbe Adresse, die das Smartphone verwendet.
 
 Für den Wasserfall setze `AURORA_AUDIO_DEVICE` (Teil des Namens des Audioeingangs, zum Beispiel `USB Audio`): ohne bleibt der Wasserfall leer.
 
@@ -87,17 +87,13 @@ Zeigt einen 8-stelligen Code und einen QR-Code; der Code gilt so lange, wie du e
 
 Während der Tests kann der **Zugang ohne Code** eingeschaltet werden (Einstellungen → Zugang oder `AURORA_OPEN_ACCESS=1`): Er gilt nur für Geräte im Heimnetz, nie für das Internet oder Proxys, und lässt sich am PC jederzeit ausschalten.
 
-### Mit echtem JTDX
-
-Siehe `docs/guida-collegamento-jtdx.md` (Dokumentation auf Italienisch): Aurora sitzt zwischen JTDX und GridTracker2 (UDP-Hub), ohne einem der beiden etwas wegzunehmen, und das geloggte QSO erreicht Log4OM2 wie zuvor. Der Band- und Moduswechsel nutzt dasselbe OmniRig wie JTDX (`AURORA_RIG=omnirig`).
-
 ### CAT: das Funkgerät für alle Modelle
 
 Unter Einstellungen → Radio CAT wählst du, wie das Funkgerät gesteuert wird (Frequenz, Modus, PTT, Split): **Hamlib** über `rigctld` (über 300 Modelle, die Standardwahl) oder OmniRig. Benannte Profile, Erkennung des Funkgeräts und Echtzeitstatus. Anleitung für Anwender und Tests mit echtem Funkgerät in `docs/cat-radio.md` (Dokumentation auf Italienisch).
 
 ## Konfiguration
 
-Umgebungsvariablen (vollständige Liste in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`sim` / `jtdx`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
+Umgebungsvariablen (vollständige Liste in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`native` / `sim`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
 Die Anzeigeeinstellungen (Farben, Filter, Sprache, Bänder, Makros) liegen im Browser; Frequenzen, Zeitplan, Automatisierungsregeln, Codedauer und Funkgerät (`radio.json`: Modell, Port, Profile) liegen in `data/`.
 
 ## Struktur
@@ -108,7 +104,7 @@ core/crates/   aurora-core  udp-bridge  udp-hub  engine-jtdx  engine-sim
                rig-control  auth  remote-api  aurora
 app/src/       pages  components  settings  lib  i18n  render  state  api
 scripts/       avvia-sviluppo.ps1  associa-telefono.ps1
-docs/          Spezifikation, Pläne, Berichte, API, JTDX-Anleitung, mancante.md (auf Italienisch)
+docs/          Spezifikation, Pläne, Berichte, API, mancante.md (auf Italienisch)
 ```
 
 ## Dokumentation (auf Italienisch)

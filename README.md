@@ -32,7 +32,7 @@
 >
 > 🐧 **[Linux (not tested by the author, no support): AppImage, .deb or one-command build](docs/linux.en.md)**
 
-A new kind of FT8, FT4, JT65 and JT9 digital station: a striking interface, QSO automation and remote control from your phone. It has its own FT8 decode and transmit engine (JTDX remains an optional comparison); Aurora is brain, engine and screen.
+A new kind of FT8, FT4, JT65 and JT9 digital station: a striking interface, QSO automation and remote control from your phone. It has its own FT8 decode and transmit engine; Aurora is brain, engine and screen.
 
 Design and development: Tiziano Cassone (IU3WJQ)
 
@@ -49,7 +49,7 @@ Version 0.11.101: own FT8, FT4, JT65 and JT9 engine with receive and transmit, C
 - **Settings by topic**: six groups (Station, Receive, Transmit and QSO, Alerts, Network and logs, System) with pages such as Radio, Cascade, Sequence, Log services and Connected programs; search across every item, errors shown next to the field.
 - **Six languages** (Italian, English, German, French, Spanish, Portuguese) and a tooltip on every control.
 - **Help and statistics**: short in-app help in six languages; Statistics page with awards, QSOs per band and missing countries; your own transmitted messages appear as `Tx` rows.
-- **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency), NTP client with clock indicator, real JTDX settings read from its file and read-only Log4OM2 Log window.
+- **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency), NTP client with clock indicator, read-only Log4OM2 Log window.
 - **Station tools**: input audio level with slider and AUTO on the Windows recording volume, history of received messages (30 days, searchable), cluster spots on the waterfall, automatic diagnostics (clock, audio, callsign), Propagation page with PSK Reporter and hamqsl.com (**off until you switch them on**) and a map of QSOs and received stations.
 - **Radio**: radio display at the top with the extended display (second VFO, meters, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), every item can be switched on in Settings > General; the waterfall follows the radio's filter width read over CAT; an orphaned rigctld shuts itself down.
 - **DXpeditions**: NG3K calendar (Online services, off by default) next to the CQs: on the air, heard now, upcoming and history.
@@ -68,10 +68,10 @@ The easiest way: the installer `Aurora_X.Y.Z_x64-setup.exe` (tray application, s
 ## Quick start (Windows)
 
 ```
-.\scripts\avvia-sviluppo.ps1 -Jtdx
+.\scripts\avvia-sviluppo.ps1 -Motore
 ```
 
-This starts the core (port 8787) and the interface (port 5173) in a single Windows Terminal tab; with `-Jtdx` it connects to the real JTDX and finds `cty.dat` and the QSO log by itself. Open the page **from the PC's IP address** (for example `http://192.168.1.225:8787`), not from `localhost`: it is the same address the phone uses.
+This starts the core (port 8787) and the interface (port 5173) in a single Windows Terminal tab; with `-Motore` it uses Aurora's own engine on the sound card (`-Audio "USB Audio"` to pick it). Open the page **from the PC's IP address** (for example `http://192.168.1.225:8787`), not from `localhost`: it is the same address the phone uses.
 
 To get the waterfall too, set `AURORA_AUDIO_DEVICE` (part of the audio input name, for example `USB Audio`): without it the waterfall stays empty.
 
@@ -87,17 +87,13 @@ It shows an 8-digit code and a QR; the code is valid for the time you decide in 
 
 During tests you can switch on **code-free access** (Settings → Access, or `AURORA_OPEN_ACCESS=1`): it only applies to those on your home network, never to the internet or proxies, and can be switched off from the PC at any time.
 
-### With a real JTDX
-
-See `docs/guida-collegamento-jtdx.md` (documentation in Italian): Aurora sits between JTDX and GridTracker2 (UDP hub) without taking anything away from either, and the logged QSO reaches Log4OM2 as before. Band and mode switching uses the same OmniRig as JTDX (`AURORA_RIG=omnirig`).
-
 ### CAT: the radio for every model
 
 In Settings → Radio CAT you choose how to control the radio (frequency, mode, PTT, split): **Hamlib** through `rigctld` (over 300 models, the default) or OmniRig. Named profiles, radio detection and real-time status. User guide and tests with a real radio in `docs/cat-radio.md` (documentation in Italian).
 
 ## Configuration
 
-Environment variables (full list in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`sim` / `jtdx`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
+Environment variables (full list in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`native` / `sim`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
 Display preferences (colours, filters, language, bands, macros) are kept in the browser; frequencies, schedule, automation rules, code duration and radio (`radio.json`: model, port, profiles) are kept in `data/`.
 
 ## Structure
@@ -108,7 +104,7 @@ core/crates/   aurora-core  udp-bridge  udp-hub  engine-jtdx  engine-sim
                rig-control  auth  remote-api  aurora
 app/src/       pages  components  settings  lib  i18n  render  state  api
 scripts/       avvia-sviluppo.ps1  associa-telefono.ps1
-docs/          specification, plans, reports, API, JTDX guide, mancante.md (in Italian)
+docs/          specification, plans, reports, API, mancante.md (in Italian)
 ```
 
 ## Documentation (in Italian)

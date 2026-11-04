@@ -32,7 +32,7 @@
 >
 > 🐧 **[Linux (non provata dall'autore, senza assistenza): AppImage, .deb o compilazione con un comando](docs/linux.md)**
 
-Stazione digitale FT8, FT4, JT65 e JT9 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8 (JTDX resta un confronto facoltativo); Aurora è cervello, motore e schermo.
+Stazione digitale FT8, FT4, JT65 e JT9 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8; Aurora è cervello, motore e schermo.
 
 Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
@@ -49,7 +49,7 @@ Versione 0.11.101: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissi
 - **Impostazioni per argomento**: sei gruppi (Stazione, Ricezione, Trasmissione e QSO, Avvisi, Rete e log, Sistema) con pagine come Radio, Cascata, Sequenza, Servizi di log e Programmi collegati; ricerca su tutte le voci, errori mostrati accanto al campo.
 - **Sei lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) e un tooltip su ogni controllo.
 - **Guida e statistiche**: guida in-app breve nelle sei lingue; pagina Statistiche con premi, QSO per banda e paesi mancanti; i tuoi messaggi trasmessi compaiono come righe `Tx`.
-- **DX Cluster, orologio, log**: finestra DX Cluster (server telnet pubblici o propri, doppio clic = la radio va sulla frequenza dello spot), client NTP con indicatore dell'orologio, impostazioni vere di JTDX lette dal suo file e finestra Log di Log4OM2 in sola lettura.
+- **DX Cluster, orologio, log**: finestra DX Cluster (server telnet pubblici o propri, doppio clic = la radio va sulla frequenza dello spot), client NTP con indicatore dell'orologio, finestra Log di Log4OM2 in sola lettura.
 - **Strumenti della stazione**: livello dell'audio in ingresso con cursore e AUTO sul volume di registrazione di Windows, storico dei messaggi ricevuti (30 giorni, ricercabile), spot del cluster sulla cascata, diagnosi automatica (orologio, audio, nominativo), pagina Propagazione con PSK Reporter e hamqsl.com (**spenti finche' non li accendi**) e mappa dei QSO e delle stazioni ricevute.
 - **Radio**: display della radio in alto con il display esteso (secondo VFO, strumenti, PRE/ATT, AGC, NB/NR/notch, guadagni, RIT/XIT), ogni voce accendibile in Impostazioni > Generali; la cascata segue la larghezza del filtro della radio letta col CAT; un rigctld rimasto orfano si chiude da solo.
 - **DXpedition**: calendario NG3K (Servizi online, spento di base) accanto ai CQ: in onda, sentite adesso, in arrivo e storico.
@@ -68,10 +68,10 @@ Il modo piu' semplice: l'installatore `Aurora_X.Y.Z_x64-setup.exe` (programma co
 ## Avvio rapido (Windows)
 
 ```
-.\scripts\avvia-sviluppo.ps1 -Jtdx
+.\scripts\avvia-sviluppo.ps1 -Motore
 ```
 
-Avvia il core (porta 8787) e l'interfaccia (porta 5173) in una sola tab di Windows Terminal; con `-Jtdx` si collega al JTDX reale e trova da solo `cty.dat` e il log dei QSO. Apri la pagina **dall'indirizzo IP del PC** (per esempio `http://192.168.1.225:8787`), non da `localhost`: è lo stesso indirizzo che usa il telefono.
+Avvia il core (porta 8787) e l'interfaccia (porta 5173) in una sola tab di Windows Terminal; con `-Motore` usa il motore di Aurora sulla scheda audio (`-Audio "USB Audio"` per sceglierla). Apri la pagina **dall'indirizzo IP del PC** (per esempio `http://192.168.1.225:8787`), non da `localhost`: è lo stesso indirizzo che usa il telefono.
 
 Per avere anche la cascata imposta `AURORA_AUDIO_DEVICE` (parte del nome dell'ingresso audio, per esempio `USB Audio`): senza, la cascata resta vuota.
 
@@ -87,17 +87,13 @@ Mostra un codice di 8 cifre e un QR; il codice vale per il tempo che decidi in I
 
 Durante le prove si può accendere l'**accesso senza codice** (Impostazioni → Accesso, oppure `AURORA_OPEN_ACCESS=1`): vale solo per chi è sulla rete di casa, mai per internet o proxy, e dal PC si spegne in qualunque momento.
 
-### Con JTDX reale
-
-Vedi `docs/guida-collegamento-jtdx.md`: Aurora si mette tra JTDX e GridTracker2 (hub UDP) senza togliere nulla a nessuno dei due, e il QSO registrato arriva a Log4OM2 come prima. Il cambio banda e modo usa lo stesso OmniRig di JTDX (`AURORA_RIG=omnirig`).
-
 ### CAT: la radio per tutti i modelli
 
 In Impostazioni → Radio CAT si sceglie come comandare la radio (frequenza, modo, PTT, split): **Hamlib** tramite `rigctld` (oltre 300 modelli, la scelta di base) oppure OmniRig. Profili con nome, rilevamento della radio e stato in tempo reale. Guida per l'utente e prove con la radio vera in `docs/cat-radio.md`.
 
 ## Configurazione
 
-Variabili d'ambiente (elenco completo in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`sim` o `jtdx`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
+Variabili d'ambiente (elenco completo in `.env.example`): `AURORA_BIND`, `AURORA_DATA_DIR`, `AURORA_UI_DIR`, `AURORA_ENGINE` (`native` o `sim`), `AURORA_UDP_LISTEN`, `AURORA_UDP_FORWARD`, `AURORA_AUDIO_DEVICE`, `AURORA_HISTORY_DAYS`, `AURORA_CTY_PATH`, `AURORA_WORKED_ADIF`, `AURORA_RIG` (`none`, `omnirig`, `hamlib`), `AURORA_RIGCTLD`, `AURORA_EXPORT_UDP`, `AURORA_EXPORT_FILE`, `AURORA_TX_POWER`, `AURORA_PAIR_TTL_SECS`, `AURORA_OPEN_ACCESS`, `AURORA_TRUST_LOCAL`, `AURORA_AUTO_*`.
 Le preferenze di visualizzazione (colori, filtri, lingua, bande, macro) stanno nel browser; frequenze, programmazione, regole dell'automazione, durata del codice e radio (`radio.json`: modello, porta, profili) stanno in `data/`.
 
 ## Struttura
@@ -108,7 +104,7 @@ core/crates/   aurora-core (tipi, bus)  udp-bridge  udp-hub  engine-jtdx  engine
                rig-control (CAT: Hamlib e OmniRig, frequenze, programmazione)  auth  remote-api (HTTP/WebSocket)  aurora (binario)
 app/src/       pages  components  settings (una scheda per funzione)  lib  i18n (6 lingue)  render (cascata)  state  api
 scripts/       avvia-sviluppo.ps1  associa-telefono.ps1
-docs/          specifica, piani, rapporti, API, guida JTDX, mancante.md
+docs/          specifica, piani, rapporti, API, mancante.md
 ```
 
 ## Documentazione
