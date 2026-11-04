@@ -1,35 +1,26 @@
-# Avvia Aurora da pulito: chiude le copie rimaste dall'avvio precedente (core, pannelli, JTDX doppi) e ne apre una sola.
+# Avvia Aurora da pulito: chiude le copie rimaste dall'avvio precedente (core, pannelli) e ne apre una sola.
 # Una sola finestra di Windows Terminal (sempre la stessa, "aurora") con un solo pannello: il core, che serve anche l'interfaccia.
 
 #   .\scripts\avvia-sviluppo.ps1            -> stazione simulata
-#   .\scripts\avvia-sviluppo.ps1 -Jtdx      -> JTDX reale: Aurora fa da ripetitore verso GridTracker2
+#   .\scripts\avvia-sviluppo.ps1 -Motore    -> il motore di Aurora sulla scheda audio (-Audio "USB Audio" per sceglierla)
 #   -Chiusa -> tiene chiusa la trasmissione (AURORA_ALLOW_TX=0); di norma lo script la apre: servono per CQ e risposte con doppio clic
-#   opzioni con -Jtdx: -Inoltra 127.0.0.1:2333   -Audio "USB Audio"
 #   -Sviluppo -> aggiunge il server di sviluppo dell'interfaccia (porta 5173), di norma inutile: il core serve l'interfaccia compilata
 param(
-    [switch]$Jtdx,
+    [switch]$Motore,
     [switch]$Chiusa,
     [switch]$Sviluppo,
-    [string]$Inoltra = '127.0.0.1:2333',
     [string]$Audio = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 
-# Con JTDX reale: motore JTDX, ascolto dell'hub su 2334, inoltro identico a GridTracker2. Trasmissione sempre chiusa.
+# Il motore di Aurora: ascolta la scheda audio e decodifica da solo, con il file dei paesi incluso (scaricato dagli script di compilazione).
 $engineEnv = ''
-if ($Jtdx) {
-    $engineEnv = "`$env:AURORA_ENGINE='jtdx'; `$env:AURORA_UDP_LISTEN='127.0.0.1:2334'; `$env:AURORA_UDP_FORWARD='$Inoltra'; "
-    $cty = 'C:\JTDX64\159\share\jtdx\cty.dat'
-    $log = Join-Path $env:LOCALAPPDATA 'JTDX\wsjtx_log.adi'
+if ($Motore) {
+    $engineEnv = "`$env:AURORA_ENGINE='native'; "
+    $cty = Join-Path $root 'desktop\src-tauri\cty\cty.dat'
     if (Test-Path $cty) { $engineEnv += "`$env:AURORA_CTY_PATH='$cty'; " }
-    if (Test-Path $log) { $engineEnv += "`$env:AURORA_WORKED_ADIF='$log'; " }
-    $engineEnv += "`$env:AURORA_RIG='omnirig'; "
-    $ini = Join-Path $env:LOCALAPPDATA 'JTDX\JTDX.ini'
-    if (Test-Path $ini) { $engineEnv += "`$env:AURORA_JTDX_INI='$ini'; " }
-    $l4o = Get-ChildItem (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'LOG4OM2') -Filter '*.sqlite' -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1
-    if ($l4o) { $engineEnv += "`$env:AURORA_LOG4OM_DB='$($l4o.FullName)'; " }
     if ($Audio) { $engineEnv += "`$env:AURORA_AUDIO_DEVICE='$Audio'; " }
 }
 
@@ -43,16 +34,6 @@ $vecchi = Get-CimInstance Win32_Process | Where-Object {
 }
 foreach ($v in $vecchi) { Stop-Process -Id $v.ProcessId -Force -ErrorAction SilentlyContinue }
 if ($vecchi) { Start-Sleep -Seconds 2 }
-
-# Una sola finestra di JTDX: le copie in piu' si chiudono (resta la piu' vecchia); se non ce n'e' nessuna e serve, se ne apre una.
-if ($Jtdx) {
-    $copie = @(Get-Process jtdx -ErrorAction SilentlyContinue | Sort-Object StartTime)
-    if ($copie.Count -gt 1) { $copie | Select-Object -Skip 1 | Stop-Process -Force -ErrorAction SilentlyContinue }
-    if ($copie.Count -eq 0) {
-        $exe = 'C:\JTDX64\159\bin\jtdx.exe'
-        if (Test-Path $exe) { Start-Process $exe -WorkingDirectory (Split-Path $exe) }
-    }
-}
 
 # Il core va per primo: l'interfaccia fa da proxy verso di lui.
 $services = @()
