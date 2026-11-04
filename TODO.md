@@ -95,3 +95,5 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [x] (0.11.113, scelti tutti e sei) Display da scegliere tra le bozze `docs/mockup-display-grandi.html` (8) e `docs/mockup-display-icom.html` (Icom blu con banda passante e strumento multiplo). Niente spettro ne' cascata nel display.
 - [ ] Provare dal vivo i display quasi quadrati in testata (compaiono solo con la radio collegata) e i clic sui tasti dei sei display nuovi.
 - [ ] Le note della locandina degli aggiornamenti sono il testo della release (italiano): valutare note in sei lingue.
+- [ ] Telefono: verificare con gli utenti che con la 0.11.120 si colleghino (QR con l'indirizzo vero, «Consenti Aurora» nel firewall).
+- [ ] Display: opzioni lette da Hamlib per ogni modello (ancora aperto).
