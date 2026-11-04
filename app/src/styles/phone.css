@@ -919,9 +919,25 @@ body:has(.phone-live) .toaster {
   white-space: nowrap;
 }
 
-/* frequenza | bandiera | DX | modo | chi ha fatto lo spot | ora */
+/* il paese dopo il nominativo, piu' piccolo e tenue: se non c'e' spazio si accorcia con i puntini */
+.phone-row--spot .phone-row-m,
+.phone-row--qso .phone-row-m {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.phone-row-m > .data { flex: none; }
+.phone-row-country {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* frequenza | bandiera | DX e paese | modo | chi ha fatto lo spot | ora */
 .phone-row--spot {
-  grid-template-columns: 3.4rem 1.4rem minmax(0, 1fr) 2.3rem minmax(0, 4.6rem) 2.6rem;
+  grid-template-columns: 3.2rem 1.4rem minmax(0, 1fr) 2rem minmax(0, 3.6rem) 2.4rem;
 }
 
 /* ora | bandiera | nominativo | banda e modo | rapporti */
