@@ -132,7 +132,7 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     let places = settings::Places {
         local_app_data: std::env::var_os("LOCALAPPDATA").map(PathBuf::from),
         documents: handle.path().document_dir().ok(),
-        jtdx_roots: settings::Places::standard_jtdx_roots(),
+        bundled_cty: handle.path().resource_dir().ok().map(|d| d.join("cty").join("cty.dat")).filter(|p| p.is_file()).or_else(|| Some(PathBuf::from("cty/cty.dat"))),
     };
     let values = settings::build(&places, &data_dir, &ui_dir(&handle), std::fs::read_to_string(&env_path).ok().as_deref(), std::env::vars());
     let installer = installer::DesktopInstaller::new(handle.clone());

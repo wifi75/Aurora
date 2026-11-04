@@ -2,7 +2,7 @@
 //!
 //! 1. dalle variabili d'ambiente `AURORA_*` del processo;
 //! 2. dal file `aurora.env` nella cartella dei dati (`CHIAVE=valore`, `#` per i commenti);
-//! 3. dal rilevamento automatico di JTDX, di Log4OM2 e del file dei paesi.
+//! 3. dal rilevamento automatico di JTDX e di Log4OM2 (se ci sono: facoltativi) e dal file dei paesi incluso in Aurora.
 //!
 //! Tutto cio' che non si trova resta al valore predefinito del core. La trasmissione nel programma Windows e' **aperta** (scelta del proprietario); per chiuderla
 //! senza opzioni. STOP, tetti, dead-man e automazioni spente di default restano.
@@ -20,15 +20,8 @@ pub struct Places {
     pub local_app_data: Option<PathBuf>,
     /// La cartella Documenti: li' Log4OM2 tiene il suo archivio.
     pub documents: Option<PathBuf>,
-    /// Dove puo' essere installato JTDX (per trovare `cty.dat`).
-    pub jtdx_roots: Vec<PathBuf>,
-}
-
-impl Places {
-    /// Le cartelle abituali di JTDX su Windows.
-    pub fn standard_jtdx_roots() -> Vec<PathBuf> {
-        vec![PathBuf::from(r"C:\JTDX64"), PathBuf::from(r"C:\JTDX"), PathBuf::from(r"C:\Program Files\JTDX"), PathBuf::from(r"C:\Program Files (x86)\JTDX")]
-    }
+    /// Il file dei paesi `cty.dat` incluso in Aurora (cartella delle risorse del programma): Aurora non lo prende da nessun altro programma.
+    pub bundled_cty: Option<PathBuf>,
 }
 
 /// Legge un file `CHIAVE=valore`: righe vuote e commenti (`#`) si saltano, gli apici attorno al valore si tolgono.
@@ -49,25 +42,6 @@ pub fn parse_env_file(text: &str) -> Values {
         out.insert(key.to_string(), value.to_string());
     }
     out
-}
-
-/// `cty.dat` dentro una cartella di JTDX: `<radice>/share/jtdx/cty.dat` o `<radice>/<versione>/share/jtdx/cty.dat`.
-fn find_cty(roots: &[PathBuf], local_app_data: Option<&Path>) -> Option<PathBuf> {
-    let mut candidates: Vec<PathBuf> = Vec::new();
-    for root in roots {
-        candidates.push(root.join("share").join("jtdx").join("cty.dat"));
-        if let Ok(entries) = std::fs::read_dir(root) {
-            let mut versions: Vec<PathBuf> = entries.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.is_dir()).collect();
-            // la versione piu' recente (nome piu' alto) per prima
-            versions.sort();
-            versions.reverse();
-            candidates.extend(versions.into_iter().map(|v| v.join("share").join("jtdx").join("cty.dat")));
-        }
-    }
-    if let Some(local) = local_app_data {
-        candidates.push(local.join("JTDX").join("cty.dat"));
-    }
-    candidates.into_iter().find(|p| p.is_file())
 }
 
 /// Il piu' grande archivio `*.sqlite` di Log4OM2 nei Documenti.
@@ -153,8 +127,8 @@ pub fn detect(places: &Places) -> Values {
             }
         }
     }
-    if let Some(cty) = find_cty(&places.jtdx_roots, places.local_app_data.as_deref()) {
-        v.insert("AURORA_CTY_PATH".into(), text(&cty));
+    if let Some(cty) = places.bundled_cty.as_deref().filter(|p| p.is_file()) {
+        v.insert("AURORA_CTY_PATH".into(), text(cty));
     }
     if let Some(db) = places.documents.as_deref().and_then(find_log4om) {
         v.insert("AURORA_LOG4OM_DB".into(), text(&db));
@@ -231,8 +205,8 @@ mod tests {
         std::fs::write(path, content).unwrap();
     }
 
-    fn places(local: &Path, docs: &Path, roots: Vec<PathBuf>) -> Places {
-        Places { local_app_data: Some(local.to_path_buf()), documents: Some(docs.to_path_buf()), jtdx_roots: roots }
+    fn places(local: &Path, docs: &Path, bundled_cty: Option<PathBuf>) -> Places {
+        Places { local_app_data: Some(local.to_path_buf()), documents: Some(docs.to_path_buf()), bundled_cty }
     }
 
     #[test]
@@ -247,22 +221,21 @@ mod tests {
     fn without_jtdx_it_stays_the_simulator_and_finds_nothing() {
         let local = temp("nojtdx-local");
         let docs = temp("nojtdx-docs");
-        assert!(detect(&places(&local, &docs, vec![])).is_empty());
+        assert!(detect(&places(&local, &docs, None)).is_empty());
     }
 
     #[test]
     fn finds_jtdx_its_log_the_audio_input_the_countries_file_and_the_log4om_archive() {
         let local = temp("found-local");
         let docs = temp("found-docs");
-        let root = temp("found-root");
+        let res = temp("found-res");
         touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nSoundInName=Microfono (2- USB Audio Device)\nMyCall=AA1AA\n");
         touch(&local.join("JTDX").join("wsjtx_log.adi"), "<eoh>");
-        touch(&root.join("159").join("share").join("jtdx").join("cty.dat"), "x");
-        touch(&root.join("158").join("share").join("jtdx").join("cty.dat"), "old");
+        touch(&res.join("cty").join("cty.dat"), "x");
         touch(&docs.join("LOG4OM2").join("piccolo.sqlite"), "1");
         touch(&docs.join("LOG4OM2").join("grande.sqlite"), "123456789");
         touch(&docs.join("LOG4OM2").join("altro.txt"), "123456789012345");
-        let v = detect(&places(&local, &docs, vec![root.clone()]));
+        let v = detect(&places(&local, &docs, Some(res.join("cty").join("cty.dat"))));
         assert_eq!(v["AURORA_ENGINE"], "jtdx");
         assert_eq!(v["AURORA_RIG"], "omnirig");
         assert_eq!(v["AURORA_UDP_LISTEN"], "127.0.0.1:2334");
@@ -270,15 +243,27 @@ mod tests {
         assert_eq!(v["AURORA_AUDIO_DEVICE"], "Microfono (2- USB Audio Device)");
         assert!(v["AURORA_JTDX_INI"].ends_with("JTDX.ini"));
         assert!(v["AURORA_WORKED_ADIF"].ends_with("wsjtx_log.adi"));
-        assert!(v["AURORA_CTY_PATH"].contains("159"), "la versione piu' recente: {}", v["AURORA_CTY_PATH"]);
+        assert!(v["AURORA_CTY_PATH"].ends_with("cty.dat"), "il file incluso in Aurora: {}", v["AURORA_CTY_PATH"]);
         assert!(v["AURORA_LOG4OM_DB"].ends_with("grande.sqlite"));
+    }
+
+    #[test]
+    fn the_countries_file_is_the_one_inside_aurora_even_without_jtdx() {
+        let local = temp("cty-local");
+        let res = temp("cty-res");
+        touch(&res.join("cty").join("cty.dat"), "x");
+        let v = detect(&Places { local_app_data: Some(local.clone()), documents: None, bundled_cty: Some(res.join("cty").join("cty.dat")) });
+        assert!(v["AURORA_CTY_PATH"].ends_with("cty.dat"));
+        assert!(!v.contains_key("AURORA_ENGINE"), "nessun JTDX: nessun legame");
+        let missing = detect(&Places { local_app_data: Some(local), documents: None, bundled_cty: Some(res.join("manca.dat")) });
+        assert!(!missing.contains_key("AURORA_CTY_PATH"));
     }
 
     #[test]
     fn a_missing_audio_device_or_adif_just_leaves_those_values_out() {
         let local = temp("partial-local");
         touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nMyCall=AA1AA\n");
-        let v = detect(&Places { local_app_data: Some(local), documents: None, jtdx_roots: vec![] });
+        let v = detect(&Places { local_app_data: Some(local), documents: None, bundled_cty: None });
         assert_eq!(v["AURORA_ENGINE"], "jtdx");
         assert!(!v.contains_key("AURORA_AUDIO_DEVICE") && !v.contains_key("AURORA_WORKED_ADIF") && !v.contains_key("AURORA_LOG4OM_DB"));
     }
@@ -287,7 +272,7 @@ mod tests {
     fn the_file_beats_the_detection_and_the_environment_beats_the_file() {
         let local = temp("prec-local");
         touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nSoundInName=Rilevato\n");
-        let p = Places { local_app_data: Some(local), documents: None, jtdx_roots: vec![] };
+        let p = Places { local_app_data: Some(local), documents: None, bundled_cty: None };
         let env = vec![("AURORA_BIND".to_string(), "127.0.0.1:9000".to_string()), ("PATH".to_string(), "non conta".to_string())];
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), Some("AURORA_AUDIO_DEVICE=Dal file\nAURORA_BIND=1.2.3.4:1\n"), env);
         assert_eq!(v["AURORA_AUDIO_DEVICE"], "Dal file");
@@ -299,7 +284,7 @@ mod tests {
 
     #[test]
     fn the_defaults_reach_the_phone_and_open_transmission() {
-        let p = Places { local_app_data: None, documents: None, jtdx_roots: vec![] };
+        let p = Places { local_app_data: None, documents: None, bundled_cty: None };
         let v = build(&p, Path::new("C:/dati"), Path::new("C:/ui"), None, vec![]);
         assert_eq!(v["AURORA_BIND"], "0.0.0.0:8787");
         assert!(!v.contains_key("AURORA_ALLOW_TX"), "la trasmissione non ha opzioni");
@@ -315,7 +300,7 @@ mod tests {
     fn the_second_udp_server_is_not_injected_from_the_ini_any_more() {
         let local = temp("udp2-local");
         touch(&local.join("JTDX").join("JTDX.ini"), "[Configuration]\nUDP2Server=127.0.0.1\nUDP2ServerPort=2237\nEnableUDP2adifBroadcast=true\n");
-        let p = Places { local_app_data: Some(local), documents: None, jtdx_roots: vec![] };
+        let p = Places { local_app_data: Some(local), documents: None, bundled_cty: None };
         let native = build(&p, Path::new("d"), Path::new("u"), None, vec![]);
         assert!(!native.contains_key("AURORA_EXPORT_UDP"), "il secondo server e' una impostazione di Aurora: si puo' spegnere dalla scheda Segnalazioni");
         let own = build(&p, Path::new("d"), Path::new("u"), None, vec![("AURORA_EXPORT_UDP".to_string(), "127.0.0.1:2240".to_string())]);
@@ -353,7 +338,7 @@ AcceptUDPRequests=false
 
     #[test]
     fn a_bad_value_in_the_file_is_reported_not_ignored() {
-        let p = Places { local_app_data: None, documents: None, jtdx_roots: vec![] };
+        let p = Places { local_app_data: None, documents: None, bundled_cty: None };
         let v = build(&p, Path::new("d"), Path::new("u"), Some("AURORA_BIND=non un indirizzo"), vec![]);
         assert!(config_from(&v).is_err());
     }
