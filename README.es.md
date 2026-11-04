@@ -2,7 +2,7 @@
 
 [![Download](https://img.shields.io/github/downloads/wifi75/Aurora/total?label=Download&color=2ea44f&logo=github)](https://github.com/wifi75/Aurora/releases)
 ![Visite](https://visitor-badge.laobi.icu/badge?page_id=wifi75.Aurora&left_text=Visite&left_color=%23555&right_color=%238e7bff)
-[![Piattaforma](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20Linux-0078D4?logo=windows&logoColor=white)](docs/linux.md)
+[![Piattaforma](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20Linux-0078D4?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.md)
 [![Linux](https://github.com/wifi75/Aurora/actions/workflows/linux.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/linux.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.99%20%C2%B7%20edition%202024-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Axum](https://img.shields.io/badge/API-Axum%200.8-1A1A1A)](https://github.com/tokio-rs/axum)
@@ -28,9 +28,9 @@
 >
 > **[Instalador de Windows (última versión)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Página de la última versión](https://github.com/wifi75/Aurora/releases/latest)
 >
-> [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Linux .deb](https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Linux](https://img.shields.io/badge/Gu%C3%ADa-Linux-E95420?logo=ubuntu&logoColor=white)](docs/linux.es.md)
+> [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest) [![Linux .deb](https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest) [![Linux](https://img.shields.io/badge/Gu%C3%ADa-Linux-E95420?logo=ubuntu&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.es.md)
 >
-> 🐧 **[Linux (no probada por el autor, sin soporte): AppImage, .deb o compilación con un comando](docs/linux.es.md)**
+> 🐧 **[Linux (no probada por el autor, sin soporte): AppImage, .deb o compilación con un comando](https://github.com/wifi75/Aurora/blob/main/docs/linux.es.md)**
 
 Una estación digital FT8, FT4, JT65 y JT9 de nuevo concepto: interfaz de impacto, automatización de los QSO y control remoto desde el teléfono. Tiene un motor propio de decodificación y transmisión FT8; Aurora es cerebro, motor y pantalla.
 
