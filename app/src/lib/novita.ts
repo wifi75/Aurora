@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.117',
+    released: '2026-11-04T17:08:28Z',
+    kind: 'fixed',
+    title: ['«Già lavorato» più preciso', 'More precise «already worked»', 'Genaueres «schon gearbeitet»', '« Déjà contacté » plus précis', '«Ya trabajado» más preciso', '«Já trabalhado» mais preciso'],
+    text: [
+      "«Già lavorato» compare solo per un nominativo davvero nel log, non più per ogni stazione di un paese già fatto. Lo S-meter stimato mostra la tilde anche nei display a lancetta nuovi.",
+      "«Already worked» appears only for a callsign really in the log, no longer for every station of a country already worked. The estimated S-meter shows the tilde in the new needle displays too.",
+      "«Schon gearbeitet» erscheint nur für ein Rufzeichen, das wirklich im Log steht, nicht mehr für jede Station eines schon gearbeiteten Landes. Der geschätzte S-Meter zeigt die Tilde auch in den neuen Zeigeranzeigen.",
+      "« Déjà contacté » n’apparaît que pour un indicatif vraiment dans le journal, plus pour chaque station d’un pays déjà fait. Le S-mètre estimé montre le tilde aussi dans les nouveaux afficheurs à aiguille.",
+      "«Ya trabajado» aparece solo para un indicativo que está de verdad en el log, ya no para cada estación de un país ya hecho. El S-meter estimado muestra la tilde también en las pantallas nuevas de aguja.",
+      "«Já trabalhado» aparece só para um indicativo que está mesmo no log, já não para cada estação de um país já feito. O S-meter estimado mostra o til também nos novos ecrãs de ponteiro.",
+    ],
+  },
+  {
     version: '0.11.116',
     released: '2026-11-04T13:40:20Z',
     kind: 'new',
