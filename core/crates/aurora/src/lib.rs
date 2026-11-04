@@ -716,7 +716,7 @@ fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) ->
 /// Collega alle impostazioni gli invii verso l'esterno (PSK Reporter, spot DXSummit a richiesta, server TCP, eQSL, invio diretto dei QSO con la sua
 /// coda `invii-in-coda.json` nella cartella dei dati), la registrazione del log (commento con rapporti e distanza,
 /// modo) e la scrittura di `ALL.TXT`. Ogni invio ha il suo thread e i suoi tempi massimi: non ferma mai il motore.
-fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>, bus: &Bus, controls: &Arc<engine_native::NativeControls>, data_dir: &Path, tx_power: String) {
+fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>, bus: &Bus, controls: &Arc<engine_native::NativeControls>, data_dir: &Path, tx_power: String, prompt: Arc<remote_api::log_prompt::LogPrompt>) {
     use remote_api::engine_settings::Feature;
     let secrets: Arc<dyn reporting::secret::SecretStore> = Arc::new(reporting::secret::ProtectedFiles::new(data_dir));
     store.set_secrets(Arc::clone(&secrets));
@@ -759,7 +759,19 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
                             q.qth = qth;
                         }
                     }
-                    let _ = events.send(Event::QsoLogged(q));
+                    // «Richiedimi di loggare il QSO»: il QSO aspetta la conferma della finestra; con la coda piena il piu' vecchio va a log
+                    if r.prompt_to_log {
+                        tracing::info!("QSO con {} in attesa di conferma", q.call);
+                        if let Some(oldest) = prompt.push(q) {
+                            let _ = events.send(Event::QsoLogged(oldest));
+                        }
+                    } else {
+                        // la voce spenta con QSO ancora in attesa: vanno a log, non si perdono
+                        for waiting in prompt.drain() {
+                            let _ = events.send(Event::QsoLogged(waiting));
+                        }
+                        let _ = events.send(Event::QsoLogged(q));
+                    }
                 }
                 Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
                 Err(broadcast::error::RecvError::Closed) => break,
@@ -1378,6 +1390,8 @@ pub async fn run(
         }));
     }
     let updates = updater::UpdateService::open(&config.data_dir.join("update.json"), env!("CARGO_PKG_VERSION"));
+    // i QSO conclusi che aspettano la conferma della finestra («Richiedimi di loggare il QSO»)
+    let log_prompt = Arc::new(remote_api::log_prompt::LogPrompt::new());
     let cluster = dx_cluster::ClusterService::open(&config.data_dir.join("dx-cluster.json"));
     // il livello dell'ingresso audio si regola sullo stesso dispositivo da cui viene la cascata
     // con il motore proprio il dispositivo e' quello della scheda Audio (store, poi ambiente); poi il gestore lo fa seguire a ogni cambio di ingresso
@@ -1449,6 +1463,7 @@ pub async fn run(
         .with_local_trust(config.local_trust)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
+        .with_log_prompt(Arc::clone(&log_prompt))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level.clone())
         .with_update_installer_if(config.update_installer.clone().map(|h| h.0))
@@ -1732,7 +1747,7 @@ pub async fn run(
     }
 
     if let Some(store) = &engine_settings {
-        wire_reporting(store, &bus, &native_controls, &config.data_dir, config.tx_power.clone().unwrap_or_default());
+        wire_reporting(store, &bus, &native_controls, &config.data_dir, config.tx_power.clone().unwrap_or_default(), Arc::clone(&log_prompt));
     }
 
     // la lista dei desiderati: guarda messaggi e spot e avvisa (anche a pagina chiusa)

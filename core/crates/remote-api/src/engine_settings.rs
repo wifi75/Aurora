@@ -313,8 +313,10 @@ pub fn support(key: &str) -> Support {
         "udpWindowToFront" | "udpWindowRestore" => Support::Needs(Feature::WindowControl, "udp_window", Apply::Now),
         // registrazione del log: finestra di conferma, log automatico, record ADIF (modo, commento) e pulizia del DX
         "toRTTY" | "dBtoComments" | "distanceToComments" | "ClearCallGrid" => Support::Live(Apply::Now),
-        // finestra di conferma e registrazione a mano: la pagina non li ha ancora, il QSO si registra sempre da solo
-        "PromptToLog" => Support::Hidden("log_prompt"),
+        // finestra di conferma prima di registrare (dal 0.11.123): vale subito, per il prossimo QSO concluso
+        "PromptToLog" => Support::Live(Apply::Now),
+        // la registrazione a mano senza conferma resta da fare: il QSO si registra da solo o, con la conferma, dalla finestra
+
         "AutoQSOLogging" => Support::Hidden("log_auto"),
         "ClearCallGridExit" => Support::Hidden("clear_exit"),
         // un invio del record ADIF di ogni QSO al server TCP
@@ -590,6 +592,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("dBtoComments", "false"),
         ("distanceToComments", "false"),
         ("ClearCallGrid", "false"),
+        // nessuna finestra di conferma: il QSO concluso va a log da solo (come JTDX di fabbrica)
+        ("PromptToLog", "false"),
         // Server TCP (JTDX: 127.0.0.1, porta 52001, spento)
         ("TCPServer", "127.0.0.1"),
         ("TCPServerPort", "52001"),
@@ -1259,10 +1263,8 @@ impl EngineSettingsStore {
         // i controlli fra piu' voci valgono solo per il servizio che si sta cambiando: un valore vecchio e incoerente di un altro
         // servizio (per esempio importato da JTDX) non deve bloccare il salvataggio di tutto il resto
         let touches = |keys: &[&str]| keys.iter().any(|k| changes.contains_key(*k));
-        // le caselle che in JTDX si escludono a vicenda (cliccare una toglie l'altra)
-        if touches(&["PromptToLog", "AutoQSOLogging"]) && truthy(next.get("PromptToLog")) && truthy(next.get("AutoQSOLogging")) {
-            return Err(SettingsError::BadValue("PromptToLog e AutoQSOLogging si escludono: ne va accesa una sola".into()));
-        }
+        // `PromptToLog` e `AutoQSOLogging` in JTDX si escludono; in Aurora no (scelta del 2026-11-04): «Messa a log automatica» decide solo come
+        // finisce la trasmissione a fine QSO, la conferma decide solo se il QSO aspetta l'operatore prima di andare a log
         if touches(&["WriteDecodedALLTXT", "WriteDecodedDebugALLTXT"]) && truthy(next.get("WriteDecodedALLTXT")) && truthy(next.get("WriteDecodedDebugALLTXT")) {
             return Err(SettingsError::BadValue("WriteDecodedALLTXT e WriteDecodedDebugALLTXT si escludono: ne va accesa una sola".into()));
         }
@@ -1486,7 +1488,6 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
             ("PSKReporter", "si"),
             ("TCPServerPort", "0"),
             ("NDepth", "3"),
-            ("PromptToLog", "true"),
             ("EQSLSend", "true"),
         ] {
             assert!(store.update(&map(&[(k, v)])).is_err(), "{k}={v}");
