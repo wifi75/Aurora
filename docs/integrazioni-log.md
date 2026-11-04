@@ -98,7 +98,7 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 | OpenHamClock | Ascolta 2237 (segnalazione su GitHub); alla ricezione del traffico FT8 mostra gli spot | - | **OK** (non verificato dal vivo) | Multicast se 2237 e' occupata |
 | SDR-Control e simili | Nessuna fonte trovata | - | **?** | Verificare |
 
-## 2bis. Collegare i log via UDP: configurazione passo passo (Log4OM, LogHX3, BBLogger2)
+## 2bis. Collegare i log via UDP: configurazione passo passo (Log4OM, LogHX3, BBLogger)
 
 Stessa sostanza della voce «Collegare i programmi di log (UDP)» della Guida dell'app.
 
@@ -116,17 +116,24 @@ Stessa sostanza della voce «Collegare i programmi di log (UDP)» della Guida de
 4. Oppure tipo `JT_MESSAGE` sulla porta del primario per avere anche lo stato. Una sola delle due strade.
 5. La radio si collega a parte: CAT interface > Hamlib, «Connect to active HAMLIB instance» 127.0.0.1:4532 (CAT condiviso di Aurora).
 
-### LogHX3 e BBLogger2
+### LogHX3
 1. Aurora: «Integrazioni» > «+ Flusso WSJT-X», 127.0.0.1, porta 2237 o un'altra libera (es. 2239), flusso acceso, multicast spento. Se il QSO non arriva ma lo stato si', accendere anche «Logged ADIF (12)».
 2. Nel log: impostazione dell'interfaccia WSJT-X/JTDX via UDP, ricezione attiva, 127.0.0.1 e la stessa porta, registrazione automatica dei QSO ricevuti *(nomi delle voci indicativi, non verificati: controllare la versione del programma)*.
-3. Multicast solo se il log lo supporta (non verificato per LogHX3 e BBLogger2).
+
+### BBLogger
+Log italiano gratuito di Giorgio IK2VIW (con Gigi IK2UVR), sito bblogger.eu, per Windows 10/11. Per i modi digitali riceve il **flusso UDP in formato WSJT-X**: la sua guida indica «IP del server» 127.0.0.1 e «Porta del Server UDP» di base **2237**, e 2334 quando si mette in mezzo JTAlert. Aurora gli parla direttamente, senza altri programmi.
+1. Aurora: «Integrazioni» > «+ BBLogger» (destinatario pronto, dal 2026-11-04): nome BBLogger, 127.0.0.1, porta 2237, flusso WSJT-X e Logged ADIF (12) accesi, multicast spento.
+2. BBLogger: nel collegamento FT8/FT4 (WSJT-X/JTDX) IP 127.0.0.1 e la stessa porta.
+3. Ordine di avvio: prima Aurora, poi BBLogger (la guida di BBLogger chiede di avviare prima il programma FT8).
+4. Se la 2237 e' gia' usata da un altro destinatario, una porta libera (es. 2239) uguale nei due programmi.
+Fonti: guida di BBLogger su aribusto.it (pagina «Aggiornamenti»), forumradioamatori.it. Non provato dal vivo: la prova con il programma la fa il proprietario.
 
 ### Verifica e problemi tipici
 - Prova: un QSO (anche su carico fittizio) e la riga deve comparire nel log.
 - Una porta unicast la apre un solo programma: con JTDX, GridTracker o JTAlert aperti la 2237 e' spesso occupata. Soluzioni: un destinatario per programma con porte diverse, oppure il gruppo multicast se tutti i programmi lo ascoltano.
 - QSO doppi: lo stesso log riceve per due strade (flusso + ADIF, o inoltro di GridTracker/JTAlert). Tenerne una.
 - Log su un altro PC: indirizzo IP di quel PC e regola del firewall di Windows per UDP in entrata sulla porta.
-- Nessun preset dedicato a LogHX3 o BBLogger2 nell'interfaccia: si usa «Flusso WSJT-X» (porte e voci di quei programmi non verificate).
+- BBLogger ha il suo destinatario pronto («+ BBLogger»); LogHX3 usa «Flusso WSJT-X» (porte e voci non verificate).
 
 ## 3. Programma per programma
 
