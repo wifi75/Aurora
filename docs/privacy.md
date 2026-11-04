@@ -1,9 +1,21 @@
 # Informativa sulla privacy di Aurora
 
 Aurora è un programma che gira sul tuo PC. I dati della stazione (nominativo, locatore, log dei QSO, impostazioni, password dei
-servizi) restano nella cartella dati sul PC (di norma `%APPDATA%\Aurora`). Escono solo verso i servizi che accendi tu
-(PSK Reporter, eQSL, LoTW, ClubLog, QRZ.com, Wavelog, DX Cluster, controllo degli aggiornamenti su GitHub e simili), con le
-regole di quei servizi.
+servizi) restano nella cartella dati sul PC (di norma `%APPDATA%\Aurora`). Escono solo verso i servizi elencati qui sotto,
+con le regole di quei servizi.
+
+## Servizi accesi di fabbrica
+
+Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono in qualunque momento:
+
+- **PSK Reporter**, lettura (Impostazioni → Servizi online, pagina Propagazione): ogni tanto Aurora chiede chi ti ha ricevuto; nella richiesta c'è il tuo nominativo.
+- **PSK Reporter**, spotting (Impostazioni → Programmi collegati): manda i nominativi che ricevi, con frequenza, rapporto, il tuo nominativo e il locatore, come fanno gli altri programmi FT8.
+- **Propagazione** (hamqsl.com) e **calendario delle DXpedition** (NG3K): sola lettura di pagine pubbliche, senza dati tuoi.
+- **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
+- **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura.
+
+Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,
+ricerca dei nominativi su QRZ.com e HamQTH.
 
 ## Rapporti degli errori
 
