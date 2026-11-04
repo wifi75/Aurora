@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.114',
+    released: '2026-11-04T13:17:28Z',
+    kind: 'new',
+    title: ['Locandina della versione nuova', 'New version poster', 'Plakat der neuen Version', 'Affiche de la nouvelle version', 'Cartel de la versión nueva', 'Cartaz da versão nova'],
+    text: [
+      "Quando esce una versione nuova di Aurora, all’apertura compare al centro una locandina con il numero della versione, le novità e il pulsante «Installa e riavvia». «Più tardi» la nasconde fino alla versione dopo.",
+      "When a new version of Aurora comes out, a poster appears in the middle at start-up with the version number, what’s new and an «Install and restart» button. «Later» hides it until the next version.",
+      "Wenn eine neue Version von Aurora erscheint, zeigt sich beim Start in der Mitte ein Plakat mit Versionsnummer, Neuigkeiten und der Taste «Installieren und neu starten». «Später» blendet es bis zur nächsten Version aus.",
+      "Quand une nouvelle version d’Aurora sort, une affiche apparaît au centre au démarrage avec le numéro de version, les nouveautés et le bouton « Installer et redémarrer ». « Plus tard » la masque jusqu’à la version suivante.",
+      "Cuando sale una versión nueva de Aurora, al abrirla aparece en el centro un cartel con el número de versión, las novedades y el botón «Instalar y reiniciar». «Más tarde» lo oculta hasta la versión siguiente.",
+      "Quando sai uma versão nova da Aurora, ao abrir aparece ao centro um cartaz com o número da versão, as novidades e o botão «Instalar e reiniciar». «Mais tarde» esconde-o até à versão seguinte.",
+    ],
+  },
+  {
     version: '0.11.113',
     released: '2026-11-04T13:12:16Z',
     kind: 'new',

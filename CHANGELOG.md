@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.114 - 2026-11-04
+- **Locandina della versione nuova** (`UpdatePoster.tsx`): al centro all'apertura, con le note della release, la data, «Note e download», «Piu' tardi» (fino alla versione dopo) e «Installa e riavvia» (aggiornamento firmato). Sei lingue.
+
 ## 0.11.113 - 2026-11-04
 - **Sei display nuovi** (`ModernDisplays.tsx`, `modern-displays.css`): estesi `icdual`, `icblue`, `ledline` (640 x 70) e quasi quadrati `icblueq`, `icblackq`, `yaesuq` (330 x 140, fissi nell'angolo; con la classe `rd-square` le icone della testata si rimpiccioliscono). Indicatori solo se la radio da' il dato e se spuntati in «Display esteso: cosa mostrare»; clic che comanda la radio come gli altri pannelli.
 - **Altezza dei display estesi**: da 64 a 70 punti; misure accanto a ogni stile e disposizione in Impostazioni › Radio.

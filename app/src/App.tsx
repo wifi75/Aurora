@@ -34,6 +34,7 @@ import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 import { ReportsNotice } from './components/ReportsNotice';
 import { FirstRun } from './components/FirstRun';
+import { UpdatePoster } from './components/UpdatePoster';
 import { CrashPrompt } from './settings/ReportsBox';
 
 /**
@@ -170,6 +171,7 @@ export function App() {
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
       {session.data && !REMOTE ? <FirstRun /> : null}
+      {session.data && !REMOTE ? <UpdatePoster /> : null}
     </div>
   );
 }
