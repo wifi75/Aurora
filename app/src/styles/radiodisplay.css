@@ -829,8 +829,8 @@
 }
 
 /* nella Stazione il display sta al centro fra la barra del menu e i pannelli, con lo stesso spazio sopra e sotto */
-.live-top > .rd-header,
-.live-top > .setup-cta--radio {
+/* vale per ogni tipo di display: l'ultimo elemento della riga in alto e' sempre il display (o il suo invito a configurarlo) */
+.live-top > :last-child {
   align-self: center;
   margin-top: 0;
   margin-bottom: 0.55rem;
