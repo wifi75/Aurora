@@ -13,7 +13,8 @@ export function NetworkChecklist({ waiting }: { waiting: boolean }) {
   const allow = useMutation({ mutationFn: allowFirewall, onSettled: () => void qc.invalidateQueries({ queryKey: ['lan-check'] }) });
   const c = check.data;
   if (!c) return null;
-  const pub = c.category === 'Public';
+  // con la regola di Aurora valida su ogni rete, anche una rete «Pubblica» lascia entrare il telefono
+  const pub = c.category === 'Public' && c.firewall_allowed !== true;
   const blocked = c.firewall_allowed === false;
   const first = c.addresses[0];
 
