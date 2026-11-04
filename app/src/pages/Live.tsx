@@ -360,6 +360,7 @@ export function Live() {
       ) : (
         <Dock
           layout={layout}
+          hidden={layout.hidden}
           onChange={changeLayout}
           titles={titles}
           render={renderPanel}
