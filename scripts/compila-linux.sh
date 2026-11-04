@@ -83,7 +83,13 @@ fi
 echo "Rust: $(cargo --version)"
 echo "Node: $(node -v)"
 
-passo "3/4 Interfaccia"
+passo "3/4 File dei paesi e interfaccia"
+mkdir -p "$root/desktop/src-tauri/cty"
+if curl -fsSL -o "$root/desktop/src-tauri/cty/cty.dat.new" https://www.country-files.com/cty/cty.dat; then
+    mv "$root/desktop/src-tauri/cty/cty.dat.new" "$root/desktop/src-tauri/cty/cty.dat"
+elif [ ! -s "$root/desktop/src-tauri/cty/cty.dat" ]; then
+    echo "Attenzione: cty.dat non scaricato (country-files.com non raggiungibile): Aurora partira' senza paesi ne' bandiere."
+fi
 cd "$root/app"
 npm ci
 npm run build

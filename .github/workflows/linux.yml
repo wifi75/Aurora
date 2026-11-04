@@ -45,6 +45,13 @@ jobs:
         working-directory: core
         run: cargo check --workspace
 
+      - name: File dei paesi (cty.dat)
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir -p desktop/src-tauri/cty
+          curl -fsSL -o desktop/src-tauri/cty/cty.dat https://www.country-files.com/cty/cty.dat
+          test "$(stat -c %s desktop/src-tauri/cty/cty.dat)" -gt 50000
+
       - name: Interfaccia
         working-directory: app
         run: |
