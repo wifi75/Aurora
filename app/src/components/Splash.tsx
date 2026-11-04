@@ -4,9 +4,25 @@ import { getHealth } from '../api/client';
 import { useT } from '../i18n';
 import { Logo } from './Logo';
 
-/** Mostrata una sola volta per avvio del programma. */
-let shown = false;
-let chirped = false;
+/** Mostrata una sola volta per avvio del programma: anche quando la finestra si ricarica (aggiornamento, ricollegamento, Ctrl+R)
+ *  la schermata e il saluto sonoro non tornano (lo si ricorda per la sessione della finestra). */
+const SEEN_KEY = 'aurora-splash-seen';
+function seenThisSession(): boolean {
+  try {
+    return sessionStorage.getItem(SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function markSeen(): void {
+  try {
+    sessionStorage.setItem(SEEN_KEY, '1');
+  } catch {
+    // senza archivio si torna al comportamento di prima
+  }
+}
+let shown = seenThisSession();
+let chirped = shown;
 
 const SHOW_MS = 2600;
 const FADE_MS = 500;
@@ -46,6 +62,7 @@ export function Splash() {
     if (shown) return;
     if (!chirped) {
       chirped = true;
+      markSeen();
       chirp();
     }
     const a = window.setTimeout(() => setPhase('fade'), SHOW_MS);

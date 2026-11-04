@@ -39,6 +39,8 @@ export interface StreamHandlers {
 
 const RETRY_MIN_MS = 250;
 const RETRY_MAX_MS = 2000;
+/** Senza messaggi per tanto il collegamento si considera perso e si riapre. */
+const SILENT_MS = 8000;
 
 function streamUrl(): string {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -51,6 +53,12 @@ export function openStream(handlers: StreamHandlers): { close(): void } {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let delay = RETRY_MIN_MS;
   let stopped = false;
+  // un collegamento «aperto ma muto» (il PC si e' addormentato, la rete ha perso il collegamento senza chiuderlo) non chiude mai da solo:
+  // senza messaggi per SILENT_MS lo si chiude e si riapre (il core manda lo stato quattro volte al secondo)
+  let lastMessage = Date.now();
+  const watchdog = setInterval(() => {
+    if (!stopped && socket && socket.readyState === WebSocket.OPEN && Date.now() - lastMessage > SILENT_MS) socket.close();
+  }, 2000);
 
   const connect = () => {
     if (stopped) return;
@@ -59,10 +67,12 @@ export function openStream(handlers: StreamHandlers): { close(): void } {
     ws.binaryType = 'arraybuffer';
     socket = ws;
     ws.onopen = () => {
+      lastMessage = Date.now();
       delay = RETRY_MIN_MS;
       handlers.onState('open');
     };
     ws.onmessage = (message: MessageEvent) => {
+      lastMessage = Date.now();
       if (typeof message.data === 'string') {
         try {
           const parsed = EventSchema.safeParse(JSON.parse(message.data));
@@ -88,6 +98,7 @@ export function openStream(handlers: StreamHandlers): { close(): void } {
   return {
     close() {
       stopped = true;
+      clearInterval(watchdog);
       if (timer) clearTimeout(timer);
       socket?.close();
     },
