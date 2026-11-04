@@ -982,7 +982,7 @@ struct ModeBody {
     mode: String,
 }
 
-/// Porta JTDX in FT8 o FT4 (preme il suo pulsante). Mai durante la trasmissione.
+/// Cambia tra FT8 e FT4 (con JTDX preme il suo pulsante). Con il motore proprio funziona anche senza radio collegata. Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<ModeBody>) -> Result<Json<Value>, ApiError> {
     if state.active_rig().is_none() {
@@ -1020,7 +1020,10 @@ pub async fn switch_mode(state: &AppState, mode: &str) -> Result<Option<u64>, St
     let region = state.frequency_region();
     let work = move || -> Result<Option<u64>, rig_control::RigError> {
         rig.set_mode(&mode)?;
-        let current = rig.frequency().ok().filter(|hz| *hz > 0).or(status_dial);
+        // senza radio collegata (radioascolto senza CAT) il motore cambia modo lo stesso: la frequenza resta quella che si sceglie sulla radio
+        let read = rig.frequency().ok().filter(|hz| *hz > 0);
+        let radio_answers = read.is_some();
+        let current = read.or(status_dial);
         let target = current.and_then(|now| {
             let table = frequencies.lock().unwrap_or_else(|p| p.into_inner());
             // come `MainWindow::switch_mode` di JTDX: resta sulla riga del nuovo modo se il dial e' gia' una riga, altrimenti la predefinita piu' vicina
@@ -1031,7 +1034,14 @@ pub async fn switch_mode(state: &AppState, mode: &str) -> Result<Option<u64>, St
             })
         });
         if let Some(hz) = target {
-            rig.set_frequency(hz)?;
+            match rig.set_frequency(hz) {
+                Ok(()) => {}
+                Err(e) if !radio_answers => {
+                    tracing::debug!("modo {mode} cambiato senza spostare la radio: {e}");
+                    return Ok(None);
+                }
+                Err(e) => return Err(e),
+            }
         }
         Ok(target)
     };

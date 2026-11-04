@@ -41,6 +41,8 @@ interface Props {
   pickMode(mode: string): void;
   /** La radio si comanda dal CAT: senza, banda, modo e spot non si cambiano da qui. */
   rigControl: boolean;
+  /** FT8/FT4 si cambia anche senza radio collegata (motore proprio); senza, vale `rigControl`. */
+  modeControl?: boolean;
   /** La trasmissione e' aperta (AURORA_ALLOW_TX=1). */
   txAllowed: boolean;
   /** Tablet in orizzontale: due colonne (a sinistra l'attivita' di banda, a destra cluster, log, Tx e cascata), riquadri sempre aperti. */
@@ -68,7 +70,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
  * La pagina Stazione sul telefono: un telecomando compatto al posto dei pannelli. Dati e comandi sono quelli della pagina a finestre
  * (li passa Live): qui cambia solo la disposizione, dall'alto in basso come nel prototipo approvato.
  */
-export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pickMode, rigControl, txAllowed, tablet = false }: Props) {
+export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pickMode, rigControl, modeControl = rigControl, txAllowed, tablet = false }: Props) {
   const t = useT();
   const client = useQueryClient();
   const status = useStation((s) => s.status);
@@ -177,7 +179,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
           </select>
         </label>
         <label className="phone-sel" title={t('phone.mode')}>
-          <select aria-label={t('phone.mode')} value={mode} disabled={!rigControl} onChange={(e) => onMode(e.target.value)}>
+          <select aria-label={t('phone.mode')} value={mode} disabled={!modeControl} onChange={(e) => onMode(e.target.value)}>
             {mode !== '' && !(PHONE_MODES as readonly string[]).includes(mode) ? <option value={mode}>{mode}</option> : null}
             {PHONE_MODES.map((m) => (
               <option key={m} value={m}>
