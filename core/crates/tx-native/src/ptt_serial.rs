@@ -73,6 +73,7 @@ mod sys {
 pub struct SerialLinePtt {
     #[cfg(windows)]
     port: sys::Port,
+    #[cfg_attr(not(windows), allow(dead_code))]
     line: Line,
     on: AtomicBool,
 }

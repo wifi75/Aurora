@@ -26,11 +26,13 @@ const BEAT_EVERY: Duration = Duration::from_secs(2);
 const HANG_AFTER: Duration = Duration::from_secs(20);
 const KEEP_DUMPS: usize = 10;
 const KEEP_TEXTS: usize = 50;
+#[cfg_attr(not(windows), allow(dead_code))]
 const MAX_STDERR_BYTES: u64 = 1024 * 1024;
 
 static DIR: OnceLock<PathBuf> = OnceLock::new();
 static START: OnceLock<Instant> = OnceLock::new();
 /// dbghelp non e' rientrante: un dump alla volta.
+#[cfg_attr(not(windows), allow(dead_code))]
 static DUMP_LOCK: Mutex<()> = Mutex::new(());
 
 /// Un battito: i millisecondi dall'avvio dell'ultima volta che la sorgente ha dato segno di vita.
