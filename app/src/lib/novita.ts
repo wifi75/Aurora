@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.117',
-    released: '2026-11-04T17:08:28Z',
+    released: '2026-11-04T17:13:57Z',
     kind: 'fixed',
     title: ['«Già lavorato» più preciso', 'More precise «already worked»', 'Genaueres «schon gearbeitet»', '« Déjà contacté » plus précis', '«Ya trabajado» más preciso', '«Já trabalhado» mais preciso'],
     text: [
