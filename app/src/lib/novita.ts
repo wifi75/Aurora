@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.126',
-    released: '2026-11-04T21:20:44Z',
+    released: '2026-11-04T21:23:33Z',
     kind: 'changed',
     title: ['Display quasi quadrati più alti e ben centrati', 'Taller, well-centred near-square displays', 'Höhere, gut zentrierte fast quadratische Anzeigen', 'Afficheurs presque carrés plus hauts et bien centrés', 'Pantallas casi cuadradas más altas y bien centradas', 'Ecrãs quase quadrados mais altos e bem centrados'],
     text: [
