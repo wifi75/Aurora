@@ -3,6 +3,8 @@
  *
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
+ * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
+ * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
  *
@@ -170,13 +172,48 @@ async function pulizia(env: Env): Promise<void> {
       cursor = elenco.truncated ? elenco.cursor : undefined;
     } while (cursor);
   }
-  await env.INDICE.batch([env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite)]);
+  await env.INDICE.batch([env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite)]);
+}
+
+/** Una installazione dice che oggi e' aperta: una sola riga al giorno, la versione e il sistema si aggiornano. */
+async function attivo(req: Request, env: Env): Promise<Response> {
+  const corpo = await leggiCorpo(req, 2048);
+  if (!corpo) return risposta(413, { error: 'troppo grande' });
+  let dati: Record<string, unknown>;
+  try {
+    dati = JSON.parse(new TextDecoder().decode(corpo)) as Record<string, unknown>;
+  } catch {
+    return risposta(400, { error: 'json' });
+  }
+  const id = corto(dati.installazione, 36);
+  if (!/^[0-9a-f-]{36}$/.test(id)) return risposta(400, { error: 'installazione' });
+  await env.INDICE.prepare('INSERT INTO attivi (giorno, installazione, versione, sistema) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione, sistema = excluded.sistema')
+    .bind(oggi(), id, corto(dati.versione, 20), corto(dati.sistema, 60))
+    .run();
+  return risposta(200, { ok: true });
+}
+
+/** Quante installazioni sono attive: oggi, ultimi 7 e 30 giorni, per versione e per giorno. */
+async function attivi(env: Env): Promise<Response> {
+  const giorni = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+  const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
+  const perGiorno = await env.INDICE.prepare('SELECT giorno, COUNT(*) AS n FROM attivi WHERE giorno >= ?1 GROUP BY giorno ORDER BY giorno DESC').bind(giorni(30)).all();
+  const perVersione = await env.INDICE.prepare('SELECT versione, COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1 GROUP BY versione ORDER BY n DESC').bind(giorni(7)).all();
+  return risposta(200, { oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     try {
+      if (req.method === 'POST' && url.pathname === '/v1/attivo') {
+        const no = await ingresso(req, env);
+        if (no) return no;
+        return await attivo(req, env);
+      }
+      if (req.method === 'GET' && url.pathname === '/v1/attivi') {
+        return amministratore(req, env) ? await attivi(env) : risposta(401, { error: 'segreto' });
+      }
       if (req.method === 'POST' && (url.pathname === '/v1/report' || url.pathname === '/v1/bundle')) {
         const no = await ingresso(req, env);
         if (no) return no;

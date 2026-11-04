@@ -21,3 +21,13 @@ CREATE TABLE IF NOT EXISTS pacchetti (
   byte INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS pacchetti_giorno ON pacchetti (giorno);
+
+-- Installazioni attive: una riga per installazione e giorno (codice casuale, versione, sistema). Niente IP, niente dati personali.
+CREATE TABLE IF NOT EXISTS attivi (
+  giorno TEXT NOT NULL,
+  installazione TEXT NOT NULL,
+  versione TEXT NOT NULL,
+  sistema TEXT NOT NULL,
+  PRIMARY KEY (giorno, installazione)
+);
+CREATE INDEX IF NOT EXISTS attivi_versione ON attivi (versione, giorno);
