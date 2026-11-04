@@ -181,7 +181,8 @@ export function ClusterTab() {
         <Cells min={13}>
           <Check label={t('cluster.enabled')} hint={t('tip.cluster.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
           <Field label={t('cluster.callsign')} hint={t('tip.cluster.callsign')}>
-            <input type="text" value={shown.callsign} maxLength={16} onChange={(e) => set({ callsign: e.target.value.toUpperCase() })} />
+            {/* il nominativo viene dai dati di stazione: qui si mostra soltanto */}
+            <input type="text" value={state.data?.callsign || t('cluster.callMissing')} readOnly aria-readonly="true" />
           </Field>
           <Field label={t('cluster.max')} hint={t('tip.cluster.max')}>
             <input type="number" className="set-number" min={50} max={2000} value={shown.maxSpots} onChange={(e) => set({ maxSpots: e.target.value })} />

@@ -90,6 +90,8 @@ export function ClusterPanel() {
   if (cluster.isError) return <p className="muted cluster-note">{t('set.loadError')}</p>;
   if (!cluster.data) return <p className="muted cluster-note">…</p>;
   const { config, servers, spots } = cluster.data;
+  // il nominativo con cui si entra: quello dei dati di stazione (o, con un core vecchio, quello del cluster)
+  const callsign = cluster.data.callsign ?? config.callsign;
   if (!config.enabled) {
     return (
       <div className="cluster-note">
@@ -100,7 +102,7 @@ export function ClusterPanel() {
       </div>
     );
   }
-  if (config.callsign === '') {
+  if (callsign === '') {
     return (
       <div className="cluster-note">
         <p className="muted">{t('cluster.noCall')}</p>

@@ -500,8 +500,9 @@ export interface ClusterCatalogEntry {
 }
 
 /** Impostazioni, stato dei collegamenti e spot recenti del DX Cluster (`limit` spot al massimo). */
-export async function getClusterSpots(limit = 200): Promise<{ config: ClusterConfig; servers: ClusterServerStatus[]; spots: ClusterSpot[] }> {
-  return (await (await request(`/dx-cluster?limit=${limit}`)).json()) as { config: ClusterConfig; servers: ClusterServerStatus[]; spots: ClusterSpot[] };
+/** `callsign`: il nominativo con cui si entra davvero (quello dei dati di stazione). */
+export async function getClusterSpots(limit = 200): Promise<{ config: ClusterConfig; callsign?: string; servers: ClusterServerStatus[]; spots: ClusterSpot[] }> {
+  return (await (await request(`/dx-cluster?limit=${limit}`)).json()) as { config: ClusterConfig; callsign?: string; servers: ClusterServerStatus[]; spots: ClusterSpot[] };
 }
 
 export async function putCluster(config: ClusterConfig): Promise<void> {
