@@ -133,7 +133,8 @@ pub fn network_check() -> NetworkCheck {
              $s = (netsh wlan show interfaces | Select-String '^\\s*SSID\\s*:' | Select-Object -First 1); if ($s) {{ 'SSID=' + ($s.ToString() -replace '^\\s*SSID\\s*:\\s*','') }}; \
              $p = Get-NetConnectionProfile | Where-Object {{ $_.IPv4Connectivity -ne 'Disconnected' }} | Select-Object -First 1; if ($p) {{ 'CAT=' + $p.NetworkCategory }}; \
              $r = Get-NetFirewallApplicationFilter -Program '{exe}' | Get-NetFirewallRule | Where-Object {{ $_.Enabled -eq 'True' -and $_.Direction -eq 'Inbound' }}; \
-             if ($r | Where-Object {{ $_.Action -eq 'Block' }}) {{ 'FW=block' }} elseif ($r | Where-Object {{ $_.Action -eq 'Allow' }}) {{ 'FW=allow' }} else {{ 'FW=none' }}"
+             $q = Get-NetFirewallRule -DisplayName 'Aurora (porta TCP)' | Where-Object {{ $_.Enabled -eq 'True' -and $_.Action -eq 'Allow' }}; \
+             if ($r | Where-Object {{ $_.Action -eq 'Block' }}) {{ 'FW=block' }} elseif (($r | Where-Object {{ $_.Action -eq 'Allow' }}) -or $q) {{ 'FW=allow' }} else {{ 'FW=none' }}"
         );
         if let Some(out) = powershell(&script) {
             for line in out.lines() {
@@ -154,17 +155,54 @@ pub fn network_check() -> NetworkCheck {
     check
 }
 
-/// Aggiunge al firewall di Windows la regola che lascia entrare Aurora (Windows chiede la conferma da amministratore).
-pub fn allow_in_firewall() -> Result<(), String> {
+/// Lo script (PowerShell, da amministratore) che apre il firewall di Windows ad Aurora **una volta per tutte**:
+/// 1. toglie le regole di BLOCCO sul programma: le crea Windows da solo se alla sua domanda «Consenti l'accesso» si preme Annulla o si
+///    chiude la finestra, e in Windows un blocco vince sempre su un permesso (era il motivo per cui «Consenti Aurora» non bastava);
+/// 2. rimette la regola «Aurora» per il programma e aggiunge «Aurora (porta TCP)» per la porta, tutte e due su ogni rete (anche «Pubblica»).
+/// `exe` e `port` arrivano dal programma, non dall'utente.
+pub fn firewall_script(exe: &str, port: u16) -> String {
+    let exe = exe.replace('\'', "''");
+    format!(
+        "$ErrorActionPreference='SilentlyContinue'; $exe='{exe}'; \
+         Get-NetFirewallApplicationFilter -Program $exe | Get-NetFirewallRule | Where-Object {{ $_.Action -eq 'Block' }} | Remove-NetFirewallRule; \
+         Get-NetFirewallRule -DisplayName 'Aurora*' | Remove-NetFirewallRule; \
+         New-NetFirewallRule -DisplayName 'Aurora' -Direction Inbound -Action Allow -Program $exe -Profile Any -Enabled True | Out-Null; \
+         New-NetFirewallRule -DisplayName 'Aurora (porta TCP)' -Direction Inbound -Action Allow -Protocol TCP -LocalPort {port} -Profile Any -Enabled True | Out-Null"
+    )
+}
+
+/// Il testo per `powershell -EncodedCommand`: UTF-16LE in base64 (cosi' apici e virgolette dello script non si rompono passando da RunAs).
+pub fn encoded_command(script: &str) -> String {
+    const ABC: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let bytes: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = (u32::from(chunk[0]) << 16) | (u32::from(*chunk.get(1).unwrap_or(&0)) << 8) | u32::from(*chunk.get(2).unwrap_or(&0));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(char::from(ABC[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// Apre il firewall di Windows ad Aurora (vedi [`firewall_script`]); Windows chiede la conferma da amministratore.
+pub fn allow_in_firewall(port: u16) -> Result<(), String> {
     #[cfg(windows)]
     {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?.display().to_string();
-        let args = format!("advfirewall firewall add rule name=\"Aurora\" dir=in action=allow program=\"{exe}\" enable=yes profile=any");
-        let script = format!("Start-Process netsh -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '{}'", args.replace('\'', "''"));
+        let encoded = encoded_command(&firewall_script(&exe, port));
+        let script = format!("Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-NonInteractive','-EncodedCommand','{encoded}'");
         return powershell(&script).map(|_| ()).ok_or_else(|| "regola non aggiunta (conferma annullata?)".to_string());
     }
     #[cfg(not(windows))]
-    Err("solo su Windows".into())
+    {
+        let _ = port;
+        Err("solo su Windows".into())
+    }
 }
 
 /// Il nome del PC ridotto a lettere, cifre e trattini, come vuole un nome host.
@@ -247,6 +285,23 @@ impl Drop for Announcer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_firewall_script_removes_the_blocks_then_allows_program_and_port_everywhere() {
+        let s = firewall_script("C:\\Users\\o'neil\\Aurora\\aurora-desktop.exe", 8787);
+        let block = s.find("Action -eq 'Block'").expect("toglie i blocchi");
+        let allow = s.find("-Action Allow -Program").expect("permesso del programma");
+        assert!(block < allow, "prima si tolgono i blocchi");
+        assert!(s.contains("-LocalPort 8787") && s.matches("-Profile Any").count() == 2);
+        assert!(s.contains("o''neil"), "l'apice nel percorso non rompe lo script");
+    }
+
+    #[test]
+    fn the_encoded_command_is_utf16_base64() {
+        // «ab» in UTF-16LE = 61 00 62 00 -> YQBiAA==
+        assert_eq!(encoded_command("ab"), "YQBiAA==");
+        assert_eq!(encoded_command("a"), "YQA=");
+    }
 
     #[test]
     fn the_wifi_adapter_is_recognised_by_its_name() {
