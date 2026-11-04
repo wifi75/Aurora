@@ -247,3 +247,8 @@
 .net-check li button { margin-left: auto; white-space: nowrap; }
 .net-check__err { margin: 0; color: var(--danger); font-size: 0.85rem; }
 .net-check__tip { margin: 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
+
+/* finestra di conferma del log: due colonne di campi, il commento su tutta la riga */
+.log-prompt__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 1rem; }
+.log-prompt__wide { grid-column: 1 / -1; }
+@media (max-width: 34rem) { .log-prompt__fields { grid-template-columns: 1fr; } }
