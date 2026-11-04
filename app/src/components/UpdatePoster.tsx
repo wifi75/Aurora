@@ -33,7 +33,7 @@ export function noteLines(notes: string): string[] {
 export function UpdatePoster() {
   const t = useT();
   const lang = useLang((s) => s.lang);
-  const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: 10 * 60_000 });
+  const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: (q) => ((q.state.data?.checked_at_ms ?? 0) === 0 ? 5_000 : 10 * 60_000) });
   const [seen, setSeen] = useState(seenVersion);
   const [installing, setInstalling] = useState(false);
   const [failure, setFailure] = useState('');
