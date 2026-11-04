@@ -281,7 +281,7 @@
 .splash {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -832,7 +832,7 @@
 /* vale per ogni tipo di display: l'ultimo elemento della riga in alto e' sempre il display (o il suo invito a configurarlo) */
 /* il display non deve mai spostare ne' la barra del menu ne' i pannelli: sta fuori dal flusso, a destra, e la riga resta alta quanto i
    comandi a sinistra. Si centra fra il bordo basso della barra (12 px sopra la riga) e i pannelli (3 px sotto); se e' piu' alto dello
-   spazio (display estesi da 90) poggia sui pannelli e sale sul bordo della barra, in primo piano */
+   spazio la riga si allunga (display estesi da 90); lo splash di apertura (livello 2000) gli sta sopra */
 .live-top {
   position: relative;
 }
@@ -841,7 +841,7 @@
   position: absolute;
   right: 0;
   top: calc(50% - 4.5px);
-  z-index: 1001;
+  z-index: 1;
   margin: 0;
   transform: translateY(-50%);
 }
