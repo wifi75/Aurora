@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.110',
-    released: '2026-11-04T12:25:53Z',
+    released: '2026-11-04T12:28:05Z',
     kind: 'fixed',
     title: ['Niente messaggi falsi senza radio', 'No false messages without a radio', 'Keine falschen Meldungen ohne Funkgerät', 'Plus de faux messages sans radio', 'Sin mensajes falsos sin radio', 'Sem mensagens falsas sem rádio'],
     text: [
