@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.119 - 2026-11-04
+- **Porta del CAT scrivibile**: oltre alle COM accetta un indirizzo di rete (`127.0.0.1:4532` per «Hamlib NET rigctl», flrig, rigctld di un altro programma); avviso se la condivisione della radio usa la stessa porta.
+- **CQ e novita'**: colonna del paese con larghezza minima (niente piu' «S..»).
+- **Display quasi quadrato** messo sulla pagina sopra la testata (prima finiva sotto, sopra il pannello Comandi).
+
 ## 0.11.118 - 2026-11-04
 - **Pannelli da togliere**: Impostazioni › Finestre › «Pannelli mostrati» toglie o rimette ogni pannello della stazione (cascata, attività di banda, log, DX Cluster…); «Ripristina la disposizione» li rimostra tutti (richiesta di un utente). Sei lingue.
 - **Import ADIF grandi**: limite del file portato da 64 a 256 MB (un log di 70 mila QSO esportato con tutti i campi superava i 64 MB); se il file è troppo grande il messaggio lo dice chiaramente invece di un errore generico.
