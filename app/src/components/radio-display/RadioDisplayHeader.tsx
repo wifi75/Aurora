@@ -76,7 +76,7 @@ const OPEN_MS = 250;
 const CLOSE_MS = 300;
 
 /**
- * La lente: passando il mouse sul display, dopo un attimo si apre sotto una copia identica ingrandita 2 volte in larghezza E in altezza
+ * La lente: passando il mouse sul display, dopo un attimo si apre sotto una copia identica ingrandita 1,5 volte in larghezza e in altezza
  * (CSS `zoom`, come una lente: niente si stira). Resta aperta finche' il mouse e' sul display o sulla copia.
  */
 function Zoom({ children }: { children: ReactNode }) {
