@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.122 - 2026-11-04
+- **Locandina dell'aggiornamento**: finche' il primo controllo non e' fatto la finestra lo chiede ogni 5 s (`UpdatePoster`, `UpdateBar`); prima, con l'avviso gia' dato a un avvio precedente, aspettava la lettura ogni 10 minuti.
+
 ## 0.11.121 - 2026-11-04
 - **OmniRig che non risponde**: il PTT spiega di controllare porta e modello di Rig1 e la radio accesa, o di passare a Hamlib (dai rapporti: mezz'ora di trasmissioni fallite su una stazione).
 - **Telefono**: il riquadro del DX Cluster non compare se il cluster e' spento in Aurora.
