@@ -9,6 +9,7 @@ Stato al 2026-11-05, versione 0.11.153. Per riprendere il lavoro leggi anche `do
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
 
 ## Mappa DX
+- Dal 2026-11-05 la vecchia pagina «Mappa» non e' piu' nel menu (doppione, scelta del proprietario): `#/mappa`, le finestre staccate `map` e l'ultima pagina ricordata portano alla Mappa DX. `MapPage.tsx` e `WorldMap.tsx` restano perche' li usa la pagina Propagazione.
 - Pagina `#/mappa-dx` (`pages/DxMapPage.tsx`, `components/DxMap.tsx`, `lib/moon.ts` per Luna e crepuscoli, `lib/mapStyles.ts` per gli sfondi), staccabile (ItemId `dxmap`). I quadrati vengono da `/api/v1/map/worked`: stessi log della scheda DXCC, con `cells` per banda, modo e conferma; senza file dei paesi dal solo log di Aurora; Log4OM2 da solo resta senza `cells`.
 - Stile GridTracker2 (dalla sua documentazione e dalle schermate del proprietario): mappa di calore PSK Reporter (`lib/heatLayer.ts`, nessuna libreria esterna) con Spot RX e durata massima; linee «Chi chiama chi» tratteggiate giallo-verde con cerchietti neri, colori/spessore/velocita' dal menu; quadrati in onda QSX/CQ/CQDX/QRZ (vale l'ultimo messaggio di ogni stazione) divisi in triangoli con il log; centro del paese da `/api/v1/dxcc/{call}` se manca il quadrato; puntini delle stazioni spenti di base. Le «PSK Spot Paths» (linee dalla propria stazione a chi ci riceve) sono dentro «Propagazione»; i quadrati sentiti restano in `LEARNED_GRIDS` (pagina) finche' il programma e' aperto.
 
