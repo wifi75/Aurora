@@ -32,7 +32,8 @@ struct Core {
     data_dir: PathBuf,
 }
 
-static LAST_WINDOW_SAVE: Mutex<Option<Instant>> = Mutex::new(None);
+/// L'ultimo salvataggio di posizione e misura, per ogni finestra (la principale e quelle a parte).
+static LAST_WINDOW_SAVE: std::sync::LazyLock<Mutex<std::collections::HashMap<String, Instant>>> = std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
 
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
 
@@ -50,9 +51,9 @@ pub fn run() {
             // dimensione e posizione si ricordano per il prossimo avvio (senza scrivere a ogni pixel)
             WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
                 if let Ok(mut last) = LAST_WINDOW_SAVE.lock()
-                    && last.is_none_or(|t| t.elapsed() > Duration::from_millis(600))
+                    && last.get(window.label()).is_none_or(|t| t.elapsed() > Duration::from_millis(600))
                 {
-                    *last = Some(Instant::now());
+                    last.insert(window.label().to_string(), Instant::now());
                     remember_window(window);
                 }
             }
@@ -62,7 +63,8 @@ pub fn run() {
     match built {
         Ok(app) => app.run(|handle, event| {
             if let RunEvent::Exit = event {
-                if let Some(window) = handle.get_webview_window("main") {
+                // la principale e le finestre a parte: ognuna si ricorda dove stava
+                for window in handle.webview_windows().values() {
                     remember_window(&window.as_ref().window());
                 }
                 stop_core(handle);
@@ -272,7 +274,26 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
             return;
         }
     };
-    // sul secondo schermo: il primo schermo diverso da quello della finestra principale, con un po' di margine dall'angolo
+    // dove stava l'ultima volta (posizione, misura, massimizzata), se quello schermo c'e' ancora
+    if let Some(core) = app.try_state::<Core>()
+        && let Some(state) = window_state::load_for(&core.data_dir, &label)
+    {
+        let monitors: Vec<window_state::Monitor> = window
+            .available_monitors()
+            .map(|all| all.iter().map(|m| (m.position().x, m.position().y, m.size().width, m.size().height)).collect())
+            .unwrap_or_default();
+        if window_state::is_usable_with(&state, &monitors, window_state::SOLO_MIN_WIDTH, window_state::SOLO_MIN_HEIGHT) {
+            let _ = window.set_size(PhysicalSize::new(state.width, state.height));
+            let _ = window.set_position(PhysicalPosition::new(state.x, state.y));
+            if state.maximized {
+                let _ = window.maximize();
+            }
+            let _ = window.show();
+            let _ = window.set_focus();
+            return;
+        }
+    }
+    // la prima volta: sul secondo schermo, il primo diverso da quello della finestra principale, con un po' di margine dall'angolo
     let main_monitor = app.get_webview_window("main").and_then(|m| m.current_monitor().ok().flatten()).map(|m| *m.position());
     if let Ok(monitors) = window.available_monitors() {
         if let Some(other) = monitors.iter().find(|m| Some(*m.position()) != main_monitor) {
@@ -328,11 +349,12 @@ fn restore_window(app: &AppHandle, window: &WebviewWindow) {
 
 /// Salva dimensione e posizione della finestra principale. Da massimizzata resta la misura di prima e si segna solo che lo era.
 fn remember_window(window: &tauri::Window) {
-    if window.label() != "main" || window.is_minimized().unwrap_or(false) {
+    let label = window.label().to_string();
+    if !(label == "main" || label.starts_with("finestra-")) || window.is_minimized().unwrap_or(false) {
         return;
     }
     let Some(core) = window.app_handle().try_state::<Core>() else { return };
-    let previous = window_state::load(&core.data_dir);
+    let previous = window_state::load_for(&core.data_dir, &label);
     let state = if window.is_maximized().unwrap_or(false) {
         match previous {
             Some(p) => window_state::WindowState { maximized: true, ..p },
@@ -343,7 +365,7 @@ fn remember_window(window: &tauri::Window) {
         window_state::WindowState { width: size.width, height: size.height, x: pos.x, y: pos.y, maximized: false }
     };
     if previous != Some(state)
-        && let Err(e) = window_state::save(&core.data_dir, &state)
+        && let Err(e) = window_state::save_for(&core.data_dir, &label, &state)
     {
         tracing::warn!("posizione della finestra non salvata: {e}");
     }

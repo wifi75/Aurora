@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.135',
+    released: '2026-11-05T12:57:17Z',
+    kind: 'fixed',
+    title: ['Installazione che non si blocca e finestre ricordate', 'Installer that no longer hangs and remembered windows', 'Installation hängt nicht mehr, Fenster gemerkt', 'Installation qui ne bloque plus et fenêtres mémorisées', 'Instalación que no se bloquea y ventanas recordadas', 'Instalação que não bloqueia e janelas lembradas'],
+    text: [
+      "Su alcuni PC l'installazione restava ferma all'inizio della barra: ora chiude Aurora senza aspettare PowerShell e non attende mai più di pochi secondi. Le finestre a parte del secondo schermo si riaprono dove le avevi lasciate, con la stessa misura (anche massimizzate).",
+      "On some PCs the installer stopped at the start of the bar: now it closes Aurora without waiting for PowerShell and never waits more than a few seconds. The separate windows on the second screen reopen where you left them, with the same size (maximized too).",
+      "Auf manchen PCs blieb die Installation am Anfang des Balkens stehen: jetzt schließt sie Aurora ohne auf PowerShell zu warten und wartet nie länger als ein paar Sekunden. Die Fenster auf dem zweiten Bildschirm öffnen sich wieder dort, wo sie waren, in gleicher Größe (auch maximiert).",
+      "Sur certains PC l’installation restait bloquée au début de la barre : elle ferme maintenant Aurora sans attendre PowerShell et n’attend jamais plus de quelques secondes. Les fenêtres à part du second écran se rouvrent là où tu les avais laissées, à la même taille (même agrandies).",
+      "En algunos PC la instalación se quedaba parada al inicio de la barra: ahora cierra Aurora sin esperar a PowerShell y nunca espera más de unos segundos. Las ventanas aparte de la segunda pantalla se reabren donde las dejaste, con el mismo tamaño (también maximizadas).",
+      "Em alguns PC a instalação ficava parada no início da barra: agora fecha a Aurora sem esperar pelo PowerShell e nunca espera mais de alguns segundos. As janelas à parte do segundo ecrã reabrem onde as deixaste, com o mesmo tamanho (também maximizadas).",
+    ],
+  },
+  {
     version: '0.11.134',
     released: '2026-11-05T12:50:53Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Les Réglages ont un onglet « Assistance » : paquet du journal sur le Bureau et « Envoyer par e-mail », qui ouvre un message Gmail prêt dans Chrome. L’activité de bande affiche de nouveau les km dans un panneau étroit, sans double ligne ; sur le téléphone drapeau et pays suivent les options d’affichage.',
       'Ajustes tiene ahora la pestaña «Asistencia»: paquete del registro en el Escritorio y «Enviar por email», que abre un Gmail listo en Chrome. La actividad de banda vuelve a mostrar los km en un panel estrecho y sin línea doble; en el teléfono bandera y país siguen las opciones de Pantalla.',
       'As Definições têm agora o separador «Assistência»: pacote do registo no Ambiente de trabalho e «Enviar por email», que abre um Gmail pronto no Chrome. A atividade de banda volta a mostrar os km num painel estreito e sem linha dupla; no telemóvel bandeira e país seguem as opções de Ecrã.',
-    ],
-  },
-  {
-    version: '0.11.95',
-    released: '2026-11-03T21:37:15Z',
-    kind: 'new',
-    title: ['Pacchetto per l’assistenza', 'Support package', 'Paket für den Support', 'Paquet pour l’assistance', 'Paquete para la asistencia', 'Pacote para a assistência'],
-    text: [
-      'In Impostazioni > Informazioni il pulsante «Prepara il pacchetto per l’assistenza» crea sul Desktop uno zip con log, errori e impostazioni (senza password) e apre la cartella; con «Manda per email» si apre anche la posta già compilata per chi ti aiuta.',
-      'In Settings > About the «Prepare the support package» button creates a zip on the Desktop with log, errors and settings (no passwords) and opens the folder; «Send by email» also opens a ready-made email to whoever helps you.',
-      'Unter Einstellungen > Info erstellt die Taste «Support-Paket vorbereiten» auf dem Desktop eine ZIP-Datei mit Log, Fehlern und Einstellungen (ohne Passwörter) und öffnet den Ordner; «Per E-Mail senden» öffnet zusätzlich eine fertige E-Mail an deinen Helfer.',
-      'Dans Réglages > À propos le bouton « Préparer le paquet d’assistance » crée sur le Bureau un zip avec journal, erreurs et réglages (sans mots de passe) et ouvre le dossier ; « Envoyer par e-mail » ouvre aussi un e-mail prêt pour la personne qui t’aide.',
-      'En Ajustes > Información el botón «Preparar el paquete de asistencia» crea en el Escritorio un zip con registro, errores y ajustes (sin contraseñas) y abre la carpeta; «Enviar por email» abre también un correo listo para quien te ayuda.',
-      'Em Definições > Sobre o botão «Preparar o pacote de assistência» cria no Ambiente de trabalho um zip com registo, erros e definições (sem palavras-passe) e abre a pasta; «Enviar por email» abre também um email pronto para quem te ajuda.',
     ],
   },
 ];
