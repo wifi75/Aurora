@@ -255,11 +255,14 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     }
     // il titolo vero lo mette la pagina (gli elementi che contiene)
     let title = "Aurora";
-    // il display della radio da solo: finestra senza cornice (si vede solo il display); le altre finestre a parte hanno la cornice di Windows
-    let display_only = url.query_pairs().any(|(k, v)| k == "items" && v == "display") && !url.query_pairs().any(|(k, v)| k == "mode" && v == "grid");
+    // finestre a parte senza cornice: si vede solo il blocco staccato (si sposta dalla sua barretta); la dashboard a blocchi resta una
+    // finestra normale con la cornice di Windows
+    let grid = url.query_pairs().any(|(k, v)| k == "mode" && v == "grid");
+    let frameless = !grid;
+    let display_only = !grid && url.query_pairs().any(|(k, v)| k == "items" && v == "display");
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
         .title(title)
-        .decorations(!display_only)
+        .decorations(!frameless)
         .shadow(true)
         .inner_size(if display_only { 660.0 } else { 1000.0 }, if display_only { 110.0 } else { 700.0 })
         .min_inner_size(if display_only { 160.0 } else { 360.0 }, if display_only { 40.0 } else { 260.0 })
