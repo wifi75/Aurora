@@ -52,4 +52,28 @@ export const diagnosisStrings = {
     'Ningún mensaje decodificado desde hace {min} minutos: banda cerrada o recepción detenida (comprueba Monitor y el audio).',
     'Nenhuma mensagem descodificada há {min} minutos: banda fechada ou receção parada (verifica Monitorar e o áudio).',
   ],
+  'diag.audio_loss': [
+    'L’audio perde blocchi ({detail} al minuto): controlla il cavo USB della scheda audio e togli il risparmio energetico USB di Windows; chiudi i programmi pesanti.',
+    'The audio is losing blocks ({detail} per minute): check the sound card USB cable and turn off Windows USB power saving; close heavy programs.',
+    'Das Audio verliert Blöcke ({detail} pro Minute): Prüfe das USB-Kabel der Soundkarte und schalte das USB-Energiesparen von Windows aus; schließe schwere Programme.',
+    'L’audio perd des blocs ({detail} par minute) : vérifie le câble USB de la carte son et désactive l’économie d’énergie USB de Windows ; ferme les programmes lourds.',
+    'El audio pierde bloques ({detail} por minuto): comprueba el cable USB de la tarjeta de sonido y quita el ahorro de energía USB de Windows; cierra los programas pesados.',
+    'O áudio está a perder blocos ({detail} por minuto): verifica o cabo USB da placa de som e desliga a poupança de energia USB do Windows; fecha os programas pesados.',
+  ],
+  'diag.no_radio': [
+    'Stai trasmettendo senza una radio collegata: il PTT non viene comandato (va bene solo con il VOX). Scegli la radio in Impostazioni › Radio.',
+    'You are transmitting without a connected radio: PTT is not keyed (fine only with VOX). Choose the radio in Settings › Radio.',
+    'Du sendest ohne verbundenes Funkgerät: PTT wird nicht geschaltet (nur mit VOX in Ordnung). Wähle das Funkgerät unter Einstellungen › Funkgerät.',
+    'Tu émets sans radio connectée : le PTT n’est pas commandé (correct seulement avec le VOX). Choisis la radio dans Réglages › Radio.',
+    'Estás transmitiendo sin una radio conectada: el PTT no se acciona (solo vale con VOX). Elige la radio en Ajustes › Radio.',
+    'Estás a transmitir sem um rádio ligado: o PTT não é acionado (só serve com VOX). Escolhe o rádio em Definições › Rádio.',
+  ],
+  'diag.omnirig': [
+    'OmniRig non risponde anche dopo tre tentativi ({detail}): controlla che in OmniRig la radio risulti «On-line», oppure passa a Hamlib in Impostazioni › Radio.',
+    'OmniRig does not answer even after three tries ({detail}): check that OmniRig shows the radio as “On-line”, or switch to Hamlib in Settings › Radio.',
+    'OmniRig antwortet auch nach drei Versuchen nicht ({detail}): Prüfe, ob OmniRig das Funkgerät als „On-line“ zeigt, oder wechsle zu Hamlib unter Einstellungen › Funkgerät.',
+    'OmniRig ne répond pas même après trois essais ({detail}) : vérifie que OmniRig affiche la radio « On-line », ou passe à Hamlib dans Réglages › Radio.',
+    'OmniRig no responde ni tras tres intentos ({detail}): comprueba que OmniRig muestre la radio «On-line», o pasa a Hamlib en Ajustes › Radio.',
+    'O OmniRig não responde mesmo após três tentativas ({detail}): verifica se o OmniRig mostra o rádio «On-line», ou passa para Hamlib em Definições › Rádio.',
+  ],
 } as const satisfies Record<string, Entry>;

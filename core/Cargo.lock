@@ -1551,6 +1551,7 @@ dependencies = [
 name = "rig-control"
 version = "0.11.131"
 dependencies = [
+ "aurora-core",
  "serde",
  "serde_json",
  "tracing",

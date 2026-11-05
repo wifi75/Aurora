@@ -1,0 +1,45 @@
+/* «Verifica tutto»: la stessa scheda della guida al primo avvio, una riga colorata per ogni controllo. */
+.ca-open {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+.ca-open:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.ca-summary { margin: 0.4rem 0 1rem; color: var(--text-muted); }
+.ca-list { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+.ca-row {
+  --ca: var(--accent);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--ca) 35%, var(--border));
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--ca) 8%, transparent);
+}
+.ca-row--ok { --ca: #2fbf71; }
+.ca-row--warn { --ca: #e6a23c; }
+.ca-row--bad { --ca: #e5484d; }
+.ca-row--wait { --ca: var(--text-muted); }
+.ca-icon {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: var(--ca);
+  color: #fff;
+  font-weight: 700;
+}
+.ca-text { display: grid; gap: 0.15rem; min-width: 0; }
+.ca-text span { color: var(--text-muted); font-size: 0.88rem; overflow-wrap: anywhere; }
+.ca-fix { color: var(--ca); font-weight: 600; white-space: nowrap; }
+.lp-foot .lp-log { margin-left: auto; }

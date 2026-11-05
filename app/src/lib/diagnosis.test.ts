@@ -59,3 +59,12 @@ describe('diagnose', () => {
     expect(list.slice(0, 2).every((x) => x.endsWith(':problem'))).toBe(true);
   });
 });
+
+describe('notices from the engine', () => {
+  it('shows a recent notice with its fix page and forgets an old one', () => {
+    const base = { now: 1_000_000, status: null, clockOffsetMs: null, periodSecs: 15, audio: null, lastDecodeAt: null, sessionStartAt: null };
+    const recent = diagnose({ ...base, notices: { audio_loss: { detail: '12', at: 990_000 } } });
+    expect(recent).toEqual([expect.objectContaining({ id: 'audio_loss', href: '#/impostazioni/audio' })]);
+    expect(diagnose({ ...base, now: 990_000 + 11 * 60_000, notices: { audio_loss: { detail: '12', at: 990_000 } } })).toEqual([]);
+  });
+});
