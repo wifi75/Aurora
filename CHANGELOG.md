@@ -4,6 +4,7 @@
 
 ## 0.11.140 - 2026-11-05
 - **Errore «libhamlib-4.dll» durante l'aggiornamento**: il rigctld di Aurora sopravviveva alla chiusura del programma e teneva la DLL; l'installatore ora lo ferma con `taskkill /FI "MODULES eq libhamlib-4.dll"` (senza PowerShell), poi con PowerShell solo per quello della cartella di Aurora, fino a quattro tentativi.
+- **Impostazioni › Audio**: la «Cartella dei file audio» non mostra piu' una cartella rimasta da JTDX; fuori dalla cartella di Aurora non vale (come gia' faceva il core) e compare quella di Aurora.
 
 ## 0.11.139 - 2026-11-05
 - **Impostazioni › Audio**: cursore del volume di Windows sotto l'ingresso (registrazione, `/api/v1/input-level`) e sotto l'uscita (trasmissione Pwr, `/api/v1/output-level`), si invia al rilascio (`settings/DeviceVolume.tsx`).

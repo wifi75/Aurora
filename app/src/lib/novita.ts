@@ -25,7 +25,7 @@ export const NOVITA: readonly Novita[] = [
     kind: 'fixed',
     title: ["Aggiornamento senza l'errore di libhamlib", 'Update without the libhamlib error', 'Aktualisierung ohne libhamlib-Fehler', 'Mise à jour sans l’erreur libhamlib', 'Actualización sin el error de libhamlib', 'Atualização sem o erro do libhamlib'],
     text: [
-      "Aggiornando, l'installazione poteva fermarsi con «Errore nell'apertura del file in scrittura: libhamlib-4.dll», perché il rigctld di Aurora restava aperto. Ora l'installatore lo chiude da solo e riprova, senza chiederti nulla.",
+      "Aggiornando, l'installazione poteva fermarsi con «Errore nell'apertura del file in scrittura: libhamlib-4.dll», perché il rigctld di Aurora restava aperto. Ora l'installatore lo chiude da solo e riprova, senza chiederti nulla. In Impostazioni › Audio non compare più una cartella dei file audio rimasta da JTDX.",
       "When updating, the installer could stop with «Error opening file for writing: libhamlib-4.dll», because Aurora's rigctld stayed open. Now the installer closes it by itself and retries, without asking.",
       "Beim Aktualisieren konnte die Installation mit «Fehler beim Öffnen der Datei zum Schreiben: libhamlib-4.dll» stehen bleiben, weil Auroras rigctld offen blieb. Jetzt schließt das Installationsprogramm es selbst und versucht es erneut, ohne Nachfrage.",
       "Lors d’une mise à jour, l’installation pouvait s’arrêter sur « Erreur d’ouverture du fichier en écriture : libhamlib-4.dll », car le rigctld d’Aurora restait ouvert. L’installateur le ferme maintenant tout seul et réessaie, sans rien demander.",
