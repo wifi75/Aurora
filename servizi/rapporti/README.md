@@ -65,8 +65,9 @@ npx tsc --noEmit
 ## Totale delle installazioni (dal 2026-11-05)
 
 `GET /v1/attivi` restituisce anche `totale` (tutte le installazioni che hanno usato Aurora dall'inizio) e `nuove_per_giorno`.
-Le righe di `attivi` si cancellano dopo 90 giorni, quindi il totale vive in una tabella a parte, `installazioni`
-(identificativo, primo e ultimo giorno); quelle ferme da un anno passano al contatore `archiviate` della tabella `contatori`.
+Lo storico non si cancella mai: il totale vive nella tabella `installazioni` (identificativo, primo e ultimo giorno), e prima che
+la pulizia tolga le righe di `attivi` (90 giorni) i conteggi di ogni giorno per versione e sistema passano alla tabella `storico`
+(`storico_per_giorno` nella risposta).
 
 Per metterlo online, una volta, dalla cartella `servizi/rapporti`:
 
