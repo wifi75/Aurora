@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.145',
-    released: '2026-11-05T17:21:55Z',
+    released: '2026-11-05T17:24:42Z',
     kind: 'new',
     title: ["L'orologio si corregge con un clic", 'The clock is corrected with one click', 'Die Uhr wird mit einem Klick korrigiert', 'L’horloge se corrige d’un clic', 'El reloj se corrige con un clic', 'O relógio corrige-se com um clique'],
     text: [
