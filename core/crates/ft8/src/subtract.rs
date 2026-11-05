@@ -13,7 +13,7 @@
 //!
 //! # Differenze dal Fortran
 //!
-//! - Solo il filtro lungo (`NFILT1`); il `NFILT2` di `swl` non e' portato.
+//! - Con il Modo SWL il filtro e' quello di `swl` di JTDX: `NFILT2 = 3400` punti a coseno (non al quadrato), con la sua correzione dei bordi (`endcorrswl`).
 //! - L'onda di riferimento si genera una volta a frequenza 0 ([`Reference::new`]) e si porta a `f0` con un rotore complesso invece di
 //!   rigenerarla con la tabella a 65536 punti di `gen_ft8wave`: stessa fase, errore trascurabile.
 //! - La FFT lunga e' quella di `rustfft` in virgola mobile a 32 bit.
@@ -34,6 +34,8 @@ const NFRAME: usize = crate::NN * crate::NSPS;
 const NFFT: usize = 180_000;
 /// Lunghezza del filtro (`NFILT1`).
 const NFILT1: usize = 4000;
+/// Lunghezza del filtro con il Modo SWL (`NFILT2`).
+const NFILT2: usize = 3400;
 /// Scarto in campioni a 200 Hz usato da `peakup` (`noff`).
 const NOFF: i64 = 10;
 
@@ -49,12 +51,18 @@ struct Filter {
     inverse: Arc<dyn Fft<f32>>,
 }
 
-fn filter() -> &'static Filter {
+fn filter(swl: bool) -> &'static Filter {
     static FILTER: OnceLock<Filter> = OnceLock::new();
-    FILTER.get_or_init(|| {
-        let half = (NFILT1 / 2) as i64;
-        // window1(j) = cos(pi j / NFILT1)^2 per j = -2000..2000
-        let window = |j: i64| -> f64 { (PI * j as f64 / NFILT1 as f64).cos().powi(2) };
+    static FILTER_SWL: OnceLock<Filter> = OnceLock::new();
+    // `cwfilter`: normale window1 = cos^2 su NFILT1 punti; SWL window2 = cos su NFILT2 punti
+    if swl { FILTER_SWL.get_or_init(|| build_filter(NFILT2, 1)) } else { FILTER.get_or_init(|| build_filter(NFILT1, 2)) }
+}
+
+fn build_filter(len: usize, power: i32) -> Filter {
+    {
+        let half = (len / 2) as i64;
+        // window(j) = cos(pi j / len)^power per j = -len/2..len/2
+        let window = |j: i64| -> f64 { (PI * j as f64 / len as f64).cos().powi(power) };
         let sumw: f64 = (-half..=half).map(window).sum();
         // cw(1:NFILT1+1) = window/sumw, poi cshift di NFILT1/2+1: l'elemento (da 0) n vale window(n + 1) per n = -2001..1999
         let mut cw = vec![ZERO; NFFT];
@@ -77,7 +85,7 @@ fn filter() -> &'static Filter {
         }
         let endcorr: Vec<f32> = (0..=half as usize).map(|m| (1.0 / (1.0 - tail[m] / sumw)) as f32).collect();
         Filter { cw, endcorr, forward, inverse }
-    })
+    }
 }
 
 /// L'onda complessa `exp(j fase)` del messaggio a frequenza 0, con le rampe di `gen_ft8wave`.
@@ -150,10 +158,15 @@ pub fn refine_dt(cd: &[Complex], reference: &Reference, i0: i64) -> f32 {
 /// Toglie dall'audio (12 kHz, nella scala a 16 bit di `decode`) il segnale di toni `reference` a `f0_hz`, che comincia a `dt_s`
 /// secondi dall'inizio del periodo (ritardo assoluto, cioe' con lo 0,5 s incluso).
 pub fn subtract(audio: &mut [f32], reference: &Reference, f0_hz: f32, dt_s: f64) {
+    subtract_with(audio, reference, f0_hz, dt_s, false);
+}
+
+/// Come [`subtract`], con il filtro del Modo SWL se `swl` (`subtractft8(..., swl)`).
+pub fn subtract_with(audio: &mut [f32], reference: &Reference, f0_hz: f32, dt_s: f64, swl: bool) {
     if !f0_hz.is_finite() || !dt_s.is_finite() {
         return;
     }
-    let filt = filter();
+    let filt = filter(swl);
     let cref = reference.at_frequency(f0_hz);
     // nstart = dt*12000+1 (da 1): in indice da 0 e' il troncamento verso zero di dt*12000 + 1, meno uno
     let start = (dt_s * SAMPLE_RATE as f64 + 1.0) as i64 - 1;

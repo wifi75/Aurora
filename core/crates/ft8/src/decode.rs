@@ -494,7 +494,8 @@ fn remove_signal(audio: &mut [f32], options: &Options, tones: &[u8; NN], freq_hz
         Subtraction::Adaptive => {
             let reference = Reference::new(tones);
             let correction = subtract::refine_dt(cd, &reference, i0);
-            subtract::subtract(audio, &reference, freq_hz, dt_abs + f64::from(correction));
+            // Modo SWL: il filtro corto di JTDX (`NFILT2`)
+            subtract::subtract_with(audio, &reference, freq_hz, dt_abs + f64::from(correction), options.swl);
         }
     }
 }
@@ -1238,6 +1239,36 @@ mod tests {
                 assert_eq!(one, many, "profondita' {depth}, {threads} thread");
             }
         }
+    }
+
+    /// Modo SWL su banda fitta (segnali forti con deboli a 25-60 Hz, che restano solo dopo la sottrazione):
+    /// `cargo test --release -p ft8 esplora_swl -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn esplora_swl() {
+        let calls = ["K1ABC", "W9XYZ", "DL1ABC", "F4ABC", "EA3ABC", "G4ABC", "JA1ABC", "VK2ABC", "PY2ABC", "OH2ABC", "SP3ABC", "ZL1ABC"];
+        let (mut total, mut found) = (0usize, 0usize);
+        for seed in 0..12u64 {
+            let mut rng = Rng(900 + seed);
+            let mut texts: Vec<String> = Vec::new();
+            let mut signals: Vec<(f32, f32, f32)> = Vec::new();
+            for i in 0..24 {
+                let a = calls[i % calls.len()];
+                let b = calls[(i * 5 + 1) % calls.len()];
+                texts.push(if i % 2 == 0 { format!("CQ {a} FN42") } else { format!("{a} {b} -{:02}", 5 + i % 15) });
+                // a coppie: uno forte e uno debole vicino
+                let base = 300.0 + (i / 2) as f32 * 210.0 + (rng.uniform() as f32) * 10.0;
+                let freq = if i % 2 == 0 { base } else { base + 8.0 + (rng.uniform() as f32) * 14.0 };
+                let snr = if i % 2 == 0 { 12.0 + (rng.uniform() as f32) * 8.0 } else { -21.0 + (rng.uniform() as f32) * 4.0 };
+                signals.push((freq, (rng.uniform() as f32) * 0.6 - 0.2, snr));
+            }
+            let list: Vec<(&str, f32, f32, f32)> = texts.iter().zip(&signals).map(|(t, &(f, d, s))| (t.as_str(), f, d, s)).collect();
+            let audio = slot(&list, 900 + seed);
+            let out = decode_slot(&audio, &Options { swl: true, ..Options::depth(3) }, &mut CallHashes::default());
+            total += texts.len();
+            found += texts.iter().filter(|t| out.iter().any(|d| &d.text == *t)).count();
+        }
+        println!("SWL: {found}/{total} messaggi");
     }
 
     /// Tempi su banda affollata (`cargo test --release -p ft8 tempi_multithread -- --ignored --nocapture`).
