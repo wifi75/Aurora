@@ -265,7 +265,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         ]
       : [[0, 1]];
     for (const [alt, share] of steps) {
-      L.polygon(shadowPolygon(date, alt), { pane: 'shadePane', interactive: false, stroke: alt === 0, color: '#ffd27a', weight: 1, opacity: 0.5, fillColor: '#050b18', fillOpacity: settings.nightOpacity * share }).addTo(group);
+      L.polygon(shadowPolygon(date, alt), { pane: 'shadePane', interactive: false, stroke: alt === 0, color: '#ffd27a', weight: 1, opacity: 0.5, fillColor: '#000814', fillOpacity: settings.nightOpacity * share }).addTo(group);
     }
     replace('shade', group);
   }, [settings.greyline, settings.twilight, settings.nightOpacity, now]);

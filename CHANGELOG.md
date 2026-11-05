@@ -6,6 +6,7 @@
 ### Corretto
 - Mappa DX: stazioni in onda, quadrati QSX/CQ/CQDX/QRZ e linee «Chi chiama chi» non comparivano (l'ora dei messaggi è in ms dalla mezzanotte UTC, era confrontata con l'ora completa).
 - Mappa DX: il menu per staccare la mappa non resta sotto la cartina.
+- Mappa DX: la notte è più scura (predefinito 0,75; i valori salvati più chiari delle prime versioni si alzano una volta sola).
 
 ## 0.11.154 - 2026-11-05
 ### Modificato

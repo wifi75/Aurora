@@ -27,7 +27,7 @@ const DEFAULTS: DxMapSettings = {
   brightness: 1,
   background: '#0b1626',
   greyline: true,
-  nightOpacity: 0.65,
+  nightOpacity: 0.75,
   twilight: true,
   moon: true,
   arcs: true,
@@ -47,7 +47,14 @@ const DEFAULTS: DxMapSettings = {
 
 function readSettings(): DxMapSettings {
   try {
-    return { ...DEFAULTS, ...(JSON.parse(browserStorage()?.getItem(KEY) ?? '{}') as Partial<DxMapSettings>) };
+    const saved = JSON.parse(browserStorage()?.getItem(KEY) ?? '{}') as Partial<DxMapSettings> & { v?: number };
+    // la notte salvata dalle prime versioni era troppo chiara (quasi non si vedeva): una volta sola si porta al valore nuovo
+    if ((saved.v ?? 0) < 2) {
+      if (saved.nightOpacity === undefined || saved.nightOpacity < 0.7) saved.nightOpacity = DEFAULTS.nightOpacity;
+      saved.v = 2;
+      browserStorage()?.setItem(KEY, JSON.stringify(saved));
+    }
+    return { ...DEFAULTS, ...saved };
   } catch {
     return DEFAULTS;
   }
@@ -82,7 +89,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
   const change = (next: Partial<DxMapSettings>) => {
     const merged = { ...settings, ...next };
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify(merged));
+      browserStorage()?.setItem(KEY, JSON.stringify({ ...merged, v: 2 }));
     } catch {
       // senza archivio vale finche' la pagina resta aperta
     }
