@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.149 - 2026-11-05
+### Aggiunto
+- Mappa DX (menu): sfondi, luminosità, colore di fondo, notte automatica, linea grigia con crepuscoli, Sole e Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate, quadrati lavorati/confermati per banda e modo, clic con quadrato, distanza, paese e zone CQ/ITU; staccabile.
+- `/api/v1/map/worked` legge gli stessi log della scheda DXCC e restituisce anche `cells` (quadrato, banda, modo, conferme).
+
+### Corretto
+- Display staccato: niente barre di scorrimento quando lo si ridimensiona.
+
 ## 0.11.148 - 2026-11-05
 - **Propagazione in finestra a parte**: si stacca solo la mappa «Chi mi ha ricevuto», a tutta finestra (prima tutta la pagina).
 

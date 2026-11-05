@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.149',
+    released: '2026-11-05T18:09:15Z',
+    kind: 'new',
+    title: ['Mappa DX', 'DX Map', 'DX-Karte', 'Carte DX', 'Mapa DX', 'Mapa DX'],
+    text: [
+      "Nuova voce di menu «Mappa DX», alla GridTracker: 15 sfondi, luminosità e colore di fondo, mappa di notte automatica, linea grigia con i crepuscoli, Sole e Luna, stazioni in onda colorate come in Attività di banda che sbiadiscono col tempo, linee ad arco animate, quadrati lavorati (giallo) e confermati (verde) per banda e modo, clic su un punto con quadrato, distanza, paese e zone CQ/ITU. Si stacca su un altro schermo. Il display staccato non ha più barre di scorrimento.",
+      "New «DX Map» menu entry, GridTracker-style: 15 backgrounds, brightness and background color, automatic night map, greyline with twilight, Sun and Moon, on-air stations colored as in Band activity that fade over time, animated arc lines, worked (yellow) and confirmed (green) squares by band and mode, click on a point for square, distance, country and CQ/ITU zones. It can be detached to another screen. The detached display no longer shows scrollbars.",
+      "Neuer Menüpunkt «DX-Karte» im Stil von GridTracker: 15 Hintergründe, Helligkeit und Hintergrundfarbe, automatische Nachtkarte, Grauzone mit Dämmerung, Sonne und Mond, Stationen auf Sendung farbig wie in der Bandaktivität und mit der Zeit verblassend, animierte Bogenlinien, gearbeitete (gelb) und bestätigte (grün) Felder nach Band und Betriebsart, Klick auf einen Punkt zeigt Feld, Entfernung, Land und CQ/ITU-Zonen. Abtrennbar auf einen anderen Bildschirm. Das abgetrennte Display zeigt keine Bildlaufleisten mehr.",
+      "Nouvelle entrée de menu «Carte DX», façon GridTracker : 15 fonds, luminosité et couleur de fond, carte de nuit automatique, ligne grise avec les crépuscules, Soleil et Lune, stations en l’air colorées comme dans Activité de bande qui s’effacent avec le temps, lignes en arc animées, carrés travaillés (jaune) et confirmés (vert) par bande et mode, clic sur un point avec carré, distance, pays et zones CQ/UIT. Détachable sur un autre écran. L’afficheur détaché n’a plus de barres de défilement.",
+      "Nueva entrada de menú «Mapa DX», al estilo GridTracker: 15 fondos, brillo y color de fondo, mapa nocturno automático, línea gris con los crepúsculos, Sol y Luna, estaciones en el aire coloreadas como en Actividad de banda que se desvanecen con el tiempo, líneas en arco animadas, cuadrículas trabajadas (amarillo) y confirmadas (verde) por banda y modo, clic en un punto con cuadrícula, distancia, país y zonas CQ/UIT. Se puede separar a otra pantalla. El display separado ya no muestra barras de desplazamiento.",
+      "Nova entrada de menu «Mapa DX», ao estilo GridTracker: 15 fundos, brilho e cor de fundo, mapa noturno automático, linha cinzenta com os crepúsculos, Sol e Lua, estações no ar coloridas como em Atividade de banda que desvanecem com o tempo, linhas em arco animadas, quadrados trabalhados (amarelo) e confirmados (verde) por banda e modo, clique num ponto com quadrado, distância, país e zonas CQ/UIT. Pode ser destacado para outro ecrã. O display destacado já não mostra barras de deslocamento.",
+    ],
+  },
+  {
     version: '0.11.148',
     released: '2026-11-05T17:43:17Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Avec le micro du PC ou une entrée presque muette, les recherches de messages attendus (a7, a8, a priori) pouvaient « trouver » des stations dans le bruit, par exemple un CQ à -25 dB. Désormais avec un audio faible on ne décode que ce qui est vraiment là, et avec un audio muet la période reste vide.",
       "Con el micrófono del PC o una entrada casi muda, las búsquedas de mensajes esperados (a7, a8, a priori) podían «encontrar» estaciones en el ruido, por ejemplo un CQ a -25 dB. Ahora con audio débil solo se decodifica lo que hay de verdad, y con audio mudo el periodo queda vacío.",
       "Com o microfone do PC ou uma entrada quase muda, as pesquisas de mensagens esperadas (a7, a8, a priori) podiam «encontrar» estações no ruído, por exemplo um CQ a -25 dB. Agora com áudio fraco só se descodifica o que existe de facto, e com áudio mudo o período fica vazio.",
-    ],
-  },
-  {
-    version: '0.11.109',
-    released: '2026-11-04T12:23:47Z',
-    kind: 'changed',
-    title: ['«Clicca per configurare» su radio e log', '«Click to set up» on radio and log', '«Klicken zum Einrichten» bei Funkgerät und Log', '« Clique pour configurer » sur radio et journal', '«Haz clic para configurar» en radio y log', '«Clica para configurar» no rádio e no log'],
-    text: [
-      "Senza radio collegata, al posto del display vuoto e delle scritte sparse c’è un solo riquadro «Radio non configurata · Clicca per configurarla» che apre Impostazioni › Radio. Con il log vuoto, il pannello Log porta all’importazione del tuo log.",
-      "Without a connected radio, instead of an empty display and scattered text there is a single «Radio not set up · Click to set it up» box that opens Settings › Radio. With an empty log, the Log panel takes you to importing your log.",
-      "Ohne verbundenes Funkgerät gibt es statt leerer Anzeige und verstreuter Texte ein einziges Feld «Funkgerät nicht eingerichtet · Klicken zum Einrichten», das Einstellungen › Funkgerät öffnet. Bei leerem Log führt das Log-Feld zum Import deines Logs.",
-      "Sans radio connectée, au lieu d’un afficheur vide et de textes épars il y a un seul cadre « Radio non configurée · Clique pour la configurer » qui ouvre Réglages › Radio. Avec un journal vide, le panneau Journal mène à l’import de ton journal.",
-      "Sin radio conectada, en lugar de la pantalla vacía y de textos sueltos hay un solo recuadro «Radio no configurada · Haz clic para configurarla» que abre Ajustes › Radio. Con el log vacío, el panel Log lleva a importar tu log.",
-      "Sem rádio ligado, em vez do ecrã vazio e de textos soltos há um só quadro «Rádio não configurado · Clica para o configurar» que abre Definições › Rádio. Com o log vazio, o painel Log leva à importação do teu log.",
     ],
   },
 ];
