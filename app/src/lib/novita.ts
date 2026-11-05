@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.151',
-    released: '2026-11-05T20:05:44Z',
+    released: '2026-11-05T20:08:26Z',
     kind: 'changed',
     title: ['Propagazione sulla cartina', 'Propagation on the map', 'Ausbreitung auf der Karte', 'Propagation sur la carte', 'Propagación en el mapa', 'Propagação no mapa'],
     text: [
