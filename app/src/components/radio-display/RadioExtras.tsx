@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, getCat, postCatExtra, type CatExtraItem } from '../../api/client';
 import { useT } from '../../i18n';
+import { coreText } from '../../lib/coreText';
 import { toast } from '../../lib/toast';
 import { agcName, formatVfo, useRadioExtras } from '../../lib/radioExtras';
 import { useStation } from '../../state/station';
@@ -50,7 +51,7 @@ export function useCatExtras() {
       await postCatExtra(item);
     } catch (e) {
       const code = e instanceof ApiError ? e.code : '';
-      const detail = e instanceof ApiError ? e.detail : undefined;
+      const detail = e instanceof ApiError && e.detail ? coreText(e.detail, t) : undefined;
       if (code === 'local_only') toast(t('rx.err.local'), 'error');
       else if (code === 'transmitting') toast(t('rx.err.tx'), 'error');
       else if (code === 'unsupported') toast(detail ?? t('rx.err.unsupported'), 'error');
