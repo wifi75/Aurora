@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.148',
+    released: '2026-11-05T17:40:12Z',
+    kind: 'new',
+    title: ['Solo la mappa di chi ti ha ricevuto', 'Only the map of who received you', 'Nur die Karte, wer dich empfangen hat', 'Seulement la carte de qui t’a reçu', 'Solo el mapa de quién te ha recibido', 'Só o mapa de quem te recebeu'],
+    text: [
+      "Staccando la Propagazione su un altro schermo arriva solo la mappa «Chi mi ha ricevuto», a tutta finestra, senza il resto della pagina.",
+      "Detaching Propagation to another screen now brings only the «Who received me» map, full window, without the rest of the page.",
+      "Beim Ablösen der Ausbreitung auf einen anderen Bildschirm kommt nur die Karte «Wer mich empfangen hat», fensterfüllend, ohne den Rest der Seite.",
+      "En détachant la Propagation sur un autre écran, seule la carte « Qui m’a reçu » arrive, plein écran, sans le reste de la page.",
+      "Al separar la Propagación en otra pantalla llega solo el mapa «Quién me ha recibido», a toda ventana, sin el resto de la página.",
+      "Ao destacar a Propagação para outro monitor chega só o mapa «Quem me recebeu», em toda a janela, sem o resto da página.",
+    ],
+  },
+  {
     version: '0.11.147',
     released: '2026-11-05T17:39:54Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Sans radio connectée, au lieu d’un afficheur vide et de textes épars il y a un seul cadre « Radio non configurée · Clique pour la configurer » qui ouvre Réglages › Radio. Avec un journal vide, le panneau Journal mène à l’import de ton journal.",
       "Sin radio conectada, en lugar de la pantalla vacía y de textos sueltos hay un solo recuadro «Radio no configurada · Haz clic para configurarla» que abre Ajustes › Radio. Con el log vacío, el panel Log lleva a importar tu log.",
       "Sem rádio ligado, em vez do ecrã vazio e de textos soltos há um só quadro «Rádio não configurado · Clica para o configurar» que abre Definições › Rádio. Com o log vazio, o painel Log leva à importação do teu log.",
-    ],
-  },
-  {
-    version: '0.11.108',
-    released: '2026-11-04T12:07:26Z',
-    kind: 'fixed',
-    title: ['Ricezione con due schede audio uguali', 'Receiving with two identical sound cards', 'Empfang mit zwei gleichen Soundkarten', 'Réception avec deux cartes son identiques', 'Recepción con dos tarjetas de sonido iguales', 'Receção com duas placas de som iguais'],
-    text: [
-      "Con due schede USB uguali (per esempio «USB Audio Device» e «2- USB Audio Device») la 0.11.105 poteva aprire quella sbagliata e la cascata restava muta. Ora vince sempre il nome esatto scelto in Impostazioni.",
-      "With two identical USB cards (for example «USB Audio Device» and «2- USB Audio Device») version 0.11.105 could open the wrong one and the waterfall stayed silent. Now the exact name chosen in Settings always wins.",
-      "Mit zwei gleichen USB-Karten (z. B. «USB Audio Device» und «2- USB Audio Device») konnte die 0.11.105 die falsche öffnen und der Wasserfall blieb stumm. Jetzt gilt immer der in den Einstellungen gewählte genaue Name.",
-      "Avec deux cartes USB identiques (par exemple « USB Audio Device » et « 2- USB Audio Device ») la 0.11.105 pouvait ouvrir la mauvaise et la chute d’eau restait muette. Désormais le nom exact choisi dans les Réglages l’emporte toujours.",
-      "Con dos tarjetas USB iguales (por ejemplo «USB Audio Device» y «2- USB Audio Device») la 0.11.105 podía abrir la equivocada y la cascada se quedaba muda. Ahora siempre gana el nombre exacto elegido en Ajustes.",
-      "Com duas placas USB iguais (por exemplo «USB Audio Device» e «2- USB Audio Device») a 0.11.105 podia abrir a errada e a cascata ficava muda. Agora ganha sempre o nome exato escolhido nas Definições.",
     ],
   },
 ];

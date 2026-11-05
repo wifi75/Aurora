@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.148 - 2026-11-05
 - **Propagazione in finestra a parte**: si stacca solo la mappa «Chi mi ha ricevuto», a tutta finestra (prima tutta la pagina).
 
 ## 0.11.147 - 2026-11-05
