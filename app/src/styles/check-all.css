@@ -1,18 +1,5 @@
 /* «Verifica tutto»: la stessa scheda della guida al primo avvio, una riga colorata per ogni controllo. */
-.ca-open {
-  display: inline-grid;
-  place-items: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--accent);
-  font-weight: 700;
-  cursor: pointer;
-}
-.ca-open:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.ca-summary { margin: 0.4rem 0 1rem; color: var(--text-muted); }
+.lp-body .ca-summary { margin: 0.45rem 0 1.1rem; color: var(--text-muted); line-height: 1.45; }
 .ca-list { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
 .ca-row {
   --ca: var(--accent);
