@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.154',
+    released: '2026-11-05T22:11:49Z',
+    kind: 'changed',
+    title: ['Una sola mappa: Mappa DX', 'One map only: DX Map', 'Nur eine Karte: DX-Karte', 'Une seule carte : Carte DX', 'Un solo mapa: Mapa DX', 'Um só mapa: Mapa DX'],
+    text: [
+      "La vecchia «Mappa» non è più nel menu: faceva le stesse cose della Mappa DX. Il suo indirizzo, le finestre staccate e l'ultima pagina ricordata portano alla Mappa DX.",
+      "The old «Map» is no longer in the menu: it did the same things as the DX Map. Its address, detached windows and the last remembered page lead to the DX Map.",
+      "Die alte «Karte» ist nicht mehr im Menü: Sie konnte dasselbe wie die DX-Karte. Ihre Adresse, abgetrennte Fenster und die zuletzt gemerkte Seite führen zur DX-Karte.",
+      "L’ancienne «Carte» n’est plus dans le menu : elle faisait la même chose que la Carte DX. Son adresse, les fenêtres détachées et la dernière page mémorisée mènent à la Carte DX.",
+      "El antiguo «Mapa» ya no está en el menú: hacía lo mismo que el Mapa DX. Su dirección, las ventanas separadas y la última página recordada llevan al Mapa DX.",
+      "O antigo «Mapa» já não está no menu: fazia o mesmo que o Mapa DX. O seu endereço, as janelas destacadas e a última página lembrada levam ao Mapa DX.",
+    ],
+  },
+  {
     version: '0.11.153',
     released: '2026-11-05T22:11:31Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans Réglages › Radio tous les aperçus des afficheurs larges ont la vraie taille de l’en-tête (640 × 70) : les panneaux FT-2000 et IC-7610 ne s’étirent plus sur toute la page.",
       "En Ajustes › Radio todas las vistas previas de las pantallas anchas tienen el tamaño real de la cabecera (640 × 70): los paneles FT-2000 e IC-7610 ya no se estiran por toda la página.",
       "Em Definições › Rádio todas as pré-visualizações dos ecrãs largos têm o tamanho real do cabeçalho (640 × 70): os painéis FT-2000 e IC-7610 já não se esticam pela página toda.",
-    ],
-  },
-  {
-    version: '0.11.114',
-    released: '2026-11-04T13:19:51Z',
-    kind: 'new',
-    title: ['Locandina della versione nuova', 'New version poster', 'Plakat der neuen Version', 'Affiche de la nouvelle version', 'Cartel de la versión nueva', 'Cartaz da versão nova'],
-    text: [
-      "Quando esce una versione nuova di Aurora, all’apertura compare al centro una locandina con il numero della versione, le novità e il pulsante «Installa e riavvia». «Più tardi» la nasconde fino alla versione dopo.",
-      "When a new version of Aurora comes out, a poster appears in the middle at start-up with the version number, what’s new and an «Install and restart» button. «Later» hides it until the next version.",
-      "Wenn eine neue Version von Aurora erscheint, zeigt sich beim Start in der Mitte ein Plakat mit Versionsnummer, Neuigkeiten und der Taste «Installieren und neu starten». «Später» blendet es bis zur nächsten Version aus.",
-      "Quand une nouvelle version d’Aurora sort, une affiche apparaît au centre au démarrage avec le numéro de version, les nouveautés et le bouton « Installer et redémarrer ». « Plus tard » la masque jusqu’à la version suivante.",
-      "Cuando sale una versión nueva de Aurora, al abrirla aparece en el centro un cartel con el número de versión, las novedades y el botón «Instalar y reiniciar». «Más tarde» lo oculta hasta la versión siguiente.",
-      "Quando sai uma versão nova da Aurora, ao abrir aparece ao centro um cartaz com o número da versão, as novidades e o botão «Instalar e reiniciar». «Mais tarde» esconde-o até à versão seguinte.",
     ],
   },
 ];
