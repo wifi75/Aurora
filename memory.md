@@ -1,12 +1,15 @@
 # Memoria di progetto
 
-Stato al 2026-11-04, versione 0.11.149. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-05, versione 0.11.149. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
 - Core Rust (workspace `core/`, Tokio/Axum), interfaccia React + TypeScript + Vite, cascata WebGPU con ripiego WebGL2, PWA per il telefono. Guscio desktop Tauri 2 ancora da fare. Database SQLite.
 - Nessun login a password: dispositivi associati con un codice monouso (durata scelta dall'operatore, 1-60 minuti, predefinito 10). Per le prove esiste l'accesso senza codice, solo rete di casa, mai da proxy.
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
+
+## Mappa DX
+- Pagina `#/mappa-dx` (`pages/DxMapPage.tsx`, `components/DxMap.tsx`, `lib/moon.ts` per Luna e crepuscoli, `lib/mapStyles.ts` per gli sfondi), staccabile (ItemId `dxmap`). I quadrati vengono da `/api/v1/map/worked`: stessi log della scheda DXCC, con `cells` per banda, modo e conferma; senza file dei paesi dal solo log di Aurora; Log4OM2 da solo resta senza `cells`.
 
 ## Logiche di JTDX
 - `docs/logiche-jtdx.md` raccoglie le logiche del motore e come le segue Aurora: JTDX decide (messaggio da trasmettere, periodo, avanzamento), Aurora legge e comanda come un utente. Tabella di tutti i controlli della sua finestra e delle impostazioni che contano, errori passati e la regola che ne viene.
