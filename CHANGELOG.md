@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Propagazione in finestra a parte**: si stacca solo la mappa «Chi mi ha ricevuto», a tutta finestra (prima tutta la pagina).
 
 ## 0.11.147 - 2026-11-05
 - **Finestra del display staccato**: si porta alla misura esatta del display (`plugin:window|set_size`, permesso `core:window:allow-set-size` per `finestra-*`), senza fondo nero in piu'; dopo un ridimensionamento dai bordi o con la maniglia la finestra segue il display in proporzione.
