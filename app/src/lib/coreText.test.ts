@@ -17,6 +17,13 @@ describe('coreText', () => {
     expect(coreText("Errore sulla porta seriale: la connessione con la radio si e' interrotta. Nuovo tentativo tra 5 s.", t as never)).toBe('core.retry{"cause":"core.portError","s":"5"}');
   });
 
+  it('translates the automation log and the audio errors', () => {
+    expect(coreText('K1ABC: segnale -24 dB sotto il minimo di -20 dB', t as never)).toBe('core.au.weak{"call":"K1ABC","snr":"-24","min":"-20"}');
+    expect(coreText('Rispondo a K1ABC: paese nuovo', t as never)).toBe('core.au.reply{"call":"K1ABC","why":"core.au.newDxcc"}');
+    expect(coreText('K1ABC: tentativi esauriti senza QSO', t as never)).toBe('core.au.callWhy{"call":"K1ABC","why":"core.au.exhausted"}');
+    expect(coreText('K1ABC: qualcosa di nuovo', t as never)).toBe('K1ABC: qualcosa di nuovo');
+  });
+
   it('leaves an unknown message as it is', () => {
     expect(coreText('qualcosa di nuovo', t as never)).toBe('qualcosa di nuovo');
     expect(coreText(null, t as never)).toBe('');
