@@ -172,13 +172,14 @@ async function pulizia(env: Env): Promise<void> {
       cursor = elenco.truncated ? elenco.cursor : undefined;
     } while (cursor);
   }
-  await env.INDICE.batch([env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite)]);
-  // le installazioni ferme da piu' di un anno escono dall'elenco ma restano nel totale (contatore `archiviate`)
-  const anno = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+  // lo storico resta per sempre: prima di togliere le righe di un giorno se ne salvano i conteggi (per versione e sistema, senza identificativi)
   await env.INDICE.batch([
-    env.INDICE.prepare("INSERT INTO contatori (nome, valore) SELECT 'archiviate', COUNT(*) FROM installazioni WHERE ultima < ?1 ON CONFLICT (nome) DO UPDATE SET valore = valore + excluded.valore").bind(anno),
-    env.INDICE.prepare('DELETE FROM installazioni WHERE ultima < ?1').bind(anno),
+    env.INDICE.prepare('INSERT INTO storico (giorno, versione, sistema, attivi) SELECT giorno, versione, sistema, COUNT(*) FROM attivi WHERE giorno < ?1 GROUP BY giorno, versione, sistema ON CONFLICT (giorno, versione, sistema) DO UPDATE SET attivi = excluded.attivi').bind(limite),
+    env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite),
+    env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite),
+    env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite),
   ]);
+  // l'elenco `installazioni` (totale di sempre) non si cancella mai
 }
 
 /** Una installazione dice che oggi e' aperta: una sola riga al giorno, la versione e il sistema si aggiornano. */
@@ -208,11 +209,12 @@ async function attivi(env: Env): Promise<Response> {
   const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
   const perGiorno = await env.INDICE.prepare('SELECT giorno, COUNT(*) AS n FROM attivi WHERE giorno >= ?1 GROUP BY giorno ORDER BY giorno DESC').bind(giorni(30)).all();
   const perVersione = await env.INDICE.prepare('SELECT versione, COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1 GROUP BY versione ORDER BY n DESC').bind(giorni(7)).all();
-  // il totale di sempre: le installazioni nell'elenco piu' quelle archiviate dopo un anno di silenzio
-  const elenco = (await env.INDICE.prepare('SELECT COUNT(*) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
-  const archiviate = (await env.INDICE.prepare("SELECT valore AS n FROM contatori WHERE nome = 'archiviate'").first<{ n: number }>())?.n ?? 0;
+  // il totale di sempre: tutte le installazioni viste dall'inizio
+  const totale = (await env.INDICE.prepare('SELECT COUNT(*) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
+  // giorni oltre i 90 di `attivi`: dallo storico
+  const storico = await env.INDICE.prepare('SELECT giorno, SUM(attivi) AS n FROM storico GROUP BY giorno ORDER BY giorno DESC').all();
   const nuove = await env.INDICE.prepare('SELECT prima AS giorno, COUNT(*) AS n FROM installazioni WHERE prima >= ?1 GROUP BY prima ORDER BY prima DESC').bind(giorni(30)).all();
-  return risposta(200, { totale: elenco + archiviate, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
+  return risposta(200, { totale, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
 export default {

@@ -67,9 +67,9 @@ solo a sapere quante persone usano Aurora e con quale versione. È **acceso di f
 quella di Windows, il giorno. **Niente altro**: nessun nominativo, locatore, radio, log o impostazione. Il servizio non registra
 l'indirizzo IP. Le righe restano 90 giorni, poi la pulizia notturna le cancella.
 
-**Totale delle installazioni**: per contare quante installazioni hanno usato Aurora dall'inizio, il servizio tiene anche un elenco
-con il solo identificativo casuale e il primo e l'ultimo giorno in cui l'installazione si è fatta viva (niente versione, sistema o
-altro). Un identificativo che non si fa più vivo per un anno esce dall'elenco e resta solo come numero in un contatore. Rigenerando
+**Storico delle installazioni**: per sapere quante installazioni hanno usato Aurora dall'inizio, il servizio tiene per sempre un
+elenco con il solo identificativo casuale e il primo e l'ultimo giorno in cui l'installazione si è fatta viva (niente versione,
+sistema o altro), e i conteggi di ogni giorno per versione e sistema (solo numeri, senza identificativi). Rigenerando
 l'identificativo in Impostazioni → Assistenza si conta come un'installazione nuova.
 
 ## Pacchetto per l'assistenza

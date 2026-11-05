@@ -33,13 +33,17 @@ CREATE TABLE IF NOT EXISTS attivi (
 CREATE INDEX IF NOT EXISTS attivi_versione ON attivi (versione, giorno);
 
 -- Totale di tutte le installazioni che hanno usato Aurora: una riga per identificativo anonimo, con il primo e l'ultimo giorno.
--- Le righe ferme da piu' di un anno si tolgono e si sommano al contatore `archiviate`, cosi' il totale non si perde.
+-- Non si cancella mai: e' lo storico di quante installazioni hanno usato Aurora dall'inizio.
 CREATE TABLE IF NOT EXISTS installazioni (
   installazione TEXT PRIMARY KEY,
   prima TEXT NOT NULL,
   ultima TEXT NOT NULL
 );
-CREATE TABLE IF NOT EXISTS contatori (
-  nome TEXT PRIMARY KEY,
-  valore INTEGER NOT NULL
+-- Conteggi di ogni giorno (per versione e sistema, senza identificativi), salvati prima che la pulizia tolga le righe di `attivi`.
+CREATE TABLE IF NOT EXISTS storico (
+  giorno TEXT NOT NULL,
+  versione TEXT NOT NULL,
+  sistema TEXT NOT NULL,
+  attivi INTEGER NOT NULL,
+  PRIMARY KEY (giorno, versione, sistema)
 );
