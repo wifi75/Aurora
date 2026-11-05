@@ -101,8 +101,11 @@ function Zoom({ children }: { children: ReactNode }) {
   const [width, setWidth] = useState(0);
   const host = useRef<HTMLDivElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // sul pulsantino per staccare il display (e sul suo menu) la lente resta chiusa: prima si apriva sopra il menu e lampeggiava
+  const onCorner = useRef(false);
   const later = (next: boolean, ms: number) => {
     clearTimeout(timer.current);
+    if (next && onCorner.current) return;
     timer.current = setTimeout(() => {
       if (next && host.current) setWidth(host.current.offsetWidth);
       setOpen(next);
@@ -112,7 +115,16 @@ function Zoom({ children }: { children: ReactNode }) {
   return (
     <div className="rd-zoom-host" ref={host} onMouseEnter={() => later(true, OPEN_MS)} onMouseLeave={() => later(false, CLOSE_MS)}>
       {children}
-      <span className="rd-detach-corner">
+      <span
+        className="rd-detach-corner"
+        onMouseEnter={() => {
+          onCorner.current = true;
+          later(false, 0);
+        }}
+        onMouseLeave={() => {
+          onCorner.current = false;
+        }}
+      >
         <DetachButton item="display" className="dock-detach" />
       </span>
       {open ? (
