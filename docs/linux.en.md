@@ -155,6 +155,7 @@ libayatana-appindicator3-dev librsvg2-dev libxdo-dev libasound2-dev libudev-dev 
 - Direct PTT on the serial RTS/DTR lines: Windows only for now.
 - Recording volume control (audio level slider and AUTO): use the system mixer.
 - Automatic update from the program.
+- **Pwr** slider: on Windows it sets the sound card volume; on Linux it lowers the generated signal (like JTDX). Set the output volume in the system mixer once.
 - TQSL for LoTW: set its path by hand in the settings.
 
 ## Where the data lives

@@ -155,6 +155,7 @@ libayatana-appindicator3-dev librsvg2-dev libxdo-dev libasound2-dev libudev-dev 
 - PTT direto nas linhas RTS/DTR da porta série: por agora só no Windows.
 - Controlo do volume de gravação (cursor e AUTO do nível de áudio): usa o misturador do sistema.
 - Atualização automática a partir do programa.
+- Cursor **Pwr**: no Windows comanda o volume da placa de som; no Linux baixa o sinal gerado (como o JTDX). Ajusta uma vez o volume de saída no misturador do sistema.
 - TQSL para o LoTW: indica o caminho à mão nas definições.
 
 ## Onde ficam os dados

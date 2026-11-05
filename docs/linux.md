@@ -155,6 +155,7 @@ libayatana-appindicator3-dev librsvg2-dev libxdo-dev libasound2-dev libudev-dev 
 - PTT diretto sulle linee RTS/DTR della seriale: per ora solo su Windows.
 - Regolazione del volume di registrazione (cursore e AUTO del livello audio): si usa il mixer del sistema.
 - Aggiornamento automatico dal programma.
+- Cursore **Pwr**: su Windows comanda il volume della scheda audio; su Linux abbassa il segnale generato (come JTDX). Il volume dell'uscita nel mixer del sistema si regola una volta.
 - TQSL per LoTW: va indicato il percorso a mano nelle impostazioni.
 
 ## Dove sono i dati
