@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.146 - 2026-11-05
+- **Display della radio da solo**: la sua finestra a parte e' senza cornice (`decorations(false)`) e si sposta dal bordo o dalla presa ⠿ (`data-tauri-drag-region`, permesso `core:window:allow-start-dragging` per le finestre `finestra-*` in `capabilities/finestre.json`); ⤓ la rimette nella principale. Le altre finestre a parte restano con la cornice.
+
 ## 0.11.145 - 2026-11-05
 - **Orologio**: l'avviso «Orologio sbagliato» e' un pulsante che corregge subito l'ora di Windows (se Windows non lo permette apre le impostazioni dell'orologio); soglia di fabbrica 500 ms invece di 200 (FT8 tollera bene qualche decimo, e l'orologio di Windows deriva di centinaia di ms), chi aveva 200 passa a 500.
 

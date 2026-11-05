@@ -94,6 +94,24 @@ export function SoloWindow({ id }: { id: string }) {
     handle.addEventListener('pointerup', stop);
   };
 
+  // il display della radio da solo: finestra senza cornice, si vede solo il display; si sposta dal bordo o dalla presa in alto a sinistra
+  // (`data-tauri-drag-region`), si ridimensiona dai bordi della finestra, ⤓ lo rimette nella finestra principale
+  if (group.mode !== 'grid' && group.items.length === 1 && group.items[0] === 'display') {
+    return (
+      <div className="solo-display" data-tauri-drag-region>
+        <DisplayFit />
+        <span className="solo-display-tools">
+          <span className="solo-display-grip" data-tauri-drag-region title={t('win.dragWindow')}>
+            ⠿
+          </span>
+          <button type="button" className="solo-btn solo-display-btn" title={t('win.attach')} aria-label={t('win.attach')} onClick={() => attach('display')}>
+            ⤓
+          </button>
+        </span>
+      </div>
+    );
+  }
+
   // dashboard a blocchi: ogni elemento e' un blocco da trascinare dalla barretta e ridimensionare dall'angolo
   if (group.mode === 'grid') {
     const cells: Record<string, Cell> = {};
