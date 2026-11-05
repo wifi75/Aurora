@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.144 - 2026-11-05
+- **Display in finestra a parte**: maniglia nell'angolo in basso a destra per ridimensionare il solo display in proporzione (CSS `zoom`, da 0,3 a 8 volte), indipendente dalla finestra; doppio clic torna ad adattarsi alla finestra; misura ricordata (`aurora-display-scala`).
+
 ## 0.11.143 - 2026-11-05
 - **Pulsantino per staccare il display**: passandoci sopra la lente (zoom 1,5) non si apre piu' e si chiude se era aperta; prima copriva il menu ⧉ e lampeggiava.
 
