@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.147',
-    released: '2026-11-05T17:37:13Z',
+    released: '2026-11-05T17:39:54Z',
     kind: 'fixed',
     title: ['La finestra del display è il display', 'The display window is the display', 'Das Anzeigefenster ist die Anzeige', 'La fenêtre de l’afficheur est l’afficheur', 'La ventana de la pantalla es la pantalla', 'A janela do ecrã é o ecrã'],
     text: [
