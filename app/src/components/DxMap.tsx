@@ -16,6 +16,7 @@ import { bearingDeg, distanceKm, greatCircle, latLonToGrid } from '../lib/geo';
 import { tagColorName } from '../lib/mapColors';
 import { mapStyle } from '../lib/mapStyles';
 import { gridToLatLon, squareCorner } from '../lib/maidenhead';
+import { HeatLayer } from '../lib/heatLayer';
 import { moonPhase, moonPosition, shadowPolygon } from '../lib/moon';
 import { isNight, sunPosition } from '../lib/terminator';
 
@@ -30,6 +31,49 @@ export interface DxStation {
   /** Secondi dall'ultimo messaggio. */
   age: number;
 }
+
+/** Una chiamata in corso fra due stazioni di cui si conosce il quadrato: `from` chiama `to`. */
+export interface DxLink {
+  from: string;
+  to: string;
+  fromPos: { lat: number; lon: number };
+  toPos: { lat: number; lon: number };
+  /** Una delle due posizioni e' il centro del paese (la stazione non ha mandato il quadrato). */
+  guess: boolean;
+  /** Secondi dal messaggio. */
+  age: number;
+  /** La chiamata e' per noi. */
+  toMe: boolean;
+}
+
+/** Chi ci ha ricevuto (PSK Reporter): il suo quadrato e da quanti secondi. */
+export interface DxSpot {
+  call: string;
+  grid: string;
+  age: number;
+  snr: number | null;
+}
+
+/** Che cosa succede ora in un quadrato, come i codici di GridTracker2. */
+export type LiveStatus = 'qrz' | 'cqdx' | 'cq' | 'qsx';
+
+/** Un quadrato con traffico in onda: lo stato piu' importante e l'eta' del messaggio piu' recente. */
+export interface DxLiveGrid {
+  grid: string;
+  status: LiveStatus;
+  age: number;
+  calls: string[];
+}
+
+/** Colori dei codici: QSO e QSL dal log, gli altri dal traffico in onda. */
+export const LIVE_COLORS: Record<LiveStatus | 'qso' | 'qsl', string> = {
+  qso: '#ffe14a',
+  qsl: '#2ecc71',
+  qsx: '#7aa2ff',
+  cq: '#00d2c8',
+  cqdx: '#ff8c1a',
+  qrz: '#ff3b3b',
+};
 
 export interface DxMapSettings {
   style: string;
@@ -47,6 +91,22 @@ export interface DxMapSettings {
   twilight: boolean;
   moon: boolean;
   arcs: boolean;
+  /** Puntini colorati delle stazioni sopra i quadrati. */
+  dots: boolean;
+  /** Propagazione: mappa di calore e quadratini di chi ci ha ricevuto (PSK Reporter). */
+  heat: boolean;
+  /** Minuti: gli spot piu' vecchi non contano. */
+  spotMaxMin: number;
+  /** Linee fra le stazioni che si chiamano (chi chiama chi). */
+  links: boolean;
+  /** Colore delle linee fra altre stazioni (QSX). */
+  linkColor: string;
+  /** Colore delle linee di chi chiama noi (QRZ). */
+  linkMeColor: string;
+  /** Spessore delle linee in pixel. */
+  linkWidth: number;
+  /** Secondi per un passo del tratteggio: meno = piu' veloce. */
+  antSpeed: number;
   /** Animazione delle linee. */
   arcsAnimated: boolean;
   /** Minuti dopo cui una stazione sparisce; sbiadisce prima. */
@@ -56,6 +116,9 @@ export interface DxMapSettings {
 interface Props {
   settings: DxMapSettings;
   stations: readonly DxStation[];
+  links: readonly DxLink[];
+  spots: readonly DxSpot[];
+  live: readonly DxLiveGrid[];
   squares: readonly DxSquare[];
   homeGrid?: string | null;
   labels: { aria: string; you: string; moon: string; square: string; worked: string; never: string; cq: string; itu: string };
@@ -74,7 +137,7 @@ function cssColor(variable: string | null, fallback: string): string {
 const wrap = (lon: number) => ((((lon + 180) % 360) + 360) % 360) - 180;
 
 /** Mappa DX: sfondi a scelta, linea grigia con i crepuscoli, Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate. */
-export function DxMap({ settings, stations, squares, homeGrid, labels }: Props) {
+export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<string, L.Layer | null>>({});
@@ -227,7 +290,7 @@ export function DxMap({ settings, stations, squares, homeGrid, labels }: Props) 
     const group = L.layerGroup();
     const limit = settings.decayMin * 60;
     for (const s of stations) {
-      if (s.age > limit) continue;
+      if (s.age > limit || !settings.dots) continue;
       const pos = gridToLatLon(s.grid);
       if (!pos) continue;
       const fade = Math.max(0.15, 1 - s.age / limit);
@@ -251,24 +314,102 @@ export function DxMap({ settings, stations, squares, homeGrid, labels }: Props) 
         .addTo(group);
     }
     replace('stations', group);
-  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, home?.lat, home?.lon]);
+  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, settings.dots, home?.lat, home?.lon]);
+
+  // chi chiama chi: una linea fra le due stazioni, dorata se chiamano noi; sbiadisce come le stazioni
+  useEffect(() => {
+    if (!settings.links) {
+      replace('links', null);
+      return;
+    }
+    const group = L.layerGroup();
+    const limit = settings.decayMin * 60;
+    for (const k of links) {
+      if (k.age > limit) continue;
+      const a = k.fromPos;
+      const b = k.toPos;
+      const fade = Math.max(0.15, 1 - k.age / limit);
+      const path = greatCircle(a, b, 40).map((p) => [p.lat, p.lon] as [number, number]);
+      // come in GridTracker2: tratteggio giallo-verde che scorre verso chi e' chiamato, cerchietto nero vuoto alle due stazioni
+      L.polyline(path, { className: `dxmap-link${settings.arcsAnimated ? ' dxmap-link--anim' : ''}`, color: k.toMe ? settings.linkMeColor : settings.linkColor, weight: k.toMe ? settings.linkWidth + 0.6 : settings.linkWidth, opacity: 0.95 * fade })
+        .bindTooltip(`${k.from} → ${k.to}`, { sticky: true })
+        .addTo(group);
+      for (const end of [a, b]) {
+        L.circleMarker([end.lat, end.lon], { interactive: false, radius: 3.5, color: '#111', weight: 1.6, opacity: fade, fill: false }).addTo(group);
+      }
+    }
+    replace('links', group);
+  }, [links, settings.links, settings.arcsAnimated, settings.decayMin, settings.linkColor, settings.linkMeColor, settings.linkWidth]);
+
+  // velocita' del tratteggio
+  useEffect(() => {
+    map.current?.getContainer().style.setProperty('--dxmap-ants', `${settings.antSpeed}s`);
+  }, [settings.antSpeed]);
+
+  // propagazione: la mappa di calore di chi ci ha ricevuto e il suo quadratino
+  useEffect(() => {
+    if (!settings.heat) {
+      replace('heat', null);
+      replace('spots', null);
+      return;
+    }
+    const limit = settings.spotMaxMin * 60;
+    const live = spots.filter((p) => p.age <= limit);
+    const heat = new HeatLayer();
+    replace('heat', heat);
+    const points: Array<{ lat: number; lon: number; weight: number }> = [];
+    for (const p of live) {
+      const pos = gridToLatLon(p.grid.slice(0, 6)) ?? gridToLatLon(p.grid.slice(0, 4));
+      if (pos) points.push({ lat: pos.lat, lon: pos.lon, weight: 0.35 });
+    }
+    heat.setPoints(points);
+    const group = L.layerGroup();
+    for (const p of live) {
+      const c = squareCorner(p.grid.slice(0, 4));
+      if (!c) continue;
+      L.rectangle([[c.lat + 0.15, c.lon + 0.3], [c.lat + 0.85, c.lon + 1.7]], { color: '#4a4000', weight: 1, opacity: 0.9, fillColor: '#e8d84a', fillOpacity: 0.9 })
+        .bindTooltip(`${p.call} · ${p.grid}${p.snr !== null ? ` · ${p.snr} dB` : ''} · ${Math.round(p.age / 60)} min`, { sticky: true })
+        .addTo(group);
+    }
+    replace('spots', group);
+  }, [spots, settings.heat, settings.spotMaxMin]);
 
   // casa
   useEffect(() => {
     replace('home', home ? L.marker([home.lat, home.lon], { interactive: false, zIndexOffset: 1000, icon: L.divIcon({ className: 'worldmap-home', html: '<span>★</span>', iconSize: [26, 26], iconAnchor: [13, 13] }) }).bindTooltip(labels.you) : null);
   }, [home?.lat, home?.lon]);
 
-  // quadrati lavorati (gia' filtrati per banda dalla pagina)
+  // quadrati: dal log (QSO giallo, QSL verde) e in onda (QSX, CQ, CQDX, QRZ); quando ci sono tutti e due il quadrato si divide sulla
+  // diagonale, in alto a sinistra il log e in basso a destra l'onda, come «Logbook & Live» di GridTracker2. L'onda sbiadisce col tempo.
   useEffect(() => {
     const group = L.layerGroup();
+    const limit = settings.decayMin * 60;
+    const liveNow = new Map(live.filter((g) => g.age <= limit).map((g) => [g.grid, g]));
+    const logGrids = new Set(squares.map((s) => s.grid));
+    const shape = (c: { lat: number; lon: number }, part: 'all' | 'top' | 'bottom'): Array<[number, number]> => {
+      const sw: [number, number] = [c.lat, c.lon];
+      const nw: [number, number] = [c.lat + 1, c.lon];
+      const ne: [number, number] = [c.lat + 1, c.lon + 2];
+      const se: [number, number] = [c.lat, c.lon + 2];
+      return part === 'top' ? [sw, nw, ne] : part === 'bottom' ? [sw, ne, se] : [sw, nw, ne, se];
+    };
     for (const s of squares) {
       const c = squareCorner(s.grid);
       if (!c) continue;
-      // confermato verde, lavorato e non confermato giallo
-      L.rectangle([[c.lat, c.lon], [c.lat + 1, c.lon + 2]], { interactive: false, color: s.confirmed ? '#2ecc71' : '#ffe14a', weight: 0.5, opacity: 0.6, fillColor: s.confirmed ? '#2ecc71' : '#ffe14a', fillOpacity: 0.3 }).addTo(group);
+      const color = s.confirmed ? LIVE_COLORS.qsl : LIVE_COLORS.qso;
+      L.polygon(shape(c, liveNow.has(s.grid) ? 'top' : 'all'), { interactive: false, color, weight: 0.5, opacity: 0.6, fillColor: color, fillOpacity: 0.32 }).addTo(group);
+    }
+    for (const g of liveNow.values()) {
+      const c = squareCorner(g.grid);
+      if (!c) continue;
+      const fade = Math.max(0.15, 1 - g.age / limit);
+      const color = LIVE_COLORS[g.status];
+      L.polygon(shape(c, logGrids.has(g.grid) ? 'bottom' : 'all'), { color, weight: 1, opacity: 0.8 * fade, fillColor: color, fillOpacity: 0.55 * fade })
+        .bindTooltip(`${g.grid} · ${g.status.toUpperCase()} · ${g.calls.join(', ')}`, { sticky: true })
+        .addTo(group);
     }
     replace('squares', group);
-  }, [squares]);
+  }, [squares, live, settings.decayMin]);
 
   return (
     <div className="worldmap dxmap">

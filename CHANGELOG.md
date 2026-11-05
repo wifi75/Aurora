@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.150 - 2026-11-05
+### Aggiunto
+- Mappa DX: propagazione (mappa di calore e quadratini PSK Reporter, Spot RX, durata massima), linee «Chi chiama chi» tratteggiate e animate personalizzabili, centro del paese se manca il quadrato, quadrati in onda QSX/CQ/CQDX/QRZ divisi in triangoli con il log, legenda; puntini delle stazioni facoltativi.
+- Guida: voce «Mappa DX».
+
 ## 0.11.149 - 2026-11-05
 ### Aggiunto
 - Mappa DX (menu): sfondi, luminosità, colore di fondo, notte automatica, linea grigia con crepuscoli, Sole e Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate, quadrati lavorati/confermati per banda e modo, clic con quadrato, distanza, paese e zone CQ/ITU; staccabile.
