@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.140',
-    released: '2026-11-05T16:39:55Z',
+    released: '2026-11-05T16:47:38Z',
     kind: 'fixed',
     title: ["Aggiornamento senza l'errore di libhamlib", 'Update without the libhamlib error', 'Aktualisierung ohne libhamlib-Fehler', 'Mise à jour sans l’erreur libhamlib', 'Actualización sin el error de libhamlib', 'Atualização sem o erro do libhamlib'],
     text: [
