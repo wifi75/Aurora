@@ -6,6 +6,7 @@ pub mod command;
 pub mod engine;
 pub mod event;
 pub mod filters;
+pub mod notice;
 pub mod version;
 
 pub use bus::Bus;

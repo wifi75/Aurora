@@ -291,6 +291,10 @@ pub fn run_capture_with(
             let cause = format!("{:?}", e.kind());
             let minutes = started.elapsed().as_secs_f64() / 60.0;
             let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };
+            // tante perdite di fila: si dice sullo schermo cosa controllare (l'avviso non si ripete per due minuti)
+            if n >= 20 && per_min >= 5.0 {
+                aurora_core::notice::notice("audio_loss", format!("{per_min:.0}"));
+            }
             // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
             if is_power_of_ten(n) {
                 if n >= 100 {

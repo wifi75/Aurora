@@ -19,6 +19,7 @@ export function DiagnosisBar() {
   const audioAt = useStation((s) => s.audioLevelAt);
   const lastDecodeAt = useStation((s) => s.lastDecodeAt);
   const sessionStartAt = useStation((s) => s.sessionStartAt);
+  const notices = useStation((s) => s.notices);
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });
   const [now, setNow] = useState(() => Date.now());
   // gli avvisi chiusi restano chiusi finche' non cambiano (un altro problema, o lo stesso con un altro stato)
@@ -36,8 +37,9 @@ export function DiagnosisBar() {
     audio: audio && now - audioAt <= LEVEL_STALE_MS ? audio : null,
     lastDecodeAt,
     sessionStartAt,
+    notices,
   });
-  const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? '')}`;
+  const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
   const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));
   if (visible.length === 0) return null;
 
