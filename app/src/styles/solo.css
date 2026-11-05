@@ -152,3 +152,11 @@
 /* le scritte a destra nella barra di un pannello (es. «36584 QSO nel log») si spostano a sinistra: il pulsantino ⧉ resta libero */
 .dock-grip:has(.dock-detach-host) .dock-grip-extra--right { right: 1.8rem; }
 .dock-detach-host { z-index: 2; }
+
+/* Impostazioni › Audio: cursore del volume di Windows del dispositivo */
+.dev-vol { display: flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0; }
+.dev-vol label { flex: none; }
+.dev-vol input[type='range'] { flex: 1; min-width: 6rem; accent-color: var(--accent); }
+.dev-vol-val { flex: none; width: 3rem; text-align: right; }
+.dev-vol-auto { flex: none; font-size: 0.7rem; }
+.solo--grid { height: 100vh; padding: 0; }
