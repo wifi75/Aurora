@@ -68,6 +68,14 @@ export const diagnosisStrings = {
     'Estás transmitiendo sin una radio conectada: el PTT no se acciona (solo vale con VOX). Elige la radio en Ajustes › Radio.',
     'Estás a transmitir sem um rádio ligado: o PTT não é acionado (só serve com VOX). Escolhe o rádio em Definições › Rádio.',
   ],
+  'diag.slow_pc': [
+    'Il PC decodifica troppo lentamente ({detail} s per periodo): si perdono i segnali deboli. Accendi Multithread, spegni Modo SWL e chiudi i programmi pesanti.',
+    'The PC decodes too slowly ({detail} s per period): weak signals are lost. Turn on Multithread, turn off SWL mode and close heavy programs.',
+    'Der PC dekodiert zu langsam ({detail} s pro Periode): schwache Signale gehen verloren. Schalte Multithread ein, SWL-Modus aus und schließe schwere Programme.',
+    'Le PC décode trop lentement ({detail} s par période) : les signaux faibles sont perdus. Active Multithread, désactive le mode SWL et ferme les programmes lourds.',
+    'El PC decodifica demasiado despacio ({detail} s por periodo): se pierden las señales débiles. Activa Multithread, desactiva el modo SWL y cierra los programas pesados.',
+    'O PC descodifica demasiado devagar ({detail} s por período): perdem-se os sinais fracos. Liga o Multithread, desliga o modo SWL e fecha os programas pesados.',
+  ],
   'diag.omnirig': [
     'OmniRig non risponde anche dopo tre tentativi ({detail}): controlla che in OmniRig la radio risulti «On-line», oppure passa a Hamlib in Impostazioni › Radio.',
     'OmniRig does not answer even after three tries ({detail}): check that OmniRig shows the radio as “On-line”, or switch to Hamlib in Settings › Radio.',

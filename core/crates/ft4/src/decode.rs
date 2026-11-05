@@ -66,6 +66,8 @@ pub struct Options {
     pub swl: bool,
     /// Scarta i messaggi con piu' di questi bit diversi dalle decisioni dure del segnale (`None` = nessun controllo).
     pub max_hard_errors: Option<usize>,
+    /// Compensazione AGC (pulsante AGCc): la stessa di FT8 ([`ft8::sync::agc_compensate_len`]) sul tratto del periodo che si decodifica.
+    pub agc: bool,
 }
 
 impl Default for Options {
@@ -90,6 +92,7 @@ impl Options {
             osd_order: 3,
             swl: false,
             max_hard_errors: Some(MAX_HARD_ERRORS),
+            agc: false,
         };
         match ndepth {
             0 | 1 => {
@@ -111,6 +114,10 @@ const MAX_HARD_ERRORS: usize = 45;
 pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<Decoded> {
     let mut audio: Vec<f32> = samples.iter().take(NMAX).map(|&x| x * SCALE).collect();
     audio.resize(NMAX, 0.0);
+    // AGCc: una volta sola prima delle passate; con il rumore uniforme non cambia niente
+    if options.agc {
+        ft8::sync::agc_compensate_len(&mut audio, options.f_low_hz, options.f_high_hz, NMAX);
+    }
     let tables = SyncTables::new();
     let subtractor = Subtractor::new();
     let mut found: Vec<Decoded> = Vec::new();
@@ -324,6 +331,39 @@ mod tests {
 
     fn texts(out: &[Decoded]) -> Vec<String> {
         out.iter().map(|d| d.text.clone()).collect()
+    }
+
+    /// L'AGC della radio che pompa: una stazione forte fa scendere il guadagno a un quarto per 2 s a meta' del messaggio.
+    fn pumped(mut a: Vec<f32>) -> Vec<f32> {
+        for x in &mut a[24_000..48_000] {
+            *x *= 0.25;
+        }
+        a
+    }
+
+    #[test]
+    fn l_agcc_non_cambia_l_audio_pulito_e_non_inventa_messaggi() {
+        let audio = slot(&[("CQ K1ABC FN42", 1500.0, 0.3, -12.0)], 3, 0.05);
+        let on = decode_slot(&audio, &Options { agc: true, ..Options::default() }, &mut CallHashes::default());
+        assert_eq!(texts(&on), texts(&decode(&audio)), "rumore uniforme: stesso risultato");
+        for seed in 40..50 {
+            let noise = pumped(slot(&[], seed, 0.05));
+            assert!(decode_slot(&noise, &Options { agc: true, ..Options::default() }, &mut CallHashes::default()).is_empty(), "solo rumore pompato: niente messaggi");
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn esplora_agc_ft4() {
+        for snr in [-14.0, -15.0, -16.0, -17.0] {
+            let (mut off, mut on) = (0, 0);
+            for seed in 0..20 {
+                let audio = pumped(slot(&[("CQ K1ABC FN42", 1500.0, 0.1, snr)], 200 + seed, 0.05));
+                off += decode(&audio).len();
+                on += decode_slot(&audio, &Options { agc: true, ..Options::default() }, &mut CallHashes::default()).len();
+            }
+            println!("SNR {snr}: senza AGCc {off}/20, con AGCc {on}/20");
+        }
     }
 
     #[test]

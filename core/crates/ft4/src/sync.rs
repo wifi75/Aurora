@@ -35,7 +35,7 @@
 //! - `sync4d`: sempre con la correzione di frequenza (`itwk = 1`), che e' l'unico uso del decoder; le tabelle (riferimenti di Costas per
 //!   ogni correzione) sono calcolate una volta in [`SyncTables`].
 //! - `get_ft4_bitmetrics`: identica; il controllo `nsync < 8` e il conteggio dei bit di sincronismo (`nsync_qual`) escono insieme in [`Metrics`].
-//! - Non c'e' la compensazione AGC (`agccft4`, `llagcc`), ne' la perdita parziale di dati (`partintft4`): sono ritocchi dell'interfaccia di JTDX.
+//! - La compensazione AGC (AGCc) e' quella di FT8 (`ft8::sync::agc_compensate_len`), applicata in `decode_slot`; non c'e' la perdita parziale di dati (`partintft4`).
 
 use std::f64::consts::PI;
 use std::sync::Arc;
