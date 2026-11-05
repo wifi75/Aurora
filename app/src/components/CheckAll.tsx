@@ -18,17 +18,21 @@ interface Row {
 
 const ICON: Record<Verdict, string> = { ok: '✓', warn: '!', bad: '×', wait: '…' };
 
-/** «Verifica tutto»: un pulsante che apre una scheda con stazione, radio, audio, orologio e telefono, ognuno con cosa non va e dove sistemarlo. */
-export function CheckAllButton() {
+/** Riquadro «Verifica tutto» di Impostazioni › Assistenza: apre una scheda con stazione, radio, audio, orologio e telefono, ognuno con cosa non va e dove sistemarlo. */
+export function CheckAllBox() {
   const t = useT();
   const [open, setOpen] = useState(false);
   return (
-    <>
-      <button type="button" className="ca-open" title={t('ca.title')} aria-label={t('ca.title')} onClick={() => setOpen(true)}>
-        ✓
-      </button>
+    <section className="about-fact about-support">
+      <h3>{t('ca.title')}</h3>
+      <p>{t('ca.intro')}</p>
+      <div className="about-support-actions">
+        <button type="button" className="glass about-support-main" onClick={() => setOpen(true)}>
+          {t('ca.run')}
+        </button>
+      </div>
       {open ? <CheckAll onClose={() => setOpen(false)} /> : null}
-    </>
+    </section>
   );
 }
 
@@ -89,7 +93,7 @@ function CheckAll({ onClose }: { onClose: () => void }) {
                 </span>
                 <span className="ca-text">
                   <strong>{t(`ca.${r.id}` as Key)}</strong>
-                  <span>{t(`ca.${r.id}.${r.verdict === 'wait' ? 'ok' : r.verdict}` as Key, { detail: r.id === 'clock' ? Math.round(Math.abs(offset ?? 0)) : '' })}</span>
+                  <span>{t((r.id === 'clock' && r.verdict === 'warn' && offset == null ? 'ca.clock.none' : `ca.${r.id}.${r.verdict === 'wait' ? 'ok' : r.verdict}`) as Key, { detail: r.id === 'clock' ? Math.round(Math.abs(offset ?? 0)) : '' })}</span>
                 </span>
                 {r.verdict === 'warn' || r.verdict === 'bad' ? (
                   <a className="ca-fix" href={r.href} onClick={onClose}>
