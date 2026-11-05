@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.135',
-    released: '2026-11-05T12:57:17Z',
+    released: '2026-11-05T12:59:57Z',
     kind: 'fixed',
     title: ['Installazione che non si blocca e finestre ricordate', 'Installer that no longer hangs and remembered windows', 'Installation hängt nicht mehr, Fenster gemerkt', 'Installation qui ne bloque plus et fenêtres mémorisées', 'Instalación que no se bloquea y ventanas recordadas', 'Instalação que não bloqueia e janelas lembradas'],
     text: [
