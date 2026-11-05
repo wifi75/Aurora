@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.152',
-    released: '2026-11-05T21:58:36Z',
+    released: '2026-11-05T22:01:43Z',
     kind: 'fixed',
     title: ['Audio che si riprende da solo e Linux', 'Self-recovering audio and Linux', 'Audio erholt sich selbst und Linux', 'Audio qui se rétablit seul et Linux', 'Audio que se recupera solo y Linux', 'Áudio que recupera sozinho e Linux'],
     text: [
