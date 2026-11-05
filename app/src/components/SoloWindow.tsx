@@ -1,6 +1,6 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT, type Key } from '../i18n';
-import { attach, markClosed, updateGroup, useGroups, type ItemId } from '../lib/detached';
+import { attach, groupFromUrl, markClosed, restoreGroup, updateGroup, useGroups, type ItemId } from '../lib/detached';
 import { Live } from '../pages/Live';
 import { MapPage } from '../pages/MapPage';
 import { PropagationPage } from '../pages/PropagationPage';
@@ -48,12 +48,23 @@ export function SoloWindow({ id }: { id: string }) {
     return () => window.removeEventListener('beforeunload', onClose);
   }, [id]);
   // tutti gli elementi rimessi nella finestra principale: questa finestra non serve piu'
+  // chiusa solo se il gruppo c'era e poi e' sparito (tutto rimesso nella principale); appena aperta, se l'archivio non lo ha ancora,
+  // lo si ricostruisce dall'indirizzo invece di chiudersi (prima la finestra lampeggiava e spariva)
+  const seen = useRef(false);
+  if (group) seen.current = true;
   useEffect(() => {
     if (group) return;
+    if (!seen.current) {
+      const fromUrl = groupFromUrl(id);
+      if (fromUrl) {
+        restoreGroup(fromUrl);
+        return;
+      }
+    }
     window.close();
     // nel programma per Windows window.close() non basta: il guscio chiude la finestra quando la pagina chiede questo indirizzo
     location.href = `${location.origin}/__chiudi-finestra`;
-  }, [group]);
+  }, [group, id]);
   if (!group) return null;
 
   const startDivider = (at: number) => (e: ReactPointerEvent<HTMLDivElement>) => {

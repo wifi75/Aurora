@@ -72,7 +72,27 @@ function evenSizes(n: number): number[] {
 
 /** Apre (o porta davanti) la finestra di un gruppo: nel programma per Windows la crea il guscio, sul secondo schermo. */
 export function openGroupWindow(id: string): void {
-  window.open(`${location.origin}${location.pathname}#/finestra/${id}`, `aurora-${id}`, 'width=1000,height=700');
+  // cosa contiene viaggia anche nell'indirizzo: se la finestra nuova non trova ancora il gruppo nell'archivio, lo ricostruisce da qui
+  const g = readGroups().find((x) => x.id === id);
+  const q = g ? `?items=${g.items.join(',')}${g.mode === 'grid' ? '&mode=grid' : ''}` : '';
+  window.open(`${location.origin}/${q}#/finestra/${id}`, `aurora-${id}`, 'width=1000,height=700');
+}
+
+const ITEM_IDS: readonly string[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster', 'map', 'propagation'];
+
+/** Dalla finestra a parte: il gruppo descritto nell'indirizzo (`?items=...`), da rimettere nell'archivio se manca. */
+export function groupFromUrl(id: string): Group | null {
+  const q = new URLSearchParams(location.search);
+  const items = (q.get('items') ?? '').split(',').filter((i) => ITEM_IDS.includes(i)) as ItemId[];
+  if (items.length === 0) return null;
+  return { id, items, dir: 'row', sizes: evenSizes(items.length), open: true, mode: q.get('mode') === 'grid' ? 'grid' : 'split' };
+}
+
+/** Rimette un gruppo nell'archivio (se non c'e' gia'). */
+export function restoreGroup(group: Group): void {
+  const groups = readGroups();
+  if (groups.some((g) => g.id === group.id)) return;
+  writeGroups([...groups.map((g) => ({ ...g, items: g.items.filter((i) => !group.items.includes(i)) })).filter((g) => g.items.length > 0), group]);
 }
 
 /** Porta un elemento in una finestra a parte: nuova, o accanto a quelli di una finestra gia' aperta. */

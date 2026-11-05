@@ -4,6 +4,8 @@
 
 ## 0.11.138 - 2026-11-05
 - **Dashboard a blocchi** (finestra `#/finestra/dash`, `GridBoard.tsx`): griglia a 12 colonne, ogni elemento si trascina dalla barretta e si ridimensiona dall'angolo, gli altri blocchi si spostano e risalgono; posizione e misura ricordate. Si sceglie dal menu ⧉ («Nella dashboard a blocchi») e in Impostazioni › Finestre.
+- **Finestre a parte che lampeggiavano e si chiudevano** (0.11.137): la finestra nuova non trovava ancora il suo gruppo e si chiudeva; ora il contenuto viaggia anche nell'indirizzo (`?items=`) e la finestra si chiude solo se il gruppo c'era ed e' stato svuotato.
+- **Barra dei pannelli**: le scritte a destra (es. «QSO nel log») si spostano per non coprire il pulsantino ⧉.
 
 ## 0.11.137 - 2026-11-05
 - **Impostazioni › Finestre**: «Dove sta ogni elemento» per i 7 pannelli, la Mappa e la Propagazione (finestra principale, finestra nuova, accanto a una finestra a parte, nascosto) al posto delle caselle «Pannelli mostrati»; «Finestre a parte aperte» con Mostra, Rimetti e Rimetti tutto; «Ripristina la disposizione» rimette anche tutto nella finestra principale (`settings/WhereTab.tsx`).
