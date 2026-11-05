@@ -344,7 +344,7 @@ fn da_segnalare(livello: tracing::Level, origine: &str) -> bool {
     }
     match livello {
         tracing::Level::ERROR => true,
-        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum", "remote_api::associazione", "engine_native::lento"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
+        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum", "remote_api::associazione", "engine_native::lento", "aurora_desktop::blocco"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
         _ => false,
     }
 }
@@ -363,6 +363,8 @@ fn area(origine: &str, messaggio: &str) -> &'static str {
     let m = messaggio.to_ascii_lowercase();
     if m.starts_with("panic") {
         "panic"
+    } else if origine.starts_with("aurora_desktop::blocco") || m.starts_with("programma bloccato") {
+        "blocco"
     } else if origine.starts_with("remote_api::associazione") {
         "telefono"
     } else if origine.starts_with("tx_native") || m.contains("ptt") {
@@ -1026,6 +1028,13 @@ mod tests {
     #[test]
     fn valori_noti_senza_maiuscole() {
         assert_eq!(pulisci("utente tiziano su PC-SALA", &["Tiziano".into(), "pc-sala".into()]), "utente <personale> su <personale>");
+    }
+
+    #[test]
+    fn la_fine_di_un_blocco_va_nei_rapporti_con_la_sua_area() {
+        assert!(da_segnalare(tracing::Level::WARN, "aurora_desktop::blocco"));
+        assert_eq!(area("aurora_desktop::blocco", "blocco del programma finito dopo 31 s"), "blocco");
+        assert_eq!(area("aurora_desktop_lib::crash", "programma bloccato (finestra) da oltre 20 s"), "blocco");
     }
 
     #[test]

@@ -60,6 +60,39 @@ impl Beat {
 pub static RUNTIME: Beat = Beat::new("runtime");
 pub static WINDOW: Beat = Beat::new("finestra");
 
+/// L'ultima cosa fatta dal thread della finestra (per capire un blocco) e da quando, in ms dall'avvio.
+static ACTIVITY: Mutex<(&'static str, u64)> = Mutex::new(("nessuna", 0));
+/// Una finestra modale di Windows aperta («Salva con nome»): la finestra principale e' ferma apposta, non e' un blocco.
+static MODAL: AtomicU64 = AtomicU64::new(0);
+
+/// Segna cosa sta per fare il thread della finestra (aprire una finestra a parte, salvarne la posizione...).
+pub fn activity(what: &'static str) {
+    if let Ok(mut a) = ACTIVITY.lock() {
+        *a = (what, now_ms());
+    }
+}
+
+fn last_activity() -> (&'static str, u64) {
+    ACTIVITY.lock().map(|a| *a).unwrap_or(("sconosciuta", 0))
+}
+
+/// Tiene il guardiano zitto finche' una finestra modale e' aperta (si chiude con il valore restituito).
+pub struct ModalGuard;
+
+pub fn modal(what: &'static str) -> ModalGuard {
+    activity(what);
+    MODAL.fetch_add(1, Ordering::SeqCst);
+    ModalGuard
+}
+
+impl Drop for ModalGuard {
+    fn drop(&mut self) {
+        MODAL.fetch_sub(1, Ordering::SeqCst);
+        // il tempo passato con la finestra modale aperta non conta come blocco
+        WINDOW.touch();
+    }
+}
+
 fn now_ms() -> u64 {
     START.get_or_init(Instant::now).elapsed().as_millis() as u64
 }
@@ -148,6 +181,8 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
         .spawn(move || {
             let mut watch = Watch::default();
             let mut ticks = 0u32;
+            // quando e' cominciato il blocco in corso (per dire quanto e' durato)
+            let mut blocked_since: Option<u64> = None;
             loop {
                 // il battito della finestra: un compito eseguito dal suo thread; se e' fermo resta in coda e il tempo non si aggiorna
                 let _ = app.run_on_main_thread(|| WINDOW.touch());
@@ -156,9 +191,26 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
                     let _ = app.run_on_main_thread(|| std::thread::sleep(Duration::from_secs(30)));
                 }
                 std::thread::sleep(BEAT_EVERY);
+                if MODAL.load(Ordering::SeqCst) > 0 {
+                    // «Salva con nome» aperta: la finestra principale aspetta l'operatore
+                    WINDOW.touch();
+                }
                 let beats = [(RUNTIME.name, RUNTIME.last()), (WINDOW.name, WINDOW.last())];
-                if let Some(stale) = watch.check(now_ms(), &beats, HANG_AFTER.as_millis() as u64) {
+                let now = now_ms();
+                if let Some(stale) = watch.check(now, &beats, HANG_AFTER.as_millis() as u64) {
+                    blocked_since = Some(stale.iter().map(|(_, last)| *last).min().unwrap_or(now));
                     report_hang(&stale, &beats);
+                } else if let Some(since) = blocked_since
+                    && beats.iter().all(|(_, last)| now.saturating_sub(*last) <= HANG_AFTER.as_millis() as u64)
+                {
+                    blocked_since = None;
+                    let (what, at) = last_activity();
+                    let line = format!(
+                        "blocco del programma finito dopo {} s (ultima attivita' della finestra: {what}, cominciata {} s prima del blocco)",
+                        now.saturating_sub(since) / 1000,
+                        since.saturating_sub(at) / 1000
+                    );
+                    let _ = std::thread::Builder::new().name("aurora-guardiano-log".into()).spawn(move || tracing::warn!(target: "aurora_desktop::blocco", "{line}"));
                 }
             }
         });
@@ -181,14 +233,18 @@ fn report_hang(stale: &[(&str, u64)], beats: &[(&str, u64)]) {
     }
     let names: Vec<&str> = stale.iter().map(|(n, _)| *n).collect();
     let _ = writeln!(text, "fermi: {}", names.join(", "));
+    let (what, at) = last_activity();
+    let _ = writeln!(text, "ultima attivita' della finestra: {what} ({:.1} s fa)", now.saturating_sub(at) as f64 / 1000.0);
     let _ = writeln!(text, "minidump: {}", describe(&dump, &dump_result));
     let _ = std::fs::write(dir.join(format!("{base}.txt")), text);
     prune(dir);
     // il log potrebbe essere fermo anche lui: la riga si scrive da un thread a parte che, al limite, resta in attesa da solo
+    let (what, at) = last_activity();
     let line = format!(
-        "programma bloccato ({}) da oltre {} s: scritto {}",
+        "programma bloccato ({}) da oltre {} s, ultima attivita' della finestra: {what} ({} s prima): scritto {}",
         names.join(", "),
         HANG_AFTER.as_secs(),
+        now.saturating_sub(at) / 1000,
         dump.display()
     );
     let _ = std::thread::Builder::new()

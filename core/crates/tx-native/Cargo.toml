@@ -8,6 +8,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
+aurora-core = { path = "../aurora-core" }
 rig-control = { path = "../rig-control" }
 tracing = { workspace = true }
 # «realtime»: il thread audio a priorita' alta (MMCSS su Windows), meno blocchi persi quando il PC e' carico

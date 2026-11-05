@@ -34,6 +34,14 @@ pub trait AudioSink: Send {
     fn live_gain(&self) -> Option<Arc<AtomicU32>> {
         None
     }
+    /// Il dispositivo si e' perso (scollegato, spento, configurazione da ricostruire) e non suona piu'.
+    fn has_failed(&self) -> bool {
+        false
+    }
+    /// Riapre lo stesso dispositivo dopo che si e' perso (`None` se questa uscita non sa farlo).
+    fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
+        None
+    }
 }
 
 /// Il canale d'uscita come nella scheda Audio di JTDX (`AudioOutputChannel`). In JTDX (`Modulator::readData`, `SoundOutput::setFormat`):
@@ -329,6 +337,8 @@ struct SinkShared {
 /// Uscita sul dispositivo vero. Il flusso vive in un thread proprio (su alcune piattaforme non e' `Send`).
 pub struct CpalSink {
     name: String,
+    /// Il nome chiesto all'apertura, per riaprire lo stesso dispositivo se si perde.
+    hint: Option<String>,
     rate: u32,
     shared: Arc<SinkShared>,
     stop_thread: Arc<AtomicBool>,
@@ -457,7 +467,7 @@ impl CpalSink {
             .map_err(|e| TxError::Thread(e.to_string()))?;
 
         match ready_rx.recv() {
-            Ok(Ok(())) => Ok(CpalSink { name, rate, shared, stop_thread, thread: Some(thread) }),
+            Ok(Ok(())) => Ok(CpalSink { name, hint: device_hint.map(str::to_string), rate, shared, stop_thread, thread: Some(thread) }),
             Ok(Err(e)) => {
                 let _ = thread.join();
                 Err(e)
@@ -496,6 +506,16 @@ impl AudioSink for CpalSink {
     fn live_gain(&self) -> Option<Arc<AtomicU32>> {
         Some(Arc::clone(&self.shared.gain))
     }
+
+    fn has_failed(&self) -> bool {
+        self.shared.failed.load(Ordering::SeqCst)
+    }
+
+    fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
+        // lo stesso nome scelto (non quello del dispositivo: Windows puo' rinumerarlo, «2- USB Audio CODEC»), lo stesso guadagno e canale
+        let hint = self.hint.as_deref().or(Some(self.name.as_str()));
+        Some(CpalSink::open_with(hint, Arc::clone(&self.shared.gain), Arc::clone(&self.shared.channel)).map(|s| Box::new(s) as Box<dyn AudioSink>))
+    }
 }
 
 impl Drop for CpalSink {
@@ -525,6 +545,24 @@ struct SwitchState {
 }
 
 impl SwitchState {
+    /// L'uscita si e' persa (radio spenta, cavo USB mosso): tra una trasmissione e l'altra si riapre lo stesso dispositivo.
+    fn recover_if_lost(&mut self) {
+        if self.armed || self.current.is_playing() || !self.current.has_failed() {
+            return;
+        }
+        match self.current.reopen() {
+            Some(Ok(next)) => {
+                tracing::info!("uscita audio ritrovata: la trasmissione riprende");
+                self.current = next;
+            }
+            Some(Err(e)) => {
+                tracing::debug!("uscita audio ancora assente: {e}");
+                aurora_core::notice::notice("audio_out_missing", "");
+            }
+            None => {}
+        }
+    }
+
     fn swap_if_possible(&mut self) -> bool {
         if self.pending.is_some()
             && !self.armed
@@ -577,6 +615,8 @@ impl AudioSink for SwitchableSink {
     fn sample_rate(&self) -> u32 {
         let mut state = lock(&self.shared);
         state.swap_if_possible();
+        // prima di preparare i campioni: se l'uscita si e' persa si riapre, cosi' la frequenza e' quella del dispositivo vero
+        state.recover_if_lost();
         state.armed = true;
         state.current.sample_rate()
     }
@@ -829,4 +869,34 @@ mod tests {
         assert!(!sink.is_playing(), "il suono non e' finito in tempo");
         std::thread::sleep(Duration::from_millis(200));
     }
+
+    /// Un'uscita persa che sa riaprirsi su un dispositivo con un'altra frequenza.
+    struct LostSink;
+    impl AudioSink for LostSink {
+        fn sample_rate(&self) -> u32 {
+            48_000
+        }
+        fn start(&mut self, _: Vec<f32>) -> Result<(), TxError> {
+            Err(TxError::Audio("persa".into()))
+        }
+        fn is_playing(&self) -> bool {
+            false
+        }
+        fn stop(&mut self) {}
+        fn has_failed(&self) -> bool {
+            true
+        }
+        fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
+            Some(Ok(fake(44_100).0))
+        }
+    }
+
+    #[test]
+    fn a_lost_output_is_reopened_before_the_next_transmission() {
+        let (mut sink, _switch) = SwitchableSink::new(Box::new(LostSink), Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        // prima di preparare i campioni l'uscita persa si riapre: la frequenza e' quella del dispositivo ritrovato
+        assert_eq!(sink.sample_rate(), 44_100);
+        assert!(sink.start(vec![0.0; 10]).is_ok());
+    }
+
 }
