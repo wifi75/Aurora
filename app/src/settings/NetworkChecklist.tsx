@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { allowFirewall, ApiError, getNetworkCheck } from '../api/client';
 import { useT } from '../i18n';
+import { coreText } from '../lib/coreText';
 
 /**
  * Durante l'associazione del telefono: cosa sa il PC della sua rete (Wi-Fi, rete «Pubblica», firewall, indirizzo scelto per il QR)
@@ -52,7 +53,7 @@ export function NetworkChecklist({ waiting }: { waiting: boolean }) {
           </li>
         )}
       </ul>
-      {allow.isError ? <p className="net-check__err">{allow.error instanceof ApiError && allow.error.detail ? allow.error.detail : t('net.allowFailed')}</p> : null}
+      {allow.isError ? <p className="net-check__err">{allow.error instanceof ApiError && allow.error.detail ? coreText(allow.error.detail, t) : t('net.allowFailed')}</p> : null}
       <p className="net-check__tip">{t('net.tips')}</p>
     </div>
   );

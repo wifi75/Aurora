@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getClock } from '../api/client';
 import { useT, type Key } from '../i18n';
+import { coreText } from '../lib/coreText';
 import { LEVEL_STALE_MS } from '../lib/audioLevel';
 import { diagnose, type Issue } from '../lib/diagnosis';
 import { periodSecs } from '../lib/period';
@@ -48,7 +49,7 @@ export function DiagnosisBar() {
     <ul className="diag" aria-label={t('diag.aria')} aria-live="polite">
       {visible.map((issue) => (
         <li key={keyOf(issue)} className={`diag-item diag-item--${issue.severity}`}>
-          <span className="diag-text">{t(messageKey(issue), issue.vars)}</span>
+          <span className="diag-text">{t(messageKey(issue), typeof issue.vars.detail === 'string' ? { ...issue.vars, detail: coreText(issue.vars.detail, t) } : issue.vars)}</span>
           {issue.href ? (
             <a className="diag-fix" href={issue.href}>
               {t('diag.fix')}
