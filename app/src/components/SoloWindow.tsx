@@ -18,7 +18,7 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
   log: 'panel.log',
   cluster: 'panel.cluster',
   map: 'nav.map',
-  propagation: 'nav.propagation',
+  propagation: 'prop.psk',
   display: 'win.display',
 };
 
