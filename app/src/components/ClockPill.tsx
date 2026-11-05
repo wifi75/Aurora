@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { getClock, type ClockState } from '../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { correctClock, getClock, type ClockState } from '../api/client';
+import { toast } from '../lib/toast';
 import { useT, type T } from '../i18n';
 import { clockInTolerance } from '../lib/clock';
 
@@ -26,16 +28,31 @@ export function clockAlert(state: ClockState | undefined, now: number, t: T): st
 
 /**
  * Nella barra di stato non c'e' piu' niente finche' l'orologio va bene: compare un avviso solo se l'ora e' fuori tolleranza o non si e'
- * potuta verificare da piu' di un giorno (anche tra un avvio e l'altro). Un clic apre le impostazioni dell'orologio, con le prove NTP.
+ * potuta verificare da piu' di un giorno (anche tra un avvio e l'altro). Un clic corregge subito l'ora di Windows; se non si puo'
+ * (permessi), apre le impostazioni dell'orologio con le prove NTP.
  */
 export function ClockPill() {
   const t = useT();
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });
+  const client = useQueryClient();
+  const [busy, setBusy] = useState(false);
   const text = clockAlert(clock.data, Date.now(), t);
   if (!text) return null;
+  const fix = async () => {
+    setBusy(true);
+    try {
+      const m = await correctClock();
+      toast(t('clock.fixed', { ms: Math.round(Math.abs(m.offset_ms ?? 0)) }), 'ok');
+      await client.invalidateQueries({ queryKey: ['clock'] });
+    } catch {
+      location.hash = '#/impostazioni/clock';
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <a className="pill pill--warn clock-alert" href="#/impostazioni/clock" title={t('tip.clock.alert')}>
+    <button type="button" className="pill pill--warn clock-alert" title={t('tip.clock.fix')} disabled={busy} onClick={() => void fix()}>
       ⚠ {text}
-    </a>
+    </button>
   );
 }

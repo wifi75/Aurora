@@ -125,6 +125,8 @@ export const clockStrings = {
   ],
   'clock.alert.hours': ['{n} ore', '{n} hours', '{n} Stunden', '{n} heures', '{n} horas', '{n} horas'],
   'clock.alert.days': ['{n} giorni', '{n} days', '{n} Tagen', '{n} jours', '{n} días', '{n} dias'],
+  'clock.fixed': ['Orologio corretto: ora scarta di {ms} ms.', 'Clock corrected: now off by {ms} ms.', 'Uhr korrigiert: jetzt {ms} ms Abweichung.', 'Horloge corrigée : écart maintenant de {ms} ms.', 'Reloj corregido: ahora desfase de {ms} ms.', 'Relógio corrigido: agora desvio de {ms} ms.'],
+  'tip.clock.fix': ['Un clic corregge subito l’ora di Windows con i server NTP; se Windows non lo permette si aprono le impostazioni dell’orologio.', 'One click corrects the Windows time with the NTP servers; if Windows does not allow it, the clock settings open.', 'Ein Klick korrigiert die Windows-Uhr mit den NTP-Servern; erlaubt Windows das nicht, öffnen sich die Uhr-Einstellungen.', 'Un clic corrige l’heure de Windows avec les serveurs NTP ; si Windows ne le permet pas, les réglages de l’horloge s’ouvrent.', 'Un clic corrige la hora de Windows con los servidores NTP; si Windows no lo permite se abren los ajustes del reloj.', 'Um clique corrige a hora do Windows com os servidores NTP; se o Windows não o permitir abrem-se as definições do relógio.'],
   'tip.clock.alert': [
     'In FT8 l’ora deve essere giusta entro una frazione di secondo. Clicca per aprire le impostazioni dell’orologio e fare la prova con i server NTP.',
     'In FT8 the time must be right within a fraction of a second. Click to open the clock settings and test against the NTP servers.',
