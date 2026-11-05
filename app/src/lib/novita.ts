@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.154',
-    released: '2026-11-05T22:11:49Z',
+    released: '2026-11-05T22:14:34Z',
     kind: 'changed',
     title: ['Una sola mappa: Mappa DX', 'One map only: DX Map', 'Nur eine Karte: DX-Karte', 'Une seule carte : Carte DX', 'Un solo mapa: Mapa DX', 'Um só mapa: Mapa DX'],
     text: [
