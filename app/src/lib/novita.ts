@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.137',
+    released: '2026-11-05T13:09:55Z',
+    kind: 'new',
+    title: ['Scegli dove sta ogni pannello', 'Choose where each panel goes', 'Wähle, wo jedes Feld ist', 'Choisis où va chaque panneau', 'Elige dónde va cada panel', 'Escolhe onde fica cada painel'],
+    text: [
+      "In Impostazioni › Finestre scegli per ogni pannello, la Mappa e la Propagazione dove stanno: nella finestra principale, in una finestra a parte (nuova o accanto a un'altra) o nascosti. Sotto ci sono le finestre a parte aperte, con «Mostra la finestra» e «Rimetti nella finestra principale»; «Ripristina la disposizione» rimette tutto com'era all'inizio.",
+      "In Settings › Windows choose for each panel, the Map and Propagation where they go: in the main window, in a separate window (new or next to another) or hidden. Below are the open separate windows, with «Show the window» and «Put back in the main window»; «Reset layout» puts everything back as at the start.",
+      "Unter Einstellungen › Fenster wählst du für jedes Feld, die Karte und die Ausbreitung, wo sie sind: im Hauptfenster, in einem eigenen Fenster (neu oder neben einem anderen) oder ausgeblendet. Darunter die offenen eigenen Fenster mit «Fenster zeigen» und «Zurück ins Hauptfenster»; «Anordnung zurücksetzen» stellt alles wie am Anfang her.",
+      "Dans Réglages › Fenêtres choisis pour chaque panneau, la Carte et la Propagation où ils vont : dans la fenêtre principale, dans une fenêtre à part (nouvelle ou à côté d’une autre) ou masqués. Dessous, les fenêtres à part ouvertes, avec « Afficher la fenêtre » et « Remettre dans la fenêtre principale » ; « Rétablir la disposition » remet tout comme au départ.",
+      "En Ajustes › Ventanas eliges para cada panel, el Mapa y la Propagación dónde van: en la ventana principal, en una ventana aparte (nueva o junto a otra) u ocultos. Debajo, las ventanas aparte abiertas, con «Mostrar la ventana» y «Devolver a la ventana principal»; «Restablecer la disposición» lo deja todo como al principio.",
+      "Em Definições › Janelas escolhes para cada painel, o Mapa e a Propagação onde ficam: na janela principal, numa janela à parte (nova ou ao lado de outra) ou ocultos. Por baixo, as janelas à parte abertas, com «Mostrar a janela» e «Repor na janela principal»; «Repor a disposição» deixa tudo como no início.",
+    ],
+  },
+  {
     version: '0.11.136',
     released: '2026-11-05T13:06:22Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'PTT corrigé quand un ancien JTDX indiquait OmniRig alors que la radio est reliée par Hamlib (elle ne passait jamais en émission). Le service qui reçoit les rapports est en ligne : si tu les actives dans Réglages > Assistance (désactivés par défaut), le rapport après un plantage et les erreurs anonymes arrivent vraiment au développeur d’Aurora, et « Envoyer le paquet au développeur » te donne un code à communiquer.',
       'Corregido el PTT cuando un JTDX antiguo indicaba OmniRig pero la radio está conectada con Hamlib (nunca transmitía). El servicio que recibe los informes está en línea: si los activas en Ajustes > Asistencia (apagados de fábrica), el informe tras un fallo y los errores anónimos llegan de verdad a quien desarrolla Aurora, y «Enviar el paquete a quien desarrolla Aurora» te da un código para comunicar.',
       'Corrigido o PTT quando um JTDX antigo indicava OmniRig mas o rádio está ligado com Hamlib (nunca transmitia). O serviço que recebe os relatórios está online: se os ligares em Definições > Assistência (desligados de fábrica), o relatório após uma falha e os erros anónimos chegam mesmo a quem desenvolve a Aurora, e «Enviar o pacote a quem desenvolve a Aurora» dá-te um código para comunicar.',
-    ],
-  },
-  {
-    version: '0.11.97',
-    released: '2026-11-03T22:01:54Z',
-    kind: 'new',
-    title: ['Rapporti degli errori (facoltativi)', 'Error reports (optional)', 'Fehlerberichte (freiwillig)', 'Rapports d’erreur (facultatifs)', 'Informes de errores (opcionales)', 'Relatórios de erros (opcionais)'],
-    text: [
-      'In Impostazioni > Assistenza puoi scegliere, spenti di fabbrica, di mandare il rapporto dopo un crash e gli errori anonimi a chi sviluppa Aurora, con «Vedi cosa mando». Nominativo, locatore, messaggi e indirizzi vengono tolti. Più bandiere nel pannello DXpedition (Rodrigues, Tokelau, Pitcairn e altre).',
-      'In Settings > Support you can choose, off by default, to send the report after a crash and anonymous errors to Aurora’s developer, with «See what I send». Callsign, locator, messages and addresses are removed. More flags in the DXpedition panel (Rodrigues, Tokelau, Pitcairn and others).',
-      'Unter Einstellungen > Support kannst du (standardmäßig aus) den Bericht nach einem Absturz und anonyme Fehler an den Entwickler von Aurora senden, mit «Zeigen, was ich sende». Rufzeichen, Locator, Meldungen und Adressen werden entfernt. Mehr Flaggen im DXpedition-Bereich (Rodrigues, Tokelau, Pitcairn und andere).',
-      'Dans Réglages > Assistance tu peux choisir, désactivé par défaut, d’envoyer le rapport après un plantage et les erreurs anonymes au développeur d’Aurora, avec « Voir ce que j’envoie ». Indicatif, locator, messages et adresses sont retirés. Plus de drapeaux dans le panneau DXpédition (Rodrigues, Tokelau, Pitcairn et d’autres).',
-      'En Ajustes > Asistencia puedes elegir, apagado de fábrica, enviar el informe tras un fallo y los errores anónimos a quien desarrolla Aurora, con «Ver lo que envío». Se quitan indicativo, locator, mensajes y direcciones. Más banderas en el panel DXpedición (Rodrigues, Tokelau, Pitcairn y otras).',
-      'Em Definições > Assistência podes escolher, desligado de fábrica, enviar o relatório após uma falha e os erros anónimos a quem desenvolve a Aurora, com «Ver o que envio». Indicativo, locator, mensagens e endereços são retirados. Mais bandeiras no painel DXpedição (Rodrigues, Tokelau, Pitcairn e outras).',
     ],
   },
 ];
