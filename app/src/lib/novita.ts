@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.146',
-    released: '2026-11-05T17:30:00Z',
+    released: '2026-11-05T17:33:05Z',
     kind: 'new',
     title: ['Il display da solo, senza finestra intorno', 'The display alone, without a window around it', 'Die Anzeige allein, ohne Fenster drumherum', 'L’afficheur seul, sans fenêtre autour', 'La pantalla sola, sin ventana alrededor', 'O ecrã sozinho, sem janela à volta'],
     text: [
