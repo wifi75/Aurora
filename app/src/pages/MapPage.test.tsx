@@ -15,6 +15,8 @@ import { getWorkedMap } from '../api/client';
 import { useStation } from '../state/station';
 import { MapPage } from './MapPage';
 
+const BAND = 'Limita l’elenco a una banda.';
+
 function render(ui: ReactElement) {
   return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
 }
@@ -34,9 +36,9 @@ describe('MapPage', () => {
   it('filters the worked squares by band', async () => {
     render(<MapPage />);
     await screen.findByText(/2 griglie lavorate/);
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '40m' } });
+    fireEvent.change(screen.getByRole('combobox', { name: BAND }), { target: { value: '40m' } });
     expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(1);
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '15m' } });
+    fireEvent.change(screen.getByRole('combobox', { name: BAND }), { target: { value: '15m' } });
     expect(document.querySelectorAll('.worldmap-worked-rect')).toHaveLength(1);
   });
 

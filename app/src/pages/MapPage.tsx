@@ -98,7 +98,7 @@ function MapPageBody({ solo }: { solo: boolean }) {
         </div>
         <label className="map-select">
           {t('map.band')}
-          <select title={t('tip.ui.band')} value={band} onChange={(e) => setBand(e.target.value)} disabled={bands.length === 0}>
+          <select title={t('tip.ui.band')} aria-label={t('tip.ui.band')} value={band} onChange={(e) => setBand(e.target.value)} disabled={bands.length === 0}>
             <option value="all">{t('map.allBands')}</option>
             {bands.map((b) => (
               <option key={b} value={b}>
