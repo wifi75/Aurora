@@ -23,7 +23,7 @@
 //! - Le sottopassate 3-11 (CQ, chiamata diretta a noi, segnale del canale QSO, combinate con la lettura a tempo invertito dello
 //!   stesso periodo o con il periodo precedente della stessa parita') sono portate in [`try_candidate`]; restano fuori i casi piu'
 //!   intrecciati del gate per tipo a priori quando piu' motivi si sovrappongono (vedi i commenti li') e `evencopy`/`oddcopy`
-//!   (il messaggio ridecodificato con `ft8sd`/`ft8mf1`), il decoder `ft8s` del segnale di QSO e i candidati virtuali sulla
+//!   (dalla 0.11.132 c'e' la ridecodifica `evencopy`/`oddcopy` con `ft8sd1`/`ft8mf1`/`ft8mfcq` e `ldeepsync`: [`crate::copies`]), il decoder `ft8s` del segnale di QSO e i candidati virtuali sulla
 //!   frequenza di ricezione.
 //! - Nessun controllo `chkgrid` (geografico) ne' `ALLCALL7.TXT`: vedi [`filters`].
 
@@ -411,6 +411,13 @@ pub fn decode_slot_streaming(
         h.store_cq(options.even_period, cq_capture);
         h.store_my_call(options.even_period, my_capture);
         h.store_qso(options.even_period, qso_capture);
+        // i messaggi di questo periodo restano per la ridecodifica di quello seguente della stessa parita'
+        let copies = found
+            .iter()
+            .filter(|d| crate::copies::worth_keeping(&d.decoded.text, &ap_options.mycall))
+            .map(|d| crate::copies::CopyMessage { text: d.decoded.text.clone(), freq_hz: d.decoded.freq_hz, dt_s: d.decoded.dt_s })
+            .collect();
+        h.store_copies(options.even_period, copies);
     }
     list_decoding(&residual, options, hashes, history, &mut found, npass);
     found.sort_by(|a, b| a.decoded.freq_hz.total_cmp(&b.decoded.freq_hz));
@@ -762,6 +769,14 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
         return (None, Capture::default());
     }
 
+    // il messaggio di 30 s fa nello stesso punto (`lsd` di `ft8b`): prima della decodifica normale si prova a ritrovarlo (`ft8sd1`)
+    let copy = ctx.history.and_then(|h| h.find_copy(options.even_period, c.freq_hz, c.dt_s));
+    if let Some(copy) = copy
+        && let Some((text, tones)) = crate::copies::ft8sd1(&first.s8, &copy.text, crate::copies::is_cq(&copy.text), &ctx.ap.opts.mycall)
+    {
+        return (copy_hit(ctx, c, &refined, text, tones, &first.s8, cd, ibest), Capture::default());
+    }
+
     let flags = signal_flags(ctx, &cd, ibest, &first.s8, refined.freq_hz);
     let nweak = if options.subpass || options.swl { 2 } else { 1 };
     let progress = usize::from(o.qso_progress.min(5));
@@ -945,7 +960,52 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
             );
         }
     }
+    // `iqso = 4`: la decodifica normale non ha trovato niente; si prova il seguito del messaggio di 30 s fa
+    if let Some(copy) = copy {
+        let lcq = crate::copies::is_cq(&copy.text);
+        let deep = options.swl || options.subpass || options.low_threshold;
+        let (s8, cd, at, ibest) = if deep {
+            // `ldeepsync`: si risincronizza sul segnale originale con i toni noti del messaggio atteso
+            let mut cd1 = ds.run(c.freq_hz, highsens);
+            let rows = crate::copies::known_rows(&copy.text, lcq);
+            let (delf, dt) = crate::copies::deep_refine(&cd1, c.dt_s, SyncKind::for_pass(ipass), &rows, lcq);
+            sync::shift_frequency(&mut cd1, -delf);
+            let Some(m) = sync::bit_metrics_ex(&cd1, dt, MetricsMode { reverse, second: false }) else { return (None, capture) };
+            let at = Candidate { freq_hz: c.freq_hz + delf, dt_s: dt, sync: c.sync };
+            let ib = (f64::from(dt + 0.5) * 200.0).round() as i64;
+            if let Some((text, tones)) = crate::copies::ft8sd1(&m.s8, &copy.text, lcq, &ctx.ap.opts.mycall) {
+                return (copy_hit(ctx, c, &at, text, tones, &m.s8, cd1, ib), capture);
+            }
+            (m.s8, cd1, at, ib)
+        } else {
+            (first.s8, cd, refined, ibest)
+        };
+        let found = if lcq { crate::copies::ft8mfcq(&s8, &copy.text) } else { crate::copies::ft8mf1(&s8, &copy.text) };
+        if let Some((text, tones)) = found {
+            return (copy_hit(ctx, c, &at, text, tones, &s8, cd, ibest), capture);
+        }
+    }
     (None, capture)
+}
+
+/// Il decode trovato dalla ridecodifica del messaggio di 30 s fa ([`crate::copies`]): niente a priori, i toni servono alla sottrazione.
+#[allow(clippy::too_many_arguments)]
+fn copy_hit(ctx: &PassContext, c: Candidate, at: &Candidate, text: String, tones: [u8; NN], s8: &[[f32; 8]; NN], cd: Vec<Complex>, i0: i64) -> Option<Hit> {
+    let xsnr = filters::jtdx_snr(s8, &tones, false);
+    Some(Hit {
+        info: DecodedInfo {
+            decoded: Decoded { freq_hz: at.freq_hz, dt_s: at.dt_s, snr_db: xsnr.round() as i32, text, hint: true },
+            pass: ctx.ipass,
+            ap_type: 0,
+            hard_errors: 0,
+            dmin: 0.0,
+            sync: c.sync,
+        },
+        tones,
+        cd,
+        i0,
+        hashes: ctx.hashes.clone(),
+    })
 }
 
 #[cfg(test)]
@@ -1237,6 +1297,36 @@ mod tests {
             for threads in [2usize, 4, 8] {
                 let many = decode_slot_detailed(&audio, &Options { threads, ..base.clone() }, &mut CallHashes::default(), None);
                 assert_eq!(one, many, "profondita' {depth}, {threads} thread");
+            }
+        }
+    }
+
+    /// Ridecodifica del messaggio di 30 s fa (`crate::copies`): il seguito debole di un QSO e il solo rumore nello stesso punto.
+    /// `cargo test --release -p ft8 esplora_copie -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn esplora_copie() {
+        for (label, swl) in [("normale", false), ("SWL", true)] {
+            for snr in [-20.0f32, -21.0, -22.0, -23.0] {
+                let (mut with, mut without, mut false_hits) = (0, 0, 0);
+                for seed in 0..20u64 {
+                    let even = Options { swl, even_period: true, ..Options::depth(3) };
+                    let first = slot(&[("K1ABC W9XYZ -10", 1200.0, 0.1, -8.0)], 5000 + seed);
+                    let second = slot(&[("K1ABC W9XYZ RR73", 1200.4, 0.12, snr)], 6000 + seed);
+                    let mut hashes = CallHashes::default();
+                    let mut history = PeriodHistory::default();
+                    decode_slot_with_history(&first, &even, &mut hashes, &mut history);
+                    let out = decode_slot_with_history(&second, &even, &mut hashes, &mut history);
+                    with += usize::from(out.iter().any(|d| d.text == "K1ABC W9XYZ RR73"));
+                    let alone = decode_slot(&second, &even, &mut CallHashes::default());
+                    without += usize::from(alone.iter().any(|d| d.text == "K1ABC W9XYZ RR73"));
+                    // solo rumore nel punto ricordato: niente deve uscire
+                    let mut history = PeriodHistory::default();
+                    decode_slot_with_history(&first, &even, &mut CallHashes::default(), &mut history);
+                    let noise = slot(&[], 7000 + seed);
+                    false_hits += decode_slot_with_history(&noise, &even, &mut CallHashes::default(), &mut history).len();
+                }
+                println!("{label} SNR {snr}: senza memoria {without}/20, con memoria {with}/20, falsi sul rumore {false_hits}");
             }
         }
     }
