@@ -153,6 +153,17 @@ function PropagationPageBody({ solo }: { solo: boolean }) {
   const home = status?.de_grid ? gridCenter(status.de_grid) : null;
   const nightNow = home ? isNight(home.lat, home.lon, new Date()) : null;
 
+  // in una finestra a parte solo la mappa di chi mi ha ricevuto, a tutta finestra
+  if (solo) {
+    return (
+      <div className="map-page map-page--solo">
+        <div className="worldmap-wrap">
+          <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} night={options.night} labels={mapLabels(t)} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="prop-page">
       <header className="prop-head">
