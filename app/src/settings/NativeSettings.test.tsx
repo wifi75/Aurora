@@ -111,7 +111,7 @@ describe('Connected programs tab with the built-in engine', () => {
     expect(box).toBeEnabled();
     expect(box).toBeChecked();
     // in breve l'esito; il dettaglio (cosa e' stato inviato) sta nel suggerimento
-    expect(screen.getByTestId('status-dxsummit').getAttribute('title')).toMatch(/spot inviato: DL1ABC su 14075.5 kHz/);
+    expect(screen.getByTestId('status-dxsummit').getAttribute('title')).toMatch(/Spot inviato: DL1ABC su 14075.5 kHz/);
     expect(screen.queryByLabelText(it_('ens.k.PSKReporter'))).toBeNull();
   });
 

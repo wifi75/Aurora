@@ -12,6 +12,7 @@ import { Cells, Group, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 import { WavelogStationSelect } from './WavelogStationSelect';
 import { IntegrationsPanel } from './IntegrationsPanel';
+import { coreText } from '../lib/coreText';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
 export function useIsNative(): boolean | undefined {
@@ -272,7 +273,7 @@ function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind:
   // riga dei servizi: niente «Ultimo invio: mai»; dopo un invio solo l'esito in breve, il dettaglio nel suggerimento
   if (compact) {
     if (!st || st.ok === null) return null;
-    const detail = `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
+    const detail = `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${coreText(st.message, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
     return (
       <small className={`ens-reason ${st.ok ? 'muted' : 'live-note'}`} role="status" title={detail} data-testid={`status-${kind}`}>
         {t('ens.st.title')}: {st.ok ? t('ens.st.ok') : t('ens.st.err')} {new Date(st.at_ms).toLocaleTimeString()}
@@ -280,7 +281,7 @@ function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind:
       </small>
     );
   }
-  const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${st.message} (${new Date(st.at_ms).toLocaleTimeString()})`;
+  const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${coreText(st.message, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
   const pending = st?.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : '';
   return (
     <p className={`ens-reason ${st?.ok === false ? 'live-note' : 'muted'}`} role="status" data-testid={`status-${kind}`}>
@@ -399,7 +400,7 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
           return (
             <div key={group.title} className="svc-row" role="group" aria-label={t(group.title)} data-testid={`svc-${service ?? group.title}`}>
               <div className="svc-head">
-                {led ? <StatusLed led={led.led} why={led.why} /> : null}
+                {led ? <StatusLed led={led.led} why={coreText(led.why, t)} /> : null}
                 <strong>{t(group.title)}</strong>
                 <Help tip={[help ? t(help) : '', group.note ? t(group.note) : ''].filter(Boolean).join(' ') || undefined} />
               </div>
@@ -418,7 +419,7 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
           );
         }
         return (
-          <Group key={group.title} title={<>{led ? <StatusLed led={led.led} why={led.why} /> : null}{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
+          <Group key={group.title} title={<>{led ? <StatusLed led={led.led} why={coreText(led.why, t)} /> : null}{t(group.title)}<Help tip={help ? t(help) : undefined} /></>} span={span}>
             <Cells min={15}>
               {rows.map((row) => (
                 <SettingField key={row.key} row={row} label={t(`ens.k.${row.key}` as Key)} doc={doc} draft={draft} />

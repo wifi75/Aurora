@@ -6,6 +6,7 @@ import { useT } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { toast } from '../lib/toast';
 import { Help } from '../settings/layout';
+import { coreText } from '../lib/coreText';
 
 /** Le bande nell'ordine della radio (160m prima di 80m), quelle sconosciute in fondo. */
 function bandOrder(a: string, b: string): number {
@@ -92,7 +93,7 @@ export function ExportPage() {
     } catch (error) {
       if (error instanceof ApiError && error.code === 'save_busy') toast(t('exp.busy'), 'info');
       else if (error instanceof ApiError && (error.code === 'no_selection' || error.code === 'empty_export')) toast(t('exp.noneSelected'), 'info');
-      else if (error instanceof ApiError && error.detail) toast(t('exp.failed', { why: error.detail }), 'error');
+      else if (error instanceof ApiError && error.detail) toast(t('exp.failed', { why: coreText(error.detail, t) }), 'error');
       else toast(t('exp.error'), 'error');
     } finally {
       setBusy(false);
