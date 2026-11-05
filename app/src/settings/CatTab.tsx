@@ -116,9 +116,9 @@ function Detected({ detection, onUse }: { detection: CatDetection; onUse(c: CatC
       {detection.candidates.map((c) => (
         <li key={`${c.device_key}:${c.cat_port}`}>
           <div>
-            <strong>{c.rig_label}</strong> — {c.cat_port}
+            <strong>{coreText(c.rig_label, t)}</strong> — {c.cat_port}
             {c.baud ? `, ${c.baud} baud` : ''} <span className="muted">({t('cat.detected.confidence', { n: c.confidence })})</span>
-            <div className="muted">{c.evidence}</div>
+            <div className="muted">{coreText(c.evidence, t)}</div>
             {c.is_radio && c.rig_token === '' ? <div className="muted">{t('cat.detected.manual')}</div> : null}
             {c.audio_input ? <div className="muted">{t('cat.detected.audio', { name: c.audio_input })}</div> : null}
           </div>

@@ -38,6 +38,14 @@ const RETRY = /^(.*) Nuovo tentativo tra (\d+) s\.$/s;
 const STOPPED = /^rigctld si e' fermato: controlla modello, porta e velocita'\. \((.*)\)$/s;
 const PORT_USED = /^la porta (\d+) e' gia' usata da (?:il programma «(.+)»|un altro programma \(forse Aurora e' gia' aperta\)): chiudilo o scegli un'altra porta in Impostazioni > Accesso$/s;
 
+const EVIDENCE: ReadonlyArray<[RegExp, Key]> = [
+  [/^il nome "(.*)" contiene il modello$/s, 'core.ev.nameModel'],
+  [/^il nome "(.*)" e' quello di un'interfaccia radio$/s, 'core.ev.nameInterface'],
+  [/^porta seriale (.*)$/s, 'core.ev.serial'],
+  [/^Adattatore USB-seriale \((.*)\): il modello va scelto a mano$/s, 'core.ev.adapter'],
+];
+const USB_ID = /^identita' USB ([0-9A-F]{4}:[0-9A-F]{4})(, porta CAT \(Enhanced\))?$/s;
+
 export function coreText(message: string | null | undefined, t: T): string {
   const m = (message ?? '').trim();
   if (m === '') return '';
@@ -49,6 +57,12 @@ export function coreText(message: string | null | undefined, t: T): string {
   if (r) return t('core.retry', { cause: coreText(r[1], t), s: r[2] ?? '' });
   r = STOPPED.exec(m);
   if (r) return t('core.rigctldStopped', { raw: r[1] ?? '' });
+  for (const [re, key] of EVIDENCE) {
+    const e = re.exec(m);
+    if (e) return t(key, { name: e[1] ?? '' });
+  }
+  r = USB_ID.exec(m);
+  if (r) return t(r[2] ? 'core.ev.usbCat' : 'core.ev.usb', { id: r[1] ?? '' });
   r = PORT_USED.exec(m);
   if (r) return t(r[2] ? 'core.portUsedBy' : 'core.portUsed', { port: r[1] ?? '', who: r[2] ?? '' });
   return m;
