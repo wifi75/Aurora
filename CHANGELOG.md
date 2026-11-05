@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.138 - 2026-11-05
+- **Dashboard a blocchi** (finestra `#/finestra/dash`, `GridBoard.tsx`): griglia a 12 colonne, ogni elemento si trascina dalla barretta e si ridimensiona dall'angolo, gli altri blocchi si spostano e risalgono; posizione e misura ricordate. Si sceglie dal menu ⧉ («Nella dashboard a blocchi») e in Impostazioni › Finestre.
+
 ## 0.11.137 - 2026-11-05
 - **Impostazioni › Finestre**: «Dove sta ogni elemento» per i 7 pannelli, la Mappa e la Propagazione (finestra principale, finestra nuova, accanto a una finestra a parte, nascosto) al posto delle caselle «Pannelli mostrati»; «Finestre a parte aperte» con Mostra, Rimetti e Rimetti tutto; «Ripristina la disposizione» rimette anche tutto nella finestra principale (`settings/WhereTab.tsx`).
 - **Installazione piu' veloce**: niente PowerShell per chiudere Aurora (solo `taskkill`, mezzo secondo); PowerShell solo se la cartella di Hamlib resta bloccata, al massimo due volte da 6 s. Nella 0.11.135-136, su PC dove PowerShell non risponde, l'installazione restava ferma fino a un minuto.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
-import { detach, useGroups, type ItemId } from '../lib/detached';
+import { DASHBOARD, detach, useGroups, type ItemId } from '../lib/detached';
 import { REMOTE_HOST } from '../lib/phone';
 import { ITEM_TITLE } from './SoloWindow';
 
@@ -29,7 +29,8 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
     return () => window.removeEventListener('pointerdown', close);
   }, [menu]);
   if (REMOTE_HOST) return null;
-  const others = groups.filter((g) => g.open && !g.items.includes(item));
+  const others = groups.filter((g) => g.open && !g.items.includes(item) && g.id !== DASHBOARD);
+  const dash = groups.find((g) => g.id === DASHBOARD && g.open);
   const go = (into?: string) => {
     setMenu(false);
     detach(item, into);
@@ -38,7 +39,7 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
   };
   return (
     <span className="dock-detach-host" ref={host} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-      <button type="button" className={className} title={t('win.detach')} aria-label={t('win.detach')} onClick={() => (others.length === 0 ? go() : setMenu(!menu))}>
+      <button type="button" className={className} title={t('win.detach')} aria-label={t('win.detach')} onClick={() => setMenu(!menu)}>
         {ICON}
       </button>
       {menu ? (
@@ -46,6 +47,11 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
           <button type="button" role="menuitem" onClick={() => go()}>
             {t('win.new')}
           </button>
+          {dash?.items.includes(item) ? null : (
+            <button type="button" role="menuitem" onClick={() => go(DASHBOARD)}>
+              {t('win.dash')}
+            </button>
+          )}
           {others.map((g) => (
             <button key={g.id} type="button" role="menuitem" onClick={() => go(g.id)}>
               {t('win.beside', { what: g.items.map((i) => t(ITEM_TITLE[i])).join(' · ') })}

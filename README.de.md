@@ -38,7 +38,7 @@ Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
 ## Stand
 
-Version 0.11.137: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
+Version 0.11.138: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
 
 - **Station**: Nachrichtenliste wie in JTDX (Land mit Flagge, Entfernung, nach Typ gefärbte Zeilen, gerufenes Rufzeichen und Anrufe an dich hervorgehoben), WebGPU/WebGL2-Wasserfall mit verschiebbaren Rx/Tx-Balken, Tx1–Tx6 mit der QSO-Phase, Band- und Modusleiste (FT8/FT4) mit Umschaltung direkt auf der Seite.
 - **Anruferwarteschlange**: Rechtsklick auf eine rufende Station reiht sie ein (Kennzeichnung «IN CODA» mit Platz); nach dem geloggten QSO antwortet Aurora dem Ersten in der Schlange; der Schalter «Risp. a tutti» reiht automatisch jeden ein, der dich ruft; «Canc DX» stoppt das Senden sofort. Nur mit der eigenen Engine.
