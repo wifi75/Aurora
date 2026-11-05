@@ -1,3 +1,4 @@
+import { DEFAULT_STYLE, MAP_STYLES } from '../lib/mapStyles';
 import { useGroups } from '../lib/detached';
 import { DetachedNote } from '../components/DetachedNote';
 import { DetachButton } from '../components/DetachButton';
@@ -83,6 +84,13 @@ function MapPageBody({ solo }: { solo: boolean }) {
             <input type="checkbox" checked={options.tiles} onChange={(e) => change({ tiles: e.target.checked })} />
             {t('map.tiles')}
           </label>
+          <select className="map-style" value={options.style ?? DEFAULT_STYLE} disabled={!options.tiles} title={t('map.style')} aria-label={t('map.style')} onChange={(e) => change({ style: e.target.value })}>
+            {MAP_STYLES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
           <label className="map-check" title={t('tip.ui.mapNight')}>
             <input type="checkbox" checked={options.night} onChange={(e) => change({ night: e.target.checked })} />
             {t('map.night')}
@@ -114,6 +122,7 @@ function MapPageBody({ solo }: { solo: boolean }) {
           selected={selected}
           onSelect={setSelected}
           tiles={options.tiles}
+          mapStyleId={options.style ?? DEFAULT_STYLE}
           night={options.night}
           labels={mapLabels(t)}
         />

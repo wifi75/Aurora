@@ -6,7 +6,7 @@ import { ITEM_TITLE } from '../components/SoloWindow';
 import { useState } from 'react';
 import { Actions, Group } from './layout';
 
-const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'map', 'propagation', 'display'];
+const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'map', 'dxmap', 'propagation', 'display'];
 
 /**
  * Dove sta ogni elemento (Impostazioni › Finestre): nella finestra principale, in una finestra a parte (nuova o accanto a un'altra) o
@@ -25,7 +25,7 @@ export function WhereGroups() {
     return 'main';
   };
   const setHidden = (item: ItemId, want: boolean) => {
-    if (item === 'map' || item === 'propagation' || item === 'display') return;
+    if (item === 'map' || item === 'dxmap' || item === 'propagation' || item === 'display') return;
     if (hidden.includes(item) !== want) {
       const next = toggleHidden(layout, item);
       saveLayout(browserStorage(), next);
@@ -54,7 +54,7 @@ export function WhereGroups() {
         <div className="where-list">
           {ITEMS.map((item) => {
             const place = placeOf(item);
-            const page = item === 'map' || item === 'propagation' || item === 'display';
+            const page = item === 'map' || item === 'dxmap' || item === 'propagation' || item === 'display';
             return (
               <label key={item} className="where-row">
                 <span>{t(ITEM_TITLE[item])}</span>

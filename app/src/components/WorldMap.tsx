@@ -1,5 +1,6 @@
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { mapStyle } from '../lib/mapStyles';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
@@ -48,6 +49,8 @@ interface Props {
   compact?: boolean;
   /** Tessere diverse da quelle di base (es. la cartina stradale chiara di Esri). */
   tileUrl?: string;
+  /** Lo sfondo scelto (`lib/mapStyles.ts`); senza, quello di sempre (National Geographic). */
+  mapStyleId?: string;
   /** Tropici, equatore e circoli polari (di base si'). */
   parallels?: boolean;
   labels: Labels;
@@ -76,7 +79,10 @@ function cssColor(variable: string | null, fallback: string): string {
  * lavorati in giallo, le stazioni che si ricevono ora, chi ci ha ricevuto con le sue linee e la lettura sotto il cursore.
  * Si trascina e si ingrandisce con la rotella.
  */
-export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, tileUrl = TILES_URL, labels }: Props) {
+export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, tileUrl, mapStyleId, labels }: Props) {
+  const style = mapStyle(mapStyleId);
+  const url = tileUrl ?? (mapStyleId ? style.url : TILES_URL);
+  const attribution = tileUrl || !mapStyleId ? ATTRIBUTION : style.attribution;
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<'tiles' | 'lines' | 'worked' | 'stations' | 'receivers' | 'home', L.Layer | null>>({
@@ -173,11 +179,12 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
     m.getContainer().classList.remove('worldmap--tiles-failed');
-    const layer = tiles ? L.tileLayer(tileUrl, { attribution: ATTRIBUTION, maxNativeZoom: 10, maxZoom: 10, noWrap: true, bounds: WORLD }) : null;
+    const layer = tiles ? L.tileLayer(url, { attribution, maxNativeZoom: mapStyleId ? style.maxNativeZoom : 10, maxZoom: 10, noWrap: true, bounds: WORLD, ...(style.subdomains && mapStyleId ? { subdomains: style.subdomains } : {}) }) : null;
+    m.getContainer().classList.toggle('worldmap--dark-tiles', tiles && !!mapStyleId && !!style.dark);
     // senza internet le tessere non arrivano: allora si mostra la terra disegnata dal programma (prima appariva sempre per un attimo)
     layer?.on('tileerror', () => m.getContainer().classList.add('worldmap--tiles-failed'));
     replace('tiles', layer);
-  }, [tiles, tileUrl]);
+  }, [tiles, url, attribution]);
 
   // la notte e le linee fisse: tropici e circoli polari
   useEffect(() => {
