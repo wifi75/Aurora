@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.144',
+    released: '2026-11-05T17:18:22Z',
+    kind: 'new',
+    title: ['Ridimensiona il display, non solo la finestra', 'Resize the display, not just the window', 'Größe der Anzeige ändern, nicht nur des Fensters', 'Redimensionne l’afficheur, pas seulement la fenêtre', 'Redimensiona la pantalla, no solo la ventana', 'Redimensiona o ecrã, não só a janela'],
+    text: [
+      "Nella finestra a parte il display ha una maniglia nel suo angolo in basso a destra: trascinala e il display si ingrandisce o si rimpicciolisce da solo, in proporzione e senza perdere qualità, qualunque sia la misura della finestra. Doppio clic sulla maniglia: torna ad adattarsi alla finestra. La misura si ricorda.",
+      "In the separate window the display has a handle in its bottom-right corner: drag it and the display grows or shrinks on its own, in proportion and without losing quality, whatever the window size. Double-click the handle: it fits the window again. The size is remembered.",
+      "Im eigenen Fenster hat die Anzeige einen Griff in der Ecke unten rechts: zieh ihn und die Anzeige wird größer oder kleiner, proportional und ohne Qualitätsverlust, unabhängig von der Fenstergröße. Doppelklick auf den Griff: wieder an das Fenster angepasst. Die Größe wird gemerkt.",
+      "Dans la fenêtre à part l’afficheur a une poignée dans son coin en bas à droite : fais-la glisser et l’afficheur grandit ou rapetisse tout seul, en proportion et sans perte de qualité, quelle que soit la taille de la fenêtre. Double-clic sur la poignée : il s’adapte de nouveau à la fenêtre. La taille est mémorisée.",
+      "En la ventana aparte la pantalla tiene un asa en su esquina inferior derecha: arrástrala y la pantalla crece o se reduce sola, en proporción y sin perder calidad, sea cual sea el tamaño de la ventana. Doble clic en el asa: vuelve a ajustarse a la ventana. El tamaño se recuerda.",
+      "Na janela à parte o ecrã tem uma pega no canto inferior direito: arrasta-a e o ecrã cresce ou diminui sozinho, em proporção e sem perder qualidade, seja qual for o tamanho da janela. Duplo clique na pega: volta a ajustar-se à janela. O tamanho fica lembrado.",
+    ],
+  },
+  {
     version: '0.11.143',
     released: '2026-11-05T17:03:40Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Beaucoup de stations restaient sans chute d’eau ni émission car le nom enregistré de la carte son ne correspondait plus : « Default Input Device », lettres accentuées mal enregistrées, le numéro ajouté par Windows à la reconnexion, Windows dans une autre langue. Aurora la retrouve désormais. Si OmniRig n’est pas installé, elle le dit clairement.',
       'Muchas estaciones se quedaban sin cascada ni transmisión porque el nombre guardado de la tarjeta de sonido ya no coincidía: «Default Input Device», letras acentuadas mal guardadas, el número que Windows añade al reconectar la tarjeta, Windows en otro idioma. Ahora Aurora la encuentra. Si OmniRig no está instalado lo dice claramente.',
       'Muitas estações ficavam sem cascata nem transmissão porque o nome guardado da placa de som já não correspondia: «Default Input Device», letras acentuadas mal guardadas, o número que o Windows junta ao religar a placa, Windows noutra língua. Agora a Aurora encontra-a. Se o OmniRig não estiver instalado, di-lo claramente.',
-    ],
-  },
-  {
-    version: '0.11.104',
-    released: '2026-11-04T11:40:40Z',
-    kind: 'new',
-    title: ['Copia delle impostazioni e suono di avvio', 'Settings backup and start-up sound', 'Sicherung der Einstellungen und Startton', 'Copie des réglages et son de démarrage', 'Copia de los ajustes y sonido de inicio', 'Cópia das definições e som de arranque'],
-    text: [
-      'In Impostazioni › Assistenza «Salva una copia» mette sul Desktop uno zip con tutte le impostazioni e il log dei QSO; «Ripristina da una copia» le rimette al posto alla prossima apertura (password dei servizi escluse). Il saluto sonoro della schermata di avvio si sente di nuovo.',
-      'In Settings › Support «Save a backup» puts a zip with all settings and the QSO log on the Desktop; «Restore from a backup» puts them back the next time Aurora opens (service passwords excluded). The start-up screen greeting sound plays again.',
-      'Unter Einstellungen › Support legt «Sicherung speichern» eine ZIP-Datei mit allen Einstellungen und dem QSO-Log auf den Desktop; «Aus Sicherung wiederherstellen» setzt sie beim nächsten Start zurück (ohne Passwörter der Dienste). Der Begrüßungston des Startbildschirms ist wieder zu hören.',
-      'Dans Réglages › Assistance « Enregistrer une copie » met sur le Bureau un zip avec tous les réglages et le journal des QSO ; « Restaurer depuis une copie » les remet en place à la prochaine ouverture (mots de passe des services exclus). Le son d’accueil de l’écran de démarrage s’entend de nouveau.',
-      'En Ajustes › Asistencia «Guardar una copia» deja en el Escritorio un zip con todos los ajustes y el log de QSO; «Restaurar desde una copia» los repone en la próxima apertura (sin contraseñas de servicios). El sonido de bienvenida de la pantalla de inicio vuelve a oírse.',
-      'Em Definições › Assistência «Guardar uma cópia» põe no Ambiente de trabalho um zip com todas as definições e o log dos QSO; «Restaurar de uma cópia» repõe-nas na próxima abertura (sem palavras-passe dos serviços). O som de boas-vindas do ecrã de arranque volta a ouvir-se.',
     ],
   },
 ];
