@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.132',
+    released: '2026-11-05T11:49:36Z',
+    kind: 'new',
+    title: ['Decodifica più sensibile e messaggi nella tua lingua', 'More sensitive decoding and messages in your language', 'Empfindlichere Dekodierung und Meldungen in deiner Sprache', 'Décodage plus sensible et messages dans ta langue', 'Decodificación más sensible y mensajes en tu idioma', 'Descodificação mais sensível e mensagens na tua língua'],
+    text: [
+      "FT8 ritrova il seguito dei QSO in corso anche a -23 dB, come JTDX; AGCc vale anche in FT4. I messaggi della radio, dell'audio e degli invii ai servizi si leggono nella lingua scelta. Meno blocchi audio persi, avvisi sullo schermo per audio, radio e OmniRig, «Verifica tutto» in Impostazioni › Assistenza e il nome del programma che occupa una porta.",
+      "FT8 picks up the rest of ongoing QSOs even at -23 dB, as JTDX does; AGCc now works in FT4 too. Radio, audio and service upload messages read in the chosen language. Fewer lost audio blocks, on-screen notices for audio, radio and OmniRig, «Check everything» in Settings › Support and the name of the program holding a port.",
+      "FT8 findet die Fortsetzung laufender QSOs auch bei -23 dB, wie JTDX; AGCc gilt jetzt auch in FT4. Meldungen von Radio, Audio und Diensten erscheinen in der gewählten Sprache. Weniger verlorene Audioblöcke, Hinweise auf dem Bildschirm für Audio, Radio und OmniRig, «Alles prüfen» unter Einstellungen › Hilfe und der Name des Programms, das einen Port belegt.",
+      "FT8 retrouve la suite des QSO en cours même à -23 dB, comme JTDX ; AGCc vaut aussi en FT4. Les messages de la radio, de l’audio et des envois aux services se lisent dans la langue choisie. Moins de blocs audio perdus, avis à l’écran pour audio, radio et OmniRig, « Tout vérifier » dans Réglages › Assistance et le nom du programme qui occupe un port.",
+      "FT8 recupera la continuación de los QSO en curso incluso a -23 dB, como JTDX; AGCc vale también en FT4. Los mensajes de la radio, del audio y de los envíos a servicios se leen en el idioma elegido. Menos bloques de audio perdidos, avisos en pantalla para audio, radio y OmniRig, «Verificar todo» en Ajustes › Asistencia y el nombre del programa que ocupa un puerto.",
+      "O FT8 recupera a continuação dos QSO em curso mesmo a -23 dB, como o JTDX; o AGCc vale também em FT4. As mensagens do rádio, do áudio e dos envios aos serviços leem-se na língua escolhida. Menos blocos de áudio perdidos, avisos no ecrã para áudio, rádio e OmniRig, «Verificar tudo» em Definições › Assistência e o nome do programa que ocupa uma porta.",
+    ],
+  },
+  {
     version: '0.11.131',
     released: '2026-11-04T22:05:09Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Le Guide est divisé en six groupes (premiers pas, radio et audio, trafic, programmes connectés et journaux, téléphone et tablette, problèmes courants) avec des étapes courtes et « Si ça ne marche pas ». Nouvelles entrées pour relier Log4OM, LogHX3 et BBLogger2 en UDP, côté Aurora et côté journal.',
       'La Guía está dividida en seis grupos (primeros pasos, radio y audio, operar, programas conectados y registros, teléfono y tableta, problemas comunes) con pasos breves y «Si no funciona». Nuevas entradas para conectar Log4OM, LogHX3 y BBLogger2 por UDP, del lado de Aurora y del lado del registro.',
       'O Guia está dividido em seis grupos (primeiros passos, rádio e áudio, operar, programas ligados e registos, telemóvel e tablet, problemas comuns) com passos curtos e «Se não funcionar». Novas entradas para ligar Log4OM, LogHX3 e BBLogger2 por UDP, do lado da Aurora e do lado do registo.',
-    ],
-  },
-  {
-    version: '0.11.94',
-    released: '2026-11-03T21:11:53Z',
-    kind: 'fixed',
-    title: ['Fox e attività di banda più comodi', 'Handier Fox page and band activity', 'Bequemere Fox-Seite und Bandaktivität', 'Page Fox et activité de bande plus pratiques', 'Página Fox y actividad de banda más cómodas', 'Página Fox e atividade de banda mais práticas'],
-    text: [
-      'Nella pagina Fox la cascata è larga solo fino a «Messaggi ricevuti», che scende fino in fondo. Nell’attività di banda il messaggio ricevuto ha più spazio e un carattere un po’ più piccolo. Il messaggio su «qualsiasi messaggio» indica la scheda giusta (Programmi collegati).',
-      'On the Fox page the waterfall only goes as far as «Received messages», which now runs to the bottom. In band activity the received message has more room and a slightly smaller font. The «any message» notice points to the right tab (Connected programs).',
-      'Auf der Fox-Seite reicht der Wasserfall nur bis «Empfangene Meldungen», das jetzt bis unten geht. In der Bandaktivität hat die empfangene Meldung mehr Platz und eine etwas kleinere Schrift. Der Hinweis zu «jede Nachricht» zeigt auf den richtigen Reiter (Verbundene Programme).',
-      'Sur la page Fox la cascade ne va que jusqu’à « Messages reçus », qui descend jusqu’en bas. Dans l’activité de bande le message reçu a plus de place et une police un peu plus petite. L’avis sur « tout message » indique le bon onglet (Programmes connectés).',
-      'En la página Fox la cascada llega solo hasta «Mensajes recibidos», que baja hasta el final. En la actividad de banda el mensaje recibido tiene más espacio y una letra algo más pequeña. El aviso de «cualquier mensaje» indica la pestaña correcta (Programas conectados).',
-      'Na página Fox a cascata vai só até «Mensagens recebidas», que desce até ao fundo. Na atividade de banda a mensagem recebida tem mais espaço e letra um pouco mais pequena. O aviso de «qualquer mensagem» indica o separador certo (Programas ligados).',
     ],
   },
 ];
