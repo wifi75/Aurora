@@ -95,6 +95,10 @@ export interface DxMapSettings {
   dots: boolean;
   /** Propagazione: mappa di calore e quadratini di chi ci ha ricevuto (PSK Reporter). */
   heat: boolean;
+  /** Linee da noi a chi ci ha ricevuto. */
+  spotPaths: boolean;
+  /** Colore di quelle linee. */
+  spotColor: string;
   /** Minuti: gli spot piu' vecchi non contano. */
   spotMaxMin: number;
   /** Linee fra le stazioni che si chiamano (chi chiama chi). */
@@ -364,6 +368,17 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     }
     heat.setPoints(points);
     const group = L.layerGroup();
+    // linee da noi a chi ci ha ricevuto (le «PSK Spot Paths» di GridTracker2): tratteggio che scorre verso il ricevitore, cerchietto nero
+    const from = homeRef.current;
+    if (settings.spotPaths && from) {
+      for (const p of live) {
+        const to = gridToLatLon(p.grid.slice(0, 6)) ?? gridToLatLon(p.grid.slice(0, 4));
+        if (!to) continue;
+        const path = greatCircle(from, to, 40).map((q) => [q.lat, q.lon] as [number, number]);
+        L.polyline(path, { interactive: false, className: `dxmap-link${settings.arcsAnimated ? ' dxmap-link--anim' : ''}`, color: settings.spotColor, weight: settings.linkWidth, opacity: 0.9 }).addTo(group);
+        L.circleMarker([to.lat, to.lon], { interactive: false, radius: 3.5, color: '#111', weight: 1.6, fill: false }).addTo(group);
+      }
+    }
     for (const p of live) {
       const c = squareCorner(p.grid.slice(0, 4));
       if (!c) continue;
@@ -372,7 +387,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         .addTo(group);
     }
     replace('spots', group);
-  }, [spots, settings.heat, settings.spotMaxMin]);
+  }, [spots, settings.heat, settings.spotMaxMin, settings.spotPaths, settings.spotColor, settings.linkWidth, settings.arcsAnimated, home?.lat, home?.lon]);
 
   // casa
   useEffect(() => {

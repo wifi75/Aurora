@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.151',
+    released: '2026-11-05T20:05:44Z',
+    kind: 'changed',
+    title: ['Propagazione sulla cartina', 'Propagation on the map', 'Ausbreitung auf der Karte', 'Propagation sur la carte', 'Propagación en el mapa', 'Propagação no mapa'],
+    text: [
+      "Mappa DX: con «Propagazione» acceso, una linea tratteggiata dalla tua stazione a ogni stazione che ti ha ricevuto (PSK Reporter), come in GridTracker2; si spegne e si colora dal menu ⚙. Le linee «Chi chiama chi» usano i quadrati di tutte le stazioni sentite da quando Aurora è aperta, quindi compaiono molte più linee.",
+      "DX Map: with «Propagation» on, a dashed line from your station to every station that received you (PSK Reporter), as in GridTracker2; switch it off and pick its color in the ⚙ menu. «Who calls whom» lines use the squares of every station heard since Aurora started, so many more lines appear.",
+      "DX-Karte: Mit «Ausbreitung» eine gestrichelte Linie von deiner Station zu jeder Station, die dich empfangen hat (PSK Reporter), wie in GridTracker2; im Menü ⚙ abschaltbar und einfärbbar. Die Linien «Wer ruft wen» nutzen die Felder aller seit dem Start gehörten Stationen, daher erscheinen viel mehr Linien.",
+      "Carte DX : avec «Propagation» activé, une ligne en tirets de ta station vers chaque station qui t’a reçu (PSK Reporter), comme dans GridTracker2 ; on la coupe et on choisit sa couleur dans le menu ⚙. Les lignes «Qui appelle qui» utilisent les carrés de toutes les stations entendues depuis le démarrage, donc beaucoup plus de lignes apparaissent.",
+      "Mapa DX: con «Propagación» encendido, una línea discontinua desde tu estación a cada estación que te ha recibido (PSK Reporter), como en GridTracker2; se apaga y se colorea en el menú ⚙. Las líneas «Quién llama a quién» usan las cuadrículas de todas las estaciones oídas desde que Aurora está abierta, así aparecen muchas más líneas.",
+      "Mapa DX: com «Propagação» ligado, uma linha tracejada da tua estação para cada estação que te recebeu (PSK Reporter), como no GridTracker2; desliga-se e escolhe-se a cor no menu ⚙. As linhas «Quem chama quem» usam os quadrados de todas as estações ouvidas desde que a Aurora está aberta, por isso aparecem muitas mais linhas.",
+    ],
+  },
+  {
     version: '0.11.150',
     released: '2026-11-05T18:51:32Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Avec un journal vide, un clic sur le panneau Journal ouvre Réglages › Programmes connectés : en haut l’import et l’export ADIF de ton journal, juste en dessous la liaison vers un journal externe par UDP (Log4OM, GridTracker, BBLogger…).",
       "Con el log vacío, el clic en el panel Log abre Ajustes › Programas conectados: arriba la importación y exportación ADIF de tu log, justo debajo la conexión a un log externo por UDP (Log4OM, GridTracker, BBLogger…).",
       "Com o log vazio, o clique no painel Log abre Definições › Programas ligados: em cima a importação e exportação ADIF do teu log, logo abaixo a ligação a um log externo por UDP (Log4OM, GridTracker, BBLogger…).",
-    ],
-  },
-  {
-    version: '0.11.111',
-    released: '2026-11-04T12:32:44Z',
-    kind: 'changed',
-    title: ['Avvisi che non spostano i pannelli', 'Notices that do not move the panels', 'Hinweise, die die Felder nicht verschieben', 'Des avis qui ne déplacent plus les panneaux', 'Avisos que no mueven los paneles', 'Avisos que não mexem nos painéis'],
-    text: [
-      "Gli avvisi della stazione (segnale debole, nessun messaggio decodificato, orologio…) compaiono ora come piccole schede in basso a destra, ognuna con la sua ✕: i pannelli non scendono più ogni volta che ne arriva uno.",
-      "Station notices (weak signal, no decoded messages, clock…) now appear as small cards at the bottom right, each with its own ✕: the panels no longer move down every time one arrives.",
-      "Stationshinweise (schwaches Signal, keine dekodierten Meldungen, Uhr…) erscheinen jetzt als kleine Karten unten rechts, jede mit ihrem ✕: die Felder rutschen nicht mehr nach unten, wenn einer kommt.",
-      "Les avis de la station (signal faible, aucun message décodé, horloge…) apparaissent maintenant en petites cartes en bas à droite, chacune avec sa ✕ : les panneaux ne descendent plus à chaque avis.",
-      "Los avisos de la estación (señal débil, ningún mensaje decodificado, reloj…) aparecen ahora como pequeñas tarjetas abajo a la derecha, cada una con su ✕: los paneles ya no bajan cada vez que llega uno.",
-      "Os avisos da estação (sinal fraco, nenhuma mensagem descodificada, relógio…) aparecem agora como pequenos cartões em baixo à direita, cada um com o seu ✕: os painéis já não descem sempre que chega um.",
     ],
   },
 ];

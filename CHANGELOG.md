@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.151 - 2026-11-05
+### Aggiunto
+- Mappa DX: linee dalla propria stazione a chi l'ha ricevuta (PSK Reporter), con interruttore e colore nel menu.
+
+### Modificato
+- Mappa DX: i quadrati delle stazioni sentite restano ricordati finché Aurora è aperta, così le linee «Chi chiama chi» compaiono anche senza quadrato nell'ultimo messaggio.
+
 ## 0.11.150 - 2026-11-05
 ### Aggiunto
 - Mappa DX: propagazione (mappa di calore e quadratini PSK Reporter, Spot RX, durata massima), linee «Chi chiama chi» tratteggiate e animate personalizzabili, centro del paese se manca il quadrato, quadrati in onda QSX/CQ/CQDX/QRZ divisi in triangoli con il log, legenda; puntini delle stazioni facoltativi.
