@@ -92,6 +92,12 @@ Stato al 2026-11-04, versione 0.11.131. Per riprendere il lavoro leggi anche `do
 - «Verifica tutto» sta in Impostazioni › Assistenza, non nella testata (decisione del proprietario: pulsanti nei menu giusti).
 - AGCc FT4: banco di prova `ft4::decode::tests::esplora_agc_ft4` (ignorato): -16 dB 15→20/20, -17 dB 3→15/20.
 
+## Messaggi del core nelle sei lingue (2026-11-05, issue #1)
+- Regola: nessun testo italiano del core deve arrivare a schermo cosi' com'e'. Il core scrive i messaggi in italiano (stato e errori di CAT/Hamlib/OmniRig/PTT, rilevamento della radio, registro delle automazioni, errori audio, porta occupata); l'interfaccia li passa sempre da `coreText()` (`app/src/lib/coreText.ts`), che li riconosce (frasi esatte in `EXACT`, frasi con valori in `PATTERNS`) e li mostra con le chiavi `core.*` (`app/src/i18n/strings/coretext.ts`). Un messaggio sconosciuto resta com'e'.
+- Ogni messaggio nuovo del core che arriva all'interfaccia: aggiungerlo a `coreText.ts` con le sei lingue, oppure mandare un codice da tradurre nell'interfaccia (meglio per le funzioni nuove).
+- Guardia: `core/crates/aurora/tests/core_text.rs` fallisce se un testo di `EXACT` non esiste piu' identico nel codice Rust (testo cambiato = traduzione da rifare).
+- Restano solo in italiano i dettagli tecnici grezzi (errori del sistema operativo, risposte dei servizi esterni) dentro le frasi tradotte.
+
 ## Problemi noti
 - Versione smartphone (segnalato 2026-10-24): causa trovata e corretta, il flusso WebSocket si chiudeva ogni secondo in accesso senza codice. Da riprovare sul telefono vero; restano da verificare layout e lampeggio grafico.
 - Da fuori casa non ci si collega ancora (trasporti Tailscale/Cloudflare da fare); l'accesso senza codice vale solo per indirizzi della rete di casa.

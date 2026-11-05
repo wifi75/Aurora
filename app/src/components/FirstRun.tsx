@@ -5,6 +5,7 @@ import { getAudioDevices, getEngineSettings, putAudioSettings, putEngineSettings
 import { useLang, useT } from '../i18n';
 import { LANGS, LANG_NAMES, type Lang } from '../i18n/core';
 import { browserStorage } from '../lib/theme';
+import { coreText } from '../lib/coreText';
 
 const DONE_KEY = 'aurora-first-run-done';
 const CALL_RE = /^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(\/[A-Z0-9]{1,4})?$/;
@@ -80,7 +81,7 @@ export function FirstRun() {
     try {
       const r = await putAudioSettings(change);
       const msg = r.input.message ?? r.output.message;
-      if (!r.ok && msg) setError(msg);
+      if (!r.ok && msg) setError(coreText(msg, t));
       else setStep(3);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

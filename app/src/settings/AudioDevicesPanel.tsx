@@ -5,6 +5,7 @@ import { useT, type Key, type T } from '../i18n';
 import { Help } from './common';
 import { useAutosave } from './useAutosave';
 import { Actions, Field, Group, Message, Notes, Page } from './layout';
+import { coreText } from '../lib/coreText';
 
 const IN_CHANNELS = ['Mono', 'Left', 'Right'] as const;
 const OUT_CHANNELS = ['Mono', 'Left', 'Right', 'Both'] as const;
@@ -112,7 +113,7 @@ export function resultLines(result: AudioResult, t: T): { text: string; bad: boo
     else if (part.status === 'saved_only') lines.push({ text: t('aud.res.savedOnly', { part: label }), bad: false });
     else if (part.status === 'failed') {
       const tail = part.restored && name ? ` ${t('aud.res.restored', { name })}` : part.in_use === null && key !== 'aud.part.save' ? ` ${t('aud.res.lost')}` : '';
-      lines.push({ text: `${t('aud.res.failed', { part: label, reason: part.message ?? '—' })}${tail}`, bad: true });
+      lines.push({ text: `${t('aud.res.failed', { part: label, reason: part.message ? coreText(part.message, t) : '—' })}${tail}`, bad: true });
     }
   }
   if (lines.length === 0) lines.push({ text: t('aud.res.nothing'), bad: false });

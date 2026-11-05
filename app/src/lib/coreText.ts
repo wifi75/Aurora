@@ -6,7 +6,7 @@ type T = (key: Key, vars?: Record<string, string | number>) => string;
  * I messaggi che il core scrive in italiano (stato e errori di CAT, Hamlib, OmniRig, PTT) riconosciuti e mostrati nella lingua scelta.
  * Un messaggio sconosciuto resta com'e'. I messaggi composti («Collegamento perso: <causa> Nuovo tentativo ...») si traducono a pezzi.
  */
-const EXACT: ReadonlyArray<[string, Key]> = [
+export const EXACT: ReadonlyArray<[string, Key]> = [
   ["Manca rigctld (Hamlib): mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.", 'core.rigctld'],
   ["La porta seriale e' occupata da un altro programma: chiudilo (o scegli un'altra porta) e riprova.", 'core.portBusy'],
   ["La porta seriale non esiste: controlla il numero (Windows puo' rinumerarla) e che la radio sia accesa e collegata.", 'core.portMissing'],
@@ -31,6 +31,42 @@ const EXACT: ReadonlyArray<[string, Key]> = [
     'core.omniNoExtras',
   ],
   ['nessuna risposta', 'core.noReply'],
+  ["Automazione spenta dall'operatore", 'core.au.offByUser'],
+  ['STOP TX: automazione spenta', 'core.au.stop'],
+  ['Nominativo non leggibile nel messaggio', 'core.au.noCall'],
+  ['paese nuovo', 'core.au.newDxcc'],
+  ['paese nuovo su questa banda', 'core.au.newDxccBand'],
+  ['zona nuova', 'core.au.newZone'],
+  ['griglia nuova', 'core.au.newGrid'],
+  ['CQ di interesse', 'core.au.cqOfInterest'],
+  ['decodifica incerta (segnata con «?» dal motore)', 'core.au.uncertain'],
+  ['il nominativo non ha la forma di un nominativo', 'core.au.badShape'],
+  ['segnale molto debole di una stazione mai sentita prima: possibile falso decode', 'core.au.ghost'],
+  ['tentativi esauriti senza QSO', 'core.au.exhausted'],
+];
+
+/** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
+const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
+  // il modo arriva da `format!` nel core: non e' una frase intera da controllare
+  { re: /^Automazione accesa, modo reale$/s, key: 'core.au.onLive', vars: [] },
+  { re: /^Automazione accesa, modo in prova a vuoto$/s, key: 'core.au.onDry', vars: [] },
+  { re: /^Nessun dispositivo collegato da (\d+) s: automazione spenta$/s, key: 'core.au.deadMan', vars: ['s'] },
+  { re: /^Tra (\d+) CQ interessanti scelto (\S+) \(altri: (.*)\)$/s, key: 'core.au.chose', vars: ['n', 'call', 'others'] },
+  { re: /^(\S+): segnale (-?\d+) dB sotto il minimo di (-?\d+) dB$/s, key: 'core.au.weak', vars: ['call', 'snr', 'min'] },
+  { re: /^(\S+): QSO gia' in corso con (\S+)$/s, key: 'core.au.busy', vars: ['call', 'busy'] },
+  { re: /^(\S+) e' nell'elenco delle esclusioni$/s, key: 'core.au.excluded', vars: ['call'] },
+  { re: /^Raggiunte (\d+) risposte di fila senza QSO: automazione spenta$/s, key: 'core.au.maxRow', vars: ['n'] },
+  { re: /^Raggiunto il tetto di (\d+) risposte al giorno$/s, key: 'core.au.maxDay', vars: ['n'] },
+  { re: /^Rispondo a (\S+): (.*)$/s, key: 'core.au.reply', vars: ['call', 'why'], inner: ['why'] },
+  { re: /^Risponderei a (\S+): (.*) \(prova a vuoto\)$/s, key: 'core.au.wouldReply', vars: ['call', 'why'], inner: ['why'] },
+  { re: /^nella lista dei desiderati \((.*)\)$/s, key: 'core.au.wanted', vars: ['why'] },
+  { re: /^CQ (\S+): non e' per il tuo continente \((\S+)\)$/s, key: 'core.au.notContinent', vars: ['to', 'own'] },
+  { re: /^CQ DX dal tuo stesso continente \((\S+)\)$/s, key: 'core.au.sameContinent', vars: ['own'] },
+  { re: /^ingresso audio non trovato \((.*)\); disponibili: (.*)$/s, key: 'core.audio.notFound', vars: ['name', 'list'] },
+  { re: /^configurazione audio non disponibile: (.*)$/s, key: 'core.audio.noConfig', vars: ['raw'] },
+  { re: /^ingresso audio non aperto \(occupato da un'altra applicazione\?\): (.*)$/s, key: 'core.audio.busy', vars: ['raw'] },
+  // «CALL: motivo» per ultimo: il motivo si traduce se e' noto
+  { re: /^(\S+): (.+)$/s, key: 'core.au.callWhy', vars: ['call', 'why'], inner: ['why'] },
 ];
 
 const LOST = /^Collegamento perso: (.*) Nuovo tentativo (\d+) di (\d+) tra (\d+) s\.$/s;
@@ -65,5 +101,17 @@ export function coreText(message: string | null | undefined, t: T): string {
   if (r) return t(r[2] ? 'core.ev.usbCat' : 'core.ev.usb', { id: r[1] ?? '' });
   r = PORT_USED.exec(m);
   if (r) return t(r[2] ? 'core.portUsedBy' : 'core.portUsed', { port: r[1] ?? '', who: r[2] ?? '' });
+  for (const p of PATTERNS) {
+    const g = p.re.exec(m);
+    if (!g) continue;
+    const vars: Record<string, string> = {};
+    p.vars.forEach((name, i) => {
+      const v = g[i + 1] ?? '';
+      vars[name] = p.inner?.includes(name) ? coreText(v, t) : v;
+    });
+    // «CALL: motivo» con un motivo sconosciuto: si lascia tutto com'era
+    if (p.key === 'core.au.callWhy' && vars.why === (g[2] ?? '')) return m;
+    return t(p.key, vars);
+  }
   return m;
 }
