@@ -4,7 +4,6 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react
 import { useT, type Key } from '../i18n';
 import { attach, groupFromUrl, markClosed, restoreGroup, updateGroup, useGroups, type ItemId } from '../lib/detached';
 import { Live } from '../pages/Live';
-import { MapPage } from '../pages/MapPage';
 import { PropagationPage } from '../pages/PropagationPage';
 import '../styles/solo.css';
 import { freeCell, GridBoard, type Cell } from './GridBoard';
@@ -25,7 +24,8 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
 };
 
 function Item({ item }: { item: ItemId }) {
-  if (item === 'map') return <MapPage solo />;
+  // la vecchia «Mappa» staccata in una finestra si riapre come Mappa DX
+  if (item === 'map') return <DxMapPage solo />;
   if (item === 'dxmap') return <DxMapPage solo />;
   if (item === 'propagation') return <PropagationPage solo />;
   if (item === 'display') return <DisplayFit />;

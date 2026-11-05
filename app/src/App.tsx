@@ -171,7 +171,6 @@ export function App() {
           <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox" title={t('tip.nav.fox')}>{t('nav.fox')}</a>
           <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
-          <a className={`glass${route.name === 'map' ? ' glass--on' : ''}`} aria-current={route.name === 'map' ? 'page' : undefined} href="#/mappa">{t('nav.map')}</a>
           <a className={`glass${route.name === 'dxmap' ? ' glass--on' : ''}`} aria-current={route.name === 'dxmap' ? 'page' : undefined} href="#/mappa-dx">{t('nav.dxmap')}</a>
           {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}
           <a className={`glass${route.name === 'export' ? ' glass--on' : ''}`} aria-current={route.name === 'export' ? 'page' : undefined} href="#/esporta">{t('nav.log')}</a>

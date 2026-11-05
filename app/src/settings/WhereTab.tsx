@@ -6,7 +6,7 @@ import { ITEM_TITLE } from '../components/SoloWindow';
 import { useState } from 'react';
 import { Actions, Group } from './layout';
 
-const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'map', 'dxmap', 'propagation', 'display'];
+const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'dxmap', 'propagation', 'display'];
 
 /**
  * Dove sta ogni elemento (Impostazioni › Finestre): nella finestra principale, in una finestra a parte (nuova o accanto a un'altra) o
