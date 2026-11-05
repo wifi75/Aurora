@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.141',
-    released: '2026-11-05T16:52:55Z',
+    released: '2026-11-05T16:55:55Z',
     kind: 'new',
     title: ['Display su un altro schermo e log grandi', 'Display on another screen and large logs', 'Anzeige auf anderem Bildschirm und große Logs', 'Afficheur sur un autre écran et gros journaux', 'Pantalla en otra pantalla y logs grandes', 'Ecrã noutro monitor e logs grandes'],
     text: [
