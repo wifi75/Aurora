@@ -21,6 +21,7 @@ import { replyErrorMessage } from '../lib/replyError';
 import { toast } from '../lib/toast';
 import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
+import { holdControl, useShownControls } from '../lib/pendingControls';
 import { forceFreshUi } from '../lib/freshUi';
 import { ThemeToggle } from '../components/ThemeToggle';
 import '../styles/phone.css';
@@ -100,7 +101,8 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const poW = displayModel(status).meters?.power_w ?? null;
   const [pwrOpen, setPwrOpen] = useState(false);
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
-  const txOn = controls.data?.enable_tx === true;
+  const shownControls = useShownControls(controls.data ?? {});
+  const txOn = shownControls.enable_tx === true;
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   // gli ultimi 5 spot, con i filtri banda/modo salvati nel cluster di Aurora; se con quei filtri sono meno di 5, si completa con gli ultimi arrivati
   const saved = readClusterFilters();
@@ -129,6 +131,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   };
   const toggleTx = async () => {
     try {
+      holdControl('enable_tx', !txOn);
       await postControl('enable_tx', !txOn);
       client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, enable_tx: !txOn }));
       await client.invalidateQueries({ queryKey: ['controls'] });
