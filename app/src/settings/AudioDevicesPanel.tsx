@@ -159,7 +159,12 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
   if (!devices.data) return <p className="muted">{t('set.loading')}</p>;
   const data = devices.data;
   const sys = data.system_default;
-  const shown: AudioValues = { ...data.values, ...draft };
+  // una cartella fuori da quella di Aurora (per esempio rimasta da JTDX) non vale e non si mostra: vale quella di Aurora
+  const norm = (dir: string) => dir.trim().split('\\').join('/').toLowerCase();
+  const auroraRoot = norm(data.default_save_dir).replace(/\/+save\/*$/, '');
+  const insideAurora = (dir: string) => dir.trim() === '' || norm(dir).startsWith(auroraRoot);
+  const saved = insideAurora(data.values.save_dir) ? data.values : { ...data.values, save_dir: '' };
+  const shown: AudioValues = { ...saved, ...draft };
   const set = (patch: Partial<AudioValues>) => setDraft((previous) => ({ ...previous, ...patch }));
   const inStereo = channelsOf(data.inputs, shown.input, sys) >= 2;
   const outStereo = channelsOf(data.outputs, shown.output, sys) >= 2;
