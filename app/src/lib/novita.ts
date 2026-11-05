@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.137',
-    released: '2026-11-05T13:09:55Z',
+    released: '2026-11-05T13:13:04Z',
     kind: 'new',
     title: ['Scegli dove sta ogni pannello', 'Choose where each panel goes', 'Wähle, wo jedes Feld ist', 'Choisis où va chaque panneau', 'Elige dónde va cada panel', 'Escolhe onde fica cada painel'],
     text: [
