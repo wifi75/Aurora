@@ -197,8 +197,10 @@ async function attivo(req: Request, env: Env): Promise<Response> {
   await env.INDICE.prepare('INSERT INTO attivi (giorno, installazione, versione, sistema) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione, sistema = excluded.sistema')
     .bind(oggi(), id, corto(dati.versione, 20), corto(dati.sistema, 60))
     .run();
-  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima) VALUES (?1, ?2, ?2) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima')
-    .bind(id, oggi())
+  // la nazione la dice Cloudflare (`cf.country`, sigla di due lettere): ne' l'indirizzo IP ne' la citta' si salvano
+  const paese = corto((req as Request & { cf?: { country?: string } }).cf?.country, 2).toUpperCase() || 'XX';
+  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese) VALUES (?1, ?2, ?2, ?3) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese')
+    .bind(id, oggi(), paese)
     .run();
   return risposta(200, { ok: true });
 }
@@ -214,7 +216,8 @@ async function attivi(env: Env): Promise<Response> {
   // giorni oltre i 90 di `attivi`: dallo storico
   const storico = await env.INDICE.prepare('SELECT giorno, SUM(attivi) AS n FROM storico GROUP BY giorno ORDER BY giorno DESC').all();
   const nuove = await env.INDICE.prepare('SELECT prima AS giorno, COUNT(*) AS n FROM installazioni WHERE prima >= ?1 GROUP BY prima ORDER BY prima DESC').bind(giorni(30)).all();
-  return risposta(200, { totale, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
+  const perPaese = await env.INDICE.prepare("SELECT COALESCE(paese, 'XX') AS paese, COUNT(*) AS n FROM installazioni GROUP BY paese ORDER BY n DESC").all();
+  return risposta(200, { totale, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
 export default {

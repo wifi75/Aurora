@@ -68,8 +68,8 @@ quella di Windows, il giorno. **Niente altro**: nessun nominativo, locatore, rad
 l'indirizzo IP. Le righe restano 90 giorni, poi la pulizia notturna le cancella.
 
 **Storico delle installazioni**: per sapere quante installazioni hanno usato Aurora dall'inizio, il servizio tiene per sempre un
-elenco con il solo identificativo casuale e il primo e l'ultimo giorno in cui l'installazione si è fatta viva (niente versione,
-sistema o altro), e i conteggi di ogni giorno per versione e sistema (solo numeri, senza identificativi). Rigenerando
+elenco con il solo identificativo casuale, il primo e l'ultimo giorno in cui l'installazione si è fatta viva e la **nazione**
+(la sigla di due lettere, per esempio IT, che Cloudflare ricava dalla connessione; niente città, regione o indirizzo IP), e i conteggi di ogni giorno per versione e sistema (solo numeri, senza identificativi). Rigenerando
 l'identificativo in Impostazioni → Assistenza si conta come un'installazione nuova.
 
 ## Pacchetto per l'assistenza
