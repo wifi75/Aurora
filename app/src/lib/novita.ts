@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.138',
-    released: '2026-11-05T13:14:01Z',
+    released: '2026-11-05T13:18:14Z',
     kind: 'new',
     title: ['Dashboard a blocchi sul secondo schermo', 'Block dashboard on the second screen', 'Block-Dashboard auf dem zweiten Bildschirm', 'Tableau de bord à blocs sur le second écran', 'Panel de bloques en la segunda pantalla', 'Painel de blocos no segundo ecrã'],
     text: [
