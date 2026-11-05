@@ -32,11 +32,12 @@ export function RadioDisplayHeader({ solo = false }: { solo?: boolean } = {}) {
   // il display sta in una finestra a parte (secondo schermo): qui resta solo un segnaposto vuoto
   if (detached && !solo) return <span className="rd-detached" aria-hidden="true" />;
   const model = { ...raw, meters };
-  // senza radio collegata niente display vuoto e scritte sparse: un solo riquadro che porta alla configurazione
+  // radio mai configurata: un solo riquadro che porta alla configurazione. Radio configurata ma spenta o che non risponde: resta il display,
+  // spento, con la scritta «Radio non risponde» (il CAT riprova da solo; il riquadro «configura» qui era fuorviante)
   const state = cat.data?.status.state;
-  if (!phone && cat.data && (state === 'disconnected' || state === 'error')) {
-    const configured = cat.data.config.backend === 'omnirig' || cat.data.config.model !== 0;
-    return <SetupCta className="setup-cta--radio" href="#/impostazioni/radio" title={configured ? 'cta.radio.off' : 'cta.radio.none'} action="cta.radio.go" />;
+  const configured = !!cat.data && (cat.data.config.backend === 'omnirig' || cat.data.config.model !== 0);
+  if (!phone && cat.data && !configured && (state === 'disconnected' || state === 'error')) {
+    return <SetupCta className="setup-cta--radio" href="#/impostazioni/radio" title="cta.radio.none" action="cta.radio.go" />;
   }
 
   if (phone) {

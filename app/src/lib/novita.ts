@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.153',
+    released: '2026-11-05T22:08:46Z',
+    kind: 'fixed',
+    title: ['Radio spenta: resta il display', 'Radio off: the display stays', 'Funkgerät aus: das Display bleibt', 'Radio éteinte : l’afficheur reste', 'Radio apagada: el display se queda', 'Rádio desligado: o display fica'],
+    text: [
+      "Con la radio configurata ma spenta (o che non risponde) il display resta al suo posto, spento, con «Radio non risponde», e torna da solo quando riaccendi la radio. Il riquadro «Clicca per configurarla» compare solo se la radio non è mai stata configurata.",
+      "With the radio set up but switched off (or not answering) the display stays in place, dark, with «Radio not responding», and comes back on its own when you switch the radio on. The «Click to set it up» box appears only if the radio was never set up.",
+      "Ist das Funkgerät eingerichtet, aber aus (oder antwortet nicht), bleibt das Display dunkel an seinem Platz mit «Funkgerät antwortet nicht» und kommt von selbst zurück, sobald du es einschaltest. Das Feld «Klicken zum Einrichten» erscheint nur, wenn das Funkgerät nie eingerichtet wurde.",
+      "Avec la radio configurée mais éteinte (ou qui ne répond pas) l’afficheur reste en place, éteint, avec «La radio ne répond pas», et revient seul quand tu rallumes la radio. Le cadre «Clique pour la configurer» n’apparaît que si la radio n’a jamais été configurée.",
+      "Con la radio configurada pero apagada (o que no responde) el display se queda en su sitio, apagado, con «La radio no responde», y vuelve solo cuando enciendes la radio. El recuadro «Haz clic para configurarla» solo aparece si la radio nunca se configuró.",
+      "Com o rádio configurado mas desligado (ou sem resposta) o display fica no lugar, apagado, com «O rádio não responde», e volta sozinho quando ligas o rádio. O quadro «Clica para o configurar» só aparece se o rádio nunca foi configurado.",
+    ],
+  },
+  {
     version: '0.11.152',
     released: '2026-11-05T22:01:43Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand une nouvelle version d’Aurora sort, une affiche apparaît au centre au démarrage avec le numéro de version, les nouveautés et le bouton « Installer et redémarrer ». « Plus tard » la masque jusqu’à la version suivante.",
       "Cuando sale una versión nueva de Aurora, al abrirla aparece en el centro un cartel con el número de versión, las novedades y el botón «Instalar y reiniciar». «Más tarde» lo oculta hasta la versión siguiente.",
       "Quando sai uma versão nova da Aurora, ao abrir aparece ao centro um cartaz com o número da versão, as novidades e o botão «Instalar e reiniciar». «Mais tarde» esconde-o até à versão seguinte.",
-    ],
-  },
-  {
-    version: '0.11.113',
-    released: '2026-11-04T13:12:16Z',
-    kind: 'new',
-    title: ['Sei display nuovi', 'Six new displays', 'Sechs neue Anzeigen', 'Six nouveaux afficheurs', 'Seis pantallas nuevas', 'Seis ecrãs novos'],
-    text: [
-      "In Impostazioni › Radio ci sono sei display nuovi: tre estesi (Icom doppio ricevitore, Icom blu con banda passante, LED essenziale) e tre quasi quadrati che stanno nell’angolo della testata (Icom blu, Icom nero con lancetta, Yaesu ambra). Mostrano solo ciò che la radio dà e che scegli tu. Tutti i display estesi ora sono alti 70 punti, con le misure scritte accanto a ogni scelta.",
-      "Settings › Radio has six new displays: three wide ones (Icom dual receiver, Icom blue with passband, essential LED) and three near-square ones in the header corner (Icom blue, Icom black with needle, Yaesu amber). They show only what the radio provides and what you choose. All wide displays are now 70 points tall, with the size written next to each choice.",
-      "In Einstellungen › Funkgerät gibt es sechs neue Anzeigen: drei breite (Icom Doppelempfänger, Icom blau mit Durchlassbereich, schlichte LED) und drei fast quadratische in der Ecke der Kopfzeile (Icom blau, Icom schwarz mit Zeiger, Yaesu bernstein). Sie zeigen nur, was das Funkgerät liefert und du wählst. Alle breiten Anzeigen sind jetzt 70 Punkte hoch, die Maße stehen neben jeder Wahl.",
-      "Réglages › Radio propose six nouveaux afficheurs : trois larges (Icom double récepteur, Icom bleu avec bande passante, LED essentiel) et trois presque carrés dans le coin de l’en-tête (Icom bleu, Icom noir à aiguille, Yaesu ambre). Ils ne montrent que ce que la radio donne et ce que tu choisis. Tous les afficheurs larges font maintenant 70 points de haut, avec la taille indiquée à côté de chaque choix.",
-      "En Ajustes › Radio hay seis pantallas nuevas: tres anchas (Icom doble receptor, Icom azul con banda de paso, LED esencial) y tres casi cuadradas en la esquina de la cabecera (Icom azul, Icom negro con aguja, Yaesu ámbar). Muestran solo lo que da la radio y lo que eliges. Todas las pantallas anchas miden ahora 70 puntos de alto, con la medida junto a cada opción.",
-      "Em Definições › Rádio há seis ecrãs novos: três largos (Icom recetor duplo, Icom azul com banda passante, LED essencial) e três quase quadrados no canto do cabeçalho (Icom azul, Icom preto com ponteiro, Yaesu âmbar). Mostram só o que o rádio dá e o que escolhes. Todos os ecrãs largos têm agora 70 pontos de altura, com a medida escrita ao lado de cada escolha.",
     ],
   },
 ];
