@@ -1,3 +1,4 @@
+import { detachedItems, useGroups } from '../lib/detached';
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
@@ -52,7 +53,7 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
   return txLog.length === 0 ? shown : [...txLog, ...shown].sort((a, b) => b.time_ms - a.time_ms);
 }
 
-export function Live() {
+export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
   const phone = usePhone();
   const view = useStationView();
@@ -113,6 +114,7 @@ export function Live() {
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
   const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
+  const groups = useGroups();
   const changeLayout = (next: Layout) => {
     saveLayout(browserStorage(), next);
     setLayout(next);
@@ -277,6 +279,11 @@ export function Live() {
   );
 
   // sotto i 768 px (o su un tablet in orizzontale, a due colonne): il telecomando compatto, con gli stessi dati e comandi di questa pagina
+  // finestra a parte: solo il pannello chiesto, a tutta finestra
+  if (soloPanel) {
+    return <div className={`solo-panel dock-panel dock-panel--${soloPanel}`}><div className="dock-body">{renderPanel(soloPanel)}</div></div>;
+  }
+
   if (view !== 'desktop') {
     return (
       <PhoneLive
@@ -360,7 +367,7 @@ export function Live() {
       ) : (
         <Dock
           layout={layout}
-          hidden={layout.hidden}
+          hidden={[...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])]}
           onChange={changeLayout}
           titles={titles}
           render={renderPanel}

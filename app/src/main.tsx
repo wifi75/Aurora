@@ -38,7 +38,8 @@ async function start() {
     e.preventDefault();
   });
   // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fa eccezione solo il collegamento di associazione del telefono
-  if (!location.hash.startsWith('#/associa') && !location.hash.startsWith('#/pair')) history.replaceState(null, '', '#/');
+  const solo = location.hash.startsWith('#/finestra/');
+  if (!solo && !location.hash.startsWith('#/associa') && !location.hash.startsWith('#/pair')) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
   const { Splash } = await import('./components/Splash');
@@ -47,7 +48,7 @@ async function start() {
       <StrictMode>
         <QueryClientProvider client={queryClient}>
           <App />
-          <Splash />
+          {solo ? null : <Splash />}
         </QueryClientProvider>
       </StrictMode>,
     );

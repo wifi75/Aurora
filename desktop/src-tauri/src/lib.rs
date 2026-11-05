@@ -212,10 +212,20 @@ fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn 
         // gli argomenti di base di Tauri piu' il silenzio dei messaggi interni di WebView2: alla chiusura scriveva sempre in stderr.log
         // «Failed to unregister class Chrome_WidgetWin_0. Error = 1412», innocuo ma scambiato per un errore di Aurora
         .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3 --autoplay-policy=no-user-gesture-required")
+        // le pagine da sole (`#/finestra/...`: mappa, propagazione) si aprono in una finestra di Aurora da portare sul secondo schermo;
         // i link a siti (note di versione, guida) si aprono nel browser di Windows, non in una finestra nuova
-        .on_new_window(|url, _| {
-            links::open_in_browser(url.as_str());
-            NewWindowResponse::Deny
+        .on_new_window({
+            let app = app.clone();
+            move |url, _| {
+                if let Some(page) = solo_page(url.as_str()) {
+                    let app = app.clone();
+                    let url = url.clone();
+                    let _ = app.clone().run_on_main_thread(move || open_solo_window(&app, &page, url));
+                } else {
+                    links::open_in_browser(url.as_str());
+                }
+                NewWindowResponse::Deny
+            }
         })
         .build()?;
     restore_window(app, &window);
@@ -223,6 +233,55 @@ fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn 
         window.show()?;
     }
     Ok(())
+}
+
+/// La pagina da sola chiesta da un link `#/finestra/<pagina>` dello stesso Aurora (solo lettere minuscole: e' anche l'etichetta della finestra).
+fn solo_page(url: &str) -> Option<String> {
+    let page = url.split_once("#/finestra/")?.1;
+    let local = url.starts_with("http://127.0.0.1:") || url.starts_with("http://localhost:");
+    (local && !page.is_empty() && page.len() <= 20 && page.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())).then(|| page.to_string())
+}
+
+/// Apre (o porta davanti, se c'e' gia') la finestra di una pagina da sola: ridimensionabile, sul secondo schermo se c'e'.
+fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
+    let label = format!("finestra-{page}");
+    if let Some(window) = app.get_webview_window(&label) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+        return;
+    }
+    // il titolo vero lo mette la pagina (gli elementi che contiene)
+    let title = "Aurora";
+    let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
+        .title(title)
+        .inner_size(1000.0, 700.0)
+        .min_inner_size(360.0, 260.0)
+        .resizable(true)
+        .visible(false)
+        .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3 --autoplay-policy=no-user-gesture-required")
+        .on_new_window(|url, _| {
+            links::open_in_browser(url.as_str());
+            NewWindowResponse::Deny
+        })
+        .build();
+    let window = match built {
+        Ok(w) => w,
+        Err(e) => {
+            tracing::warn!("finestra {page} non aperta: {e}");
+            return;
+        }
+    };
+    // sul secondo schermo: il primo schermo diverso da quello della finestra principale, con un po' di margine dall'angolo
+    let main_monitor = app.get_webview_window("main").and_then(|m| m.current_monitor().ok().flatten()).map(|m| *m.position());
+    if let Ok(monitors) = window.available_monitors() {
+        if let Some(other) = monitors.iter().find(|m| Some(*m.position()) != main_monitor) {
+            let p = other.position();
+            let _ = window.set_position(PhysicalPosition::new(p.x + 60, p.y + 60));
+        }
+    }
+    let _ = window.show();
+    let _ = window.set_focus();
 }
 
 fn core_state(app: &AppHandle) -> Option<remote_api::AppState> {

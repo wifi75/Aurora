@@ -1,3 +1,5 @@
+import { dropClosed, reopenAll, useGroups } from './lib/detached';
+import { SoloWindow } from './components/SoloWindow';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { checkSession } from './api/client';
@@ -90,6 +92,24 @@ export function App() {
     location.hash = '#/';
     void queryClient.invalidateQueries({ queryKey: ['session'] });
   };
+
+  // finestre a parte: all'avvio della finestra principale si riaprono dove erano; quelle chiuse con la X rimettono i pannelli al loro posto
+  const groups = useGroups();
+  const isSolo = route.name === 'window';
+  useEffect(() => {
+    if (!isSolo && !REMOTE && session.data === true) reopenAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.data === true]);
+  useEffect(() => {
+    if (isSolo || !groups.some((g) => !g.open)) return;
+    const timer = window.setTimeout(dropClosed, 800);
+    return () => window.clearTimeout(timer);
+  }, [groups, isSolo]);
+
+  // finestra a parte (secondo schermo): solo la pagina, senza menu, barre e finestre di avviso
+  if (route.name === 'window' && session.data === true) {
+    return <SoloWindow id={route.id} />;
+  }
 
   let content;
   if (route.name === 'pair' && session.data !== true) {

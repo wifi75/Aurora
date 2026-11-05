@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.134',
+    released: '2026-11-05T12:48:19Z',
+    kind: 'new',
+    title: ['Finestre sul secondo schermo', 'Windows on the second screen', 'Fenster auf dem zweiten Bildschirm', 'Fenêtres sur le second écran', 'Ventanas en la segunda pantalla', 'Janelas no segundo ecrã'],
+    text: [
+      "Con il pulsantino ⧉ nella barra di un pannello della Stazione, o accanto al titolo di Mappa e Propagazione, l'elemento va in una finestra a parte da portare sul secondo schermo e ridimensionare. Più elementi si affiancano nella stessa finestra (in riga o uno sopra l'altro, con il divisore); ⤓ li rimette al loro posto. Aurora riapre le finestre all'avvio. Sul telefono non cambia niente.",
+      "With the small ⧉ button in the bar of a Station panel, or next to the Map and Propagation titles, the item goes into a separate window to move to the second screen and resize. Several items can share a window (side by side or stacked, with a divider); ⤓ puts them back. Aurora reopens the windows at start. Nothing changes on the phone.",
+      "Mit dem kleinen ⧉ in der Leiste eines Stations-Felds oder neben den Titeln Karte und Ausbreitung kommt das Element in ein eigenes Fenster für den zweiten Bildschirm, frei in der Größe. Mehrere Elemente teilen sich ein Fenster (nebeneinander oder übereinander, mit Teiler); ⤓ holt sie zurück. Aurora öffnet die Fenster beim Start wieder. Am Telefon ändert sich nichts.",
+      "Avec le petit ⧉ dans la barre d’un panneau de la Station, ou à côté des titres Carte et Propagation, l’élément passe dans une fenêtre à part à mettre sur le second écran et à redimensionner. Plusieurs éléments partagent une fenêtre (côte à côte ou l’un sur l’autre, avec un séparateur) ; ⤓ les remet en place. Aurora rouvre les fenêtres au démarrage. Rien ne change sur le téléphone.",
+      "Con el pequeño ⧉ en la barra de un panel de la Estación, o junto a los títulos de Mapa y Propagación, el elemento pasa a una ventana aparte para llevar a la segunda pantalla y redimensionar. Varios elementos comparten ventana (lado a lado o uno sobre otro, con divisor); ⤓ los devuelve. Aurora reabre las ventanas al iniciar. En el teléfono no cambia nada.",
+      "Com o pequeno ⧉ na barra de um painel da Estação, ou junto aos títulos de Mapa e Propagação, o elemento passa para uma janela à parte para levar ao segundo ecrã e redimensionar. Vários elementos partilham uma janela (lado a lado ou um sobre o outro, com divisor); ⤓ repõe-nos. A Aurora reabre as janelas no arranque. No telemóvel não muda nada.",
+    ],
+  },
+  {
     version: '0.11.133',
     released: '2026-11-05T11:58:59Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > À propos le bouton « Préparer le paquet d’assistance » crée sur le Bureau un zip avec journal, erreurs et réglages (sans mots de passe) et ouvre le dossier ; « Envoyer par e-mail » ouvre aussi un e-mail prêt pour la personne qui t’aide.',
       'En Ajustes > Información el botón «Preparar el paquete de asistencia» crea en el Escritorio un zip con registro, errores y ajustes (sin contraseñas) y abre la carpeta; «Enviar por email» abre también un correo listo para quien te ayuda.',
       'Em Definições > Sobre o botão «Preparar o pacote de assistência» cria no Ambiente de trabalho um zip com registo, erros e definições (sem palavras-passe) e abre a pasta; «Enviar por email» abre também um email pronto para quem te ajuda.',
-    ],
-  },
-  {
-    version: '0.11.95',
-    released: '2026-11-03T21:37:15Z',
-    kind: 'fixed',
-    title: ['PTT applicato subito', 'PTT applied at once', 'PTT sofort übernommen', 'PTT appliqué tout de suite', 'PTT aplicado al momento', 'PTT aplicado logo'],
-    text: [
-      'Senza PTT preso da JTDX Aurora guarda Impostazioni > Radio a ogni trasmissione: la scelta vale subito, senza riavviare. Riquadro «Impostazioni consigliate» più leggibile.',
-      'Without a PTT taken from JTDX Aurora checks Settings > Radio at each transmission: the choice applies at once, with no restart. Clearer «Recommended settings» box.',
-      'Ohne von JTDX übernommene PTT prüft Aurora bei jeder Sendung Einstellungen > Radio: die Wahl gilt sofort, ohne Neustart. Übersichtlicherer Kasten «Empfohlene Einstellungen».',
-      'Sans PTT repris de JTDX Aurora regarde Réglages > Radio à chaque émission : le choix vaut tout de suite, sans redémarrer. Encadré « Réglages conseillés » plus lisible.',
-      'Sin PTT tomado de JTDX Aurora mira Ajustes > Radio en cada transmisión: la elección vale al momento, sin reiniciar. Recuadro «Ajustes recomendados» más legible.',
-      'Sem PTT vindo do JTDX a Aurora vê Definições > Rádio em cada transmissão: a escolha vale logo, sem reiniciar. Caixa «Definições recomendadas» mais legível.',
     ],
   },
 ];
