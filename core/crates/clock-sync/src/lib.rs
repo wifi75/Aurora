@@ -46,7 +46,9 @@ impl Default for Config {
             enabled: true,
             servers: ["it.pool.ntp.org", "ntp1.inrim.it", "time.cloudflare.com", "time.windows.com"].map(String::from).to_vec(),
             interval_secs: 900,
-            warn_ms: 200,
+            // FT8 tollera bene qualche decimo di secondo: sotto il mezzo secondo l'avviso spaventava senza motivo (l'orologio di Windows
+            // deriva di centinaia di ms tra una sincronizzazione e l'altra)
+            warn_ms: 500,
             auto_correct: false,
             correct_at_start: true,
         }
@@ -161,6 +163,13 @@ impl ClockService {
             .ok()
             .and_then(|text| serde_json::from_str::<Config>(&text).ok())
             .filter(|c| c.validate().is_ok())
+            // la soglia vecchia di fabbrica (200 ms) passa alla nuova; una scelta diversa dell'utente resta
+            .map(|mut c| {
+                if c.warn_ms == 200 {
+                    c.warn_ms = 500;
+                }
+                c
+            })
             .unwrap_or_default();
         let last_good = std::fs::read_to_string(path.with_extension("good")).ok().and_then(|t| t.trim().parse::<u64>().ok());
         Arc::new(ClockService { path: path.to_path_buf(), config: Mutex::new(config), last: Mutex::new(None), last_good: Mutex::new(last_good), query, setter, wake: Notify::new() })

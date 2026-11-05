@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Orologio**: l'avviso «Orologio sbagliato» e' un pulsante che corregge subito l'ora di Windows (se Windows non lo permette apre le impostazioni dell'orologio); soglia di fabbrica 500 ms invece di 200 (FT8 tollera bene qualche decimo, e l'orologio di Windows deriva di centinaia di ms), chi aveva 200 passa a 500.
 
 ## 0.11.144 - 2026-11-05
 - **Display in finestra a parte**: maniglia nell'angolo in basso a destra per ridimensionare il solo display in proporzione (CSS `zoom`, da 0,3 a 8 volte), indipendente dalla finestra; doppio clic torna ad adattarsi alla finestra; misura ricordata (`aurora-display-scala`).
