@@ -1571,13 +1571,83 @@ pub async fn run(
                 }) as remote_api::Log4omProvider
             }
         }))
-        .with_worked_map_if(config.log4om_db.clone().map(|path| {
-            Arc::new(move || {
+        // i quadrati lavorati: dagli stessi log della scheda DXCC (Aurora, file ADIF, Log4OM2), anche per banda, modo e conferma (Mappa DX);
+        // senza paesi caricati, solo da Log4OM2 come prima
+        .with_worked_map_if(match (live_log.clone(), config.log4om_db.clone()) {
+            (Some((db, worked, sources)), _) => Some(Arc::new(move || {
+                refresh_worked(&sources, &db, &worked);
+                let w = worked.read().map_err(|_| "QSO gia' fatti non disponibili".to_string())?;
+                let cells = w.grid_cells();
+                let mut squares: Vec<serde_json::Value> = Vec::new();
+                let mut i = 0;
+                while i < cells.len() {
+                    let grid = cells[i].grid.clone();
+                    let (mut count, mut bands) = (0u64, Vec::<String>::new());
+                    while i < cells.len() && cells[i].grid == grid {
+                        count += u64::from(cells[i].qsos);
+                        if !bands.contains(&cells[i].band) {
+                            bands.push(cells[i].band.clone());
+                        }
+                        i += 1;
+                    }
+                    squares.push(serde_json::json!({ "grid": grid, "count": count, "bands": bands }));
+                }
+                Ok(serde_json::json!({ "squares": squares, "cells": cells }))
+            }) as remote_api::WorkedMapProvider),
+            (None, Some(path)) => Some(Arc::new(move || {
                 logbook::log4om::worked_squares(&path)
                     .map(|squares| serde_json::json!({ "squares": squares }))
                     .map_err(|e| e.to_string())
-            }) as remote_api::WorkedMapProvider
-        }))
+            }) as remote_api::WorkedMapProvider),
+            // senza file dei paesi: i quadrati dal solo log di Aurora
+            (None, None) => {
+                let own = Arc::clone(&own_log);
+                Some(Arc::new(move || {
+                    let rows = own.all_qsos().map_err(|e| e.to_string())?;
+                    let mut cells: std::collections::BTreeMap<(String, String, String), (u32, u32, u32)> = std::collections::BTreeMap::new();
+                    for q in &rows {
+                        let g = q.grid.trim().to_uppercase();
+                        let b = g.as_bytes();
+                        if b.len() < 4 || !(b'A'..=b'R').contains(&b[0]) || !(b'A'..=b'R').contains(&b[1]) || !b[2].is_ascii_digit() || !b[3].is_ascii_digit() {
+                            continue;
+                        }
+                        let c = cells.entry((g[..4].to_string(), q.band.trim().to_lowercase(), q.mode.trim().to_uppercase())).or_default();
+                        c.0 += 1;
+                        match q.confirmed {
+                            Some(true) => c.1 += 1,
+                            Some(false) => c.2 += 1,
+                            None => {}
+                        }
+                    }
+                    let mut squares: Vec<serde_json::Value> = Vec::new();
+                    let mut last: Option<(String, u64, Vec<String>)> = None;
+                    for ((grid, band, _), (n, _, _)) in &cells {
+                        match &mut last {
+                            Some((g, count, bands)) if g == grid => {
+                                *count += u64::from(*n);
+                                if !bands.contains(band) {
+                                    bands.push(band.clone());
+                                }
+                            }
+                            _ => {
+                                if let Some((g, count, bands)) = last.take() {
+                                    squares.push(serde_json::json!({ "grid": g, "count": count, "bands": bands }));
+                                }
+                                last = Some((grid.clone(), u64::from(*n), vec![band.clone()]));
+                            }
+                        }
+                    }
+                    if let Some((g, count, bands)) = last {
+                        squares.push(serde_json::json!({ "grid": g, "count": count, "bands": bands }));
+                    }
+                    let cells: Vec<serde_json::Value> = cells
+                        .into_iter()
+                        .map(|((grid, band, mode), (qsos, confirmed, unconfirmed))| serde_json::json!({ "grid": grid, "band": band, "mode": mode, "qsos": qsos, "confirmed": confirmed, "unconfirmed": unconfirmed }))
+                        .collect();
+                    Ok(serde_json::json!({ "squares": squares, "cells": cells }))
+                }) as remote_api::WorkedMapProvider)
+            }
+        })
         .with_frequencies(Arc::clone(&frequencies))
         .with_schedule(Arc::clone(&schedule))
         .with_settings_saver(settings_saver)

@@ -5,6 +5,8 @@ export interface MapOptions {
   tiles: boolean;
   /** Zona di notte. */
   night: boolean;
+  /** Lo sfondo scelto (`lib/mapStyles.ts`). */
+  style?: string;
 }
 
 const KEY = 'aurora-map-options';
@@ -15,7 +17,9 @@ export function readMapOptions(storage: Pick<Storage, 'getItem'> | null = browse
     const raw = storage?.getItem(KEY);
     if (!raw) return defaults;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return { tiles: typeof parsed.tiles === 'boolean' ? parsed.tiles : defaults.tiles, night: typeof parsed.night === 'boolean' ? parsed.night : defaults.night };
+    const out: MapOptions = { tiles: typeof parsed.tiles === 'boolean' ? parsed.tiles : defaults.tiles, night: typeof parsed.night === 'boolean' ? parsed.night : defaults.night };
+    if (typeof parsed.style === 'string') out.style = parsed.style;
+    return out;
   } catch {
     return defaults;
   }

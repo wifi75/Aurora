@@ -1028,9 +1028,19 @@ export interface WorkedSquare {
   bands: string[];
 }
 
-/** I quadrati locatore gia' lavorati, dal log di Log4OM2 (per la mappa). */
-export async function getWorkedMap(): Promise<{ squares: WorkedSquare[] }> {
-  return (await (await request('/map/worked')).json()) as { squares: WorkedSquare[] };
+/** Un quadrato lavorato su una banda in un modo, con le conferme (per la Mappa DX). */
+export interface WorkedGridCell {
+  grid: string;
+  band: string;
+  mode: string;
+  qsos: number;
+  confirmed: number;
+  unconfirmed: number;
+}
+
+/** I quadrati locatore gia' lavorati (per la mappa); `cells` per banda, modo e conferma quando il core li ha. */
+export async function getWorkedMap(): Promise<{ squares: WorkedSquare[]; cells?: WorkedGridCell[] }> {
+  return (await (await request('/map/worked')).json()) as { squares: WorkedSquare[]; cells?: WorkedGridCell[] };
 }
 
 /** La scheda DXCC: paesi lavorati per banda e modo e, con `call`, le etichette NEW ONE / NEW BAND / NEW MODE / NEW GRID / GRID BAND / GRID MODE. */
