@@ -38,6 +38,8 @@ export const logExportStrings = {
     'Quita la selección de los QSO que muestran los filtros.',
     'Tira a seleção dos QSO que os filtros mostram.',
   ],
+  'exp.moreShown': ['Visibili {shown} di {total} QSO (filtri, selezione ed esportazione valgono per tutti).', 'Showing {shown} of {total} QSOs (filters, selection and export apply to all).', '{shown} von {total} QSOs sichtbar (Filter, Auswahl und Export gelten für alle).', '{shown} QSO affichés sur {total} (filtres, sélection et export valent pour tous).', 'Visibles {shown} de {total} QSO (filtros, selección y exportación valen para todos).', 'Visíveis {shown} de {total} QSO (filtros, seleção e exportação valem para todos).'],
+  'exp.more': ['Mostra altri', 'Show more', 'Mehr zeigen', 'Afficher plus', 'Mostrar más', 'Mostrar mais'],
   'exp.count': [
     '{selected} selezionati su {shown} mostrati ({total} nel log)',
     '{selected} selected of {shown} shown ({total} in the log)',

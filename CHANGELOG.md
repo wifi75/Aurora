@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.141 - 2026-11-05
+- **Display della radio in finestra a parte** (`display`, `DisplayFit.tsx`): pulsantino ⧉ nell'angolo in alto a destra del display (bianco su fondo scuro, compare al passaggio); nella finestra il display scala con CSS `zoom` mantenendo le proporzioni; nella principale resta solo un segnaposto. Anche in Impostazioni › Finestre.
+- **Pagina Log con log grandi** (segnalato con 71 252 QSO): la tabella disegnava tutte le righe e la pagina si bloccava; ora 300 per volta con «Mostra altri»; importazione e lettura erano gia' veloci (71 000 QSO in pochi secondi).
+
 ## 0.11.140 - 2026-11-05
 - **Errore «libhamlib-4.dll» durante l'aggiornamento**: il rigctld di Aurora sopravviveva alla chiusura del programma e teneva la DLL; l'installatore ora lo ferma con `taskkill /FI "MODULES eq libhamlib-4.dll"` (senza PowerShell), poi con PowerShell solo per quello della cartella di Aurora, fino a quattro tentativi.
 - **Impostazioni › Audio**: la «Cartella dei file audio» non mostra piu' una cartella rimasta da JTDX; fuori dalla cartella di Aurora non vale (come gia' faceva il core) e compare quella di Aurora.

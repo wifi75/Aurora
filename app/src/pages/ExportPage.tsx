@@ -8,6 +8,9 @@ import { toast } from '../lib/toast';
 import { Help } from '../settings/layout';
 import { coreText } from '../lib/coreText';
 
+/** Righe disegnate per volta nella tabella del log. */
+const PAGE_ROWS = 300;
+
 /** Le bande nell'ordine della radio (160m prima di 80m), quelle sconosciute in fondo. */
 function bandOrder(a: string, b: string): number {
   const ia = BAND_NAMES.indexOf(a);
@@ -52,6 +55,10 @@ export function ExportPage() {
   const bands = useMemo(() => [...new Set(qsos.map((q) => q.band))].sort(bandOrder), [qsos]);
   const modes = useMemo(() => [...new Set(qsos.map((q) => q.mode))].sort(), [qsos]);
   const shown = useMemo(() => filterQsos(qsos, filter), [qsos, filter]);
+  // con log grandi (decine di migliaia di QSO) disegnare tutte le righe bloccava la pagina: se ne disegnano a blocchi, gli altri
+  // compaiono scorrendo in fondo o con «Mostra altri»; filtri, selezione ed esportazione valgono sempre per tutti
+  const [limit, setLimit] = useState(PAGE_ROWS);
+  useEffect(() => setLimit(PAGE_ROWS), [filter]);
   const shownSelected = shown.reduce((n, q) => n + (selected.has(q.id) ? 1 : 0), 0);
   const hiddenSelected = selected.size - shownSelected;
   const everything = qsos.length > 0 && selected.size === qsos.length;
@@ -138,7 +145,7 @@ export function ExportPage() {
             </tr>
           </thead>
           <tbody>
-            {shown.map((q) => {
+            {shown.slice(0, limit).map((q) => {
               const on = selected.has(q.id);
               return (
                 <tr key={q.id} className={on ? 'export-row export-row--on' : 'export-row'} onClick={() => toggle(q.id)}>
@@ -164,6 +171,14 @@ export function ExportPage() {
             })}
           </tbody>
         </table>
+        {shown.length > limit ? (
+          <div className="export-more">
+            <span className="muted">{t('exp.moreShown', { shown: limit, total: shown.length })}</span>
+            <button type="button" className="glass" onClick={() => setLimit((n) => n + PAGE_ROWS * 2)}>
+              {t('exp.more')}
+            </button>
+          </div>
+        ) : null}
       </div>
     );
 

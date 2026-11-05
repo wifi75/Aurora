@@ -95,6 +95,7 @@ export const commandStrings = {
   'win.dash': ['Nella dashboard a blocchi', 'In the block dashboard', 'Im Block-Dashboard', 'Dans le tableau de bord à blocs', 'En el panel de bloques', 'No painel de blocos'],
   'win.dashName': ['Dashboard', 'Dashboard', 'Dashboard', 'Tableau de bord', 'Panel', 'Painel'],
   'win.drag': ['Trascina per spostare il blocco; l’angolo in basso a destra lo ridimensiona', 'Drag to move the block; the bottom-right corner resizes it', 'Ziehen zum Verschieben; die Ecke unten rechts ändert die Größe', 'Fais glisser pour déplacer le bloc ; le coin en bas à droite le redimensionne', 'Arrastra para mover el bloque; la esquina inferior derecha lo redimensiona', 'Arrasta para mover o bloco; o canto inferior direito redimensiona-o'],
+  'win.display': ['Display della radio', 'Radio display', 'Radio-Anzeige', 'Afficheur de la radio', 'Pantalla de la radio', 'Ecrã do rádio'],
   'win.show': ['Mostra la finestra', 'Show the window', 'Fenster zeigen', 'Afficher la fenêtre', 'Mostrar la ventana', 'Mostrar a janela'],
   'qsl.lotw': ['LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW'],
   'qsl.eqsl': ['eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL'],

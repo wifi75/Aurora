@@ -1,3 +1,5 @@
+import { useGroups } from '../../lib/detached';
+import { DetachButton } from '../DetachButton';
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RadioExtras, useCatExtras } from './RadioExtras';
@@ -18,7 +20,8 @@ import { SetupCta } from '../SetupCta';
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
  * indicatori cliccabili, per leggerlo bene. Sul telefono niente zoom. Con "Nascondi il display" non c'e' affatto.
  */
-export function RadioDisplayHeader() {
+export function RadioDisplayHeader({ solo = false }: { solo?: boolean } = {}) {
+  const detached = useGroups().some((g) => g.open && g.items.includes('display'));
   const phone = usePhone();
   const pref = useRadioDisplay((s) => s.pref);
   const status = useStation((s) => s.status);
@@ -26,6 +29,8 @@ export function RadioDisplayHeader() {
   const meters = useMeterBallistics(raw.meters);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
   if (pref.hidden) return null;
+  // il display sta in una finestra a parte (secondo schermo): qui resta solo un segnaposto vuoto
+  if (detached && !solo) return <span className="rd-detached" aria-hidden="true" />;
   const model = { ...raw, meters };
   // senza radio collegata niente display vuoto e scritte sparse: un solo riquadro che porta alla configurazione
   const state = cat.data?.status.state;
@@ -46,11 +51,11 @@ export function RadioDisplayHeader() {
   }
 
   if (isSquareStyle(pref.style) || pref.style === 'icdual' || pref.style === 'icblue' || pref.style === 'ledline') {
-    return <ModernHeader model={model} style={pref.style} />;
+    return solo ? <ModernHeader model={model} style={pref.style} solo /> : isSquareStyle(pref.style) ? <ModernHeader model={model} style={pref.style} /> : <Detachable><ModernHeader model={model} style={pref.style} /></Detachable>;
   }
 
   if (isFaceStyle(pref.style)) {
-    return (
+    return solo ? <FaceHeader model={model} style={pref.style} /> : (
       <Zoom>
         <FaceHeader model={model} style={pref.style} />
       </Zoom>
@@ -58,8 +63,7 @@ export function RadioDisplayHeader() {
   }
 
   // due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (VFO A grande a sinistra, VFO B e indicatori a destra)
-  return (
-    <Zoom>
+  const duo = (
     <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
       <div className="rd-slot rd-trigger rd-trigger--static">
         <RadioDisplay model={model} style={pref.style} size="mini" />
@@ -68,7 +72,19 @@ export function RadioDisplayHeader() {
         <RadioExtras />
       </div>
     </div>
-    </Zoom>
+  );
+  return solo ? duo : <Zoom>{duo}</Zoom>;
+}
+
+/** Il pulsantino discreto per portare il display su un altro schermo, nell'angolo in alto a destra (si vede passandoci sopra). */
+function Detachable({ children }: { children: ReactNode }) {
+  return (
+    <div className="rd-detachable">
+      {children}
+      <span className="rd-detach-corner">
+        <DetachButton item="display" className="dock-detach" />
+      </span>
+    </div>
   );
 }
 
@@ -96,6 +112,9 @@ function Zoom({ children }: { children: ReactNode }) {
   return (
     <div className="rd-zoom-host" ref={host} onMouseEnter={() => later(true, OPEN_MS)} onMouseLeave={() => later(false, CLOSE_MS)}>
       {children}
+      <span className="rd-detach-corner">
+        <DetachButton item="display" className="dock-detach" />
+      </span>
       {open ? (
         <div className="rd-zoom" role="group" aria-label={t('rd.popover')}>
           <div className="rd-zoom-lens" style={{ width: width || undefined }}>
@@ -137,17 +156,17 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
 }
 
 /** I display moderni in testata: gli estesi nella riga dei comandi, i quasi quadrati fissi nell'angolo (le icone diventano piccole). */
-function ModernHeader({ model, style }: { model: DisplayModel; style: RadioDisplayStyle }) {
+function ModernHeader({ model, style, solo = false }: { model: DisplayModel; style: RadioDisplayStyle; solo?: boolean }) {
   const t = useT();
   const { rig, waiting, click } = useCatExtras();
   const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
   const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
   const square = isSquareStyle(style);
   useEffect(() => {
-    if (!square) return;
+    if (!square || solo) return;
     document.body.classList.add('rd-square');
     return () => document.body.classList.remove('rd-square');
-  }, [square]);
+  }, [square, solo]);
   const view =
     style === 'icdual' ? <IcDualDisplay {...props} />
     : style === 'icblue' ? <IcBlueDisplay {...props} />
@@ -156,6 +175,16 @@ function ModernHeader({ model, style }: { model: DisplayModel; style: RadioDispl
     : style === 'icblackq' ? <IcBlackSquare {...props} />
     : <YaesuSquare {...props} />;
   // il quasi quadrato va sulla pagina (non dentro la riga dei comandi, che fa da contenitore e lo spostava sotto la testata)
-  if (square) return createPortal(<div className="rd-square-slot">{view}</div>, document.body);
+  if (square && solo) return <div className="rd-square-preview">{view}</div>;
+  if (square)
+    return createPortal(
+      <div className="rd-square-slot rd-detachable">
+        {view}
+        <span className="rd-detach-corner">
+          <DetachButton item="display" className="dock-detach" />
+        </span>
+      </div>,
+      document.body,
+    );
   return <div className="rd-modern-slot">{view}</div>;
 }
