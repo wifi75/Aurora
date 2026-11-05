@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { ApiError, makeSettingsBackup, restoreSettingsBackup } from '../api/client';
 import { useT } from '../i18n';
+import { coreText } from '../lib/coreText';
 
 /**
  * Riquadro «Copia delle impostazioni»: uno zip sul Desktop con impostazioni e log dei QSO, e il ripristino da uno zip fatto cosi'
@@ -21,7 +22,7 @@ export function BackupBox({ available }: { available: boolean }) {
       const r = await makeSettingsBackup();
       setDone(t('bak.made', { name: r.name, files: r.files }));
     } catch (error) {
-      setFailure(t('bak.failed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
+      setFailure(t('bak.failed', { message: error instanceof ApiError ? (error.detail ? coreText(error.detail, t) : error.code) : '—' }));
     } finally {
       setBusy(null);
     }
@@ -37,7 +38,7 @@ export function BackupBox({ available }: { available: boolean }) {
       const r = await restoreSettingsBackup(picked);
       setDone(t('bak.restored', { files: r.files }));
     } catch (error) {
-      setFailure(error instanceof ApiError && error.code === 'not_a_backup' ? t('bak.notBackup') : t('bak.failed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
+      setFailure(error instanceof ApiError && error.code === 'not_a_backup' ? t('bak.notBackup') : t('bak.failed', { message: error instanceof ApiError ? (error.detail ? coreText(error.detail, t) : error.code) : '—' }));
     } finally {
       setBusy(null);
       if (file.current) file.current.value = '';
