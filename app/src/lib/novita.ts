@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.145',
+    released: '2026-11-05T17:21:55Z',
+    kind: 'new',
+    title: ["L'orologio si corregge con un clic", 'The clock is corrected with one click', 'Die Uhr wird mit einem Klick korrigiert', 'L’horloge se corrige d’un clic', 'El reloj se corrige con un clic', 'O relógio corrige-se com um clique'],
+    text: [
+      "Un clic sull'avviso «Orologio sbagliato» corregge subito l'ora di Windows con i server NTP. L'avviso compare solo oltre mezzo secondo di scarto (prima 200 ms): FT8 tollera bene qualche decimo e l'orologio di Windows si sposta da solo di centinaia di millisecondi.",
+      "One click on the «Clock wrong» notice corrects the Windows time right away with the NTP servers. The notice appears only beyond half a second (before 200 ms): FT8 tolerates a few tenths well and the Windows clock drifts by hundreds of milliseconds.",
+      "Ein Klick auf den Hinweis «Uhr falsch» korrigiert die Windows-Zeit sofort mit den NTP-Servern. Der Hinweis erscheint erst ab einer halben Sekunde (vorher 200 ms): FT8 verträgt einige Zehntel gut und die Windows-Uhr driftet um Hunderte Millisekunden.",
+      "Un clic sur l’avis « Horloge fausse » corrige tout de suite l’heure de Windows avec les serveurs NTP. L’avis n’apparaît qu’au-delà d’une demi-seconde (avant 200 ms) : FT8 tolère bien quelques dixièmes et l’horloge de Windows dérive de centaines de millisecondes.",
+      "Un clic en el aviso «Reloj incorrecto» corrige enseguida la hora de Windows con los servidores NTP. El aviso aparece solo por encima de medio segundo (antes 200 ms): FT8 tolera bien algunas décimas y el reloj de Windows deriva cientos de milisegundos.",
+      "Um clique no aviso «Relógio errado» corrige logo a hora do Windows com os servidores NTP. O aviso só aparece acima de meio segundo (antes 200 ms): o FT8 tolera bem algumas décimas e o relógio do Windows desvia centenas de milissegundos.",
+    ],
+  },
+  {
     version: '0.11.144',
     released: '2026-11-05T17:21:35Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Sur un PC lent le décodage d’une période FT8 pouvait durer plus d’une minute, et Aurora prenait de plus en plus de retard. Désormais, après 11 secondes, les passes supplémentaires sont sautées : les messages trouvés arrivent à temps et la période suivante repart à l’heure.",
       "En un PC lento la decodificación de un periodo FT8 podía durar más de un minuto, y Aurora se quedaba cada vez más atrás. Ahora, pasados 11 segundos, se saltan las pasadas extra: los mensajes encontrados llegan a tiempo y el periodo siguiente empieza puntual.",
       "Num PC lento a descodificação de um período FT8 podia durar mais de um minuto, e a Aurora ficava cada vez mais para trás. Agora, passados 11 segundos, saltam-se as passagens extra: as mensagens encontradas chegam a tempo e o período seguinte começa pontual.",
-    ],
-  },
-  {
-    version: '0.11.105',
-    released: '2026-11-04T11:47:42Z',
-    kind: 'fixed',
-    title: ['Scheda audio trovata anche con nomi vecchi', 'Sound card found even with old names', 'Soundkarte auch mit alten Namen gefunden', 'Carte son trouvée même avec d’anciens noms', 'Tarjeta de sonido encontrada también con nombres antiguos', 'Placa de som encontrada mesmo com nomes antigos'],
-    text: [
-      'Molte stazioni restavano senza cascata né trasmissione perché il nome salvato della scheda audio non corrispondeva più: «Default Input Device», lettere accentate salvate in modo sbagliato, il numero che Windows aggiunge quando ricollega la scheda, Windows in un’altra lingua. Ora Aurora la ritrova. Se OmniRig non è installato lo dice chiaramente.',
-      'Many stations had no waterfall or transmission because the saved sound card name no longer matched: «Default Input Device», accented letters saved wrongly, the number Windows adds when the card is reconnected, Windows in another language. Aurora now finds it. If OmniRig is not installed it says so clearly.',
-      'Viele Stationen hatten weder Wasserfall noch Senden, weil der gespeicherte Name der Soundkarte nicht mehr passte: «Default Input Device», falsch gespeicherte Umlaute, die Nummer, die Windows beim erneuten Anschließen hinzufügt, Windows in einer anderen Sprache. Aurora findet sie jetzt. Ist OmniRig nicht installiert, sagt Aurora das klar.',
-      'Beaucoup de stations restaient sans chute d’eau ni émission car le nom enregistré de la carte son ne correspondait plus : « Default Input Device », lettres accentuées mal enregistrées, le numéro ajouté par Windows à la reconnexion, Windows dans une autre langue. Aurora la retrouve désormais. Si OmniRig n’est pas installé, elle le dit clairement.',
-      'Muchas estaciones se quedaban sin cascada ni transmisión porque el nombre guardado de la tarjeta de sonido ya no coincidía: «Default Input Device», letras acentuadas mal guardadas, el número que Windows añade al reconectar la tarjeta, Windows en otro idioma. Ahora Aurora la encuentra. Si OmniRig no está instalado lo dice claramente.',
-      'Muitas estações ficavam sem cascata nem transmissão porque o nome guardado da placa de som já não correspondia: «Default Input Device», letras acentuadas mal guardadas, o número que o Windows junta ao religar a placa, Windows noutra língua. Agora a Aurora encontra-a. Se o OmniRig não estiver instalado, di-lo claramente.',
     ],
   },
 ];
