@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.148',
-    released: '2026-11-05T17:40:12Z',
+    released: '2026-11-05T17:43:17Z',
     kind: 'new',
     title: ['Solo la mappa di chi ti ha ricevuto', 'Only the map of who received you', 'Nur die Karte, wer dich empfangen hat', 'Seulement la carte de qui t’a reçu', 'Solo el mapa de quién te ha recibido', 'Só o mapa de quem te recebeu'],
     text: [
