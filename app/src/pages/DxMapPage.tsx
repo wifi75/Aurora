@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { getWorkedMap } from '../api/client';
+import { getDxcc, getOnline, getPsk, getWorkedMap } from '../api/client';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
-import { DxMap, type DxMapSettings, type DxSquare, type DxStation } from '../components/DxMap';
+import { DxMap, LIVE_COLORS, type DxMapSettings, type DxLink, type DxLiveGrid, type LiveStatus, type DxSpot, type DxSquare, type DxStation } from '../components/DxMap';
 import { useT } from '../i18n';
 import { useGroups } from '../lib/detached';
 import { MAP_STYLES } from '../lib/mapStyles';
 import { stationsWithGrid } from '../lib/mapStations';
+import { gridToLatLon } from '../lib/maidenhead';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 
@@ -23,6 +24,14 @@ const DEFAULTS: DxMapSettings = {
   twilight: true,
   moon: true,
   arcs: true,
+  links: true,
+  dots: false,
+  linkColor: '#d4ff2a',
+  linkMeColor: '#ffb300',
+  linkWidth: 1.6,
+  antSpeed: 0.9,
+  heat: true,
+  spotMaxMin: 15,
   arcsAnimated: true,
   decayMin: 15,
 };
@@ -47,12 +56,16 @@ function DxMapBody({ solo }: { solo: boolean }) {
   const decodes = useStation((s) => s.decodes);
   const status = useStation((s) => s.status);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
+  const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
+  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
   const [settings, setSettings] = useState<DxMapSettings>(readSettings);
   const [band, setBand] = useState('all');
   const [mode, setMode] = useState('all');
   const [showSquares, setShowSquares] = useState(true);
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(() => Date.now());
+  // centro del paese per chi non manda il quadrato (dal file dei paesi del core, una richiesta per nominativo)
+  const [countryPos, setCountryPos] = useState<Record<string, { lat: number; lon: number } | null>>({});
   useEffect(() => {
     const timer = window.setInterval(() => setTick(Date.now()), 15_000);
     return () => window.clearInterval(timer);
@@ -71,6 +84,105 @@ function DxMapBody({ solo }: { solo: boolean }) {
     const times = new Map(decodes.map((d) => [d.id, d.time_ms]));
     return stationsWithGrid(decodes).map((s) => ({ call: s.call, grid: s.grid, snr: s.snr, cq: s.cq, tag: s.tag, country: s.country, age: Math.max(0, (tick - (times.get(s.id) ?? tick)) / 1000) }));
   }, [decodes, tick]);
+  // chi ci ha ricevuto (PSK Reporter), l'ultimo spot di ogni stazione
+  const spots: DxSpot[] = useMemo(() => {
+    const last = new Map<string, DxSpot>();
+    for (const r of psk.data?.psk.reports ?? []) {
+      const age = Math.max(0, tick / 1000 - r.time_s);
+      const old = last.get(r.receiver);
+      if (!r.locator || (old && old.age <= age)) continue;
+      last.set(r.receiver, { call: r.receiver, grid: r.locator, snr: r.snr, age });
+    }
+    return [...last.values()];
+  }, [psk.data, tick]);
+  const liveSpots = spots.filter((p) => p.age <= settings.spotMaxMin * 60).length;
+  // chi chiama chi: «K1ABC G0XYZ …» e' G0XYZ che chiama K1ABC; vale l'ultimo messaggio di ogni mittente, se i due quadrati sono noti
+  const me = status?.de_call?.toUpperCase() ?? '';
+  const grids = useMemo(() => {
+    const m = new Map(stations.map((s) => [s.call, s.grid]));
+    if (me && status?.de_grid) m.set(me, status.de_grid);
+    return m;
+  }, [stations, me, status?.de_grid]);
+  // le chiamate: «K1ABC G0XYZ …» e' G0XYZ che chiama K1ABC (vale l'ultimo messaggio di ogni mittente)
+  const calls = useMemo(() => {
+    const clean = (c: string) => c.replace(/[<>]/g, '');
+    const byFrom = new Map<string, { from: string; to: string; time: number }>();
+    for (const d of [...decodes].sort((a, b) => a.id - b.id)) {
+      const tokens = d.text.trim().toUpperCase().split(/\s+/);
+      if (tokens.length < 2 || ['CQ', 'QRZ', 'DE'].includes(tokens[0]!)) continue;
+      const to = clean(tokens[0]!);
+      const from = clean(tokens[1]!);
+      if (to === from || !/[0-9]/.test(to) || !/[0-9]/.test(from) || to.length < 3 || from.length < 3) continue;
+      byFrom.set(from, { from, to, time: d.time_ms });
+    }
+    return [...byFrom.values()];
+  }, [decodes]);
+  // per i nominativi senza quadrato si chiede il centro del paese, una volta sola
+  useEffect(() => {
+    const missing = [...new Set(calls.flatMap((c) => [c.from, c.to]))].filter((c) => !grids.has(c) && !(c in countryPos)).slice(0, 20);
+    if (missing.length === 0) return;
+    let alive = true;
+    void Promise.all(missing.map((c) => getDxcc(c).then((d) => [c, d.lat !== undefined && d.lon !== undefined ? { lat: d.lat, lon: d.lon } : null] as const).catch(() => [c, null] as const))).then((found) => {
+      if (alive) setCountryPos((old) => ({ ...old, ...Object.fromEntries(found) }));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [calls, grids, countryPos]);
+  const links: DxLink[] = useMemo(() => {
+    const where = (call: string): { pos: { lat: number; lon: number }; guess: boolean } | null => {
+      const g = grids.get(call);
+      const p = g ? gridToLatLon(g) : null;
+      if (p) return { pos: p, guess: false };
+      const c = countryPos[call];
+      return c ? { pos: c, guess: true } : null;
+    };
+    const out: DxLink[] = [];
+    for (const c of calls) {
+      const a = where(c.from);
+      const b = where(c.to);
+      if (!a || !b) continue;
+      out.push({ from: c.from, to: c.to, fromPos: a.pos, toPos: b.pos, guess: a.guess || b.guess, toMe: c.to === me, age: Math.max(0, (tick - c.time) / 1000) });
+    }
+    return out;
+  }, [calls, grids, countryPos, me, tick]);
+  // quadrati in onda: QRZ (chiamano me) prima di CQDX, CQ e QSX (traffico fra altri), il messaggio piu' recente per l'eta'
+  const live: DxLiveGrid[] = useMemo(() => {
+    const rank: Record<LiveStatus, number> = { qrz: 4, cqdx: 3, cq: 2, qsx: 1 };
+    // prima l'ultimo messaggio di ogni stazione (chi ha chiamato CQ e ora risponde a qualcuno e' QSX), poi i quadrati
+    const latest = new Map<string, { status: LiveStatus; time: number }>();
+    const byGrid = new Map<string, DxLiveGrid>();
+    const note = (call: string, status: LiveStatus, time: number) => {
+      const old = latest.get(call);
+      if (!old || time >= old.time) latest.set(call, { status, time });
+    };
+    const put = (call: string, status: LiveStatus, time: number) => {
+      const grid = grids.get(call)?.slice(0, 4).toUpperCase();
+      if (!grid || call === me) return;
+      const age = Math.max(0, (tick - time) / 1000);
+      const old = byGrid.get(grid);
+      if (!old) {
+        byGrid.set(grid, { grid, status, age, calls: [call] });
+        return;
+      }
+      if (rank[status] > rank[old.status]) old.status = status;
+      old.age = Math.min(old.age, age);
+      if (!old.calls.includes(call)) old.calls.push(call);
+    };
+    for (const d of decodes) {
+      const tokens = d.text.trim().toUpperCase().split(/\s+/);
+      if (tokens[0] === 'CQ' || tokens[0] === 'QRZ') {
+        const dx = tokens.length >= 4 && !/[0-9]/.test(tokens[1]!);
+        const call = (dx ? tokens[2] : tokens[1])?.replace(/[<>]/g, '');
+        if (call) note(call, dx && tokens[1] === 'DX' ? 'cqdx' : 'cq', d.time_ms);
+      } else if (tokens.length >= 2) {
+        const to = tokens[0]!.replace(/[<>]/g, '');
+        note(tokens[1]!.replace(/[<>]/g, ''), to === me ? 'qrz' : 'qsx', d.time_ms);
+      }
+    }
+    for (const [call, v] of latest) put(call, v.status, v.time);
+    return [...byGrid.values()];
+  }, [decodes, grids, me, tick]);
   const squares = worked.data?.squares ?? [];
   const bands = useMemo(() => [...new Set(squares.flatMap((s) => s.bands))].sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10)), [squares]);
   const cells = worked.data?.cells;
@@ -124,6 +236,14 @@ function DxMapBody({ solo }: { solo: boolean }) {
         <label className="toggle">
           <input type="checkbox" checked={settings.arcs} onChange={(e) => change({ arcs: e.target.checked })} />
           {t('dxmap.arcs')}
+        </label>
+        <label className="toggle" title={t('dxmap.heat.tip')}>
+          <input type="checkbox" checked={settings.heat} onChange={(e) => change({ heat: e.target.checked })} />
+          {t('dxmap.heat')}
+        </label>
+        <label className="toggle" title={t('dxmap.links.tip')}>
+          <input type="checkbox" checked={settings.links} onChange={(e) => change({ links: e.target.checked })} />
+          {t('dxmap.links')}
         </label>
         <label className="toggle">
           <input type="checkbox" checked={showSquares} onChange={(e) => setShowSquares(e.target.checked)} />
@@ -194,6 +314,29 @@ function DxMapBody({ solo }: { solo: boolean }) {
             <input type="checkbox" checked={settings.arcsAnimated} onChange={(e) => change({ arcsAnimated: e.target.checked })} />
             {t('dxmap.animated')}
           </label>
+          <label className="toggle">
+            <input type="checkbox" checked={settings.dots} onChange={(e) => change({ dots: e.target.checked })} />
+            {t('dxmap.dots')}
+          </label>
+          <span className="dxmap-group">
+            {t('dxmap.links')}:
+            <label title={t('dxmap.linkColor')}>
+              {t('dxmap.linkColor')}
+              <input type="color" value={settings.linkColor} onChange={(e) => change({ linkColor: e.target.value })} />
+            </label>
+            <label title={t('dxmap.linkMeColor')}>
+              {t('dxmap.linkMeColor')}
+              <input type="color" value={settings.linkMeColor} onChange={(e) => change({ linkMeColor: e.target.value })} />
+            </label>
+            <label>
+              {t('dxmap.linkWidth')}
+              <input type="range" min={0.8} max={4} step={0.2} value={settings.linkWidth} onChange={(e) => change({ linkWidth: Number(e.target.value) })} />
+            </label>
+            <label>
+              {t('dxmap.antSpeed')}
+              <input type="range" min={0.2} max={3} step={0.1} value={3.2 - settings.antSpeed} disabled={!settings.arcsAnimated} onChange={(e) => change({ antSpeed: Math.round((3.2 - Number(e.target.value)) * 10) / 10 })} />
+            </label>
+          </span>
           <label>
             {t('dxmap.decay')}
             <select value={settings.decayMin} onChange={(e) => change({ decayMin: Number(e.target.value) })}>
@@ -209,10 +352,37 @@ function DxMapBody({ solo }: { solo: boolean }) {
       <DxMap
         settings={settings}
         stations={stations}
+        links={links}
+        spots={spots}
+        live={live}
         squares={shown}
         homeGrid={status?.de_grid}
         labels={{ aria: t('map.aria'), you: t('dxmap.you'), moon: t('dxmap.moon'), square: t('dxmap.square'), worked: t('dxmap.worked'), never: t('dxmap.never'), cq: t('dxmap.cq'), itu: t('dxmap.itu') }}
       />
+      <div className="dxmap-legendbox" aria-label={t('dxmap.legend')}>
+        {(['qso', 'qsl', 'qsx', 'cq', 'cqdx', 'qrz'] as const).map((k) => (
+          <span key={k} title={t(`dxmap.code.${k}`)}>
+            <i style={{ background: LIVE_COLORS[k] }} />
+            {k.toUpperCase()}
+          </span>
+        ))}
+      </div>
+      {settings.heat ? (
+        <div className="dxmap-spotbox">
+          <strong>{t('dxmap.spotRx', { n: liveSpots })}</strong>
+          <label>
+            {t('dxmap.spotMax')}
+            <select value={settings.spotMaxMin} onChange={(e) => change({ spotMaxMin: Number(e.target.value) })}>
+              {[5, 15, 30, 60, 120, 360].map((m) => (
+                <option key={m} value={m}>
+                  {String(Math.floor(m / 60)).padStart(2, '0')}:{String(m % 60).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </label>
+          {online.data?.psk === false ? <span className="dxmap-spotoff">{t('dxmap.pskOff')}</span> : null}
+        </div>
+      ) : null}
     </section>
   );
 }

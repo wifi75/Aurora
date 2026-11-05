@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.150',
+    released: '2026-11-05T18:48:19Z',
+    kind: 'new',
+    title: ['Mappa DX come GridTracker2', 'DX Map like GridTracker2', 'DX-Karte wie GridTracker2', 'Carte DX comme GridTracker2', 'Mapa DX como GridTracker2', 'Mapa DX como GridTracker2'],
+    text: [
+      "Mappa DX: propagazione con la mappa di calore e i quadratini di chi ti ha ricevuto (PSK Reporter), con Spot RX e durata massima; linee «Chi chiama chi» fra le due stazioni di ogni chiamata, tratteggiate e animate, personalizzabili dal menu (colori, spessore, velocità), anche verso il centro del paese se manca il quadrato; quadrati in onda colorati QSX, CQ, CQDX e QRZ, divisi in triangoli con il log; legenda dei colori.",
+      "DX Map: propagation with the heat map and small squares of who received you (PSK Reporter), with Spot RX and maximum age; «Who calls whom» lines between the two stations of each call, dashed and animated, customizable from the menu (colors, width, speed), also to the country centre when the square is missing; on-air squares colored QSX, CQ, CQDX and QRZ, split into triangles with the log; color legend.",
+      "DX-Karte: Ausbreitung mit Wärmekarte und kleinen Feldern derer, die dich empfangen haben (PSK Reporter), mit Spot RX und Höchstdauer; Linien «Wer ruft wen» zwischen den beiden Stationen jedes Anrufs, gestrichelt und animiert, im Menü einstellbar (Farben, Stärke, Tempo), auch zur Landesmitte, wenn das Feld fehlt; Felder auf Sendung in QSX, CQ, CQDX und QRZ gefärbt, mit dem Log in Dreiecke geteilt; Farblegende.",
+      "Carte DX : propagation avec la carte de chaleur et les petits carrés de qui t’a reçu (PSK Reporter), avec Spot RX et durée maximale ; lignes «Qui appelle qui» entre les deux stations de chaque appel, en tirets et animées, réglables depuis le menu (couleurs, épaisseur, vitesse), aussi vers le centre du pays si le carré manque ; carrés en l’air colorés QSX, CQ, CQDX et QRZ, partagés en triangles avec le log ; légende des couleurs.",
+      "Mapa DX: propagación con el mapa de calor y los cuadraditos de quién te ha recibido (PSK Reporter), con Spot RX y duración máxima; líneas «Quién llama a quién» entre las dos estaciones de cada llamada, discontinuas y animadas, personalizables desde el menú (colores, grosor, velocidad), también al centro del país si falta la cuadrícula; cuadrículas en el aire coloreadas QSX, CQ, CQDX y QRZ, divididas en triángulos con el log; leyenda de colores.",
+      "Mapa DX: propagação com o mapa de calor e os quadradinhos de quem te recebeu (PSK Reporter), com Spot RX e duração máxima; linhas «Quem chama quem» entre as duas estações de cada chamada, tracejadas e animadas, personalizáveis no menu (cores, espessura, velocidade), também para o centro do país se faltar o quadrado; quadrados no ar coloridos QSX, CQ, CQDX e QRZ, divididos em triângulos com o log; legenda das cores.",
+    ],
+  },
+  {
     version: '0.11.149',
     released: '2026-11-05T18:14:25Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les avis de la station (signal faible, aucun message décodé, horloge…) apparaissent maintenant en petites cartes en bas à droite, chacune avec sa ✕ : les panneaux ne descendent plus à chaque avis.",
       "Los avisos de la estación (señal débil, ningún mensaje decodificado, reloj…) aparecen ahora como pequeñas tarjetas abajo a la derecha, cada una con su ✕: los paneles ya no bajan cada vez que llega uno.",
       "Os avisos da estação (sinal fraco, nenhuma mensagem descodificada, relógio…) aparecem agora como pequenos cartões em baixo à direita, cada um com o seu ✕: os painéis já não descem sempre que chega um.",
-    ],
-  },
-  {
-    version: '0.11.110',
-    released: '2026-11-04T12:28:05Z',
-    kind: 'fixed',
-    title: ['Niente messaggi falsi senza radio', 'No false messages without a radio', 'Keine falschen Meldungen ohne Funkgerät', 'Plus de faux messages sans radio', 'Sin mensajes falsos sin radio', 'Sem mensagens falsas sem rádio'],
-    text: [
-      "Con il microfono del PC o un ingresso quasi muto, le ricerche dei messaggi attesi (a7, a8, a priori) potevano «trovare» stazioni nel rumore, per esempio un CQ a -25 dB. Ora con l’audio debole si decodifica solo ciò che c’è davvero, e con l’audio muto il periodo resta vuoto.",
-      "With the PC microphone or an almost silent input, the searches for expected messages (a7, a8, a priori) could «find» stations in the noise, for example a CQ at -25 dB. Now with weak audio only what is really there is decoded, and with silent audio the period stays empty.",
-      "Mit dem PC-Mikrofon oder einem fast stummen Eingang konnten die Suchen nach erwarteten Meldungen (a7, a8, a priori) Stationen im Rauschen «finden», etwa ein CQ bei -25 dB. Jetzt wird bei schwachem Audio nur dekodiert, was wirklich da ist, und bei stummem Audio bleibt der Durchgang leer.",
-      "Avec le micro du PC ou une entrée presque muette, les recherches de messages attendus (a7, a8, a priori) pouvaient « trouver » des stations dans le bruit, par exemple un CQ à -25 dB. Désormais avec un audio faible on ne décode que ce qui est vraiment là, et avec un audio muet la période reste vide.",
-      "Con el micrófono del PC o una entrada casi muda, las búsquedas de mensajes esperados (a7, a8, a priori) podían «encontrar» estaciones en el ruido, por ejemplo un CQ a -25 dB. Ahora con audio débil solo se decodifica lo que hay de verdad, y con audio mudo el periodo queda vacío.",
-      "Com o microfone do PC ou uma entrada quase muda, as pesquisas de mensagens esperadas (a7, a8, a priori) podiam «encontrar» estações no ruído, por exemplo um CQ a -25 dB. Agora com áudio fraco só se descodifica o que existe de facto, e com áudio mudo o período fica vazio.",
     ],
   },
 ];
