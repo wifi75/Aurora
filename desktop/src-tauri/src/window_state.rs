@@ -1,4 +1,5 @@
-//! Dimensione e posizione della finestra principale: si salvano chiudendo e si ripristinano all'avvio.
+//! Dimensione e posizione delle finestre (la principale e quelle a parte del secondo schermo): si salvano spostandole e chiudendo e si
+//! ripristinano alla riapertura.
 
 use std::path::{Path, PathBuf};
 
@@ -18,18 +19,32 @@ pub struct WindowState {
     pub maximized: bool,
 }
 
-fn path(dir: &Path) -> PathBuf {
-    dir.join(FILE)
+/// Le finestre a parte (secondo schermo) sono piu' piccole della principale.
+pub const SOLO_MIN_WIDTH: u32 = 300;
+pub const SOLO_MIN_HEIGHT: u32 = 200;
+
+/// Il file di una finestra: `finestra.json` per la principale, `<etichetta>.json` per le altre (`finestra-f1.json`).
+fn path_for(dir: &Path, label: &str) -> PathBuf {
+    if label == "main" { dir.join(FILE) } else { dir.join(format!("{label}.json")) }
 }
 
 pub fn load(dir: &Path) -> Option<WindowState> {
-    let text = std::fs::read_to_string(path(dir)).ok()?;
+    load_for(dir, "main")
+}
+
+#[allow(dead_code)]
+pub fn save(dir: &Path, state: &WindowState) -> std::io::Result<()> {
+    save_for(dir, "main", state)
+}
+
+pub fn load_for(dir: &Path, label: &str) -> Option<WindowState> {
+    let text = std::fs::read_to_string(path_for(dir, label)).ok()?;
     serde_json::from_str(&text).ok()
 }
 
-pub fn save(dir: &Path, state: &WindowState) -> std::io::Result<()> {
+pub fn save_for(dir: &Path, label: &str, state: &WindowState) -> std::io::Result<()> {
     let text = serde_json::to_string(state).map_err(std::io::Error::other)?;
-    std::fs::write(path(dir), text)
+    std::fs::write(path_for(dir, label), text)
 }
 
 /// Un monitor come area (x, y, larghezza, altezza) in pixel fisici.
@@ -38,7 +53,12 @@ pub type Monitor = (i32, i32, u32, u32);
 /// Lo stato e' ragionevole: dimensioni non minuscole e almeno una parte della barra del titolo su un monitor che c'e' ancora
 /// (un monitor staccato non deve lasciare la finestra fuori dallo schermo).
 pub fn is_usable(state: &WindowState, monitors: &[Monitor]) -> bool {
-    if state.width < MIN_WIDTH || state.height < MIN_HEIGHT || state.width > 20_000 || state.height > 20_000 {
+    is_usable_with(state, monitors, MIN_WIDTH, MIN_HEIGHT)
+}
+
+/// Come `is_usable`, con la misura minima della finestra (quelle a parte sono piu' piccole).
+pub fn is_usable_with(state: &WindowState, monitors: &[Monitor], min_width: u32, min_height: u32) -> bool {
+    if state.width < min_width || state.height < min_height || state.width > 20_000 || state.height > 20_000 {
         return false;
     }
     let title_x = i64::from(state.x) + i64::from(state.width) / 2;

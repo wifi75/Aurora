@@ -1,7 +1,7 @@
 # Disegna le due immagini dell'installatore (intestazione 150x57 e barra laterale 164x314, BMP a 24 bit) con il logo di Aurora.
 # Si lancia a mano quando cambia il logo o la versione; i file prodotti stanno nel repository (desktop/src-tauri/installer).
 #   .\desktop\scripts\genera-immagini-installer.ps1 -Versione 0.11.25
-param([string]$Versione = '0.11.25')
+param([string]$Versione = '')
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -62,7 +62,7 @@ $muted = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(1
 $center = New-Object System.Drawing.StringFormat; $center.Alignment = 'Center'
 $g.DrawString('AURORA', $title, $white, (New-Object System.Drawing.RectangleF(0, 150, 164, 30)), $center)
 $g.DrawString("Stazione digitale`nFT8 / FT4", $small, $muted, (New-Object System.Drawing.RectangleF(0, 184, 164, 40)), $center)
-$g.DrawString("Versione $Versione", $tiny, $muted, (New-Object System.Drawing.RectangleF(0, 262, 164, 16)), $center)
+if ($Versione) { $g.DrawString("Versione $Versione", $tiny, $muted, (New-Object System.Drawing.RectangleF(0, 262, 164, 16)), $center) }
 $g.DrawString('Tiziano Cassone - IU3WJQ', $tiny, $white, (New-Object System.Drawing.RectangleF(0, 280, 164, 16)), $center)
 $bmp.Save((Join-Path $out 'sidebar.bmp'), [System.Drawing.Imaging.ImageFormat]::Bmp)
 $g.Dispose(); $bmp.Dispose()
@@ -74,7 +74,7 @@ Fill-Night $g 150 57
 Draw-Aurora $g 150 57
 $g.DrawImage($logo, 8, 7, 43, 43)
 $g.DrawString('AURORA', (New-Object System.Drawing.Font('Segoe UI', 13, [System.Drawing.FontStyle]::Bold)), $white, 54, 9)
-$g.DrawString("v$Versione", $tiny, $muted, 56, 33)
+if ($Versione) { $g.DrawString("v$Versione", $tiny, $muted, 56, 33) }
 $bmp.Save((Join-Path $out 'header.bmp'), [System.Drawing.Imaging.ImageFormat]::Bmp)
 $g.Dispose(); $bmp.Dispose()
 $logo.Dispose()
