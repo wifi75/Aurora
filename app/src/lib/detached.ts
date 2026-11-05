@@ -112,6 +112,11 @@ export function dropClosed(): void {
   if (groups.some((g) => !g.open)) writeGroups(groups.filter((g) => g.open));
 }
 
+/** Tutto torna nella finestra principale e le finestre a parte si chiudono (ognuna si chiude da sola quando resta vuota). */
+export function attachAll(): void {
+  writeGroups([]);
+}
+
 export function reopenAll(): void {
   const groups = readGroups();
   if (groups.length === 0) return;

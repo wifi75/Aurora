@@ -131,14 +131,21 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     });
     m.on('mouseout', () => setReadout(''));
     const fit = () => {
+      // finestra ancora nascosta o senza misura (finestra a parte appena creata): con larghezza zero lo zoom diventava infinito e la mappa
+      // restava bianca anche dopo, quando la finestra compariva
+      if (el.clientWidth < 10 || el.clientHeight < 10) return;
       m.invalidateSize(false);
       const z = m.getBoundsZoom(WORLD, true);
+      if (!Number.isFinite(z)) return;
       m.setMinZoom(z);
-      if (m.getZoom() < z) m.setZoom(z);
+      const now = m.getZoom();
+      if (!Number.isFinite(now) || now > m.getMaxZoom()) m.setView([25, 10], z, { animate: false });
+      else if (now < z) m.setZoom(z);
     };
     m.setView([25, 10], 2, { animate: false });
     fit();
-    m.setView([25, 10], m.getMinZoom(), { animate: false });
+    const start = m.getMinZoom();
+    m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
     map.current = m;
     let observer: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
