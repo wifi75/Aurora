@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.140 - 2026-11-05
+- **Errore «libhamlib-4.dll» durante l'aggiornamento**: il rigctld di Aurora sopravviveva alla chiusura del programma e teneva la DLL; l'installatore ora lo ferma con `taskkill /FI "MODULES eq libhamlib-4.dll"` (senza PowerShell), poi con PowerShell solo per quello della cartella di Aurora, fino a quattro tentativi.
+
 ## 0.11.139 - 2026-11-05
 - **Impostazioni › Audio**: cursore del volume di Windows sotto l'ingresso (registrazione, `/api/v1/input-level`) e sotto l'uscita (trasmissione Pwr, `/api/v1/output-level`), si invia al rilascio (`settings/DeviceVolume.tsx`).
 - **Dashboard a blocchi**: 12 colonne e 24 righe che seguono la finestra in larghezza e in altezza; il primo blocco riempie la finestra (prima restava uno spazio grigio vuoto).

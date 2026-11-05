@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.140',
+    released: '2026-11-05T16:39:55Z',
+    kind: 'fixed',
+    title: ["Aggiornamento senza l'errore di libhamlib", 'Update without the libhamlib error', 'Aktualisierung ohne libhamlib-Fehler', 'Mise à jour sans l’erreur libhamlib', 'Actualización sin el error de libhamlib', 'Atualização sem o erro do libhamlib'],
+    text: [
+      "Aggiornando, l'installazione poteva fermarsi con «Errore nell'apertura del file in scrittura: libhamlib-4.dll», perché il rigctld di Aurora restava aperto. Ora l'installatore lo chiude da solo e riprova, senza chiederti nulla.",
+      "When updating, the installer could stop with «Error opening file for writing: libhamlib-4.dll», because Aurora's rigctld stayed open. Now the installer closes it by itself and retries, without asking.",
+      "Beim Aktualisieren konnte die Installation mit «Fehler beim Öffnen der Datei zum Schreiben: libhamlib-4.dll» stehen bleiben, weil Auroras rigctld offen blieb. Jetzt schließt das Installationsprogramm es selbst und versucht es erneut, ohne Nachfrage.",
+      "Lors d’une mise à jour, l’installation pouvait s’arrêter sur « Erreur d’ouverture du fichier en écriture : libhamlib-4.dll », car le rigctld d’Aurora restait ouvert. L’installateur le ferme maintenant tout seul et réessaie, sans rien demander.",
+      "Al actualizar, la instalación podía pararse con «Error al abrir el archivo para escritura: libhamlib-4.dll», porque el rigctld de Aurora seguía abierto. Ahora el instalador lo cierra solo y reintenta, sin preguntar.",
+      "Ao atualizar, a instalação podia parar com «Erro ao abrir o ficheiro para escrita: libhamlib-4.dll», porque o rigctld da Aurora ficava aberto. Agora o instalador fecha-o sozinho e tenta de novo, sem perguntar.",
+    ],
+  },
+  {
     version: '0.11.139',
     released: '2026-11-05T13:26:43Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Les fichiers audio sont toujours enregistrés dans le dossier d’Aurora, jamais dans celui de JTDX ou ailleurs. Dans l’activité de bande drapeau et pays commencent plus à gauche avec un nom un peu plus petit ; l’encadré « Réglages conseillés » est aligné en haut à gauche.',
       'Los archivos de audio se guardan siempre en la carpeta de Aurora, nunca en la de JTDX ni en otra. En la actividad de banda bandera y país empiezan más a la izquierda con el nombre algo más pequeño; el recuadro «Ajustes recomendados» está alineado arriba a la izquierda.',
       'Os ficheiros de áudio são sempre gravados na pasta da Aurora, nunca na do JTDX nem noutra. Na atividade de banda bandeira e país começam mais à esquerda com o nome um pouco mais pequeno; a caixa «Definições recomendadas» está alinhada em cima à esquerda.',
-    ],
-  },
-  {
-    version: '0.11.100',
-    released: '2026-11-03T22:22:32Z',
-    kind: 'changed',
-    title: ['Rapporti degli errori accesi', 'Error reports on', 'Fehlerberichte an', 'Rapports d’erreur activés', 'Informes de errores activos', 'Relatórios de erros ligados'],
-    text: [
-      'I rapporti degli errori (domanda dopo un crash ed errori anonimi) sono accesi di fabbrica: al primo avvio Aurora lo dice una volta. Si spengono in Impostazioni > Assistenza.',
-      'Error reports (question after a crash and anonymous errors) are on by default: Aurora says so once at first start. Switch them off in Settings > Support.',
-      'Fehlerberichte (Frage nach einem Absturz und anonyme Fehler) sind ab Werk an: Aurora sagt es einmal beim ersten Start. Ausschalten unter Einstellungen > Support.',
-      'Les rapports d’erreur (question après un plantage et erreurs anonymes) sont activés par défaut : Aurora le dit une fois au premier démarrage. Désactivation dans Réglages > Assistance.',
-      'Los informes de errores (pregunta tras un fallo y errores anónimos) están encendidos de fábrica: Aurora lo dice una vez al primer inicio. Se apagan en Ajustes > Asistencia.',
-      'Os relatórios de erros (pergunta após uma falha e erros anónimos) estão ligados de fábrica: a Aurora diz isso uma vez no primeiro arranque. Desligam-se em Definições > Assistência.',
     ],
   },
 ];
