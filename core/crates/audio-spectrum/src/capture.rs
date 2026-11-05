@@ -281,14 +281,20 @@ pub fn run_capture_with(
         // Un buffer perso ogni tanto e' normale (USB, carico del PC): lascia un buco di pochi ms nella cascata.
         // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
         let glitches = Arc::new(AtomicU64::new(0));
+        let started = std::time::Instant::now();
+        // dettagli per capire il problema dal rapporto: tipo di scheda (non il nome, che puo' dire chi e'), formato e ritmo delle perdite
+        let kind = device_kind(&name);
+        let detail = format!("ingresso {kind}, {rate} Hz, {channels} canali, {format:?}");
         let on_error = move |e: cpal::Error| {
             let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
             tracing::debug!("errore del flusso audio: {e}");
             let cause = format!("{:?}", e.kind());
+            let minutes = started.elapsed().as_secs_f64() / 60.0;
+            let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };
             // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
             if is_power_of_ten(n) {
                 if n >= 100 {
-                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora, causa: {cause}): la cascata resta attiva");
+                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte in {minutes:.0} min, {per_min:.1} al minuto, causa: {cause}; {detail}): la cascata resta attiva");
                 } else {
                     tracing::info!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
                 }
@@ -407,5 +413,19 @@ mod tests {
         let hits: Vec<u64> = (1..=1000).filter(|n| is_power_of_ten(*n)).collect();
         assert_eq!(hits, vec![1, 10, 100, 1000]);
         assert!(!is_power_of_ten(0) && !is_power_of_ten(20) && !is_power_of_ten(101));
+    }
+}
+
+/// Il tipo della scheda audio dal nome, senza il nome stesso.
+fn device_kind(name: &str) -> &'static str {
+    let n = name.to_lowercase();
+    if n.contains("usb") || n.contains("codec") {
+        "USB"
+    } else if n.contains("realtek") || n.contains("high definition") {
+        "integrata"
+    } else if n.contains("cable") || n.contains("virtual") || n.contains("vac") || n.contains("voicemeeter") {
+        "virtuale"
+    } else {
+        "altra"
     }
 }
