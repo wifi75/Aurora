@@ -133,8 +133,8 @@ describe('RadioDisplayHeader', () => {
     act(() => useStation.setState({ status }));
     act(() => useRadioDisplay.getState().set({ style: 'ft2000' }));
     const { container } = render(<RadioDisplayHeader />, { wrapper });
-    expect(container.querySelectorAll('svg')).toHaveLength(1);
-    expect(container.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 960 96');
+    // un solo frontalino (le altre svg sono le icone della testata, come il menu per spostare il display)
+    expect(container.querySelectorAll('svg[viewBox="0 0 960 96"]')).toHaveLength(1);
     expect(container.querySelector('.rx-extras')).toBeNull();
     expect(container.textContent).toContain('VFO-A');
   });
