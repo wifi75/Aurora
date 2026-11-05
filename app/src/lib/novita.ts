@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.152',
+    released: '2026-11-05T21:58:36Z',
+    kind: 'fixed',
+    title: ['Audio che si riprende da solo e Linux', 'Self-recovering audio and Linux', 'Audio erholt sich selbst und Linux', 'Audio qui se rétablit seul et Linux', 'Audio que se recupera solo y Linux', 'Áudio que recupera sozinho e Linux'],
+    text: [
+      "Se la scheda audio della radio sparisce durante l'uso (radio spenta, cavo USB mosso), ricezione e trasmissione ripartono da sole appena torna, con un avviso che spiega cosa succede. Su Linux il cursore Pwr ora abbassa davvero il segnale, gli aggiornamenti portano alla release con AppImage e .deb e OmniRig non è più proposto. La finestra «Salva con nome» aperta a lungo non è più scambiata per un blocco del programma.",
+      "If the radio's sound card disappears during use (radio off, USB cable moved), receive and transmit restart on their own as soon as it is back, with a notice explaining what is happening. On Linux the Pwr slider now really lowers the signal, updates lead to the release with AppImage and .deb and OmniRig is no longer offered. A «Save as» window left open for long is no longer taken for a program freeze.",
+      "Verschwindet die Soundkarte des Funkgeräts während des Betriebs (Gerät aus, USB-Kabel bewegt), starten Empfang und Senden von selbst neu, sobald sie zurück ist, mit einem Hinweis. Unter Linux senkt der Pwr-Regler jetzt wirklich das Signal, Updates führen zur Release mit AppImage und .deb, OmniRig wird nicht mehr angeboten. Ein lange offenes «Speichern unter» gilt nicht mehr als Programmhänger.",
+      "Si la carte son de la radio disparaît en cours d’utilisation (radio éteinte, câble USB bougé), réception et émission repartent seules dès qu’elle revient, avec un avis qui explique ce qui se passe. Sous Linux le curseur Pwr baisse vraiment le signal, les mises à jour mènent à la release avec AppImage et .deb et OmniRig n’est plus proposé. Une fenêtre «Enregistrer sous» ouverte longtemps n’est plus prise pour un blocage.",
+      "Si la tarjeta de sonido de la radio desaparece durante el uso (radio apagada, cable USB movido), recepción y transmisión vuelven solas en cuanto regresa, con un aviso que explica qué pasa. En Linux el control Pwr ahora baja de verdad la señal, las actualizaciones llevan a la release con AppImage y .deb y OmniRig ya no se ofrece. Una ventana «Guardar como» abierta mucho tiempo ya no se toma por un bloqueo.",
+      "Se a placa de som do rádio desaparecer durante o uso (rádio desligado, cabo USB mexido), receção e transmissão recomeçam sozinhas assim que volta, com um aviso a explicar o que se passa. No Linux o cursor Pwr baixa mesmo o sinal, as atualizações levam à release com AppImage e .deb e o OmniRig já não é proposto. Uma janela «Guardar como» aberta muito tempo já não é tomada por um bloqueio.",
+    ],
+  },
+  {
     version: '0.11.151',
     released: '2026-11-05T20:08:26Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Réglages › Radio propose six nouveaux afficheurs : trois larges (Icom double récepteur, Icom bleu avec bande passante, LED essentiel) et trois presque carrés dans le coin de l’en-tête (Icom bleu, Icom noir à aiguille, Yaesu ambre). Ils ne montrent que ce que la radio donne et ce que tu choisis. Tous les afficheurs larges font maintenant 70 points de haut, avec la taille indiquée à côté de chaque choix.",
       "En Ajustes › Radio hay seis pantallas nuevas: tres anchas (Icom doble receptor, Icom azul con banda de paso, LED esencial) y tres casi cuadradas en la esquina de la cabecera (Icom azul, Icom negro con aguja, Yaesu ámbar). Muestran solo lo que da la radio y lo que eliges. Todas las pantallas anchas miden ahora 70 puntos de alto, con la medida junto a cada opción.",
       "Em Definições › Rádio há seis ecrãs novos: três largos (Icom recetor duplo, Icom azul com banda passante, LED essencial) e três quase quadrados no canto do cabeçalho (Icom azul, Icom preto com ponteiro, Yaesu âmbar). Mostram só o que o rádio dá e o que escolhes. Todos os ecrãs largos têm agora 70 pontos de altura, com a medida escrita ao lado de cada escolha.",
-    ],
-  },
-  {
-    version: '0.11.112',
-    released: '2026-11-04T12:34:49Z',
-    kind: 'changed',
-    title: ['Log: import e collegamenti in una pagina', 'Log: import and links on one page', 'Log: Import und Verbindungen auf einer Seite', 'Journal : import et liaisons sur une page', 'Log: importación y conexiones en una página', 'Log: importação e ligações numa página'],
-    text: [
-      "Con il log vuoto, il clic sul pannello Log apre Impostazioni › Programmi collegati: in cima l’importazione ed esportazione ADIF del tuo log, subito sotto il collegamento a un log esterno via UDP (Log4OM, GridTracker, BBLogger…).",
-      "With an empty log, clicking the Log panel opens Settings › Connected programs: at the top importing and exporting your ADIF log, right below the link to an external log via UDP (Log4OM, GridTracker, BBLogger…).",
-      "Bei leerem Log öffnet ein Klick auf das Log-Feld Einstellungen › Verbundene Programme: oben Import und Export deines ADIF-Logs, direkt darunter die Verbindung zu einem externen Log über UDP (Log4OM, GridTracker, BBLogger…).",
-      "Avec un journal vide, un clic sur le panneau Journal ouvre Réglages › Programmes connectés : en haut l’import et l’export ADIF de ton journal, juste en dessous la liaison vers un journal externe par UDP (Log4OM, GridTracker, BBLogger…).",
-      "Con el log vacío, el clic en el panel Log abre Ajustes › Programas conectados: arriba la importación y exportación ADIF de tu log, justo debajo la conexión a un log externo por UDP (Log4OM, GridTracker, BBLogger…).",
-      "Com o log vazio, o clique no painel Log abre Definições › Programas ligados: em cima a importação e exportação ADIF do teu log, logo abaixo a ligação a um log externo por UDP (Log4OM, GridTracker, BBLogger…).",
     ],
   },
 ];
