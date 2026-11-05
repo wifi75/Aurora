@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.142',
-    released: '2026-11-05T16:56:16Z',
+    released: '2026-11-05T16:59:48Z',
     kind: 'fixed',
     title: ['Abilita Tx si accende al primo clic', 'Enable Tx turns on at the first click', 'Tx aktivieren schaltet beim ersten Klick ein', 'Activer Tx s’allume au premier clic', 'Activar Tx se enciende al primer clic', 'Ativar Tx liga ao primeiro clique'],
     text: [
