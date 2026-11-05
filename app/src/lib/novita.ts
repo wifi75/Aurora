@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.139',
-    released: '2026-11-05T13:24:08Z',
+    released: '2026-11-05T13:26:43Z',
     kind: 'new',
     title: ['Volumi di Windows nelle Impostazioni, dashboard a tutta finestra', 'Windows volumes in Settings, full-window dashboard', 'Windows-Lautstärken in den Einstellungen, Dashboard im ganzen Fenster', 'Volumes Windows dans les Réglages, tableau de bord plein écran', 'Volúmenes de Windows en Ajustes, panel a toda ventana', 'Volumes do Windows nas Definições, painel em toda a janela'],
     text: [
