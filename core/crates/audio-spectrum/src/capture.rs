@@ -276,29 +276,35 @@ pub fn run_capture_with(
     // lo stream non e' `Send` su tutte le piattaforme: vive e muore nel thread che lo crea
     let thread = std::thread::spawn(move || {
         let (chunks_tx, chunks_rx) = mpsc::channel::<Vec<f32>>();
+        // i buffer tornano indietro dopo l'uso: nel thread audio niente allocazioni a ogni blocco (rallentano e fanno perdere campioni)
+        let (free_tx, free_rx) = mpsc::channel::<Vec<f32>>();
         // Un buffer perso ogni tanto e' normale (USB, carico del PC): lascia un buco di pochi ms nella cascata.
         // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
         let glitches = Arc::new(AtomicU64::new(0));
         let on_error = move |e: cpal::Error| {
             let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
             tracing::debug!("errore del flusso audio: {e}");
+            let cause = format!("{:?}", e.kind());
             // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
             if is_power_of_ten(n) {
                 if n >= 100 {
-                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte finora, causa: {cause}): la cascata resta attiva");
                 } else {
                     tracing::info!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
                 }
             }
         };
+        let mut free_rx_slot = Some(free_rx);
         let built = match format {
             cpal::SampleFormat::F32 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
+                let free = std::mem::replace(&mut free_rx_slot, None);
                 device.build_input_stream(
                     supported.into(),
                     move |data: &[f32], _| {
-                        let mut mono = Vec::new();
+                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
+                        mono.clear();
                         pick_channel(data, channels, InputChannel::load(&channel), &mut mono);
                         let _ = tx.send(mono);
                     },
@@ -309,11 +315,15 @@ pub fn run_capture_with(
             cpal::SampleFormat::I16 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
+                let free = std::mem::replace(&mut free_rx_slot, None);
+                let mut floats: Vec<f32> = Vec::new();
                 device.build_input_stream(
                     supported.into(),
                     move |data: &[i16], _| {
-                        let floats: Vec<f32> = data.iter().map(|&s| f32::from(s) / 32768.0).collect();
-                        let mut mono = Vec::new();
+                        floats.clear();
+                        floats.extend(data.iter().map(|&s| f32::from(s) / 32768.0));
+                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
+                        mono.clear();
                         pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
                         let _ = tx.send(mono);
                     },
@@ -355,6 +365,7 @@ pub fn run_capture_with(
                         seq += 1;
                         let _ = rows.send(SpectrumRow { seq, f_min_hz: 0, f_max_hz: F_MAX_HZ, bins });
                     }
+                    let _ = free_tx.send(chunk);
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,
