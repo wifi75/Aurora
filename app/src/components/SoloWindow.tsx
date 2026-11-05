@@ -5,6 +5,7 @@ import { Live } from '../pages/Live';
 import { MapPage } from '../pages/MapPage';
 import { PropagationPage } from '../pages/PropagationPage';
 import '../styles/solo.css';
+import { freeCell, GridBoard, type Cell } from './GridBoard';
 
 /** Il titolo di un elemento (gli stessi nomi dei pannelli e delle pagine). */
 export const ITEM_TITLE: Record<ItemId, Key> = {
@@ -78,6 +79,33 @@ export function SoloWindow({ id }: { id: string }) {
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', stop);
   };
+
+  // dashboard a blocchi: ogni elemento e' un blocco da trascinare dalla barretta e ridimensionare dall'angolo
+  if (group.mode === 'grid') {
+    const cells: Record<string, Cell> = {};
+    for (const item of group.items) cells[item] = group.cells?.[item] ?? freeCell(cells);
+    return (
+      <div className="solo solo--grid">
+        <GridBoard
+          cells={cells}
+          onChange={(next) => updateGroup(id, { cells: next })}
+          render={(item, grip) => (
+            <div className="solo-slot solo-slot--block">
+              <div className="solo-bar solo-bar--grip" onPointerDown={grip.onPointerDown} title={t('win.drag')}>
+                <span className="solo-title">{t(ITEM_TITLE[item as ItemId])}</span>
+                <button type="button" className="solo-btn" title={t('win.attach')} aria-label={t('win.attach')} onPointerDown={(e) => e.stopPropagation()} onClick={() => attach(item as ItemId)}>
+                  ⤓
+                </button>
+              </div>
+              <div className="solo-body">
+                <Item item={item as ItemId} />
+              </div>
+            </div>
+          )}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={box} className={`solo solo--${group.dir}`}>

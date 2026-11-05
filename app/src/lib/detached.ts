@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PanelId } from './layout';
 import { browserStorage } from './theme';
+import { arrange, freeCell, type Cell } from '../components/GridBoard';
 
 /** Cosa si puo' portare in una finestra a parte (secondo schermo): i pannelli della Stazione, la Mappa e la Propagazione. */
 export type ItemId = PanelId | 'map' | 'propagation';
@@ -14,7 +15,14 @@ export interface Group {
   sizes: number[];
   /** La finestra e' aperta adesso; chiusa dall'utente con la X, i suoi elementi tornano nella finestra principale. */
   open: boolean;
+  /** `grid`: dashboard a blocchi (trascinabili e ridimensionabili); altrimenti in riga o in colonna con il divisore. */
+  mode?: 'split' | 'grid';
+  /** Posizione e misura di ogni blocco della dashboard. */
+  cells?: Record<string, Cell>;
 }
+
+/** L'identificativo della dashboard a blocchi (una sola). */
+export const DASHBOARD = 'dash';
 
 const KEY = 'aurora-finestre';
 const EVENT = 'aurora-finestre';
@@ -76,6 +84,9 @@ export function detach(item: ItemId, into?: string): void {
     target.items.push(item);
     target.sizes = evenSizes(target.items.length);
     target.open = true;
+    if (target.mode === 'grid') target.cells = arrange({ ...(target.cells ?? {}), [item]: freeCell(target.cells ?? {}) });
+  } else if (into === DASHBOARD) {
+    groups.push({ id: DASHBOARD, items: [item], dir: 'row', sizes: [1], open: true, mode: 'grid', cells: { [item]: { x: 0, y: 0, w: 12, h: 12 } } });
   } else {
     let n = 1;
     while (groups.some((g) => g.id === `f${n}`)) n += 1;
@@ -91,7 +102,8 @@ export function attach(item: ItemId): void {
   const groups = readGroups()
     .map((g) => {
       const items = g.items.filter((i) => i !== item);
-      return { ...g, items, sizes: items.length === g.items.length ? g.sizes : evenSizes(items.length) };
+      const cells = g.cells ? Object.fromEntries(Object.entries(g.cells).filter(([k]) => k !== item)) : undefined;
+      return { ...g, items, cells, sizes: items.length === g.items.length ? g.sizes : evenSizes(items.length) };
     })
     .filter((g) => g.items.length > 0);
   writeGroups(groups);
