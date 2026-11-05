@@ -143,7 +143,7 @@ export function SoloWindow({ id }: { id: string }) {
     <div ref={box} className={`solo solo--${group.dir}`}>
       {group.items.map((item, at) => (
         <div key={item} className="solo-slot" style={{ flexGrow: group.sizes[at] ?? 1 }}>
-          <div className="solo-bar">
+          <div className="solo-bar solo-bar--drag" data-tauri-drag-region title={t('win.dragWindow')}>
             <span className="solo-title">{t(ITEM_TITLE[item])}</span>
             {at === 0 && group.items.length > 1 ? (
               <button type="button" className="solo-btn" title={t('win.dir')} aria-label={t('win.dir')} onClick={() => updateGroup(id, { dir: group.dir === 'row' ? 'col' : 'row' })}>
