@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.136',
-    released: '2026-11-05T13:02:55Z',
+    released: '2026-11-05T13:06:22Z',
     kind: 'fixed',
     title: ['La finestra vuota si chiude', 'The empty window closes', 'Das leere Fenster schließt sich', 'La fenêtre vide se ferme', 'La ventana vacía se cierra', 'A janela vazia fecha-se'],
     text: [
