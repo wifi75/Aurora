@@ -1,10 +1,13 @@
 # TODO
 
-Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-01, v0.11.60.
+Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
 ## Aperti (2026-11-01)
 - [ ] Rinominare il crate `engine-jtdx` (ora contiene solo i dati di Aurora) e i preset della cascata «JTDX»/«WSJT-X».
-- [ ] Linux: alla prossima release controllare che il lavoro `Linux` di GitHub Actions alleghi AppImage e `.deb` e che i link della pagina web funzionino.
+- [x] Linux: GitHub Actions allega AppImage e `.deb` a ogni release (verificato fino alla 0.11.151, 148 download).
+- [ ] **Linux, aggiornamento AppImage con un clic**: oggi l'avviso porta solo alla pagina della release. Da fare: con «Installa» Aurora scarica la nuova AppImage (`$APPIMAGE` dice dove sta la sua), controlla che sia completa, sostituisce la vecchia e si riapre; niente password (file dell'utente).
+- [ ] **Linux, aiuto per il `.deb`**: scaricarlo e aprirlo con l'installatore del sistema (Software di Ubuntu / GDebi, `xdg-open`), dove l'utente conferma con la password. Da provare su un desktop Linux vero.
+- [ ] Uscita audio persa e ripresa (0.11.152): provare in onda spegnendo e riaccendendo la radio con Aurora aperta.
 - [ ] **CAT4OM** (cat4om.com, dello stesso autore di Log4OM, IW3HMH): richiesto da un utente. Oggi dovrebbe funzionare con il ponte Hamlib/rigctld di CAT4OM (Aurora: Hamlib, radio «Hamlib NET rigctl», porta 127.0.0.1:4532, PTT CAT), ma non e' provato. Dalla 0.11.119 la porta 127.0.0.1:4532 si puo' scrivere nel campo Porta, prima il collegamento era impossibile. Da fare: provarlo (anche senza radio), poi aggiungerlo come scelta pronta in Impostazioni > Radio e nella Guida; valutare il protocollo nativo di CAT4OM con l'autore se da' piu' funzioni del ponte.
 - [ ] Pagina dei rapporti degli errori nell'installatore (informativa e due caselle gia' spuntate); oggi c'e' solo l'avviso al primo avvio.
 - [ ] Server UDP primario e secondario di fabbrica sulla stessa porta 127.0.0.1:2237 (QSO doppi nei log): decidere se spegnere il secondario.
