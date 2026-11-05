@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.153',
-    released: '2026-11-05T22:08:46Z',
+    released: '2026-11-05T22:11:31Z',
     kind: 'fixed',
     title: ['Radio spenta: resta il display', 'Radio off: the display stays', 'Funkgerät aus: das Display bleibt', 'Radio éteinte : l’afficheur reste', 'Radio apagada: el display se queda', 'Rádio desligado: o display fica'],
     text: [
