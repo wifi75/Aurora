@@ -1,3 +1,4 @@
+import { DxMapPage } from '../pages/DxMapPage';
 import { DisplayFit } from './DisplayFit';
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT, type Key } from '../i18n';
@@ -18,12 +19,14 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
   log: 'panel.log',
   cluster: 'panel.cluster',
   map: 'nav.map',
+  dxmap: 'nav.dxmap',
   propagation: 'prop.psk',
   display: 'win.display',
 };
 
 function Item({ item }: { item: ItemId }) {
   if (item === 'map') return <MapPage solo />;
+  if (item === 'dxmap') return <DxMapPage solo />;
   if (item === 'propagation') return <PropagationPage solo />;
   if (item === 'display') return <DisplayFit />;
   return <Live soloPanel={item} />;

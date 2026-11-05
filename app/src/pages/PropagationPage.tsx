@@ -158,7 +158,7 @@ function PropagationPageBody({ solo }: { solo: boolean }) {
     return (
       <div className="map-page map-page--solo">
         <div className="worldmap-wrap">
-          <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} night={options.night} labels={mapLabels(t)} />
+          <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} mapStyleId={options.style} night={options.night} labels={mapLabels(t)} />
         </div>
       </div>
     );
@@ -263,7 +263,7 @@ function PropagationPageBody({ solo }: { solo: boolean }) {
                 <p className="muted">{t('prop.psk.none', { hours: pskState?.hours ?? 0 })}</p>
               ) : (
                 <>
-                  <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} night={options.night} compact labels={mapLabels(t)} />
+                  <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles={options.tiles} mapStyleId={options.style} night={options.night} compact labels={mapLabels(t)} />
                   <div className="prop-received-columns">
                     {receivedColumns.map((col, i) => (
                       <div className="history-table-wrap prop-table-wrap" key={i}>

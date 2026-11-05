@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -18,6 +18,7 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/automazioni') return { name: 'automation' };
   if (hash === '#/statistiche') return { name: 'stats' };
   if (hash === '#/mappa') return { name: 'map' };
+  if (hash === '#/mappa-dx') return { name: 'dxmap' };
   if (hash === '#/storico') return { name: 'history' };
   if (hash === '#/propagazione') return { name: 'propagation' };
   if (hash === '#/guida') return { name: 'guide' };

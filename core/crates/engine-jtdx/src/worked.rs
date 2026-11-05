@@ -64,6 +64,8 @@ pub struct WorkedLog {
     pub(crate) cells: HashMap<(usize, String, ModeClass), Cell>,
     /// QSO per (paese, banda) con qualunque modo, anche non noto.
     pub(crate) any_cells: HashMap<(usize, String), Cell>,
+    /// QSO per (locatore a 4 caratteri, banda, modo come nel log): la Mappa DX colora i quadrati per banda, modo e conferma.
+    grid_cells: HashMap<(String, String, String), Cell>,
     /// Chiavi dei QSO con data gia' contati (stesso QSO letto da due log: conta una volta sola).
     seen: HashSet<String>,
     /// Indice dei criteri di «nuovo» di JTDX (zona CQ, ITU, paese, locatore, prefisso, nominativo), ognuno a quattro livelli: in qualunque banda e
@@ -327,6 +329,7 @@ impl WorkedLog {
         if let Some(g) = grid4(&q.grid) {
             self.index(Crit::Grid, &g, &band, class);
             self.grid_bands.insert((g.clone(), band.clone()));
+            self.grid_cells.entry((g.clone(), band.clone(), q.mode.trim().to_uppercase())).or_default().add(q.confirmed);
             if let Some(class) = class {
                 self.grid_modes.insert((g.clone(), class));
             }
@@ -887,5 +890,29 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         let bare = qso("AT3AB", "20m", "FT8");
         assert!(LogFilter { call: Some("IU3ABC".into()), grid: Some("IO91".into()), ..off.clone() }.accepts(&bare));
         assert!(!from("2024").accepts(&bare), "senza data non si puo' dire che sia recente");
+    }
+}
+
+/// Un quadrato locatore lavorato su una banda in un modo: quanti QSO e quanti confermati (`confirmed` null se il log non lo dice).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct GridCell {
+    pub grid: String,
+    pub band: String,
+    pub mode: String,
+    pub qsos: u32,
+    pub confirmed: u32,
+    pub unconfirmed: u32,
+}
+
+impl WorkedLog {
+    /// I quadrati lavorati per banda e modo, in ordine di quadrato (per la Mappa DX).
+    pub fn grid_cells(&self) -> Vec<GridCell> {
+        let mut out: Vec<GridCell> = self
+            .grid_cells
+            .iter()
+            .map(|((grid, band, mode), c)| GridCell { grid: grid.clone(), band: band.clone(), mode: mode.clone(), qsos: c.qsos, confirmed: c.confirmed, unconfirmed: c.unconfirmed })
+            .collect();
+        out.sort_by(|a, b| (&a.grid, &a.band, &a.mode).cmp(&(&b.grid, &b.band, &b.mode)));
+        out
     }
 }
