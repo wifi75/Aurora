@@ -249,6 +249,29 @@ impl AudioManager {
 
     /// Apre l'ingresso all'avvio (store, poi ambiente). Se niente e' scelto o niente si apre la cascata resta spenta, come prima.
     pub fn open_initial_input(&self) {
+        self.try_open_input(true);
+    }
+
+    /// C'e' un ingresso aperto?
+    pub fn has_input(&self) -> bool {
+        lock(&self.state).input.is_some()
+    }
+
+    /// C'e' un ingresso scelto da aprire (nelle impostazioni o nell'ambiente)?
+    pub fn wants_input(&self) -> bool {
+        !input_candidates(&self.initial.input, self.env_input.as_deref()).is_empty()
+    }
+
+    /// Riprova ad aprire l'ingresso scelto (la scheda della radio accesa dopo Aurora); `log` scrive gli errori nel registro.
+    pub fn retry_input(&self) -> bool {
+        if self.has_input() {
+            return true;
+        }
+        self.try_open_input(false);
+        self.has_input()
+    }
+
+    fn try_open_input(&self, log: bool) {
         let candidates = input_candidates(&self.initial.input, self.env_input.as_deref());
         let mut st = lock(&self.state);
         for (hint, from_store) in candidates {
@@ -262,7 +285,8 @@ impl AudioManager {
                     self.start_engine_once();
                     return;
                 }
-                Err(e) => tracing::warn!("cascata audio non attiva da {}: {e}", hint.as_deref().unwrap_or("predefinito")),
+                Err(e) if log => tracing::warn!("cascata audio non attiva da {}: {e}", hint.as_deref().unwrap_or("predefinito")),
+                Err(_) => {}
             }
         }
     }
