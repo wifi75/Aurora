@@ -39,6 +39,10 @@ ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash
 virtuale), quanti indirizzi ha il PC, se la rete di Windows è Pubblica o Privata, se il firewall ha la regola per Aurora, se il
 telefono è arrivato ad Aurora e come è finita. Mai l'indirizzo IP, il nome della rete Wi-Fi o il nome degli adattatori.
 
+**Audio e decodifica** (dalla versione dopo la 0.11.131): il rapporto dei blocchi audio persi dice la causa indicata da Windows, da
+quanti minuti, quanti al minuto e il *tipo* di ingresso (USB, integrata, virtuale), con frequenza, canali e formato, mai il nome della
+scheda. Se la decodifica è spesso lenta, il rapporto dice i tempi, il numero di processori e quali opzioni del decoder sono accese.
+
 **Cosa non contengono mai**: nominativo, locatore, messaggi decodificati, log dei QSO, `ALL.TXT`, impostazioni, password, chiavi
 e token, indirizzi IP, email, il nome utente di Windows e il nome del PC, i minidump (contengono la memoria del programma). Prima
 dell'invio una pulizia sostituisce nominativi e locatori riconosciuti, percorsi `C:\Users\<nome>`, indirizzi IP, email e codici
