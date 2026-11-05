@@ -13,6 +13,8 @@ import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 
 const KEY = 'aurora-mappa-dx';
+/** Nominativo → quadrato, da tutti i messaggi sentiti da quando il programma e' aperto. */
+const LEARNED_GRIDS = new Map<string, string>();
 const DEFAULTS: DxMapSettings = {
   style: 'natgeo',
   nightStyle: 'citylights',
@@ -31,6 +33,8 @@ const DEFAULTS: DxMapSettings = {
   linkWidth: 1.6,
   antSpeed: 0.9,
   heat: true,
+  spotPaths: true,
+  spotColor: '#d4ff2a',
   spotMaxMin: 15,
   arcsAnimated: true,
   decayMin: 15,
@@ -98,8 +102,10 @@ function DxMapBody({ solo }: { solo: boolean }) {
   const liveSpots = spots.filter((p) => p.age <= settings.spotMaxMin * 60).length;
   // chi chiama chi: «K1ABC G0XYZ …» e' G0XYZ che chiama K1ABC; vale l'ultimo messaggio di ogni mittente, se i due quadrati sono noti
   const me = status?.de_call?.toUpperCase() ?? '';
+  // i quadrati gia' sentiti restano ricordati finche' il programma e' aperto: le linee si tracciano anche quando l'ultimo messaggio non ha il quadrato
   const grids = useMemo(() => {
-    const m = new Map(stations.map((s) => [s.call, s.grid]));
+    for (const s of stations) LEARNED_GRIDS.set(s.call, s.grid);
+    const m = new Map(LEARNED_GRIDS);
     if (me && status?.de_grid) m.set(me, status.de_grid);
     return m;
   }, [stations, me, status?.de_grid]);
@@ -314,6 +320,17 @@ function DxMapBody({ solo }: { solo: boolean }) {
             <input type="checkbox" checked={settings.arcsAnimated} onChange={(e) => change({ arcsAnimated: e.target.checked })} />
             {t('dxmap.animated')}
           </label>
+          <span className="dxmap-group">
+            {t('dxmap.heat')}:
+            <label className="toggle">
+              <input type="checkbox" checked={settings.spotPaths} onChange={(e) => change({ spotPaths: e.target.checked })} />
+              {t('dxmap.spotPaths')}
+            </label>
+            <label title={t('dxmap.linkColor')}>
+              {t('dxmap.linkColor')}
+              <input type="color" value={settings.spotColor} onChange={(e) => change({ spotColor: e.target.value })} />
+            </label>
+          </span>
           <label className="toggle">
             <input type="checkbox" checked={settings.dots} onChange={(e) => change({ dots: e.target.checked })} />
             {t('dxmap.dots')}
