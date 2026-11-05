@@ -25,7 +25,7 @@ export const NOVITA: readonly Novita[] = [
     kind: 'fixed',
     title: ['La finestra vuota si chiude', 'The empty window closes', 'Das leere Fenster schließt sich', 'La fenêtre vide se ferme', 'La ventana vacía se cierra', 'A janela vazia fecha-se'],
     text: [
-      "Quando rimetti nella finestra principale l'ultimo elemento di una finestra a parte (⤓), la finestra sul secondo schermo si chiude da sola invece di restare aperta vuota.",
+      "Quando rimetti nella finestra principale l'ultimo elemento di una finestra a parte (⤓), la finestra sul secondo schermo si chiude da sola invece di restare aperta vuota. La mappa nella finestra a parte non resta più bianca, e il pulsantino ⤓ accanto a lingua e volume riporta tutto nella finestra principale.",
       "When you put the last item of a separate window back into the main window (⤓), the window on the second screen closes by itself instead of staying open and empty.",
       "Wenn du das letzte Element eines eigenen Fensters ins Hauptfenster zurückholst (⤓), schließt sich das Fenster auf dem zweiten Bildschirm von selbst, statt leer offen zu bleiben.",
       "Quand tu remets dans la fenêtre principale le dernier élément d’une fenêtre à part (⤓), la fenêtre du second écran se ferme toute seule au lieu de rester ouverte et vide.",

@@ -1,4 +1,5 @@
-import { dropClosed, reopenAll, useGroups } from './lib/detached';
+import { attachAll, dropClosed, reopenAll, useGroups } from './lib/detached';
+import './styles/solo.css';
 import { SoloWindow } from './components/SoloWindow';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -180,6 +181,11 @@ export function App() {
         {/* lingua, volume, tema: piccoli, subito dopo il menu, staccati da un pallino colorato */}
         <span className="app-tools">
           <span className="app-tools-dot" aria-hidden="true" />
+          {groups.length > 0 ? (
+            <button type="button" className="solo-btn app-attach-all" title={t('win.attachAll')} aria-label={t('win.attachAll')} onClick={attachAll}>
+              ⤓
+            </button>
+          ) : null}
           {session.data ? <UpdateBar /> : null}
           <LanguageSelect />
           <HeaderAlertSwitch />
