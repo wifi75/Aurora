@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.154 - 2026-11-05
+### Modificato
+- La vecchia «Mappa» esce dal menu (doppione della Mappa DX): `#/mappa`, le finestre staccate e l'ultima pagina ricordata aprono la Mappa DX; tolta anche da Guida e Impostazioni › Finestre.
+
 ## 0.11.153 - 2026-11-05
 ### Corretto
 - Radio configurata ma spenta: il display resta (spento, «Radio non risponde») invece del riquadro «Radio non collegata – Clicca per configurarla», che ora compare solo se la radio non è mai stata configurata.
