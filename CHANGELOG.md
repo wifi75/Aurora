@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.135 - 2026-11-05
+- **Installatore fermo all'inizio** (segnalato su un PC aziendale): prima `taskkill` di Aurora, poi PowerShell con tempo massimo (`/TIMEOUT` 15 s e 8 s, `-NonInteractive -ExecutionPolicy Bypass`); se PowerShell non risponde si prosegue; `Get-Process` invece di `Get-CimInstance` (WMI lento) per il rigctld di Aurora. Immagini dell'installatore senza la versione scritta dentro (mostravano 0.11.46).
+- **Finestre a parte**: posizione, misura e massimizzazione ricordate per ognuna (`<etichetta>.json` accanto a `finestra.json`), anche all'uscita di Aurora.
+
 ## 0.11.134 - 2026-11-05
 - **Finestre sul secondo schermo** (prima prova): pulsantino ⧉ nella barra di ogni pannello della Stazione e accanto ai titoli di Mappa e Propagazione; l'elemento va in una finestra a parte (`#/finestra/<id>`, creata dal guscio sul secondo schermo se c'e', ridimensionabile) e sparisce dalla finestra principale. Più elementi nella stessa finestra, in riga o in colonna, con divisore; ⤓ li rimette; la X li riporta nella principale. Le finestre si riaprono all'avvio (`lib/detached.ts`, `SoloWindow.tsx`). Non su telefono, tablet e PC collegati da remoto. Da fare: posizione e misura ricordate per ogni finestra.
 
