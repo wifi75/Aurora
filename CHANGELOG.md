@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.153 - 2026-11-05
+### Corretto
+- Radio configurata ma spenta: il display resta (spento, «Radio non risponde») invece del riquadro «Radio non collegata – Clicca per configurarla», che ora compare solo se la radio non è mai stata configurata.
+
 ## 0.11.152 - 2026-11-05
 - **Linux**: il cursore Pwr ora abbassa davvero il segnale (prima si trasmetteva sempre al massimo, perche' il volume di Windows li' non c'e'); niente pulsante «Installa» degli aggiornamenti (era l'installatore di Windows), resta il link alla release con AppImage e .deb; OmniRig non e' piu' proposto tra i CAT.
 - **Radio spenta e riaccesa durante l'uso**: se la scheda audio della radio sparisce (radio spenta, cavo USB mosso) ricezione e trasmissione si riprendono da sole appena torna, senza riavviare Aurora; intanto un avviso spiega cosa succede.
