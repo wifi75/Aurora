@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.134 - 2026-11-05
+- **Finestre sul secondo schermo** (prima prova): pulsantino ⧉ nella barra di ogni pannello della Stazione e accanto ai titoli di Mappa e Propagazione; l'elemento va in una finestra a parte (`#/finestra/<id>`, creata dal guscio sul secondo schermo se c'e', ridimensionabile) e sparisce dalla finestra principale. Più elementi nella stessa finestra, in riga o in colonna, con divisore; ⤓ li rimette; la X li riporta nella principale. Le finestre si riaprono all'avvio (`lib/detached.ts`, `SoloWindow.tsx`). Non su telefono, tablet e PC collegati da remoto. Da fare: posizione e misura ricordate per ogni finestra.
+
 ## 0.11.133 - 2026-11-05
 - **Radio accesa dopo Aurora**: se la scheda audio della radio non c'e' all'avvio (radio spenta, cavo USB staccato), Aurora riprova ogni 5 s e la ricezione parte da sola appena compare; intanto un avviso spiega cosa succede. Prima serviva riavviare Aurora.
 

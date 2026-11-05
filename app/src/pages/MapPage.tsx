@@ -1,3 +1,6 @@
+import { useGroups } from '../lib/detached';
+import { DetachedNote } from '../components/DetachedNote';
+import { DetachButton } from '../components/DetachButton';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { getWorkedMap } from '../api/client';
@@ -24,7 +27,13 @@ export function mapLabels(t: ReturnType<typeof useT>) {
 }
 
 /** Mappa: i quadrati locatore gia' lavorati (dal log) e le stazioni che si ricevono ora (dal loro locatore). */
-export function MapPage() {
+export function MapPage({ solo = false }: { solo?: boolean } = {}) {
+  const elsewhere = useGroups().some((g) => g.open && g.items.includes('map'));
+  if (elsewhere && !solo) return <DetachedNote item="map" />;
+  return <MapPageBody solo={solo} />;
+}
+
+function MapPageBody({ solo }: { solo: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
   const status = useStation((s) => s.status);
@@ -49,8 +58,13 @@ export function MapPage() {
   const currentBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
 
   return (
-    <div className="map-page">
-      <h1 className="page-title">{t('map.title')}</h1>
+    <div className={`map-page${solo ? ' map-page--solo' : ''}`}>
+      {solo ? null : (
+        <h1 className="page-title page-title--tools">
+          {t('map.title')}
+          <DetachButton item="map" />
+        </h1>
+      )}
       <div className="map-bar" title={t('tip.map')}>
         <div className="map-bar-group">
           <label className="map-check" title={t('tip.ui.mapWorked')}>
