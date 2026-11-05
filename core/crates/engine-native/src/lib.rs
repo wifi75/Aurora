@@ -326,7 +326,8 @@ pub fn start_with_save(
                     Some(d)
                 }
                 Err(e) => {
-                    tracing::error!("trasmissione non attiva: nominativo o locatore non validi ({e})");
+                    // dati di stazione ancora da compilare: e' una configurazione, non un guasto (avviso, niente rapporto)
+                    tracing::warn!("trasmissione non attiva: nominativo o locatore non validi ({e})");
                     None
                 }
             }

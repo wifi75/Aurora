@@ -3,6 +3,7 @@
 ## Non rilasciato
 
 - **Audio, meno blocchi persi**: il thread che legge la scheda audio gira a priorita' alta (MMCSS su Windows) e non alloca piu' memoria a ogni blocco; nel rapporto dei blocchi persi c'e' anche la causa indicata da Windows.
+- **Rapporti piu' chiari**: i blocchi audio persi riportano anche da quanti minuti, quanti al minuto e il tipo di ingresso (USB, integrata, virtuale; mai il nome), frequenza, canali e formato. Il nominativo o locatore da compilare non e' piu' un errore segnalato ma un avviso.
 ## 0.11.131 - 2026-11-04
 - **Splash di apertura**: il display della radio (livello 1001 dalla 0.11.129, quasi quadrati 1050) compariva sopra; ora display a livello 1 e splash a 2000.
 
