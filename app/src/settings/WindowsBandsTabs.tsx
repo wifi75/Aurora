@@ -2,45 +2,29 @@ import { useState } from 'react';
 import { useT } from '../i18n';
 import { useBandFilter } from '../lib/bandFilter';
 import { BAND_NAMES } from '../lib/format';
-import { ALL_PANELS, defaultLayout, readLayout, saveLayout, toggleHidden } from '../lib/layout';
-import type { Key } from '../i18n';
+import { defaultLayout, saveLayout } from '../lib/layout';
 import { browserStorage } from '../lib/theme';
-import { Check, Help } from './common';
-import { Actions, Cells, Group, Notes, Page } from './layout';
+import { Help } from './common';
+import { attachAll } from '../lib/detached';
+import { WhereGroups } from './WhereTab';
+import { Actions, Group, Notes, Page } from './layout';
 
 /** Scheda Finestre: ripristina la disposizione dei pannelli. */
 export function WindowsTab() {
   const t = useT();
   const [note, setNote] = useState('');
-  const [layout, setLayout] = useState(() => readLayout(browserStorage()));
-  const hidden = layout.hidden ?? [];
   return (
     <Page>
-      <Group title={t('win.shown')}>
-        <Cells min={12}>
-          {ALL_PANELS.map((id) => (
-            <Check
-              key={id}
-              label={t(`panel.${id}` as Key)}
-              hint={t('tip.win.shown')}
-              checked={!hidden.includes(id)}
-              onChange={() => {
-                const next = toggleHidden(layout, id);
-                saveLayout(browserStorage(), next);
-                setLayout(next);
-              }}
-            />
-          ))}
-        </Cells>
-      </Group>
+      <WhereGroups />
       <Group title={t('tab.windows')}>
         <Actions>
           <button title={t('tip.ui.reset')}
             type="button"
             className="glass"
             onClick={() => {
+              // tutto come all'inizio: disposizione di partenza, niente nascosto e niente in finestre a parte
               saveLayout(browserStorage(), defaultLayout());
-              setLayout(defaultLayout());
+              attachAll();
               setNote(t('win.done'));
             }}
           >

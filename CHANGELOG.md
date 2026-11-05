@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.137 - 2026-11-05
+- **Impostazioni › Finestre**: «Dove sta ogni elemento» per i 7 pannelli, la Mappa e la Propagazione (finestra principale, finestra nuova, accanto a una finestra a parte, nascosto) al posto delle caselle «Pannelli mostrati»; «Finestre a parte aperte» con Mostra, Rimetti e Rimetti tutto; «Ripristina la disposizione» rimette anche tutto nella finestra principale (`settings/WhereTab.tsx`).
+
 ## 0.11.136 - 2026-11-05
 - **Finestre a parte**: rimesso l'ultimo elemento (⤓) la finestra si chiude da sola; nel programma per Windows `window.close()` non bastava, ora la pagina chiede `/__chiudi-finestra` e il guscio chiude la finestra (`on_navigation`).
 - **Mappa bianca nella finestra a parte**: la finestra nasce nascosta e Leaflet calcolava uno zoom infinito con larghezza zero; ora la misura si prende solo quando c'e' e la vista si rimette a posto.

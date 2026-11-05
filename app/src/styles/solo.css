@@ -119,3 +119,11 @@
 
 /* pagina staccata: avviso al suo posto nella finestra principale */
 .detached-note { display: flex; align-items: center; gap: 0.6rem; padding: 1rem; color: var(--text-muted); }
+
+/* Impostazioni › Finestre: dove sta ogni elemento */
+.where-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.35rem 1.2rem; }
+.where-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.where-row select { max-width: 13rem; }
+.where-groups { display: flex; flex-direction: column; gap: 0.35rem; margin: 0 0 0.5rem; padding: 0; list-style: none; }
+.where-groups li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; }
+.where-groups li span { flex: 1 1 100%; font-weight: 600; }
