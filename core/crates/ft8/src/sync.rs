@@ -229,9 +229,14 @@ fn spectrogram(dd: &[f32], shape: Spectrum) -> Vec<f32> {
 ///
 /// Restituisce vero se la compensazione e' stata applicata: allora [`find_candidates_agc`] va usato con la misura di sincronismo per tono.
 pub fn agc_compensate(audio: &mut [f32], f_low_hz: f32, f_high_hz: f32) -> bool {
+    agc_compensate_len(audio, f_low_hz, f_high_hz, SLOT_SAMPLES)
+}
+
+/// Come [`agc_compensate`] sui primi `len` campioni (FT4: il tratto del periodo che si decodifica).
+pub fn agc_compensate_len(audio: &mut [f32], f_low_hz: f32, f_high_hz: f32, len: usize) -> bool {
     const NFFT: usize = 1024;
     const STEP: usize = 960;
-    if audio.len() < SLOT_SAMPLES {
+    if len < NFFT * 4 || audio.len() < len {
         return false;
     }
     let w: Vec<f32> = (1..=NFFT).map(|k| (2.0 * PI * (k as f64 + 2.0) / 2048.0).sin() as f32).collect();
@@ -240,7 +245,7 @@ pub fn agc_compensate(audio: &mut [f32], f_low_hz: f32, f_high_hz: f32) -> bool 
     if nf2 <= nf1 + 2 {
         return false;
     }
-    let blocks = (SLOT_SAMPLES - NFFT) / STEP + 1;
+    let blocks = (len - NFFT) / STEP + 1;
     let plan = fft_plan(NFFT, false);
     let mut scratch = vec![ZERO; plan.get_inplace_scratch_len()];
     let mut buf = vec![ZERO; NFFT];
@@ -272,7 +277,7 @@ pub fn agc_compensate(audio: &mut [f32], f_low_hz: f32, f_high_hz: f32) -> bool 
     }
     // il guadagno di un campione: interpolato tra i centri dei blocchi
     let center = |j: usize| (j * STEP + NFFT / 2) as f32;
-    for (n, a) in audio.iter_mut().take(SLOT_SAMPLES).enumerate() {
+    for (n, a) in audio.iter_mut().take(len).enumerate() {
         let x = n as f32;
         let g = if x <= center(0) {
             gain[0]
