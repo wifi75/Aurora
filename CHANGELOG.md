@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Radio spenta e riaccesa durante l'uso**: se la scheda audio della radio sparisce (radio spenta, cavo USB mosso) ricezione e trasmissione si riprendono da sole appena torna, senza riavviare Aurora; intanto un avviso spiega cosa succede.
+- **Blocchi del programma**: la finestra «Salva con nome» aperta a lungo non e' piu' scambiata per un blocco; il rapporto di un blocco dice cosa stava facendo la finestra e quanto e' durato.
 
 ## 0.11.151 - 2026-11-05
 ### Aggiunto

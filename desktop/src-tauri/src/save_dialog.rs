@@ -13,6 +13,8 @@ pub fn dialog(app: AppHandle) -> remote_api::SaveFileDialog {
         if let Some(window) = app.get_webview_window("main") {
             picker = picker.set_parent(&window);
         }
+        // la finestra principale resta ferma finche' l'operatore sceglie: non e' un blocco
+        let _modal = crate::crash::modal("finestra Salva con nome");
         picker.save_file()
     })
 }

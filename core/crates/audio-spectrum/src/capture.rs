@@ -185,11 +185,18 @@ mod device_name_tests {
 /// Cattura in corso; si ferma con `stop` o quando viene lasciata cadere.
 pub struct CaptureHandle {
     stop: Arc<AtomicBool>,
+    /// Il dispositivo si e' perso (scollegato, radio spenta): il flusso non da' piu' audio e va riaperto.
+    lost: Arc<AtomicBool>,
     thread: Option<JoinHandle<()>>,
     device: String,
 }
 
 impl CaptureHandle {
+    /// Il dispositivo si e' perso e il flusso va riaperto.
+    pub fn is_lost(&self) -> bool {
+        self.lost.load(Ordering::SeqCst)
+    }
+
     /// Il nome del dispositivo aperto.
     pub fn device_name(&self) -> &str {
         &self.device
@@ -271,6 +278,8 @@ pub fn run_capture_with(
 
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = Arc::clone(&stop);
+    let lost = Arc::new(AtomicBool::new(false));
+    let lost_thread = Arc::clone(&lost);
     let (ready_tx, ready_rx) = mpsc::channel::<Result<(), CaptureError>>();
 
     // lo stream non e' `Send` su tutte le piattaforme: vive e muore nel thread che lo crea
@@ -289,6 +298,9 @@ pub fn run_capture_with(
             let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
             tracing::debug!("errore del flusso audio: {e}");
             let cause = format!("{:?}", e.kind());
+            if matches!(e.kind(), cpal::ErrorKind::DeviceNotAvailable | cpal::ErrorKind::StreamInvalidated | cpal::ErrorKind::HostUnavailable) {
+                lost_thread.store(true, Ordering::SeqCst);
+            }
             let minutes = started.elapsed().as_secs_f64() / 60.0;
             let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };
             // tante perdite di fila: si dice sullo schermo cosa controllare (l'avviso non si ripete per due minuti)
@@ -385,7 +397,7 @@ pub fn run_capture_with(
     });
 
     match ready_rx.recv() {
-        Ok(Ok(())) => Ok(CaptureHandle { stop, thread: Some(thread), device: name_for_handle }),
+        Ok(Ok(())) => Ok(CaptureHandle { stop, lost, thread: Some(thread), device: name_for_handle }),
         Ok(Err(e)) => {
             let _ = thread.join();
             Err(e)
