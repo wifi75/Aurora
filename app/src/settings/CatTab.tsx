@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  getHealth,
   ApiError,
   catProfile,
   connectCat,
@@ -176,6 +177,8 @@ function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatCon
 /** I riquadri della scheda Radio: collegamento, PTT, split, lettura, profili, prova, condivisione. Si mettono nella griglia di una pagina. */
 export function CatGroups() {
   const t = useT();
+  const health = useQuery({ queryKey: ['health'], queryFn: getHealth, retry: false, staleTime: Infinity });
+  const windows = (health.data?.os ?? 'windows') === 'windows';
   const client = useQueryClient();
   const snap = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 1500 });
   const [draft, setDraft] = useState<CatConfig | null>(null);
@@ -288,7 +291,8 @@ export function CatGroups() {
         <Field label={t('cat.backend')} className="cat-w-l" hint={t('tip.cat.backend')}>
           <select value={config.backend} onChange={(e) => set({ backend: e.target.value as CatConfig['backend'] })}>
             <option value="hamlib">{t('cat.backend.hamlib')}</option>
-            <option value="omnirig">{t('cat.backend.omnirig')}</option>
+            {/* OmniRig e' un programma di Windows: su Linux non si propone (se era gia' scelto resta visibile per cambiarlo) */}
+            {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}</option> : null}
           </select>
         </Field>
         {fields.rig ? (

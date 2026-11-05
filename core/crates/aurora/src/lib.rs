@@ -1736,9 +1736,16 @@ pub async fn run(
                         m.output_closed();
                     }
                     let manager = Arc::clone(m);
+                    // su Windows Pwr e' il volume della scheda; altrove quel comando non c'e' e il cursore attenua il segnale, come JTDX
+                    // (senza, su Linux si trasmetteva sempre al massimo)
                     transmitter.map(|inner| {
-                        let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()), controls: Arc::clone(&native_controls) };
-                        Arc::new(port) as Arc<dyn engine_native::TxPort>
+                        if cfg!(windows) {
+                            let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()), controls: Arc::clone(&native_controls) };
+                            Arc::new(port) as Arc<dyn engine_native::TxPort>
+                        } else {
+                            drop(manager);
+                            inner
+                        }
                     })
                 }),
                 band_of: Arc::new(|hz| rig_control::bands::amateur_band(hz).map(str::to_string)),

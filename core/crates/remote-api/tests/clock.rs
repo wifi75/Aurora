@@ -52,7 +52,7 @@ async fn needs_a_paired_device() {
 async fn shows_the_configuration_and_measures_on_demand() {
     let (s, _) = clock_state("check", true);
     let v = body_json(send(&s, Method::GET, "/api/v1/clock", None, false).await).await;
-    assert_eq!(v["config"]["warn_ms"], 200);
+    assert_eq!(v["config"]["warn_ms"], 500, "avviso oltre 500 ms dalla 0.11.145");
     assert!(v["last"].is_null());
     let m = body_json(send(&s, Method::POST, "/api/v1/clock/check", None, false).await).await;
     assert_eq!(m["offset_ms"], 250.0);

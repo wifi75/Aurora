@@ -250,7 +250,7 @@ impl<S: Send + Sync> FromRequestParts<S> for Peer {
 
 #[utoipa::path(get, path = "/api/v1/health", responses((status = 200, description = "Stato, nome, versione e autore")))]
 async fn health() -> Json<Value> {
-    Json(json!({ "status": "ok", "name": APP_NAME, "version": APP_VERSION, "author": APP_AUTHOR }))
+    Json(json!({ "status": "ok", "name": APP_NAME, "version": APP_VERSION, "author": APP_AUTHOR, "os": std::env::consts::OS }))
 }
 
 #[derive(Deserialize, Default)]

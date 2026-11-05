@@ -155,6 +155,7 @@ libayatana-appindicator3-dev librsvg2-dev libxdo-dev libasound2-dev libudev-dev 
 - Direktes PTT über die RTS/DTR-Leitungen der seriellen Schnittstelle: vorerst nur Windows.
 - Regelung der Aufnahmelautstärke (Pegelregler und AUTO): den Mixer des Systems verwenden.
 - Automatische Aktualisierung aus dem Programm.
+- Regler **Pwr**: unter Windows steuert er die Lautstärke der Soundkarte; unter Linux senkt er das erzeugte Signal (wie JTDX). Die Ausgangslautstärke im System-Mixer einmal einstellen.
 - TQSL für LoTW: Pfad in den Einstellungen von Hand angeben.
 
 ## Wo die Daten liegen

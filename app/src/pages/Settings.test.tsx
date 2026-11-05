@@ -11,6 +11,7 @@ import { defaultNotify, useNotify } from '../lib/notify';
 import { defaultPrefs, usePrefs } from '../lib/prefs';
 
 vi.mock('../api/client', () => ({
+  getHealth: vi.fn().mockResolvedValue({ status: 'ok', name: 'Aurora', version: '0', author: '', os: 'windows' }),
   getStationInfo: vi.fn().mockResolvedValue({
     tx_allowed: false,
     rig_control: true,

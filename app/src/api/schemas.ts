@@ -5,6 +5,8 @@ export const HealthSchema = z.object({
   name: z.string(),
   version: z.string(),
   author: z.string(),
+  /** Il sistema del PC dove gira Aurora (`windows`, `linux`): OmniRig e il volume di Windows ci sono solo su Windows. */
+  os: z.string().optional(),
 });
 export type Health = z.infer<typeof HealthSchema>;
 
