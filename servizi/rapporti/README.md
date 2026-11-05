@@ -61,3 +61,19 @@ I rapporti singoli si vedono anche nella dashboard di Cloudflare (R2 → `aurora
 ```powershell
 npx tsc --noEmit
 ```
+
+## Totale delle installazioni (dal 2026-11-05)
+
+`GET /v1/attivi` restituisce anche `totale` (tutte le installazioni che hanno usato Aurora dall'inizio) e `nuove_per_giorno`.
+Le righe di `attivi` si cancellano dopo 90 giorni, quindi il totale vive in una tabella a parte, `installazioni`
+(identificativo, primo e ultimo giorno); quelle ferme da un anno passano al contatore `archiviate` della tabella `contatori`.
+
+Per metterlo online, una volta, dalla cartella `servizi/rapporti`:
+
+```powershell
+npx wrangler d1 execute aurora-rapporti --remote --file=schema.sql
+npx wrangler d1 execute aurora-rapporti --remote --command "INSERT INTO installazioni (installazione, prima, ultima) SELECT installazione, MIN(giorno), MAX(giorno) FROM attivi GROUP BY installazione ON CONFLICT (installazione) DO NOTHING"
+npx wrangler deploy
+```
+
+Il secondo comando riempie l'elenco con le installazioni gia' viste negli ultimi 90 giorni (il conteggio e' partito il 2026-11-04).

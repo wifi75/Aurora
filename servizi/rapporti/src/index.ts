@@ -4,7 +4,7 @@
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
  * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
- * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione (protetto da ADMIN_TOKEN)
+ * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
  *
@@ -173,6 +173,12 @@ async function pulizia(env: Env): Promise<void> {
     } while (cursor);
   }
   await env.INDICE.batch([env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite), env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite)]);
+  // le installazioni ferme da piu' di un anno escono dall'elenco ma restano nel totale (contatore `archiviate`)
+  const anno = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+  await env.INDICE.batch([
+    env.INDICE.prepare("INSERT INTO contatori (nome, valore) SELECT 'archiviate', COUNT(*) FROM installazioni WHERE ultima < ?1 ON CONFLICT (nome) DO UPDATE SET valore = valore + excluded.valore").bind(anno),
+    env.INDICE.prepare('DELETE FROM installazioni WHERE ultima < ?1').bind(anno),
+  ]);
 }
 
 /** Una installazione dice che oggi e' aperta: una sola riga al giorno, la versione e il sistema si aggiornano. */
@@ -190,6 +196,9 @@ async function attivo(req: Request, env: Env): Promise<Response> {
   await env.INDICE.prepare('INSERT INTO attivi (giorno, installazione, versione, sistema) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione, sistema = excluded.sistema')
     .bind(oggi(), id, corto(dati.versione, 20), corto(dati.sistema, 60))
     .run();
+  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima) VALUES (?1, ?2, ?2) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima')
+    .bind(id, oggi())
+    .run();
   return risposta(200, { ok: true });
 }
 
@@ -199,7 +208,11 @@ async function attivi(env: Env): Promise<Response> {
   const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
   const perGiorno = await env.INDICE.prepare('SELECT giorno, COUNT(*) AS n FROM attivi WHERE giorno >= ?1 GROUP BY giorno ORDER BY giorno DESC').bind(giorni(30)).all();
   const perVersione = await env.INDICE.prepare('SELECT versione, COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1 GROUP BY versione ORDER BY n DESC').bind(giorni(7)).all();
-  return risposta(200, { oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), per_giorno: perGiorno.results, per_versione: perVersione.results });
+  // il totale di sempre: le installazioni nell'elenco piu' quelle archiviate dopo un anno di silenzio
+  const elenco = (await env.INDICE.prepare('SELECT COUNT(*) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
+  const archiviate = (await env.INDICE.prepare("SELECT valore AS n FROM contatori WHERE nome = 'archiviate'").first<{ n: number }>())?.n ?? 0;
+  const nuove = await env.INDICE.prepare('SELECT prima AS giorno, COUNT(*) AS n FROM installazioni WHERE prima >= ?1 GROUP BY prima ORDER BY prima DESC').bind(giorni(30)).all();
+  return risposta(200, { totale: elenco + archiviate, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
 export default {
