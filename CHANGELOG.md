@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.155 - 2026-11-05
+### Corretto
+- Mappa DX: stazioni in onda, quadrati QSX/CQ/CQDX/QRZ e linee «Chi chiama chi» non comparivano (l'ora dei messaggi è in ms dalla mezzanotte UTC, era confrontata con l'ora completa).
+- Mappa DX: il menu per staccare la mappa non resta sotto la cartina.
+
 ## 0.11.154 - 2026-11-05
 ### Modificato
 - La vecchia «Mappa» esce dal menu (doppione della Mappa DX): `#/mappa`, le finestre staccate e l'ultima pagina ricordata aprono la Mappa DX; tolta anche da Guida e Impostazioni › Finestre.

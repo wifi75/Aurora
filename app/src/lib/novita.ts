@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.155',
+    released: '2026-11-05T22:20:20Z',
+    kind: 'fixed',
+    title: ['Mappa DX: stazioni e linee degli altri', 'DX Map: stations and others’ lines', 'DX-Karte: Stationen und Linien der anderen', 'Carte DX : stations et lignes des autres', 'Mapa DX: estaciones y líneas de los demás', 'Mapa DX: estações e linhas dos outros'],
+    text: [
+      "Mappa DX: le stazioni in onda, i quadrati QSX/CQ/CQDX/QRZ e le linee «Chi chiama chi» fra le altre stazioni non comparivano mai («0 in onda»): l'ora dei messaggi era letta male e sembravano tutti vecchi. Ora si vedono. Il menu per staccare la mappa su un altro schermo non resta più nascosto sotto la cartina.",
+      "DX Map: on-air stations, QSX/CQ/CQDX/QRZ squares and «Who calls whom» lines between other stations never appeared («0 on air»): the message time was read wrongly and they all looked old. Now they show. The menu to detach the map to another screen no longer hides under the map.",
+      "DX-Karte: Stationen auf Sendung, QSX/CQ/CQDX/QRZ-Felder und «Wer ruft wen»-Linien zwischen anderen Stationen erschienen nie («0 auf Sendung»): Die Uhrzeit der Meldungen wurde falsch gelesen, alle wirkten alt. Jetzt erscheinen sie. Das Menü zum Abtrennen auf einen anderen Bildschirm liegt nicht mehr unter der Karte.",
+      "Carte DX : les stations en l’air, les carrés QSX/CQ/CQDX/QRZ et les lignes «Qui appelle qui» entre les autres stations n’apparaissaient jamais («0 en l’air») : l’heure des messages était mal lue et tout semblait ancien. Maintenant elles s’affichent. Le menu pour détacher la carte sur un autre écran ne reste plus caché sous la carte.",
+      "Mapa DX: las estaciones en el aire, las cuadrículas QSX/CQ/CQDX/QRZ y las líneas «Quién llama a quién» entre otras estaciones nunca aparecían («0 en el aire»): la hora de los mensajes se leía mal y todo parecía viejo. Ahora se ven. El menú para separar el mapa a otra pantalla ya no queda oculto bajo el mapa.",
+      "Mapa DX: as estações no ar, os quadrados QSX/CQ/CQDX/QRZ e as linhas «Quem chama quem» entre outras estações nunca apareciam («0 no ar»): a hora das mensagens era lida mal e tudo parecia antigo. Agora aparecem. O menu para destacar o mapa para outro ecrã já não fica escondido debaixo do mapa.",
+    ],
+  },
+  {
     version: '0.11.154',
     released: '2026-11-05T22:14:34Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Une fois par jour Aurora signale de façon anonyme « cette installation est ouverte » (seulement un code aléatoire, la version d’Aurora et celle de Windows) : cela permet de savoir combien de personnes l’utilisent. Désactivable dans Réglages › Assistance.",
       "Una vez al día Aurora indica de forma anónima «esta instalación está abierta» (solo un código aleatorio, la versión de Aurora y la de Windows): sirve para saber cuántas personas la usan. Se apaga en Ajustes › Asistencia.",
       "Uma vez por dia a Aurora indica de forma anónima «esta instalação está aberta» (só um código aleatório, a versão da Aurora e a do Windows): serve para saber quantas pessoas a usam. Desliga-se em Definições › Assistência.",
-    ],
-  },
-  {
-    version: '0.11.115',
-    released: '2026-11-04T13:35:19Z',
-    kind: 'fixed',
-    title: ['Anteprime dei display tutte uguali', 'Display previews all the same size', 'Anzeige-Vorschauen gleich groß', 'Aperçus des afficheurs à la même taille', 'Vistas previas de pantallas del mismo tamaño', 'Pré-visualizações dos ecrãs do mesmo tamanho'],
-    text: [
-      "In Impostazioni › Radio le anteprime dei display estesi hanno tutte la misura vera della testata (640 × 70): i pannelli FT-2000 e IC-7610 non si allargano più per tutta la pagina.",
-      "In Settings › Radio all wide display previews have the real header size (640 × 70): the FT-2000 and IC-7610 panels no longer stretch across the whole page.",
-      "Unter Einstellungen › Funkgerät haben alle breiten Anzeige-Vorschauen die echte Größe der Kopfzeile (640 × 70): die Felder FT-2000 und IC-7610 ziehen sich nicht mehr über die ganze Seite.",
-      "Dans Réglages › Radio tous les aperçus des afficheurs larges ont la vraie taille de l’en-tête (640 × 70) : les panneaux FT-2000 et IC-7610 ne s’étirent plus sur toute la page.",
-      "En Ajustes › Radio todas las vistas previas de las pantallas anchas tienen el tamaño real de la cabecera (640 × 70): los paneles FT-2000 e IC-7610 ya no se estiran por toda la página.",
-      "Em Definições › Rádio todas as pré-visualizações dos ecrãs largos têm o tamanho real do cabeçalho (640 × 70): os painéis FT-2000 e IC-7610 já não se esticam pela página toda.",
     ],
   },
 ];
