@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.143',
+    released: '2026-11-05T17:00:55Z',
+    kind: 'fixed',
+    title: ['Il menu per spostare il display si usa', 'The display move menu works', 'Das Menü zum Verschieben der Anzeige funktioniert', 'Le menu pour déplacer l’afficheur fonctionne', 'El menú para mover la pantalla funciona', 'O menu para mover o ecrã funciona'],
+    text: [
+      "Sul pulsantino per portare il display su un altro schermo la lente d’ingrandimento non si apre più: prima copriva il menu, lampeggiava e non si riusciva a scegliere nulla.",
+      "Over the button that moves the display to another screen the magnifier no longer opens: before it covered the menu, flickered and nothing could be chosen.",
+      "Über dem Knopf, der die Anzeige auf einen anderen Bildschirm bringt, öffnet sich die Lupe nicht mehr: vorher verdeckte sie das Menü, flackerte und man konnte nichts wählen.",
+      "Sur le bouton qui déplace l’afficheur vers un autre écran la loupe ne s’ouvre plus : avant elle couvrait le menu, clignotait et on ne pouvait rien choisir.",
+      "Sobre el botón que lleva la pantalla a otra pantalla ya no se abre la lupa: antes tapaba el menú, parpadeaba y no se podía elegir nada.",
+      "Sobre o botão que leva o ecrã para outro monitor a lupa já não abre: antes tapava o menu, piscava e não se conseguia escolher nada.",
+    ],
+  },
+  {
     version: '0.11.142',
     released: '2026-11-05T16:59:48Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages › Assistance « Enregistrer une copie » met sur le Bureau un zip avec tous les réglages et le journal des QSO ; « Restaurer depuis une copie » les remet en place à la prochaine ouverture (mots de passe des services exclus). Le son d’accueil de l’écran de démarrage s’entend de nouveau.',
       'En Ajustes › Asistencia «Guardar una copia» deja en el Escritorio un zip con todos los ajustes y el log de QSO; «Restaurar desde una copia» los repone en la próxima apertura (sin contraseñas de servicios). El sonido de bienvenida de la pantalla de inicio vuelve a oírse.',
       'Em Definições › Assistência «Guardar uma cópia» põe no Ambiente de trabalho um zip com todas as definições e o log dos QSO; «Restaurar de uma cópia» repõe-nas na próxima abertura (sem palavras-passe dos serviços). O som de boas-vindas do ecrã de arranque volta a ouvir-se.',
-    ],
-  },
-  {
-    version: '0.11.103',
-    released: '2026-11-04T11:33:12Z',
-    kind: 'fixed',
-    title: ['Modo visibile anche senza audio', 'Mode shown even without audio', 'Modus auch ohne Audio sichtbar', 'Mode visible même sans audio', 'Modo visible incluso sin audio', 'Modo visível mesmo sem áudio'],
-    text: [
-      'Senza una scheda audio collegata il selettore del modo mostrava «—» e non si apriva: ora FT8, FT4, JT65 e JT9 si vedono e si cambiano sempre, anche con il PC senza radio né audio.',
-      'Without a connected sound card the mode selector showed «—» and did not open: now FT8, FT4, JT65 and JT9 are always shown and can be changed, even on a PC with no radio or audio.',
-      'Ohne angeschlossene Soundkarte zeigte die Modusauswahl «—» und öffnete sich nicht: jetzt sind FT8, FT4, JT65 und JT9 immer sichtbar und wählbar, auch an einem PC ohne Funkgerät und Audio.',
-      'Sans carte son connectée le sélecteur de mode affichait « — » et ne s’ouvrait pas : désormais FT8, FT4, JT65 et JT9 s’affichent et se changent toujours, même sur un PC sans radio ni audio.',
-      'Sin una tarjeta de sonido conectada el selector de modo mostraba «—» y no se abría: ahora FT8, FT4, JT65 y JT9 se ven y se cambian siempre, incluso en un PC sin radio ni audio.',
-      'Sem uma placa de som ligada o seletor de modo mostrava «—» e não abria: agora FT8, FT4, JT65 e JT9 veem-se e mudam-se sempre, mesmo num PC sem rádio nem áudio.',
     ],
   },
 ];
