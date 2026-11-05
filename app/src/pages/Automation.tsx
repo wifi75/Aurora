@@ -3,6 +3,7 @@ import { getAutomation, putAutomation, type AutomationChange } from '../api/clie
 import { AutomationRulesForm } from '../components/AutomationRulesForm';
 import { useT, type Key } from '../i18n';
 import { formatClock } from '../lib/format';
+import { coreText } from '../lib/coreText';
 
 const KIND_KEY = {
   reply: 'auto.kind.reply',
@@ -64,7 +65,7 @@ export function Automation() {
             <li key={`${d.at}-${i}`}>
               <span className="num muted">{formatClock((d.at % 86_400) * 1000)}</span>
               <span className={`badge badge--${d.kind === 'reply' ? 'auto' : 'rare'}`}>{t(KIND_KEY[d.kind])}</span>
-              <span>{d.reason}</span>
+              <span>{coreText(d.reason, t)}</span>
             </li>
           ))}
           {a.log.length === 0 ? <li className="muted">{t('auto.noLog')}</li> : null}
