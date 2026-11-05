@@ -110,6 +110,7 @@ export const accessStrings = {
     'Nombre fijo no activo (Aurora solo escucha en este PC, o la red no permite el anuncio). Usa la IP de abajo.',
     'Nome fixo não ativo (a Aurora só escuta neste PC, ou a rede não permite o anúncio). Usa o IP abaixo.',
   ],
+  'acc.pairedNow': ['Telefono associato: lo trovi qui sotto in «Dispositivi associati».', 'Phone paired: you find it below in «Paired devices».', 'Telefon gekoppelt: du findest es unten unter «Gekoppelte Geräte».', 'Téléphone associé : il apparaît ci-dessous dans « Appareils associés ».', 'Teléfono asociado: lo encuentras abajo en «Dispositivos asociados».', 'Telemóvel associado: encontras-o abaixo em «Dispositivos associados».'],
   'acc.camera': [
     'Inquadra il QR con la fotocamera del telefono e apri il link in Chrome o Safari: dentro Messenger o WhatsApp spesso la pagina non si apre. Telefono e PC sulla stessa Wi-Fi. Chrome su Android non apre la pagina? Spegni ⋮ › Impostazioni › Privacy e sicurezza › «Usa sempre connessioni sicure» e consenti «Rete locale» dal lucchetto, oppure usa Firefox.',
     'Scan the QR with the phone camera and open the link in Chrome or Safari: inside Messenger or WhatsApp the page often does not open. Phone and PC on the same Wi-Fi. Chrome on Android does not open the page? Turn off ⋮ › Settings › Privacy and security › «Always use secure connections» and allow «Local network» from the lock icon, or use Firefox.',
