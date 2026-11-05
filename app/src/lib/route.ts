@@ -17,7 +17,8 @@ export function parseRoute(hash: string): Route {
   if (settings) return settings[1] ? { name: 'settings', tab: settings[1] } : { name: 'settings' };
   if (hash === '#/automazioni') return { name: 'automation' };
   if (hash === '#/statistiche') return { name: 'stats' };
-  if (hash === '#/mappa') return { name: 'map' };
+  // la vecchia «Mappa» e' confluita nella Mappa DX: il suo indirizzo porta li'
+  if (hash === '#/mappa') return { name: 'dxmap' };
   if (hash === '#/mappa-dx') return { name: 'dxmap' };
   if (hash === '#/storico') return { name: 'history' };
   if (hash === '#/propagazione') return { name: 'propagation' };

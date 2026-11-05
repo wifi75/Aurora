@@ -7,7 +7,7 @@ import type { Route } from './route';
 
 const PAGE_KEY = 'aurora-last-page';
 const TAB_KEY = 'aurora-settings-tab';
-const RESTORABLE = new Set(['#/automazioni', '#/statistiche', '#/mappa', '#/storico', '#/propagazione', '#/impostazioni', '#/guida']);
+const RESTORABLE = new Set(['#/automazioni', '#/statistiche', '#/mappa-dx', '#/storico', '#/propagazione', '#/impostazioni', '#/guida']);
 
 type Store = Pick<Storage, 'getItem' | 'setItem'> | null;
 
@@ -38,7 +38,7 @@ const HASH_OF: Record<string, string> = {
   live: '#/',
   automation: '#/automazioni',
   stats: '#/statistiche',
-  map: '#/mappa',
+  map: '#/mappa-dx',
   history: '#/storico',
   propagation: '#/propagazione',
   settings: '#/impostazioni',
