@@ -92,6 +92,10 @@ Stato al 2026-11-04, versione 0.11.131. Per riprendere il lavoro leggi anche `do
 - «Verifica tutto» sta in Impostazioni › Assistenza, non nella testata (decisione del proprietario: pulsanti nei menu giusti).
 - AGCc FT4: banco di prova `ft4::decode::tests::esplora_agc_ft4` (ignorato): -16 dB 15→20/20, -17 dB 3→15/20.
 
+## Ridecodifica del messaggio di 30 s fa (2026-11-05)
+- `ft8/src/copies.rs` porta `evencopy`/`oddcopy` di JTDX (sorgente pubblico 2.2.159, che coincide con l'eseguibile verificato con REA): i decode standard di un periodo si ricordano (`PeriodHistory::store_copies`) e nel periodo seguente della stessa parita' un candidato a meno di 3 Hz e 0,19 s prova `ft8sd1` prima di LDPC, poi `ft8mf1`/`ft8mfcq`; con SWL, sottopassate o soglia bassa prima si risincronizza sui toni attesi (`ldeepsync`, `deep_refine`). I decode cosi' trovati hanno `hint: true` e `ap_type 0`.
+- Attenzione nel leggere `ft8mf1`: dopo un rapporto la stessa stazione puo' mandare solo un altro rapporto o RRR/RR73/73 (l'R+rapporto e' dell'altra stazione).
+
 ## Messaggi del core nelle sei lingue (2026-11-05, issue #1)
 - Regola: nessun testo italiano del core deve arrivare a schermo cosi' com'e'. Il core scrive i messaggi in italiano (stato e errori di CAT/Hamlib/OmniRig/PTT, rilevamento della radio, registro delle automazioni, errori audio, porta occupata); l'interfaccia li passa sempre da `coreText()` (`app/src/lib/coreText.ts`), che li riconosce (frasi esatte in `EXACT`, frasi con valori in `PATTERNS`) e li mostra con le chiavi `core.*` (`app/src/i18n/strings/coretext.ts`). Un messaggio sconosciuto resta com'e'.
 - Ogni messaggio nuovo del core che arriva all'interfaccia: aggiungerlo a `coreText.ts` con le sei lingue, oppure mandare un codice da tradurre nell'interfaccia (meglio per le funzioni nuove).
