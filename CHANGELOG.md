@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.133 - 2026-11-05
 - **Radio accesa dopo Aurora**: se la scheda audio della radio non c'e' all'avvio (radio spenta, cavo USB staccato), Aurora riprova ogni 5 s e la ricezione parte da sola appena compare; intanto un avviso spiega cosa succede. Prima serviva riavviare Aurora.
 
 ## 0.11.132 - 2026-11-05
