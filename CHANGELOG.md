@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **AGCc anche in FT4**: la compensazione dell'AGC della radio ora vale anche in FT4 (nelle prove, a -17 dB 15 periodi decodificati su 20 invece di 3).
+- **Decodifica lenta**: se il PC impiega spesso piu' del 70% del periodo a decodificare compare un avviso (Multithread, Modo SWL, programmi pesanti) e parte un rapporto anonimo con tempi, processori e opzioni.
 
 - **Audio, meno blocchi persi**: il thread che legge la scheda audio gira a priorita' alta (MMCSS su Windows) e non alloca piu' memoria a ogni blocco; nel rapporto dei blocchi persi c'e' anche la causa indicata da Windows.
 - **Rapporti piu' chiari**: i blocchi audio persi riportano anche da quanti minuti, quanti al minuto e il tipo di ingresso (USB, integrata, virtuale; mai il nome), frequenza, canali e formato. Il nominativo o locatore da compilare non e' piu' un errore segnalato ma un avviso.

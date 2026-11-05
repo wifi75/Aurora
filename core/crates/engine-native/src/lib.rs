@@ -14,6 +14,7 @@ mod persist;
 mod resample;
 mod rig;
 mod slots;
+mod slow;
 mod smeter;
 mod tx;
 mod wav;
@@ -270,6 +271,7 @@ pub fn start_with_save(
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
+        let mut slow_watch = slow::SlowWatch::default();
         // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro (sottopassate 3-11)
         let mut ft8_history = ft8::decode::PeriodHistory::default();
         let mut band_watch = BandWatch::default();
@@ -561,6 +563,20 @@ pub fn start_with_save(
                 }
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
+                if let Some(r) = slow_watch.record(millis, mode.period_ms()) {
+                    let swl = live.as_ref().is_some_and(|l| l.controls.switch_on("swl"));
+                    let report = matches!(r.times, 1 | 10 | 100 | 1000);
+                    let text = format!(
+                        "decodifica lenta: {} periodi su {} oltre il {:.0}% del tempo ({} in {} ms su {} ms; {} processori, {} thread di decodifica, SWL {}, a8 {})",
+                        r.slow, r.of, slow::SLOW_FRACTION * 100.0, mode.name(), millis, mode.period_ms(), slow::cores(), options.threads, if swl { "acceso" } else { "spento" }, if options.a8.is_some() { "acceso" } else { "spento" }
+                    );
+                    if report {
+                        tracing::warn!(target: "engine_native::lento", "{text}");
+                    } else {
+                        tracing::info!(target: "engine_native::lento", "{text}");
+                    }
+                    aurora_core::notice::notice("slow_pc", format!("{:.1}", millis as f64 / 1000.0));
+                }
                 // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
                 if let Some(save) = &save {
                     let (save_mode, dir) = save.get();
@@ -783,7 +799,12 @@ fn decode_period(
 ) -> Vec<ft8::decode::Decoded> {
     match mode {
         Mode::Ft8 => ft8::decode::decode_slot_with_history(samples, ft8_options, hashes, ft8_history),
-        Mode::Ft4 => ft4::decode::decode_slot(samples, ft4_options, hashes),
+        Mode::Ft4 => {
+            // AGCc anche in FT4 (stesso interruttore di FT8)
+            let mut o = ft4_options.clone();
+            o.agc = ft8_options.agc;
+            ft4::decode::decode_slot(samples, &o, hashes)
+        }
         Mode::Jt65 => jt::rx::decode(samples, &jt::rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
         Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
     }

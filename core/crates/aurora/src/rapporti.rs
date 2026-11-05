@@ -344,7 +344,7 @@ fn da_segnalare(livello: tracing::Level, origine: &str) -> bool {
     }
     match livello {
         tracing::Level::ERROR => true,
-        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum", "remote_api::associazione"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
+        tracing::Level::WARN => ["rig_control", "tx_native", "input_level", "audio_spectrum", "remote_api::associazione", "engine_native::lento"].iter().any(|p| origine.starts_with(p)) || origine.contains("audio"),
         _ => false,
     }
 }
@@ -1026,6 +1026,13 @@ mod tests {
     #[test]
     fn valori_noti_senza_maiuscole() {
         assert_eq!(pulisci("utente tiziano su PC-SALA", &["Tiziano".into(), "pc-sala".into()]), "utente <personale> su <personale>");
+    }
+
+    #[test]
+    fn la_decodifica_lenta_va_nei_rapporti_come_decoder() {
+        assert!(da_segnalare(tracing::Level::WARN, "engine_native::lento"));
+        assert!(!da_segnalare(tracing::Level::WARN, "engine_native"));
+        assert_eq!(area("engine_native::lento", "decodifica lenta: 4 periodi su 10"), "decoder");
     }
 
     #[test]
