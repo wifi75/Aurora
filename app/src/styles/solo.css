@@ -148,3 +148,7 @@
   touch-action: none;
 }
 .grid-resize:hover { opacity: 1; }
+
+/* le scritte a destra nella barra di un pannello (es. «36584 QSO nel log») si spostano a sinistra: il pulsantino ⧉ resta libero */
+.dock-grip:has(.dock-detach-host) .dock-grip-extra--right { right: 1.8rem; }
+.dock-detach-host { z-index: 2; }
