@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.133',
+    released: '2026-11-05T11:56:41Z',
+    kind: 'fixed',
+    title: ['La radio accesa dopo Aurora si sente da sola', 'A radio switched on after Aurora is heard by itself', 'Ein nach Aurora eingeschaltetes Radio wird von selbst gehört', 'La radio allumée après Aurora est entendue toute seule', 'La radio encendida después de Aurora se oye sola', 'O rádio ligado depois da Aurora ouve-se sozinho'],
+    text: [
+      "Se la scheda audio della radio non c'è all'avvio (radio spenta, cavo USB staccato), Aurora riprova ogni 5 secondi e la ricezione parte da sola appena compare; intanto un avviso spiega cosa succede. Prima serviva riavviare Aurora.",
+      "If the radio's sound card is missing at start (radio off, USB cable unplugged), Aurora retries every 5 seconds and reception starts by itself as soon as it appears; meanwhile a notice explains what is happening. Before, Aurora had to be restarted.",
+      "Fehlt die Soundkarte des Radios beim Start (Radio aus, USB-Kabel getrennt), versucht Aurora es alle 5 Sekunden erneut und der Empfang startet von selbst, sobald sie erscheint; ein Hinweis erklärt, was passiert. Vorher musste Aurora neu gestartet werden.",
+      "Si la carte son de la radio manque au démarrage (radio éteinte, câble USB débranché), Aurora réessaie toutes les 5 secondes et la réception démarre seule dès qu’elle apparaît ; un avis explique ce qui se passe. Avant, il fallait redémarrer Aurora.",
+      "Si la tarjeta de sonido de la radio no está al iniciar (radio apagada, cable USB desconectado), Aurora reintenta cada 5 segundos y la recepción arranca sola en cuanto aparece; mientras tanto un aviso explica lo que pasa. Antes había que reiniciar Aurora.",
+      "Se a placa de som do rádio não existir no arranque (rádio desligado, cabo USB desligado), a Aurora tenta de novo a cada 5 segundos e a receção arranca sozinha assim que aparece; entretanto um aviso explica o que se passa. Antes era preciso reiniciar a Aurora.",
+    ],
+  },
+  {
     version: '0.11.132',
     released: '2026-11-05T11:54:47Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sans PTT repris de JTDX Aurora regarde Réglages > Radio à chaque émission : le choix vaut tout de suite, sans redémarrer. Encadré « Réglages conseillés » plus lisible.',
       'Sin PTT tomado de JTDX Aurora mira Ajustes > Radio en cada transmisión: la elección vale al momento, sin reiniciar. Recuadro «Ajustes recomendados» más legible.',
       'Sem PTT vindo do JTDX a Aurora vê Definições > Rádio em cada transmissão: a escolha vale logo, sem reiniciar. Caixa «Definições recomendadas» mais legível.',
-    ],
-  },
-  {
-    version: '0.11.94',
-    released: '2026-11-03T21:11:53Z',
-    kind: 'changed',
-    title: ['Guida riorganizzata', 'Guide reorganised', 'Anleitung neu geordnet', 'Guide réorganisé', 'Guía reorganizada', 'Guia reorganizado'],
-    text: [
-      'La Guida è divisa in sei gruppi (primi passi, radio e audio, operare, programmi collegati e log, telefono e tablet, problemi comuni) con passi brevi e «Se non va». Nuove voci per collegare Log4OM, LogHX3 e BBLogger2 via UDP, lato Aurora e lato log.',
-      'The Guide is split into six groups (first steps, radio and audio, operating, connected programs and logs, phone and tablet, common problems) with short steps and «If it does not work». New entries to connect Log4OM, LogHX3 and BBLogger2 over UDP, on the Aurora side and on the log side.',
-      'Die Anleitung ist in sechs Gruppen geteilt (erste Schritte, Funkgerät und Audio, Betrieb, verbundene Programme und Logs, Telefon und Tablet, häufige Probleme) mit kurzen Schritten und «Wenn es nicht geht». Neue Einträge zum Verbinden von Log4OM, LogHX3 und BBLogger2 über UDP, auf Aurora- und auf Log-Seite.',
-      'Le Guide est divisé en six groupes (premiers pas, radio et audio, trafic, programmes connectés et journaux, téléphone et tablette, problèmes courants) avec des étapes courtes et « Si ça ne marche pas ». Nouvelles entrées pour relier Log4OM, LogHX3 et BBLogger2 en UDP, côté Aurora et côté journal.',
-      'La Guía está dividida en seis grupos (primeros pasos, radio y audio, operar, programas conectados y registros, teléfono y tableta, problemas comunes) con pasos breves y «Si no funciona». Nuevas entradas para conectar Log4OM, LogHX3 y BBLogger2 por UDP, del lado de Aurora y del lado del registro.',
-      'O Guia está dividido em seis grupos (primeiros passos, rádio e áudio, operar, programas ligados e registos, telemóvel e tablet, problemas comuns) com passos curtos e «Se não funcionar». Novas entradas para ligar Log4OM, LogHX3 e BBLogger2 por UDP, do lado da Aurora e do lado do registo.',
     ],
   },
 ];
