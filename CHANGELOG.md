@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.136 - 2026-11-05
+- **Finestre a parte**: rimesso l'ultimo elemento (⤓) la finestra si chiude da sola; nel programma per Windows `window.close()` non bastava, ora la pagina chiede `/__chiudi-finestra` e il guscio chiude la finestra (`on_navigation`).
+
 ## 0.11.135 - 2026-11-05
 - **Installatore fermo all'inizio** (segnalato su un PC aziendale): prima `taskkill` di Aurora, poi PowerShell con tempo massimo (`/TIMEOUT` 15 s e 8 s, `-NonInteractive -ExecutionPolicy Bypass`); se PowerShell non risponde si prosegue; `Get-Process` invece di `Get-CimInstance` (WMI lento) per il rigctld di Aurora. Immagini dell'installatore senza la versione scritta dentro (mostravano 0.11.46).
 - **Finestre a parte**: posizione, misura e massimizzazione ricordate per ognuna (`<etichetta>.json` accanto a `finestra.json`), anche all'uscita di Aurora.

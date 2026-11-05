@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.136',
+    released: '2026-11-05T13:02:55Z',
+    kind: 'fixed',
+    title: ['La finestra vuota si chiude', 'The empty window closes', 'Das leere Fenster schließt sich', 'La fenêtre vide se ferme', 'La ventana vacía se cierra', 'A janela vazia fecha-se'],
+    text: [
+      "Quando rimetti nella finestra principale l'ultimo elemento di una finestra a parte (⤓), la finestra sul secondo schermo si chiude da sola invece di restare aperta vuota.",
+      "When you put the last item of a separate window back into the main window (⤓), the window on the second screen closes by itself instead of staying open and empty.",
+      "Wenn du das letzte Element eines eigenen Fensters ins Hauptfenster zurückholst (⤓), schließt sich das Fenster auf dem zweiten Bildschirm von selbst, statt leer offen zu bleiben.",
+      "Quand tu remets dans la fenêtre principale le dernier élément d’une fenêtre à part (⤓), la fenêtre du second écran se ferme toute seule au lieu de rester ouverte et vide.",
+      "Cuando devuelves a la ventana principal el último elemento de una ventana aparte (⤓), la ventana de la segunda pantalla se cierra sola en lugar de quedarse abierta y vacía.",
+      "Quando repões na janela principal o último elemento de uma janela à parte (⤓), a janela do segundo ecrã fecha-se sozinha em vez de ficar aberta e vazia.",
+    ],
+  },
+  {
     version: '0.11.135',
     released: '2026-11-05T12:59:57Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Assistance tu peux choisir, désactivé par défaut, d’envoyer le rapport après un plantage et les erreurs anonymes au développeur d’Aurora, avec « Voir ce que j’envoie ». Indicatif, locator, messages et adresses sont retirés. Plus de drapeaux dans le panneau DXpédition (Rodrigues, Tokelau, Pitcairn et d’autres).',
       'En Ajustes > Asistencia puedes elegir, apagado de fábrica, enviar el informe tras un fallo y los errores anónimos a quien desarrolla Aurora, con «Ver lo que envío». Se quitan indicativo, locator, mensajes y direcciones. Más banderas en el panel DXpedición (Rodrigues, Tokelau, Pitcairn y otras).',
       'Em Definições > Assistência podes escolher, desligado de fábrica, enviar o relatório após uma falha e os erros anónimos a quem desenvolve a Aurora, com «Ver o que envio». Indicativo, locator, mensagens e endereços são retirados. Mais bandeiras no painel DXpedição (Rodrigues, Tokelau, Pitcairn e outras).',
-    ],
-  },
-  {
-    version: '0.11.96',
-    released: '2026-11-03T21:57:13Z',
-    kind: 'changed',
-    title: ['Assistenza in una scheda a sé', 'Support in its own tab', 'Support im eigenen Reiter', 'Assistance dans un onglet à part', 'Asistencia en su propia pestaña', 'Assistência num separador próprio'],
-    text: [
-      'In Impostazioni c’è la scheda «Assistenza»: pacchetto con il log sul Desktop e «Manda per email», che apre Gmail in Chrome già compilato. Nell’attività di banda tornano i km anche con il pannello stretto e non c’è più la doppia linea; sul telefono bandiera e paese seguono le opzioni di Schermo.',
-      'Settings now has a «Support» tab: log package on the Desktop and «Send by email», which opens a ready-made Gmail message in Chrome. Band activity shows km again in a narrow panel with no double line; on the phone flag and country follow the Display options.',
-      'Die Einstellungen haben jetzt den Reiter «Support»: Log-Paket auf dem Desktop und «Per E-Mail senden», das eine fertige Gmail-Nachricht in Chrome öffnet. Die Bandaktivität zeigt km auch im schmalen Bereich ohne doppelte Linie; auf dem Telefon folgen Flagge und Land den Anzeige-Optionen.',
-      'Les Réglages ont un onglet « Assistance » : paquet du journal sur le Bureau et « Envoyer par e-mail », qui ouvre un message Gmail prêt dans Chrome. L’activité de bande affiche de nouveau les km dans un panneau étroit, sans double ligne ; sur le téléphone drapeau et pays suivent les options d’affichage.',
-      'Ajustes tiene ahora la pestaña «Asistencia»: paquete del registro en el Escritorio y «Enviar por email», que abre un Gmail listo en Chrome. La actividad de banda vuelve a mostrar los km en un panel estrecho y sin línea doble; en el teléfono bandera y país siguen las opciones de Pantalla.',
-      'As Definições têm agora o separador «Assistência»: pacote do registo no Ambiente de trabalho e «Enviar por email», que abre um Gmail pronto no Chrome. A atividade de banda volta a mostrar os km num painel estreito e sem linha dupla; no telemóvel bandeira e país seguem as opções de Ecrã.',
     ],
   },
 ];
