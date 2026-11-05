@@ -255,10 +255,14 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     }
     // il titolo vero lo mette la pagina (gli elementi che contiene)
     let title = "Aurora";
+    // il display della radio da solo: finestra senza cornice (si vede solo il display); le altre finestre a parte hanno la cornice di Windows
+    let display_only = url.query_pairs().any(|(k, v)| k == "items" && v == "display") && !url.query_pairs().any(|(k, v)| k == "mode" && v == "grid");
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
         .title(title)
-        .inner_size(1000.0, 700.0)
-        .min_inner_size(360.0, 260.0)
+        .decorations(!display_only)
+        .shadow(true)
+        .inner_size(if display_only { 660.0 } else { 1000.0 }, if display_only { 110.0 } else { 700.0 })
+        .min_inner_size(if display_only { 160.0 } else { 360.0 }, if display_only { 40.0 } else { 260.0 })
         .resizable(true)
         .visible(false)
         .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3 --autoplay-policy=no-user-gesture-required")

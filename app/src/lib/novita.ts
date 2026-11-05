@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.146',
+    released: '2026-11-05T17:30:00Z',
+    kind: 'new',
+    title: ['Il display da solo, senza finestra intorno', 'The display alone, without a window around it', 'Die Anzeige allein, ohne Fenster drumherum', 'L’afficheur seul, sans fenêtre autour', 'La pantalla sola, sin ventana alrededor', 'O ecrã sozinho, sem janela à volta'],
+    text: [
+      "Portato su un altro schermo, il display della radio non ha più la cornice di Windows né la barra del titolo: si vede solo il display. Lo sposti trascinandolo dal bordo o dalla presa ⠿ che compare in alto a sinistra, lo ridimensioni dai bordi (in proporzione) o con la maniglia, e ⤓ lo rimette al suo posto. Le finestre con più pannelli e la dashboard restano finestre normali.",
+      "Moved to another screen, the radio display no longer has the Windows frame or title bar: you only see the display. Drag it by the edge or by the ⠿ grip that appears top-left, resize it from the edges (in proportion) or with the handle, and ⤓ puts it back. Windows with several panels and the dashboard stay normal windows.",
+      "Auf einen anderen Bildschirm verschoben hat die Radioanzeige keinen Windows-Rahmen und keine Titelleiste mehr: man sieht nur die Anzeige. Verschieben am Rand oder am Griff ⠿ oben links, Größe an den Rändern (proportional) oder am Griff ändern, ⤓ holt sie zurück. Fenster mit mehreren Feldern und das Dashboard bleiben normale Fenster.",
+      "Déplacé sur un autre écran, l’afficheur de la radio n’a plus le cadre de Windows ni la barre de titre : on ne voit que l’afficheur. Fais-le glisser par le bord ou par la poignée ⠿ en haut à gauche, redimensionne-le par les bords (en proportion) ou avec la poignée, et ⤓ le remet en place. Les fenêtres à plusieurs panneaux et le tableau de bord restent des fenêtres normales.",
+      "Llevada a otra pantalla, la pantalla de la radio ya no tiene el marco de Windows ni la barra de título: solo se ve la pantalla. Muévela arrastrando el borde o el asa ⠿ que aparece arriba a la izquierda, redimensiónala desde los bordes (en proporción) o con el asa, y ⤓ la devuelve. Las ventanas con varios paneles y el panel de bloques siguen siendo ventanas normales.",
+      "Levado para outro monitor, o ecrã do rádio já não tem a moldura do Windows nem a barra de título: só se vê o ecrã. Move-o arrastando a borda ou a pega ⠿ no canto superior esquerdo, redimensiona-o pelas bordas (em proporção) ou com a pega, e ⤓ volta a pô-lo no lugar. As janelas com vários painéis e o painel de blocos continuam a ser janelas normais.",
+    ],
+  },
+  {
     version: '0.11.145',
     released: '2026-11-05T17:24:42Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Le Guide explique l’assistant du premier lancement et a une nouvelle entrée, « Copie des réglages », pour enregistrer et restaurer réglages et journal.",
       "La Guía explica la configuración guiada del primer inicio y tiene una entrada nueva, «Copia de los ajustes», sobre cómo guardar y restaurar ajustes y log.",
       "O Guia explica a configuração guiada do primeiro arranque e tem uma entrada nova, «Cópia das definições», sobre como guardar e restaurar definições e log.",
-    ],
-  },
-  {
-    version: '0.11.106',
-    released: '2026-11-04T11:54:55Z',
-    kind: 'fixed',
-    title: ['Decodifica in tempo anche sui PC lenti', 'Decoding on time even on slow PCs', 'Dekodierung auch auf langsamen PCs rechtzeitig', 'Décodage à temps même sur les PC lents', 'Decodificación a tiempo también en PC lentos', 'Descodificação a tempo também em PC lentos'],
-    text: [
-      "Su un PC lento la decodifica di un periodo FT8 poteva durare più di un minuto, e Aurora restava sempre più indietro. Ora, passati 11 secondi, le passate in più si saltano: i messaggi trovati arrivano in tempo e il periodo dopo riparte puntuale.",
-      "On a slow PC decoding one FT8 period could take over a minute, and Aurora fell further and further behind. Now, after 11 seconds, the extra passes are skipped: the messages found arrive on time and the next period starts punctually.",
-      "Auf einem langsamen PC konnte die Dekodierung eines FT8-Durchgangs über eine Minute dauern, und Aurora geriet immer weiter in Rückstand. Jetzt werden nach 11 Sekunden die weiteren Durchläufe übersprungen: die gefundenen Meldungen kommen rechtzeitig und der nächste Durchgang beginnt pünktlich.",
-      "Sur un PC lent le décodage d’une période FT8 pouvait durer plus d’une minute, et Aurora prenait de plus en plus de retard. Désormais, après 11 secondes, les passes supplémentaires sont sautées : les messages trouvés arrivent à temps et la période suivante repart à l’heure.",
-      "En un PC lento la decodificación de un periodo FT8 podía durar más de un minuto, y Aurora se quedaba cada vez más atrás. Ahora, pasados 11 segundos, se saltan las pasadas extra: los mensajes encontrados llegan a tiempo y el periodo siguiente empieza puntual.",
-      "Num PC lento a descodificação de um período FT8 podia durar mais de um minuto, e a Aurora ficava cada vez mais para trás. Agora, passados 11 segundos, saltam-se as passagens extra: as mensagens encontradas chegam a tempo e o período seguinte começa pontual.",
     ],
   },
 ];
