@@ -121,4 +121,10 @@ export const coreTextStrings = {
     'El puerto {port} ya lo usa otro programa (quizá Aurora ya está abierta): ciérralo o elige otro puerto en Ajustes › Acceso.',
     'A porta {port} já é usada por outro programa (talvez o Aurora já esteja aberto): fecha-o ou escolhe outra porta em Definições › Acesso.',
   ],
+  'core.ev.nameModel': ['il nome «{name}» contiene il modello', 'the name “{name}” contains the model', 'der Name „{name}“ enthält das Modell', 'le nom « {name} » contient le modèle', 'el nombre «{name}» contiene el modelo', 'o nome «{name}» contém o modelo'],
+  'core.ev.nameInterface': ['il nome «{name}» è quello di un’interfaccia radio', 'the name “{name}” is that of a radio interface', 'der Name „{name}“ ist der eines Funk-Interfaces', 'le nom « {name} » est celui d’une interface radio', 'el nombre «{name}» es el de una interfaz de radio', 'o nome «{name}» é o de uma interface de rádio'],
+  'core.ev.serial': ['porta seriale {name}', 'serial port {name}', 'serielle Schnittstelle {name}', 'port série {name}', 'puerto serie {name}', 'porta série {name}'],
+  'core.ev.adapter': ['Adattatore USB-seriale ({name}): il modello va scelto a mano', 'USB-serial adapter ({name}): choose the model by hand', 'USB-Seriell-Adapter ({name}): das Modell von Hand wählen', 'Adaptateur USB-série ({name}) : choisis le modèle à la main', 'Adaptador USB-serie ({name}): elige el modelo a mano', 'Adaptador USB-série ({name}): escolhe o modelo à mão'],
+  'core.ev.usb': ['identità USB {id}', 'USB identity {id}', 'USB-Kennung {id}', 'identité USB {id}', 'identidad USB {id}', 'identidade USB {id}'],
+  'core.ev.usbCat': ['identità USB {id}, porta CAT (Enhanced)', 'USB identity {id}, CAT port (Enhanced)', 'USB-Kennung {id}, CAT-Port (Enhanced)', 'identité USB {id}, port CAT (Enhanced)', 'identidad USB {id}, puerto CAT (Enhanced)', 'identidade USB {id}, porta CAT (Enhanced)'],
 } as const;
