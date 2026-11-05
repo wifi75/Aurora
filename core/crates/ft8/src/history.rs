@@ -45,6 +45,8 @@ struct Parity {
     cq: Vec<StoredSignal>,
     my_call: Vec<StoredSignal>,
     qso: Option<StoredSignal>,
+    /// I messaggi decodificati, per la ridecodifica del periodo seguente della stessa parita' (`evencopy`/`oddcopy`, [`crate::copies`]).
+    copies: Vec<crate::copies::CopyMessage>,
 }
 
 /// La cronologia dei periodi dispari e pari: un'istanza vive per tutta la sessione di ricezione (come [`crate::message::CallHashes`]),
@@ -94,6 +96,21 @@ impl PeriodHistory {
         let side = self.side_mut(even_period);
         side.my_call = signals;
         side.my_call.truncate(MAX_MY_CALL);
+    }
+
+    /// L'ultimo messaggio ricordato che corrisponde al candidato (freq, dt), come il ciclo su `evencopy` di `ft8b` (vince l'ultimo).
+    pub fn find_copy(&self, even_period: bool, freq_hz: f32, dt_s: f32) -> Option<&crate::copies::CopyMessage> {
+        self.side(even_period)
+            .copies
+            .iter()
+            .rev()
+            .find(|c| (c.freq_hz - freq_hz).abs() < crate::copies::MATCH_FREQ_HZ && (c.dt_s - dt_s).abs() < crate::copies::MATCH_DT_S)
+    }
+
+    /// Sostituisce i messaggi ricordati di questa parita' con quelli di questo periodo (al massimo [`crate::copies::MAX_COPIES`]).
+    pub fn store_copies(&mut self, even_period: bool, mut copies: Vec<crate::copies::CopyMessage>) {
+        copies.truncate(crate::copies::MAX_COPIES);
+        self.side_mut(even_period).copies = copies;
     }
 
     /// Sostituisce il segnale del canale QSO di questo periodo (uno solo, come in JTDX).

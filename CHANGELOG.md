@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Decodifica FT8 piu' sensibile sui QSO in corso**: se 30 s prima nello stesso punto c'era un messaggio, Aurora prova a ritrovarlo o a leggere il suo seguito (rapporto, RRR, RR73, 73), come JTDX; in Modo SWL con la risincronizzazione sui toni attesi. Nelle prove il seguito di un QSO a -23 dB si legge 18 volte su 20 invece di 0, senza messaggi falsi in piu'.
 - **Modo SWL**: la sottrazione dei segnali decodificati usa il filtro corto di JTDX per l'ascolto (`NFILT2`), che segue meglio i segnali con evanescenza.
 - **Messaggi della radio nella lingua scelta** (issue #1): stato ed errori di CAT, Hamlib, OmniRig, PTT, porta occupata e rilevamento della radio («il nome … contiene il modello»), registro delle automazioni, errori dell'audio ed esiti degli invii ai servizi (LoTW, eQSL, PSK Reporter, DX Summit, TCP), che il core scrive in italiano, ora si leggono in inglese, tedesco, francese, spagnolo e portoghese (`app/src/lib/coreText.ts`).
 - **AGCc anche in FT4**: la compensazione dell'AGC della radio ora vale anche in FT4 (nelle prove, a -17 dB 15 periodi decodificati su 20 invece di 3).

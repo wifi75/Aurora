@@ -10,6 +10,7 @@
 pub mod a7;
 pub mod a8;
 pub mod ap;
+pub mod copies;
 pub mod crc;
 pub mod decode;
 pub mod filters;
