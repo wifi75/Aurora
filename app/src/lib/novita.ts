@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.138',
+    released: '2026-11-05T13:14:01Z',
+    kind: 'new',
+    title: ['Dashboard a blocchi sul secondo schermo', 'Block dashboard on the second screen', 'Block-Dashboard auf dem zweiten Bildschirm', 'Tableau de bord à blocs sur le second écran', 'Panel de bloques en la segunda pantalla', 'Painel de blocos no segundo ecrã'],
+    text: [
+      "Dal pulsantino ⧉ di un pannello, della Mappa o della Propagazione scegli «Nella dashboard a blocchi»: una finestra sola dove ogni elemento è un blocco che trascini dalla sua barretta e ridimensioni dall'angolo in basso a destra; gli altri blocchi si spostano per fargli posto. Aurora ricorda posizione e misura di ogni blocco. Anche da Impostazioni › Finestre.",
+      "From the ⧉ button of a panel, the Map or Propagation choose «In the block dashboard»: a single window where each item is a block you drag by its bar and resize from the bottom-right corner; the other blocks move to make room. Aurora remembers each block's position and size. Also from Settings › Windows.",
+      "Über das kleine ⧉ eines Felds, der Karte oder der Ausbreitung wählst du «Im Block-Dashboard»: ein Fenster, in dem jedes Element ein Block ist, den du an seiner Leiste ziehst und an der Ecke unten rechts in der Größe änderst; die anderen Blöcke machen Platz. Aurora merkt sich Position und Größe jedes Blocks. Auch unter Einstellungen › Fenster.",
+      "Depuis le petit ⧉ d’un panneau, de la Carte ou de la Propagation choisis « Dans le tableau de bord à blocs » : une seule fenêtre où chaque élément est un bloc que tu fais glisser par sa barre et redimensionnes par le coin en bas à droite ; les autres blocs se déplacent pour lui faire place. Aurora mémorise la position et la taille de chaque bloc. Aussi depuis Réglages › Fenêtres.",
+      "Desde el pequeño ⧉ de un panel, del Mapa o de la Propagación elige «En el panel de bloques»: una sola ventana donde cada elemento es un bloque que arrastras por su barra y redimensionas desde la esquina inferior derecha; los demás bloques se mueven para hacerle sitio. Aurora recuerda la posición y el tamaño de cada bloque. También desde Ajustes › Ventanas.",
+      "No pequeno ⧉ de um painel, do Mapa ou da Propagação escolhe «No painel de blocos»: uma só janela onde cada elemento é um bloco que arrastas pela barra e redimensionas pelo canto inferior direito; os outros blocos mexem-se para lhe dar espaço. A Aurora lembra a posição e o tamanho de cada bloco. Também em Definições › Janelas.",
+    ],
+  },
+  {
     version: '0.11.137',
     released: '2026-11-05T13:13:04Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans l’activité de bande la colonne drapeau, pays et km est plus large vers la gauche : des noms comme « European Russia » tiennent en entier à côté de la distance.',
       'En la actividad de banda la columna de bandera, país y km es más ancha hacia la izquierda: nombres como «European Russia» caben enteros junto a la distancia.',
       'Na atividade de banda a coluna de bandeira, país e km é mais larga para a esquerda: nomes como «European Russia» cabem inteiros ao lado da distância.',
-    ],
-  },
-  {
-    version: '0.11.98',
-    released: '2026-11-03T22:10:59Z',
-    kind: 'new',
-    title: ['Rapporti degli errori attivi', 'Error reports active', 'Fehlerberichte aktiv', 'Rapports d’erreur actifs', 'Informes de errores activos', 'Relatórios de erros ativos'],
-    text: [
-      'Corretto il PTT quando un vecchio JTDX diceva OmniRig ma la radio è collegata con Hamlib (la radio non andava in TX). Il servizio che riceve i rapporti è online: se li accendi in Impostazioni > Assistenza (sono spenti di fabbrica), il rapporto dopo un crash e gli errori anonimi arrivano davvero a chi sviluppa Aurora, e «Manda il pacchetto a chi sviluppa Aurora» ti dà un codice da comunicare.',
-      'Fixed the PTT when an old JTDX said OmniRig but the radio is connected with Hamlib (the radio never keyed). The service that receives reports is online: if you switch them on in Settings > Support (off by default), the report after a crash and anonymous errors really reach Aurora’s developer, and «Send the package to Aurora’s developer» gives you a code to share.',
-      'PTT korrigiert, wenn ein altes JTDX OmniRig angab, das Funkgerät aber über Hamlib verbunden ist (es sendete nie). Der Dienst für die Berichte ist online: wenn du sie unter Einstellungen > Support einschaltest (standardmäßig aus), erreichen der Bericht nach einem Absturz und anonyme Fehler wirklich den Entwickler von Aurora, und «Paket an den Entwickler senden» gibt dir einen Code zum Weitergeben.',
-      'PTT corrigé quand un ancien JTDX indiquait OmniRig alors que la radio est reliée par Hamlib (elle ne passait jamais en émission). Le service qui reçoit les rapports est en ligne : si tu les actives dans Réglages > Assistance (désactivés par défaut), le rapport après un plantage et les erreurs anonymes arrivent vraiment au développeur d’Aurora, et « Envoyer le paquet au développeur » te donne un code à communiquer.',
-      'Corregido el PTT cuando un JTDX antiguo indicaba OmniRig pero la radio está conectada con Hamlib (nunca transmitía). El servicio que recibe los informes está en línea: si los activas en Ajustes > Asistencia (apagados de fábrica), el informe tras un fallo y los errores anónimos llegan de verdad a quien desarrolla Aurora, y «Enviar el paquete a quien desarrolla Aurora» te da un código para comunicar.',
-      'Corrigido o PTT quando um JTDX antigo indicava OmniRig mas o rádio está ligado com Hamlib (nunca transmitia). O serviço que recebe os relatórios está online: se os ligares em Definições > Assistência (desligados de fábrica), o relatório após uma falha e os erros anónimos chegam mesmo a quem desenvolve a Aurora, e «Enviar o pacote a quem desenvolve a Aurora» dá-te um código para comunicar.',
     ],
   },
 ];

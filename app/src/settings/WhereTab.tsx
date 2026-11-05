@@ -1,5 +1,5 @@
 import { useT } from '../i18n';
-import { attach, attachAll, detach, openGroupWindow, useGroups, type ItemId } from '../lib/detached';
+import { attach, attachAll, DASHBOARD, detach, openGroupWindow, useGroups, type ItemId } from '../lib/detached';
 import { ALL_PANELS, readLayout, saveLayout, toggleHidden, type PanelId } from '../lib/layout';
 import { browserStorage } from '../lib/theme';
 import { ITEM_TITLE } from '../components/SoloWindow';
@@ -61,9 +61,10 @@ export function WhereGroups() {
                 <select value={place} onChange={(e) => choose(item, e.target.value)}>
                   <option value="main">{t('win.place.main')}</option>
                   {place.startsWith('in:') ? null : <option value="new">{t('win.new')}</option>}
+                  {open.some((g) => g.id === DASHBOARD) ? null : <option value={`in:${DASHBOARD}`}>{t('win.dash')}</option>}
                   {open.map((g) => (
                     <option key={g.id} value={`in:${g.id}`}>
-                      {g.items.includes(item) ? t('win.place.in', { what: label(g.items) }) : t('win.beside', { what: label(g.items) })}
+                      {g.id === DASHBOARD ? t('win.dash') : g.items.includes(item) ? t('win.place.in', { what: label(g.items) }) : t('win.beside', { what: label(g.items) })}
                     </option>
                   ))}
                   {page ? null : <option value="hidden">{t('win.place.hidden')}</option>}
@@ -80,7 +81,7 @@ export function WhereGroups() {
           <ul className="where-groups">
             {open.map((g) => (
               <li key={g.id}>
-                <span>{label(g.items)}</span>
+                <span>{g.id === DASHBOARD ? `${t('win.dashName')}: ${label(g.items)}` : label(g.items)}</span>
                 <button type="button" className="glass chip" onClick={() => openGroupWindow(g.id)}>
                   {t('win.show')}
                 </button>
