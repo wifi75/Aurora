@@ -25,7 +25,7 @@ export const NOVITA: readonly Novita[] = [
     kind: 'fixed',
     title: ['Abilita Tx si accende al primo clic', 'Enable Tx turns on at the first click', 'Tx aktivieren schaltet beim ersten Klick ein', 'Activer Tx s’allume au premier clic', 'Activar Tx se enciende al primer clic', 'Ativar Tx liga ao primeiro clique'],
     text: [
-      "Abilita Tx e gli altri interruttori (AutoSeq, 1 QSO, Auto Tx…) si accendevano a volte solo al secondo clic: la prima rilettura li riportava indietro prima che il motore li applicasse. Ora restano come li hai messi, nei Comandi e sul telefono.",
+      "Abilita Tx e gli altri interruttori (AutoSeq, 1 QSO, Auto Tx…) si accendevano a volte solo al secondo clic: la prima rilettura li riportava indietro prima che il motore li applicasse. Ora restano come li hai messi, nei Comandi e sul telefono. Associando un telefono, compare subito in «Dispositivi associati».",
       "Enable Tx and the other switches (AutoSeq, 1 QSO, Auto Tx…) sometimes turned on only at the second click: the first refresh put them back before the engine applied them. Now they stay as you set them, in Commands and on the phone.",
       "Tx aktivieren und die anderen Schalter (AutoSeq, 1 QSO, Auto Tx…) gingen manchmal erst beim zweiten Klick an: das erste Neuladen setzte sie zurück, bevor die Engine sie übernahm. Jetzt bleiben sie wie eingestellt, in Befehle und am Telefon.",
       "Activer Tx et les autres interrupteurs (AutoSeq, 1 QSO, Auto Tx…) ne s’allumaient parfois qu’au second clic : la première relecture les remettait avant que le moteur les applique. Ils restent maintenant comme tu les as mis, dans Commandes et sur le téléphone.",
