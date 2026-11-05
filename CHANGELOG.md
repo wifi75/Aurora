@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.143 - 2026-11-05
+- **Pulsantino per staccare il display**: passandoci sopra la lente (zoom 1,5) non si apre piu' e si chiude se era aperta; prima copriva il menu ⧉ e lampeggiava.
+
 ## 0.11.142 - 2026-11-05
 - **Interruttori al primo clic**: lo stato chiesto resta per 2,5 s (`lib/pendingControls.ts`) cosi' la prima rilettura del motore, che poteva arrivare prima dell'applicazione, non riporta indietro Abilita Tx e gli altri (Comandi, QsoSwitches, telefono).
 - **Associazione del telefono**: con il QR in vista l'elenco dei dispositivi si rilegge ogni 2 s (prima mai); appena il telefono compare, l'attesa finisce da sola e arriva l'avviso «Telefono associato».
