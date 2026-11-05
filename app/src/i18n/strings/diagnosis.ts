@@ -68,6 +68,14 @@ export const diagnosisStrings = {
     'Estás transmitiendo sin una radio conectada: el PTT no se acciona (solo vale con VOX). Elige la radio en Ajustes › Radio.',
     'Estás a transmitir sem um rádio ligado: o PTT não é acionado (só serve com VOX). Escolhe o rádio em Definições › Rádio.',
   ],
+  'diag.audio_missing': [
+    'La scheda audio scelta non c’è (radio spenta o cavo USB staccato?): accendi la radio, Aurora la riprende da sola appena compare.',
+    'The chosen sound card is missing (radio off or USB cable unplugged?): turn the radio on, Aurora picks it up as soon as it appears.',
+    'Die gewählte Soundkarte fehlt (Funkgerät aus oder USB-Kabel getrennt?): Schalte das Funkgerät ein, Aurora übernimmt sie, sobald sie erscheint.',
+    'La carte son choisie est absente (radio éteinte ou câble USB débranché ?) : allume la radio, Aurora la reprend dès qu’elle apparaît.',
+    'La tarjeta de sonido elegida no está (¿radio apagada o cable USB desconectado?): enciende la radio, Aurora la retoma en cuanto aparezca.',
+    'A placa de som escolhida não está presente (rádio desligado ou cabo USB desligado?): liga o rádio, o Aurora retoma-a assim que aparecer.',
+  ],
   'diag.slow_pc': [
     'Il PC decodifica troppo lentamente ({detail} s per periodo): si perdono i segnali deboli. Accendi Multithread, spegni Modo SWL e chiudi i programmi pesanti.',
     'The PC decodes too slowly ({detail} s per period): weak signals are lost. Turn on Multithread, turn off SWL mode and close heavy programs.',

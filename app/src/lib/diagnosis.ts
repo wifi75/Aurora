@@ -1,12 +1,13 @@
 import type { AudioLevel, StationStatus } from '../api/schemas';
 
 export type Severity = 'problem' | 'warning' | 'info';
-export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'omnirig' | 'slow_pc';
+export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'omnirig' | 'slow_pc' | 'audio_missing';
 
 /** Quanto resta sullo schermo un avviso arrivato dal motore. */
 export const NOTICE_MS = 10 * 60_000;
 const NOTICES: Record<string, { id: IssueId; severity: Severity; href?: string }> = {
   slow_pc: { id: 'slow_pc', severity: 'warning' },
+  audio_missing: { id: 'audio_missing', severity: 'problem', href: '#/impostazioni/audio' },
   audio_loss: { id: 'audio_loss', severity: 'warning', href: '#/impostazioni/audio' },
   no_radio: { id: 'no_radio', severity: 'warning', href: '#/impostazioni/radio' },
   omnirig: { id: 'omnirig', severity: 'problem', href: '#/impostazioni/radio' },
@@ -73,6 +74,8 @@ export function diagnose(i: DiagnosisInput): Issue[] {
 
   for (const [key, n] of Object.entries(i.notices ?? {})) {
     const def = NOTICES[key];
+    // l'ingresso mancante non vale piu' appena l'audio arriva
+    if (key === 'audio_missing' && i.audio) continue;
     if (def && i.now - n.at <= NOTICE_MS) issues.push({ id: def.id, severity: def.severity, ...(def.href ? { href: def.href } : {}), vars: { detail: n.detail, at: n.at } });
   }
 
