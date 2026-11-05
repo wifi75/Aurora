@@ -85,6 +85,7 @@ export const commandStrings = {
   'win.attach': ['Rimetti nella finestra principale', 'Put back in the main window', 'Zurück ins Hauptfenster', 'Remettre dans la fenêtre principale', 'Devolver a la ventana principal', 'Repor na janela principal'],
   'win.dir': ['Affiancati o uno sopra all’altro', 'Side by side or stacked', 'Nebeneinander oder übereinander', 'Côte à côte ou l’un sur l’autre', 'Lado a lado o uno sobre otro', 'Lado a lado ou um sobre o outro'],
   'win.elsewhere': ['È in una finestra a parte.', 'It is in a separate window.', 'Es ist in einem eigenen Fenster.', 'Elle est dans une fenêtre à part.', 'Está en una ventana aparte.', 'Está numa janela à parte.'],
+  'win.attachAll': ['Rimetti tutte le finestre a parte nella finestra principale', 'Put all separate windows back into the main window', 'Alle eigenen Fenster ins Hauptfenster zurückholen', 'Remettre toutes les fenêtres à part dans la fenêtre principale', 'Devolver todas las ventanas aparte a la principal', 'Repor todas as janelas à parte na principal'],
   'win.show': ['Mostra la finestra', 'Show the window', 'Fenster zeigen', 'Afficher la fenêtre', 'Mostrar la ventana', 'Mostrar a janela'],
   'qsl.lotw': ['LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW', 'LoTW'],
   'qsl.eqsl': ['eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL', 'eQSL'],
