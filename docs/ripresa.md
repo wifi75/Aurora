@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-04)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-05)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -40,6 +40,16 @@ le prove dal vivo con la radio le faccio io.
 
 ## Lavoro in corso
 
+- **2026-11-05, non ancora rilasciato** (su `main`, voci in CHANGELOG «Non rilasciato»; ultima versione pubblicata 0.11.131):
+  - audio: cattura con `cpal` feature `realtime` (MMCSS), buffer riusati nel thread audio, rapporto dei blocchi persi con causa (`Xrun`), minuti, blocchi al minuto, tipo di ingresso, Hz, canali, formato (`audio-spectrum/src/capture.rs`);
+  - avvisi sullo schermo dal motore: `aurora_core::notice::notice(id, detail)` → `Event::Notice` → `DiagnosisBar` (`audio_loss`, `no_radio`, `omnirig`, `slow_pc`; lo stesso avviso non si ripete prima di 2 minuti);
+  - «Verifica tutto» in Impostazioni › Assistenza (`app/src/components/CheckAll.tsx`): stazione, radio, audio, orologio, telefono;
+  - OmniRig: terzo tentativo del cambio frequenza; porta del server occupata: il messaggio dice il programma (Windows);
+  - nominativo o locatore da compilare: avviso, non piu' errore nei rapporti;
+  - AGCc anche in FT4 (`ft8::sync::agc_compensate_len`, `ft4::decode::Options::agc`);
+  - decodifica lenta: `engine-native/src/slow.rs` (4 periodi su 10 oltre il 70% → rapporto `engine_native::lento` e avviso `slow_pc`);
+  - riquadro «Radio non collegata» dentro la riga in alto, con spazio sopra e sotto.
+
 - Prototipi grafici in `docs/prototipo-*.html` e `docs/mockup-display-*.html` (anche sul Desktop del PC di casa, cartella `Aurora-prototipi`): il proprietario vuole sempre un prototipo prima del codice grafico.
 - Rapporti su Cloudflare letti alle 18:00 del 2026-11-04: 16 installazioni attive; un pacchetto di assistenza (OmniRig non in linea). Le prove con il core di prova vanno fatte su un'altra porta (8799) se Aurora e' aperta: sulla 8787 il core di prova fallisce e manda un falso rapporto «porta in uso».
 - Nessun ramo aperto. Il proprietario deve rimettere il PTT della sua stazione su RTS / COM9 in Impostazioni > Radio: dalla 0.11.102 non viene piu' da JTDX.ini.
@@ -50,6 +60,8 @@ le prove dal vivo con la radio le faccio io.
 
 ## Prossimo passo
 
+0. Pubblicare la versione con il lavoro del 2026-11-05 (dal PC), poi guardare su Cloudflare se i blocchi audio persi calano e da che tipo di ingresso arrivano.
+0. JT65/JT9 sul segnale debole e SWL (`NFILT2`, `ldeepsync`): da fare dal PC con JTDX e REA, non a memoria.
 1. Opzioni del display lette da Hamlib per ogni modello (`TODO.md`, «Display grandi in testata»).
 2. Provare dal vivo i sei display, soprattutto i quasi quadrati in testata, e la locandina alla prossima versione.
 3. Guardare i rapporti e le installazioni attive su Cloudflare (`SELECT ... FROM attivi` o `GET /v1/attivi`). Download al 2026-11-04: 266 `Aurora-Setup.exe` (prime installazioni), 22 Linux, 374 exe con versione = aggiornamenti automatici.
