@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.133',
-    released: '2026-11-05T11:56:41Z',
+    released: '2026-11-05T11:58:59Z',
     kind: 'fixed',
     title: ['La radio accesa dopo Aurora si sente da sola', 'A radio switched on after Aurora is heard by itself', 'Ein nach Aurora eingeschaltetes Radio wird von selbst gehört', 'La radio allumée après Aurora est entendue toute seule', 'La radio encendida después de Aurora se oye sola', 'O rádio ligado depois da Aurora ouve-se sozinho'],
     text: [
