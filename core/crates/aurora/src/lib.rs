@@ -1911,16 +1911,21 @@ pub async fn run(
             manager.set_engine_starter(Box::new(move |save| start_engine(Some(save))));
             manager.open_initial_input();
             // la scheda audio della radio puo' comparire dopo (radio accesa dopo Aurora, cavo USB rimesso): si riprova da soli
-            if !manager.has_input() && manager.wants_input() {
+            // e puo' sparire durante l'uso: ogni 5 s si controlla e, se manca, si riprova (l'avviso al massimo ogni 2 minuti)
+            if manager.wants_input() {
                 let m = Arc::clone(manager);
                 std::thread::spawn(move || {
+                    let mut missing = !m.has_input();
                     loop {
                         std::thread::sleep(std::time::Duration::from_secs(5));
-                        // l'avviso si ripete (al massimo ogni 2 minuti) finche' la scheda manca: lo vede anche chi apre la finestra dopo
-                        aurora_core::notice::notice("audio_missing", "");
                         if m.retry_input() {
-                            tracing::info!("ingresso audio trovato: la ricezione parte");
-                            break;
+                            if missing {
+                                tracing::info!("ingresso audio trovato: la ricezione riparte");
+                                missing = false;
+                            }
+                        } else {
+                            missing = true;
+                            aurora_core::notice::notice("audio_missing", "");
                         }
                     }
                 });

@@ -76,6 +76,14 @@ export const diagnosisStrings = {
     'La tarjeta de sonido elegida no está (¿radio apagada o cable USB desconectado?): enciende la radio, Aurora la retoma en cuanto aparezca.',
     'A placa de som escolhida não está presente (rádio desligado ou cabo USB desligado?): liga o rádio, o Aurora retoma-a assim que aparecer.',
   ],
+  'diag.audio_out_missing': [
+    'L’uscita audio per trasmettere si è persa (radio spenta o cavo USB staccato?): Aurora la riapre da sola alla prossima trasmissione appena torna.',
+    'The audio output for transmitting was lost (radio off or USB cable unplugged?): Aurora reopens it by itself at the next transmission once it is back.',
+    'Der Audioausgang zum Senden ging verloren (Funkgerät aus oder USB-Kabel getrennt?): Aurora öffnet ihn bei der nächsten Sendung von selbst, sobald er wieder da ist.',
+    'La sortie audio d’émission a été perdue (radio éteinte ou câble USB débranché ?) : Aurora la rouvre seule à la prochaine émission dès qu’elle revient.',
+    'La salida de audio para transmitir se ha perdido (¿radio apagada o cable USB desconectado?): Aurora la vuelve a abrir sola en la próxima transmisión en cuanto vuelva.',
+    'A saída de áudio para transmitir perdeu-se (rádio desligado ou cabo USB desligado?): o Aurora reabre-a sozinho na próxima transmissão assim que voltar.',
+  ],
   'diag.slow_pc': [
     'Il PC decodifica troppo lentamente ({detail} s per periodo): si perdono i segnali deboli. Accendi Multithread, spegni Modo SWL e chiudi i programmi pesanti.',
     'The PC decodes too slowly ({detail} s per period): weak signals are lost. Turn on Multithread, turn off SWL mode and close heavy programs.',

@@ -29,6 +29,10 @@ use tx_native::{AudioSink, OutputChannel, SinkSwitch, SwitchOutcome, SwitchableS
 /// Un ingresso aperto: chiuderlo (lasciarlo cadere) ferma la cattura.
 pub trait InputStream: Send {
     fn name(&self) -> String;
+    /// Il dispositivo si e' perso (scollegato, radio spenta) e va riaperto.
+    fn is_lost(&self) -> bool {
+        false
+    }
 }
 
 /// Cio' che serve per aprire e elencare i dispositivi: quelli veri (`cpal`) o, nelle prove, dei finti.
@@ -52,6 +56,9 @@ struct Capture(audio_spectrum::CaptureHandle);
 impl InputStream for Capture {
     fn name(&self) -> String {
         self.0.device_name().to_string()
+    }
+    fn is_lost(&self) -> bool {
+        self.0.is_lost()
     }
 }
 
@@ -264,6 +271,15 @@ impl AudioManager {
 
     /// Riprova ad aprire l'ingresso scelto (la scheda della radio accesa dopo Aurora); `log` scrive gli errori nel registro.
     pub fn retry_input(&self) -> bool {
+        // un ingresso che si e' perso durante l'uso (radio spenta, cavo mosso) si chiude e si riapre
+        let lost = {
+            let mut st = lock(&self.state);
+            if st.input.as_ref().is_some_and(|i| i.is_lost()) { st.input.take() } else { None }
+        };
+        if let Some(stream) = lost {
+            tracing::warn!("ingresso audio \"{}\" perso: lo riapro appena torna", stream.name());
+            drop(stream);
+        }
         if self.has_input() {
             return true;
         }

@@ -246,6 +246,7 @@ fn solo_page(url: &str) -> Option<String> {
 
 /// Apre (o porta davanti, se c'e' gia') la finestra di una pagina da sola: ridimensionabile, sul secondo schermo se c'e'.
 fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
+    crash::activity("apertura di una finestra a parte");
     let label = format!("finestra-{page}");
     if let Some(window) = app.get_webview_window(&label) {
         let _ = window.unminimize();
@@ -374,6 +375,7 @@ fn restore_window(app: &AppHandle, window: &WebviewWindow) {
 
 /// Salva dimensione e posizione della finestra principale. Da massimizzata resta la misura di prima e si segna solo che lo era.
 fn remember_window(window: &tauri::Window) {
+    crash::activity("salvataggio della posizione di una finestra");
     let label = window.label().to_string();
     if !(label == "main" || label.starts_with("finestra-")) || window.is_minimized().unwrap_or(false) {
         return;

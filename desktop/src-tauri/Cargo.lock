@@ -5321,6 +5321,7 @@ dependencies = [
 name = "tx-native"
 version = "0.11.151"
 dependencies = [
+ "aurora-core",
  "cpal",
  "rig-control",
  "tracing",
