@@ -205,3 +205,6 @@
   touch-action: none;
 }
 .display-fit-frame:hover .display-fit-handle { opacity: 1; }
+
+/* avviso dell'orologio: ora e' un pulsante (corregge l'ora), stesso aspetto della pillola */
+button.clock-alert { font: inherit; cursor: pointer; }
