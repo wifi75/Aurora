@@ -7,6 +7,7 @@ import { expandMacro, useMacros } from '../lib/macros';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
+import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 import { DxQsl } from './CallsignTip';
 import { coreText } from '../lib/coreText';
 
@@ -56,7 +57,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   const client = useQueryClient();
   const macros = useMacros((s) => s.macros);
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
-  const state = controls.data ?? {};
+  const state = useShownControls(controls.data ?? {});
   const reachable = !controls.isError;
   const prefs = usePrefs((st) => st.prefs);
   const [cqKind, setCqKind] = useState('CQ');
@@ -108,7 +109,11 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
 
   const setControl = (id: ControlId, on?: boolean) =>
     run(t('ctl.done'), async () => {
-      await postControl(id, on);
+      if (on !== undefined) holdControl(id, on);
+      await postControl(id, on).catch((e: unknown) => {
+        releaseControl(id);
+        throw e;
+      });
       if (on !== undefined) client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, [id]: on }));
       await client.invalidateQueries({ queryKey: ['controls'] });
     });
