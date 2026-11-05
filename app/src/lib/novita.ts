@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.134',
-    released: '2026-11-05T12:48:19Z',
+    released: '2026-11-05T12:50:53Z',
     kind: 'new',
     title: ['Finestre sul secondo schermo', 'Windows on the second screen', 'Fenster auf dem zweiten Bildschirm', 'Fenêtres sur le second écran', 'Ventanas en la segunda pantalla', 'Janelas no segundo ecrã'],
     text: [
