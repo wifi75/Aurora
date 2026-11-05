@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.144',
-    released: '2026-11-05T17:18:22Z',
+    released: '2026-11-05T17:21:35Z',
     kind: 'new',
     title: ['Ridimensiona il display, non solo la finestra', 'Resize the display, not just the window', 'Größe der Anzeige ändern, nicht nur des Fensters', 'Redimensionne l’afficheur, pas seulement la fenêtre', 'Redimensiona la pantalla, no solo la ventana', 'Redimensiona o ecrã, não só a janela'],
     text: [
