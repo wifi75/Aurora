@@ -279,3 +279,6 @@ html:has(.solo-display) *, html:has(.solo-display) { scrollbar-width: none; }
 }
 .dxmap-legendbox span { display: inline-flex; align-items: center; gap: 0.25rem; }
 .dxmap-legendbox i { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; }
+/* Mappa DX: la barra e i suoi menu (stacca su un altro schermo, ⚙) stanno sopra la cartina, non sotto i livelli della mappa */
+.dxmap-bar { position: relative; z-index: 1100; }
+.dxmap { position: relative; z-index: 0; }
