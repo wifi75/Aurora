@@ -6,6 +6,7 @@ import { replyErrorMessage } from '../lib/replyError';
 import { periodLabel } from '../lib/txPeriod';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
+import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 
 /** Interruttori del QSO e di trasmissione, nell'ordine in cui li usa chi lavora un DX. */
 // sinistra: come si svolge il QSO, due colonne; destra: tutto cio' che fa trasmettere, in colonna (proposta 2 scelta dal proprietario)
@@ -23,16 +24,18 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
   const mode = useStation((st) => st.status?.mode);
   const minuteLabel = useEngineTx((st) => st.tx?.minute ?? '');
   const autoseqLabel = useEngineTx((st) => st.tx?.autoseq ?? '');
-  const state = controls.data ?? {};
+  const state = useShownControls(controls.data ?? {});
   const reachable = !controls.isError;
 
   const set = async (id: ControlId, on: boolean) => {
     try {
+      holdControl(id, on);
       await postControl(id, on);
       client.setQueryData(['controls'], (old: object | undefined) => ({ ...old, [id]: on }));
       await client.invalidateQueries({ queryKey: ['controls'] });
       setNote('');
     } catch (error) {
+      releaseControl(id);
       setNote(replyErrorMessage(error, t));
     }
   };
