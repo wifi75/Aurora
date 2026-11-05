@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.155',
-    released: '2026-11-05T22:20:20Z',
+    released: '2026-11-05T22:24:39Z',
     kind: 'fixed',
     title: ['Mappa DX: stazioni e linee degli altri', 'DX Map: stations and others’ lines', 'DX-Karte: Stationen und Linien der anderen', 'Carte DX : stations et lignes des autres', 'Mapa DX: estaciones y líneas de los demás', 'Mapa DX: estações e linhas dos outros'],
     text: [
