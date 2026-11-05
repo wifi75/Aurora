@@ -77,4 +77,11 @@ npx wrangler d1 execute aurora-rapporti --remote --command "INSERT INTO installa
 npx wrangler deploy
 ```
 
+Dal 2026-11-05 l'elenco ha anche la nazione (`paese`, la sigla di due lettere che Cloudflare da' a ogni richiesta) e
+`GET /v1/attivi` restituisce `per_paese`. Su un database gia' creato la colonna si aggiunge una volta con:
+
+```powershell
+npx wrangler d1 execute aurora-rapporti --remote --command "ALTER TABLE installazioni ADD COLUMN paese TEXT"
+```
+
 Il secondo comando riempie l'elenco con le installazioni gia' viste negli ultimi 90 giorni (il conteggio e' partito il 2026-11-04).

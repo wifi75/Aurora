@@ -37,7 +37,9 @@ CREATE INDEX IF NOT EXISTS attivi_versione ON attivi (versione, giorno);
 CREATE TABLE IF NOT EXISTS installazioni (
   installazione TEXT PRIMARY KEY,
   prima TEXT NOT NULL,
-  ultima TEXT NOT NULL
+  ultima TEXT NOT NULL,
+  -- la nazione (sigla di due lettere data da Cloudflare, `XX` se non si sa): niente IP, niente citta'
+  paese TEXT
 );
 -- Conteggi di ogni giorno (per versione e sistema, senza identificativi), salvati prima che la pulizia tolga le righe di `attivi`.
 CREATE TABLE IF NOT EXISTS storico (
