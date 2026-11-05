@@ -1,7 +1,8 @@
 import '../styles/first-run.css';
 import { NetworkChecklist } from './NetworkChecklist';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from '../lib/toast';
 import {
   ApiError,
   getAccess,
@@ -46,7 +47,18 @@ export function AccessTab() {
   const [offer, setOffer] = useState<PairingOffer | null>(null);
   const show = useMutation({ mutationFn: () => startPairing(window.location.origin), onSuccess: setOffer });
 
-  const devices = useQuery({ queryKey: ['devices'], queryFn: getDevices, retry: false });
+  // con il QR in vista l'elenco si rilegge ogni 2 s: il telefono appena associato compare subito e l'attesa finisce da sola
+  const devices = useQuery({ queryKey: ['devices'], queryFn: getDevices, retry: false, refetchInterval: offer ? 2000 : 15_000 });
+  const count = devices.data?.length;
+  const before = useRef<number | null>(null);
+  useEffect(() => {
+    if (count === undefined) return;
+    if (offer && before.current !== null && count > before.current) {
+      setOffer(null);
+      toast(t('acc.pairedNow'), 'ok');
+    }
+    before.current = count;
+  }, [count, offer, t]);
   const revoke = useMutation({
     mutationFn: (id: number) => revokeDevice(id),
     onSuccess: () => void client.invalidateQueries({ queryKey: ['devices'] }),
