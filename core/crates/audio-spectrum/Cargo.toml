@@ -11,7 +11,8 @@ publish = false
 aurora-core = { path = "../aurora-core" }
 tokio = { workspace = true }
 tracing = { workspace = true }
-cpal = "0.18.2"
+# «realtime»: il thread audio a priorita' alta (MMCSS su Windows), meno blocchi persi quando il PC e' carico
+cpal = { version = "0.18.2", features = ["realtime"] }
 rustfft = "6.4.1"
 
 [target.'cfg(windows)'.dependencies]
