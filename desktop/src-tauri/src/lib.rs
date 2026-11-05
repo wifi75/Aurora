@@ -266,6 +266,24 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
             links::open_in_browser(url.as_str());
             NewWindowResponse::Deny
         })
+        // la pagina non ha piu' niente da mostrare (tutto rimesso nella finestra principale): chiede `/__chiudi-finestra` e si chiude
+        .on_navigation({
+            let app = app.clone();
+            let label = label.clone();
+            move |url| {
+                if url.path() != "/__chiudi-finestra" {
+                    return true;
+                }
+                let app2 = app.clone();
+                let label = label.clone();
+                let _ = app.run_on_main_thread(move || {
+                    if let Some(window) = app2.get_webview_window(&label) {
+                        let _ = window.close();
+                    }
+                });
+                false
+            }
+        })
         .build();
     let window = match built {
         Ok(w) => w,

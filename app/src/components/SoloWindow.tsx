@@ -48,7 +48,10 @@ export function SoloWindow({ id }: { id: string }) {
   }, [id]);
   // tutti gli elementi rimessi nella finestra principale: questa finestra non serve piu'
   useEffect(() => {
-    if (!group) window.close();
+    if (group) return;
+    window.close();
+    // nel programma per Windows window.close() non basta: il guscio chiude la finestra quando la pagina chiede questo indirizzo
+    location.href = `${location.origin}/__chiudi-finestra`;
   }, [group]);
   if (!group) return null;
 
