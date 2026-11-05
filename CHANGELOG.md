@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.139 - 2026-11-05
+- **Impostazioni › Audio**: cursore del volume di Windows sotto l'ingresso (registrazione, `/api/v1/input-level`) e sotto l'uscita (trasmissione Pwr, `/api/v1/output-level`), si invia al rilascio (`settings/DeviceVolume.tsx`).
+- **Dashboard a blocchi**: 12 colonne e 24 righe che seguono la finestra in larghezza e in altezza; il primo blocco riempie la finestra (prima restava uno spazio grigio vuoto).
+
 ## 0.11.138 - 2026-11-05
 - **Dashboard a blocchi** (finestra `#/finestra/dash`, `GridBoard.tsx`): griglia a 12 colonne, ogni elemento si trascina dalla barretta e si ridimensiona dall'angolo, gli altri blocchi si spostano e risalgono; posizione e misura ricordate. Si sceglie dal menu ⧉ («Nella dashboard a blocchi») e in Impostazioni › Finestre.
 - **Finestre a parte che lampeggiavano e si chiudevano** (0.11.137): la finestra nuova non trovava ancora il suo gruppo e si chiudeva; ora il contenuto viaggia anche nell'indirizzo (`?items=`) e la finestra si chiude solo se il gruppo c'era ed e' stato svuotato.

@@ -1,3 +1,4 @@
+import { DeviceVolume } from './DeviceVolume';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { ApiError, getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
@@ -179,6 +180,7 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
           allowUnset
           onChange={(next) => set({ input: next, ...(channelsOf(data.inputs, next, sys) < 2 && shown.input_channel !== 'Mono' ? { input_channel: 'Mono' } : {}) })}
         />
+        <DeviceVolume kind="input" />
         <ChannelSelect id="aud-inch" label={t('aud.inch')} tip={t('tip.aud.inch')} value={shown.input_channel} options={IN_CHANNELS} stereo={inStereo} onChange={(next) => set({ input_channel: next })} />
         <Message kind={data.input_in_use ? 'note' : 'alert'}>{data.input_in_use ? t('aud.nowIn', { name: data.input_in_use }) : t('aud.nowInNone')}</Message>
       </Group>
@@ -195,6 +197,7 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
           allowUnset={false}
           onChange={(next) => set({ output: next, ...(channelsOf(data.outputs, next, sys) < 2 && shown.output_channel !== 'Mono' ? { output_channel: 'Mono' } : {}) })}
         />
+        <DeviceVolume kind="output" />
         <ChannelSelect id="aud-outch" label={t('aud.outch')} tip={t('tip.aud.outch')} value={shown.output_channel} options={OUT_CHANNELS} stereo={outStereo} onChange={(next) => set({ output_channel: next })} />
         <Message kind={data.output_in_use ? 'note' : 'muted'}>
           {data.output_in_use ? t('aud.nowOut', { name: data.output_in_use }) : t('aud.nowOutNone')}

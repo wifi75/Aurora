@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 
-/** Un blocco della dashboard, in celle della griglia (12 colonne, righe da `ROW` pixel). */
+/** Un blocco della dashboard, in celle della griglia (12 colonne e 24 righe che riempiono la finestra). */
 export interface Cell {
   x: number;
   y: number;
@@ -9,7 +9,8 @@ export interface Cell {
 }
 
 export const COLS = 12;
-const ROW = 32;
+/** Righe della finestra intera: la griglia segue la finestra in larghezza e in altezza, cosi' i blocchi la riempiono sempre. */
+export const ROWS = 24;
 const GAP = 6;
 
 function overlaps(a: Cell, b: Cell): boolean {
@@ -39,10 +40,13 @@ export function arrange(cells: Record<string, Cell>, fixed?: string): Record<str
   return placed;
 }
 
-/** Dove mettere un blocco nuovo: sotto tutti gli altri, a tutta larghezza a meta'. */
+/** Dove mettere un blocco nuovo: il primo a tutta finestra, gli altri sotto, a meta' larghezza. */
 export function freeCell(cells: Record<string, Cell>): Cell {
-  const bottom = Object.values(cells).reduce((m, c) => Math.max(m, c.y + c.h), 0);
-  return { x: 0, y: bottom, w: 6, h: 9 };
+  const all = Object.values(cells);
+  // il primo blocco riempie la finestra; gli altri vanno sotto, a meta' larghezza
+  if (all.length === 0) return { x: 0, y: 0, w: COLS, h: ROWS };
+  const bottom = all.reduce((m, c) => Math.max(m, c.y + c.h), 0);
+  return { x: 0, y: bottom, w: 6, h: 12 };
 }
 
 interface Props {
@@ -59,17 +63,23 @@ interface Props {
 export function GridBoard({ cells, onChange, render }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(1000);
+  const [height, setHeight] = useState(700);
   const [live, setLive] = useState<Record<string, Cell> | null>(null);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const fit = () => setWidth(el.clientWidth);
+    const fit = () => {
+      setWidth(el.clientWidth);
+      setHeight(el.parentElement?.clientHeight ?? el.clientHeight);
+    };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   const colW = (width - GAP * (COLS + 1)) / COLS;
+  // altezza di una riga: la finestra divisa in ROWS righe (mai meno di 14 px, oltre si scorre)
+  const ROW = Math.max(14, (height - GAP * (ROWS + 1)) / ROWS);
   const shown = live ?? cells;
 
   const track = (id: string, mode: 'move' | 'size') => (e: ReactPointerEvent<HTMLElement>) => {
