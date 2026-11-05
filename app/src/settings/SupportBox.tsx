@@ -5,6 +5,7 @@ import { useLang, useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { ReportsBox } from './ReportsBox';
 import { BackupBox } from './BackupBox';
+import { CheckAllBox } from '../components/CheckAll';
 
 /** Un pacchetto fatto da meno di cosi' si riusa per «Manda per email» invece di rifarlo. */
 const FRESH_MS = 5 * 60_000;
@@ -26,6 +27,7 @@ export function SupportTab() {
     <div className="sx-page">
       <BackupBox available={diagnostics.data?.support_bundle === true} />
       <SupportBox />
+      <CheckAllBox />
       <ReportsBox />
     </div>
   );

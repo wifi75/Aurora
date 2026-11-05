@@ -32,7 +32,6 @@ import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 import { ReportsNotice } from './components/ReportsNotice';
-import { CheckAllButton } from './components/CheckAll';
 import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
 import { UpdatePoster } from './components/UpdatePoster';
@@ -163,7 +162,6 @@ export function App() {
           <span className="app-tools-dot" aria-hidden="true" />
           {session.data ? <UpdateBar /> : null}
           <LanguageSelect />
-          {session.data && !REMOTE ? <CheckAllButton /> : null}
           <HeaderAlertSwitch />
           <ThemeToggle />
         </span>
