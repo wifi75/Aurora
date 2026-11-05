@@ -13,6 +13,11 @@ import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 
 const KEY = 'aurora-mappa-dx';
+const DAY_MS = 86_400_000;
+/** Secondi da un messaggio: l'ora dei messaggi e' in millisecondi dalla mezzanotte UTC, non una data intera (a cavallo della mezzanotte si gira). */
+function ageOf(nowMs: number, timeOfDayMs: number): number {
+  return (((nowMs % DAY_MS) - timeOfDayMs + DAY_MS) % DAY_MS) / 1000;
+}
 /** Nominativo → quadrato, da tutti i messaggi sentiti da quando il programma e' aperto. */
 const LEARNED_GRIDS = new Map<string, string>();
 const DEFAULTS: DxMapSettings = {
@@ -86,7 +91,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
 
   const stations: DxStation[] = useMemo(() => {
     const times = new Map(decodes.map((d) => [d.id, d.time_ms]));
-    return stationsWithGrid(decodes).map((s) => ({ call: s.call, grid: s.grid, snr: s.snr, cq: s.cq, tag: s.tag, country: s.country, age: Math.max(0, (tick - (times.get(s.id) ?? tick)) / 1000) }));
+    return stationsWithGrid(decodes).map((s) => ({ call: s.call, grid: s.grid, snr: s.snr, cq: s.cq, tag: s.tag, country: s.country, age: ageOf(tick, times.get(s.id) ?? tick % DAY_MS) }));
   }, [decodes, tick]);
   // chi ci ha ricevuto (PSK Reporter), l'ultimo spot di ogni stazione
   const spots: DxSpot[] = useMemo(() => {
@@ -148,7 +153,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
       const a = where(c.from);
       const b = where(c.to);
       if (!a || !b) continue;
-      out.push({ from: c.from, to: c.to, fromPos: a.pos, toPos: b.pos, guess: a.guess || b.guess, toMe: c.to === me, age: Math.max(0, (tick - c.time) / 1000) });
+      out.push({ from: c.from, to: c.to, fromPos: a.pos, toPos: b.pos, guess: a.guess || b.guess, toMe: c.to === me, age: ageOf(tick, c.time) });
     }
     return out;
   }, [calls, grids, countryPos, me, tick]);
@@ -165,7 +170,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
     const put = (call: string, status: LiveStatus, time: number) => {
       const grid = grids.get(call)?.slice(0, 4).toUpperCase();
       if (!grid || call === me) return;
-      const age = Math.max(0, (tick - time) / 1000);
+      const age = ageOf(tick, time);
       const old = byGrid.get(grid);
       if (!old) {
         byGrid.set(grid, { grid, status, age, calls: [call] });
