@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.143',
-    released: '2026-11-05T17:00:55Z',
+    released: '2026-11-05T17:03:40Z',
     kind: 'fixed',
     title: ['Il menu per spostare il display si usa', 'The display move menu works', 'Das Menü zum Verschieben der Anzeige funktioniert', 'Le menu pour déplacer l’afficheur fonctionne', 'El menú para mover la pantalla funciona', 'O menu para mover o ecrã funciona'],
     text: [
