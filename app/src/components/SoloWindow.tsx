@@ -1,3 +1,4 @@
+import { DisplayFit } from './DisplayFit';
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT, type Key } from '../i18n';
 import { attach, groupFromUrl, markClosed, restoreGroup, updateGroup, useGroups, type ItemId } from '../lib/detached';
@@ -18,11 +19,13 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
   cluster: 'panel.cluster',
   map: 'nav.map',
   propagation: 'nav.propagation',
+  display: 'win.display',
 };
 
 function Item({ item }: { item: ItemId }) {
   if (item === 'map') return <MapPage solo />;
   if (item === 'propagation') return <PropagationPage solo />;
+  if (item === 'display') return <DisplayFit />;
   return <Live soloPanel={item} />;
 }
 

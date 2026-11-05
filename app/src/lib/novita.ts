@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.141',
+    released: '2026-11-05T16:52:55Z',
+    kind: 'new',
+    title: ['Display su un altro schermo e log grandi', 'Display on another screen and large logs', 'Anzeige auf anderem Bildschirm und große Logs', 'Afficheur sur un autre écran et gros journaux', 'Pantalla en otra pantalla y logs grandes', 'Ecrã noutro monitor e logs grandes'],
+    text: [
+      "Il display della radio si porta su un altro schermo con il pulsantino nel suo angolo in alto a destra (bianco su nero, si vede su ogni display): la finestra si ridimensiona e il display la segue mantenendo le proporzioni, senza perdere qualità. La pagina Log regge anche log da decine di migliaia di QSO: le righe compaiono a blocchi con «Mostra altri», filtri ed esportazione valgono per tutti.",
+      "The radio display moves to another screen with the small button in its top-right corner (white on black, visible on every display): the window resizes and the display follows keeping its proportions, without losing quality. The Log page now handles logs of tens of thousands of QSOs: rows appear in blocks with «Show more», filters and export apply to all.",
+      "Die Radioanzeige kommt mit dem kleinen Knopf in ihrer oberen rechten Ecke (weiß auf schwarz, auf jeder Anzeige sichtbar) auf einen anderen Bildschirm: das Fenster lässt sich in der Größe ändern und die Anzeige folgt mit gleichen Proportionen, ohne Qualitätsverlust. Die Log-Seite verkraftet Logs mit Zehntausenden QSOs: Zeilen erscheinen in Blöcken mit «Mehr zeigen», Filter und Export gelten für alle.",
+      "L’afficheur de la radio passe sur un autre écran avec le petit bouton dans son coin en haut à droite (blanc sur noir, visible sur tout afficheur) : la fenêtre se redimensionne et l’afficheur suit en gardant ses proportions, sans perte de qualité. La page Journal supporte des journaux de dizaines de milliers de QSO : les lignes apparaissent par blocs avec « Afficher plus », filtres et export valent pour tous.",
+      "La pantalla de la radio pasa a otra pantalla con el pequeño botón en su esquina superior derecha (blanco sobre negro, visible en cualquier pantalla): la ventana se redimensiona y la pantalla la sigue manteniendo las proporciones, sin perder calidad. La página Log aguanta logs de decenas de miles de QSO: las filas aparecen por bloques con «Mostrar más», filtros y exportación valen para todos.",
+      "O ecrã do rádio passa para outro monitor com o pequeno botão no canto superior direito (branco sobre preto, visível em qualquer ecrã): a janela redimensiona-se e o ecrã acompanha mantendo as proporções, sem perder qualidade. A página Log aguenta logs de dezenas de milhares de QSO: as linhas aparecem em blocos com «Mostrar mais», filtros e exportação valem para todos.",
+    ],
+  },
+  {
     version: '0.11.140',
     released: '2026-11-05T16:47:38Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora fonctionne seule : elle ne lit plus rien de JTDX ou WSJT-X, le fichier des pays et Hamlib sont inclus. Au premier lancement un guide pas à pas demande la langue, l’indicatif et le locator, la carte son et la radio ; chaque étape peut être passée. Services publics activés d’usine, préréglage BBLogger et première version Linux.',
       'Aurora funciona sola: ya no lee nada de JTDX o WSJT-X, el archivo de países y Hamlib están incluidos. En el primer inicio una guía paso a paso pide idioma, indicativo y localizador, tarjeta de sonido y radio; cada paso se puede saltar. Servicios públicos activados de fábrica, ajuste BBLogger y primera versión para Linux.',
       'A Aurora funciona sozinha: já não lê nada do JTDX ou do WSJT-X, o ficheiro dos países e o Hamlib estão incluídos. No primeiro arranque um guia passo a passo pede língua, indicativo e locator, placa de som e rádio; cada passo pode ser saltado. Serviços públicos ligados de fábrica, predefinição BBLogger e primeira versão para Linux.',
-    ],
-  },
-  {
-    version: '0.11.101',
-    released: '2026-11-03T22:29:49Z',
-    kind: 'fixed',
-    title: ['File audio nella cartella di Aurora', 'Audio files in Aurora’s folder', 'Audiodateien im Aurora-Ordner', 'Fichiers audio dans le dossier d’Aurora', 'Archivos de audio en la carpeta de Aurora', 'Ficheiros de áudio na pasta da Aurora'],
-    text: [
-      'I file audio si salvano sempre nella cartella di Aurora, mai in quella di JTDX o altrove. Nell’attività di banda bandiera e paese partono più a sinistra con il nome un po’ più piccolo; il riquadro «Impostazioni consigliate» è allineato in alto a sinistra.',
-      'Audio files are always saved in Aurora’s folder, never in JTDX’s or elsewhere. In band activity flag and country start further left with a slightly smaller name; the «Recommended settings» box is aligned top-left.',
-      'Audiodateien werden immer im Aurora-Ordner gespeichert, nie bei JTDX oder anderswo. In der Bandaktivität beginnen Flagge und Land weiter links mit etwas kleinerem Namen; der Kasten «Empfohlene Einstellungen» ist oben links ausgerichtet.',
-      'Les fichiers audio sont toujours enregistrés dans le dossier d’Aurora, jamais dans celui de JTDX ou ailleurs. Dans l’activité de bande drapeau et pays commencent plus à gauche avec un nom un peu plus petit ; l’encadré « Réglages conseillés » est aligné en haut à gauche.',
-      'Los archivos de audio se guardan siempre en la carpeta de Aurora, nunca en la de JTDX ni en otra. En la actividad de banda bandera y país empiezan más a la izquierda con el nombre algo más pequeño; el recuadro «Ajustes recomendados» está alineado arriba a la izquierda.',
-      'Os ficheiros de áudio são sempre gravados na pasta da Aurora, nunca na do JTDX nem noutra. Na atividade de banda bandeira e país começam mais à esquerda com o nome um pouco mais pequeno; a caixa «Definições recomendadas» está alinhada em cima à esquerda.',
     ],
   },
 ];
