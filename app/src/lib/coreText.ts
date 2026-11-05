@@ -31,6 +31,8 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
     'core.omniNoExtras',
   ],
   ['nessuna risposta', 'core.noReply'],
+  ['servono il tuo nominativo e il tuo locatore (scheda Generali)', 'core.svc.needCall'],
+  ['password di eQSL non impostata (o non leggibile da questo utente)', 'core.svc.eqslPassword'],
   ["Automazione spenta dall'operatore", 'core.au.offByUser'],
   ['STOP TX: automazione spenta', 'core.au.stop'],
   ['Nominativo non leggibile nel messaggio', 'core.au.noCall'],
@@ -65,6 +67,15 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
   { re: /^ingresso audio non trovato \((.*)\); disponibili: (.*)$/s, key: 'core.audio.notFound', vars: ['name', 'list'] },
   { re: /^configurazione audio non disponibile: (.*)$/s, key: 'core.audio.noConfig', vars: ['raw'] },
   { re: /^ingresso audio non aperto \(occupato da un'altra applicazione\?\): (.*)$/s, key: 'core.audio.busy', vars: ['raw'] },
+  { re: /^QSO con (.+) scartato: in coda da piu' di sette giorni$/s, key: 'core.svc.dropped', vars: ['calls'] },
+  { re: /^QSO con (.+?) inviato(?: \((.*)\))?$/s, key: 'core.svc.sent', vars: ['calls', 'detail'] },
+  { re: /^QSO con (.+?) gia' presente(?: \((.*)\))?$/s, key: 'core.svc.dup', vars: ['calls', 'detail'] },
+  { re: /^QSO con (.+?) rifiutato: (.*)$/s, key: 'core.svc.refused', vars: ['calls', 'why'] },
+  { re: /^(.*): nuovo tentativo alle (\d\d:\d\d) UTC$/s, key: 'core.svc.retryAt', vars: ['why', 'at'], inner: ['why'] },
+  { re: /^spot inviato: (\S+) su (\S+) kHz$/s, key: 'core.svc.spot', vars: ['call', 'khz'] },
+  { re: /^(\d+) spot in (\d+) pacchetti$/s, key: 'core.svc.psk', vars: ['n', 'p'] },
+  { re: /^QSO inviato a (.+)$/s, key: 'core.svc.tcp', vars: ['to'] },
+  { re: /^invio interrotto: (.*)$/s, key: 'core.svc.aborted', vars: ['why'] },
   // «CALL: motivo» per ultimo: il motivo si traduce se e' noto
   { re: /^(\S+): (.+)$/s, key: 'core.au.callWhy', vars: ['call', 'why'], inner: ['why'] },
 ];
@@ -111,6 +122,8 @@ export function coreText(message: string | null | undefined, t: T): string {
     });
     // «CALL: motivo» con un motivo sconosciuto: si lascia tutto com'era
     if (p.key === 'core.au.callWhy' && vars.why === (g[2] ?? '')) return m;
+    // il dettaglio tra parentesi c'e' solo se il core l'ha scritto
+    if ('detail' in vars && !vars.detail) return t(`${p.key}.plain` as Key, vars);
     return t(p.key, vars);
   }
   return m;

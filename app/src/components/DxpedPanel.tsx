@@ -5,6 +5,7 @@ import { getDxcc, getDxped, type Dxpedition } from '../api/client';
 import { loadAtlas } from './CountryShape';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
+import { coreText } from '../lib/coreText';
 
 /** Oggi come `AAAA-MM-GG` (UTC, come il calendario NG3K). */
 export function today(now = new Date()): string {
@@ -64,7 +65,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heard
         <strong>{t('dxp.title')}</strong>
         <span className="muted">NG3K</span>
       </header>
-      {q.data?.dxped.error ? <p className="muted dxped-note">{q.data.dxped.error}</p> : null}
+      {q.data?.dxped.error ? <p className="muted dxped-note">{coreText(q.data.dxped.error, t)}</p> : null}
       {items.length === 0 ? <p className="muted dxped-note">{q.data?.dxped.fetched_ms ? t('dxp.none') : t('dxp.loading')}</p> : null}
       <ul className="dxped-list">
         {items.map((d) => (

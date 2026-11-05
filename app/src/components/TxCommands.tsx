@@ -8,6 +8,7 @@ import { replyErrorMessage } from '../lib/replyError';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { DxQsl } from './CallsignTip';
+import { coreText } from '../lib/coreText';
 
 interface Props {
   /** La trasmissione e' aperta su questo PC (AURORA_ALLOW_TX=1). */
@@ -40,7 +41,7 @@ function spotErrorMessage(error: unknown, t: T): string {
       case 'bad_spot':
         return t('err.spot.badText');
       case 'spot_failed':
-        return t('err.spot.failed', { reason: error.detail ?? '—' });
+        return t('err.spot.failed', { reason: error.detail ? coreText(error.detail, t) : '—' });
       case 'local_only':
         return t('err.spot.local');
     }
