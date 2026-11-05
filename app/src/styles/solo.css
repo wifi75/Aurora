@@ -208,3 +208,14 @@
 
 /* avviso dell'orologio: ora e' un pulsante (corregge l'ora), stesso aspetto della pillola */
 button.clock-alert { font: inherit; cursor: pointer; }
+
+/* display da solo, finestra senza cornice: un bordino scuro da cui trascinarla, strumenti piccoli in alto a sinistra al passaggio */
+.solo-display { position: relative; box-sizing: border-box; height: 100vh; padding: 4px; background: #05080a; cursor: move; overflow: hidden; }
+.solo-display .display-fit { cursor: default; }
+.solo-display-tools { position: absolute; top: 4px; left: 4px; z-index: 5; display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s ease-out; }
+.solo-display:hover .solo-display-tools { opacity: 1; }
+.solo-display-grip, .solo-display-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem;
+  border: 1px solid rgb(255 255 255 / 0.55); border-radius: 0.3rem; background: rgb(0 0 0 / 0.7); color: #fff; font-size: 0.75rem; opacity: 1;
+}
+.solo-display-grip { cursor: move; }

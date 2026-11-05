@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "finestre",
+  "description": "Finestre a parte (secondo schermo) mostrano la pagina del core locale: il display della radio da solo e' una finestra senza cornice, che si sposta trascinandola e si chiude dal suo pulsantino.",
+  "windows": ["finestra-*"],
+  "remote": { "urls": ["http://127.0.0.1:*/*", "http://localhost:*/*"] },
+  "permissions": ["core:window:allow-start-dragging", "core:window:allow-close", "core:window:allow-minimize"]
+}
