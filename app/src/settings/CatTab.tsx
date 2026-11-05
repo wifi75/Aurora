@@ -21,6 +21,7 @@ import {
   type CatState,
 } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
+import { coreText } from '../lib/coreText';
 import { BAUDS, applyCandidate, catIssue, filterModels, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
 import { icomBaudWarning, presetApplied, presetFor, type RigPreset } from '../lib/rigPresets';
 import { Check, Help, Row } from './common';
@@ -66,7 +67,7 @@ function errorText(error: unknown, t: T): string {
     if (error.code === 'no_such_profile') return t('cat.err.profile');
     if (error.code === 'bad_name') return t('cat.err.name');
     if (error.code === 'write_failed') return t('cat.err.write');
-    if (error.detail) return error.detail;
+    if (error.detail) return coreText(error.detail, t);
     if (error.code.startsWith('bad_')) return t('cat.invalid');
   }
   return t('cat.err.generic');
@@ -89,7 +90,7 @@ function Status({ snap }: { snap: CatSnapshot }) {
     <>
       <p role="status" className="cat-state sx-message">
         <span className={`led ${LED[status.state]}`} aria-hidden="true" /> <strong>{t(STATE_KEY[status.state])}</strong>
-        {status.message ? ` — ${status.message}` : ''}
+        {status.message ? ` — ${coreText(status.message, t)}` : ''}
       </p>
       {status.state === 'connected' && rig ? (
         <Cells min={12}>
