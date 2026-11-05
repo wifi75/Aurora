@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Radio accesa dopo Aurora**: se la scheda audio della radio non c'e' all'avvio (radio spenta, cavo USB staccato), Aurora riprova ogni 5 s e la ricezione parte da sola appena compare; intanto un avviso spiega cosa succede. Prima serviva riavviare Aurora.
 
 ## 0.11.132 - 2026-11-05
 - **Decodifica FT8 piu' sensibile sui QSO in corso**: se 30 s prima nello stesso punto c'era un messaggio, Aurora prova a ritrovarlo o a leggere il suo seguito (rapporto, RRR, RR73, 73), come JTDX; in Modo SWL con la risincronizzazione sui toni attesi. Nelle prove il seguito di un QSO a -23 dB si legge 18 volte su 20 invece di 0, senza messaggi falsi in piu'.
