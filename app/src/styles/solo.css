@@ -223,3 +223,7 @@ button.clock-alert { font: inherit; cursor: pointer; }
 /* finestre a parte senza cornice: la barretta di ogni blocco sposta la finestra */
 .solo-bar--drag { cursor: move; user-select: none; }
 .solo-bar--drag .solo-title { pointer-events: none; }
+/* finestra stretta attorno al display: niente bordino, niente margini */
+.solo-display { padding: 0; background: #000; }
+.solo-display .display-fit-inner > :last-child { border-radius: 0 !important; }
+html:has(.solo-display), body:has(.solo-display) { background: #000; overflow: hidden; }

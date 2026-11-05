@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.147',
+    released: '2026-11-05T17:37:13Z',
+    kind: 'fixed',
+    title: ['La finestra del display è il display', 'The display window is the display', 'Das Anzeigefenster ist die Anzeige', 'La fenêtre de l’afficheur est l’afficheur', 'La ventana de la pantalla es la pantalla', 'A janela do ecrã é o ecrã'],
+    text: [
+      "La finestra del display staccato si stringe esattamente attorno al display: niente più fondo nero in più sotto o di lato. Ridimensionandola dai bordi o con la maniglia, la finestra segue il display in proporzione.",
+      "The detached display window now fits exactly around the display: no more extra black background below or beside it. Resizing it from the edges or with the handle, the window follows the display in proportion.",
+      "Das Fenster der abgelösten Anzeige liegt jetzt genau um die Anzeige: kein zusätzlicher schwarzer Hintergrund mehr darunter oder daneben. Beim Ändern der Größe an den Rändern oder am Griff folgt das Fenster der Anzeige proportional.",
+      "La fenêtre de l’afficheur détaché se resserre exactement autour de l’afficheur : plus de fond noir en trop dessous ou à côté. En la redimensionnant par les bords ou avec la poignée, la fenêtre suit l’afficheur en proportion.",
+      "La ventana de la pantalla separada se ajusta exactamente a la pantalla: ya no queda fondo negro de más debajo o al lado. Al redimensionarla desde los bordes o con el asa, la ventana sigue a la pantalla en proporción.",
+      "A janela do ecrã destacado ajusta-se exatamente ao ecrã: já não sobra fundo preto por baixo ou ao lado. Ao redimensioná-la pelas bordas ou com a pega, a janela acompanha o ecrã em proporção.",
+    ],
+  },
+  {
     version: '0.11.146',
     released: '2026-11-05T17:33:05Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Avec deux cartes USB identiques (par exemple « USB Audio Device » et « 2- USB Audio Device ») la 0.11.105 pouvait ouvrir la mauvaise et la chute d’eau restait muette. Désormais le nom exact choisi dans les Réglages l’emporte toujours.",
       "Con dos tarjetas USB iguales (por ejemplo «USB Audio Device» y «2- USB Audio Device») la 0.11.105 podía abrir la equivocada y la cascada se quedaba muda. Ahora siempre gana el nombre exacto elegido en Ajustes.",
       "Com duas placas USB iguais (por exemplo «USB Audio Device» e «2- USB Audio Device») a 0.11.105 podia abrir a errada e a cascata ficava muda. Agora ganha sempre o nome exato escolhido nas Definições.",
-    ],
-  },
-  {
-    version: '0.11.107',
-    released: '2026-11-04T12:03:16Z',
-    kind: 'changed',
-    title: ['Guida aggiornata', 'Updated guide', 'Aktualisierte Anleitung', 'Guide mis à jour', 'Guía actualizada', 'Guia atualizado'],
-    text: [
-      "La Guida spiega la configurazione guidata del primo avvio e ha una voce nuova, «Copia delle impostazioni», su come salvare e ripristinare impostazioni e log.",
-      "The Guide explains the first-start setup guide and has a new entry, «Settings backup», on how to save and restore settings and log.",
-      "Die Anleitung erklärt den Einrichtungsassistenten beim ersten Start und hat einen neuen Eintrag «Sicherung der Einstellungen» zum Speichern und Wiederherstellen von Einstellungen und Log.",
-      "Le Guide explique l’assistant du premier lancement et a une nouvelle entrée, « Copie des réglages », pour enregistrer et restaurer réglages et journal.",
-      "La Guía explica la configuración guiada del primer inicio y tiene una entrada nueva, «Copia de los ajustes», sobre cómo guardar y restaurar ajustes y log.",
-      "O Guia explica a configuração guiada do primeiro arranque e tem uma entrada nova, «Cópia das definições», sobre como guardar e restaurar definições e log.",
     ],
   },
 ];

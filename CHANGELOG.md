@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.147 - 2026-11-05
+- **Finestra del display staccato**: si porta alla misura esatta del display (`plugin:window|set_size`, permesso `core:window:allow-set-size` per `finestra-*`), senza fondo nero in piu'; dopo un ridimensionamento dai bordi o con la maniglia la finestra segue il display in proporzione.
+
 ## 0.11.146 - 2026-11-05
 - **Display della radio da solo**: la sua finestra a parte e' senza cornice (`decorations(false)`) e si sposta dal bordo o dalla presa ⠿ (`data-tauri-drag-region`, permesso `core:window:allow-start-dragging` per le finestre `finestra-*` in `capabilities/finestre.json`); ⤓ la rimette nella principale. Anche le altre finestre a parte (un pannello, o piu' pannelli in riga/colonna) sono senza cornice e si spostano dalla barretta del blocco; solo la dashboard a blocchi resta una finestra normale.
 

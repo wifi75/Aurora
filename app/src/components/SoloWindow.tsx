@@ -99,7 +99,7 @@ export function SoloWindow({ id }: { id: string }) {
   if (group.mode !== 'grid' && group.items.length === 1 && group.items[0] === 'display') {
     return (
       <div className="solo-display" data-tauri-drag-region>
-        <DisplayFit />
+        <DisplayFit hugWindow />
         <span className="solo-display-tools">
           <span className="solo-display-grip" data-tauri-drag-region title={t('win.dragWindow')}>
             ⠿
