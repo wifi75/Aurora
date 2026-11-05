@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.132',
-    released: '2026-11-05T11:49:36Z',
+    released: '2026-11-05T11:54:47Z',
     kind: 'new',
     title: ['Decodifica più sensibile e messaggi nella tua lingua', 'More sensitive decoding and messages in your language', 'Empfindlichere Dekodierung und Meldungen in deiner Sprache', 'Décodage plus sensible et messages dans ta langue', 'Decodificación más sensible y mensajes en tu idioma', 'Descodificação mais sensível e mensagens na tua língua'],
     text: [
