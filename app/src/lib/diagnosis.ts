@@ -1,7 +1,15 @@
 import type { AudioLevel, StationStatus } from '../api/schemas';
 
 export type Severity = 'problem' | 'warning' | 'info';
-export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet';
+export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'omnirig';
+
+/** Quanto resta sullo schermo un avviso arrivato dal motore. */
+export const NOTICE_MS = 10 * 60_000;
+const NOTICES: Record<string, { id: IssueId; severity: Severity; href: string }> = {
+  audio_loss: { id: 'audio_loss', severity: 'warning', href: '#/impostazioni/audio' },
+  no_radio: { id: 'no_radio', severity: 'warning', href: '#/impostazioni/radio' },
+  omnirig: { id: 'omnirig', severity: 'problem', href: '#/impostazioni/radio' },
+};
 
 export interface Issue {
   id: IssueId;
@@ -25,6 +33,8 @@ export interface DiagnosisInput {
   lastDecodeAt: number | null;
   /** Quando e' arrivato il primo stato del motore in questa sessione (ms Unix). */
   sessionStartAt: number | null;
+  /** Avvisi arrivati dal motore. */
+  notices?: Record<string, { detail: string; at: number }>;
 }
 
 /** Soglie dell'orologio in parti del periodo: oltre il 4 % i messaggi deboli si perdono, oltre l'8 % la decodifica peggiora molto. */
@@ -58,6 +68,11 @@ export function diagnose(i: DiagnosisInput): Issue[] {
   if (i.status && !i.status.transmitting && i.sessionStartAt !== null) {
     const since = Math.max(i.sessionStartAt, i.lastDecodeAt ?? 0);
     if (i.now - since >= QUIET_AFTER_MS) issues.push({ id: 'quiet', severity: 'info', vars: { min: Math.floor((i.now - since) / 60_000) } });
+  }
+
+  for (const [key, n] of Object.entries(i.notices ?? {})) {
+    const def = NOTICES[key];
+    if (def && i.now - n.at <= NOTICE_MS) issues.push({ id: def.id, severity: def.severity, href: def.href, vars: { detail: n.detail, at: n.at } });
   }
 
   const order: Record<Severity, number> = { problem: 0, warning: 1, info: 2 };

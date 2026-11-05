@@ -1116,6 +1116,7 @@ impl tx_native::Ptt for AutoPtt {
             rig.set_ptt(on).map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
         } else if on {
             tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni > Radio");
+            aurora_core::notice::notice("no_radio", "");
         }
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
         Ok(())
@@ -1225,6 +1226,7 @@ pub async fn run(
         cat.adopt_backend(rig_control::cat_config::Backend::Omnirig);
     }
     let bus = Bus::new(4096);
+    aurora_core::notice::install(bus.events());
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
     // il blocco della trasmissione chiesto dai controller UDP (TxInhibit): sta tra la catena di trasmissione e il PTT vero per tutta la vita del programma
@@ -1858,7 +1860,7 @@ pub async fn run(
 
     let listener = TcpListener::bind(config.bind)
         .await
-        .map_err(|e| StartError::Io(format!("{}: {e}", config.bind)))?;
+        .map_err(|e| StartError::Io(port_error(config.bind, &e)))?;
     let addr = listener.local_addr().map_err(|e| StartError::Io(e.to_string()))?;
     state.lan.set_port(addr.port());
     // nome fisso in casa (aurora.local): solo se il server e' raggiungibile dalla rete; parte in disparte per non ritardare l'avvio
@@ -2023,4 +2025,27 @@ mod tests {
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ACCEPT_REPLY").then(|| "4".to_string())).is_err());
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ADIF").then(|| "si".to_string())).is_err());
     }
+}
+
+/// La porta del server non si apre: se e' gia' in uso si dice da quale programma (su Windows), che di solito e' un'altra Aurora aperta.
+fn port_error(bind: std::net::SocketAddr, e: &std::io::Error) -> String {
+    if e.kind() != std::io::ErrorKind::AddrInUse {
+        return format!("{bind}: {e}");
+    }
+    let who = port_owner(bind.port()).map_or_else(|| "un altro programma (forse Aurora e' gia' aperta)".to_string(), |p| format!("il programma «{p}»"));
+    format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni > Accesso", bind.port())
+}
+
+#[cfg(windows)]
+fn port_owner(port: u16) -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    let script = format!("(Get-Process -Id (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop | Select-Object -First 1).OwningProcess).ProcessName");
+    let out = std::process::Command::new("powershell.exe").args(["-NoProfile", "-NonInteractive", "-Command", &script]).creation_flags(0x0800_0000).output().ok()?;
+    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    (out.status.success() && !name.is_empty()).then_some(name)
+}
+
+#[cfg(not(windows))]
+fn port_owner(_port: u16) -> Option<String> {
+    None
 }

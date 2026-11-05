@@ -8,6 +8,7 @@ vi.mock('../api/client', async (importActual) => ({
   getEngineSettings: vi.fn(),
   getClusterSpots: vi.fn().mockResolvedValue({ config: {}, servers: [{ key: 'a', name: 'a', state: 'connected', detail: null, spots: 0, since_ms: 0 }], spots: [] }),
   postSpotDxsummit: vi.fn(),
+  getCallsign: vi.fn().mockResolvedValue({ call: '', dxcc: null, person: null, lookup: 'off', subscriber: null, message: null }),
   getControls: vi.fn(),
   postControl: vi.fn().mockResolvedValue(undefined),
   postCq: vi.fn().mockResolvedValue(undefined),

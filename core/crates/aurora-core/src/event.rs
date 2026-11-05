@@ -298,6 +298,8 @@ pub enum Event {
     ClearDecodes { window: u8 },
     /// Lo stato della Fox (modo Fox di WSJT-X): chi chiama, la coda, i QSO in corso e i messaggi del periodo.
     Fox(FoxSnapshot),
+    /// Un problema da mostrare sullo schermo con una scheda di avviso: `id` dice quale (`audio_loss`, `no_radio`, `omnirig`), `detail` i dettagli.
+    Notice { id: String, detail: String },
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

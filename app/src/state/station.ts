@@ -59,6 +59,8 @@ interface StationState {
   /** Quando e' arrivato l'ultimo messaggio decodificato e il primo stato del motore (ms Unix): servono alla diagnosi. */
   lastDecodeAt: number | null;
   sessionStartAt: number | null;
+  /** Gli avvisi arrivati dal motore (audio, radio, OmniRig): id → dettaglio e quando. */
+  notices: Record<string, { detail: string; at: number }>;
   /** La banda per cui si e' gia' svuotato tutto (stato o evento del motore): il secondo avviso per lo stesso cambio non svuota di nuovo. */
   clearedBand: string | null;
   /** Il chiamante appena azzerato: per un attimo lo stato in arrivo che lo riporta ancora (ritardo del motore) non lo fa ricomparire. */
@@ -157,6 +159,7 @@ export const useStation = create<StationState>((set) => ({
   audioLevelAt: 0,
   lastDecodeAt: null,
   sessionStartAt: null,
+  notices: {},
   clearedBand: null,
   clearedDx: null,
   qsosLogged: 0,
@@ -223,6 +226,9 @@ export const useStation = create<StationState>((set) => ({
         set({ audioLevel: level, audioLevelAt: Date.now() });
         break;
       }
+      case 'notice':
+        set((s) => ({ notices: { ...s.notices, [event.id]: { detail: event.detail, at: Date.now() } } }));
+        break;
       case 'tx_halted':
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));
         break;

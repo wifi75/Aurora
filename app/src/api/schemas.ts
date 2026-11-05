@@ -166,6 +166,7 @@ export const EventSchema = z.discriminatedUnion('type', [
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
   QsoRecordSchema.extend({ type: z.literal('qso_logged') }),
   z.object({ type: z.literal('tx_halted') }),
+  z.object({ type: z.literal('notice'), id: z.string(), detail: z.string() }),
   WantedAlertSchema.extend({ type: z.literal('wanted') }),
   UpdateNoticeSchema.extend({ type: z.literal('update_available') }),
   AudioLevelSchema.extend({ type: z.literal('audio_level') }),

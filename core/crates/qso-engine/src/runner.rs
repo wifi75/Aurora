@@ -197,6 +197,7 @@ fn handle_event(inner: &Inner, event: Event) {
         | Event::BandChanged { .. }
         | Event::HighlightCallsign { .. }
         | Event::ClearDecodes { .. }
-        | Event::Fox(_) => {}
+        | Event::Fox(_)
+        | Event::Notice { .. } => {}
     }
 }

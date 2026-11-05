@@ -431,7 +431,8 @@ impl Session {
             | Event::BandChanged { .. }
             | Event::HighlightCallsign { .. }
             | Event::ClearDecodes { .. }
-            | Event::Fox(_) => Vec::new(),
+            | Event::Fox(_)
+            | Event::Notice { .. } => Vec::new(),
         }
     }
 

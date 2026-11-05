@@ -84,7 +84,12 @@ impl Rig for WindowsRig {
         powershell(&script(hz)).or_else(|first| {
             tracing::warn!("cambio frequenza, primo tentativo fallito: {first}");
             std::thread::sleep(std::time::Duration::from_millis(600));
-            powershell(&script(hz))
+            // terzo tentativo dopo una pausa piu' lunga: OmniRig a volte si riprende dopo un paio di secondi (radio che si risveglia)
+            powershell(&script(hz)).or_else(|second| {
+                tracing::warn!("cambio frequenza, secondo tentativo fallito: {second}");
+                std::thread::sleep(std::time::Duration::from_millis(2000));
+                powershell(&script(hz)).inspect_err(|e| aurora_core::notice::notice("omnirig", e.0.clone()))
+            })
         })
     }
 
