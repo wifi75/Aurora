@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.142',
+    released: '2026-11-05T16:56:16Z',
+    kind: 'fixed',
+    title: ['Abilita Tx si accende al primo clic', 'Enable Tx turns on at the first click', 'Tx aktivieren schaltet beim ersten Klick ein', 'Activer Tx s’allume au premier clic', 'Activar Tx se enciende al primer clic', 'Ativar Tx liga ao primeiro clique'],
+    text: [
+      "Abilita Tx e gli altri interruttori (AutoSeq, 1 QSO, Auto Tx…) si accendevano a volte solo al secondo clic: la prima rilettura li riportava indietro prima che il motore li applicasse. Ora restano come li hai messi, nei Comandi e sul telefono.",
+      "Enable Tx and the other switches (AutoSeq, 1 QSO, Auto Tx…) sometimes turned on only at the second click: the first refresh put them back before the engine applied them. Now they stay as you set them, in Commands and on the phone.",
+      "Tx aktivieren und die anderen Schalter (AutoSeq, 1 QSO, Auto Tx…) gingen manchmal erst beim zweiten Klick an: das erste Neuladen setzte sie zurück, bevor die Engine sie übernahm. Jetzt bleiben sie wie eingestellt, in Befehle und am Telefon.",
+      "Activer Tx et les autres interrupteurs (AutoSeq, 1 QSO, Auto Tx…) ne s’allumaient parfois qu’au second clic : la première relecture les remettait avant que le moteur les applique. Ils restent maintenant comme tu les as mis, dans Commandes et sur le téléphone.",
+      "Activar Tx y los demás interruptores (AutoSeq, 1 QSO, Auto Tx…) a veces solo se encendían al segundo clic: la primera relectura los devolvía antes de que el motor los aplicara. Ahora se quedan como los pones, en Comandos y en el teléfono.",
+      "Ativar Tx e os outros interruptores (AutoSeq, 1 QSO, Auto Tx…) às vezes só ligavam ao segundo clique: a primeira releitura repunha-os antes de o motor os aplicar. Agora ficam como os puseste, nos Comandos e no telemóvel.",
+    ],
+  },
+  {
     version: '0.11.141',
     released: '2026-11-05T16:55:55Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Sans carte son connectée le sélecteur de mode affichait « — » et ne s’ouvrait pas : désormais FT8, FT4, JT65 et JT9 s’affichent et se changent toujours, même sur un PC sans radio ni audio.',
       'Sin una tarjeta de sonido conectada el selector de modo mostraba «—» y no se abría: ahora FT8, FT4, JT65 y JT9 se ven y se cambian siempre, incluso en un PC sin radio ni audio.',
       'Sem uma placa de som ligada o seletor de modo mostrava «—» e não abria: agora FT8, FT4, JT65 e JT9 veem-se e mudam-se sempre, mesmo num PC sem rádio nem áudio.',
-    ],
-  },
-  {
-    version: '0.11.102',
-    released: '2026-11-04T11:20:49Z',
-    kind: 'new',
-    title: ['Aurora indipendente e guida al primo avvio', 'Independent Aurora and first-run guide', 'Unabhängiges Aurora und Einrichtungsassistent', 'Aurora indépendante et guide du premier lancement', 'Aurora independiente y guía del primer inicio', 'Aurora independente e guia do primeiro arranque'],
-    text: [
-      'Aurora funziona da sola: non legge più nulla da JTDX o WSJT-X, il file dei paesi e Hamlib sono inclusi. Al primo avvio una guida passo passo chiede lingua, nominativo e locatore, scheda audio e radio; ogni passo si può saltare. Servizi pubblici accesi di fabbrica, preset BBLogger e prima versione per Linux.',
-      'Aurora works on its own: it no longer reads anything from JTDX or WSJT-X, and the country file and Hamlib are included. On first start a step-by-step guide asks for language, callsign and locator, sound card and radio; every step can be skipped. Public services on by default, BBLogger preset and a first Linux build.',
-      'Aurora arbeitet allein: es liest nichts mehr von JTDX oder WSJT-X, Länderdatei und Hamlib sind enthalten. Beim ersten Start fragt ein Assistent Schritt für Schritt Sprache, Rufzeichen und Locator, Soundkarte und Funkgerät ab; jeder Schritt lässt sich überspringen. Öffentliche Dienste ab Werk an, BBLogger-Vorlage und eine erste Linux-Version.',
-      'Aurora fonctionne seule : elle ne lit plus rien de JTDX ou WSJT-X, le fichier des pays et Hamlib sont inclus. Au premier lancement un guide pas à pas demande la langue, l’indicatif et le locator, la carte son et la radio ; chaque étape peut être passée. Services publics activés d’usine, préréglage BBLogger et première version Linux.',
-      'Aurora funciona sola: ya no lee nada de JTDX o WSJT-X, el archivo de países y Hamlib están incluidos. En el primer inicio una guía paso a paso pide idioma, indicativo y localizador, tarjeta de sonido y radio; cada paso se puede saltar. Servicios públicos activados de fábrica, ajuste BBLogger y primera versión para Linux.',
-      'A Aurora funciona sozinha: já não lê nada do JTDX ou do WSJT-X, o ficheiro dos países e o Hamlib estão incluídos. No primeiro arranque um guia passo a passo pede língua, indicativo e locator, placa de som e rádio; cada passo pode ser saltado. Serviços públicos ligados de fábrica, predefinição BBLogger e primeira versão para Linux.',
     ],
   },
 ];

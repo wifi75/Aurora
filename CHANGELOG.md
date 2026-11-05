@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.142 - 2026-11-05
+- **Interruttori al primo clic**: lo stato chiesto resta per 2,5 s (`lib/pendingControls.ts`) cosi' la prima rilettura del motore, che poteva arrivare prima dell'applicazione, non riporta indietro Abilita Tx e gli altri (Comandi, QsoSwitches, telefono).
+
 ## 0.11.141 - 2026-11-05
 - **Display della radio in finestra a parte** (`display`, `DisplayFit.tsx`): pulsantino ⧉ nell'angolo in alto a destra del display (bianco su fondo scuro, compare al passaggio); nella finestra il display scala con CSS `zoom` mantenendo le proporzioni; nella principale resta solo un segnaposto. Anche in Impostazioni › Finestre.
 - **Pagina Log con log grandi** (segnalato con 71 252 QSO): la tabella disegnava tutte le righe e la pagina si bloccava; ora 300 per volta con «Mostra altri»; importazione e lettura erano gia' veloci (71 000 QSO in pochi secondi).
