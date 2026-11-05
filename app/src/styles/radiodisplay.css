@@ -867,3 +867,62 @@
 .rd-face-row .rd-pwr {
   height: auto;
 }
+
+/* finestre a parte (secondo schermo): pulsantino discreto accanto al titolo, pagina da sola a tutta finestra */
+.page-title--tools {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.detach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.detach-btn:hover,
+.detach-btn:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.app-solo {
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 0.4rem;
+  overflow: auto;
+  background: var(--bg);
+}
+
+/* mappa da sola: riempie tutta la finestra, qualunque misura le si dia */
+.map-page--solo {
+  height: calc(100vh - 0.8rem);
+}
+
+.map-page--solo .worldmap-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-page--solo .worldmap {
+  height: 100%;
+  aspect-ratio: auto;
+  max-height: none;
+  min-height: 12rem;
+}
+
+/* nella finestra a parte solo il planisfero, senza la barra delle opzioni */
+.map-page--solo .map-bar {
+  display: none;
+}

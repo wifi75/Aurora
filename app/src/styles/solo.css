@@ -1,0 +1,121 @@
+/* Finestre a parte (secondo schermo): elementi affiancati o uno sopra l'altro, barretta sottile, divisore da trascinare */
+.solo {
+  display: flex;
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 0.3rem;
+  gap: 0.3rem;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.solo--row { flex-direction: row; }
+.solo--col { flex-direction: column; }
+
+.solo-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-basis: 0;
+  min-width: 0;
+  min-height: 0;
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  overflow: visible;
+}
+
+.solo-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.3rem;
+  padding: 0 0.3rem 0 0.5rem;
+  border-bottom: var(--border-width) solid var(--glass-edge);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.solo-title { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.solo-btn,
+.dock-detach {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.solo-btn:hover,
+.solo-btn:focus-visible,
+.dock-detach:hover,
+.dock-detach:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.solo-body { flex: 1; min-height: 0; overflow: auto; border-radius: 0 0 0.5rem 0.5rem; }
+
+.solo-body .solo-panel { height: 100%; border: 0; }
+.solo-body .solo-panel .dock-body { height: 100%; }
+.solo-body .map-page--solo { height: 100%; }
+
+/* divisore fra due elementi: sul bordo destro (in riga) o in basso (in colonna) */
+.solo-divider {
+  position: absolute;
+  z-index: 5;
+  background: transparent;
+}
+
+.solo--row .solo-divider { top: 0; right: -0.35rem; bottom: 0; width: 0.4rem; cursor: col-resize; }
+.solo--col .solo-divider { left: 0; right: 0; bottom: -0.35rem; height: 0.4rem; cursor: row-resize; }
+.solo-divider:hover { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* pulsantino nella barra dei pannelli della Stazione, e il suo menu piccolo */
+.dock-detach-host { position: relative; margin-left: auto; display: inline-flex; }
+.dock-grip:hover .dock-detach { opacity: 0.8; }
+
+.dock-detach-menu {
+  position: absolute;
+  top: 1.3rem;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.25rem;
+  border: var(--border-width) solid var(--glass-edge);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+  font-size: 0.75rem;
+}
+
+.dock-detach-menu button {
+  padding: 0.3rem 0.5rem;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dock-detach-menu button:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+/* pagina staccata: avviso al suo posto nella finestra principale */
+.detached-note { display: flex; align-items: center; gap: 0.6rem; padding: 1rem; color: var(--text-muted); }

@@ -1,3 +1,6 @@
+import { useGroups } from '../lib/detached';
+import { DetachedNote } from '../components/DetachedNote';
+import { DetachButton } from '../components/DetachButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getOnline, getPsk, getSolar, refreshOnline, type SolarData } from '../api/client';
@@ -87,7 +90,13 @@ function Stat({ value, label, hint }: { value: string; label: string; hint?: str
 }
 
 /** Propagazione e ricezione: cruscotto del sole, bande per giorno e notte, mappa di chi ti ha ricevuto. Tutto a richiesta: spento finche' non si accende. */
-export function PropagationPage() {
+export function PropagationPage({ solo = false }: { solo?: boolean } = {}) {
+  const elsewhere = useGroups().some((g) => g.open && g.items.includes('propagation'));
+  if (elsewhere && !solo) return <DetachedNote item="propagation" />;
+  return <PropagationPageBody solo={solo} />;
+}
+
+function PropagationPageBody({ solo }: { solo: boolean }) {
   const t = useT();
   const client = useQueryClient();
   const prefs = usePrefs((s) => s.prefs);
@@ -117,7 +126,12 @@ export function PropagationPage() {
   if (!online.data.psk && !online.data.solar) {
     return (
       <div className="prop-page">
-        <h1 className="page-title">{t('prop.title')}</h1>
+        {solo ? null : (
+          <h1 className="page-title page-title--tools">
+            {t('prop.title')}
+            <DetachButton item="propagation" />
+          </h1>
+        )}
         <p className="muted">{t('prop.off')}</p>
         <a className="glass glass--link" href="#/impostazioni/online">
           {t('prop.settings')}
@@ -142,7 +156,12 @@ export function PropagationPage() {
   return (
     <div className="prop-page">
       <header className="prop-head">
-        <h1 className="page-title">{t('prop.title')}</h1>
+        {solo ? null : (
+          <h1 className="page-title page-title--tools">
+            {t('prop.title')}
+            <DetachButton item="propagation" />
+          </h1>
+        )}
         <button type="button" className="glass" onClick={() => refresh.mutate()} title={t('tip.ui.refresh')} disabled={refresh.isPending}>
           {t('prop.refresh')}
         </button>

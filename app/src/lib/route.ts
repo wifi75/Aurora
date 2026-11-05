@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -24,6 +24,9 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/novita') return { name: 'news' };
   if (hash === '#/fox') return { name: 'fox' };
   if (hash === '#/esporta') return { name: 'export' };
+  // una pagina da sola in una finestra a parte (secondo schermo): solo il contenuto, senza menu
+  const solo = /^#\/finestra\/([a-z0-9]{1,12})$/.exec(hash);
+  if (solo) return { name: 'window', id: solo[1] ?? '' };
   return { name: 'live' };
 }
 

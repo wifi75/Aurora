@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { useT } from '../i18n';
+import { DetachButton } from './DetachButton';
 import { movePanel, resizePanel, setSplit, toggleCollapsed, type Layout, type PanelId, type Zone } from '../lib/layout';
 
 interface Props {
@@ -171,6 +172,7 @@ export function Dock({ layout, onChange, titles, hidden = [], render, headerExtr
             <span className="dock-grip-dots" aria-hidden="true" />
             <h2>{titles[id]}</h2>
             {headerExtra?.[id]}
+            <DetachButton item={id} className="dock-detach" />
           </header>
           {!folded && <div className="dock-body">{render(id)}</div>}
           {!folded && <div className="dock-resize" role="separator" aria-orientation="horizontal" aria-label={t('dock.height', { title: titles[id] })} title={t('tip.dock.resize')} onPointerDown={startResize(id)} />}
