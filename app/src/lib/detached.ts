@@ -106,7 +106,7 @@ export function detach(item: ItemId, into?: string): void {
     target.open = true;
     if (target.mode === 'grid') target.cells = arrange({ ...(target.cells ?? {}), [item]: freeCell(target.cells ?? {}) });
   } else if (into === DASHBOARD) {
-    groups.push({ id: DASHBOARD, items: [item], dir: 'row', sizes: [1], open: true, mode: 'grid', cells: { [item]: { x: 0, y: 0, w: 12, h: 12 } } });
+    groups.push({ id: DASHBOARD, items: [item], dir: 'row', sizes: [1], open: true, mode: 'grid', cells: { [item]: { x: 0, y: 0, w: 12, h: 24 } } });
   } else {
     let n = 1;
     while (groups.some((g) => g.id === `f${n}`)) n += 1;

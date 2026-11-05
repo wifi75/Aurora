@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.139',
+    released: '2026-11-05T13:24:08Z',
+    kind: 'new',
+    title: ['Volumi di Windows nelle Impostazioni, dashboard a tutta finestra', 'Windows volumes in Settings, full-window dashboard', 'Windows-Lautstärken in den Einstellungen, Dashboard im ganzen Fenster', 'Volumes Windows dans les Réglages, tableau de bord plein écran', 'Volúmenes de Windows en Ajustes, panel a toda ventana', 'Volumes do Windows nas Definições, painel em toda a janela'],
+    text: [
+      "In Impostazioni › Audio, sotto la scelta dell'ingresso e dell'uscita, ci sono i cursori del volume di Windows di quel dispositivo: registrazione per l'ingresso, trasmissione (Pwr) per l'uscita. Nella dashboard a blocchi la griglia segue la finestra in larghezza e in altezza: il primo blocco la riempie tutta, niente più spazio grigio vuoto.",
+      "In Settings › Audio, under the input and output choice, there are the Windows volume sliders of that device: recording for the input, transmit (Pwr) for the output. In the block dashboard the grid follows the window in width and height: the first block fills it, no more empty grey space.",
+      "Unter Einstellungen › Audio stehen unter der Wahl von Eingang und Ausgang die Windows-Lautstärkeregler des Geräts: Aufnahme für den Eingang, Senden (Pwr) für den Ausgang. Im Block-Dashboard folgt das Raster dem Fenster in Breite und Höhe: der erste Block füllt es ganz, kein leerer grauer Raum mehr.",
+      "Dans Réglages › Audio, sous le choix de l’entrée et de la sortie, il y a les curseurs du volume Windows de ce périphérique : enregistrement pour l’entrée, émission (Pwr) pour la sortie. Dans le tableau de bord à blocs la grille suit la fenêtre en largeur et en hauteur : le premier bloc la remplit, plus d’espace gris vide.",
+      "En Ajustes › Audio, bajo la elección de entrada y salida, están los controles del volumen de Windows de ese dispositivo: grabación para la entrada, transmisión (Pwr) para la salida. En el panel de bloques la cuadrícula sigue la ventana en ancho y alto: el primer bloque la llena, sin espacio gris vacío.",
+      "Em Definições › Áudio, sob a escolha da entrada e da saída, estão os controlos do volume do Windows desse dispositivo: gravação para a entrada, transmissão (Pwr) para a saída. No painel de blocos a grelha segue a janela em largura e altura: o primeiro bloco enche-a, sem espaço cinzento vazio.",
+    ],
+  },
+  {
     version: '0.11.138',
     released: '2026-11-05T13:18:14Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       'Les rapports d’erreur (question après un plantage et erreurs anonymes) sont activés par défaut : Aurora le dit une fois au premier démarrage. Désactivation dans Réglages > Assistance.',
       'Los informes de errores (pregunta tras un fallo y errores anónimos) están encendidos de fábrica: Aurora lo dice una vez al primer inicio. Se apagan en Ajustes > Asistencia.',
       'Os relatórios de erros (pergunta após uma falha e erros anónimos) estão ligados de fábrica: a Aurora diz isso uma vez no primeiro arranque. Desligam-se em Definições > Assistência.',
-    ],
-  },
-  {
-    version: '0.11.99',
-    released: '2026-11-03T22:16:50Z',
-    kind: 'fixed',
-    title: ['Paese e km senza accavallarsi', 'Country and km no longer overlap', 'Land und km überlappen nicht mehr', 'Pays et km ne se chevauchent plus', 'País y km ya no se solapan', 'País e km já não se sobrepõem'],
-    text: [
-      'Nell’attività di banda la colonna con bandiera, paese e km è più larga verso sinistra: nomi come «European Russia» stanno interi accanto alla distanza.',
-      'In band activity the flag, country and km column is wider to the left: names like «European Russia» fit in full next to the distance.',
-      'In der Bandaktivität ist die Spalte mit Flagge, Land und km nach links breiter: Namen wie «European Russia» passen ganz neben die Entfernung.',
-      'Dans l’activité de bande la colonne drapeau, pays et km est plus large vers la gauche : des noms comme « European Russia » tiennent en entier à côté de la distance.',
-      'En la actividad de banda la columna de bandera, país y km es más ancha hacia la izquierda: nombres como «European Russia» caben enteros junto a la distancia.',
-      'Na atividade de banda a coluna de bandeira, país e km é mais larga para a esquerda: nomes como «European Russia» cabem inteiros ao lado da distância.',
     ],
   },
 ];
