@@ -610,3 +610,6 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .cluster-table th:nth-child(3), .cluster-table td:nth-child(3),
 .cluster-table th:nth-child(4), .cluster-table td:nth-child(4),
 .cluster-table th:nth-child(5), .cluster-table td:nth-child(5) { position: relative; left: -30px; }
+
+/* il nome dello stato piu' vicino alla bandierina (8 px) */
+.cluster-table td.cluster-country { position: relative; left: -38px; }
