@@ -267,6 +267,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     /// L'ultima trasmissione consegnata alla catena (testo inviato, se e' testo libero, periodo, inizio): serve a rimodularla a un'altra frequenza
     /// quando la barra Tx si sposta durante la trasmissione (JTDX con `TxQSYAllowed`: il tono cambia subito).
     on_air_tx: Option<(String, bool, Parity, u64)>,
+    /// Il prossimo `plan` sostituisce il messaggio gia' in onda anche se la sequenza non lo segna come ritrasmissione (doppio clic su un'altra stazione mentre si trasmette).
+    swap_on_air: bool,
     /// Wait and Call scattato: fino a quando (secondi UTC) si continua a chiamare il DX se non risponde.
     wait_call_until: Option<f64>,
     /// Gli scambi di contest ricevuti di recente (`(nominativo, scambio)`), per il record del QSO (`exch_rcvd`).
@@ -325,7 +327,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new() };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new() };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9) {
             driver.opts.use_rrr = true;
@@ -577,12 +579,22 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                             self.follow_decode_frequency(freq);
                             log.extend(self.maybe_move_free_tx(Slot::at(self.mode, now_s)));
                             log.push(if self.auto_tx { format!("risposta a «{text}»: Tx abilitato") } else { format!("risposta a «{text}»: AutoTX spento, Abilita Tx resta com'e'") });
-                            // un messaggio gia' pianificato per il periodo in corso o per il prossimo e' superato: si riparte col nuovo (come `m_restart` di JTDX)
-                            if self.last_planned.is_some_and(|planned| planned >= Slot::at(self.mode, now_s)) {
-                                self.halt_tx();
-                                self.last_planned = None;
+                            let now_slot = Slot::at(self.mode, now_s);
+                            // si sta trasmettendo e la nuova stazione va chiamata in questo stesso periodo: la trasmissione non si ferma, il messaggio
+                            // in onda si sostituisce al volo con quello per la nuova stazione (come `m_restart` di JTDX, senza buco nel segnale)
+                            let on_air_now = self.on_air_tx.as_ref().is_some_and(|(_, _, _, start)| *start == now_slot.start_ms(self.mode));
+                            if on_air_now && self.last_planned == Some(now_slot) && now_slot.is_even() == self.seq.tx_even() {
+                                self.swap_on_air = true;
+                                log.extend(self.start_now(now_s));
+                                self.swap_on_air = false;
+                            } else {
+                                // un messaggio gia' pianificato per il periodo in corso o per il prossimo e' superato: si riparte col nuovo
+                                if self.last_planned.is_some_and(|planned| planned >= now_slot) {
+                                    self.halt_tx();
+                                    self.last_planned = None;
+                                }
+                                log.extend(self.start_now(now_s));
                             }
-                            log.extend(self.start_now(now_s));
                         }
                         Err(e) => log.push(format!("risposta non possibile: {e:?}")),
                     }
@@ -1424,7 +1436,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if n != 6 {
             self.cq_by_user = false;
         }
-        if already && !retransmit {
+        if already && !retransmit && !self.swap_on_air {
             return log;
         }
         let freq = self.hound_hop(freq, n, already);

@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.157 - 2026-11-06
+### Modificato
+- Doppio clic su un'altra stazione durante la trasmissione: nello stesso periodo il messaggio in onda si sostituisce al volo (niente arresto del Tx); nel periodo opposto la trasmissione si ferma come prima.
+- Attività di banda e CQ: caratteri più piccoli, bandiera e colonna dei km strette, più spazio ai messaggi.
+
 ## 0.11.156 - 2026-11-06
 ### Modificato
 - Pagina principale a blocchi con misure fisse: Attivita' di banda, Log, DX Cluster, Bande aperte, Trasmissione, CQ e novita', Cascata. Si scambia di posto a destra e a sinistra trascinando la barretta del titolo; tra due finestre vicine un divisore stringe una e allarga l'altra.
