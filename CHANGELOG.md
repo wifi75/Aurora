@@ -1,13 +1,28 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.156 - 2026-11-06
 ### Modificato
-- Impostazioni in una finestra a parte (1040x760): 15 schede, Prova CAT e Prova PTT, Annulla, Applica e Salva; le voci del motore partono solo con Applica o Salva. Scheda Generale rifatta, schede Colori e Profili separate da Radio e Avvisi, Avanzate con Orologio e Finestre.
+- Pagina principale a blocchi con misure fisse: Attivita' di banda, Log, DX Cluster, Bande aperte, Trasmissione, CQ e novita', Cascata. Si scambia di posto a destra e a sinistra trascinando la barretta del titolo; tra due finestre vicine un divisore stringe una e allarga l'altra.
+- Trasmissione contiene anche i comandi del QSO (compatti) con i cursori Rx e Pwr in una riga; Abilita Tx e AutoTX accesi sono rossi. La scheda QSO separata non c'e' piu'.
+- CQ e novita': i CQ in una fascia orizzontale su due righe che scorre da sola, sotto le DXpedition su una riga (anche quelle in arrivo fino a 120 giorni).
+- Cascata: barra dei comandi, righello con le parentesi Tx e Rx, spettro sempre visibile sotto la cascata e a sfondo nero.
+- Mappa DX: solo gli sfondi della NASA (Blue Marble di giorno, City Lights di notte).
+- DX Cluster: colonne di larghezza fissa e allineate, Commenti visibile.
+- Barra di stato in fondo con l'ora UTC, le decodifiche e il periodo.
+- Impostazioni in una finestra a parte (1040x760): 15 schede, Prova CAT e Prova PTT, Annulla, Applica e Salva; le voci del motore partono solo con Applica o Salva.
 
 ### Aggiunto
+- Bande aperte: condizioni di propagazione per giorno e notte e le tre stazioni piu' lontane che ti hanno ascoltato (PSK Reporter).
+- I sei messaggi Tx si possono scrivere a mano (Invio o uscita dal campo li conferma, Esc annulla); il motore li tiene finche' non vengono rigenerati.
 - Analisi a priori (AP) anche in FT4 (nominativo, DX, CQ) e collegata al motore proprio anche in FT8.
 - Elenco dei nominativi conosciuti (log + stazioni ascoltate, salvato in `known_calls.txt`): filtra i falsi decode deboli, attivo da 300 nominativi.
 - Controllo del locatore: scarta i decode deboli o AP con un quadrato troppo lontano dal paese del nominativo (oltre 5500 km dal centro).
+
+### Corretto
+- Con Abilita Tx acceso, Wait and Pounce non si arma: ora il pulsante e' grigio e lo spiega.
+- Il pulsante Ripristina non sposta piu' le finestre.
 
 ## 0.11.155 - 2026-11-05
 ### Corretto

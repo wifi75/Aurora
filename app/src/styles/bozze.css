@@ -684,3 +684,8 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .grid-divider { width: 10px; margin-left: -2px; }
 .grid-divider::after { left: 3px; width: 4px; height: 44px; margin-top: -22px; background: rgba(142, 123, 255, 0.7) !important; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5); }
 .grid-divider:hover::after, .grid-board--moving .grid-divider::after { background: #6a54ff !important; height: 64px; margin-top: -32px; }
+
+/* i pulsanti in alto e il display della radio allineati ai bordi delle finestre (6 px dal bordo, come tra le finestre) */
+.live .live-top { padding-left: 6px !important; padding-right: 6px !important; box-sizing: border-box; }
+.live .live-top > .setup-cta { margin-right: 0 !important; }
+.live .live-top > .setup-cta--radio, .live .live-top > .setup-cta { right: 6px !important; }
