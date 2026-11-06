@@ -16,6 +16,11 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] Riordino del menu Impostazioni (gruppi per funzione, pagina Servizi di log, via Avanzate, errori di salvataggio col nome del campo): in lavorazione
 - [ ] Hound automatico, etichetta FOX, Tx sopra 1000 Hz e Salta Tx1 disattivato in Hound: in lavorazione
 - [x] SuperFox: fatto come UltraFOX nella 0.11.70 (trasmissione, ricezione in Hound); manca la firma digitale.
+- [ ] **Motori, confronto con JTDX sui WAV veri** (dal PC con REA e JTDX): raccogliere periodi dalla stazione (anche con falsi noti, come «CQ P78JUN»), passarli ad Aurora e a JTDX e guardare dove Aurora decodifica meno. Prima da provare dal vivo: AP in FT4 e in FT8 collegata al motore (0.11.155+), elenco nominativi `known_calls.txt` (filtro da 300 nominativi), controllo del locatore sul paese (5500 km, solo decode deboli).
+- [ ] **FT8, decoder del canale QSO (`ft8s`) e candidati «virtuali»** di JTDX: lavorano solo sulla frequenza del QSO in corso e cercano il messaggio atteso anche senza un segnale trovato. Da leggere con REA, non a memoria.
+- [ ] **Filtro dei falsi: `chkgrid` vero di JTDX** al posto dell'approssimazione a distanza (`dxcc::grid_plausible`, `ft8::filters::grid_is_false`); da leggere con REA.
+- [ ] **JT65 e JT9 sul segnale debole** (`NFILT2`, `ldeepsync`): con JTDX e REA.
+- [ ] Decodifica FT8 a fette di banda su piu' processori come JTDX (oggi il multithread e' per candidato, `rayon`): solo se i rapporti «decodifica lenta» lo chiedono.
 - [ ] Lavori grandi da WSJT-X 3: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza approvata `docs/mockup-fox.html`)
 - [ ] Prove dal vivo del proprietario: a7/a8, stop per ROS, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, display Yaesu/Icom, barre Rx/Tx
 
