@@ -523,6 +523,11 @@ impl WorkedLog {
         names
     }
 
+    /// I nominativi collegati su almeno una banda.
+    pub fn calls(&self) -> Vec<String> {
+        self.any_call.iter().cloned().collect()
+    }
+
     /// QSO completi letti o aggiunti.
     pub fn len(&self) -> usize {
         self.qsos

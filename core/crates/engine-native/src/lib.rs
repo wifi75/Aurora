@@ -8,6 +8,7 @@ pub mod qpc;
 pub mod ultrafox;
 pub mod ultrafox_rx;
 mod alltxt;
+mod known;
 pub mod features;
 mod parity;
 mod persist;
@@ -70,6 +71,8 @@ pub struct LiveConfig {
     pub annotate: Annotator,
     /// La catena di trasmissione (audio in uscita e PTT); senza, il motore riceve soltanto.
     pub transmitter: Option<Arc<dyn TxPort>>,
+    /// I nominativi gia' collegati (il log): insegnano al filtro contro i falsi decode chi esiste. `None`: il filtro impara solo dall'ascolto.
+    pub log_calls: Option<Arc<dyn Fn() -> Vec<String> + Send + Sync>>,
 }
 
 /// Il motore proprio in funzione: il confronto con JTDX e le ultime misure.
@@ -271,6 +274,9 @@ pub fn start_with_save(
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut hashes = CallHashes::default();
+        // i nominativi conosciuti (log e ascolto) per il filtro contro i falsi decode
+        let mut known = known::KnownCalls::load(data_dir.join("known_calls.txt"));
+        let mut known_seeded: Option<Instant> = None;
         let mut slow_watch = slow::SlowWatch::default();
         // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro (sottopassate 3-11)
         let mut ft8_history = ft8::decode::PeriodHistory::default();
@@ -511,6 +517,15 @@ pub fn start_with_save(
                 let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)
                 options.deadline = Some(started + std::time::Duration::from_secs(11));
+                // il log si rilegge ogni dieci minuti (i QSO nuovi); poi l'elenco per il filtro (None finche' i nominativi sono pochi)
+                if let Some(log_calls) = live.as_ref().and_then(|l| l.log_calls.as_ref())
+                    && known_seeded.is_none_or(|t| t.elapsed() >= std::time::Duration::from_secs(600))
+                {
+                    known.add_all(log_calls());
+                    known_seeded = Some(Instant::now());
+                }
+                let call_book = known.book();
+                options.call_book.clone_from(&call_book);
                 // senza un segnale vero (nessuna radio, microfono del PC) le ricerche «a priori» trovano messaggi nel rumore:
                 // con l'audio debole si decodifica solo cio' che c'e' davvero, con l'audio muto il periodo non si decodifica
                 let peak = slot.samples.iter().fold(0.0f32, |m, &x| m.max(x.abs()));
@@ -523,6 +538,7 @@ pub fn start_with_save(
                 }
                 // FT4: analisi a priori sul proprio nominativo e sul QSO in corso (stesso interruttore «a7/a8» di FT8, acceso di base)
                 let mut ft4_slot = live.as_ref().map_or_else(|| ft4_options.clone(), |l| ft4_period_options(&ft4_options, &l.controls, &l.de_call));
+                ft4_slot.call_book = call_book;
                 if peak < 0.02 {
                     ft4_slot.ap = None;
                     ft4_slot.ap_cq = false;
@@ -542,6 +558,10 @@ pub fn start_with_save(
                     decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history)
                 };
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
+                if matches!(mode, Mode::Ft8 | Mode::Ft4) {
+                    known.learn(&decoded);
+                    known.save_if_due();
+                }
                 let other_mode = match mode {
                     Mode::Jt65 => Some(Mode::Jt9),
                     Mode::Jt9 => Some(Mode::Jt65),
@@ -950,6 +970,7 @@ mod tests {
             dial_hz: Arc::new(AtomicU64::new(14_074_000)),
             controls: Arc::new(NativeControls::default()),
             transmitter: None,
+            log_calls: None,
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
@@ -1028,6 +1049,7 @@ mod tests {
                 dial_hz: Arc::new(AtomicU64::new(14_076_000)),
                 controls,
                 transmitter: None,
+            log_calls: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1102,6 +1124,7 @@ mod tests {
                 dial_hz: Arc::new(AtomicU64::new(14_076_000)),
                 controls,
                 transmitter: None,
+            log_calls: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1294,6 +1317,7 @@ mod tests {
             dial_hz: Arc::new(AtomicU64::new(14_074_000)),
             controls,
             transmitter: None,
+            log_calls: None,
             band_of: Arc::new(|_| Some("20m".to_string())),
             annotate: Arc::new(|_, _| (None, None, None)),
         }

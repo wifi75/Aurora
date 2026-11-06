@@ -1724,7 +1724,12 @@ pub async fn run(
                     }
                 });
             }
+            // i nominativi gia' collegati insegnano al filtro contro i falsi decode chi esiste
+            let log_calls = enrich.as_ref().and_then(|e| e.lock().ok().map(|g| g.shared_worked())).map(|worked| {
+                Arc::new(move || worked.read().map(|w| w.calls()).unwrap_or_default()) as Arc<dyn Fn() -> Vec<String> + Send + Sync>
+            });
             native_live = Some(engine_native::LiveConfig {
+                log_calls,
                 de_call: call,
                 de_grid: grid,
                 own_continent,
