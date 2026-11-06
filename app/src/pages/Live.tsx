@@ -384,11 +384,12 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           <GridBoard
             cells={visibleCells}
             locked={!EDIT_LAYOUT}
+            swap
             free
             onChange={(next) => useBoard.getState().set({ ...boardCells, ...next })}
             render={(id, grip) => (
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
-                <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--fixed'}`} onPointerDown={grip.onPointerDown}>
+                <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}

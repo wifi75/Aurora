@@ -14,14 +14,15 @@ const KEY = 'aurora-board';
 
 /** Come stavano prima: attivita' di banda, log, cluster e comandi in alto; cascata, trasmissione, QSO e CQ in basso. */
 export function defaultBoard(): Record<BoardId, Cell> {
+  // la disposizione sistemata dal proprietario (fase di progetto chiusa)
   return {
-    all: { x: 0, y: 0, w: 3, h: 13 },
-    log: { x: 3, y: 0, w: 3, h: 13 },
-    cluster: { x: 6, y: 0, w: 3, h: 13 },
-    dxmap: { x: 9, y: 0, w: 3, h: 13 },
-    waterfall: { x: 0, y: 13, w: 5, h: 11 },
-    tx: { x: 5, y: 13, w: 4, h: 11 },
-    cq: { x: 9, y: 13, w: 3, h: 11 },
+    all: { x: 0, y: 0, w: 3.25, h: 19.25 },
+    log: { x: 3.25, y: 0, w: 2.75, h: 19.25 },
+    cluster: { x: 6, y: 0, w: 3.5, h: 13.5 },
+    dxmap: { x: 9.5, y: 0, w: 2.5, h: 13.5 },
+    waterfall: { x: 0, y: 19.25, w: 6, h: 4.75 },
+    tx: { x: 6, y: 13.5, w: 2.75, h: 10.5 },
+    cq: { x: 8.75, y: 13.5, w: 3.25, h: 10.5 },
   };
 }
 

@@ -11,7 +11,7 @@ export type BottomKey = 'waterfall' | 'tx' | 'qso';
  * FASE DI PROGETTO: finche' e' `true` la riga in basso si sposta (barra del titolo), si allarga (divisori) e si alza (bordo alto). Quando la
  * disposizione e' scelta si mette `false`: restano le misure salvate come fisse e i comandi di regolazione spariscono.
  */
-export const EDIT_LAYOUT = true;
+export const EDIT_LAYOUT = false;
 
 export interface BottomLayout {
   heightPx: number;

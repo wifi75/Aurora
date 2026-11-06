@@ -670,3 +670,7 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .bands-open .prop-tile { width: 112px; box-sizing: border-box; justify-content: flex-start; padding: 1px 8px; gap: 8px; background: color-mix(in srgb, currentColor 0%, transparent); border: 1px solid var(--border); border-radius: 5px; }
 .bands-open .prop-tile--active { border-color: transparent; }
 .bands-open .prop-tile b { flex: 1; text-align: left; }
+
+/* pagina bloccata: la barretta del titolo si trascina solo a destra e a sinistra per scambiare di posto con il vicino */
+.grid-panel > .dock-grip--swap { cursor: ew-resize; }
+.grid-board--moving .grid-panel { opacity: .92; }

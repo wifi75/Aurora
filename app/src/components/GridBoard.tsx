@@ -63,13 +63,15 @@ interface Props {
   locked?: boolean;
   /** Posizionamento libero: i blocchi non risalgono da soli per riempire i buchi, restano dove li lasci. */
   free?: boolean;
+  /** Con la pagina bloccata: la barretta si trascina solo a destra e a sinistra e scambia di posto il blocco con il vicino della stessa altezza. */
+  swap?: boolean;
 }
 
 /**
  * Dashboard a blocchi (secondo schermo): ogni blocco si trascina dalla sua barretta e si ridimensiona dall'angolo in basso a destra;
  * i blocchi si agganciano alla griglia e gli altri si spostano per fargli posto.
  */
-export function GridBoard({ cells, onChange, render, locked = false, free = false }: Props) {
+export function GridBoard({ cells, onChange, render, locked = false, free = false, swap = false }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(1000);
   const [height, setHeight] = useState(700);
@@ -184,9 +186,51 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
     window.addEventListener('pointerup', stop);
   };
 
+  /** Scambio a destra e a sinistra (pagina bloccata): le misure restano, cambiano solo i posti dei due blocchi vicini della stessa altezza. */
+  const trackSwap = (id: string) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const from = cells[id];
+    const rect = box.current?.getBoundingClientRect();
+    if (!from || !rect) return;
+    const band = Object.entries(cells)
+      .filter(([, c]) => Math.abs(c.y - from.y) < 0.01 && Math.abs(c.h - from.h) < 0.01)
+      .sort(([, a], [, b]) => a.x - b.x);
+    const index = band.findIndex(([k]) => k === id);
+    const swapped = (otherId: string): Record<string, Cell> => {
+      const a = cells[id]!;
+      const b = cells[otherId]!;
+      const minX = Math.min(a.x, b.x);
+      const maxEnd = Math.max(a.x + a.w, b.x + b.w);
+      const aLeft = a.x < b.x;
+      return aLeft ? { ...cells, [otherId]: { ...b, x: minX }, [id]: { ...a, x: maxEnd - a.w } } : { ...cells, [id]: { ...a, x: minX }, [otherId]: { ...b, x: maxEnd - b.w } };
+    };
+    let target: string | null = null;
+    const pick = (ev: PointerEvent) => {
+      const gx = (ev.clientX - rect.left - GAP) / (colW + GAP);
+      const right = band[index + 1];
+      const left = band[index - 1];
+      if (right && gx > right[1].x + right[1].w / 2) return right[0];
+      if (left && gx < left[1].x + left[1].w / 2) return left[0];
+      return null;
+    };
+    const move = (ev: PointerEvent) => {
+      target = pick(ev);
+      setLive(target ? swapped(target) : null);
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      setLive(null);
+      if (target) onChange(swapped(target));
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+  };
+
   // il contenuto di ogni blocco si ridisegna solo quando cambia qualcosa di vero (dati, misure salvate): non a ogni fotogramma del trascinamento
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const nodes = useMemo(() => Object.fromEntries(Object.keys(cells).map((id) => [id, render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })])), [cells, render, locked, free, colW, ROW, onChange]);
+  const nodes = useMemo(() => Object.fromEntries(Object.keys(cells).map((id) => [id, render(id, { onPointerDown: locked ? (swap ? trackSwap(id) : () => undefined) : track(id, 'move') })])), [cells, render, locked, free, swap, colW, ROW, onChange]);
   const bottom = Object.values(shown).reduce((m, c) => Math.max(m, c.y + c.h), 0);
   return (
     <div ref={box} className={`grid-board${live ? ' grid-board--moving' : ''}`} style={{ height: Math.floor(bottom * (ROW + GAP) + GAP) }}>
