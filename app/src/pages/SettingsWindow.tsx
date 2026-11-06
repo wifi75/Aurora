@@ -100,6 +100,11 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
   useEffect(() => {
     document.title = `Aurora - ${t('set.title')}`;
   }, [t]);
+  // la finestra e' fissa: non scorre la pagina, scorre solo il contenuto della scheda
+  useEffect(() => {
+    document.documentElement.classList.add('sw-fixed');
+    return () => document.documentElement.classList.remove('sw-fixed');
+  }, []);
 
   const draft = useMemo<SharedDraft>(
     () => ({
