@@ -1,5 +1,5 @@
 /* La finestra delle Impostazioni (pages/SettingsWindow.tsx): prototipo in docs/prototipo-impostazioni.html */
-.sw-window{--sw-accent:#8e7bff;display:grid;grid-template-rows:auto 1fr auto;height:100vh;background:var(--bg, #0b1220);color:inherit}
+.sw-window{--sw-zoom:.86;zoom:var(--sw-zoom);--sw-accent:#8e7bff;display:grid;grid-template-rows:auto 1fr auto;height:calc(100vh / var(--sw-zoom));background:var(--bg, #0b1220);color:inherit}
 .sw-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line, #1f2d45)}
 .sw-top small{opacity:.65;letter-spacing:.08em;text-transform:uppercase;font-size:10px}
 .sw-x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
@@ -112,3 +112,32 @@
 .sw-btn--save:hover:not(:disabled){background-image:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 85%,#fff),var(--sw-accent2))}
 
 .sw-nav-sep--line{display:block;height:0;margin:8px 2px 0;padding:0}
+
+/* ritmo come nelle schermate di riferimento: titoli netti, riquadri respirati, righe distanziate, campi alti e uniformi */
+.sw-panel .sx-group,.sw-box{padding:15px 17px;border-radius:10px;background:color-mix(in srgb,var(--bg, #0b1220) 93%,#fff)}
+.sw-panel .sx-title,.sw-box h3{font-size:13px;font-weight:700;color:var(--text);margin:0 0 12px}
+.sw-panel .sx-cells,.sw-grid,.sw-panel .jx-list{gap:15px 22px}
+.sw-panel .sx-body{gap:12px}
+.sw-panel .sx-field input[type='text'],.sw-panel .sx-field input[type='search'],.sw-panel .sx-field input[type='password'],.sw-panel .sx-field input[type='url'],.sw-panel .sx-field input[type='number'],.sw-panel .sx-field select,
+.sw-panel .jx-row input[type='text'],.sw-panel .jx-row input[type='number'],.sw-panel .jx-row select,.sw-input{min-height:34px;border-radius:8px;background:color-mix(in srgb,var(--bg, #0b1220) 82%,#000)}
+.sw-nav{gap:8px}
+.sw-tab{padding:9px 12px}
+.sw-page,.sw-stack{gap:12px}
+
+/* pagina fissa: niente scorrimento della pagina, niente salti quando compare la barra di scorrimento del contenuto */
+html.sw-fixed,html.sw-fixed body{height:100%;margin:0;overflow:hidden}
+.sw-panel,.sw-nav{scrollbar-gutter:stable;overscroll-behavior:contain}
+.sw-window{overflow:hidden}
+
+/* richiamo grafico ai colori del logo (verde, turchese, giallo-lime, blu): leggero, solo di contorno */
+.sw-window{background:
+  radial-gradient(520px 200px at 100% 0%,rgba(44,245,164,.10),transparent 70%),
+  radial-gradient(520px 220px at 0% 0%,rgba(39,214,245,.09),transparent 70%),
+  radial-gradient(600px 240px at 50% 100%,rgba(142,123,255,.08),transparent 70%),
+  var(--bg, #0b1220)}
+.sw-top{position:relative;border-bottom-color:transparent}
+.sw-top::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,#17b57e,#2cf5a4 28%,#27d6f5 55%,#8e7bff 82%,#f4ff9a);opacity:.75;border-radius:2px}
+.sw-top strong{background:linear-gradient(90deg,#2cf5a4,#27d6f5 60%,#8e7bff);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:15px}
+.sw-tab--on i{color:#2cf5a4;opacity:1}
+.sw-nav-sep{border-top-color:transparent;background:linear-gradient(90deg,rgba(44,245,164,.5),rgba(39,214,245,.3),transparent) top/100% 1px no-repeat}
+.sw-foot{border-top-color:transparent;background:linear-gradient(90deg,rgba(44,245,164,.35),rgba(39,214,245,.25),rgba(142,123,255,.35)) top/100% 1px no-repeat}
