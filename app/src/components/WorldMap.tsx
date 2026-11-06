@@ -53,6 +53,8 @@ interface Props {
   mapStyleId?: string;
   /** Tropici, equatore e circoli polari (di base si'). */
   parallels?: boolean;
+  /** Tutte le terre sempre dentro il riquadro (da +82 a -60 gradi), senza tagliare: per le mappe piccole. */
+  whole?: boolean;
   labels: Labels;
 }
 
@@ -79,7 +81,7 @@ function cssColor(variable: string | null, fallback: string): string {
  * lavorati in giallo, le stazioni che si ricevono ora, chi ci ha ricevuto con le sue linee e la lettura sotto il cursore.
  * Si trascina e si ingrandisce con la rotella.
  */
-export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, tileUrl, mapStyleId, labels }: Props) {
+export function WorldMap({ squares, stations, receivers = [], homeGrid, selected, onSelect, tiles, night, compact = false, parallels = true, tileUrl, mapStyleId, whole = false, labels }: Props) {
   const style = mapStyle(mapStyleId);
   const url = tileUrl ?? (mapStyleId ? style.url : TILES_URL);
   const attribution = tileUrl || !mapStyleId ? ATTRIBUTION : style.attribution;
@@ -114,12 +116,15 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
       zoomSnap: 0.25,
       zoomDelta: 0.5,
       wheelPxPerZoomLevel: 100,
-      maxBounds: WORLD,
+      // mappa piccola intera: la cartina si ripete ai lati, quindi niente limiti in larghezza
+      maxBounds: whole ? [[-85, -540], [85, 540]] : WORLD,
       maxBoundsViscosity: 1,
     });
     m.attributionControl.setPrefix(false);
     // sotto le tessere: la terra disegnata dal programma, per quando non c'e' internet o le tessere sono spente
     m.createPane('landPane').style.zIndex = '150';
+    // con lo sfondo che si ripete ai lati, le terre disegnate di riserva comparirebbero azzurre nelle fasce: nella mappa piccola si nascondono
+    if (whole && tiles) m.getPane('landPane')!.style.display = 'none';
     m.getPane('landPane')!.style.pointerEvents = 'none';
     const topology = countries as unknown as Topology;
     L.geoJSON(feature(topology, topology.objects.countries as GeometryCollection), {
@@ -141,6 +146,20 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
       // restava bianca anche dopo, quando la finestra compariva
       if (el.clientWidth < 10 || el.clientHeight < 10) return;
       m.invalidateSize(false);
+      if (whole) {
+        // tutte le terre dentro: si adatta il riquadro al mondo, non il mondo al riquadro
+        const land: L.LatLngBoundsLiteral = [
+          [-60, -180],
+          [82, 180],
+        ];
+        // nei riquadri piccoli il mondo intero sta sotto lo zoom 1: si lascia scendere lo zoom minimo prima di calcolarlo
+        m.setMinZoom(-3);
+        const zw = m.getBoundsZoom(land, false);
+        if (!Number.isFinite(zw)) return;
+        m.setMinZoom(zw);
+        m.fitBounds(land, { animate: false, padding: [0, 0] });
+        return;
+      }
       const z = m.getBoundsZoom(WORLD, true);
       if (!Number.isFinite(z)) return;
       m.setMinZoom(z);
@@ -151,7 +170,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     m.setView([25, 10], 2, { animate: false });
     fit();
     const start = m.getMinZoom();
-    m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
+    if (!whole) m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
     map.current = m;
     let observer: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
@@ -179,7 +198,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
     m.getContainer().classList.remove('worldmap--tiles-failed');
-    const layer = tiles ? L.tileLayer(url, { attribution, maxNativeZoom: mapStyleId ? style.maxNativeZoom : 10, maxZoom: 10, noWrap: true, bounds: WORLD, ...(style.subdomains && mapStyleId ? { subdomains: style.subdomains } : {}) }) : null;
+    const layer = tiles ? L.tileLayer(url, { minZoom: -3, minNativeZoom: 0, attribution, maxNativeZoom: mapStyleId ? style.maxNativeZoom : 10, maxZoom: 10, ...(whole ? {} : { noWrap: true, bounds: WORLD }), ...(style.subdomains && mapStyleId ? { subdomains: style.subdomains } : {}) }) : null;
     m.getContainer().classList.toggle('worldmap--dark-tiles', tiles && !!mapStyleId && !!style.dark);
     // senza internet le tessere non arrivano: allora si mostra la terra disegnata dal programma (prima appariva sempre per un attimo)
     layer?.on('tileerror', () => m.getContainer().classList.add('worldmap--tiles-failed'));
