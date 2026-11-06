@@ -656,6 +656,10 @@ impl Rig for NativeRig {
         self.controls.send(TxCommand::SelectTx(n))
     }
 
+    fn set_tx_text(&self, n: u8, text: &str) -> Result<(), RigError> {
+        self.controls.send(TxCommand::SetTxText { n, text: text.to_string() })
+    }
+
     fn set_control(&self, id: &str, on: Option<bool>) -> Result<(), RigError> {
         let control = controls::find(id).ok_or_else(|| RigError(format!("comando sconosciuto: {id}")))?;
         match (control.kind, on) {

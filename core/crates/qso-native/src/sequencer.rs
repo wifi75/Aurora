@@ -83,6 +83,10 @@ pub struct Sequencer {
     tx_even: bool,
     /// Il periodo per cui sono stati generati gli ultimi messaggi (`m_txGenerated`).
     tx_generated: bool,
+    /// Testi Tx scritti a mano dall'operatore (come i campi Tx1-Tx6 di JTDX): valgono finche' i messaggi non si rigenerano («Gen.Msgs»,
+    /// nuovo rapporto, stazione liberata). I primi cinque valgono per il DX a cui sono stati scritti (`tx_edits_for`).
+    tx_edits: [Option<String>; 6],
+    tx_edits_for: String,
     /// Lo stato letto da `process_Auto` (`m_status`).
     status: Status,
     /// Frequenza di ricezione (`RxFreqSpinBox`).
@@ -163,6 +167,8 @@ impl Sequencer {
             ntx: 6,
             tx_even,
             tx_generated: tx_even,
+            tx_edits: Default::default(),
+            tx_edits_for: String::new(),
             status: Status::None,
             rx_hz: tx_hz,
             last_calling_freq: tx_hz,
@@ -308,6 +314,7 @@ impl Sequencer {
     /// «Gen.Msgs»: rigenera i messaggi Tx1-Tx5 per il DX in collegamento e rimette il messaggio di partenza (Tx1, o Tx2 con «Salta Tx1»),
     /// come `genStdMsgs` di JTDX. Senza DX non c'e' nulla da rigenerare. I testi si compongono sempre dal DX e dal rapporto correnti.
     pub fn regen_messages(&mut self) {
+        self.tx_edits = Default::default();
         // `m_txGenerated = m_txFirst` sta in cima a `genStdMsgs`, prima del controllo sul DX (verificato in `jtdx.exe` a 0x474800)
         self.tx_generated = self.tx_even;
         self.restore_auto_seq();
@@ -410,7 +417,51 @@ impl Sequencer {
             }
         }
         out[5] = self.cq_text();
+        for n in 1..=6u8 {
+            if let Some(t) = self.edit_for(n) {
+                out[usize::from(n) - 1] = t;
+            }
+        }
         out
+    }
+
+    /// Il testo scritto a mano per Tx`n`, se c'e' e vale ancora (per i primi cinque, solo per lo stesso DX).
+    fn edit_for(&self, n: u8) -> Option<String> {
+        let edit = self.tx_edits.get(usize::from(n).checked_sub(1)?)?.as_ref()?;
+        if n != 6 && !same_station(&self.tx_edits_for, &self.his_call) {
+            return None;
+        }
+        Some(edit.clone())
+    }
+
+    /// Scrive a mano il testo di Tx`n` (1-6), come i campi dei messaggi di JTDX: maiuscolo, spazi singoli, al piu' 37 caratteri (`character*37 msg`).
+    /// Un testo vuoto toglie la modifica e torna il messaggio standard. Tx1-Tx5 hanno bisogno di un DX.
+    pub fn set_tx_text(&mut self, n: u8, text: &str) -> Result<(), SeqError> {
+        if !(1..=6).contains(&n) {
+            return Err(SeqError::InvalidTxNumber(n));
+        }
+        if n != 6 && self.his_call.is_empty() {
+            return Err(SeqError::NoDx);
+        }
+        let clean: String = text.chars().filter(|c| c.is_ascii_graphic() || *c == ' ').collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ").to_uppercase();
+        let clean: String = clean.chars().take(37).collect();
+        let slot = usize::from(n) - 1;
+        if clean.is_empty() {
+            self.tx_edits[slot] = None;
+        } else {
+            if n != 6 && !same_station(&self.tx_edits_for, &self.his_call) {
+                // altro DX: le modifiche dei messaggi 1-5 fatte per il precedente non valgono piu'
+                for e in self.tx_edits.iter_mut().take(5) {
+                    *e = None;
+                }
+            }
+            if n != 6 {
+                self.tx_edits_for = self.his_call.clone();
+            }
+            self.tx_edits[slot] = Some(clean);
+        }
+        self.note_state();
+        Ok(())
     }
 
     pub fn is_worked(&self, call: &str) -> bool {
@@ -1342,6 +1393,7 @@ impl Sequencer {
 
     /// `genStdMsgs(rpt)`: aggiorna il rapporto e rimette il messaggio di partenza (i testi si compongono a richiesta).
     fn gen_std_msgs(&mut self, rpt: i32) {
+        self.tx_edits = Default::default();
         self.restore_auto_seq();
         self.tx_generated = self.tx_even;
         self.rpt = rpt.clamp(-50, 49);
@@ -1360,6 +1412,9 @@ impl Sequencer {
     }
 
     fn text_for(&self, n: u8) -> String {
+        if let Some(t) = self.edit_for(n) {
+            return t;
+        }
         if n == 6 {
             return self.cq_text();
         }
@@ -1371,6 +1426,7 @@ impl Sequencer {
 
     /// `clearDX` senza evento: libera la stazione e rimette il messaggio CQ.
     fn clear_dx_inner(&mut self) {
+        self.tx_edits = Default::default();
         self.his_call.clear();
         self.his_grid.clear();
         self.tx_generated = self.tx_even;

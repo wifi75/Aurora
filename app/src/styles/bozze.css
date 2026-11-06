@@ -205,3 +205,47 @@ html[data-bozza][data-theme='light'] .app-nav a:not(.glass--on):not([aria-curren
 @media (min-width: 64rem) {
   .app-main { padding-bottom: 3px; }
 }
+
+/* ---- messaggi Tx: contorno netto per quello scelto (verde pieno) e per quello che sta trasmettendo (rosso con respiro) ---- */
+.tx-panel .tx-list li[data-next='true'] {
+  outline: none !important;
+  border: 2px solid #2cf5a4 !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  background: color-mix(in srgb, #2cf5a4 14%, transparent) !important;
+}
+.tx-panel .tx-list li[aria-current='true'] {
+  outline: none !important;
+  border: 2px solid #ff5d6c !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  background: color-mix(in srgb, #ff5d6c 16%, transparent) !important;
+  animation: txbreath 1.4s ease-in-out infinite;
+}
+.tx-panel .tx-list li[data-next='true'] .tx-n { background: #2cf5a4 !important; color: #04251a !important; }
+.tx-panel .tx-list li[aria-current='true'] .tx-n { background: #ff5d6c !important; color: #fff !important; }
+@keyframes txbreath { 0%, 100% { border-color: #ff5d6c; } 50% { border-color: #ffb3bb; } }
+@media (prefers-reduced-motion: reduce) { .tx-panel .tx-list li[aria-current='true'] { animation: none; } }
+html[data-theme='light'] .tx-panel .tx-list li[data-next='true'] { border-color: #0b7f4a !important; background: #d3f1e3 !important; }
+html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-color: #c62a2a !important; background: #fde3e3 !important; }
+
+/* campo del messaggio Tx modificabile: piatto come il testo, si vede il campo solo con il cursore dentro */
+.tx-panel .tx-list li .tx-msg-edit {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 1px 4px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font: inherit;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  cursor: text;
+}
+.tx-panel .tx-list li .tx-msg-edit:hover:not(:disabled) { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.tx-panel .tx-list li .tx-msg-edit:focus { outline: none; border-color: #8e7bff; background: color-mix(in srgb, var(--panel) 85%, transparent); }
+.tx-panel .tx-list li .tx-msg-edit:disabled { cursor: inherit; }

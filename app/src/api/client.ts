@@ -143,6 +143,11 @@ export async function postTxMessage(n: number): Promise<void> {
   await request('/commands/tx-message', jsonInit({ n }));
 }
 
+/** Scrive a mano il testo del messaggio Tx `n` (1-6): resta finche' i messaggi non si rigenerano; vuoto torna lo standard. */
+export async function postTxText(n: number, text: string): Promise<void> {
+  await request('/commands/tx-text', jsonInit({ n, text }));
+}
+
 export async function postTxFrequency(hz: number): Promise<void> {
   await request('/commands/tx-frequency', jsonInit({ hz }));
 }

@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -64,6 +64,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/controls", get(controls_get))
         .route("/api/v1/commands/control", post(control_press))
         .route("/api/v1/commands/tx-message", post(tx_message))
+        .route("/api/v1/commands/tx-text", post(tx_text))
         .route("/api/v1/frequencies", get(frequencies_get).put(frequencies_put))
         .route("/api/v1/frequencies/defaults", get(frequencies_defaults))
         .route("/api/v1/pairing-settings", get(pairing_get).put(pairing_put))
@@ -1045,6 +1046,33 @@ async fn tx_message(State(state): State<AppState>, _: Authed, Json(body): Json<T
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "n": n }))),
         Ok(Err(e)) => {
             tracing::warn!("selezione del messaggio Tx {n} fallita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+        }
+        Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+    }
+}
+
+#[derive(Deserialize)]
+struct TxTextBody {
+    /// Numero del messaggio Tx, da 1 a 6.
+    n: u8,
+    /// Il testo scritto a mano; vuoto torna al messaggio standard.
+    text: String,
+}
+
+/// Scrive a mano il testo di un messaggio Tx (il campo accanto al numero): vale finche' i messaggi non si rigenerano (Gen.Msgs, nuovo rapporto,
+/// stazione liberata). Maiuscolo, al piu' 37 caratteri; vuoto = torna lo standard. Non fa trasmettere.
+#[utoipa::path(post, path = "/api/v1/commands/tx-text", responses((status = 200, description = "Testo impostato"), (status = 400, description = "Numero fuori da 1-6 (bad_message)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+async fn tx_text(State(state): State<AppState>, _: Authed, Json(body): Json<TxTextBody>) -> Result<Json<Value>, ApiError> {
+    if !(1..=6).contains(&body.n) || body.text.len() > 400 {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_message"));
+    }
+    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let (n, text) = (body.n, body.text);
+    match tokio::task::spawn_blocking(move || rig.set_tx_text(n, &text)).await {
+        Ok(Ok(())) => Ok(Json(json!({ "ok": true, "n": n }))),
+        Ok(Err(e)) => {
+            tracing::warn!("testo del messaggio Tx {n} non impostato: {e}");
             Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
