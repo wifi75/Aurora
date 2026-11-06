@@ -189,7 +189,7 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
   const nodes = useMemo(() => Object.fromEntries(Object.keys(cells).map((id) => [id, render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })])), [cells, render, locked, free, colW, ROW, onChange]);
   const bottom = Object.values(shown).reduce((m, c) => Math.max(m, c.y + c.h), 0);
   return (
-    <div ref={box} className={`grid-board${live ? ' grid-board--moving' : ''}`} style={{ height: bottom * (ROW + GAP) + GAP }}>
+    <div ref={box} className={`grid-board${live ? ' grid-board--moving' : ''}`} style={{ height: Math.floor(bottom * (ROW + GAP) + GAP) }}>
       {guides.map((g, i) => (
         <div
           key={`${g.axis}${i}`}
