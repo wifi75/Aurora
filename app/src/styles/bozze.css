@@ -311,3 +311,62 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .wf-splitter:hover::after { background: #8e7bff; }
 /* la riga in basso un po' piu' alta, per dare spazio allo spettro */
 .live-bottom { height: clamp(18rem, 37vh, 26rem); }
+
+/* Trasmissione e QSO nella riga in basso: una sola cornice (quella della finestra) e il contenuto riempie tutta l'altezza */
+.live-bottom .tx-panel { display: flex; flex: 1 1 0; min-height: 0; gap: 8px; padding: 6px; align-items: stretch; }
+.live-bottom .tx-main { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; flex-direction: column; gap: 0; }
+.live-bottom .tx-split { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+.live-bottom .tx-block { flex: 1 1 0; min-height: 0; border: 0 !important; background: none !important; box-shadow: none; border-radius: 0; padding: 2px 4px; }
+
+/* messaggi: le sei righe si dividono l'altezza */
+.live-bottom-msgs .tx-left { display: flex; flex-direction: column; gap: 6px; }
+.live-bottom-msgs .tx-dx { flex: none; }
+.live-bottom-msgs .tx-list { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; }
+.live-bottom-msgs .tx-list li { height: auto; min-height: 0; }
+
+/* QSO: interruttori a sinistra che riempiono la finestra, i due livelli (Rx e Pwr) a destra a tutta altezza */
+.live-bottom-qso .cmd-sec { display: flex; flex-direction: column; gap: 6px; }
+.live-bottom-qso .qso-cols { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; gap: 10px; justify-content: space-evenly; }
+.live-bottom-qso .qso-col { display: flex; flex-direction: column; gap: 4px; }
+.live-bottom-qso .qso-grid { flex: 1; align-content: stretch; }
+.live-bottom-qso .in-level, .live-bottom-qso .out-level { align-self: stretch; }
+
+/* riga in basso piu' bassa (era 333 px a 900 px di finestra); la barra della cascata va a capo invece di scorrere di lato */
+.live-bottom { height: clamp(15rem, 32vh, 20rem); }
+.live-bottom-wf { flex: 1.8 1 0; }
+.live-bottom .wf-toolbar { flex-wrap: wrap; overflow: visible; }
+.waterfall--bar .wf-main { min-height: 56px; }
+
+/* la cascata nella riga in basso e' bassa (72 px di base, si regola col divisore): tutto il resto e' dello spettro */
+.waterfall--bar .wf-main { min-height: 40px; }
+
+/* riga in basso: ogni finestra sta in un posto (slot); in fase di progetto ci sono il bordo alto e i divisori da trascinare */
+.live-bottom { gap: 0; }
+.live-bottom-slot { display: flex; min-width: 0; min-height: 0; }
+.live-bottom-slot > .live-bottom-panel { flex: 1 1 auto; min-width: 0; }
+.live-bottom-panel { flex: 1 1 0; }
+.live-bottom-split { flex: 0 0 6px; cursor: ew-resize; touch-action: none; position: relative; }
+.live-bottom-split::after { content: ''; position: absolute; top: 40%; bottom: 40%; left: 2px; width: 2px; border-radius: 2px; background: color-mix(in srgb, var(--text) 35%, transparent); }
+.live-bottom-split:hover::after { background: #8e7bff; }
+.live-bottom-resizer { flex: 0 0 6px; height: 6px; margin-top: 2px; cursor: ns-resize; touch-action: none; position: relative; }
+.live-bottom-resizer::after { content: ''; position: absolute; left: 50%; top: 1px; width: 56px; height: 3px; margin-left: -28px; border-radius: 3px; background: color-mix(in srgb, var(--text) 40%, transparent); }
+.live-bottom-resizer:hover::after { background: #8e7bff; }
+.live-bottom--edit .live-bottom-panel > .dock-grip { cursor: grab; }
+
+/* anti-tremolio: ogni finestra della riga in basso e' isolata (un cambio dentro non sposta le altre) e i numeri che cambiano non cambiano larghezza */
+.live-bottom-panel { contain: layout paint; }
+.live-bottom-panel .dock-body { contain: layout; }
+.bar-count, .period-text, .cmd-big-in, .bar-item b, .tx-n { font-variant-numeric: tabular-nums; }
+.bar-count { display: inline-block; min-width: 3.2em; text-align: right; }
+.waterfall canvas { contain: strict; }
+
+/* pagina a blocchi: la griglia riempie la finestra; ogni blocco e' una finestra che si sposta e si ridimensiona (fase di progetto) */
+.live-board { flex: 1 1 0; min-height: 0; position: relative; overflow: auto; }
+.grid-board { height: auto; }
+.grid-block > .grid-panel { flex: 1 1 auto; width: 100%; height: 100%; min-height: 0; min-width: 0; }
+.grid-panel .dock-body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+.grid-panel > .dock-grip { cursor: grab; }
+.grid-panel > .dock-grip--fixed { cursor: default; }
+@media (min-width: 64rem) {
+  .live .live-board { flex: 1 1 0; }
+}

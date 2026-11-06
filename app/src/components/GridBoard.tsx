@@ -54,13 +54,15 @@ interface Props {
   onChange(cells: Record<string, Cell>): void;
   /** Il contenuto di un blocco: `grip` va messo sulla barretta che si trascina. */
   render(id: string, grip: { onPointerDown(e: ReactPointerEvent<HTMLElement>): void }): ReactNode;
+  /** Bloccata: i blocchi non si spostano e non si ridimensionano, restano dove sono. */
+  locked?: boolean;
 }
 
 /**
  * Dashboard a blocchi (secondo schermo): ogni blocco si trascina dalla sua barretta e si ridimensiona dall'angolo in basso a destra;
  * i blocchi si agganciano alla griglia e gli altri si spostano per fargli posto.
  */
-export function GridBoard({ cells, onChange, render }: Props) {
+export function GridBoard({ cells, onChange, render, locked = false }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(1000);
   const [height, setHeight] = useState(700);
@@ -115,8 +117,8 @@ export function GridBoard({ cells, onChange, render }: Props) {
           className="grid-block"
           style={{ left: GAP + c.x * (colW + GAP), top: GAP + c.y * (ROW + GAP), width: c.w * (colW + GAP) - GAP, height: c.h * (ROW + GAP) - GAP }}
         >
-          {render(id, { onPointerDown: track(id, 'move') })}
-          <div className="grid-resize" onPointerDown={track(id, 'size')} aria-hidden="true" />
+          {render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })}
+          {locked ? null : <div className="grid-resize" onPointerDown={track(id, 'size')} aria-hidden="true" />}
         </div>
       ))}
     </div>

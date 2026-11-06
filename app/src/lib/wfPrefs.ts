@@ -34,6 +34,8 @@ export interface WfPrefs {
   freq: boolean;
   /** «Time stamp»: l'ora (UTC) e la banda scritte sulla cascata a ogni inizio di periodo. */
   timeStamp: boolean;
+  /** Altezza (px) della cascata nella riga in basso: il resto dell'altezza e' dello spettro. Si cambia col divisore fra i due. */
+  mainPx: number;
   /**
    * Velocita' della cascata. `wsjtx`: una riga ogni mezzo simbolo FT8 (0,288 s, `jstep = nsps/2` con `nsps = 6912` di
    * `symspec.f90`) per N Avg, ~52 righe a periodo di 15 s con N Avg 1. `jtdx`: 15 righe al secondo per N Avg (~225 a periodo).
@@ -105,6 +107,7 @@ export function defaultWfPrefs(): WfPrefs {
     bars: true,
     freq: false,
     timeStamp: true,
+    mainPx: 72,
     styleApplied: true,
     spectrumLive: true,
   };
@@ -148,6 +151,7 @@ export function readWfPrefs(storage: ReadableStorage): WfPrefs {
     for (const key of ['scale', 'flatten', 'bars', 'periodLine', 'freq', 'timeStamp'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
+    if (typeof parsed.mainPx === 'number' && Number.isFinite(parsed.mainPx)) prefs.mainPx = Math.min(600, Math.max(40, Math.round(parsed.mainPx)));
     if (parsed.spectrumMode === 'current' || parsed.spectrumMode === 'cumulative') prefs.spectrumMode = parsed.spectrumMode;
     const user = readPalette(parsed.userPalette);
     if (user) prefs.userPalette = user;

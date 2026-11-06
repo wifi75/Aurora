@@ -158,6 +158,7 @@ export const stationStrings = {
   ],
   'panel.waterfall': ['Cascata', 'Waterfall', 'Wasserfall', 'Cascade', 'Cascada', 'Cascata'],
   'panel.station': ['Comandi', 'Commands', 'Befehle', 'Commandes', 'Comandos', 'Comandos'],
+  'bottom.height': ['Trascina per cambiare l’altezza della riga in basso', 'Drag to change the height of the bottom row', 'Ziehen, um die Höhe der unteren Reihe zu ändern', 'Glisser pour changer la hauteur de la rangée du bas', 'Arrastra para cambiar la altura de la fila inferior', 'Arraste para mudar a altura da linha de baixo'],
   'panel.qso': ['QSO', 'QSO', 'QSO', 'QSO', 'QSO', 'QSO'],
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
