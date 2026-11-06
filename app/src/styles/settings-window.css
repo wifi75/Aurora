@@ -26,3 +26,52 @@
 
 /* le schede vecchie contano su `.settings-layout` per i loro stili: qui il contenitore resta un blocco solo */
 .sw-panel.settings-layout{display:block}
+
+/*
+ * Le schede vecchie nella finestra: stesso aspetto della scheda Generale (prototipo). Una colonna di riquadri, ogni riquadro con
+ * il titolo in alto e le voci su tre colonne; l'etichetta piccola sopra il controllo, tutto allineato in griglia.
+ */
+.sw-panel .sx-page{display:grid;grid-template-columns:1fr;gap:10px;align-content:start}
+.sw-panel .sx-span-1,.sw-panel .sx-span-2,.sw-panel .sx-span-3{grid-column:1/-1;grid-row:auto!important}
+.sw-panel .sx-group{background:transparent;border:1px solid var(--line, #1f2d45);border-radius:9px;padding:12px 14px;box-shadow:none}
+.sw-panel .sx-title{margin:0 0 9px;font-size:12px;font-weight:700;letter-spacing:0;text-transform:none}
+.sw-panel .sx-body{padding:0}
+.sw-panel .sx-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px;align-items:end}
+.sw-panel .sx-field{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;align-items:end;gap:3px;min-height:0;padding:0;background:none;border:0;border-radius:0}
+.sw-panel .sx-field--wide{grid-column:1/-1}
+.sw-panel .sx-label{display:block;overflow:visible;-webkit-line-clamp:unset;line-clamp:unset;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.sw-panel .sx-control{min-width:0}
+.sw-panel .sx-field input[type='text'],.sw-panel .sx-field input[type='search'],.sw-panel .sx-field input[type='password'],.sw-panel .sx-field input[type='url'],.sw-panel .sx-field select{width:100%;max-width:none}
+/* le caselle: quadratino e testo sulla stessa riga, il testo non in maiuscoletto */
+.sw-panel .sx-field:has(> .sx-control > input[type='checkbox']),.sw-panel .set-check.sx-field{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px}
+.sw-panel .sx-field:has(> .sx-control > input[type='checkbox']) .sx-label,.sw-panel .set-check.sx-field .sx-label{font-size:12px;letter-spacing:0;text-transform:none;opacity:1}
+.sw-panel .sx-table{width:100%}
+@media (max-width:900px){.sw-panel .sx-cells{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.sw-panel .sx-cells{grid-template-columns:1fr}}
+
+/* le voci del motore (`.jx-row`): etichetta piccola sopra il controllo, le caselle su una riga, niente righe a strisce */
+.sw-panel .jx-list{border:0;border-radius:0;margin:0;overflow:visible;gap:8px 18px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.sw-panel .jx-row:not(.svc-field),.sw-page .jx-row:not(.svc-field){display:grid;grid-template-columns:minmax(0,1fr);align-content:end;gap:3px;padding:0;background:none!important;border:0;box-shadow:none;font-size:12px}
+.sw-panel .jx-row:not(.svc-field) .jx-name,.sw-page .jx-row:not(.svc-field) .jx-name{display:block;overflow:visible;-webkit-line-clamp:unset;line-clamp:unset;white-space:normal;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+  .sw-panel .jx-row:not(.svc-field):has(> input[type='checkbox']){display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px}
+  .sw-panel .jx-row:not(.svc-field):has(> input[type='checkbox']) .jx-name{font-size:12px;letter-spacing:0;text-transform:none;opacity:1}
+.sw-panel .jx-row:not(.svc-field) input[type='text'],.sw-panel .jx-row:not(.svc-field) input[type='number'],.sw-panel .jx-row:not(.svc-field) select{width:100%;max-width:none;min-height:30px;padding:0 8px}
+.sw-panel .jx-row:not(.svc-field) input[type='number']{max-width:8rem}
+.sw-panel .jx-row:not(.svc-field) .ens-reason{grid-column:1/-1;font-size:10.5px;opacity:.7}
+.sw-panel .jx-row--changed{box-shadow:none;outline:1px solid #e0a100;outline-offset:3px;border-radius:4px}
+/* il riquadro Aggiornamenti: le sue schede vecchie dentro un riquadro solo, senza cornici doppie */
+.sw-box .sx-page{gap:6px}
+.sw-box .sx-group{border:0;padding:0}
+.sw-box .sx-title{display:none}
+.sw-box .sx-cells{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.sw-panel .jx-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.sw-panel .jx-list{grid-template-columns:1fr}}
+
+.sw-grid--2{grid-template-columns:minmax(0,1fr) minmax(0,3fr);align-items:start;margin-top:10px}
+.sw-grid--4{align-items:start}
+.sw-field{align-content:start;justify-items:start}
+.sw-field .lang-select{justify-self:start}
+@media (max-width:760px){.sw-grid--2{grid-template-columns:1fr}}
+
+/* le voci non disponibili restano spente e senza il lungo perche': il perche' sta nel suggerimento */
+.sw-panel .jx-row--off .ens-reason{display:none}
