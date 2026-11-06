@@ -168,6 +168,22 @@ impl DxccDb {
         }
     }
 
+    /// Il locatore e' credibile per il paese del nominativo? Falso solo se il centro del quadrato dista dal centro del paese (come lo scrive
+    /// `cty.dat`) piu' di [`GRID_MAX_KM`]: e' un controllo largo, che prende i locatori dall'altra parte del mondo ma non i paesi grandi. Vero se il
+    /// nominativo ha un `/` (portatili, maritimi), non si riconosce o il paese non ha una posizione.
+    pub fn grid_plausible(&self, call: &str, grid: &str) -> bool {
+        if call.contains('/') {
+            return true;
+        }
+        let Some(hit) = self.lookup(call) else { return true };
+        let entity = &self.entities[hit.entity];
+        if entity.lat_e2 == 0 && entity.lon_e2 == 0 {
+            return true;
+        }
+        let Some((lat, lon)) = grid_center(grid) else { return true };
+        distance_km(lat, lon, f64::from(entity.lat_e2) / 100.0, f64::from(entity.lon_e2) / 100.0) <= GRID_MAX_KM
+    }
+
     fn by_prefix(&self, call: &str) -> Option<Lookup> {
         if let Some(hit) = self.exact.get(call) {
             return Some(*hit);
@@ -175,6 +191,38 @@ impl DxccDb {
         let max = call.len().min(self.longest_prefix);
         (1..=max).rev().find_map(|n| call.get(..n).and_then(|p| self.prefixes.get(p)).copied())
     }
+}
+
+/// Distanza massima, in km, tra il centro di un paese e un locatore creduto suo. Il paese piu' esteso (Canada, Russia asiatica, Australia) arriva
+/// a 4500 km dal suo centro; oltre 5500 non e' piu' lo stesso paese.
+pub const GRID_MAX_KM: f64 = 5500.0;
+
+/// Latitudine e longitudine (gradi) del centro di un locatore a 4 o 6 caratteri; `None` se non e' un locatore.
+pub fn grid_center(grid: &str) -> Option<(f64, f64)> {
+    let b = grid.trim().as_bytes();
+    if b.len() != 4 && b.len() != 6 {
+        return None;
+    }
+    let field = |c: u8| (b'A'..=b'R').contains(&c.to_ascii_uppercase()).then(|| f64::from(c.to_ascii_uppercase() - b'A'));
+    let digit = |c: u8| c.is_ascii_digit().then(|| f64::from(c - b'0'));
+    let (mut lon, mut lat) = (field(b[0])? * 20.0 - 180.0 + digit(b[2])? * 2.0, field(b[1])? * 10.0 - 90.0 + digit(b[3])?);
+    if b.len() == 6 {
+        let sub = |c: u8| (b'A'..=b'X').contains(&c.to_ascii_uppercase()).then(|| f64::from(c.to_ascii_uppercase() - b'A'));
+        lon += sub(b[4])? * (2.0 / 24.0) + 1.0 / 24.0;
+        lat += sub(b[5])? * (1.0 / 24.0) + 0.5 / 24.0;
+    } else {
+        lon += 1.0;
+        lat += 0.5;
+    }
+    Some((lat, lon))
+}
+
+/// Distanza sul cerchio massimo tra due punti, in km.
+pub fn distance_km(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
+    let dl = (lon2 - lon1).to_radians();
+    let a = ((p2 - p1) / 2.0).sin().powi(2) + p1.cos() * p2.cos() * (dl / 2.0).sin().powi(2);
+    6371.0 * 2.0 * a.sqrt().min(1.0).asin()
 }
 
 /// `AT5(15)[30]` -> ("AT5", Some zona CQ 15, zona ITU 30); gli altri modificatori si ignorano.
@@ -201,4 +249,53 @@ fn split_overrides(token: &str, cq: u8, itu: u8) -> (String, u8, u8) {
         rest = &rest[end + 2..];
     }
     (token[..key_end].to_uppercase(), cq_zone, itu_zone)
+}
+
+#[cfg(test)]
+mod grid_tests {
+    use super::*;
+
+    const CTY: &str = "Italy:                    15:  28:  EU:   43.00:   -12.00:    -1.0:  I:
+    I,IK,IU;
+United States:            05:  08:  NA:   37.53:    91.67:     5.0:  K:
+    K,W,N,AA;
+Japan:                    25:  45:  AS:   36.00:  -138.00:    -9.0:  JA:
+    JA,JE;
+";
+
+    #[test]
+    fn il_centro_di_un_locatore() {
+        let (lat, lon) = grid_center("JN45").expect("locatore");
+        assert!((lat - 45.5).abs() < 0.01 && (lon - 11.0).abs() < 0.01, "{lat} {lon}");
+        let (lat, lon) = grid_center("FN42ab").expect("locatore");
+        assert!((lat - 42.02).abs() < 0.05 && (lon + 71.96).abs() < 0.05, "{lat} {lon}");
+        assert!(grid_center("RR73x").is_none() && grid_center("ZZ99").is_none() && grid_center("-15").is_none());
+    }
+
+    #[test]
+    fn la_distanza_tra_citta_note() {
+        // Roma-New York: circa 6900 km
+        let d = distance_km(41.9, 12.5, 40.7, -74.0);
+        assert!((6800.0..7000.0).contains(&d), "{d}");
+    }
+
+    #[test]
+    fn un_locatore_dall_altra_parte_del_mondo_non_e_credibile() {
+        let db = DxccDb::parse(CTY).expect("cty");
+        assert!(db.grid_plausible("IU3ABC", "JN45"));
+        assert!(db.grid_plausible("IU3ABC", "JO62"), "Berlino e' vicina");
+        assert!(db.grid_plausible("IU3ABC", "KN32"), "Mar Nero, 1800 km");
+        assert!(!db.grid_plausible("IU3ABC", "FN42"), "New York");
+        assert!(!db.grid_plausible("IU3ABC", "PM95"), "Tokyo");
+        assert!(db.grid_plausible("W1AW", "FN31") && db.grid_plausible("W7XYZ", "CN87"), "tutto il paese e' dentro il limite");
+        assert!(!db.grid_plausible("W1AW", "JN45"));
+    }
+
+    #[test]
+    fn portatili_sconosciuti_e_locatori_non_validi_non_si_giudicano() {
+        let db = DxccDb::parse(CTY).expect("cty");
+        assert!(db.grid_plausible("IU3ABC/P", "FN42"));
+        assert!(db.grid_plausible("ZZ9ZZZ", "FN42"));
+        assert!(db.grid_plausible("IU3ABC", "RR73"));
+    }
 }

@@ -15,14 +15,61 @@
 //! - Mancano i controlli che consultano le tabelle di JTDX: `ALLCALL7.TXT` (`searchcalls`, `chkflscall`: il nominativo e' fra quelli
 //!   conosciuti?) e la geografia (`chkgrid`: il locatore e' compatibile con il prefisso?). Quelli di `chkflscall` si ottengono
 //!   passando un [`CallBook`] a [`reject_message`]: va riempito con un elenco **completo** di nominativi, altrimenti scarta stazioni
-//!   vere mai sentite. `chkgrid` non e' portato (e' una tabella di migliaia di condizioni).
+//!   vere mai sentite. `chkgrid` e' approssimato da [`grid_is_false`] con la distanza dal centro del paese (vedi [`GridCheck`]), non con la sua tabella.
 //! - `filtersfree` non usa `datacor` (la correlazione dei dati): scarta di meno i testi liberi falsi.
 //! - Non c'e' il ramo Hound/Fox ne' i controlli sui nominativi non standard del proprio QSO (`iaptype` 11, 21, 40, 41).
 
 use std::collections::HashSet;
+use std::sync::Arc;
 
 use crate::ap::argmax8;
 use crate::{COSTAS, NN};
+
+/// Controllo geografico: `true` se il locatore (secondo argomento) e' credibile per il nominativo (primo argomento). Lo fornisce chi ha la tabella
+/// dei paesi (`dxcc::DxccDb::grid_plausible`); e' un'approssimazione di `chkgrid` di JTDX, che e' una tabella di migliaia di condizioni.
+#[derive(Clone)]
+pub struct GridCheck(Arc<dyn Fn(&str, &str) -> bool + Send + Sync>);
+
+impl GridCheck {
+    pub fn new(check: impl Fn(&str, &str) -> bool + Send + Sync + 'static) -> GridCheck {
+        GridCheck(Arc::new(check))
+    }
+
+    pub fn is_plausible(&self, call: &str, grid: &str) -> bool {
+        (self.0)(call, grid)
+    }
+}
+
+impl std::fmt::Debug for GridCheck {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("GridCheck")
+    }
+}
+
+/// Il nominativo di chi trasmette e il suo locatore, in un messaggio con locatore (`CQ [DX] CALL GRID`, `A B GRID`). `None` se il messaggio non ne ha
+/// uno (rapporti, RRR, 73, testo libero) o se il locatore e' in realta' `RR73`.
+pub fn sender_grid(text: &str) -> Option<(String, String)> {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let grid = *words.last()?;
+    if words.len() < 3 || grid == "RR73" || !looks_like_grid(grid) {
+        return None;
+    }
+    let call_like = |w: &str| w.bytes().any(|c| c.is_ascii_digit()) && w.bytes().any(|c| c.is_ascii_alphabetic()) && (3..=11).contains(&w.len());
+    let sender = if words[0] == "CQ" { words[1..words.len() - 1].iter().rev().find(|w| call_like(w)) } else { words.get(1) }?;
+    let sender = sender.trim_matches(|c| c == '<' || c == '>');
+    (!sender.starts_with('.') && call_like(sender)).then(|| (sender.to_string(), grid.to_string()))
+}
+
+/// `true` se il messaggio e' un falso per la geografia: il suo locatore non e' credibile per il paese di chi lo manda. Si applica solo ai messaggi
+/// deboli (SNR sotto -10 dB) o trovati con l'analisi a priori, dove un falso e' possibile: un segnale forte con un locatore sbagliato e' un
+/// operatore distratto, non un falso.
+pub fn grid_is_false(text: &str, snr_db: f32, ap_type: u8, check: Option<&GridCheck>) -> bool {
+    let Some(check) = check else { return false };
+    if ap_type == 0 && snr_db >= -10.0 {
+        return false;
+    }
+    sender_grid(text).is_some_and(|(call, grid)| !check.is_plausible(&call, &grid))
+}
 
 /// Elenco di nominativi conosciuti (l'equivalente di `ALLCALL7.TXT` di JTDX).
 #[derive(Debug, Clone, Default)]
@@ -941,5 +988,31 @@ mod tests {
         eprintln!("rumore: passa i controlli completi {passed}/400, solo nsync >= 7 {passed_basic}/400");
         assert!(passed <= 1, "{passed}");
         assert!(passed <= passed_basic);
+    }
+}
+
+#[cfg(test)]
+mod grid_tests {
+    use super::*;
+
+    #[test]
+    fn mittente_e_locatore() {
+        assert_eq!(sender_grid("CQ K1ABC FN42"), Some(("K1ABC".into(), "FN42".into())));
+        assert_eq!(sender_grid("CQ DX K1ABC FN42"), Some(("K1ABC".into(), "FN42".into())));
+        assert_eq!(sender_grid("IU3ABC K1ABC FN42"), Some(("K1ABC".into(), "FN42".into())));
+        assert_eq!(sender_grid("IU3ABC K1ABC RR73"), None);
+        assert_eq!(sender_grid("IU3ABC K1ABC -15"), None);
+        assert_eq!(sender_grid("CQ K1ABC"), None);
+        assert_eq!(sender_grid("<IU3ABC> K1ABC FN42"), Some(("K1ABC".into(), "FN42".into())));
+    }
+
+    #[test]
+    fn il_controllo_vale_solo_per_i_messaggi_deboli_o_a_priori() {
+        let never = GridCheck::new(|_, _| false);
+        assert!(grid_is_false("CQ K1ABC FN42", -15.0, 0, Some(&never)));
+        assert!(grid_is_false("CQ K1ABC FN42", 5.0, 1, Some(&never)));
+        assert!(!grid_is_false("CQ K1ABC FN42", 5.0, 0, Some(&never)), "forte e senza AP: non e' un falso");
+        assert!(!grid_is_false("CQ K1ABC FN42", -15.0, 0, None));
+        assert!(!grid_is_false("IU3ABC K1ABC -15", -15.0, 0, Some(&never)));
     }
 }
