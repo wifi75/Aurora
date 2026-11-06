@@ -200,3 +200,8 @@ html[data-bozza][data-theme='light'] .app-nav a:not(.glass--on):not([aria-curren
 /* Trasmissione: i due riquadri (messaggi a sinistra, QSO a destra) hanno sempre la stessa altezza */
 .tx-split { align-items: stretch; }
 .tx-split > .tx-block { height: auto; box-sizing: border-box; }
+
+/* schermo largo: i riquadri scendono fino quasi alla barra di stato (resta un filo di spazio, prima erano 16 px) */
+@media (min-width: 64rem) {
+  .app-main { padding-bottom: 3px; }
+}
