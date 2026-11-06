@@ -172,7 +172,8 @@ impl DxccDb {
     /// `cty.dat`) piu' di [`GRID_MAX_KM`]: e' un controllo largo, che prende i locatori dall'altra parte del mondo ma non i paesi grandi. Vero se il
     /// nominativo ha un `/` (portatili, maritimi), non si riconosce o il paese non ha una posizione.
     pub fn grid_plausible(&self, call: &str, grid: &str) -> bool {
-        if call.contains('/') {
+        // «RR73» ha la forma di un locatore (nel Pacifico) ma in FT8 e' un saluto: non si giudica
+        if call.contains('/') || grid.trim().eq_ignore_ascii_case("RR73") {
             return true;
         }
         let Some(hit) = self.lookup(call) else { return true };
@@ -266,7 +267,8 @@ Japan:                    25:  45:  AS:   36.00:  -138.00:    -9.0:  JA:
     #[test]
     fn il_centro_di_un_locatore() {
         let (lat, lon) = grid_center("JN45").expect("locatore");
-        assert!((lat - 45.5).abs() < 0.01 && (lon - 11.0).abs() < 0.01, "{lat} {lon}");
+        // JN45: campo J (0 gradi E) + quadrato 4 (8 gradi) + mezzo quadrato = 9 gradi E, 45,5 N (zona di Milano)
+        assert!((lat - 45.5).abs() < 0.01 && (lon - 9.0).abs() < 0.01, "{lat} {lon}");
         let (lat, lon) = grid_center("FN42ab").expect("locatore");
         assert!((lat - 42.02).abs() < 0.05 && (lon + 71.96).abs() < 0.05, "{lat} {lon}");
         assert!(grid_center("RR73x").is_none() && grid_center("ZZ99").is_none() && grid_center("-15").is_none());
