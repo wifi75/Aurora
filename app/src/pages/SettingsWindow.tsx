@@ -36,6 +36,8 @@ interface TabDef {
   icon: string;
   /** `extra`: funzioni che Aurora ha in piu' rispetto alle schede di riferimento, ognuna nella sua scheda e mai dentro un'altra. */
   extra?: boolean;
+  /** L'ultima voce della barra, staccata dalle altre. */
+  last?: boolean;
   render(): ReactNode;
 }
 
@@ -54,7 +56,6 @@ const TABS: readonly TabDef[] = [
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
   { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
-  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => <AboutTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
   { id: 'sequence', label: 'tab.sequence', icon: '↻', extra: true, render: () => <SequenceTab /> },
@@ -67,6 +68,8 @@ const TABS: readonly TabDef[] = [
   { id: 'windows', label: 'tab.windows', icon: '▢', extra: true, render: () => <WindowsTab /> },
   { id: 'phone', label: 'sw.tab.phone', icon: '☎', extra: true, render: () => <AccessTab /> },
   { id: 'support', label: 'tab.support', icon: '✚', extra: true, render: () => <SupportTab /> },
+  // sempre l'ultima della barra
+  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', last: true, render: () => <AboutTab /> },
 ];
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */
@@ -185,6 +188,7 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
           {TABS.map((x, i) => (
             <Fragment key={x.id}>
               {x.extra && !TABS[i - 1]?.extra ? <span className="sw-nav-sep">{t('sw.extra')}</span> : null}
+              {x.last ? <span className="sw-nav-sep sw-nav-sep--line" aria-hidden="true" /> : null}
               <button
                 type="button"
                 role="tab"

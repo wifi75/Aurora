@@ -110,3 +110,5 @@
 .sw-tab--on,.sw-btn--on,.sw-tab:focus-visible,.sw-btn:focus,.sw-panel button:focus-visible{background-image:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 55%,transparent),color-mix(in srgb,var(--sw-accent2) 32%,transparent))}
 .sw-btn--save{background-image:linear-gradient(135deg,var(--sw-accent),color-mix(in srgb,var(--sw-accent2) 70%,#0b1220));border-color:transparent}
 .sw-btn--save:hover:not(:disabled){background-image:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 85%,#fff),var(--sw-accent2))}
+
+.sw-nav-sep--line{display:block;height:0;margin:8px 2px 0;padding:0}
