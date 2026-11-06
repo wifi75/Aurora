@@ -521,3 +521,9 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 .tx-levels .in-level-title, .tx-levels .out-level-title { font-size: 10px; }
 .tx-levels .in-level-value, .tx-levels .out-level-value { font-size: 10px; min-width: 26px; }
 .tx-levels .in-level-auto { height: 18px !important; min-height: 18px !important; padding: 0 5px !important; font-size: 9.5px !important; }
+
+/* come nella bozza: le sei righe dei messaggi restano compatte e i comandi QSO seguono subito sotto (lo spazio in piu' resta in fondo) */
+.dock-panel--tx.grid-panel .tx-panel--combo .tx-list { flex: none; grid-template-rows: repeat(6, 22px); }
+.dock-panel--tx.grid-panel .tx-panel--combo .tx-left { flex: none; }
+.dock-panel--tx.grid-panel .tx-panel--combo .tx-split { justify-content: flex-start; overflow: auto; }
+.dock-panel--tx.grid-panel .tx-panel--combo .tx-block { margin-top: 2px; }
