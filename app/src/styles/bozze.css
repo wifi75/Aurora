@@ -619,3 +619,20 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .cluster-table th:nth-child(4), .cluster-table td:nth-child(4) { left: -57px; }
 .cluster-table th:nth-child(5), .cluster-table td:nth-child(5) { left: -57px; }
 .cluster-table td.cluster-country { left: -75px; }
+
+/* DX Cluster: colonne piu' a sinistra e la colonna Commenti con il suo spazio (la regola vecchia la toglieva) */
+.cluster-table th:nth-child(1) { width: 14%; }
+.cluster-table th:nth-child(2) { width: 14%; }
+.cluster-table th:nth-child(3) { width: 14%; }
+.cluster-table th:nth-child(4) { width: 7%; }
+.cluster-table th:nth-child(5) { width: 11%; }
+.cluster-table th:nth-child(6) { width: 8%; }
+.cluster-table th:nth-child(7) { width: 22%; }
+.cluster-table th:nth-child(8) { width: 10%; }
+.cluster-table th:nth-child(2), .cluster-table td:nth-child(2) { left: -40px; }
+.cluster-table th:nth-child(3), .cluster-table td:nth-child(3) { left: -50px; }
+.cluster-table th:nth-child(4), .cluster-table td:nth-child(4) { left: -72px; }
+.cluster-table th:nth-child(5), .cluster-table td:nth-child(5) { left: -72px; }
+.cluster-table td.cluster-country { left: -90px; }
+.cluster-table th:nth-child(7), .cluster-table td:nth-child(7) { display: table-cell !important; }
+.cluster-table td.cluster-comment { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; opacity: .85; }
