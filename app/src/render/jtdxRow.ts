@@ -357,6 +357,28 @@ export function spectrumCurve(
   return out;
 }
 
+/**
+ * Fa «salire» lo spettro quando il segnale e' debole: il fondo (il punto piu' basso) resta dov'e' e la curva si allarga verso l'alto
+ * finche' i picchi arrivano a circa il 60% dell'altezza (al massimo 5 volte), come negli altri programmi che regolano da soli il guadagno.
+ * Con un segnale gia' alto non cambia niente.
+ */
+export function liftCurve(curve: Float32Array): Float32Array {
+  if (curve.length < 2) return curve;
+  let base = -Infinity;
+  let peak = Infinity;
+  for (const v of curve) {
+    if (v > base) base = v;
+    if (v < peak) peak = v;
+  }
+  const span = base - peak;
+  if (!(span > 0)) return curve;
+  const k = Math.min(5, 0.6 / span);
+  if (k <= 1) return curve;
+  const out = new Float32Array(curve.length);
+  for (let i = 0; i < curve.length; i++) out[i] = base - (base - curve[i]!) * k;
+  return out;
+}
+
 /** Porta una riga alla larghezza della texture: se ha piu' colonne tiene il massimo di ognuna (un segnale stretto non sparisce). */
 export function fitWidth(codes: Uint8Array, width: number): Uint8Array {
   if (codes.length <= width) return codes;

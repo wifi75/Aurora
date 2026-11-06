@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import { createBackend, type WaterfallBackend } from '../render/backend';
 import { jtdxPaletteLut } from '../render/colormap';
-import { PeriodAverage, RowPacer, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
+import { PeriodAverage, RowPacer, cumulativeCurve, fitWidth, liftCurve, processRow, spectrumCurve } from '../render/jtdxRow';
 import { drawSpectrum } from '../render/spectrumPlot';
 import { WATERFALL_WIDTH, rowsPerPixel } from '../render/webgl2';
 import { periodSecs } from '../lib/period';
@@ -177,7 +177,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
           if (Math.min(p.spectrumPercent, MAX_SPECTRUM_SHARE) > 0) {
             const cumulative = p.spectrumMode === 'cumulative' ? periodAverage.average() : null;
             const values = cumulative ? cumulativeCurve(cumulative, binWidthHz, options) : row.y;
-            curveRef.current = spectrumCurve(values, cumulative ? 'cumulative' : 'current', p.gain2d, p.zero2d, p.flatten);
+            curveRef.current = liftCurve(spectrumCurve(values, cumulative ? 'cumulative' : 'current', p.gain2d, p.zero2d, p.flatten));
             drawPlot();
           }
         });
