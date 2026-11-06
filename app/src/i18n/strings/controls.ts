@@ -79,6 +79,14 @@ export const controlStrings = {
   ],
   'tip.ctl.skip_tx1.hound': ['In Hound si parte sempre dal locatore, come chiede la Fox', 'In Hound mode you always start with the locator, as the Fox requires', 'Im Hound-Modus beginnt man immer mit dem Locator, wie der Fox es verlangt', 'En Hound on commence toujours par le locator, comme le demande le Fox', 'En Hound siempre se empieza por el locator, como pide la Fox', 'Em Hound começa-se sempre pelo locator, como a Fox pede'],
   'ctl.pounce': ['Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce', 'Wait and Pounce'],
+  'tip.ctl.pounce.txOn': [
+    'Wait and Pounce si arma solo con Abilita Tx spento: spegni prima Abilita Tx.',
+    'Wait and Pounce arms only with Enable Tx off: turn Enable Tx off first.',
+    'Wait and Pounce schaltet sich nur bei ausgeschaltetem Tx scharf: schalte zuerst Tx aus.',
+    'Wait and Pounce ne s’arme qu’avec Activer Tx éteint : éteins d’abord Activer Tx.',
+    'Wait and Pounce solo se arma con Activar Tx apagado: apaga antes Activar Tx.',
+    'Wait and Pounce só arma com Ativar Tx desligado: desliga primeiro Ativar Tx.',
+  ],
   'tip.ctl.pounce': [
     'Armato con Abilita Tx spento: alla fine del periodo Aurora risponde da sola al CQ scelto con il criterio delle impostazioni (Generali: il primo, il più lontano, il più forte o il più debole), saltando chi hai già collegato; se non risponde entro circa tre chiamate la trasmissione si spegne. Scattato, il pulsante si spegne. Servono le Wait features accese.',
     'Armed with Enable Tx off: at the end of the period Aurora answers by itself the CQ picked by the rule in the settings (General: the first, the farthest, the strongest or the weakest), skipping stations already worked; if there is no answer within about three calls transmission stops. Once it fires, the button switches off. Needs the Wait features on.',

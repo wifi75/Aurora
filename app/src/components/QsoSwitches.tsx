@@ -67,11 +67,11 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
           type="button"
           className={`glass chip${on ? ' glass--on' : ''}${arming ? ' chip--arming' : ''}`}
           aria-pressed={on}
-          disabled={!reachable || (arming && !on && !txAllowed) || (id === 'skip_tx1' && state.hound === true)}
-          title={id === 'skip_tx1' && state.hound === true ? t('tip.ctl.skip_tx1.hound') : t(`tip.ctl.${id}` as Key)}
+          disabled={!reachable || (arming && !on && !txAllowed) || (id === 'skip_tx1' && state.hound === true) || (id === 'pounce' && !on && state.enable_tx === true)}
+          title={id === 'skip_tx1' && state.hound === true ? t('tip.ctl.skip_tx1.hound') : id === 'pounce' && !on && state.enable_tx === true ? t('tip.ctl.pounce.txOn') : t(`tip.ctl.${id}` as Key)}
           onClick={() => void set(id, !on)}
         >
-          {on ? <span className="chip-led" aria-hidden="true" /> : null}
+          <span className={`chip-led${on ? ' chip-led--on' : ''}`} aria-hidden="true" />
           {/* AutoSeq porta il livello nel testo, come nel motore: «AutoSeq 3» */}
           {id === 'autoseq' && autoseqLabel !== '' ? autoseqLabel : t(`ctl.${id}` as Key)}
         </button>

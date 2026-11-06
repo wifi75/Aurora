@@ -37,6 +37,8 @@ export function arrange(cells: Record<string, Cell>, fixed?: string, lift = true
       while (lift && c.y > 0 && !Object.values(placed).some((p) => overlaps({ ...c, y: c.y - 1 }, p))) c.y -= 1;
       while (Object.values(placed).some((p) => overlaps(c, p))) c.y += 1;
     }
+    // nessuna finestra sta sotto la parte visibile (24 righe): se non c'e' posto si sovrappone invece di sparire fuori dallo schermo
+    if (!lift) c.y = Math.max(0, Math.min(c.y, ROWS - c.h));
     placed[id] = c;
   }
   return placed;
@@ -87,8 +89,10 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
   }, []);
   const colW = (width - GAP * (COLS + 1)) / COLS;
   // altezza di una riga: la finestra divisa in ROWS righe (mai meno di 14 px, oltre si scorre)
-  const ROW = Math.max(14, (height - GAP * (ROWS + 1)) / ROWS);
   const shown = live ?? cells;
+  // se qualche blocco e' sceso oltre le 24 righe la griglia si stringe per farli stare tutti nella finestra (niente blocchi nascosti sotto)
+  const rowsUsed = Math.max(ROWS, Math.ceil(Object.values(shown).reduce((m, c) => Math.max(m, c.y + c.h), 0)));
+  const ROW = Math.max(14, (height - GAP * (rowsUsed + 1)) / rowsUsed);
 
   const track = (id: string, mode: 'move' | 'size') => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
@@ -173,7 +177,8 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
       apply();
       setLive(null);
       setGuides([]);
-      onChange(arrange(last, undefined, !free));
+      // libero: `last` e' gia' sistemato con la finestra mossa ferma dove l'hai messa; risistemarlo senza di lei la rimetterebbe dove stava
+      onChange(free ? last : arrange(last, undefined, true));
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);

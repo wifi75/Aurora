@@ -412,3 +412,49 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .dock-panel--tx.grid-panel .tx-list li { height: 22px; font-size: 11px; border-radius: 6px; }
 .dock-panel--tx.grid-panel .tx-n { width: 16px; height: 16px; font-size: 10px; }
 .dock-panel--tx.grid-panel .tx-list li .tx-msg-edit { padding: 0 4px; font-size: 11px; line-height: 1; }
+
+/* QSO: tutti i pulsanti uguali. Il pallino c'e' sempre (anello vuoto spento, pieno verde acceso), stesso peso del testo e colonne fisse:
+   premendo un pulsante non si sposta niente */
+.qso-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 6px !important; }
+.qso-grid .chip {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 28px !important; padding: 0 6px !important;
+  font-size: 11.5px !important; font-weight: 600 !important; letter-spacing: 0 !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.qso-grid .chip.glass--on, .qso-grid .chip[aria-pressed='true'] { font-weight: 600 !important; }
+.qso-grid .chip .chip-led {
+  flex: none; width: 8px !important; height: 8px !important; border-radius: 50%;
+  background: transparent !important; border: 1.5px solid currentColor; opacity: .45; box-shadow: none !important; position: static;
+}
+.qso-grid .chip .chip-led--on { background: #2cf5a4 !important; border-color: #2cf5a4; opacity: 1; box-shadow: 0 0 6px rgba(44, 245, 164, .7) !important; }
+html[data-theme='light'] .qso-grid .chip .chip-led--on { background: #0b9a5a !important; border-color: #0b9a5a; box-shadow: none !important; }
+.qso-grid .chip:disabled { opacity: .5; }
+.qso-grid .chip--period { font-weight: 700 !important; }
+
+/* pulsante «Ripristina» della fase di progetto: in basso a destra sopra il tabellone */
+.board-reset { position: absolute; right: 10px; bottom: 6px; z-index: 80; min-height: 24px; padding: 0 10px; font-size: 11px; }
+
+/* la barra del titolo non si schiaccia mai (se la finestra e' bassa e' il contenuto a ridursi o a scorrere), cosi' si puo' sempre afferrare */
+.grid-panel > .dock-grip { flex: 0 0 auto; min-height: 22px; }
+.grid-panel { overflow: hidden; }
+.dock-panel--waterfall.grid-panel .dock-body { overflow: hidden; }
+
+/* anche la cascata ha la sua barra del titolo: serve per spostarla e per staccarla (una vecchia regola la nascondeva) */
+.dock-panel--waterfall.grid-panel > .dock-grip { display: flex !important; }
+
+/* QSO: le colonne si adattano alla larghezza della finestra e il testo va a capo invece di essere tagliato */
+.qso-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)) !important; }
+.qso-grid .chip {
+  height: auto !important; min-height: 28px; padding: 3px 7px !important;
+  white-space: normal !important; text-overflow: clip !important; overflow: visible !important;
+  line-height: 1.12; text-align: center; font-size: 11.5px !important;
+}
+.qso-grid .chip .chip-led { margin-right: 0; }
+
+/* scheda QSO: carattere piu' piccolo (pulsanti 10 px, titoli di gruppo 9 px, livelli 10 px) */
+.dock-panel--qso.grid-panel .qso-grid .chip { font-size: 10px !important; min-height: 24px; padding: 2px 5px !important; line-height: 1.1; }
+.dock-panel--qso.grid-panel .qso-grid .chip .chip-led { width: 7px !important; height: 7px !important; }
+.dock-panel--qso.grid-panel .qso-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) !important; gap: 5px !important; }
+.dock-panel--qso.grid-panel .qso-group { font-size: 9px; letter-spacing: .08em; margin: 0 0 3px; }
+.dock-panel--qso.grid-panel .in-level, .dock-panel--qso.grid-panel .out-level, .dock-panel--qso.grid-panel .in-level *, .dock-panel--qso.grid-panel .out-level * { font-size: 10px; }
