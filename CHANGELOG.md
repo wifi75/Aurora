@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Crash corretto**: accendendo la radio dopo Aurora, la ripresa automatica dell'audio faceva partire il decodificatore fuori dal suo motore asincrono e Aurora si chiudeva («there is no reactor running», 0.11.155-0.11.158).
+- **Uscita audio**: un attimo di ritardo della scheda (underrun) non la dava piu' per persa; prima la trasmissione seguente falliva con «il dispositivo non risponde piu'».
+- **Blocchi della finestra**: il salvataggio della posizione delle finestre non si fa piu' sul thread della finestra, e spostare o ridimensionare a lungo non e' scambiato per un blocco.
 
 ## 0.11.158 - 2026-11-06
 ### Modificato

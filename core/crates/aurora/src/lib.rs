@@ -1930,7 +1930,11 @@ pub async fn run(
             // e puo' sparire durante l'uso: ogni 5 s si controlla e, se manca, si riprova (l'avviso al massimo ogni 2 minuti)
             if manager.wants_input() {
                 let m = Arc::clone(manager);
+                // il decodificatore parte con il primo ingresso aperto e ha bisogno del runtime asincrono: senza, riaprire l'audio da
+                // questo thread mandava Aurora in crash («there is no reactor running», 0.11.155-0.11.158)
+                let runtime = tokio::runtime::Handle::current();
                 std::thread::spawn(move || {
+                    let _runtime = runtime.enter();
                     let mut missing = !m.has_input();
                     loop {
                         std::thread::sleep(std::time::Duration::from_secs(5));
