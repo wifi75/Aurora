@@ -413,7 +413,7 @@ pub fn start_with_save(
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_options, &mut hashes, &mut ft8_history);
+                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_period_options(&ft4_options, &l.controls, &l.de_call), &mut hashes, &mut ft8_history);
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -521,6 +521,12 @@ pub fn start_with_save(
                     options.ap = None;
                     options.ap_cq = false;
                 }
+                // FT4: analisi a priori sul proprio nominativo e sul QSO in corso (stesso interruttore «a7/a8» di FT8, acceso di base)
+                let mut ft4_slot = live.as_ref().map_or_else(|| ft4_options.clone(), |l| ft4_period_options(&ft4_options, &l.controls, &l.de_call));
+                if peak < 0.02 {
+                    ft4_slot.ap = None;
+                    ft4_slot.ap_cq = false;
+                }
                 // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
                 let mut early: Vec<String> = Vec::new();
                 let mut decoded = if silent {
@@ -533,7 +539,7 @@ pub fn start_with_save(
                     };
                     ft8::decode::decode_slot_streaming(&slot.samples, &options, &mut hashes, Some(&mut ft8_history), &mut on_pass).into_iter().map(|d| d.decoded).collect()
                 } else {
-                    decode_period(mode, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history)
+                    decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history)
                 };
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 let other_mode = match mode {
@@ -543,7 +549,7 @@ pub fn start_with_save(
                 };
                 let mut other_texts: Vec<String> = Vec::new();
                 if let Some(other) = other_mode.filter(|_| live.as_ref().is_some_and(|l| l.controls.switch_on("jt_both"))) {
-                    for d in decode_period(other, &slot.samples, &options, &ft4_options, &mut hashes, &mut ft8_history) {
+                    for d in decode_period(other, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history) {
                         if !decoded.iter().any(|x| x.text == d.text) {
                             other_texts.push(d.text.clone());
                             decoded.push(d);
@@ -778,6 +784,29 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
         options.f_low_hz = (rx - half).max(base.f_low_hz);
         options.f_high_hz = (rx + half).min(base.f_high_hz);
     }
+    options
+}
+
+/// Le opzioni di decodifica FT4 di questo periodo: l'analisi a priori (interruttore «a7/a8», `ap_list`, acceso di base) sul proprio nominativo e sul
+/// QSO in corso. Il punto del QSO viene dal messaggio selezionato (1-5; CQ o nessuno = 0); il DX e il suo locatore dalla pagina; la frequenza
+/// di ricezione e di trasmissione dalle barre. I tipi di QSO valgono solo mentre si trasmette con un DX scelto (`idle` spento).
+fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControls, de_call: &str) -> ft4::decode::Options {
+    let mut options = base.clone();
+    if !controls.switch_on("ap_list") {
+        return options;
+    }
+    let view = tx::view_of(controls);
+    let dx = view.dx.clone().unwrap_or_default();
+    let mut ap = ft8::ap::ApOptions::new(de_call);
+    ap.qso_progress = if dx.is_empty() || !(1..=5).contains(&view.selected) { 0 } else { view.selected };
+    ap.hisgrid = view.dx_grid.clone().unwrap_or_default();
+    ap.idle = !(view.enabled && !dx.is_empty());
+    ap.dx_search = !dx.is_empty();
+    ap.rx_freq_hz = Some(controls.rx_df.load(Ordering::Relaxed) as f32);
+    ap.tx_freq_hz = Some(controls.tx_df.load(Ordering::Relaxed) as f32);
+    ap.hiscall = dx;
+    options.ap = Some(ap);
+    options.ap_cq = true;
     options
 }
 

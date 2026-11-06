@@ -15,11 +15,14 @@
 //!
 //! # Differenze rispetto al Fortran
 //!
-//! - Niente analisi a-priori (AP): servono nominativi (`mycall`, `hiscall`) e lo stato del QSO, che il decoder qui non ha. Restano le tre
-//!   passate senza AP (`ipass` 1-3) di ogni candidato.
-//! - Niente filtri sui falsi legati ai nominativi (`chkflscall`, `chkfalse8`), ne' nascondimento di messaggi di prova o di telemetria
-//!   (`lhidetest`, `lhidetelemetry`), ne' il filtro di frequenza dell'interfaccia (`lfilter`: qui `f_low_hz`/`f_high_hz` alla ricerca). Non c'e'
-//!   la media dello scarto di tempo (`avexdt` sempre 0).
+//! - Analisi a priori (AP) con i tipi di FT8 ([`ft8::ap`]): se [`Options::ap`] (nominativi e QSO) o [`Options::ap_cq`] sono accesi, dopo le tre
+//!   letture senza AP di ogni candidato si provano i tipi del punto del QSO. I bit noti stanno nel messaggio mescolato con [`RVEC`], quindi la
+//!   maschera si porta nel dominio mescolato (segno invertito dove `RVEC` e' 1). Non ci sono i controlli sui toni attesi di `ft8b`: li
+//!   sostituisce un limite ai bit dubbi tra quelli non noti, piu' stretto quanti piu' bit sono noti. Non sono portati i nominativi non standard.
+//! - Filtri sui falsi: i messaggi trovati con l'AP passano sempre per [`filters::reject_message`] (`chkfalse8`); con [`Options::call_book`]
+//!   (l'elenco dei nominativi veri, come `ALLCALL7.TXT`) passano per `chkflscall` anche quelli senza AP. Niente nascondimento di messaggi di
+//!   prova o di telemetria (`lhidetest`, `lhidetelemetry`), ne' il filtro di frequenza dell'interfaccia (`lfilter`: qui `f_low_hz`/`f_high_hz`
+//!   alla ricerca). Non c'e' la media dello scarto di tempo (`avexdt` sempre 0).
 //! - Messaggio di tipo 0.1 (DXpedition): JTDX lo spezza in due righe; qui esce com'e' dal decodificatore dei messaggi.
 //! - In piu', come in `ft8::decode`, un controllo opzionale sui bit dubbi ([`Options::max_hard_errors`]): un messaggio vero ha pochi bit diversi
 //!   dalle decisioni dure del segnale, uno falso (CRC a caso) circa la meta'. In JTDX non c'e'.
@@ -27,6 +30,8 @@
 
 use std::sync::Arc;
 
+use ft8::ap::{ApContext, ApOptions, NAPTYPES};
+use ft8::filters::{self, CallBook, MessageCheck};
 use ft8::ldpc;
 use ft8::message::{self, CallHashes};
 use rustfft::{Fft, FftPlanner};
@@ -35,7 +40,7 @@ pub use ft8::decode::Decoded;
 
 use crate::modem;
 use crate::sync::{self, Candidate, Complex, Downsampler, SyncTables, DOWN_RATE, NDMAX, NSS};
-use crate::{NMAX, NN, NSPS, SAMPLE_RATE};
+use crate::{NMAX, NN, NSPS, RVEC, SAMPLE_RATE};
 
 /// L'audio di JTDX e' a 16 bit (±32768): i campioni normalizzati a ±1 si riportano a quella scala.
 const SCALE: f32 = 32768.0;
@@ -68,6 +73,12 @@ pub struct Options {
     pub max_hard_errors: Option<usize>,
     /// Compensazione AGC (pulsante AGCc): la stessa di FT8 ([`ft8::sync::agc_compensate_len`]) sul tratto del periodo che si decodifica.
     pub agc: bool,
+    /// Analisi a priori per il proprio nominativo e il QSO (`None`: solo il tipo CQ, se acceso).
+    pub ap: Option<ApOptions>,
+    /// Tipo a priori 1, `CQ ??? ???`: non richiede di sapere niente.
+    pub ap_cq: bool,
+    /// Elenco dei nominativi veri (come `ALLCALL7.TXT`) per `chkflscall`; con un elenco incompleto si scartano stazioni vere.
+    pub call_book: Option<Arc<CallBook>>,
 }
 
 impl Default for Options {
@@ -93,6 +104,9 @@ impl Options {
             swl: false,
             max_hard_errors: Some(MAX_HARD_ERRORS),
             agc: false,
+            ap: None,
+            ap_cq: false,
+            call_book: None,
         };
         match ndepth {
             0 | 1 => {
@@ -120,6 +134,7 @@ pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) 
     }
     let tables = SyncTables::new();
     let subtractor = Subtractor::new();
+    let ap = (options.ap.is_some() || options.ap_cq).then(|| ApContext::new(&options.ap.clone().unwrap_or_else(|| ApOptions::new(""))));
     let mut found: Vec<Decoded> = Vec::new();
     let mut before_pass = 0;
 
@@ -136,7 +151,7 @@ pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) 
         }
         let ds = Downsampler::new(&audio);
         for cand in candidates {
-            let Some(hit) = try_candidate(&ds, &tables, cand, options, hashes) else { continue };
+            let Some(hit) = try_candidate(&ds, &tables, cand, options, ap.as_ref(), hashes) else { continue };
             // come nel Fortran la sottrazione precede il controllo dei doppioni
             if options.subtract {
                 subtractor.subtract(&mut audio, &hit.tones, hit.decoded.freq_hz, hit.start);
@@ -159,7 +174,7 @@ struct Hit {
 }
 
 /// Cerca ritardo e frequenza di un candidato nelle tre finestre di tempo e prova a decodificarlo.
-fn try_candidate(ds: &Downsampler, tables: &SyncTables, cand: Candidate, options: &Options, hashes: &mut CallHashes) -> Option<Hit> {
+fn try_candidate(ds: &Downsampler, tables: &SyncTables, cand: Candidate, options: &Options, ap: Option<&ApContext>, hashes: &mut CallHashes) -> Option<Hit> {
     let f0 = cand.freq_hz;
     let mut cd2 = ds.run(f0);
     sync::normalize(&mut cd2, NDMAX as f32);
@@ -187,18 +202,125 @@ fn try_candidate(ds: &Downsampler, tables: &SyncTables, cand: Candidate, options
         if metrics.sync_bits < MIN_SYNC_BITS {
             continue;
         }
-        if let Some((text, codeword)) = decode_llrs(&metrics, options, hashes) {
-            let snr = sync_to_snr(cand.sync);
-            let dt = al.start as f32 / DOWN_RATE - 0.5;
-            let tones = modem::tones_from_codeword(&codeword);
-            return Some(Hit { decoded: Decoded { freq_hz: f1, dt_s: dt, snr_db: snr, text, hint: false }, tones, start: al.start });
+        let snr = sync_to_snr(cand.sync);
+        let dt = al.start as f32 / DOWN_RATE - 0.5;
+        // prima le tre letture senza AP; se nessuna regge, i tipi a priori
+        let found = decode_llrs(&metrics, options, hashes).or_else(|| ap.and_then(|ctx| decode_ap(&metrics, options, ctx, f1, hashes)));
+        let Some(found) = found else { continue };
+        if rejected(&found, options, snr, dt) {
+            continue;
+        }
+        let tones = modem::tones_from_codeword(&found.codeword);
+        return Some(Hit { decoded: Decoded { freq_hz: f1, dt_s: dt, snr_db: snr, text: found.text, hint: found.ap_type != 0 }, tones, start: al.start });
+    }
+    None
+}
+
+/// Un messaggio decodificato con quello che serve a giudicarlo.
+struct Found {
+    text: String,
+    codeword: [u8; 174],
+    i3: u8,
+    n3: u8,
+    /// Tipo a priori con cui e' stato trovato (0 = nessuno).
+    ap_type: u8,
+    hard_errors: u32,
+    dmin: f32,
+}
+
+/// I filtri sui falsi: sempre per i messaggi trovati con l'AP (che lavorano su bit decisi in partenza), per gli altri solo se si ha l'elenco
+/// dei nominativi (senza, `chkflscall` non ha niente da controllare).
+fn rejected(found: &Found, options: &Options, snr: i32, dt_s: f32) -> bool {
+    if found.ap_type == 0 && options.call_book.is_none() {
+        return false;
+    }
+    let qual = 1.0 - (found.hard_errors as f32 + found.dmin) / 60.0;
+    let check = MessageCheck { text: &found.text, i3: found.i3, n3: found.n3, ap_type: found.ap_type, qual, snr: snr as f32, dt_s };
+    let my_call = options.ap.as_ref().map_or("", |a| a.mycall.as_str());
+    filters::reject_message(&check, my_call, options.call_book.as_deref())
+}
+
+/// I tipi a priori da provare per un candidato a `freq_hz`, nell'ordine di `NAPTYPES` per il punto del QSO (ogni tipo una volta sola: in FT8 si
+/// ripete per le sottoletture). Le condizioni sono quelle di `ap_allowed` di FT8 che non riguardano i toni attesi.
+fn ap_types(options: &Options, ctx: &ApContext, freq_hz: f32) -> Vec<u8> {
+    let o = &ctx.opts;
+    let his_given = o.hiscall.trim().len() >= 3;
+    let far = o.rx_freq_hz.is_none_or(|r| (r - freq_hz).abs() > o.width_hz) && o.tx_freq_hz.is_none_or(|t| (t - freq_hz).abs() > o.width_hz);
+    let mut types: Vec<u8> = Vec::new();
+    for &t in &NAPTYPES[usize::from(o.qso_progress).min(5)] {
+        if t == 0 || types.contains(&t) {
+            continue;
+        }
+        let qso_type = (3..31).contains(&t);
+        let allowed = match t {
+            1 => options.ap_cq,
+            // `MYCALL ??? ???`: in ricezione a vuoto un messaggio "per me" trovato nel rumore e' quasi sempre un falso
+            2 => o.my_call_active && ctx.my_ok,
+            _ if !his_given => false,
+            // con il nominativo del DX non standard restano solo CQ e `MYCALL ??? ???`
+            _ if !ctx.his_ok => false,
+            3..=30 => !o.idle && !far && ctx.my_ok && o.my_call_active,
+            _ => o.idle && o.dx_search && (o.wide_dx_search || !far),
+        };
+        if allowed && !(qso_type && o.idle) {
+            types.push(t);
+        }
+    }
+    types
+}
+
+/// Limite ai bit dubbi tra quelli non noti: un messaggio vero ne ha pochi, un'estrazione a caso circa la meta'. Piu' bit sono noti, meno
+/// bit liberi ci sono e piu' facile e' che il rumore combaci per caso, quindi il limite scende (45 al massimo, come senza AP).
+fn ap_error_limit(mask: &[bool; 174]) -> u32 {
+    let free = mask.iter().filter(|&&m| !m).count();
+    ((free as f32 * 0.35) as u32).min(MAX_HARD_ERRORS as u32)
+}
+
+/// L'analisi a priori su un candidato: per ogni tipo e per ognuna delle tre serie di LLR la propagazione di credenze con i bit noti fissati
+/// e, sulla prima serie, l'OSD. Il primo messaggio valido vince.
+fn decode_ap(metrics: &sync::Metrics, options: &Options, ctx: &ApContext, freq_hz: f32, hashes: &mut CallHashes) -> Option<Found> {
+    for t in ap_types(options, ctx, freq_hz) {
+        for (k, base) in metrics.llr.iter().enumerate() {
+            let apmag = base.iter().fold(0.0f32, |m, v| m.max(v.abs())) * 1.01;
+            let Some((mut z, mask)) = ctx.apply(t, base, apmag) else { break };
+            // i bit noti sono quelli del messaggio; sul filo c'e' il messaggio mescolato con RVEC
+            for (i, &r) in RVEC.iter().enumerate() {
+                if mask[i] && r == 1 {
+                    z[i] = -z[i];
+                }
+            }
+            let quality = match ldpc::bp_decode_masked(&z, &mask, options.bp_iterations) {
+                Some(q) => Some(q),
+                None if k == 0 && options.osd_order > 0 => ldpc::osd_decode_masked(&z, &mask, options.osd_order),
+                None => None,
+            };
+            let Some(q) = quality else { continue };
+            if q.hard_errors > ap_error_limit(&mask) || !filters::accept_decode(q.hard_errors, q.dmin, false) {
+                continue;
+            }
+            let mut scrambled = [0u8; 77];
+            scrambled.copy_from_slice(&q.decoded.message[..77]);
+            if scrambled.iter().all(|&b| b == 0) {
+                continue;
+            }
+            let bits = modem::scramble(&scrambled);
+            let (i3, n3) = message::message_type(&bits);
+            if i3 > 4 || (i3 == 0 && n3 > 5) {
+                continue;
+            }
+            let Ok(text) = message::unpack(&bits, hashes) else { continue };
+            let text = if (i3, n3) == (0, 0) { text } else { strip_braces(&text) };
+            if text.trim().is_empty() || (t == 1 && text.starts_with("CQ DE AA00")) {
+                continue;
+            }
+            return Some(Found { text, codeword: q.decoded.codeword, i3, n3, ap_type: t, hard_errors: q.hard_errors, dmin: q.dmin });
         }
     }
     None
 }
 
 /// Le tre serie di LLR, nell'ordine: per ognuna la propagazione di credenze e, se non basta, l'OSD. Il primo messaggio valido vince.
-fn decode_llrs(metrics: &sync::Metrics, options: &Options, hashes: &mut CallHashes) -> Option<(String, [u8; 174])> {
+fn decode_llrs(metrics: &sync::Metrics, options: &Options, hashes: &mut CallHashes) -> Option<Found> {
     for llr in &metrics.llr {
         let mut code = ldpc::bp_decode(llr, options.bp_iterations);
         if code.is_none() && options.osd_order > 0 {
@@ -218,12 +340,13 @@ fn decode_llrs(metrics: &sync::Metrics, options: &Options, hashes: &mut CallHash
         scrambled.copy_from_slice(&code.message[..77]);
         let bits = modem::scramble(&scrambled);
         let Ok(text) = message::unpack(&bits, hashes) else { continue };
-        let free_text = message::message_type(&bits) == (0, 0);
-        let text = if free_text { text } else { strip_braces(&text) };
+        let (i3, n3) = message::message_type(&bits);
+        let text = if (i3, n3) == (0, 0) { text } else { strip_braces(&text) };
         if text.trim().is_empty() {
             continue;
         }
-        return Some((text, code.codeword));
+        let hard_errors = code.codeword.iter().zip(llr.iter()).filter(|&(&bit, &l)| (l > 0.0) != (bit == 1)).count() as u32;
+        return Some(Found { text, codeword: code.codeword, i3, n3, ap_type: 0, hard_errors, dmin: 0.0 });
     }
     None
 }
@@ -460,6 +583,66 @@ mod tests {
                 assert!((d.dt_s - dt).abs() < 0.02, "dt {dt}: {d:?}");
             }
         }
+    }
+
+    fn ap_with(mycall: &str, hiscall: &str, progress: u8) -> ApContext {
+        let mut o = ApOptions::new(mycall);
+        o.hiscall = hiscall.into();
+        o.hisgrid = "FN42".into();
+        o.qso_progress = progress;
+        o.idle = false;
+        o.rx_freq_hz = Some(1500.0);
+        ApContext::new(&o)
+    }
+
+    #[test]
+    fn i_bit_noti_dell_ap_sono_nel_dominio_mescolato() {
+        // "IU3ABC K1ABC RR73" (tipo 6): tutti i 77 bit noti; i bit sul filo sono il messaggio mescolato con RVEC
+        let ctx = ap_with("IU3ABC", "K1ABC", 3);
+        let bits = message::pack("IU3ABC K1ABC RR73", &mut CallHashes::default()).expect("messaggio valido");
+        let wire = modem::scramble(&bits);
+        let (mut z, mask) = ctx.apply(6, &[0.0; 174], 10.0).expect("tipo 6");
+        for (i, &r) in RVEC.iter().enumerate() {
+            if mask[i] && r == 1 {
+                z[i] = -z[i];
+            }
+        }
+        assert_eq!(mask.iter().filter(|&&m| m).count(), 77);
+        for i in 0..77 {
+            assert_eq!(z[i] > 0.0, wire[i] == 1, "bit {i}");
+        }
+    }
+
+    #[test]
+    fn i_tipi_ap_seguono_il_punto_del_qso_e_le_condizioni() {
+        let none = Options::default();
+        let cq = Options { ap_cq: true, ..Options::default() };
+        // in ricezione a vuoto (idle) niente tipi di QSO; il CQ solo se acceso
+        let mut idle = ApOptions::new("IU3ABC");
+        idle.hiscall = "K1ABC".into();
+        let ctx = ApContext::new(&idle);
+        assert!(!ap_types(&none, &ctx, 1500.0).contains(&1));
+        assert!(ap_types(&cq, &ctx, 1500.0).contains(&1));
+        assert!(!ap_types(&cq, &ctx, 1500.0).iter().any(|t| (3..31).contains(t)));
+        // in QSO, sulla frequenza: i tipi 3-6; lontano dalla frequenza no
+        let ctx = ap_with("IU3ABC", "K1ABC", 3);
+        let near = ap_types(&cq, &ctx, 1510.0);
+        assert!(near.contains(&3) && near.contains(&6) && near.contains(&5) && near.contains(&4), "{near:?}");
+        assert!(!ap_types(&cq, &ctx, 2800.0).iter().any(|t| (3..31).contains(t)));
+        // senza il nominativo del DX restano solo CQ e MYCALL
+        let ctx = ap_with("IU3ABC", "", 0);
+        assert!(ap_types(&cq, &ctx, 1500.0).iter().all(|t| matches!(t, 1 | 2)));
+        // niente di niente senza dati
+        assert!(ap_types(&none, &ApContext::new(&ApOptions::new("")), 1500.0).is_empty());
+    }
+
+    #[test]
+    fn il_limite_ai_bit_dubbi_scende_con_i_bit_noti() {
+        let ctx = ap_with("IU3ABC", "K1ABC", 3);
+        let (_, few) = ctx.apply(1, &[0.0; 174], 10.0).expect("tipo 1");
+        let (_, all) = ctx.apply(6, &[0.0; 174], 10.0).expect("tipo 6");
+        assert_eq!(ap_error_limit(&few), 45);
+        assert!(ap_error_limit(&all) < 35);
     }
 
     #[test]
