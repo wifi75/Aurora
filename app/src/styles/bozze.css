@@ -492,3 +492,7 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 /* scheda DXCC nel Log: le etichette NEW ONE / NEW BAND ... piu' piccole */
 .dock-panel--log .dxcc-labels { gap: 3px !important; }
 .dock-panel--log .dxcc-label { padding: 0 3px !important; font-size: 9px !important; line-height: 17px; letter-spacing: 0 !important; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Ripristina: fuori dal flusso, non sposta mai le finestre; piccolo, in basso a destra sopra la barra */
+.live-board > .board-reset { position: absolute !important; right: 14px !important; bottom: 4px !important; left: auto !important; top: auto !important; margin: 0 !important; width: auto; min-height: 22px !important; height: 22px; padding: 0 8px !important; font-size: 10.5px !important; z-index: 90; opacity: .75; }
+.live-board > .board-reset:hover { opacity: 1; }

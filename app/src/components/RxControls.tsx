@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type ReactNode } from 'react';
-import { formatClock } from '../lib/format';
+import { useState, type ReactNode } from 'react';
 import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
@@ -13,23 +12,6 @@ const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'agc', 'f
 const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
-
-/**
- * L'ora UTC del PC accanto ai comandi: sono i secondi che contano per i periodi. L'avanzamento del periodo (prima «9/15» qui) sta nella
- * barra di stato in fondo alla finestra: non si ripete.
- */
-function PeriodClock({ clockLabel }: { clockLabel: string }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(timer);
-  }, []);
-  return (
-    <time className="period period--clock" dateTime={new Date(now).toISOString()} aria-label={clockLabel} title={clockLabel}>
-      <span className="period-text data">{formatClock(now)}</span>
-    </time>
-  );
-}
 
 /** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo; `trailing` sta a destra, sulla stessa riga. */
 export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu' qui (il colore della barra del periodo se n'e' andato con la barra); resta per chi lo passa. */ transmitting?: boolean; trailing?: ReactNode }) {
@@ -90,7 +72,6 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
           </button>
         ))}
       </div>
-      <PeriodClock clockLabel={t('ctl.clock')} />
       {note ? <span className="live-note" role="status">{note}</span> : null}
       {trailing ? <div className="rx-trailing">{trailing}</div> : null}
     </div>
