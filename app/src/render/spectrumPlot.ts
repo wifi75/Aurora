@@ -23,7 +23,7 @@ export interface PlotColors {
 }
 
 /** I colori di JTDX: fondo darkBlue -> nero, griglia bianca a puntini, curva verde. */
-export const JTDX_PLOT_COLORS: PlotColors = { top: '#000080', bottom: '#000000', grid: 'rgba(255,255,255,0.55)', curve: '#00ff00' };
+export const JTDX_PLOT_COLORS: PlotColors = { top: '#02020c', bottom: '#000000', grid: 'rgba(255,255,255,0.55)', curve: '#00ff00' };
 
 /** Disegna lo sfondo, la griglia e la curva (ordinate come frazioni di altezza dall'alto, una per pixel di cascata). */
 export function drawSpectrum(

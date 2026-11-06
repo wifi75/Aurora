@@ -660,3 +660,6 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 /* lo spettro sotto la cascata si vede anche con la finestra bassa: minimi piu' piccoli (cascata 28, spettro 28) */
 .waterfall--bar .wf-main { min-height: 28px !important; }
 .waterfall--bar .wf-spectrum { flex: 1 0 28px !important; min-height: 28px !important; }
+
+/* lo spettro comincia dove finisce la cascata: sfondo nero e una riga chiara di separazione */
+.waterfall--bar .wf-spectrum { border-top: 1px solid rgba(255, 255, 255, 0.28); box-sizing: border-box; }
