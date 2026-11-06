@@ -41,31 +41,33 @@ html[data-bozza='a'][data-theme='light'] .alert-switch button[aria-pressed='true
 html[data-bozza='a'][data-theme='light'] .dock-panel { background: #ffffff; border: 1px solid #aab6cc; box-shadow: none; }
 html[data-bozza='a'][data-theme='light'] .dock-grip { background: transparent; border-bottom: 1px solid #d3dbe8; }
 
-/* ---- menu in alto: pillole con il pallino verde, come nello stile di riferimento ---- */
-html[data-bozza] .app-nav { gap: 8px; align-items: center; }
+/* ---- menu in alto: pillole piccole con il pallino e i colori dell'aurora (verde, turchese, viola) ---- */
+html[data-bozza] .app-nav { gap: 6px; align-items: center; }
 html[data-bozza] .app-nav a,
 html[data-bozza] .app-nav a.glass,
 html[data-bozza] .app-nav a.glass--on {
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 32px; padding: 0 16px 0 12px;
-  border: 1px solid #27375a; border-image: none; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 26px; padding: 0 11px 0 9px;
+  border: 1px solid #2d3d66; border-image: none; border-radius: 999px;
   background: #0f192b; color: var(--text);
-  font-size: 13px; font-weight: 600; letter-spacing: 0; box-shadow: none;
-  transition: background-color .15s ease, border-color .15s ease;
+  font-size: 12px; font-weight: 600; letter-spacing: 0; box-shadow: none;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 html[data-bozza] .app-nav a::before {
-  content: ''; flex: none; width: 9px; height: 9px; border-radius: 50%;
-  background: #2cf5a4; box-shadow: 0 0 0 2px rgba(44, 245, 164, .22), 0 0 8px rgba(44, 245, 164, .7);
+  content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%;
+  background: linear-gradient(135deg, #2cf5a4, #27d6f5 55%, #8e7bff);
+  box-shadow: 0 0 6px rgba(39, 214, 245, .6);
 }
-html[data-bozza] .app-nav a:hover { background: #16253f; border-color: #3a5288; color: var(--text); }
+html[data-bozza] .app-nav a:hover { background: linear-gradient(135deg, rgba(142, 123, 255, .16), rgba(39, 214, 245, .10)); border-color: #27d6f5; color: var(--text); }
 html[data-bozza] .app-nav a.glass--on,
 html[data-bozza] .app-nav a[aria-current='page'] {
-  background: #0e2a24; border: 1px solid #2cf5a4; border-image: none; color: #eafff6; font-weight: 700; box-shadow: none;
+  background: linear-gradient(135deg, rgba(142, 123, 255, .34), rgba(44, 245, 164, .16)); border: 1px solid #8e7bff; border-image: none; color: #fff; font-weight: 700;
+  box-shadow: 0 0 12px -3px rgba(142, 123, 255, .7);
 }
 html[data-bozza] .app-nav a.glass--on::before,
-html[data-bozza] .app-nav a[aria-current='page']::before { box-shadow: 0 0 0 3px rgba(44, 245, 164, .35), 0 0 12px rgba(44, 245, 164, .9); }
+html[data-bozza] .app-nav a[aria-current='page']::before { box-shadow: 0 0 0 2px rgba(142, 123, 255, .4), 0 0 9px rgba(44, 245, 164, .8); }
 html[data-bozza][data-theme='light'] .app-nav a { background: #ffffff; border-color: #7a8aa6; color: #0b1322; }
-html[data-bozza][data-theme='light'] .app-nav a::before { background: #0b9a6a; box-shadow: 0 0 0 2px rgba(11, 154, 106, .2); }
-html[data-bozza][data-theme='light'] .app-nav a:hover { background: #eef3fa; border-color: #4a5d82; }
+html[data-bozza][data-theme='light'] .app-nav a::before { background: linear-gradient(135deg, #0b9a6a, #1f8fd0 55%, #5b45d6); box-shadow: none; }
+html[data-bozza][data-theme='light'] .app-nav a:hover { background: linear-gradient(135deg, rgba(91, 69, 214, .12), rgba(11, 127, 117, .10)); border-color: #5b45d6; }
 html[data-bozza][data-theme='light'] .app-nav a.glass--on,
-html[data-bozza][data-theme='light'] .app-nav a[aria-current='page'] { background: #d3f1e8; border-color: #0b7f75; color: #064e46; }
+html[data-bozza][data-theme='light'] .app-nav a[aria-current='page'] { background: linear-gradient(135deg, rgba(91, 69, 214, .22), rgba(11, 127, 117, .14)); border-color: #5b45d6; color: #0b1322; box-shadow: none; }
