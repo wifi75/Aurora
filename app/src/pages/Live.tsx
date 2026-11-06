@@ -169,7 +169,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           return (
             <div className="cq-split">
               <div className="cq-split-main">{cqList}</div>
-              <DxpedPanel heardCalls={heardCalls} foxCalls={[...foxCalls(decodes.slice(0, 300))]} keepDays={prefs.dxpedDays} />
+              <DxpedPanel heardCalls={heardCalls} foxCalls={[...foxCalls(decodes.slice(0, 300))]} keepDays={prefs.dxpedDays} soonDays={120} />
             </div>
           );
         }
