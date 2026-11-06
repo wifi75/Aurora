@@ -796,6 +796,8 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
         a8: a8.filter(ft8::a8::A8Query::usable),
         period_key: Some(slot_start_ms / 15_000),
         threads,
+        // nominativo, DX e punto del QSO per i tipi a priori (in Hound si cerca solo la Fox: niente QSO normale)
+        ap: if controls.switch_on("hound") { None } else { ap_options(controls, de_call) },
         ..base.clone()
     };
     if controls.switch_on("filter") {
@@ -812,8 +814,18 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
 /// di ricezione e di trasmissione dalle barre. I tipi di QSO valgono solo mentre si trasmette con un DX scelto (`idle` spento).
 fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControls, de_call: &str) -> ft4::decode::Options {
     let mut options = base.clone();
+    if let Some(ap) = ap_options(controls, de_call) {
+        options.ap = Some(ap);
+        options.ap_cq = true;
+    }
+    options
+}
+
+/// L'analisi a priori di questo periodo (FT8 e FT4): il proprio nominativo, il DX e il suo locatore dalla pagina, il punto del QSO dal messaggio
+/// selezionato (1-5; CQ o nessuno = 0), le frequenze dalle barre. `None` con l'interruttore «a7/a8» (`ap_list`) spento.
+fn ap_options(controls: &rig::NativeControls, de_call: &str) -> Option<ft8::ap::ApOptions> {
     if !controls.switch_on("ap_list") {
-        return options;
+        return None;
     }
     let view = tx::view_of(controls);
     let dx = view.dx.clone().unwrap_or_default();
@@ -821,13 +833,13 @@ fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControl
     ap.qso_progress = if dx.is_empty() || !(1..=5).contains(&view.selected) { 0 } else { view.selected };
     ap.hisgrid = view.dx_grid.clone().unwrap_or_default();
     ap.idle = !(view.enabled && !dx.is_empty());
+    // i tipi con il proprio nominativo solo con Abilita Tx: in ascolto a vuoto un messaggio "per me" trovato nel rumore e' quasi sempre un falso
+    ap.my_call_active = view.enabled;
     ap.dx_search = !dx.is_empty();
     ap.rx_freq_hz = Some(controls.rx_df.load(Ordering::Relaxed) as f32);
     ap.tx_freq_hz = Some(controls.tx_df.load(Ordering::Relaxed) as f32);
     ap.hiscall = dx;
-    options.ap = Some(ap);
-    options.ap_cq = true;
-    options
+    Some(ap)
 }
 
 fn as_decoded(freq_hz: f32, dt_s: f32, snr_db: i32, text: String) -> ft8::decode::Decoded {
