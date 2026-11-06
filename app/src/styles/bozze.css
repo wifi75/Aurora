@@ -604,3 +604,9 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 /* lo spettro sotto la cascata c'e' sempre: la cascata cede spazio (mai sotto 40 px) e lo spettro tiene almeno 36 px, poi prende il resto */
 .waterfall--bar .wf-spectrum { flex: 1 0 36px !important; min-height: 36px !important; display: block !important; }
 .waterfall--bar .wf-splitter { flex: 0 0 7px; }
+
+/* DX Cluster: le colonne Freq, DX e Paese (bandiera e nome) spostate di 30 px a sinistra */
+.cluster-table th:nth-child(2), .cluster-table td:nth-child(2),
+.cluster-table th:nth-child(3), .cluster-table td:nth-child(3),
+.cluster-table th:nth-child(4), .cluster-table td:nth-child(4),
+.cluster-table th:nth-child(5), .cluster-table td:nth-child(5) { position: relative; left: -30px; }
