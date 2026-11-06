@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.158 - 2026-11-06
+### Modificato
+- Attività di banda e CQ: colonne a 10,5 px (km a 9,5 px), niente linea fra bandiera e paese, paese accostato alla bandiera, colonna dei km a larghezza fissa e allineata, più spazio alle etichette.
+- Display a frontalino (FT-2000, IC-7610) nella Stazione: 10 px più alto e centrato fra barra del menu e pannelli.
+
 ## 0.11.157 - 2026-11-06
 ### Modificato
 - Doppio clic su un'altra stazione durante la trasmissione: nello stesso periodo il messaggio in onda si sostituisce al volo (niente arresto del Tx); nel periodo opposto la trasmissione si ferma come prima.

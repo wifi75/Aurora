@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.158',
+    released: '2026-11-06T17:49:53Z',
+    kind: 'changed',
+    title: ['Attività di banda e display più ordinati', 'Tidier Band activity and display', 'Aufgeräumtere Bandaktivität und Display', 'Activité de bande et afficheur plus nets', 'Actividad de banda y display más ordenados', 'Atividade de banda e display mais arrumados'],
+    text: [
+      "Attività di banda e CQ: tutte le colonne a 10,5 px, niente linea dopo la bandiera, nome del paese accostato alla bandiera, colonna dei km fissa e allineata in ogni riga. Il display della radio a frontalino (FT-2000, IC-7610) è 10 pixel più alto e centrato con lo stesso spazio verso il menu e verso i pannelli.",
+      "Band activity and CQ: all columns at 10.5 px, no line after the flag, country name next to the flag, km column fixed and aligned on every row. The front-panel radio display (FT-2000, IC-7610) is 10 pixels taller and centred with the same space towards the menu and the panels.",
+      "Bandaktivität und CQ: alle Spalten mit 10,5 px, keine Linie nach der Flagge, Ländername direkt neben der Flagge, km-Spalte fest und in jeder Zeile ausgerichtet. Das Frontplatten-Display (FT-2000, IC-7610) ist 10 Pixel höher und mittig mit gleichem Abstand zu Menü und Fenstern.",
+      "Activité de bande et CQ : toutes les colonnes à 10,5 px, plus de ligne après le drapeau, nom du pays collé au drapeau, colonne km fixe et alignée sur chaque ligne. L’afficheur façon façade (FT-2000, IC-7610) est 10 pixels plus haut et centré avec le même espace vers le menu et les panneaux.",
+      "Actividad de banda y CQ: todas las columnas a 10,5 px, sin línea tras la bandera, nombre del país junto a la bandera, columna de km fija y alineada en cada fila. El display de frontal (FT-2000, IC-7610) es 10 píxeles más alto y centrado con el mismo espacio hacia el menú y los paneles.",
+      "Atividade de banda e CQ: todas as colunas a 10,5 px, sem linha depois da bandeira, nome do país junto à bandeira, coluna de km fixa e alinhada em cada linha. O display de frontal (FT-2000, IC-7610) tem mais 10 píxeis de altura e fica centrado com o mesmo espaço para o menu e os painéis.",
+    ],
+  },
+  {
     version: '0.11.157',
     released: '2026-11-06T17:25:40Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans le champ Port de la radio on peut maintenant écrire une adresse réseau, comme 127.0.0.1:4532 pour « Hamlib NET rigctl » ou flrig, en plus de choisir un port COM. Dans le panneau « CQ et nouveautés » le nom du pays reste lisible, et l’afficheur presque carré se place au-dessus de l’en-tête.",
       "En el campo Puerto de la radio ahora se puede escribir una dirección de red, como 127.0.0.1:4532 para «Hamlib NET rigctl» o flrig, además de elegir un COM. En el panel «CQ y novedades» el nombre del país sigue siendo legible, y la pantalla casi cuadrada queda sobre la cabecera.",
       "No campo Porta do rádio agora pode-se escrever um endereço de rede, como 127.0.0.1:4532 para «Hamlib NET rigctl» ou flrig, além de escolher uma COM. No painel «CQ e novidades» o nome do país continua legível, e o ecrã quase quadrado fica por cima do cabeçalho.",
-    ],
-  },
-  {
-    version: '0.11.118',
-    released: '2026-11-04T17:21:58Z',
-    kind: 'new',
-    title: ["Pannelli da togliere e log grandi", "Removable panels and large logs", "Ausblendbare Felder und große Logs", "Panneaux masquables et gros journaux", "Paneles que se quitan y logs grandes", "Painéis removíveis e logs grandes"],
-    text: [
-      "In Impostazioni › Finestre scegli quali pannelli della stazione mostrare (cascata, attività di banda, log, DX Cluster…) e li rimetti quando vuoi. L’importazione ADIF accetta file fino a 256 MB e, se il file è troppo grande, lo dice chiaramente.",
-      "In Settings › Windows you choose which station panels to show (waterfall, band activity, log, DX Cluster…) and bring them back whenever you like. ADIF import accepts files up to 256 MB and clearly says so if a file is too large.",
-      "Unter Einstellungen › Fenster wählst du, welche Felder der Station angezeigt werden (Wasserfall, Bandaktivität, Log, DX-Cluster…), und holst sie jederzeit zurück. Der ADIF-Import nimmt Dateien bis 256 MB an und sagt klar, wenn eine Datei zu groß ist.",
-      "Dans Réglages › Fenêtres tu choisis quels panneaux de la station afficher (chute d’eau, activité de bande, journal, DX Cluster…) et tu les remets quand tu veux. L’import ADIF accepte des fichiers jusqu’à 256 Mo et le dit clairement si un fichier est trop gros.",
-      "En Ajustes › Ventanas eliges qué paneles de la estación mostrar (cascada, actividad de banda, log, DX Cluster…) y los vuelves a poner cuando quieras. La importación ADIF acepta archivos de hasta 256 MB y avisa claramente si un archivo es demasiado grande.",
-      "Em Definições › Janelas escolhes que painéis da estação mostrar (cascata, atividade de banda, log, DX Cluster…) e voltas a pô-los quando quiseres. A importação ADIF aceita ficheiros até 256 MB e diz claramente se um ficheiro é grande demais.",
     ],
   },
 ];

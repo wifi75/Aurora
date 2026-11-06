@@ -6404,3 +6404,128 @@
     grid-template-columns: 3.6rem 1.8rem minmax(0, 1.15fr) minmax(0, 1fr) calc(5rem - 7px);
   }
 }
+
+/* Attivita' di banda e CQ: nessuna linea fra la bandiera e il nome del paese */
+.dock-panel--all .decode-where > :nth-child(2),
+.dock-panel--cq .decode-where > :nth-child(2) {
+  border-left: 0;
+}
+
+/* colonna dei km: larghezza fissa (misurata su «99999 km» a 0.66rem), cosi' le linee restano allineate in tutte le righe */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.5rem minmax(3.5rem, 1fr) 3.9rem;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where .w-km:empty,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km:empty {
+  display: flex;
+}
+
+/* testo della chiamata piu' piccolo */
+.dock-panel--all .decode-list .decode-row .decode-text,
+.dock-panel--all .decode-list .decode-row .decode-text .data,
+.dock-panel--cq .decode-list .decode-row .decode-text,
+.dock-panel--cq .decode-list .decode-row .decode-text .data {
+  font-size: 0.64rem;
+}
+
+/* nome del paese accostato alla bandiera */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.35rem minmax(3.5rem, 1fr) 3.9rem;
+}
+
+.dock-panel--all .decode-where > .w-flag,
+.dock-panel--cq .decode-where > .w-flag {
+  justify-content: flex-end;
+  padding-right: 0;
+}
+
+.dock-panel--all .decode-where > .w-country,
+.dock-panel--cq .decode-where > .w-country {
+  padding-left: 0.2rem;
+}
+
+/* orario piu' piccolo */
+.dock-panel--all .decode-list .decode-row .c-time,
+.dock-panel--cq .decode-list .decode-row .c-time {
+  font-size: 0.64rem;
+}
+
+/* Attivita' di banda e CQ: tutte le colonne alla stessa misura, 10.5 px */
+.dock-panel--all .decode-list .decode-row .c-time,
+.dock-panel--all .decode-list .decode-row .c-snr,
+.dock-panel--all .decode-list .decode-row .decode-text,
+.dock-panel--all .decode-list .decode-row .decode-text .data,
+.dock-panel--all .decode-list .decode-country,
+.dock-panel--all .decode-list .decode-row .decode-where .w-km,
+.dock-panel--cq .decode-list .decode-row .c-time,
+.dock-panel--cq .decode-list .decode-row .c-snr,
+.dock-panel--cq .decode-list .decode-row .decode-text,
+.dock-panel--cq .decode-list .decode-row .decode-text .data,
+.dock-panel--cq .decode-list .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km {
+  font-size: 10.5px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 10.5px;
+}
+
+/* bandiera e paese piu' a sinistra: la colonna della chiamata e' larga quanto serve a un messaggio normale (circa 18 caratteri a 10.5 px) */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, 7.8rem) minmax(5rem, 1fr) calc(5rem - 7px);
+  }
+}
+
+/* colonna dei km piu' stretta: misurata su «16923 km» a 10.5 px con poco margine */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.35rem minmax(3.5rem, 1fr) 3.55rem;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where .w-km,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km {
+  padding: 0 0.15rem 0 0.25rem;
+  letter-spacing: -0.03em;
+}
+
+/* km: carattere piu' piccolo (9.5 px) e colonna ristretta di conseguenza */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.35rem minmax(3.5rem, 1fr) 3.2rem;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where .w-km,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km {
+  font-size: 9.5px;
+}
+
+/* km piu' a sinistra: il paese si ferma a 6.5rem (i nomi lunghi si accorciano coi puntini), lo spazio che avanza va all'etichetta */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, 7.8rem) minmax(5rem, 11.05rem) minmax(calc(5rem - 7px), 1fr);
+  }
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.35rem minmax(0, 6.5rem) 3.2rem;
+}
+
+/* km 5 px piu' a destra */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, 7.8rem) minmax(5rem, calc(11.05rem + 15px)) minmax(calc(5rem - 7px), 1fr);
+  }
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.35rem minmax(0, calc(6.5rem + 15px)) 3.2rem;
+}
