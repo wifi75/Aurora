@@ -6542,9 +6542,9 @@
   font-size: 9px;
 }
 
-/* Trasmissione: i due cursori (volume di registrazione e Pwr) 31 px piu' in basso */
+/* Trasmissione: i due cursori (volume di registrazione e Pwr) 8 px piu' in basso (con un pannello basso 31 px li spingevano fuori) */
 .dock-panel--tx .tx-levels {
-  margin-top: 31px;
+  margin-top: 8px;
 }
 
 
@@ -6566,4 +6566,44 @@
   flex: 1;
   min-height: 0;
   max-height: none;
+}
+
+/* Statistiche: pagina ordinata ------------------------------------------------------------------------------------------ */
+.stats-page { padding: 0 0.6rem; }
+.stats-page > .page-title { margin: 0.4rem 0 0.8rem; font-size: 1.35rem; letter-spacing: 0.02em; }
+/* riquadri dei numeri: tutti alti uguali, numero grande, didascalia sotto, barra sempre in fondo */
+.stats-tiles { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem !important; }
+.stats-tile { display: flex !important; flex-direction: column; justify-content: flex-start; gap: 0.25rem; min-height: 5.6rem; padding: 0.75rem 0.9rem !important; }
+.stats-tile > strong { font-size: 1.6rem !important; line-height: 1.1; }
+.stats-tile > span.muted { font-size: 0.8rem; }
+.stats-tile > .stats-progress { margin-top: auto; }
+/* due colonne: per banda piu' stretta, scheda DXCC piu' larga; stessa altezza */
+.stats-columns { display: grid !important; grid-template-columns: minmax(20rem, 2fr) minmax(0, 3fr); gap: 0.8rem !important; align-items: stretch; margin-top: 0.8rem; }
+.stats-columns > .stats-card { margin: 0 !important; }
+.stats-card .panel-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+/* tabella per banda: intestazioni e numeri con lo stesso carattere, numeri allineati a destra */
+.stats-bands th { font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stats-bands td { font-size: 0.95rem; }
+.stats-bands th:nth-child(2), .stats-bands th:nth-child(3), .stats-bands td:nth-child(2), .stats-bands td:nth-child(3) { text-align: right; padding-right: 1rem; }
+/* scheda DXCC: etichette e tabella a tutta larghezza */
+.dxcc-labels { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem !important; }
+.dxcc-labels > * { width: auto !important; }
+.dxcc-subject { display: flex !important; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0.6rem 0; }
+.dxcc-subject input { flex: 1 1 12rem; }
+.dxcc-grid { width: 100% !important; table-layout: fixed; }
+.dxcc-grid td, .dxcc-grid th { font-size: 0.85rem; }
+.dxcc-foot, .dxcc-legend { font-size: 0.8rem; }
+@media (max-width: 60rem) { .stats-columns { grid-template-columns: 1fr; } }
+.stats-page .dxcc-card { max-width: none !important; width: 100%; grid-template-columns: minmax(0, 1fr) !important; }
+
+/* Trasmissione: i cursori Rx e Pwr restano sempre visibili in fondo al pannello, qualunque sia la sua altezza;
+   se lo spazio non basta scorre solo la parte sopra (prima si schiacciavano a zero e finivano sotto il bordo) */
+.dock-panel--tx .tx-main > * { flex-shrink: 0; }
+.dock-panel--tx .tx-main > .tx-levels {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: auto;
+  padding: 6px 0 4px;
+  background: var(--panel);
 }
