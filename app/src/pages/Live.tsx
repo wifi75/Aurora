@@ -11,6 +11,8 @@ import { GridBoard } from '../components/GridBoard';
 import { DetachButton } from '../components/DetachButton';
 import { detachedItems, useGroups } from '../lib/detached';
 import { useBoard, type BoardId } from '../lib/boardLayout';
+import { DxMapPage } from './DxMapPage';
+import type { ItemId } from '../lib/detached';
 import { EDIT_LAYOUT } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
@@ -311,12 +313,14 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // si sposta dalla barra del titolo e si ridimensiona dall'angolo in basso a destra; poi le misure salvate restano fisse.
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
-    id === 'tx' ? (
+    id === 'dxmap' ? (
+      <DxMapPage solo />
+    ) : id === 'tx' ? (
       <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
     ) : (
       renderPanel(id)
     );
-  const blockTitle = (id: BoardId): string => titles[id];
+  const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('nav.dxmap') : titles[id]);
   const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
@@ -326,7 +330,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // le finestre staccate sul secondo schermo non si vedono qui (la Trasmissione porta con se' anche il QSO); idem quelle nascoste dalle Impostazioni
   const groups = useGroups();
   const awayIds: PanelId[] = [...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])];
-  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !awayIds.includes(id as PanelId)));
+  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !(awayIds as string[]).includes(id)));
 
   return (
     <div className="live">
@@ -388,7 +392,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
-                  <DetachButton item={id as PanelId} className="dock-detach" />
+                  <DetachButton item={id as ItemId} className="dock-detach" />
                 </header>
                 <div className="dock-body">{blockBody(id as BoardId)}</div>
               </section>

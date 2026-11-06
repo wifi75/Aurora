@@ -7,7 +7,7 @@ import { browserStorage } from './theme';
  * posizione e la sua misura in celle. Si cambia trascinando (barra del titolo) e ridimensionando (angolo in basso a destra) finche'
  * `EDIT_LAYOUT` (lib/bottomLayout.ts) e' acceso; poi le misure salvate restano fisse. Chiave `aurora-board`, sincronizzata come le altre.
  */
-export const BOARD_IDS = ['all', 'log', 'cluster', 'cq', 'waterfall', 'tx'] as const;
+export const BOARD_IDS = ['all', 'log', 'cluster', 'dxmap', 'cq', 'waterfall', 'tx'] as const;
 export type BoardId = (typeof BOARD_IDS)[number];
 
 const KEY = 'aurora-board';
@@ -17,7 +17,8 @@ export function defaultBoard(): Record<BoardId, Cell> {
   return {
     all: { x: 0, y: 0, w: 3, h: 13 },
     log: { x: 3, y: 0, w: 3, h: 13 },
-    cluster: { x: 6, y: 0, w: 6, h: 13 },
+    cluster: { x: 6, y: 0, w: 3, h: 13 },
+    dxmap: { x: 9, y: 0, w: 3, h: 13 },
     waterfall: { x: 0, y: 13, w: 5, h: 11 },
     tx: { x: 5, y: 13, w: 4, h: 11 },
     cq: { x: 9, y: 13, w: 3, h: 11 },
@@ -38,11 +39,12 @@ const overlaps = (a: Cell, b: Cell) => a.x < b.x + b.w - 1e-6 && b.x < a.x + a.w
  * se non c'e' posto, prova la misura di partenza e, in ultimo, torna tutta la disposizione di partenza.
  */
 export function settleBoard(cells: Record<BoardId, Cell>): Record<BoardId, Cell> {
-  const order: BoardId[] = ['waterfall', 'tx', 'cq', 'all', 'log', 'cluster'];
+  const order: BoardId[] = ['waterfall', 'tx', 'cq', 'all', 'log', 'cluster', 'dxmap'];
   const placed: Partial<Record<BoardId, Cell>> = {};
   const fits = (c: Cell) => c.x >= 0 && c.y >= 0 && c.x + c.w <= COLS + 1e-6 && c.y + c.h <= MAX_ROWS + 1e-6 && Object.values(placed).every((p) => !overlaps(c, p));
   const spot = (w: number, h: number): Cell | null => {
-    for (let y = 0; y + h <= MAX_ROWS + 1e-6; y += 0.5) for (let x = 0; x + w <= COLS + 1e-6; x += 0.5) if (fits({ x, y, w, h })) return { x, y, w, h };
+    // il primo posto libero, il piu' in alto possibile; se la larghezza intera non entra si restringe (fino a 2 colonne) prima di scendere
+    for (let y = 0; y + h <= MAX_ROWS + 1e-6; y += 0.5) for (let x = 0; x < COLS; x += 0.5) for (let ww = Math.min(w, COLS - x); ww >= 2; ww -= 0.5) if (fits({ x, y, w: ww, h })) return { x, y, w: ww, h };
     return null;
   };
   const base = defaultBoard();

@@ -21,7 +21,7 @@ function ageOf(nowMs: number, timeOfDayMs: number): number {
 /** Nominativo → quadrato, da tutti i messaggi sentiti da quando il programma e' aperto. */
 const LEARNED_GRIDS = new Map<string, string>();
 const DEFAULTS: DxMapSettings = {
-  style: 'natgeo',
+  style: 'bluemarble',
   nightStyle: 'citylights',
   autoNight: false,
   brightness: 1,

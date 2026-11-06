@@ -67,6 +67,7 @@ export function QsoSwitches({ txAllowed }: { txAllowed: boolean }) {
           type="button"
           className={`glass chip${on ? ' glass--on' : ''}${arming ? ' chip--arming' : ''}`}
           aria-pressed={on}
+          data-ctl={id}
           disabled={!reachable || (arming && !on && !txAllowed) || (id === 'skip_tx1' && state.hound === true) || (id === 'pounce' && !on && state.enable_tx === true)}
           title={id === 'skip_tx1' && state.hound === true ? t('tip.ctl.skip_tx1.hound') : id === 'pounce' && !on && state.enable_tx === true ? t('tip.ctl.pounce.txOn') : t(`tip.ctl.${id}` as Key)}
           onClick={() => void set(id, !on)}
