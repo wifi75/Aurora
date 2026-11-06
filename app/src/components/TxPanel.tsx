@@ -11,6 +11,7 @@ import { useStation } from '../state/station';
 import { InputLevel } from './InputLevel';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
+import { TxQuickControls } from './TxQuickControls';
 import { replyErrorMessage } from '../lib/replyError';
 import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 
@@ -172,6 +173,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 RX
               </span>
             )}
+            <TxQuickControls />
             {/* in Hound lo si vede sempre accanto alle frequenze: chiama sopra 1000 Hz e risponde solo al Fox */}
             {status.dx_call && foxCalls(decodes).has(status.dx_call.toUpperCase()) ? (
               <span className="hound-badge hound-badge--fox" role="status" title={t('tip.foxBadge')}>

@@ -9,6 +9,7 @@ import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 import { DxQsl } from './CallsignTip';
+import { PeriodClockRing } from './PeriodClockRing';
 import { coreText } from '../lib/coreText';
 
 interface Props {
@@ -187,6 +188,32 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
         {!txAllowed && <p className="muted tx-note">{t('tx.closed')}</p>}
         {!reachable && <p className="muted tx-note">{t('ctl.unavailable')}</p>}
 
+        <PeriodClockRing mode={status?.mode ?? 'FT8'} label={t('ctl.period')} />
+        {/* Tx, Rx e Report in grande, come nello stile di riferimento: campo, unita' e il pulsante che copia l'altra frequenza */}
+        <div className="cmd-big" role="group" aria-label={t('ctl.sec.freq')}>
+          <label className="cmd-big-row">
+            <span className="cmd-big-lab">Tx</span>
+            <input type="number" className="cmd-big-in" aria-label="Tx" title={t('tip.ctl.tx')} min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
+            <span className="cmd-big-unit">Hz</span>
+            <button type="button" className="glass cmd-big-btn" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} aria-label="Tx=Rx" onClick={() => void setControl('rx_to_tx')}>
+              ▲
+            </button>
+          </label>
+          <label className="cmd-big-row">
+            <span className="cmd-big-lab">Rx</span>
+            <input type="number" className="cmd-big-in" aria-label="Rx" title={t('tip.ctl.rx')} min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
+            <span className="cmd-big-unit">Hz</span>
+            <button type="button" className="glass cmd-big-btn" disabled={!reachable} title={t('tip.ctl.tx_to_rx')} aria-label="Rx=Tx" onClick={() => void setControl('tx_to_rx')}>
+              ▼
+            </button>
+          </label>
+          <label className="cmd-big-row">
+            <span className="cmd-big-lab" title={t('tip.cmd.report')}>{t('cmd.report')}</span>
+            <input type="number" className="cmd-big-in" aria-label={t('cmd.report')} title={t('tip.cmd.report')} min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
+            <span className="cmd-big-unit">dB</span>
+          </label>
+        </div>
+
         <p className="cmd-cap">{t('cmd.cap.dx')}</p>
         {/* proposta 1: due righe per la stazione, una riga per Tx e una per Rx, ogni pulsante accanto al suo campo */}
         <div className="cmd-line cmd-row" role="group" aria-label={t('ctl.sec.dx')}>
@@ -196,13 +223,10 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
           <DxQsl call={dxCall} />
         </div>
         <div className="cmd-line cmd-row" role="group" aria-label={t('cmd.report')}>
-          <span className="cmd-lab" title={t('tip.cmd.report')}>{t('cmd.report')}</span>
-          <input type="number" className="cmd-report" aria-label={t('cmd.report')} title={t('tip.cmd.report')} min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
           <a className="glass chip" href={dxCall ? `https://www.qrz.com/db/${encodeURIComponent(dxCall)}` : undefined} target="_blank" rel="noreferrer" title={t('tip.cmd.lookup')} aria-disabled={!dxCall}>
             {t('cmd.lookup')}
           </a>
           {press('gen_msgs')}
-          {press('clear_dx')}
         </div>
         {spotOn && dxCall !== '' ? (
           <div className="cmd-line cmd-row">
@@ -222,23 +246,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
           </div>
         ) : null}
 
-        <p className="cmd-cap">{t('cmd.cap.freq')}</p>
-        <div className="cmd-line cmd-row" role="group" aria-label={t('ctl.sec.freq')}>
-          <span className="cmd-lab">Tx</span>
-          <input type="number" className="cmd-hzin" aria-label="Tx" title={t('tip.ctl.tx')} min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
-          <button type="button" className="glass chip" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} onClick={() => void setControl('rx_to_tx')}>
-            ▲ Tx=Rx
-          </button>
-          {toggle('split')}
-        </div>
-        <div className="cmd-line cmd-row">
-          <span className="cmd-lab">Rx</span>
-          <input type="number" className="cmd-hzin" aria-label="Rx" title={t('tip.ctl.rx')} min={100} max={3000} value={rxHz} onChange={(e) => setRxHz(e.target.value)} onBlur={applyRx} onKeyDown={onEnter(applyRx)} />
-          <button type="button" className="glass chip" disabled={!reachable} title={t('tip.ctl.tx_to_rx')} onClick={() => void setControl('tx_to_rx')}>
-            ▼ Rx=Tx
-          </button>
-          {toggle('hold_tx')}
-        </div>
+        <div className="cmd-line">{toggle('hold_tx')}</div>
 
         <p className="cmd-cap">{t('cmd.cap.cq')}</p>
         <div className="cmd-line" role="group" aria-label={t('ctl.sec.send')}>
