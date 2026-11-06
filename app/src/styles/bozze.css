@@ -613,3 +613,9 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 
 /* il nome dello stato piu' vicino alla bandierina (8 px) */
 .cluster-table td.cluster-country { position: relative; left: -38px; }
+
+/* DX Cluster, posizioni finali: Freq -30, DX -35, bandiera -57, nome dello stato -75 (cioe' 18 px piu' vicino alla bandiera) */
+.cluster-table th:nth-child(3), .cluster-table td:nth-child(3) { left: -35px; }
+.cluster-table th:nth-child(4), .cluster-table td:nth-child(4) { left: -57px; }
+.cluster-table th:nth-child(5), .cluster-table td:nth-child(5) { left: -57px; }
+.cluster-table td.cluster-country { left: -75px; }
