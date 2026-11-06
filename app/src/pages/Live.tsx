@@ -153,7 +153,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               />
               <SpotMarkers fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} dialHz={status?.dial_hz} onPick={(hz) => void setFrequency('Rx', hz, postRxFrequency)} />
             </div>
-            <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} />
+            <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} />
           </>
         );
       case 'station':

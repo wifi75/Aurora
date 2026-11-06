@@ -354,21 +354,73 @@ button.primary {
   padding: var(--space-3);
 }
 
-/* Righello delle frequenze */
+/* Righello delle frequenze: stretto, con le tacche ogni 100 Hz, le parentesi Tx (arancione, sopra) e Rx (verde, sotto) */
 .ruler {
-  margin-top: var(--space-1);
+  flex: 0 0 auto;
+  margin-top: 0;
+  background: var(--wf-bg);
+  border-top: 1px solid var(--border);
 }
 
-.ruler-markers {
+.ruler-strip {
   position: relative;
-  height: 0.75rem;
+  height: 24px;
+  overflow: hidden;
+}
+
+.ruler-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 5px;
+  background: rgba(190, 208, 238, .45);
+}
+
+.ruler-tick--major {
+  height: 10px;
+  background: rgba(205, 220, 245, .85);
+}
+
+.ruler-tick em {
+  position: absolute;
+  top: 11px;
+  left: 3px;
+  color: #b9c6dc;
+  font: normal 9.5px/1 var(--font-data);
+  letter-spacing: 0;
+}
+
+.ruler-tick--major:first-child em { left: 2px; }
+
+/* parentesi di Tx (sopra) e Rx (sotto): una barra con le due estremita' ripiegate */
+.ruler-bracket {
+  position: absolute;
+  height: 6px;
+  box-sizing: border-box;
+  border: 2px solid;
+  transform: translateX(-50%);
+}
+.ruler-bracket--tx {
+  top: 0;
+  color: #ff9f1a;
+  border-bottom: 0;
+}
+.ruler-bracket--rx {
+  bottom: 0;
+  color: #2cf5a4;
+  border-top: 0;
+}
+
+/* un segno per ogni decodifica dell'ultimo periodo, sul bordo basso */
+.ruler-strip .marker {
+  top: auto;
+  bottom: 0;
+  width: 3px;
+  height: 3px;
 }
 
 .marker {
   position: absolute;
-  top: 0;
-  width: 3px;
-  height: 100%;
   border-radius: 1px;
   transform: translateX(-50%);
 }
@@ -383,30 +435,6 @@ button.primary {
 
 .marker--other {
   background: var(--text-muted);
-}
-
-.ruler-ticks {
-  position: relative;
-  height: 1.75rem;
-  border-top: var(--border-width) solid var(--border);
-}
-
-.tick {
-  position: absolute;
-  top: 0;
-  padding-top: var(--space-1);
-  transform: translateX(-50%);
-  color: var(--text-muted);
-  font-family: var(--font-data);
-  font-size: var(--text-xs);
-}
-
-.tick:first-child {
-  transform: none;
-}
-
-.tick:last-child {
-  transform: translateX(-100%);
 }
 
 /* Schermo largo: cascata grande a sinistra, pannelli a destra, STOP TX in alto */
