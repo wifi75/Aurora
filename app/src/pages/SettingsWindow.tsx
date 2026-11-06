@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { connectCat, postTune, putEngineSettings } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { usePrefs } from '../lib/prefs';
@@ -16,6 +16,7 @@ import { GeneralWindowTab } from '../settings/GeneralWindowTab';
 import { AudioTab, ReportsTab } from '../settings/InfoTabs';
 import { LogServicesTab } from '../settings/LogServicesTab';
 import { MacrosTab } from '../settings/MacrosTab';
+import { LogTransfer } from '../components/LogTransfer';
 import { saveErrorOf, useSettings, type SaveError } from '../settings/NativeSettings';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
@@ -33,35 +34,39 @@ interface TabDef {
   id: string;
   label: Key;
   icon: string;
+  /** `extra`: funzioni che Aurora ha in piu' rispetto alle schede di riferimento, ognuna nella sua scheda e mai dentro un'altra. */
+  extra?: boolean;
   render(): ReactNode;
 }
 
-/** Contenuto di una scheda fatta di piu' schede vecchie, una sotto l'altra. */
-const stack = (...parts: ReactNode[]): ReactNode => (
-  <div className="sw-stack">
-    {parts.map((p, i) => (
-      <div key={i}>{p}</div>
-    ))}
-  </div>
-);
-
-/** Le 15 schede della finestra, nell'ordine del prototipo `docs/prototipo-impostazioni.html`. */
+/** Le schede di riferimento (ognuna con solo il suo contenuto) e poi quelle che sono solo di Aurora, nell'ordine di `docs/prototipo-impostazioni.html`. */
 const TABS: readonly TabDef[] = [
   { id: 'general', label: 'sw.tab.general', icon: '⚙', render: () => <GeneralWindowTab /> },
   { id: 'radio', label: 'sw.tab.radio', icon: '▭', render: () => <RadioTab part="link" /> },
   { id: 'profiles', label: 'sw.tab.profiles', icon: '☰', render: () => <RadioTab part="profiles" /> },
-  { id: 'audio', label: 'sw.tab.audio', icon: '∿', render: () => stack(<AudioTab />, <WaterfallTab />) },
-  { id: 'macros', label: 'sw.tab.macros', icon: '≡', render: () => stack(<MacrosTab />, <SequenceTab />) },
-  { id: 'reporting', label: 'sw.tab.reporting', icon: '⇄', render: () => stack(<ReportsTab />, <OnlineTab />, <ClusterTab />) },
-  { id: 'freq', label: 'sw.tab.freq', icon: '∼', render: () => stack(<FrequenciesTab />, <BandsTab />) },
+  { id: 'audio', label: 'sw.tab.audio', icon: '∿', render: () => <AudioTab /> },
+  { id: 'macros', label: 'sw.tab.macros', icon: '≡', render: () => <MacrosTab /> },
+  { id: 'reporting', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
+  { id: 'freq', label: 'sw.tab.freq', icon: '∼', render: () => <FrequenciesTab /> },
   { id: 'colors', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
   { id: 'logbooks', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
-  { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <SupportTab /> },
+  { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
-  { id: 'advanced', label: 'sw.tab.advanced', icon: '☼', render: () => stack(<ClockTab />, <WindowsTab />) },
-  { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => stack(<NotificationsTab part="alerts" />, <WishlistTab />, <DxccTab />) },
+  { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
-  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => stack(<AccessTab />, <AboutTab />) },
+  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => <AboutTab /> },
+  // solo di Aurora
+  { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
+  { id: 'sequence', label: 'tab.sequence', icon: '↻', extra: true, render: () => <SequenceTab /> },
+  { id: 'bands', label: 'tab.bands', icon: '▦', extra: true, render: () => <BandsTab /> },
+  { id: 'online', label: 'tab.online', icon: '☁', extra: true, render: () => <OnlineTab /> },
+  { id: 'cluster', label: 'tab.cluster', icon: '✦', extra: true, render: () => <ClusterTab /> },
+  { id: 'wishlist', label: 'tab.wishlist', icon: '★', extra: true, render: () => <WishlistTab /> },
+  { id: 'dxcc', label: 'tab.dxcc', icon: '◎', extra: true, render: () => <DxccTab /> },
+  { id: 'clock', label: 'tab.clock', icon: '◔', extra: true, render: () => <ClockTab /> },
+  { id: 'windows', label: 'tab.windows', icon: '▢', extra: true, render: () => <WindowsTab /> },
+  { id: 'phone', label: 'sw.tab.phone', icon: '☎', extra: true, render: () => <AccessTab /> },
+  { id: 'support', label: 'tab.support', icon: '✚', extra: true, render: () => <SupportTab /> },
 ];
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */
@@ -83,6 +88,9 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
   const [error, setError] = useState<SaveError | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  /** L'ultimo pulsante in basso premuto: resta evidenziato. */
+  const [last, setLast] = useState('');
+  const on = (name: string) => (last === name ? ' sw-btn--on' : '');
   // le preferenze dello schermo (distanza, bandiere...) agiscono subito: Annulla le rimette com'erano all'apertura
   const startPrefs = useRef(usePrefs.getState().prefs);
 
@@ -174,23 +182,25 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
       </header>
       <div className="sw-main">
         <nav className="sw-nav" role="tablist" aria-orientation="vertical">
-          {TABS.map((x) => (
-            <button
-              key={x.id}
-              type="button"
-              role="tab"
-              id={`swtab-${x.id}`}
-              aria-selected={tab.id === x.id}
-              aria-controls="sw-panel"
-              className={tab.id === x.id ? 'sw-tab sw-tab--on' : 'sw-tab'}
-              onClick={() => {
-                setId(x.id);
-                rememberTab(browserStorage(), x.id);
-              }}
-            >
-              <i aria-hidden="true">{x.icon}</i>
-              {t(x.label)}
-            </button>
+          {TABS.map((x, i) => (
+            <Fragment key={x.id}>
+              {x.extra && !TABS[i - 1]?.extra ? <span className="sw-nav-sep">{t('sw.extra')}</span> : null}
+              <button
+                type="button"
+                role="tab"
+                id={`swtab-${x.id}`}
+                aria-selected={tab.id === x.id}
+                aria-controls="sw-panel"
+                className={tab.id === x.id ? 'sw-tab sw-tab--on' : 'sw-tab'}
+                onClick={() => {
+                  setId(x.id);
+                  rememberTab(browserStorage(), x.id);
+                }}
+              >
+                <i aria-hidden="true">{x.icon}</i>
+                {t(x.label)}
+              </button>
+            </Fragment>
           ))}
         </nav>
         <section className="sw-panel settings settings-layout" id="sw-panel" role="tabpanel" aria-label={t(tab.label)}>
@@ -198,10 +208,10 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
         </section>
       </div>
       <footer className="sw-foot">
-        <button type="button" className="sw-btn" onClick={() => void testCat()}>
+        <button type="button" className={`sw-btn${on('cat')}`} onClick={() => { setLast('cat'); void testCat(); }}>
           {t('sw.testCat')}
         </button>
-        <button type="button" className="sw-btn" onClick={() => void testPtt()}>
+        <button type="button" className={`sw-btn${on('ptt')}`} onClick={() => { setLast('ptt'); void testPtt(); }}>
           {t('sw.testPtt')}
         </button>
         <span className="sw-state" role="status">
@@ -210,7 +220,7 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
         <button type="button" className="sw-btn" disabled={busy} onClick={cancel}>
           {t('sw.cancel')}
         </button>
-        <button type="button" className="sw-btn" disabled={busy || count === 0} onClick={() => void apply()}>
+        <button type="button" className={`sw-btn${on('apply')}`} disabled={busy || count === 0} onClick={() => { setLast('apply'); void apply(); }}>
           {t('sw.apply')}
         </button>
         <button type="button" className="sw-btn sw-btn--save" disabled={busy} onClick={() => void save()}>

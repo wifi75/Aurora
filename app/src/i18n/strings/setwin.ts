@@ -14,6 +14,8 @@ export const setWinStrings = {
   'sw.tab.advanced': ['Avanzate', 'Advanced', 'Erweitert', 'Avancé', 'Avanzado', 'Avançado'],
   'sw.tab.alerts': ['Avvisi', 'Alerts', 'Hinweise', 'Alertes', 'Avisos', 'Avisos'],
   'sw.tab.filters': ['Filtri', 'Filters', 'Filter', 'Filtres', 'Filtros', 'Filtros'],
+  'sw.tab.phone': ['Smartphone', 'Smartphone', 'Smartphone', 'Smartphone', 'Smartphone', 'Smartphone'],
+  'sw.extra': ['Funzioni di Aurora', 'Aurora features', 'Aurora-Funktionen', 'Fonctions d’Aurora', 'Funciones de Aurora', 'Funções do Aurora'],
   'sw.tab.info': ['Informazioni', 'About', 'Info', 'À propos', 'Acerca de', 'Sobre'],
   'sw.testCat': ['Prova CAT', 'Test CAT', 'CAT testen', 'Tester CAT', 'Probar CAT', 'Testar CAT'],
   'sw.testPtt': ['Prova PTT', 'Test PTT', 'PTT testen', 'Tester PTT', 'Probar PTT', 'Testar PTT'],
