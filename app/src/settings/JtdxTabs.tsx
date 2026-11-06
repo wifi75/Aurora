@@ -493,13 +493,15 @@ const PREVIEW_ROWS: readonly ColorKey[] = ['tx_msg', 'cq', 'my_call', 'standard_
 /** Il nominativo mostrato nelle anteprime: quello della stazione, finche' non e' noto un nominativo di prova. */
 const SAMPLE_FALLBACK = 'K1ABC';
 
-export function NativeNotifications() {
+export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' | 'alerts' } = {}) {
   const t = useT();
   const { settings, draft } = useDoc();
   const view = useNotifyView((s) => s.view);
   const setView = useNotifyView.getState().set;
   const [colors, setColors] = useState<TagColors>(() => readColors(browserStorage()));
   const myCall = useStation((s) => s.status?.de_call);
+  const showColors = part !== 'alerts';
+  const showAlerts = part !== 'colors';
   if (settings.isError || !settings.data) {
     return (
       <Page>
@@ -520,6 +522,8 @@ export function NativeNotifications() {
   const na = <td className="sx-na" aria-hidden="true">—</td>;
   return (
     <Page>
+      {showColors ? (
+      <>
       <Group title={t('not2.grpTable')} span={2}>
         <div className="sx-tablewrap">
           <table className="sx-table sx-table--compact jt-grid">
@@ -661,6 +665,10 @@ export function NativeNotifications() {
         </Cells>
       </Group>
 
+      </>
+      ) : null}
+
+      {showAlerts ? (
       <Group title={t('not2.grpAlerts')}>
         <Cells min={14}>
           <AlertOptions />
@@ -679,6 +687,10 @@ export function NativeNotifications() {
         </Cells>
       </Group>
 
+      ) : null}
+
+      {showColors ? (
+      <>
       <Group title={t('not2.grpDisplay')}>
         <Cells min={14}>
           <Check label={t('not2.diffBg')} hint={t('tip.not2.diffBg')} checked={view.differentBackground} onChange={(v) => setView({ differentBackground: v })} />
@@ -708,6 +720,11 @@ export function NativeNotifications() {
         </Cells>
       </Group>
 
+      </>
+      ) : null}
+
+      {showAlerts ? (
+      <>
       <Notes>
         <Help>{t('not2.help')}</Help>
         <Help>{t('not2.intro')}</Help>
@@ -717,6 +734,8 @@ export function NativeNotifications() {
       </Notes>
       <SoundsGroup />
       <ToastGroup />
+      </>
+      ) : null}
       <ApplyBar draft={draft} doc={doc} />
     </Page>
   );
