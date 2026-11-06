@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Pulsante del modo** (FT8, FT4...): il modo scelto e' ben in evidenza (bordo pieno, alone, testo marcato).
 
 ## 0.11.162 - 2026-11-06
 - **Bande aperte**: al posto della mini-mappa, «Continenti che ti ascoltano» (stazioni PSK Reporter per continente, stimato dal locatore) e «Record di distanza» di oggi e degli ultimi 7 giorni.
