@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { COLS, ROWS, arrange, type Cell } from '../components/GridBoard';
+import { COLS, ROWS, type Cell } from '../components/GridBoard';
 import { browserStorage } from './theme';
 
 /**
@@ -32,6 +32,32 @@ function valid(c: unknown): c is Cell {
   return [x, y, w, h].every((n) => typeof n === 'number' && Number.isFinite(n)) && (w as number) >= 1 && (h as number) >= 1 && (x as number) >= 0 && (y as number) >= 0 && (x as number) + (w as number) <= COLS && (y as number) + (h as number) <= ROWS * 4;
 }
 
+const overlaps = (a: Cell, b: Cell) => a.x < b.x + b.w - 1e-6 && b.x < a.x + a.w - 1e-6 && a.y < b.y + b.h - 1e-6 && b.y < a.y + a.h - 1e-6;
+
+/**
+ * Nessuna finestra deve restare coperta da un'altra o fuori dallo schermo: le finestre si tengono dentro le 24 righe e, se due si
+ * sovrappongono, quella che viene dopo (cascata, Trasmissione e QSO hanno la precedenza) va nel primo spazio libero della stessa misura;
+ * se non c'e' posto, prova la misura di partenza e, in ultimo, torna tutta la disposizione di partenza.
+ */
+export function settleBoard(cells: Record<BoardId, Cell>): Record<BoardId, Cell> {
+  const order: BoardId[] = ['waterfall', 'tx', 'qso', 'cq', 'all', 'log', 'cluster', 'station'];
+  const placed: Partial<Record<BoardId, Cell>> = {};
+  const fits = (c: Cell) => c.x >= 0 && c.y >= 0 && c.x + c.w <= COLS + 1e-6 && c.y + c.h <= ROWS + 1e-6 && Object.values(placed).every((p) => !overlaps(c, p));
+  const spot = (w: number, h: number): Cell | null => {
+    for (let y = 0; y + h <= ROWS + 1e-6; y += 0.5) for (let x = 0; x + w <= COLS + 1e-6; x += 0.5) if (fits({ x, y, w, h })) return { x, y, w, h };
+    return null;
+  };
+  const base = defaultBoard();
+  for (const id of order) {
+    const c0 = cells[id];
+    const c: Cell = { ...c0, y: Math.max(0, Math.min(c0.y, ROWS - c0.h)), x: Math.max(0, Math.min(c0.x, COLS - c0.w)) };
+    const found = fits(c) ? c : (spot(c0.w, c0.h) ?? spot(base[id].w, base[id].h));
+    if (!found) return base;
+    placed[id] = found;
+  }
+  return placed as Record<BoardId, Cell>;
+}
+
 export function readBoard(storage: Pick<Storage, 'getItem'> | null): Record<BoardId, Cell> {
   const out = defaultBoard();
   try {
@@ -39,10 +65,11 @@ export function readBoard(storage: Pick<Storage, 'getItem'> | null): Record<Boar
     if (!raw) return out;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     for (const id of BOARD_IDS) if (valid(parsed[id])) out[id] = parsed[id] as Cell;
+    // una finestra rimasta sotto la parte visibile o coperta da un'altra viene rimessa a posto
+    return settleBoard(out);
   } catch {
     return defaultBoard();
   }
-  return out;
 }
 
 interface BoardState {
@@ -62,8 +89,9 @@ function save(cells: Record<BoardId, Cell>): void {
 export const useBoard = create<BoardState>((set) => ({
   cells: readBoard(browserStorage()),
   set(cells) {
-    // senza gravita': ogni finestra resta dove l'hai lasciata (solo le sovrapposizioni si risolvono spingendo giu')
-    const next = { ...defaultBoard(), ...arrange(cells, undefined, false) } as Record<BoardId, Cell>;
+    // gia' sistemati da GridBoard (la finestra mossa resta dove l'hai lasciata, le altre si spostano): qui solo si tengono dentro la parte visibile
+    const merged = { ...defaultBoard(), ...cells } as Record<BoardId, Cell>;
+    const next = merged;
     save(next);
     set({ cells: next });
   },
