@@ -12,12 +12,17 @@ import './styles/radiodisplay.css';
 import './styles/dxcc.css';
 import './styles/settings-layout.css';
 import './styles/news.css';
+import './styles/bozze.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
+
+// bozze grafiche della pagina principale: `?bozza=a|b|c` (vedi styles/bozze.css); senza il parametro non cambia niente
+const draftStyle = new URLSearchParams(window.location.search).get('bozza');
+if (draftStyle && /^[abc]$/.test(draftStyle)) document.documentElement.dataset.bozza = draftStyle;
 
 const queryClient = new QueryClient();
 const root = document.getElementById('root');
