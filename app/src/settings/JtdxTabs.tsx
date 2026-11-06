@@ -27,7 +27,7 @@ function valueOf(doc: EngineSettings, draft: Draft, key: string): string {
   return draft.changes[key] ?? doc.values[key] ?? '';
 }
 
-function isOn(doc: EngineSettings, draft: Draft, key: string): boolean {
+export function isOn(doc: EngineSettings, draft: Draft, key: string): boolean {
   return valueOf(doc, draft, key) === 'true';
 }
 
@@ -57,14 +57,14 @@ function EngineBox({ k, label, doc, draft, locked = false }: { k: string; label:
 }
 
 /** Una preferenza dello schermo (del browser, vale subito). */
-function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'showTx' | 'showAzimuth' | 'showCountry' | 'showDistance'); label: string }) {
+export function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'showTx' | 'showAzimuth' | 'showCountry' | 'showDistance'); label: string }) {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   return <Check label={label} hint={t(`tip.pref.${k}` as Key)} checked={prefs[k]} onChange={(v) => usePrefs.getState().set({ [k]: v })} />;
 }
 
 /** Le scelte della regione IARU (i nomi di JTDX) e dei messaggi per i nominativi composti di tipo 2. */
-const REGION_OPTIONS: SettingRow['options'] = [
+export const REGION_OPTIONS: SettingRow['options'] = [
   { value: 'ALL', label: 'gen2.regionAll' },
   { value: 'R1', label: 'gen2.region1' },
   { value: 'R2', label: 'gen2.region2' },
@@ -82,7 +82,7 @@ const POUNCE_OPTIONS: SettingRow['options'] = [
   { value: 'max_db', label: 'gen2.pounceMaxDb' },
   { value: 'min_db', label: 'gen2.pounceMinDb' },
 ];
-const TYPE2_OPTIONS: SettingRow['options'] = [
+export const TYPE2_OPTIONS: SettingRow['options'] = [
   { value: 'type_2_msg_1_full', label: 'gen2.type2Tx1' },
   { value: 'type_2_msg_3_full', label: 'gen2.type2Full' },
   { value: 'type_2_msg_5_only', label: 'gen2.type2Tx5' },
@@ -230,7 +230,7 @@ function EngineCheckWithId({ id, k, label, doc, draft }: { id: string; k: string
 /* ---------------------------------------------------------------- Generali */
 
 /** Il resto dello schermo (del browser): bandiera, DT, ESC, svuota al cambio, doppio clic, righe di Log4OM2, ripristino. */
-function ScreenExtras() {
+export function ScreenExtras() {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
   const set = usePrefs.getState().set;
