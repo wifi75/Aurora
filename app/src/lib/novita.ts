@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.156',
+    released: '2026-11-06T15:30:00Z',
+    kind: 'changed',
+    title: ["Pagina principale a blocchi, Bande aperte e comandi QSO in Trasmissione", "Block-based main page, Open bands and QSO controls inside Transmit", "Hauptseite aus Blöcken, Offene Bänder und QSO-Steuerung im Senden-Feld", "Page principale en blocs, Bandes ouvertes et commandes QSO dans Émission", "Página principal en bloques, Bandas abiertas y controles QSO en Transmisión", "Página principal em blocos, Bandas abertas e comandos QSO em Transmissão"],
+    text: [
+      "La pagina principale ha misure fisse e si riorganizza a destra e a sinistra: trascina la barretta del titolo per scambiare una finestra con la vicina, e il divisore tra due finestre stringe una e allarga l'altra. Nuova finestra «Bande aperte»: propagazione di giorno e di notte per gruppo di bande e le tre stazioni più lontane che ti hanno ascoltato (PSK Reporter). I comandi del QSO stanno dentro Trasmissione, compatti, con Rx e Pwr in una riga; Abilita Tx e AutoTX accesi sono rossi, e i sei messaggi Tx si possono scrivere a mano. CQ e novità mostra i CQ in una fascia su due righe che scorre da sola e, sotto, le DXpedition su una riga. La Cascata ha lo spettro sempre visibile e la Mappa DX usa solo gli sfondi della NASA.",
+      "The main page has fixed sizes and rearranges left and right: drag the title bar to swap a window with its neighbour, and the divider between two windows narrows one and widens the other. New «Open bands» window: day and night propagation by band group and the three farthest stations that heard you (PSK Reporter). The QSO controls now sit inside Transmit, compact, with Rx and Pwr on one row; Enable Tx and AutoTX turn red when on, and the six Tx messages can be typed by hand. CQ and news shows CQs in a two-row strip that scrolls by itself and, below, DXpeditions on one line each. The Waterfall always shows the spectrum and the DX Map uses only NASA backgrounds.",
+      "Die Hauptseite hat feste Größen und ordnet sich links und rechts um: Ziehe die Titelleiste, um ein Fenster mit dem Nachbarn zu tauschen; der Teiler zwischen zwei Fenstern verengt das eine und weitet das andere. Neues Fenster «Offene Bänder»: Ausbreitung bei Tag und Nacht je Bandgruppe und die drei am weitesten entfernten Stationen, die dich gehört haben (PSK Reporter). Die QSO-Steuerung sitzt jetzt kompakt im Senden-Feld, Rx und Pwr in einer Zeile; Tx aktivieren und AutoTX sind eingeschaltet rot, und die sechs Tx-Nachrichten lassen sich von Hand schreiben. CQ und Neues zeigt die CQ in einem zweizeiligen Streifen, der von selbst läuft, darunter die DXpeditionen einzeilig. Der Wasserfall zeigt das Spektrum immer, die DX-Karte nutzt nur NASA-Hintergründe.",
+      "La page principale a des tailles fixes et se réorganise à gauche et à droite : glisse la barre de titre pour échanger une fenêtre avec sa voisine, et le séparateur entre deux fenêtres rétrécit l’une et agrandit l’autre. Nouvelle fenêtre «Bandes ouvertes» : propagation de jour et de nuit par groupe de bandes et les trois stations les plus lointaines qui t’ont entendu (PSK Reporter). Les commandes QSO sont dans Émission, compactes, avec Rx et Pwr sur une ligne ; Activer Tx et AutoTX allumés sont rouges, et les six messages Tx peuvent s’écrire à la main. CQ et nouveautés affiche les CQ dans une bande à deux lignes qui défile seule et, dessous, les DXpéditions sur une ligne. La Cascade montre toujours le spectre et la Carte DX n’utilise que les fonds de la NASA.",
+      "La página principal tiene medidas fijas y se reorganiza a izquierda y derecha: arrastra la barra del título para intercambiar una ventana con su vecina, y el divisor entre dos ventanas estrecha una y ensancha la otra. Nueva ventana «Bandas abiertas»: propagación de día y de noche por grupo de bandas y las tres estaciones más lejanas que te han oído (PSK Reporter). Los controles del QSO están dentro de Transmisión, compactos, con Rx y Pwr en una fila; Activar Tx y AutoTX encendidos son rojos, y los seis mensajes Tx se pueden escribir a mano. CQ y novedades muestra los CQ en una franja de dos filas que se desplaza sola y, debajo, las DXpediciones en una línea. La Cascada muestra siempre el espectro y el Mapa DX usa solo fondos de la NASA.",
+      "A página principal tem medidas fixas e reorganiza-se à esquerda e à direita: arrasta a barra do título para trocar uma janela com a vizinha, e o divisor entre duas janelas estreita uma e alarga a outra. Nova janela «Bandas abertas»: propagação de dia e de noite por grupo de bandas e as três estações mais distantes que te ouviram (PSK Reporter). Os comandos do QSO ficam dentro de Transmissão, compactos, com Rx e Pwr numa linha; Ativar Tx e AutoTX ligados ficam vermelhos, e as seis mensagens Tx podem ser escritas à mão. CQ e novidades mostra os CQ numa faixa de duas linhas que se desloca sozinha e, por baixo, as DXpedições numa linha. A Cascata mostra sempre o espectro e o Mapa DX usa só fundos da NASA.",
+    ],
+  },
+  {
     version: '0.11.155',
     released: '2026-11-05T22:24:39Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "« Déjà contacté » n’apparaît que pour un indicatif vraiment dans le journal, plus pour chaque station d’un pays déjà fait. Le S-mètre estimé montre le tilde aussi dans les nouveaux afficheurs à aiguille.",
       "«Ya trabajado» aparece solo para un indicativo que está de verdad en el log, ya no para cada estación de un país ya hecho. El S-meter estimado muestra la tilde también en las pantallas nuevas de aguja.",
       "«Já trabalhado» aparece só para um indicativo que está mesmo no log, já não para cada estação de um país já feito. O S-meter estimado mostra o til também nos novos ecrãs de ponteiro.",
-    ],
-  },
-  {
-    version: '0.11.116',
-    released: '2026-11-04T13:40:20Z',
-    kind: 'new',
-    title: ['Conteggio anonimo delle installazioni attive', 'Anonymous count of active installations', 'Anonyme Zählung aktiver Installationen', 'Comptage anonyme des installations actives', 'Recuento anónimo de instalaciones activas', 'Contagem anónima das instalações ativas'],
-    text: [
-      "Una volta al giorno Aurora dice in forma anonima «questa installazione è aperta» (solo un codice casuale, la versione di Aurora e quella di Windows): serve a sapere quante persone la usano. Si spegne in Impostazioni › Assistenza.",
-      "Once a day Aurora anonymously says «this installation is open» (only a random code, the Aurora version and the Windows version): it tells how many people use it. It can be switched off in Settings › Support.",
-      "Einmal täglich meldet Aurora anonym «diese Installation ist offen» (nur ein Zufallscode, die Aurora- und die Windows-Version): so weiß man, wie viele sie nutzen. Abschaltbar unter Einstellungen › Support.",
-      "Une fois par jour Aurora signale de façon anonyme « cette installation est ouverte » (seulement un code aléatoire, la version d’Aurora et celle de Windows) : cela permet de savoir combien de personnes l’utilisent. Désactivable dans Réglages › Assistance.",
-      "Una vez al día Aurora indica de forma anónima «esta instalación está abierta» (solo un código aleatorio, la versión de Aurora y la de Windows): sirve para saber cuántas personas la usan. Se apaga en Ajustes › Asistencia.",
-      "Uma vez por dia a Aurora indica de forma anónima «esta instalação está aberta» (só um código aleatório, a versão da Aurora e a do Windows): serve para saber quantas pessoas a usam. Desliga-se em Definições › Assistência.",
     ],
   },
 ];
