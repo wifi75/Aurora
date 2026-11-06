@@ -71,6 +71,11 @@ pub trait Rig: Send + Sync {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 
+    /// Scrive a mano il testo del messaggio Tx `n` (1-6), come i campi dei messaggi: vale finche' i messaggi non si rigenerano.
+    fn set_tx_text(&self, _n: u8, _text: &str) -> Result<(), RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
     /// Il clic su un indicatore del display esteso: cambia l'impostazione della radio (NB, NR, notch, ATU, preamplificatore, attenuatore,
     /// AGC, VFO, RIT/XIT) e rilegge quel dato. Solo con il CAT Hamlib.
     fn set_extra(&self, _item: extras::ExtraItem) -> Result<(), RigError> {

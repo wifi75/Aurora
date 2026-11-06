@@ -145,6 +145,8 @@ pub enum TxCommand {
     AutoTx(bool),
     Option(OptionChange),
     SelectTx(u8),
+    /// Il testo di Tx`n` (1-6) scritto a mano nel campo del messaggio: vale finche' i messaggi non si rigenerano.
+    SetTxText { n: u8, text: String },
     ClearDx,
     /// «Gen.Msgs»: rigenera i messaggi per il DX attuale.
     GenMsgs,
@@ -723,6 +725,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 self.seq.set_options(self.opts.clone());
             }
+            TxCommand::SetTxText { n, text } => match self.seq.set_tx_text(n, &text) {
+                Ok(()) => log.push(format!("Tx{n} scritto a mano: {text}")),
+                Err(e) => log.push(format!("Tx{n} non modificabile: {e:?}")),
+            },
             TxCommand::SelectTx(n) => {
                 self.free_text = None;
                 if let Err(e) = self.seq.select_tx(n) {
@@ -2336,6 +2342,28 @@ mod tests {
         b.d.handle(TxCommand::FreeText { text: "73".into(), send: false }, BASE + 1.0);
         b.d.handle(TxCommand::FreeText { text: String::new(), send: false }, BASE + 1.0);
         assert_eq!(b.texts()[4], "");
+    }
+
+    /// Il testo di un messaggio Tx scritto a mano (il campo accanto al numero) resta finche' i messaggi non si rigenerano: maiuscolo, spazi
+    /// singoli, e vale solo per il DX a cui e' stato scritto; il CQ si puo' modificare anche senza DX.
+    #[test]
+    fn a_hand_written_tx_text_is_kept_until_the_messages_are_regenerated() {
+        let mut b = Bench::new();
+        b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 20.0);
+        b.d.handle(TxCommand::SetTxText { n: 1, text: "k1abc   iu3abc  io91 x".into() }, BASE + 21.0);
+        assert_eq!(b.texts()[0], "K1ABC IU3ABC IO91 X");
+        b.press("gen_msgs", None, BASE + 22.0);
+        assert_eq!(b.texts()[0], "K1ABC IU3ABC IO91", "con Gen.Msgs torna il messaggio standard");
+        // vuoto toglie la modifica
+        b.d.handle(TxCommand::SetTxText { n: 2, text: "PROVA".into() }, BASE + 23.0);
+        assert_eq!(b.texts()[1], "PROVA");
+        b.d.handle(TxCommand::SetTxText { n: 2, text: "  ".into() }, BASE + 24.0);
+        assert_ne!(b.texts()[1], "PROVA");
+        // il CQ (Tx6) si scrive anche senza DX
+        let mut b = Bench::new();
+        b.d.handle(TxCommand::SetTxText { n: 6, text: "cq dx iu3abc io91".into() }, BASE + 1.0);
+        assert_eq!(b.texts()[5], "CQ DX IU3ABC IO91");
     }
 
     /// Come JTDX (`pack77`: `character*37 msg`, testo libero = primi 13 caratteri): oltre i 13 caratteri si trasmettono i primi 13,

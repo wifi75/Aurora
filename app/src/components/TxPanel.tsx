@@ -1,8 +1,8 @@
 import { foxCalls } from '../lib/fox';
 import { DxPill } from './DxPill';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getControls, postHalt, postTxMessage } from '../api/client';
+import { getControls, postHalt, postTxMessage, postTxText } from '../api/client';
 import { toast } from '../lib/toast';
 import type { DecodedMessage, StationStatus, TxAlert } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -89,11 +89,63 @@ export async function chooseTxMessage(i: number, messages: string[], selected: n
   }
 }
 
+/**
+ * Il testo di un messaggio Tx, modificabile sul posto: si scrive, Invio o l'uscita dal campo lo confermano, Esc annulla. Un clic nel campo
+ * non sceglie la riga. Svuotato, torna il messaggio standard.
+ */
+function TxMessageField({ value, disabled, label, onCommit }: { value: string; disabled: boolean; label: string; onCommit(text: string): void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const finish = (save: boolean) => {
+    const next = draft;
+    setDraft(null);
+    if (save && next !== null && next.trim().toUpperCase() !== value.trim().toUpperCase()) onCommit(next);
+  };
+  return (
+    <input
+      type="text"
+      className="data tx-msg tx-msg-edit"
+      value={draft ?? value}
+      disabled={disabled}
+      maxLength={37}
+      spellCheck={false}
+      autoComplete="off"
+      aria-label={label}
+      onClick={(e) => e.stopPropagation()}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setDraft(e.target.value.toUpperCase())}
+      onBlur={() => finish(true)}
+      onKeyDown={(e) => {
+        // la riga sceglie il messaggio con Invio e Spazio: dentro il campo servono a scrivere
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finish(true);
+          e.currentTarget.blur();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setDraft(null);
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
 /** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
 export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
   const t = useT();
   const [note, setNote] = useState('');
   const { messages, selected, active, next, hound, skipTx1, controls, pendingDx } = useTxSequence(status, decodes);
+  const client = useQueryClient();
+
+  /** Il testo scritto a mano nel campo di un messaggio: resta finche' i messaggi non si rigenerano. */
+  const commitText = (i: number, text: string) =>
+    postTxText(i + 1, text)
+      .then(() => {
+        setNote('');
+        return client.invalidateQueries({ queryKey: ['controls'] });
+      })
+      .catch((error: unknown) => setNote(replyErrorMessage(error, t)));
 
   /** Sceglie a mano il messaggio da cui il motore parte: si vede subito e, se il comando fallisce, torna quello di prima. */
   const choose = (i: number) =>
@@ -120,9 +172,6 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 RX
               </span>
             )}
-            <span className="data muted tx-freqs">
-              <span>{`Tx ${status.tx_df ?? '—'} Hz`}</span> <span>{`Rx ${status.rx_df ?? '—'} Hz`}</span>
-            </span>
             {/* in Hound lo si vede sempre accanto alle frequenze: chiama sopra 1000 Hz e risponde solo al Fox */}
             {status.dx_call && foxCalls(decodes).has(status.dx_call.toUpperCase()) ? (
               <span className="hound-badge hound-badge--fox" role="status" title={t('tip.foxBadge')}>
@@ -185,7 +234,12 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
                 className={m === '' ? 'tx-empty' : i === 5 && hound ? 'tx-empty tx-off' : undefined}
               >
                 <span className="tx-n">{i + 1}</span>
-                <span className="data tx-msg">{m}</span>
+                <TxMessageField
+                  value={m}
+                  disabled={(m === '' && i !== 5) || (i === 5 && hound)}
+                  label={t(`tx.step.${i + 1}` as Key)}
+                  onCommit={(text) => commitText(i, text)}
+                />
                 <span className="tx-step">{t(`tx.step.${i + 1}` as Key)}</span>
               </li>
             ))}
