@@ -157,3 +157,28 @@ html[data-bozza][data-theme='light'] .dock-panel {
     linear-gradient(#ffffff, #ffffff) padding-box,
     linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box;
 }
+
+/* ---- pulsante ACCESO: pieno, colorato, testo bianco in grassetto e pallino bianco: si capisce subito, in tema scuro e chiaro ---- */
+html[data-bozza] .band-bar .glass--on,
+html[data-bozza] .cmd-chips .chip.glass--on,
+html[data-bozza] .mode-switch-btn.glass--on {
+  background: linear-gradient(180deg, #1fd281, #12a864) !important;
+  border-color: #8dffc2 !important;
+  color: #ffffff !important;
+  font-weight: 800;
+}
+html[data-bozza] .cmd-chips .chip.glass--on::before {
+  background: #ffffff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35);
+}
+html[data-bozza][data-theme='light'] .band-bar .glass--on,
+html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on,
+html[data-bozza][data-theme='light'] .mode-switch-btn.glass--on {
+  background: linear-gradient(180deg, #17a35f, #0f8a4f) !important;
+  border-color: #0a6a3b !important;
+  color: #ffffff !important;
+}
+/* il pulsante acceso non cambia sfondo al passaggio del mouse (resta pieno), solo un po' piu' vivo */
+html[data-bozza] .band-bar .glass--on:hover,
+html[data-bozza] .cmd-chips .chip.glass--on:hover { filter: brightness(1.1); }
+/* tutti gli altri pulsanti accesi (Applica, Prova, schede, menu) con lo stesso criterio: pieni e in grassetto */
+html[data-bozza] .glass--on:not(.chip):not(.app-nav a) { font-weight: 800; }
