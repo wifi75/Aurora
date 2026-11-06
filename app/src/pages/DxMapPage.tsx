@@ -379,6 +379,7 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
         </div>
       ) : null}
       <DxMap
+        whole={bare}
         settings={bare ? { ...settings, links: false } : settings}
         stations={stations}
         links={links}

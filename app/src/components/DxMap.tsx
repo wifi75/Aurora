@@ -118,6 +118,8 @@ export interface DxMapSettings {
 }
 
 interface Props {
+  /** Tutto il mondo sempre intero nella finestra (con una fascia vuota sopra e sotto se serve), anche se e' stretta o alta: per la finestra della pagina a blocchi. */
+  whole?: boolean;
   settings: DxMapSettings;
   stations: readonly DxStation[];
   links: readonly DxLink[];
@@ -141,7 +143,7 @@ function cssColor(variable: string | null, fallback: string): string {
 const wrap = (lon: number) => ((((lon + 180) % 360) + 360) % 360) - 180;
 
 /** Mappa DX: sfondi a scelta, linea grigia con i crepuscoli, Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate. */
-export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels }: Props) {
+export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels, whole = false }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<string, L.Layer | null>>({});
@@ -196,15 +198,17 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
       ].filter(Boolean);
       L.popup({ className: 'dxmap-popup' }).setLatLng(e.latlng).setContent(lines.join('<br>')).openOn(m);
     });
+    let lastMin = 0;
     const fit = () => {
       if (el.clientWidth < 10 || el.clientHeight < 10) return;
       m.invalidateSize(false);
-      const z = m.getBoundsZoom(WORLD, true);
+      const z = m.getBoundsZoom(WORLD, !whole);
       if (!Number.isFinite(z)) return;
       m.setMinZoom(z);
       const cur = m.getZoom();
       if (!Number.isFinite(cur) || cur > m.getMaxZoom()) m.setView([25, 10], z, { animate: false });
-      else if (cur < z) m.setZoom(z);
+      else if (cur < z || (whole && cur <= lastMin + 0.01)) m.setView(whole ? [10, 0] : m.getCenter(), z, { animate: false });
+      lastMin = z;
     };
     m.setView([25, 10], 2, { animate: false });
     fit();
