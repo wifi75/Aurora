@@ -1,0 +1,71 @@
+/*
+ * Bozze grafiche della pagina principale (solo per provare): si attivano con `?bozza=a`, `?bozza=b` o `?bozza=c` nell'indirizzo.
+ * Cambiano soltanto colori, bordi, forma e dimensione dei pulsanti e dei riquadri: posizioni e disposizione restano quelle di Aurora.
+ * Pulsanti: angoli 8 px come nello stile di riferimento; l'altezza resta quella di Aurora (36 px, contro i 34 del riferimento) per non spostare niente.
+ */
+
+/* ---- parte comune: solo forma (angoli) dei pulsanti, dei campi e dei riquadri; dimensioni e posizioni restano quelle di Aurora ---- */
+html[data-bozza] .glass,
+html[data-bozza] button.glass,
+html[data-bozza] .theme-toggle,
+html[data-bozza] .alert-switch button,
+html[data-bozza] .size-switch,
+html[data-bozza] .notice button {
+  border-radius: 8px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+html[data-bozza] .dock-panel { border-radius: 10px; }
+html[data-bozza] select,
+html[data-bozza] input[type='text'],
+html[data-bozza] input[type='number'],
+html[data-bozza] input:not([type]) { border-radius: 8px; }
+
+/* ---- A · Fedele: piatto, blu notte, bordo sottile; acceso = contorno verde ---- */
+html[data-bozza='a'] {
+  --glass-hi: #101b2f; --glass-lo: #101b2f; --glass-edge: #27375a; --glass-shine: transparent; --glass-shadow: transparent;
+}
+html[data-bozza='a'] .glass, html[data-bozza='a'] .theme-toggle, html[data-bozza='a'] .alert-switch button { box-shadow: none; }
+html[data-bozza='a'] .glass:hover:not(:disabled) { background: #16253f; border-color: #3a5288; box-shadow: none; }
+html[data-bozza='a'] .glass--on, html[data-bozza='a'] .alert-switch button[aria-pressed='true'] {
+  background: #0e2a24; border-color: #2cf5a4; color: #bdfbe0; box-shadow: none;
+}
+html[data-bozza='a'] .dock-panel { background: #0a1220; border: 1px solid #1d2c47; box-shadow: none; }
+html[data-bozza='a'] .dock-grip { background: transparent; border-bottom: 1px solid #16233a; }
+
+/* ---- B · Aurora: come A ma con i colori del logo (verde, turchese, viola) nei bordi e nelle luci ---- */
+html[data-bozza='b'] {
+  --glass-hi: #0f1b30; --glass-lo: #0c1626; --glass-edge: #2a3c63; --glass-shine: rgba(255,255,255,.04); --glass-shadow: rgba(0,0,0,.35);
+}
+html[data-bozza='b'] .glass:hover:not(:disabled) {
+  border-color: #27d6f5; background: linear-gradient(180deg, #13243f, #0f1d33); box-shadow: 0 0 14px -4px rgba(39,214,245,.55);
+}
+html[data-bozza='b'] .glass--on, html[data-bozza='b'] .alert-switch button[aria-pressed='true'] {
+  background: linear-gradient(135deg, rgba(44,245,164,.22), rgba(39,214,245,.16) 55%, rgba(142,123,255,.20));
+  border-color: #2cf5a4; color: #eafff6; box-shadow: 0 0 16px -4px rgba(44,245,164,.55);
+}
+html[data-bozza='b'] .dock-panel {
+  background: linear-gradient(180deg, #0b1424, #09111e); border: 1px solid #1f3050;
+  box-shadow: inset 0 1px 0 rgba(44,245,164,.18), 0 8px 24px -14px rgba(0,0,0,.7);
+}
+html[data-bozza='b'] .dock-grip { background: linear-gradient(90deg, rgba(44,245,164,.10), rgba(39,214,245,.06) 45%, transparent); border-bottom: 1px solid #1a2a47; }
+html[data-bozza='b'] .app-header { box-shadow: 0 1px 0 rgba(44,245,164,.25); }
+
+/* ---- C · Vetro: traslucido, riflesso in alto, acceso = riempimento viola-turchese ---- */
+html[data-bozza='c'] {
+  --glass-hi: rgba(255,255,255,.07); --glass-lo: rgba(255,255,255,.025); --glass-edge: rgba(255,255,255,.14); --glass-shine: rgba(255,255,255,.12); --glass-shadow: rgba(0,0,0,.45);
+}
+html[data-bozza='c'] .glass, html[data-bozza='c'] .theme-toggle { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+html[data-bozza='c'] .glass:hover:not(:disabled) {
+  border-color: rgba(142,123,255,.8); background: linear-gradient(180deg, rgba(142,123,255,.20), rgba(142,123,255,.07)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 0 16px -4px rgba(142,123,255,.6);
+}
+html[data-bozza='c'] .glass--on, html[data-bozza='c'] .alert-switch button[aria-pressed='true'] {
+  background: linear-gradient(135deg, rgba(142,123,255,.55), rgba(39,214,245,.35)); border-color: rgba(190,180,255,.9); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 0 20px -4px rgba(142,123,255,.7);
+}
+html[data-bozza='c'] .dock-panel {
+  background: rgba(12,20,36,.72); border: 1px solid rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 30px -16px rgba(0,0,0,.8);
+}
+html[data-bozza='c'] .dock-grip { background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.07); }
