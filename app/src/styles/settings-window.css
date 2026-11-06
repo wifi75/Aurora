@@ -1,5 +1,5 @@
 /* La finestra delle Impostazioni (pages/SettingsWindow.tsx): prototipo in docs/prototipo-impostazioni.html */
-.sw-window{display:grid;grid-template-rows:auto 1fr auto;height:100vh;background:var(--bg, #0b1220);color:inherit}
+.sw-window{--sw-accent:#8e7bff;display:grid;grid-template-rows:auto 1fr auto;height:100vh;background:var(--bg, #0b1220);color:inherit}
 .sw-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line, #1f2d45)}
 .sw-top small{opacity:.65;letter-spacing:.08em;text-transform:uppercase;font-size:10px}
 .sw-x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
@@ -7,7 +7,7 @@
 .sw-nav{display:grid;gap:6px;align-content:start;padding:10px;border-right:1px solid var(--line, #1f2d45);overflow:auto}
 .sw-tab{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line, #1f2d45);border-radius:7px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
 .sw-tab i{font-style:normal;width:14px;opacity:.6}
-.sw-tab--on{background:rgba(63,182,255,.16);border-color:#3fb6ff}
+.sw-tab--on{background:color-mix(in srgb,var(--sw-accent) 20%,transparent);border-color:var(--sw-accent)}
 .sw-panel{padding:12px 14px;overflow:auto;min-width:0}
 .sw-page,.sw-stack{display:grid;gap:10px;align-content:start}
 .sw-box{border:1px solid var(--line, #1f2d45);border-radius:9px;padding:12px 14px}
@@ -21,7 +21,7 @@
 .sw-state{margin-left:auto;font-size:12px;opacity:.85}
 .sw-btn{padding:7px 12px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
 .sw-btn:disabled{opacity:.45;cursor:default}
-.sw-btn--save{background:#12507f;border-color:#3fb6ff}
+.sw-btn--save{background:color-mix(in srgb,var(--sw-accent) 55%,#0b1220);border-color:var(--sw-accent)}
 @media (max-width:760px){.sw-main{grid-template-columns:1fr}.sw-nav{grid-auto-flow:column;border-right:0;border-bottom:1px solid var(--line, #1f2d45)}.sw-grid,.sw-grid--4{grid-template-columns:1fr}}
 
 /* le schede vecchie contano su `.settings-layout` per i loro stili: qui il contenitore resta un blocco solo */
@@ -91,10 +91,22 @@
  * (resta evidenziato anche l'ultimo toccato: `:focus`, e le schede e i pulsanti in basso con la loro classe).
  */
 .sw-tab,.sw-btn,.sw-x,.sw-panel button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease,border-color .16s ease,color .16s ease}
-.sw-tab:hover,.sw-btn:hover:not(:disabled),.sw-x:hover,.sw-panel button:hover:not(:disabled){transform:translateY(-1px);border-color:var(--accent, #3fb6ff);background-color:color-mix(in srgb,var(--accent, #3fb6ff) 14%,transparent);box-shadow:0 4px 14px color-mix(in srgb,var(--accent, #3fb6ff) 28%,transparent)}
+.sw-tab:hover,.sw-btn:hover:not(:disabled),.sw-x:hover,.sw-panel button:hover:not(:disabled){transform:translateY(-1px);border-color:var(--sw-accent);background-color:color-mix(in srgb,var(--sw-accent) 14%,transparent);box-shadow:0 4px 14px color-mix(in srgb,var(--sw-accent) 28%,transparent)}
 .sw-tab:active,.sw-btn:active:not(:disabled),.sw-panel button:active:not(:disabled){transform:translateY(0) scale(.97);box-shadow:none}
-.sw-tab--on,.sw-btn--on,.sw-tab:focus-visible,.sw-btn:focus,.sw-panel button:focus-visible{border-color:var(--accent, #3fb6ff);background-color:color-mix(in srgb,var(--accent, #3fb6ff) 26%,transparent);box-shadow:inset 3px 0 0 var(--accent, #3fb6ff),0 0 0 1px color-mix(in srgb,var(--accent, #3fb6ff) 55%,transparent);outline:none}
-.sw-btn--on{box-shadow:inset 0 -3px 0 var(--accent, #3fb6ff),0 0 0 1px color-mix(in srgb,var(--accent, #3fb6ff) 55%,transparent)}
-.sw-btn--save{background-color:color-mix(in srgb,var(--accent, #3fb6ff) 45%,#0b1220)}
-.sw-btn--save:hover:not(:disabled){background-color:color-mix(in srgb,var(--accent, #3fb6ff) 65%,#0b1220)}
+.sw-tab--on,.sw-btn--on,.sw-tab:focus-visible,.sw-btn:focus,.sw-panel button:focus-visible{border-color:var(--sw-accent);background-color:color-mix(in srgb,var(--sw-accent) 26%,transparent);box-shadow:inset 3px 0 0 var(--sw-accent),0 0 0 1px color-mix(in srgb,var(--sw-accent) 55%,transparent);outline:none}
+.sw-btn--on{box-shadow:inset 0 -3px 0 var(--sw-accent),0 0 0 1px color-mix(in srgb,var(--sw-accent) 55%,transparent)}
+.sw-btn--save{background-color:color-mix(in srgb,var(--sw-accent) 45%,#0b1220)}
+.sw-btn--save:hover:not(:disabled){background-color:color-mix(in srgb,var(--sw-accent) 65%,#0b1220)}
 @media (prefers-reduced-motion:reduce){.sw-tab,.sw-btn,.sw-x,.sw-panel button{transition:none}.sw-tab:hover,.sw-btn:hover,.sw-panel button:hover{transform:none}}
+
+/* titolo e voci di ogni riquadro sullo stesso filo a sinistra; i pulsanti sotto le voci con il loro respiro */
+.sw-panel .sx-title{padding:0;margin:0 0 9px;background:none;border:0;justify-content:flex-start}
+.sw-panel .sx-body{gap:8px;padding:0}
+.sw-panel .sx-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+/* sfumature «aurora»: dal viola al turchese su pulsanti evidenziati, passaggio del mouse e Salva */
+.sw-window{--sw-accent2:#3fd6c8;--sw-grad:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 38%,transparent),color-mix(in srgb,var(--sw-accent2) 22%,transparent))}
+.sw-tab:hover,.sw-btn:hover:not(:disabled),.sw-x:hover,.sw-panel button:hover:not(:disabled){background-image:var(--sw-grad)}
+.sw-tab--on,.sw-btn--on,.sw-tab:focus-visible,.sw-btn:focus,.sw-panel button:focus-visible{background-image:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 55%,transparent),color-mix(in srgb,var(--sw-accent2) 32%,transparent))}
+.sw-btn--save{background-image:linear-gradient(135deg,var(--sw-accent),color-mix(in srgb,var(--sw-accent2) 70%,#0b1220));border-color:transparent}
+.sw-btn--save:hover:not(:disabled){background-image:linear-gradient(135deg,color-mix(in srgb,var(--sw-accent) 85%,#fff),var(--sw-accent2))}
