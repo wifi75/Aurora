@@ -13,6 +13,7 @@ import { useAutosave } from './useAutosave';
 import { WavelogStationSelect } from './WavelogStationSelect';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { coreText } from '../lib/coreText';
+import { useSharedDraft } from './session';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
 export function useIsNative(): boolean | undefined {
@@ -57,8 +58,11 @@ export interface Draft {
 }
 
 export function useDraft(): Draft & { clear(): void } {
+  const shared = useSharedDraft();
   const [changes, setChanges] = useState<Record<string, string>>({});
   const [error, setError] = useState<SaveError | null>(null);
+  // dentro la finestra delle Impostazioni la bozza e' una sola, di tutte le schede
+  if (shared) return shared;
   return {
     changes,
     error,
@@ -233,9 +237,11 @@ export function ApplyBar({ draft, doc }: { draft: Draft & { clear(): void }; doc
     },
   });
   const count = Object.keys(changes).length;
+  // nella finestra delle Impostazioni salvano i pulsanti in basso: qui niente barra e niente salvataggio da solo
+  const inWindow = useSharedDraft() !== null;
   // le modifiche si applicano da sole, dopo una breve pausa e uscendo dalla scheda
-  useAutosave(count > 0 ? changes : null, count > 0, () => apply.mutate(), (v) => void Promise.resolve().then(() => putEngineSettings(v)).catch(() => undefined), 700);
-  if (count === 0 && !note) return null;
+  useAutosave(count > 0 && !inWindow ? changes : null, count > 0 && !inWindow, () => apply.mutate(), (v) => void Promise.resolve().then(() => putEngineSettings(v)).catch(() => undefined), 700);
+  if (inWindow || (count === 0 && !note)) return null;
   return (
     <div className="jx-bar" role="status">
       {count > 0 ? <strong>{t('ens.pending', { n: count })}</strong> : null}

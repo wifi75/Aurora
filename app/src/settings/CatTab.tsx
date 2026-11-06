@@ -175,7 +175,7 @@ function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatCon
 }
 
 /** I riquadri della scheda Radio: collegamento, PTT, split, lettura, profili, prova, condivisione. Si mettono nella griglia di una pagina. */
-export function CatGroups() {
+export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles' } = {}) {
   const t = useT();
   const health = useQuery({ queryKey: ['health'], queryFn: getHealth, retry: false, staleTime: Infinity });
   const windows = (health.data?.os ?? 'windows') === 'windows';
@@ -446,8 +446,12 @@ export function CatGroups() {
     </Group>
   );
 
+  const showLink = part !== 'profiles';
+  const showProfiles = part !== 'link';
   return (
     <>
+      {showLink ? (
+      <>
       {link}
 
       {preset ? (
@@ -532,6 +536,10 @@ export function CatGroups() {
         </Cells>
       </Group>
 
+      </>
+      ) : null}
+
+      {showProfiles ? (
       <Group title={t('cat.profile')}>
         <Cells min={14}>
           <Field label={t('cat.profile.pick')} hint={t('tip.cat.profile')}>
@@ -564,6 +572,10 @@ export function CatGroups() {
         </Actions>
       </Group>
 
+      ) : null}
+
+      {showLink ? (
+      <>
       {hamlib ? (
         <Group title={t('cat.share')}>
           <Cells min={14}>
@@ -582,6 +594,8 @@ export function CatGroups() {
         </Group>
       ) : null}
 
+      </>
+      ) : null}
     </>
   );
 }

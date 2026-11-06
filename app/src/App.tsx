@@ -24,7 +24,8 @@ import { emitSpectrum } from './lib/spectrumFeed';
 import { FoxPage } from './pages/FoxPage';
 import { useStation } from './state/station';
 import { Automation } from './pages/Automation';
-import { Settings } from './pages/Settings';
+import { SettingsWindow } from './pages/SettingsWindow';
+import { openSettingsWindow } from './lib/settingsWindow';
 import { Live } from './pages/Live';
 import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
@@ -108,6 +109,16 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [groups, isSolo]);
 
+  // le Impostazioni hanno una finestra tutta loro: dalla finestra principale ogni link `#/impostazioni[/scheda]` la apre e resta la Stazione
+  useEffect(() => {
+    if (route.name !== 'settings' || REMOTE || session.data !== true) return;
+    openSettingsWindow(route.tab ?? rememberedTab(browserStorage()));
+    location.hash = '#/';
+  }, [route, session.data]);
+
+  if (route.name === 'window' && route.id === 'impostazioni' && session.data === true) {
+    return <SettingsWindow initialTab={new URLSearchParams(location.search).get('tab') ?? undefined} />;
+  }
   // finestra a parte (secondo schermo): solo la pagina, senza menu, barre e finestre di avviso
   if (route.name === 'window' && session.data === true) {
     return <SoloWindow id={route.id} />;
@@ -133,7 +144,8 @@ export function App() {
   } else if (!session.data) {
     content = <Pair onPaired={onPaired} />;
   } else if (route.name === 'settings' && !REMOTE) {
-    content = <Settings key={route.tab ?? ''} initialTab={route.tab ?? rememberedTab(browserStorage())} />;
+    // si apre la finestra (effetto qui sopra) e intanto resta la Stazione
+    content = <Live />;
   } else if (route.name === 'automation') {
     content = <Automation />;
   } else if (route.name === 'stats') {

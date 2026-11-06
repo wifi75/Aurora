@@ -262,14 +262,16 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     // finestre a parte senza cornice: si vede solo il blocco staccato (si sposta dalla sua barretta); la dashboard a blocchi resta una
     // finestra normale con la cornice di Windows
     let grid = url.query_pairs().any(|(k, v)| k == "mode" && v == "grid");
-    let frameless = !grid;
-    let display_only = !grid && url.query_pairs().any(|(k, v)| k == "items" && v == "display");
+    // le Impostazioni: finestra piccola, con la cornice di Windows, al centro e non sul secondo schermo
+    let settings = page == "impostazioni";
+    let frameless = !grid && !settings;
+    let display_only = !grid && !settings && url.query_pairs().any(|(k, v)| k == "items" && v == "display");
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
-        .title(title)
+        .title(if settings { "Aurora - Impostazioni" } else { title })
         .decorations(!frameless)
         .shadow(true)
-        .inner_size(if display_only { 660.0 } else { 1000.0 }, if display_only { 110.0 } else { 700.0 })
-        .min_inner_size(if display_only { 160.0 } else { 360.0 }, if display_only { 40.0 } else { 260.0 })
+        .inner_size(if display_only { 660.0 } else if settings { 1040.0 } else { 1000.0 }, if display_only { 110.0 } else if settings { 760.0 } else { 700.0 })
+        .min_inner_size(if display_only { 160.0 } else if settings { 760.0 } else { 360.0 }, if display_only { 40.0 } else if settings { 520.0 } else { 260.0 })
         .resizable(true)
         .visible(false)
         .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3 --autoplay-policy=no-user-gesture-required")
@@ -321,6 +323,12 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
             let _ = window.set_focus();
             return;
         }
+    }
+    if settings {
+        let _ = window.center();
+        let _ = window.show();
+        let _ = window.set_focus();
+        return;
     }
     // la prima volta: sul secondo schermo, il primo diverso da quello della finestra principale, con un po' di margine dall'angolo
     let main_monitor = app.get_webview_window("main").and_then(|m| m.current_monitor().ok().flatten()).map(|m| *m.position());

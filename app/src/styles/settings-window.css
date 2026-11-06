@@ -1,0 +1,28 @@
+/* La finestra delle Impostazioni (pages/SettingsWindow.tsx): prototipo in docs/prototipo-impostazioni.html */
+.sw-window{display:grid;grid-template-rows:auto 1fr auto;height:100vh;background:var(--bg, #0b1220);color:inherit}
+.sw-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line, #1f2d45)}
+.sw-top small{opacity:.65;letter-spacing:.08em;text-transform:uppercase;font-size:10px}
+.sw-x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
+.sw-main{display:grid;grid-template-columns:190px minmax(0,1fr);min-height:0}
+.sw-nav{display:grid;gap:6px;align-content:start;padding:10px;border-right:1px solid var(--line, #1f2d45);overflow:auto}
+.sw-tab{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line, #1f2d45);border-radius:7px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
+.sw-tab i{font-style:normal;width:14px;opacity:.6}
+.sw-tab--on{background:rgba(63,182,255,.16);border-color:#3fb6ff}
+.sw-panel{padding:12px 14px;overflow:auto;min-width:0}
+.sw-page,.sw-stack{display:grid;gap:10px;align-content:start}
+.sw-box{border:1px solid var(--line, #1f2d45);border-radius:9px;padding:12px 14px}
+.sw-box h3{margin:0 0 9px;font-size:12px}
+.sw-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px;align-items:center}
+.sw-grid--4{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
+.sw-field{display:grid;gap:3px}
+.sw-label{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+.sw-note{margin:6px 0 0;font-size:11.5px;opacity:.7}
+.sw-foot{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--line, #1f2d45)}
+.sw-state{margin-left:auto;font-size:12px;opacity:.85}
+.sw-btn{padding:7px 12px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
+.sw-btn:disabled{opacity:.45;cursor:default}
+.sw-btn--save{background:#12507f;border-color:#3fb6ff}
+@media (max-width:760px){.sw-main{grid-template-columns:1fr}.sw-nav{grid-auto-flow:column;border-right:0;border-bottom:1px solid var(--line, #1f2d45)}.sw-grid,.sw-grid--4{grid-template-columns:1fr}}
+
+/* le schede vecchie contano su `.settings-layout` per i loro stili: qui il contenitore resta un blocco solo */
+.sw-panel.settings-layout{display:block}

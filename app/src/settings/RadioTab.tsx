@@ -8,12 +8,19 @@ import { InfoTab, Row } from './common';
 import { useIsNative } from './NativeSettings';
 
 /** Scheda Radio: un'unica scheda con tutto il collegamento (modello, porta, PTT, split, lettura, profili, prova, condivisione, OmniRig). */
-export function RadioTab() {
+export function RadioTab({ part = 'all' }: { part?: 'all' | 'link' | 'profiles' } = {}) {
   const t = useT();
   const native = useIsNative();
+  if (part === 'profiles') {
+    return (
+      <Page>
+        <CatGroups part="profiles" />
+      </Page>
+    );
+  }
   return (
     <Page>
-      <CatGroups />
+      <CatGroups part={part} />
       <Group title={t('rd.title')} span={3}>
         <RadioDisplayPicker />
       </Group>
