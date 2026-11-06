@@ -406,3 +406,9 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .dock-panel--tx.grid-panel .tx-list { flex: none; grid-template-rows: none; grid-auto-rows: 28px; align-content: start; gap: 4px; }
 .dock-panel--tx.grid-panel .tx-list li { height: 28px; min-height: 0; padding-top: 0; padding-bottom: 0; align-items: center; font-size: 12px; }
 .dock-panel--tx.grid-panel .tx-n { width: 20px; height: 20px; font-size: 11px; }
+
+/* messaggi Tx ancora piu' bassi: 22 px */
+.dock-panel--tx.grid-panel .tx-list { grid-auto-rows: 22px; gap: 3px; }
+.dock-panel--tx.grid-panel .tx-list li { height: 22px; font-size: 11px; border-radius: 6px; }
+.dock-panel--tx.grid-panel .tx-n { width: 16px; height: 16px; font-size: 10px; }
+.dock-panel--tx.grid-panel .tx-list li .tx-msg-edit { padding: 0 4px; font-size: 11px; line-height: 1; }
