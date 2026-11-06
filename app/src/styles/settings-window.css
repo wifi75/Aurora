@@ -177,3 +177,12 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 :root[data-theme='light'] .sw-top::after,:root[data-theme='light'] .sw-foot{opacity:.9}
 :root[data-theme='light'] .sw-tab--on i{color:#0b7f75}
 :root[data-theme='light'] .sw-panel .sx-group{background:#f7f9fc}
+
+/* scheda Automazioni: righe di stato, caselle in griglia e registro delle decisioni */
+.sw-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.sw-check{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
+.sw-grid--2c{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px}
+.sw-field--wide{margin-top:12px}
+.sw-field input[type='text'],.sw-field input[type='number'],.sw-field select{width:100%;min-height:34px;padding:0 10px;border-radius:8px;box-sizing:border-box}
+.sw-log{margin:0;padding:0;list-style:none;display:grid;gap:6px;max-height:260px;overflow:auto}
+.sw-log li{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;font-size:12px}

@@ -158,27 +158,41 @@ html[data-bozza][data-theme='light'] .dock-panel {
     linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box;
 }
 
-/* ---- pulsante ACCESO: pieno, colorato, testo bianco in grassetto e pallino bianco: si capisce subito, in tema scuro e chiaro ---- */
+/* ---- pulsante ACCESO: come nello stile di riferimento, fondo verde scuro, contorno verde, pallino verde e testo chiaro ---- */
 html[data-bozza] .band-bar .glass--on,
 html[data-bozza] .cmd-chips .chip.glass--on,
-html[data-bozza] .mode-switch-btn.glass--on {
-  background: linear-gradient(180deg, #1fd281, #12a864) !important;
-  border-color: #8dffc2 !important;
-  color: #ffffff !important;
-  font-weight: 800;
+html[data-bozza] .mode-switch-btn.glass--on,
+html[data-bozza] .glass--on:not(.app-nav a),
+html[data-bozza] .alert-switch button[aria-pressed='true'] {
+  background: #0e2f24 !important;
+  border-color: #2cf5a4 !important;
+  color: #d9ffee !important;
+  font-weight: 700;
 }
-html[data-bozza] .cmd-chips .chip.glass--on::before {
-  background: #ffffff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35);
-}
+html[data-bozza] .cmd-chips .chip.glass--on::before { background: #2cf5a4; box-shadow: 0 0 6px rgba(44, 245, 164, .8); }
 html[data-bozza][data-theme='light'] .band-bar .glass--on,
 html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on,
-html[data-bozza][data-theme='light'] .mode-switch-btn.glass--on {
-  background: linear-gradient(180deg, #17a35f, #0f8a4f) !important;
-  border-color: #0a6a3b !important;
+html[data-bozza][data-theme='light'] .mode-switch-btn.glass--on,
+html[data-bozza][data-theme='light'] .glass--on:not(.app-nav a),
+html[data-bozza][data-theme='light'] .alert-switch button[aria-pressed='true'] {
+  background: #d3f1e3 !important;
+  border-color: #0b7f4a !important;
+  color: #053d25 !important;
+}
+html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on::before { background: #0b9a5a; box-shadow: none; }
+/* il pulsante acceso resta com'e' al passaggio del mouse, solo un po' piu' vivo */
+html[data-bozza] .band-bar .glass--on:hover,
+html[data-bozza] .cmd-chips .chip.glass--on:hover,
+html[data-bozza] .glass--on:not(.app-nav a):hover { filter: brightness(1.15); }
+
+/* menu in alto: al passaggio del mouse lo sfondo della pillola si vede bene (le voci non attive) */
+html[data-bozza] .app-nav a:not(.glass--on):not([aria-current='page']):hover {
+  background: linear-gradient(135deg, rgba(142, 123, 255, .55), rgba(39, 214, 245, .40)) !important;
+  border-color: #27d6f5 !important;
   color: #ffffff !important;
 }
-/* il pulsante acceso non cambia sfondo al passaggio del mouse (resta pieno), solo un po' piu' vivo */
-html[data-bozza] .band-bar .glass--on:hover,
-html[data-bozza] .cmd-chips .chip.glass--on:hover { filter: brightness(1.1); }
-/* tutti gli altri pulsanti accesi (Applica, Prova, schede, menu) con lo stesso criterio: pieni e in grassetto */
-html[data-bozza] .glass--on:not(.chip):not(.app-nav a) { font-weight: 800; }
+html[data-bozza][data-theme='light'] .app-nav a:not(.glass--on):not([aria-current='page']):hover {
+  background: linear-gradient(135deg, rgba(91, 69, 214, .30), rgba(11, 127, 117, .24)) !important;
+  border-color: #5b45d6 !important;
+  color: #0b1322 !important;
+}

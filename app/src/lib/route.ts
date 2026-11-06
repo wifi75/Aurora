@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'automation' } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -15,7 +15,8 @@ export function parseRoute(hash: string): Route {
   if (match) return { name: 'pair', code: (match[1] ?? '').replace(/\D/g, '') };
   const settings = /^#\/impostazioni(?:\/([a-z]+))?$/.exec(hash);
   if (settings) return settings[1] ? { name: 'settings', tab: settings[1] } : { name: 'settings' };
-  if (hash === '#/automazioni') return { name: 'automation' };
+  // le Automazioni stanno nelle Impostazioni, nella loro scheda
+  if (hash === '#/automazioni') return { name: 'settings', tab: 'automation' };
   if (hash === '#/statistiche') return { name: 'stats' };
   // la vecchia «Mappa» e' confluita nella Mappa DX: il suo indirizzo porta li'
   if (hash === '#/mappa') return { name: 'dxmap' };

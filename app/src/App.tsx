@@ -23,7 +23,6 @@ import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
 import { FoxPage } from './pages/FoxPage';
 import { useStation } from './state/station';
-import { Automation } from './pages/Automation';
 import { SettingsWindow } from './pages/SettingsWindow';
 import { Live } from './pages/Live';
 import { HistoryPage } from './pages/HistoryPage';
@@ -141,8 +140,6 @@ export function App() {
   } else if (route.name === 'settings' && !REMOTE) {
     // le Impostazioni stanno nel riquadro (qui sotto): dietro resta la Stazione
     content = <Live />;
-  } else if (route.name === 'automation') {
-    content = <Automation />;
   } else if (route.name === 'stats') {
     content = <Stats />;
   } else if (route.name === 'map') {
@@ -177,7 +174,6 @@ export function App() {
         <nav className="app-nav" aria-label={t('nav.pages')}>
           <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
           <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox" title={t('tip.nav.fox')}>{t('nav.fox')}</a>
-          <a className={`glass${route.name === 'automation' ? ' glass--on' : ''}`} aria-current={route.name === 'automation' ? 'page' : undefined} href="#/automazioni">{t('nav.automation')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
           <a className={`glass${route.name === 'dxmap' ? ' glass--on' : ''}`} aria-current={route.name === 'dxmap' ? 'page' : undefined} href="#/mappa-dx">{t('nav.dxmap')}</a>
           {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}
