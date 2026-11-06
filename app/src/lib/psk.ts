@@ -87,8 +87,18 @@ export function latestPerReceiver(rows: readonly PskRow[]): PskRow[] {
 
 /** Il continente di un punto, stimato dalla posizione (riquadri larghi: basta per contare chi ci ascolta, non e' un confine esatto). */
 export function continentAt(lat: number, lon: number): 'EU' | 'NA' | 'SA' | 'AF' | 'AS' | 'OC' {
-  if (lon < -140 || (lon > 110 && lat < -10) || (lon > 130 && lat < 0)) return 'OC';
-  if (lon < -25) return lat < 12 && lon > -82 ? 'SA' : 'NA';
+  // Pacifico: Hawaii e Polinesia (sotto i 30N: l'Alaska resta Nord America), Australia, Nuova Zelanda, Melanesia
+  if ((lon < -140 && lat < 30) || (lon > 110 && lat < -10) || (lon > 130 && lat < 0)) return 'OC';
+  // oltre il 180°: le Aleutine piu' a ovest sono Nord America, la punta della Chukotka e' Asia
+  if (lon > 170 && lat > 50 && lat < 56) return 'NA';
+  if (lon < -169 && lat > 64.5) return 'AS';
+  // le Azzorre sono Europa
+  if (lon < -25 && lon > -32 && lat > 36 && lat < 40) return 'EU';
+  if (lon < -25) {
+    // Sud America sotto i 12N, ma non Panama (a ovest del confine con la Colombia, sopra i 7N)
+    const panama = lon < -77.3 && lat > 7;
+    return lat < 12 && lon > -82 && !panama ? 'SA' : 'NA';
+  }
   if (lon <= 40 && lat >= 35) return 'EU';
   if (lon > 40 && lon <= 60 && lat >= 45) return 'EU';
   if (lon <= 52 && lat < 35 && !(lon > 34 && lat > 12)) return 'AF';

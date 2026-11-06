@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { getOnline, getPsk, getSolar } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
@@ -43,12 +43,25 @@ export function BandsOpen() {
     const out: Record<string, number> = { EU: 0, NA: 0, SA: 0, AF: 0, AS: 0, OC: 0 };
     for (const r of latestPerReceiver(rows)) {
       const p = gridCenter(r.locator.slice(0, 6)) ?? gridCenter(r.locator.slice(0, 4));
-      if (p) out[continentAt(p.lat, p.lon)] = (out[continentAt(p.lat, p.lon)] ?? 0) + 1;
+      if (!p) continue;
+      const c = continentAt(p.lat, p.lon);
+      out[c] = (out[c] ?? 0) + 1;
     }
     return out;
   }, [rows]);
-  // record di distanza: il piu' lontano di oggi (dagli spot) e della settimana (ricordato giorno per giorno su questo dispositivo)
-  const records = useMemo(() => recordsFrom(farthest[0] ?? null), [farthest]);
+  // record di distanza: il piu' lontano di oggi (solo gli spot di oggi UTC: la finestra di PSK Reporter arriva anche a ieri) e degli
+  // ultimi 7 giorni (ricordato giorno per giorno su questo dispositivo)
+  const todayBest = useMemo(() => {
+    const dayStart = Math.floor(Date.now() / 86_400_000) * 86_400;
+    let best: (typeof rows)[number] | null = null;
+    for (const r of rows) {
+      if (r.km === null || r.km === undefined || r.time_s < dayStart) continue;
+      if (!best || r.km > (best.km ?? -1)) best = r;
+    }
+    return best;
+  }, [rows]);
+  const records = useMemo(() => recordsFrom(todayBest), [todayBest]);
+  useEffect(() => saveRecords(records.kept), [records]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -128,29 +141,51 @@ interface DistanceRecord {
 
 const RECORDS_KEY = 'aurora-record-distanza';
 
-/** Il record di oggi e quello degli ultimi 7 giorni: ogni giorno si ricorda il piu' lontano visto (su questo dispositivo). */
-function recordsFrom(best: { receiver: string; band: string | null; km: number | null } | null): { today: DistanceRecord | null; week: DistanceRecord | null } {
-  const day = new Date().toISOString().slice(0, 10);
-  let saved: Record<string, DistanceRecord> = {};
+function isRecord(v: unknown): v is DistanceRecord {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return typeof r.call === 'string' && typeof r.band === 'string' && typeof r.km === 'number' && Number.isFinite(r.km);
+}
+
+/** I record salvati giorno per giorno; un archivio rovinato o scritto da un'altra versione vale come vuoto (non deve far cadere la scheda). */
+function loadRecords(): Record<string, DistanceRecord> {
+  const out: Record<string, DistanceRecord> = {};
   try {
-    saved = JSON.parse(browserStorage()?.getItem(RECORDS_KEY) ?? '{}') as Record<string, DistanceRecord>;
+    const raw: unknown = JSON.parse(browserStorage()?.getItem(RECORDS_KEY) ?? '{}');
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return out;
+    for (const [day, v] of Object.entries(raw)) if (/^\d{4}-\d{2}-\d{2}$/.test(day) && isRecord(v)) out[day] = v;
   } catch {
-    saved = {};
+    // archivio illeggibile: si riparte da zero
   }
-  const old = saved[day];
-  if (best && best.km !== null && (!old || best.km > old.km)) {
-    saved[day] = { call: best.receiver, band: best.band ?? '', km: best.km };
-  }
-  const kept: Record<string, DistanceRecord> = {};
-  for (const d of Object.keys(saved).sort().slice(-7)) {
-    const v = saved[d];
-    if (v) kept[d] = v;
-  }
+  return out;
+}
+
+function saveRecords(kept: Record<string, DistanceRecord>): void {
   try {
     browserStorage()?.setItem(RECORDS_KEY, JSON.stringify(kept));
   } catch {
     // senza archivio il record vale finche' la pagina resta aperta
   }
+}
+
+/**
+ * Il record di oggi e quello degli ultimi 7 giorni di calendario (oggi compreso): ogni giorno si ricorda il piu' lontano visto, su questo
+ * dispositivo. Non scrive niente: `kept` e' quello da salvare (lo fa un effetto, fuori dal disegno).
+ */
+function recordsFrom(best: { receiver: string; band: string | null; km: number | null } | null): {
+  today: DistanceRecord | null;
+  week: DistanceRecord | null;
+  kept: Record<string, DistanceRecord>;
+} {
+  const day = new Date().toISOString().slice(0, 10);
+  const firstDay = new Date(Date.now() - 6 * 86_400_000).toISOString().slice(0, 10);
+  const saved = loadRecords();
+  const old = saved[day];
+  if (best && best.km !== null && (!old || best.km > old.km)) {
+    saved[day] = { call: best.receiver, band: best.band ?? '', km: best.km };
+  }
+  const kept: Record<string, DistanceRecord> = {};
+  for (const [d, v] of Object.entries(saved)) if (d >= firstDay && d <= day) kept[d] = v;
   const week = Object.values(kept).reduce<DistanceRecord | null>((a, b) => (!a || b.km > a.km ? b : a), null);
-  return { today: kept[day] ?? null, week };
+  return { today: kept[day] ?? null, week, kept };
 }

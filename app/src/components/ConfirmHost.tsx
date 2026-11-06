@@ -12,7 +12,11 @@ export function askConfirm(text: string): Promise<boolean> {
     const host = document.createElement('div');
     document.body.appendChild(host);
     const root = createRoot(host);
+    let done = false;
     const answer = (ok: boolean) => {
+      // Esc e clic quasi insieme: la seconda risposta non deve smontare di nuovo la finestra
+      if (done) return;
+      done = true;
       root.unmount();
       host.remove();
       resolve(ok);

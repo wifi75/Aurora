@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.164',
+    released: '2026-11-06T22:48:53Z',
+    kind: 'fixed',
+    title: ['Pagine che scorrono di nuovo', 'Pages scroll again', 'Seiten scrollen wieder', 'Les pages défilent à nouveau', 'Las páginas vuelven a desplazarse', 'As páginas voltam a deslizar'],
+    text: [
+      "Fox, Propagazione e le altre pagine scorrono di nuovo fino in fondo sugli schermi larghi (prima la parte sotto restava nascosta); solo la Stazione resta tutta nella finestra. Lo splash mostra l'autore completo. Bande aperte: il record di «Oggi» conta solo gli spot di oggi, «7 giorni» sono gli ultimi 7 giorni di calendario e i continenti sono più precisi (Alaska, Azzorre, Panama).",
+      "Fox, Propagation and the other pages scroll all the way down again on wide screens (the lower part used to stay hidden); only the Station page stays within the window. The splash shows the full author. Open bands: the «Today» record counts only today's spots, «7 days» means the last 7 calendar days and continents are more accurate (Alaska, Azores, Panama).",
+      "Fox, Ausbreitung und die anderen Seiten scrollen auf breiten Bildschirmen wieder bis ganz unten (der untere Teil blieb verborgen); nur die Station bleibt im Fenster. Der Startbildschirm zeigt den vollständigen Autor. Offene Bänder: der Rekord «Heute» zählt nur heutige Spots, «7 Tage» sind die letzten 7 Kalendertage und die Kontinente sind genauer (Alaska, Azoren, Panama).",
+      "Fox, Propagation et les autres pages défilent à nouveau jusqu’en bas sur les grands écrans (la partie basse restait cachée) ; seule la Station reste dans la fenêtre. L’écran d’accueil montre l’auteur complet. Bandes ouvertes : le record « Aujourd’hui » ne compte que les spots du jour, « 7 jours » sont les 7 derniers jours du calendrier et les continents sont plus précis (Alaska, Açores, Panama).",
+      "Fox, Propagación y las demás páginas vuelven a desplazarse hasta abajo en pantallas anchas (la parte inferior quedaba oculta); solo la Estación queda dentro de la ventana. La pantalla de inicio muestra el autor completo. Bandas abiertas: el récord «Hoy» cuenta solo los spots de hoy, «7 días» son los últimos 7 días de calendario y los continentes son más precisos (Alaska, Azores, Panamá).",
+      "Fox, Propagação e as outras páginas voltam a deslizar até ao fim em ecrãs largos (a parte de baixo ficava escondida); só a Estação fica dentro da janela. O ecrã inicial mostra o autor completo. Bandas abertas: o recorde «Hoje» conta só os spots de hoje, «7 dias» são os últimos 7 dias de calendário e os continentes são mais precisos (Alasca, Açores, Panamá).",
+    ],
+  },
+  {
     version: '0.11.163',
     released: '2026-11-06T22:45:55Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans Activité de bande la station appelée reste sur une seule ligne fixée en haut et change de couleur à chaque réponse jusqu’au log. De QRZ.com et HamQTH arrivent LoTW, eQSL, QSL directe et QSL manager : lettres L E D à côté de la station DX et dans la bulle de l’indicatif, aussi dans Activité de bande. Afficheurs larges 640 × 80 centrés, presque carrés 330 × 110 ; langue, volume et thème petits après Nouveautés. Sous le QR un conseil pour Chrome sur Android.",
       "En Actividad de banda la estación que llamas queda en una sola fila fija arriba y cambia de color con cada respuesta hasta el log. De QRZ.com y HamQTH llegan LoTW, eQSL, QSL directa y QSL manager: letras L E D junto a la estación DX y en el recuadro del indicativo, ahora también en Actividad de banda. Pantallas anchas 640 × 80 centradas, casi cuadradas 330 × 110; idioma, volumen y tema pequeños tras Novedades. Bajo el QR un consejo para Chrome en Android.",
       "Na Atividade de banda a estação que chamas fica numa só linha fixa em cima e muda de cor a cada resposta até ao log. Do QRZ.com e HamQTH chegam LoTW, eQSL, QSL direta e QSL manager: letras L E D junto à estação DX e no quadro do indicativo, agora também na Atividade de banda. Ecrãs largos 640 × 80 centrados, quase quadrados 330 × 110; idioma, volume e tema pequenos depois de Novidades. Sob o QR um conselho para o Chrome no Android.",
-    ],
-  },
-  {
-    version: '0.11.124',
-    released: '2026-11-04T20:43:34Z',
-    kind: 'new',
-    title: ['Log anche senza il 73, Split sul telefono', 'Logged even without the 73, Split on the phone', 'Log auch ohne 73, Split am Telefon', 'Log même sans le 73, Split sur le téléphone', 'Log incluso sin el 73, Split en el teléfono', 'Log mesmo sem o 73, Split no telemóvel'],
-    text: [
-      "Dopo il tuo RRR, se la stazione non manda il 73, all'ultimo tentativo il QSO va a log lo stesso (o si apre la conferma). Sul telefono il tasto Tx/Rx Split accanto alla stazione chiamata. Nel pannello Log c'è il paese; in Attività di banda bandiera e paese 10 px più a destra; i display estesi sono 640 × 75 e il LED essenziale ha S, Po e SWR sotto i pulsanti.",
-      "After your RRR, if the station never sends 73, the QSO is logged anyway at the last try (or the confirmation opens). On the phone a Tx/Rx Split button next to the called station. The Log panel shows the country; in Band activity flag and country sit 10 px further right; wide displays are 640 × 75 and the essential LED has S, Po and SWR under the buttons.",
-      "Nach deinem RRR wird das QSO beim letzten Versuch auch ohne 73 geloggt (oder die Bestätigung öffnet sich). Am Telefon ein Tx/Rx-Split-Schalter neben der gerufenen Station. Das Log-Feld zeigt das Land; in der Bandaktivität stehen Flagge und Land 10 px weiter rechts; breite Anzeigen sind 640 × 75, die LED-Anzeige hat S, Po und SWR unter den Tasten.",
-      "Après ton RRR, si la station n’envoie pas le 73, le QSO est enregistré au dernier essai (ou la confirmation s’ouvre). Sur le téléphone un bouton Tx/Rx Split à côté de la station appelée. Le panneau Log affiche le pays ; dans Activité de bande drapeau et pays 10 px plus à droite ; les afficheurs larges font 640 × 75 et le LED essentiel a S, Po et SWR sous les boutons.",
-      "Tras tu RRR, si la estación no manda el 73, en el último intento el QSO se registra igual (o se abre la confirmación). En el teléfono un botón Tx/Rx Split junto a la estación llamada. El panel Log muestra el país; en Actividad de banda bandera y país 10 px más a la derecha; las pantallas anchas son 640 × 75 y el LED esencial tiene S, Po y SWR bajo los botones.",
-      "Depois do teu RRR, se a estação não mandar o 73, na última tentativa o QSO vai para o log na mesma (ou abre-se a confirmação). No telemóvel um botão Tx/Rx Split junto à estação chamada. O painel Log mostra o país; na Atividade de banda bandeira e país 10 px mais à direita; os ecrãs largos são 640 × 75 e o LED essencial tem S, Po e SWR por baixo dos botões.",
     ],
   },
 ];
