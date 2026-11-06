@@ -40,7 +40,7 @@ function Meter({ level }: { level: Level }) {
   );
 }
 
-function Conditions({ data, group, nightNow }: { data: SolarData; group: string | null; nightNow: boolean | null }) {
+export function Conditions({ data, group, nightNow }: { data: SolarData; group: string | null; nightNow: boolean | null }) {
   const t = useT();
   const find = (name: string, time: string) => data.bands.find((b) => b.name === name && b.time === time)?.condition ?? '';
   const word = (condition: string, level: Level) => (level === 'none' ? condition || '–' : t(`prop.cond.${level === 'good' ? 'Good' : level === 'fair' ? 'Fair' : 'Poor'}` as Key));
