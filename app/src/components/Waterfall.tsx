@@ -4,7 +4,8 @@ import { createBackend, type WaterfallBackend } from '../render/backend';
 import { jtdxPaletteLut } from '../render/colormap';
 import { PeriodAverage, RowPacer, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
 import { drawSpectrum } from '../render/spectrumPlot';
-import { WATERFALL_WIDTH } from '../render/webgl2';
+import { WATERFALL_WIDTH, rowsPerPixel } from '../render/webgl2';
+import { WaterfallToolbar } from './WaterfallToolbar';
 import { periodSecs } from '../lib/period';
 import { type SpectrumListener, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { ROW_SECS, WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
@@ -16,6 +17,8 @@ interface Props {
   mode?: string;
   /** Telefono: lo spettro sempre visibile sotto la cascata, alto questi pixel (invece della quota `Spec %`). */
   spectrumPx?: number;
+  /** La banda in uso (20m...): si scrive accanto all'ora sulla cascata. */
+  band?: string;
 }
 
 /** Quota massima dell'altezza per lo spettro (%). */
@@ -27,7 +30,7 @@ type Phase = 'loading' | 'ready' | 'unsupported';
  * La cascata e lo spettro del Wide Graph di JTDX: le righe del core (canali da 0,732 Hz) diventano pixel con le opzioni
  * delle Impostazioni → Cascata (Bins/Pixel, Start, N Avg, Scale, Flatten, tavolozza, Gain, Zero, spettro Current/Cumulative).
  */
-export function Waterfall({ register, mode, spectrumPx }: Props) {
+export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>('loading');
   const [kind, setKind] = useState('');
@@ -43,8 +46,51 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
   const specPercent = Math.min(prefs.spectrumPercent, MAX_SPECTRUM_SHARE);
 
   // le opzioni correnti per il ricevitore delle righe, che vive per tutta la vita del renderer
-  const live = useRef({ prefs, from: range.from, to: range.to, mode });
-  live.current = { prefs, from: range.from, to: range.to, mode };
+  const live = useRef({ prefs, from: range.from, to: range.to, mode, band });
+  live.current = { prefs, from: range.from, to: range.to, mode, band };
+  // «Time stamp»: l'ora di ogni inizio di periodo scende con la cascata; `age` conta le righe arrivate dopo
+  const stampsRef = useRef<HTMLCanvasElement>(null);
+  const marks = useRef<Array<{ label: string; age: number }>>([]);
+  const drawStamps = () => {
+    const stamps = stampsRef.current;
+    const main = canvasRef.current;
+    if (!stamps || !main) return;
+    const dpr = window.devicePixelRatio || 1;
+    stamps.style.top = `${main.offsetTop}px`;
+    stamps.style.height = `${main.clientHeight}px`;
+    const w = Math.max(1, Math.round(main.clientWidth * dpr));
+    const h = Math.max(1, Math.round(main.clientHeight * dpr));
+    if (stamps.width !== w) stamps.width = w;
+    if (stamps.height !== h) stamps.height = h;
+    const ctx = stamps.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, w, h);
+    if (!live.current.prefs.timeStamp) return;
+    const rpp = rowsPerPixel(main.height);
+    ctx.font = `${Math.round(11 * dpr)}px 'IBM Plex Sans', system-ui, sans-serif`;
+    ctx.textBaseline = 'top';
+    for (const m of marks.current) {
+      const y = Math.round((m.age / rpp) * (h / Math.max(1, main.height)));
+      if (y > h) continue;
+      const pad = 3 * dpr;
+      const tw = ctx.measureText(m.label).width;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.fillRect(4 * dpr, y + 2 * dpr, tw + pad * 2, 14 * dpr);
+      ctx.fillStyle = '#e8f1ff';
+      ctx.fillText(m.label, 4 * dpr + pad, y + 4 * dpr);
+    }
+  };
+  // ogni riga nuova allontana di una riga i segni gia' scritti; quelli fuori dall'altezza si tolgono
+  const bumpStamps = (startsPeriod: boolean) => {
+    for (const m of marks.current) m.age += 1;
+    if (startsPeriod) {
+      const hhmmss = new Date().toISOString().slice(11, 19);
+      marks.current.push({ label: live.current.band ? `${hhmmss}  ${live.current.band}` : hhmmss, age: 0 });
+    }
+    const limit = (canvasRef.current?.height ?? 600) * 2;
+    marks.current = marks.current.filter((m) => m.age <= limit).slice(-40);
+    drawStamps();
+  };
   const curveRef = useRef<Float32Array | null>(null);
   const drawPlot = () => {
     const canvas = plotRef.current;
@@ -92,6 +138,7 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
         observer = new ResizeObserver(() => {
           fit();
           drawPlot();
+          drawStamps();
         });
         observer.observe(canvas);
         if (plotRef.current) observer.observe(plotRef.current);
@@ -118,6 +165,7 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
           // la riga si puo' spegnere (Impostazioni > Cascata): il periodo nuovo comincia comunque
           if (startsPeriod && p.periodLine) {
             b.pushRow(new Uint8Array(1), 1);
+            bumpStamps(true);
             return;
           }
           const binWidthHz = (fMaxHz - fMinHz) / bins.length;
@@ -125,6 +173,7 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
           const row = processRow(average, binWidthHz, options);
           if (row.codes.length === 0) return;
           b.pushRow(fitWidth(row.codes, WATERFALL_WIDTH));
+          bumpStamps(false);
           if (Math.min(p.spectrumPercent, MAX_SPECTRUM_SHARE) > 0) {
             const cumulative = p.spectrumMode === 'cumulative' ? periodAverage.average() : null;
             const values = cumulative ? cumulativeCurve(cumulative, binWidthHz, options) : row.y;
@@ -174,8 +223,11 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
     </label>
   );
 
+  // la barra dei comandi sopra la cascata (non sul telefono, dove lo spazio e' poco)
+  const bar = !spectrumPx;
   return (
-    <div className="waterfall" data-backend={kind} data-phase={phase}>
+    <div className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
+      {bar ? <WaterfallToolbar fromHz={range.from} toHz={range.to} /> : null}
       <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       <canvas
         ref={plotRef}
@@ -183,6 +235,7 @@ export function Waterfall({ register, mode, spectrumPx }: Props) {
         aria-hidden="true"
         style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: 'block' } : { flex: `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
       />
+      <canvas ref={stampsRef} className="wf-stamps" aria-hidden="true" />
       {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
       <div className="wf-controls">
         {quick('gain')}

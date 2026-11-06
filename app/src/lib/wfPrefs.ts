@@ -32,6 +32,8 @@ export interface WfPrefs {
   periodLine: boolean;
   /** «Freq»: la frequenza sotto il puntatore. */
   freq: boolean;
+  /** «Time stamp»: l'ora (UTC) e la banda scritte sulla cascata a ogni inizio di periodo. */
+  timeStamp: boolean;
   /**
    * Velocita' della cascata. `wsjtx`: una riga ogni mezzo simbolo FT8 (0,288 s, `jstep = nsps/2` con `nsps = 6912` di
    * `symspec.f90`) per N Avg, ~52 righe a periodo di 15 s con N Avg 1. `jtdx`: 15 righe al secondo per N Avg (~225 a periodo).
@@ -102,6 +104,7 @@ export function defaultWfPrefs(): WfPrefs {
     userPalette: JTDX_PALETTES[DEFAULT_PALETTE]!.map((c) => [...c] as unknown as PaletteColor),
     bars: true,
     freq: false,
+    timeStamp: true,
     styleApplied: true,
     spectrumLive: true,
   };
@@ -142,7 +145,7 @@ export function readWfPrefs(storage: ReadableStorage): WfPrefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     for (const key of Object.keys(WF_LIMITS) as NumericKey[]) prefs[key] = inRange(key, parsed[key], prefs[key]);
-    for (const key of ['scale', 'flatten', 'bars', 'periodLine', 'freq'] as const) {
+    for (const key of ['scale', 'flatten', 'bars', 'periodLine', 'freq', 'timeStamp'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (parsed.spectrumMode === 'current' || parsed.spectrumMode === 'cumulative') prefs.spectrumMode = parsed.spectrumMode;
