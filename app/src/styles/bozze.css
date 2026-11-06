@@ -527,3 +527,8 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 .dock-panel--tx.grid-panel .tx-panel--combo .tx-left { flex: none; }
 .dock-panel--tx.grid-panel .tx-panel--combo .tx-split { justify-content: flex-start; overflow: auto; }
 .dock-panel--tx.grid-panel .tx-panel--combo .tx-block { margin-top: 2px; }
+
+/* niente tremolio: la barra di scorrimento non compare e scompare cambiando le larghezze, e non c'e' mai scorrimento laterale */
+.live-board { overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
+.dock-panel--tx.grid-panel .tx-panel--combo .tx-split { overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
+.grid-panel .dock-body { scrollbar-gutter: stable; }
