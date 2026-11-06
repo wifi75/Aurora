@@ -553,3 +553,6 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 /* Mappa DX nella pagina a blocchi: riempie la finestra, senza altezze minime */
 .dock-panel--dxmap .dock-body { padding: 0; overflow: hidden; }
 .dock-panel--dxmap .dxmap-page { height: 100%; min-height: 0; padding: 2px; }
+
+/* Mappa DX a blocchi: nessuna barra dei comandi, solo la mappa */
+.dxmap-page--bare > .dxmap-bar { display: none !important; }
