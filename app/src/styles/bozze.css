@@ -722,3 +722,20 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .bands-open-cont--on { opacity: 1; border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .bands-open-records { display: grid; gap: 3px; }
 .bands-open-record { display: grid; grid-template-columns: 4.2rem 1fr auto auto; align-items: center; gap: 6px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; }
+
+/* pulsante del modo (FT8, FT4...): il modo scelto sempre ben in evidenza (bordo pieno, alone, testo marcato) */
+html[data-bozza] .mode-switch-btn.glass,
+html[data-bozza] .mode-switch-btn {
+  background: rgba(44, 245, 164, .2) !important;
+  border: 2px solid #2cf5a4 !important;
+  color: #eafff5 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(44, 245, 164, .45) !important;
+}
+html[data-bozza][data-theme='light'] .mode-switch-btn.glass,
+html[data-bozza][data-theme='light'] .mode-switch-btn {
+  background: #d9f7ec !important;
+  border-color: #0b7f75 !important;
+  color: #063a28 !important;
+  box-shadow: 0 0 8px rgba(11, 127, 117, .35) !important;
+}
