@@ -20,9 +20,8 @@ import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 
-// stile dei pulsanti e dei riquadri: la bozza A (scelta dal proprietario) e' quella di tutta l'app; `?bozza=b` o `?bozza=c` provano le altre (styles/bozze.css)
-const draftStyle = new URLSearchParams(window.location.search).get('bozza');
-document.documentElement.dataset.bozza = draftStyle && /^[abc]$/.test(draftStyle) ? draftStyle : 'a';
+// stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
+document.documentElement.dataset.bozza = 'a';
 
 const queryClient = new QueryClient();
 const root = document.getElementById('root');
