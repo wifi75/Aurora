@@ -71,3 +71,89 @@ html[data-bozza][data-theme='light'] .app-nav a::before { background: linear-gra
 html[data-bozza][data-theme='light'] .app-nav a:hover { background: linear-gradient(135deg, rgba(91, 69, 214, .12), rgba(11, 127, 117, .10)); border-color: #5b45d6; }
 html[data-bozza][data-theme='light'] .app-nav a.glass--on,
 html[data-bozza][data-theme='light'] .app-nav a[aria-current='page'] { background: linear-gradient(135deg, rgba(91, 69, 214, .22), rgba(11, 127, 117, .14)); border-color: #5b45d6; color: #0b1322; box-shadow: none; }
+
+/* nessuna ombra sui pulsanti (a riposo, al passaggio del mouse, premuti, in primo piano) */
+html[data-bozza] button,
+html[data-bozza] button:hover,
+html[data-bozza] button:focus,
+html[data-bozza] button:active,
+html[data-bozza] .glass,
+html[data-bozza] .glass:hover,
+html[data-bozza] .glass--on,
+html[data-bozza] a.glass,
+html[data-bozza] .chip,
+html[data-bozza] [role='tab'],
+html[data-bozza] .app-nav a,
+html[data-bozza] .app-nav a:hover,
+html[data-bozza] .sw-tab,
+html[data-bozza] .sw-btn,
+html[data-bozza] .sw-x,
+html[data-bozza] .theme-toggle,
+html[data-bozza] .alert-switch button,
+html[data-bozza] .size-switch,
+html[data-bozza] .stop-btn,
+html[data-bozza] input[type='button'],
+html[data-bozza] input[type='submit'] {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* al passaggio del mouse lo sfondo di ogni pulsante cambia in modo ben visibile (senza ombre) */
+html[data-bozza] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
+  background: #1d3157 !important;
+  border-color: #4b6bb0 !important;
+}
+html[data-bozza][data-theme='light'] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
+  background: #dfe8f6 !important;
+  border-color: #3f5a8e !important;
+}
+html[data-bozza] :is(button, a.glass, .chip, [role='tab']) { transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+
+/* ---- barra delle bande, pulsanti dei comandi e scelta del modo: pillole come il menu, ognuno con il suo colore di contorno ---- */
+html[data-bozza] .band-bar .glass,
+html[data-bozza] .cmd-chips .chip,
+html[data-bozza] .mode-switch-btn {
+  border-radius: 999px !important;
+  background: #0f192b;
+  color: var(--text);
+  border: 1px solid;
+  font-weight: 600;
+}
+/* bande: contorno turchese */
+html[data-bozza] .band-bar .glass { border-color: rgba(39, 214, 245, .55) !important; }
+/* comandi: contorno viola, con il pallino dell'aurora */
+html[data-bozza] .cmd-chips .chip { border-color: rgba(142, 123, 255, .75) !important; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px 0 9px; }
+html[data-bozza] .cmd-chips .chip::before {
+  content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%;
+  background: linear-gradient(135deg, #2cf5a4, #27d6f5 55%, #8e7bff);
+}
+/* modo (FT8...): contorno verde */
+html[data-bozza] .mode-switch-btn { border-color: rgba(44, 245, 164, .65) !important; }
+/* acceso: pieno con la sfumatura verde-turchese, contorno verde */
+html[data-bozza] .band-bar .glass--on,
+html[data-bozza] .cmd-chips .chip.glass--on {
+  background: linear-gradient(135deg, rgba(44, 245, 164, .38), rgba(39, 214, 245, .26)) !important;
+  border-color: #2cf5a4 !important; color: #fff;
+}
+/* tema chiaro: fondo bianco, contorni piu' scuri */
+html[data-bozza][data-theme='light'] .band-bar .glass,
+html[data-bozza][data-theme='light'] .cmd-chips .chip,
+html[data-bozza][data-theme='light'] .mode-switch-btn { background: #ffffff; color: #0b1322; }
+html[data-bozza][data-theme='light'] .band-bar .glass { border-color: #1f8fd0 !important; }
+html[data-bozza][data-theme='light'] .cmd-chips .chip { border-color: #5b45d6 !important; }
+html[data-bozza][data-theme='light'] .mode-switch-btn { border-color: #0b7f75 !important; }
+html[data-bozza][data-theme='light'] .band-bar .glass--on,
+html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on { background: linear-gradient(135deg, rgba(11, 154, 106, .30), rgba(31, 143, 208, .22)) !important; border-color: #0b7f75 !important; color: #0b1322; }
+
+/* ---- riquadri (le «finestre» della pagina): filo sottile con i colori dell'aurora, verde -> turchese -> viola ---- */
+html[data-bozza] .dock-panel {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0a1220, #0a1220) padding-box,
+    linear-gradient(135deg, rgba(44, 245, 164, .75), rgba(39, 214, 245, .55) 50%, rgba(142, 123, 255, .75)) border-box;
+}
+html[data-bozza][data-theme='light'] .dock-panel {
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box;
+}
