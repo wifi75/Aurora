@@ -1,6 +1,10 @@
 # Changelog
 
 ## Non rilasciato
+### Aggiunto
+- Analisi a priori (AP) anche in FT4 (nominativo, DX, CQ) e collegata al motore proprio anche in FT8.
+- Elenco dei nominativi conosciuti (log + stazioni ascoltate, salvato in `known_calls.txt`): filtra i falsi decode deboli, attivo da 300 nominativi.
+- Controllo del locatore: scarta i decode deboli o AP con un quadrato troppo lontano dal paese del nominativo (oltre 5500 km dal centro).
 
 ## 0.11.155 - 2026-11-05
 ### Corretto

@@ -61,6 +61,8 @@ le prove dal vivo con la radio le faccio io.
 
 ## Prossimo passo
 
+0. **2026-11-06, su `main` non rilasciato**: AP in FT4 e FT8 collegata al motore, elenco dei nominativi conosciuti, controllo del locatore (dettagli in `memory.md`, «Motori: AP…»). Dal PC di casa con REA: confronto sui WAV Aurora/JTDX e prova dal vivo di queste tre cose (voci in `TODO.md`).
+
 0. Pubblicare la versione con il lavoro del 2026-11-05 (dal PC), poi guardare su Cloudflare se i blocchi audio persi calano e da che tipo di ingresso arrivano.
 0. JT65/JT9 sul segnale debole e SWL (`NFILT2`, `ldeepsync`): da fare dal PC con JTDX e REA, non a memoria.
 1. Opzioni del display lette da Hamlib per ogni modello (`TODO.md`, «Display grandi in testata»).
