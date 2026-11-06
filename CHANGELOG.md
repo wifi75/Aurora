@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.161 - 2026-11-06
+### Corretto
+- Trasmissione: i cursori Rx e Pwr restano sempre visibili in fondo al pannello anche quando è basso (0.11.160: potevano finire sotto il bordo); distanze fra i pulsanti a 6 px.
+
+### Modificato
+- Statistiche: riquadri dei numeri alti uguali, «Per banda» con numeri allineati a destra, scheda DXCC a tutta larghezza.
+
 ## 0.11.160 - 2026-11-06
 ### Aggiunto
 - Bande aperte: mini-mappa NASA di chi ti ascolta (PSK Reporter) con le linee dalla propria stazione e il collegamento alla Mappa DX.

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.161',
+    released: '2026-11-06T22:16:15Z',
+    kind: 'fixed',
+    title: ['Cursori di Trasmissione sempre visibili', 'Transmit sliders always visible', 'Sende-Regler immer sichtbar', 'Curseurs d’émission toujours visibles', 'Controles de transmisión siempre visibles', 'Cursores de transmissão sempre visíveis'],
+    text: [
+      "Trasmissione: i cursori Rx e Pwr restano sempre visibili in fondo al pannello, anche quando è basso (nella 0.11.160 potevano finire sotto il bordo); se lo spazio non basta scorrono solo i pulsanti sopra. Statistiche riordinate: riquadri uguali, numeri per banda allineati e scheda DXCC a tutta larghezza.",
+      "Transmit: the Rx and Pwr sliders always stay visible at the bottom of the panel, even when it is short (in 0.11.160 they could end up below the edge); if space runs out only the buttons above scroll. Statistics tidied up: equal tiles, per-band numbers aligned and DXCC card full width.",
+      "Senden: Die Regler Rx und Pwr bleiben unten im Fenster immer sichtbar, auch wenn es niedrig ist (in 0.11.160 konnten sie unter dem Rand verschwinden); reicht der Platz nicht, scrollen nur die Tasten darüber. Statistik aufgeräumt: gleiche Felder, Bandzahlen ausgerichtet, DXCC-Karte über die ganze Breite.",
+      "Émission : les curseurs Rx et Pwr restent toujours visibles en bas du panneau, même s’il est bas (en 0.11.160 ils pouvaient passer sous le bord) ; si la place manque, seuls les boutons au-dessus défilent. Statistiques rangées : cadres égaux, chiffres par bande alignés et fiche DXCC sur toute la largeur.",
+      "Transmisión: los controles Rx y Pwr quedan siempre visibles al fondo del panel, aunque sea bajo (en la 0.11.160 podían quedar bajo el borde); si falta espacio solo se desplazan los botones de arriba. Estadísticas ordenadas: recuadros iguales, números por banda alineados y ficha DXCC a todo el ancho.",
+      "Transmissão: os cursores Rx e Pwr ficam sempre visíveis no fundo do painel, mesmo quando é baixo (na 0.11.160 podiam ficar abaixo da margem); se faltar espaço só os botões de cima deslizam. Estatísticas arrumadas: quadros iguais, números por banda alinhados e ficha DXCC em toda a largura.",
+    ],
+  },
+  {
     version: '0.11.160',
     released: '2026-11-06T22:12:42Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand une nouvelle version existe, l’affiche apparaît quelques secondes après l’ouverture d’Aurora : avant, elle pouvait attendre jusqu’à 10 minutes si l’avis avait déjà été donné lors d’un démarrage précédent.",
       "Cuando hay una versión nueva, el cartel aparece pocos segundos después de abrir Aurora: antes podía tardar hasta 10 minutos si el aviso ya se había dado en un inicio anterior.",
       "Quando há uma versão nova, o cartaz aparece poucos segundos depois de abrir a Aurora: antes podia demorar até 10 minutos se o aviso já tivesse sido dado num arranque anterior.",
-    ],
-  },
-  {
-    version: '0.11.121',
-    released: '2026-11-04T18:01:02Z',
-    kind: 'fixed',
-    title: ["OmniRig spiegato e cluster solo se serve", "OmniRig explained and cluster only when needed", "OmniRig erklärt, Cluster nur bei Bedarf", "OmniRig expliqué et cluster seulement si utile", "OmniRig explicado y cluster solo si hace falta", "OmniRig explicado e cluster só quando faz falta"],
-    text: [
-      "Quando OmniRig non risponde, Aurora dice cosa controllare (porta e modello di Rig1, radio accesa) o suggerisce Hamlib. Sul telefono il DX Cluster compare solo se è acceso in Aurora.",
-      "When OmniRig does not answer, Aurora tells you what to check (Rig1 port and model, radio switched on) or suggests Hamlib. On the phone the DX Cluster appears only if it is on in Aurora.",
-      "Wenn OmniRig nicht antwortet, sagt Aurora, was zu prüfen ist (Port und Modell von Rig1, Funkgerät an), oder schlägt Hamlib vor. Auf dem Telefon erscheint der DX-Cluster nur, wenn er in Aurora an ist.",
-      "Quand OmniRig ne répond pas, Aurora dit quoi vérifier (port et modèle de Rig1, radio allumée) ou propose Hamlib. Sur le téléphone le DX Cluster n’apparaît que s’il est activé dans Aurora.",
-      "Cuando OmniRig no responde, Aurora dice qué revisar (puerto y modelo de Rig1, radio encendida) o sugiere Hamlib. En el teléfono el DX Cluster aparece solo si está activado en Aurora.",
-      "Quando o OmniRig não responde, a Aurora diz o que verificar (porta e modelo do Rig1, rádio ligado) ou sugere o Hamlib. No telemóvel o DX Cluster só aparece se estiver ligado na Aurora.",
     ],
   },
 ];

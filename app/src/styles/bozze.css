@@ -718,6 +718,6 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .bands-open-map .worldmap { flex: 1; aspect-ratio: auto; min-height: 8rem; max-height: none; border-radius: 6px; overflow: hidden; }
 .bands-open-map .worldmap-zoom, .bands-open-map .worldmap-readout, .bands-open-map .leaflet-control-attribution { display: none; }
 /* i pulsanti stanno davvero nella griglia .qso-cols (le altre sono «contents»): la distanza va data qui */
-.dock-panel--tx .tx-panel--combo .qso-cols { gap: 10px !important; }
+.dock-panel--tx .tx-panel--combo .qso-cols { gap: 6px !important; }
 /* il blocco dei pulsanti QSO 10 px piu' in basso (piu' staccato dai messaggi Tx sopra) */
-.dock-panel--tx .tx-panel--combo .qso-cols { margin-top: 10px !important; }
+.dock-panel--tx .tx-panel--combo .qso-cols { margin-top: 6px !important; }
