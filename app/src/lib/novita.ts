@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.160',
-    released: '2026-11-06T22:09:00Z',
+    released: '2026-11-06T22:12:42Z',
     kind: 'changed',
     title: ['Più ordine in Stazione, Fox e Impostazioni', 'Tidier Station, Fox and Settings', 'Aufgeräumter: Station, Fox und Einstellungen', 'Station, Fox et Réglages plus ordonnés', 'Estación, Fox y Ajustes más ordenados', 'Estação, Fox e Definições mais arrumadas'],
     text: [
