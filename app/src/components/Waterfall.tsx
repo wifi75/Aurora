@@ -252,7 +252,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const bar = !spectrumPx;
   return (
     <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : bar ? `0 0 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {bar && specPercent > 0 ? (
         <div
           className="wf-splitter"
