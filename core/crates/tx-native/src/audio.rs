@@ -411,7 +411,15 @@ impl CpalSink {
             .spawn(move || {
                 let err_shared = Arc::clone(&thread_shared);
                 let on_error = move |e: cpal::Error| {
-                    err_shared.errors.fetch_add(1, Ordering::Relaxed);
+                    let n = err_shared.errors.fetch_add(1, Ordering::Relaxed) + 1;
+                    // un attimo di ritardo della scheda (underrun) o il cambio del dispositivo predefinito non fermano l'uscita: il flusso
+                    // continua. Prima ogni underrun la dava per persa e la trasmissione seguente falliva («il dispositivo non risponde piu'»).
+                    if matches!(e.kind(), cpal::ErrorKind::Xrun | cpal::ErrorKind::DeviceChanged) {
+                        if n == 1 || n.is_power_of_two() && n >= 64 {
+                            tracing::info!("uscita audio: {e} ({n} volte finora), il flusso continua");
+                        }
+                        return;
+                    }
                     err_shared.failed.store(true, Ordering::SeqCst);
                     tracing::warn!("errore del flusso di uscita audio: {e}");
                 };

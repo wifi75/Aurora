@@ -43,7 +43,10 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))
         .plugin(tauri_plugin_notification::init())
         .setup(move |app| start(app))
-        .on_window_event(|window, event| match event {
+        .on_window_event(|window, event| {
+            // la finestra sta ricevendo eventi (anche durante un trascinamento lungo): e' viva, non e' un blocco
+            crash::WINDOW.touch();
+            match event {
             // come una normale applicazione: la X chiude la finestra e con lei tutto (il core si ferma all'uscita)
             WindowEvent::CloseRequested { .. } => {
                 remember_window(window);
@@ -54,10 +57,14 @@ pub fn run() {
                     && last.get(window.label()).is_none_or(|t| t.elapsed() > Duration::from_millis(600))
                 {
                     last.insert(window.label().to_string(), Instant::now());
-                    remember_window(window);
+                    // fuori dal thread della finestra: leggere dimensioni e posizione e scrivere il file non deve fermarla (blocchi
+                    // segnalati dalla 0.11.155 proprio su «salvataggio della posizione di una finestra»)
+                    let window = window.clone();
+                    let _ = std::thread::Builder::new().name("aurora-posizione".into()).spawn(move || remember_window(&window));
                 }
             }
             _ => {}
+            }
         })
         .build(tauri::generate_context!());
     match built {
@@ -387,7 +394,6 @@ fn restore_window(app: &AppHandle, window: &WebviewWindow) {
 
 /// Salva dimensione e posizione della finestra principale. Da massimizzata resta la misura di prima e si segna solo che lo era.
 fn remember_window(window: &tauri::Window) {
-    crash::activity("salvataggio della posizione di una finestra");
     let label = window.label().to_string();
     if !(label == "main" || label.starts_with("finestra-")) || window.is_minimized().unwrap_or(false) {
         return;

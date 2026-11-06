@@ -277,7 +277,8 @@ impl AudioManager {
             if st.input.as_ref().is_some_and(|i| i.is_lost()) { st.input.take() } else { None }
         };
         if let Some(stream) = lost {
-            tracing::warn!("ingresso audio \"{}\" perso: lo riapro appena torna", stream.name());
+            // non e' un guasto (radio spenta, cavo mosso): si riprende da solo, quindi resta nel registro senza diventare un rapporto
+            tracing::info!("ingresso audio \"{}\" perso: lo riapro appena torna", stream.name());
             drop(stream);
         }
         if self.has_input() {
