@@ -27,12 +27,12 @@ export const appStrings = {
   ],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
-    '{name} v{version} — Progettazione e sviluppo: {author}',
-    '{name} v{version} — Design and development: {author}',
-    '{name} v{version} — Entwurf und Entwicklung: {author}',
-    '{name} v{version} — Conception et développement : {author}',
-    '{name} v{version} — Diseño y desarrollo: {author}',
-    '{name} v{version} — Projeto e desenvolvimento: {author}',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
+    '{name} v{version} — By IU3WJQ -Tiziano Cassone',
   ],
   'footer.coreDown': [
     'Core non raggiungibile. Controlla che Aurora sia acceso sul PC.',

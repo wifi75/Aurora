@@ -13,7 +13,7 @@ function renderFooter() {
 }
 
 describe('Footer', () => {
-  it('shows name version and author on one line', async () => {
+  it('shows name, version and the author signature on one line', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -24,7 +24,7 @@ describe('Footer', () => {
       ),
     );
     renderFooter();
-    expect(await screen.findByText('Aurora v0.1.0 — Progettazione e sviluppo: Tiziano Cassone')).toBeInTheDocument();
+    expect(await screen.findByText('Aurora v0.1.0 — By IU3WJQ -Tiziano Cassone')).toBeInTheDocument();
   });
 
   it('shows a clear message when the core is unreachable', async () => {

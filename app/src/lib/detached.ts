@@ -150,6 +150,10 @@ export function attachAll(): void {
 }
 
 export function reopenAll(): void {
+  // la cascata e la Trasmissione stanno nella riga fissa in basso: se erano state staccate in una finestra a parte tornano al loro posto
+  // e non si riaprono piu' da sole
+  attach('waterfall');
+  attach('tx');
   const groups = readGroups();
   if (groups.length === 0) return;
   writeGroups(groups.map((g) => ({ ...g, open: true })));

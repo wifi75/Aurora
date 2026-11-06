@@ -246,4 +246,5 @@ export const waterfallStrings = {
     'Escribe en la cascada la hora (UTC) y la banda al inicio de cada periodo.',
     'Escreve na cascata a hora (UTC) e a banda no início de cada período.',
   ],
+  'wf.specHeight': ['Trascina per cambiare l’altezza dello spettro', 'Drag to change the spectrum height', 'Ziehen, um die Höhe des Spektrums zu ändern', 'Glisser pour changer la hauteur du spectre', 'Arrastra para cambiar la altura del espectro', 'Arraste para mudar a altura do espectro'],
 } as const satisfies Record<string, Entry>;

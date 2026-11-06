@@ -1,7 +1,7 @@
 import { detachedItems, useGroups } from '../lib/detached';
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
@@ -319,6 +319,32 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     );
   }
 
+  // la riga in basso, fissa (non si trascina e non si ridimensiona): la cascata a sinistra e, a destra, la Trasmissione (i messaggi) e il
+  // QSO (interruttori e livelli) come due finestre separate, della stessa altezza. Si possono ancora staccare in una finestra a parte.
+  const BottomRow = () => {
+    // fissa: non si stacca e non si sposta; solo chi l'ha nascosta dalle Impostazioni (Finestre) non la vede
+    const away = layout.hidden ?? [];
+    const fixed = (key: string, title: string, body: ReactNode, extra?: string) => (
+      <section key={key} className={`dock-panel dock-panel--${key} live-bottom-panel ${extra ?? ''}`} data-panel={key}>
+        <header className="dock-grip dock-grip--fixed">
+          <span className="dock-grip-dots" aria-hidden="true" />
+          <h2>{title}</h2>
+        </header>
+        <div className="dock-body">{body}</div>
+      </section>
+    );
+    const showWf = !away.includes('waterfall');
+    const showTx = !away.includes('tx');
+    if (!showWf && !showTx) return null;
+    return (
+      <div className="live-bottom">
+        {showWf ? fixed('waterfall', titles.waterfall, renderPanel('waterfall'), 'live-bottom-wf') : null}
+        {showTx ? fixed('tx', titles.tx, <TxPanel part="messages" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />, 'live-bottom-msgs') : null}
+        {showTx ? fixed('qso', t('panel.qso'), <TxPanel part="qso" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />, 'live-bottom-qso') : null}
+      </div>
+    );
+  };
+
   return (
     <div className="live">
       <div className="live-top">
@@ -369,7 +395,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       ) : (
         <Dock
           layout={layout}
-          hidden={[...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])]}
+          hidden={[...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[]), 'waterfall', 'tx']}
           onChange={changeLayout}
           titles={titles}
           render={renderPanel}
@@ -388,6 +414,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           }
         />
       )}
+      {phone ? null : <BottomRow />}
       <StopButton variant="bar" />
     </div>
   );
