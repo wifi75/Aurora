@@ -20,30 +20,30 @@ function short(date: string): string {
 export type DxpedState = 'active' | 'soon' | 'ended';
 
 /** In onda, in arrivo (entro 30 giorni) o finita da poco (entro `keepDays`); le altre non si mostrano. */
-export function dxpedState(d: Dxpedition, day: string, keepDays: number): DxpedState | null {
+export function dxpedState(d: Dxpedition, day: string, keepDays: number, soonDays = 30): DxpedState | null {
   if (d.start <= day && d.end >= day) return 'active';
   const ms = (a: string, b: string) => (Date.parse(a) - Date.parse(b)) / 86_400_000;
-  if (d.start > day) return ms(d.start, day) <= 30 ? 'soon' : null;
+  if (d.start > day) return ms(d.start, day) <= soonDays ? 'soon' : null;
   return ms(day, d.end) <= keepDays ? 'ended' : null;
 }
 
 /** Le DXpedition da mostrare: prima quelle in onda (le sentite adesso in cima), poi le prossime, poi le finite da poco. */
-export function dxpedList(items: Dxpedition[], heard: Set<string>, day: string, keepDays: number): Array<Dxpedition & { state: DxpedState; heard: boolean }> {
+export function dxpedList(items: Dxpedition[], heard: Set<string>, day: string, keepDays: number, soonDays = 30): Array<Dxpedition & { state: DxpedState; heard: boolean }> {
   const rank = { active: 0, soon: 1, ended: 2 } as const;
   return items
-    .map((d) => ({ ...d, state: dxpedState(d, day, keepDays), heard: heard.has(d.call.toUpperCase()) }))
+    .map((d) => ({ ...d, state: dxpedState(d, day, keepDays, soonDays), heard: heard.has(d.call.toUpperCase()) }))
     .filter((d): d is Dxpedition & { state: DxpedState; heard: boolean } => d.state !== null)
     .sort((a, b) => rank[a.state] - rank[b.state] || Number(b.heard) - Number(a.heard) || (a.state === 'ended' ? b.end.localeCompare(a.end) : a.start.localeCompare(b.start)));
 }
 
 /** Il calendario delle DXpedition (NG3K) accanto ai CQ: quelle in onda, quelle sentite adesso evidenziate, e lo storico da scorrere. */
-export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15 }: { heardCalls: string[]; foxCalls?: string[]; keepDays?: number }) {
+export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays = 30 }: { heardCalls: string[]; foxCalls?: string[]; keepDays?: number; /** Quanti giorni in anticipo mostrare quelle in arrivo. */ soonDays?: number }) {
   const t = useT();
   // finche' il core non ha ancora scaricato il calendario si richiede spesso; poi ogni 10 minuti
   const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
   const [open, setOpen] = useState<(Dxpedition & { state: DxpedState }) | null>(null);
   const heard = new Set(heardCalls.map((c) => c.toUpperCase()));
-  const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays);
+  const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays, soonDays);
   // la scheda si apre subito: confini del mondo e paese di ogni DXpedition si preparano in anticipo, appena c'e' il calendario
   const client = useQueryClient();
   const calls = items.map((d) => d.call).join(' ');
