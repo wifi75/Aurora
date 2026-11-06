@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.156',
-    released: '2026-11-06T15:30:00Z',
+    released: '2026-11-06T17:13:01Z',
     kind: 'changed',
     title: ["Pagina principale a blocchi, Bande aperte e comandi QSO in Trasmissione", "Block-based main page, Open bands and QSO controls inside Transmit", "Hauptseite aus Blöcken, Offene Bänder und QSO-Steuerung im Senden-Feld", "Page principale en blocs, Bandes ouvertes et commandes QSO dans Émission", "Página principal en bloques, Bandas abiertas y controles QSO en Transmisión", "Página principal em blocos, Bandas abertas e comandos QSO em Transmissão"],
     text: [
