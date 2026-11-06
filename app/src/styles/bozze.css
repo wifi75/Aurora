@@ -483,3 +483,8 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 /* l'ora UTC nella barra in fondo, tra il watchdog e la firma */
 .app-bar .bar-utc { margin: 0 28px 0 auto; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .02em; white-space: nowrap; }
 .app-bar .bar-utc i { font-style: normal; font-weight: 600; font-size: 10px; opacity: .65; margin-left: 2px; }
+
+/* CQ e novita': la fascia dei CQ in alto (due righe), sotto le DXpedition a tutta larghezza */
+.cq-split { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: 72px minmax(0, 1fr) !important; }
+.cq-split-main { overflow: hidden; }
+.cq-split .dxped { padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--border); padding-top: 4px; overflow: auto; }
