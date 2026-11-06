@@ -636,3 +636,18 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .cluster-table td.cluster-country { left: -90px; }
 .cluster-table th:nth-child(7), .cluster-table td:nth-child(7) { display: table-cell !important; }
 .cluster-table td.cluster-comment { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; opacity: .85; }
+
+/* DX Cluster, versione definitiva: colonne di larghezza fissa in px (stesse posizioni a qualunque larghezza, niente sovrapposizioni) al posto degli spostamenti */
+.cluster-table th, .cluster-table td { left: 0 !important; position: static !important; }
+.cluster-table td.cluster-country { left: 0 !important; }
+.cluster-table th:nth-child(1) { width: 52px; }
+.cluster-table th:nth-child(2) { width: 56px; }
+.cluster-table th:nth-child(3) { width: 66px; }
+.cluster-table th:nth-child(4) { width: 22px; padding-left: 0; }
+.cluster-table th:nth-child(5) { width: 84px; }
+.cluster-table th:nth-child(6) { width: 40px; }
+.cluster-table th:nth-child(7) { width: auto; }
+.cluster-table th:nth-child(8) { width: 40px; }
+.cluster-table td, .cluster-table th { padding-left: 3px; padding-right: 3px; }
+.cluster-table td.cluster-flag { padding: 0; text-align: left; }
+.cluster-table th.cluster-th-country { overflow: visible; }
