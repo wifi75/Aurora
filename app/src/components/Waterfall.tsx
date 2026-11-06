@@ -5,7 +5,6 @@ import { jtdxPaletteLut } from '../render/colormap';
 import { PeriodAverage, RowPacer, cumulativeCurve, fitWidth, processRow, spectrumCurve } from '../render/jtdxRow';
 import { drawSpectrum } from '../render/spectrumPlot';
 import { WATERFALL_WIDTH, rowsPerPixel } from '../render/webgl2';
-import { WaterfallToolbar } from './WaterfallToolbar';
 import { periodSecs } from '../lib/period';
 import { type SpectrumListener, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { ROW_SECS, WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
@@ -227,7 +226,6 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const bar = !spectrumPx;
   return (
     <div className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
-      {bar ? <WaterfallToolbar fromHz={range.from} toHz={range.to} /> : null}
       <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       <canvas
         ref={plotRef}

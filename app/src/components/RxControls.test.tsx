@@ -13,12 +13,14 @@ function show(transmitting: boolean) {
   );
 }
 
-describe('RxControls period bar', () => {
-  it('is green while receiving', () => {
-    expect(show(false).container.querySelector('.period')).not.toHaveClass('period--tx');
+describe('RxControls period', () => {
+  it('shows only the UTC clock: the period progress is in the bottom status bar', () => {
+    const { container } = show(false);
+    expect(container.querySelector('[role="progressbar"]')).toBeNull();
+    expect(container.querySelector('.period--clock')).not.toBeNull();
   });
 
-  it('turns red while transmitting', () => {
-    expect(show(true).container.querySelector('.period')).toHaveClass('period--tx');
+  it('keeps the clock while transmitting', () => {
+    expect(show(true).container.querySelector('.period--clock')).not.toBeNull();
   });
 });

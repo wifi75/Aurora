@@ -27,6 +27,7 @@ import { TxPanel } from '../components/TxPanel';
 import { DxccCard } from '../components/DxccCard';
 import { subjectBand, subjectMode } from '../lib/dxccCard';
 import { Waterfall } from '../components/Waterfall';
+import { WaterfallToolbar } from '../components/WaterfallToolbar';
 import { useT } from '../i18n';
 import { applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
@@ -135,6 +136,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'waterfall':
         return (
           <>
+            <WaterfallToolbar />
             <div className="wf-stack">
               <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
               <FrequencyMarkers
