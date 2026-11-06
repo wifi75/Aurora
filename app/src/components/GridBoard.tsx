@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 
 /** Un blocco della dashboard, in celle della griglia (12 colonne e 24 righe che riempiono la finestra). */
 export interface Cell {
@@ -12,6 +12,8 @@ export const COLS = 12;
 /** Righe della finestra intera: la griglia segue la finestra in larghezza e in altezza, cosi' i blocchi la riempiono sempre. */
 export const ROWS = 24;
 const GAP = 6;
+/** Quanto vicino (px) un bordo deve arrivare a un altro per agganciarsi. */
+const SNAP_PX = 10;
 
 function overlaps(a: Cell, b: Cell): boolean {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -21,7 +23,7 @@ function overlaps(a: Cell, b: Cell): boolean {
  * Sistema i blocchi senza sovrapposizioni, come una dashboard: quello che si sta muovendo resta dov'e', gli altri scendono quanto basta
  * e poi risalgono il piu' possibile (nessun buco in alto).
  */
-export function arrange(cells: Record<string, Cell>, fixed?: string): Record<string, Cell> {
+export function arrange(cells: Record<string, Cell>, fixed?: string, lift = true): Record<string, Cell> {
   const ids = Object.keys(cells).sort((a, b) => (a === fixed ? -1 : b === fixed ? 1 : cells[a]!.y - cells[b]!.y || cells[a]!.x - cells[b]!.x));
   const placed: Record<string, Cell> = {};
   for (const id of ids) {
@@ -31,8 +33,8 @@ export function arrange(cells: Record<string, Cell>, fixed?: string): Record<str
     c.x = Math.max(0, Math.min(COLS - c.w, c.x));
     c.y = Math.max(0, c.y);
     if (id !== fixed) {
-      // risale finche' puo', poi scende finche' non tocca nessuno
-      while (c.y > 0 && !Object.values(placed).some((p) => overlaps({ ...c, y: c.y - 1 }, p))) c.y -= 1;
+      // risale finche' puo' (solo se `lift`: senza, il blocco resta dove l'hai messo), poi scende finche' non tocca nessuno
+      while (lift && c.y > 0 && !Object.values(placed).some((p) => overlaps({ ...c, y: c.y - 1 }, p))) c.y -= 1;
       while (Object.values(placed).some((p) => overlaps(c, p))) c.y += 1;
     }
     placed[id] = c;
@@ -56,17 +58,21 @@ interface Props {
   render(id: string, grip: { onPointerDown(e: ReactPointerEvent<HTMLElement>): void }): ReactNode;
   /** Bloccata: i blocchi non si spostano e non si ridimensionano, restano dove sono. */
   locked?: boolean;
+  /** Posizionamento libero: i blocchi non risalgono da soli per riempire i buchi, restano dove li lasci. */
+  free?: boolean;
 }
 
 /**
  * Dashboard a blocchi (secondo schermo): ogni blocco si trascina dalla sua barretta e si ridimensiona dall'angolo in basso a destra;
  * i blocchi si agganciano alla griglia e gli altri si spostano per fargli posto.
  */
-export function GridBoard({ cells, onChange, render, locked = false }: Props) {
+export function GridBoard({ cells, onChange, render, locked = false, free = false }: Props) {
   const box = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(1000);
   const [height, setHeight] = useState(700);
   const [live, setLive] = useState<Record<string, Cell> | null>(null);
+  /** Le linee guida mostrate mentre si trascina: dove il bordo si e' agganciato a un'altra finestra o al bordo della pagina. */
+  const [guides, setGuides] = useState<Array<{ axis: 'x' | 'y'; at: number }>>([]);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -91,33 +97,109 @@ export function GridBoard({ cells, onChange, render, locked = false }: Props) {
     const from = cells[id];
     if (!from) return;
     let last = cells;
-    const move = (ev: PointerEvent) => {
-      const dx = Math.round((ev.clientX - start.x) / (colW + GAP));
-      const dy = Math.round((ev.clientY - start.y) / (ROW + GAP));
-      const next = mode === 'move' ? { ...from, x: from.x + dx, y: Math.max(0, from.y + dy) } : { ...from, w: from.w + dx, h: from.h + dy };
-      last = arrange({ ...cells, [id]: next }, id);
+    let frame = 0;
+    let latest: PointerEvent | null = null;
+    const apply = () => {
+      frame = 0;
+      const ev = latest;
+      if (!ev) return;
+      const dx = (ev.clientX - start.x) / (colW + GAP);
+      const dy = (ev.clientY - start.y) / (ROW + GAP);
+      if (!free) {
+        const next = mode === 'move' ? { ...from, x: from.x + Math.round(dx), y: Math.max(0, from.y + Math.round(dy)) } : { ...from, w: from.w + Math.round(dx), h: from.h + Math.round(dy) };
+        last = arrange({ ...cells, [id]: next }, id, true);
+        setLive(last);
+        return;
+      }
+      // libero e preciso: i bordi si agganciano a quelli delle altre finestre e della pagina (con le linee guida), altrimenti a un quarto di cella
+      const others = Object.entries(cells).filter(([k]) => k !== id).map(([, c]) => c);
+      const thX = SNAP_PX / (colW + GAP);
+      const thY = SNAP_PX / (ROW + GAP);
+      const xEdges = [0, COLS, ...others.flatMap((o) => [o.x, o.x + o.w])];
+      const yEdges = [0, ...others.flatMap((o) => [o.y, o.y + o.h])];
+      const found: Array<{ axis: 'x' | 'y'; at: number }> = [];
+      /** Il valore di `edge` agganciato al bordo piu' vicino (entro la soglia) oppure al quarto di cella; registra la guida. */
+      const snapEdge = (edge: number, edges: number[], th: number, axis: 'x' | 'y'): { value: number; hit: boolean } => {
+        let best = edge;
+        let bestDistance = th;
+        for (const c of edges) {
+          const d = Math.abs(edge - c);
+          if (d < bestDistance) {
+            bestDistance = d;
+            best = c;
+          }
+        }
+        if (best !== edge) {
+          found.push({ axis, at: best });
+          return { value: best, hit: true };
+        }
+        return { value: Math.round(edge * 4) / 4, hit: false };
+      };
+      let next: Cell;
+      if (mode === 'move') {
+        let x = from.x + dx;
+        let y = Math.max(0, from.y + dy);
+        // si prova il bordo sinistro e poi quello destro: vince quello che si aggancia
+        const left = snapEdge(x, xEdges, thX, 'x');
+        if (left.hit) x = left.value;
+        else {
+          const right = snapEdge(x + from.w, xEdges, thX, 'x');
+          x = right.hit ? right.value - from.w : left.value;
+        }
+        const top = snapEdge(y, yEdges, thY, 'y');
+        if (top.hit) y = top.value;
+        else {
+          const bottom = snapEdge(y + from.h, yEdges, thY, 'y');
+          y = bottom.hit ? bottom.value - from.h : top.value;
+        }
+        next = { ...from, x: Math.max(0, Math.min(COLS - from.w, x)), y: Math.max(0, y) };
+      } else {
+        const right = snapEdge(from.x + from.w + dx, xEdges, thX, 'x').value;
+        const bottom = snapEdge(from.y + from.h + dy, yEdges, thY, 'y').value;
+        next = { ...from, w: Math.max(2, right - from.x), h: Math.max(3, bottom - from.y) };
+      }
+      setGuides(found);
+      last = arrange({ ...cells, [id]: next }, id, false);
       setLive(last);
+    };
+    const move = (ev: PointerEvent) => {
+      latest = ev;
+      if (!frame) frame = requestAnimationFrame(apply);
     };
     const stop = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
+      if (frame) cancelAnimationFrame(frame);
+      apply();
       setLive(null);
-      onChange(arrange(last));
+      setGuides([]);
+      onChange(arrange(last, undefined, !free));
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);
   };
 
+  // il contenuto di ogni blocco si ridisegna solo quando cambia qualcosa di vero (dati, misure salvate): non a ogni fotogramma del trascinamento
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const nodes = useMemo(() => Object.fromEntries(Object.keys(cells).map((id) => [id, render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })])), [cells, render, locked, free, colW, ROW, onChange]);
   const bottom = Object.values(shown).reduce((m, c) => Math.max(m, c.y + c.h), 0);
   return (
     <div ref={box} className={`grid-board${live ? ' grid-board--moving' : ''}`} style={{ height: bottom * (ROW + GAP) + GAP }}>
+      {guides.map((g, i) => (
+        <div
+          key={`${g.axis}${i}`}
+          className={`grid-guide grid-guide--${g.axis}`}
+          style={g.axis === 'x' ? { left: GAP + g.at * (colW + GAP) - GAP / 2 } : { top: GAP + g.at * (ROW + GAP) - GAP / 2 }}
+          aria-hidden="true"
+        />
+      ))}
       {Object.entries(shown).map(([id, c]) => (
         <div
           key={id}
           className="grid-block"
           style={{ left: GAP + c.x * (colW + GAP), top: GAP + c.y * (ROW + GAP), width: c.w * (colW + GAP) - GAP, height: c.h * (ROW + GAP) - GAP }}
         >
-          {render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })}
+          {nodes[id] ?? render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })}
           {locked ? null : <div className="grid-resize" onPointerDown={track(id, 'size')} aria-hidden="true" />}
         </div>
       ))}
