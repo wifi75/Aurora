@@ -21,6 +21,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] **Filtro dei falsi: `chkgrid` vero di JTDX** al posto dell'approssimazione a distanza (`dxcc::grid_plausible`, `ft8::filters::grid_is_false`); da leggere con REA.
 - [ ] **JT65 e JT9 sul segnale debole** (`NFILT2`, `ldeepsync`): con JTDX e REA.
 - [ ] Decodifica FT8 a fette di banda su piu' processori come JTDX (oggi il multithread e' per candidato, `rayon`): solo se i rapporti «decodifica lenta» lo chiedono.
+- [ ] **Modi che mancano** (richiesto dal proprietario, 2026-11-06): JT4, Q65, MSK144, FST4, FST4W e WSPR. Oggi Aurora ha FT8, FT4, JT65 e JT9. Per ognuno: codifica, modulazione, decodifica, periodi e sottomodi, pulsanti dei modi e prove con i WAV di WSJT-X. Dettaglio di Q65 e MSK144 in `docs/tasks.md` (§21 e §22).
 - [ ] Lavori grandi da WSJT-X 3: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza approvata `docs/mockup-fox.html`)
 - [ ] Prove dal vivo del proprietario: a7/a8, stop per ROS, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, display Yaesu/Icom, barre Rx/Tx
 

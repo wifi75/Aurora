@@ -47,6 +47,7 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 | 33 ✔ | **Finestre sul secondo schermo e dashboard a blocchi** | A | 0.11.134-138: pannelli, Mappa e Propagazione in finestre a parte o in una dashboard trascinabile e ridimensionabile; Impostazioni › Finestre per ritrovare tutto. Da provare dal vivo con due schermi |
 | 32 | **HTTPS per il telefono** | B | Scelta del proprietario (2026-11-04): per ora http con il consiglio per Chrome su Android sotto il QR; l'HTTPS vero richiede un dominio |
 | 30 | **Prove dal vivo** di CAT4OM, dell'associazione del telefono con gli utenti e del log dopo RRR senza 73 (0.11.124) | A | Le fa il proprietario |
+| 34 | **Altri modi digitali**: JT4, Q65, MSK144, FST4, FST4W e WSPR | M | Richiesti dal proprietario (2026-11-06). Oggi ci sono FT8, FT4, JT65 e JT9. Q65 e MSK144 sono gia' descritti in `docs/tasks.md` (§21, §22); per gli altri servono codifica, modulazione, decodifica, periodi e pulsanti dei modi |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 
