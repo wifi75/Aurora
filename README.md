@@ -38,7 +38,7 @@ Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.162: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.163: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.163',
+    released: '2026-11-06T22:35:15Z',
+    kind: 'changed',
+    title: ['Modo in evidenza', 'Mode clearly highlighted', 'Betriebsart deutlich hervorgehoben', 'Mode bien en évidence', 'Modo bien destacado', 'Modo bem destacado'],
+    text: [
+      "Il pulsante del modo (FT8, FT4…) mostra il modo scelto ben in evidenza: bordo pieno, alone luminoso e testo marcato, con il tema scuro e con quello chiaro.",
+      "The mode button (FT8, FT4…) shows the chosen mode clearly: solid border, glow and bold text, in both the dark and the light theme.",
+      "Die Taste der Betriebsart (FT8, FT4…) hebt die gewählte Betriebsart deutlich hervor: voller Rand, Leuchten und fette Schrift, im dunklen wie im hellen Thema.",
+      "Le bouton du mode (FT8, FT4…) montre le mode choisi bien en évidence : bordure pleine, halo lumineux et texte en gras, avec le thème sombre comme avec le clair.",
+      "El botón del modo (FT8, FT4…) muestra el modo elegido bien destacado: borde lleno, halo luminoso y texto en negrita, con el tema oscuro y con el claro.",
+      "O botão do modo (FT8, FT4…) mostra o modo escolhido bem destacado: margem cheia, halo luminoso e texto em negrito, no tema escuro e no claro.",
+    ],
+  },
+  {
     version: '0.11.162',
     released: '2026-11-06T22:31:55Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Après ton RRR, si la station n’envoie pas le 73, le QSO est enregistré au dernier essai (ou la confirmation s’ouvre). Sur le téléphone un bouton Tx/Rx Split à côté de la station appelée. Le panneau Log affiche le pays ; dans Activité de bande drapeau et pays 10 px plus à droite ; les afficheurs larges font 640 × 75 et le LED essentiel a S, Po et SWR sous les boutons.",
       "Tras tu RRR, si la estación no manda el 73, en el último intento el QSO se registra igual (o se abre la confirmación). En el teléfono un botón Tx/Rx Split junto a la estación llamada. El panel Log muestra el país; en Actividad de banda bandera y país 10 px más a la derecha; las pantallas anchas son 640 × 75 y el LED esencial tiene S, Po y SWR bajo los botones.",
       "Depois do teu RRR, se a estação não mandar o 73, na última tentativa o QSO vai para o log na mesma (ou abre-se a confirmação). No telemóvel um botão Tx/Rx Split junto à estação chamada. O painel Log mostra o país; na Atividade de banda bandeira e país 10 px mais à direita; os ecrãs largos são 640 × 75 e o LED essencial tem S, Po e SWR por baixo dos botões.",
-    ],
-  },
-  {
-    version: '0.11.123',
-    released: '2026-11-04T19:52:42Z',
-    kind: 'new',
-    title: ["Conferma del log e telefono più sicuro", "Log confirmation and safer phone pairing", "Log-Bestätigung und sichereres Telefon-Koppeln", "Confirmation du journal et téléphone plus sûr", "Confirmación del log y teléfono más seguro", "Confirmação do log e telemóvel mais seguro"],
-    text: [
-      "Puoi farti chiedere conferma prima che un QSO entri nel log, con i campi da correggere (Impostazioni › Sequenza › «Richiedimi di loggare il QSO»). Il QR del telefono mette per prima la Wi-Fi e ne mostra uno per ogni indirizzo del PC; «Consenti Aurora» toglie anche i blocchi del firewall creati da un «Annulla». Sul telefono, accanto al nominativo, compare il paese.",
-      "You can be asked to confirm before a QSO goes into the log, with fields you can correct (Settings › Sequence › «Ask me to log the QSO»). The phone QR puts the Wi-Fi first and shows one for each PC address; «Allow Aurora» also removes firewall blocks created by a «Cancel». On the phone the country appears next to the callsign.",
-      "Du kannst dich vor dem Eintragen eines QSO fragen lassen, mit korrigierbaren Feldern (Einstellungen › Sequenz › «QSO-Eintrag bestätigen»). Der Telefon-QR nimmt zuerst das WLAN und zeigt einen pro PC-Adresse; «Aurora zulassen» entfernt auch Firewall-Sperren nach einem «Abbrechen». Auf dem Telefon steht das Land neben dem Rufzeichen.",
-      "Tu peux demander une confirmation avant qu’un QSO entre dans le journal, avec des champs corrigeables (Réglages › Séquence › « Me demander de journaliser le QSO »). Le QR du téléphone met le Wi-Fi en premier et en montre un par adresse du PC ; « Autoriser Aurora » retire aussi les blocages du pare-feu créés par un « Annuler ». Sur le téléphone le pays apparaît à côté de l’indicatif.",
-      "Puedes pedir confirmación antes de que un QSO entre en el log, con campos que se pueden corregir (Ajustes › Secuencia › «Pedirme registrar el QSO»). El QR del teléfono pone primero la Wi-Fi y muestra uno por cada dirección del PC; «Permitir Aurora» quita también los bloqueos del cortafuegos creados por un «Cancelar». En el teléfono aparece el país junto al indicativo.",
-      "Podes pedir confirmação antes de um QSO entrar no log, com campos corrigíveis (Definições › Sequência › «Pedir para registar o QSO»). O QR do telemóvel põe primeiro a Wi-Fi e mostra um por cada endereço do PC; «Permitir Aurora» tira também os bloqueios da firewall criados por um «Cancelar». No telemóvel aparece o país ao lado do indicativo.",
     ],
   },
 ];

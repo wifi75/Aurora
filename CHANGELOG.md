@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.163 - 2026-11-06
 - **Pulsante del modo** (FT8, FT4...): il modo scelto e' ben in evidenza (bordo pieno, alone, testo marcato).
 
 ## 0.11.162 - 2026-11-06
