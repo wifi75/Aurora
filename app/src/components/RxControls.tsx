@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { formatClock } from '../lib/format';
-import { periodPosition } from '../lib/period';
 import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
@@ -15,37 +14,25 @@ const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
 const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
 
-/** Avanzamento del periodo, come l'indicatore "14/15" del motore, ma continuo: si ridisegna a ogni fotogramma. */
-function PeriodBar({ mode, label, clockLabel, transmitting }: { mode: string; label: string; clockLabel: string; transmitting: boolean }) {
+/**
+ * L'ora UTC del PC accanto ai comandi: sono i secondi che contano per i periodi. L'avanzamento del periodo (prima «9/15» qui) sta nella
+ * barra di stato in fondo alla finestra: non si ripete.
+ */
+function PeriodClock({ clockLabel }: { clockLabel: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    let frame = 0;
-    const tick = () => {
-      setNow(Date.now());
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
   }, []);
-  const { seconds, fraction, length } = periodPosition(now, mode);
   return (
-    <>
-      <div className={`period${transmitting ? ' period--tx' : ''}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={length} aria-valuenow={seconds} title={label}>
-        <span className="period-fill" style={{ width: `${fraction * 100}%` }} />
-        <span className="period-text data">
-          {seconds}/{Math.round(length)}
-        </span>
-      </div>
-      {/* l'ora UTC del PC accanto alla barra, con la sua stessa grafica e misura: sono i secondi che contano per i periodi */}
-      <time className="period period--clock" dateTime={new Date(now).toISOString()} aria-label={clockLabel} title={clockLabel}>
-        <span className="period-text data">{formatClock(now)}</span>
-      </time>
-    </>
+    <time className="period period--clock" dateTime={new Date(now).toISOString()} aria-label={clockLabel} title={clockLabel}>
+      <span className="period-text data">{formatClock(now)}</span>
+    </time>
   );
 }
 
 /** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo; `trailing` sta a destra, sulla stessa riga. */
-export function RxControls({ mode, transmitting = false, trailing }: { mode: string; transmitting?: boolean; trailing?: ReactNode }) {
+export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu' qui (il colore della barra del periodo se n'e' andato con la barra); resta per chi lo passa. */ transmitting?: boolean; trailing?: ReactNode }) {
   const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
@@ -103,7 +90,7 @@ export function RxControls({ mode, transmitting = false, trailing }: { mode: str
           </button>
         ))}
       </div>
-      <PeriodBar mode={mode} label={t('ctl.period')} clockLabel={t('ctl.clock')} transmitting={transmitting} />
+      <PeriodClock clockLabel={t('ctl.clock')} />
       {note ? <span className="live-note" role="status">{note}</span> : null}
       {trailing ? <div className="rx-trailing">{trailing}</div> : null}
     </div>

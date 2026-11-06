@@ -996,3 +996,12 @@ button.primary {
 /* la barra resta su una sola riga (scorre di lato se il pannello e' stretto): la cascata non si schiaccia */
 .wf-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
 .wf-toolbar > * { flex: none; }
+
+/* barra della cascata piccola: testo e celle ridotti molto */
+.wf-toolbar { gap: 3px 10px; padding: 2px 8px; font-size: 10px; line-height: 1.1; }
+.wft-item { gap: 4px; }
+.wft-num, .wft-select { height: 19px; padding: 0 4px; font-size: 10px; border-radius: 5px; }
+.wft-select { max-width: 6.2rem; }
+.wft-range { width: 58px; height: 12px; }
+.wft-check input { width: 11px; height: 11px; margin: 0; }
+.wft-range-text { font-size: 9px; }
