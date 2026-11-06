@@ -533,3 +533,7 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 .live-board::-webkit-scrollbar { display: none; }
 .dock-panel--tx.grid-panel .tx-panel--combo .tx-split { overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
 .dock-panel--tx.grid-panel .tx-panel--combo .tx-split::-webkit-scrollbar { display: none; }
+
+/* DXpedition: niente barra di scorrimento visibile, si scorre con la rotella; si recupera lo spazio */
+.cq-split .dxped, .cq-split .dxped * { scrollbar-width: none; }
+.cq-split .dxped::-webkit-scrollbar, .cq-split .dxped *::-webkit-scrollbar { display: none; }
