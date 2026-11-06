@@ -479,3 +479,7 @@ html[data-theme='light'] .qso-grid .chip .chip-led--on { background: #0b9a5a !im
 .cq-chip-snr { flex: none; min-width: 20px; text-align: right; }
 html[data-theme='light'] .cq-chip { background: rgba(0, 0, 0, .04); border-color: rgba(0, 0, 0, .14); }
 html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
+
+/* l'ora UTC nella barra in fondo, tra il watchdog e la firma */
+.app-bar .bar-utc { margin: 0 28px 0 auto; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .02em; white-space: nowrap; }
+.app-bar .bar-utc i { font-style: normal; font-weight: 600; font-size: 10px; opacity: .65; margin-left: 2px; }
