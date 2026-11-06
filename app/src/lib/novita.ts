@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.159',
-    released: '2026-11-06T21:22:44Z',
+    released: '2026-11-06T21:29:15Z',
     kind: 'fixed',
     title: ['Niente chiusura accendendo la radio', 'No more closing when the radio is switched on', 'Kein Beenden beim Einschalten des Funkgeräts', 'Plus de fermeture en allumant la radio', 'Ya no se cierra al encender la radio', 'Já não fecha ao ligar o rádio'],
     text: [
