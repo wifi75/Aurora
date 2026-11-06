@@ -9,6 +9,9 @@ Stato al 2026-11-06, versione 0.11.160. Per riprendere il lavoro leggi anche `do
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
 
 ## Prove della grafica in locale (dal 2026-11-06)
+- Le build (`rilascio-windows.ps1`, `cargo build`) si avviano a priorita' Idle: sullo stesso PC Aurora e' in onda e una build a 18 job faceva andare a scatti la cascata.
+- Conferme: `askConfirm()` in `components/ConfirmHost.tsx` crea da sola una finestra nella grafica di Aurora (mai `window.confirm`).
+- Bande aperte ha la mini-mappa di chi ci ascolta (WorldMap compatta con sfondo NASA e i ricevitori PSK Reporter); il display in alto si allinea al pannello piu' a destra della prima fila (`alignDisplay` in `pages/Live.tsx`).
 - Il proprietario prova le modifiche grafiche prima di pubblicare: con Aurora aperta (core su 8787) si avvia Vite su http://localhost:5173 e la pagina usa la stazione vera; le modifiche all'interfaccia compaiono subito, si pubblica una volta sola alla fine.
 - `app/vite.config.ts` fa il proxy con `xfwd`: il core lo vede come proxy e chiede il codice di associazione. Per entrare senza codice dal PC si usa una copia della configurazione **senza** `xfwd`, tenuta fuori dal repository.
 - Le modifiche al motore (core) non si vedono cosi': servono `cargo build --release -p aurora` e il core avviato con la cartella dati di Aurora (con Aurora chiusa: radio e porte COM sono di una sola istanza).
