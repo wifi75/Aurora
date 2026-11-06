@@ -16,7 +16,7 @@ describe('parseRoute', () => {
 
   it('reads the settings and automation pages', () => {
     expect(parseRoute('#/impostazioni')).toEqual({ name: 'settings' });
-    expect(parseRoute('#/automazioni')).toEqual({ name: 'automation' });
+    expect(parseRoute('#/automazioni')).toEqual({ name: 'settings', tab: 'automation' });
   });
 
   it('opens a precise settings tab', () => {

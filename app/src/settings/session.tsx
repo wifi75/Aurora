@@ -10,6 +10,9 @@ export interface SharedDraft {
   error?: { key: string | null; text: string } | null;
   setError?(e: { key: string | null; text: string } | null): void;
   clear(): void;
+  /** Bozze di schede che non sono voci del motore (per esempio le regole delle Automazioni), per chiave; partono con Applica o Salva. */
+  drafts: Record<string, unknown>;
+  setDraftOf(key: string, value: unknown): void;
 }
 
 export const SessionDraft = createContext<SharedDraft | null>(null);

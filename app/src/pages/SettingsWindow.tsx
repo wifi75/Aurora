@@ -1,12 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { connectCat, postTune, putEngineSettings } from '../api/client';
+import { connectCat, postTune, putAutomation, putEngineSettings } from '../api/client';
+import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { rememberTab } from '../lib/lastPage';
 import { browserStorage } from '../lib/theme';
 import { AboutTab } from '../settings/AboutTab';
 import { AccessTab } from '../settings/AccessTab';
+import { AutomationTab, AUTOMATION_DRAFT } from '../settings/AutomationTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { DxccTab } from '../settings/DxccTab';
@@ -58,6 +60,7 @@ const TABS: readonly TabDef[] = [
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
+  { id: 'automation', label: 'nav.automation', icon: '⚡', extra: true, render: () => <AutomationTab /> },
   { id: 'sequence', label: 'tab.sequence', icon: '↻', extra: true, render: () => <SequenceTab /> },
   { id: 'bands', label: 'tab.bands', icon: '▦', extra: true, render: () => <BandsTab /> },
   { id: 'online', label: 'tab.online', icon: '☁', extra: true, render: () => <OnlineTab /> },
@@ -88,6 +91,8 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   const settings = useSettings();
   const [id, setId] = useState(TABS.some((x) => x.id === initialTab) ? (initialTab as string) : 'general');
   const [changes, setChanges] = useState<Record<string, string>>({});
+  /** Bozze di schede che non sono voci del motore (le regole delle Automazioni). */
+  const [drafts, setDrafts] = useState<Record<string, unknown>>({});
   const [error, setError] = useState<SaveError | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -132,21 +137,35 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           return next;
         });
       },
-      clear: () => setChanges({}),
+      clear: () => {
+        setChanges({});
+        setDrafts({});
+      },
+      drafts,
+      setDraftOf(key, value) {
+        setDrafts((previous) => {
+          const next = { ...previous };
+          if (value === undefined) delete next[key];
+          else next[key] = value;
+          return next;
+        });
+      },
     }),
-    [changes, error],
+    [changes, error, drafts],
   );
-  const count = Object.keys(changes).length;
+  const count = Object.keys(changes).length + Object.keys(drafts).length;
 
   /** Manda la bozza al motore; vero se e' andata. */
   const apply = async (): Promise<boolean> => {
     if (count === 0) return true;
     setBusy(true);
     try {
-      const next = await putEngineSettings(changes);
       const slow = Object.keys(changes).some((k) => settings.data?.items[k]?.apply === 'restart');
-      client.setQueryData(['engine-settings'], next);
+      if (Object.keys(changes).length > 0) client.setQueryData(['engine-settings'], await putEngineSettings(changes));
+      const rules = drafts[AUTOMATION_DRAFT] as AutomationRules | undefined;
+      if (rules) client.setQueryData(['automation'], await putAutomation({ rules }));
       setChanges({});
+      setDrafts({});
       setError(null);
       setNote(slow ? t('sw.appliedRestart') : t('sw.applied'));
       return true;
@@ -165,6 +184,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   const cancel = () => {
     usePrefs.getState().set(startPrefs.current);
     setChanges({});
+    setDrafts({});
     leave();
   };
   cancelRef.current = cancel;
