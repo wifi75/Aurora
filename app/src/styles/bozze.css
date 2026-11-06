@@ -304,7 +304,7 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 }
 
 /* spettro piu' alto (almeno 60 px in piu') e ridimensionabile con il divisore fra cascata e spettro */
-.waterfall--bar .wf-spectrum { min-height: 116px; }
+.waterfall--bar .wf-spectrum { min-height: 36px; }
 .waterfall--bar .wf-main { min-height: 64px; }
 .wf-splitter { flex: 0 0 7px; position: relative; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--border) 60%, transparent); }
 .wf-splitter::after { content: ''; position: absolute; left: 50%; top: 2px; width: 44px; height: 3px; margin-left: -22px; border-radius: 3px; background: color-mix(in srgb, var(--text) 45%, transparent); }
@@ -370,3 +370,26 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 @media (min-width: 64rem) {
   .live .live-board { flex: 1 1 0; }
 }
+
+/* lo spettro si accorcia fino a 36 px: la cascata prende lo spazio che le dai col divisore, senza spingere fuori lo spettro */
+.waterfall--bar { overflow: hidden; }
+
+/* Trasmissione e QSO nel tabellone: una sola finestra (niente cornice interna) e il contenuto riempie tutta la finestra */
+.grid-panel .tx-panel { display: flex; flex: 1 1 0; min-height: 0; gap: 8px; padding: 8px; align-items: stretch; background: none; border: 0; }
+.grid-panel .tx-main { display: flex; flex: 1 1 0; min-width: 0; min-height: 0; flex-direction: column; gap: 0; }
+.grid-panel .tx-split { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+.grid-panel .tx-block { flex: 1 1 0; min-height: 0; border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0; padding: 0; }
+
+/* messaggi: le sei righe si dividono l'altezza */
+.dock-panel--tx.grid-panel .tx-left { display: flex; flex-direction: column; gap: 8px; }
+.dock-panel--tx.grid-panel .tx-dx { flex: none; }
+.dock-panel--tx.grid-panel .tx-list { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; }
+.dock-panel--tx.grid-panel .tx-list li { height: auto; min-height: 0; }
+
+/* QSO: interruttori a sinistra che riempiono la finestra, i due livelli (Rx e Pwr) a destra a tutta altezza */
+.dock-panel--qso.grid-panel .cmd-sec { display: flex; flex-direction: column; gap: 6px; }
+.dock-panel--qso.grid-panel .cmd-title { display: none; }
+.dock-panel--qso.grid-panel .qso-cols { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; gap: 10px; justify-content: space-evenly; }
+.dock-panel--qso.grid-panel .qso-col { display: flex; flex-direction: column; gap: 4px; }
+.dock-panel--qso.grid-panel .qso-grid { flex: 1; align-content: stretch; }
+.dock-panel--qso.grid-panel .in-level, .dock-panel--qso.grid-panel .out-level { align-self: stretch; }
