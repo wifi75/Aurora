@@ -9,6 +9,7 @@ pub mod ultrafox;
 pub mod ultrafox_rx;
 mod alltxt;
 mod known;
+pub use ft8::filters::GridCheck;
 pub mod features;
 mod parity;
 mod persist;
@@ -73,6 +74,8 @@ pub struct LiveConfig {
     pub transmitter: Option<Arc<dyn TxPort>>,
     /// I nominativi gia' collegati (il log): insegnano al filtro contro i falsi decode chi esiste. `None`: il filtro impara solo dall'ascolto.
     pub log_calls: Option<Arc<dyn Fn() -> Vec<String> + Send + Sync>>,
+    /// Controllo del locatore sul paese del nominativo (`dxcc::DxccDb::grid_plausible`): scarta i decode deboli con un locatore impossibile.
+    pub grid_check: Option<ft8::filters::GridCheck>,
 }
 
 /// Il motore proprio in funzione: il confronto con JTDX e le ultime misure.
@@ -526,6 +529,7 @@ pub fn start_with_save(
                 }
                 let call_book = known.book();
                 options.call_book.clone_from(&call_book);
+                options.grid_check = live.as_ref().and_then(|l| l.grid_check.clone());
                 // senza un segnale vero (nessuna radio, microfono del PC) le ricerche «a priori» trovano messaggi nel rumore:
                 // con l'audio debole si decodifica solo cio' che c'e' davvero, con l'audio muto il periodo non si decodifica
                 let peak = slot.samples.iter().fold(0.0f32, |m, &x| m.max(x.abs()));
@@ -539,6 +543,7 @@ pub fn start_with_save(
                 // FT4: analisi a priori sul proprio nominativo e sul QSO in corso (stesso interruttore «a7/a8» di FT8, acceso di base)
                 let mut ft4_slot = live.as_ref().map_or_else(|| ft4_options.clone(), |l| ft4_period_options(&ft4_options, &l.controls, &l.de_call));
                 ft4_slot.call_book = call_book;
+                ft4_slot.grid_check = live.as_ref().and_then(|l| l.grid_check.clone());
                 if peak < 0.02 {
                     ft4_slot.ap = None;
                     ft4_slot.ap_cq = false;
@@ -983,6 +988,7 @@ mod tests {
             controls: Arc::new(NativeControls::default()),
             transmitter: None,
             log_calls: None,
+            grid_check: None,
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
@@ -1062,6 +1068,7 @@ mod tests {
                 controls,
                 transmitter: None,
             log_calls: None,
+            grid_check: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1137,6 +1144,7 @@ mod tests {
                 controls,
                 transmitter: None,
             log_calls: None,
+            grid_check: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1330,6 +1338,7 @@ mod tests {
             controls,
             transmitter: None,
             log_calls: None,
+            grid_check: None,
             band_of: Arc::new(|_| Some("20m".to_string())),
             annotate: Arc::new(|_, _| (None, None, None)),
         }

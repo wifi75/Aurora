@@ -1704,6 +1704,7 @@ pub async fn run(
             // il motore proprio decodifica dall'audio della cascata (avviato piu' sotto); qui si prepara cio' che pubblica
             let (call, grid) = (my_call.clone(), my_grid.clone());
             let own_continent = enrichment.as_ref().and_then(|(db, _)| db.lookup(&call).map(|hit| db.entity(hit.entity).continent.clone()));
+            let grid_db = enrichment.as_ref().map(|(db, _)| Arc::clone(db));
             let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::with_shared(db, worked).with_flags(Arc::clone(&highlight_flags)))));
             let mode_controls = Arc::clone(&native_controls);
             // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
@@ -1728,8 +1729,11 @@ pub async fn run(
             let log_calls = enrich.as_ref().and_then(|e| e.lock().ok().map(|g| g.shared_worked())).map(|worked| {
                 Arc::new(move || worked.read().map(|w| w.calls()).unwrap_or_default()) as Arc<dyn Fn() -> Vec<String> + Send + Sync>
             });
+            // il locatore deve essere credibile per il paese del nominativo (cty.dat)
+            let grid_check = grid_db.map(|db| engine_native::GridCheck::new(move |call, grid| db.grid_plausible(call, grid)));
             native_live = Some(engine_native::LiveConfig {
                 log_calls,
+                grid_check,
                 de_call: call,
                 de_grid: grid,
                 own_continent,

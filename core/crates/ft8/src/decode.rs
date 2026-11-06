@@ -36,7 +36,7 @@ use rayon::prelude::*;
 
 use crate::a8::A8Query;
 use crate::ap::{self, ApContext, ApOptions, NAPTYPES};
-use crate::filters::{self, CallBook, MessageCheck};
+use crate::filters::{self, CallBook, GridCheck, MessageCheck};
 pub use crate::history::PeriodHistory;
 use crate::history::StoredSignal;
 use crate::message::{self, CallHashes};
@@ -119,6 +119,8 @@ pub struct Options {
     pub ap_cq: bool,
     /// Elenco completo di nominativi (come `ALLCALL7.TXT`) per `chkflscall`; con un elenco incompleto si scartano stazioni vere.
     pub call_book: Option<Arc<CallBook>>,
+    /// Controllo del locatore sul paese del nominativo (vedi [`filters::grid_is_false`]); solo sui messaggi deboli o a priori.
+    pub grid_check: Option<GridCheck>,
     /// Parita' di questo periodo (FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei
     /// tempi): sceglie quale meta' della [`history::PeriodHistory`] passata a [`decode_slot_with_history`] leggere e
     /// scrivere. Senza cronologia non conta.
@@ -169,6 +171,7 @@ impl Options {
             ap: None,
             ap_cq: depth > 1,
             call_book: None,
+            grid_check: None,
             even_period: true,
             agc: false,
             a7: depth > 1,
@@ -936,7 +939,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
             if options.filters {
                 let qual = 1.0 - (quality.hard_errors as f32 + quality.dmin) / 60.0;
                 let check = MessageCheck { text: &text, i3, n3, ap_type: aptype, qual, snr: xsnr, dt_s: refined.dt_s };
-                if filters::reject_message(&check, &o.mycall, options.call_book.as_deref()) {
+                if filters::reject_message(&check, &o.mycall, options.call_book.as_deref()) || filters::grid_is_false(&text, xsnr, aptype, options.grid_check.as_ref()) {
                     return (None, capture);
                 }
             }

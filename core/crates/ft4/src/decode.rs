@@ -31,7 +31,7 @@
 use std::sync::Arc;
 
 use ft8::ap::{ApContext, ApOptions, NAPTYPES};
-use ft8::filters::{self, CallBook, MessageCheck};
+use ft8::filters::{self, CallBook, GridCheck, MessageCheck};
 use ft8::ldpc;
 use ft8::message::{self, CallHashes};
 use rustfft::{Fft, FftPlanner};
@@ -79,6 +79,8 @@ pub struct Options {
     pub ap_cq: bool,
     /// Elenco dei nominativi veri (come `ALLCALL7.TXT`) per `chkflscall`; con un elenco incompleto si scartano stazioni vere.
     pub call_book: Option<Arc<CallBook>>,
+    /// Controllo del locatore sul paese del nominativo (vedi [`filters::grid_is_false`]); solo sui messaggi deboli o a priori.
+    pub grid_check: Option<GridCheck>,
 }
 
 impl Default for Options {
@@ -107,6 +109,7 @@ impl Options {
             ap: None,
             ap_cq: false,
             call_book: None,
+            grid_check: None,
         };
         match ndepth {
             0 | 1 => {
@@ -231,6 +234,9 @@ struct Found {
 /// I filtri sui falsi: sempre per i messaggi trovati con l'AP (che lavorano su bit decisi in partenza), per gli altri solo se si ha l'elenco
 /// dei nominativi (senza, `chkflscall` non ha niente da controllare).
 fn rejected(found: &Found, options: &Options, snr: i32, dt_s: f32) -> bool {
+    if filters::grid_is_false(&found.text, snr as f32, found.ap_type, options.grid_check.as_ref()) {
+        return true;
+    }
     if found.ap_type == 0 && options.call_book.is_none() {
         return false;
     }
