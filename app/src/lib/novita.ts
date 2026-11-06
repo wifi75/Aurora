@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.159',
+    released: '2026-11-06T21:22:44Z',
+    kind: 'fixed',
+    title: ['Niente chiusura accendendo la radio', 'No more closing when the radio is switched on', 'Kein Beenden beim Einschalten des Funkgeräts', 'Plus de fermeture en allumant la radio', 'Ya no se cierra al encender la radio', 'Já não fecha ao ligar o rádio'],
+    text: [
+      "Accendendo la radio dopo Aurora, la ripresa automatica dell'audio poteva far chiudere Aurora (versioni 0.11.155-0.11.158): corretto. Un attimo di ritardo della scheda audio in uscita non fa più fallire la trasmissione seguente, e spostare o ridimensionare a lungo le finestre non è più scambiato per un blocco del programma.",
+      "Switching the radio on after Aurora, the automatic audio recovery could close Aurora (versions 0.11.155-0.11.158): fixed. A brief delay of the output sound card no longer makes the next transmission fail, and moving or resizing windows for a long time is no longer taken for a program freeze.",
+      "Wurde das Funkgerät nach Aurora eingeschaltet, konnte die automatische Audio-Wiederaufnahme Aurora beenden (Versionen 0.11.155-0.11.158): behoben. Eine kurze Verzögerung der Ausgabe-Soundkarte lässt die nächste Sendung nicht mehr scheitern, und langes Verschieben oder Vergrößern von Fenstern gilt nicht mehr als Programmhänger.",
+      "En allumant la radio après Aurora, la reprise automatique de l’audio pouvait fermer Aurora (versions 0.11.155-0.11.158) : corrigé. Un bref retard de la carte son de sortie ne fait plus échouer l’émission suivante, et déplacer ou redimensionner longuement les fenêtres n’est plus pris pour un blocage.",
+      "Al encender la radio después de Aurora, la recuperación automática del audio podía cerrar Aurora (versiones 0.11.155-0.11.158): corregido. Un breve retraso de la tarjeta de sonido de salida ya no hace fallar la transmisión siguiente, y mover o redimensionar ventanas mucho rato ya no se toma por un bloqueo.",
+      "Ao ligar o rádio depois da Aurora, a recuperação automática do áudio podia fechar a Aurora (versões 0.11.155-0.11.158): corrigido. Um breve atraso da placa de som de saída já não faz falhar a transmissão seguinte, e mover ou redimensionar janelas durante muito tempo já não é tomado por um bloqueio.",
+    ],
+  },
+  {
     version: '0.11.158',
     released: '2026-11-06T17:52:32Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Le QR de l’association utilise la vraie adresse du PC (plus celles de WSL, Hyper-V, VirtualBox ou VPN), et la carte indique le réseau Wi-Fi du PC et si Windows bloque le téléphone, avec le bouton « Autoriser Aurora ». La page Nouveautés est compacte, la fenêtre se reconnecte seule si la liaison devient muette, l’afficheur presque carré fait 120 points de haut et le son de démarrage ne joue qu’une fois par lancement.",
       "El QR del emparejamiento usa la dirección real del PC (ya no las de WSL, Hyper-V, VirtualBox o VPN), y la tarjeta indica la red Wi-Fi del PC y si Windows bloquea el teléfono, con el botón «Permitir Aurora». La página Novedades es compacta, la ventana se reconecta sola si la conexión se queda muda, la pantalla casi cuadrada mide 120 puntos de alto y el sonido de inicio suena una vez por arranque.",
       "O QR da associação usa o endereço verdadeiro do PC (já não os de WSL, Hyper-V, VirtualBox ou VPN), e o cartão indica a rede Wi-Fi do PC e se o Windows bloqueia o telemóvel, com o botão «Permitir Aurora». A página Novidades é compacta, a janela volta a ligar-se sozinha se a ligação ficar muda, o ecrã quase quadrado tem 120 pontos de altura e o som de arranque toca uma vez por arranque.",
-    ],
-  },
-  {
-    version: '0.11.119',
-    released: '2026-11-04T17:29:39Z',
-    kind: 'fixed',
-    title: ["Porta di rete per il CAT", "Network port for CAT", "Netzwerkport für CAT", "Port réseau pour le CAT", "Puerto de red para el CAT", "Porta de rede para o CAT"],
-    text: [
-      "Nel campo Porta della radio ora si può scrivere un indirizzo di rete, come 127.0.0.1:4532 per «Hamlib NET rigctl» o flrig, oltre a scegliere una COM. Nel pannello «CQ e novità» il nome del paese resta leggibile, e il display quasi quadrato sta sopra la testata.",
-      "In the radio Port field you can now type a network address, such as 127.0.0.1:4532 for «Hamlib NET rigctl» or flrig, as well as pick a COM port. In the «CQ and news» panel the country name stays readable, and the near-square display sits above the header.",
-      "Im Feld Port des Funkgeräts kann man jetzt eine Netzwerkadresse eingeben, etwa 127.0.0.1:4532 für «Hamlib NET rigctl» oder flrig, oder einen COM-Port wählen. Im Feld «CQ und Neues» bleibt der Ländername lesbar, und die fast quadratische Anzeige liegt über der Kopfzeile.",
-      "Dans le champ Port de la radio on peut maintenant écrire une adresse réseau, comme 127.0.0.1:4532 pour « Hamlib NET rigctl » ou flrig, en plus de choisir un port COM. Dans le panneau « CQ et nouveautés » le nom du pays reste lisible, et l’afficheur presque carré se place au-dessus de l’en-tête.",
-      "En el campo Puerto de la radio ahora se puede escribir una dirección de red, como 127.0.0.1:4532 para «Hamlib NET rigctl» o flrig, además de elegir un COM. En el panel «CQ y novedades» el nombre del país sigue siendo legible, y la pantalla casi cuadrada queda sobre la cabecera.",
-      "No campo Porta do rádio agora pode-se escrever um endereço de rede, como 127.0.0.1:4532 para «Hamlib NET rigctl» ou flrig, além de escolher uma COM. No painel «CQ e novidades» o nome do país continua legível, e o ecrã quase quadrado fica por cima do cabeçalho.",
     ],
   },
 ];
