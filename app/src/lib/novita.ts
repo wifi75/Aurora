@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.164',
-    released: '2026-11-06T22:48:53Z',
+    released: '2026-11-06T22:51:47Z',
     kind: 'fixed',
     title: ['Pagine che scorrono di nuovo', 'Pages scroll again', 'Seiten scrollen wieder', 'Les pages défilent à nouveau', 'Las páginas vuelven a desplazarse', 'As páginas voltam a deslizar'],
     text: [
