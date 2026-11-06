@@ -6,14 +6,14 @@ import { periodSecs } from '../lib/period';
 import { useStation } from '../state/station';
 
 /** Dove siamo nel periodo (secondi trascorsi e durata), agganciati all'orologio come i periodi del motore. */
-function usePeriodClock(mode: string | undefined): { elapsed: number; total: number } {
+function usePeriodClock(mode: string | undefined): { elapsed: number; total: number; now: number } {
   const total = periodSecs(mode ?? 'FT8');
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, []);
-  return { elapsed: (now / 1000) % total, total };
+  return { elapsed: (now / 1000) % total, total, now };
 }
 
 /**
@@ -28,7 +28,7 @@ export function Footer() {
   const decodes = useStation((s) => s.decodes);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, staleTime: 30_000 });
   const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, staleTime: 30_000 });
-  const { elapsed, total } = usePeriodClock(status?.mode);
+  const { elapsed, total, now } = usePeriodClock(status?.mode);
 
   // le decodifiche dell'ultimo periodo: quelle con la stessa ora della piu' recente
   const periodDecodes = decodes.length > 0 ? decodes.filter((d) => d.time_ms === decodes[0]!.time_ms).length : 0;
@@ -61,6 +61,9 @@ export function Footer() {
       ) : (
         <div className="app-bar-left" />
       )}
+      <span className="bar-utc num" title="UTC">
+        {new Date(now).toISOString().slice(11, 19)} <i>UTC</i>
+      </span>
       <small>
         {data
           ? t('footer.credit', { name: data.name, version: data.version })
