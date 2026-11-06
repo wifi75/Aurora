@@ -25,7 +25,6 @@ import { FoxPage } from './pages/FoxPage';
 import { useStation } from './state/station';
 import { Automation } from './pages/Automation';
 import { SettingsWindow } from './pages/SettingsWindow';
-import { openSettingsWindow } from './lib/settingsWindow';
 import { Live } from './pages/Live';
 import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
@@ -109,12 +108,8 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [groups, isSolo]);
 
-  // le Impostazioni hanno una finestra tutta loro: dalla finestra principale ogni link `#/impostazioni[/scheda]` la apre e resta la Stazione
-  useEffect(() => {
-    if (route.name !== 'settings' || REMOTE || session.data !== true) return;
-    openSettingsWindow(route.tab ?? rememberedTab(browserStorage()));
-    location.hash = '#/';
-  }, [route, session.data]);
+  // le Impostazioni sono un riquadro al centro sopra l'applicazione, che dietro si oscura e non si puo' usare
+  const settingsOpen = route.name === 'settings' && !REMOTE && session.data === true;
 
   if (route.name === 'window' && route.id === 'impostazioni' && session.data === true) {
     return <SettingsWindow initialTab={new URLSearchParams(location.search).get('tab') ?? undefined} />;
@@ -144,7 +139,7 @@ export function App() {
   } else if (!session.data) {
     content = <Pair onPaired={onPaired} />;
   } else if (route.name === 'settings' && !REMOTE) {
-    // si apre la finestra (effetto qui sopra) e intanto resta la Stazione
+    // le Impostazioni stanno nel riquadro (qui sotto): dietro resta la Stazione
     content = <Live />;
   } else if (route.name === 'automation') {
     content = <Automation />;
@@ -171,7 +166,8 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
+    <>
+    <div className="app-shell" inert={settingsOpen ? true : undefined}>
       {REMOTE_TOUCH ? null : (
       <header className="app-header">
         <a className="app-brand" href="#/">
@@ -218,6 +214,8 @@ export function App() {
       {session.data ? <LogPrompt /> : null}
       {session.data && !REMOTE ? <UpdatePoster /> : null}
     </div>
+    {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? (route.tab ?? rememberedTab(browserStorage())) : undefined} onClose={() => { location.hash = '#/'; }} /> : null}
+    </>
   );
 }
 

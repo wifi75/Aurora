@@ -262,9 +262,9 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     // finestre a parte senza cornice: si vede solo il blocco staccato (si sposta dalla sua barretta); la dashboard a blocchi resta una
     // finestra normale con la cornice di Windows
     let grid = url.query_pairs().any(|(k, v)| k == "mode" && v == "grid");
-    // le Impostazioni: finestra piccola, con la cornice di Windows, al centro e non sul secondo schermo
+    // le Impostazioni: finestra piccola, senza cornice, sempre davanti, al centro e non sul secondo schermo
     let settings = page == "impostazioni";
-    let frameless = !grid && !settings;
+    let frameless = !grid;
     let display_only = !grid && !settings && url.query_pairs().any(|(k, v)| k == "items" && v == "display");
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
         .title(if settings { "Aurora - Impostazioni" } else { title })
@@ -273,6 +273,7 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
         .inner_size(if display_only { 660.0 } else if settings { 1040.0 } else { 1000.0 }, if display_only { 110.0 } else if settings { 760.0 } else { 700.0 })
         .min_inner_size(if display_only { 160.0 } else if settings { 1040.0 } else { 360.0 }, if display_only { 40.0 } else if settings { 760.0 } else { 260.0 })
         .resizable(!settings)
+        .always_on_top(settings)
         .visible(false)
         .additional_browser_args("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-logging --log-level=3 --autoplay-policy=no-user-gesture-required")
         .on_new_window(|url, _| {

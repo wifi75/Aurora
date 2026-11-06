@@ -82,7 +82,7 @@ function closeWindow(): void {
  * Le Impostazioni in una finestra a parte, piccola: a sinistra le 15 schede, a destra la scheda scelta, in basso Prova CAT, Prova PTT,
  * Annulla, Applica e Salva. Le voci del motore scrivono in una bozza unica (`SessionDraft`) e partono solo con Applica o Salva.
  */
-export function SettingsWindow({ initialTab }: { initialTab?: string }) {
+export function SettingsWindow({ initialTab, embedded = false, onClose }: { initialTab?: string; /** Dentro l'applicazione (riquadro sopra la pagina) e non in una finestra a parte. */ embedded?: boolean; onClose?(): void }) {
   const t = useT();
   const client = useQueryClient();
   const settings = useSettings();
@@ -100,11 +100,23 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
   useEffect(() => {
     document.title = `Aurora - ${t('set.title')}`;
   }, [t]);
-  // la finestra e' fissa: non scorre la pagina, scorre solo il contenuto della scheda
+  // finestra a parte: la pagina e' fissa (scorre solo il contenuto della scheda); nel riquadro non serve
   useEffect(() => {
-    document.documentElement.classList.add('sw-fixed');
-    return () => document.documentElement.classList.remove('sw-fixed');
-  }, []);
+    const cls = embedded ? 'sw-lock' : 'sw-fixed';
+    document.documentElement.classList.add(cls);
+    return () => document.documentElement.classList.remove(cls);
+  }, [embedded]);
+  const leave = () => (onClose ? onClose() : closeWindow());
+  // Esc chiude (come Annulla)
+  const cancelRef = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    if (!embedded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cancelRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [embedded]);
 
   const draft = useMemo<SharedDraft>(
     () => ({
@@ -148,13 +160,14 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
     }
   };
   const save = async () => {
-    if (await apply()) closeWindow();
+    if (await apply()) leave();
   };
   const cancel = () => {
     usePrefs.getState().set(startPrefs.current);
     setChanges({});
-    closeWindow();
+    leave();
   };
+  cancelRef.current = cancel;
 
   const testCat = async () => {
     setNote('…');
@@ -179,9 +192,9 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
   };
 
   const tab = TABS.find((x) => x.id === id) ?? TABS[0]!;
-  return (
-    <div className="sw-window" role="dialog" aria-label={t('set.title')}>
-      <header className="sw-top">
+  const body = (
+    <div className={`sw-window${embedded ? ' sw-window--in' : ''}`} role="dialog" aria-label={t('set.title')}>
+      <header className="sw-top" data-tauri-drag-region>
         <strong>{t('set.title')}</strong>
         <small>{t(tab.label)}</small>
         <button type="button" className="sw-x" aria-label={t('sw.close')} title={t('sw.close')} onClick={cancel}>
@@ -237,5 +250,12 @@ export function SettingsWindow({ initialTab }: { initialTab?: string }) {
         </button>
       </footer>
     </div>
+  );
+  return embedded ? (
+    <div className="settings-backdrop">
+      <div className="settings-modal">{body}</div>
+    </div>
+  ) : (
+    body
   );
 }
