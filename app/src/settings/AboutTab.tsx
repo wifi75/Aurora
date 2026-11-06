@@ -4,7 +4,7 @@ import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
 
 const REPO = 'https://github.com/wifi75/Aurora';
-const SITE = 'https://wifi75.github.io/Aurora/';
+const SITE = 'https://aurora.iu3wjq.com/';
 
 /** La pagina di presentazione: logo, versione dal core, autore, licenza, collegamenti e ringraziamenti. */
 export function AboutTab() {
