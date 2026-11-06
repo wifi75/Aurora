@@ -6362,3 +6362,45 @@
 .dock-panel--cq .decode-list .decode-text .data {
   font-size: calc(0.8rem - 1px);
 }
+
+/* Attivita' di banda e CQ: caratteri piu' piccoli, bandiera e km stretti, lo spazio recuperato va al messaggio (nominativi leggibili) */
+.dock-panel--all .decode-list .decode-row,
+.dock-panel--cq .decode-list .decode-row {
+  gap: 0.3rem;
+  font-size: 0.72rem;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-text,
+.dock-panel--cq .decode-list .decode-row .decode-text {
+  letter-spacing: -0.02em;
+}
+
+.dock-panel--all .decode-list .decode-country,
+.dock-panel--cq .decode-list .decode-country,
+.dock-panel--all .decode-list .decode-row .decode-where .w-km,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km {
+  font-size: 0.66rem;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.5rem minmax(3.5rem, 1fr) auto;
+}
+
+.dock-panel--all .decode-list .decode-row .decode-where .w-km,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-km {
+  width: auto;
+  padding: 0 0.25rem;
+}
+
+.dock-panel--all .decode-where > *,
+.dock-panel--cq .decode-where > * {
+  padding: 0 0.25rem;
+}
+
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(0, 1.15fr) minmax(0, 1fr) calc(5rem - 7px);
+  }
+}

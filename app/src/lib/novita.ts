@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.157',
+    released: '2026-11-06T17:22:04Z',
+    kind: 'changed',
+    title: ['Cambio stazione senza fermare il Tx', 'Switch station without stopping Tx', 'Station wechseln ohne Tx-Stopp', 'Changer de station sans arrêter le Tx', 'Cambiar de estación sin detener el Tx', 'Mudar de estação sem parar o Tx'],
+    text: [
+      "Doppio clic su un'altra stazione mentre trasmetti: se va chiamata nello stesso periodo la trasmissione non si ferma, il messaggio cambia al volo per la nuova stazione. Attività di banda con caratteri più piccoli e colonna dei km stretta: messaggi e nominativi si leggono interi.",
+      "Double-click another station while transmitting: if it has to be called in the same period the transmission does not stop, the message switches on the fly to the new station. Band activity with smaller text and a narrow km column: messages and callsigns are readable in full.",
+      "Doppelklick auf eine andere Station beim Senden: Muss sie im selben Zeitraum gerufen werden, stoppt die Sendung nicht, die Meldung wechselt sofort zur neuen Station. Bandaktivität mit kleinerer Schrift und schmaler km-Spalte: Meldungen und Rufzeichen sind ganz lesbar.",
+      "Double-clic sur une autre station pendant l’émission : si elle doit être appelée dans la même période, l’émission ne s’arrête pas, le message change à la volée pour la nouvelle station. Activité de bande avec un texte plus petit et une colonne km étroite : messages et indicatifs se lisent en entier.",
+      "Doble clic en otra estación mientras transmites: si hay que llamarla en el mismo periodo la transmisión no se detiene, el mensaje cambia al vuelo para la nueva estación. Actividad de banda con letra más pequeña y columna de km estrecha: mensajes e indicativos se leen enteros.",
+      "Duplo clique noutra estação enquanto transmites: se tiver de ser chamada no mesmo período a transmissão não para, a mensagem muda logo para a nova estação. Atividade de banda com letra mais pequena e coluna de km estreita: mensagens e indicativos leem-se inteiros.",
+    ],
+  },
+  {
     version: '0.11.156',
     released: '2026-11-06T17:13:01Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans Réglages › Fenêtres tu choisis quels panneaux de la station afficher (chute d’eau, activité de bande, journal, DX Cluster…) et tu les remets quand tu veux. L’import ADIF accepte des fichiers jusqu’à 256 Mo et le dit clairement si un fichier est trop gros.",
       "En Ajustes › Ventanas eliges qué paneles de la estación mostrar (cascada, actividad de banda, log, DX Cluster…) y los vuelves a poner cuando quieras. La importación ADIF acepta archivos de hasta 256 MB y avisa claramente si un archivo es demasiado grande.",
       "Em Definições › Janelas escolhes que painéis da estação mostrar (cascata, atividade de banda, log, DX Cluster…) e voltas a pô-los quando quiseres. A importação ADIF aceita ficheiros até 256 MB e diz claramente se um ficheiro é grande demais.",
-    ],
-  },
-  {
-    version: '0.11.117',
-    released: '2026-11-04T17:13:57Z',
-    kind: 'fixed',
-    title: ['«Già lavorato» più preciso', 'More precise «already worked»', 'Genaueres «schon gearbeitet»', '« Déjà contacté » plus précis', '«Ya trabajado» más preciso', '«Já trabalhado» mais preciso'],
-    text: [
-      "«Già lavorato» compare solo per un nominativo davvero nel log, non più per ogni stazione di un paese già fatto. Lo S-meter stimato mostra la tilde anche nei display a lancetta nuovi.",
-      "«Already worked» appears only for a callsign really in the log, no longer for every station of a country already worked. The estimated S-meter shows the tilde in the new needle displays too.",
-      "«Schon gearbeitet» erscheint nur für ein Rufzeichen, das wirklich im Log steht, nicht mehr für jede Station eines schon gearbeiteten Landes. Der geschätzte S-Meter zeigt die Tilde auch in den neuen Zeigeranzeigen.",
-      "« Déjà contacté » n’apparaît que pour un indicatif vraiment dans le journal, plus pour chaque station d’un pays déjà fait. Le S-mètre estimé montre le tilde aussi dans les nouveaux afficheurs à aiguille.",
-      "«Ya trabajado» aparece solo para un indicativo que está de verdad en el log, ya no para cada estación de un país ya hecho. El S-meter estimado muestra la tilde también en las pantallas nuevas de aguja.",
-      "«Já trabalhado» aparece só para um indicativo que está mesmo no log, já não para cada estação de um país já feito. O S-meter estimado mostra o til também nos novos ecrãs de ponteiro.",
     ],
   },
 ];
