@@ -541,3 +541,15 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 /* in tutte le finestre della pagina principale (cluster, attivita' di banda, log, ...) niente barra visibile: si scorre con la rotella */
 .grid-panel, .grid-panel * { scrollbar-width: none; }
 .grid-panel::-webkit-scrollbar, .grid-panel *::-webkit-scrollbar { display: none; }
+
+/* Abilita Tx e AutoTX accesi: rossi (stanno per far trasmettere) */
+.qso-grid .chip[data-ctl='enable_tx'].glass--on, .qso-grid .chip[data-ctl='auto_tx'].glass--on,
+.qso-grid .chip[data-ctl='enable_tx'][aria-pressed='true'], .qso-grid .chip[data-ctl='auto_tx'][aria-pressed='true'] {
+  background: #d93a46 !important; border-color: #a11d2a !important; color: #fff !important;
+}
+.qso-grid .chip[data-ctl='enable_tx'].glass--on:hover, .qso-grid .chip[data-ctl='auto_tx'].glass--on:hover { background: #c22f3b !important; }
+.qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led--on, .qso-grid .chip[data-ctl='auto_tx'].glass--on .chip-led--on { background: #fff !important; border-color: #fff; box-shadow: none !important; }
+
+/* Mappa DX nella pagina a blocchi: riempie la finestra, senza altezze minime */
+.dock-panel--dxmap .dock-body { padding: 0; overflow: hidden; }
+.dock-panel--dxmap .dxmap-page { height: 100%; min-height: 0; padding: 2px; }
