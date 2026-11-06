@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.158',
-    released: '2026-11-06T17:49:53Z',
+    released: '2026-11-06T17:52:32Z',
     kind: 'changed',
     title: ['Attività di banda e display più ordinati', 'Tidier Band activity and display', 'Aufgeräumtere Bandaktivität und Display', 'Activité de bande et afficheur plus nets', 'Actividad de banda y display más ordenados', 'Atividade de banda e display mais arrumados'],
     text: [
