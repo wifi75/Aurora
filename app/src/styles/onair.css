@@ -6629,3 +6629,19 @@
 .export-scroll tbody tr {
   scroll-snap-align: start;
 }
+
+/* pulsante del modo (FT8, FT4...): il modo scelto e' sempre ben in evidenza, come la banda attiva ma piu' marcato */
+.mode-switch-btn,
+.mode-switch-btn.glass {
+  background: color-mix(in srgb, var(--accent, #2cf5a4) 22%, #0b1a14) !important;
+  border: 2px solid var(--accent, #2cf5a4) !important;
+  color: #eafff5 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #2cf5a4) 45%, transparent) !important;
+}
+:root[data-theme='light'] .mode-switch-btn,
+:root[data-theme='light'] .mode-switch-btn.glass {
+  background: color-mix(in srgb, var(--accent, #0f9d6b) 18%, #fff) !important;
+  color: #063a28 !important;
+}
