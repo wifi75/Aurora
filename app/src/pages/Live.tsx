@@ -7,6 +7,8 @@ import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
 import { DiagnosisBar } from '../components/DiagnosisBar';
 import { GridBoard } from '../components/GridBoard';
+import { DetachButton } from '../components/DetachButton';
+import { detachedItems, useGroups } from '../lib/detached';
 import { useBoard, type BoardId } from '../lib/boardLayout';
 import { EDIT_LAYOUT } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
@@ -333,8 +335,10 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       <span className="muted">NG3K</span>
     </div>
   ) : null);
-  const hiddenIds = layout.hidden ?? [];
-  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !hiddenIds.includes(id === 'qso' ? 'tx' : (id as PanelId))));
+  // le finestre staccate sul secondo schermo non si vedono qui (la Trasmissione porta con se' anche il QSO); idem quelle nascoste dalle Impostazioni
+  const groups = useGroups();
+  const awayIds: PanelId[] = [...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])];
+  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !awayIds.includes(id === 'qso' ? 'tx' : (id as PanelId))));
 
   return (
     <div className="live">
@@ -388,6 +392,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           <GridBoard
             cells={visibleCells}
             locked={!EDIT_LAYOUT}
+            free
             onChange={(next) => useBoard.getState().set({ ...boardCells, ...next })}
             render={(id, grip) => (
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
@@ -395,6 +400,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
+                  {id === 'qso' ? null : <DetachButton item={id as Exclude<BoardId, 'qso'>} className="dock-detach" />}
                 </header>
                 <div className="dock-body">{blockBody(id as BoardId)}</div>
               </section>

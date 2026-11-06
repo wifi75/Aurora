@@ -62,7 +62,8 @@ function save(cells: Record<BoardId, Cell>): void {
 export const useBoard = create<BoardState>((set) => ({
   cells: readBoard(browserStorage()),
   set(cells) {
-    const next = { ...defaultBoard(), ...arrange(cells) } as Record<BoardId, Cell>;
+    // senza gravita': ogni finestra resta dove l'hai lasciata (solo le sovrapposizioni si risolvono spingendo giu')
+    const next = { ...defaultBoard(), ...arrange(cells, undefined, false) } as Record<BoardId, Cell>;
     save(next);
     set({ cells: next });
   },
