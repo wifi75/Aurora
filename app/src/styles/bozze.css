@@ -663,3 +663,10 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 
 /* lo spettro comincia dove finisce la cascata: sfondo nero e una riga chiara di separazione */
 .waterfall--bar .wf-spectrum { border-top: 1px solid rgba(255, 255, 255, 0.28); box-sizing: border-box; }
+
+/* Bande aperte: colonne con misure fisse (etichetta 64 px, Giorno e Notte 112 px ciascuna), tessere uguali e allineate */
+.bands-open .prop-matrix-head, .bands-open .prop-matrix-row { grid-template-columns: 64px 112px 112px !important; column-gap: 6px !important; justify-content: start; }
+.bands-open .prop-matrix-head > span { justify-content: center; }
+.bands-open .prop-tile { width: 112px; box-sizing: border-box; justify-content: flex-start; padding: 1px 8px; gap: 8px; background: color-mix(in srgb, currentColor 0%, transparent); border: 1px solid var(--border); border-radius: 5px; }
+.bands-open .prop-tile--active { border-color: transparent; }
+.bands-open .prop-tile b { flex: 1; text-align: left; }
