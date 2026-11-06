@@ -166,7 +166,10 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    const m = L.map(el, { zoomControl: false, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD, maxBoundsViscosity: 1 });
+    const m = whole
+      ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
+        L.map(el, { zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
+      : L.map(el, { zoomControl: false, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
@@ -198,22 +201,26 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
       ].filter(Boolean);
       L.popup({ className: 'dxmap-popup' }).setLatLng(e.latlng).setContent(lines.join('<br>')).openOn(m);
     });
-    let lastMin = 0;
     const fit = () => {
       if (el.clientWidth < 10 || el.clientHeight < 10) return;
       m.invalidateSize(false);
-      const z = m.getBoundsZoom(WORLD, !whole);
+      if (whole) {
+        m.fitBounds(WORLD, { animate: false, padding: [0, 0] });
+        return;
+      }
+      const z = m.getBoundsZoom(WORLD, true);
       if (!Number.isFinite(z)) return;
       m.setMinZoom(z);
       const cur = m.getZoom();
       if (!Number.isFinite(cur) || cur > m.getMaxZoom()) m.setView([25, 10], z, { animate: false });
-      else if (cur < z || (whole && cur <= lastMin + 0.01)) m.setView(whole ? [10, 0] : m.getCenter(), z, { animate: false });
-      lastMin = z;
+      else if (cur < z) m.setZoom(z);
     };
     m.setView([25, 10], 2, { animate: false });
     fit();
-    const start = m.getMinZoom();
-    m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
+    if (!whole) {
+      const start = m.getMinZoom();
+      m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
+    }
     map.current = m;
     const ro = new ResizeObserver(fit);
     ro.observe(el);
