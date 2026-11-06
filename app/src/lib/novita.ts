@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.162',
+    released: '2026-11-06T22:28:48Z',
+    kind: 'changed',
+    title: ['Continenti, record e liste più comode', 'Continents, records and handier lists', 'Kontinente, Rekorde und bequemere Listen', 'Continents, records et listes plus pratiques', 'Continentes, récords y listas más cómodas', 'Continentes, recordes e listas mais práticas'],
+    text: [
+      "Bande aperte mostra i continenti che ti ascoltano (stazioni PSK Reporter per continente) e il record di distanza di oggi e degli ultimi 7 giorni. Attività di banda, se la scorri e poi la lasci per 15 secondi, torna da sola all'ultima stazione ricevuta. Le liste che scorrono si fermano all'inizio di una riga. In Trasmissione i pulsanti tornano alla misura originale e i cursori Rx e Pwr restano sempre visibili.",
+      "Open bands shows the continents that hear you (PSK Reporter stations per continent) and the distance record of today and of the last 7 days. Band activity, if you scroll it and then leave it for 15 seconds, goes back on its own to the latest station received. Scrolling lists stop at the start of a row. In Transmit the buttons are back to their original size and the Rx and Pwr sliders are always visible.",
+      "Offene Bänder zeigt die Kontinente, die dich hören (PSK-Reporter-Stationen je Kontinent), und den Entfernungsrekord von heute und den letzten 7 Tagen. Die Bandaktivität kehrt, wenn du scrollst und sie 15 Sekunden lässt, von selbst zur zuletzt empfangenen Station zurück. Scrollende Listen halten am Zeilenanfang. Beim Senden haben die Tasten wieder ihre ursprüngliche Größe, die Regler Rx und Pwr sind immer sichtbar.",
+      "Bandes ouvertes montre les continents qui t’entendent (stations PSK Reporter par continent) et le record de distance du jour et des 7 derniers jours. Activité de bande, si tu la fais défiler puis la laisses 15 secondes, revient seule à la dernière station reçue. Les listes qui défilent s’arrêtent au début d’une ligne. En Émission les boutons reprennent leur taille d’origine et les curseurs Rx et Pwr restent toujours visibles.",
+      "Bandas abiertas muestra los continentes que te oyen (estaciones PSK Reporter por continente) y el récord de distancia de hoy y de los últimos 7 días. Actividad de banda, si la desplazas y la dejas 15 segundos, vuelve sola a la última estación recibida. Las listas que se desplazan se paran al inicio de una fila. En Transmisión los botones vuelven a su tamaño original y los controles Rx y Pwr quedan siempre visibles.",
+      "Bandas abertas mostra os continentes que te ouvem (estações PSK Reporter por continente) e o recorde de distância de hoje e dos últimos 7 dias. Atividade de banda, se a deslizares e a deixares 15 segundos, volta sozinha à última estação recebida. As listas que deslizam param no início de uma linha. Na Transmissão os botões voltam ao tamanho original e os cursores Rx e Pwr ficam sempre visíveis.",
+    ],
+  },
+  {
     version: '0.11.161',
     released: '2026-11-06T22:19:13Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Tu peux demander une confirmation avant qu’un QSO entre dans le journal, avec des champs corrigeables (Réglages › Séquence › « Me demander de journaliser le QSO »). Le QR du téléphone met le Wi-Fi en premier et en montre un par adresse du PC ; « Autoriser Aurora » retire aussi les blocages du pare-feu créés par un « Annuler ». Sur le téléphone le pays apparaît à côté de l’indicatif.",
       "Puedes pedir confirmación antes de que un QSO entre en el log, con campos que se pueden corregir (Ajustes › Secuencia › «Pedirme registrar el QSO»). El QR del teléfono pone primero la Wi-Fi y muestra uno por cada dirección del PC; «Permitir Aurora» quita también los bloqueos del cortafuegos creados por un «Cancelar». En el teléfono aparece el país junto al indicativo.",
       "Podes pedir confirmação antes de um QSO entrar no log, com campos corrigíveis (Definições › Sequência › «Pedir para registar o QSO»). O QR do telemóvel põe primeiro a Wi-Fi e mostra um por cada endereço do PC; «Permitir Aurora» tira também os bloqueios da firewall criados por um «Cancelar». No telemóvel aparece o país ao lado do indicativo.",
-    ],
-  },
-  {
-    version: '0.11.122',
-    released: '2026-11-04T18:05:13Z',
-    kind: 'fixed',
-    title: ["La locandina arriva subito", "The poster comes right away", "Das Plakat kommt sofort", "L’affiche arrive tout de suite", "El cartel llega enseguida", "O cartaz chega logo"],
-    text: [
-      "Quando c’è una versione nuova, la locandina compare pochi secondi dopo l’apertura di Aurora: prima poteva aspettare fino a 10 minuti se l’avviso era già stato dato a un avvio precedente.",
-      "When a new version is out, the poster appears a few seconds after Aurora opens: before, it could wait up to 10 minutes if the notice had already been given at an earlier start.",
-      "Gibt es eine neue Version, erscheint das Plakat wenige Sekunden nach dem Öffnen von Aurora: vorher konnte es bis zu 10 Minuten dauern, wenn der Hinweis schon bei einem früheren Start kam.",
-      "Quand une nouvelle version existe, l’affiche apparaît quelques secondes après l’ouverture d’Aurora : avant, elle pouvait attendre jusqu’à 10 minutes si l’avis avait déjà été donné lors d’un démarrage précédent.",
-      "Cuando hay una versión nueva, el cartel aparece pocos segundos después de abrir Aurora: antes podía tardar hasta 10 minutos si el aviso ya se había dado en un inicio anterior.",
-      "Quando há uma versão nova, o cartaz aparece poucos segundos depois de abrir a Aurora: antes podia demorar até 10 minutos se o aviso já tivesse sido dado num arranque anterior.",
     ],
   },
 ];
