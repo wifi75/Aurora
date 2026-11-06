@@ -1,4 +1,3 @@
-import { detachedItems, useGroups } from '../lib/detached';
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -7,7 +6,9 @@ import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { DecodeList } from '../components/DecodeList';
 import { DiagnosisBar } from '../components/DiagnosisBar';
-import { Dock } from '../components/Dock';
+import { GridBoard } from '../components/GridBoard';
+import { useBoard, type BoardId } from '../lib/boardLayout';
+import { EDIT_LAYOUT } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
@@ -36,7 +37,7 @@ import { armAudio, playSound } from '../lib/soundBank';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
-import { readLayout, saveLayout, type Layout, type PanelId } from '../lib/layout';
+import { readLayout, type Layout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone, useStationView } from '../lib/phone';
 import { PhoneLive } from './PhoneLive';
@@ -114,12 +115,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const heardCalls = decodes.slice(0, 300).map((d) => senderOf(d.text)?.call ?? '').filter(Boolean);
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
-  const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
-  const groups = useGroups();
-  const changeLayout = (next: Layout) => {
-    saveLayout(browserStorage(), next);
-    setLayout(next);
-  };
+  const [layout] = useState<Layout>(() => readLayout(browserStorage()));
 
   const titles: Record<PanelId, string> = {
     waterfall: t('panel.waterfall'),
@@ -319,31 +315,26 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     );
   }
 
-  // la riga in basso, fissa (non si trascina e non si ridimensiona): la cascata a sinistra e, a destra, la Trasmissione (i messaggi) e il
-  // QSO (interruttori e livelli) come due finestre separate, della stessa altezza. Si possono ancora staccare in una finestra a parte.
-  const BottomRow = () => {
-    // fissa: non si stacca e non si sposta; solo chi l'ha nascosta dalle Impostazioni (Finestre) non la vede
-    const away = layout.hidden ?? [];
-    const fixed = (key: string, title: string, body: ReactNode, extra?: string) => (
-      <section key={key} className={`dock-panel dock-panel--${key} live-bottom-panel ${extra ?? ''}`} data-panel={key}>
-        <header className="dock-grip dock-grip--fixed">
-          <span className="dock-grip-dots" aria-hidden="true" />
-          <h2>{title}</h2>
-        </header>
-        <div className="dock-body">{body}</div>
-      </section>
+  // la pagina a blocchi: ogni finestra ha la sua posizione e la sua misura (lib/boardLayout.ts) e, in fase di progetto (`EDIT_LAYOUT`),
+  // si sposta dalla barra del titolo e si ridimensiona dall'angolo in basso a destra; poi le misure salvate restano fisse.
+  const boardCells = useBoard((st) => st.cells);
+  const blockBody = (id: BoardId): ReactNode =>
+    id === 'tx' ? (
+      <TxPanel part="messages" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
+    ) : id === 'qso' ? (
+      <TxPanel part="qso" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
+    ) : (
+      renderPanel(id)
     );
-    const showWf = !away.includes('waterfall');
-    const showTx = !away.includes('tx');
-    if (!showWf && !showTx) return null;
-    return (
-      <div className="live-bottom">
-        {showWf ? fixed('waterfall', titles.waterfall, renderPanel('waterfall'), 'live-bottom-wf') : null}
-        {showTx ? fixed('tx', titles.tx, <TxPanel part="messages" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />, 'live-bottom-msgs') : null}
-        {showTx ? fixed('qso', t('panel.qso'), <TxPanel part="qso" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />, 'live-bottom-qso') : null}
-      </div>
-    );
-  };
+  const blockTitle = (id: BoardId): string => (id === 'qso' ? t('panel.qso') : titles[id]);
+  const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
+    <div className="dock-grip-extra">
+      <h2>{t('dxp.title')}</h2>
+      <span className="muted">NG3K</span>
+    </div>
+  ) : null);
+  const hiddenIds = layout.hidden ?? [];
+  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !hiddenIds.includes(id === 'qso' ? 'tx' : (id as PanelId))));
 
   return (
     <div className="live">
@@ -393,28 +384,24 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           }}
         />
       ) : (
-        <Dock
-          layout={layout}
-          hidden={[...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[]), 'waterfall', 'tx']}
-          onChange={changeLayout}
-          titles={titles}
-          render={renderPanel}
-          headerExtra={
-            dxpedOn
-              ? {
-                  log: <LogHeader />,
-                  cq: (
-                    <div className="dock-grip-extra">
-                      <h2>{t('dxp.title')}</h2>
-                      <span className="muted">NG3K</span>
-                    </div>
-                  ),
-                }
-              : { log: <LogHeader /> }
-          }
-        />
+        <div className="live-board">
+          <GridBoard
+            cells={visibleCells}
+            locked={!EDIT_LAYOUT}
+            onChange={(next) => useBoard.getState().set({ ...boardCells, ...next })}
+            render={(id, grip) => (
+              <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
+                <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--fixed'}`} onPointerDown={grip.onPointerDown}>
+                  <span className="dock-grip-dots" aria-hidden="true" />
+                  <h2>{blockTitle(id as BoardId)}</h2>
+                  {blockExtra(id as BoardId)}
+                </header>
+                <div className="dock-body">{blockBody(id as BoardId)}</div>
+              </section>
+            )}
+          />
+        </div>
       )}
-      {phone ? null : <BottomRow />}
       <StopButton variant="bar" />
     </div>
   );

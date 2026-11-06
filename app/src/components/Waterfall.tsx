@@ -231,8 +231,8 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
     handle.setPointerCapture(e.pointerId);
     const move = (ev: PointerEvent) => {
       const r = box.getBoundingClientRect();
-      const percent = Math.round(((r.bottom - ev.clientY) / Math.max(1, r.height)) * 100);
-      useWfPrefs.getState().set({ spectrumPercent: Math.min(MAX_SPECTRUM_SHARE, Math.max(5, percent)) });
+      const px = Math.round(ev.clientY - r.top);
+      useWfPrefs.getState().set({ mainPx: Math.min(Math.max(40, r.height - 116 - 7), Math.max(40, px)) });
     };
     const stop = () => {
       handle.removeEventListener('pointermove', move);
@@ -248,7 +248,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const bar = !spectrumPx;
   return (
     <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : bar ? `0 0 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {bar && specPercent > 0 ? (
         <div
           className="wf-splitter"
@@ -263,7 +263,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
         ref={plotRef}
         className="wf-spectrum"
         aria-hidden="true"
-        style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: 'block' } : { flex: `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
+        style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: 'block' } : { flex: bar ? '1 1 0px' : `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
       />
       <canvas ref={stampsRef} className="wf-stamps" aria-hidden="true" />
       {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
