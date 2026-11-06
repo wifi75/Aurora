@@ -228,11 +228,15 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
     const box = boxRef.current;
     if (!box) return;
     const handle = e.currentTarget;
-    handle.setPointerCapture(e.pointerId);
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      // senza cattura il divisore funziona lo stesso: gli ascoltatori sono sul divisore e sulla finestra
+    }
     const move = (ev: PointerEvent) => {
       const r = box.getBoundingClientRect();
       const px = Math.round(ev.clientY - r.top);
-      useWfPrefs.getState().set({ mainPx: Math.min(Math.max(40, r.height - 116 - 7), Math.max(40, px)) });
+      useWfPrefs.getState().set({ mainPx: Math.min(Math.max(40, r.height - 36 - 7), Math.max(40, px)) });
     };
     const stop = () => {
       handle.removeEventListener('pointermove', move);
