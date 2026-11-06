@@ -565,3 +565,14 @@ html[data-bozza][data-theme='dark'] .qso-grid .chip[data-ctl='enable_tx'].glass-
 }
 html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on:hover, html[data-bozza] .qso-grid .chip[data-ctl='auto_tx'].glass--on:hover { background: #c22f3b !important; }
 html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html[data-bozza] .qso-grid .chip[data-ctl='auto_tx'].glass--on .chip-led { background: #fff !important; border-color: #fff !important; opacity: 1; box-shadow: none !important; }
+
+/* DXpedition nella scheda CQ e novita': una riga per stazione, compatta (il dettaglio resta nel suggerimento) */
+.cq-split .dxped-head { display: none; }
+.cq-split .dxped-list { display: grid; grid-auto-flow: row; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.cq-split .dxped-item { padding: 1px 6px !important; min-height: 0; border-radius: 5px; }
+.cq-split .dxped-info { display: none !important; }
+.cq-split .dxped-line { display: flex; align-items: center; gap: 8px; min-height: 20px; font-size: 11px; }
+.cq-split .dxped-call { font-size: 12px; }
+.cq-split .dxped-when { margin-left: auto; font-size: 10px; }
+.cq-split .dxped-list { display: flex !important; flex-direction: column; flex: none; overflow: visible; }
+.cq-split .dxped-item { flex: none; height: auto; }
