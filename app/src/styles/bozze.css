@@ -651,3 +651,8 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .cluster-table td, .cluster-table th { padding-left: 3px; padding-right: 3px; }
 .cluster-table td.cluster-flag { padding: 0; text-align: left; }
 .cluster-table th.cluster-th-country { overflow: visible; }
+
+/* DX Cluster: colonna Paese piu' lunga, Commenti piu' piccola con il carattere ridotto */
+.cluster-table th:nth-child(5) { width: 130px; }
+.cluster-table td.cluster-comment { font-size: 0.6rem; }
+.cluster-table th:nth-child(7) { font-size: 0.6rem; }
