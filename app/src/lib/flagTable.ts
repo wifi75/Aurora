@@ -95,6 +95,8 @@ export const FLAG_TABLE: Record<string, string | null> = {
   'Canada': 'ca',
   'Canary Islands': 'ic',
   'Cape Verde': 'cv',
+  // nome nuovo di `cty.dat` (le versioni recenti scrivono «Cabo Verde»)
+  'Cabo Verde': 'cv',
   'Cayman Islands': 'ky',
   'Central African Republic': 'cf',
   'Central Kiribati': 'ki',
