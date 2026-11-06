@@ -5,6 +5,8 @@ interface Props {
   value: number;
   label: string;
   disabled?: boolean;
+  /** Disteso in orizzontale (a sinistra 0, a destra 100): per le righe compatte. */
+  horizontal?: boolean;
   onChange(value: number): void;
   /** Al rilascio del mouse o del dito e alla fine di un tasto. */
   onCommit(value: number): void;
@@ -16,7 +18,7 @@ const clamp = (v: number) => Math.min(100, Math.max(0, Math.round(v)));
  * Cursore verticale tutto nostro: il valore si ricava dalla posizione del puntatore sul binario (in alto il massimo),
  * cosi' non dipende da come un browser disegna un `<input type="range">` verticale o ruotato.
  */
-export function VerticalSlider({ value, label, disabled = false, onChange, onCommit }: Props) {
+export function VerticalSlider({ value, label, disabled = false, horizontal = false, onChange, onCommit }: Props) {
   const track = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const last = useRef(value);
@@ -24,6 +26,7 @@ export function VerticalSlider({ value, label, disabled = false, onChange, onCom
   const fromPointer = (e: PointerEvent): number => {
     const rect = track.current?.getBoundingClientRect();
     if (!rect || rect.height === 0) return value;
+    if (horizontal) return rect.width === 0 ? value : clamp(((e.clientX - rect.left) / rect.width) * 100);
     return clamp((1 - (e.clientY - rect.top) / rect.height) * 100);
   };
 
@@ -46,11 +49,11 @@ export function VerticalSlider({ value, label, disabled = false, onChange, onCom
   return (
     <div
       ref={track}
-      className="vslider"
+      className={`vslider${horizontal ? ' vslider--h' : ''}`}
       role="slider"
       tabIndex={disabled ? -1 : 0}
       aria-label={label}
-      aria-orientation="vertical"
+      aria-orientation={horizontal ? 'horizontal' : 'vertical'}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={value}
@@ -77,8 +80,8 @@ export function VerticalSlider({ value, label, disabled = false, onChange, onCom
         if (!disabled && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) onCommit(last.current);
       }}
     >
-      <span className="vslider-fill" style={{ height: `${value}%` }} />
-      <span className="vslider-thumb" style={{ bottom: `${value}%` }} />
+      <span className="vslider-fill" style={horizontal ? { width: `${value}%` } : { height: `${value}%` }} />
+      <span className="vslider-thumb" style={horizontal ? { left: `${value}%` } : { bottom: `${value}%` }} />
     </div>
   );
 }
