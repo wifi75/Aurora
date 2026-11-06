@@ -11,7 +11,7 @@ import { GridBoard } from '../components/GridBoard';
 import { DetachButton } from '../components/DetachButton';
 import { detachedItems, useGroups } from '../lib/detached';
 import { useBoard, type BoardId } from '../lib/boardLayout';
-import { DxMapPage } from './DxMapPage';
+import { BandsOpen } from '../components/BandsOpen';
 import type { ItemId } from '../lib/detached';
 import { EDIT_LAYOUT } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
@@ -314,13 +314,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
     id === 'dxmap' ? (
-      <DxMapPage solo bare />
+      <BandsOpen />
     ) : id === 'tx' ? (
       <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
     ) : (
       renderPanel(id)
     );
-  const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('nav.dxmap') : titles[id]);
+  const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : titles[id]);
   const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
