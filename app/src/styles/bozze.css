@@ -556,3 +556,12 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 
 /* Mappa DX a blocchi: nessuna barra dei comandi, solo la mappa */
 .dxmap-page--bare > .dxmap-bar { display: none !important; }
+
+/* Abilita Tx e AutoTX accesi: rossi con testo bianco (specificita' maggiore dello stile verde degli interruttori accesi, anche col tema chiaro) */
+html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on, html[data-bozza] .qso-grid .chip[data-ctl='auto_tx'].glass--on,
+html[data-bozza][data-theme='light'] .qso-grid .chip[data-ctl='enable_tx'].glass--on, html[data-bozza][data-theme='light'] .qso-grid .chip[data-ctl='auto_tx'].glass--on,
+html[data-bozza][data-theme='dark'] .qso-grid .chip[data-ctl='enable_tx'].glass--on, html[data-bozza][data-theme='dark'] .qso-grid .chip[data-ctl='auto_tx'].glass--on {
+  background: #d93a46 !important; border-color: #a11d2a !important; color: #fff !important;
+}
+html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on:hover, html[data-bozza] .qso-grid .chip[data-ctl='auto_tx'].glass--on:hover { background: #c22f3b !important; }
+html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html[data-bozza] .qso-grid .chip[data-ctl='auto_tx'].glass--on .chip-led { background: #fff !important; border-color: #fff !important; opacity: 1; box-shadow: none !important; }
