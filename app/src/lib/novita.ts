@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.162',
-    released: '2026-11-06T22:28:48Z',
+    released: '2026-11-06T22:31:55Z',
     kind: 'changed',
     title: ['Continenti, record e liste più comode', 'Continents, records and handier lists', 'Kontinente, Rekorde und bequemere Listen', 'Continents, records et listes plus pratiques', 'Continentes, récords y listas más cómodas', 'Continentes, recordes e listas mais práticas'],
     text: [
