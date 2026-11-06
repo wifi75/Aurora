@@ -488,3 +488,7 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 .cq-split { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: 72px minmax(0, 1fr) !important; }
 .cq-split-main { overflow: hidden; }
 .cq-split .dxped { padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--border); padding-top: 4px; overflow: auto; }
+
+/* scheda DXCC nel Log: le etichette NEW ONE / NEW BAND ... piu' piccole */
+.dock-panel--log .dxcc-labels { gap: 3px !important; }
+.dock-panel--log .dxcc-label { padding: 0 3px !important; font-size: 9px !important; line-height: 17px; letter-spacing: 0 !important; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
