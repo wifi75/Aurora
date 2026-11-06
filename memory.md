@@ -120,6 +120,12 @@ Stato al 2026-11-05, versione 0.11.155. Per riprendere il lavoro leggi anche `do
 - Guardia: `core/crates/aurora/tests/core_text.rs` fallisce se un testo di `EXACT` non esiste piu' identico nel codice Rust (testo cambiato = traduzione da rifare).
 - Restano solo in italiano i dettagli tecnici grezzi (errori del sistema operativo, risposte dei servizi esterni) dentro le frasi tradotte.
 
+## Motori: AP, nominativi conosciuti, locatore (2026-11-06, non rilasciato)
+- AP in FT4 (`ft4/src/decode.rs`, `decode_ap`): i bit AP vanno invertiti nel dominio scramblato con `RVEC`. FT8: `engine-native` costruisce `ap_options()` / `ft4_period_options()` e li passa ai decoder (prima l'AP di FT8 non era collegata).
+- Elenco dei nominativi (`engine-native/src/known.rs`, file `known_calls.txt`): semi dal log condiviso (`WorkedLog::calls`) piu' decodifiche non AP con SNR >= -18; il filtro (`ft8::filters::CallBook`) agisce solo da 300 nominativi e solo su messaggi gia' dubbi.
+- Controllo locatore (`dxcc::grid_plausible`, `ft8::filters::grid_is_false`, `GridCheck`): distanza dal centro del paese (cty.dat) oltre 5500 km, solo decode deboli (SNR < -10) o AP; salta nominativi con '/' o sconosciuti. E' un'approssimazione del `chkgrid` di JTDX.
+- Da fare con JTDX e REA dal PC di casa (non a memoria): confronto sui WAV, `ft8s` e candidati virtuali, `chkgrid` vero, JT65/JT9 deboli, Q65/MSK144. Voci in `TODO.md`. Nessuna prova di decodifica eseguita: le fa il proprietario dal vivo.
+
 ## Problemi noti
 - Versione smartphone (segnalato 2026-10-24): causa trovata e corretta, il flusso WebSocket si chiudeva ogni secondo in accesso senza codice. Da riprovare sul telefono vero; restano da verificare layout e lampeggio grafico.
 - Da fuori casa non ci si collega ancora (trasporti Tailscale/Cloudflare da fare); l'accesso senza codice vale solo per indirizzi della rete di casa.
