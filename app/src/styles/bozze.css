@@ -674,3 +674,8 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 /* pagina bloccata: la barretta del titolo si trascina solo a destra e a sinistra per scambiare di posto con il vicino */
 .grid-panel > .dock-grip--swap { cursor: ew-resize; }
 .grid-board--moving .grid-panel { opacity: .92; }
+
+/* divisore tra due finestre vicine (pagina bloccata): trascinato a destra o a sinistra stringe una e allarga l'altra */
+.grid-divider { position: absolute; width: 6px; z-index: 30; cursor: col-resize; touch-action: none; border-radius: 3px; }
+.grid-divider::after { content: ''; position: absolute; left: 2px; top: 50%; width: 2px; height: 36px; margin-top: -18px; border-radius: 2px; background: transparent; }
+.grid-divider:hover::after, .grid-board--moving .grid-divider::after { background: #8e7bff; }

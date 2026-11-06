@@ -78,6 +78,8 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
   const [live, setLive] = useState<Record<string, Cell> | null>(null);
   /** Le linee guida mostrate mentre si trascina: dove il bordo si e' agganciato a un'altra finestra o al bordo della pagina. */
   const [guides, setGuides] = useState<Array<{ axis: 'x' | 'y'; at: number }>>([]);
+  /** Lo scambio a destra e a sinistra: il blocco che si sta trascinando segue il mouse (in px). */
+  const [swapDrag, setSwapDrag] = useState<{ id: string; dx: number } | null>(null);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -193,6 +195,7 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
     const from = cells[id];
     const rect = box.current?.getBoundingClientRect();
     if (!from || !rect) return;
+    const startX = e.clientX;
     const band = Object.entries(cells)
       .filter(([, c]) => Math.abs(c.y - from.y) < 0.01 && Math.abs(c.h - from.h) < 0.01)
       .sort(([, a], [, b]) => a.x - b.x);
@@ -210,19 +213,54 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
       const gx = (ev.clientX - rect.left - GAP) / (colW + GAP);
       const right = band[index + 1];
       const left = band[index - 1];
-      if (right && gx > right[1].x + right[1].w / 2) return right[0];
-      if (left && gx < left[1].x + left[1].w / 2) return left[0];
+      if (right && gx > right[1].x + right[1].w * 0.3) return right[0];
+      if (left && gx < left[1].x + left[1].w * 0.7) return left[0];
       return null;
     };
     const move = (ev: PointerEvent) => {
       target = pick(ev);
-      setLive(target ? swapped(target) : null);
+      const preview = target ? swapped(target) : null;
+      setLive(preview);
+      const shiftX = preview ? (preview[id]!.x - from.x) * (colW + GAP) : 0;
+      setSwapDrag({ id, dx: ev.clientX - startX - shiftX });
     };
     const stop = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
       setLive(null);
+      setSwapDrag(null);
       if (target) onChange(swapped(target));
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+  };
+
+  /** Le coppie di blocchi vicini della stessa altezza che si toccano: fra loro c'e' un divisore che stringe uno e allarga l'altro. */
+  const dividers: Array<[string, string]> = [];
+  {
+    const list = Object.entries(shown);
+    for (const [ia, a] of list) for (const [ib, b] of list) if (ia !== ib && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.h - b.h) < 0.01 && Math.abs(a.x + a.w - b.x) < 0.01) dividers.push([ia, ib]);
+  }
+  const trackDivider = (a: string, b: string) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const left = cells[a];
+    const right = cells[b];
+    if (!left || !right) return;
+    const startX = e.clientX;
+    let next: Record<string, Cell> = cells;
+    const move = (ev: PointerEvent) => {
+      const raw = (ev.clientX - startX) / (colW + GAP);
+      // a quarti di colonna; ogni blocco resta largo almeno 2 colonne
+      const d = Math.max(2 - left.w, Math.min(right.w - 2, Math.round(raw * 4) / 4));
+      next = { ...cells, [a]: { ...left, w: left.w + d }, [b]: { ...right, x: right.x + d, w: right.w - d } };
+      setLive(next);
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      setLive(null);
+      if (next !== cells) onChange(next);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop);
@@ -246,12 +284,28 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
         <div
           key={id}
           className="grid-block"
-          style={{ left: GAP + c.x * (colW + GAP), top: GAP + c.y * (ROW + GAP), width: c.w * (colW + GAP) - GAP, height: c.h * (ROW + GAP) - GAP }}
+          style={{ left: GAP + c.x * (colW + GAP), top: GAP + c.y * (ROW + GAP), width: c.w * (colW + GAP) - GAP, height: c.h * (ROW + GAP) - GAP, ...(swapDrag?.id === id ? { transform: `translateX(${swapDrag.dx}px)`, zIndex: 40, transition: 'none' } : null) }}
         >
           {nodes[id] ?? render(id, { onPointerDown: locked ? () => undefined : track(id, 'move') })}
           {locked ? null : <div className="grid-resize" onPointerDown={track(id, 'size')} aria-hidden="true" />}
         </div>
       ))}
+      {locked && swap
+        ? dividers.map(([a, b]) => {
+            const left = shown[a]!;
+            const right = shown[b]!;
+            return (
+              <div
+                key={`${a}|${b}`}
+                className="grid-divider"
+                style={{ left: GAP + right.x * (colW + GAP) - GAP / 2 - 3, top: GAP + left.y * (ROW + GAP), height: left.h * (ROW + GAP) - GAP }}
+                onPointerDown={trackDivider(a, b)}
+                title="↔"
+                aria-hidden="true"
+              />
+            );
+          })
+        : null}
     </div>
   );
 }
