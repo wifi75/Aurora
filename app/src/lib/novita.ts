@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.163',
-    released: '2026-11-06T22:35:15Z',
+    released: '2026-11-06T22:45:55Z',
     kind: 'changed',
     title: ['Modo in evidenza', 'Mode clearly highlighted', 'Betriebsart deutlich hervorgehoben', 'Mode bien en évidence', 'Modo bien destacado', 'Modo bem destacado'],
     text: [
