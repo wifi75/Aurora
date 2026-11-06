@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
+import { CqStrip } from '../components/CqStrip';
 import { DecodeList } from '../components/DecodeList';
 import { DiagnosisBar } from '../components/DiagnosisBar';
 import { GridBoard } from '../components/GridBoard';
@@ -160,18 +161,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
       case 'cq':
         {
-          const cqList = (
-            <DecodeList
-              decodes={applyCqPrefs(shown, cqPrefs)}
-              myGrid={status?.de_grid}
-              myCall={status?.de_call}
-              dxCall={status?.dx_call}
-              dxGrid={status?.dx_grid}
-              onReply={onReply}
-              onQueue={onQueue}
-              emptyText={t('decode.noCq')}
-            />
-          );
+          const cqList = <CqStrip decodes={applyCqPrefs(shown, cqPrefs)} onReply={onReply} onQueue={onQueue} emptyText={t('decode.noCq')} />;
           // con il calendario NG3K acceso il pannello si divide: CQ a sinistra, DXpedition a destra
           if (!dxpedOn) return cqList;
           return (
