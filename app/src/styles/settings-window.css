@@ -1,28 +1,28 @@
 /* La finestra delle Impostazioni (pages/SettingsWindow.tsx): prototipo in docs/prototipo-impostazioni.html */
-.sw-window{--sw-zoom:.86;zoom:var(--sw-zoom);--sw-accent:#8e7bff;display:grid;grid-template-rows:auto 1fr auto;height:calc(100vh / var(--sw-zoom));background:var(--bg, #0b1220);color:inherit}
-.sw-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line, #1f2d45)}
+.sw-window{--sw-line:#1f2d45;--sw-zoom:.86;zoom:var(--sw-zoom);--sw-accent:#8e7bff;display:grid;grid-template-rows:auto 1fr auto;height:calc(100vh / var(--sw-zoom));background:var(--bg, #0b1220);color:inherit}
+.sw-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--sw-line)}
 .sw-top small{opacity:.65;letter-spacing:.08em;text-transform:uppercase;font-size:10px}
-.sw-x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
+.sw-x{margin-left:auto;width:28px;height:28px;border:1px solid var(--sw-line);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
 .sw-main{display:grid;grid-template-columns:190px minmax(0,1fr);min-height:0}
-.sw-nav{display:grid;gap:6px;align-content:start;padding:10px;border-right:1px solid var(--line, #1f2d45);overflow:auto}
-.sw-tab{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line, #1f2d45);border-radius:7px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
+.sw-nav{display:grid;gap:6px;align-content:start;padding:10px;border-right:1px solid var(--sw-line);overflow:auto}
+.sw-tab{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--sw-line);border-radius:7px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
 .sw-tab i{font-style:normal;width:14px;opacity:.6}
 .sw-tab--on{background:color-mix(in srgb,var(--sw-accent) 20%,transparent);border-color:var(--sw-accent)}
 .sw-panel{padding:12px 14px;overflow:auto;min-width:0}
 .sw-page,.sw-stack{display:grid;gap:10px;align-content:start}
-.sw-box{border:1px solid var(--line, #1f2d45);border-radius:9px;padding:12px 14px}
+.sw-box{border:1px solid var(--sw-line);border-radius:9px;padding:12px 14px}
 .sw-box h3{margin:0 0 9px;font-size:12px}
 .sw-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px;align-items:center}
 .sw-grid--4{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
 .sw-field{display:grid;gap:3px}
 .sw-label{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
 .sw-note{margin:6px 0 0;font-size:11.5px;opacity:.7}
-.sw-foot{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--line, #1f2d45)}
+.sw-foot{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--sw-line)}
 .sw-state{margin-left:auto;font-size:12px;opacity:.85}
-.sw-btn{padding:7px 12px;border:1px solid var(--line, #1f2d45);border-radius:6px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
+.sw-btn{padding:7px 12px;border:1px solid var(--sw-line);border-radius:6px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
 .sw-btn:disabled{opacity:.45;cursor:default}
 .sw-btn--save{background:color-mix(in srgb,var(--sw-accent) 55%,#0b1220);border-color:var(--sw-accent)}
-@media (max-width:760px){.sw-main{grid-template-columns:1fr}.sw-nav{grid-auto-flow:column;border-right:0;border-bottom:1px solid var(--line, #1f2d45)}.sw-grid,.sw-grid--4{grid-template-columns:1fr}}
+@media (max-width:760px){.sw-main{grid-template-columns:1fr}.sw-nav{grid-auto-flow:column;border-right:0;border-bottom:1px solid var(--sw-line)}.sw-grid,.sw-grid--4{grid-template-columns:1fr}}
 
 /* le schede vecchie contano su `.settings-layout` per i loro stili: qui il contenitore resta un blocco solo */
 .sw-panel.settings-layout{display:block}
@@ -33,7 +33,7 @@
  */
 .sw-panel .sx-page{display:grid;grid-template-columns:1fr;gap:10px;align-content:start}
 .sw-panel .sx-span-1,.sw-panel .sx-span-2,.sw-panel .sx-span-3{grid-column:1/-1;grid-row:auto!important}
-.sw-panel .sx-group{background:transparent;border:1px solid var(--line, #1f2d45);border-radius:9px;padding:12px 14px;box-shadow:none}
+.sw-panel .sx-group{background:transparent;border:1px solid var(--sw-line);border-radius:9px;padding:12px 14px;box-shadow:none}
 .sw-panel .sx-title{margin:0 0 9px;font-size:12px;font-weight:700;letter-spacing:0;text-transform:none}
 .sw-panel .sx-body{padding:0}
 .sw-panel .sx-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px;align-items:end}
@@ -76,7 +76,7 @@
 /* le voci non disponibili restano spente e senza il lungo perche': il perche' sta nel suggerimento */
 .sw-panel .jx-row--off .ens-reason{display:none}
 
-.sw-nav-sep{margin:8px 2px 0;padding-top:8px;border-top:1px solid var(--line, #1f2d45);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+.sw-nav-sep{margin:8px 2px 0;padding-top:8px;border-top:1px solid var(--sw-line);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
 
 /* finestra stretta: ogni servizio (Log, Servizi online) ha testata, campi e Prova uno sotto l'altro, mai affiancati a larghezze fisse */
 .sw-panel .svc-row{grid-template-columns:minmax(0,1fr)}
@@ -156,3 +156,24 @@ html.sw-fixed,html.sw-fixed body{height:100%;margin:0;overflow:hidden}
 
 /* con il riquadro aperto la pagina dietro non scorre e il riquadro resta dov'e' */
 html.sw-lock,html.sw-lock body{overflow:hidden}
+
+/* ---- tema chiaro: fondo chiaro, testo scuro leggibile, titolo con sfumatura scura, campi bianchi ---- */
+:root[data-theme='light'] .sw-window{--sw-accent:#5b45d6;--sw-accent2:#0b7f75;--sw-line:#9aa8c0;color:#0b1322;
+  background:radial-gradient(520px 200px at 100% 0%,rgba(11,127,117,.10),transparent 70%),radial-gradient(520px 220px at 0% 0%,rgba(91,69,214,.08),transparent 70%),#e9eef6}
+:root[data-theme='light'] .sw-top strong{background:linear-gradient(90deg,#0b6b62,#1f4fc4 60%,#5b45d6);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme='light'] .sw-top small{opacity:.8}
+:root[data-theme='light'] .sw-panel .sx-group,:root[data-theme='light'] .sw-box{background:#f7f9fc;border-color:var(--sw-line)}
+:root[data-theme='light'] .sw-panel .sx-field input[type='text'],:root[data-theme='light'] .sw-panel .sx-field input[type='search'],:root[data-theme='light'] .sw-panel .sx-field input[type='password'],:root[data-theme='light'] .sw-panel .sx-field input[type='url'],:root[data-theme='light'] .sw-panel .sx-field input[type='number'],:root[data-theme='light'] .sw-panel .sx-field select,
+:root[data-theme='light'] .sw-panel .jx-row input[type='text'],:root[data-theme='light'] .sw-panel .jx-row input[type='number'],:root[data-theme='light'] .sw-panel .jx-row select,:root[data-theme='light'] .sw-input{background:#fff;border:1px solid #7a8aa6;color:#0b1322}
+:root[data-theme='light'] .sw-tab,:root[data-theme='light'] .sw-btn,:root[data-theme='light'] .sw-x{background:#fff;color:#0b1322;border-color:var(--sw-line)}
+:root[data-theme='light'] .sw-tab--on,:root[data-theme='light'] .sw-btn--on,:root[data-theme='light'] .sw-tab:focus-visible,:root[data-theme='light'] .sw-btn:focus{background-image:linear-gradient(135deg,rgba(91,69,214,.22),rgba(11,127,117,.16));color:#0b1322;border-color:var(--sw-accent)}
+:root[data-theme='light'] .sw-tab:hover,:root[data-theme='light'] .sw-btn:hover:not(:disabled),:root[data-theme='light'] .sw-panel button:hover:not(:disabled){background-image:linear-gradient(135deg,rgba(91,69,214,.14),rgba(11,127,117,.10));box-shadow:0 4px 12px rgba(91,69,214,.18)}
+:root[data-theme='light'] .sw-btn--save{background-image:linear-gradient(135deg,#5b45d6,#0b7f75);color:#fff;border-color:transparent}
+:root[data-theme='light'] .sw-btn--save:hover:not(:disabled){background-image:linear-gradient(135deg,#6d58e6,#0f948a)}
+:root[data-theme='light'] .sw-state{color:#25324a}
+:root[data-theme='light'] .sw-label,:root[data-theme='light'] .sw-panel .sx-label,:root[data-theme='light'] .sw-panel .jx-name{opacity:.85}
+:root[data-theme='light'] .settings-backdrop{background:rgba(24,34,56,.42);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+:root[data-theme='light'] .settings-modal{box-shadow:0 30px 80px rgba(20,30,55,.45)}
+:root[data-theme='light'] .sw-top::after,:root[data-theme='light'] .sw-foot{opacity:.9}
+:root[data-theme='light'] .sw-tab--on i{color:#0b7f75}
+:root[data-theme='light'] .sw-panel .sx-group{background:#f7f9fc}

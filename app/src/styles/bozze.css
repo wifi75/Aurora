@@ -23,13 +23,20 @@ html[data-bozza] input[type='number'],
 html[data-bozza] input:not([type]) { border-radius: 8px; }
 
 /* ---- A · Fedele: piatto, blu notte, bordo sottile; acceso = contorno verde ---- */
-html[data-bozza='a'] {
+html[data-bozza='a']:not([data-theme='light']) {
   --glass-hi: #101b2f; --glass-lo: #101b2f; --glass-edge: #27375a; --glass-shine: transparent; --glass-shadow: transparent;
 }
-html[data-bozza='a'] .glass, html[data-bozza='a'] .theme-toggle, html[data-bozza='a'] .alert-switch button { box-shadow: none; }
-html[data-bozza='a'] .glass:hover:not(:disabled) { background: #16253f; border-color: #3a5288; box-shadow: none; }
-html[data-bozza='a'] .glass--on, html[data-bozza='a'] .alert-switch button[aria-pressed='true'] {
+html[data-bozza='a']:not([data-theme='light']) .glass, html[data-bozza='a']:not([data-theme='light']) .theme-toggle, html[data-bozza='a']:not([data-theme='light']) .alert-switch button { box-shadow: none; }
+html[data-bozza='a']:not([data-theme='light']) .glass:hover:not(:disabled) { background: #16253f; border-color: #3a5288; box-shadow: none; }
+html[data-bozza='a']:not([data-theme='light']) .glass--on, html[data-bozza='a']:not([data-theme='light']) .alert-switch button[aria-pressed='true'] {
   background: #0e2a24; border-color: #2cf5a4; color: #bdfbe0; box-shadow: none;
 }
-html[data-bozza='a'] .dock-panel { background: #0a1220; border: 1px solid #1d2c47; box-shadow: none; }
-html[data-bozza='a'] .dock-grip { background: transparent; border-bottom: 1px solid #16233a; }
+html[data-bozza='a']:not([data-theme='light']) .dock-panel { background: #0a1220; border: 1px solid #1d2c47; box-shadow: none; }
+html[data-bozza='a']:not([data-theme='light']) .dock-grip { background: transparent; border-bottom: 1px solid #16233a; }
+
+/* ---- A · tema chiaro: bianco, bordo scuro ben visibile, acceso = contorno verde su fondo menta ---- */
+html[data-bozza='a'][data-theme='light'] .glass:hover:not(:disabled) { background: #eef3fa; border-color: #4a5d82; box-shadow: none; }
+html[data-bozza='a'][data-theme='light'] .glass--on,
+html[data-bozza='a'][data-theme='light'] .alert-switch button[aria-pressed='true'] { background: #d3f1e8; border-color: #0b7f75; color: #064e46; box-shadow: none; }
+html[data-bozza='a'][data-theme='light'] .dock-panel { background: #ffffff; border: 1px solid #aab6cc; box-shadow: none; }
+html[data-bozza='a'][data-theme='light'] .dock-grip { background: transparent; border-bottom: 1px solid #d3dbe8; }
