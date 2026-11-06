@@ -30,6 +30,7 @@ export const setWinStrings = {
   'sw.pttConfirm': ['La radio trasmette per un secondo. Continuare?', 'The radio transmits for one second. Continue?', 'Das Funkgerät sendet eine Sekunde lang. Fortfahren?', 'La radio émet pendant une seconde. Continuer ?', 'La radio transmite durante un segundo. ¿Continuar?', 'O rádio transmite durante um segundo. Continuar?'],
   'sw.pttDone': ['Prova PTT fatta.', 'PTT test done.', 'PTT-Test erledigt.', 'Test PTT terminé.', 'Prueba PTT hecha.', 'Teste PTT feito.'],
   'sw.pttFail': ['Prova PTT non riuscita (trasmissione non abilitata?).', 'PTT test failed (transmission not enabled?).', 'PTT-Test fehlgeschlagen (Senden nicht freigegeben?).', 'Test PTT échoué (émission non activée ?).', 'Prueba PTT fallida (¿transmisión no habilitada?).', 'Teste PTT falhou (transmissão não ativada?).'],
+  'sw.station': ['Dati della stazione', 'Station details', 'Stationsdaten', 'Données de la station', 'Datos de la estación', 'Dados da estação'],
   'sw.behavior': ['Comportamento', 'Behavior', 'Verhalten', 'Comportement', 'Comportamiento', 'Comportamento'],
   'sw.logging': ['Registrazione dei QSO', 'QSO logging', 'QSO-Protokollierung', 'Enregistrement des QSO', 'Registro de QSO', 'Registo de QSO'],
   'sw.updatesSelf': ['Gli aggiornamenti si salvano da soli.', 'Updates settings save by themselves.', 'Die Update-Einstellungen speichern sich selbst.', 'Les réglages des mises à jour s’enregistrent seuls.', 'Los ajustes de actualización se guardan solos.', 'As definições de atualização guardam-se sozinhas.'],

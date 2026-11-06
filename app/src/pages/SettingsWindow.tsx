@@ -7,6 +7,7 @@ import { rememberTab } from '../lib/lastPage';
 import { browserStorage } from '../lib/theme';
 import { AboutTab } from '../settings/AboutTab';
 import { AccessTab } from '../settings/AccessTab';
+import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { DxccTab } from '../settings/DxccTab';
 import { FiltersTab } from '../settings/FiltersTab';
@@ -15,7 +16,7 @@ import { GeneralWindowTab } from '../settings/GeneralWindowTab';
 import { AudioTab, ReportsTab } from '../settings/InfoTabs';
 import { LogServicesTab } from '../settings/LogServicesTab';
 import { MacrosTab } from '../settings/MacrosTab';
-import { NativeValues, saveErrorOf, useSettings, type SaveError } from '../settings/NativeSettings';
+import { saveErrorOf, useSettings, type SaveError } from '../settings/NativeSettings';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
 import { RadioTab } from '../settings/RadioTab';
@@ -57,10 +58,10 @@ const TABS: readonly TabDef[] = [
   { id: 'logbooks', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
   { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <SupportTab /> },
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
-  { id: 'advanced', label: 'sw.tab.advanced', icon: '☼', render: () => <NativeValues group="advanced" /> },
+  { id: 'advanced', label: 'sw.tab.advanced', icon: '☼', render: () => stack(<ClockTab />, <WindowsTab />) },
   { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => stack(<NotificationsTab part="alerts" />, <WishlistTab />, <DxccTab />) },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
-  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => stack(<AccessTab />, <WindowsTab />, <AboutTab />) },
+  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => stack(<AccessTab />, <AboutTab />) },
 ];
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */

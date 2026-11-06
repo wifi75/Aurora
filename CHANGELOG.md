@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+### Modificato
+- Impostazioni in una finestra a parte (1040x760): 15 schede, Prova CAT e Prova PTT, Annulla, Applica e Salva; le voci del motore partono solo con Applica o Salva. Scheda Generale rifatta, schede Colori e Profili separate da Radio e Avvisi, Avanzate con Orologio e Finestre.
+
 ### Aggiunto
 - Analisi a priori (AP) anche in FT4 (nominativo, DX, CQ) e collegata al motore proprio anche in FT8.
 - Elenco dei nominativi conosciuti (log + stazioni ascoltate, salvato in `known_calls.txt`): filtra i falsi decode deboli, attivo da 300 nominativi.

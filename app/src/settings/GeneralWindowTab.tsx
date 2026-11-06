@@ -34,21 +34,23 @@ export function GeneralWindowTab() {
         <p className="sw-note">{t('sw.updatesSelf')}</p>
       </section>
 
-      <section className="sw-box" aria-label={t('gen2.station')}>
-        <h3>{t('gen2.station')}</h3>
+      <section className="sw-box" aria-label={t('sw.station')}>
+        <h3>{t('sw.station')}</h3>
         <div className="sw-grid sw-grid--4">
           {f('MyCall', 'text', 'gen2.call')}
           {f('MyGrid', 'text', 'gen2.grid')}
           {f('Region', 'choice', 'gen2.region', { options: REGION_OPTIONS })}
-          {f('Type2MsgGen', 'choice', 'gen2.type2', { options: TYPE2_OPTIONS })}
-          <label className="sw-field">
+          <div className="sw-field">
             <span className="sw-label">{t('gen.language')}</span>
             <LanguageSelect />
-          </label>
-          <label className="sw-field">
+          </div>
+        </div>
+        <div className="sw-grid sw-grid--2">
+          <div className="sw-field">
             <span className="sw-label">{t('gen.theme')}</span>
             <ThemeToggle />
-          </label>
+          </div>
+          {f('Type2MsgGen', 'choice', 'gen2.type2', { options: TYPE2_OPTIONS })}
         </div>
       </section>
 
@@ -69,9 +71,7 @@ export function GeneralWindowTab() {
         <h3>{t('sw.behavior')}</h3>
         <div className="sw-grid">
           {f('MonitorOFF', 'bool', 'gen2.monitorOff')}
-          {f('MonitorLastUsed', 'bool', 'jx.MonitorLastUsed')}
           {f('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
-          {f('TuneTimer', 'num', 'jx.TuneTimer', { min: 0, max: 999 })}
         </div>
       </section>
 
@@ -79,7 +79,6 @@ export function GeneralWindowTab() {
         <h3>{t('sw.logging')}</h3>
         <div className="sw-grid">
           {f('PromptToLog', 'bool', 'jx.PromptToLog')}
-          {f('AutoQSOLogging', 'bool', 'jx.AutoQSOLogging')}
           {f('ClearCallGrid', 'bool', 'jx.ClearCallGrid')}
           {f('callsignLogFiltering', 'bool', 'gen2.useCall')}
           {f('gridLogFiltering', 'bool', 'gen2.useGrid')}
