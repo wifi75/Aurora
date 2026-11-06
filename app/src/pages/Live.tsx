@@ -377,11 +377,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         />
       ) : (
         <div className="live-board">
-          {EDIT_LAYOUT ? (
-            <button type="button" className="glass board-reset" title={t('board.reset')} onClick={() => useBoard.getState().reset()}>
-              ↺ {t('board.resetShort')}
-            </button>
-          ) : null}
           <GridBoard
             cells={visibleCells}
             locked={!EDIT_LAYOUT}
