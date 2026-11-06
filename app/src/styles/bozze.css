@@ -705,10 +705,6 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .bands-open .prop-matrix-head > span { font-size: 11px; font-weight: 600; }
 .bands-open .prop-matrix-head > .prop-now { color: var(--accent); }
 
-/* Trasmissione: pulsanti dei comandi QSO piu' grandi, per usare lo spazio libero */
-.dock-panel--tx .tx-panel--combo .qso-grid { gap: 10px !important; }
-.dock-panel--tx .tx-panel--combo .qso-grid .chip { height: 25px !important; min-height: 25px !important; font-size: 10.5px !important; gap: 4px !important; padding: 0 5px !important; }
-.dock-panel--tx .tx-panel--combo .qso-grid .chip .chip-led { width: 6px !important; height: 6px !important; }
 
 /* Bande aperte: mini-mappa di chi ti ascolta (PSK Reporter), riempie lo spazio sotto */
 .bands-open { display: flex; flex-direction: column; min-height: 100%; }
@@ -717,7 +713,12 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .bands-open-map-head a { font-weight: 500; font-size: 10px; }
 .bands-open-map .worldmap { flex: 1; aspect-ratio: auto; min-height: 8rem; max-height: none; border-radius: 6px; overflow: hidden; }
 .bands-open-map .worldmap-zoom, .bands-open-map .worldmap-readout, .bands-open-map .leaflet-control-attribution { display: none; }
-/* i pulsanti stanno davvero nella griglia .qso-cols (le altre sono «contents»): la distanza va data qui */
-.dock-panel--tx .tx-panel--combo .qso-cols { gap: 6px !important; }
-/* il blocco dei pulsanti QSO 10 px piu' in basso (piu' staccato dai messaggi Tx sopra) */
-.dock-panel--tx .tx-panel--combo .qso-cols { margin-top: 6px !important; }
+
+/* Bande aperte: continenti che ti ascoltano e record di distanza (al posto della mini-mappa) */
+.bands-open-conts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.bands-open-cont { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 0; border: 1px solid var(--border); border-radius: 5px; opacity: .45; }
+.bands-open-cont b { font-size: 10.5px; }
+.bands-open-cont span { font-size: 13px; font-weight: 700; }
+.bands-open-cont--on { opacity: 1; border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.bands-open-records { display: grid; gap: 3px; }
+.bands-open-record { display: grid; grid-template-columns: 4.2rem 1fr auto auto; align-items: center; gap: 6px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; }

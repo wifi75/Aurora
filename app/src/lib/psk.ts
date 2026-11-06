@@ -84,3 +84,13 @@ export function latestPerReceiver(rows: readonly PskRow[]): PskRow[] {
   }
   return [...byKey.values()];
 }
+
+/** Il continente di un punto, stimato dalla posizione (riquadri larghi: basta per contare chi ci ascolta, non e' un confine esatto). */
+export function continentAt(lat: number, lon: number): 'EU' | 'NA' | 'SA' | 'AF' | 'AS' | 'OC' {
+  if (lon < -140 || (lon > 110 && lat < -10) || (lon > 130 && lat < 0)) return 'OC';
+  if (lon < -25) return lat < 12 && lon > -82 ? 'SA' : 'NA';
+  if (lon <= 40 && lat >= 35) return 'EU';
+  if (lon > 40 && lon <= 60 && lat >= 45) return 'EU';
+  if (lon <= 52 && lat < 35 && !(lon > 34 && lat > 12)) return 'AF';
+  return 'AS';
+}

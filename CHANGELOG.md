@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- **Bande aperte**: al posto della mini-mappa, «Continenti che ti ascoltano» (stazioni PSK Reporter per continente, stimato dal locatore) e «Record di distanza» di oggi e degli ultimi 7 giorni.
+- **Attivita' di banda**: se si scorre e poi la si lascia per 15 secondi torna da sola all'ultima stazione ricevuta (ogni scorrimento fa ripartire il conto).
+- **Liste e tabelle che scorrono** (Attivita' di banda, Log, DX Cluster, DXpedition, Fox): si fermano all'inizio di una riga, senza righe tagliate.
+- **Trasmissione**: pulsanti QSO tornati alla misura originale; i cursori Rx e Pwr restano sempre visibili in fondo al pannello.
+- **Mappa piccola intera** (`WorldMap` con `whole`): tutte le terre dentro il riquadro e cartina ripetuta ai lati.
 
 ## 0.11.161 - 2026-11-06
 ### Corretto

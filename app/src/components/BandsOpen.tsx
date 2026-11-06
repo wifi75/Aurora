@@ -6,9 +6,8 @@ import { bandOf } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { gridCenter } from '../lib/geo';
 import { formatDistance, usePrefs } from '../lib/prefs';
-import { conditionGroup, latestPerReceiver, pskRows } from '../lib/psk';
-import { WorldMap, type MapReceiver } from './WorldMap';
-import { mapLabels } from '../pages/MapPage';
+import { conditionGroup, continentAt, latestPerReceiver, pskRows } from '../lib/psk';
+import { browserStorage } from '../lib/theme';
 import { isNight } from '../lib/terminator';
 import { Conditions } from '../pages/PropagationPage';
 import { useStation } from '../state/station';
@@ -39,8 +38,17 @@ export function BandsOpen() {
     return out;
   }, [rows]);
 
-  // mini-mappa: una stazione ricevente per punto (l'ultimo spot), con la linea dalla nostra stazione
-  const receivers: MapReceiver[] = useMemo(() => latestPerReceiver(rows).map((r) => ({ call: r.receiver, grid: r.locator, snr: r.snr, band: r.band, km: r.km })), [rows]);
+  // continenti che ci ascoltano: una stazione ricevente conta una volta, il continente si stima dal suo locatore
+  const continents = useMemo(() => {
+    const out: Record<string, number> = { EU: 0, NA: 0, SA: 0, AF: 0, AS: 0, OC: 0 };
+    for (const r of latestPerReceiver(rows)) {
+      const p = gridCenter(r.locator.slice(0, 6)) ?? gridCenter(r.locator.slice(0, 4));
+      if (p) out[continentAt(p.lat, p.lon)] = (out[continentAt(p.lat, p.lon)] ?? 0) + 1;
+    }
+    return out;
+  }, [rows]);
+  // record di distanza: il piu' lontano di oggi (dagli spot) e della settimana (ricordato giorno per giorno su questo dispositivo)
+  const records = useMemo(() => recordsFrom(farthest[0] ?? null), [farthest]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -76,14 +84,73 @@ export function BandsOpen() {
         </ol>
       )}
       {online.data.psk ? (
-        <div className="bands-open-map">
-          <div className="bands-open-map-head">
-            <span>{t('bands.mapTitle', { n: receivers.length })}</span>
-            <a href="#/mappa-dx">{t('bands.mapOpen')}</a>
+        <>
+          <h3 className="bands-open-title">{t('bands.continents')}</h3>
+          <div className="bands-open-conts">
+            {(['EU', 'NA', 'SA', 'AF', 'AS', 'OC'] as const).map((c) => (
+              <div key={c} className={`bands-open-cont${continents[c] ? ' bands-open-cont--on' : ''}`} title={t(`bands.cont.${c}`)}>
+                <b>{c}</b>
+                <span className="data">{continents[c]}</span>
+              </div>
+            ))}
           </div>
-          <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles mapStyleId="bluemarble" night parallels={false} compact labels={mapLabels(t)} />
-        </div>
+          <h3 className="bands-open-title">{t('bands.records')}</h3>
+          <div className="bands-open-records">
+            {[
+              { label: t('bands.today'), r: records.today },
+              { label: t('bands.week'), r: records.week },
+            ].map(({ label, r }) => (
+              <div key={label} className="bands-open-record">
+                <span className="muted">{label}</span>
+                {r ? (
+                  <>
+                    <b className="data">{r.call}</b>
+                    <span className="muted">{r.band}</span>
+                    <span className="data bands-open-km">{formatDistance(r.km, prefs.distanceUnit)}</span>
+                  </>
+                ) : (
+                  <span className="muted">—</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       ) : null}
     </div>
   );
+}
+
+interface DistanceRecord {
+  call: string;
+  band: string;
+  km: number;
+}
+
+const RECORDS_KEY = 'aurora-record-distanza';
+
+/** Il record di oggi e quello degli ultimi 7 giorni: ogni giorno si ricorda il piu' lontano visto (su questo dispositivo). */
+function recordsFrom(best: { receiver: string; band: string | null; km: number | null } | null): { today: DistanceRecord | null; week: DistanceRecord | null } {
+  const day = new Date().toISOString().slice(0, 10);
+  let saved: Record<string, DistanceRecord> = {};
+  try {
+    saved = JSON.parse(browserStorage()?.getItem(RECORDS_KEY) ?? '{}') as Record<string, DistanceRecord>;
+  } catch {
+    saved = {};
+  }
+  const old = saved[day];
+  if (best && best.km !== null && (!old || best.km > old.km)) {
+    saved[day] = { call: best.receiver, band: best.band ?? '', km: best.km };
+  }
+  const kept: Record<string, DistanceRecord> = {};
+  for (const d of Object.keys(saved).sort().slice(-7)) {
+    const v = saved[d];
+    if (v) kept[d] = v;
+  }
+  try {
+    browserStorage()?.setItem(RECORDS_KEY, JSON.stringify(kept));
+  } catch {
+    // senza archivio il record vale finche' la pagina resta aperta
+  }
+  const week = Object.values(kept).reduce<DistanceRecord | null>((a, b) => (!a || b.km > a.km ? b : a), null);
+  return { today: kept[day] ?? null, week };
 }

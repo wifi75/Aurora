@@ -1,5 +1,5 @@
 import { foxCalls, lineSender } from '../lib/fox';
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -170,6 +170,20 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   // telefono: un tocco chiama la stazione; un secondo tocco sulla stessa riga subito dopo (o un doppio tocco) non richiama,
   // altrimenti la sequenza ripartiva a ogni richiesta e la trasmissione non partiva
   const lastTap = useRef<{ id: number; at: number } | null>(null);
+  // se si scorre la lista e poi la si lascia stare per 15 secondi, torna da sola all'ultima stazione ricevuta (in cima, o in fondo se
+  // l'ordine e' invertito)
+  const backTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(backTimer.current), []);
+  const onListScroll = (e: UIEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    window.clearTimeout(backTimer.current);
+    const invert = el.classList.contains('decode-list--invert');
+    const atNewest = invert ? el.scrollHeight - el.clientHeight - el.scrollTop < 4 : el.scrollTop < 4;
+    if (atNewest) return;
+    backTimer.current = window.setTimeout(() => {
+      el.scrollTo({ top: invert ? el.scrollHeight : 0, behavior: 'smooth' });
+    }, 15_000);
+  };
   const tapOnce = (id: number) => {
     const now = Date.now();
     if (lastTap.current && lastTap.current.id === id && now - lastTap.current.at < 2000) return;
@@ -266,7 +280,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const rows = pin ? (view.invert ? [...rest, pin] : [pin, ...rest]) : decodes;
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
-    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} onScroll={onListScroll}>
       {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
         const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');

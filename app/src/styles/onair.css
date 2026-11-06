@@ -6542,9 +6542,9 @@
   font-size: 9px;
 }
 
-/* Trasmissione: i due cursori (volume di registrazione e Pwr) 8 px piu' in basso (con un pannello basso 31 px li spingevano fuori) */
+/* Trasmissione: i due cursori (volume di registrazione e Pwr) in posizione originale */
 .dock-panel--tx .tx-levels {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 
@@ -6604,6 +6604,28 @@
   bottom: 0;
   z-index: 2;
   margin-top: auto;
-  padding: 6px 0 4px;
   background: var(--panel);
+}
+
+/* Scorrimento a righe intere: le liste e le tabelle che scorrono si fermano sempre all'inizio di una riga, cosi' la riga in cima non
+   resta mai tagliata a meta' (le tabelle con intestazione fissa si fermano sotto l'intestazione) */
+.decode-list,
+.log4om,
+.dock-panel--cluster .dock-body,
+.dxped,
+.foxc-scroll,
+.history-list,
+.export-scroll {
+  /* «proximity»: aggancia la riga solo quando ci si ferma vicino, senza mai respingere (con «mandatory» la riga fissa in cima
+     di Attivita' di banda faceva tornare giu' lo scorrimento) */
+  scroll-snap-type: y proximity;
+}
+.decode-list > .decode-row:not(.decode-row--pin),
+.log4om tbody tr,
+.dock-panel--cluster .dock-body tbody tr,
+.dxped .dxped-item,
+.foxc-scroll li,
+.history-list tr,
+.export-scroll tbody tr {
+  scroll-snap-align: start;
 }
