@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prototipo Impostazioni</title>
+<style>
+:root{--bg:#070c14;--win:#0b1220;--box:#0e1626;--line:#1f2d45;--ink:#e6edf7;--mut:#8fa0b8;--acc:#3fb6ff;--accbg:#0d2a47;--btn:#101a2c}
+*{box-sizing:border-box}
+body{margin:0;background:#04070c;color:var(--ink);font:13px/1.35 system-ui,Segoe UI,sans-serif;min-height:100vh;display:grid;place-items:center;padding:16px}
+.win{width:min(1020px,100%);height:min(760px,94vh);background:var(--win);border:1px solid var(--line);border-radius:12px;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;box-shadow:0 20px 60px #000a}
+.top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.top b{font-size:15px}.top small{color:var(--mut);letter-spacing:.08em;text-transform:uppercase;font-size:10px}
+.top .x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--btn);color:var(--ink)}
+.main{display:grid;grid-template-columns:190px 1fr;min-height:0}
+nav{padding:10px;border-right:1px solid var(--line);overflow:auto;display:grid;gap:6px;align-content:start}
+nav button{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--btn);color:var(--ink);font:600 12px inherit;cursor:pointer}
+nav button.on{background:var(--accbg);border-color:var(--acc)}
+nav button i{font-style:normal;color:var(--mut);width:14px}
+.page{padding:12px 14px;overflow:auto;display:grid;gap:10px;align-content:start}
+.box{background:var(--box);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.box h3{margin:0 0 9px;font-size:12px}
+.lbl{display:block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 0 3px}
+input[type=text],select{width:100%;background:#0a1120;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 8px;font:12px ui-monospace,Consolas,monospace}
+input[type=number]{width:62px;background:#0a1120;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px;font:12px ui-monospace,Consolas,monospace}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px 18px;align-items:center}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;align-items:end}
+.g4{display:grid;grid-template-columns:2fr 2fr 1.2fr 1.6fr;gap:10px 14px;align-items:end}
+label.c{display:flex;gap:7px;align-items:center;cursor:pointer}
+.b{background:var(--btn);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:7px 10px;font:600 12px inherit;cursor:pointer}
+.b.sm{padding:5px 8px;font-size:11px}
+.note{color:var(--mut);font-size:11.5px;margin:6px 0 0}
+.nuovo{font-size:9px;border:1px solid #d9a441;color:#d9a441;border-radius:4px;padding:0 4px;margin-left:4px;letter-spacing:.04em}
+.row{display:flex;gap:8px;align-items:center}
+footer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+footer .sp{margin-left:auto}.save{background:#12507f;border-color:var(--acc)}
+.map{padding:10px 14px;color:var(--mut);font-size:11.5px;border:1px dashed var(--line);border-radius:8px}
+.map code{color:var(--ink)}
+@media (max-width:760px){.main{grid-template-columns:1fr}nav{grid-auto-flow:column;overflow:auto;border-right:0;border-bottom:1px solid var(--line)}.g3,.g2,.g4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="win" role="dialog" aria-label="Impostazioni">
+  <div class="top"><b>Impostazioni</b><small id="cur">Generale</small><button class="x" aria-label="Chiudi">✕</button></div>
+  <div class="main">
+    <nav id="nav"></nav>
+    <div class="page" id="page"></div>
+  </div>
+  <footer><button class="b">Prova CAT</button><button class="b">Prova PTT</button><span class="sp"></span><button class="b">Annulla</button><button class="b">Applica</button><button class="b save">Salva</button></footer>
+</div>
+
+<script>
+const TABS=[
+ ['general','Generale','⚙'],['radio','Radio','▭'],['profiles','Profili','☰'],['audio','Audio','∿'],['macros','Macro Tx','≡'],
+ ['reporting','Segnalazioni','⇄'],['freq','Frequenze','∼'],['colors','Colori','◐'],['logbooks','Log','▤'],['files','File','▣'],
+ ['autocq','Auto CQ','◷'],['advanced','Avanzate','☼'],['alerts','Avvisi','♫'],['filters','Filtri','▽'],['info','Informazioni','ⓘ']];
+const MAP={
+ general:'Scheda attuale <code>Generali</code> + <code>Orologio</code> + <code>Aggiornamenti</code>',
+ radio:'Scheda attuale <code>Radio</code> (CAT, PTT, display)',
+ profiles:'<span class="nuovo">NUOVA</span> oggi Aurora ha un solo profilo di stazione: da costruire (una radio per profilo)',
+ audio:'<code>Audio</code> + <code>Cascata</code>',
+ macros:'<code>Macro</code> + <code>Sequenza</code>',
+ reporting:'<code>Segnalazioni</code> (UDP, PSK Reporter) + <code>Servizi online</code> + <code>Cluster</code>',
+ freq:'<code>Frequenze</code> + <code>Bande</code>',
+ colors:'Colori dei messaggi (17 categorie) oggi sparsi tra pagine',
+ logbooks:'<code>Servizi di log</code>',
+ files:'Esporta ADIF, ALL.TXT, registrazioni .wav, copia delle impostazioni (oggi in <code>Assistenza</code>)',
+ autocq:'<code>Programmazione</code> (Auto CQ, limiti, paesi)',
+ advanced:'Parametri del decodificatore (profondita, AP, JT65/JT9) e attivita speciali',
+ alerts:'<code>Notifiche</code> + <code>Desiderati</code> + <code>DXCC</code>',
+ filters:'<code>Filtri</code>: elenchi nero e bianco, territori',
+ info:'<code>Accesso</code> + <code>Finestre</code> + <code>Assistenza</code> + <code>Informazioni</code> (al posto di Registrazione)'
+};
+const ck=(t,on,n)=>`<label class="c"><input type="checkbox" ${on?'checked':''}> ${t}${n?'<span class="nuovo">NUOVO</span>':''}</label>`;
+const GENERAL=`
+<div class="box"><h3>Aggiornamenti</h3>
+ <div class="g3">${ck('Invia i dati della stazione ai rapporti anonimi',true)}${ck('Controlla gli aggiornamenti da solo',true)}<button class="b">Controlla ora</button></div>
+ <div class="row" style="margin-top:8px"><button class="b">Torna alla versione installata</button></div>
+ <span class="lbl" style="margin-top:10px">Server degli aggiornamenti</span><input type="text" value="https://github.com/wifi75/Aurora/releases" readonly>
+ <p class="note">Quando esce una versione nuova il programma la scarica da solo (Windows e Linux) e chiede di riavviare: nient'altro da fare.</p></div>
+
+<div class="box"><h3>Dati della stazione</h3>
+ <div class="g4"><div><span class="lbl">Nominativo</span><input type="text" placeholder="es. IU3ABC"></div>
+ <div><span class="lbl">Locatore</span><input type="text" placeholder="es. IO91"></div>
+ <div>${ck('Locatore automatico')}</div>
+ <div><span class="lbl">Regione IARU</span><select><option>Regione 1</option><option>Regione 2</option><option>Regione 3</option></select></div></div>
+ <div class="g4" style="margin-top:10px"><div><span class="lbl">Lingua</span><select><option>Italiano</option><option>English</option><option>Deutsch</option><option>Français</option><option>Español</option><option>Português</option></select></div>
+ <div><span class="lbl">Tema</span><select><option>Scuro</option><option>Chiaro</option></select></div>
+ <div class="note" style="grid-column:span 2;margin:0">La lingua cambia quando premi Salva.</div></div>
+ <div class="g2" style="margin-top:10px"><div><span class="lbl">Sfondo del programma — tema scuro</span><div class="row">${ck('Colore mio')}<input type="color" value="#000000"><button class="b sm">Ripristina</button></div></div>
+ <div><span class="lbl">Sfondo del programma — tema chiaro</span><div class="row">${ck('Colore mio')}<input type="color" value="#f0f4fb"><button class="b sm">Ripristina</button></div></div></div>
+ <p class="note">Cambia solo lo sfondo dietro i pannelli. Pannelli, menu, pulsanti delle bande e altri pulsanti restano com'erano.</p>
+ <div class="row" style="margin-top:8px"><span>Messaggi per i nominativi composti di tipo 2:</span><select style="width:auto"><option>Nominativo intero nel Tx3</option><option>Nominativo intero nel Tx1</option></select></div></div>
+
+<div class="box"><h3>Visualizzazione</h3>
+ <div class="g3">
+  ${ck('Le decodifiche del periodo nuovo partono in alto')}${ck('Riga vuota tra i periodi di decodifica',true)}${ck('Riga vuota con l\'ora',true)}
+  ${ck('Distanza in miglia')}${ck('Evidenzia il nominativo DX nel messaggio',true)}<button class="b">Carattere…</button>
+  ${ck('Messaggi Tx nella finestra della frequenza Rx',true)}${ck('Evidenzia il locatore DX nel messaggio',true)}<button class="b">Carattere delle decodifiche…</button>
+  ${ck('Mostra DXCC, locatore e «già lavorato»',true)}${ck('Prefisso principale al posto del nome del paese')}${ck('DXCC su tutti i messaggi')}
+  ${ck('Mostra le bandiere dei paesi',true)}${ck('Mostra i QSO precedenti con la stazione scelta',true)}
+ </div></div>
+
+<div class="box"><h3>Comportamento</h3>
+ <div class="g3">
+  ${ck('Monitor spento all\'avvio')}${ck('Funzioni VHF e sottomodi',false,true)}${ck('MSK144/Q65: trasmetti fino al 73',false,true)}
+  ${ck('Il monitor torna all\'ultima frequenza')}${ck('Cambio della frequenza Tx anche mentre trasmetti',false,true)}${ck('Apri/chiudi da solo i dati astronomici',false,true)}
+  ${ck('Il doppio clic sul nominativo abilita Tx',true)}${ck('Decodifica dopo il ritardo EME',false,true)}${ck('Frequenza in kHz senza «k» (riavvio)',false,true)}
+  ${ck('Disabilita Tx dopo il 73',true)}${ck('Decodifica singola',false,true)}${ck('Barra di avanzamento rossa in trasmissione',true)}
+  ${ck('CQ forza la chiamata al primo')}<span></span><div class="row">${ck('ID in CW dopo il 73',false,true)}<input type="number" value="0"> <span class="note" style="margin:0">intervallo</span></div>
+  ${ck('Tasti F1–F6 alternativi',false,true)}<div class="row">${ck('Tune watchdog',true)}<input type="number" value="90"> s</div><div><span class="lbl">Watchdog Tx</span><div class="row"><input type="number" value="6"> min</div></div>
+ </div></div>
+
+<div class="box"><h3>Funzioni in più</h3>
+ <div class="g3">
+  ${ck('Locatore → stato USA',false,true)}${ck('Cancella le decodifiche al cambio banda')}${ck('Comportamento alternativo di Cancella',false,true)}
+  ${ck('Stati USA nei messaggi con locatore',false,true)}${ck('Frequenza Rx = frequenza Tx dopo il QSO')}${ck('Attiva le funzioni Wait',true)}
+  ${ck('Svuota il DX Call dopo il QSO',true)}${ck('Svuota il DX Grid dopo il QSO')}${ck('Meno colore sui pulsanti (riavvio)',false,true)}
+  ${ck('Distanza nei messaggi con locatore')}${ck('Azimut nei messaggi con locatore')}<div class="row">${ck('Allinea DXCC/distanza/azimut',true,true)}<input type="number" value="2"><input type="number" value="0"></div>
+ </div></div>
+<p class="note">Etichetta <span class="nuovo">NUOVO</span> = voce della schermata di riferimento che Aurora oggi non ha: la costruisco solo se la vuoi, altrimenti la tolgo dalla pagina.</p>`;
+const nav=document.getElementById('nav'),page=document.getElementById('page'),cur=document.getElementById('cur');
+function show(id){
+ nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+ const t=TABS.find(x=>x[0]===id);cur.textContent=t[1];
+ page.innerHTML=id==='general'?GENERAL:`<div class="box"><h3>${t[1]}</h3><div class="map">Da costruire dopo l'approvazione. Contenuto preso da: ${MAP[id]}</div></div>`;
+ page.scrollTop=0;
+}
+TABS.forEach(([id,l,i])=>{const b=document.createElement('button');b.dataset.id=id;b.innerHTML=`<i>${i}</i>${l}`;b.onclick=()=>show(id);nav.append(b)});
+show('general');
+</script>
+</body>
+</html>
