@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.157',
-    released: '2026-11-06T17:22:04Z',
+    released: '2026-11-06T17:25:40Z',
     kind: 'changed',
     title: ['Cambio stazione senza fermare il Tx', 'Switch station without stopping Tx', 'Station wechseln ohne Tx-Stopp', 'Changer de station sans arrêter le Tx', 'Cambiar de estación sin detener el Tx', 'Mudar de estação sem parar o Tx'],
     text: [
