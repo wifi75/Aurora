@@ -11,7 +11,7 @@ import { VerticalSlider } from './VerticalSlider';
  * Livello dell'audio in ingresso: barra del valore medio con la tacca del picco, avviso se manca, e' debole o e' saturo,
  * e il volume di registrazione di Windows (cursore e AUTO) con cui correggerlo.
  */
-export function InputLevel() {
+export function InputLevel({ horizontal = false }: { horizontal?: boolean } = {}) {
   const t = useT();
   const client = useQueryClient();
   const level = useStation((s) => s.audioLevel);
@@ -56,7 +56,7 @@ export function InputLevel() {
           <span className="in-level-peak" style={{ bottom: `${meterPercent(level.peak)}%` }} />
         </div>
         {control ? (
-          <VerticalSlider value={shown} label={t('rxl.volume')} onChange={setDraft} onCommit={(v) => void change({ volume_pct: v })} />
+          <VerticalSlider horizontal={horizontal} value={shown} label={t('rxl.volume')} onChange={setDraft} onCommit={(v) => void change({ volume_pct: v })} />
         ) : null}
       </div>
       {control ? (

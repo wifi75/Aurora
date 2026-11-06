@@ -312,13 +312,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
     id === 'tx' ? (
-      <TxPanel part="messages" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
-    ) : id === 'qso' ? (
-      <TxPanel part="qso" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
+      <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
     ) : (
       renderPanel(id)
     );
-  const blockTitle = (id: BoardId): string => (id === 'qso' ? t('panel.qso') : titles[id]);
+  const blockTitle = (id: BoardId): string => titles[id];
   const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
@@ -328,7 +326,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // le finestre staccate sul secondo schermo non si vedono qui (la Trasmissione porta con se' anche il QSO); idem quelle nascoste dalle Impostazioni
   const groups = useGroups();
   const awayIds: PanelId[] = [...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])];
-  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !awayIds.includes(id === 'qso' ? 'tx' : (id as PanelId))));
+  const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !awayIds.includes(id as PanelId)));
 
   return (
     <div className="live">
@@ -395,7 +393,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
-                  {id === 'qso' ? null : <DetachButton item={id as Exclude<BoardId, 'qso'>} className="dock-detach" />}
+                  <DetachButton item={id as PanelId} className="dock-detach" />
                 </header>
                 <div className="dock-body">{blockBody(id as BoardId)}</div>
               </section>

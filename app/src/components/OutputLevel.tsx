@@ -9,10 +9,12 @@ import { VerticalSlider } from './VerticalSlider';
 interface Props {
   /** Il livello si regola sempre, come nel motore; la proprieta' resta perche' il pannello la passa a tutti i suoi blocchi. */
   txAllowed?: boolean;
+  /** Cursore disteso in orizzontale (riga compatta). */
+  horizontal?: boolean;
 }
 
 /** Il cursore "Pwr" del motore: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
-export function OutputLevel(_: Props) {
+export function OutputLevel({ horizontal = false }: Props) {
   const t = useT();
   const client = useQueryClient();
   const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 2000) });
@@ -43,6 +45,7 @@ export function OutputLevel(_: Props) {
       <span className="out-level-title">Pwr</span>
       {/* come in JTDX (attenuazione = (450 - valore) / 10 dB, verificato nel programma): in alto 0 dB (potenza massima), in basso 45 dB (minima) */}
       <VerticalSlider
+        horizontal={horizontal}
         value={pct}
         label={t('out.label')}
         onChange={(v) => {

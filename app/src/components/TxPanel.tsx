@@ -23,7 +23,7 @@ interface Props {
   /** Messaggi decodificati (i piu' recenti per primi): servono a capire a che punto e' il QSO. */
   decodes?: DecodedMessage[];
   /** `messages`: solo i sei messaggi con lo stato; `qso`: solo gli interruttori del QSO e i livelli audio; di base tutto insieme. */
-  part?: 'all' | 'messages' | 'qso';
+  part?: 'all' | 'messages' | 'qso' | 'combo';
 }
 
 /** Il testo di un avviso di sicurezza della trasmissione. */
@@ -255,6 +255,21 @@ export function TxPanel({ txAllowed, status = null, decodes = [], part = 'all' }
     return (
       <div className="tx-panel tx-panel--msgs">
         <div className="tx-main tx-split">{left}</div>
+      </div>
+    );
+  }
+  if (part === 'combo') {
+    // la pagina a blocchi: i messaggi in alto e, sotto, i comandi del QSO compatti con i due livelli (Rx e Pwr) in una riga
+    return (
+      <div className="tx-panel tx-panel--combo">
+        <div className="tx-main tx-split">
+          {left}
+          <QsoSwitches txAllowed={txAllowed} />
+          <div className="tx-levels">
+            <InputLevel horizontal />
+            <OutputLevel txAllowed={txAllowed} horizontal />
+          </div>
+        </div>
       </div>
     );
   }
