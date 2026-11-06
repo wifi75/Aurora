@@ -537,3 +537,7 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 /* DXpedition: niente barra di scorrimento visibile, si scorre con la rotella; si recupera lo spazio */
 .cq-split .dxped, .cq-split .dxped * { scrollbar-width: none; }
 .cq-split .dxped::-webkit-scrollbar, .cq-split .dxped *::-webkit-scrollbar { display: none; }
+
+/* in tutte le finestre della pagina principale (cluster, attivita' di banda, log, ...) niente barra visibile: si scorre con la rotella */
+.grid-panel, .grid-panel * { scrollbar-width: none; }
+.grid-panel::-webkit-scrollbar, .grid-panel *::-webkit-scrollbar { display: none; }
