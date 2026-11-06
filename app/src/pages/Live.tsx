@@ -334,7 +334,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
 
   return (
     <div className="live">
-      <div className="live-top">
+      <div className="live-top" ref={alignDisplay}>
         {/* a sinistra modi, bande e controlli di ricezione una sotto l'altra, vicini; a destra il display della radio */}
         <div className="live-left">
         <div className="live-left-row">
@@ -404,4 +404,40 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       <StopButton variant="bar" />
     </div>
   );
+}
+
+/**
+ * Il display in alto a destra si allinea al bordo destro del pannello piu' a destra della prima fila (con la pagina a blocchi i pannelli
+ * hanno misure fisse e non arrivano al bordo della finestra). La distanza si scrive nella variabile `--rd-right` della riga e si ricalcola
+ * quando cambia la misura della finestra o dei blocchi.
+ */
+let alignStop: (() => void) | null = null;
+
+function alignDisplay(row: HTMLDivElement | null): void {
+  alignStop?.();
+  alignStop = null;
+  if (!row) return;
+  const page = row.parentElement;
+  if (!page) return;
+  const measure = () => {
+    const top = row.getBoundingClientRect();
+    const panels = [...page.querySelectorAll<HTMLElement>('.grid-block, .dock-panel')].map((p) => p.getBoundingClientRect()).filter((r) => r.width > 0 && r.top > top.bottom - 1);
+    if (panels.length === 0) {
+      row.style.removeProperty('--rd-right');
+      return;
+    }
+    const firstTop = Math.min(...panels.map((r) => r.top));
+    const right = Math.max(...panels.filter((r) => r.top < firstTop + 4).map((r) => r.right));
+    row.style.setProperty('--rd-right', `${Math.max(0, Math.round(top.right - right))}px`);
+  };
+  measure();
+  const ro = new ResizeObserver(measure);
+  ro.observe(page);
+  page.querySelectorAll('.grid-board, .dock').forEach((el) => ro.observe(el));
+  // i blocchi si spostano anche senza cambiare la misura della pagina: si ricontrolla ogni tanto
+  const timer = window.setInterval(measure, 1500);
+  alignStop = () => {
+    ro.disconnect();
+    window.clearInterval(timer);
+  };
 }

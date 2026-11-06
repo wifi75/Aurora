@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.160',
+    released: '2026-11-06T22:09:00Z',
+    kind: 'changed',
+    title: ['Più ordine in Stazione, Fox e Impostazioni', 'Tidier Station, Fox and Settings', 'Aufgeräumter: Station, Fox und Einstellungen', 'Station, Fox et Réglages plus ordonnés', 'Estación, Fox y Ajustes más ordenados', 'Estação, Fox e Definições mais arrumadas'],
+    text: [
+      "Bande aperte: Giorno e Notte con caselle uguali e una mini-mappa NASA di chi ti ascolta (PSK Reporter). Mappa DX sempre intera, senza terre tagliate. Fox: cascata uguale alla Stazione, con Tx/Rx Split, e «Messaggi ricevuti» allineato alla cascata. Trasmissione con pulsanti più grandi e distanziati. Prova CAT e Prova PTT aspettano l'esito vero; le conferme hanno la grafica di Aurora. Impostazioni: Aggiornamenti e Dati della stazione riordinati, cartella dei crash in Assistenza. Display allineato a Bande aperte, nazione a 9,2 px, etichette a 9 px, scritta del Filtro solo nel suggerimento.",
+      "Open bands: Day and Night with equal boxes and a NASA mini-map of who hears you (PSK Reporter). DX Map always whole, no land cut off. Fox: waterfall identical to the Station one, with Tx/Rx Split, and «Received messages» aligned with the waterfall. Transmit with bigger, better spaced buttons. CAT test and PTT test wait for the real result; confirmations use Aurora’s look. Settings: Updates and Station details reorganised, crash folder moved to Support. Display aligned with Open bands, country at 9.2 px, labels at 9 px, Filter note only in the tooltip.",
+      "Offene Bänder: Tag und Nacht mit gleichen Feldern und einer NASA-Minikarte, wer dich hört (PSK Reporter). DX-Karte immer ganz, kein Land abgeschnitten. Fox: Wasserfall wie in der Station, mit Tx/Rx Split, «Empfangene Meldungen» bündig zum Wasserfall. Senden mit größeren, besser verteilten Tasten. CAT- und PTT-Test warten auf das echte Ergebnis; Bestätigungen im Aurora-Stil. Einstellungen: Updates und Stationsdaten geordnet, Absturzordner unter Support. Display bündig mit Offene Bänder, Land 9,2 px, Etiketten 9 px, Filterhinweis nur im Tooltip.",
+      "Bandes ouvertes : Jour et Nuit avec des cases identiques et une mini-carte NASA de qui t’entend (PSK Reporter). Carte DX toujours entière, sans terre coupée. Fox : cascade identique à celle de la Station, avec Tx/Rx Split, et «Messages reçus» aligné sur la cascade. Émission avec des boutons plus grands et mieux espacés. Test CAT et test PTT attendent le vrai résultat ; les confirmations ont le style d’Aurora. Réglages : Mises à jour et Données de la station réorganisées, dossier des plantages dans Assistance. Afficheur aligné sur Bandes ouvertes, pays à 9,2 px, étiquettes à 9 px, note du Filtre seulement dans l’infobulle.",
+      "Bandas abiertas: Día y Noche con casillas iguales y un mini-mapa NASA de quién te oye (PSK Reporter). Mapa DX siempre entero, sin tierras cortadas. Fox: cascada igual a la de Estación, con Tx/Rx Split, y «Mensajes recibidos» alineado con la cascada. Transmisión con botones más grandes y espaciados. Prueba CAT y prueba PTT esperan el resultado real; las confirmaciones tienen el estilo de Aurora. Ajustes: Actualizaciones y Datos de la estación ordenados, carpeta de fallos en Asistencia. Display alineado con Bandas abiertas, país a 9,2 px, etiquetas a 9 px, nota del Filtro solo en la ayuda.",
+      "Bandas abertas: Dia e Noite com quadros iguais e um mini-mapa NASA de quem te ouve (PSK Reporter). Mapa DX sempre inteiro, sem terras cortadas. Fox: cascata igual à da Estação, com Tx/Rx Split, e «Mensagens recebidas» alinhado com a cascata. Transmissão com botões maiores e mais espaçados. Teste CAT e teste PTT esperam o resultado real; as confirmações têm o estilo da Aurora. Definições: Atualizações e Dados da estação arrumados, pasta de falhas em Assistência. Display alinhado com Bandas abertas, país a 9,2 px, etiquetas a 9 px, nota do Filtro só na dica.",
+    ],
+  },
+  {
     version: '0.11.159',
     released: '2026-11-06T21:29:15Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand OmniRig ne répond pas, Aurora dit quoi vérifier (port et modèle de Rig1, radio allumée) ou propose Hamlib. Sur le téléphone le DX Cluster n’apparaît que s’il est activé dans Aurora.",
       "Cuando OmniRig no responde, Aurora dice qué revisar (puerto y modelo de Rig1, radio encendida) o sugiere Hamlib. En el teléfono el DX Cluster aparece solo si está activado en Aurora.",
       "Quando o OmniRig não responde, a Aurora diz o que verificar (porta e modelo do Rig1, rádio ligado) ou sugere o Hamlib. No telemóvel o DX Cluster só aparece se estiver ligado na Aurora.",
-    ],
-  },
-  {
-    version: '0.11.120',
-    released: '2026-11-04T17:57:04Z',
-    kind: 'fixed',
-    title: ["Telefono più facile da collegare", "Easier phone connection", "Telefon leichter verbinden", "Téléphone plus facile à connecter", "Teléfono más fácil de conectar", "Telemóvel mais fácil de ligar"],
-    text: [
-      "Il QR dell’associazione usa l’indirizzo vero del PC (non più quelli di WSL, Hyper-V, VirtualBox o VPN), e la scheda dice la rete Wi-Fi del PC e se Windows blocca il telefono, con il pulsante «Consenti Aurora». La pagina Novità è compatta, la finestra si ricollega da sola se il collegamento resta muto, il display quasi quadrato è alto 120 punti e il suono dello splash si sente una volta per avvio.",
-      "The pairing QR uses the PC’s real address (no longer WSL, Hyper-V, VirtualBox or VPN ones), and the card shows the PC’s Wi-Fi network and whether Windows blocks the phone, with an «Allow Aurora» button. The News page is compact, the window reconnects by itself if the link goes silent, the near-square display is 120 points tall and the splash sound plays once per start.",
-      "Der QR der Kopplung nutzt die echte Adresse des PCs (nicht mehr die von WSL, Hyper-V, VirtualBox oder VPN), und die Karte zeigt das WLAN des PCs und ob Windows das Telefon blockiert, mit der Taste «Aurora zulassen». Die Neuigkeiten-Seite ist kompakt, das Fenster verbindet sich selbst neu, wenn die Verbindung verstummt, die fast quadratische Anzeige ist 120 Punkte hoch und der Startton erklingt einmal pro Start.",
-      "Le QR de l’association utilise la vraie adresse du PC (plus celles de WSL, Hyper-V, VirtualBox ou VPN), et la carte indique le réseau Wi-Fi du PC et si Windows bloque le téléphone, avec le bouton « Autoriser Aurora ». La page Nouveautés est compacte, la fenêtre se reconnecte seule si la liaison devient muette, l’afficheur presque carré fait 120 points de haut et le son de démarrage ne joue qu’une fois par lancement.",
-      "El QR del emparejamiento usa la dirección real del PC (ya no las de WSL, Hyper-V, VirtualBox o VPN), y la tarjeta indica la red Wi-Fi del PC y si Windows bloquea el teléfono, con el botón «Permitir Aurora». La página Novedades es compacta, la ventana se reconecta sola si la conexión se queda muda, la pantalla casi cuadrada mide 120 puntos de alto y el sonido de inicio suena una vez por arranque.",
-      "O QR da associação usa o endereço verdadeiro do PC (já não os de WSL, Hyper-V, VirtualBox ou VPN), e o cartão indica a rede Wi-Fi do PC e se o Windows bloqueia o telemóvel, com o botão «Permitir Aurora». A página Novidades é compacta, a janela volta a ligar-se sozinha se a ligação ficar muda, o ecrã quase quadrado tem 120 pontos de altura e o som de arranque toca uma vez por arranque.",
     ],
   },
 ];

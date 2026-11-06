@@ -1,6 +1,8 @@
+import { useStation } from '../state/station';
+import { askConfirm } from '../components/ConfirmHost';
 import { useQueryClient } from '@tanstack/react-query';
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { connectCat, postTune, putAutomation, putEngineSettings } from '../api/client';
+import { connectCat, getCat, postTune, putAutomation, putEngineSettings } from '../api/client';
 import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { usePrefs } from '../lib/prefs';
@@ -192,19 +194,31 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   const testCat = async () => {
     setNote('…');
     try {
-      const snap = await connectCat();
+      // il collegamento parte in sottofondo: si aspetta l'esito (collegato o errore) fino a 15 secondi, invece di leggere subito «in corso»
+      let snap = await connectCat();
+      for (let i = 0; i < 30 && snap.status.state !== 'connected' && snap.status.state !== 'error'; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        snap = await getCat();
+      }
       setNote(snap.status.state === 'connected' ? t('sw.catOk') : `${t('sw.catFail')} ${snap.status.message}`);
     } catch {
       setNote(t('sw.catFail'));
     }
   };
   const testPtt = async () => {
-    if (!window.confirm(t('sw.pttConfirm'))) return;
+    if (!(await askConfirm(t('sw.pttConfirm')))) return;
     try {
+      // il Tune parte all'inizio del prossimo periodo (fino a 15 s): si aspetta che la radio sia davvero in trasmissione, poi un secondo e si spegne
       await postTune(true);
-      await new Promise((r) => setTimeout(r, 1000));
+      setNote(t('sw.pttWait'));
+      let on = false;
+      for (let i = 0; i < 40 && !on; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        on = useStation.getState().status?.transmitting === true;
+      }
+      if (on) await new Promise((r) => setTimeout(r, 1000));
       await postTune(false);
-      setNote(t('sw.pttDone'));
+      setNote(on ? t('sw.pttDone') : t('sw.pttFail'));
     } catch {
       await postTune(false).catch(() => undefined);
       setNote(t('sw.pttFail'));

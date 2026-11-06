@@ -1,14 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getCat, postControl, postFox, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, postControl, postFox, postRxFrequency, postTxFrequency } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { RxControls } from '../components/RxControls';
 import { StopButton } from '../components/StopButton';
 import { Waterfall } from '../components/Waterfall';
+import { WaterfallToolbar } from '../components/WaterfallToolbar';
+import { TxQuickControls } from '../components/TxQuickControls';
+import { SpotMarkers } from '../components/SpotMarkers';
+import { bandOf } from '../lib/format';
 import { useT } from '../i18n';
-import { signalBandwidthHz } from '../lib/markers';
+import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
 import { useFox } from '../state/fox';
@@ -172,7 +176,7 @@ export function FoxPage() {
 
 
       {/* a sinistra chi chiama, QSO in corso e cascata (larga solo fin li'); a destra «Messaggi ricevuti» alto fino in fondo */}
-      <div className="foxc-body">
+      <div className="foxc-body" ref={trackFoxTop}>
         <div className="foxc-left">
       <div className="foxc-grid foxc-grid--main foxc-grid--two" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
         <section className="foxc-card foxc-tone--lilac">
@@ -325,33 +329,40 @@ function Spectrum() {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
   const { height, onPointerDown } = useDragHeight('aurora-fox-wf-height-v3', 110);
+  // la stessa cascata della pagina Stazione: barra degli strumenti, filtro, spot del cluster, righello con i messaggi e le barre Rx/Tx
+  const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
+  const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
         <h2 title={t('tip.fox.waterfall')}>{t('fox.waterfall')}</h2>
         <span className="foxc-chip data" title={t('tip.fox.txChip')}>Tx {status?.tx_df ?? '—'} Hz</span>
         <span className="foxc-chip foxc-chip--rx data" title={t('tip.fox.rxChip')}>Rx {status?.rx_df ?? '—'} Hz</span>
+        {/* Tx/Rx Split, come nella Trasmissione della pagina Stazione: la Tx resta ferma quando si sposta la Rx */}
+        <TxQuickControls splitOnly />
       </header>
       <div className="foxc-rx-controls">
         <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
       </div>
+      <WaterfallToolbar />
       <div className="foxc-wf" style={{ height }}>
         <div className="wf-stack">
-          <Waterfall register={registerSpectrum} mode={status?.mode} />
+          <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
           <FrequencyMarkers
             fMinHz={from}
             fMaxHz={to}
             rxHz={status?.rx_df}
             txHz={status?.tx_df}
             bandwidthHz={signalBandwidthHz(status?.mode)}
-            filter={null}
+            filter={filterWindow}
             showBars={wf.bars}
             showFreq={wf.freq}
             onRx={(hz) => void postRxFrequency(hz)}
             onTx={(hz) => void postTxFrequency(hz)}
           />
+          <SpotMarkers fMinHz={from} fMaxHz={to} dialHz={status?.dial_hz} onPick={(hz) => void postRxFrequency(hz)} />
         </div>
-        <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} />
+        <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} />
       </div>
       <DragHandle label={t('fox.resize')} onPointerDown={onPointerDown} />
     </section>
@@ -416,4 +427,22 @@ function order(a: Caller, b: Caller, key: SortKey): number {
   if (key === 'call') return a.call.localeCompare(b.call);
   if (key === 'snr') return b.snr - a.snr;
   return a[key] - b[key];
+}
+
+let foxTopStop: (() => void) | null = null;
+
+/** Scrive in `--foxc-top` dove comincia il corpo della pagina Fox: «Messaggi ricevuti» arriva cosi' esattamente al fondo della finestra. */
+function trackFoxTop(body: HTMLDivElement | null): void {
+  foxTopStop?.();
+  foxTopStop = null;
+  if (!body) return;
+  const set = () => body.style.setProperty('--foxc-top', `${Math.round(body.getBoundingClientRect().top + window.scrollY)}px`);
+  set();
+  const ro = new ResizeObserver(set);
+  ro.observe(document.body);
+  window.addEventListener('resize', set);
+  foxTopStop = () => {
+    ro.disconnect();
+    window.removeEventListener('resize', set);
+  };
 }

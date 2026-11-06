@@ -48,22 +48,13 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
               className={`glass chip${on ? ' glass--on' : ''}${id === 'filter' && on ? ' chip--warn' : ''}`}
               aria-pressed={on}
               disabled={!reachable}
-              title={t(`tip.ctl.${id}` as Key)}
+              // col Filtro acceso la spiegazione «Decodifico solo ±60 Hz attorno a Rx» sta solo nel suggerimento, non scritta accanto
+              title={id === 'filter' && on ? `${t('ctl.filter.on', { hz: state.hound === true ? 290 : 60 })} · ${t('tip.ctl.filter' as Key)}` : t(`tip.ctl.${id}` as Key)}
               onClick={() => void run(id, !on)}
             >
               {t(`ctl.${id}` as Key)}
             </button>
           );
-          if (id === 'filter' && on) {
-            return (
-              <span key={id} className="chip-with-note">
-                {button}
-                <span className="live-note chip-note" role="status">
-                  {t('ctl.filter.on', { hz: state.hound === true ? 290 : 60 })}
-                </span>
-              </span>
-            );
-          }
           return button;
         })}
         {RX_BUTTONS.map((id) => (

@@ -30,6 +30,7 @@ export const setWinStrings = {
   'sw.catOk': ['CAT collegato.', 'CAT connected.', 'CAT verbunden.', 'CAT connecté.', 'CAT conectado.', 'CAT ligado.'],
   'sw.catFail': ['CAT non risponde.', 'CAT does not respond.', 'CAT antwortet nicht.', 'CAT ne répond pas.', 'CAT no responde.', 'CAT não responde.'],
   'sw.pttConfirm': ['La radio trasmette per un secondo. Continuare?', 'The radio transmits for one second. Continue?', 'Das Funkgerät sendet eine Sekunde lang. Fortfahren?', 'La radio émet pendant une seconde. Continuer ?', 'La radio transmite durante un segundo. ¿Continuar?', 'O rádio transmite durante um segundo. Continuar?'],
+  'sw.pttWait': ['Aspetto l’inizio del periodo di trasmissione…', 'Waiting for the transmit period to start…', 'Warte auf den Beginn des Sendedurchgangs…', 'J’attends le début de la période d’émission…', 'Espero el inicio del periodo de transmisión…', 'Aguardo o início do período de transmissão…'],
   'sw.pttDone': ['Prova PTT fatta.', 'PTT test done.', 'PTT-Test erledigt.', 'Test PTT terminé.', 'Prueba PTT hecha.', 'Teste PTT feito.'],
   'sw.pttFail': ['Prova PTT non riuscita (trasmissione non abilitata?).', 'PTT test failed (transmission not enabled?).', 'PTT-Test fehlgeschlagen (Senden nicht freigegeben?).', 'Test PTT échoué (émission non activée ?).', 'Prueba PTT fallida (¿transmisión no habilitada?).', 'Teste PTT falhou (transmissão não ativada?).'],
   'sw.station': ['Dati della stazione', 'Station details', 'Stationsdaten', 'Données de la station', 'Datos de la estación', 'Dados da estação'],

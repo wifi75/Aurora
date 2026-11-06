@@ -947,3 +947,14 @@
 .live-top:has(> .rd-face-slot) > :last-child {
   top: calc(50% - 1.4px);
 }
+
+/* pagina a blocchi (live-board): i pannelli partono 6 px dentro il riquadro dei blocchi, cioe' 9.2 px sotto la riga (non 3.2):
+   il centro fra barra (6 px sopra) e pannelli sta 1.6 px sotto la meta' della riga */
+.live:has(> .live-board) > .live-top > :last-child {
+  top: calc(50% + 1.6px);
+}
+
+/* il display finisce dove finisce il pannello piu' a destra della prima fila (vedi alignDisplay in Live.tsx) */
+.live-top > :last-child {
+  right: var(--rd-right, 0px);
+}

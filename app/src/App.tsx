@@ -1,3 +1,4 @@
+import { ConfirmHost } from './components/ConfirmHost';
 import { DxMapPage } from './pages/DxMapPage';
 import { attachAll, dropClosed, reopenAll, useGroups } from './lib/detached';
 import './styles/solo.css';
@@ -204,6 +205,7 @@ export function App() {
       <main className="app-main">{content}</main>
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
+      <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
       {session.data && !REMOTE ? <FirstRun /> : null}

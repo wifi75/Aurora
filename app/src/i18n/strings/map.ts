@@ -57,6 +57,8 @@ export const mapStrings = {
   'dxmap.code.cqdx': ['CQDX: stazioni che chiamano CQ DX', 'CQDX: stations calling CQ DX', 'CQDX: Stationen, die CQ DX rufen', 'CQDX : stations qui lancent CQ DX', 'CQDX: estaciones llamando CQ DX', 'CQDX: estações a chamar CQ DX'],
   'dxmap.code.qrz': ['QRZ: stazioni che chiamano te', 'QRZ: stations calling you', 'QRZ: Stationen, die dich rufen', 'QRZ : stations qui t’appellent', 'QRZ: estaciones que te llaman', 'QRZ: estações a chamar-te'],
   'dxmap.spotPaths': ['Linee verso chi ti riceve', 'Lines to who receives you', 'Linien zu deinen Empfängern', 'Lignes vers qui te reçoit', 'Líneas hacia quien te recibe', 'Linhas para quem te recebe'],
+  'bands.mapTitle': ['Chi ti ascolta: {n} stazioni', 'Who hears you: {n} stations', 'Wer dich hört: {n} Stationen', 'Qui t’entend : {n} stations', 'Quién te oye: {n} estaciones', 'Quem te ouve: {n} estações'],
+  'bands.mapOpen': ['Apri Mappa DX', 'Open DX Map', 'DX-Karte öffnen', 'Ouvrir la carte DX', 'Abrir Mapa DX', 'Abrir Mapa DX'],
   'nav.map': ['Mappa', 'Map', 'Karte', 'Carte', 'Mapa', 'Mapa'],
   'map.title': ['Mappa', 'Map', 'Karte', 'Carte', 'Mapa', 'Mapa'],
   'map.aria': [

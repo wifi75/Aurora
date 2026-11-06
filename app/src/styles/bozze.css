@@ -689,3 +689,35 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .live .live-top { padding-left: 6px !important; padding-right: 6px !important; box-sizing: border-box; }
 .live .live-top > .setup-cta { margin-right: 0 !important; }
 .live .live-top > .setup-cta--radio, .live .live-top > .setup-cta { right: 6px !important; }
+
+/* Bande aperte: la tabella della propagazione occupa tutta la larghezza della scheda, colonne uguali e centrate */
+.bands-open .prop-matrix-head, .bands-open .prop-matrix-row { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) !important; justify-content: stretch; }
+.bands-open .prop-tile { width: 100%; }
+
+/* Bande aperte: Giorno e Notte con caselle identiche (stesso contorno, stesso sfondo); il periodo di adesso si vede solo dal titolo */
+.bands-open .prop-tile,
+.bands-open .prop-tile--active {
+  border: 1px solid var(--border) !important;
+  background: color-mix(in srgb, var(--panel) 70%, transparent) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.bands-open .prop-matrix-head > span { font-size: 11px; font-weight: 600; }
+.bands-open .prop-matrix-head > .prop-now { color: var(--accent); }
+
+/* Trasmissione: pulsanti dei comandi QSO piu' grandi, per usare lo spazio libero */
+.dock-panel--tx .tx-panel--combo .qso-grid { gap: 10px !important; }
+.dock-panel--tx .tx-panel--combo .qso-grid .chip { height: 25px !important; min-height: 25px !important; font-size: 10.5px !important; gap: 4px !important; padding: 0 5px !important; }
+.dock-panel--tx .tx-panel--combo .qso-grid .chip .chip-led { width: 6px !important; height: 6px !important; }
+
+/* Bande aperte: mini-mappa di chi ti ascolta (PSK Reporter), riempie lo spazio sotto */
+.bands-open { display: flex; flex-direction: column; min-height: 100%; }
+.bands-open-map { flex: 1; display: flex; flex-direction: column; gap: 3px; min-height: 9rem; margin-top: 6px; }
+.bands-open-map-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.5px; font-weight: 600; opacity: .85; }
+.bands-open-map-head a { font-weight: 500; font-size: 10px; }
+.bands-open-map .worldmap { flex: 1; aspect-ratio: auto; min-height: 8rem; max-height: none; border-radius: 6px; overflow: hidden; }
+.bands-open-map .worldmap-zoom, .bands-open-map .worldmap-readout, .bands-open-map .leaflet-control-attribution { display: none; }
+/* i pulsanti stanno davvero nella griglia .qso-cols (le altre sono «contents»): la distanza va data qui */
+.dock-panel--tx .tx-panel--combo .qso-cols { gap: 10px !important; }
+/* il blocco dei pulsanti QSO 10 px piu' in basso (piu' staccato dai messaggi Tx sopra) */
+.dock-panel--tx .tx-panel--combo .qso-cols { margin-top: 10px !important; }
