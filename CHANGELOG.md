@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.164 - 2026-11-06
+- **Pagine che scorrono**: su schermo largo solo la Stazione resta tutta nella finestra; Fox, Propagazione e le altre pagine scorrono di nuovo fino in fondo (la parte sotto restava nascosta).
+- **Splash**: mostra l'autore completo.
+- **Bande aperte**: record di «Oggi» solo dagli spot di oggi (UTC), «7 giorni» di calendario, archivio dei record rovinato non fa più cadere la scheda; continenti più precisi (Alaska e Aleutine in NA, Azzorre in EU, Panama in NA).
+- **Conferme**: la finestra non si chiude due volte con Esc e clic insieme.
+- Tolto codice non più usato (mini-mappa intera di WorldMap, calcolo `--foxc-top` della Fox).
+
 ## 0.11.163 - 2026-11-06
 - **Pulsante del modo** (FT8, FT4...): il modo scelto e' ben in evidenza (bordo pieno, alone, testo marcato).
 

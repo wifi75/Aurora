@@ -428,7 +428,9 @@ function alignDisplay(row: HTMLDivElement | null): void {
     }
     const firstTop = Math.min(...panels.map((r) => r.top));
     const right = Math.max(...panels.filter((r) => r.top < firstTop + 4).map((r) => r.right));
-    row.style.setProperty('--rd-right', `${Math.max(0, Math.round(top.right - right))}px`);
+    const value = `${Math.max(0, Math.round(top.right - right))}px`;
+    // si riscrive solo se cambia: a ogni controllo periodico non si ridisegna niente
+    if (row.style.getPropertyValue('--rd-right') !== value) row.style.setProperty('--rd-right', value);
   };
   measure();
   const ro = new ResizeObserver(measure);

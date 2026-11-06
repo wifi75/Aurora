@@ -86,6 +86,7 @@ export function Splash() {
       <Logo size={200} animated className="splash-logo" />
       <h1 className="splash-name">AURORA</h1>
       <p className="splash-motto">{t('splash.motto')}</p>
+      <p className="splash-author">{t('splash.author')}</p>
       <p className="splash-version">{data ? `v${data.version}` : ''}</p>
     </div>
   );

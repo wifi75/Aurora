@@ -27,6 +27,7 @@ export const appStrings = {
     'Estación digital FT8, FT4, JT65 y JT9 con CAT, DX Cluster y DXpediciones: escucha, decodifica y transmite por ti',
     'Estação digital FT8, FT4, JT65 e JT9 com CAT, DX Cluster e DXpedições: escuta, descodifica e transmite por ti',
   ],
+  'splash.author': ['di IU3WJQ - Tiziano Cassone', 'by IU3WJQ - Tiziano Cassone', 'von IU3WJQ - Tiziano Cassone', 'par IU3WJQ - Tiziano Cassone', 'por IU3WJQ - Tiziano Cassone', 'por IU3WJQ - Tiziano Cassone'],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
     '{name} v{version} — By IU3WJQ -Tiziano Cassone',

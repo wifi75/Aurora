@@ -176,7 +176,7 @@ export function FoxPage() {
 
 
       {/* a sinistra chi chiama, QSO in corso e cascata (larga solo fin li'); a destra «Messaggi ricevuti» alto fino in fondo */}
-      <div className="foxc-body" ref={trackFoxTop}>
+      <div className="foxc-body">
         <div className="foxc-left">
       <div className="foxc-grid foxc-grid--main foxc-grid--two" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
         <section className="foxc-card foxc-tone--lilac">
@@ -427,22 +427,4 @@ function order(a: Caller, b: Caller, key: SortKey): number {
   if (key === 'call') return a.call.localeCompare(b.call);
   if (key === 'snr') return b.snr - a.snr;
   return a[key] - b[key];
-}
-
-let foxTopStop: (() => void) | null = null;
-
-/** Scrive in `--foxc-top` dove comincia il corpo della pagina Fox: «Messaggi ricevuti» arriva cosi' esattamente al fondo della finestra. */
-function trackFoxTop(body: HTMLDivElement | null): void {
-  foxTopStop?.();
-  foxTopStop = null;
-  if (!body) return;
-  const set = () => body.style.setProperty('--foxc-top', `${Math.round(body.getBoundingClientRect().top + window.scrollY)}px`);
-  set();
-  const ro = new ResizeObserver(set);
-  ro.observe(document.body);
-  window.addEventListener('resize', set);
-  foxTopStop = () => {
-    ro.disconnect();
-    window.removeEventListener('resize', set);
-  };
 }
