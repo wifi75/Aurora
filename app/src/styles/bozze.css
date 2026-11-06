@@ -679,3 +679,8 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 .grid-divider { position: absolute; width: 6px; z-index: 30; cursor: col-resize; touch-action: none; border-radius: 3px; }
 .grid-divider::after { content: ''; position: absolute; left: 2px; top: 50%; width: 2px; height: 36px; margin-top: -18px; border-radius: 2px; background: transparent; }
 .grid-divider:hover::after, .grid-board--moving .grid-divider::after { background: #8e7bff; }
+
+/* divisori sempre visibili: una barretta viola al centro dello spazio tra due finestre, piu' evidente al passaggio del mouse */
+.grid-divider { width: 10px; margin-left: -2px; }
+.grid-divider::after { left: 3px; width: 4px; height: 44px; margin-top: -22px; background: rgba(142, 123, 255, 0.7) !important; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5); }
+.grid-divider:hover::after, .grid-board--moving .grid-divider::after { background: #6a54ff !important; height: 64px; margin-top: -32px; }
