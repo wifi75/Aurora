@@ -926,3 +926,24 @@
 .map-page--solo .map-bar {
   display: none;
 }
+
+/* display centrato fra barra del menu e pannelli: la barra ora e' 6 px sopra la riga (prima 12) e i pannelli 3 px sotto,
+   quindi il centro sta 1.5 px sopra la meta' della riga */
+.live-top > :last-child {
+  top: calc(50% - 1.5px);
+}
+
+/* display FT-2000 / IC-7610 nella Stazione: 10 px piu' alto (64 -> 74 px), in proporzione (il disegno e' 10:1, quindi 640 -> 740 px) */
+.live-top .rd-face-slot {
+  width: 46.25rem;
+}
+/* la riga si allunga per il display piu' alto: circa 5 px liberi sopra e sotto */
+.live-top:has(> .rd-zoom-host .rd-face-slot),
+.live-top:has(> .rd-face-slot) {
+  min-height: 73px;
+}
+/* display centrato: stesso spazio fra barra e display e fra display e pannelli (barra 6 px sopra la riga, pannelli 3.2 px sotto) */
+.live-top:has(> .rd-zoom-host .rd-face-slot) > :last-child,
+.live-top:has(> .rd-face-slot) > :last-child {
+  top: calc(50% - 1.4px);
+}
