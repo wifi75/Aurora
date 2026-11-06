@@ -8,6 +8,11 @@ Stato al 2026-11-05, versione 0.11.158. Per riprendere il lavoro leggi anche `do
 - Nessun login a password: dispositivi associati con un codice monouso (durata scelta dall'operatore, 1-60 minuti, predefinito 10). Per le prove esiste l'accesso senza codice, solo rete di casa, mai da proxy.
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
 
+## Prove della grafica in locale (dal 2026-11-06)
+- Il proprietario prova le modifiche grafiche prima di pubblicare: con Aurora aperta (core su 8787) si avvia Vite su http://localhost:5173 e la pagina usa la stazione vera; le modifiche all'interfaccia compaiono subito, si pubblica una volta sola alla fine.
+- `app/vite.config.ts` fa il proxy con `xfwd`: il core lo vede come proxy e chiede il codice di associazione. Per entrare senza codice dal PC si usa una copia della configurazione **senza** `xfwd`, tenuta fuori dal repository.
+- Le modifiche al motore (core) non si vedono cosi': servono `cargo build --release -p aurora` e il core avviato con la cartella dati di Aurora (con Aurora chiusa: radio e porte COM sono di una sola istanza).
+
 ## Mappa DX
 - Attenzione: `time_ms` dei messaggi ricevuti (DecodedMessage) e' in millisecondi dalla mezzanotte UTC, non una data intera; l'eta' si calcola con `ageOf` in `DxMapPage.tsx` (fino alla 0.11.154 era confrontata con l'ora completa e la Mappa DX non mostrava mai stazioni in onda ne' linee degli altri). Gli spot di PSK Reporter invece hanno `time_s` Unix.
 - Dal 2026-11-05 la vecchia pagina «Mappa» non e' piu' nel menu (doppione, scelta del proprietario): `#/mappa`, le finestre staccate `map` e l'ultima pagina ricordata portano alla Mappa DX. `MapPage.tsx` e `WorldMap.tsx` restano perche' li usa la pagina Propagazione.
