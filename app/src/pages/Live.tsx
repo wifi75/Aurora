@@ -136,7 +136,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         return (
           <>
             <div className="wf-stack">
-              <Waterfall register={registerSpectrum} mode={status?.mode} />
+              <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
               <FrequencyMarkers
                 fMinHz={F_MIN_HZ}
                 fMaxHz={F_MAX_HZ}

@@ -964,3 +964,35 @@ button.primary {
   width: 1.35em;
   height: 1em;
 }
+
+/* barra dei comandi sopra la cascata (Bins/Pixel, Start, Palette, Gain, Zero, N Avg, Spec, Flatten, Time stamp) */
+.wf-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 6px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.wft-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.wft-num, .wft-select {
+  height: 26px;
+  padding: 0 6px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 70%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font: inherit;
+}
+.wft-range { width: 84px; }
+.wft-check { color: var(--text); }
+.wft-range-text { margin-left: auto; letter-spacing: .06em; text-transform: uppercase; font-size: 10.5px; }
+.waterfall--bar .wf-controls { display: none; }
+.wf-stamps { position: absolute; left: 0; width: 100%; pointer-events: none; z-index: 2; }
+/* la barra resta su una sola riga (scorre di lato se il pannello e' stretto): la cascata non si schiaccia */
+.wf-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.wf-toolbar > * { flex: none; }
