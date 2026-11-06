@@ -36,6 +36,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   // WebGPU puo' aver gia' preso il canvas: per ripiegare su WebGL2 serve un canvas nuovo
   const [attempt, setAttempt] = useState<{ forced?: 'webgl2'; key: number }>({ key: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLCanvasElement>(null);
   const backendRef = useRef<WaterfallBackend | null>(null);
   const prefs = useWfPrefs((s) => s.prefs);
@@ -222,11 +223,42 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
     </label>
   );
 
+  // il divisore fra cascata e spettro si trascina in alto e in basso: la quota dello spettro (`Spec %`) segue il mouse e resta salvata
+  const startSpectrumResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = boxRef.current;
+    if (!box) return;
+    const handle = e.currentTarget;
+    handle.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const r = box.getBoundingClientRect();
+      const percent = Math.round(((r.bottom - ev.clientY) / Math.max(1, r.height)) * 100);
+      useWfPrefs.getState().set({ spectrumPercent: Math.min(MAX_SPECTRUM_SHARE, Math.max(5, percent)) });
+    };
+    const stop = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  };
+
   // la barra dei comandi sopra la cascata (non sul telefono, dove lo spazio e' poco)
   const bar = !spectrumPx;
   return (
-    <div className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
+    <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
       <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      {bar && specPercent > 0 ? (
+        <div
+          className="wf-splitter"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label={t('wf.specHeight')}
+          title={t('wf.specHeight')}
+          onPointerDown={startSpectrumResize}
+        />
+      ) : null}
       <canvas
         ref={plotRef}
         className="wf-spectrum"

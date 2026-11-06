@@ -275,3 +275,39 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .dock-splitter { width: 6px; }
 .app-main { padding-left: 4px; padding-right: 4px; padding-top: 6px; }
 .dock-col > .dock-panel, .dock-col > .dock-pair { margin: 0; }
+
+/* riga in basso fissa: cascata, Trasmissione (messaggi) e QSO come tre finestre separate della stessa altezza */
+.live-bottom { display: flex; flex: none; gap: 4px; height: clamp(15rem, 31vh, 21rem); min-height: 0; margin-top: 4px; }
+.live-bottom-panel { min-width: 0; min-height: 0; height: auto; flex: 1 1 0; }
+.live-bottom-wf { flex: 1.5 1 0; }
+.live-bottom-msgs { flex: 1.1 1 0; }
+.live-bottom-qso { flex: 1.1 1 0; }
+.live-bottom-panel .dock-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
+.live-bottom-panel .dock-grip--fixed { cursor: default; }
+.live-bottom-wf .dock-body { overflow: hidden; }
+.live-bottom-wf .waterfall { flex: 1 1 0; height: auto; min-height: 0; }
+.live-bottom-wf .wf-stack { flex: 1 1 0; min-height: 0; }
+.live-bottom .tx-panel { flex: 1; min-height: 0; padding: 4px; }
+/* Tx/Rx Split e Canc DX: un po' staccati fra loro */
+.tx-quick { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
+
+/* Comandi ridotti a Tx, Rx, Rapporto e Hold Tx Freq: il pulsante Hold occupa tutta la riga, con lo stato ben visibile */
+.cmd-big .cmd-hold { width: 100%; justify-content: center; min-height: 34px; margin-top: 2px; font-weight: 700; }
+
+/* schermo largo: la pagina sta nella finestra (niente scorrimento): i riquadri in alto si adattano e la riga in basso resta fissa */
+@media (min-width: 64rem) {
+  .app-main { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .live { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .live .dock { flex: 1 1 0; min-height: 0; }
+  .live .dock-col { min-height: 0; }
+  .live-bottom { flex: none; }
+}
+
+/* spettro piu' alto (almeno 60 px in piu') e ridimensionabile con il divisore fra cascata e spettro */
+.waterfall--bar .wf-spectrum { min-height: 116px; }
+.waterfall--bar .wf-main { min-height: 64px; }
+.wf-splitter { flex: 0 0 7px; position: relative; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--border) 60%, transparent); }
+.wf-splitter::after { content: ''; position: absolute; left: 50%; top: 2px; width: 44px; height: 3px; margin-left: -22px; border-radius: 3px; background: color-mix(in srgb, var(--text) 45%, transparent); }
+.wf-splitter:hover::after { background: #8e7bff; }
+/* la riga in basso un po' piu' alta, per dare spazio allo spettro */
+.live-bottom { height: clamp(18rem, 37vh, 26rem); }

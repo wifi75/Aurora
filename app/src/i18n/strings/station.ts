@@ -158,6 +158,7 @@ export const stationStrings = {
   ],
   'panel.waterfall': ['Cascata', 'Waterfall', 'Wasserfall', 'Cascade', 'Cascada', 'Cascata'],
   'panel.station': ['Comandi', 'Commands', 'Befehle', 'Commandes', 'Comandos', 'Comandos'],
+  'panel.qso': ['QSO', 'QSO', 'QSO', 'QSO', 'QSO', 'QSO'],
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
   'panel.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],

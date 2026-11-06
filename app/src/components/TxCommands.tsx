@@ -1,86 +1,34 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { ApiError, getClusterSpots, getControls, getEngineSettings, postControl, postCq, postDx, postFreeText, postLogQso, postReport, postTune, postRxFrequency, postSpotDxsummit, postTxFrequency, type ControlId } from '../api/client';
+import { getControls, postControl, postReport, postRxFrequency, postTxFrequency, type ControlId } from '../api/client';
 import type { StationStatus } from '../api/schemas';
-import { useT, type Key, type T } from '../i18n';
-import { expandMacro, useMacros } from '../lib/macros';
+import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
-import { usePrefs } from '../lib/prefs';
-import { useStation } from '../state/station';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
-import { DxQsl } from './CallsignTip';
-import { PeriodClockRing } from './PeriodClockRing';
-import { coreText } from '../lib/coreText';
 
 interface Props {
   /** La trasmissione e' aperta su questo PC (AURORA_ALLOW_TX=1). */
   txAllowed: boolean;
   /** Frequenza audio di partenza (Hz). */
   initialFrequency?: number;
-  /** Stato del motore: frequenze, stazione DX e dati per riempire le macro. */
+  /** Stato del motore: frequenze e rapporto. */
   status?: StationStatus | null;
 }
 
-const MAX_TEXT = 13;
-const MAX_SPOT_TEXT = 60;
-/** I CQ con destinazione, come la tendina di WSJT-X 3.3 (comboBoxCQ). */
-const CQ_KINDS = ['CQ', 'CQ DX', 'CQ NA', 'CQ SA', 'CQ EU', 'CQ AS', 'CQ AF', 'CQ OC', 'CQ POTA', 'CQ SOTA', 'CQ TEST'] as const;
-
-/** Perche' lo spot non e' partito, nella lingua scelta. */
-function spotErrorMessage(error: unknown, t: T): string {
-  if (error instanceof ApiError) {
-    switch (error.code) {
-      case 'spot_off':
-        return t('err.spot.off');
-      case 'spot_no_call':
-        return t('err.spot.noCall');
-      case 'spot_bad_call':
-        return t('err.spot.badCall');
-      case 'spot_already':
-        return t('err.spot.already');
-      case 'spot_no_frequency':
-        return t('err.spot.noFreq');
-      case 'bad_spot':
-        return t('err.spot.badText');
-      case 'spot_failed':
-        return t('err.spot.failed', { reason: error.detail ? coreText(error.detail, t) : '—' });
-      case 'local_only':
-        return t('err.spot.local');
-    }
-  }
-  return replyErrorMessage(error, t);
-}
-
-/** Pannello comandi come quello del motore, ma raccolto: QSO, frequenze, stazione DX, CQ e messaggio libero. */
+/**
+ * Comandi: Tx, Rx e Rapporto in grande, con le frecce che copiano una frequenza sull'altra, e il pulsante Hold Tx Freq. Il resto (stazione DX,
+ * CQ, messaggio libero, Tx/Rx Split, Canc DX) e' stato tolto o spostato nella Trasmissione.
+ */
 export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }: Props) {
   const t = useT();
-  const pendingDx = useStation((s) => s.pendingDx);
   const client = useQueryClient();
-  const macros = useMacros((s) => s.macros);
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const state = useShownControls(controls.data ?? {});
   const reachable = !controls.isError;
-  const prefs = usePrefs((st) => st.prefs);
-  const [cqKind, setCqKind] = useState('CQ');
-  const [tuning, setTuning] = useState(false);
-  const [dxInput, setDxInput] = useState(status?.dx_call ?? '');
-  const [gridInput, setGridInput] = useState(status?.dx_grid ?? '');
   const [report, setReport] = useState(String(status?.report ?? '-10').replace(/^\+/, ''));
-  const [text, setText] = useState('');
   const [txHz, setTxHz] = useState(String(status?.tx_df ?? initialFrequency));
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
   const [note, setNote] = useState('');
-  const [spotText, setSpotText] = useState('');
-  const [spotting, setSpotting] = useState(false);
-  // la stazione gia' segnalata: finche' resta quella scelta il pulsante dice «Spottato» (come in JTDX, torna normale se si cambia stazione)
-  const [spottedDx, setSpottedDx] = useState('');
-  // lo spot si offre solo se acceso nelle impostazioni (motore proprio: con JTDX la rotta non c'e')
-  const settings = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false });
-  // lo spot (con il suo commento) si offre solo se acceso nelle impostazioni E con almeno un server del DX Cluster collegato (login fatto)
-  const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 10_000 });
-  const clusterIn = (cluster.data?.servers ?? []).some((sv) => sv.state === 'connected');
-  const spotOn = clusterIn && settings.data?.values.AllowSpotsDXSummit === 'true' && settings.data.items.AllowSpotsDXSummit?.state === 'live';
-  const dxCall = (pendingDx || status?.dx_call || '').trim();
 
   // la frequenza vera e' quella del motore: quando cambia lì si aggiorna anche qui
   useEffect(() => {
@@ -89,15 +37,6 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   useEffect(() => {
     if (status?.rx_df != null) setRxHz(String(status.rx_df));
   }, [status?.rx_df]);
-  // il DX scelto con il doppio clic (o dal motore) riempie i campi
-  useEffect(() => {
-    setDxInput(pendingDx || status?.dx_call || '');
-    setGridInput(pendingDx ? '' : (status?.dx_grid ?? ''));
-  }, [pendingDx, status?.dx_call, status?.dx_grid]);
-  // Tune dura un periodo: finita la trasmissione il pulsante torna spento
-  useEffect(() => {
-    if (!status?.transmitting) setTuning(false);
-  }, [status?.transmitting]);
 
   const run = async (what: string, action: () => Promise<void>) => {
     try {
@@ -119,44 +58,6 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
       await client.invalidateQueries({ queryKey: ['controls'] });
     });
 
-  const toggle = (id: ControlId) => {
-    const on = state[id] === true;
-    const locked = !reachable;
-    return (
-      <button
-        key={id}
-        type="button"
-        className={`glass chip${on ? ' glass--on' : ''}`}
-        aria-pressed={on}
-        disabled={locked}
-        title={t(`tip.ctl.${id}` as Key)}
-        onClick={() => void setControl(id, !on)}
-      >
-        {t(`ctl.${id}` as Key)}
-      </button>
-    );
-  };
-
-  const press = (id: ControlId) => (
-    <button key={id} type="button" className="glass chip" disabled={!reachable} title={t(`tip.ctl.${id}` as Key)} onClick={() => void setControl(id)}>
-      {t(`ctl.${id}` as Key)}
-    </button>
-  );
-
-  const spot = async () => {
-    setSpotting(true);
-    try {
-      const done = await postSpotDxsummit({ dx_call: dxCall, dx_grid: pendingDx ? '' : (status?.dx_grid ?? ''), text: spotText.trim() });
-      setSpottedDx(dxCall);
-      setNote(t('ctl.spotOk', { call: done.dx_call, khz: (done.frequency_hz / 1000).toFixed(1) }));
-      await client.invalidateQueries({ queryKey: ['engine-settings'] });
-    } catch (error) {
-      setNote(spotErrorMessage(error, t));
-    } finally {
-      setSpotting(false);
-    }
-  };
-
   const applyTx = () => {
     const hz = Number(txHz);
     if (Number.isFinite(hz)) void run(t('tx.freqSet'), () => postTxFrequency(hz));
@@ -168,28 +69,19 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
   const onEnter = (apply: () => void) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') apply();
   };
-
-  // il DX scritto a mano: si manda al motore con Invio o uscendo dal campo
-  const applyDx = () => {
-    const call = dxInput.trim().toUpperCase();
-    const grid = gridInput.trim().toUpperCase();
-    if (call === (status?.dx_call ?? '') && grid === (status?.dx_grid ?? '')) return;
-    void run(t('cmd.dxSet', { call: call || '—' }), () => postDx(call, grid));
-  };
   const applyReport = () => {
     const db = Math.round(Number(report));
     if (Number.isFinite(db) && db >= -50 && db <= 49) void run(t('cmd.reportSet', { db: `${db >= 0 ? '+' : ''}${db}` }), () => postReport(db));
   };
-  const cqModifier = cqKind === 'CQ' ? '' : cqKind.replace(/^CQ /, '');
 
+  const hold = state.hold_tx === true;
   return (
     <div className="tx-panel tx-commands">
       <div className="tx-main">
         {!txAllowed && <p className="muted tx-note">{t('tx.closed')}</p>}
         {!reachable && <p className="muted tx-note">{t('ctl.unavailable')}</p>}
 
-        <PeriodClockRing mode={status?.mode ?? 'FT8'} label={t('ctl.period')} />
-        {/* Tx, Rx e Report in grande, come nello stile di riferimento: campo, unita' e il pulsante che copia l'altra frequenza */}
+        {/* Tx, Rx e Rapporto in grande: campo, unita' e il pulsante che copia l'altra frequenza */}
         <div className="cmd-big" role="group" aria-label={t('ctl.sec.freq')}>
           <label className="cmd-big-row">
             <span className="cmd-big-lab">Tx</span>
@@ -208,112 +100,23 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }
             </button>
           </label>
           <label className="cmd-big-row">
-            <span className="cmd-big-lab" title={t('tip.cmd.report')}>{t('cmd.report')}</span>
+            <span className="cmd-big-lab" title={t('tip.cmd.report')}>
+              {t('cmd.report')}
+            </span>
             <input type="number" className="cmd-big-in" aria-label={t('cmd.report')} title={t('tip.cmd.report')} min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
             <span className="cmd-big-unit">dB</span>
           </label>
-        </div>
-
-        <p className="cmd-cap">{t('cmd.cap.dx')}</p>
-        {/* proposta 1: due righe per la stazione, una riga per Tx e una per Rx, ogni pulsante accanto al suo campo */}
-        <div className="cmd-line cmd-row" role="group" aria-label={t('ctl.sec.dx')}>
-          <span className="cmd-lab">Call</span>
-          <input type="text" className="data cmd-call" aria-label={t('cmd.dxCall')} title={t('tip.cmd.dxCall')} placeholder={t('cmd.dxCall')} value={dxInput} maxLength={12} onChange={(e) => setDxInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
-          <input type="text" className="data cmd-grid" aria-label={t('cmd.dxGrid')} title={t('tip.cmd.dxGrid')} placeholder={t('cmd.dxGrid')} value={gridInput} maxLength={6} onChange={(e) => setGridInput(e.target.value.toUpperCase())} onBlur={applyDx} onKeyDown={onEnter(applyDx)} />
-          <DxQsl call={dxCall} />
-        </div>
-        <div className="cmd-line cmd-row" role="group" aria-label={t('cmd.report')}>
-          <a className="glass chip" href={dxCall ? `https://www.qrz.com/db/${encodeURIComponent(dxCall)}` : undefined} target="_blank" rel="noreferrer" title={t('tip.cmd.lookup')} aria-disabled={!dxCall}>
-            {t('cmd.lookup')}
-          </a>
-          {press('gen_msgs')}
-        </div>
-        {spotOn && dxCall !== '' ? (
-          <div className="cmd-line cmd-row">
-            <input
-              type="text"
-              className="cmd-free cmd-spot-text"
-              value={spotText}
-              maxLength={MAX_SPOT_TEXT}
-              aria-label={t('ctl.spotText')}
-              title={t('tip.ctl.spotText')}
-              placeholder={t('ctl.spotText')}
-              onChange={(e) => setSpotText(e.target.value)}
-            />
-            <button type="button" className="glass chip" disabled={spotting || spottedDx === dxCall} title={t('tip.ctl.spot')} onClick={() => void spot()}>
-              {spotting ? t('ctl.spotSending') : spottedDx === dxCall ? t('ctl.spotted') : t('ctl.spot')}
-            </button>
-          </div>
-        ) : null}
-
-        <div className="cmd-line">{toggle('hold_tx')}</div>
-
-        <p className="cmd-cap">{t('cmd.cap.cq')}</p>
-        <div className="cmd-line" role="group" aria-label={t('ctl.sec.send')}>
-          <button type="button" className="glass glass--on chip chip--main" disabled={!txAllowed} title={t('tip.tx.cq')} onClick={() => run(t('tx.cqAsked'), () => postCq(cqModifier))}>
-            CQ
-          </button>
-          <select value={cqKind} aria-label={t('cmd.cqKind')} title={t('tip.cmd.cqKind')} onChange={(e) => setCqKind(e.target.value)}>
-            {CQ_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
-          {prefs.cmdTune ? (
-            <button type="button" className={`glass chip${tuning ? ' chip--tune-on' : ''}`} disabled={!txAllowed && !tuning} title={t('tip.cmd.tune')} aria-pressed={tuning} onClick={() => {
-              const next = !tuning;
-              setTuning(next);
-              void run(next ? t('cmd.tuneOn') : t('cmd.tuneOff'), () => postTune(next));
-            }}>
-              {t('cmd.tune')}
-            </button>
-          ) : null}
-          {prefs.cmdLogQso ? (
-            <button type="button" className="glass chip" disabled={!dxCall} title={t('tip.cmd.logQso')} onClick={() => run(t('cmd.logged', { call: dxCall }), () => postLogQso())}>
-              {t('cmd.logQso')}
-            </button>
-          ) : null}
-        </div>
-
-        <p className="cmd-cap">{t('cmd.cap.free')}</p>
-        <div className="cmd-line">
-          <input
-            type="text"
-            className="cmd-free"
-            value={text}
-            maxLength={MAX_TEXT}
-            aria-label={t('tx.free')}
-            title={t('tip.tx.free')}
-            onChange={(e) => setText(e.target.value.toUpperCase().slice(0, MAX_TEXT))}
-            placeholder={t('tx.free')}
-          />
-          <button type="button" className="glass chip" disabled={text.trim() === ''} title={t('tip.tx.free')} onClick={() => run(t('tx.prepared'), () => postFreeText(text.trim(), false))}>
-            {t('tx.prepare')}
-          </button>
+          {/* Hold Tx Freq: a tutta larghezza sotto i campi, con lo stato ben visibile */}
           <button
             type="button"
-            className="glass glass--on chip"
-            disabled={!txAllowed || text.trim() === ''}
-            title={t('tip.tx.free')}
-            onClick={() => run(t('tx.sent'), () => postFreeText(text.trim(), true))}
+            className={`glass chip cmd-hold${hold ? ' glass--on' : ''}`}
+            aria-pressed={hold}
+            disabled={!reachable}
+            title={t('tip.ctl.hold_tx')}
+            onClick={() => void setControl('hold_tx', !hold)}
           >
-            {t('tx.send')}
+            {t('ctl.hold_tx' as Key)}
           </button>
-        </div>
-
-        <div className="macro-chips" role="group" aria-label={t('macro.chips')}>
-          {macros.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className="glass"
-              title={t('tip.macro.chip')}
-              onClick={() => setText(expandMacro(m, { dx: pendingDx || status?.dx_call || '', me: status?.de_call ?? '', report: status?.report ?? '' }))}
-            >
-              {m}
-            </button>
-          ))}
         </div>
         {note ? (
           <p className="live-note" role="status">

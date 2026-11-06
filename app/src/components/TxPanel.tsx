@@ -22,6 +22,8 @@ interface Props {
   status?: StationStatus | null;
   /** Messaggi decodificati (i piu' recenti per primi): servono a capire a che punto e' il QSO. */
   decodes?: DecodedMessage[];
+  /** `messages`: solo i sei messaggi con lo stato; `qso`: solo gli interruttori del QSO e i livelli audio; di base tutto insieme. */
+  part?: 'all' | 'messages' | 'qso';
 }
 
 /** Il testo di un avviso di sicurezza della trasmissione. */
@@ -133,7 +135,7 @@ function TxMessageField({ value, disabled, label, onCommit }: { value: string; d
 }
 
 /** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
-export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
+export function TxPanel({ txAllowed, status = null, decodes = [], part = 'all' }: Props) {
   const t = useT();
   const [note, setNote] = useState('');
   const { messages, selected, active, next, hound, skipTx1, controls, pendingDx } = useTxSequence(status, decodes);
@@ -155,9 +157,7 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
       .catch((error: unknown) => setNote(replyErrorMessage(error, t)));
 
 
-  return (
-    <div className="tx-panel">
-      <div className="tx-main tx-split">
+  const left = (
         <section className="tx-left tx-block" aria-label={t('ctl.sec.dx')}>
       {status && (
         <>
@@ -250,6 +250,29 @@ export function TxPanel({ txAllowed, status = null, decodes = [] }: Props) {
         </>
       )}
         </section>
+  );
+  if (part === 'messages') {
+    return (
+      <div className="tx-panel tx-panel--msgs">
+        <div className="tx-main tx-split">{left}</div>
+      </div>
+    );
+  }
+  if (part === 'qso') {
+    return (
+      <div className="tx-panel tx-panel--qso">
+        <div className="tx-main tx-split">
+          <QsoSwitches txAllowed={txAllowed} />
+        </div>
+        <InputLevel />
+        <OutputLevel txAllowed={txAllowed} />
+      </div>
+    );
+  }
+  return (
+    <div className="tx-panel">
+      <div className="tx-main tx-split">
+        {left}
         <QsoSwitches txAllowed={txAllowed} />
       </div>
       <InputLevel />
