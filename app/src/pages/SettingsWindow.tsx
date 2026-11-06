@@ -53,24 +53,15 @@ const TABS: readonly TabDef[] = [
   { id: 'macros', label: 'sw.tab.macros', icon: '≡', render: () => stack(<MacrosTab />, <SequenceTab />) },
   { id: 'reporting', label: 'sw.tab.reporting', icon: '⇄', render: () => stack(<ReportsTab />, <OnlineTab />, <ClusterTab />) },
   { id: 'freq', label: 'sw.tab.freq', icon: '∼', render: () => stack(<FrequenciesTab />, <BandsTab />) },
-  { id: 'colors', label: 'sw.tab.colors', icon: '◐', render: () => <ColorsSoon /> },
+  { id: 'colors', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
   { id: 'logbooks', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
   { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <SupportTab /> },
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
   { id: 'advanced', label: 'sw.tab.advanced', icon: '☼', render: () => <NativeValues group="advanced" /> },
-  { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => stack(<NotificationsTab />, <WishlistTab />, <DxccTab />) },
+  { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => stack(<NotificationsTab part="alerts" />, <WishlistTab />, <DxccTab />) },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
   { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', render: () => stack(<AccessTab />, <WindowsTab />, <AboutTab />) },
 ];
-
-function ColorsSoon() {
-  const t = useT();
-  return (
-    <section className="sw-box">
-      <p className="muted">{t('sw.soon')}</p>
-    </section>
-  );
-}
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */
 function closeWindow(): void {

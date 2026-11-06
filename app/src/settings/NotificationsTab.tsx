@@ -16,9 +16,9 @@ import { ToastGroup } from './ToastGroup';
 import { Actions, Cell, Group, Notes, Page } from './layout';
 
 /** Scheda Notifiche: con il motore proprio come nel motore (evidenziazioni, gia' lavorati, colori e marcatori); con JTDX colore, evidenziazione e suono per tipo. */
-export function NotificationsTab() {
+export function NotificationsTab({ part = 'all' }: { part?: 'all' | 'colors' | 'alerts' } = {}) {
   const native = useIsNative();
-  return native ? <NativeNotifications /> : <JtdxNotificationsTab />;
+  return native ? <NativeNotifications part={part} /> : <JtdxNotificationsTab />;
 }
 
 function JtdxNotificationsTab() {
