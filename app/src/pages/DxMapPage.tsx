@@ -61,13 +61,13 @@ function readSettings(): DxMapSettings {
 }
 
 /** Mappa DX: le stazioni in onda sul planisfero, alla GridTracker. */
-export function DxMapPage({ solo = false }: { solo?: boolean } = {}) {
+export function DxMapPage({ solo = false, bare = false }: { solo?: boolean; /** Nella pagina a blocchi: solo la mappa con le linee e la propagazione, niente comandi, legenda e riquadri. */ bare?: boolean } = {}) {
   const elsewhere = useGroups().some((g) => g.open && g.items.includes('dxmap'));
   if (elsewhere && !solo) return <DetachedNote item="dxmap" />;
-  return <DxMapBody solo={solo} />;
+  return <DxMapBody solo={solo} bare={bare} />;
 }
 
-function DxMapBody({ solo }: { solo: boolean }) {
+function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
   const status = useStation((s) => s.status);
@@ -77,7 +77,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
   const [settings, setSettings] = useState<DxMapSettings>(readSettings);
   const [band, setBand] = useState('all');
   const [mode, setMode] = useState('all');
-  const [showSquares, setShowSquares] = useState(true);
+  const [showSquares, setShowSquares] = useState(!bare);
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(() => Date.now());
   // centro del paese per chi non manda il quadrato (dal file dei paesi del core, una richiesta per nominativo)
@@ -234,7 +234,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
   const confirmedCount = shown.filter((s) => s.confirmed).length;
 
   return (
-    <section className={`dxmap-page${solo ? ' map-page--solo' : ''}`}>
+    <section className={`dxmap-page${solo ? ' map-page--solo' : ''}${bare ? ' dxmap-page--bare' : ''}`}>
       <div className="dxmap-bar">
         <select className="map-style" value={settings.style} title={t('map.style')} onChange={(e) => change({ style: e.target.value })}>
           {MAP_STYLES.map((s) => (
@@ -299,7 +299,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
         </button>
         {solo ? null : <DetachButton item="dxmap" />}
       </div>
-      {open ? (
+      {open && !bare ? (
         <div className="dxmap-bar dxmap-bar--more">
           <label title={t('dxmap.background')}>
             {t('dxmap.background')}
@@ -379,7 +379,7 @@ function DxMapBody({ solo }: { solo: boolean }) {
         </div>
       ) : null}
       <DxMap
-        settings={settings}
+        settings={bare ? { ...settings, links: false } : settings}
         stations={stations}
         links={links}
         spots={spots}
@@ -388,15 +388,15 @@ function DxMapBody({ solo }: { solo: boolean }) {
         homeGrid={status?.de_grid}
         labels={{ aria: t('map.aria'), you: t('dxmap.you'), moon: t('dxmap.moon'), square: t('dxmap.square'), worked: t('dxmap.worked'), never: t('dxmap.never'), cq: t('dxmap.cq'), itu: t('dxmap.itu') }}
       />
-      <div className="dxmap-legendbox" aria-label={t('dxmap.legend')}>
+      {bare ? null : <div className="dxmap-legendbox" aria-label={t('dxmap.legend')}>
         {(['qso', 'qsl', 'qsx', 'cq', 'cqdx', 'qrz'] as const).map((k) => (
           <span key={k} title={t(`dxmap.code.${k}`)}>
             <i style={{ background: LIVE_COLORS[k] }} />
             {k.toUpperCase()}
           </span>
         ))}
-      </div>
-      {settings.heat ? (
+      </div>}
+      {settings.heat && !bare ? (
         <div className="dxmap-spotbox">
           <strong>{t('dxmap.spotRx', { n: liveSpots })}</strong>
           <label>

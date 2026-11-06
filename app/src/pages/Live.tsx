@@ -314,7 +314,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
     id === 'dxmap' ? (
-      <DxMapPage solo />
+      <DxMapPage solo bare />
     ) : id === 'tx' ? (
       <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
     ) : (
