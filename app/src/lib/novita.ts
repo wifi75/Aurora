@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.161',
-    released: '2026-11-06T22:16:15Z',
+    released: '2026-11-06T22:19:13Z',
     kind: 'fixed',
     title: ['Cursori di Trasmissione sempre visibili', 'Transmit sliders always visible', 'Sende-Regler immer sichtbar', 'Curseurs d’émission toujours visibles', 'Controles de transmisión siempre visibles', 'Cursores de transmissão sempre visíveis'],
     text: [
