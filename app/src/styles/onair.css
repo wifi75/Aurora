@@ -6529,3 +6529,41 @@
 .dock-panel--cq .decode-list .decode-row .decode-where {
   grid-template-columns: 1.35rem minmax(0, calc(6.5rem + 15px)) 3.2rem;
 }
+
+/* nome della nazione: 9.2 px (scelta del proprietario) */
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 9.2px;
+}
+
+/* etichette degli stati (NUOVA STAZ., GIA' LAVORATA...): 9 px */
+.dock-panel--all .decode-list .badge.badge-cell,
+.dock-panel--cq .decode-list .badge.badge-cell {
+  font-size: 9px;
+}
+
+/* Trasmissione: i due cursori (volume di registrazione e Pwr) 31 px piu' in basso */
+.dock-panel--tx .tx-levels {
+  margin-top: 31px;
+}
+
+
+/* Fox: «Messaggi ricevuti» non allunga piu' la pagina: alto quanto la colonna di sinistra (almeno fino al fondo della finestra),
+   i messaggi scorrono dentro il riquadro */
+.foxc-right {
+  position: relative;
+  /* alto quanto la colonna di sinistra (chi chiama, QSO e cascata): finisce allineato al fondo della cascata */
+  align-self: stretch;
+  min-height: 20rem;
+}
+.foxc-right > .foxc-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.foxc-right > .foxc-card > .foxc-scroll--rx {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}

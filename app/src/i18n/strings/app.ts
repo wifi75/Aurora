@@ -2,6 +2,8 @@ import type { Entry } from '../core';
 
 /** Struttura generale: navigazione, intestazione, piede di pagina, tema e lingua. [it, en, de, fr, es, pt] */
 export const appStrings = {
+  'confirm.ok': ['OK', 'OK', 'OK', 'OK', 'Aceptar', 'OK'],
+  'confirm.cancel': ['Annulla', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Cancelar'],
   'nav.pages': ['Pagine', 'Pages', 'Seiten', 'Pages', 'Páginas', 'Páginas'],
   'nav.station': ['Stazione', 'Station', 'Station', 'Station', 'Estación', 'Estação'],
   'nav.automation': ['Automazioni', 'Automation', 'Automatik', 'Automatisation', 'Automatización', 'Automação'],

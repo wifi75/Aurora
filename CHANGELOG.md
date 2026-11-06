@@ -2,6 +2,24 @@
 
 ## Non rilasciato
 
+## 0.11.160 - 2026-11-06
+### Aggiunto
+- Bande aperte: mini-mappa NASA di chi ti ascolta (PSK Reporter) con le linee dalla propria stazione e il collegamento alla Mappa DX.
+- Fox: Tx/Rx Split nella cascata.
+
+### Modificato
+- Bande aperte: Giorno e Notte con caselle uguali, tabella a tutta larghezza.
+- Mappa DX: planisfero sempre intero in altezza (da +82° a -60°), ripetuto ai lati.
+- Fox: cascata uguale a quella della Stazione (barra, filtro, spot, righello); «Messaggi ricevuti» alto quanto la colonna con la cascata.
+- Trasmissione: pulsanti QSO più grandi (25 px, 10,5 px), 10 px fra i pulsanti, cursori più in basso.
+- Stazione: display allineato al bordo destro di Bande aperte e centrato anche con la pagina a blocchi; nazione a 9,2 px, etichette degli stati a 9 px; la scritta del Filtro solo nel suggerimento.
+- Impostazioni: Aggiornamenti e Dati della stazione riordinati; la cartella dei crash passa in Assistenza.
+- Conferme (Prova PTT, storico, copia di sicurezza, cambio banda dal telefono) nella grafica di Aurora invece di quella del browser.
+
+### Corretto
+- Prova CAT: aspetta l'esito del collegamento (prima diceva «non risponde» mentre si collegava).
+- Prova PTT: aspetta l'inizio del periodo di trasmissione (prima spegneva il Tune prima che partisse).
+
 ## 0.11.159 - 2026-11-06
 - **Crash corretto**: accendendo la radio dopo Aurora, la ripresa automatica dell'audio faceva partire il decodificatore fuori dal suo motore asincrono e Aurora si chiudeva («there is no reactor running», 0.11.155-0.11.158).
 - **Uscita audio**: un attimo di ritardo della scheda (underrun) non la dava piu' per persa; prima la trasmissione seguente falliva con «il dispositivo non risponde piu'».

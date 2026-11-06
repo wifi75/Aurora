@@ -1,3 +1,4 @@
+import { askConfirm } from '../components/ConfirmHost';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { clearHistory, getHistory, getHistoryStats } from '../api/client';
@@ -39,7 +40,7 @@ export function HistoryPage() {
   const total = rows.data?.pages[0]?.total ?? 0;
 
   const wipe = async () => {
-    if (!window.confirm(t('hist.clear.confirm'))) return;
+    if (!(await askConfirm(t('hist.clear.confirm')))) return;
     await clearHistory();
     await client.invalidateQueries({ queryKey: ['history'] });
     await client.invalidateQueries({ queryKey: ['history-stats'] });

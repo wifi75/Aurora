@@ -6,7 +6,9 @@ import { bandOf } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { gridCenter } from '../lib/geo';
 import { formatDistance, usePrefs } from '../lib/prefs';
-import { conditionGroup, pskRows } from '../lib/psk';
+import { conditionGroup, latestPerReceiver, pskRows } from '../lib/psk';
+import { WorldMap, type MapReceiver } from './WorldMap';
+import { mapLabels } from '../pages/MapPage';
 import { isNight } from '../lib/terminator';
 import { Conditions } from '../pages/PropagationPage';
 import { useStation } from '../state/station';
@@ -36,6 +38,9 @@ export function BandsOpen() {
     }
     return out;
   }, [rows]);
+
+  // mini-mappa: una stazione ricevente per punto (l'ultimo spot), con la linea dalla nostra stazione
+  const receivers: MapReceiver[] = useMemo(() => latestPerReceiver(rows).map((r) => ({ call: r.receiver, grid: r.locator, snr: r.snr, band: r.band, km: r.km })), [rows]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -70,6 +75,15 @@ export function BandsOpen() {
           ))}
         </ol>
       )}
+      {online.data.psk ? (
+        <div className="bands-open-map">
+          <div className="bands-open-map-head">
+            <span>{t('bands.mapTitle', { n: receivers.length })}</span>
+            <a href="#/mappa-dx">{t('bands.mapOpen')}</a>
+          </div>
+          <WorldMap squares={[]} stations={[]} receivers={receivers} homeGrid={status?.de_grid} onSelect={() => undefined} tiles mapStyleId="bluemarble" night parallels={false} compact labels={mapLabels(t)} />
+        </div>
+      ) : null}
     </div>
   );
 }

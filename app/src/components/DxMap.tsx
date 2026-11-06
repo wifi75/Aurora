@@ -134,6 +134,16 @@ const WORLD: L.LatLngBoundsLiteral = [
   [-85, -180],
   [85, 180],
 ];
+/** La parte da far stare sempre intera nel riquadro: tutte le terre, dal nord della Groenlandia a Capo Horn. */
+const WORLD_FIT: L.LatLngBoundsLiteral = [
+  [-60, -180],
+  [82, 180],
+];
+/** Spostamenti consentiti: in altezza fino ai poli della mappa, in larghezza la cartina si ripete ai lati (come GridTracker). */
+const WORLD_PAN: L.LatLngBoundsLiteral = [
+  [-85, -540],
+  [85, 540],
+];
 
 function cssColor(variable: string | null, fallback: string): string {
   if (!variable) return fallback;
@@ -169,7 +179,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     const m = whole
       ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
         L.map(el, { zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
-      : L.map(el, { zoomControl: false, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD, maxBoundsViscosity: 1 });
+      : L.map(el, { zoomControl: false, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
@@ -208,12 +218,14 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         m.fitBounds(WORLD, { animate: false, padding: [0, 0] });
         return;
       }
-      const z = m.getBoundsZoom(WORLD, true);
+      // tutto il planisfero sempre dentro il riquadro (mai tagliato sopra o sotto): lo zoom minimo e' quello che lo fa stare intero;
+      // se si era al minimo, al cambio di misura si resta al nuovo minimo, centrati
+      const atMin = Math.abs(m.getZoom() - m.getMinZoom()) < 0.01;
+      const z = m.getBoundsZoom(WORLD_FIT, false);
       if (!Number.isFinite(z)) return;
       m.setMinZoom(z);
       const cur = m.getZoom();
-      if (!Number.isFinite(cur) || cur > m.getMaxZoom()) m.setView([25, 10], z, { animate: false });
-      else if (cur < z) m.setZoom(z);
+      if (!Number.isFinite(cur) || cur > m.getMaxZoom() || atMin || cur < z) m.fitBounds(WORLD_FIT, { animate: false, padding: [0, 0] });
     };
     m.setView([25, 10], 2, { animate: false });
     fit();
@@ -245,7 +257,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
   useLayoutEffect(() => {
     const m = map.current;
     if (!m) return;
-    const layer = L.tileLayer(style.url, { attribution: style.attribution, maxNativeZoom: style.maxNativeZoom, maxZoom: 10, noWrap: true, bounds: WORLD, ...(style.subdomains ? { subdomains: style.subdomains } : {}) });
+    const layer = L.tileLayer(style.url, { attribution: style.attribution, maxNativeZoom: style.maxNativeZoom, maxZoom: 10, ...(style.subdomains ? { subdomains: style.subdomains } : {}) });
     m.getContainer().classList.add('worldmap--tiles');
     m.getContainer().classList.toggle('worldmap--dark-tiles', !!style.dark);
     replace('tiles', layer);

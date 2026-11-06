@@ -186,3 +186,14 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .sw-field input[type='text'],.sw-field input[type='number'],.sw-field select{width:100%;min-height:34px;padding:0 10px;border-radius:8px;box-sizing:border-box}
 .sw-log{margin:0;padding:0;list-style:none;display:grid;gap:6px;max-height:260px;overflow:auto}
 .sw-log li{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;font-size:12px}
+
+/* Dati della stazione: righe ordinate e allineate */
+.sw-station-who { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; align-items: end; }
+.sw-station-more { grid-template-columns: auto auto minmax(0, 1fr) !important; align-items: start; column-gap: 1.5rem !important; margin-top: 0.6rem; }
+.sw-field--compact { justify-items: start; align-items: flex-start; }
+.sw-field--compact > :not(.sw-label) { align-self: flex-start; }
+@media (max-width: 52rem) {
+  .sw-station-who { grid-template-columns: 1fr 1fr !important; }
+  .sw-station-more { grid-template-columns: auto auto !important; }
+  .sw-station-more > :last-child { grid-column: 1 / -1; }
+}

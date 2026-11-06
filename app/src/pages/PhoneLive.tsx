@@ -1,3 +1,4 @@
+import { askConfirm } from '../components/ConfirmHost';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { getClusterSpots, getControls, getLog4om, postControl, postCq, type ClusterSpot } from '../api/client';
@@ -114,14 +115,14 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const fail = (error: unknown) => toast(replyErrorMessage(error, t), 'error');
 
   // in trasmissione si chiede conferma: un cambio di banda o di modo interrompe il QSO in corso
-  const onBand = (next: string) => {
+  const onBand = async (next: string) => {
     if (next === band) return;
-    if (transmitting && !window.confirm(t('phone.confirmBand', { band: next }))) return;
+    if (transmitting && !(await askConfirm(t('phone.confirmBand', { band: next })))) return;
     pickBand(next);
   };
-  const onMode = (next: string) => {
+  const onMode = async (next: string) => {
     if (next === mode) return;
-    if (transmitting && !window.confirm(t('phone.confirmMode', { mode: next }))) return;
+    if (transmitting && !(await askConfirm(t('phone.confirmMode', { mode: next })))) return;
     pickMode(next);
   };
 

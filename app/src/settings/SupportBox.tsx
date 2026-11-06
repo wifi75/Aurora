@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiError, getDiagnostics, prepareSupportBundle, revealSupportBundle, type SupportBundle } from '../api/client';
+import { ApiError, getDiagnostics, openCrashFolder, prepareSupportBundle, revealSupportBundle, type SupportBundle } from '../api/client';
 import { useLang, useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { ReportsBox } from './ReportsBox';
@@ -27,6 +27,7 @@ export function SupportTab() {
     <div className="sx-page">
       <BackupBox available={diagnostics.data?.support_bundle === true} />
       <SupportBox />
+      {diagnostics.data?.crash_folder ? <CrashFolderBox /> : null}
       <CheckAllBox />
       <ReportsBox />
     </div>
@@ -109,6 +110,28 @@ export function SupportBox() {
       )}
       {failure ? <p className="about-support-alert" role="alert">{failure}</p> : null}
       <p className="about-support-note">{t('sup.privacy')}</p>
+    </section>
+  );
+}
+
+/** Riquadro «Rapporti dei crash»: apre la cartella dove Windows e Aurora salvano i rapporti dei crash (spostato qui da Aggiornamenti). */
+function CrashFolderBox() {
+  const t = useT();
+  const [failure, setFailure] = useState('');
+  const open = () => {
+    setFailure('');
+    openCrashFolder().catch((error: unknown) => setFailure(t('diag.openFailed', { message: error instanceof ApiError ? error.code : '—' })));
+  };
+  return (
+    <section className="about-fact about-support">
+      <h3 title={t('tip.diag.crashFolder')}>{t('diag.crashFolder')}</h3>
+      <p className="about-support-note">{t('tip.diag.crashFolder')}</p>
+      <div className="about-support-actions">
+        <button type="button" className="glass" onClick={open}>
+          {t('diag.openCrashFolder')}
+        </button>
+      </div>
+      {failure ? <p className="notice">{failure}</p> : null}
     </section>
   );
 }

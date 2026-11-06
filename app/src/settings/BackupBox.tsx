@@ -1,3 +1,4 @@
+import { askConfirm } from '../components/ConfirmHost';
 import { useRef, useState } from 'react';
 import { ApiError, makeSettingsBackup, restoreSettingsBackup } from '../api/client';
 import { useT } from '../i18n';
@@ -30,7 +31,7 @@ export function BackupBox({ available }: { available: boolean }) {
 
   const restore = async (picked: File | undefined) => {
     if (!picked) return;
-    if (!window.confirm(t('bak.confirm'))) return;
+    if (!(await askConfirm(t('bak.confirm')))) return;
     setBusy('restore');
     setFailure('');
     setDone('');

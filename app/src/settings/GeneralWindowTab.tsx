@@ -36,17 +36,18 @@ export function GeneralWindowTab() {
 
       <section className="sw-box" aria-label={t('sw.station')}>
         <h3>{t('sw.station')}</h3>
-        <div className="sw-grid sw-grid--4">
+        {/* prima riga: chi sei (nominativo, locatore, regione); seconda: lingua e tema piccoli a sinistra, i nominativi composti a destra */}
+        <div className="sw-grid sw-station-who">
           {f('MyCall', 'text', 'gen2.call')}
           {f('MyGrid', 'text', 'gen2.grid')}
           {f('Region', 'choice', 'gen2.region', { options: REGION_OPTIONS })}
-          <div className="sw-field">
+        </div>
+        <div className="sw-grid sw-station-more">
+          <div className="sw-field sw-field--compact">
             <span className="sw-label">{t('gen.language')}</span>
             <LanguageSelect />
           </div>
-        </div>
-        <div className="sw-grid sw-grid--2">
-          <div className="sw-field">
+          <div className="sw-field sw-field--compact">
             <span className="sw-label">{t('gen.theme')}</span>
             <ThemeToggle />
           </div>

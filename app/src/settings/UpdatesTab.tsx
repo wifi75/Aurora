@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ApiError, checkUpdate, getDiagnostics, getUpdate, installUpdate, openCrashFolder, putUpdate, type UpdateConfigInput } from '../api/client';
+import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
-import { Check, Help, Row } from './common';
-import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
+import { Check, Help } from './common';
+import { Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
 interface Draft {
@@ -35,12 +35,6 @@ export function UpdatesTab() {
   const t = useT();
   const client = useQueryClient();
   const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false });
-  const diagnostics = useQuery({ queryKey: ['diagnostics'], queryFn: getDiagnostics, retry: false });
-  const [crashFailure, setCrashFailure] = useState('');
-  const openCrashes = () => {
-    setCrashFailure('');
-    openCrashFolder().catch((error: unknown) => setCrashFailure(t('diag.openFailed', { message: error instanceof ApiError ? error.code : '—' })));
-  };
   const [draft, setDraft] = useState<Draft | null>(null);
   const [note, setNote] = useState('');
   const [installing, setInstalling] = useState(false);
@@ -90,79 +84,83 @@ export function UpdatesTab() {
   const set = (change: Partial<Draft>) => setDraft({ ...shown, ...change });
 
   return (
-    <Page>
+    <Page className="upd-page">
+      {/* Versione: tre numeri grandi in fila, lo stato in una riga sola, i pulsanti sotto */}
       <Group title={t('lay.status')}>
-        <Cells min={17}>
-          <Row name={t('upd.current')}>{status.current}</Row>
-          <Row name={t('upd.latest')}>
-            {status.latest ? (
-              status.available ? (
-                // versione nuova: ben visibile, con la stella e «NEW»
-                <span className="upd-new">
-                  <span className="upd-new-star" aria-hidden="true">★</span>
-                  {status.latest.version}
-                  <span className="upd-new-tag">NEW</span>
-                </span>
+        <div className="upd-stats">
+          <div className="upd-stat">
+            <span className="upd-stat-label">{t('upd.current')}</span>
+            <span className="upd-stat-value data">{status.current}</span>
+          </div>
+          <div className="upd-stat">
+            <span className="upd-stat-label">{t('upd.latest')}</span>
+            <span className="upd-stat-value data">
+              {status.latest ? (
+                status.available ? (
+                  // versione nuova: ben visibile, con la stella e «NEW»
+                  <span className="upd-new">
+                    <span className="upd-new-star" aria-hidden="true">★</span>
+                    {status.latest.version}
+                    <span className="upd-new-tag">NEW</span>
+                  </span>
+                ) : (
+                  status.latest.version
+                )
               ) : (
-                status.latest.version
-              )
-            ) : (
-              '—'
-            )}
-          </Row>
-          <Row name={t('upd.lastCheck')}>{status.checked_at_ms > 0 ? new Date(status.checked_at_ms).toLocaleString() : t('upd.never')}</Row>
-        </Cells>
-        {status.available ? (
-          <p className="live-note sx-message" role="status">
-            {t('upd.available', { version: status.available.version })}{' '}
-            {status.available.url ? (
-              <a href={status.available.url} target="_blank" rel="noreferrer noopener">
-                {t('upd.open')}
-              </a>
+                '—'
+              )}
+            </span>
+          </div>
+          <div className="upd-stat">
+            <span className="upd-stat-label">{t('upd.lastCheck')}</span>
+            <span className="upd-stat-value data">{status.checked_at_ms > 0 ? new Date(status.checked_at_ms).toLocaleString() : t('upd.never')}</span>
+          </div>
+        </div>
+        <div className="upd-status-row">
+          <div className="upd-status-text">
+            {status.available ? (
+              <span className="upd-status upd-status--new" role="status">
+                {t('upd.available', { version: status.available.version })}{' '}
+                {status.available.url ? (
+                  <a href={status.available.url} target="_blank" rel="noreferrer noopener">
+                    {t('upd.open')}
+                  </a>
+                ) : null}
+              </span>
+            ) : status.latest ? (
+              <span className="upd-status upd-status--ok">✓ {t('upd.uptodate')}</span>
             ) : null}
-          </p>
-        ) : status.latest ? (
-          <Message kind="muted">{t('upd.uptodate')}</Message>
-        ) : null}
+          </div>
+          <div className="upd-buttons">
+            {status.available && status.can_install ? (
+              <button type="button" className="glass glass--on" disabled={installing} onClick={() => void install()}>
+                {t('upd.install')}
+              </button>
+            ) : null}
+            <button type="button" className="glass" disabled={check.isPending || draft !== null} onClick={() => check.mutate()}>
+              {t('upd.check')}
+            </button>
+          </div>
+        </div>
         {status.error ? <Message kind="alert">{t('upd.offline', { message: status.error })}</Message> : null}
         {installing ? <Message kind="muted">{t('upd.installing')}</Message> : null}
         {installFailure ? <Message kind="alert">{installFailure}</Message> : null}
-        <Actions>
-          {status.available && status.can_install ? (
-            <button type="button" className="glass glass--on" disabled={installing} onClick={() => void install()}>
-              {t('upd.install')}
-            </button>
-          ) : null}
-          <button type="button" className="glass" disabled={check.isPending || draft !== null} onClick={() => check.mutate()}>
-            {t('upd.check')}
-          </button>
-        </Actions>
       </Group>
 
-      <Group title={t('lay.settings')} span={2}>
-        <Cells min={17}>
+      {/* Controllo automatico: interruttore e ogni quante ore, sulla stessa riga */}
+      <Group title={t('lay.settings')}>
+        <div className="upd-auto">
           <Check label={t('upd.enabled')} hint={t('tip.upd.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
           {/* repository, versioni di prova e token restano quelli di fabbrica: servono solo a chi sviluppa, non a chi usa Aurora */}
-          <Field label={t('upd.interval')} hint={t('tip.upd.interval')}>
-            <input type="number" className="set-number" min={1} max={168} value={shown.hours} onChange={(e) => set({ hours: e.target.value })} />
-          </Field>
-        </Cells>
+          <label className="upd-hours" title={t('tip.upd.interval')}>
+            <span>{t('upd.interval')}</span>
+            <input type="number" className="jx-text upd-hours-input" min={1} max={168} value={shown.hours} disabled={!shown.enabled} onChange={(e) => set({ hours: e.target.value })} />
+          </label>
+        </div>
         {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>
 
-      {diagnostics.data?.crash_folder ? (
-        <Group title={t('diag.title')}>
-          <Cells min={17}>
-            <Cell label={t('diag.crashFolder')} hint={t('tip.diag.crashFolder')}>
-              <button type="button" className="glass" onClick={openCrashes}>
-                {t('diag.openCrashFolder')}
-              </button>
-            </Cell>
-          </Cells>
-          {crashFailure ? <Message kind="alert">{crashFailure}</Message> : null}
-        </Group>
-      ) : null}
 
       <Notes>
         <Help>{t('upd.intro')}</Help>
