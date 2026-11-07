@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.183',
-    released: '2026-11-07T15:40:24Z',
+    released: '2026-11-07T15:44:08Z',
     kind: 'fixed',
     title: ['RRR come WSJT-X', 'RRR like WSJT-X', 'RRR wie WSJT-X', 'RRR comme WSJT-X', 'RRR como WSJT-X', 'RRR como o WSJT-X'],
     text: [
