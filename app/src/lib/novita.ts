@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.190',
+    released: '2026-11-07T22:30:00Z',
+    kind: 'new',
+    title: ['QSO a mano e pulizia del log', 'Manual QSOs and log cleanup', 'QSOs von Hand und Log aufräumen', 'QSO à la main et nettoyage du log', 'QSO a mano y limpieza del log', 'QSO à mão e limpeza do log'],
+    text: [
+      'Nella pagina Log: «Aggiungi QSO» per scriverne uno a mano, «Elimina selezionati» e «Svuota il log». Guida di BBLogger rifatta, passo per passo.',
+      'On the Log page: “Add QSO” to type one in, “Delete selected” and “Clear the log”. BBLogger guide redone, step by step.',
+      'Auf der Seite Log: „QSO hinzufügen“ zum Eintippen, „Ausgewählte löschen“ und „Log leeren“. BBLogger-Anleitung neu, Schritt für Schritt.',
+      'Dans la page Log : « Ajouter un QSO » pour en saisir un, « Supprimer la sélection » et « Vider le log ». Guide BBLogger refait, pas à pas.',
+      'En la página Log: «Añadir QSO» para escribir uno a mano, «Eliminar seleccionados» y «Vaciar el log». Guía de BBLogger rehecha, paso a paso.',
+      'Na página Log: «Adicionar QSO» para escrever um à mão, «Eliminar selecionados» e «Esvaziar o log». Guia do BBLogger refeito, passo a passo.',
+    ],
+  },
+  {
     version: '0.11.189',
     released: '2026-11-07T21:22:09Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Carte DX : propagation avec la carte de chaleur et les petits carrés de qui t’a reçu (PSK Reporter), avec Spot RX et durée maximale ; lignes «Qui appelle qui» entre les deux stations de chaque appel, en tirets et animées, réglables depuis le menu (couleurs, épaisseur, vitesse), aussi vers le centre du pays si le carré manque ; carrés en l’air colorés QSX, CQ, CQDX et QRZ, partagés en triangles avec le log ; légende des couleurs.",
       "Mapa DX: propagación con el mapa de calor y los cuadraditos de quién te ha recibido (PSK Reporter), con Spot RX y duración máxima; líneas «Quién llama a quién» entre las dos estaciones de cada llamada, discontinuas y animadas, personalizables desde el menú (colores, grosor, velocidad), también al centro del país si falta la cuadrícula; cuadrículas en el aire coloreadas QSX, CQ, CQDX y QRZ, divididas en triángulos con el log; leyenda de colores.",
       "Mapa DX: propagação com o mapa de calor e os quadradinhos de quem te recebeu (PSK Reporter), com Spot RX e duração máxima; linhas «Quem chama quem» entre as duas estações de cada chamada, tracejadas e animadas, personalizáveis no menu (cores, espessura, velocidade), também para o centro do país se faltar o quadrado; quadrados no ar coloridos QSX, CQ, CQDX e QRZ, divididos em triângulos com o log; legenda das cores.",
-    ],
-  },
-  {
-    version: '0.11.149',
-    released: '2026-11-05T18:14:25Z',
-    kind: 'new',
-    title: ['Mappa DX', 'DX Map', 'DX-Karte', 'Carte DX', 'Mapa DX', 'Mapa DX'],
-    text: [
-      "Nuova voce di menu «Mappa DX», alla GridTracker: 15 sfondi, luminosità e colore di fondo, mappa di notte automatica, linea grigia con i crepuscoli, Sole e Luna, stazioni in onda colorate come in Attività di banda che sbiadiscono col tempo, linee ad arco animate, quadrati lavorati (giallo) e confermati (verde) per banda e modo, clic su un punto con quadrato, distanza, paese e zone CQ/ITU. Si stacca su un altro schermo. Il display staccato non ha più barre di scorrimento.",
-      "New «DX Map» menu entry, GridTracker-style: 15 backgrounds, brightness and background color, automatic night map, greyline with twilight, Sun and Moon, on-air stations colored as in Band activity that fade over time, animated arc lines, worked (yellow) and confirmed (green) squares by band and mode, click on a point for square, distance, country and CQ/ITU zones. It can be detached to another screen. The detached display no longer shows scrollbars.",
-      "Neuer Menüpunkt «DX-Karte» im Stil von GridTracker: 15 Hintergründe, Helligkeit und Hintergrundfarbe, automatische Nachtkarte, Grauzone mit Dämmerung, Sonne und Mond, Stationen auf Sendung farbig wie in der Bandaktivität und mit der Zeit verblassend, animierte Bogenlinien, gearbeitete (gelb) und bestätigte (grün) Felder nach Band und Betriebsart, Klick auf einen Punkt zeigt Feld, Entfernung, Land und CQ/ITU-Zonen. Abtrennbar auf einen anderen Bildschirm. Das abgetrennte Display zeigt keine Bildlaufleisten mehr.",
-      "Nouvelle entrée de menu «Carte DX», façon GridTracker : 15 fonds, luminosité et couleur de fond, carte de nuit automatique, ligne grise avec les crépuscules, Soleil et Lune, stations en l’air colorées comme dans Activité de bande qui s’effacent avec le temps, lignes en arc animées, carrés travaillés (jaune) et confirmés (vert) par bande et mode, clic sur un point avec carré, distance, pays et zones CQ/UIT. Détachable sur un autre écran. L’afficheur détaché n’a plus de barres de défilement.",
-      "Nueva entrada de menú «Mapa DX», al estilo GridTracker: 15 fondos, brillo y color de fondo, mapa nocturno automático, línea gris con los crepúsculos, Sol y Luna, estaciones en el aire coloreadas como en Actividad de banda que se desvanecen con el tiempo, líneas en arco animadas, cuadrículas trabajadas (amarillo) y confirmadas (verde) por banda y modo, clic en un punto con cuadrícula, distancia, país y zonas CQ/UIT. Se puede separar a otra pantalla. El display separado ya no muestra barras de desplazamiento.",
-      "Nova entrada de menu «Mapa DX», ao estilo GridTracker: 15 fundos, brilho e cor de fundo, mapa noturno automático, linha cinzenta com os crepúsculos, Sol e Lua, estações no ar coloridas como em Atividade de banda que desvanecem com o tempo, linhas em arco animadas, quadrados trabalhados (amarelo) e confirmados (verde) por banda e modo, clique num ponto com quadrado, distância, país e zonas CQ/UIT. Pode ser destacado para outro ecrã. O display destacado já não mostra barras de deslocamento.",
     ],
   },
 ];

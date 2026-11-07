@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.190 - 2026-11-07
+- **Log**: «Aggiungi QSO» (QSO scritto a mano: nominativo, data e ora UTC, banda o frequenza, modo, rapporti, locatore, nome, commento; va a log come gli altri, anche ai programmi collegati, con `Event::QsoLogged`), «Elimina selezionati» e «Svuota il log» con conferma. I QSO cancellati spariscono anche da `aurora_log.adi` (`logbook::adif_without`); svuotando, il file si mette da parte con la data. API `POST` e `DELETE /api/v1/log/qsos`, solo dalla rete di casa.
+- **Guida di BBLogger** riscritta dai documenti ufficiali (aribusto.it): interfaccia Wsjtx con Msg ID 5 e 12, «UDP 12» e «Auto-Save», JTAlert sulla 2334; nuova voce per il modo file ADIF con `aurora_log.adi`.
+
 ## 0.11.189 - 2026-11-07
 - **Dimensione del testo** (issue #3): Impostazioni > Generali, da 90% a 160% per tutta l'interfaccia (`zoom` sulla radice, `lib/uiScale.ts`), anche con Ctrl +, Ctrl - e Ctrl 0; vale per ogni dispositivo a parte (`aurora-ui-scale` tra le preferenze proprie del telefono).
 - **Impostazioni** (issue #4): «Salva» salva e lascia aperta la finestra; il pulsante Applica non c'e' piu'; «Chiudi» e la X chiedono se scartare le modifiche non salvate (prima la X le scartava senza avvisare).
