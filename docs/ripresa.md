@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-05)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-07)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,7 +15,8 @@ le prove dal vivo con la radio le faccio io.
 
 ## Stato
 
-- **Ultima versione**: **0.11.151** (2026-11-05), pubblicata dal PC (Mappa DX come GridTracker2, finestre a parte senza cornice, display su un altro schermo, pagina Log, orologio con correzione a un clic). Su `main` dopo la 0.11.151, non ancora rilasciati: ingresso e uscita audio che si riprendono da soli se la radio sparisce durante l'uso, guardiano dei blocchi piu' preciso, correzioni Linux (Pwr, aggiornamenti, OmniRig), storico permanente delle installazioni nel servizio dei rapporti.
+- **Ultima versione**: **0.11.191** (2026-11-07). Dal 2026-11-07 sera (risposte alle issue e agli utenti): 0.11.189 dimensione del testo (Impostazioni > Generali, Ctrl +/-/0, `lib/uiScale.ts`) e Impostazioni che non si chiudono con Salva (issue #3 e #4, chiuse con #1 e #2); 0.11.190 pagina Log con «Aggiungi QSO», «Elimina selezionati», «Svuota il log» (`POST`/`DELETE /api/v1/log/qsos`) e Guida di BBLogger rifatta dai PDF ufficiali; 0.11.191 bande senza CAT (`ManualDialHook`, `frequenza-a-mano.txt`). Da provare dal vivo: tutte e tre. Fino alla 0.11.188 il lavoro e' nel CHANGELOG.
+- Prima, 0.11.151 (2026-11-05): pubblicata dal PC (Mappa DX come GridTracker2, finestre a parte senza cornice, display su un altro schermo, pagina Log, orologio con correzione a un clic). Su `main` dopo la 0.11.151, non ancora rilasciati: ingresso e uscita audio che si riprendono da soli se la radio sparisce durante l'uso, guardiano dei blocchi piu' preciso, correzioni Linux (Pwr, aggiornamenti, OmniRig), storico permanente delle installazioni nel servizio dei rapporti.
 - Versioni precedenti, del 2026-11-04:
   - 0.11.102: Aurora indipendente (non legge piu' nulla da JTDX o WSJT-X; `cty.dat` e Hamlib dentro l'installatore), guida al primo avvio (`app/src/components/FirstRun.tsx`, compare finche' manca il nominativo), servizi pubblici accesi di fabbrica, BBLogger, prima versione Linux.
   - 0.11.103: modo, periodo e frequenza si pubblicano anche senza ingresso audio (`engine_native::publish_status`, avviato dal core prima del motore).

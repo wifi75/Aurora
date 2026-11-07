@@ -289,3 +289,10 @@ Stato al 2026-11-07, versione 0.11.191. Per riprendere il lavoro leggi anche `do
 - **Portale web** (https://aurora.iu3wjq.com/, senza `/it`): lo aggiorna il progetto «Portale web Aurora»; a ogni versione con funzioni nuove gli si passano le novita'. La vecchia pagina GitHub Pages (`docs/index.html`, `scripts/pubblica-sito.ps1`) non e' piu' il sito vero.
 - **Accordatore e potenza (0.11.76)**: `ExtraItem::Tune` manda `G TUNE` (vfo_op di Hamlib; FT-2000 e IC-7610 lo dichiarano), `PowerUp`/`PowerDown` portano `L RFPOWER` al multiplo di 5% piu' vicino +/- 5% (tra 5% e 100%); pulsanti TUNE e PWR −/+ in `RadioExtras.tsx`, visibili solo con la lettura dei dati in piu' accesa. Da verificare in aria con le due radio.
 - **Contatori nel README** (2026-11-03): download dalle release (shields.io `github/downloads`) e visite con visitor-badge.laobi.icu (`page_id=wifi75.Aurora`, autorizzato dal proprietario; hits.sh non rispondeva). Il traffico vero e' in GitHub Insights > Traffic.
+
+## Issue e richieste degli utenti (2026-11-07 sera, 0.11.189-0.11.191)
+- Issue GitHub #1-#4 chiuse: #3 dimensione del testo (`zoom` sulla radice, `aurora-ui-scale` propria di ogni dispositivo), #4 «Salva» che non chiude le Impostazioni (Chiudi/X chiedono se scartare), #2 FTDX-101MP (c'e', Hamlib 1044), #1 gia' corretta.
+- Log: QSO a mano e cancellazione (`Logbook::delete`/`clear`, `logbook::adif_without` per togliere i QSO da `aurora_log.adi`, che serve ai «gia' lavorati»).
+- Senza CAT le bande impostano solo la frequenza di Aurora (`ManualDialHook` in `remote-api`, file `frequenza-a-mano.txt` letto all'avvio): richiesta di IZ0008SWL.
+- BBLogger: fonti ufficiali su https://www.aribusto.it/bblogger.htm e i PDF «Wsjt_I v. 2 - SETUP» e «Differenze tra UDP e ADIF»; dettagli in `docs/integrazioni-log.md`.
+- Prove della app che falliscono gia' prima di questi lavori: cronologia (svuota con conferma), Aggiornamenti (cartella dei crash), regole delle Automazioni, `lastPage` e `route` (mappa); da guardare.
