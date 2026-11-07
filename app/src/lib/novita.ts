@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.174',
-    released: '2026-11-07T11:05:48Z',
+    released: '2026-11-07T11:09:42Z',
     kind: 'new',
     title: ['DXpedition: chiamale con un doppio clic', 'DXpeditions: call them with a double-click', 'DXpeditionen: per Doppelklick rufen', "DXpéditions : appelle-les d'un double-clic", 'DXpediciones: llámalas con doble clic', 'DXpedições: chama-as com duplo clique'],
     text: [
