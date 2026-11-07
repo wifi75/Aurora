@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'export' } | { name: 'window'; id: string };
+export type Route = { name: 'fox' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -25,6 +25,8 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/propagazione') return { name: 'propagation' };
   if (hash === '#/guida') return { name: 'guide' };
   if (hash === '#/novita') return { name: 'news' };
+  // pagina dei messaggi agli utenti: non e' in nessun menu, la apre solo l'icona sul desktop dell'autore
+  if (hash === '#/messaggi-autore') return { name: 'ownerMessages' };
   if (hash === '#/fox') return { name: 'fox' };
   if (hash === '#/esporta') return { name: 'export' };
   // una pagina da sola in una finestra a parte (secondo schermo): solo il contenuto, senza menu

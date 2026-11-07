@@ -40,6 +40,7 @@ import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
 import { UpdatePoster } from './components/UpdatePoster';
 import { OwnerMessages } from './components/OwnerMessages';
+import { OwnerMessagesTab } from './settings/OwnerMessagesTab';
 import { CrashPrompt } from './settings/ReportsBox';
 
 /**
@@ -156,6 +157,13 @@ export function App() {
     content = <Wiki />;
   } else if (route.name === 'fox') {
     content = <FoxPage />;
+  } else if (route.name === 'ownerMessages') {
+    content = (
+      <div className="owner-page">
+        <h1>{t('own.tab')}</h1>
+        <OwnerMessagesTab />
+      </div>
+    );
   } else if (route.name === 'news') {
     content = <News />;
   } else if (route.name === 'export') {

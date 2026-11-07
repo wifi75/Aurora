@@ -29,7 +29,6 @@ import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
 import { SupportTab } from '../settings/SupportBox';
 import { AgentTab } from '../settings/AgentTab';
-import { OwnerMessagesTab } from '../settings/OwnerMessagesTab';
 import { WaterfallTab } from '../settings/WaterfallTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
@@ -44,8 +43,6 @@ interface TabDef {
   extra?: boolean;
   /** L'ultima voce della barra, staccata dalle altre. */
   last?: boolean;
-  /** Solo per l'autore (nominativo della stazione o segreto gia' salvato su questo PC). */
-  owner?: boolean;
   render(): ReactNode;
 }
 
@@ -65,7 +62,6 @@ const TABS: readonly TabDef[] = [
   { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
   // l'agente nel tray: la pagina con le sue scelte (lette dall'agente dal file delle impostazioni)
   { id: 'agent', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
-  { id: 'owner-messages', label: 'own.tab', icon: '✉', owner: true, render: () => <OwnerMessagesTab /> },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
@@ -232,17 +228,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
     }
   };
 
-  // la scheda «Messaggi agli utenti» si vede solo all'autore: con il suo nominativo o con il segreto gia' salvato su questo PC
-  // (la sicurezza vera e' il segreto, chiesto dal servizio a ogni operazione)
-  const deCall = useStation((st) => st.status?.de_call ?? '').toUpperCase();
-  const isOwner = deCall === 'IU3WJQ' || (() => {
-    try {
-      return (localStorage.getItem('auroraOwnerToken') ?? '').length >= 16;
-    } catch {
-      return false;
-    }
-  })();
-  const shownTabs = TABS.filter((x) => !x.owner || isOwner);
+  const shownTabs = TABS;
   const tab = shownTabs.find((x) => x.id === id) ?? shownTabs[0]!;
   const body = (
     <div className={`sw-window${embedded ? ' sw-window--in' : ''}`} role="dialog" aria-label={t('set.title')}>

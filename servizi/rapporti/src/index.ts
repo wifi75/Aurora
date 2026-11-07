@@ -265,9 +265,7 @@ export default {
         r.headers.set('Cache-Control', 'public, max-age=300');
         return r;
       }
-      if (req.method === 'GET' && url.pathname === '/admin/messaggi') {
-        return new Response(messaggi.PAGINA, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
-      }
+      // la pagina web per scrivere i messaggi non c'e' piu': si scrivono solo da Aurora sul PC dell'autore
       // la scheda «Messaggi agli utenti» di Aurora chiama da un'altra origine (la pagina locale): domanda preventiva del browser
       if (req.method === 'OPTIONS' && url.pathname.startsWith('/v1/messaggi')) {
         return new Response(null, { status: 204, headers: CORS_ADMIN });
