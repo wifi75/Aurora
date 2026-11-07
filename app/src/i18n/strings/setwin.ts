@@ -19,6 +19,7 @@ export const setWinStrings = {
   'sw.tab.info': ['Informazioni', 'About', 'Info', 'À propos', 'Acerca de', 'Sobre'],
   'sw.testCat': ['Prova CAT', 'Test CAT', 'CAT testen', 'Tester CAT', 'Probar CAT', 'Testar CAT'],
   'sw.testPtt': ['Prova PTT', 'Test PTT', 'PTT testen', 'Tester PTT', 'Probar PTT', 'Testar PTT'],
+  'sw.discardAsk': ['Ci sono {n} modifiche non salvate. Chiudere e scartarle?', 'There are {n} unsaved changes. Close and discard them?', 'Es gibt {n} ungespeicherte Änderungen. Schließen und verwerfen?', 'Il y a {n} modifications non enregistrées. Fermer et les abandonner ?', 'Hay {n} cambios sin guardar. ¿Cerrar y descartarlos?', 'Há {n} alterações por guardar. Fechar e descartá-las?'],
   'sw.cancel': ['Annulla', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Cancelar'],
   'sw.apply': ['Applica', 'Apply', 'Übernehmen', 'Appliquer', 'Aplicar', 'Aplicar'],
   'sw.save': ['Salva', 'Save', 'Speichern', 'Enregistrer', 'Guardar', 'Guardar'],

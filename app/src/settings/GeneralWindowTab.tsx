@@ -1,3 +1,4 @@
+import { UI_SCALES, useUiScale } from '../lib/uiScale';
 import { LanguageSelect } from '../components/LanguageSelect';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useT, type Key } from '../i18n';
@@ -51,6 +52,7 @@ export function GeneralWindowTab() {
             <span className="sw-label">{t('gen.theme')}</span>
             <ThemeToggle />
           </div>
+          <TextSize />
           {f('Type2MsgGen', 'choice', 'gen2.type2', { options: TYPE2_OPTIONS })}
         </div>
       </section>
@@ -86,6 +88,24 @@ export function GeneralWindowTab() {
           {f('timeFromLogFiltering', 'text', 'gen2.fromDate')}
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Dimensione del testo di tutta l'interfaccia (anche con Ctrl +, Ctrl - e Ctrl 0). */
+function TextSize() {
+  const t = useT();
+  const scale = useUiScale((s) => s.scale);
+  return (
+    <div className="sw-field sw-field--compact" title={t('tip.gen.textSize')}>
+      <span className="sw-label">{t('gen.textSize')}</span>
+      <div className="sw-scale" role="group" aria-label={t('gen.textSize')}>
+        {UI_SCALES.map((v) => (
+          <button key={v} type="button" className={`glass chip${scale === v ? ' glass--on' : ''}`} aria-pressed={scale === v} onClick={() => useUiScale.getState().set(v)}>
+            {Math.round(v * 100)}%
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

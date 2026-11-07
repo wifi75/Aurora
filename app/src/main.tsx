@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
+import { readScale, startUiScale, useUiScale } from './lib/uiScale';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 
 // stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
@@ -36,6 +37,9 @@ async function start() {
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }
+  // la dimensione del testo: dopo le preferenze portate dal server
+  useUiScale.setState({ scale: readScale() });
+  startUiScale();
   // il menu del tasto destro del browser (Indietro, Ricarica, Ispeziona...) non serve: resta solo nei campi di testo, per copia e incolla
   document.addEventListener('contextmenu', (e) => {
     const target = e.target instanceof Element ? e.target : null;

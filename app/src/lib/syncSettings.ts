@@ -19,7 +19,7 @@ export function deviceKind(width: number): DeviceKind {
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'key' | 'length'>;
 
 /** Le preferenze proprie del telefono: la disposizione, diversa da quella del PC. Le altre sono quelle di Aurora. */
-const PHONE_OWN = ['aurora-layout', 'aurora-phone-', 'aurora-last-page', 'aurora-known-addresses', 'aurora-fox-', 'aurora-settings-tab', 'aurora-update-dismissed'];
+const PHONE_OWN = ['aurora-layout', 'aurora-phone-', 'aurora-last-page', 'aurora-known-addresses', 'aurora-fox-', 'aurora-settings-tab', 'aurora-update-dismissed', 'aurora-ui-scale'];
 
 export function isPhoneOwn(key: string): boolean {
   return PHONE_OWN.some((p) => key === p || (p.endsWith('-') && key.startsWith(p)));

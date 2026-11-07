@@ -174,6 +174,8 @@ export const settingsStrings = {
   'gen.showDt': ['Mostra la colonna DT', 'Show the DT column', 'DT-Spalte anzeigen', 'Afficher la colonne DT', 'Mostrar la columna DT', 'Mostrar a coluna DT'],
   'gen.look': ['Aspetto', 'Appearance', 'Darstellung', 'Aspect', 'Aspecto', 'Aspeto'],
   'gen.language': ['Lingua', 'Language', 'Sprache', 'Langue', 'Idioma', 'Idioma'],
+  'gen.textSize': ['Dimensione del testo', 'Text size', 'Textgröße', 'Taille du texte', 'Tamaño del texto', 'Tamanho do texto'],
+  'tip.gen.textSize': ['Ingrandisce tutta l’interfaccia: testo, pulsanti, elenchi. Anche con Ctrl + e Ctrl −, Ctrl 0 torna al 100%. Vale su questo dispositivo.', 'Enlarges the whole interface: text, buttons, lists. Also with Ctrl + and Ctrl −; Ctrl 0 goes back to 100%. Applies to this device.', 'Vergrößert die ganze Oberfläche: Text, Schaltflächen, Listen. Auch mit Strg + und Strg −; Strg 0 setzt auf 100 % zurück. Gilt für dieses Gerät.', 'Agrandit toute l’interface : texte, boutons, listes. Aussi avec Ctrl + et Ctrl − ; Ctrl 0 revient à 100 %. Vaut pour cet appareil.', 'Amplía toda la interfaz: texto, botones, listas. También con Ctrl + y Ctrl −; Ctrl 0 vuelve al 100 %. Vale para este dispositivo.', 'Amplia toda a interface: texto, botões, listas. Também com Ctrl + e Ctrl −; Ctrl 0 volta a 100 %. Vale para este dispositivo.'],
   'gen.theme': ['Tema', 'Theme', 'Design', 'Thème', 'Tema', 'Tema'],
   'tip.gen.miles': [
     'Mostra le distanze in miglia; per impostazione predefinita sono in chilometri.',

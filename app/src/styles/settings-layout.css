@@ -1835,3 +1835,4 @@
 .upd-hours input.upd-hours-input:disabled { opacity: 0.5; }
 /* prima «Controlla ora», poi lo stato («Aurora e' aggiornata») */
 .upd-status-row .upd-buttons { order: -1; }
+.sw-scale { display: flex; flex-wrap: wrap; gap: 0.25rem; }

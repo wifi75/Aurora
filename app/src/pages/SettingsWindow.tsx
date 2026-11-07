@@ -183,14 +183,25 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
       setBusy(false);
     }
   };
+  // «Salva» salva e lascia aperta la finestra (si continua con le altre schede); si chiude con la X o con «Chiudi»
   const save = async () => {
-    if (await apply()) leave();
+    await apply();
   };
-  const cancel = () => {
+  const discard = () => {
     usePrefs.getState().set(startPrefs.current);
     setChanges({});
     setDrafts({});
     leave();
+  };
+  // chiudendo con modifiche non salvate si chiede prima se scartarle
+  const cancel = () => {
+    if (count === 0) {
+      leave();
+      return;
+    }
+    void askConfirm(t('sw.discardAsk', { n: count })).then((yes) => {
+      if (yes) discard();
+    });
   };
   cancelRef.current = cancel;
 
@@ -278,12 +289,9 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           {count > 0 ? t('sw.pending', { n: count }) : note}
         </span>
         <button type="button" className="sw-btn" disabled={busy} onClick={cancel}>
-          {t('sw.cancel')}
+          {t('sw.close')}
         </button>
-        <button type="button" className={`sw-btn${on('apply')}`} disabled={busy || count === 0} onClick={() => { setLast('apply'); void apply(); }}>
-          {t('sw.apply')}
-        </button>
-        <button type="button" className="sw-btn sw-btn--save" disabled={busy} onClick={() => void save()}>
+        <button type="button" className="sw-btn sw-btn--save" disabled={busy || count === 0} onClick={() => void save()}>
           {t('sw.save')}
         </button>
       </footer>
