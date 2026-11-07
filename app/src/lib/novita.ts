@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.176',
+    released: '2026-11-07T12:12:03Z',
+    kind: 'fixed',
+    title: ['«Aggiorna ora» dal tray funziona sempre', '«Update now» from the tray always works', '«Jetzt aktualisieren» im Infobereich klappt immer', '« Mettre à jour » depuis la barre des tâches marche toujours', '«Actualizar ahora» desde la bandeja funciona siempre', '«Atualizar agora» na bandeja funciona sempre'],
+    text: [
+      "Se l'agente nel tray vede una versione nuova prima di Aurora, «Aggiorna ora» non risponde più «nessuna versione nuova»: Aurora la cerca subito su GitHub e la installa.",
+      "If the tray agent sees a new version before Aurora does, «Update now» no longer answers «no new version»: Aurora looks it up on GitHub right away and installs it.",
+      "Sieht der Agent im Infobereich eine neue Version vor Aurora, meldet «Jetzt aktualisieren» nicht mehr «keine neue Version»: Aurora sucht sie sofort auf GitHub und installiert sie.",
+      "Si l'agent voit une nouvelle version avant Aurora, « Mettre à jour » ne répond plus « aucune nouvelle version » : Aurora la cherche aussitôt sur GitHub et l'installe.",
+      "Si el agente de la bandeja ve una versión nueva antes que Aurora, «Actualizar ahora» ya no responde «ninguna versión nueva»: Aurora la busca enseguida en GitHub y la instala.",
+      "Se o agente da bandeja vê uma versão nova antes da Aurora, «Atualizar agora» já não responde «nenhuma versão nova»: a Aurora procura-a logo no GitHub e instala-a.",
+    ],
+  },
+  {
     version: '0.11.175',
     released: '2026-11-07T12:03:08Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans Réglages › Fenêtres choisis pour chaque panneau, la Carte et la Propagation où ils vont : dans la fenêtre principale, dans une fenêtre à part (nouvelle ou à côté d’une autre) ou masqués. Dessous, les fenêtres à part ouvertes, avec « Afficher la fenêtre » et « Remettre dans la fenêtre principale » ; « Rétablir la disposition » remet tout comme au départ.",
       "En Ajustes › Ventanas eliges para cada panel, el Mapa y la Propagación dónde van: en la ventana principal, en una ventana aparte (nueva o junto a otra) u ocultos. Debajo, las ventanas aparte abiertas, con «Mostrar la ventana» y «Devolver a la ventana principal»; «Restablecer la disposición» lo deja todo como al principio.",
       "Em Definições › Janelas escolhes para cada painel, o Mapa e a Propagação onde ficam: na janela principal, numa janela à parte (nova ou ao lado de outra) ou ocultos. Por baixo, as janelas à parte abertas, com «Mostrar a janela» e «Repor na janela principal»; «Repor a disposição» deixa tudo como no início.",
-    ],
-  },
-  {
-    version: '0.11.136',
-    released: '2026-11-05T13:06:22Z',
-    kind: 'fixed',
-    title: ['La finestra vuota si chiude', 'The empty window closes', 'Das leere Fenster schließt sich', 'La fenêtre vide se ferme', 'La ventana vacía se cierra', 'A janela vazia fecha-se'],
-    text: [
-      "Quando rimetti nella finestra principale l'ultimo elemento di una finestra a parte (⤓), la finestra sul secondo schermo si chiude da sola invece di restare aperta vuota. La mappa nella finestra a parte non resta più bianca, e il pulsantino ⤓ accanto a lingua e volume riporta tutto nella finestra principale.",
-      "When you put the last item of a separate window back into the main window (⤓), the window on the second screen closes by itself instead of staying open and empty.",
-      "Wenn du das letzte Element eines eigenen Fensters ins Hauptfenster zurückholst (⤓), schließt sich das Fenster auf dem zweiten Bildschirm von selbst, statt leer offen zu bleiben.",
-      "Quand tu remets dans la fenêtre principale le dernier élément d’une fenêtre à part (⤓), la fenêtre du second écran se ferme toute seule au lieu de rester ouverte et vide.",
-      "Cuando devuelves a la ventana principal el último elemento de una ventana aparte (⤓), la ventana de la segunda pantalla se cierra sola en lugar de quedarse abierta y vacía.",
-      "Quando repões na janela principal o último elemento de uma janela à parte (⤓), a janela do segundo ecrã fecha-se sozinha em vez de ficar aberta e vazia.",
     ],
   },
 ];

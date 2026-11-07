@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.176 - 2026-11-07
+- **Agente, «Aggiorna ora»**: se Aurora non conosce ancora la versione nuova (ultimo controllo di prima della pubblicazione) la chiede subito a GitHub invece di rispondere «nessuna versione nuova trovata».
+
 ## 0.11.175 - 2026-11-07
 - **Messaggi agli utenti**: modelli pronti, anteprima della cartolina sul PC dell'autore, contatori dei caratteri, conferma prima di pubblicare con destinatari e scadenza, «Usa di nuovo» nell'elenco dei messaggi.
 - **Icona dei messaggi**: all'avvio Aurora non riporta piu' alla Stazione chi apre `#/messaggi-autore`.
