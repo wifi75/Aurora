@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.175',
-    released: '2026-11-07T11:54:37Z',
+    released: '2026-11-07T12:03:08Z',
     kind: 'new',
     title: ['Messaggi agli utenti più comodi', 'Easier messages to users', 'Einfachere Nachrichten an Nutzer', 'Messages aux utilisateurs plus simples', 'Mensajes a los usuarios más cómodos', 'Mensagens aos utilizadores mais práticas'],
     text: [
