@@ -132,8 +132,15 @@ async function bundle(req: Request, env: Env): Promise<Response> {
     httpMetadata: { contentType: 'application/zip' },
     customMetadata: { codice, versione, motivo, installazione: corto(req.headers.get('X-Aurora-Installazione'), 36) },
   });
-  await env.INDICE.prepare('INSERT OR REPLACE INTO pacchetti (codice, chiave, giorno, versione, motivo, byte) VALUES (?1, ?2, ?3, ?4, ?5, ?6)')
-    .bind(codice, chiave, giorno, versione, motivo, corpo.byteLength)
+  // il riassunto del crash (gia' ripulito da Aurora): si legge dall'indice senza scaricare lo zip
+  let riassunto = '';
+  try {
+    riassunto = decodeURIComponent(req.headers.get('X-Aurora-Riassunto') ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').slice(0, 2000);
+  } catch {
+    riassunto = '';
+  }
+  await env.INDICE.prepare('INSERT OR REPLACE INTO pacchetti (codice, chiave, giorno, versione, motivo, byte, riassunto) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+    .bind(codice, chiave, giorno, versione, motivo, corpo.byteLength, riassunto)
     .run();
   return risposta(200, { ok: true, code: codice });
 }
@@ -147,7 +154,7 @@ async function summary(url: URL, env: Env): Promise<Response> {
     GROUP BY versione, area, messaggio ORDER BY versione DESC, conteggio DESC LIMIT 200`;
   const q = env.INDICE.prepare(sql);
   const { results } = await (versione ? q.bind(dal, versione) : q.bind(dal)).all();
-  const pacchetti = await env.INDICE.prepare('SELECT codice, giorno, versione, motivo, byte FROM pacchetti WHERE giorno >= ?1 ORDER BY giorno DESC LIMIT 100').bind(dal).all();
+  const pacchetti = await env.INDICE.prepare('SELECT codice, giorno, versione, motivo, byte, riassunto FROM pacchetti WHERE giorno >= ?1 ORDER BY giorno DESC LIMIT 100').bind(dal).all();
   return risposta(200, { dal, errori: results, pacchetti: pacchetti.results });
 }
 

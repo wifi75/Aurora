@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS pacchetti (
   giorno TEXT NOT NULL,
   versione TEXT NOT NULL,
   motivo TEXT NOT NULL,
-  byte INTEGER NOT NULL
+  byte INTEGER NOT NULL,
+  -- l'inizio del file di testo del crash, gia' ripulito da Aurora (dal 2026-11-07): si legge senza scaricare lo zip
+  riassunto TEXT
 );
 CREATE INDEX IF NOT EXISTS pacchetti_giorno ON pacchetti (giorno);
 

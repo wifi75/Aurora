@@ -84,4 +84,7 @@ Dal 2026-11-05 l'elenco ha anche la nazione (`paese`, la sigla di due lettere ch
 npx wrangler d1 execute aurora-rapporti --remote --command "ALTER TABLE installazioni ADD COLUMN paese TEXT"
 ```
 
+Dal 2026-11-07 i pacchetti hanno anche `riassunto` (l'inizio del file del crash, ripulito da Aurora come il resto): si legge
+dall'indice senza scaricare lo zip. Su un database gia' creato: `ALTER TABLE pacchetti ADD COLUMN riassunto TEXT`.
+
 Il secondo comando riempie l'elenco con le installazioni gia' viste negli ultimi 90 giorni (il conteggio e' partito il 2026-11-04).

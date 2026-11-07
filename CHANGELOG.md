@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
 ## 0.11.164 - 2026-11-06
 - **Pagine che scorrono**: su schermo largo solo la Stazione resta tutta nella finestra; Fox, Propagazione e le altre pagine scorrono di nuovo fino in fondo (la parte sotto restava nascosta).
