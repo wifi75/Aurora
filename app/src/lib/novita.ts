@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.181',
+    released: '2026-11-07T14:48:49Z',
+    kind: 'new',
+    title: ["QSO a log con l'aurora", 'Logged QSO with the aurora', 'Geloggtes QSO mit Polarlicht', "QSO au log avec l'aurore", 'QSO en el log con la aurora', 'QSO no log com a aurora'],
+    text: [
+      "Quando un QSO va a log, la sua riga nel Log si accende per 5 secondi: un'aurora viola-azzurra scorre dentro la riga, due scie viola corrono sul bordo e in fondo compare «A LOG». La pagina Statistiche si apre con le schede già al loro posto, senza salti mentre arrivano i numeri.",
+      "When a QSO is logged, its row in the Log lights up for 5 seconds: a purple-blue aurora flows inside the row, two purple trails run along the edge and «LOGGED» appears at the end. The Statistics page opens with the cards already in place, with no jumps while the numbers arrive.",
+      "Wenn ein QSO geloggt wird, leuchtet seine Zeile im Log 5 Sekunden lang: Ein violett-blaues Polarlicht zieht durch die Zeile, zwei violette Spuren laufen am Rand entlang und am Ende erscheint «GELOGGT». Die Statistikseite öffnet sich mit den Karten schon an ihrem Platz, ohne Sprünge, während die Zahlen kommen.",
+      "Quand un QSO est mis au log, sa ligne s'allume 5 secondes : une aurore violette et bleue défile dans la ligne, deux traînées violettes courent sur le bord et « AU LOG » apparaît au bout. La page Statistiques s'ouvre avec les fiches déjà à leur place, sans sauts pendant l'arrivée des chiffres.",
+      "Cuando un QSO entra en el log, su fila se ilumina 5 segundos: una aurora violeta y azul recorre la fila, dos estelas violetas corren por el borde y al final aparece «EN LOG». La página Estadísticas se abre con las fichas ya en su sitio, sin saltos mientras llegan los números.",
+      "Quando um QSO vai para o log, a sua linha acende-se 5 segundos: uma aurora violeta e azul percorre a linha, dois rastos violeta correm pela borda e no fim aparece «NO LOG». A página Estatísticas abre com os cartões já no lugar, sem saltos enquanto chegam os números.",
+    ],
+  },
+  {
     version: '0.11.180',
     released: '2026-11-07T14:06:24Z',
     kind: 'new',

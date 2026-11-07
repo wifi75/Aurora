@@ -3,6 +3,10 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.181 - 2026-11-07
+- **QSO a log**: nuovo effetto sulla riga del Log (scelta del proprietario, proposta 2a): aurora viola-magenta-azzurro-verde che scorre in uno strato `.qso-fx` sotto la riga, due scie viola sul bordo, nominativo viola, «A LOG» in fondo; tolti il verde fluo e il giallo.
+- **Statistiche**: alla prima apertura le schede (numeri, Per banda, scheda DXCC, paesi mancanti) sono subito al loro posto con «…»; prima la scheda DXCC compariva a sinistra e poi saltava nella sua colonna.
+
 ## 0.11.180 - 2026-11-07
 - **Messaggi dell'autore, traduzione**: pulsante «Traduci in tutte le lingue» nella pagina dei messaggi; il servizio `aurora-rapporti` traduce dall'italiano con Workers AI (Llama 3.3, istruito sul gergo radioamatoriale) in `POST /v1/messaggi/traduci`, solo con ADMIN_TOKEN e con il freno ai tentativi; le traduzioni si ricontrollano nella cartolina prima di pubblicare.
 
