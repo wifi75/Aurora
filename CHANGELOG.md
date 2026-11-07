@@ -3,6 +3,12 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.170 - 2026-11-07
+- **Errori della radio**: il messaggio dice il motivo vero mandato dal core (es. «la radio non ha raggiunto la frequenza»); tolto il vecchio «controlla OmniRig» che compariva anche con Hamlib.
+- **Potenza**: sopra il 98,5% si mostra 100% (Hamlib legge l'FT-2000 a 100 W come 0,992).
+- **Agente**: «Domani parte…» solo per le DXpedition di paesi non ancora lavorati (elenco salvato da Aurora; senza elenco o vecchio di 7 giorni, per tutte).
+- **Messaggi agli utenti** (solo per l'autore): scheda nelle Impostazioni per scrivere, vedere e togliere i messaggi push; il segreto resta solo su quel PC; il servizio accetta le richieste dalla finestra di Aurora e frena i tentativi ripetuti.
+
 ## 0.11.169 - 2026-11-07
 - **Agente nel tray** (nuovo): Aurora avviata con `--agente` resta accanto all'orologio anche chiusa (icona sempre visibile), apre Aurora con un clic e mostra la cartolina con il suono per le versioni nuove (sempre) e i messaggi dell'autore; a scelta Propagazione (tempesta geomagnetica, 12-10 m aperti), DXpedition che partono domani e riepilogo di ieri. Controlla all'avvio e ogni ora; con Aurora aperta non ripete gli avvisi. Acceso di fabbrica e in avvio con Windows; si spegne dalla pagina «Agente nel tray» delle Impostazioni (o `AURORA_AGENTE=0`). Prima di un aggiornamento Aurora lo chiude.
 - **DXpedition in onda**: salgono in cima all'elenco finche' sono spottate (15 minuti), con chi le ha spottate e il modo (dal cluster, dal commento o dalla frequenza); doppio clic sulla frequenza porta la radio li'.
