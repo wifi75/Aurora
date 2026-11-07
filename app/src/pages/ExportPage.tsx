@@ -208,7 +208,8 @@ export function ExportPage() {
     <div className="export-page">
       <div className="export-head">
         <h1 className="page-title">{t('exp.title')}</h1>
-        <button type="button" className="glass glass--on" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
+        <button type="button" className="glass glass--on export-add-btn" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
+          <span aria-hidden="true">＋</span> 
           {t('exp.add')}
         </button>
         <a className="glass export-back" href="#/">
