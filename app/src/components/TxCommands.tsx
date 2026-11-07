@@ -1,7 +1,8 @@
 import { useStation } from '../state/station';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getControls, postControl, postReport, postRxFrequency, postTxFrequency, type ControlId } from '../api/client';
+import { getControls, postControl, postReport, postRxFrequency, postTune, postTxFrequency, type ControlId } from '../api/client';
+import { usePrefs } from '../lib/prefs';
 import type { StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
@@ -34,6 +35,22 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   const [txHz, setTxHz] = useState(String(status?.tx_df ?? initialFrequency));
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
   const [note, setNote] = useState('');
+  // «Pulsante Tune nel pannello Comandi» delle Impostazioni: portante sulla frequenza Tx per un periodo, ripremuto la ferma (come WSJT-X)
+  const showTune = usePrefs((p) => p.prefs.cmdTune);
+  const [tuning, setTuning] = useState(false);
+  useEffect(() => {
+    if (!tuning) return;
+    // il motore la ferma da solo dopo un periodo (15 s in FT8): poco dopo il pulsante torna spento
+    const stop = window.setTimeout(() => setTuning(false), 16_000);
+    return () => window.clearTimeout(stop);
+  }, [tuning]);
+  const toggleTune = () => {
+    const on = !tuning;
+    void run(t(on ? 'cmd.tuneOn' : 'cmd.tuneOff'), async () => {
+      await postTune(on);
+      setTuning(on);
+    });
+  };
 
   // la frequenza vera e' quella del motore: quando cambia lì si aggiorna anche qui
   useEffect(() => {
@@ -124,7 +141,19 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
           >
             {t('ctl.hold_tx' as Key)}
           </button>
-<TxQuickControls inline />
+          {showTune ? (
+            <button
+              type="button"
+              className={`glass chip cmd-tune${tuning ? ' cmd-tune--on' : ''}`}
+              aria-pressed={tuning}
+              disabled={!reachable || !txAllowed}
+              title={t('tip.cmd.tune')}
+              onClick={toggleTune}
+            >
+              {t('cmd.tune')}
+            </button>
+          ) : null}
+          <TxQuickControls inline />
         </div>
         {note ? (
           <p className="live-note" role="status">

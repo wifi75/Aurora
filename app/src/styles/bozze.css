@@ -1108,3 +1108,6 @@ html:not([data-theme='light']) .dock-grip h2, html:not([data-theme='light']) .do
 /* il menu «Nuova finestra / Accanto a…» non resta mai tagliato dalla scheda: aperto, la scheda lo lascia uscire e sta sopra le altre */
 .grid-block:has(.dock-detach-menu) { z-index: 50; }
 .dock-panel:has(.dock-detach-menu) { overflow: visible !important; }
+
+/* Tune nei Comandi: rosso mentre trasmette la portante, come in WSJT-X */
+.cmd-tune--on { background: #d93025 !important; border-color: #b3261e !important; color: #fff !important; }
