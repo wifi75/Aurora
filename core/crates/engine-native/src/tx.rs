@@ -613,8 +613,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         Some(call) if self.seq.dx().is_some_and(|d| d.eq_ignore_ascii_case(&call)) => {
                             log.push(format!("{call} e' gia' la stazione in corso"));
                         }
-                        Some(call) if self.seq.dx().is_none() || !self.seq.is_enabled() => {
-                            // nessun QSO in corso: non c'e' niente da aspettare, come il doppio clic
+                        // nessun DX: non c'e' niente da aspettare, si risponde come il doppio clic. Con un DX gia' impostato la stazione va
+                        // sempre in coda, anche con Abilita Tx spento: prima ogni clic per la coda rispondeva subito e sostituiva il DX in
+                        // corso (2026-11-07: R7OQ, G0BQB, 2E0UMF, EA7FU sostituiti uno dopo l'altro)
+                        Some(call) if self.seq.dx().is_none() => {
                             log.push(format!("{call}: nessun QSO in corso, si risponde subito"));
                             log.extend(self.handle(TxCommand::Reply { decode_id }, now_s));
                         }
