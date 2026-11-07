@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.190',
-    released: '2026-11-07T22:30:00Z',
+    released: '2026-11-07T21:39:53Z',
     kind: 'new',
     title: ['QSO a mano e pulizia del log', 'Manual QSOs and log cleanup', 'QSOs von Hand und Log aufräumen', 'QSO à la main et nettoyage du log', 'QSO a mano y limpieza del log', 'QSO à mão e limpeza do log'],
     text: [
