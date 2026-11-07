@@ -3,6 +3,10 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.172 - 2026-11-07
+- **Agente nel tray**: la cartolina non si apriva con Aurora aperta (WebView2 rifiutava la finestra: stessa cartella dati con impostazioni diverse, errore 0x8007139F); ora l'agente ha la sua cartella (`%LOCALAPPDATA%\Aurora\agente-webview`) e la pagina della cartolina e' un file temporaneo. Registro dell'agente in `%TEMP%\aurora-agente.log`; `AURORA_AGENTE_PROVA=1` mostra una cartolina di prova all'avvio.
+- **Scheda DXCC elastica**: sempre larga quanto il pannello (prima una colonna fissa di 408 px usciva dal riquadro, campo «Prova» compreso).
+
 ## 0.11.171 - 2026-11-07
 - **Riga Tx con etichetta**: la tua riga di trasmissione in Attivita' di banda porta l'etichetta della stazione chiamata (presa dal suo ultimo messaggio ricevuto).
 

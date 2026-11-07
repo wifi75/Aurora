@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.172',
+    released: '2026-11-07T10:30:40Z',
+    kind: 'fixed',
+    title: ["La cartolina dell'agente si apre", 'The agent card opens', 'Die Karte des Agenten öffnet sich', "La carte de l'agent s'ouvre", 'La tarjeta del agente se abre', 'O cartão do agente abre'],
+    text: [
+      "Con Aurora aperta l'agente nel tray non riusciva ad aprire la cartolina (anche con «Cerca aggiornamenti»): ora ha una cartella tutta sua e la cartolina compare sempre. La scheda DXCC nel Log si adatta da sola alla larghezza del pannello.",
+      "With Aurora open the tray agent couldn't open its card (also with «Check for updates»): now it has its own folder and the card always appears. The DXCC card in the Log fits the panel width by itself.",
+      "Mit geöffnetem Aurora konnte der Tray-Agent seine Karte nicht öffnen (auch nicht mit «Nach Updates suchen»): jetzt hat er einen eigenen Ordner und die Karte erscheint immer. Die DXCC-Karte im Log passt sich der Feldbreite an.",
+      "Avec Aurora ouverte, l'agent ne pouvait pas ouvrir sa carte (même avec « Rechercher des mises à jour ») : il a maintenant son propre dossier et la carte apparaît toujours. La carte DXCC du Log s'adapte seule à la largeur.",
+      "Con Aurora abierta el agente no podía abrir su tarjeta (tampoco con «Buscar actualizaciones»): ahora tiene su propia carpeta y la tarjeta aparece siempre. La tarjeta DXCC del Log se ajusta sola al ancho.",
+      "Com o Aurora aberto o agente não conseguia abrir o cartão (nem com «Procurar atualizações»): agora tem a sua pasta e o cartão aparece sempre. O cartão DXCC do Log ajusta-se sozinho à largura.",
+    ],
+  },
+  {
     version: '0.11.171',
     released: '2026-11-07T10:21:59Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Si la carte son de la radio manque au démarrage (radio éteinte, câble USB débranché), Aurora réessaie toutes les 5 secondes et la réception démarre seule dès qu’elle apparaît ; un avis explique ce qui se passe. Avant, il fallait redémarrer Aurora.",
       "Si la tarjeta de sonido de la radio no está al iniciar (radio apagada, cable USB desconectado), Aurora reintenta cada 5 segundos y la recepción arranca sola en cuanto aparece; mientras tanto un aviso explica lo que pasa. Antes había que reiniciar Aurora.",
       "Se a placa de som do rádio não existir no arranque (rádio desligado, cabo USB desligado), a Aurora tenta de novo a cada 5 segundos e a receção arranca sozinha assim que aparece; entretanto um aviso explica o que se passa. Antes era preciso reiniciar a Aurora.",
-    ],
-  },
-  {
-    version: '0.11.132',
-    released: '2026-11-05T11:54:47Z',
-    kind: 'new',
-    title: ['Decodifica più sensibile e messaggi nella tua lingua', 'More sensitive decoding and messages in your language', 'Empfindlichere Dekodierung und Meldungen in deiner Sprache', 'Décodage plus sensible et messages dans ta langue', 'Decodificación más sensible y mensajes en tu idioma', 'Descodificação mais sensível e mensagens na tua língua'],
-    text: [
-      "FT8 ritrova il seguito dei QSO in corso anche a -23 dB, come JTDX; AGCc vale anche in FT4. I messaggi della radio, dell'audio e degli invii ai servizi si leggono nella lingua scelta. Meno blocchi audio persi, avvisi sullo schermo per audio, radio e OmniRig, «Verifica tutto» in Impostazioni › Assistenza e il nome del programma che occupa una porta.",
-      "FT8 picks up the rest of ongoing QSOs even at -23 dB, as JTDX does; AGCc now works in FT4 too. Radio, audio and service upload messages read in the chosen language. Fewer lost audio blocks, on-screen notices for audio, radio and OmniRig, «Check everything» in Settings › Support and the name of the program holding a port.",
-      "FT8 findet die Fortsetzung laufender QSOs auch bei -23 dB, wie JTDX; AGCc gilt jetzt auch in FT4. Meldungen von Radio, Audio und Diensten erscheinen in der gewählten Sprache. Weniger verlorene Audioblöcke, Hinweise auf dem Bildschirm für Audio, Radio und OmniRig, «Alles prüfen» unter Einstellungen › Hilfe und der Name des Programms, das einen Port belegt.",
-      "FT8 retrouve la suite des QSO en cours même à -23 dB, comme JTDX ; AGCc vaut aussi en FT4. Les messages de la radio, de l’audio et des envois aux services se lisent dans la langue choisie. Moins de blocs audio perdus, avis à l’écran pour audio, radio et OmniRig, « Tout vérifier » dans Réglages › Assistance et le nom du programme qui occupe un port.",
-      "FT8 recupera la continuación de los QSO en curso incluso a -23 dB, como JTDX; AGCc vale también en FT4. Los mensajes de la radio, del audio y de los envíos a servicios se leen en el idioma elegido. Menos bloques de audio perdidos, avisos en pantalla para audio, radio y OmniRig, «Verificar todo» en Ajustes › Asistencia y el nombre del programa que ocupa un puerto.",
-      "O FT8 recupera a continuação dos QSO em curso mesmo a -23 dB, como o JTDX; o AGCc vale também em FT4. As mensagens do rádio, do áudio e dos envios aos serviços leem-se na língua escolhida. Menos blocos de áudio perdidos, avisos no ecrã para áudio, rádio e OmniRig, «Verificar tudo» em Definições › Assistência e o nome do programa que ocupa uma porta.",
     ],
   },
 ];
