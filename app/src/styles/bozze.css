@@ -982,3 +982,6 @@ html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10;
 
 .dxped-heard-line b { color: #0b9e6b; }
 .dxped-heard-dot { background: #2cf5a4; box-shadow: 0 0 6px #2cf5a4; animation: none; }
+
+/* le mie trasmissioni uguali raccolte in una riga: «×N» piccolo accanto a Tx */
+.decode-row--tx .tx-rep { flex: 0 0 auto; margin-left: 6px; padding: 0 5px; border-radius: 8px; font-size: 0.78em; font-weight: 700; line-height: 1.5; background: color-mix(in srgb, currentColor 12%, transparent); opacity: 0.85; }

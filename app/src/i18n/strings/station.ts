@@ -182,6 +182,7 @@ export const stationStrings = {
   'log.col.rst': ['Rapporti', 'Reports', 'Rapporte', 'Rapports', 'Reportes', 'Relatórios'],
   'log.col.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
   'panel.all': ['Attività di banda', 'Band activity', 'Bandaktivität', 'Activité de la bande', 'Actividad de banda', 'Atividade da banda'],
+  'tip.row.txRepeat': ["Hai trasmesso questo messaggio {n} volte: si vede solo l'ultima", "You sent this message {n} times: only the last one is shown", "Du hast diese Nachricht {n} Mal gesendet: nur die letzte wird gezeigt", "Tu as envoyé ce message {n} fois : seule la dernière est affichée", "Has enviado este mensaje {n} veces: solo se ve la última", "Enviaste esta mensagem {n} vezes: só se vê a última"],
   'tip.row.tx': [
     'Messaggio trasmesso da te.',
     'Message sent by you.',

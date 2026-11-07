@@ -331,7 +331,21 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     if (c && !lastTagOf.has(c)) lastTagOf.set(c, d.tag);
   }
   const dxTagFor = (txText: string) => lastTagOf.get((txText.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()) ?? null;
-  const rows = view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest];
+  // le mie trasmissioni uguali (lo stesso CQ ripetuto ogni periodo) restano una riga sola, la piu' recente, con «×N»; i messaggi
+  // diversi (rapporto, RR73...) restano tutti, cosi' il QSO si legge passo per passo (scelta del proprietario: JTDX le mostra tutte)
+  const txKey = (d: DecodedMessage) => d.text.trim().replace(/\s+/g, ' ').toUpperCase();
+  const txNewest = new Map<string, DecodedMessage>();
+  const txCount = new Map<string, number>();
+  for (const d of decodes) {
+    if (d.id >= 0) continue;
+    const k = txKey(d);
+    txCount.set(k, (txCount.get(k) ?? 0) + 1);
+    const cur = txNewest.get(k);
+    if (!cur || d.time_ms > cur.time_ms) txNewest.set(k, d);
+  }
+  const txRepeat = (d: DecodedMessage) => (d.id < 0 ? (txCount.get(txKey(d)) ?? 1) : 1);
+  const shown = (d: DecodedMessage) => d.id >= 0 || d === pin || txNewest.get(txKey(d)) === d;
+  const rows = (view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest]).filter(shown);
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
@@ -424,6 +438,11 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="decode-text">
               {queueMark}
               <span className="data">{view.highlightDxCall || view.highlightDxGrid || answered ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined) : d.text}</span>
+              {own && txRepeat(d) > 1 ? (
+                <small className="tx-rep" title={t('tip.row.txRepeat', { n: txRepeat(d) })}>
+                  ×{txRepeat(d)}
+                </small>
+              ) : null}
             </span>
             </CallsignTip>
             <span className="decode-where">
