@@ -3,6 +3,8 @@
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
 ## Aperti (2026-11-01)
+- [ ] Prove dal vivo della 0.11.189-0.11.191: testo piu' grande (Ctrl +), Salva nelle Impostazioni, Aggiungi/Elimina/Svuota nel Log, bande senza CAT, QSO verso BBLogger (UDP 12 e file ADIF).
+- [ ] Cinque prove della app che falliscono gia': HistoryPage (svuota con conferma), UpdatesTab (cartella dei crash), Settings (regole delle Automazioni), lastPage, route (mappa).
 - [ ] Rinominare il crate `engine-jtdx` (ora contiene solo i dati di Aurora) e i preset della cascata «JTDX»/«WSJT-X».
 - [x] Linux: GitHub Actions allega AppImage e `.deb` a ogni release (verificato fino alla 0.11.151, 148 download).
 - [ ] **Linux, aggiornamento AppImage con un clic**: oggi l'avviso porta solo alla pagina della release. Da fare: con «Installa» Aurora scarica la nuova AppImage (`$APPIMAGE` dice dove sta la sua), controlla che sia completa, sostituisce la vecchia e si riapre; niente password (file dell'utente).
