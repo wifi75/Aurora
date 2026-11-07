@@ -12,6 +12,7 @@
 - **DXpedition in onda**: spottata negli ultimi 15 minuti, riga arancione che lampeggia e «IN ONDA» con frequenza e modo.
 - **Avviso senza CAT**: provando a trasmettere senza radio collegata compare un avviso (la ricezione resta libera).
 - Trasmissione senza la riga sotto il DX; bandiera di Attivita' di banda piu' grande.
+- **Coda nella Trasmissione**: accanto al blocchetto giallo del DX, tra il DX e RX/TX, su una riga (al massimo 3 nominativi e «+n»); i messaggi non scendono piu'.
 
 ## 0.11.168 - 2026-11-07
 - **Coda**: le stazioni accodate hanno l'etichetta «IN CODA n» (fondo azzurro) e restano ferme sotto la stazione chiamata, nell'ordine della coda; dopo il log salgono di un posto.
