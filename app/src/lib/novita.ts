@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.168',
-    released: '2026-11-07T09:03:52Z',
+    released: '2026-11-07T09:06:54Z',
     kind: 'new',
     title: ['Stazioni in coda sempre in vista', 'Queued stations always in view', 'Stationen in der Warteschlange immer sichtbar', 'Stations en file toujours visibles', 'Estaciones en cola siempre a la vista', 'Estações na fila sempre à vista'],
     text: [
