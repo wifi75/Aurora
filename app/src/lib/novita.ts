@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.186',
-    released: '2026-11-07T17:51:59Z',
+    released: '2026-11-07T17:56:12Z',
     kind: 'fixed',
     title: ['Schede staccate: le altre si ridimensionano', 'Detached panels: the others can be resized', 'Abgetrennte Fenster: die anderen lassen sich anpassen', 'Fenêtres détachées : les autres se redimensionnent', 'Ventanas separadas: las demás se redimensionan', 'Janelas separadas: as outras redimensionam-se'],
     text: [
