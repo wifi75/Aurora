@@ -40,6 +40,30 @@ function Meter({ level }: { level: Level }) {
   );
 }
 
+/** Il sole a colori per la colonna del giorno (al posto del simbolo ☀, che nei font cambia forma e colore). */
+function SunIcon() {
+  return (
+    <svg className="prop-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+      <g stroke="#f5a623" strokeWidth="1.4" strokeLinecap="round">
+        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.4 1.4M11.55 11.55l1.4 1.4M3.05 12.95l1.4-1.4M11.55 4.45l1.4-1.4" />
+      </g>
+      <circle cx="8" cy="8" r="3.4" fill="#ffc83d" stroke="#f08c00" strokeWidth="0.8" />
+    </svg>
+  );
+}
+
+/** La luna piena a colori per la colonna della notte. */
+function MoonIcon() {
+  return (
+    <svg className="prop-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.2" fill="#e9ecf5" stroke="#9aa6c4" strokeWidth="0.8" />
+      <circle cx="6" cy="6.3" r="1.3" fill="#c9cfdf" />
+      <circle cx="10.2" cy="9.6" r="1.6" fill="#c9cfdf" />
+      <circle cx="6.8" cy="10.6" r="0.8" fill="#c9cfdf" />
+    </svg>
+  );
+}
+
 export function Conditions({ data, group, nightNow }: { data: SolarData; group: string | null; nightNow: boolean | null }) {
   const t = useT();
   const find = (name: string, time: string) => data.bands.find((b) => b.name === name && b.time === time)?.condition ?? '';
@@ -49,11 +73,13 @@ export function Conditions({ data, group, nightNow }: { data: SolarData; group: 
       <div className="prop-matrix-head" role="row">
         <span role="columnheader" />
         <span role="columnheader" className={nightNow === false ? 'prop-now' : undefined}>
-          ☀ {t('prop.day')}
+          <SunIcon />
+          {t('prop.day')}
           {nightNow === false ? <small>{t('prop.here')}</small> : null}
         </span>
         <span role="columnheader" className={nightNow === true ? 'prop-now' : undefined}>
-          ☾ {t('prop.night')}
+          <MoonIcon />
+          {t('prop.night')}
           {nightNow === true ? <small>{t('prop.here')}</small> : null}
         </span>
       </div>

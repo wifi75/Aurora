@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useLayoutEffect, useRef } from 'react';
 import { getOnline, getPsk, getSolar } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
@@ -24,7 +24,7 @@ function BandsOpenInner() {
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
   const pskState = psk.data?.psk ?? null;
   const rows = useMemo(() => (pskState ? pskRows(pskState.reports, status?.de_grid) : []), [pskState, status?.de_grid]);
-  // le tre piu' lontane, una per stazione ricevente
+  // le piu' lontane, una per stazione ricevente: fino a 5, ma la quarta e la quinta solo se entrano nella finestra (vedi sotto)
   const farthest = useMemo(() => {
     const seen = new Set<string>();
     const out: typeof rows = [];
@@ -32,11 +32,32 @@ function BandsOpenInner() {
       if (r.km === null || r.km === undefined || seen.has(r.receiver)) continue;
       seen.add(r.receiver);
       out.push(r);
-      if (out.length === 3) break;
+      if (out.length === 5) break;
     }
     return out;
   }, [rows]);
 
+
+  // la quarta e la quinta stazione si vedono solo se c'e' posto: se la finestra scorrerebbe si nascondono dall'ultima (mai sotto 3)
+  const farRef = useRef<HTMLOListElement | null>(null);
+  useLayoutEffect(() => {
+    const ol = farRef.current;
+    if (!ol) return;
+    // i contenitori che possono scorrere: quello della scheda (`dock-body`) e quello interno di Bande aperte
+    const rooms: HTMLElement[] = [];
+    for (let el: HTMLElement | null = ol.parentElement; el && !el.classList.contains('grid-panel'); el = el.parentElement) rooms.push(el);
+    const overflowing = () => rooms.some((el) => el.scrollHeight > el.clientHeight + 1);
+    const fit = () => {
+      const rows = Array.from(ol.children) as HTMLElement[];
+      for (const r of rows) r.style.display = '';
+      for (let i = rows.length - 1; i >= 3 && overflowing(); i--) rows[i]!.style.display = 'none';
+    };
+    fit();
+    const watch = new ResizeObserver(fit);
+    for (const el of rooms) watch.observe(el);
+    return () => watch.disconnect();
+    // a ogni disegno: la lista compare dopo i dati e le condizioni arrivano dopo la lista, e la scheda non cambia dimensione
+  });
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -59,7 +80,7 @@ function BandsOpenInner() {
       {farthest.length === 0 ? (
         <p className="muted bands-open-none">{online.data.psk ? t('bands.noPsk') : t('prop.off')}</p>
       ) : (
-        <ol className="bands-open-far">
+        <ol className="bands-open-far" ref={farRef}>
           {farthest.map((r) => (
             <li key={r.receiver} title={r.country ?? undefined}>
               {flagCode(r.country) ? <span className={`fi fi-${flagCode(r.country)}`} aria-hidden="true" /> : <span className="fi" />}

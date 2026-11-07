@@ -1091,3 +1091,10 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .bands-open .prop-tile b { font-size: 12px !important; }
 .bands-open .prop-matrix-row { min-height: 24px; }
 .bands-open .prop-matrix-row > .prop-group { font-size: 12.5px !important; font-weight: 600 !important; white-space: nowrap; }
+.bands-open-far li { font-size: 12px !important; padding-top: 2px !important; padding-bottom: 2px !important; }
+
+/* Bande aperte: colonne Giorno/Notte di larghezza fissa e vicine, titolo allineato all'inizio delle barre (richiesta del proprietario) */
+.bands-open .prop-matrix-head, .bands-open .prop-matrix-row { grid-template-columns: 64px 118px 118px !important; column-gap: 10px !important; justify-content: start !important; }
+.bands-open .prop-tile { width: 118px !important; }
+.bands-open .prop-matrix-head > span { justify-content: flex-start !important; text-align: left; padding-left: 4px; gap: 5px !important; align-items: center; }
+.prop-icon { flex: none; display: inline-block; vertical-align: -2px; }

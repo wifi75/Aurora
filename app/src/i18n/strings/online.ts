@@ -40,7 +40,7 @@ export const onlineStrings = {
   ],
   'onl.saved': ['Salvato.', 'Saved.', 'Gespeichert.', 'Enregistré.', 'Guardado.', 'Guardado.'],
   'onl.error': ['Non è stato possibile salvare.', 'Could not save.', 'Speichern nicht möglich.', 'Enregistrement impossible.', 'No se pudo guardar.', 'Não foi possível guardar.'],
-  'bands.far3': ['Le 3 più lontane che mi ascoltano', 'The 3 farthest stations hearing me', 'Die 3 weitesten Stationen, die mich hören', 'Les 3 stations les plus lointaines qui m’entendent', 'Las 3 estaciones más lejanas que me escuchan', 'As 3 estações mais distantes que me ouvem'],
+  'bands.far3': ['Le più lontane che mi ascoltano', 'The farthest stations hearing me', 'Die weitesten Stationen, die mich hören', 'Les stations les plus lointaines qui m’entendent', 'Las estaciones más lejanas que me escuchan', 'As estações mais distantes que me ouvem'],
   'bands.noPsk': ['Nessuna ricezione ancora (PSK Reporter)', 'No reports yet (PSK Reporter)', 'Noch keine Empfangsberichte (PSK Reporter)', 'Pas encore de réception (PSK Reporter)', 'Aún sin recepciones (PSK Reporter)', 'Ainda sem receções (PSK Reporter)'],
   'bands.title': ['Bande aperte', 'Open bands', 'Offene Bänder', 'Bandes ouvertes', 'Bandas abiertas', 'Bandas abertas'],
   'prop.title': ['Propagazione e ricezione', 'Propagation and reception', 'Ausbreitung und Empfang', 'Propagation et réception', 'Propagación y recepción', 'Propagação e receção'],
