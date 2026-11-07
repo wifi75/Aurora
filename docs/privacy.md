@@ -32,7 +32,7 @@ Impostazioni → Assistenza → «Rapporti degli errori».
 **Cosa contengono**: versione di Aurora e di Windows, motore, modello della radio, metodo di PTT, backend del CAT, nome della
 scheda audio, area del problema (CAT, PTT, audio, decodifica, UDP, servizi, associazione del telefono…), il messaggio d'errore ripulito, quante volte è
 successo, il giorno e un identificativo casuale dell'installazione. Il pacchetto dopo un crash aggiunge il log del programma
-ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash.
+ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash. L'inizio del rapporto di testo del crash, già ripulito allo stesso modo, si salva anche nell'indice del servizio, per leggerlo senza aprire il pacchetto.
 
 **Associazione del telefono non riuscita** (dalla 0.11.123): se un codice scade senza che il telefono si associ, il rapporto dice solo il
 *tipo* di indirizzo messo nel QR (per esempio «192.168, rete di casa» o «adattatore virtuale»), il tipo di adattatore (Wi-Fi, cavo,

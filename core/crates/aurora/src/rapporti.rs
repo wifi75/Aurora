@@ -739,12 +739,13 @@ impl Rapporti {
             return Err("indirizzo del servizio dei rapporti non configurato".into());
         }
         let file = self.pacchetto_crash();
+        let riassunto = riassunto_crash(&file);
         let zip = comprimi(&file)?;
         let id = self.stato.lock().map(|s| s.id.clone()).unwrap_or_default();
         // il codice breve: 8 cifre esadecimali casuali, con cui il servizio ritrova il pacchetto
         let codice: String = uuid().chars().filter(char::is_ascii_hexdigit).take(8).collect::<String>().to_ascii_uppercase();
         let uno = self.invio.lock().map_err(|_| "invio occupato".to_string())?;
-        let esito = manda_zip(&zip, &id, &codice, motivo);
+        let esito = manda_zip(&zip, &id, &codice, motivo, &riassunto);
         drop(uno);
         esito.map_err(|e| match e {
             Invio::Rifiutato => "pacchetto rifiutato dal servizio".to_string(),
@@ -929,7 +930,39 @@ fn manda_json(rapporto: &Value) -> Result<(), Invio> {
     esito(risposta.status().as_u16())
 }
 
-fn manda_zip(zip: &[u8], id: &str, codice: &str, motivo: &str) -> Result<(), Invio> {
+/// Il riassunto del crash piu' recente (gia' ripulito come il resto del pacchetto): l'inizio del suo file di testo (`panic-`, `crash-`,
+/// `hang-`), cosi' il servizio lo salva nell'indice e si legge senza scaricare lo zip.
+fn riassunto_crash(file: &[(String, Vec<u8>)]) -> String {
+    const MAX: usize = 1500;
+    let Some((nome, dati)) = file.iter().find(|(n, _)| n.starts_with("crash/") && n.ends_with(".txt") && !n.ends_with("stderr.log")) else {
+        return String::new();
+    };
+    let testo = String::from_utf8_lossy(dati);
+    let mut out = format!("{}\n{}", nome.trim_start_matches("crash/"), testo.trim());
+    if out.len() > MAX {
+        let mut fine = MAX;
+        while !out.is_char_boundary(fine) {
+            fine -= 1;
+        }
+        out.truncate(fine);
+    }
+    out
+}
+
+/// Percent-encoding per un'intestazione HTTP (solo ASCII sicuro).
+fn per_intestazione(testo: &str) -> String {
+    let mut out = String::with_capacity(testo.len() * 3);
+    for b in testo.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~' | b' ') {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
+fn manda_zip(zip: &[u8], id: &str, codice: &str, motivo: &str, riassunto: &str) -> Result<(), Invio> {
     let risposta = agente(TIMEOUT_PACCHETTO)
         .post(&format!("{INDIRIZZO}/v1/bundle"))
         .header("X-Aurora-Key", CHIAVE_INGRESSO)
@@ -937,6 +970,7 @@ fn manda_zip(zip: &[u8], id: &str, codice: &str, motivo: &str) -> Result<(), Inv
         .header("X-Aurora-Codice", codice)
         .header("X-Aurora-Motivo", motivo)
         .header("X-Aurora-Versione", aurora_core::version::APP_VERSION)
+        .header("X-Aurora-Riassunto", &per_intestazione(riassunto))
         .header("Content-Type", "application/zip")
         .header("User-Agent", "Aurora-rapporti")
         .send(zip)
@@ -998,6 +1032,17 @@ fn scrivi_json<T: Serialize>(path: &Path, valore: &T) {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn il_riassunto_del_crash_va_in_un_intestazione_e_si_ferma_a_1500_caratteri() {
+        let file = vec![("crash/panic-1.txt".to_string(), "Panic\nmessaggio: there is no reactor running\n".repeat(100).into_bytes())];
+        let r = riassunto_crash(&file);
+        assert!(r.starts_with("panic-1.txt\nPanic") && r.len() <= 1500);
+        let h = per_intestazione("a b:è\n");
+        assert_eq!(h, "a b%3A%C3%A8%0A");
+        assert!(riassunto_crash(&[("logs/aurora.log".into(), b"x".to_vec())]).is_empty());
+    }
+
     use super::*;
 
     fn p(s: &str) -> String {
