@@ -1036,3 +1036,8 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 /* Comandi dentro Bande aperte: una linea li separa dalle bande e il titolo «Comandi» come gli altri titoli della scheda */
 .bands-with-cmds .bands-cmds { margin-top: 8px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
 .bands-with-cmds .bands-cmds-title { margin: 0 0 4px; }
+
+/* riquadro giallo del DX in Trasmissione piu' basso: le due righe (nominativo e paese) vicine, cosi' non spinge giu' la scheda */
+.tx-dx .pill--dx { padding: 1px 11px !important; line-height: 1.05 !important; row-gap: 0 !important; }
+.tx-dx .pill--dx .pill-dx-main, .tx-dx .pill--dx .pill-dx-country { line-height: 1.05 !important; margin: 0 !important; }
+.tx-dx .pill--dx .pill-dx-country { margin-top: -1px !important; }
