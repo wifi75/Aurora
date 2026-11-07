@@ -712,7 +712,10 @@ struct BandBody {
 /// Porta la radio sulla frequenza FT8 della banda (OmniRig, condiviso con JTDX). Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/band", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Banda sconosciuta (bad_band)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
 async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<BandBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig();
+    if rig.is_none() && state.manual_dial.is_none() {
+        return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"));
+    }
     let mode = body.mode.clone().unwrap_or_else(|| state.current_mode());
     // il blocco chiude il lock prima di qualunque attesa
     let region = state.frequency_region();
@@ -725,6 +728,13 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
         return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
     }
     halt_for_band_change(&state, hz);
+    // senza CAT si cambia solo la frequenza di Aurora: la radio la sposta l'operatore
+    let Some(rig) = rig else {
+        if let Some(set) = &state.manual_dial {
+            set(hz);
+        }
+        return Ok(Json(json!({ "ok": true, "dial_hz": hz, "manual": true })));
+    };
     // il comando blocca (PowerShell e COM): fuori dal thread asincrono
     let done = tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await;
     match done {
@@ -747,7 +757,10 @@ struct FrequencyBody {
 /// Mai durante la trasmissione.
 #[utoipa::path(post, path = "/api/v1/commands/frequency", responses((status = 200, description = "Radio spostata"), (status = 400, description = "Fuori dalle bande dei radioamatori (bad_frequency)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "Errore della radio (rig_error)"), (status = 503, description = "Comando radio non disponibile (rig_unavailable)")))]
 async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): Json<FrequencyBody>) -> Result<Json<Value>, ApiError> {
-    let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+    let rig = state.active_rig();
+    if rig.is_none() && state.manual_dial.is_none() {
+        return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"));
+    }
     if rig_control::bands::amateur_band(body.hz).is_none() {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
     }
@@ -756,6 +769,12 @@ async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): 
     }
     let hz = body.hz;
     halt_for_band_change(&state, hz);
+    let Some(rig) = rig else {
+        if let Some(set) = &state.manual_dial {
+            set(hz);
+        }
+        return Ok(Json(json!({ "ok": true, "dial_hz": hz, "manual": true })));
+    };
     match tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await {
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
         Ok(Err(e)) => {
@@ -1261,6 +1280,13 @@ async fn station_info(State(state): State<AppState>, _: Authed) -> Json<Value> {
         && let Some(map) = info.as_object_mut()
     {
         map.insert("rig_control".into(), Value::Bool(true));
+    }
+    // senza radio comandabile le bande si scelgono lo stesso: cambiano solo la frequenza di Aurora
+    if state.manual_dial.is_some()
+        && state.active_rig().is_none()
+        && let Some(map) = info.as_object_mut()
+    {
+        map.insert("manual_dial".into(), Value::Bool(true));
     }
     Json(info)
 }

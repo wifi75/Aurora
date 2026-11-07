@@ -57,6 +57,8 @@ pub type LogStationProvider = Arc<dyn Fn() -> logbook::adif::Station + Send + Sy
 /// Chiamato dopo che il log interno e' cambiato in blocco (importazione): chi tiene in memoria i QSO gia' fatti li rilegge.
 pub type LogChangedHook = Arc<dyn Fn() + Send + Sync>;
 /// QSO cancellati dal log (None = log svuotato): il programma li toglie anche dal file ADIF di Aurora e rilegge i lavorati.
+/// Senza radio comandabile (niente CAT): imposta la frequenza di Aurora a mano (la radio si sposta a mano).
+pub type ManualDialHook = Arc<dyn Fn(u64) + Send + Sync>;
 pub type LogDeletedHook = Arc<dyn Fn(Option<Vec<logbook::LogEntry>>) + Send + Sync>;
 /// La finestra «Salva con nome» del sistema, aperta nel programma Windows: riceve il nome proposto e ritorna il file scelto
 /// (`None` = annullato). E' bloccante: si chiama fuori dal thread asincrono.
@@ -160,6 +162,7 @@ pub struct AppState {
     pub log_station: Option<LogStationProvider>,
     pub log_changed: Option<LogChangedHook>,
     pub log_deleted: Option<LogDeletedHook>,
+    pub manual_dial: Option<ManualDialHook>,
     /// «Salva con nome» del programma Windows, per salvare il log ADIF dove si vuole (solo dal PC stesso).
     pub save_dialog: Option<SaveFileDialog>,
     /// «Apri la cartella dei crash» (solo nel programma Windows).
@@ -267,7 +270,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, save_dialog: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -398,6 +401,11 @@ impl AppState {
 
     pub fn with_log_station(mut self, provider: LogStationProvider) -> AppState {
         self.log_station = Some(provider);
+        self
+    }
+
+    pub fn with_manual_dial(mut self, hook: ManualDialHook) -> AppState {
+        self.manual_dial = Some(hook);
         self
     }
 

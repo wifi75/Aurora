@@ -670,6 +670,8 @@ async fn start_udp_emitter(
 
 /// Il file ADIF di Aurora, nella cartella dei dati: stesso formato di `wsjtx_log.adi`.
 const OWN_LOG_FILE: &str = "aurora_log.adi";
+/// La frequenza scelta a mano quando non c'e' una radio comandabile (CAT), ricordata al riavvio.
+const MANUAL_DIAL_FILE: &str = "frequenza-a-mano.txt";
 
 /// Da dove vengono i QSO gia' fatti: i file ADIF (`wsjtx_log.adi` di JTDX, `aurora_log.adi`), il log interno di Aurora (`logbook.db`) e, se
 /// c'e', il log di Log4OM2 (sola lettura). Lo stesso QSO presente in piu' sorgenti conta una volta sola.
@@ -1490,6 +1492,9 @@ pub async fn run(
     let own_log = Arc::clone(&logbook);
     // i rapporti degli errori: spenti di fabbrica, si accendono in Impostazioni > Assistenza
     let rapporti = rapporti::Rapporti::avvia(&config.data_dir);
+    // senza CAT la frequenza la sceglie l'operatore con le bande (`with_manual_dial`) e resta al riavvio
+    let manual_file = config.data_dir.join(MANUAL_DIAL_FILE);
+    let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(std::fs::read_to_string(&manual_file).ok().and_then(|t| t.trim().parse().ok()).unwrap_or(0)));
     let state = AppState::new(bus.clone(), auth, Arc::clone(&logbook), TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
@@ -1573,6 +1578,17 @@ pub async fn run(
             }) as remote_api::DxccMatrixProvider
         }))
         .with_log_station(log_station)
+        .with_manual_dial({
+            let dial = Arc::clone(&dial_hz);
+            let file = config.data_dir.join(MANUAL_DIAL_FILE);
+            Arc::new(move |hz: u64| {
+                dial.store(hz, std::sync::atomic::Ordering::Relaxed);
+                if let Err(e) = std::fs::write(&file, hz.to_string()) {
+                    tracing::warn!("frequenza a mano non salvata: {e}");
+                }
+                tracing::info!("frequenza a mano (senza CAT): {hz} Hz");
+            })
+        })
         .with_log_deleted({
             let own_file = config.data_dir.join(OWN_LOG_FILE);
             let live = live_log.clone();
@@ -1739,7 +1755,6 @@ pub async fn run(
 
     let commands = bus.take_command_rx().ok_or_else(|| StartError::Io("canale dei comandi gia' preso".into()))?;
     let io = EngineIo { events: bus.events(), spectrum: bus.spectrum(), commands };
-    let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(0));
     let mut native_live: Option<engine_native::LiveConfig> = None;
     let engine_task = match config.engine {
         EngineKind::Native => {

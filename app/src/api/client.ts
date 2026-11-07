@@ -91,6 +91,8 @@ export interface StationInfo {
   engine?: string;
   tx_allowed: boolean;
   rig_control?: boolean;
+  /** Niente radio comandabile: le bande cambiano solo la frequenza di Aurora (la radio si sposta a mano). */
+  manual_dial?: boolean;
   udp_listen: string;
   udp_forward: string[];
   export_udp: string[];

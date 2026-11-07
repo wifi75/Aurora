@@ -302,7 +302,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         onQueue={(id) => void onQueue(id)}
         pickBand={(band) => void pickBand(band)}
         pickMode={(mode) => void pickMode(mode)}
-        rigControl={info.data?.rig_control === true}
+        rigControl={info.data?.rig_control === true || info.data?.manual_dial === true}
         modeControl={info.data?.rig_control === true || info.data?.engine === 'native'}
         txAllowed={info.data?.tx_allowed ?? false}
       />
@@ -377,7 +377,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             dialHz={status?.dial_hz ?? 0}
             pendingBand={pendingBand}
             locked={status?.transmitting ?? false}
-            onPick={info.data?.rig_control ? (band) => void pickBand(band) : undefined}
+            onPick={info.data?.rig_control || info.data?.manual_dial ? (band) => void pickBand(band) : undefined}
             onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
         </div>

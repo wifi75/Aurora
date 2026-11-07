@@ -129,7 +129,7 @@ function ClusterPanelInner() {
   const shown = filterSpots(spots, filters, myBand);
 
   const tune = async (spot: ClusterSpot) => {
-    if (!info.data?.rig_control) {
+    if (!info.data?.rig_control && !info.data?.manual_dial) {
       setNote(t('cluster.noRig'));
       return;
     }
