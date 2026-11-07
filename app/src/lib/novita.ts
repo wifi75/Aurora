@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.188',
+    released: '2026-11-07T19:41:25Z',
+    kind: 'fixed',
+    title: ['Comandi più ordinati', 'Tidier Commands', 'Aufgeräumtere Befehle', 'Commandes plus nettes', 'Comandos más ordenados', 'Comandos mais arrumados'],
+    text: [
+      "I messaggi dei Comandi (Tune, Spot DX, errori) compaiono come avvisi a comparsa invece che in una riga sotto i pulsanti, e i pulsanti non escono più dal bordo della finestra.",
+      "Messages from Commands (Tune, Spot DX, errors) appear as pop-up notices instead of a line under the buttons, and the buttons no longer run past the window edge.",
+      "Meldungen der Befehle (Tune, DX spotten, Fehler) erscheinen als Hinweise statt als Zeile unter den Tasten, und die Tasten ragen nicht mehr über den Fensterrand.",
+      "Les messages des Commandes (Tune, Spot DX, erreurs) s'affichent en notifications au lieu d'une ligne sous les boutons, et les boutons ne dépassent plus du bord de la fenêtre.",
+      "Los mensajes de Comandos (Tune, Spot DX, errores) aparecen como avisos emergentes en lugar de una línea bajo los botones, y los botones ya no se salen del borde de la ventana.",
+      "As mensagens dos Comandos (Tune, Spot DX, erros) aparecem como avisos em vez de uma linha por baixo dos botões, e os botões já não saem da borda da janela.",
+    ],
+  },
+  {
     version: '0.11.187',
     released: '2026-11-07T18:55:46Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "En détachant la Propagation sur un autre écran, seule la carte « Qui m’a reçu » arrive, plein écran, sans le reste de la page.",
       "Al separar la Propagación en otra pantalla llega solo el mapa «Quién me ha recibido», a toda ventana, sin el resto de la página.",
       "Ao destacar a Propagação para outro monitor chega só o mapa «Quem me recebeu», em toda a janela, sem o resto da página.",
-    ],
-  },
-  {
-    version: '0.11.147',
-    released: '2026-11-05T17:39:54Z',
-    kind: 'fixed',
-    title: ['La finestra del display è il display', 'The display window is the display', 'Das Anzeigefenster ist die Anzeige', 'La fenêtre de l’afficheur est l’afficheur', 'La ventana de la pantalla es la pantalla', 'A janela do ecrã é o ecrã'],
-    text: [
-      "La finestra del display staccato si stringe esattamente attorno al display: niente più fondo nero in più sotto o di lato. Ridimensionandola dai bordi o con la maniglia, la finestra segue il display in proporzione.",
-      "The detached display window now fits exactly around the display: no more extra black background below or beside it. Resizing it from the edges or with the handle, the window follows the display in proportion.",
-      "Das Fenster der abgelösten Anzeige liegt jetzt genau um die Anzeige: kein zusätzlicher schwarzer Hintergrund mehr darunter oder daneben. Beim Ändern der Größe an den Rändern oder am Griff folgt das Fenster der Anzeige proportional.",
-      "La fenêtre de l’afficheur détaché se resserre exactement autour de l’afficheur : plus de fond noir en trop dessous ou à côté. En la redimensionnant par les bords ou avec la poignée, la fenêtre suit l’afficheur en proportion.",
-      "La ventana de la pantalla separada se ajusta exactamente a la pantalla: ya no queda fondo negro de más debajo o al lado. Al redimensionarla desde los bordes o con el asa, la ventana sigue a la pantalla en proporción.",
-      "A janela do ecrã destacado ajusta-se exatamente ao ecrã: já não sobra fundo preto por baixo ou ao lado. Ao redimensioná-la pelas bordas ou com a pega, a janela acompanha o ecrã em proporção.",
     ],
   },
 ];

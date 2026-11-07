@@ -27,7 +27,7 @@
 > ### Download Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Every installer is checked with [VirusTotal](https://www.virustotal.com) (about 70 antivirus engines) and Windows Defender before release: 0.11.187 — 0 detections out of 69 ([report](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)).
+> Every installer is checked with [VirusTotal](https://www.virustotal.com) (about 70 antivirus engines) and Windows Defender before release: 0.11.188 — 0 detections out of 69 ([report](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)).
 >
 > **[Windows installer (latest version)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Latest release page](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -41,7 +41,7 @@ Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.187: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.188: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.

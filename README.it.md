@@ -27,7 +27,7 @@
 > ### Scarica Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Ogni programma d'installazione viene analizzato con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender prima della pubblicazione: 0.11.187 — 0 segnalazioni su 69 ([risultato](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)).
+> Ogni programma d'installazione viene analizzato con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender prima della pubblicazione: 0.11.188 — 0 segnalazioni su 69 ([risultato](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)).
 >
 > **[Installatore per Windows (ultima versione)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Pagina dell'ultima release](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -41,7 +41,7 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.187: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.188: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.

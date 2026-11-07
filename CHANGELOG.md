@@ -3,6 +3,10 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.188 - 2026-11-07
+- **Comandi**: messaggi come toast (niente `live-note` sotto i pulsanti), nessun avviso per frequenze e interruttori; pulsanti `flex: 0 1 auto` che si stringono invece di uscire dal bordo.
+- **README**: badge VirusTotal e analisi antivirus degli installatori.
+
 ## 0.11.187 - 2026-11-07
 - **Comandi**: Tune di nuovo disegnato (`prefs.cmdTune`, rosso mentre trasmette), Spot DX su DXSummit (`postSpotDxsummit`, solo con `AllowSpotsDXSummit`), Log QSO solo con `prefs.cmdLogQso` (prima sempre visibile); sei pulsanti in una riga.
 - **Mappa DX**: linea da me al DX con Abilita Tx o in trasmissione; legenda in una riga.
