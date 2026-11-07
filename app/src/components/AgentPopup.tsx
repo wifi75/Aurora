@@ -28,6 +28,52 @@ export function showAgentPopup(notice: AgentNotice, seconds: number): void {
     host.remove();
   };
   root.render(<AgentPopup notice={notice} seconds={seconds} onClose={close} />);
+  chime(notice.update === true);
+}
+
+/**
+ * Il suono di ogni cartolina: un accordo luminoso che sale (quattro note morbide, con una piccola eco), pieno abbastanza da farsi
+ * notare. Per gli aggiornamenti una nota in piu' in cima. Se l'audio e' bloccato la cartolina compare lo stesso, muta.
+ */
+function chime(update: boolean): void {
+  try {
+    const Ctx = window.AudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    if (ctx.state === 'suspended') void ctx.resume();
+    const out = ctx.createGain();
+    out.gain.value = 0.9;
+    // eco leggera: il suono resta nell'aria un attimo
+    const echo = ctx.createDelay();
+    echo.delayTime.value = 0.16;
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.28;
+    echo.connect(feedback).connect(echo);
+    echo.connect(out);
+    out.connect(ctx.destination);
+    const notes = update ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
+    const start = ctx.currentTime + 0.04;
+    notes.forEach((f, i) => {
+      const at = start + i * 0.085;
+      for (const [type, mult, level] of [['triangle', 1, 0.16], ['sine', 2, 0.05]] as const) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = f * mult;
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.exponentialRampToValueAtTime(level, at + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.9);
+        osc.connect(gain);
+        gain.connect(out);
+        gain.connect(echo);
+        osc.start(at);
+        osc.stop(at + 0.95);
+      }
+    });
+    window.setTimeout(() => void ctx.close(), 2500);
+  } catch {
+    // audio non disponibile: la cartolina resta muta
+  }
 }
 
 function AgentPopup({ notice, seconds, onClose }: { notice: AgentNotice; seconds: number; onClose(): void }) {

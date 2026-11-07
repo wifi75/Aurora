@@ -20,8 +20,22 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.166',
+    released: '2026-11-07T07:42:33Z',
+    kind: 'fixed',
+    title: ['Attività di banda torna in cima', 'Band activity returns to the top', 'Bandaktivität springt nach oben zurück', 'L’activité de bande revient en haut', 'La actividad de banda vuelve arriba', 'A atividade de banda volta ao topo'],
+    text: [
+      "Se scorri Attività di banda e poi la lasci per 15 secondi, torna davvero all'ultima stazione ricevuta: prima l'arrivo delle stazioni nuove ogni 15 secondi faceva ripartire il conto e il ritorno non avveniva mai.",
+      "If you scroll Band activity and then leave it for 15 seconds, it really returns to the last station received: before, new stations arriving every 15 seconds restarted the count and it never came back.",
+      "Wenn du die Bandaktivität scrollst und sie 15 Sekunden in Ruhe lässt, springt sie wirklich zur zuletzt empfangenen Station zurück: vorher startete das Eintreffen neuer Stationen alle 15 Sekunden die Zählung neu.",
+      "Si tu fais défiler l’Activité de bande puis la laisses 15 secondes, elle revient vraiment à la dernière station reçue : avant, l’arrivée de nouvelles stations toutes les 15 secondes relançait le compte.",
+      "Si desplazas la Actividad de banda y la dejas 15 segundos, vuelve de verdad a la última estación recibida: antes, la llegada de estaciones nuevas cada 15 segundos reiniciaba la cuenta.",
+      "Se deslizares a Atividade de banda e a deixares 15 segundos, volta mesmo à última estação recebida: antes, a chegada de novas estações a cada 15 segundos reiniciava a contagem.",
+    ],
+  },
+  {
     version: '0.11.165',
-    released: '2026-11-07T07:35:18Z',
+    released: '2026-11-07T07:42:18Z',
     kind: 'new',
     title: ['Tema automatico', 'Automatic theme', 'Automatisches Design', 'Thème automatique', 'Tema automático', 'Tema automático'],
     text: [
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "QRZ.com sans abonnement n’envoie pas les infos QSL : Aurora les complète avec HamQTH (gratuit), en gardant nom et ville de QRZ. Les lettres L E D B (LoTW, eQSL, directe, bureau) apparaissent à côté de la station DX et dans la bulle de l’indicatif ; les indicatifs de l’Activité de bande sont préchargés. Avec l’afficheur large langue, volume et thème sont tout à droite ; dans la ligne du QSO en cours l’étiquette reste lisible.",
       "QRZ.com sin suscripción no manda la información QSL: Aurora la completa con HamQTH (gratis), manteniendo nombre y ciudad de QRZ. Las letras L E D B (LoTW, eQSL, directa, buró) aparecen junto a la estación DX y en el recuadro del indicativo; los indicativos de Actividad de banda se precargan. Con la pantalla ancha idioma, volumen y tema van a la derecha; en la fila del QSO en curso la etiqueta se lee bien.",
       "O QRZ.com sem assinatura não manda a informação QSL: a Aurora completa-a com o HamQTH (grátis), mantendo nome e cidade do QRZ. As letras L E D B (LoTW, eQSL, direta, bureau) aparecem junto à estação DX e no quadro do indicativo; os indicativos da Atividade de banda são pré-carregados. Com o ecrã largo idioma, volume e tema ficam à direita; na linha do QSO em curso a etiqueta lê-se bem.",
-    ],
-  },
-  {
-    version: '0.11.126',
-    released: '2026-11-04T21:23:33Z',
-    kind: 'changed',
-    title: ['Display quasi quadrati più alti e ben centrati', 'Taller, well-centred near-square displays', 'Höhere, gut zentrierte fast quadratische Anzeigen', 'Afficheurs presque carrés plus hauts et bien centrés', 'Pantallas casi cuadradas más altas y bien centradas', 'Ecrãs quase quadrados mais altos e bem centrados'],
-    text: [
-      "I display quasi quadrati sono 330 × 130 e stanno al centro fra il bordo della finestra e i pannelli; la barra del menu finisce prima del display, con l'angolo arrotondato. Anche i display estesi, di ogni tipo, hanno lo stesso spazio sopra e sotto.",
-      "Near-square displays are 330 × 130 and sit centred between the window edge and the panels; the menu bar ends before the display, with a rounded corner. Wide displays of every kind also have the same space above and below.",
-      "Fast quadratische Anzeigen sind 330 × 130 und sitzen mittig zwischen Fensterrand und Feldern; die Menüleiste endet vor der Anzeige, mit abgerundeter Ecke. Auch breite Anzeigen jeder Art haben oben und unten gleich viel Platz.",
-      "Les afficheurs presque carrés font 330 × 130 et sont centrés entre le bord de la fenêtre et les panneaux ; la barre du menu s’arrête avant l’afficheur, avec un coin arrondi. Les afficheurs larges de tout type ont aussi le même espace dessus et dessous.",
-      "Las pantallas casi cuadradas son 330 × 130 y quedan centradas entre el borde de la ventana y los paneles; la barra del menú termina antes de la pantalla, con la esquina redondeada. Las pantallas anchas de cualquier tipo también tienen el mismo espacio arriba y abajo.",
-      "Os ecrãs quase quadrados são 330 × 130 e ficam centrados entre a borda da janela e os painéis; a barra do menu acaba antes do ecrã, com o canto arredondado. Os ecrãs largos de qualquer tipo também têm o mesmo espaço em cima e em baixo.",
     ],
   },
 ];

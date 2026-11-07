@@ -1,5 +1,5 @@
 import { foxCalls, lineSender } from '../lib/fox';
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -173,17 +173,33 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   // se si scorre la lista e poi la si lascia stare per 15 secondi, torna da sola all'ultima stazione ricevuta (in cima, o in fondo se
   // l'ordine e' invertito)
   const backTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(backTimer.current), []);
-  const onListScroll = (e: UIEvent<HTMLElement>) => {
-    const el = e.currentTarget;
-    window.clearTimeout(backTimer.current);
-    const invert = el.classList.contains('decode-list--invert');
-    const atNewest = invert ? el.scrollHeight - el.clientHeight - el.scrollTop < 4 : el.scrollTop < 4;
-    if (atNewest) return;
-    backTimer.current = window.setTimeout(() => {
-      el.scrollTo({ top: invert ? el.scrollHeight : 0, behavior: 'smooth' });
-    }, 15_000);
-  };
+  const [listEl, setListEl] = useState<HTMLElement | null>(null);
+  // a scorrere puo' essere la lista o il riquadro del pannello che la contiene: si ascoltano entrambi (in cattura, perche' lo
+  // scorrimento non risale), e si riporta in cima quello che si e' mosso
+  useEffect(() => {
+    const list = listEl;
+    if (!list) return;
+    const host = list.closest<HTMLElement>('.dock-body') ?? list;
+    const invert = () => list.classList.contains('decode-list--invert');
+    // chi scorre davvero: la lista o il riquadro del pannello (quello che ha qualcosa da scorrere)
+    const scroller = () => (list.scrollHeight > list.clientHeight + 1 ? list : host);
+    const atNewest = (el: HTMLElement) => (invert() ? el.scrollHeight - el.clientHeight - el.scrollTop < 4 : el.scrollTop < 4);
+    // il conto riparte solo quando scorre la persona (rotella, dito, tasti, barra di scorrimento): gli spostamenti fatti dalla lista
+    // quando arrivano le stazioni nuove (ogni 15 s) non contano, altrimenti il conto non finiva mai
+    const onUser = () => {
+      window.clearTimeout(backTimer.current);
+      backTimer.current = window.setTimeout(() => {
+        const el = scroller();
+        if (!atNewest(el)) el.scrollTop = invert() ? el.scrollHeight : 0;
+      }, 15_000);
+    };
+    const kinds = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
+    for (const k of kinds) host.addEventListener(k, onUser, { capture: true, passive: true });
+    return () => {
+      for (const k of kinds) host.removeEventListener(k, onUser, { capture: true });
+      window.clearTimeout(backTimer.current);
+    };
+  }, [listEl]);
   const tapOnce = (id: number) => {
     const now = Date.now();
     if (lastTap.current && lastTap.current.id === id && now - lastTap.current.at < 2000) return;
@@ -280,7 +296,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const rows = pin ? (view.invert ? [...rest, pin] : [pin, ...rest]) : decodes;
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
-    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} onScroll={onListScroll}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
       {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
         const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');

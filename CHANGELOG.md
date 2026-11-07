@@ -3,6 +3,10 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.166 - 2026-11-07
+- **Attivita' di banda**: il ritorno all'ultima stazione dopo 15 s funziona davvero. Il conto riparte solo quando scorre la persona (rotella, dito, tasti, barra); gli spostamenti della lista all'arrivo delle stazioni nuove (ogni 15 s) lo facevano ripartire all'infinito. Il ritorno e' immediato (lo scorrimento morbido veniva annullato).
+- Prova locale: la cartolina dell'agente nel tray suona un accordo crescente (con una nota in piu' per gli aggiornamenti).
+
 ## 0.11.165 - 2026-11-07
 - **Tema automatico**: il pulsante del tema passa da Scuro a Chiaro ad Automatico (segue Windows e cambia con lui).
 - **Log**: dopo un QSO il pannello rilegge Log4OM subito e poi dopo 1,5, 4 e 8 s (prima fino a 10 s di ritardo); caratteri del pannello 0,7 px piu' piccoli.
