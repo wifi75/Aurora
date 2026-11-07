@@ -3,6 +3,12 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.184 - 2026-11-07
+- **Chiusura RR73 come WSJT-X**: dopo il nostro RR73 a log, senza novita' dall'altro, Aurora salta il periodo invece di ripeterlo (`hold_slot`); risponde se ripete il R+rapporto, chiude al 73, si ferma dopo 3 periodi.
+- **Ripresa del QSO**: doppio clic o Wait and Reply con lo stesso DX ripartono dal messaggio scelto (caso BG2EFX).
+- **Wait and Reply / Wait and Call spenti di fabbrica**.
+- **Interfaccia**: le 3 piu' lontane con colonne fisse e paese, pie' di pagina piu' leggibile, logo con l'aurora che scorre, scelta della lingua tolta dalla barra in alto.
+
 ## 0.11.183 - 2026-11-07
 - **Chiusura con RRR come WSJT-X** (verificato sui sorgenti 2.7 e 3.0.1, `message_is_73`): mandare RRR non registra piu'; si registra al suo 73 (`Status::R73`) o, se non arriva, all'ultimo tentativo di chiusura o dopo 5 risposte RRR al suo R+rapporto ripetuto (`RRR_REPEATS`, ora contato anche prima della registrazione). RR73 e 73 invariati.
 

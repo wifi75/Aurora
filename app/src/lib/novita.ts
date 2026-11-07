@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.184',
+    released: '2026-11-07T15:59:42Z',
+    kind: 'new',
+    title: ['Chiusura del QSO più pulita', 'Cleaner QSO closing', 'Saubererer QSO-Abschluss', 'Clôture du QSO plus propre', 'Cierre del QSO más limpio', 'Fecho do QSO mais limpo'],
+    text: [
+      "Dopo il tuo RR73 Aurora non lo ripete più da sola: aspetta il suo 73, e risponde solo se lui ripete il suo rapporto. «Wait and Reply / Wait and Call» è spento di serie. In Bande aperte le 3 stazioni più lontane hanno colonne allineate e il nome del paese; il piè di pagina è più leggibile e il logo ha l'aurora che scorre.",
+      "After your RR73 Aurora no longer repeats it on its own: it waits for his 73 and answers only if he repeats his report. «Wait and Reply / Wait and Call» is off by default. In Open bands the 3 farthest stations have aligned columns and the country name; the footer is easier to read and the logo has a flowing aurora.",
+      "Nach deinem RR73 wiederholt Aurora es nicht mehr von selbst: Es wartet auf seine 73 und antwortet nur, wenn er seinen Rapport wiederholt. «Wait and Reply / Wait and Call» ist standardmäßig aus. In Offene Bänder haben die 3 entferntesten Stationen ausgerichtete Spalten und den Ländernamen; die Fußzeile ist besser lesbar und das Logo hat ein fließendes Polarlicht.",
+      "Après ton RR73 Aurora ne le répète plus toute seule : elle attend son 73 et ne répond que s'il répète son report. « Wait and Reply / Wait and Call » est désactivé par défaut. Dans Bandes ouvertes les 3 stations les plus lointaines ont des colonnes alignées et le nom du pays ; le pied de page est plus lisible et le logo a une aurore qui défile.",
+      "Después de tu RR73 Aurora ya no lo repite sola: espera su 73 y solo responde si él repite su reporte. «Wait and Reply / Wait and Call» está apagado de serie. En Bandas abiertas las 3 estaciones más lejanas tienen columnas alineadas y el nombre del país; el pie de página se lee mejor y el logo tiene una aurora que fluye.",
+      "Depois do teu RR73 a Aurora já não o repete sozinha: espera o 73 dele e só responde se ele repetir o relatório. «Wait and Reply / Wait and Call» vem desligado. Em Bandas abertas as 3 estações mais distantes têm colunas alinhadas e o nome do país; o rodapé lê-se melhor e o logótipo tem uma aurora a deslizar.",
+    ],
+  },
+  {
     version: '0.11.183',
     released: '2026-11-07T15:44:08Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans la fenêtre à part l’afficheur a une poignée dans son coin en bas à droite : fais-la glisser et l’afficheur grandit ou rapetisse tout seul, en proportion et sans perte de qualité, quelle que soit la taille de la fenêtre. Double-clic sur la poignée : il s’adapte de nouveau à la fenêtre. La taille est mémorisée.",
       "En la ventana aparte la pantalla tiene un asa en su esquina inferior derecha: arrástrala y la pantalla crece o se reduce sola, en proporción y sin perder calidad, sea cual sea el tamaño de la ventana. Doble clic en el asa: vuelve a ajustarse a la ventana. El tamaño se recuerda.",
       "Na janela à parte o ecrã tem uma pega no canto inferior direito: arrasta-a e o ecrã cresce ou diminui sozinho, em proporção e sem perder qualidade, seja qual for o tamanho da janela. Duplo clique na pega: volta a ajustar-se à janela. O tamanho fica lembrado.",
-    ],
-  },
-  {
-    version: '0.11.143',
-    released: '2026-11-05T17:03:40Z',
-    kind: 'fixed',
-    title: ['Il menu per spostare il display si usa', 'The display move menu works', 'Das Menü zum Verschieben der Anzeige funktioniert', 'Le menu pour déplacer l’afficheur fonctionne', 'El menú para mover la pantalla funciona', 'O menu para mover o ecrã funciona'],
-    text: [
-      "Sul pulsantino per portare il display su un altro schermo la lente d’ingrandimento non si apre più: prima copriva il menu, lampeggiava e non si riusciva a scegliere nulla.",
-      "Over the button that moves the display to another screen the magnifier no longer opens: before it covered the menu, flickered and nothing could be chosen.",
-      "Über dem Knopf, der die Anzeige auf einen anderen Bildschirm bringt, öffnet sich die Lupe nicht mehr: vorher verdeckte sie das Menü, flackerte und man konnte nichts wählen.",
-      "Sur le bouton qui déplace l’afficheur vers un autre écran la loupe ne s’ouvre plus : avant elle couvrait le menu, clignotait et on ne pouvait rien choisir.",
-      "Sobre el botón que lleva la pantalla a otra pantalla ya no se abre la lupa: antes tapaba el menú, parpadeaba y no se podía elegir nada.",
-      "Sobre o botão que leva o ecrã para outro monitor a lupa já não abre: antes tapava o menu, piscava e não se conseguia escolher nada.",
     ],
   },
 ];

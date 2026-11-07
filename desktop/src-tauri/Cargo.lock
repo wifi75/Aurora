@@ -231,7 +231,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-spectrum"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "cpal",
@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "aurora"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-core"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "serde",
  "tokio",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-desktop"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora",
  "aurora-core",
@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "auth"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -698,7 +698,7 @@ dependencies = [
 
 [[package]]
 name = "clock-sync"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "serde",
  "serde_json",
@@ -1014,7 +1014,7 @@ dependencies = [
 
 [[package]]
 name = "decode-history"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "rusqlite",
  "serde",
@@ -1234,7 +1234,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "dx-cluster"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "serde",
  "serde_json",
@@ -1244,7 +1244,7 @@ dependencies = [
 
 [[package]]
 name = "dxcc"
-version = "0.11.183"
+version = "0.11.184"
 
 [[package]]
 name = "dyn-clone"
@@ -1286,7 +1286,7 @@ checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
 name = "engine-jtdx"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "dxcc",
@@ -1295,7 +1295,7 @@ dependencies = [
 
 [[package]]
 name = "engine-native"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -1314,7 +1314,7 @@ dependencies = [
 
 [[package]]
 name = "engine-sim"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "tokio",
@@ -1503,7 +1503,7 @@ dependencies = [
 
 [[package]]
 name = "ft4"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "ft8",
  "rustfft",
@@ -1511,7 +1511,7 @@ dependencies = [
 
 [[package]]
 name = "ft8"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "rayon",
  "rustfft",
@@ -2254,7 +2254,7 @@ dependencies = [
 
 [[package]]
 name = "input-level"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "audio-spectrum",
  "aurora-core",
@@ -2462,7 +2462,7 @@ dependencies = [
 
 [[package]]
 name = "jt"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "rustfft",
 ]
@@ -2587,7 +2587,7 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "logbook"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "rusqlite",
@@ -3171,7 +3171,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "online-info"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "serde",
  "serde_json",
@@ -3510,7 +3510,7 @@ checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
 name = "qso-engine"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "engine-jtdx",
@@ -3521,7 +3521,7 @@ dependencies = [
 
 [[package]]
 name = "qso-export"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -3531,7 +3531,7 @@ dependencies = [
 
 [[package]]
 name = "qso-native"
-version = "0.11.183"
+version = "0.11.184"
 
 [[package]]
 name = "quick-xml"
@@ -3705,7 +3705,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "remote-api"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "auth",
@@ -3735,7 +3735,7 @@ dependencies = [
 
 [[package]]
 name = "reporting"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -3810,7 +3810,7 @@ dependencies = [
 
 [[package]]
 name = "rig-control"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "serde",
@@ -5355,7 +5355,7 @@ dependencies = [
 
 [[package]]
 name = "tx-native"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "cpal",
@@ -5384,11 +5384,11 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
 name = "udp-bridge"
-version = "0.11.183"
+version = "0.11.184"
 
 [[package]]
 name = "udp-emitter"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "logbook",
@@ -5435,7 +5435,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "updater"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "minisign-verify",
  "serde",
@@ -6176,7 +6176,7 @@ dependencies = [
 
 [[package]]
 name = "wishlist"
-version = "0.11.183"
+version = "0.11.184"
 dependencies = [
  "aurora-core",
  "serde",
