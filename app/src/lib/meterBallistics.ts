@@ -37,6 +37,8 @@ export function useMeterBallistics(meters: RadioMeters | null): RadioMeters | nu
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
+    let drawn = 0;
+    let dirty = false;
     const tick = (now: number) => {
       const dt = Math.min(0.2, (now - last) / 1000);
       last = now;
@@ -44,8 +46,15 @@ export function useMeterBallistics(meters: RadioMeters | null): RadioMeters | nu
       const prev = shown.current;
       const s = settle(prev.s, sDb(m), dt, S_RELEASE_DB_PER_S);
       const po = settle(prev.po, m?.power_w ?? null, dt, Math.max(1, prev.po ?? 0) * PO_RELEASE_PER_S);
+      // il valore della lancetta segue ogni fotogramma, ma il display si ridisegna al piu' 25 volte al secondo (prima 60: tutto il
+      // display della radio rifatto a ogni fotogramma) e mai a finestra nascosta
       if (s !== prev.s || po !== prev.po) {
         shown.current = { s, po };
+        dirty = true;
+      }
+      if (dirty && now - drawn >= 40 && !document.hidden) {
+        drawn = now;
+        dirty = false;
         redraw((n) => n + 1);
       }
       frame = requestAnimationFrame(tick);

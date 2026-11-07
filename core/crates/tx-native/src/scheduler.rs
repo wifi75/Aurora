@@ -461,7 +461,14 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
     match &outcome {
         TxOutcome::Completed => tracing::info!("trasmissione conclusa"),
         TxOutcome::Halted => tracing::info!("trasmissione fermata"),
-        TxOutcome::Failed(why) => tracing::warn!("trasmissione fallita: {why}"),
+        TxOutcome::Failed(why) => {
+            tracing::warn!("trasmissione fallita: {why}");
+            // senza CAT la ricezione resta intera (anche per chi ascolta soltanto): si avvisa solo che non si puo' trasmettere
+            let lower = why.to_lowercase();
+            if lower.contains("radio non collegata") || lower.contains("nessuna radio collegata") {
+                aurora_core::notice::notice("no_cat", "");
+            }
+        }
     }
     inner.finish(outcome);
 }

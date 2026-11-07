@@ -10,7 +10,7 @@ import { MAP_STYLES } from '../lib/mapStyles';
 import { stationsWithGrid } from '../lib/mapStations';
 import { gridToLatLon } from '../lib/maidenhead';
 import { browserStorage } from '../lib/theme';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 const KEY = 'aurora-mappa-dx';
 const DAY_MS = 86_400_000;
@@ -70,7 +70,7 @@ export function DxMapPage({ solo = false, bare = false }: { solo?: boolean; /** 
 function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_call', 'de_grid']);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });

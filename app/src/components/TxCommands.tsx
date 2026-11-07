@@ -1,3 +1,4 @@
+import { useStation } from '../state/station';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getControls, postControl, postReport, postRxFrequency, postTxFrequency, type ControlId } from '../api/client';
@@ -19,7 +20,10 @@ interface Props {
  * Comandi: Tx, Rx e Rapporto in grande, con le frecce che copiano una frequenza sull'altra, e il pulsante Hold Tx Freq. Il resto (stazione DX,
  * CQ, messaggio libero, Tx/Rx Split, Canc DX) e' stato tolto o spostato nella Trasmissione.
  */
-export function TxCommands({ txAllowed, initialFrequency = 1500, status = null }: Props) {
+export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusProp }: Props) {
+  // senza stato passato lo legge da solo: cosi' chi lo contiene non deve ridisegnarsi a ogni arrivo dello stato
+  const ownStatus = useStation((st) => st.status);
+  const status = statusProp === undefined ? ownStatus : statusProp;
   const t = useT();
   const client = useQueryClient();
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });

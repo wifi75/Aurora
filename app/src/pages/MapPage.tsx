@@ -10,7 +10,7 @@ import { useT } from '../i18n';
 import { stationsWithGrid } from '../lib/mapStations';
 import { bandOf } from '../lib/format';
 import { readMapOptions, saveMapOptions, type MapOptions } from '../lib/mapOptions';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 /** Le scritte della mappa nella lingua scelta. */
 export function mapLabels(t: ReturnType<typeof useT>) {
@@ -37,7 +37,7 @@ export function MapPage({ solo = false }: { solo?: boolean } = {}) {
 function MapPageBody({ solo }: { solo: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_grid', 'dial_hz']);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
   const [band, setBand] = useState('all');
   const [showWorked, setShowWorked] = useState(true);

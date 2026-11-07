@@ -59,8 +59,11 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
     let dir = 1;
     let pos = el.scrollLeft;
     let hold = 0;
-    const tick = (now: number) => {
-      raf = requestAnimationFrame(tick);
+    // 20 passi al secondo bastano per uno scorrimento lento e morbido (prima 60, sempre, anche a finestra nascosta)
+    const tick = () => {
+      raf = window.setTimeout(tick, 50);
+      if (document.hidden) return;
+      const now = performance.now();
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       const max = el.scrollWidth - el.clientWidth;
@@ -84,8 +87,8 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
       }
       el.scrollLeft = pos;
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    raf = window.setTimeout(tick, 50);
+    return () => window.clearTimeout(raf);
   }, []);
 
   if (items.length === 0) return <section className="cq-strip cq-strip--empty"><p>{emptyText ?? t('decode.noCq')}</p></section>;

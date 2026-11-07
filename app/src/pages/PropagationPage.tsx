@@ -16,7 +16,7 @@ import { formatDistance, usePrefs } from '../lib/prefs';
 import { bandCounts, bestSnr, conditionGroup, latestPerReceiver, pskRows, summarize, type PskRow } from '../lib/psk';
 import { aLevel, conditionLevel, kLevel, sfiLevel, type Level } from '../lib/solar';
 import { isNight } from '../lib/terminator';
-import { useStation } from '../state/station';
+import { useStatusPick } from '../state/station';
 import { mapLabels } from './MapPage';
 
 /** Divide le righe in blocchi, per affiancare piu' colonne di tabella e vedere piu' stazioni senza scorrere. */
@@ -100,7 +100,7 @@ function PropagationPageBody({ solo }: { solo: boolean }) {
   const t = useT();
   const client = useQueryClient();
   const prefs = usePrefs((s) => s.prefs);
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_grid', 'dial_hz']);
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const solar = useQuery({ queryKey: ['online-solar'], queryFn: getSolar, retry: false, refetchInterval: 60_000, enabled: online.data?.solar === true });
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });

@@ -1,5 +1,6 @@
 import { useFox } from './fox';
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
 
 /** I colori chiesti da un programma collegato via UDP per un nominativo (Highlight Callsign). */
@@ -294,3 +295,18 @@ export const useStation = create<StationState>((set) => ({
     set({ status: null, decodes: [], txLog: [], pendingDx: null, pendingSince: 0, connection: 'connecting', pending: {}, pendingAt: 0, pendingBand: null, wanted: [], wantedBanner: null, updateNotice: null, audioLevel: null, audioLevelAt: 0, lastDecodeAt: null, sessionStartAt: null, clearedBand: null, clearedDx: null, highlights: {} });
   },
 }));
+
+/**
+ * Solo i campi dello stato che servono a un componente: lo stato arriva piu' volte al secondo (S-meter, livelli) e chi lo legge intero si
+ * ridisegnava a ogni arrivo anche se gli serviva solo la banda. Con questa scelta si ridisegna solo quando cambia uno dei suoi campi.
+ */
+export function useStatusPick<K extends keyof StationStatus>(keys: readonly K[]): Pick<StationStatus, K> | null {
+  return useStation(
+    useShallow((s) => {
+      if (!s.status) return null as unknown as Pick<StationStatus, K>;
+      const out = {} as Pick<StationStatus, K>;
+      for (const k of keys) out[k] = s.status[k];
+      return out;
+    }),
+  ) as Pick<StationStatus, K> | null;
+}

@@ -60,6 +60,14 @@ export const diagnosisStrings = {
     'El audio pierde bloques ({detail} por minuto): comprueba el cable USB de la tarjeta de sonido y quita el ahorro de energía USB de Windows; cierra los programas pesados.',
     'O áudio está a perder blocos ({detail} por minuto): verifica o cabo USB da placa de som e desliga a poupança de energia USB do Windows; fecha os programas pesados.',
   ],
+  'diag.no_cat': [
+    "Attenzione: non puoi trasmettere perché la radio non è collegata (CAT non configurato). La ricezione funziona lo stesso: per trasmettere scegli la radio in Impostazioni › Radio e premi Collega.",
+    "Warning: you can't transmit because the radio isn't connected (CAT not set up). Reception still works: to transmit, choose the radio in Settings › Radio and press Connect.",
+    "Achtung: Du kannst nicht senden, weil das Funkgerät nicht verbunden ist (CAT nicht eingerichtet). Der Empfang funktioniert trotzdem: zum Senden wähle das Funkgerät unter Einstellungen › Funkgerät und drücke Verbinden.",
+    "Attention : tu ne peux pas émettre car la radio n’est pas connectée (CAT non configuré). La réception fonctionne quand même : pour émettre, choisis la radio dans Réglages › Radio et appuie sur Connecter.",
+    "Atención: no puedes transmitir porque la radio no está conectada (CAT sin configurar). La recepción funciona igual: para transmitir elige la radio en Ajustes › Radio y pulsa Conectar.",
+    "Atenção: não podes transmitir porque o rádio não está ligado (CAT não configurado). A receção funciona na mesma: para transmitir escolhe o rádio em Definições › Rádio e carrega em Ligar.",
+  ],
   'diag.no_radio': [
     'Stai trasmettendo senza una radio collegata: il PTT non viene comandato (va bene solo con il VOX). Scegli la radio in Impostazioni › Radio.',
     'You are transmitting without a connected radio: PTT is not keyed (fine only with VOX). Choose the radio in Settings › Radio.',

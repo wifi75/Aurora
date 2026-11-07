@@ -33,7 +33,9 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
   const dash = groups.find((g) => g.id === DASHBOARD && g.open);
   const go = (into?: string) => {
     setMenu(false);
-    detach(item, into);
+    // la finestra a parte nasce grande quanto il pannello sullo schermo (non a tutto schermo)
+    const box = host.current?.closest('.dock-panel, .grid-block, .grid-panel')?.getBoundingClientRect();
+    detach(item, into, box && box.width > 50 && box.height > 50 ? { w: Math.round(box.width), h: Math.round(box.height) } : undefined);
     // una pagina intera staccata: la finestra principale torna alla Stazione
     if (item === 'map' || item === 'propagation') location.hash = '#/';
   };

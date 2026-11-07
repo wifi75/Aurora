@@ -826,3 +826,12 @@ html[data-theme='light'] .foxc-card {
   border-color: #6a55e0 !important;
   box-shadow: none;
 }
+
+/* Record di distanza: piu' visibili (titolo, righe piu' alte, nominativo e km in evidenza) */
+.bands-open-records { gap: 5px; }
+.bands-open-record { padding: 6px 10px; font-size: 12.5px; border-color: color-mix(in srgb, #8e7bff 55%, var(--border)); background: color-mix(in srgb, #8e7bff 10%, transparent); }
+.bands-open-record > .muted:first-child { font-weight: 700; color: var(--text); opacity: 0.85; }
+.bands-open-record b.data { font-size: 14px; color: #f5c542; letter-spacing: 0.02em; }
+.bands-open-record .bands-open-km { font-size: 14px; font-weight: 800; color: #2cf5a4; }
+html[data-theme='light'] .bands-open-record b.data { color: #9a6a00; }
+html[data-theme='light'] .bands-open-record .bands-open-km { color: #0b7f4a; }

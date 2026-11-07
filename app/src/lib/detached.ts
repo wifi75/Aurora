@@ -71,11 +71,13 @@ function evenSizes(n: number): number[] {
 }
 
 /** Apre (o porta davanti) la finestra di un gruppo: nel programma per Windows la crea il guscio, sul secondo schermo. */
-export function openGroupWindow(id: string): void {
-  // cosa contiene viaggia anche nell'indirizzo: se la finestra nuova non trova ancora il gruppo nell'archivio, lo ricostruisce da qui
+export function openGroupWindow(id: string, size?: { w: number; h: number }): void {
+  // cosa contiene viaggia anche nell'indirizzo: se la finestra nuova non trova ancora il gruppo nell'archivio, lo ricostruisce da qui;
+  // `w` e `h`: la misura del pannello da staccare (la finestra nasce grande uguale)
   const g = readGroups().find((x) => x.id === id);
-  const q = g ? `?items=${g.items.join(',')}${g.mode === 'grid' ? '&mode=grid' : ''}` : '';
-  window.open(`${location.origin}/${q}#/finestra/${id}`, `aurora-${id}`, 'width=1000,height=700');
+  const dims = size ? `&w=${size.w}&h=${size.h}` : '';
+  const q = g ? `?items=${g.items.join(',')}${g.mode === 'grid' ? '&mode=grid' : ''}${dims}` : '';
+  window.open(`${location.origin}/${q}#/finestra/${id}`, `aurora-${id}`, size ? `width=${size.w},height=${size.h}` : 'width=1000,height=700');
 }
 
 const ITEM_IDS: readonly string[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster', 'map', 'dxmap', 'propagation', 'display'];
@@ -96,7 +98,7 @@ export function restoreGroup(group: Group): void {
 }
 
 /** Porta un elemento in una finestra a parte: nuova, o accanto a quelli di una finestra gia' aperta. */
-export function detach(item: ItemId, into?: string): void {
+export function detach(item: ItemId, into?: string, size?: { w: number; h: number }): void {
   const groups = readGroups().map((g) => ({ ...g, items: g.items.filter((i) => i !== item) })).filter((g) => g.items.length > 0);
   let id = into;
   const target = into ? groups.find((g) => g.id === into) : undefined;
@@ -114,7 +116,8 @@ export function detach(item: ItemId, into?: string): void {
     groups.push({ id, items: [item], dir: 'row', sizes: [1], open: true });
   }
   writeGroups(groups);
-  if (id) openGroupWindow(id);
+  // in una finestra nuova il pannello tiene la sua misura; accanto ad altri resta la misura di quella finestra
+  if (id) openGroupWindow(id, target ? undefined : size);
 }
 
 /** Rimette un elemento nella finestra principale; la finestra a parte rimasta vuota si chiude da sola. */

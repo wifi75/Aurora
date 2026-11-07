@@ -135,7 +135,10 @@ function TxMessageField({ value, disabled, label, onCommit }: { value: string; d
 }
 
 /** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
-export function TxPanel({ txAllowed, status = null, decodes = [], part = 'all' }: Props) {
+export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'all' }: Props) {
+  // senza stato passato lo legge da solo: cosi' chi lo contiene non deve ridisegnarsi a ogni arrivo dello stato
+  const ownStatus = useStation((st) => st.status);
+  const status = statusProp === undefined ? ownStatus : statusProp;
   const t = useT();
   const [note, setNote] = useState('');
   const { messages, selected, active, next, hound, skipTx1, controls, pendingDx } = useTxSequence(status, decodes);

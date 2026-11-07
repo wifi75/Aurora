@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, memo } from 'react';
 import { getOnline, getPsk, getSolar } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
@@ -10,16 +10,16 @@ import { conditionGroup, continentAt, latestPerReceiver, pskRows } from '../lib/
 import { browserStorage } from '../lib/theme';
 import { isNight } from '../lib/terminator';
 import { Conditions } from '../pages/PropagationPage';
-import { useStation } from '../state/station';
+import { useStatusPick } from '../state/station';
 
 /**
  * «Bande aperte»: le condizioni di propagazione per gruppo di bande (giorno e notte, quella dove sei evidenziata) e, sotto, le tre
  * stazioni piu' lontane che hanno ricevuto il tuo segnale (PSK Reporter). I dati vengono dai servizi online, accesi nelle Impostazioni.
  */
-export function BandsOpen() {
+function BandsOpenInner() {
   const t = useT();
   const prefs = usePrefs((s) => s.prefs);
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_grid', 'dial_hz']);
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const solar = useQuery({ queryKey: ['online-solar'], queryFn: getSolar, retry: false, refetchInterval: 60_000, enabled: online.data?.solar === true });
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
@@ -189,3 +189,6 @@ function recordsFrom(best: { receiver: string; band: string | null; km: number |
   const week = Object.values(kept).reduce<DistanceRecord | null>((a, b) => (!a || b.km > a.km ? b : a), null);
   return { today: kept[day] ?? null, week, kept };
 }
+
+/** Senza proprieta': si ridisegna solo per i suoi dati, non ogni volta che si ridisegna la Stazione. */
+export const BandsOpen = memo(BandsOpenInner);
