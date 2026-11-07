@@ -104,11 +104,14 @@ pub fn run() {
     let app = tauri::Builder::default()
         .setup(|app| {
             build_tray(app.handle())?;
-            if std::env::var("AURORA_AGENTE_PROVA").as_deref() == Ok("1") {
+            // AURORA_AGENTE_PROVA=1 mostra una cartolina di prova; con il nome di un tema (natale, anno, pasqua, aggiorna, servizio) la mostra con quel tema
+            let prova = std::env::var("AURORA_AGENTE_PROVA").unwrap_or_default();
+            if prova == "1" || matches!(prova.as_str(), "natale" | "anno" | "pasqua" | "aggiorna" | "servizio") {
                 let h = app.handle().clone();
+                let theme = if prova == "1" { String::new() } else { prova };
                 std::thread::spawn(move || {
                     std::thread::sleep(Duration::from_secs(3));
-                    show_card(&h, Card { kind: "Prova", title: "Cartolina di prova".into(), text: "Se la vedi, la cartolina funziona.".into(), main: "OK", main_action: "close", update: true });
+                    show_card(&h, Card { kind: "Prova", title: "Cartolina di prova".into(), text: "Se la vedi, la cartolina funziona.".into(), main: "OK", main_action: "close", update: theme.is_empty(), theme });
                 });
             }
             let handle = app.handle().clone();
@@ -350,11 +353,11 @@ fn check(app: &AppHandle, asked: bool) {
                 .take(3)
                 .collect::<Vec<_>>()
                 .join(" · ");
-            show_card(app, Card { kind: "Aggiornamento", title: format!("Aurora {tag} è pronta"), text: summary, main: "Aggiorna ora", main_action: "update", update: true });
+            show_card(app, Card { kind: "Aggiornamento", title: format!("Aurora {tag} è pronta"), text: summary, main: "Aggiorna ora", main_action: "update", update: true, theme: String::new() });
             seen.versions.push(tag);
             shown = true;
         } else if asked {
-            show_card(app, Card { kind: "Aggiornamenti", title: format!("Aurora è aggiornata ({VERSION})"), text: "Hai già l'ultima versione.".into(), main: "OK", main_action: "close", update: false });
+            show_card(app, Card { kind: "Aggiornamenti", title: format!("Aurora è aggiornata ({VERSION})"), text: "Hai già l'ultima versione.".into(), main: "OK", main_action: "close", update: false, theme: String::new() });
             shown = true;
         }
     }
@@ -377,6 +380,12 @@ fn check(app: &AppHandle, asked: bool) {
                 main: if link.is_empty() { "OK" } else { "Apri" },
                 main_action: if link.is_empty() { "close" } else { "link" },
                 update: false,
+                theme: m
+                    .get("stile")
+                    .and_then(|v| v.as_str())
+                    .filter(|t| matches!(*t, "natale" | "anno" | "pasqua" | "aggiorna" | "servizio"))
+                    .unwrap_or("")
+                    .to_string(),
             });
             if !link.is_empty() {
                 LINK.lock().map(|mut l| *l = link).ok();
@@ -404,10 +413,10 @@ fn check(app: &AppHandle, asked: bool) {
         // propagazione (hamqsl.com): tempesta geomagnetica e 12-10 m aperti di giorno, una volta al giorno
         if let Some(sol) = get_text(online_info::solar::URL).and_then(|b| online_info::solar::parse(&b)) {
             if let Some(k) = sol.k_index.filter(|k| *k >= 5) {
-                want("prop", format!("prop-{today}-k"), Card { kind: "Propagazione", title: format!("Tempesta geomagnetica (K {k})"), text: "Le bande HF sono disturbate: meglio le bande basse e i segnali forti.".into(), main: "OK", main_action: "close", update: false }, &mut seen);
+                want("prop", format!("prop-{today}-k"), Card { kind: "Propagazione", title: format!("Tempesta geomagnetica (K {k})"), text: "Le bande HF sono disturbate: meglio le bande basse e i segnali forti.".into(), main: "OK", main_action: "close", update: false, theme: String::new() }, &mut seen);
             }
             if sol.bands.iter().any(|b| b.name.contains("12m-10m") && b.time == "day" && b.condition == "Good") {
-                want("prop", format!("prop-{today}-10m"), Card { kind: "Propagazione", title: "12 e 10 metri aperti".into(), text: "Le condizioni di oggi danno buone le bande alte di giorno.".into(), main: "Apri Aurora", main_action: "open", update: false }, &mut seen);
+                want("prop", format!("prop-{today}-10m"), Card { kind: "Propagazione", title: "12 e 10 metri aperti".into(), text: "Le condizioni di oggi danno buone le bande alte di giorno.".into(), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
             }
         }
         // DXpedition che partono domani (NG3K)
@@ -420,12 +429,12 @@ fn check(app: &AppHandle, asked: bool) {
                 .filter(|d| missing.as_ref().is_none_or(|m| m.iter().any(|c| c.eq_ignore_ascii_case(&d.call))))
                 .take(3)
             {
-                want("dxped", format!("dxped-{}-{}", d.call, d.start), Card { kind: "DXpedition", title: format!("Domani parte {} · {}", d.call, d.country), text: d.info.chars().take(160).collect(), main: "Apri Aurora", main_action: "open", update: false }, &mut seen);
+                want("dxped", format!("dxped-{}-{}", d.call, d.start), Card { kind: "DXpedition", title: format!("Domani parte {} · {}", d.call, d.country), text: d.info.chars().take(160).collect(), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
             }
         }
         // riepilogo di ieri (dal log di Aurora), dopo le 8 del mattino
         if local_minutes() >= 8 * 60 && let Some((n, countries)) = yesterday_summary() {
-            want("daily", format!("daily-{today}"), Card { kind: "Riepilogo", title: format!("Ieri: {n} QSO"), text: format!("{countries} paesi diversi. Buoni DX anche oggi!"), main: "Apri Aurora", main_action: "open", update: false }, &mut seen);
+            want("daily", format!("daily-{today}"), Card { kind: "Riepilogo", title: format!("Ieri: {n} QSO"), text: format!("{countries} paesi diversi. Buoni DX anche oggi!"), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
         }
         if !icon_notes.is_empty() {
             let note = format!("Aurora · {}", icon_notes.join(" · "));
@@ -471,6 +480,8 @@ struct Card {
     /// `open` apre Aurora, `link` apre il collegamento del messaggio, `close` chiude e basta.
     main_action: &'static str,
     update: bool,
+    /// Tema grafico dei messaggi dell'autore: natale, anno, pasqua, aggiorna, servizio (vuoto = normale).
+    theme: String,
 }
 
 /// Registro dell'agente (non ha la console): `%TEMP%\aurora-agente.log`.
@@ -511,6 +522,7 @@ fn show_card(app: &AppHandle, card: Card) {
         .replace("{MAIN}", &esc(card.main))
         .replace("{ACTION}", card.main_action)
         .replace("{UPDATE}", if card.update { "1" } else { "0" })
+        .replace("{THEME}", if card.theme.is_empty() { "" } else { &card.theme })
         .replace("{SECONDS}", &(prefs().seconds.clamp(3, 60) * 1000).to_string());
     // la cartolina come file nella cartella temporanea: un indirizzo `data:` non sempre si apre come pagina principale
     let file = std::env::temp_dir().join("aurora-cartolina.html");
@@ -519,13 +531,14 @@ fn show_card(app: &AppHandle, card: Card) {
     }
     let Ok(url) = tauri::Url::from_file_path(&file) else { return };
     agent_log("cartolina richiesta");
+    let hat = card.theme == "natale";
     let app2 = app.clone();
     let r = app.run_on_main_thread(move || {
         agent_log("cartolina: thread principale");
         if let Some(old) = app2.get_webview_window("cartolina") {
             let _ = old.close();
         }
-        let (w, h) = (390.0, 230.0);
+        let (w, h) = if hat { (430.0, 272.0) } else { (390.0, 230.0) };
         let built = WebviewWindowBuilder::new(&app2, "cartolina", WebviewUrl::External(url))
             .title("Aurora")
             .decorations(false)
@@ -608,7 +621,8 @@ html,body{margin:0;background:transparent;font:13px system-ui,sans-serif;color:#
 .a{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}button.n{height:28px;padding:0 14px;border-radius:8px;border:1px solid #2a3850;background:none;color:#dbe6f2;font-weight:600;cursor:pointer}
 button.m{background:#2cf5a4;border-color:#2cf5a4;color:#04342c}.t{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,#2cf5a4,#27a0f5);width:100%}
 @keyframes in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes spin{to{transform:rotate(360deg)}}
-</style></head><body><div class="c" id="c"><div class="b"><div class="l"></div><div class="k"><b>AURORA</b><span>{KIND}</span></div><button class="x" onclick="go('close')">×</button></div>
+.b{position:relative;isolation:isolate}.b>*:not(.dc):not(.x){position:relative;z-index:1}.x{z-index:2}.dc{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}.dc:before{content:'';position:absolute;inset:0}.dc:after{position:absolute;right:46px;top:50%;transform:translateY(-50%);font-size:32px;line-height:1;filter:drop-shadow(0 2px 6px rgb(0 0 0/.45))}.natale{border-color:#e8c063;overflow:visible;top:46px;left:44px}.natale .b{background:radial-gradient(circle at 18% 50%,#8a1626,#3a0b14 72%);border-radius:13px 13px 0 0}.natale .dc:before{background-image:radial-gradient(2px 2px at 12% 20%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 30% 70%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 55% 35%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 72% 80%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 88% 25%,#fff 50%,transparent 51%);animation:snow 6s linear infinite;opacity:.85}.natale .dc:after{content:'🎄'}.natale .k b{background:linear-gradient(100deg,#ffe08a,#fff4d6 50%,#e8c063);-webkit-background-clip:text;background-clip:text}.natale button.m{background:#e8c063;border-color:#e8c063;color:#3a0b14}.natale .t{background:linear-gradient(90deg,#d6303f,#e8c063);border-radius:0 0 0 13px}.natale:before{content:'';position:absolute;z-index:3;left:-35px;top:-45px;width:70px;height:58px;transform:rotate(-45deg);pointer-events:none;filter:drop-shadow(0 4px 6px rgb(0 0 0/.45));background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d5e'/%3E%3Cstop offset='1' stop-color='%23b3121f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M14 78 C26 40 52 14 82 10 C98 8 108 18 104 30 C100 22 90 20 80 26 C66 36 64 60 66 78 Z' fill='url(%23r)'/%3E%3Cpath d='M18 60 C30 44 46 34 60 32' stroke='%23ffffff' stroke-opacity='.18' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Crect x='6' y='70' width='70' height='20' rx='10' fill='%23f7f7f2'/%3E%3Cpath d='M12 76 h58' stroke='%23d9d9d0' stroke-width='3' stroke-linecap='round' stroke-dasharray='2 6'/%3E%3Ccircle cx='106' cy='32' r='11' fill='%23f7f7f2'/%3E%3Ccircle cx='103' cy='29' r='4' fill='%23ffffff'/%3E%3C/svg%3E")}.anno{border-color:#b48cff}.anno .b{background:radial-gradient(circle at 18% 50%,#2b1a5e,#0a0820 72%)}.anno .dc:before{background-image:radial-gradient(2px 2px at 15% 30%,#ffd76a 50%,transparent 51%),radial-gradient(2.5px 2.5px at 38% 65%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 60% 22%,#c9a8ff 50%,transparent 51%),radial-gradient(2px 2px at 78% 70%,#ffd76a 50%,transparent 51%);animation:tw 1.8s ease-in-out infinite alternate}.anno .dc:after{content:'🥂'}.anno .k b{background:linear-gradient(100deg,#ffd76a,#c9a8ff 55%,#8e7bff);-webkit-background-clip:text;background-clip:text}.anno button.m{background:#ffd76a;border-color:#ffd76a;color:#2a1a00}.pasqua{border-color:#f7a8c8}.pasqua .b{background:radial-gradient(circle at 18% 50%,#2f5a3a,#13261b 72%)}.pasqua .dc:before{background-image:radial-gradient(3px 3px at 14% 28%,#f7a8c8 50%,transparent 51%),radial-gradient(3px 3px at 34% 72%,#ffe58a 50%,transparent 51%),radial-gradient(3px 3px at 56% 30%,#c9b6ff 50%,transparent 51%),radial-gradient(3px 3px at 74% 74%,#9ee6b0 50%,transparent 51%);animation:tw 2.6s ease-in-out infinite alternate}.pasqua .dc:after{content:'🐣'}.pasqua .k b{background:linear-gradient(100deg,#f7a8c8,#ffe58a 50%,#9ee6b0);-webkit-background-clip:text;background-clip:text}.pasqua button.m{background:#9ee6b0;border-color:#9ee6b0;color:#0f2e19}.aggiorna .b{background:radial-gradient(circle at 18% 50%,#0f4a44,#071a20 72%)}.aggiorna .dc:before{background:repeating-linear-gradient(0deg,transparent 0 14px,rgb(44 245 164/.07) 14px 15px);animation:up 2.4s linear infinite}.aggiorna .dc:after{content:'⬆';color:#2cf5a4;font-weight:700}.servizio{border-color:#f5a524}.servizio .b{background:repeating-linear-gradient(135deg,#3a2806 0 14px,#2a1d04 14px 28px)}.servizio .dc:after{content:'⚠️'}.servizio .k b{background:linear-gradient(100deg,#ffc65c,#f5a524 60%,#ff8a3d);-webkit-background-clip:text;background-clip:text}.servizio button.m{background:#f5a524;border-color:#f5a524;color:#2a1800}@keyframes snow{from{background-position:0 -60px}to{background-position:0 60px}}@keyframes tw{from{opacity:.35}to{opacity:1}}@keyframes up{from{background-position:0 0}to{background-position:0 -30px}}
+</style></head><body><div class="c {THEME}" id="c"><div class="b"><i class="dc"></i><div class="l"></div><div class="k"><b>AURORA</b><span>{KIND}</span></div><button class="x" onclick="go('close')">×</button></div>
 <div class="d"><h3>{TITLE}</h3><p>{TEXT}</p><div class="a"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('{ACTION}')">{MAIN}</button></div></div><i class="t" id="t"></i></div>
 <script>
 function go(a){location.href='https://aurora-'+a+'/'}
