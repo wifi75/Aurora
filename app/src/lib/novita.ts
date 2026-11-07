@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.185',
-    released: '2026-11-07T17:26:07Z',
+    released: '2026-11-07T17:35:03Z',
     kind: 'new',
     title: ['Comandi a parte e coda fino a 4', 'Separate Commands and a queue of up to 4', 'Eigene Befehle und Warteschlange bis 4', "Commandes à part et file jusqu'à 4", 'Comandos aparte y cola de hasta 4', 'Comandos à parte e fila até 4'],
     text: [
