@@ -141,7 +141,7 @@ Altre opzioni della stessa scheda: `SingleShotQSO` (il «1 QSO»), `SeqHaltTxRep
 ### La casella RRR
 
 Dal suggerimento di JTDX: **senza spunta il Tx4 e' `RR73`, con la spunta e' `RRR`** (`RRR\RR73` nel file delle impostazioni; qui false, quindi RR73).
-Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX e WSJT-X mandano ancora 73). **Dalla 0.11.124**, se il suo 73 non arriva, all'ultimo tentativo di chiusura (o dopo 3 se non c'e' limite) il QSO si registra lo stesso invece di essere abbandonato: molte stazioni non rispondono al RRR (scelta del proprietario; JTDX in quel caso non registra).
+Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX manda ancora 73; WSJT-X in FT8/FT4 no: vedi «Chiusura e registrazione in WSJT-X» qui sotto). **Dalla 0.11.124**, se il suo 73 non arriva, all'ultimo tentativo di chiusura (o dopo 3 se non c'e' limite) il QSO si registra lo stesso invece di essere abbandonato: molte stazioni non rispondono al RRR (scelta del proprietario; JTDX in quel caso non registra).
 
 ### Il periodo (pari/dispari)
 
@@ -319,3 +319,45 @@ Qui sotto: per ogni regola se **coincide**, e' stata **corretta** o **non e' ver
 ## Scelta del proprietario: «nuovo su banda» per paese e zone
 
 Per paese (DXCC) e zone CQ/ITU, se la casella «Banda» e' accesa vale la sola banda in qualunque modo anche quando e' accesa «Banda+Modo» (JTDX in quel caso guarda banda e modo insieme). Un paese gia' collegato su quella banda, con qualunque nominativo e in qualunque modo, non da' «DXCC BANDA». Locatore, prefisso e nominativo restano come JTDX (`criterion_news` in `engine-jtdx/src/worked.rs`).
+
+
+## Chiusura e registrazione in WSJT-X (verifica del 2026-11-07)
+
+Richiesta del proprietario: capire quando WSJT-X considera chiuso un QSO e quando lo mette a log, per confrontarlo con Aurora.
+Fonti: `widgets/mainwindow.cpp` del repository pubblico (ramo master, 2.7) e dei sorgenti ufficiali `wsjtx-3.0.1-src.tar.gz`
+(SourceForge, GPL), scaricati in `D:\build\wsjtx-src` fuori dal repository; il programma installato del proprietario e' la
+**3.2.0-rc1** (`C:\WSJT\wsjtx\bin\wsjtx.exe`, FileVersion 3.2.0-rc1, SHA-256 `47a7f473…d024dd`), i cui sorgenti non sono pubblici.
+L'analisi completa del binario con Ghidra 12.1.4 (via REA) non e' finita entro 330 s; nel binario ci sono pero' le stesse espressioni
+del codice (`^(73|RR73)$`, `^RR(?:R|73)$`, `^R(?!R73|RR)`, «Warning:  DX Call field is empty.»), quindi le regole sotto valgono anche
+per la 3.2.0-rc1 come **DEDUZIONE**; per la 2.7 e la 3.0.1 sono **VERIFICATE** sul codice.
+
+### Regole di WSJT-X (FT8 e FT4)
+
+1. **Cosa conta come chiusura**: `message_is_73` riconosce solo i messaggi che contengono `73` o `RR73`. **RRR non e' una chiusura.**
+2. **Quando registra**: all'**inizio della trasmissione** del primo messaggio di chiusura che parte (`m_sentFirst73` in `guiUpdate`),
+   se «Prompt me to log QSO» o «Log automatically» sono accesi. Non aspetta la risposta dell'altro.
+3. **Subito dopo**: `on_logQSOButton_clicked` chiama `cease_auto_Tx_after_QSO`, che spegne «Enable Tx». Il 73/RR73 parte **una volta
+   sola**: se l'altro non lo riceve e ripete, WSJT-X non risponde piu' da solo (l'auto-sequenza ignora i messaggi con `m_sentFirst73`).
+   Senza registrazione automatica si spegne lo stesso (`cease_auto_Tx_after_QSO` nel ramo `else`).
+4. **Chi risponde a un CQ**: riceve `RR73` o `RRR` → manda `73` (Tx5) → registra all'inizio di quel 73.
+5. **Chi chiama CQ con RR73** (Tx4 di serie): riceve `R-xx` → manda `RR73` → registra all'inizio di RR73. Il 73 dell'altro non
+   serve e non viene piu' letto.
+6. **Chi chiama CQ con RRR** (Tx4 cambiato in RRR): manda `RRR` e **non registra**. Se poi riceve `73`, registra in quel momento e
+   passa al Tx6 (CQ) **senza mandare un altro 73**. Se il 73 non arriva, continua a mandare RRR finche' scatta il watchdog e **non
+   registra mai**.
+7. In Hound registra quando la Fox manda `RR73`. Dalla 3.0.1 le uniche differenze riguardano MSK144/Q65 (con RRR manda ancora il 73)
+   e la gara NCCC Sprint in FT4 (non registra durante la gara): in FT8/FT4 normali nulla cambia rispetto alla 2.7.
+
+### Confronto con Aurora
+
+| Situazione | WSJT-X | Aurora |
+|---|---|---|
+| Mando RR73 | registra all'inizio del RR73 | uguale |
+| Ricevo RR73/RRR e mando 73 | registra all'inizio del 73 | uguale |
+| Mando RRR | **non** registra | **registra al primo RRR** (`is_73` comprende RRR, come JTDX) |
+| Dopo RRR arriva il suo 73 | registra, va al CQ senza 73 | non registra di nuovo, si ferma senza 73 (uguale nel comportamento) |
+| Il suo 73 non arriva mai | non registra | registra all'ultimo tentativo di chiusura (scelta del proprietario, 0.11.124) |
+| Dopo il 73/RR73 l'altro ripete R+rapporto | non risponde: Enable Tx spento | risponde ancora con RRR, al massimo 5 volte (`RRR_REPEATS`) |
+
+In sintesi: sul momento della registrazione per RR73 e 73 Aurora coincide con WSJT-X; le differenze sono la registrazione al primo
+RRR, quella all'ultimo tentativo senza 73 e le risposte ripetute dopo la chiusura, tutte scelte di Aurora/JTDX e non di WSJT-X.
