@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.169',
-    released: '2026-11-07T09:34:18Z',
+    released: '2026-11-07T09:53:41Z',
     kind: 'fixed',
     title: ['Le decodifiche nuove sempre in vista', 'New decodes always in view', 'Neue Dekodierungen immer sichtbar', 'Nouveaux décodages toujours visibles', 'Decodificaciones nuevas siempre a la vista', 'Novas descodificações sempre à vista'],
     text: [
