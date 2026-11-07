@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.181',
-    released: '2026-11-07T14:48:49Z',
+    released: '2026-11-07T14:52:45Z',
     kind: 'new',
     title: ["QSO a log con l'aurora", 'Logged QSO with the aurora', 'Geloggtes QSO mit Polarlicht', "QSO au log avec l'aurore", 'QSO en el log con la aurora', 'QSO no log com a aurora'],
     text: [
