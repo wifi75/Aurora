@@ -5,6 +5,7 @@
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
  * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
+ * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
@@ -21,6 +22,8 @@ interface Env {
   CHIAVE_INGRESSO: string;
   GIORNI_CONSERVAZIONE: string;
   ADMIN_TOKEN?: string;
+  /** Workers AI: traduce i messaggi dell'autore nelle altre lingue (solo con il segreto). */
+  AI: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
 }
 
 const MAX_REPORT = 32 * 1024;
@@ -292,6 +295,19 @@ export default {
         }
         const fatto = await messaggi.crea(env.INDICE, dati);
         return conCors(typeof fatto === 'string' ? risposta(400, { error: fatto }) : risposta(200, { messaggio: fatto }));
+      }
+      // traduzione automatica dei messaggi (solo l'autore): dall'italiano alle altre cinque lingue, da ricontrollare prima di pubblicare
+      if (req.method === 'POST' && url.pathname === '/v1/messaggi/traduci') {
+        if (!amministratore(req, env)) return conCors(risposta(401, { error: 'segreto' }));
+        const corpo = await leggiCorpo(req, 8_000);
+        if (!corpo) return conCors(risposta(413, { error: 'troppo grande' }));
+        let dati: { titolo?: unknown; testo?: unknown };
+        try {
+          dati = JSON.parse(new TextDecoder().decode(corpo)) as typeof dati;
+        } catch {
+          return conCors(risposta(400, { error: 'json' }));
+        }
+        return conCors(risposta(200, await messaggi.traduci(env.AI, String(dati.titolo ?? '').slice(0, 120), String(dati.testo ?? '').slice(0, 1200))));
       }
       const togli = /^\/v1\/messaggi\/([0-9a-f]{8})$/.exec(url.pathname);
       if (req.method === 'DELETE' && togli) {

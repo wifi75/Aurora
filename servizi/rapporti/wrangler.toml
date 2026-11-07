@@ -30,3 +30,7 @@ simple = { limit = 30, period = 60 }
 
 [observability]
 enabled = false
+
+# Workers AI: traduzione dei messaggi dell'autore (solo con ADMIN_TOKEN)
+[ai]
+binding = "AI"

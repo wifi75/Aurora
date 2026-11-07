@@ -116,3 +116,52 @@ export async function crea(db: D1Database, corpo: unknown): Promise<Messaggio | 
 export async function togli(db: D1Database, id: string): Promise<void> {
   await db.prepare('DELETE FROM messaggi WHERE id = ?1').bind(id).run();
 }
+
+/** Istruzioni per il modello: traduzione fedele, gergo radioamatoriale naturale, solo JSON. */
+const ISTRUZIONI =
+  'You translate short notices written by an Italian amateur radio operator for the users of Aurora, an FT8/FT4 program. ' +
+  'Translate faithfully, keeping the same meaning and tone; do not add, remove or change greetings. ' +
+  'Keep ham radio jargon natural for operators (DX, QSO, 73, band, "see you on the air"). Keep names like Aurora, IU3WJQ, FT8 unchanged. ' +
+  'Reply ONLY with JSON: {"en":{"titolo":"","testo":""},"de":{"titolo":"","testo":""},"fr":{"titolo":"","testo":""},"es":{"titolo":"","testo":""},"pt":{"titolo":"","testo":""}}.';
+
+/** Traduce titolo e testo dall'italiano nelle altre cinque lingue con Workers AI (Llama 3.3, che conosce il gergo radio). Ogni lingua che non arriva resta vuota. */
+export async function traduci(
+  ai: { run(model: string, input: Record<string, unknown>): Promise<unknown> },
+  titolo: string,
+  testo: string,
+): Promise<{ titolo: Partial<Record<Lingua, string>>; testo: Partial<Record<Lingua, string>> }> {
+  const out = { titolo: {} as Partial<Record<Lingua, string>>, testo: {} as Partial<Record<Lingua, string>> };
+  if (titolo.trim() === '' && testo.trim() === '') return out;
+  let risposta: unknown;
+  try {
+    const r = (await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+      messages: [
+        { role: 'system', content: ISTRUZIONI },
+        { role: 'user', content: JSON.stringify({ titolo, testo }) },
+      ],
+      max_tokens: 1800,
+      temperature: 0.2,
+    })) as { response?: unknown };
+    risposta = r.response;
+  } catch {
+    return out;
+  }
+  // il modello a volte risponde con l'oggetto gia' letto, a volte con il testo del JSON (anche tra ``` ```)
+  let dati: unknown = risposta;
+  if (typeof risposta === 'string') {
+    const m = /\{[\s\S]*\}/.exec(risposta);
+    try {
+      dati = m ? JSON.parse(m[0]) : null;
+    } catch {
+      dati = null;
+    }
+  }
+  if (typeof dati !== 'object' || dati === null) return out;
+  for (const l of LINGUE) {
+    if (l === 'it') continue;
+    const v = (dati as Record<string, { titolo?: unknown; testo?: unknown } | undefined>)[l];
+    if (typeof v?.titolo === 'string' && v.titolo.trim()) out.titolo[l] = v.titolo.trim().slice(0, 120);
+    if (typeof v?.testo === 'string' && v.testo.trim()) out.testo[l] = v.testo.trim().slice(0, 1200);
+  }
+  return out;
+}
