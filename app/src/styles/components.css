@@ -1101,3 +1101,81 @@ button.primary {
 .agent-card--festa .agent-card-band { background: radial-gradient(circle at 18% 50%, #5a1f1f 0%, #2a0f12 70%); }
 .agent-card--festa .agent-card-brand b { background: linear-gradient(100deg, #ffd76a, #ff8a5c 55%, #ff5d6c); -webkit-background-clip: text; background-clip: text; }
 .agent-card--festa .agent-card-btn--main { background: #f5c542; border-color: #f5c542; color: #3a2600; }
+
+/* ===== temi delle cartoline dei messaggi dell'autore ===== */
+.agent-card-band { isolation: isolate; }
+.agent-card-band > *:not(.agent-card-deco):not(.agent-card-x) { position: relative; z-index: 1; }
+.agent-card-band > .agent-card-x { z-index: 2; }
+.agent-card-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.agent-card-deco::before { content: ''; position: absolute; inset: 0; }
+.agent-card-deco::after { position: absolute; right: 46px; top: 50%; transform: translateY(-50%); font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.45)); }
+
+/* Natale: rosso e oro, neve che scende */
+.agent-card--t-natale { border-color: #e8c063; box-shadow: 0 18px 50px rgb(0 0 0 / 0.55), 0 0 26px rgb(232 192 99 / 0.35); }
+.agent-card--t-natale .agent-card-band { background: radial-gradient(circle at 18% 50%, #8a1626 0%, #3a0b14 72%); border-bottom-color: #6b2a1e; }
+.agent-card--t-natale .agent-card-deco::before { background-image: radial-gradient(2px 2px at 12% 20%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 30% 70%, #fff 50%, transparent 51%), radial-gradient(2px 2px at 55% 35%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 72% 80%, #fff 50%, transparent 51%), radial-gradient(2px 2px at 88% 25%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 42% 10%, #fff 50%, transparent 51%); background-size: 100% 100%; animation: agent-snow 6s linear infinite; opacity: 0.85; }
+.agent-card--t-natale .agent-card-deco::after { content: '🎄'; }
+.agent-card--t-natale .agent-card-brand b { background: linear-gradient(100deg, #ffe08a, #fff4d6 50%, #e8c063); -webkit-background-clip: text; background-clip: text; }
+.agent-card--t-natale .agent-card-btn--main { background: #e8c063; border-color: #e8c063; color: #3a0b14; }
+.agent-card--t-natale .agent-card-time { background: linear-gradient(90deg, #d6303f, #e8c063); }
+
+/* Anno nuovo: notte viola e scintille dorate */
+.agent-card--t-anno { border-color: #b48cff; box-shadow: 0 18px 50px rgb(0 0 0 / 0.55), 0 0 26px rgb(180 140 255 / 0.35); }
+.agent-card--t-anno .agent-card-band { background: radial-gradient(circle at 18% 50%, #2b1a5e 0%, #0a0820 72%); border-bottom-color: #2e2559; }
+.agent-card--t-anno .agent-card-deco::before { background-image: radial-gradient(2px 2px at 15% 30%, #ffd76a 50%, transparent 51%), radial-gradient(2.5px 2.5px at 38% 65%, #fff 50%, transparent 51%), radial-gradient(2px 2px at 60% 22%, #c9a8ff 50%, transparent 51%), radial-gradient(2px 2px at 78% 70%, #ffd76a 50%, transparent 51%), radial-gradient(1.5px 1.5px at 92% 40%, #fff 50%, transparent 51%); animation: agent-twinkle 1.8s ease-in-out infinite alternate; }
+.agent-card--t-anno .agent-card-deco::after { content: '🥂'; }
+.agent-card--t-anno .agent-card-brand b { background: linear-gradient(100deg, #ffd76a, #c9a8ff 55%, #8e7bff); -webkit-background-clip: text; background-clip: text; }
+.agent-card--t-anno .agent-card-btn--main { background: #ffd76a; border-color: #ffd76a; color: #2a1a00; }
+.agent-card--t-anno .agent-card-time { background: linear-gradient(90deg, #8e7bff, #ffd76a); }
+
+/* Pasqua: verde primavera e puntini pastello */
+.agent-card--t-pasqua { border-color: #f7a8c8; box-shadow: 0 18px 50px rgb(0 0 0 / 0.55), 0 0 26px rgb(247 168 200 / 0.3); }
+.agent-card--t-pasqua .agent-card-band { background: radial-gradient(circle at 18% 50%, #2f5a3a 0%, #13261b 72%); border-bottom-color: #2f4a37; }
+.agent-card--t-pasqua .agent-card-deco::before { background-image: radial-gradient(3px 3px at 14% 28%, #f7a8c8 50%, transparent 51%), radial-gradient(3px 3px at 34% 72%, #ffe58a 50%, transparent 51%), radial-gradient(3px 3px at 56% 30%, #c9b6ff 50%, transparent 51%), radial-gradient(3px 3px at 74% 74%, #9ee6b0 50%, transparent 51%), radial-gradient(3px 3px at 90% 30%, #f7a8c8 50%, transparent 51%); animation: agent-twinkle 2.6s ease-in-out infinite alternate; }
+.agent-card--t-pasqua .agent-card-deco::after { content: '🐣'; }
+.agent-card--t-pasqua .agent-card-brand b { background: linear-gradient(100deg, #f7a8c8, #ffe58a 50%, #9ee6b0); -webkit-background-clip: text; background-clip: text; }
+.agent-card--t-pasqua .agent-card-btn--main { background: #9ee6b0; border-color: #9ee6b0; color: #0f2e19; }
+.agent-card--t-pasqua .agent-card-time { background: linear-gradient(90deg, #f7a8c8, #9ee6b0); }
+
+/* Aggiornamento: verde Aurora, freccia che sale */
+.agent-card--t-aggiorna { border-color: #2cf5a4; }
+.agent-card--t-aggiorna .agent-card-band { background: radial-gradient(circle at 18% 50%, #0f4a44 0%, #071a20 72%); }
+.agent-card--t-aggiorna .agent-card-deco::before { background: repeating-linear-gradient(0deg, transparent 0 14px, rgb(44 245 164 / 0.07) 14px 15px); animation: agent-rise 2.4s linear infinite; }
+.agent-card--t-aggiorna .agent-card-deco::after { content: '⬆'; color: #2cf5a4; font-weight: 700; filter: drop-shadow(0 0 10px rgb(44 245 164 / 0.7)); }
+
+/* Avviso di servizio: ambra a strisce */
+.agent-card--t-servizio { border-color: #f5a524; box-shadow: 0 18px 50px rgb(0 0 0 / 0.55), 0 0 22px rgb(245 165 36 / 0.3); }
+.agent-card--t-servizio .agent-card-band { background: repeating-linear-gradient(135deg, #3a2806 0 14px, #2a1d04 14px 28px); border-bottom-color: #5a3d0a; }
+.agent-card--t-servizio .agent-card-deco::after { content: '⚠️'; }
+.agent-card--t-servizio .agent-card-brand b { background: linear-gradient(100deg, #ffc65c, #f5a524 60%, #ff8a3d); -webkit-background-clip: text; background-clip: text; }
+.agent-card--t-servizio .agent-card-btn--main { background: #f5a524; border-color: #f5a524; color: #2a1800; }
+.agent-card--t-servizio .agent-card-time { background: linear-gradient(90deg, #f5a524, #ff8a3d); }
+
+@keyframes agent-snow { from { background-position: 0 -60px; } to { background-position: 0 60px; } }
+@keyframes agent-twinkle { from { opacity: 0.35; } to { opacity: 1; } }
+@keyframes agent-rise { from { background-position: 0 0; } to { background-position: 0 -30px; } }
+@media (prefers-reduced-motion: reduce) { .agent-card-deco, .agent-card-deco::before { animation: none !important; } }
+
+/* Natale: cappellino di Babbo Natale appoggiato sull'angolo in alto a sinistra della cartolina */
+.agent-card--t-natale { overflow: visible; }
+.agent-card--t-natale .agent-card-band { border-radius: 13px 13px 0 0; overflow: hidden; }
+.agent-card--t-natale .agent-card-time { border-radius: 0 0 0 13px; }
+.agent-card--t-natale::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  /* misure calcolate: nel disegno (120x100) il centro della tesa e' a (41,80); a 70x58 px e ruotato di -45 gradi attorno al suo centro
+     cade 4,5 px a destra e 20 px sotto il centro dell'elemento. Cosi' il centro della tesa sta a (4,4) dall'angolo esterno, cioe'
+     proprio sulla curva del bordo (raggio 14 px), e il cappello punta in diagonale verso l'esterno */
+  left: -35px;
+  top: -45px;
+  width: 70px;
+  height: 58px;
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.45));
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d5e'/%3E%3Cstop offset='1' stop-color='%23b3121f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M14 78 C26 40 52 14 82 10 C98 8 108 18 104 30 C100 22 90 20 80 26 C66 36 64 60 66 78 Z' fill='url(%23r)'/%3E%3Cpath d='M18 60 C30 44 46 34 60 32' stroke='%23ffffff' stroke-opacity='.18' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Crect x='6' y='70' width='70' height='20' rx='10' fill='%23f7f7f2'/%3E%3Cpath d='M12 76 h58' stroke='%23d9d9d0' stroke-width='3' stroke-linecap='round' stroke-dasharray='2 6'/%3E%3Ccircle cx='106' cy='32' r='11' fill='%23f7f7f2'/%3E%3Ccircle cx='103' cy='29' r='4' fill='%23ffffff'/%3E%3C/svg%3E");
+}
+.own-g-preview .agent-card.agent-card--t-natale { margin: 44px 0 0 30px; width: calc(100% - 30px); }
+.sx-group.own-g-preview { overflow: visible; }

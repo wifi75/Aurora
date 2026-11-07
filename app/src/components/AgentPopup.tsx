@@ -10,6 +10,8 @@ export interface AgentNotice {
   primary: string;
   secondary: string;
   update?: boolean;
+  /** Tema grafico dei messaggi dell'autore: natale, anno, pasqua, aggiorna, servizio (vuoto = normale). */
+  theme?: string;
   /** Il pulsante principale apre questo indirizzo (nel browser). */
   link?: string;
   /** Cartolina di festa (auguri): colori caldi. */
@@ -106,12 +108,13 @@ function AgentPopup({ notice, seconds, onClose }: { notice: AgentNotice; seconds
   const leave = () => setLeaving(true);
   return (
     <div
-      className={`agent-card${leaving ? ' agent-card--leaving' : ''}${notice.update ? ' agent-card--update' : ''}${notice.festive ? ' agent-card--festa' : ''}`}
+      className={`agent-card${leaving ? ' agent-card--leaving' : ''}${notice.update ? ' agent-card--update' : ''}${notice.festive ? ' agent-card--festa' : ''}${notice.theme ? ` agent-card--t-${notice.theme}` : ''}`}
       role="status"
       onMouseEnter={() => (hover.current = true)}
       onMouseLeave={() => (hover.current = false)}
     >
       <div className="agent-card-band">
+        {notice.theme ? <i className="agent-card-deco" aria-hidden="true" /> : null}
         <Logo size={46} animated className="agent-card-logo" />
         <div className="agent-card-brand">
           <b>AURORA</b>

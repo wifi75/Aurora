@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { askConfirm } from '../components/ConfirmHost';
 import { showAgentPopup } from '../components/AgentPopup';
+import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
+import { useLang } from '../i18n/lang';
 import { Help } from './common';
 import { Group, Notes, Page } from './layout';
 
@@ -22,15 +24,76 @@ interface Msg {
   prima_di: string;
   link: string;
   tema: 'normale' | 'festa';
+  stile?: string;
 }
 
-/** Modelli pronti: riempiono il modulo (si possono poi cambiare). Date: da oggi per qualche giorno. */
-const TEMPLATES: readonly { id: string; days: number; festive: boolean; title: string; text: string; before?: 'current' }[] = [
-  { id: 'natale', days: 3, festive: true, title: 'Buon Natale!', text: 'Auguri di buon Natale a te e alla tua famiglia, e buoni DX!' },
-  { id: 'anno', days: 2, festive: true, title: 'Buon anno!', text: "Felice anno nuovo: che sia pieno di paesi nuovi e di bande aperte!" },
-  { id: 'pasqua', days: 2, festive: true, title: 'Buona Pasqua!', text: 'Auguri di buona Pasqua e buoni collegamenti!' },
-  { id: 'aggiorna', days: 7, festive: false, title: 'Aggiorna Aurora', text: "La tua versione ha un problema corretto nella nuova: aggiorna da Impostazioni → Aggiornamenti.", before: 'current' },
-  { id: 'servizio', days: 1, festive: false, title: 'Avviso di servizio', text: 'Oggi alcuni servizi online di Aurora potrebbero non rispondere per qualche ora.' },
+/** Modelli pronti, gia' scritti in tutte le lingue: riempiono il modulo (si possono poi cambiare). Date: da oggi per qualche giorno. */
+type L6 = Record<Lang, string>;
+/** Temi grafici della cartolina (lo stesso nome del modello). */
+const THEMES = ['natale', 'anno', 'pasqua', 'aggiorna', 'servizio'] as const;
+type Theme = (typeof THEMES)[number] | '';
+
+const TEMPLATES: readonly { id: Theme; days: number; festive: boolean; title: L6; text: L6; before?: 'current' }[] = [
+  {
+    id: 'natale', days: 3, festive: true,
+    title: { it: 'Buon Natale!', en: 'Merry Christmas!', de: 'Frohe Weihnachten!', fr: 'Joyeux Noël !', es: '¡Feliz Navidad!', pt: 'Feliz Natal!' },
+    text: {
+      it: 'Auguri di buon Natale a te e alla tua famiglia, e buoni DX!',
+      en: 'Merry Christmas to you and your family, and good DX!',
+      de: 'Frohe Weihnachten dir und deiner Familie, und gute DX!',
+      fr: 'Joyeux Noël à toi et à ta famille, et bons DX !',
+      es: '¡Feliz Navidad a ti y a tu familia, y buenos DX!',
+      pt: 'Feliz Natal para ti e para a tua família, e bons DX!',
+    },
+  },
+  {
+    id: 'anno', days: 2, festive: true,
+    title: { it: 'Buon anno!', en: 'Happy New Year!', de: 'Frohes neues Jahr!', fr: 'Bonne année !', es: '¡Feliz año nuevo!', pt: 'Feliz ano novo!' },
+    text: {
+      it: 'Felice anno nuovo: che sia pieno di paesi nuovi e di bande aperte!',
+      en: 'Happy New Year: may it be full of new countries and open bands!',
+      de: 'Frohes neues Jahr: möge es voller neuer Länder und offener Bänder sein!',
+      fr: 'Bonne année : qu\'elle soit pleine de nouveaux pays et de bandes ouvertes !',
+      es: '¡Feliz año nuevo: que esté lleno de países nuevos y bandas abiertas!',
+      pt: 'Feliz ano novo: que seja cheio de países novos e bandas abertas!',
+    },
+  },
+  {
+    id: 'pasqua', days: 2, festive: true,
+    title: { it: 'Buona Pasqua!', en: 'Happy Easter!', de: 'Frohe Ostern!', fr: 'Joyeuses Pâques !', es: '¡Feliz Pascua!', pt: 'Feliz Páscoa!' },
+    text: {
+      it: 'Auguri di buona Pasqua e buoni collegamenti!',
+      en: 'Happy Easter and good contacts!',
+      de: 'Frohe Ostern und gute Verbindungen!',
+      fr: 'Joyeuses Pâques et bons contacts !',
+      es: '¡Feliz Pascua y buenos contactos!',
+      pt: 'Feliz Páscoa e bons contactos!',
+    },
+  },
+  {
+    id: 'aggiorna', days: 7, festive: false, before: 'current',
+    title: { it: 'Aggiorna Aurora', en: 'Update Aurora', de: 'Aurora aktualisieren', fr: 'Mets Aurora à jour', es: 'Actualiza Aurora', pt: 'Atualiza a Aurora' },
+    text: {
+      it: 'La tua versione ha un problema corretto nella nuova: aggiorna da Impostazioni → Aggiornamenti.',
+      en: 'Your version has a problem fixed in the new one: update from Settings → Updates.',
+      de: 'Deine Version hat ein Problem, das in der neuen behoben ist: aktualisiere über Einstellungen → Updates.',
+      fr: 'Ta version a un problème corrigé dans la nouvelle : mets à jour depuis Réglages → Mises à jour.',
+      es: 'Tu versión tiene un problema corregido en la nueva: actualiza desde Ajustes → Actualizaciones.',
+      pt: 'A tua versão tem um problema corrigido na nova: atualiza em Definições → Atualizações.',
+    },
+  },
+  {
+    id: 'servizio', days: 1, festive: false,
+    title: { it: 'Avviso di servizio', en: 'Service notice', de: 'Servicehinweis', fr: 'Avis de service', es: 'Aviso de servicio', pt: 'Aviso de serviço' },
+    text: {
+      it: 'Oggi alcuni servizi online di Aurora potrebbero non rispondere per qualche ora.',
+      en: 'Today some of Aurora\'s online services may not respond for a few hours.',
+      de: 'Heute könnten einige Online-Dienste von Aurora für ein paar Stunden nicht antworten.',
+      fr: 'Aujourd\'hui certains services en ligne d\'Aurora pourraient ne pas répondre pendant quelques heures.',
+      es: 'Hoy algunos servicios en línea de Aurora podrían no responder durante unas horas.',
+      pt: 'Hoje alguns serviços online da Aurora podem não responder durante algumas horas.',
+    },
+  },
 ];
 
 declare const __AURORA_UI_VERSION__: string;
@@ -54,6 +117,8 @@ function localInput(d: Date): string {
  */
 export function OwnerMessagesTab() {
   const t = useT();
+  // i nomi dei modelli nella lingua dell'interfaccia (i testi del messaggio restano in tutte e sei)
+  const uiLang = useLang((st) => st.lang) as Lang;
   const [token, setToken] = useState(readToken);
   const [list, setList] = useState<Msg[] | null>(null);
   const [note, setNote] = useState('');
@@ -64,7 +129,10 @@ export function OwnerMessagesTab() {
   const [before, setBefore] = useState('');
   const [link, setLink] = useState('');
   const [festive, setFestive] = useState(false);
+  const [theme, setTheme] = useState<Theme>('');
   const [busy, setBusy] = useState(false);
+  // lingua della cartolina d'anteprima (chi non ha la sua lingua vede l'inglese o l'italiano, come nell'agente)
+  const [shown, setShown] = useState<Lang>('it');
 
   const headers = useCallback(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
@@ -101,9 +169,10 @@ export function OwnerMessagesTab() {
   const applyTemplate = (id: string) => {
     const m = TEMPLATES.find((x) => x.id === id);
     if (!m) return;
-    setTitle({ it: m.title });
-    setText({ it: m.text });
+    setTitle({ ...m.title });
+    setText({ ...m.text });
     setFestive(m.festive);
+    setTheme(m.id);
     setFrom(localInput(new Date()));
     setTo(localInput(new Date(Date.now() + m.days * 86_400_000)));
     setBefore(m.before === 'current' && typeof __AURORA_UI_VERSION__ === 'string' ? __AURORA_UI_VERSION__ : '');
@@ -112,7 +181,7 @@ export function OwnerMessagesTab() {
   // come la vedranno gli utenti: la stessa cartolina con il suono, solo su questo PC (non si pubblica niente)
   const preview = () =>
     showAgentPopup(
-      { kind: festive ? '✦ IU3WJQ' : 'IU3WJQ', title: title.it ?? '', text: text.it ?? '', primary: link ? t('agent.msg.open') : t('upd.poster.ok'), secondary: link ? t('upd.poster.ok') : '', festive },
+      { kind: festive ? '✦ IU3WJQ' : 'IU3WJQ', title: title.it ?? '', text: text.it ?? '', primary: link ? t('agent.msg.open') : t('upd.poster.ok'), secondary: link ? t('upd.poster.ok') : '', festive, theme },
       12,
     );
 
@@ -120,6 +189,7 @@ export function OwnerMessagesTab() {
     setTitle(m.titolo);
     setText(m.testo);
     setFestive(m.tema === 'festa');
+    setTheme((m.stile ?? '') as Theme);
     setBefore(m.prima_di);
     setLink(m.link);
     setFrom(localInput(new Date()));
@@ -136,13 +206,15 @@ export function OwnerMessagesTab() {
       const r = await fetch(BASE, {
         method: 'POST',
         headers: headers(),
-        body: JSON.stringify({ titolo: title, testo: text, dal: new Date(from).toISOString(), al: new Date(to).toISOString(), prima_di: before, link, tema: festive ? 'festa' : 'normale' }),
+        body: JSON.stringify({ titolo: title, testo: text, dal: new Date(from).toISOString(), al: new Date(to).toISOString(), prima_di: before, link, tema: festive ? 'festa' : 'normale', stile: theme }),
       });
       const j = (await r.json().catch(() => ({}))) as { error?: string };
       if (r.ok) {
         setNote(t('own.published'));
         setTitle({});
         setText({});
+        setTheme('');
+        setFestive(false);
         void load();
       } else {
         setNote(r.status === 401 ? t('own.badToken') : (j.error ?? `${r.status}`));
@@ -161,22 +233,27 @@ export function OwnerMessagesTab() {
   };
 
   const now = new Date().toISOString();
+  const pick = (m: Partial<Record<Lang, string>>) => (m[shown] ?? '').trim() || (m.en ?? '').trim() || (m.it ?? '').trim();
+  const cardTitle = pick(title);
+  const cardText = pick(text);
+  const who = before ? t('own.whoOld', { v: before }) : t('own.whoAll');
+  const when = (v: string) => (v ? new Date(v).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
   return (
-    <Page>
-      <Group title={t('own.token')} span={2}>
+    <Page className="own-page">
+      <Group title={t('own.token')} className="own-g-token">
         <div className="own-row">
-          <input className="agent-input own-token" type="password" autoComplete="off" value={token} placeholder="ADMIN_TOKEN" onChange={(e) => saveToken(e.target.value)} />
+          <input className="agent-input own-token own-input" type="password" autoComplete="off" value={token} placeholder="ADMIN_TOKEN" onChange={(e) => saveToken(e.target.value)} />
           <span className="muted own-hint">{t('own.tokenHint')}</span>
         </div>
       </Group>
 
-      <Group title={t('own.new')} span={2}>
+      <Group title={t('own.new')} className="own-g-new">
         <div className="own-form">
           <div className="own-templates">
             <span className="muted">{t('own.templates')}</span>
             {TEMPLATES.map((m) => (
               <button key={m.id} type="button" className="glass chip" onClick={() => applyTemplate(m.id)}>
-                {m.title}
+                {m.title[uiLang] ?? m.title.it}
               </button>
             ))}
           </div>
@@ -219,15 +296,23 @@ export function OwnerMessagesTab() {
               <input type="checkbox" checked={festive} onChange={(e) => setFestive(e.target.checked)} />
               <span>{t('own.festive')}</span>
             </label>
+            <label>
+              <span>{t('own.theme')}</span>
+              <select className="agent-input own-select" value={theme} onChange={(e) => setTheme(e.target.value as Theme)}>
+                <option value="">{t('own.theme.none')}</option>
+                {THEMES.map((th) => (
+                  <option key={th} value={th}>
+                    {t(`own.theme.${th}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <label>
             <span>{t('own.link')}</span>
             <input className="agent-input own-wide" placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} />
           </label>
           <div className="own-actions">
-            <button type="button" className="glass" disabled={!(title.it ?? '').trim()} onClick={preview}>
-              {t('own.preview')}
-            </button>
             <button type="button" className="glass own-publish" disabled={busy || token.length < 16 || !(title.it ?? '').trim() || !(text.it ?? '').trim()} onClick={() => void publish()}>
               {t('own.publish')}
             </button>
@@ -236,7 +321,49 @@ export function OwnerMessagesTab() {
         </div>
       </Group>
 
-      <Group title={t('own.list')} span={2}>
+      <Group title={t('own.previewTitle')} className="own-g-preview">
+        <div className="own-preview">
+          <div className="own-preview-langs" role="group" aria-label={t('own.otherLangs')}>
+            {LANGS.map((l) => (
+              <button key={l} type="button" className={`glass chip${shown === l ? ' own-chip--on' : ''}`} aria-pressed={shown === l} onClick={() => setShown(l)}>
+                {l.toUpperCase()}
+                {l !== 'it' && !(title[l] ?? '').trim() ? <small> ↺</small> : null}
+              </button>
+            ))}
+          </div>
+          {cardTitle ? (
+            <div className={`agent-card agent-card--static${festive ? ' agent-card--festa' : ''}${theme ? ` agent-card--t-${theme}` : ''}`}>
+              <div className="agent-card-band">
+                {theme ? <i className="agent-card-deco" aria-hidden="true" /> : null}
+                <Logo size={46} animated className="agent-card-logo" />
+                <div className="agent-card-brand">
+                  <b>AURORA</b>
+                  <span>{festive ? '✦ IU3WJQ' : 'IU3WJQ'}</span>
+                </div>
+                <span className="agent-card-x" aria-hidden="true">
+                  ×
+                </span>
+              </div>
+              <div className="agent-card-body">
+                <h3>{cardTitle}</h3>
+                <p>{cardText}</p>
+                <div className="agent-card-actions">
+                  {link ? <span className="agent-card-btn">{t('upd.poster.ok')}</span> : null}
+                  <span className="agent-card-btn agent-card-btn--main">{link ? t('agent.msg.open') : t('upd.poster.ok')}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="own-preview-empty muted">{t('own.previewEmpty')}</p>
+          )}
+          <p className="own-preview-who muted">{t('own.previewWho', { who, from: when(from), to: when(to) })}</p>
+          <button type="button" className="glass" disabled={!(title.it ?? '').trim()} onClick={preview}>
+            {t('own.previewSound')}
+          </button>
+        </div>
+      </Group>
+
+      <Group title={t('own.list')} className="own-g-list">
         {list === null ? (
           <p className="muted">{t('own.needToken')}</p>
         ) : list.length === 0 ? (
@@ -255,6 +382,7 @@ export function OwnerMessagesTab() {
                       {new Date(m.dal).toLocaleString()} – {new Date(m.al).toLocaleString()}
                       {m.prima_di ? ` · < ${m.prima_di}` : ''}
                       {m.tema === 'festa' ? ' · ✦' : ''}
+                      {m.stile ? ` · ${t(`own.theme.${m.stile}` as 'own.theme.natale')}` : ''}
                     </small>
                   </span>
                   <span className="agent-opt-ctl">

@@ -17,6 +17,8 @@ interface Messaggio {
   testo: Testi;
   link: string;
   tema: 'normale' | 'festa';
+  /** Tema grafico (natale, anno, pasqua, aggiorna, servizio); assente nei messaggi vecchi. */
+  stile?: string;
 }
 
 function seen(): string[] {
@@ -75,6 +77,7 @@ export function OwnerMessages() {
             secondary: next.link ? t('upd.poster.ok') : '',
             link: next.link || undefined,
             festive: next.tema === 'festa',
+            theme: /^(natale|anno|pasqua|aggiorna|servizio)$/.test(next.stile ?? '') ? next.stile : undefined,
           },
           20,
         );
