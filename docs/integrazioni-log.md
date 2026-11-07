@@ -131,7 +131,7 @@ L'interfaccia per i modi digitali si chiama **Wsjt_I** (versione 2) e si configu
 
 Con Aurora:
 1. **Rete (consigliato)**: Aurora, «Integrazioni» > «+ BBLogger» (127.0.0.1:2237, flusso WSJT-X e Logged ADIF accesi). BBLogger: righe Msg ID 5 e 12 su 127.0.0.1:2237, menu «UDP 12», «Auto-Save».
-2. **File**: BBLogger, Modo ADIF con descrizione Aurora e percorso `%APPDATA%\Auroraurora_log.adi` (il motore lo scrive sempre), menu «Aurora», «Auto-Save».
+2. **File**: BBLogger, Modo ADIF con descrizione Aurora e percorso `%APPDATA%\Aurora\aurora_log.adi` (il motore lo scrive sempre), menu «Aurora», «Auto-Save».
 3. Un metodo solo alla volta. Di fabbrica anche i server UDP primario e secondario di Aurora sono su 127.0.0.1:2237: con BBLogger possono dare QSO doppi.
 
 Fonti: https://www.aribusto.it/bblogger.htm, PDF https://www.aribusto.it/BBL/Wsjt_I%20v.%202-SETUP_IT.pdf e https://www.aribusto.it/BBL/Differenze%20tra%20UDP%20e%20ADIF.pdf (letti il 2026-11-07). Non provato dal vivo con Aurora.
