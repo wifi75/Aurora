@@ -1068,3 +1068,4 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-panel--tx .tx-main.tx-split > .tx-levels { margin-bottom: auto !important; }
 /* la riga del DX ha sempre l'altezza del riquadro giallo, anche vuota: quando compare il DX (trasmissione) il resto non scende */
 .dock-panel--tx .tx-dx { min-height: 40px !important; box-sizing: border-box; }
+.tx-dx .rxtx-flag[data-state='rx'] { cursor: pointer; user-select: none; }

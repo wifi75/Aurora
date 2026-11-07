@@ -70,6 +70,7 @@ export const stationStrings = {
   'st.txOn': ['In trasmissione', 'Transmitting', 'Sendet', "En émission", 'Transmitiendo', 'A transmitir'],
   'st.txArmed': ['Abilitata', 'Enabled', 'Aktiviert', 'Activée', 'Habilitada', 'Ativada'],
   'st.txOff': ['Spenta', 'Off', 'Aus', 'Éteinte', 'Apagada', 'Desligada'],
+  'tip.rxClear': ["doppio clic: cancella il DX e i messaggi (come Canc DX)", "double-click: clears the DX and the messages (like Clear DX)", "Doppelklick: löscht DX und Nachrichten (wie DX löschen)", "double-clic : efface le DX et les messages (comme Effacer DX)", "doble clic: borra el DX y los mensajes (como Borrar DX)", "duplo clique: apaga o DX e as mensagens (como Apagar DX)"],
   'stop.button': ['STOP TX', 'STOP TX', 'STOP TX', 'STOP TX', 'STOP TX', 'STOP TX'],
   'stop.ok': ['Trasmissione fermata', 'Transmission stopped', 'Senden gestoppt', 'Émission arrêtée', 'Transmisión detenida', 'Transmissão parada'],
   'stop.fail': [

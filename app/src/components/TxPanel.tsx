@@ -1,7 +1,7 @@
 import { DxPill } from './DxPill';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getControls, postHalt, postTxMessage, postTxText } from '../api/client';
+import { getControls, postControl, postHalt, postTxMessage, postTxText } from '../api/client';
 import { toast } from '../lib/toast';
 import type { DecodedMessage, StationStatus, TxAlert } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -182,7 +182,14 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
                 TX
               </button>
             ) : (
-              <span className="rxtx-flag" data-state="rx" role="status" title={t('tip.onair')}>
+              // doppio clic su RX: come «Canc DX», libera la stazione e cancella i dati del QSO in corso (richiesta del proprietario)
+              <span
+                className="rxtx-flag"
+                data-state="rx"
+                role="status"
+                title={`${t('tip.onair')} · ${t('tip.rxClear')}`}
+                onDoubleClick={() => void postControl('clear_dx').catch((error: unknown) => toast(replyErrorMessage(error, t), 'error'))}
+              >
                 RX
               </span>
             )}
