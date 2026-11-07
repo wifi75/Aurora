@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.179',
-    released: '2026-11-07T13:20:41Z',
+    released: '2026-11-07T13:24:26Z',
     kind: 'new',
     title: ["Cartoline a tema per i messaggi dell'autore", "Themed cards for the author's messages", 'Themenkarten für die Nachrichten des Autors', "Cartes à thème pour les messages de l'auteur", 'Tarjetas temáticas para los mensajes del autor', 'Cartões temáticos para as mensagens do autor'],
     text: [
