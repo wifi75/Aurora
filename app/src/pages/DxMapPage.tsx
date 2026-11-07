@@ -70,7 +70,7 @@ export function DxMapPage({ solo = false, bare = false }: { solo?: boolean; /** 
 function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
-  const status = useStatusPick(['de_call', 'de_grid']);
+  const status = useStatusPick(['de_call', 'de_grid', 'dx_call', 'dx_grid', 'tx_enabled', 'transmitting']);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
@@ -119,8 +119,10 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
     for (const s of stations) LEARNED_GRIDS.set(s.call, s.grid);
     const m = new Map(LEARNED_GRIDS);
     if (me && status?.de_grid) m.set(me, status.de_grid);
+    const dx = status?.dx_call?.toUpperCase();
+    if (dx && status?.dx_grid) m.set(dx, status.dx_grid);
     return m;
-  }, [stations, me, status?.de_grid]);
+  }, [stations, me, status?.de_grid, status?.dx_call, status?.dx_grid]);
   // le chiamate: «K1ABC G0XYZ …» e' G0XYZ che chiama K1ABC (vale l'ultimo messaggio di ogni mittente)
   const calls = useMemo(() => {
     const clean = (c: string) => c.replace(/[<>]/g, '');
@@ -133,8 +135,11 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
       if (to === from || !/[0-9]/.test(to) || !/[0-9]/.test(from) || to.length < 3 || from.length < 3) continue;
       byFrom.set(from, { from, to, time: d.time_ms });
     }
+    // anche io che chiamo il mio DX (le mie trasmissioni non arrivano fra i messaggi ricevuti): con Abilita Tx acceso o mentre trasmetto
+    const dx = status?.dx_call ? clean(status.dx_call.toUpperCase()) : '';
+    if (me && dx && dx !== me && (status?.tx_enabled || status?.transmitting)) byFrom.set(me, { from: me, to: dx, time: Date.now() % DAY_MS });
     return [...byFrom.values()];
-  }, [decodes]);
+  }, [decodes, me, status?.dx_call, status?.tx_enabled, status?.transmitting]);
   // per i nominativi senza quadrato si chiede il centro del paese, una volta sola
   useEffect(() => {
     const missing = [...new Set(calls.flatMap((c) => [c.from, c.to]))].filter((c) => !grids.has(c) && !(c in countryPos)).slice(0, 20);
@@ -160,7 +165,7 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
       const a = where(c.from);
       const b = where(c.to);
       if (!a || !b) continue;
-      out.push({ from: c.from, to: c.to, fromPos: a.pos, toPos: b.pos, guess: a.guess || b.guess, toMe: c.to === me, age: ageOf(tick, c.time) });
+      out.push({ from: c.from, to: c.to, fromPos: a.pos, toPos: b.pos, guess: a.guess || b.guess, toMe: c.to === me || c.from === me, age: c.from === me ? 0 : ageOf(tick, c.time) });
     }
     return out;
   }, [calls, grids, countryPos, me, tick]);
