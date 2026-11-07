@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.192',
-    released: '2026-11-07T23:50:00Z',
+    released: '2026-11-07T22:02:42Z',
     kind: 'fixed',
     title: ['Salva sempre attivo', 'Save always available', 'Speichern immer aktiv', 'Enregistrer toujours actif', 'Guardar siempre activo', 'Guardar sempre ativo'],
     text: [
