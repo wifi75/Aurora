@@ -1083,3 +1083,10 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 /* Comandi in una finestra a se': niente linea e niente spazio in alto, la barra del titolo e' quella della finestra */
 .dock-panel--cmds .bands-with-cmds > :last-child, .dock-panel--cmds .bands-cmds { border-top: 0 !important; padding-top: 6px !important; margin-top: 0 !important; }
 .dock-panel--dxmap .bands-only > :last-child { border-top: 0 !important; padding-top: 0 !important; }
+
+/* Bande aperte: grafici di Giorno e Notte piu' grandi e senza bordo (richiesta del proprietario); misure fisse, non legate alla scheda */
+.bands-open .prop-tile,
+.bands-open .prop-tile--active { border: 0 !important; background: transparent !important; height: 24px !important; padding: 0 4px !important; gap: 8px !important; font-size: 12px !important; }
+.bands-open .prop-tile .prop-meter, .bands-open .prop-meter { transform: scale(1.2) !important; transform-origin: left center !important; margin-right: 4px; }
+.bands-open .prop-tile b { font-size: 12px !important; }
+.bands-open .prop-matrix-row { min-height: 24px; }
