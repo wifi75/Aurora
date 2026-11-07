@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.167',
+    released: '2026-11-07T08:43:33Z',
+    kind: 'changed',
+    title: ['Aurora più leggera', 'Lighter Aurora', 'Leichteres Aurora', 'Aurora plus légère', 'Aurora más ligera', 'Aurora mais leve'],
+    text: [
+      "La Stazione si ridisegna solo quando cambia un dato che mostra: quasi la metà del lavoro in meno (il DX Cluster da solo 13 volte meno). «Controlla aggiornamenti» apre sempre la finestra grande, anche per dire che Aurora è aggiornata. Se provi a trasmettere senza radio collegata compare l'avviso (la ricezione senza CAT resta libera). Le finestre staccate nascono grandi quanto il pannello. Record di distanza più visibili.",
+      "The Station redraws only when something it shows changes: almost half the work (the DX Cluster alone 13 times less). «Check for updates» always opens the big window, also to say Aurora is up to date. Trying to transmit without a connected radio shows a warning (reception without CAT stays free). Detached windows start as big as the panel. Distance records easier to see.",
+      "Die Station zeichnet nur neu, wenn sich etwas Angezeigtes ändert: fast halb so viel Arbeit (der DX-Cluster allein 13-mal weniger). «Nach Updates suchen» öffnet immer das große Fenster, auch um zu sagen, dass Aurora aktuell ist. Senden ohne verbundenes Funkgerät zeigt eine Warnung (Empfang ohne CAT bleibt frei). Abgelöste Fenster starten so groß wie das Feld. Entfernungsrekorde besser sichtbar.",
+      "La Station ne se redessine que lorsqu’une donnée affichée change : presque moitié moins de travail (le DX Cluster seul 13 fois moins). « Rechercher des mises à jour » ouvre toujours la grande fenêtre, aussi pour dire qu’Aurora est à jour. Émettre sans radio connectée affiche un avertissement (la réception sans CAT reste libre). Les fenêtres détachées naissent de la taille du panneau. Records de distance plus visibles.",
+      "La Estación solo se redibuja cuando cambia un dato que muestra: casi la mitad de trabajo (el DX Cluster solo 13 veces menos). «Buscar actualizaciones» abre siempre la ventana grande, también para decir que Aurora está al día. Transmitir sin radio conectada muestra un aviso (la recepción sin CAT sigue libre). Las ventanas separadas nacen del tamaño del panel. Récords de distancia más visibles.",
+      "A Estação só se redesenha quando muda um dado que mostra: quase metade do trabalho (o DX Cluster sozinho 13 vezes menos). «Procurar atualizações» abre sempre a janela grande, também para dizer que o Aurora está atualizado. Transmitir sem rádio ligado mostra um aviso (a receção sem CAT continua livre). As janelas destacadas nascem do tamanho do painel. Recordes de distância mais visíveis.",
+    ],
+  },
+  {
     version: '0.11.166',
     released: '2026-11-07T07:45:48Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les afficheurs larges font 90 points de haut (640 × 90), centrés entre la barre du menu et les panneaux. Dans Activité de bande et CQ le texte du message est plus petit d’1 point, les messages longs sont moins coupés (PC seulement).",
       "Las pantallas anchas miden 90 puntos de alto (640 × 90), centradas entre la barra del menú y los paneles. En Actividad de banda y CQ el texto del mensaje es 1 punto más pequeño, los mensajes largos se cortan menos (solo en el PC).",
       "Os ecrãs largos têm 90 pontos de altura (640 × 90), centrados entre a barra do menu e os painéis. Na Atividade de banda e CQ o texto da mensagem é 1 ponto mais pequeno, as mensagens longas cortam-se menos (só no PC).",
-    ],
-  },
-  {
-    version: '0.11.127',
-    released: '2026-11-04T21:34:00Z',
-    kind: 'new',
-    title: ['LoTW, eQSL, diretta e bureau da HamQTH', 'LoTW, eQSL, direct and bureau from HamQTH', 'LoTW, eQSL, Direkt und Büro von HamQTH', 'LoTW, eQSL, directe et bureau depuis HamQTH', 'LoTW, eQSL, directa y buró de HamQTH', 'LoTW, eQSL, direta e bureau do HamQTH'],
-    text: [
-      "QRZ.com senza abbonamento non manda le informazioni QSL: Aurora le completa con HamQTH (gratis), lasciando nome e città di QRZ. Le lettere L E D B (LoTW, eQSL, diretta, bureau) compaiono accanto alla Stazione DX e nel riquadro del nominativo; i dati dei nominativi in Attività di banda si precaricano. Con il display esteso lingua, volume e tema stanno in fondo a destra; nella riga del QSO in corso l'etichetta resta leggibile.",
-      "QRZ.com without a subscription does not send QSL information: Aurora completes it with HamQTH (free), keeping name and city from QRZ. The L E D B letters (LoTW, eQSL, direct, bureau) appear next to the DX station and in the callsign box; callsigns in Band activity are prefetched. With the wide display language, volume and theme sit at the far right; in the current QSO row the label stays readable.",
-      "QRZ.com ohne Abo liefert keine QSL-Angaben: Aurora ergänzt sie mit HamQTH (kostenlos) und behält Name und Ort von QRZ. Die Buchstaben L E D B (LoTW, eQSL, Direkt, Büro) stehen neben der DX-Station und im Rufzeichen-Feld; Rufzeichen der Bandaktivität werden vorab geladen. Mit breiter Anzeige stehen Sprache, Lautstärke und Thema ganz rechts; in der Zeile des laufenden QSO bleibt das Etikett lesbar.",
-      "QRZ.com sans abonnement n’envoie pas les infos QSL : Aurora les complète avec HamQTH (gratuit), en gardant nom et ville de QRZ. Les lettres L E D B (LoTW, eQSL, directe, bureau) apparaissent à côté de la station DX et dans la bulle de l’indicatif ; les indicatifs de l’Activité de bande sont préchargés. Avec l’afficheur large langue, volume et thème sont tout à droite ; dans la ligne du QSO en cours l’étiquette reste lisible.",
-      "QRZ.com sin suscripción no manda la información QSL: Aurora la completa con HamQTH (gratis), manteniendo nombre y ciudad de QRZ. Las letras L E D B (LoTW, eQSL, directa, buró) aparecen junto a la estación DX y en el recuadro del indicativo; los indicativos de Actividad de banda se precargan. Con la pantalla ancha idioma, volumen y tema van a la derecha; en la fila del QSO en curso la etiqueta se lee bien.",
-      "O QRZ.com sem assinatura não manda a informação QSL: a Aurora completa-a com o HamQTH (grátis), mantendo nome e cidade do QRZ. As letras L E D B (LoTW, eQSL, direta, bureau) aparecem junto à estação DX e no quadro do indicativo; os indicativos da Atividade de banda são pré-carregados. Com o ecrã largo idioma, volume e tema ficam à direita; na linha do QSO em curso a etiqueta lê-se bem.",
     ],
   },
 ];

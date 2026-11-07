@@ -10,7 +10,7 @@ import { CountryShape, loadAtlas } from './CountryShape';
 import { WorldMap } from './WorldMap';
 import { gridToLatLon } from '../lib/maidenhead';
 import { senderOf } from '../lib/wishlist';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 /** Cartina chiara con confini e nomi (Esri World Street Map, senza chiave). */
 const STREET_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
@@ -55,7 +55,7 @@ class SafeCard extends Component<{ children: ReactNode; onError(): void }, { fai
 
 function DxpedCard({ d, onClose }: { d: Dxpedition & { state: string }; onClose(): void }) {
   const t = useT();
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_grid']);
   const decodes = useStation((s) => s.decodes);
   const dxcc = useQuery({ queryKey: ['dxcc', d.call], queryFn: () => getDxcc(d.call), retry: false, staleTime: Infinity });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false });

@@ -5,7 +5,7 @@ import { DxccCountries } from '../components/DxccCountries';
 import { LogTransfer } from '../components/LogTransfer';
 import { useT } from '../i18n';
 import { subjectBand, subjectMode } from '../lib/dxccCard';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 /**
  * Avanzamento nei premi dal log dei QSO. Prima era una colonna di riquadri larghi tutta la pagina: ora i numeri in alto, bande e scheda
@@ -15,7 +15,7 @@ export function Stats() {
   const t = useT();
   const query = useQuery({ queryKey: ['stats'], queryFn: getStats, retry: false });
   // la scheda DXCC segue la stazione DX attuale (o quella scelta con un doppio clic), sulla banda e nel modo della radio
-  const status = useStation((st) => st.status);
+  const status = useStatusPick(['dial_hz', 'dx_call', 'dx_grid', 'mode']);
   const pendingDx = useStation((st) => st.pendingDx);
   const matrix = useDxccMatrix({});
 

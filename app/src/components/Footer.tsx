@@ -3,14 +3,17 @@ import { useEffect, useState } from 'react';
 import { getCat, getEngineSettings, getHealth } from '../api/client';
 import { useT } from '../i18n';
 import { periodSecs } from '../lib/period';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 /** Dove siamo nel periodo (secondi trascorsi e durata), agganciati all'orologio come i periodi del motore. */
 function usePeriodClock(mode: string | undefined): { elapsed: number; total: number; now: number } {
   const total = periodSecs(mode ?? 'FT8');
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    // due volte al secondo bastano per l'orologio e la barra del periodo; a finestra nascosta non si aggiorna
+    const timer = window.setInterval(() => {
+      if (!document.hidden) setNow(Date.now());
+    }, 500);
     return () => window.clearInterval(timer);
   }, []);
   return { elapsed: (now / 1000) % total, total, now };
@@ -24,7 +27,7 @@ function usePeriodClock(mode: string | undefined): { elapsed: number; total: num
 export function Footer() {
   const t = useT();
   const { data, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['mode']);
   const decodes = useStation((s) => s.decodes);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, staleTime: 30_000 });
   const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, staleTime: 30_000 });

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, memo } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
@@ -13,7 +13,7 @@ import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
 import { wishReason } from '../lib/wishlist';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 
 const KEY = 'aurora-cluster-filters';
@@ -58,14 +58,14 @@ export async function tuneSpot(spot: ClusterSpot): Promise<void> {
 }
 
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
-export function ClusterPanel() {
+function ClusterPanelInner() {
   const t = useT();
   // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
   const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
   const day = today();
   const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['dial_hz', 'mode']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
@@ -208,3 +208,6 @@ export function ClusterPanel() {
     </div>
   );
 }
+
+/** Senza proprieta': si ridisegna solo per i suoi dati, non ogni volta che si ridisegna la Stazione (piu' volte al secondo). */
+export const ClusterPanel = memo(ClusterPanelInner);

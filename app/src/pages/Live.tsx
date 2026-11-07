@@ -51,7 +51,7 @@ import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } fro
 import { useWfPrefs } from '../lib/wfPrefs';
 import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import { toast, useToasts } from '../lib/toast';
 
 
@@ -64,7 +64,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
   const phone = usePhone();
   const view = useStationView();
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df']);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
   const pendingBand = useStation((s) => s.pendingBand);
@@ -158,9 +158,9 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           </>
         );
       case 'station':
-        return <TxCommands txAllowed={info.data?.tx_allowed ?? false} status={status} />;
+        return <TxCommands txAllowed={info.data?.tx_allowed ?? false} />;
       case 'tx':
-        return <TxPanel txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />;
+        return <TxPanel txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />;
       case 'cq':
         {
           const cqList = <CqStrip decodes={applyCqPrefs(shown, cqPrefs)} onReply={onReply} onQueue={onQueue} emptyText={t('decode.noCq')} />;
@@ -316,7 +316,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     id === 'dxmap' ? (
       <BandsOpen />
     ) : id === 'tx' ? (
-      <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} status={status} decodes={decodes} />
+      <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />
     ) : (
       renderPanel(id)
     );
@@ -353,7 +353,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
         </div>
-        <StatusBar status={status} connection={connection} hideDial={!displayHidden} />
+        <StatusBar connection={connection} hideDial={!displayHidden} />
         </div>
         {phone ? null : (
           <div className="live-left-line">

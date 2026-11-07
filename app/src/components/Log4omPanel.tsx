@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SetupCta } from './SetupCta';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
@@ -10,7 +10,7 @@ import { useStation } from '../state/station';
 const FLASH_MS = 4300;
 
 /** Gli ultimi QSO del log di Log4OM2 (sola lettura): quanti, si sceglie in Impostazioni → Generali. */
-export function Log4omPanel() {
+function Log4omPanelInner() {
   const t = useT();
   const count = usePrefs((s) => s.prefs.log4omCount);
   const log = useQuery({ queryKey: ['log4om', count], queryFn: () => getLog4om(count), refetchInterval: 10_000, retry: false });
@@ -87,3 +87,6 @@ export function LogHeader() {
     </div>
   );
 }
+
+/** Senza proprieta': si ridisegna solo per i suoi dati, non ogni volta che si ridisegna la Stazione. */
+export const Log4omPanel = memo(Log4omPanelInner);

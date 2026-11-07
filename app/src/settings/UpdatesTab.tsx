@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { openUpdatePoster } from '../components/UpdatePoster';
 import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help } from './common';
@@ -68,6 +69,8 @@ export function UpdatesTab() {
     onSuccess: (result) => {
       setNote(result.error ? t('upd.offline', { message: result.error }) : '');
       void client.invalidateQueries({ queryKey: ['update'] });
+      // si apre sempre la locandina: con la versione nuova, oppure con «Aurora e' aggiornata»
+      if (!result.error) openUpdatePoster();
     },
     onError: () => setNote(t('upd.offline', { message: '—' })),
   });

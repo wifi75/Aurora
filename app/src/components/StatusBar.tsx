@@ -1,3 +1,4 @@
+import { useStation } from '../state/station';
 import type { StationStatus } from '../api/schemas';
 import type { ConnectionState } from '../api/stream';
 import { useT } from '../i18n';
@@ -5,13 +6,15 @@ import { ClockPill } from './ClockPill';
 import { formatDial } from '../lib/format';
 
 interface Props {
-  status: StationStatus | null;
+  status?: StationStatus | null;
   connection: ConnectionState;
   /** La frequenza e' gia' sul display della radio: la pastiglia si toglie per non ripeterla. */
   hideDial?: boolean;
 }
 
-export function StatusBar({ status, connection, hideDial = false }: Props) {
+export function StatusBar({ status: statusProp, connection, hideDial = false }: Props) {
+  const ownStatus = useStation((st) => st.status);
+  const status = statusProp === undefined ? ownStatus : statusProp;
   const t = useT();
   // «In linea» non si mostra piu': la pillola compare solo quando il collegamento con Aurora manca o si sta riprendendo
   const label = { connecting: t('conn.connecting'), open: null, closed: t('conn.closed') }[connection];

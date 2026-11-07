@@ -273,11 +273,17 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     let settings = page == "impostazioni";
     let frameless = !grid;
     let display_only = !grid && !settings && url.query_pairs().any(|(k, v)| k == "items" && v == "display");
+    // la misura del pannello staccato (pixel della pagina): la finestra nasce grande uguale, mai a tutto schermo
+    let asked = |key: &str| url.query_pairs().find(|(k, _)| k == key).and_then(|(_, v)| v.parse::<f64>().ok()).filter(|v| (50.0..=4000.0).contains(v));
+    let panel_size = (!settings).then(|| asked("w").zip(asked("h"))).flatten();
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
         .title(if settings { "Aurora - Impostazioni" } else { title })
         .decorations(!frameless)
         .shadow(true)
-        .inner_size(if display_only { 660.0 } else if settings { 1040.0 } else { 1000.0 }, if display_only { 110.0 } else if settings { 760.0 } else { 700.0 })
+        .inner_size(
+            panel_size.map_or(if display_only { 660.0 } else if settings { 1040.0 } else { 1000.0 }, |(w, _)| w),
+            panel_size.map_or(if display_only { 110.0 } else if settings { 760.0 } else { 700.0 }, |(_, h)| h),
+        )
         .min_inner_size(if display_only { 160.0 } else if settings { 1040.0 } else { 360.0 }, if display_only { 40.0 } else if settings { 760.0 } else { 260.0 })
         .resizable(!settings)
         .always_on_top(settings)
@@ -322,9 +328,12 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
             .map(|all| all.iter().map(|m| (m.position().x, m.position().y, m.size().width, m.size().height)).collect())
             .unwrap_or_default();
         if window_state::is_usable_with(&state, &monitors, window_state::SOLO_MIN_WIDTH, window_state::SOLO_MIN_HEIGHT) {
-            let _ = window.set_size(PhysicalSize::new(state.width, state.height));
+            // staccato adesso da un pannello: la sua misura vince su quella ricordata, e non si apre ingrandita
+            if panel_size.is_none() {
+                let _ = window.set_size(PhysicalSize::new(state.width, state.height));
+            }
             let _ = window.set_position(PhysicalPosition::new(state.x, state.y));
-            if state.maximized {
+            if state.maximized && panel_size.is_none() && grid {
                 let _ = window.maximize();
             }
             let _ = window.show();
