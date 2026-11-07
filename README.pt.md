@@ -27,7 +27,7 @@
 > ### Baixar o Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Cada instalador é analisado com o [VirusTotal](https://www.virustotal.com) (cerca de 70 antivírus) e o Windows Defender antes de ser publicado: 0.11.192 — nenhum antivírus o deteta ([resultado](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)).
+> Cada instalador é analisado com o [VirusTotal](https://www.virustotal.com) (cerca de 70 antivírus) e o Windows Defender antes de ser publicado: 0.11.193 — nenhum antivírus o deteta ([resultado](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)).
 >
 > **[Instalador para Windows (última versão)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Página da última versão](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -41,7 +41,7 @@ Projeto e desenvolvimento: Tiziano Cassone (IU3WJQ)
 
 ## Estado
 
-Versão 0.11.192: motor próprio FT8, FT4, JT65 e JT9 com recepção e transmissão, CAT para todos os rádios e display do rádio. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
+Versão 0.11.193: motor próprio FT8, FT4, JT65 e JT9 com recepção e transmissão, CAT para todos os rádios e display do rádio. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
 
 - **Estação**: lista de mensagens como no JTDX (país com bandeira, distância, linhas coloridas por tipo, indicativo chamado e chamadas dirigidas a você em destaque), cascata WebGPU/WebGL2 com barras Rx/Tx arrastáveis, Tx1–Tx6 com a fase do QSO, barra de bandas e modo (FT8/FT4) com troca pela própria página.
 - **Fila de chamadores**: clique direito em uma estação que chama para colocá-la na fila (etiqueta «IN CODA» com a posição); com o QSO registrado, o Aurora responde à primeira; o interruptor «Risp. a tutti» coloca na fila automaticamente quem chama você; «Canc DX» interrompe a transmissão na hora. Somente com o motor próprio.

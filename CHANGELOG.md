@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.193 - 2026-11-08
+- **Radio senza CAT**: nuovo sistema di controllo «Nessuno» in Impostazioni > Radio. Corretto: con il motore proprio i pulsanti delle bande non cambiavano mai la frequenza senza radio (il `Rig` del motore nascondeva la frequenza a mano, `AppState::dial_rig`); se la radio scelta non risponde le bande cambiano comunque la frequenza di Aurora.
+- **Radio**: «Applica» sempre attivo.
+- **Log**: in «Aggiungi QSO» il modo si sceglie da una tendina completa (digitali, fonia, CW, altri); il pulsante «+ Aggiungi QSO» sta accanto al titolo.
+
 ## 0.11.192 - 2026-11-07
 - **Impostazioni**: «Salva» sempre attivo; senza modifiche in sospeso dice «Tutto salvato» (molte voci si salvano da sole appena cambiate, e il pulsante spento sembrava guasto).
 

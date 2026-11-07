@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.193',
+    released: '2026-11-08T00:30:00Z',
+    kind: 'fixed',
+    title: ['Radio: scelta «Nessuno» (senza CAT)', 'Radio: «None» choice (no CAT)', 'Funkgerät: Auswahl «Keins» (ohne CAT)', 'Radio : choix « Aucun » (sans CAT)', 'Radio: opción «Ninguno» (sin CAT)', 'Rádio: opção «Nenhum» (sem CAT)'],
+    text: [
+      'In Impostazioni > Radio il sistema di controllo può essere «Nessuno»: i pulsanti delle bande cambiano la frequenza di Aurora e la radio la sposti a mano. Corretto il caso in cui le bande non cambiavano. Nel Log, tendina completa dei modi in «Aggiungi QSO».',
+      'In Settings > Radio the control system can be «None»: the band buttons change Aurora’s frequency and you tune the radio by hand. Fixed bands not changing. In the Log, full mode list in «Add QSO».',
+      'In Einstellungen > Funkgerät kann die Steuerung «Keins» sein: die Bandtasten ändern Auroras Frequenz, das Funkgerät stellst du von Hand ein. Behoben: Bänder wechselten nicht. Im Log vollständige Modusliste bei «QSO hinzufügen».',
+      'Dans Réglages > Radio le système de contrôle peut être « Aucun » : les boutons de bande changent la fréquence d’Aurora et la radio se règle à la main. Corrigé : les bandes ne changeaient pas. Dans le Log, liste complète des modes dans « Ajouter un QSO ».',
+      'En Ajustes > Radio el sistema de control puede ser «Ninguno»: los botones de banda cambian la frecuencia de Aurora y la radio la mueves a mano. Corregido: las bandas no cambiaban. En el Log, lista completa de modos en «Añadir QSO».',
+      'Em Definições > Rádio o sistema de controlo pode ser «Nenhum»: os botões de banda mudam a frequência do Aurora e o rádio mudas à mão. Corrigido: as bandas não mudavam. No Log, lista completa de modos em «Adicionar QSO».',
+    ],
+  },
+  {
     version: '0.11.192',
     released: '2026-11-07T22:02:42Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Avec la radio configurée mais éteinte (ou qui ne répond pas) l’afficheur reste en place, éteint, avec «La radio ne répond pas», et revient seul quand tu rallumes la radio. Le cadre «Clique pour la configurer» n’apparaît que si la radio n’a jamais été configurée.",
       "Con la radio configurada pero apagada (o que no responde) el display se queda en su sitio, apagado, con «La radio no responde», y vuelve solo cuando enciendes la radio. El recuadro «Haz clic para configurarla» solo aparece si la radio nunca se configuró.",
       "Com o rádio configurado mas desligado (ou sem resposta) o display fica no lugar, apagado, com «O rádio não responde», e volta sozinho quando ligas o rádio. O quadro «Clica para o configurar» só aparece se o rádio nunca foi configurado.",
-    ],
-  },
-  {
-    version: '0.11.152',
-    released: '2026-11-05T22:01:43Z',
-    kind: 'fixed',
-    title: ['Audio che si riprende da solo e Linux', 'Self-recovering audio and Linux', 'Audio erholt sich selbst und Linux', 'Audio qui se rétablit seul et Linux', 'Audio que se recupera solo y Linux', 'Áudio que recupera sozinho e Linux'],
-    text: [
-      "Se la scheda audio della radio sparisce durante l'uso (radio spenta, cavo USB mosso), ricezione e trasmissione ripartono da sole appena torna, con un avviso che spiega cosa succede. Su Linux il cursore Pwr ora abbassa davvero il segnale, gli aggiornamenti portano alla release con AppImage e .deb e OmniRig non è più proposto. La finestra «Salva con nome» aperta a lungo non è più scambiata per un blocco del programma.",
-      "If the radio's sound card disappears during use (radio off, USB cable moved), receive and transmit restart on their own as soon as it is back, with a notice explaining what is happening. On Linux the Pwr slider now really lowers the signal, updates lead to the release with AppImage and .deb and OmniRig is no longer offered. A «Save as» window left open for long is no longer taken for a program freeze.",
-      "Verschwindet die Soundkarte des Funkgeräts während des Betriebs (Gerät aus, USB-Kabel bewegt), starten Empfang und Senden von selbst neu, sobald sie zurück ist, mit einem Hinweis. Unter Linux senkt der Pwr-Regler jetzt wirklich das Signal, Updates führen zur Release mit AppImage und .deb, OmniRig wird nicht mehr angeboten. Ein lange offenes «Speichern unter» gilt nicht mehr als Programmhänger.",
-      "Si la carte son de la radio disparaît en cours d’utilisation (radio éteinte, câble USB bougé), réception et émission repartent seules dès qu’elle revient, avec un avis qui explique ce qui se passe. Sous Linux le curseur Pwr baisse vraiment le signal, les mises à jour mènent à la release avec AppImage et .deb et OmniRig n’est plus proposé. Une fenêtre «Enregistrer sous» ouverte longtemps n’est plus prise pour un blocage.",
-      "Si la tarjeta de sonido de la radio desaparece durante el uso (radio apagada, cable USB movido), recepción y transmisión vuelven solas en cuanto regresa, con un aviso que explica qué pasa. En Linux el control Pwr ahora baja de verdad la señal, las actualizaciones llevan a la release con AppImage y .deb y OmniRig ya no se ofrece. Una ventana «Guardar como» abierta mucho tiempo ya no se toma por un bloqueo.",
-      "Se a placa de som do rádio desaparecer durante o uso (rádio desligado, cabo USB mexido), receção e transmissão recomeçam sozinhas assim que volta, com um aviso a explicar o que se passa. No Linux o cursor Pwr baixa mesmo o sinal, as atualizações levam à release com AppImage e .deb e o OmniRig já não é proposto. Uma janela «Guardar como» aberta muito tempo já não é tomada por um bloqueio.",
     ],
   },
 ];
