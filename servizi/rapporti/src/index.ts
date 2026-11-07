@@ -234,6 +234,19 @@ async function attivi(env: Env): Promise<Response> {
   return risposta(200, { totale, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
+const CORS_ADMIN: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Max-Age': '600',
+};
+
+/** Le risposte delle operazioni sui messaggi leggibili anche dalla scheda di Aurora (il segreto resta comunque obbligatorio). */
+function conCors(r: Response): Response {
+  for (const [k, v] of Object.entries(CORS_ADMIN)) r.headers.set(k, v);
+  return r;
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -255,34 +268,38 @@ export default {
       if (req.method === 'GET' && url.pathname === '/admin/messaggi') {
         return new Response(messaggi.PAGINA, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }
+      // la scheda «Messaggi agli utenti» di Aurora chiama da un'altra origine (la pagina locale): domanda preventiva del browser
+      if (req.method === 'OPTIONS' && url.pathname.startsWith('/v1/messaggi')) {
+        return new Response(null, { status: 204, headers: CORS_ADMIN });
+      }
       // scrivere, togliere ed elencare i messaggi: prima il freno ai tentativi (stesso limite per indirizzo dei rapporti),
       // cosi' nessuno puo' provare il segreto a raffica
       if (url.pathname.startsWith('/v1/messaggi/') || (req.method === 'POST' && url.pathname === '/v1/messaggi')) {
         const ip = req.headers.get('CF-Connecting-IP') ?? 'sconosciuto';
         const { success } = await env.LIMITE.limit({ key: `admin:${ip}` });
-        if (!success) return risposta(429, { error: 'troppe richieste' });
+        if (!success) return conCors(risposta(429, { error: 'troppe richieste' }));
       }
       if (req.method === 'GET' && url.pathname === '/v1/messaggi/tutti') {
-        return amministratore(req, env) ? risposta(200, { messaggi: await messaggi.tutti(env.INDICE) }) : risposta(401, { error: 'segreto' });
+        return conCors(amministratore(req, env) ? risposta(200, { messaggi: await messaggi.tutti(env.INDICE) }) : risposta(401, { error: 'segreto' }));
       }
       if (req.method === 'POST' && url.pathname === '/v1/messaggi') {
-        if (!amministratore(req, env)) return risposta(401, { error: 'segreto' });
+        if (!amministratore(req, env)) return conCors(risposta(401, { error: 'segreto' }));
         const corpo = await leggiCorpo(req, 32_000);
-        if (!corpo) return risposta(413, { error: 'troppo grande' });
+        if (!corpo) return conCors(risposta(413, { error: 'troppo grande' }));
         let dati: unknown;
         try {
           dati = JSON.parse(new TextDecoder().decode(corpo));
         } catch {
-          return risposta(400, { error: 'json' });
+          return conCors(risposta(400, { error: 'json' }));
         }
         const fatto = await messaggi.crea(env.INDICE, dati);
-        return typeof fatto === 'string' ? risposta(400, { error: fatto }) : risposta(200, { messaggio: fatto });
+        return conCors(typeof fatto === 'string' ? risposta(400, { error: fatto }) : risposta(200, { messaggio: fatto }));
       }
       const togli = /^\/v1\/messaggi\/([0-9a-f]{8})$/.exec(url.pathname);
       if (req.method === 'DELETE' && togli) {
-        if (!amministratore(req, env)) return risposta(401, { error: 'segreto' });
+        if (!amministratore(req, env)) return conCors(risposta(401, { error: 'segreto' }));
         await messaggi.togli(env.INDICE, togli[1]);
-        return risposta(200, { ok: true });
+        return conCors(risposta(200, { ok: true }));
       }
       if (req.method === 'GET' && url.pathname === '/v1/attivi') {
         return amministratore(req, env) ? await attivi(env) : risposta(401, { error: 'segreto' });

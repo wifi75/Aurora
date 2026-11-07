@@ -1,3 +1,4 @@
+import { powerPct } from '../../lib/radioDisplay';
 import type { CatExtraItem, RigExtras } from "../../api/client";
 import { useT } from "../../i18n";
 import { agcName } from "../../lib/radioExtras";
@@ -650,7 +651,7 @@ export function Ft2000Display({
         <Label
           x={890}
           y={50}
-          text={power == null ? "—" : `${Math.round(power * 100)}%`}
+          text={power == null ? "—" : `${powerPct(power)}%`}
           fill={power == null ? FT.dim : FT.amber}
           size={22}
           weight={700}

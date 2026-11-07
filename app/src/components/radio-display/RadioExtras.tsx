@@ -1,3 +1,4 @@
+import { powerPct } from '../../lib/radioDisplay';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, getCat, postCatExtra, type CatExtraItem } from '../../api/client';
@@ -100,7 +101,7 @@ export function RadioExtras() {
   }
   // potenza RF impostata, a passi del 5%
   if (x.power_set != null) {
-    chips.push({ key: 'pwr_down', text: `PWR ${Math.round(x.power_set * 100)}% −`, on: false });
+    chips.push({ key: 'pwr_down', text: `PWR ${powerPct(x.power_set)}% −`, on: false });
     chips.push({ key: 'pwr_up', text: '+', on: false });
   }
   if (prefs.ritXit) {

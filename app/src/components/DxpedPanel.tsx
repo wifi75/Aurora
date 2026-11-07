@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { DxpedDetail } from './DxpedDetail';
-import { getDxcc, getDxped, type Dxpedition, getClusterSpots, type ClusterSpot } from '../api/client';
+import { getDxcc, getDxccMatrix, getDxped, type Dxpedition, getClusterSpots, type ClusterSpot } from '../api/client';
 import { loadAtlas } from './CountryShape';
 import { tuneSpot } from './ClusterPanel';
 import { useT } from '../i18n';
@@ -54,10 +54,29 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
     if (!old || sp.received_ms > old.received_ms) onAir.set(call, sp);
   }
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays, soonDays);
+  const client = useQueryClient();
+  // le DXpedition di paesi che non ho ancora lavorato: l'elenco si salva con le impostazioni, cosi' l'agente nel tray (anche con
+  // Aurora chiusa) avvisa solo per quelle
+  const matrix = useQuery({ queryKey: ['dxcc-matrix-all'], queryFn: () => getDxccMatrix(), staleTime: 30 * 60_000, retry: false });
+  useEffect(() => {
+    const countries = matrix.data?.countries;
+    if (!countries || items.length === 0) return;
+    const worked = new Set(countries.filter((c) => Object.keys(c.cells ?? {}).length > 0).map((c) => c.name.toUpperCase()));
+    const missing: string[] = [];
+    for (const d of items) {
+      const info = client.getQueryData<{ country?: string }>(['dxcc', d.call]);
+      const country = (info?.country ?? d.country).toUpperCase();
+      if (!worked.has(country)) missing.push(d.call.toUpperCase());
+    }
+    try {
+      localStorage.setItem('aurora-dxped-mancanti', JSON.stringify({ calls: missing, at: Date.now() }));
+    } catch {
+      // senza archivio l'agente avvisa per tutte
+    }
+  }, [matrix.data, items, client]);
   // quelle spottate adesso salgono in cima (nel loro ordine); dopo 15 minuti senza spot tornano al loro posto
   const onAirFirst = [...items].sort((a, b) => Number(onAir.has(b.call.toUpperCase())) - Number(onAir.has(a.call.toUpperCase())));
   // la scheda si apre subito: confini del mondo e paese di ogni DXpedition si preparano in anticipo, appena c'e' il calendario
-  const client = useQueryClient();
   const calls = items.map((d) => d.call).join(' ');
   useEffect(() => {
     if (calls === '') return;

@@ -1,3 +1,4 @@
+import { powerPct } from '../../lib/radioDisplay';
 import { useGroups } from '../../lib/detached';
 import { DetachButton } from '../DetachButton';
 import { createPortal } from 'react-dom';
@@ -152,7 +153,7 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
       {/* la potenza della radio, a passi del 5%: nel pannello disegnato non c'e' posto per i pulsanti */}
       {power != null && style !== 'ft2000' ? (
         <div className="rd-pwr" role="group" aria-label="PWR">
-          <span className="rd-pwr-val data">{Math.round(power * 100)}%</span>
+          <span className="rd-pwr-val data">{powerPct(power)}%</span>
           <div className="rd-pwr-btns">
             <button type="button" className="rd-pwr-btn" title={t('rx.act.pwrDown')} aria-label={t('rx.act.pwrDown')} disabled={waiting !== null} onClick={() => void click('pwr_down')}>
               −
