@@ -1090,3 +1090,4 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .bands-open .prop-tile .prop-meter, .bands-open .prop-meter { transform: scale(1.2) !important; transform-origin: left center !important; margin-right: 4px; }
 .bands-open .prop-tile b { font-size: 12px !important; }
 .bands-open .prop-matrix-row { min-height: 24px; }
+.bands-open .prop-matrix-row > .prop-group { font-size: 12.5px !important; font-weight: 600 !important; white-space: nowrap; }
