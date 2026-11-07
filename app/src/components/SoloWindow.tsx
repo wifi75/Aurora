@@ -1,4 +1,5 @@
 import { DxMapPage } from '../pages/DxMapPage';
+import { BandsOpen } from './BandsOpen';
 import { DisplayFit } from './DisplayFit';
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { useT, type Key } from '../i18n';
@@ -19,6 +20,7 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
   cluster: 'panel.cluster',
   map: 'nav.map',
   dxmap: 'nav.dxmap',
+  bands: 'bands.title',
   propagation: 'prop.psk',
   display: 'win.display',
 };
@@ -28,6 +30,18 @@ function Item({ item }: { item: ItemId }) {
   if (item === 'map') return <DxMapPage solo />;
   if (item === 'dxmap') return <DxMapPage solo />;
   if (item === 'propagation') return <PropagationPage solo />;
+  // Bande aperte della Stazione (nella Stazione il suo blocco si chiama `dxmap` per storia, ma staccato e' lei, non la Mappa DX)
+  if (item === 'bands') {
+    return (
+      <div className="solo-panel dock-panel dock-panel--dxmap">
+        <div className="dock-body">
+          <div className="bands-with-cmds bands-only">
+            <BandsOpen />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (item === 'display') return <DisplayFit />;
   return <Live soloPanel={item} />;
 }

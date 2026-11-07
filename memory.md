@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-07, versione 0.11.185. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-07, versione 0.11.186. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -42,6 +42,11 @@ Stato al 2026-11-07, versione 0.11.185. Per riprendere il lavoro leggi anche `do
 - Gli scenari di `core/crates/qso-native/tests/scenari.rs` che si aspettavano la registrazione al RRR o la ripetizione dell'RR73 vanno aggiornati quando il proprietario lancia i test.
 - All'avvio `main.tsx` riporta sempre a `#/` (Stazione, scelta del proprietario) tranne `#/finestra/`, `#/associa`, `#/pair` e `#/messaggi-autore`: senza quest'ultima eccezione l'icona dei messaggi apriva la Stazione (corretto nella 0.11.175).
 - «Aggiorna ora» dell'agente chiama `POST /api/v1/update/install`; l'installatore (`installer.rs`) se Aurora non conosce ancora una versione nuova fa subito `UpdateService::check()` (dalla 0.11.176). Prima rispondeva 502 «nessuna versione nuova trovata» quando l'agente vedeva la release prima del controllo orario di Aurora: chi ha la 0.11.175 o precedenti deve fare «Controlla aggiornamenti» in Impostazioni prima di usare il tray.
+
+## Schede staccate e Stazione (2026-11-07, 0.11.186)
+- La Stazione resta bloccata con le misure fisse (`aurora-board`) finche' nessuna scheda e' staccata o nascosta. Con almeno una staccata (`detachedItems`) o nascosta, `Live.tsx` sblocca la `GridBoard`: le altre si spostano e si ridimensionano e le misure vanno in `aurora-board-staccate`, una disposizione per ogni insieme di id staccati (chiave: id in ordine, separati da virgola). Rimesse tutte, torna la disposizione bloccata, intatta.
+- Il blocco `cmds` (Comandi) non si stacca. Il blocco `dxmap` della Stazione e' Bande aperte (nome storico): staccato diventa l'elemento `bands`; l'elemento `dxmap` e' la pagina Mappa DX e non toglie niente dalla Stazione (fino alla 0.11.185 i due si confondevano).
+- Aperto: finestre che restano vuote dopo la chiusura nel programma per Windows (vedi `docs/mancante.md`).
 
 ## Avvisi della stazione
 - `DiagnosisBar.tsx`: schede in basso a destra calcolate da `lib/diagnosis.ts`. Per `audio_loss` (blocchi audio persi, notizia del core da `audio-spectrum/src/capture.rs`) il testo e «Come risolvere» aprono `AudioLossHelp.tsx` con i sei controlli sul PC (risparmio USB, combinazione energia, cavo e porta, 48 kHz 16 bit e niente miglioramenti audio, altri programmi, memoria), su due colonne da 900 px in su (0.11.177). E' un problema del PC dell'utente, non di Aurora.

@@ -3,6 +3,11 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.186 - 2026-11-07
+- **Schede staccate**: con almeno una scheda della Stazione staccata (o nascosta) la pagina si sblocca: spostamento e ridimensionamento delle altre, misure salvate a parte per insieme di schede staccate (`aurora-board-staccate`); rimesse tutte, torna la disposizione bloccata.
+- **Menu per staccare** mai tagliato dalla scheda (`:has(.dock-detach-menu)`).
+- **Bande aperte staccata**: nuovo elemento `bands` (prima staccava `dxmap` e apriva la Mappa DX; la Mappa DX staccata toglieva Bande aperte dalla Stazione).
+
 ## 0.11.185 - 2026-11-07
 - **Coda**: con un DX impostato le chiamate vanno sempre in coda (`QueueReply` non risponde piu' da solo), massimo 4 (`QUEUE_MAX`), colonna accanto al DX.
 - **Comandi** in un blocco della disposizione a se' (`cmds`); le disposizioni salvate dividono lo spazio di Bande aperte.

@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.186',
+    released: '2026-11-07T17:51:59Z',
+    kind: 'fixed',
+    title: ['Schede staccate: le altre si ridimensionano', 'Detached panels: the others can be resized', 'Abgetrennte Fenster: die anderen lassen sich anpassen', 'Fenêtres détachées : les autres se redimensionnent', 'Ventanas separadas: las demás se redimensionan', 'Janelas separadas: as outras redimensionam-se'],
+    text: [
+      "Quando porti una scheda sul secondo schermo, quelle rimaste nella Stazione si possono spostare dalla barra del titolo e allargare dall'angolo in basso a destra, per usare il posto libero. Le misure si ricordano per ogni combinazione di schede staccate; rimesse tutte a posto, la Stazione torna com'era. Il menu per staccare una scheda non resta più nascosto e Bande aperte staccata apre Bande aperte, non la Mappa DX.",
+      "When you move a panel to the second screen, the ones left in the Station can be moved by their title bar and resized from the bottom-right corner to use the free space. The sizes are remembered for each set of detached panels; once they are all back, the Station returns as it was. The menu to detach a panel is no longer hidden, and detaching Open bands opens Open bands, not the DX map.",
+      "Wenn du ein Fenster auf den zweiten Bildschirm bringst, lassen sich die übrigen in der Station an der Titelleiste verschieben und an der Ecke unten rechts vergrößern, um den freien Platz zu nutzen. Die Größen werden für jede Kombination abgetrennter Fenster gespeichert; sind alle zurück, ist die Station wie vorher. Das Menü zum Abtrennen ist nicht mehr verdeckt, und abgetrennte Offene Bänder öffnen Offene Bänder, nicht die DX-Karte.",
+      "Quand tu places un panneau sur le second écran, ceux qui restent dans la Station se déplacent par leur barre de titre et s'agrandissent par le coin en bas à droite pour occuper la place libre. Les tailles sont mémorisées pour chaque ensemble de panneaux détachés ; une fois tous revenus, la Station redevient comme avant. Le menu pour détacher un panneau n'est plus caché, et Bandes ouvertes détachée ouvre Bandes ouvertes, pas la carte DX.",
+      "Cuando llevas un panel a la segunda pantalla, los que quedan en la Estación se mueven por su barra de título y se agrandan desde la esquina inferior derecha para usar el espacio libre. Las medidas se recuerdan para cada conjunto de paneles separados; cuando vuelven todos, la Estación queda como antes. El menú para separar un panel ya no queda oculto, y Bandas abiertas separada abre Bandas abiertas, no el mapa DX.",
+      "Quando levas um painel para o segundo ecrã, os que ficam na Estação movem-se pela barra de título e aumentam-se pelo canto inferior direito para usar o espaço livre. As medidas ficam guardadas para cada conjunto de painéis separados; quando voltam todos, a Estação fica como antes. O menu para separar um painel já não fica escondido, e Bandas abertas separada abre Bandas abertas, não o mapa DX.",
+    ],
+  },
+  {
     version: '0.11.185',
     released: '2026-11-07T17:35:03Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Déplacé sur un autre écran, l’afficheur de la radio n’a plus le cadre de Windows ni la barre de titre : on ne voit que l’afficheur. Fais-le glisser par le bord ou par la poignée ⠿ en haut à gauche, redimensionne-le par les bords (en proportion) ou avec la poignée, et ⤓ le remet en place. Les fenêtres à plusieurs panneaux et le tableau de bord restent des fenêtres normales.",
       "Llevada a otra pantalla, la pantalla de la radio ya no tiene el marco de Windows ni la barra de título: solo se ve la pantalla. Muévela arrastrando el borde o el asa ⠿ que aparece arriba a la izquierda, redimensiónala desde los bordes (en proporción) o con el asa, y ⤓ la devuelve. Las ventanas con varios paneles y el panel de bloques siguen siendo ventanas normales.",
       "Levado para outro monitor, o ecrã do rádio já não tem a moldura do Windows nem a barra de título: só se vê o ecrã. Move-o arrastando a borda ou a pega ⠿ no canto superior esquerdo, redimensiona-o pelas bordas (em proporção) ou com a pega, e ⤓ volta a pô-lo no lugar. As janelas com vários painéis e o painel de blocos continuam a ser janelas normais.",
-    ],
-  },
-  {
-    version: '0.11.145',
-    released: '2026-11-05T17:24:42Z',
-    kind: 'new',
-    title: ["L'orologio si corregge con un clic", 'The clock is corrected with one click', 'Die Uhr wird mit einem Klick korrigiert', 'L’horloge se corrige d’un clic', 'El reloj se corrige con un clic', 'O relógio corrige-se com um clique'],
-    text: [
-      "Un clic sull'avviso «Orologio sbagliato» corregge subito l'ora di Windows con i server NTP. L'avviso compare solo oltre mezzo secondo di scarto (prima 200 ms): FT8 tollera bene qualche decimo e l'orologio di Windows si sposta da solo di centinaia di millisecondi.",
-      "One click on the «Clock wrong» notice corrects the Windows time right away with the NTP servers. The notice appears only beyond half a second (before 200 ms): FT8 tolerates a few tenths well and the Windows clock drifts by hundreds of milliseconds.",
-      "Ein Klick auf den Hinweis «Uhr falsch» korrigiert die Windows-Zeit sofort mit den NTP-Servern. Der Hinweis erscheint erst ab einer halben Sekunde (vorher 200 ms): FT8 verträgt einige Zehntel gut und die Windows-Uhr driftet um Hunderte Millisekunden.",
-      "Un clic sur l’avis « Horloge fausse » corrige tout de suite l’heure de Windows avec les serveurs NTP. L’avis n’apparaît qu’au-delà d’une demi-seconde (avant 200 ms) : FT8 tolère bien quelques dixièmes et l’horloge de Windows dérive de centaines de millisecondes.",
-      "Un clic en el aviso «Reloj incorrecto» corrige enseguida la hora de Windows con los servidores NTP. El aviso aparece solo por encima de medio segundo (antes 200 ms): FT8 tolera bien algunas décimas y el reloj de Windows deriva cientos de milisegundos.",
-      "Um clique no aviso «Relógio errado» corrige logo a hora do Windows com os servidores NTP. O aviso só aparece acima de meio segundo (antes 200 ms): o FT8 tolera bem algumas décimas e o relógio do Windows desvia centenas de milissegundos.",
     ],
   },
 ];

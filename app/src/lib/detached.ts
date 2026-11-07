@@ -4,7 +4,7 @@ import { browserStorage } from './theme';
 import { arrange, freeCell, type Cell } from '../components/GridBoard';
 
 /** Cosa si puo' portare in una finestra a parte (secondo schermo): i pannelli della Stazione, la Mappa e la Propagazione. */
-export type ItemId = PanelId | 'map' | 'dxmap' | 'propagation' | 'display';
+export type ItemId = PanelId | 'map' | 'dxmap' | 'bands' | 'propagation' | 'display';
 
 /** Una finestra a parte: uno o piu' elementi affiancati (in riga) o uno sopra l'altro (in colonna), con le loro proporzioni. */
 export interface Group {
@@ -80,7 +80,7 @@ export function openGroupWindow(id: string, size?: { w: number; h: number }): vo
   window.open(`${location.origin}/${q}#/finestra/${id}`, `aurora-${id}`, size ? `width=${size.w},height=${size.h}` : 'width=1000,height=700');
 }
 
-const ITEM_IDS: readonly string[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster', 'map', 'dxmap', 'propagation', 'display'];
+const ITEM_IDS: readonly string[] = ['waterfall', 'station', 'tx', 'cq', 'all', 'log', 'cluster', 'map', 'dxmap', 'bands', 'propagation', 'display'];
 
 /** Dalla finestra a parte: il gruppo descritto nell'indirizzo (`?items=...`), da rimettere nell'archivio se manca. */
 export function groupFromUrl(id: string): Group | null {

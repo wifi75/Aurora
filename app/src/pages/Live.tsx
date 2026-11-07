@@ -338,7 +338,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   ) : null);
   // le finestre staccate sul secondo schermo non si vedono qui (la Trasmissione porta con se' anche il QSO); idem quelle nascoste dalle Impostazioni
   const groups = useGroups();
-  const awayIds: PanelId[] = [...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])];
+  // il blocco `dxmap` della Stazione e' Bande aperte: staccato diventa `bands`; la Mappa DX staccata (`dxmap`) non lo toglie da qui
+  const awayIds: PanelId[] = [
+    ...(layout.hidden ?? []),
+    ...(detachedItems(groups).filter((i) => i !== 'dxmap').map((i) => (i === 'bands' ? 'dxmap' : i)) as PanelId[]),
+  ];
   const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !(awayIds as string[]).includes(id)));
   // con una o piu' schede staccate (o nascoste) la pagina si sblocca: le altre si spostano e si ridimensionano per usare il posto libero.
   // Queste misure si ricordano a parte, una disposizione per ogni insieme di schede staccate: rimesse tutte a posto, torna la pagina
@@ -417,7 +421,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
-                  {id === 'cmds' ? null : <DetachButton item={id as ItemId} className="dock-detach" />}
+                  {id === 'cmds' ? null : <DetachButton item={(id === 'dxmap' ? 'bands' : id) as ItemId} className="dock-detach" />}
                 </header>
                 <div className="dock-body">{blockBody(id as BoardId)}</div>
               </section>

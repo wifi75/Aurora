@@ -25,7 +25,7 @@ export function WhereGroups() {
     return 'main';
   };
   const setHidden = (item: ItemId, want: boolean) => {
-    if (item === 'map' || item === 'dxmap' || item === 'propagation' || item === 'display') return;
+    if (item === 'map' || item === 'dxmap' || item === 'bands' || item === 'propagation' || item === 'display') return;
     if (hidden.includes(item) !== want) {
       const next = toggleHidden(layout, item);
       saveLayout(browserStorage(), next);
