@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.165',
+    released: '2026-11-07T07:35:18Z',
+    kind: 'new',
+    title: ['Tema automatico', 'Automatic theme', 'Automatisches Design', 'Thème automatique', 'Tema automático', 'Tema automático'],
+    text: [
+      "Il pulsante del tema ha ora anche «Automatico»: Aurora segue il tema chiaro o scuro di Windows e cambia da sola con lui. Il Log mostra il QSO appena Log4OM lo scrive (prima poteva tardare fino a 10 secondi). Attività di banda con etichette più strette e centrate e più spazio a messaggio, bandiera e paese; schede con il bordo viola di Aurora; nel tema chiaro la riga in trasmissione si legge bene; titoli delle Impostazioni più evidenti.",
+      "The theme button now also has «Automatic»: Aurora follows the Windows light or dark theme and switches with it. The Log shows the QSO as soon as Log4OM writes it (it could take up to 10 seconds before). Band activity with narrower centred labels and more room for message, flag and country; panels with Aurora's purple border; in the light theme the transmitting row is readable; clearer Settings titles.",
+      "Die Design-Taste hat jetzt auch «Automatisch»: Aurora folgt dem hellen oder dunklen Windows-Design und wechselt mit. Das Log zeigt das QSO, sobald Log4OM es schreibt (vorher bis zu 10 Sekunden später). Bandaktivität mit schmaleren, zentrierten Etiketten und mehr Platz für Nachricht, Flagge und Land; Fenster mit dem violetten Aurora-Rand; im hellen Design ist die Sendezeile lesbar; deutlichere Titel in den Einstellungen.",
+      "Le bouton du thème propose aussi « Automatique » : Aurora suit le thème clair ou sombre de Windows et change avec lui. Le Log montre le QSO dès que Log4OM l’écrit (avant, jusqu’à 10 secondes de retard). Activité de bande avec des étiquettes plus étroites et centrées et plus de place pour message, drapeau et pays ; panneaux avec la bordure violette d’Aurora ; en thème clair la ligne en émission est lisible ; titres des Réglages plus visibles.",
+      "El botón del tema tiene ahora también «Automático»: Aurora sigue el tema claro u oscuro de Windows y cambia con él. El Log muestra el QSO en cuanto Log4OM lo escribe (antes podía tardar hasta 10 segundos). Actividad de banda con etiquetas más estrechas y centradas y más espacio para mensaje, bandera y país; paneles con el borde violeta de Aurora; en el tema claro la línea en transmisión se lee bien; títulos de Ajustes más visibles.",
+      "O botão do tema tem agora também «Automático»: o Aurora segue o tema claro ou escuro do Windows e muda com ele. O Log mostra o QSO assim que o Log4OM o escreve (antes podia demorar até 10 segundos). Atividade de banda com etiquetas mais estreitas e centradas e mais espaço para mensagem, bandeira e país; painéis com a margem violeta do Aurora; no tema claro a linha em transmissão lê-se bem; títulos das Definições mais visíveis.",
+    ],
+  },
+  {
     version: '0.11.164',
     released: '2026-11-06T22:51:47Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les afficheurs presque carrés font 330 × 130 et sont centrés entre le bord de la fenêtre et les panneaux ; la barre du menu s’arrête avant l’afficheur, avec un coin arrondi. Les afficheurs larges de tout type ont aussi le même espace dessus et dessous.",
       "Las pantallas casi cuadradas son 330 × 130 y quedan centradas entre el borde de la ventana y los paneles; la barra del menú termina antes de la pantalla, con la esquina redondeada. Las pantallas anchas de cualquier tipo también tienen el mismo espacio arriba y abajo.",
       "Os ecrãs quase quadrados são 330 × 130 e ficam centrados entre a borda da janela e os painéis; a barra do menu acaba antes do ecrã, com o canto arredondado. Os ecrãs largos de qualquer tipo também têm o mesmo espaço em cima e em baixo.",
-    ],
-  },
-  {
-    version: '0.11.125',
-    released: '2026-11-04T21:15:10Z',
-    kind: 'new',
-    title: ['QSO in corso in vista, LoTW ed eQSL da QRZ', 'Current QSO in view, LoTW and eQSL from QRZ', 'Laufendes QSO im Blick, LoTW und eQSL von QRZ', 'QSO en cours en vue, LoTW et eQSL depuis QRZ', 'QSO en curso a la vista, LoTW y eQSL de QRZ', 'QSO em curso à vista, LoTW e eQSL do QRZ'],
-    text: [
-      "In Attività di banda la stazione che chiami resta in una sola riga ferma in cima e cambia colore a ogni sua risposta fino al log. Da QRZ.com e HamQTH arrivano LoTW, eQSL, QSL diretta e QSL manager: lettere L E D accanto alla Stazione DX e nel riquadro del nominativo, ora anche in Attività di banda. Display estesi 640 × 80 centrati, quasi quadrati 330 × 110; lingua, volume e tema piccoli dopo Novità. Sotto il QR il consiglio per Chrome su Android.",
-      "In Band activity the station you call stays in a single row pinned at the top and changes colour at each reply until it is logged. From QRZ.com and HamQTH come LoTW, eQSL, direct QSL and QSL manager: L E D letters next to the DX station and in the callsign box, now also in Band activity. Wide displays 640 × 80 centred, near-square 330 × 110; language, volume and theme small after News. Under the QR a tip for Chrome on Android.",
-      "In der Bandaktivität bleibt die gerufene Station in einer festen Zeile oben und wechselt bei jeder Antwort die Farbe bis zum Log. Von QRZ.com und HamQTH kommen LoTW, eQSL, Direkt-QSL und QSL-Manager: Buchstaben L E D neben der DX-Station und im Rufzeichen-Feld, jetzt auch in der Bandaktivität. Breite Anzeigen 640 × 80 zentriert, fast quadratische 330 × 110; Sprache, Lautstärke und Thema klein nach Neuigkeiten. Unter dem QR ein Tipp für Chrome auf Android.",
-      "Dans Activité de bande la station appelée reste sur une seule ligne fixée en haut et change de couleur à chaque réponse jusqu’au log. De QRZ.com et HamQTH arrivent LoTW, eQSL, QSL directe et QSL manager : lettres L E D à côté de la station DX et dans la bulle de l’indicatif, aussi dans Activité de bande. Afficheurs larges 640 × 80 centrés, presque carrés 330 × 110 ; langue, volume et thème petits après Nouveautés. Sous le QR un conseil pour Chrome sur Android.",
-      "En Actividad de banda la estación que llamas queda en una sola fila fija arriba y cambia de color con cada respuesta hasta el log. De QRZ.com y HamQTH llegan LoTW, eQSL, QSL directa y QSL manager: letras L E D junto a la estación DX y en el recuadro del indicativo, ahora también en Actividad de banda. Pantallas anchas 640 × 80 centradas, casi cuadradas 330 × 110; idioma, volumen y tema pequeños tras Novedades. Bajo el QR un consejo para Chrome en Android.",
-      "Na Atividade de banda a estação que chamas fica numa só linha fixa em cima e muda de cor a cada resposta até ao log. Do QRZ.com e HamQTH chegam LoTW, eQSL, QSL direta e QSL manager: letras L E D junto à estação DX e no quadro do indicativo, agora também na Atividade de banda. Ecrãs largos 640 × 80 centrados, quase quadrados 330 × 110; idioma, volume e tema pequenos depois de Novidades. Sob o QR um conselho para o Chrome no Android.",
     ],
   },
 ];

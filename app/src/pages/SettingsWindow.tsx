@@ -28,6 +28,7 @@ import { RadioTab } from '../settings/RadioTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
 import { SupportTab } from '../settings/SupportBox';
+import { AgentTab } from '../settings/AgentTab';
 import { WaterfallTab } from '../settings/WaterfallTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
@@ -59,6 +60,8 @@ const TABS: readonly TabDef[] = [
   { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
   { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
+  // l'agente nel tray non c'e' ancora: la sua pagina si vede solo nella grafica di prova
+  ...(import.meta.env.VITE_AURORA_PROVA === '1' ? [{ id: 'agent', label: 'agent.tab' as const, icon: '◳', render: () => <AgentTab /> } satisfies TabDef] : []),
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },

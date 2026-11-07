@@ -197,3 +197,42 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
   .sw-station-more { grid-template-columns: auto auto !important; }
   .sw-station-more > :last-child { grid-column: 1 / -1; }
 }
+
+/* Agente nel tray: una riga per avviso, tre colonne di scelta */
+.agent-table { display: grid; margin-top: 0.6rem; border: 1px solid var(--row-line, rgba(127,127,127,.25)); border-radius: 0.6rem; overflow: hidden; }
+.agent-table--off { opacity: 0.5; }
+.agent-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 6.5rem); align-items: center; padding: 0.45rem 0.8rem; border-top: 1px solid var(--row-line, rgba(127,127,127,.25)); }
+.agent-row:first-child { border-top: 0; }
+.agent-row > span:not(:first-child) { text-align: center; }
+.agent-row > span:first-child { display: flex; flex-direction: column; gap: 1px; }
+.agent-row small { font-size: 0.72rem; }
+.agent-row--head { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: color-mix(in srgb, var(--text) 5%, transparent); }
+.agent-row input[type='radio'] { width: 1rem; height: 1rem; accent-color: var(--accent); cursor: pointer; }
+
+/* titolo «Funzioni di Aurora» nel menu: ben leggibile (prima piccolo e sbiadito) */
+.sw-nav-sep:not(.sw-nav-sep--line){display:block;margin-top:12px;padding:10px 6px 4px;font-size:11px;font-weight:800;letter-spacing:.12em;opacity:1;color:var(--accent,#2cf5a4);background-size:100% 2px}
+
+/* nome della scheda aperta accanto a «Impostazioni»: leggibile, come un'etichetta */
+.sw-top small,:root[data-theme='light'] .sw-top small{opacity:1;font-size:11.5px;font-weight:800;letter-spacing:.1em;padding:3px 9px;border-radius:6px;color:var(--text);background:color-mix(in srgb,var(--accent,#2cf5a4) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent,#2cf5a4) 45%,transparent)}
+
+/* Agente nel tray, riquadro Popup: righe come la tabella sopra (cosa a sinistra, comando a destra, allineati) */
+.agent-opts { display: grid; border: 1px solid var(--row-line, rgba(127,127,127,.25)); border-radius: 0.6rem; overflow: hidden; }
+.agent-opt { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.55rem 0.8rem; border-top: 1px solid var(--row-line, rgba(127,127,127,.25)); }
+.agent-opt:first-child { border-top: 0; }
+.agent-opt > span:first-child, .agent-opt-check > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.agent-opt small { font-size: 0.72rem; }
+.agent-opt-check { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; min-width: 0; }
+.agent-opt-check input { width: 1rem; height: 1rem; accent-color: var(--accent); flex: none; }
+.agent-opt-ctl { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+.agent-opt-ctl--off { opacity: 0.45; }
+.agent-opt-ctl input[type='time'] { width: 6.2rem; }
+.agent-num { width: 4.5rem; text-align: center; }
+.agent-try { display: none; }
+
+/* Agente nel tray: secondi e orari con la stessa casella degli altri campi delle Impostazioni (come le ore di Aggiornamenti) */
+.agent-opt input.agent-input { box-sizing: border-box; height: 32px; padding: 0 10px; border: var(--border-width, 1px) solid var(--border, #a3b3ca); border-radius: 8px; background: var(--input-bg, var(--bg)); color: var(--text); font: inherit; font-size: 14px; text-align: center; appearance: textfield; }
+.agent-opt input.agent-input:focus { outline: none; border-color: var(--accent); }
+.agent-opt input.agent-input:disabled { opacity: 0.5; }
+.agent-opt input.agent-num { width: 5rem; }
+.agent-opt input.agent-time { width: 6.5rem; }
+.agent-opt-ctl > .muted { font-size: 13px; }

@@ -3,6 +3,15 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.165 - 2026-11-07
+- **Tema automatico**: il pulsante del tema passa da Scuro a Chiaro ad Automatico (segue Windows e cambia con lui).
+- **Log**: dopo un QSO il pannello rilegge Log4OM subito e poi dopo 1,5, 4 e 8 s (prima fino a 10 s di ritardo); caratteri del pannello 0,7 px piu' piccoli.
+- **Attivita' di banda**: etichette piu' strette (4,3rem, 8,5 px) e centrate; lo spazio va al messaggio e a bandiera e paese (paese 11 px, bandiera piu' grande).
+- **Schede**: bordo viola di Aurora.
+- **Tema chiaro**: la riga in trasmissione ha il testo scuro (prima bianco, illeggibile).
+- **Impostazioni**: titolo «Funzioni di Aurora» e nome della scheda aperta piu' evidenti.
+- Prova locale: filigrana «PROVA LOCALE» e pagina «Agente nel tray» (prototipo) solo nella grafica compilata con `VITE_AURORA_PROVA=1`.
+
 ## 0.11.164 - 2026-11-06
 - **Pagine che scorrono**: su schermo largo solo la Stazione resta tutta nella finestra; Fox, Propagazione e le altre pagine scorrono di nuovo fino in fondo (la parte sotto restava nascosta).
 - **Splash**: mostra l'autore completo.

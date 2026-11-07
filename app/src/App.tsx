@@ -185,6 +185,12 @@ export function App() {
           )}
           <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
           <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
+          {/* solo nella grafica di prova compilata sul PC (VITE_AURORA_PROVA=1): mai nelle versioni pubblicate */}
+          {import.meta.env.VITE_AURORA_PROVA === '1' ? (
+            <span className="app-test-badge" title="Grafica di prova compilata sul PC: non e' la versione pubblicata">
+              PROVA LOCALE
+            </span>
+          ) : null}
         </nav>
         {/* lingua, volume, tema: piccoli, subito dopo il menu, staccati da un pallino colorato */}
         <span className="app-tools">
