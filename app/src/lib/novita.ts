@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.177',
+    released: '2026-11-07T12:17:43Z',
+    kind: 'new',
+    title: ['Audio che perde blocchi: la scheda con cosa controllare', 'Audio losing blocks: a card with what to check', 'Audio verliert Blöcke: eine Karte mit den Prüfungen', 'Audio qui perd des blocs : une fiche avec quoi vérifier', 'Audio que pierde bloques: una ficha con qué comprobar', 'Áudio a perder blocos: um cartão com o que verificar'],
+    text: [
+      "Sull'avviso «L'audio perde blocchi» ora c'è «Come risolvere»: apre una scheda con i sei controlli da fare sul PC, in ordine (risparmio energetico USB, combinazione di risparmio energia, cavo e porta, formato dell'audio, altri programmi, memoria).",
+      "The «The audio is losing blocks» notice now has «How to fix»: it opens a card with the six checks to do on the PC, in order (USB power saving, power plan, cable and port, audio format, other programs, memory).",
+      "Der Hinweis «Das Audio verliert Blöcke» hat jetzt «So behebst du es»: Es öffnet eine Karte mit den sechs Prüfungen am PC, der Reihe nach (USB-Energiesparen, Energiesparplan, Kabel und Anschluss, Audioformat, andere Programme, Speicher).",
+      "L'avis « L'audio perd des blocs » a maintenant « Comment corriger » : il ouvre une fiche avec les six vérifications à faire sur le PC, dans l'ordre (économie d'énergie USB, mode d'alimentation, câble et port, format audio, autres programmes, mémoire).",
+      "El aviso «El audio pierde bloques» ahora tiene «Cómo arreglarlo»: abre una ficha con las seis comprobaciones en el PC, en orden (ahorro de energía USB, plan de energía, cable y puerto, formato de audio, otros programas, memoria).",
+      "O aviso «O áudio está a perder blocos» agora tem «Como resolver»: abre um cartão com as seis verificações a fazer no PC, por ordem (poupança de energia USB, plano de energia, cabo e porta, formato do áudio, outros programas, memória).",
+    ],
+  },
+  {
     version: '0.11.176',
     released: '2026-11-07T12:16:55Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Depuis le petit ⧉ d’un panneau, de la Carte ou de la Propagation choisis « Dans le tableau de bord à blocs » : une seule fenêtre où chaque élément est un bloc que tu fais glisser par sa barre et redimensionnes par le coin en bas à droite ; les autres blocs se déplacent pour lui faire place. Aurora mémorise la position et la taille de chaque bloc. Aussi depuis Réglages › Fenêtres.",
       "Desde el pequeño ⧉ de un panel, del Mapa o de la Propagación elige «En el panel de bloques»: una sola ventana donde cada elemento es un bloque que arrastras por su barra y redimensionas desde la esquina inferior derecha; los demás bloques se mueven para hacerle sitio. Aurora recuerda la posición y el tamaño de cada bloque. También desde Ajustes › Ventanas.",
       "No pequeno ⧉ de um painel, do Mapa ou da Propagação escolhe «No painel de blocos»: uma só janela onde cada elemento é um bloco que arrastas pela barra e redimensionas pelo canto inferior direito; os outros blocos mexem-se para lhe dar espaço. A Aurora lembra a posição e o tamanho de cada bloco. Também em Definições › Janelas.",
-    ],
-  },
-  {
-    version: '0.11.137',
-    released: '2026-11-05T13:13:04Z',
-    kind: 'new',
-    title: ['Scegli dove sta ogni pannello', 'Choose where each panel goes', 'Wähle, wo jedes Feld ist', 'Choisis où va chaque panneau', 'Elige dónde va cada panel', 'Escolhe onde fica cada painel'],
-    text: [
-      "In Impostazioni › Finestre scegli per ogni pannello, la Mappa e la Propagazione dove stanno: nella finestra principale, in una finestra a parte (nuova o accanto a un'altra) o nascosti. Sotto ci sono le finestre a parte aperte, con «Mostra la finestra» e «Rimetti nella finestra principale»; «Ripristina la disposizione» rimette tutto com'era all'inizio.",
-      "In Settings › Windows choose for each panel, the Map and Propagation where they go: in the main window, in a separate window (new or next to another) or hidden. Below are the open separate windows, with «Show the window» and «Put back in the main window»; «Reset layout» puts everything back as at the start.",
-      "Unter Einstellungen › Fenster wählst du für jedes Feld, die Karte und die Ausbreitung, wo sie sind: im Hauptfenster, in einem eigenen Fenster (neu oder neben einem anderen) oder ausgeblendet. Darunter die offenen eigenen Fenster mit «Fenster zeigen» und «Zurück ins Hauptfenster»; «Anordnung zurücksetzen» stellt alles wie am Anfang her.",
-      "Dans Réglages › Fenêtres choisis pour chaque panneau, la Carte et la Propagation où ils vont : dans la fenêtre principale, dans une fenêtre à part (nouvelle ou à côté d’une autre) ou masqués. Dessous, les fenêtres à part ouvertes, avec « Afficher la fenêtre » et « Remettre dans la fenêtre principale » ; « Rétablir la disposition » remet tout comme au départ.",
-      "En Ajustes › Ventanas eliges para cada panel, el Mapa y la Propagación dónde van: en la ventana principal, en una ventana aparte (nueva o junto a otra) u ocultos. Debajo, las ventanas aparte abiertas, con «Mostrar la ventana» y «Devolver a la ventana principal»; «Restablecer la disposición» lo deja todo como al principio.",
-      "Em Definições › Janelas escolhes para cada painel, o Mapa e a Propagação onde ficam: na janela principal, numa janela à parte (nova ou ao lado de outra) ou ocultos. Por baixo, as janelas à parte abertas, com «Mostrar a janela» e «Repor na janela principal»; «Repor a disposição» deixa tudo como no início.",
     ],
   },
 ];

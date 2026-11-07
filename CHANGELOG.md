@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.177 - 2026-11-07
+- **Audio che perde blocchi**: l'avviso ha «Come risolvere» (anche un clic sul testo) che apre una scheda con i sei controlli da fare sul PC, in 6 lingue, su due colonne sugli schermi larghi.
+
 ## 0.11.176 - 2026-11-07
 - **Agente, «Aggiorna ora»**: se Aurora non conosce ancora la versione nuova (ultimo controllo di prima della pubblicazione) la chiede subito a GitHub invece di rispondere «nessuna versione nuova trovata».
 
