@@ -19,7 +19,7 @@
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
 [![Licenza](https://img.shields.io/badge/Licenza-GPL--3.0-blue)](LICENSE)
 
-*A Aura, mi hija: la luz de la que Aurora toma su nombre.* ♥
+*A Aurora, mi hija: la luz de la que este programa toma su nombre.* ♥
 
 [English](README.md) · [Italiano](README.it.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · **Español** · [Português](README.pt.md)
 
