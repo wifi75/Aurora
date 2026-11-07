@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.171 - 2026-11-07
+- **Riga Tx con etichetta**: la tua riga di trasmissione in Attivita' di banda porta l'etichetta della stazione chiamata (presa dal suo ultimo messaggio ricevuto).
+
 ## 0.11.170 - 2026-11-07
 - **Errori della radio**: il messaggio dice il motivo vero mandato dal core (es. «la radio non ha raggiunto la frequenza»); tolto il vecchio «controlla OmniRig» che compariva anche con Hamlib.
 - **Potenza**: sopra il 98,5% si mostra 100% (Hamlib legge l'FT-2000 a 100 W come 0,992).

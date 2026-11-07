@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.171',
+    released: '2026-11-07T10:19:14Z',
+    kind: 'new',
+    title: ['Etichetta anche sulla riga Tx', 'Label on the Tx row too', 'Etikett auch in der Tx-Zeile', 'Étiquette aussi sur la ligne Tx', 'Etiqueta también en la línea Tx', 'Etiqueta também na linha Tx'],
+    text: [
+      "La tua riga di trasmissione in Attività di banda mostra l'etichetta della stazione che stai chiamando (paese nuovo, nuovo per la banda, già lavorata…): vedi subito se è un QSO importante.",
+      "Your transmit row in Band activity shows the label of the station you are calling (new country, new for the band, worked…): you see at once if it's an important QSO.",
+      "Deine Sendezeile in der Bandaktivität zeigt das Etikett der gerufenen Station (neues Land, neu auf dem Band, gearbeitet…): du siehst sofort, ob das QSO wichtig ist.",
+      "Ta ligne d'émission dans l'Activité de bande affiche l'étiquette de la station appelée (nouveau pays, nouveau sur la bande, déjà contactée…) : tu vois tout de suite si le QSO compte.",
+      "Tu línea de transmisión en Actividad de banda muestra la etiqueta de la estación que llamas (país nuevo, nuevo en la banda, ya trabajada…): ves enseguida si el QSO es importante.",
+      "A tua linha de transmissão na Atividade de banda mostra a etiqueta da estação que estás a chamar (país novo, novo na banda, já trabalhada…): vês logo se o QSO é importante.",
+    ],
+  },
+  {
     version: '0.11.170',
     released: '2026-11-07T10:18:34Z',
     kind: 'changed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "FT8 retrouve la suite des QSO en cours même à -23 dB, comme JTDX ; AGCc vaut aussi en FT4. Les messages de la radio, de l’audio et des envois aux services se lisent dans la langue choisie. Moins de blocs audio perdus, avis à l’écran pour audio, radio et OmniRig, « Tout vérifier » dans Réglages › Assistance et le nom du programme qui occupe un port.",
       "FT8 recupera la continuación de los QSO en curso incluso a -23 dB, como JTDX; AGCc vale también en FT4. Los mensajes de la radio, del audio y de los envíos a servicios se leen en el idioma elegido. Menos bloques de audio perdidos, avisos en pantalla para audio, radio y OmniRig, «Verificar todo» en Ajustes › Asistencia y el nombre del programa que ocupa un puerto.",
       "O FT8 recupera a continuação dos QSO em curso mesmo a -23 dB, como o JTDX; o AGCc vale também em FT4. As mensagens do rádio, do áudio e dos envios aos serviços leem-se na língua escolhida. Menos blocos de áudio perdidos, avisos no ecrã para áudio, rádio e OmniRig, «Verificar tudo» em Definições › Assistência e o nome do programa que ocupa uma porta.",
-    ],
-  },
-  {
-    version: '0.11.131',
-    released: '2026-11-04T22:05:09Z',
-    kind: 'fixed',
-    title: ["Il display non copre più l'apertura", 'The display no longer covers the splash', 'Die Anzeige verdeckt den Start nicht mehr', 'L’afficheur ne couvre plus l’ouverture', 'La pantalla ya no tapa el inicio', 'O ecrã já não tapa a abertura'],
-    text: [
-      "All'avvio di Aurora il display della radio compariva sopra la schermata di apertura: ora resta sotto, come tutto il resto della pagina.",
-      "When Aurora started, the radio display appeared on top of the splash screen: now it stays below, like the rest of the page.",
-      "Beim Start von Aurora erschien die Radioanzeige über dem Startbildschirm: jetzt bleibt sie darunter, wie der Rest der Seite.",
-      "Au démarrage d’Aurora l’afficheur de la radio apparaissait au-dessus de l’écran d’ouverture : il reste maintenant dessous, comme le reste de la page.",
-      "Al iniciar Aurora la pantalla de la radio aparecía encima de la pantalla de inicio: ahora queda debajo, como el resto de la página.",
-      "Ao iniciar a Aurora o ecrã do rádio aparecia por cima do ecrã de abertura: agora fica por baixo, como o resto da página.",
     ],
   },
 ];
