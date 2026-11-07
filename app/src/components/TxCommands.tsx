@@ -5,6 +5,7 @@ import { getControls, getEngineSettings, postControl, postReport, postRxFrequenc
 import { usePrefs } from '../lib/prefs';
 import type { StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
+import { toast, type ToastKind } from '../lib/toast';
 import { replyErrorMessage } from '../lib/replyError';
 import { TxQuickControls } from './TxQuickControls';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
@@ -34,7 +35,10 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   const [report, setReport] = useState(String(status?.report ?? '-10').replace(/^\+/, ''));
   const [txHz, setTxHz] = useState(String(status?.tx_df ?? initialFrequency));
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
-  const [note, setNote] = useState('');
+  // i messaggi dei Comandi come avvisi a comparsa (toast): una riga sotto i pulsanti finiva sopra il bordo della finestra
+  const setNote = (text: string, kind: ToastKind = 'ok') => {
+    if (text) toast(text, kind);
+  };
   // «Pulsante Tune nel pannello Comandi» delle Impostazioni: portante sulla frequenza Tx per un periodo, ripremuto la ferma (come WSJT-X)
   const showTune = usePrefs((p) => p.prefs.cmdTune);
   const [tuning, setTuning] = useState(false);
@@ -65,7 +69,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
           delete next[dxCall];
           return next;
         });
-        setNote(replyErrorMessage(error, t));
+        setNote(replyErrorMessage(error, t), 'error');
       });
   };
   const toggleTune = () => {
@@ -87,14 +91,15 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   const run = async (what: string, action: () => Promise<void>) => {
     try {
       await action();
-      setNote(what);
+      // i comandi che si vedono gia' cambiare (frequenze, interruttori) non mandano avvisi; solo quelli che non si vedono (Tune, rapporto)
+      if (what) setNote(what);
     } catch (error) {
-      setNote(replyErrorMessage(error, t));
+      setNote(replyErrorMessage(error, t), 'error');
     }
   };
 
   const setControl = (id: ControlId, on?: boolean) =>
-    run(t('ctl.done'), async () => {
+    run('', async () => {
       if (on !== undefined) holdControl(id, on);
       await postControl(id, on).catch((e: unknown) => {
         releaseControl(id);
@@ -106,11 +111,11 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
 
   const applyTx = () => {
     const hz = Number(txHz);
-    if (Number.isFinite(hz)) void run(t('tx.freqSet'), () => postTxFrequency(hz));
+    if (Number.isFinite(hz)) void run('', () => postTxFrequency(hz));
   };
   const applyRx = () => {
     const hz = Number(rxHz);
-    if (Number.isFinite(hz)) void run(t('ctl.rxSet'), () => postRxFrequency(hz));
+    if (Number.isFinite(hz)) void run('', () => postRxFrequency(hz));
   };
   const onEnter = (apply: () => void) => (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') apply();
@@ -190,11 +195,6 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
           ) : null}
           <TxQuickControls inline />
         </div>
-        {note ? (
-          <p className="live-note" role="status">
-            {note}
-          </p>
-        ) : null}
       </div>
     </div>
   );

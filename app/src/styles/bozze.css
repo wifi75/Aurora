@@ -1115,3 +1115,8 @@ html:not([data-theme='light']) .dock-grip h2, html:not([data-theme='light']) .do
 /* Comandi con Tune e Spot DX insieme: sei pulsanti nella stessa riga, piu' stretti ma tutti alti uguali e allineati */
 
 .bands-with-cmds .cmd-buttons.cmd-buttons--dense button { padding: 0 4px !important; font-size: 10.5px !important; }
+
+/* Comandi: i pulsanti non escono mai dal bordo destro; con molti pulsanti si stringono (testo piu' piccolo, meno margine) */
+.bands-with-cmds .cmd-buttons { flex-wrap: nowrap !important; min-width: 0; }
+.bands-with-cmds .cmd-buttons button { flex: 0 1 auto !important; min-width: 0 !important; overflow: hidden; text-overflow: ellipsis; }
+.bands-with-cmds .cmd-buttons.cmd-buttons--dense button { padding: 0 3px !important; font-size: 10px !important; }
