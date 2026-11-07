@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.176',
-    released: '2026-11-07T12:12:03Z',
+    released: '2026-11-07T12:16:55Z',
     kind: 'fixed',
     title: ['«Aggiorna ora» dal tray funziona sempre', '«Update now» from the tray always works', '«Jetzt aktualisieren» im Infobereich klappt immer', '« Mettre à jour » depuis la barre des tâches marche toujours', '«Actualizar ahora» desde la bandeja funciona siempre', '«Atualizar agora» na bandeja funciona sempre'],
     text: [
