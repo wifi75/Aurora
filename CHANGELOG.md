@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.183 - 2026-11-07
+- **Chiusura con RRR come WSJT-X** (verificato sui sorgenti 2.7 e 3.0.1, `message_is_73`): mandare RRR non registra piu'; si registra al suo 73 (`Status::R73`) o, se non arriva, all'ultimo tentativo di chiusura o dopo 5 risposte RRR al suo R+rapporto ripetuto (`RRR_REPEATS`, ora contato anche prima della registrazione). RR73 e 73 invariati.
+
 ## 0.11.182 - 2026-11-07
 - **Messaggi dell'autore, conteggio**: Aurora e l'agente nel tray dicono al servizio «cartolina mostrata» (`POST /v1/messaggi/<id>/visto`, codice anonimo dell'installazione, solo con il conteggio delle installazioni attive acceso); la pagina dei messaggi mostra «Visto da N · M attive potevano riceverlo» (M dalla tabella `attivi`). Informativa privacy aggiornata.
 

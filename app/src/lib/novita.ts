@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.183',
+    released: '2026-11-07T15:40:24Z',
+    kind: 'fixed',
+    title: ['RRR come WSJT-X', 'RRR like WSJT-X', 'RRR wie WSJT-X', 'RRR comme WSJT-X', 'RRR como WSJT-X', 'RRR como o WSJT-X'],
+    text: [
+      "Mandare RRR non mette più il QSO a log: si registra quando arriva il suo 73, come fa WSJT-X. Se il 73 non arriva, il QSO va a log all'ultimo tentativo di chiusura; con RR73 e 73 non cambia nulla.",
+      "Sending RRR no longer logs the QSO: it is logged when his 73 arrives, as WSJT-X does. If the 73 never comes, the QSO is logged at the last closing attempt; nothing changes with RR73 and 73.",
+      "RRR zu senden loggt das QSO nicht mehr: Es wird geloggt, wenn seine 73 ankommt, wie bei WSJT-X. Kommt die 73 nie, wird das QSO beim letzten Abschlussversuch geloggt; bei RR73 und 73 ändert sich nichts.",
+      "Envoyer RRR ne met plus le QSO au log : il est enregistré à l'arrivée de son 73, comme dans WSJT-X. Si le 73 n'arrive pas, le QSO est enregistré à la dernière tentative de clôture ; rien ne change avec RR73 et 73.",
+      "Enviar RRR ya no pone el QSO en el log: se registra cuando llega su 73, como en WSJT-X. Si el 73 no llega, el QSO se registra en el último intento de cierre; con RR73 y 73 no cambia nada.",
+      "Enviar RRR já não põe o QSO no log: regista-se quando chega o 73 dele, como no WSJT-X. Se o 73 não chegar, o QSO regista-se na última tentativa de fecho; com RR73 e 73 nada muda.",
+    ],
+  },
+  {
     version: '0.11.182',
     released: '2026-11-07T15:00:44Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Sur le bouton qui déplace l’afficheur vers un autre écran la loupe ne s’ouvre plus : avant elle couvrait le menu, clignotait et on ne pouvait rien choisir.",
       "Sobre el botón que lleva la pantalla a otra pantalla ya no se abre la lupa: antes tapaba el menú, parpadeaba y no se podía elegir nada.",
       "Sobre o botão que leva o ecrã para outro monitor a lupa já não abre: antes tapava o menu, piscava e não se conseguia escolher nada.",
-    ],
-  },
-  {
-    version: '0.11.142',
-    released: '2026-11-05T16:59:48Z',
-    kind: 'fixed',
-    title: ['Abilita Tx si accende al primo clic', 'Enable Tx turns on at the first click', 'Tx aktivieren schaltet beim ersten Klick ein', 'Activer Tx s’allume au premier clic', 'Activar Tx se enciende al primer clic', 'Ativar Tx liga ao primeiro clique'],
-    text: [
-      "Abilita Tx e gli altri interruttori (AutoSeq, 1 QSO, Auto Tx…) si accendevano a volte solo al secondo clic: la prima rilettura li riportava indietro prima che il motore li applicasse. Ora restano come li hai messi, nei Comandi e sul telefono. Associando un telefono, compare subito in «Dispositivi associati».",
-      "Enable Tx and the other switches (AutoSeq, 1 QSO, Auto Tx…) sometimes turned on only at the second click: the first refresh put them back before the engine applied them. Now they stay as you set them, in Commands and on the phone.",
-      "Tx aktivieren und die anderen Schalter (AutoSeq, 1 QSO, Auto Tx…) gingen manchmal erst beim zweiten Klick an: das erste Neuladen setzte sie zurück, bevor die Engine sie übernahm. Jetzt bleiben sie wie eingestellt, in Befehle und am Telefon.",
-      "Activer Tx et les autres interrupteurs (AutoSeq, 1 QSO, Auto Tx…) ne s’allumaient parfois qu’au second clic : la première relecture les remettait avant que le moteur les applique. Ils restent maintenant comme tu les as mis, dans Commandes et sur le téléphone.",
-      "Activar Tx y los demás interruptores (AutoSeq, 1 QSO, Auto Tx…) a veces solo se encendían al segundo clic: la primera relectura los devolvía antes de que el motor los aplicara. Ahora se quedan como los pones, en Comandos y en el teléfono.",
-      "Ativar Tx e os outros interruptores (AutoSeq, 1 QSO, Auto Tx…) às vezes só ligavam ao segundo clique: a primeira releitura repunha-os antes de o motor os aplicar. Agora ficam como os puseste, nos Comandos e no telemóvel.",
     ],
   },
 ];
