@@ -66,7 +66,12 @@ impl UpdateInstaller for DesktopInstaller {
 
     #[cfg(windows)]
     fn install(&self, updates: Arc<UpdateService>) -> Result<String, String> {
-        let release = updates.available().ok_or("nessuna versione nuova trovata")?;
+        // l'ultimo controllo puo' essere di prima della pubblicazione (l'agente nel tray controlla per conto suo):
+        // se non si conosce ancora una versione nuova, si chiede subito a GitHub invece di rispondere «nessuna versione»
+        let release = match updates.available() {
+            Some(r) => r,
+            None => updates.check().available.ok_or("nessuna versione nuova trovata")?,
+        };
         let (setup, sig) = installer_assets(&release).ok_or("la release non ha il pacchetto di installazione con la sua firma")?;
         let file_name = safe_file_name(&setup.name).ok_or("nome del pacchetto non valido")?;
         let data = updates.download(setup, MAX_PACKAGE_BYTES)?;
