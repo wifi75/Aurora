@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.189 - 2026-11-07
+- **Dimensione del testo** (issue #3): Impostazioni > Generali, da 90% a 160% per tutta l'interfaccia (`zoom` sulla radice, `lib/uiScale.ts`), anche con Ctrl +, Ctrl - e Ctrl 0; vale per ogni dispositivo a parte (`aurora-ui-scale` tra le preferenze proprie del telefono).
+- **Impostazioni** (issue #4): «Salva» salva e lascia aperta la finestra; il pulsante Applica non c'e' piu'; «Chiudi» e la X chiedono se scartare le modifiche non salvate (prima la X le scartava senza avvisare).
+
 ## 0.11.188 - 2026-11-07
 - **Comandi**: messaggi come toast (niente `live-note` sotto i pulsanti), nessun avviso per frequenze e interruttori; pulsanti `flex: 0 1 auto` che si stringono invece di uscire dal bordo.
 - **README**: badge VirusTotal e analisi antivirus degli installatori.

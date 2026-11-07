@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.189',
+    released: '2026-11-07T20:00:00Z',
+    kind: 'new',
+    title: ['Testo più grande', 'Bigger text', 'Größerer Text', 'Texte plus grand', 'Texto más grande', 'Texto maior'],
+    text: [
+      'In Impostazioni › Generali si sceglie la dimensione del testo di tutto il programma (da 90% a 160%), anche con Ctrl + e Ctrl −. «Salva» non chiude più le Impostazioni.',
+      'In Settings › General you choose the text size of the whole program (90% to 160%), also with Ctrl + and Ctrl −. «Save» no longer closes Settings.',
+      'Unter Einstellungen › Allgemein wählst du die Textgröße des ganzen Programms (90 % bis 160 %), auch mit Strg + und Strg −. «Speichern» schließt die Einstellungen nicht mehr.',
+      'Dans Paramètres › Général tu choisis la taille du texte de tout le programme (90 % à 160 %), aussi avec Ctrl + et Ctrl −. « Enregistrer » ne ferme plus les Paramètres.',
+      'En Ajustes › Generales eliges el tamaño del texto de todo el programa (del 90 % al 160 %), también con Ctrl + y Ctrl −. «Guardar» ya no cierra los Ajustes.',
+      'Em Definições › Gerais escolhes o tamanho do texto de todo o programa (de 90 % a 160 %), também com Ctrl + e Ctrl −. «Guardar» já não fecha as Definições.',
+    ],
+  },
+  {
     version: '0.11.188',
     released: '2026-11-07T19:45:14Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Nouvelle entrée de menu «Carte DX», façon GridTracker : 15 fonds, luminosité et couleur de fond, carte de nuit automatique, ligne grise avec les crépuscules, Soleil et Lune, stations en l’air colorées comme dans Activité de bande qui s’effacent avec le temps, lignes en arc animées, carrés travaillés (jaune) et confirmés (vert) par bande et mode, clic sur un point avec carré, distance, pays et zones CQ/UIT. Détachable sur un autre écran. L’afficheur détaché n’a plus de barres de défilement.",
       "Nueva entrada de menú «Mapa DX», al estilo GridTracker: 15 fondos, brillo y color de fondo, mapa nocturno automático, línea gris con los crepúsculos, Sol y Luna, estaciones en el aire coloreadas como en Actividad de banda que se desvanecen con el tiempo, líneas en arco animadas, cuadrículas trabajadas (amarillo) y confirmadas (verde) por banda y modo, clic en un punto con cuadrícula, distancia, país y zonas CQ/UIT. Se puede separar a otra pantalla. El display separado ya no muestra barras de desplazamiento.",
       "Nova entrada de menu «Mapa DX», ao estilo GridTracker: 15 fundos, brilho e cor de fundo, mapa noturno automático, linha cinzenta com os crepúsculos, Sol e Lua, estações no ar coloridas como em Atividade de banda que desvanecem com o tempo, linhas em arco animadas, quadrados trabalhados (amarelo) e confirmados (verde) por banda e modo, clique num ponto com quadrado, distância, país e zonas CQ/UIT. Pode ser destacado para outro ecrã. O display destacado já não mostra barras de deslocamento.",
-    ],
-  },
-  {
-    version: '0.11.148',
-    released: '2026-11-05T17:43:17Z',
-    kind: 'new',
-    title: ['Solo la mappa di chi ti ha ricevuto', 'Only the map of who received you', 'Nur die Karte, wer dich empfangen hat', 'Seulement la carte de qui t’a reçu', 'Solo el mapa de quién te ha recibido', 'Só o mapa de quem te recebeu'],
-    text: [
-      "Staccando la Propagazione su un altro schermo arriva solo la mappa «Chi mi ha ricevuto», a tutta finestra, senza il resto della pagina.",
-      "Detaching Propagation to another screen now brings only the «Who received me» map, full window, without the rest of the page.",
-      "Beim Ablösen der Ausbreitung auf einen anderen Bildschirm kommt nur die Karte «Wer mich empfangen hat», fensterfüllend, ohne den Rest der Seite.",
-      "En détachant la Propagation sur un autre écran, seule la carte « Qui m’a reçu » arrive, plein écran, sans le reste de la page.",
-      "Al separar la Propagación en otra pantalla llega solo el mapa «Quién me ha recibido», a toda ventana, sin el resto de la página.",
-      "Ao destacar a Propagação para outro monitor chega só o mapa «Quem me recebeu», em toda a janela, sem o resto da página.",
     ],
   },
 ];
