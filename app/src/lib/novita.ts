@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.182',
+    released: '2026-11-07T14:57:31Z',
+    kind: 'fixed',
+    title: ['Piccole correzioni', 'Small fixes', 'Kleine Korrekturen', 'Petites corrections', 'Pequeñas correcciones', 'Pequenas correções'],
+    text: [
+      "Correzioni interne, senza cambiamenti nell’uso di tutti i giorni.",
+      "Internal fixes, with no change in everyday use.",
+      "Interne Korrekturen, ohne Änderungen im täglichen Gebrauch.",
+      "Corrections internes, sans changement dans l’usage quotidien.",
+      "Correcciones internas, sin cambios en el uso diario.",
+      "Correções internas, sem mudanças no uso diário.",
+    ],
+  },
+  {
     version: '0.11.181',
     released: '2026-11-07T14:52:45Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Activer Tx et les autres interrupteurs (AutoSeq, 1 QSO, Auto Tx…) ne s’allumaient parfois qu’au second clic : la première relecture les remettait avant que le moteur les applique. Ils restent maintenant comme tu les as mis, dans Commandes et sur le téléphone.",
       "Activar Tx y los demás interruptores (AutoSeq, 1 QSO, Auto Tx…) a veces solo se encendían al segundo clic: la primera relectura los devolvía antes de que el motor los aplicara. Ahora se quedan como los pones, en Comandos y en el teléfono.",
       "Ativar Tx e os outros interruptores (AutoSeq, 1 QSO, Auto Tx…) às vezes só ligavam ao segundo clique: a primeira releitura repunha-os antes de o motor os aplicar. Agora ficam como os puseste, nos Comandos e no telemóvel.",
-    ],
-  },
-  {
-    version: '0.11.141',
-    released: '2026-11-05T16:55:55Z',
-    kind: 'new',
-    title: ['Display su un altro schermo e log grandi', 'Display on another screen and large logs', 'Anzeige auf anderem Bildschirm und große Logs', 'Afficheur sur un autre écran et gros journaux', 'Pantalla en otra pantalla y logs grandes', 'Ecrã noutro monitor e logs grandes'],
-    text: [
-      "Il display della radio si porta su un altro schermo con il pulsantino nel suo angolo in alto a destra (bianco su nero, si vede su ogni display): la finestra si ridimensiona e il display la segue mantenendo le proporzioni, senza perdere qualità. La pagina Log regge anche log da decine di migliaia di QSO: le righe compaiono a blocchi con «Mostra altri», filtri ed esportazione valgono per tutti.",
-      "The radio display moves to another screen with the small button in its top-right corner (white on black, visible on every display): the window resizes and the display follows keeping its proportions, without losing quality. The Log page now handles logs of tens of thousands of QSOs: rows appear in blocks with «Show more», filters and export apply to all.",
-      "Die Radioanzeige kommt mit dem kleinen Knopf in ihrer oberen rechten Ecke (weiß auf schwarz, auf jeder Anzeige sichtbar) auf einen anderen Bildschirm: das Fenster lässt sich in der Größe ändern und die Anzeige folgt mit gleichen Proportionen, ohne Qualitätsverlust. Die Log-Seite verkraftet Logs mit Zehntausenden QSOs: Zeilen erscheinen in Blöcken mit «Mehr zeigen», Filter und Export gelten für alle.",
-      "L’afficheur de la radio passe sur un autre écran avec le petit bouton dans son coin en haut à droite (blanc sur noir, visible sur tout afficheur) : la fenêtre se redimensionne et l’afficheur suit en gardant ses proportions, sans perte de qualité. La page Journal supporte des journaux de dizaines de milliers de QSO : les lignes apparaissent par blocs avec « Afficher plus », filtres et export valent pour tous.",
-      "La pantalla de la radio pasa a otra pantalla con el pequeño botón en su esquina superior derecha (blanco sobre negro, visible en cualquier pantalla): la ventana se redimensiona y la pantalla la sigue manteniendo las proporciones, sin perder calidad. La página Log aguanta logs de decenas de miles de QSO: las filas aparecen por bloques con «Mostrar más», filtros y exportación valen para todos.",
-      "O ecrã do rádio passa para outro monitor com o pequeno botão no canto superior direito (branco sobre preto, visível em qualquer ecrã): a janela redimensiona-se e o ecrã acompanha mantendo as proporções, sem perder qualidade. A página Log aguenta logs de dezenas de milhares de QSO: as linhas aparecem em blocos com «Mostrar mais», filtros e exportação valem para todos.",
     ],
   },
 ];
