@@ -33,7 +33,7 @@ Stato al 2026-11-07, versione 0.11.184. Per riprendere il lavoro leggi anche `do
 - Segreto `ADMIN_TOKEN`: Cloudflare non lo fa rileggere. Il 2026-11-07 il proprietario ne ha generato uno nuovo nel file «Aurora - segreto messaggi.txt» sul suo desktop e lo si e' mandato al Worker con `wrangler secret put ADMIN_TOKEN` (procedura in chat: generare, salvare nel file, `Get-Content … | npx wrangler secret put ADMIN_TOKEN`). Mai scriverlo in chat o nei file del repository; dopo ogni cambio verificare `GET /v1/messaggi/tutti` (200 col segreto, 401 senza).
 
 ## Chiusura del QSO (2026-11-07, 0.11.183-0.11.184)
-- Regola del proprietario: la logica di chiusura segue **WSJT-X**, verificata sui sorgenti 2.7 e 3.0.1 e sulle espressioni del binario 3.2.0-rc1 (dettagli e confronto in `docs/logiche-jtdx.md`, sezione «Chiusura e registrazione in WSJT-X»). Sorgenti scaricati in `D:uild\wsjtx-src`, fuori dal repository.
+- Regola del proprietario: la logica di chiusura segue **WSJT-X**, verificata sui sorgenti 2.7 e 3.0.1 e sulle espressioni del binario 3.2.0-rc1 (dettagli e confronto in `docs/logiche-jtdx.md`, sezione «Chiusura e registrazione in WSJT-X»). Sorgenti scaricati in `D:\build\wsjtx-src`, fuori dal repository.
 - RRR non registra (0.11.183): si registra al suo 73 o all'ultimo tentativo / dopo `RRR_REPEATS` risposte al suo R+rapporto ripetuto. RR73 e 73 registrano all'inizio della trasmissione, come WSJT-X.
 - Dopo il nostro RR73 a log, senza novita' dall'altro, si salta il periodo (`hold_slot`, `rr73_waits`) invece di ripetere RR73; si ferma dopo `LOGGED_CLOSING_TRIES` periodi (0.11.184).
 - Ripresa di un QSO con lo stesso DX (doppio clic, Wait and Reply): la memoria riparte dal messaggio scelto (`reply_to_with`, caso BG2EFX).
