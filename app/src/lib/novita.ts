@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.185',
+    released: '2026-11-07T17:26:07Z',
+    kind: 'new',
+    title: ['Comandi a parte e coda fino a 4', 'Separate Commands and a queue of up to 4', 'Eigene Befehle und Warteschlange bis 4', "Commandes à part et file jusqu'à 4", 'Comandos aparte y cola de hasta 4', 'Comandos à parte e fila até 4'],
+    text: [
+      "I Comandi hanno ora una finestra tutta loro sotto Bande aperte. Con un DX in corso le stazioni che ti chiamano vanno sempre in coda (fino a 4, in colonna accanto al DX), anche con Abilita Tx spento. Doppio clic sul pallino RX cancella il DX e i messaggi. In Trasmissione il blocco non scende più quando trasmetti. Bande aperte ha grafici Giorno/Notte più grandi e allineati, sole e luna a colori e fino a 5 stazioni lontane se c'è posto. Le barre dei titoli delle schede hanno i colori dell'aurora e la lista delle DXpedition torna in cima da sola.",
+      "Commands now have their own window below Open bands. With a DX in progress, stations calling you always go to the queue (up to 4, in a column next to the DX), even with Enable Tx off. Double-click the RX dot to clear the DX and the messages. In Transmit the block no longer moves down while you transmit. Open bands has bigger, aligned Day/Night graphs, a coloured sun and moon and up to 5 far stations when there is room. Panel title bars have the aurora colours and the DXpedition list scrolls back to the top on its own.",
+      "Die Befehle haben jetzt ein eigenes Fenster unter Offene Bänder. Bei laufendem DX kommen rufende Stationen immer in die Warteschlange (bis 4, in einer Spalte neben dem DX), auch mit Tx aus. Doppelklick auf den RX-Punkt löscht DX und Meldungen. Im Senden-Bereich rutscht beim Senden nichts mehr nach unten. Offene Bänder hat größere, ausgerichtete Tag/Nacht-Grafiken, farbige Sonne und Mond und bis zu 5 ferne Stationen, wenn Platz ist. Die Titelleisten haben die Polarlichtfarben und die DXpedition-Liste springt von selbst nach oben.",
+      "Les Commandes ont maintenant leur propre fenêtre sous Bandes ouvertes. Avec un DX en cours, les stations qui t'appellent vont toujours en file (jusqu'à 4, en colonne à côté du DX), même avec Tx désactivé. Double-clic sur le point RX efface le DX et les messages. Dans Transmission le bloc ne descend plus quand tu émets. Bandes ouvertes a des graphiques Jour/Nuit plus grands et alignés, un soleil et une lune en couleur et jusqu'à 5 stations lointaines s'il y a de la place. Les barres de titre ont les couleurs de l'aurore et la liste des DXpéditions revient en haut toute seule.",
+      "Los Comandos tienen ahora su propia ventana bajo Bandas abiertas. Con un DX en curso, las estaciones que te llaman van siempre a la cola (hasta 4, en columna junto al DX), incluso con Tx apagado. Doble clic en el punto RX borra el DX y los mensajes. En Transmisión el bloque ya no baja al transmitir. Bandas abiertas tiene gráficos Día/Noche más grandes y alineados, sol y luna en color y hasta 5 estaciones lejanas si caben. Las barras de título tienen los colores de la aurora y la lista de DXpediciones vuelve arriba sola.",
+      "Os Comandos têm agora uma janela própria sob Bandas abertas. Com um DX em curso, as estações que te chamam vão sempre para a fila (até 4, em coluna ao lado do DX), mesmo com Tx desligado. Duplo clique no ponto RX apaga o DX e as mensagens. Em Transmissão o bloco já não desce ao transmitir. Bandas abertas tem gráficos Dia/Noite maiores e alinhados, sol e lua a cores e até 5 estações distantes se couberem. As barras de título têm as cores da aurora e a lista das DXpedições volta ao topo sozinha.",
+    ],
+  },
+  {
     version: '0.11.184',
     released: '2026-11-07T16:03:36Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Un clic sur l’avis « Horloge fausse » corrige tout de suite l’heure de Windows avec les serveurs NTP. L’avis n’apparaît qu’au-delà d’une demi-seconde (avant 200 ms) : FT8 tolère bien quelques dixièmes et l’horloge de Windows dérive de centaines de millisecondes.",
       "Un clic en el aviso «Reloj incorrecto» corrige enseguida la hora de Windows con los servidores NTP. El aviso aparece solo por encima de medio segundo (antes 200 ms): FT8 tolera bien algunas décimas y el reloj de Windows deriva cientos de milisegundos.",
       "Um clique no aviso «Relógio errado» corrige logo a hora do Windows com os servidores NTP. O aviso só aparece acima de meio segundo (antes 200 ms): o FT8 tolera bem algumas décimas e o relógio do Windows desvia centenas de milissegundos.",
-    ],
-  },
-  {
-    version: '0.11.144',
-    released: '2026-11-05T17:21:35Z',
-    kind: 'new',
-    title: ['Ridimensiona il display, non solo la finestra', 'Resize the display, not just the window', 'Größe der Anzeige ändern, nicht nur des Fensters', 'Redimensionne l’afficheur, pas seulement la fenêtre', 'Redimensiona la pantalla, no solo la ventana', 'Redimensiona o ecrã, não só a janela'],
-    text: [
-      "Nella finestra a parte il display ha una maniglia nel suo angolo in basso a destra: trascinala e il display si ingrandisce o si rimpicciolisce da solo, in proporzione e senza perdere qualità, qualunque sia la misura della finestra. Doppio clic sulla maniglia: torna ad adattarsi alla finestra. La misura si ricorda.",
-      "In the separate window the display has a handle in its bottom-right corner: drag it and the display grows or shrinks on its own, in proportion and without losing quality, whatever the window size. Double-click the handle: it fits the window again. The size is remembered.",
-      "Im eigenen Fenster hat die Anzeige einen Griff in der Ecke unten rechts: zieh ihn und die Anzeige wird größer oder kleiner, proportional und ohne Qualitätsverlust, unabhängig von der Fenstergröße. Doppelklick auf den Griff: wieder an das Fenster angepasst. Die Größe wird gemerkt.",
-      "Dans la fenêtre à part l’afficheur a une poignée dans son coin en bas à droite : fais-la glisser et l’afficheur grandit ou rapetisse tout seul, en proportion et sans perte de qualité, quelle que soit la taille de la fenêtre. Double-clic sur la poignée : il s’adapte de nouveau à la fenêtre. La taille est mémorisée.",
-      "En la ventana aparte la pantalla tiene un asa en su esquina inferior derecha: arrástrala y la pantalla crece o se reduce sola, en proporción y sin perder calidad, sea cual sea el tamaño de la ventana. Doble clic en el asa: vuelve a ajustarse a la ventana. El tamaño se recuerda.",
-      "Na janela à parte o ecrã tem uma pega no canto inferior direito: arrasta-a e o ecrã cresce ou diminui sozinho, em proporção e sem perder qualidade, seja qual for o tamanho da janela. Duplo clique na pega: volta a ajustar-se à janela. O tamanho fica lembrado.",
     ],
   },
 ];

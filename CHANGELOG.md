@@ -3,6 +3,13 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.185 - 2026-11-07
+- **Coda**: con un DX impostato le chiamate vanno sempre in coda (`QueueReply` non risponde piu' da solo), massimo 4 (`QUEUE_MAX`), colonna accanto al DX.
+- **Comandi** in un blocco della disposizione a se' (`cmds`); le disposizioni salvate dividono lo spazio di Bande aperte.
+- **Trasmissione**: doppio clic su RX = Canc DX; riga del DX ad altezza fissa.
+- **Bande aperte**: colonne Giorno/Notte fisse e allineate, icone sole e luna, fino a 5 stazioni lontane se entrano.
+- **Interfaccia**: barre del titolo con l'aurora pastello, DXpedition in cima dopo 15 s, piccole correzioni.
+
 ## 0.11.184 - 2026-11-07
 - **Chiusura RR73 come WSJT-X**: dopo il nostro RR73 a log, senza novita' dall'altro, Aurora salta il periodo invece di ripeterlo (`hold_slot`); risponde se ripete il R+rapporto, chiude al 73, si ferma dopo 3 periodi.
 - **Ripresa del QSO**: doppio clic o Wait and Reply con lo stesso DX ripartono dal messaggio scelto (caso BG2EFX).
