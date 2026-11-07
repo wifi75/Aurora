@@ -71,6 +71,9 @@ CREATE TABLE IF NOT EXISTS messaggi (
   prima_di TEXT NOT NULL DEFAULT '',
   link TEXT NOT NULL DEFAULT '',
   tema TEXT NOT NULL DEFAULT 'normale',
+  stile TEXT NOT NULL DEFAULT '',
   creato TEXT NOT NULL
 );
+-- database creato prima del 2026-11-07 pomeriggio (temi delle cartoline, 0.11.179):
+-- ALTER TABLE messaggi ADD COLUMN stile TEXT NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS messaggi_dal ON messaggi (dal, al);

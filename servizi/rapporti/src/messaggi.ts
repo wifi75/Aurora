@@ -19,7 +19,15 @@ export interface Messaggio {
   link: string;
   /** Aspetto della cartolina: normale o festa (auguri). */
   tema: 'normale' | 'festa';
+  /** Tema grafico della cartolina (dalla 0.11.179): natale, anno, pasqua, aggiorna, servizio; vuoto = normale. Le versioni vecchie lo ignorano. */
+  stile: Stile;
   creato: string;
+}
+
+const STILI = ['natale', 'anno', 'pasqua', 'aggiorna', 'servizio'] as const;
+type Stile = (typeof STILI)[number] | '';
+function stile(v: unknown): Stile {
+  return typeof v === 'string' && (STILI as readonly string[]).includes(v) ? (v as Stile) : '';
 }
 
 function versione(v: string): number[] {
@@ -63,6 +71,7 @@ export function daRiga(r: Record<string, unknown>): Messaggio {
     prima_di: String(r.prima_di ?? ''),
     link: String(r.link ?? ''),
     tema: r.tema === 'festa' ? 'festa' : 'normale',
+    stile: stile(r.stile),
     creato: String(r.creato),
   };
 }
@@ -94,13 +103,14 @@ export async function crea(db: D1Database, corpo: unknown): Promise<Messaggio | 
   const prima = typeof c.prima_di === 'string' && /^\d+(\.\d+){0,3}$/.test(c.prima_di.trim()) ? c.prima_di.trim() : '';
   const link = typeof c.link === 'string' && /^https:\/\/[^\s"'<>]{3,300}$/.test(c.link.trim()) ? c.link.trim() : '';
   const tema = c.tema === 'festa' ? 'festa' : 'normale';
+  const st = stile(c.stile);
   const id = crypto.randomUUID().slice(0, 8);
   const creato = new Date().toISOString();
   await db
-    .prepare('INSERT INTO messaggi (id, titolo, testo, dal, al, prima_di, link, tema, creato) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
-    .bind(id, JSON.stringify(titolo), JSON.stringify(testo), dal, al, prima, link, tema, creato)
+    .prepare('INSERT INTO messaggi (id, titolo, testo, dal, al, prima_di, link, tema, stile, creato) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)')
+    .bind(id, JSON.stringify(titolo), JSON.stringify(testo), dal, al, prima, link, tema, st, creato)
     .run();
-  return { id, titolo, testo, dal, al, prima_di: prima, link, tema, creato };
+  return { id, titolo, testo, dal, al, prima_di: prima, link, tema, stile: st, creato };
 }
 
 export async function togli(db: D1Database, id: string): Promise<void> {
