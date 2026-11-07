@@ -63,10 +63,11 @@ function BandsOpenInner() {
           {farthest.map((r) => (
             <li key={r.receiver} title={r.country ?? undefined}>
               {flagCode(r.country) ? <span className={`fi fi-${flagCode(r.country)}`} aria-hidden="true" /> : <span className="fi" />}
-              <b className="data">{r.receiver}</b>
-              <span className="muted">{r.band ?? ''}</span>
+              <b className="data bands-open-call">{r.receiver}</b>
+              <span className="bands-open-country">{r.country ?? ''}</span>
+              <span className="muted bands-open-band">{r.band ?? ''}</span>
               <span className="data bands-open-km">{formatDistance(r.km ?? 0, prefs.distanceUnit)}</span>
-              <span className="data muted">{r.snr} dB</span>
+              <span className="data muted bands-open-snr">{typeof r.snr === 'number' && Number.isFinite(r.snr) ? `${r.snr} dB` : ''}</span>
             </li>
           ))}
         </ol>
