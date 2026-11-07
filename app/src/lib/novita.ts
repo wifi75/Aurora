@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.166',
-    released: '2026-11-07T07:42:33Z',
+    released: '2026-11-07T07:45:48Z',
     kind: 'fixed',
     title: ['Attività di banda torna in cima', 'Band activity returns to the top', 'Bandaktivität springt nach oben zurück', 'L’activité de bande revient en haut', 'La actividad de banda vuelve arriba', 'A atividade de banda volta ao topo'],
     text: [
