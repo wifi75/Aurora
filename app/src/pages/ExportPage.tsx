@@ -315,6 +315,14 @@ export function ExportPage() {
   );
 }
 
+/** I modi del QSO scritto a mano, come li scrive l'ADIF (MODE), per tipo. */
+const MODE_GROUPS: ReadonlyArray<readonly ['exp.mg.digital' | 'exp.mg.voice' | 'exp.mg.cw' | 'exp.mg.other', readonly string[]]> = [
+  ['exp.mg.digital', ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR', 'JS8', 'RTTY', 'PSK31', 'PSK63', 'PSK125', 'BPSK', 'QPSK', 'OLIVIA', 'CONTESTIA', 'MFSK', 'DOMINO', 'THOR', 'HELL', 'PACKET', 'PKT', 'VARA', 'ARDOP', 'PACTOR', 'SSTV', 'FAX']],
+  ['exp.mg.voice', ['SSB', 'USB', 'LSB', 'AM', 'FM', 'DIGITALVOICE', 'DSTAR', 'C4FM', 'DMR', 'FREEDV', 'M17']],
+  ['exp.mg.cw', ['CW']],
+  ['exp.mg.other', ['ATV', 'SATELLITE']],
+];
+
 const BANDS_FOR_ADD = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '2m', '70cm'];
 
 /** Il modulo per scrivere un QSO a mano: nominativo, data e ora UTC, banda (o frequenza), modo, rapporti, locatore, nome e commento. */
@@ -381,12 +389,17 @@ function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
       </label>
       <label>
         {t('exp.f.mode')}
-        <input value={q.mode} onChange={(e) => set({ mode: e.target.value.toUpperCase() })} maxLength={12} list="export-modes" />
-        <datalist id="export-modes">
-          {['FT8', 'FT4', 'JT65', 'JT9', 'SSB', 'CW', 'RTTY', 'PSK31', 'FM'].map((m) => (
-            <option key={m} value={m} />
+        <select value={q.mode} onChange={(e) => set({ mode: e.target.value })}>
+          {MODE_GROUPS.map(([group, modes]) => (
+            <optgroup key={group} label={t(group)}>
+              {modes.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </optgroup>
           ))}
-        </datalist>
+        </select>
       </label>
       <label>
         {t('exp.f.sent')}

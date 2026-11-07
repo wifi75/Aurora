@@ -175,4 +175,8 @@ export const logExportStrings = {
   'exp.f.grid': ['Locatore', 'Grid', 'Locator', 'Locator', 'Locator', 'Locator'],
   'exp.f.name': ['Nome', 'Name', 'Name', 'Nom', 'Nombre', 'Nome'],
   'exp.f.comment': ['Commento', 'Comment', 'Kommentar', 'Commentaire', 'Comentario', 'Comentário'],
+  'exp.mg.digital': ['Digitali', 'Digital', 'Digital', 'Numériques', 'Digitales', 'Digitais'],
+  'exp.mg.voice': ['Fonia', 'Voice', 'Sprache', 'Phonie', 'Fonía', 'Fonia'],
+  'exp.mg.cw': ['Telegrafia', 'CW', 'Telegrafie', 'Télégraphie', 'Telegrafía', 'Telegrafia'],
+  'exp.mg.other': ['Altri', 'Other', 'Andere', 'Autres', 'Otros', 'Outros'],
 } as const satisfies Record<string, Entry>;
