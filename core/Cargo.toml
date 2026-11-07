@@ -6,7 +6,7 @@ resolver = "3"
 
 [workspace.package]
 edition = "2024"
-version = "0.11.174"
+version = "0.11.175"
 authors = ["Tiziano Cassone (IU3WJQ)"]
 license = "GPL-3.0-only"
 

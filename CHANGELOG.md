@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.175 - 2026-11-07
+- **Messaggi agli utenti**: modelli pronti, anteprima della cartolina sul PC dell'autore, contatori dei caratteri, conferma prima di pubblicare con destinatari e scadenza, «Usa di nuovo» nell'elenco dei messaggi.
+
 ## 0.11.174 - 2026-11-07
 - **Agente: «Aggiorna ora» installa davvero** la versione nuova (prima apriva solo Aurora): chiede ad Aurora di scaricare e installare; con Aurora chiusa la apre e aspetta che risponda.
 - **DXpedition sentite**: riga «SENTITA DA TE» con frequenza esatta, modo, segnale e ora dell'ultimo messaggio ricevuto; doppio clic sulla spedizione la chiama come in Attivita' di banda (un clic apre la scheda).

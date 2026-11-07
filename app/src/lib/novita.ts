@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.175',
+    released: '2026-11-07T11:54:37Z',
+    kind: 'new',
+    title: ['Messaggi agli utenti più comodi', 'Easier messages to users', 'Einfachere Nachrichten an Nutzer', 'Messages aux utilisateurs plus simples', 'Mensajes a los usuarios más cómodos', 'Mensagens aos utilizadores mais práticas'],
+    text: [
+      "La pagina dell'autore per i messaggi ha modelli pronti (auguri, invito ad aggiornare, avviso di servizio), l'anteprima della cartolina, i contatori dei caratteri, una conferma prima di pubblicare e «Usa di nuovo» per i messaggi già inviati.",
+      "The author's messages page has ready templates (greetings, update reminder, service notice), a card preview, character counters, a confirmation before publishing and «Reuse» for messages already sent.",
+      "Die Nachrichtenseite des Autors hat fertige Vorlagen (Grüße, Update-Hinweis, Servicehinweis), eine Kartenvorschau, Zeichenzähler, eine Bestätigung vor dem Veröffentlichen und «Wiederverwenden» für bereits gesendete Nachrichten.",
+      "La page des messages de l'auteur a des modèles prêts (vœux, rappel de mise à jour, avis de service), l'aperçu de la carte, des compteurs de caractères, une confirmation avant publication et « Réutiliser » pour les messages déjà envoyés.",
+      "La página de mensajes del autor tiene plantillas listas (felicitaciones, aviso de actualizar, aviso de servicio), vista previa de la tarjeta, contadores de caracteres, una confirmación antes de publicar y «Reutilizar» para los mensajes ya enviados.",
+      "A página de mensagens do autor tem modelos prontos (votos, aviso para atualizar, aviso de serviço), pré-visualização do cartão, contadores de caracteres, uma confirmação antes de publicar e «Reutilizar» para as mensagens já enviadas.",
+    ],
+  },
+  {
     version: '0.11.174',
     released: '2026-11-07T11:09:42Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand tu remets dans la fenêtre principale le dernier élément d’une fenêtre à part (⤓), la fenêtre du second écran se ferme toute seule au lieu de rester ouverte et vide.",
       "Cuando devuelves a la ventana principal el último elemento de una ventana aparte (⤓), la ventana de la segunda pantalla se cierra sola en lugar de quedarse abierta y vacía.",
       "Quando repões na janela principal o último elemento de uma janela à parte (⤓), a janela do segundo ecrã fecha-se sozinha em vez de ficar aberta e vazia.",
-    ],
-  },
-  {
-    version: '0.11.135',
-    released: '2026-11-05T12:59:57Z',
-    kind: 'fixed',
-    title: ['Installazione che non si blocca e finestre ricordate', 'Installer that no longer hangs and remembered windows', 'Installation hängt nicht mehr, Fenster gemerkt', 'Installation qui ne bloque plus et fenêtres mémorisées', 'Instalación que no se bloquea y ventanas recordadas', 'Instalação que não bloqueia e janelas lembradas'],
-    text: [
-      "Su alcuni PC l'installazione restava ferma all'inizio della barra: ora chiude Aurora senza aspettare PowerShell e non attende mai più di pochi secondi. Le finestre a parte del secondo schermo si riaprono dove le avevi lasciate, con la stessa misura (anche massimizzate).",
-      "On some PCs the installer stopped at the start of the bar: now it closes Aurora without waiting for PowerShell and never waits more than a few seconds. The separate windows on the second screen reopen where you left them, with the same size (maximized too).",
-      "Auf manchen PCs blieb die Installation am Anfang des Balkens stehen: jetzt schließt sie Aurora ohne auf PowerShell zu warten und wartet nie länger als ein paar Sekunden. Die Fenster auf dem zweiten Bildschirm öffnen sich wieder dort, wo sie waren, in gleicher Größe (auch maximiert).",
-      "Sur certains PC l’installation restait bloquée au début de la barre : elle ferme maintenant Aurora sans attendre PowerShell et n’attend jamais plus de quelques secondes. Les fenêtres à part du second écran se rouvrent là où tu les avais laissées, à la même taille (même agrandies).",
-      "En algunos PC la instalación se quedaba parada al inicio de la barra: ahora cierra Aurora sin esperar a PowerShell y nunca espera más de unos segundos. Las ventanas aparte de la segunda pantalla se reabren donde las dejaste, con el mismo tamaño (también maximizadas).",
-      "Em alguns PC a instalação ficava parada no início da barra: agora fecha a Aurora sem esperar pelo PowerShell e nunca espera mais de alguns segundos. As janelas à parte do segundo ecrã reabrem onde as deixaste, com o mesmo tamanho (também maximizadas).",
     ],
   },
 ];
