@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.177',
-    released: '2026-11-07T12:17:43Z',
+    released: '2026-11-07T12:23:14Z',
     kind: 'new',
     title: ['Audio che perde blocchi: la scheda con cosa controllare', 'Audio losing blocks: a card with what to check', 'Audio verliert Blöcke: eine Karte mit den Prüfungen', 'Audio qui perd des blocs : une fiche avec quoi vérifier', 'Audio que pierde bloques: una ficha con qué comprobar', 'Áudio a perder blocos: um cartão com o que verificar'],
     text: [
