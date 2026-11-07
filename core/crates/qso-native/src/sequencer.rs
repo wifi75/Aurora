@@ -27,7 +27,7 @@
 
 /// Chiusure (RRR/RR73/73) ripetute al massimo per un QSO gia' a log quando non c'e' un limite scelto.
 const LOGGED_CLOSING_TRIES: u32 = 3;
-/// Quante volte si ripete RRR a chi continua a mandare il suo R+rapporto dopo che il QSO e' gia' a log.
+/// Quante volte si ripete RRR a chi continua a mandare il suo R+rapporto dopo il nostro RRR o RR73 (poi si registra, se serve, e ci si ferma).
 const RRR_REPEATS: u32 = 5;
 
 use std::collections::{HashMap, HashSet};
@@ -1093,12 +1093,18 @@ impl Sequencer {
                     // QSO gia' a log (rapporti scambiati) ma l'altro continua a mandare il suo R+rapporto perche' non riceve il nostro RRR:
                     // si risponde ancora, al massimo RRR_REPEATS volte, poi si smette (prima si continuava all'infinito)
                     let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
-                    if logged {
+                    // dal 2026-11-07 l'RRR non mette a log (come WSJT-X): il limite vale anche dopo un RRR gia' partito, e se il suo 73
+                    // non arriva il QSO si registra all'ultima risposta (scelta del proprietario dell'ultimo tentativo, 0.11.124)
+                    let rrr_sent = self.opts.use_rrr && self.ntx == 4;
+                    if logged || rrr_sent {
                         self.rrr_repeats += 1;
                     } else {
                         self.rrr_repeats = 0;
                     }
-                    if logged && self.rrr_repeats > RRR_REPEATS {
+                    if (logged || rrr_sent) && self.rrr_repeats > RRR_REPEATS {
+                        if !logged {
+                            self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                        }
                         self.auto_stop_tx(StopReason::QsoFinished, false);
                     } else {
                         self.txb(4);
@@ -1121,10 +1127,10 @@ impl Sequencer {
                         self.auto_stop_tx(StopReason::QsoFinished, false);
                     }
                 }
-                // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra e ci si ferma senza mandare un altro 73 (scelta del
-                // proprietario: JTDX e WSJT-X rispondono ancora 73 con il Tx5)
+                // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra qui e ci si ferma senza mandare un altro 73 (come
+                // WSJT-X in FT8/FT4; JTDX risponde ancora 73 con il Tx5)
                 Status::R73 if self.opts.use_rrr && self.ntx == 4 => {
-                    // gia' a log dal nostro primo RRR: non si registra una seconda volta
+                    // l'RRR non registra piu' (dal 2026-11-07): si registra qui, una volta sola
                     if self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call) {
                         self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
                     }
@@ -1268,9 +1274,12 @@ impl Sequencer {
         let plain = text.replace(['<', '>'], "");
         let parts: Vec<&str> = plain.split_whitespace().collect();
         let progress_roger = (3..=5).contains(&n);
-        let is_73 = progress_roger && (parts.contains(&"73") || parts.contains(&"RR73") || parts.contains(&"RRR"));
+        // come WSJT-X (`message_is_73`, verificato sui sorgenti 2.7 e 3.0.1): chiude e mette a log solo un messaggio con 73 o RR73.
+        // RRR non registra (scelta del proprietario 2026-11-07, prima Aurora registrava al primo RRR come JTDX): il QSO va a log quando
+        // arriva il suo 73 (`Status::R73`) o, se non arriva, all'ultimo tentativo di chiusura
+        let is_73 = progress_roger && (parts.contains(&"73") || parts.contains(&"RR73"));
         let last_parts: Vec<&str> = self.current_message.split_whitespace().collect();
-        let last_is_73 = last_parts.contains(&"73") || last_parts.contains(&"RR73") || last_parts.contains(&"RRR");
+        let last_is_73 = last_parts.contains(&"73") || last_parts.contains(&"RR73");
         self.last_message_sent = std::mem::take(&mut self.current_message);
         self.current_message = plain.clone();
         let sent_first_73 = is_73

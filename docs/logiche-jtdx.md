@@ -141,7 +141,7 @@ Altre opzioni della stessa scheda: `SingleShotQSO` (il «1 QSO»), `SeqHaltTxRep
 ### La casella RRR
 
 Dal suggerimento di JTDX: **senza spunta il Tx4 e' `RR73`, con la spunta e' `RRR`** (`RRR\RR73` nel file delle impostazioni; qui false, quindi RR73).
-Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX manda ancora 73; WSJT-X in FT8/FT4 no: vedi «Chiusura e registrazione in WSJT-X» qui sotto). **Dalla 0.11.124**, se il suo 73 non arriva, all'ultimo tentativo di chiusura (o dopo 3 se non c'e' limite) il QSO si registra lo stesso invece di essere abbandonato: molte stazioni non rispondono al RRR (scelta del proprietario; JTDX in quel caso non registra).
+Con RRR la stazione risponde 73 e il QSO si chiude col suo 73; con RR73 si chiude gia' alla ricezione. **Aurora (scelta del proprietario, 0.11.71)**: al 73 ricevuto dopo il nostro RRR si registra senza mandare il Tx5 (JTDX manda ancora 73; WSJT-X in FT8/FT4 no: vedi «Chiusura e registrazione in WSJT-X» qui sotto). **Dalla 0.11.183 l'RRR non mette piu' a log** (come WSJT-X): si registra al suo 73. **Dalla 0.11.124**, se il suo 73 non arriva, all'ultimo tentativo di chiusura (o dopo 3 se non c'e' limite) il QSO si registra lo stesso invece di essere abbandonato: molte stazioni non rispondono al RRR (scelta del proprietario; JTDX in quel caso non registra).
 
 ### Il periodo (pari/dispari)
 
@@ -354,10 +354,10 @@ per la 3.2.0-rc1 come **DEDUZIONE**; per la 2.7 e la 3.0.1 sono **VERIFICATE** s
 |---|---|---|
 | Mando RR73 | registra all'inizio del RR73 | uguale |
 | Ricevo RR73/RRR e mando 73 | registra all'inizio del 73 | uguale |
-| Mando RRR | **non** registra | **registra al primo RRR** (`is_73` comprende RRR, come JTDX) |
+| Mando RRR | **non** registra | **uguale dalla 0.11.183** (prima registrava al primo RRR, come JTDX) |
 | Dopo RRR arriva il suo 73 | registra, va al CQ senza 73 | non registra di nuovo, si ferma senza 73 (uguale nel comportamento) |
 | Il suo 73 non arriva mai | non registra | registra all'ultimo tentativo di chiusura (scelta del proprietario, 0.11.124) |
-| Dopo il 73/RR73 l'altro ripete R+rapporto | non risponde: Enable Tx spento | risponde ancora con RRR, al massimo 5 volte (`RRR_REPEATS`) |
+| Dopo il 73/RR73 (o il nostro RRR) l'altro ripete R+rapporto | non risponde: Enable Tx spento | risponde ancora con RRR, al massimo 5 volte (`RRR_REPEATS`); dopo un RRR senza 73 registra all'ultima risposta |
 
-In sintesi: sul momento della registrazione per RR73 e 73 Aurora coincide con WSJT-X; le differenze sono la registrazione al primo
-RRR, quella all'ultimo tentativo senza 73 e le risposte ripetute dopo la chiusura, tutte scelte di Aurora/JTDX e non di WSJT-X.
+In sintesi: dalla 0.11.183 (scelta del proprietario, 2026-11-07) Aurora registra come WSJT-X per RR73, 73 e RRR; restano scelte
+proprie la registrazione all'ultimo tentativo quando il 73 non arriva e le risposte ripetute (al massimo 5) dopo la chiusura.
