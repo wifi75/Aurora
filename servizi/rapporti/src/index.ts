@@ -107,12 +107,17 @@ async function report(req: Request, env: Env): Promise<Response> {
   const messaggio = corto(dati.messaggio, 300).replace(/\d+/g, '#');
   const conteggio = Math.max(1, Math.min(1_000_000, Math.floor(Number(dati.conteggio) || 1)));
   const installazione = corto(dati.installazione, 36);
+  // l'ultimo esempio intero: il raggruppamento toglie le cifre, qui restano (quanti ms, quante volte, quale frequenza)
+  const esempio = corto(dati.messaggio, 600);
+  const sistema = corto(dati.sistema, 80);
+  const ultimo = new Date().toISOString().slice(0, 19) + 'Z';
   await env.INDICE.prepare(
-    `INSERT INTO errori (giorno, versione, area, messaggio, conteggio, rapporti, installazioni) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6)
+    `INSERT INTO errori (giorno, versione, area, messaggio, conteggio, rapporti, installazioni, esempio, sistema, ultimo) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?8, ?9)
      ON CONFLICT (giorno, versione, area, messaggio) DO UPDATE SET conteggio = conteggio + ?5, rapporti = rapporti + 1,
-       installazioni = CASE WHEN instr(installazioni, ?6) > 0 OR length(installazioni) > 3700 THEN installazioni ELSE installazioni || ',' || ?6 END`,
+       installazioni = CASE WHEN instr(installazioni, ?6) > 0 OR length(installazioni) > 3700 THEN installazioni ELSE installazioni || ',' || ?6 END,
+       esempio = ?7, sistema = ?8, ultimo = ?9`,
   )
-    .bind(giorno, versione, area, messaggio, conteggio, installazione)
+    .bind(giorno, versione, area, messaggio, conteggio, installazione, esempio, sistema, ultimo)
     .run();
   return risposta(200, { ok: true });
 }
@@ -149,7 +154,7 @@ async function summary(url: URL, env: Env): Promise<Response> {
   const giorni = Math.max(1, Math.min(90, Number(url.searchParams.get('giorni') ?? '7') || 7));
   const dal = new Date(Date.now() - giorni * 86_400_000).toISOString().slice(0, 10);
   const versione = url.searchParams.get('versione');
-  const sql = `SELECT versione, area, messaggio, SUM(conteggio) AS conteggio, SUM(rapporti) AS rapporti, MIN(giorno) AS primo, MAX(giorno) AS ultimo
+  const sql = `SELECT versione, area, messaggio, SUM(conteggio) AS conteggio, SUM(rapporti) AS rapporti, MIN(giorno) AS primo, MAX(giorno) AS ultimo, MAX(esempio) AS esempio
     FROM errori WHERE giorno >= ?1 ${versione ? 'AND versione = ?2' : ''}
     GROUP BY versione, area, messaggio ORDER BY versione DESC, conteggio DESC LIMIT 200`;
   const q = env.INDICE.prepare(sql);

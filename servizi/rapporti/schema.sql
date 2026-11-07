@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS errori (
   conteggio INTEGER NOT NULL DEFAULT 0,
   rapporti INTEGER NOT NULL DEFAULT 0,
   installazioni TEXT NOT NULL DEFAULT '',
+  -- l'ultimo messaggio intero (con i numeri: durate, conteggi, frequenze), il sistema e l'ora UTC in cui e' arrivato
+  esempio TEXT NOT NULL DEFAULT '',
+  sistema TEXT NOT NULL DEFAULT '',
+  ultimo TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (giorno, versione, area, messaggio)
 );
 CREATE INDEX IF NOT EXISTS errori_versione ON errori (versione, giorno);
@@ -51,3 +55,8 @@ CREATE TABLE IF NOT EXISTS storico (
   attivi INTEGER NOT NULL,
   PRIMARY KEY (giorno, versione, sistema)
 );
+
+-- Database gia' creati prima delle colonne esempio/sistema/ultimo (2026-11-07):
+-- ALTER TABLE errori ADD COLUMN esempio TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE errori ADD COLUMN sistema TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE errori ADD COLUMN ultimo TEXT NOT NULL DEFAULT '';
