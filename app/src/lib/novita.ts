@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.170',
+    released: '2026-11-07T10:13:11Z',
+    kind: 'changed',
+    title: ['Messaggi della radio più chiari', 'Clearer radio messages', 'Klarere Funkgerät-Meldungen', 'Messages de la radio plus clairs', 'Mensajes de la radio más claros', 'Mensagens do rádio mais claras'],
+    text: [
+      "Se la radio non accetta un comando, Aurora dice il motivo vero (prima parlava sempre di OmniRig, anche con Hamlib). La potenza dell'FT-2000 a 100 W ora si vede 100% invece di 99%. L'agente nel tray avvisa delle DXpedition in partenza solo per i paesi che non hai ancora lavorato.",
+      "If the radio refuses a command, Aurora gives the real reason (before it always mentioned OmniRig, even with Hamlib). The FT-2000 at 100 W now shows 100% instead of 99%. The tray agent warns about departing DXpeditions only for countries you haven't worked yet.",
+      "Wenn das Funkgerät einen Befehl ablehnt, nennt Aurora den wahren Grund (vorher immer OmniRig, auch mit Hamlib). Das FT-2000 bei 100 W zeigt jetzt 100 % statt 99 %. Der Tray-Agent meldet startende DXpeditionen nur für Länder, die dir noch fehlen.",
+      "Si la radio refuse une commande, Aurora donne la vraie raison (avant elle parlait toujours d'OmniRig, même avec Hamlib). Le FT-2000 à 100 W affiche maintenant 100 % au lieu de 99 %. L'agent prévient des DXpéditions qui partent seulement pour les pays pas encore contactés.",
+      "Si la radio rechaza un comando, Aurora da el motivo real (antes siempre hablaba de OmniRig, incluso con Hamlib). El FT-2000 a 100 W ahora muestra 100 % en lugar de 99 %. El agente avisa de las DXpediciones que empiezan solo para los países que aún no has trabajado.",
+      "Se o rádio recusar um comando, o Aurora diz o motivo real (antes falava sempre do OmniRig, mesmo com Hamlib). O FT-2000 a 100 W mostra agora 100 % em vez de 99 %. O agente avisa das DXpedições que começam só para os países que ainda não trabalhaste.",
+    ],
+  },
+  {
     version: '0.11.169',
     released: '2026-11-07T09:53:41Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Au démarrage d’Aurora l’afficheur de la radio apparaissait au-dessus de l’écran d’ouverture : il reste maintenant dessous, comme le reste de la page.",
       "Al iniciar Aurora la pantalla de la radio aparecía encima de la pantalla de inicio: ahora queda debajo, como el resto de la página.",
       "Ao iniciar a Aurora o ecrã do rádio aparecia por cima do ecrã de abertura: agora fica por baixo, como o resto da página.",
-    ],
-  },
-  {
-    version: '0.11.130',
-    released: '2026-11-04T21:59:09Z',
-    kind: 'fixed',
-    title: ['Display centrato al suo posto', 'Display centred in its place', 'Anzeige mittig an ihrem Platz', 'Afficheur centré à sa place', 'Pantalla centrada en su sitio', 'Ecrã centrado no seu lugar'],
-    text: [
-      "Il display della radio sta centrato dentro lo spazio fra la barra del menu e i pannelli, senza sovrapporsi e senza spostare nulla: i frontalini FT-2000 e IC-7610 con lo stesso spazio sopra e sotto. Con i display estesi da 90 la riga si allunga solo quanto serve.",
-      "The radio display sits centred in the space between the menu bar and the panels, without overlapping or moving anything: FT-2000 and IC-7610 faces with the same space above and below. With 90-point wide displays the row grows only as needed.",
-      "Die Radioanzeige sitzt mittig im Raum zwischen Menüleiste und Feldern, ohne Überlappung und ohne etwas zu verschieben: FT-2000- und IC-7610-Fronten mit gleichem Abstand oben und unten. Mit 90 Punkte hohen breiten Anzeigen wächst die Zeile nur so weit wie nötig.",
-      "L’afficheur de la radio est centré dans l’espace entre la barre du menu et les panneaux, sans chevauchement ni déplacement : façades FT-2000 et IC-7610 avec le même espace dessus et dessous. Avec les afficheurs larges de 90 points la ligne grandit seulement du nécessaire.",
-      "La pantalla de la radio queda centrada en el espacio entre la barra del menú y los paneles, sin solaparse ni mover nada: frontales FT-2000 e IC-7610 con el mismo espacio arriba y abajo. Con las pantallas anchas de 90 puntos la fila crece solo lo necesario.",
-      "O ecrã do rádio fica centrado no espaço entre a barra do menu e os painéis, sem sobrepor nem mover nada: frontais FT-2000 e IC-7610 com o mesmo espaço em cima e em baixo. Com os ecrãs largos de 90 pontos a linha cresce só o necessário.",
     ],
   },
 ];
