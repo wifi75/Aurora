@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.178',
-    released: '2026-11-07T12:49:29Z',
+    released: '2026-11-07T12:56:55Z',
     kind: 'new',
     title: ['Le tue trasmissioni uguali in una riga', 'Your identical transmissions in one row', 'Deine gleichen Sendungen in einer Zeile', 'Tes émissions identiques sur une ligne', 'Tus transmisiones iguales en una fila', 'As tuas transmissões iguais numa linha'],
     text: [
