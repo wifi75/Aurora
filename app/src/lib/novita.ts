@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.191',
+    released: '2026-11-07T23:30:00Z',
+    kind: 'new',
+    title: ['Bande anche senza CAT', 'Bands without CAT too', 'Bänder auch ohne CAT', 'Bandes même sans CAT', 'Bandas también sin CAT', 'Bandas também sem CAT'],
+    text: [
+      'Senza radio collegata via CAT i pulsanti delle bande cambiano la frequenza di Aurora (per log, spot e mappa); la radio la sposti a mano. Spiegato nella Guida.',
+      'Without a radio connected via CAT the band buttons change Aurora’s frequency (for log, spots and map); you tune the radio by hand. Explained in the Guide.',
+      'Ohne per CAT verbundenes Funkgerät ändern die Bandtasten Auroras Frequenz (für Log, Spots und Karte); das Funkgerät stellst du von Hand ein. In der Anleitung erklärt.',
+      'Sans radio reliée en CAT les boutons de bande changent la fréquence d’Aurora (pour log, spots et carte) ; la radio se règle à la main. Expliqué dans le Guide.',
+      'Sin radio conectada por CAT los botones de banda cambian la frecuencia de Aurora (para log, spots y mapa); la radio la mueves a mano. Explicado en la Guía.',
+      'Sem rádio ligado por CAT os botões de banda mudam a frequência do Aurora (para log, spots e mapa); o rádio mudas à mão. Explicado no Guia.',
+    ],
+  },
+  {
     version: '0.11.190',
     released: '2026-11-07T21:39:53Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Carte DX : avec «Propagation» activé, une ligne en tirets de ta station vers chaque station qui t’a reçu (PSK Reporter), comme dans GridTracker2 ; on la coupe et on choisit sa couleur dans le menu ⚙. Les lignes «Qui appelle qui» utilisent les carrés de toutes les stations entendues depuis le démarrage, donc beaucoup plus de lignes apparaissent.",
       "Mapa DX: con «Propagación» encendido, una línea discontinua desde tu estación a cada estación que te ha recibido (PSK Reporter), como en GridTracker2; se apaga y se colorea en el menú ⚙. Las líneas «Quién llama a quién» usan las cuadrículas de todas las estaciones oídas desde que Aurora está abierta, así aparecen muchas más líneas.",
       "Mapa DX: com «Propagação» ligado, uma linha tracejada da tua estação para cada estação que te recebeu (PSK Reporter), como no GridTracker2; desliga-se e escolhe-se a cor no menu ⚙. As linhas «Quem chama quem» usam os quadrados de todas as estações ouvidas desde que a Aurora está aberta, por isso aparecem muitas mais linhas.",
-    ],
-  },
-  {
-    version: '0.11.150',
-    released: '2026-11-05T18:51:32Z',
-    kind: 'new',
-    title: ['Mappa DX come GridTracker2', 'DX Map like GridTracker2', 'DX-Karte wie GridTracker2', 'Carte DX comme GridTracker2', 'Mapa DX como GridTracker2', 'Mapa DX como GridTracker2'],
-    text: [
-      "Mappa DX: propagazione con la mappa di calore e i quadratini di chi ti ha ricevuto (PSK Reporter), con Spot RX e durata massima; linee «Chi chiama chi» fra le due stazioni di ogni chiamata, tratteggiate e animate, personalizzabili dal menu (colori, spessore, velocità), anche verso il centro del paese se manca il quadrato; quadrati in onda colorati QSX, CQ, CQDX e QRZ, divisi in triangoli con il log; legenda dei colori.",
-      "DX Map: propagation with the heat map and small squares of who received you (PSK Reporter), with Spot RX and maximum age; «Who calls whom» lines between the two stations of each call, dashed and animated, customizable from the menu (colors, width, speed), also to the country centre when the square is missing; on-air squares colored QSX, CQ, CQDX and QRZ, split into triangles with the log; color legend.",
-      "DX-Karte: Ausbreitung mit Wärmekarte und kleinen Feldern derer, die dich empfangen haben (PSK Reporter), mit Spot RX und Höchstdauer; Linien «Wer ruft wen» zwischen den beiden Stationen jedes Anrufs, gestrichelt und animiert, im Menü einstellbar (Farben, Stärke, Tempo), auch zur Landesmitte, wenn das Feld fehlt; Felder auf Sendung in QSX, CQ, CQDX und QRZ gefärbt, mit dem Log in Dreiecke geteilt; Farblegende.",
-      "Carte DX : propagation avec la carte de chaleur et les petits carrés de qui t’a reçu (PSK Reporter), avec Spot RX et durée maximale ; lignes «Qui appelle qui» entre les deux stations de chaque appel, en tirets et animées, réglables depuis le menu (couleurs, épaisseur, vitesse), aussi vers le centre du pays si le carré manque ; carrés en l’air colorés QSX, CQ, CQDX et QRZ, partagés en triangles avec le log ; légende des couleurs.",
-      "Mapa DX: propagación con el mapa de calor y los cuadraditos de quién te ha recibido (PSK Reporter), con Spot RX y duración máxima; líneas «Quién llama a quién» entre las dos estaciones de cada llamada, discontinuas y animadas, personalizables desde el menú (colores, grosor, velocidad), también al centro del país si falta la cuadrícula; cuadrículas en el aire coloreadas QSX, CQ, CQDX y QRZ, divididas en triángulos con el log; leyenda de colores.",
-      "Mapa DX: propagação com o mapa de calor e os quadradinhos de quem te recebeu (PSK Reporter), com Spot RX e duração máxima; linhas «Quem chama quem» entre as duas estações de cada chamada, tracejadas e animadas, personalizáveis no menu (cores, espessura, velocidade), também para o centro do país se faltar o quadrado; quadrados no ar coloridos QSX, CQ, CQDX e QRZ, divididos em triângulos com o log; legenda das cores.",
     ],
   },
 ];

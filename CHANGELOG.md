@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.191 - 2026-11-07
+- **Bande senza CAT**: senza radio comandabile i pulsanti delle bande (e il doppio clic sugli spot) impostano solo la frequenza di Aurora, ricordata al riavvio (`frequenza-a-mano.txt`, `ManualDialHook`, `manual_dial` in `/api/v1/station-info`); la radio si sposta a mano. Voce nuova della Guida «Senza CAT: la banda a mano».
+
 ## 0.11.190 - 2026-11-07
 - **Log**: «Aggiungi QSO» (QSO scritto a mano: nominativo, data e ora UTC, banda o frequenza, modo, rapporti, locatore, nome, commento; va a log come gli altri, anche ai programmi collegati, con `Event::QsoLogged`), «Elimina selezionati» e «Svuota il log» con conferma. I QSO cancellati spariscono anche da `aurora_log.adi` (`logbook::adif_without`); svuotando, il file si mette da parte con la data. API `POST` e `DELETE /api/v1/log/qsos`, solo dalla rete di casa.
 - **Guida di BBLogger** riscritta dai documenti ufficiali (aribusto.it): interfaccia Wsjtx con Msg ID 5 e 12, «UDP 12» e «Auto-Save», JTAlert sulla 2334; nuova voce per il modo file ADIF con `aurora_log.adi`.
