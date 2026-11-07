@@ -1126,6 +1126,30 @@ export async function getLogQsos(): Promise<LogQsos> {
   return (await (await request('/log/qsos')).json()) as LogQsos;
 }
 
+/** Cancella i QSO scelti, o tutto il log con `all: true`. */
+export async function deleteLogQsos(choice: { ids: number[] } | { all: true }): Promise<{ deleted: number }> {
+  return (await (await request('/log/qsos', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify(choice) })).json()) as { deleted: number };
+}
+
+/** Un QSO scritto a mano (data `AAAA-MM-GG` e ora `HH:MM` UTC). */
+export interface ManualQso {
+  call: string;
+  date: string;
+  time: string;
+  band: string;
+  freq_hz: number;
+  mode: string;
+  rst_sent: string;
+  rst_rcvd: string;
+  grid: string;
+  name: string;
+  comment: string;
+}
+
+export async function addLogQso(q: ManualQso): Promise<void> {
+  await request('/log/qsos', jsonInit(q));
+}
+
 export type LogSaveResult = { ok: true; cancelled: true } | { ok: true; cancelled: false; path: string; count: number };
 
 /** Salva i QSO scelti (o tutti) con la finestra «Salva con nome» del programma Windows. */

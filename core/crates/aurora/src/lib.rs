@@ -823,6 +823,38 @@ fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
 }
 
 /// Rilegge le sorgenti e sostituisce i QSO gia' fatti condivisi (etichette delle decodifiche, scheda DXCC e statistiche guardano gli stessi).
+/// Toglie i QSO cancellati dal log anche da `aurora_log.adi`, che serve per i «gia' lavorati». Log svuotato (`None`): il file si mette da
+/// parte con la data (`aurora_log-AAAAMMGG-HHMMSS.adi`) invece di cancellarlo, cosi' nulla va perso.
+fn forget_in_own_file(path: &Path, gone: Option<&[logbook::LogEntry]>) {
+    if !path.exists() {
+        return;
+    }
+    match gone {
+        None => {
+            let stamp = logbook::adif::utc_date(unix_secs()) + &format!("-{:06}", unix_secs() % 86_400 / 3600 * 10_000 + unix_secs() % 3600 / 60 * 100 + unix_secs() % 60);
+            let aside = path.with_file_name(format!("aurora_log-{stamp}.adi"));
+            match std::fs::rename(path, &aside) {
+                Ok(()) => tracing::info!("log svuotato: {} messo da parte come {}", path.display(), aside.display()),
+                Err(e) => tracing::warn!("log svuotato ma {} non spostato: {e}", path.display()),
+            }
+        }
+        Some(gone) if !gone.is_empty() => match std::fs::read_to_string(path) {
+            Ok(text) => {
+                let (kept, removed) = logbook::adif_without(&text, gone);
+                if removed > 0 {
+                    if let Err(e) = std::fs::write(path, kept) {
+                        tracing::warn!("{} non riscritto: {e}", path.display());
+                    } else {
+                        tracing::info!("{removed} QSO tolti anche da {}", path.display());
+                    }
+                }
+            }
+            Err(e) => tracing::warn!("{} non letto: {e}", path.display()),
+        },
+        Some(_) => {}
+    }
+}
+
 fn refresh_worked(sources: &LogSources, db: &DxccDb, shared: &SharedWorked) {
     let fresh = load_worked(sources, db);
     if let Ok(mut w) = shared.write() {
@@ -1541,6 +1573,16 @@ pub async fn run(
             }) as remote_api::DxccMatrixProvider
         }))
         .with_log_station(log_station)
+        .with_log_deleted({
+            let own_file = config.data_dir.join(OWN_LOG_FILE);
+            let live = live_log.clone();
+            Arc::new(move |gone: Option<Vec<logbook::LogEntry>>| {
+                forget_in_own_file(&own_file, gone.as_deref());
+                if let Some((db, worked, sources)) = &live {
+                    refresh_worked(sources, db, worked);
+                }
+            })
+        })
         .with_log_changed(match live_log.clone() {
             Some((db, worked, sources)) => Arc::new(move || refresh_worked(&sources, &db, &worked)),
             None => Arc::new(|| {}),

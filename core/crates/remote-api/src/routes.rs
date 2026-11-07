@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -75,7 +75,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/qso-upload/wavelog-stations", post(wavelog_stations))
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/dxcc-matrix", get(dxcc_matrix))
-        .route("/api/v1/log/qsos", get(log_qsos))
+        .route("/api/v1/log/qsos", get(log_qsos).post(log_add).delete(log_delete))
         .route("/api/v1/log/export.adi", get(log_export))
         .route("/api/v1/log/export-save", post(log_export_save))
         .route("/api/v1/diagnostics", get(diagnostics_get))
@@ -2579,6 +2579,137 @@ async fn log_import(State(state): State<AppState>, _: Authed, Peer(peer): Peer, 
         let _ = tokio::task::spawn_blocking(move || changed()).await;
     }
     Ok(Json(json!(report)))
+}
+
+#[derive(Deserialize)]
+struct LogDeleteBody {
+    #[serde(default)]
+    ids: Vec<i64>,
+    /// Tutto il log (vale solo con `all: true`, per non svuotarlo per sbaglio).
+    #[serde(default)]
+    all: bool,
+}
+
+/// Cancella i QSO scelti (`ids`) o tutto il log (`all: true`); toglie gli stessi QSO anche dal file ADIF di Aurora. Solo dalla rete di casa.
+#[utoipa::path(delete, path = "/api/v1/log/qsos", responses((status = 200, description = "{deleted}"), (status = 400, description = "Niente da cancellare (bad_delete)"), (status = 403, description = "Solo dalla rete di casa (local_only)")))]
+async fn log_delete(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<LogDeleteBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    if !body.all && body.ids.is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_delete"));
+    }
+    let book = state.logbook.clone();
+    let all = body.all;
+    let result = tokio::task::spawn_blocking(move || if all { book.clear().map(|n| (n, None)) } else { book.delete(&body.ids).map(|g| (g.len() as u64, Some(g))) })
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("QSO non cancellati: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+        })?;
+    let (deleted, gone) = result;
+    tracing::info!("log: {deleted} QSO cancellati{}", if all { " (log svuotato)" } else { "" });
+    if let Some(hook) = state.log_deleted.clone() {
+        let _ = tokio::task::spawn_blocking(move || hook(gone)).await;
+    }
+    Ok(Json(json!({ "deleted": deleted })))
+}
+
+#[derive(Deserialize)]
+struct LogAddBody {
+    call: String,
+    #[serde(default)]
+    grid: String,
+    /// `20m`; vuota = dalla frequenza.
+    #[serde(default)]
+    band: String,
+    mode: String,
+    #[serde(default)]
+    freq_hz: u64,
+    /// `AAAA-MM-GG` UTC.
+    date: String,
+    /// `HH:MM` o `HH:MM:SS` UTC.
+    time: String,
+    #[serde(default)]
+    rst_sent: String,
+    #[serde(default)]
+    rst_rcvd: String,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    comment: String,
+}
+
+/// Un QSO scritto a mano: va a log come quelli fatti da Aurora (log interno, file ADIF, programmi collegati e servizi di log accesi).
+#[utoipa::path(post, path = "/api/v1/log/qsos", responses((status = 200, description = "QSO registrato"), (status = 400, description = "Campo non valido (bad_field con field)"), (status = 403, description = "Solo dalla rete di casa (local_only)")))]
+async fn log_add(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(b): Json<LogAddBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let bad = |field: &str| {
+        let mut e = ApiError::new(StatusCode::BAD_REQUEST, "bad_field");
+        e.message = Some(field.to_string());
+        e
+    };
+    let call = b.call.trim().to_uppercase();
+    if call.len() < 3 || call.len() > 13 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
+        return Err(bad("call"));
+    }
+    let mode = b.mode.trim().to_uppercase();
+    if mode.is_empty() || mode.len() > 12 || !mode.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(bad("mode"));
+    }
+    let start = manual_time(&b.date, &b.time).ok_or_else(|| bad("time"))?;
+    let band = if b.band.trim().is_empty() { band_of_hz(b.freq_hz).unwrap_or_default() } else { b.band.trim().to_lowercase() };
+    if band.is_empty() {
+        return Err(bad("band"));
+    }
+    let clip = |s: &str, n: usize| s.trim().chars().take(n).collect::<String>();
+    let q = aurora_core::QsoRecord {
+        call,
+        grid: clip(&b.grid, 8).to_uppercase(),
+        band,
+        mode,
+        freq_hz: b.freq_hz,
+        rst_sent: clip(&b.rst_sent, 8),
+        rst_rcvd: clip(&b.rst_rcvd, 8),
+        time_ms: ((start % 86_400_000) as u32),
+        time_on_unix_ms: start,
+        time_off_unix_ms: start,
+        name: clip(&b.name, 60),
+        comment: clip(&b.comment, 200),
+        ..Default::default()
+    };
+    tracing::info!("QSO scritto a mano: {} {} {}", q.call, q.band, q.mode);
+    let _ = state.bus.events().send(aurora_core::Event::QsoLogged(q));
+    Ok(Json(json!({ "ok": true })))
+}
+
+/// `AAAA-MM-GG` e `HH:MM[:SS]` UTC in millisecondi dall'epoca UNIX.
+fn manual_time(date: &str, time: &str) -> Option<u64> {
+    let d: Vec<u64> = date.trim().split('-').map(|p| p.parse().ok()).collect::<Option<_>>()?;
+    let t: Vec<u64> = time.trim().split(':').map(|p| p.parse().ok()).collect::<Option<_>>()?;
+    let (&[y, m, g], [h, mi, rest @ ..]) = (d.as_slice(), t.as_slice()) else { return None };
+    let s = rest.first().copied().unwrap_or(0);
+    if !(1970..=2200).contains(&y) || !(1..=12).contains(&m) || !(1..=31).contains(&g) || *h > 23 || *mi > 59 || s > 59 {
+        return None;
+    }
+    // giorni dall'epoca (algoritmo di Howard Hinnant, calendario gregoriano)
+    let (y2, m2) = if m <= 2 { (y - 1, m + 9) } else { (y, m - 3) };
+    let era = y2 / 400;
+    let yoe = y2 - era * 400;
+    let doy = (153 * m2 + 2) / 5 + g - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    Some(((days * 86_400) + h * 3600 + mi * 60 + s) * 1000)
+}
+
+/// La banda di una frequenza (per i QSO scritti a mano senza banda).
+fn band_of_hz(hz: u64) -> Option<String> {
+    let khz = hz / 1000;
+    let bands: [(u64, u64, &str); 13] = [(1800, 2000, "160m"), (3500, 4000, "80m"), (5250, 5450, "60m"), (7000, 7300, "40m"), (10100, 10150, "30m"), (14000, 14350, "20m"), (18068, 18168, "17m"), (21000, 21450, "15m"), (24890, 24990, "12m"), (28000, 29700, "10m"), (50000, 54000, "6m"), (144000, 148000, "2m"), (430000, 440000, "70cm")];
+    bands.iter().find(|(a, b, _)| (*a..=*b).contains(&khz)).map(|(_, _, n)| n.to_string())
 }
 
 #[derive(Deserialize)]

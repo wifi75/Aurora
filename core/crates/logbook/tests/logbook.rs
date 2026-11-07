@@ -216,3 +216,26 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
     drop(lb);
     let _ = std::fs::remove_file(&path);
 }
+
+#[test]
+fn qsos_are_deleted_by_id_and_the_log_can_be_cleared() {
+    let book = Logbook::open_in_memory().expect("log");
+    let q = |call: &str| QsoRecord { call: call.into(), band: "20m".into(), mode: "FT8".into(), ..Default::default() };
+    let a = book.add(&q("K1ABC")).expect("a");
+    let b = book.add(&q("DL1ABC")).expect("b");
+    book.add(&q("JA1XYZ")).expect("c");
+    let gone = book.delete(&[a, b, 999]).expect("cancellati");
+    assert_eq!(gone.iter().map(|e| e.call.as_str()).collect::<Vec<_>>(), vec!["K1ABC", "DL1ABC"]);
+    assert_eq!(book.count().expect("conta"), 1);
+    assert_eq!(book.clear().expect("svuotato"), 1);
+    assert_eq!(book.count().expect("conta"), 0);
+}
+
+#[test]
+fn deleted_qsos_are_removed_from_the_adif_file_too() {
+    let text = "Aurora\n<adif_ver:5>3.1.4 <eoh>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <eor>\n<call:6>DL1ABC <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <mode:3>FT8 <eor>\n";
+    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new() }];
+    let (out, n) = logbook::adif_without(text, &gone);
+    assert_eq!(n, 1);
+    assert!(!out.contains("K1ABC") && out.contains("DL1ABC") && out.contains("<eoh>"), "{out}");
+}

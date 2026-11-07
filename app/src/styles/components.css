@@ -1179,3 +1179,12 @@ button.primary {
 }
 .own-g-preview .agent-card.agent-card--t-natale { margin: 44px 0 0 30px; width: calc(100% - 30px); }
 .sx-group.own-g-preview { overflow: visible; }
+
+/* Log: QSO a mano ed eliminazione */
+.export-add { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.6rem 0.8rem; margin: 0.5rem 0 1rem; padding: 0.9rem 1rem; border-radius: 0.8rem; border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.export-add label { display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-xs); color: var(--text-muted); }
+.export-add input, .export-add select { font-size: var(--text-sm); }
+.export-add-wide { grid-column: span 2; }
+.export-add-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+.export-add-actions .muted { margin-right: auto; }
+.export-danger:not(:disabled) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }

@@ -1,7 +1,9 @@
 import { flagCode } from '../lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, getLogQsos, logExportUrl, saveLogAdif, type LogQso } from '../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { addLogQso, ApiError, deleteLogQsos, getLogQsos, logExportUrl, saveLogAdif, type LogQso, type ManualQso } from '../api/client';
+import { askConfirm } from '../components/ConfirmHost';
 import { useT } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { toast } from '../lib/toast';
@@ -43,6 +45,25 @@ export function ExportPage() {
   const [filter, setFilter] = useState<ExportFilter>(NO_FILTER);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const client = useQueryClient();
+  const reload = () => client.invalidateQueries({ queryKey: ['log-qsos'] });
+  const remove = async (all: boolean) => {
+    const n = all ? (log.data?.qsos.length ?? 0) : selected.size;
+    if (n === 0) return;
+    if (!(await askConfirm(t(all ? 'exp.clearAsk' : 'exp.deleteAsk', { n })))) return;
+    setBusy(true);
+    try {
+      const r = await deleteLogQsos(all ? { all: true } : { ids: [...selected] });
+      setSelected(new Set());
+      toast(t('exp.deleted', { n: r.deleted }), 'ok');
+      await reload();
+    } catch (error) {
+      toast(error instanceof ApiError && error.code === 'local_only' ? t('exp.localOnly') : t('exp.deleteFailed'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
   // la prima volta che arriva il log sono scelti tutti: il caso piu' comune e' esportare l'intero log
   const primed = useRef(false);
   useEffect(() => {
@@ -187,11 +208,24 @@ export function ExportPage() {
     <div className="export-page">
       <div className="export-head">
         <h1 className="page-title">{t('exp.title')}</h1>
+        <button type="button" className="glass glass--on" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
+          {t('exp.add')}
+        </button>
         <a className="glass export-back" href="#/">
           {t('exp.back')}
         </a>
       </div>
       <p className="muted export-help">{t('exp.help')}</p>
+      {adding ? (
+        <AddQso
+          onDone={() => {
+            setAdding(false);
+            // il QSO passa dal motore (log, file ADIF, programmi collegati): si rilegge il log dopo un attimo
+            setTimeout(() => void reload(), 800);
+          }}
+          onCancel={() => setAdding(false)}
+        />
+      ) : null}
 
       {hasLog ? (
         <>
@@ -247,6 +281,12 @@ export function ExportPage() {
               {hiddenSelected > 0 ? <span className="export-hidden"> · {t('exp.hidden', { n: hiddenSelected })}</span> : null}
             </span>
             {busy ? <span className="muted export-count">{t('exp.saving')}</span> : null}
+            <button type="button" className="glass export-danger" title={t('exp.deleteTip')} disabled={busy || selected.size === 0} onClick={() => void remove(false)}>
+              {t('exp.delete', { n: selected.size })}
+            </button>
+            <button type="button" className="glass export-danger" title={t('exp.clearLogTip')} disabled={busy} onClick={() => void remove(true)}>
+              {t('exp.clearLog')}
+            </button>
             {log.data?.save_dialog ? (
               <button type="button" className="glass glass--on export-save" title={t('exp.saveTip')} disabled={busy || selected.size === 0} onClick={() => void save()}>
                 {t('exp.save')}
@@ -272,5 +312,111 @@ export function ExportPage() {
 
       {body}
     </div>
+  );
+}
+
+const BANDS_FOR_ADD = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '2m', '70cm'];
+
+/** Il modulo per scrivere un QSO a mano: nominativo, data e ora UTC, banda (o frequenza), modo, rapporti, locatore, nome e commento. */
+function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
+  const t = useT();
+  const now = new Date();
+  const [q, setQ] = useState<ManualQso>({
+    call: '',
+    date: now.toISOString().slice(0, 10),
+    time: now.toISOString().slice(11, 16),
+    band: '20m',
+    freq_hz: 0,
+    mode: 'FT8',
+    rst_sent: '',
+    rst_rcvd: '',
+    grid: '',
+    name: '',
+    comment: '',
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (patch: Partial<ManualQso>) => setQ((v) => ({ ...v, ...patch }));
+  const submit = async (e: { preventDefault(): void }) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await addLogQso({ ...q, call: q.call.trim().toUpperCase() });
+      toast(t('exp.added', { call: q.call.trim().toUpperCase() }), 'ok');
+      onDone();
+    } catch (error) {
+      const field = error instanceof ApiError ? error.detail : undefined;
+      const label = field === 'call' ? t('exp.f.call') : field === 'mode' ? t('exp.f.mode') : field === 'band' ? t('exp.f.band') : field === 'time' ? t('exp.f.time') : undefined;
+      toast(label ? t('exp.addBad', { field: label }) : error instanceof ApiError && error.code === 'local_only' ? t('exp.localOnly') : t('exp.addFailed'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form className="export-add" onSubmit={(e) => void submit(e)} aria-label={t('exp.add')}>
+      <label>
+        {t('exp.f.call')}
+        <input required autoFocus value={q.call} onChange={(e) => set({ call: e.target.value.toUpperCase() })} maxLength={13} />
+      </label>
+      <label>
+        {t('exp.f.date')}
+        <input type="date" required value={q.date} onChange={(e) => set({ date: e.target.value })} />
+      </label>
+      <label>
+        {t('exp.f.time')}
+        <input type="time" required value={q.time} onChange={(e) => set({ time: e.target.value })} />
+      </label>
+      <label>
+        {t('exp.f.band')}
+        <select value={q.band} onChange={(e) => set({ band: e.target.value })}>
+          {BANDS_FOR_ADD.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        {t('exp.f.freq')}
+        <input type="number" min={0} step={0.001} value={q.freq_hz ? q.freq_hz / 1e6 : ''} placeholder="14.074" onChange={(e) => set({ freq_hz: Math.round(Number(e.target.value) * 1e6) || 0 })} />
+      </label>
+      <label>
+        {t('exp.f.mode')}
+        <input value={q.mode} onChange={(e) => set({ mode: e.target.value.toUpperCase() })} maxLength={12} list="export-modes" />
+        <datalist id="export-modes">
+          {['FT8', 'FT4', 'JT65', 'JT9', 'SSB', 'CW', 'RTTY', 'PSK31', 'FM'].map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
+      </label>
+      <label>
+        {t('exp.f.sent')}
+        <input value={q.rst_sent} onChange={(e) => set({ rst_sent: e.target.value })} maxLength={8} />
+      </label>
+      <label>
+        {t('exp.f.rcvd')}
+        <input value={q.rst_rcvd} onChange={(e) => set({ rst_rcvd: e.target.value })} maxLength={8} />
+      </label>
+      <label>
+        {t('exp.f.grid')}
+        <input value={q.grid} onChange={(e) => set({ grid: e.target.value.toUpperCase() })} maxLength={8} />
+      </label>
+      <label>
+        {t('exp.f.name')}
+        <input value={q.name} onChange={(e) => set({ name: e.target.value })} maxLength={60} />
+      </label>
+      <label className="export-add-wide">
+        {t('exp.f.comment')}
+        <input value={q.comment} onChange={(e) => set({ comment: e.target.value })} maxLength={200} />
+      </label>
+      <div className="export-add-actions">
+        <span className="muted">{t('exp.addUtc')}</span>
+        <button type="button" className="glass" onClick={onCancel}>
+          {t('exp.addCancel')}
+        </button>
+        <button type="submit" className="glass glass--on" disabled={busy || q.call.trim().length < 3}>
+          {t('exp.addSave')}
+        </button>
+      </div>
+    </form>
   );
 }

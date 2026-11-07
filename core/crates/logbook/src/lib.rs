@@ -13,7 +13,7 @@ use aurora_core::{
     adif::{parse_records, unix_ms, AdifQso},
     QsoRecord,
 };
-use rusqlite::{params, Connection};
+use rusqlite::{OptionalExtension, params, Connection};
 
 #[derive(Debug)]
 pub enum LogError {
@@ -260,6 +260,47 @@ impl Logbook {
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
+    /// Cancella i QSO con questi id e ritorna quelli cancellati (per toglierli anche dal file ADIF di Aurora). Gli id che non ci sono si saltano.
+    pub fn delete(&self, ids: &[i64]) -> Result<Vec<LogEntry>, LogError> {
+        let mut conn = self.conn()?;
+        let tx = conn.transaction()?;
+        let mut gone = Vec::new();
+        for &id in ids {
+            let row = tx
+                .query_row(
+                    "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid FROM qso WHERE id = ?1",
+                    params![id],
+                    |r| {
+                        Ok(LogEntry {
+                            id: r.get(0)?,
+                            date: r.get(1)?,
+                            time: r.get(2)?,
+                            call: r.get(3)?,
+                            band: r.get::<_, String>(4)?.to_lowercase(),
+                            mode: r.get::<_, String>(5)?.to_uppercase(),
+                            freq_hz: r.get::<_, i64>(6)?.max(0) as u64,
+                            rst_sent: r.get(7)?,
+                            rst_rcvd: r.get(8)?,
+                            grid: r.get(9)?,
+                        })
+                    },
+                )
+                .optional()?;
+            if let Some(e) = row {
+                tx.execute("DELETE FROM qso WHERE id = ?1", params![id])?;
+                gone.push(e);
+            }
+        }
+        tx.commit()?;
+        Ok(gone)
+    }
+
+    /// Svuota il log; ritorna quanti QSO c'erano.
+    pub fn clear(&self) -> Result<u64, LogError> {
+        let n = self.conn()?.execute("DELETE FROM qso", [])?;
+        Ok(n as u64)
+    }
+
     /// Il log come file ADIF di JTDX (`wsjtx_log.adi`: stesse righe di `jtdx_file_record`, CR LF), con i QSO tra due date (`AAAAMMGG`, estremi
     /// compresi; `None` = senza limite). Ritorna il testo e quanti QSO contiene.
     pub fn export_jtdx_adif(&self, station: &adif::Station, from: Option<&str>, to: Option<&str>) -> Result<(String, usize), LogError> {
@@ -399,3 +440,47 @@ impl Logbook {
         Ok(out)
     }
 }
+
+/// Il testo di un file ADIF senza i QSO cancellati dal log (stesso nominativo, data, banda e ora di inizio al minuto); ritorna anche quanti
+/// ne ha tolti. Tutto il resto (intestazione, campi in piu', QSO non toccati) resta com'era.
+pub fn adif_without(text: &str, gone: &[LogEntry]) -> (String, usize) {
+    let lower = text.to_ascii_lowercase();
+    let mut out = String::with_capacity(text.len());
+    let mut start = 0;
+    let mut removed = 0;
+    // l'intestazione arriva fino a <eoh>
+    if let Some(h) = lower.find("<eoh>") {
+        start = h + 5;
+        out.push_str(&text[..start]);
+    }
+    while let Some(rel) = lower[start..].find("<eor>") {
+        let end = start + rel + 5;
+        let record = &text[start..end];
+        let field = |name: &str| adif_field(record, name).unwrap_or_default();
+        let matches = gone.iter().any(|e| {
+            field("call").eq_ignore_ascii_case(&e.call)
+                && field("qso_date") == e.date
+                && field("band").eq_ignore_ascii_case(&e.band)
+                && field("time_on").get(0..4) == e.time.get(0..4)
+        });
+        if matches {
+            removed += 1;
+        } else {
+            out.push_str(record);
+        }
+        start = end;
+    }
+    out.push_str(&text[start..]);
+    (out, removed)
+}
+
+/// Il valore di un campo ADIF (`<CALL:5>K1ABC`), senza badare a maiuscole e minuscole nel nome.
+fn adif_field(record: &str, name: &str) -> Option<String> {
+    let lower = record.to_ascii_lowercase();
+    let tag = format!("<{name}:");
+    let at = lower.find(&tag)? + tag.len();
+    let close = at + lower[at..].find('>')?;
+    let len: usize = lower[at..close].split(':').next()?.trim().parse().ok()?;
+    record.get(close + 1..close + 1 + len).map(|v| v.trim().to_string())
+}
+
