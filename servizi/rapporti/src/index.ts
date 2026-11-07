@@ -255,6 +255,13 @@ export default {
       if (req.method === 'GET' && url.pathname === '/admin/messaggi') {
         return new Response(messaggi.PAGINA, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }
+      // scrivere, togliere ed elencare i messaggi: prima il freno ai tentativi (stesso limite per indirizzo dei rapporti),
+      // cosi' nessuno puo' provare il segreto a raffica
+      if (url.pathname.startsWith('/v1/messaggi/') || (req.method === 'POST' && url.pathname === '/v1/messaggi')) {
+        const ip = req.headers.get('CF-Connecting-IP') ?? 'sconosciuto';
+        const { success } = await env.LIMITE.limit({ key: `admin:${ip}` });
+        if (!success) return risposta(429, { error: 'troppe richieste' });
+      }
       if (req.method === 'GET' && url.pathname === '/v1/messaggi/tutti') {
         return amministratore(req, env) ? risposta(200, { messaggi: await messaggi.tutti(env.INDICE) }) : risposta(401, { error: 'segreto' });
       }
