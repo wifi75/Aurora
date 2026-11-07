@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.172',
-    released: '2026-11-07T10:30:40Z',
+    released: '2026-11-07T10:35:29Z',
     kind: 'fixed',
     title: ["La cartolina dell'agente si apre", 'The agent card opens', 'Die Karte des Agenten öffnet sich', "La carte de l'agent s'ouvre", 'La tarjeta del agente se abre', 'O cartão do agente abre'],
     text: [
