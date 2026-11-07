@@ -950,3 +950,29 @@ html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10;
 /* frequenza della DXpedition in onda: si vede che e' cliccabile (doppio clic porta la radio li') */
 .dxped-onair-freq { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; border-radius: 4px; padding: 0 2px; }
 .dxped-onair-freq:hover { background: color-mix(in srgb, #ff7a1a 22%, transparent); }
+
+/* scheda DXCC nel Log: la tabella delle bande si adatta sempre alla larghezza, con 5 bande come con 12 (caselle piu' basse e strette) */
+.dock-panel--log .dxcc-grid { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px; }
+.dock-panel--log .dxcc-grid th.dxcc-row { width: 2.6rem; font-size: 11px; text-align: left; }
+.dock-panel--log .dxcc-grid th.dxcc-band { font-size: 10px; font-weight: 600; padding: 0 0 2px; white-space: nowrap; overflow: hidden; }
+.dock-panel--log .dxcc-grid td.dxcc-cell { height: 18px; min-width: 0; padding: 0; border-radius: 4px; }
+.dock-panel--log .dxcc-grid thead th:first-child { width: 2.6rem; font-size: 12px; }
+/* (con priorita') scheda DXCC dentro il pannello Log: niente esce dal riquadro */
+.dock-panel--log .dxcc-card { min-width: 0 !important; max-width: 100% !important; width: 100% !important; overflow: hidden; box-sizing: border-box; }
+.dock-panel--log .dxcc-grid { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; }
+.dock-panel--log .dxcc-grid td.dxcc-cell { height: 18px !important; min-width: 0 !important; width: auto !important; }
+.dock-panel--log .dxcc-grid th { min-width: 0 !important; }
+.dock-panel--log .dxcc-try { width: 6rem !important; min-width: 0 !important; max-width: 40% !important; flex: 0 1 6rem !important; }
+.dock-panel--log .dxcc-card header, .dock-panel--log .dxcc-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dock-panel--log .dxcc-head > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* scheda DXCC elastica: una sola colonna larga quanto il riquadro (prima era fissa a 408 px e usciva quando il pannello era piu' stretto).
+   Vale per ogni larghezza: le caselle delle bande, le etichette e il campo «Prova» si stringono da soli */
+.dxcc-card.dxcc-card--panel { grid-template-columns: minmax(0, 1fr) !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+.dxcc-card--panel > * { min-width: 0 !important; max-width: 100%; }
+.dxcc-card--panel .dxcc-subject { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dxcc-card--panel .dxcc-subject > :not(input) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dxcc-card--panel .dxcc-try { flex: 0 1 6rem !important; width: 6rem !important; min-width: 3.5rem !important; }
+.dxcc-card--panel .dxcc-labels { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; width: 100%; }
+.dxcc-card--panel .dxcc-grid { width: 100% !important; table-layout: fixed !important; }
+.dxcc-card--panel .dxcc-grid td.dxcc-cell { height: 18px !important; }
