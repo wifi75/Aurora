@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.178',
+    released: '2026-11-07T12:49:29Z',
+    kind: 'new',
+    title: ['Le tue trasmissioni uguali in una riga', 'Your identical transmissions in one row', 'Deine gleichen Sendungen in einer Zeile', 'Tes émissions identiques sur une ligne', 'Tus transmisiones iguales en una fila', 'As tuas transmissões iguais numa linha'],
+    text: [
+      "In Attività di banda il CQ ripetuto ogni periodo non riempie più la lista: resta solo l'ultima trasmissione con «×N» (quante volte l'hai mandata). I messaggi diversi del QSO restano tutti.",
+      "In Band activity the CQ repeated every period no longer fills the list: only the last transmission stays, with «×N» (how many times you sent it). The different QSO messages all stay.",
+      "In der Bandaktivität füllt der in jeder Periode wiederholte CQ die Liste nicht mehr: nur die letzte Sendung bleibt, mit «×N» (wie oft du sie gesendet hast). Die unterschiedlichen QSO-Nachrichten bleiben alle.",
+      "Dans l'Activité de bande le CQ répété à chaque période ne remplit plus la liste : seule la dernière émission reste, avec « ×N » (combien de fois tu l'as envoyée). Les messages différents du QSO restent tous.",
+      "En Actividad de banda el CQ repetido cada periodo ya no llena la lista: queda solo la última transmisión con «×N» (cuántas veces la enviaste). Los mensajes distintos del QSO se quedan todos.",
+      "Na Atividade de banda o CQ repetido em cada período já não enche a lista: fica só a última transmissão com «×N» (quantas vezes a enviaste). As mensagens diferentes do QSO ficam todas.",
+    ],
+  },
+  {
     version: '0.11.177',
     released: '2026-11-07T12:23:14Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans Réglages › Audio, sous le choix de l’entrée et de la sortie, il y a les curseurs du volume Windows de ce périphérique : enregistrement pour l’entrée, émission (Pwr) pour la sortie. Dans le tableau de bord à blocs la grille suit la fenêtre en largeur et en hauteur : le premier bloc la remplit, plus d’espace gris vide.",
       "En Ajustes › Audio, bajo la elección de entrada y salida, están los controles del volumen de Windows de ese dispositivo: grabación para la entrada, transmisión (Pwr) para la salida. En el panel de bloques la cuadrícula sigue la ventana en ancho y alto: el primer bloque la llena, sin espacio gris vacío.",
       "Em Definições › Áudio, sob a escolha da entrada e da saída, estão os controlos do volume do Windows desse dispositivo: gravação para a entrada, transmissão (Pwr) para a saída. No painel de blocos a grelha segue a janela em largura e altura: o primeiro bloco enche-a, sem espaço cinzento vazio.",
-    ],
-  },
-  {
-    version: '0.11.138',
-    released: '2026-11-05T13:18:14Z',
-    kind: 'new',
-    title: ['Dashboard a blocchi sul secondo schermo', 'Block dashboard on the second screen', 'Block-Dashboard auf dem zweiten Bildschirm', 'Tableau de bord à blocs sur le second écran', 'Panel de bloques en la segunda pantalla', 'Painel de blocos no segundo ecrã'],
-    text: [
-      "Dal pulsantino ⧉ di un pannello, della Mappa o della Propagazione scegli «Nella dashboard a blocchi»: una finestra sola dove ogni elemento è un blocco che trascini dalla sua barretta e ridimensioni dall'angolo in basso a destra; gli altri blocchi si spostano per fargli posto. Aurora ricorda posizione e misura di ogni blocco. Anche da Impostazioni › Finestre.",
-      "From the ⧉ button of a panel, the Map or Propagation choose «In the block dashboard»: a single window where each item is a block you drag by its bar and resize from the bottom-right corner; the other blocks move to make room. Aurora remembers each block's position and size. Also from Settings › Windows.",
-      "Über das kleine ⧉ eines Felds, der Karte oder der Ausbreitung wählst du «Im Block-Dashboard»: ein Fenster, in dem jedes Element ein Block ist, den du an seiner Leiste ziehst und an der Ecke unten rechts in der Größe änderst; die anderen Blöcke machen Platz. Aurora merkt sich Position und Größe jedes Blocks. Auch unter Einstellungen › Fenster.",
-      "Depuis le petit ⧉ d’un panneau, de la Carte ou de la Propagation choisis « Dans le tableau de bord à blocs » : une seule fenêtre où chaque élément est un bloc que tu fais glisser par sa barre et redimensionnes par le coin en bas à droite ; les autres blocs se déplacent pour lui faire place. Aurora mémorise la position et la taille de chaque bloc. Aussi depuis Réglages › Fenêtres.",
-      "Desde el pequeño ⧉ de un panel, del Mapa o de la Propagación elige «En el panel de bloques»: una sola ventana donde cada elemento es un bloque que arrastras por su barra y redimensionas desde la esquina inferior derecha; los demás bloques se mueven para hacerle sitio. Aurora recuerda la posición y el tamaño de cada bloque. También desde Ajustes › Ventanas.",
-      "No pequeno ⧉ de um painel, do Mapa ou da Propagação escolhe «No painel de blocos»: uma só janela onde cada elemento é um bloco que arrastas pela barra e redimensionas pelo canto inferior direito; os outros blocos mexem-se para lhe dar espaço. A Aurora lembra a posição e o tamanho de cada bloco. Também em Definições › Janelas.",
     ],
   },
 ];
