@@ -43,7 +43,7 @@ function load(): AgentPrefs {
 
 /**
  * «Agente nel tray» (prototipo): per ogni tipo di avviso si sceglie se compare come popup, solo sull'icona del tray o mai.
- * Per ora le scelte restano in questa finestra; l'agente vero le leggera' dal core.
+ * Le scelte si salvano con le altre impostazioni dell'interfaccia (`ui-settings.json`): l'agente le rilegge ogni minuto.
  */
 export function AgentTab() {
   const t = useT();

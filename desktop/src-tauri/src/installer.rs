@@ -78,6 +78,8 @@ impl UpdateInstaller for DesktopInstaller {
         let path = dir.join(file_name);
         std::fs::write(&path, &data).map_err(|e| format!("pacchetto non salvato: {e}"))?;
         let installer = path.to_str().ok_or("percorso del pacchetto non valido")?;
+        // l'agente nel tray e' lo stesso programma: va chiuso, altrimenti l'installatore non puo' sostituirlo
+        crate::stop_agent();
         let mut launcher = Command::new("cmd");
         launcher.args(detached_command_args(installer));
         {

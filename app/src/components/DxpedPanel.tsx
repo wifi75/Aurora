@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { DxpedDetail } from './DxpedDetail';
 import { getDxcc, getDxped, type Dxpedition, getClusterSpots, type ClusterSpot } from '../api/client';
 import { loadAtlas } from './CountryShape';
+import { tuneSpot } from './ClusterPanel';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { coreText } from '../lib/coreText';
@@ -53,6 +54,8 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
     if (!old || sp.received_ms > old.received_ms) onAir.set(call, sp);
   }
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays, soonDays);
+  // quelle spottate adesso salgono in cima (nel loro ordine); dopo 15 minuti senza spot tornano al loro posto
+  const onAirFirst = [...items].sort((a, b) => Number(onAir.has(b.call.toUpperCase())) - Number(onAir.has(a.call.toUpperCase())));
   // la scheda si apre subito: confini del mondo e paese di ogni DXpedition si preparano in anticipo, appena c'e' il calendario
   const client = useQueryClient();
   const calls = items.map((d) => d.call).join(' ');
@@ -77,7 +80,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
       {q.data?.dxped.error ? <p className="muted dxped-note">{coreText(q.data.dxped.error, t)}</p> : null}
       {items.length === 0 ? <p className="muted dxped-note">{q.data?.dxped.fetched_ms ? t('dxp.none') : t('dxp.loading')}</p> : null}
       <ul className="dxped-list">
-        {items.map((d) => (
+        {onAirFirst.map((d) => (
           <li
             key={`${d.call}-${d.start}`}
             className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}${onAir.has(d.call.toUpperCase()) ? ' dxped-item--onair' : ''}`}
@@ -110,9 +113,26 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
                 <div className="dxped-onair" title={sp.comment || undefined}>
                   <span className="dxped-onair-dot" aria-hidden="true" />
                   <b>{t('dxp.onAir')}</b>
-                  <span className="data">{(sp.freq_khz / 1000).toFixed(3)} MHz</span>
-                  {sp.mode ? <span className="data">{sp.mode}</span> : null}
+                  <span
+                    className="data dxped-onair-freq"
+                    role="button"
+                    tabIndex={0}
+                    title={t('tip.dxp.tune')}
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      void tuneSpot(sp).catch(() => undefined);
+                    }}
+                  >
+                    {(sp.freq_khz / 1000).toFixed(3)} MHz
+                  </span>
+                  <span className="data">{spotMode(sp)}</span>
                   <span className="muted">{t('dxp.spotAgo', { min })}</span>
+                  {sp.spotter ? (
+                    <span className="muted">
+                      {t('dxp.spotBy')} <span className="data">{sp.spotter}</span>
+                    </span>
+                  ) : null}
                 </div>
               );
             })()}
@@ -128,4 +148,29 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
       {open ? <DxpedDetail key={open.call} d={open} onClose={() => setOpen(null)} /> : null}
     </section>
   );
+}
+
+/** Le frequenze FT8 e FT4 di ogni banda (kHz), per riconoscere il modo di uno spot che non lo dice. */
+const DIGI: readonly [number, string][] = [
+  [1840, 'FT8'], [3573, 'FT8'], [3575, 'FT4'], [5357, 'FT8'], [7074, 'FT8'], [7047.5, 'FT4'], [10136, 'FT8'], [10140, 'FT4'],
+  [14074, 'FT8'], [14080, 'FT4'], [18100, 'FT8'], [18104, 'FT4'], [21074, 'FT8'], [21140, 'FT4'], [24915, 'FT8'], [24919, 'FT4'],
+  [28074, 'FT8'], [28180, 'FT4'], [50313, 'FT8'], [50318, 'FT4'],
+];
+/** Dove finisce il CW in ogni banda (kHz): sotto e' CW, sopra (fuori dalle frequenze digitali) SSB. */
+const CW_TOP: readonly [number, number, number][] = [
+  [1800, 2000, 1840], [3500, 4000, 3570], [7000, 7300, 7040], [10100, 10150, 10130], [14000, 14350, 14070], [18068, 18168, 18095],
+  [21000, 21450, 21070], [24890, 24990, 24915], [28000, 29700, 28070], [50000, 54000, 50100],
+];
+
+/** Il modo dello spot: quello del cluster, altrimenti dal commento, altrimenti dalla frequenza (FT8/FT4, CW, SSB). */
+function spotMode(sp: ClusterSpot): string {
+  if (sp.mode) return sp.mode.toUpperCase();
+  const c = (sp.comment ?? '').toUpperCase();
+  for (const m of ['FT8', 'FT4', 'RTTY', 'PSK', 'CW', 'SSB', 'USB', 'LSB', 'JT65', 'MSK144']) if (new RegExp(`\\b${m}\\b`).test(c)) return m === 'USB' || m === 'LSB' ? 'SSB' : m;
+  const k = sp.freq_khz;
+  const digi = DIGI.find(([f]) => Math.abs(k - f) <= 3);
+  if (digi) return digi[1];
+  const band = CW_TOP.find(([lo, hi]) => k >= lo && k <= hi);
+  if (band) return k < band[2] ? 'CW' : 'SSB';
+  return '?';
 }

@@ -1,6 +1,7 @@
 //! Aurora per Windows: il core gira dentro questo programma e la finestra mostra la sua pagina (la stessa che si apre dal telefono).
 //! Il vassoio tiene Aurora a portata di mano, parte con Windows e si aggiorna da sola quando esce una versione nuova.
 
+pub mod agent;
 mod crash;
 mod health;
 mod installer;
@@ -172,6 +173,8 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
             // niente programma residente: l'avvio con Windows e' spento, salvo `AURORA_AUTOSTART=1`
             apply_autostart_choice(&handle, values.get("AURORA_AUTOSTART").map(String::as_str) == Some("1"));
             open_window(&handle, &page, true)?;
+            // l'agente nel tray (acceso di fabbrica; `AURORA_AGENTE=0` lo spegne): parte con Windows e, se non c'e', si avvia adesso
+            agent_on_start(values.get("AURORA_AGENTE").map(String::as_str) != Some("0") && agent::prefs().enabled);
             // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'
             if values.get("AURORA_MONITOR_ON_START").map(String::as_str) != Some("0")
                 && let Some(state) = core_state(&handle)
@@ -454,4 +457,55 @@ fn notify(app: &AppHandle, title: &str, body: &str) {
 /// E' uscita una versione nuova: avviso di Windows; l'installazione si avvia dalla barra in alto nella pagina («Installa ora»).
 fn announce_update(app: &AppHandle, version: &str) {
     notify(app, &format!("Aurora {version} disponibile"), "Apri Aurora e premi «Installa ora» nella barra in alto per aggiornare.");
+}
+
+/// Avvio con Windows dell'agente nel tray (chiave Run dell'utente) e, se acceso, l'agente stesso subito (se c'e' gia', esce da solo).
+fn agent_on_start(enabled: bool) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const NO_WINDOW: u32 = 0x0800_0000;
+        let Ok(exe) = std::env::current_exe() else { return };
+        set_agent_autostart(enabled);
+        if enabled {
+            let _ = std::process::Command::new(exe).arg("--agente").creation_flags(NO_WINDOW).spawn();
+        } else {
+            stop_agent();
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = enabled;
+}
+
+/// Chiude l'agente (prima di un aggiornamento: l'installatore non puo' sostituire un programma aperto). Tocca solo gli altri
+/// processi di Aurora, non questo.
+pub(crate) fn stop_agent() {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let me = std::process::id().to_string();
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", "aurora-desktop.exe", "/FI", &format!("PID ne {me}")])
+            .creation_flags(0x0800_0000)
+            .status();
+    }
+}
+
+/// Avvio con Windows dell'agente: la voce `AuroraAgente` nella chiave Run dell'utente.
+pub(crate) fn set_agent_autostart(enabled: bool) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let Ok(exe) = std::env::current_exe() else { return };
+        let key = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+        let mut reg = std::process::Command::new("reg");
+        if enabled {
+            reg.args(["add", key, "/v", "AuroraAgente", "/t", "REG_SZ", "/d", &format!("\"{}\" --agente", exe.display()), "/f"]);
+        } else {
+            reg.args(["delete", key, "/v", "AuroraAgente", "/f"]);
+        }
+        let _ = reg.creation_flags(0x0800_0000).status();
+    }
+    #[cfg(not(windows))]
+    let _ = enabled;
 }

@@ -69,6 +69,8 @@ export const appStrings = {
   'tag.queued': ["IN CODA {n}", "QUEUE {n}", "WARTESCHL. {n}", "FILE {n}", "EN COLA {n}", "NA FILA {n}"],
   'dxp.onAir': ["IN ONDA", "ON AIR", "AUF SENDUNG", "EN L’AIR", "EN EL AIRE", "NO AR"],
   'dxp.spotAgo': ["spot {min} min fa", "spotted {min} min ago", "Spot vor {min} min", "spot il y a {min} min", "spot hace {min} min", "spot há {min} min"],
+  'tip.dxp.tune': ["Doppio clic: la radio va sulla frequenza dello spot", "Double-click: tune the radio to the spot frequency", "Doppelklick: Funkgerät auf die Spot-Frequenz", "Double-clic : la radio va sur la fréquence du spot", "Doble clic: la radio va a la frecuencia del spot", "Duplo clique: o rádio vai para a frequência do spot"],
+  'dxp.spotBy': ["da", "by", "von", "par", "por", "por"],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
     '{name} v{version} — By IU3WJQ -Tiziano Cassone',

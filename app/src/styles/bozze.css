@@ -946,3 +946,7 @@ html[data-theme='light'] .dxped-item--onair .dxped-call, html[data-theme='light'
 @keyframes qso-logged-sweep { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10; }
 @media (prefers-reduced-motion: reduce) { .log4om-table tr.log4om-row--flash td, .log4om-table tr.log4om-row--flash td::after { animation: qso-logged-fade 1.5s ease-out 4s 1 forwards !important; } }
+
+/* frequenza della DXpedition in onda: si vede che e' cliccabile (doppio clic porta la radio li') */
+.dxped-onair-freq { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; border-radius: 4px; padding: 0 2px; }
+.dxped-onair-freq:hover { background: color-mix(in srgb, #ff7a1a 22%, transparent); }
