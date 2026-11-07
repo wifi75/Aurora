@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.193',
-    released: '2026-11-08T00:30:00Z',
+    released: '2026-11-07T22:34:44Z',
     kind: 'fixed',
     title: ['Radio: scelta «Nessuno» (senza CAT)', 'Radio: «None» choice (no CAT)', 'Funkgerät: Auswahl «Keins» (ohne CAT)', 'Radio : choix « Aucun » (sans CAT)', 'Radio: opción «Ninguno» (sin CAT)', 'Rádio: opção «Nenhum» (sem CAT)'],
     text: [
