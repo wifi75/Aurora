@@ -657,11 +657,12 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TxQSYAllowed", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.5"),
-        // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese,
+        // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese (in Aurora spente),
         // righe OTP nascoste, verifica in linea del Fox accesa (WSJT-X la fa sempre in Hound) sul servizio di fabbrica, Band Hopping spento
         ("FT8DecoderStart", "normal"),
         ("FullDuplex", "false"),
-        ("WaitFeaturesEnabled", "true"),
+        // Wait features spente di fabbrica (scelta del proprietario 2026-11-07: riprendevano da sole i QSO, anche dopo «Canc DX»; WSJT-X 3.3 le accende)
+        ("WaitFeaturesEnabled", "false"),
         // Wait and Pounce: WSJT-X parte da «CQ: None» (il pulsante non si arma); Aurora parte dal primo CQ, cosi' il pulsante funziona subito
         ("PouncePolicy", "first"),
         ("HoundAuto", "true"),
@@ -879,7 +880,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         tx_qsy_allowed: values.get("TxQSYAllowed").is_none_or(|v| v == "true"),
         ft8_decoder_start: values.get("FT8DecoderStart").cloned().unwrap_or_else(|| "normal".into()),
         full_duplex: truthy(values.get("FullDuplex")),
-        wait_features: values.get("WaitFeaturesEnabled").is_none_or(|v| v == "true"),
+        wait_features: truthy(values.get("WaitFeaturesEnabled")),
         hound_auto: values.get("HoundAuto").is_none_or(|v| v == "true"),
         pounce_policy: values.get("PouncePolicy").cloned().unwrap_or_else(|| "first".into()),
         show_otp: truthy(values.get("ShowOTP")),
