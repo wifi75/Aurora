@@ -31,7 +31,8 @@ async function start() {
   const kind = deviceKind(window.innerWidth);
   try {
     await hydrate(window.localStorage, kind);
-    keepSynced(kind);
+    // prova locale nel browser: prende la configurazione del PC ma non la riscrive (le prove non toccano l'Aurora installata)
+    if (import.meta.env.VITE_AURORA_PROVA !== '1') keepSynced(kind);
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }

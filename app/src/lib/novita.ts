@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.173',
+    released: '2026-11-07T11:01:21Z',
+    kind: 'fixed',
+    title: ['Correzioni', 'Fixes', 'Korrekturen', 'Corrections', 'Correcciones', 'Correções'],
+    text: [
+      "La scritta «PROVA LOCALE» non compare mai nel programma installato. La prova nel browser legge la configurazione del PC senza modificarla.",
+      "The «PROVA LOCALE» label never appears in the installed program. The browser test reads the PC configuration without changing it.",
+      "Die Aufschrift «PROVA LOCALE» erscheint nie im installierten Programm. Der Browser-Test liest die PC-Konfiguration, ohne sie zu ändern.",
+      "L'inscription « PROVA LOCALE » n'apparaît jamais dans le programme installé. Le test dans le navigateur lit la configuration du PC sans la modifier.",
+      "La etiqueta «PROVA LOCALE» nunca aparece en el programa instalado. La prueba en el navegador lee la configuración del PC sin modificarla.",
+      "A inscrição «PROVA LOCALE» nunca aparece no programa instalado. O teste no navegador lê a configuração do PC sem a alterar.",
+    ],
+  },
+  {
     version: '0.11.172',
     released: '2026-11-07T10:35:29Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Avec le petit ⧉ dans la barre d’un panneau de la Station, ou à côté des titres Carte et Propagation, l’élément passe dans une fenêtre à part à mettre sur le second écran et à redimensionner. Plusieurs éléments partagent une fenêtre (côte à côte ou l’un sur l’autre, avec un séparateur) ; ⤓ les remet en place. Aurora rouvre les fenêtres au démarrage. Rien ne change sur le téléphone.",
       "Con el pequeño ⧉ en la barra de un panel de la Estación, o junto a los títulos de Mapa y Propagación, el elemento pasa a una ventana aparte para llevar a la segunda pantalla y redimensionar. Varios elementos comparten ventana (lado a lado o uno sobre otro, con divisor); ⤓ los devuelve. Aurora reabre las ventanas al iniciar. En el teléfono no cambia nada.",
       "Com o pequeno ⧉ na barra de um painel da Estação, ou junto aos títulos de Mapa e Propagação, o elemento passa para uma janela à parte para levar ao segundo ecrã e redimensionar. Vários elementos partilham uma janela (lado a lado ou um sobre o outro, com divisor); ⤓ repõe-nos. A Aurora reabre as janelas no arranque. No telemóvel não muda nada.",
-    ],
-  },
-  {
-    version: '0.11.133',
-    released: '2026-11-05T11:58:59Z',
-    kind: 'fixed',
-    title: ['La radio accesa dopo Aurora si sente da sola', 'A radio switched on after Aurora is heard by itself', 'Ein nach Aurora eingeschaltetes Radio wird von selbst gehört', 'La radio allumée après Aurora est entendue toute seule', 'La radio encendida después de Aurora se oye sola', 'O rádio ligado depois da Aurora ouve-se sozinho'],
-    text: [
-      "Se la scheda audio della radio non c'è all'avvio (radio spenta, cavo USB staccato), Aurora riprova ogni 5 secondi e la ricezione parte da sola appena compare; intanto un avviso spiega cosa succede. Prima serviva riavviare Aurora.",
-      "If the radio's sound card is missing at start (radio off, USB cable unplugged), Aurora retries every 5 seconds and reception starts by itself as soon as it appears; meanwhile a notice explains what is happening. Before, Aurora had to be restarted.",
-      "Fehlt die Soundkarte des Radios beim Start (Radio aus, USB-Kabel getrennt), versucht Aurora es alle 5 Sekunden erneut und der Empfang startet von selbst, sobald sie erscheint; ein Hinweis erklärt, was passiert. Vorher musste Aurora neu gestartet werden.",
-      "Si la carte son de la radio manque au démarrage (radio éteinte, câble USB débranché), Aurora réessaie toutes les 5 secondes et la réception démarre seule dès qu’elle apparaît ; un avis explique ce qui se passe. Avant, il fallait redémarrer Aurora.",
-      "Si la tarjeta de sonido de la radio no está al iniciar (radio apagada, cable USB desconectado), Aurora reintenta cada 5 segundos y la recepción arranca sola en cuanto aparece; mientras tanto un aviso explica lo que pasa. Antes había que reiniciar Aurora.",
-      "Se a placa de som do rádio não existir no arranque (rádio desligado, cabo USB desligado), a Aurora tenta de novo a cada 5 segundos e a receção arranca sozinha assim que aparece; entretanto um aviso explica o que se passa. Antes era preciso reiniciar a Aurora.",
     ],
   },
 ];
