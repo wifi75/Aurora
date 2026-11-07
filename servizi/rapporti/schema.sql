@@ -60,3 +60,17 @@ CREATE TABLE IF NOT EXISTS storico (
 -- ALTER TABLE errori ADD COLUMN esempio TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE errori ADD COLUMN sistema TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE errori ADD COLUMN ultimo TEXT NOT NULL DEFAULT '';
+
+-- Messaggi del proprietario a tutte le installazioni (dal 2026-11-07): testi per lingua in JSON, finestra di date, versioni a cui vanno.
+CREATE TABLE IF NOT EXISTS messaggi (
+  id TEXT PRIMARY KEY,
+  titolo TEXT NOT NULL,
+  testo TEXT NOT NULL,
+  dal TEXT NOT NULL,
+  al TEXT NOT NULL,
+  prima_di TEXT NOT NULL DEFAULT '',
+  link TEXT NOT NULL DEFAULT '',
+  tema TEXT NOT NULL DEFAULT 'normale',
+  creato TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS messaggi_dal ON messaggi (dal, al);
