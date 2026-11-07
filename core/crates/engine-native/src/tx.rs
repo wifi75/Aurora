@@ -183,8 +183,8 @@ pub struct TxView {
     pub queue: Vec<String>,
 }
 
-/// Quante stazioni si tengono in coda: oltre, la prima ha quasi certamente rinunciato.
-const QUEUE_MAX: usize = 8;
+/// Quante stazioni si tengono in coda (4, scelta del proprietario 2026-11-07: una colonna accanto al DX): oltre, la prima ha quasi certamente rinunciato.
+const QUEUE_MAX: usize = 4;
 /// Dopo quanto una stazione in coda e' considerata sparita se non si fa piu' sentire (ms).
 const QUEUE_KEEP_MS: u64 = 10 * 60 * 1000;
 

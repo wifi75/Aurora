@@ -164,15 +164,13 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
         <>
           <div className="tx-dx">
             {pendingDx || status.dx_call ? <DxPill status={status} /> : <strong className="data tx-dx-call">—</strong>}
-            {/* la coda accanto al DX, subito prima di RX/TX: in elenco, 4 per colonna (con 6 stazioni: 1-4 a sinistra, 5-6 a destra),
-                al massimo 8; «+n» per le altre accanto all'ottava */}
+            {/* la coda accanto al DX, subito prima di RX/TX: in elenco, una sotto l'altra; il motore ne tiene al massimo 4 (`QUEUE_MAX`) */}
             {status.queue && status.queue.length > 0 ? (
               <span className="tx-queue tx-queue--side" title={`${t('tip.tx.queue')}: ${status.queue.join(', ')}`}>
-                {status.queue.slice(0, 8).map((call, i) => (
+                {status.queue.slice(0, 4).map((call, i) => (
                   <span key={call} className="tx-queue-item" title={t('tip.row.queuedPos', { n: i + 1 })}>
                     <span className="queue-dot">{i + 1}</span>
                     <span className="data">{call}</span>
-                    {i === 7 && (status.queue?.length ?? 0) > 8 ? <span className="tx-queue-more">+{(status.queue?.length ?? 0) - 8}</span> : null}
                   </span>
                 ))}
               </span>
