@@ -979,3 +979,6 @@ html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10;
 
 /* la schermata dell'aggiornamento sta sempre sopra a tutto, anche alle Impostazioni aperte dentro la finestra principale (prima restava sotto) */
 .first-run.upd-poster { z-index: 200500 !important; }
+
+.dxped-heard-line b { color: #0b9e6b; }
+.dxped-heard-dot { background: #2cf5a4; box-shadow: 0 0 6px #2cf5a4; animation: none; }

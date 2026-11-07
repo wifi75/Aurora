@@ -1,9 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DxpedDetail } from './DxpedDetail';
 import { getDxcc, getDxccMatrix, getDxped, type Dxpedition, getClusterSpots, type ClusterSpot } from '../api/client';
 import { loadAtlas } from './CountryShape';
 import { tuneSpot } from './ClusterPanel';
+import { useStation } from '../state/station';
+import { senderOf } from '../lib/wishlist';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { coreText } from '../lib/coreText';
@@ -38,7 +40,7 @@ export function dxpedList(items: Dxpedition[], heard: Set<string>, day: string, 
 }
 
 /** Il calendario delle DXpedition (NG3K) accanto ai CQ: quelle in onda, quelle sentite adesso evidenziate, e lo storico da scorrere. */
-export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays = 30 }: { heardCalls: string[]; foxCalls?: string[]; keepDays?: number; /** Quanti giorni in anticipo mostrare quelle in arrivo. */ soonDays?: number }) {
+export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays = 30, onCall }: { heardCalls: string[]; foxCalls?: string[]; keepDays?: number; /** Quanti giorni in anticipo mostrare quelle in arrivo. */ soonDays?: number; /** Doppio clic su una spedizione sentita: la si chiama (come il doppio clic in Attivita' di banda). */ onCall?(decodeId: number): void }) {
   const t = useT();
   // finche' il core non ha ancora scaricato il calendario si richiede spesso; poi ogni 10 minuti
   const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
@@ -55,6 +57,12 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
   }
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays, soonDays);
   const client = useQueryClient();
+  const clickTimer = useRef<number | undefined>(undefined);
+  // sentita da me: l'ultimo messaggio ricevuto da quella stazione (ora, segnale, frequenza) e la frequenza della radio
+  const decodes = useStation((st) => st.decodes);
+  const dial = useStation((st) => st.status?.dial_hz ?? 0);
+  const mode = useStation((st) => st.status?.mode ?? '');
+  const heardFrom = (call: string) => decodes.find((d) => d.id >= 0 && senderOf(d.text)?.call.toUpperCase() === call.toUpperCase());
   // le DXpedition di paesi che non ho ancora lavorato: l'elenco si salva con le impostazioni, cosi' l'agente nel tray (anche con
   // Aurora chiusa) avvisa solo per quelle
   const matrix = useQuery({ queryKey: ['dxcc-matrix-all'], queryFn: () => getDxccMatrix(), staleTime: 30 * 60_000, retry: false });
@@ -103,9 +111,19 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
           <li
             key={`${d.call}-${d.start}`}
             className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}${onAir.has(d.call.toUpperCase()) ? ' dxped-item--onair' : ''}`}
-            title={t('tip.dxp.open')}
             tabIndex={0}
-            onClick={() => setOpen(d)}
+            title={d.heard && onCall ? t('tip.dxp.call') : t('tip.dxp.open')}
+            onClick={() => {
+              // un clic apre la scheda; un doppio clic su una spedizione sentita la chiama (la scheda allora non si apre)
+              window.clearTimeout(clickTimer.current);
+              clickTimer.current = window.setTimeout(() => setOpen(d), 260);
+            }}
+            onDoubleClick={() => {
+              window.clearTimeout(clickTimer.current);
+              const h = d.heard ? heardFrom(d.call) : undefined;
+              if (h && onCall) onCall(h.id);
+              else setOpen(d);
+            }}
             onKeyDown={(e) => e.key === 'Enter' && setOpen(d)}
           >
             <div className="dxped-line">
@@ -123,6 +141,24 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
                 {d.heard ? t('dxp.heard') : d.state === 'active' ? t('dxp.until', { date: short(d.end) }) : d.state === 'soon' ? t('dxp.from', { date: short(d.start) }) : t('dxp.ended', { date: short(d.end) })}
               </span>
             </div>
+            {(() => {
+              // sentita da me in Attivita' di banda (non spottata): dove, quando e con che segnale
+              if (onAir.has(d.call.toUpperCase())) return null;
+              const h = d.heard ? heardFrom(d.call) : undefined;
+              if (!h) return null;
+              const sec = Math.floor((h.time_ms % 86_400_000) / 1000);
+              const hhmm = `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
+              return (
+                <div className="dxped-onair dxped-heard-line">
+                  <span className="dxped-onair-dot dxped-heard-dot" aria-hidden="true" />
+                  <b>{t('dxp.heardByMe')}</b>
+                  {dial > 0 ? <span className="data">{((dial + h.freq_hz) / 1e6).toFixed(4)} MHz</span> : null}
+                  {mode ? <span className="data">{mode}</span> : null}
+                  <span className="data">{h.snr} dB</span>
+                  <span className="muted">{hhmm} UTC</span>
+                </div>
+              );
+            })()}
             {(() => {
               // spottata adesso: una riga sua sotto il nominativo (mai sopra il testo), con frequenza, modo e da quanto
               const sp = onAir.get(d.call.toUpperCase());
