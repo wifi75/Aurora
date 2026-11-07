@@ -1,8 +1,5 @@
 # Changelog
 
-## Non rilasciato
-- **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
-
 ## 0.11.188 - 2026-11-07
 - **Comandi**: messaggi come toast (niente `live-note` sotto i pulsanti), nessun avviso per frequenze e interruttori; pulsanti `flex: 0 1 auto` che si stringono invece di uscire dal bordo.
 - **README**: badge VirusTotal e analisi antivirus degli installatori.
@@ -121,6 +118,7 @@
 - **Attivita' di banda**: etichette piu' strette (4,3rem, 8,5 px) e centrate; lo spazio va al messaggio e a bandiera e paese (paese 11 px, bandiera piu' grande).
 - **Schede**: bordo viola di Aurora.
 - **Tema chiaro**: la riga in trasmissione ha il testo scuro (prima bianco, illeggibile).
+- **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 - **Impostazioni**: titolo «Funzioni di Aurora» e nome della scheda aperta piu' evidenti.
 - Prova locale: filigrana «PROVA LOCALE» e pagina «Agente nel tray» (prototipo) solo nella grafica compilata con `VITE_AURORA_PROVA=1`.
 

@@ -4,7 +4,7 @@ Stato al 2026-11-07, versione 0.11.188. Per riprendere il lavoro leggi anche `do
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
-- Core Rust (workspace `core/`, Tokio/Axum), interfaccia React + TypeScript + Vite, cascata WebGPU con ripiego WebGL2, PWA per il telefono. Guscio desktop Tauri 2 ancora da fare. Database SQLite.
+- Core Rust (workspace `core/`, Tokio/Axum), interfaccia React + TypeScript + Vite, cascata WebGPU con ripiego WebGL2, PWA per il telefono. Programma per Windows e Linux con il guscio Tauri 2 (`desktop/src-tauri`). Database SQLite.
 - Nessun login a password: dispositivi associati con un codice monouso (durata scelta dall'operatore, 1-60 minuti, predefinito 10). Per le prove esiste l'accesso senza codice, solo rete di casa, mai da proxy.
 - Grafica: "Notte radio" con vetro traslucido; colori dei messaggi come le 17 categorie di JTDX, configurabili.
 
@@ -12,7 +12,7 @@ Stato al 2026-11-07, versione 0.11.188. Per riprendere il lavoro leggi anche `do
 - Le build (`rilascio-windows.ps1`, `cargo build`) si avviano a priorita' Idle: sullo stesso PC Aurora e' in onda e una build a 18 job faceva andare a scatti la cascata.
 - `rilascio-windows.ps1` va lanciato con **pwsh** (PowerShell 7): avviato con `powershell.exe` (5.1) da questa sessione si ferma al passo di Hamlib perche' non trova `Get-FileHash`, senza scrivere nulla nel log normale (l'errore e' solo in `rilascio.err`).
 - Conferme: `askConfirm()` in `components/ConfirmHost.tsx` crea da sola una finestra nella grafica di Aurora (mai `window.confirm`).
-- Bande aperte mostra «Continenti che ti ascoltano» (`continentAt` in `lib/psk.ts`) e i record di distanza di oggi e degli ultimi 7 giorni (localStorage `aurora-record-distanza`, salvato in un effetto); la mini-mappa e' stata tolta. Il display in alto si allinea al pannello piu' a destra della prima fila (`alignDisplay` in `pages/Live.tsx`).
+- Bande aperte (`components/BandsOpen.tsx`) mostra le bande e fino a 5 stazioni piu' lontane che ti ricevono (PSK Reporter); la quarta e la quinta solo se entrano nella scheda. Sotto, nel blocco `cmds` a parte, i Comandi (`TxCommands.tsx`); continenti e record di distanza sono stati tolti. Il display in alto si allinea al pannello piu' a destra della prima fila (`alignDisplay` in `pages/Live.tsx`).
 - Scorrimento su schermo largo (da 64rem): solo la Stazione (`.app-main:has(> .live)`) resta tutta nella finestra con `overflow: hidden`; le altre pagine scorrono dentro `.app-main` (`bozze.css`). Prima il blocco valeva per tutte e la parte sotto di Fox e Propagazione restava nascosta (corretto nella 0.11.164).
 - Dal 2026-11-07 la prova si fa **nel browser** e l'Aurora installata resta sempre quella ufficiale: icona «Aurora - Prova locale» sul desktop (`D:\progetti\aurora-prova\avvia-prova.cmd`, configurazione `vite.prova.config.ts` fuori dal repository): `http://localhost:5173` con i dati veri dell'Aurora installata (proxy verso 8787), filigrana «PROVA LOCALE» solo li', configurazione del PC letta ma mai riscritta (`keepSynced` spento con `VITE_AURORA_PROVA=1`). `AURORA_UI_DIR` in `aurora.env` non si usa piu' (si rimetteva dopo i rilasci e l'app installata ripartiva con la grafica di prova).
 - `app/vite.config.ts` fa il proxy con `xfwd`: il core lo vede come proxy e chiede il codice di associazione. Per entrare senza codice dal PC si usa una copia della configurazione **senza** `xfwd`, tenuta fuori dal repository.
@@ -47,6 +47,10 @@ Stato al 2026-11-07, versione 0.11.188. Per riprendere il lavoro leggi anche `do
 - La Stazione resta bloccata con le misure fisse (`aurora-board`) finche' nessuna scheda e' staccata o nascosta. Con almeno una staccata (`detachedItems`) o nascosta, `Live.tsx` sblocca la `GridBoard`: le altre si spostano e si ridimensionano e le misure vanno in `aurora-board-staccate`, una disposizione per ogni insieme di id staccati (chiave: id in ordine, separati da virgola). Rimesse tutte, torna la disposizione bloccata, intatta.
 - Il blocco `cmds` (Comandi) non si stacca. Il blocco `dxmap` della Stazione e' Bande aperte (nome storico): staccato diventa l'elemento `bands`; l'elemento `dxmap` e' la pagina Mappa DX e non toglie niente dalla Stazione (fino alla 0.11.185 i due si confondevano).
 - Aperto: finestre che restano vuote dopo la chiusura nel programma per Windows (vedi `docs/mancante.md`).
+
+## Rilascio e antivirus (dal 2026-11-07, 0.11.187)
+- Dopo ogni `gh release create`: Windows Defender (`MpCmdRun.exe -Scan -ScanType 3 -File <setup> -DisableRemediation`) e VirusTotal (scheda URL con il link di download di GitHub, risultato su `/gui/file/<sha256>`). Poi badge e frase nei 6 README e riga «Analisi antivirus» nelle note della release. La frase dei README e' una promessa pubblica: una release senza analisi la rende falsa.
+- L'installatore non e' firmato: gli avvisi di SmartScreen e qualche falso positivo vengono da li'.
 
 ## Avvisi della stazione
 - `DiagnosisBar.tsx`: schede in basso a destra calcolate da `lib/diagnosis.ts`. Per `audio_loss` (blocchi audio persi, notizia del core da `audio-spectrum/src/capture.rs`) il testo e «Come risolvere» aprono `AudioLossHelp.tsx` con i sei controlli sul PC (risparmio USB, combinazione energia, cavo e porta, 48 kHz 16 bit e niente miglioramenti audio, altri programmi, memoria), su due colonne da 900 px in su (0.11.177). E' un problema del PC dell'utente, non di Aurora.
