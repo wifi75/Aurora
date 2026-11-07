@@ -985,3 +985,10 @@ html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10;
 
 /* le mie trasmissioni uguali raccolte in una riga: «×N» piccolo accanto a Tx */
 .decode-row--tx .tx-rep { flex: 0 0 auto; margin-left: 6px; padding: 0 5px; border-radius: 8px; font-size: 0.78em; font-weight: 700; line-height: 1.5; background: color-mix(in srgb, currentColor 12%, transparent); opacity: 0.85; }
+
+/* scheda DXCC nel pannello Log un po' piu' piccola (richiesta del proprietario): nominativo e paese, bandiera, campo Prova, etichette */
+.dock-panel--log .dxcc-card--panel .dxcc-subject-call { font-size: 13.5px; }
+.dock-panel--log .dxcc-card--panel .dxcc-subject-call .dxcc-flag { width: 1.4em; height: 1em; }
+.dock-panel--log .dxcc-card--panel .dxcc-try { min-height: 22px !important; height: 22px; font-size: 11.5px; }
+.dock-panel--log .dxcc-card--panel .dxcc-caption { font-size: 11px; }
+.dock-panel--log .dxcc-card--panel .dxcc-grid td.dxcc-cell { height: 16px !important; font-size: 12.5px; }
