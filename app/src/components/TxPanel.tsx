@@ -164,16 +164,16 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
         <>
           <div className="tx-dx">
             {pendingDx || status.dx_call ? <DxPill status={status} /> : <strong className="data tx-dx-call">—</strong>}
-            {/* la coda accanto al DX, tra il blocchetto giallo e RX/TX: compatta, al massimo 3 nominativi e «+n» per gli altri */}
+            {/* la coda accanto al DX, subito prima di RX/TX: in elenco, al massimo 4 nominativi; «+n» per gli altri accanto al quarto */}
             {status.queue && status.queue.length > 0 ? (
               <span className="tx-queue tx-queue--side" title={`${t('tip.tx.queue')}: ${status.queue.join(', ')}`}>
-                {status.queue.slice(0, 3).map((call, i) => (
+                {status.queue.slice(0, 4).map((call, i) => (
                   <span key={call} className="tx-queue-item" title={t('tip.row.queuedPos', { n: i + 1 })}>
                     <span className="queue-dot">{i + 1}</span>
                     <span className="data">{call}</span>
+                    {i === 3 && (status.queue?.length ?? 0) > 4 ? <span className="tx-queue-more">+{(status.queue?.length ?? 0) - 4}</span> : null}
                   </span>
                 ))}
-                {status.queue.length > 3 ? <span className="tx-queue-more">+{status.queue.length - 3}</span> : null}
               </span>
             ) : null}
             {/* accanto al DX: RX verde in ascolto; in onda TX rosso lampeggiante, ed e' anche lo STOP (un clic ferma la trasmissione) */}

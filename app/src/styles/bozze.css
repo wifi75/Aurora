@@ -1067,5 +1067,13 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-panel--tx .tx-main.tx-split > .tx-left > .tx-list { margin-top: auto !important; }
 .dock-panel--tx .tx-main.tx-split > .tx-levels { margin-bottom: auto !important; }
 /* la riga del DX ha sempre l'altezza del riquadro giallo, anche vuota: quando compare il DX (trasmissione) il resto non scende */
-.dock-panel--tx .tx-dx { min-height: 40px !important; box-sizing: border-box; }
+.dock-panel--tx .tx-dx { min-height: 50px !important; box-sizing: border-box; }
 .tx-dx .rxtx-flag[data-state='rx'] { cursor: pointer; user-select: none; }
+
+/* coda delle stazioni accanto al DX: in elenco (fino a 4, una sotto l'altra, 12 px ciascuna: la riga del DX e' alta sempre 50 px), numero attaccato
+   al nominativo, subito prima di RX/TX a destra */
+.dock-panel--tx .tx-dx .tx-queue--side { flex-direction: column !important; align-items: flex-start !important; justify-content: center; gap: 0 !important; margin-left: auto !important; flex: none !important; overflow: visible !important; }
+.dock-panel--tx .tx-dx .tx-queue--side .tx-queue-item { gap: 4px !important; font-size: 11px !important; line-height: 12px !important; height: 12px; }
+.dock-panel--tx .tx-dx .tx-queue--side .queue-dot { width: 11px !important; height: 11px !important; font-size: 8px !important; margin: 0 !important; line-height: 11px !important; }
+.dock-panel--tx .tx-dx .tx-queue--side .tx-queue-more { font-size: 10px; line-height: 12px; margin-left: 3px; }
+.dock-panel--tx .tx-dx .tx-queue--side + .rxtx-flag { margin-left: 8px !important; }
