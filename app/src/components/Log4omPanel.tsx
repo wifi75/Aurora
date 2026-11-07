@@ -18,9 +18,12 @@ export function Log4omPanel() {
   // appena un QSO viene messo a log il pannello si rilegge subito, senza aspettare il giro dei 10 secondi
   const logged = useStation((st) => st.qsosLogged);
   useEffect(() => {
-    if (logged > 0) {
-      void client.invalidateQueries({ queryKey: ['log4om'] });
-    }
+    if (logged <= 0) return;
+    // il QSO arriva nel database di Log4OM qualche istante dopo (ricerca del nome, invio, scrittura): si rilegge subito e poi ancora
+    // dopo 1,5, 4 e 8 secondi, invece di aspettare il giro dei 10 secondi
+    void client.invalidateQueries({ queryKey: ['log4om'] });
+    const timers = [1500, 4000, 8000].map((ms) => window.setTimeout(() => void client.invalidateQueries({ queryKey: ['log4om'] }), ms));
+    return () => timers.forEach((id) => window.clearTimeout(id));
   }, [logged, client]);
   // un QSO nuovo in cima: tutta la riga lampeggia tre volte, piano
   const topKey = log.data?.qsos[0] ? `${log.data.qsos[0].date}-${log.data.qsos[0].call}` : null;

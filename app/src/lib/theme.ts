@@ -22,6 +22,39 @@ export function saveTheme(storage: WritableStorage, theme: Theme): void {
   }
 }
 
+/** La scelta dell'utente: un tema fisso o «automatico» (segue il tema chiaro/scuro del sistema). */
+export type ThemeChoice = Theme | 'auto';
+
+export function readThemeChoice(storage: ReadableStorage): ThemeChoice {
+  try {
+    const v = storage?.getItem(KEY);
+    return v === 'light' || v === 'auto' ? v : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+export function saveThemeChoice(storage: WritableStorage, choice: ThemeChoice): void {
+  try {
+    storage?.setItem(KEY, choice);
+  } catch {
+    // senza archivio la scelta non viene ricordata
+  }
+}
+
+/** Il tema del sistema (Windows, telefono): scuro se non si sa. */
+export function systemTheme(): Theme {
+  try {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+export function resolveTheme(choice: ThemeChoice): Theme {
+  return choice === 'auto' ? systemTheme() : choice;
+}
+
 export function applyTheme(root: HTMLElement, theme: Theme): void {
   root.dataset.theme = theme;
 }

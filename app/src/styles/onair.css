@@ -6645,3 +6645,136 @@
   background: color-mix(in srgb, var(--accent, #0f9d6b) 18%, #fff) !important;
   color: #063a28 !important;
 }
+
+/* Attivita' di banda: etichette (NUOVA STAZ., GIA' LAVORATA...) piu' strette, tutte della stessa larghezza, a destra della riga */
+.dock-panel--all .decode-list .badge.badge-cell,
+.dock-panel--cq .decode-list .badge.badge-cell {
+  justify-self: end;
+  width: min(100%, 4.6rem);
+  min-width: 0;
+  padding-inline: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* lo spazio tolto alle etichette va a bandiera e paese: colonna delle etichette fissa a 4.6rem, il resto al paese */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, 7.8rem) minmax(5rem, 1fr) 4.6rem;
+  }
+}
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  grid-template-columns: 1.5rem minmax(0, 1fr) 3.2rem;
+}
+/* bandiera un po' piu' grande e nome del paese piu' leggibile */
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  width: 1.25em;
+  font-size: 11px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 10.2px;
+}
+
+/* bandiera e paese 7 px piu' a destra */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  padding-left: 7px;
+}
+
+/* colonna del paese 10 px piu' stretta (km piu' vicini al paese, 10 px in piu' prima delle etichette) */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  margin-right: 10px;
+}
+
+/* colonna di bandiera e paese altri 20 px piu' stretta (in tutto 30 px liberi prima delle etichette) */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  margin-right: 30px;
+}
+
+/* i 30 px tolti a bandiera e paese vanno al messaggio (dati del contatto) */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  margin-right: 0;
+}
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, calc(7.8rem + 30px)) minmax(5rem, 1fr) 4.6rem;
+  }
+}
+
+/* bandiera e paese 5 px piu' a sinistra */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  padding-left: 2px;
+}
+
+/* paese e bandiera 0,2 px piu' grandi */
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  font-size: 11.2px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 10.4px;
+}
+
+/* bandiera e paese altri 5 px a sinistra */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  padding-left: 0;
+  margin-left: -3px;
+}
+
+/* paese e bandiera altri 0,3 px piu' grandi */
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  font-size: 11.5px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 10.7px;
+}
+
+/* bandiera e paese 2 px piu' a sinistra e 0,3 px piu' grandi */
+.dock-panel--all .decode-list .decode-row .decode-where,
+.dock-panel--cq .decode-list .decode-row .decode-where {
+  margin-left: -5px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  font-size: 11.8px;
+}
+.dock-panel--all .decode-list .decode-row .decode-where .w-country .decode-country,
+.dock-panel--cq .decode-list .decode-row .decode-where .w-country .decode-country {
+  font-size: 11px;
+}
+
+/* etichetta centrata nella sua colonna */
+.dock-panel--all .decode-list .badge.badge-cell,
+.dock-panel--cq .decode-list .badge.badge-cell {
+  justify-self: center;
+  text-align: center;
+}
+
+/* dati del contatto 5 px piu' larghi, bandiera e paese 5 px piu' stretti */
+@container (max-width: 40rem) {
+  .dock-panel--all .decode-list .decode-row,
+  .dock-panel--cq .decode-list .decode-row {
+    grid-template-columns: 3.6rem 1.8rem minmax(5rem, calc(7.8rem + 35px)) minmax(5rem, 1fr) 4.6rem;
+  }
+}
+
+/* etichette di Attivita' di banda: carattere 0,5 px piu' piccolo e riquadro un po' piu' stretto */
+.dock-panel--all .decode-list .badge.badge-cell,
+.dock-panel--cq .decode-list .badge.badge-cell {
+  font-size: 8.5px;
+  width: min(100%, 4.3rem);
+}
