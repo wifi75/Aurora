@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.187',
+    released: '2026-11-07T18:50:05Z',
+    kind: 'new',
+    title: ['Tune e Spot DX nei Comandi', 'Tune and Spot DX in Commands', 'Tune und DX-Spot in Befehle', 'Tune et Spot DX dans Commandes', 'Tune y Spot DX en Comandos', 'Tune e Spot DX nos Comandos'],
+    text: [
+      "Il pulsante Tune compare di nuovo nei Comandi quando lo accendi in Impostazioni > Generali > Schermo, e diventa rosso mentre trasmette la portante. Se lo spot su DXSummit è acceso c'è anche «Spot DX»; Log QSO compare solo se lo scegli. Nella Mappa DX la linea «chi chiama chi» parte anche da te verso la stazione che stai chiamando, e la legenda sta in una riga sola in basso.",
+      "The Tune button shows again in Commands when you turn it on in Settings > General > Screen, and turns red while sending the carrier. If DXSummit spotting is on there is also «Spot DX»; Log QSO shows only if you choose it. On the DX map the «who calls whom» line also goes from you to the station you are calling, and the legend sits on one line at the bottom.",
+      "Die Tune-Taste erscheint wieder in Befehle, wenn du sie unter Einstellungen > Allgemein > Bildschirm einschaltest, und wird rot, solange der Träger gesendet wird. Ist DXSummit an, gibt es auch «DX spotten»; Log QSO erscheint nur, wenn du es wählst. Auf der DX-Karte geht die Linie «wer ruft wen» auch von dir zur gerufenen Station, und die Legende steht in einer Zeile unten.",
+      "Le bouton Tune réapparaît dans Commandes quand tu l'actives dans Réglages > Général > Écran, et devient rouge pendant l'émission de la porteuse. Si le spot DXSummit est activé il y a aussi « Spot DX » ; Log QSO n'apparaît que si tu le choisis. Sur la carte DX la ligne « qui appelle qui » part aussi de toi vers la station que tu appelles, et la légende tient sur une ligne en bas.",
+      "El botón Tune vuelve a aparecer en Comandos cuando lo activas en Ajustes > General > Pantalla, y se pone rojo mientras emite la portadora. Si el spot en DXSummit está activo también está «Spot DX»; Log QSO aparece solo si lo eliges. En el mapa DX la línea «quién llama a quién» sale también de ti hacia la estación que llamas, y la leyenda va en una sola línea abajo.",
+      "O botão Tune volta a aparecer nos Comandos quando o ligas em Definições > Geral > Ecrã, e fica vermelho enquanto emite a portadora. Se o spot no DXSummit estiver ligado há também «Spot DX»; Log QSO só aparece se o escolheres. No mapa DX a linha «quem chama quem» parte também de ti para a estação que estás a chamar, e a legenda fica numa só linha em baixo.",
+    ],
+  },
+  {
     version: '0.11.186',
     released: '2026-11-07T17:56:12Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "La fenêtre de l’afficheur détaché se resserre exactement autour de l’afficheur : plus de fond noir en trop dessous ou à côté. En la redimensionnant par les bords ou avec la poignée, la fenêtre suit l’afficheur en proportion.",
       "La ventana de la pantalla separada se ajusta exactamente a la pantalla: ya no queda fondo negro de más debajo o al lado. Al redimensionarla desde los bordes o con el asa, la ventana sigue a la pantalla en proporción.",
       "A janela do ecrã destacado ajusta-se exatamente ao ecrã: já não sobra fundo preto por baixo ou ao lado. Ao redimensioná-la pelas bordas ou com a pega, a janela acompanha o ecrã em proporção.",
-    ],
-  },
-  {
-    version: '0.11.146',
-    released: '2026-11-05T17:33:05Z',
-    kind: 'new',
-    title: ['Il display da solo, senza finestra intorno', 'The display alone, without a window around it', 'Die Anzeige allein, ohne Fenster drumherum', 'L’afficheur seul, sans fenêtre autour', 'La pantalla sola, sin ventana alrededor', 'O ecrã sozinho, sem janela à volta'],
-    text: [
-      "Portato su un altro schermo, il display della radio non ha più la cornice di Windows né la barra del titolo: si vede solo il display. Lo sposti trascinandolo dal bordo o dalla presa ⠿ che compare in alto a sinistra, lo ridimensioni dai bordi (in proporzione) o con la maniglia, e ⤓ lo rimette al suo posto. Lo stesso per ogni pannello staccato: niente cornice, si sposta dalla sua barretta. Solo la dashboard a blocchi resta una finestra normale.",
-      "Moved to another screen, the radio display no longer has the Windows frame or title bar: you only see the display. Drag it by the edge or by the ⠿ grip that appears top-left, resize it from the edges (in proportion) or with the handle, and ⤓ puts it back. Windows with several panels and the dashboard stay normal windows.",
-      "Auf einen anderen Bildschirm verschoben hat die Radioanzeige keinen Windows-Rahmen und keine Titelleiste mehr: man sieht nur die Anzeige. Verschieben am Rand oder am Griff ⠿ oben links, Größe an den Rändern (proportional) oder am Griff ändern, ⤓ holt sie zurück. Fenster mit mehreren Feldern und das Dashboard bleiben normale Fenster.",
-      "Déplacé sur un autre écran, l’afficheur de la radio n’a plus le cadre de Windows ni la barre de titre : on ne voit que l’afficheur. Fais-le glisser par le bord ou par la poignée ⠿ en haut à gauche, redimensionne-le par les bords (en proportion) ou avec la poignée, et ⤓ le remet en place. Les fenêtres à plusieurs panneaux et le tableau de bord restent des fenêtres normales.",
-      "Llevada a otra pantalla, la pantalla de la radio ya no tiene el marco de Windows ni la barra de título: solo se ve la pantalla. Muévela arrastrando el borde o el asa ⠿ que aparece arriba a la izquierda, redimensiónala desde los bordes (en proporción) o con el asa, y ⤓ la devuelve. Las ventanas con varios paneles y el panel de bloques siguen siendo ventanas normales.",
-      "Levado para outro monitor, o ecrã do rádio já não tem a moldura do Windows nem a barra de título: só se vê o ecrã. Move-o arrastando a borda ou a pega ⠿ no canto superior esquerdo, redimensiona-o pelas bordas (em proporção) ou com a pega, e ⤓ volta a pô-lo no lugar. As janelas com vários painéis e o painel de blocos continuam a ser janelas normais.",
     ],
   },
 ];

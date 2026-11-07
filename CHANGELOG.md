@@ -3,6 +3,11 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.187 - 2026-11-07
+- **Comandi**: Tune di nuovo disegnato (`prefs.cmdTune`, rosso mentre trasmette), Spot DX su DXSummit (`postSpotDxsummit`, solo con `AllowSpotsDXSummit`), Log QSO solo con `prefs.cmdLogQso` (prima sempre visibile); sei pulsanti in una riga.
+- **Mappa DX**: linea da me al DX con Abilita Tx o in trasmissione; legenda in una riga.
+- **Guida**: pannello Comandi descritto com'e' oggi; aiuto DXSummit con il posto giusto del pulsante.
+
 ## 0.11.186 - 2026-11-07
 - **Schede staccate**: con almeno una scheda della Stazione staccata (o nascosta) la pagina si sblocca: spostamento e ridimensionamento delle altre, misure salvate a parte per insieme di schede staccate (`aurora-board-staccate`); rimesse tutte, torna la disposizione bloccata.
 - **Menu per staccare** mai tagliato dalla scheda (`:has(.dock-detach-menu)`).
