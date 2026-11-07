@@ -1,7 +1,7 @@
 # Aurora
 
 [![Download](https://img.shields.io/github/downloads/wifi75/Aurora/total?label=Download&color=2ea44f&logo=github)](https://github.com/wifi75/Aurora/releases)
-[![Sem vírus](https://img.shields.io/badge/Sem%20vírus-0%2F69%20antivírus-2ea44f?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)
+[![Sem vírus](https://img.shields.io/badge/Sem%20vírus-0%20dete%C3%A7%C3%B5es-2ea44f?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)
 ![Visite](https://visitor-badge.laobi.icu/badge?page_id=wifi75.Aurora&left_text=Visite&left_color=%23555&right_color=%238e7bff)
 [![Piattaforma](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20Linux-0078D4?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.md)
 [![Linux](https://github.com/wifi75/Aurora/actions/workflows/linux.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/linux.yml)
@@ -27,7 +27,7 @@
 > ### Baixar o Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Cada instalador é analisado com o [VirusTotal](https://www.virustotal.com) (cerca de 70 antivírus) e o Windows Defender antes de ser publicado: 0.11.188 — 0 deteções em 69 ([resultado](https://www.virustotal.com/gui/file/2ba72993b3ade538bb6a042ccf0b6f1c3557458dfd7de1a3ad6c9597c8c468ca)).
+> Cada instalador é analisado com o [VirusTotal](https://www.virustotal.com) (cerca de 70 antivírus) e o Windows Defender antes de ser publicado: 0.11.188 — nenhum antivírus o deteta ([resultado](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)).
 >
 > **[Instalador para Windows (última versão)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Página da última versão](https://github.com/wifi75/Aurora/releases/latest)
 >

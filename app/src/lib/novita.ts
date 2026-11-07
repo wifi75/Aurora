@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.188',
-    released: '2026-11-07T19:41:25Z',
+    released: '2026-11-07T19:45:14Z',
     kind: 'fixed',
     title: ['Comandi più ordinati', 'Tidier Commands', 'Aufgeräumtere Befehle', 'Commandes plus nettes', 'Comandos más ordenados', 'Comandos mais arrumados'],
     text: [
