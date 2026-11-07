@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.169',
+    released: '2026-11-07T09:34:18Z',
+    kind: 'fixed',
+    title: ['Le decodifiche nuove sempre in vista', 'New decodes always in view', 'Neue Dekodierungen immer sichtbar', 'Nouveaux décodages toujours visibles', 'Decodificaciones nuevas siempre a la vista', 'Novas descodificações sempre à vista'],
+    text: [
+      "Attività di banda e DX Cluster mostrano sempre l'ultima decodifica e l'ultimo spot (prima la lista poteva scendere da sola e sembrare bloccata). Il QSO va a log al primo RRR e compare subito nel Log. Comandi dentro Bande aperte con Hold, Tx/Rx Split, Log QSO e Canc DX. Aurora ricorda la potenza RF scelta e la rimette quando si collega. Le DXpedition spottate adesso sono evidenziate con la frequenza.",
+      "Band activity and DX Cluster always show the latest decode and spot (before, the list could slide down by itself and look stuck). The QSO is logged at the first RRR and shows up in the Log right away. Commands inside Open bands with Hold, Tx/Rx Split, Log QSO and Clear DX. Aurora remembers the chosen RF power and restores it on connect. DXpeditions spotted right now are highlighted with the frequency.",
+      "Bandaktivität und DX-Cluster zeigen immer die neueste Dekodierung und den neuesten Spot (vorher konnte die Liste von selbst nach unten rutschen). Das QSO wird beim ersten RRR geloggt und erscheint sofort im Log. Befehle in «Offene Bänder» mit Hold, Tx/Rx Split, Log QSO und DX löschen. Aurora merkt sich die gewählte HF-Leistung und stellt sie beim Verbinden wieder her. Gerade gespottete DXpeditionen werden mit Frequenz hervorgehoben.",
+      "L’activité de bande et le DX Cluster montrent toujours le dernier décodage et le dernier spot (avant, la liste pouvait descendre seule et sembler bloquée). Le QSO est loggé au premier RRR et apparaît tout de suite dans le Log. Commandes dans Bandes ouvertes avec Hold, Tx/Rx Split, Log QSO et Effacer DX. Aurora retient la puissance RF choisie et la remet à la connexion. Les DXpéditions spottées maintenant sont mises en évidence avec la fréquence.",
+      "La actividad de banda y el DX Cluster muestran siempre la última decodificación y el último spot (antes la lista podía bajar sola y parecer bloqueada). El QSO va al log en el primer RRR y aparece enseguida en el Log. Comandos dentro de Bandas abiertas con Hold, Tx/Rx Split, Log QSO y Borrar DX. Aurora recuerda la potencia RF elegida y la restaura al conectar. Las DXpediciones spoteadas ahora se destacan con la frecuencia.",
+      "A atividade de banda e o DX Cluster mostram sempre a última descodificação e o último spot (antes a lista podia descer sozinha e parecer bloqueada). O QSO vai para o log no primeiro RRR e aparece logo no Log. Comandos dentro de Bandas abertas com Hold, Tx/Rx Split, Log QSO e Limpar DX. O Aurora lembra a potência RF escolhida e repõe-na ao ligar. As DXpedições spotadas agora ficam destacadas com a frequência.",
+    ],
+  },
+  {
     version: '0.11.168',
     released: '2026-11-07T09:06:54Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "L’afficheur de la radio est centré dans l’espace entre la barre du menu et les panneaux, sans chevauchement ni déplacement : façades FT-2000 et IC-7610 avec le même espace dessus et dessous. Avec les afficheurs larges de 90 points la ligne grandit seulement du nécessaire.",
       "La pantalla de la radio queda centrada en el espacio entre la barra del menú y los paneles, sin solaparse ni mover nada: frontales FT-2000 e IC-7610 con el mismo espacio arriba y abajo. Con las pantallas anchas de 90 puntos la fila crece solo lo necesario.",
       "O ecrã do rádio fica centrado no espaço entre a barra do menu e os painéis, sem sobrepor nem mover nada: frontais FT-2000 e IC-7610 com o mesmo espaço em cima e em baixo. Com os ecrãs largos de 90 pontos a linha cresce só o necessário.",
-    ],
-  },
-  {
-    version: '0.11.129',
-    released: '2026-11-04T21:53:24Z',
-    kind: 'fixed',
-    title: ['Frontalini senza spazio vuoto', 'Rig faces without empty space', 'Frontplatten ohne Leerraum', 'Façades sans espace vide', 'Frontales sin espacio vacío', 'Frontais sem espaço vazio'],
-    text: [
-      "I frontalini FT-2000 e IC-7610 hanno l'altezza del loro disegno: niente più striscia vuota sotto e pannelli di nuovo su. In Attività di banda e CQ le colonne della distanza e dell'etichetta sono 7 px più strette, più spazio al messaggio.",
-      "FT-2000 and IC-7610 faces take the height of their drawing: no more empty strip below and the panels back up. In Band activity and CQ the distance and label columns are 7 px narrower, more room for the message.",
-      "Die Frontplatten FT-2000 und IC-7610 haben die Höhe ihrer Zeichnung: kein leerer Streifen mehr darunter, die Felder wieder oben. In Bandaktivität und CQ sind Entfernungs- und Etikettspalte 7 px schmaler, mehr Platz für die Nachricht.",
-      "Les façades FT-2000 et IC-7610 prennent la hauteur de leur dessin : plus de bande vide dessous et les panneaux remontent. Dans Activité de bande et CQ les colonnes distance et étiquette sont plus étroites de 7 px, plus de place au message.",
-      "Los frontales FT-2000 e IC-7610 tienen la altura de su dibujo: ya no hay franja vacía debajo y los paneles vuelven arriba. En Actividad de banda y CQ las columnas de distancia y etiqueta son 7 px más estrechas, más espacio para el mensaje.",
-      "Os frontais FT-2000 e IC-7610 têm a altura do seu desenho: já não há faixa vazia por baixo e os painéis voltam para cima. Na Atividade de banda e CQ as colunas da distância e da etiqueta são 7 px mais estreitas, mais espaço para a mensagem.",
     ],
   },
 ];

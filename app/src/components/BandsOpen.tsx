@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, memo } from 'react';
+import { useMemo, memo } from 'react';
 import { getOnline, getPsk, getSolar } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { gridCenter } from '../lib/geo';
 import { formatDistance, usePrefs } from '../lib/prefs';
-import { conditionGroup, continentAt, latestPerReceiver, pskRows } from '../lib/psk';
-import { browserStorage } from '../lib/theme';
+import { conditionGroup, pskRows } from '../lib/psk';
 import { isNight } from '../lib/terminator';
 import { Conditions } from '../pages/PropagationPage';
 import { useStatusPick } from '../state/station';
@@ -38,30 +37,6 @@ function BandsOpenInner() {
     return out;
   }, [rows]);
 
-  // continenti che ci ascoltano: una stazione ricevente conta una volta, il continente si stima dal suo locatore
-  const continents = useMemo(() => {
-    const out: Record<string, number> = { EU: 0, NA: 0, SA: 0, AF: 0, AS: 0, OC: 0 };
-    for (const r of latestPerReceiver(rows)) {
-      const p = gridCenter(r.locator.slice(0, 6)) ?? gridCenter(r.locator.slice(0, 4));
-      if (!p) continue;
-      const c = continentAt(p.lat, p.lon);
-      out[c] = (out[c] ?? 0) + 1;
-    }
-    return out;
-  }, [rows]);
-  // record di distanza: il piu' lontano di oggi (solo gli spot di oggi UTC: la finestra di PSK Reporter arriva anche a ieri) e degli
-  // ultimi 7 giorni (ricordato giorno per giorno su questo dispositivo)
-  const todayBest = useMemo(() => {
-    const dayStart = Math.floor(Date.now() / 86_400_000) * 86_400;
-    let best: (typeof rows)[number] | null = null;
-    for (const r of rows) {
-      if (r.km === null || r.km === undefined || r.time_s < dayStart) continue;
-      if (!best || r.km > (best.km ?? -1)) best = r;
-    }
-    return best;
-  }, [rows]);
-  const records = useMemo(() => recordsFrom(todayBest), [todayBest]);
-  useEffect(() => saveRecords(records.kept), [records]);
 
   if (online.isError) return <p className="notice">{t('set.loadError')}</p>;
   if (!online.data) return <p className="muted">…</p>;
@@ -96,98 +71,9 @@ function BandsOpenInner() {
           ))}
         </ol>
       )}
-      {online.data.psk ? (
-        <>
-          <h3 className="bands-open-title">{t('bands.continents')}</h3>
-          <div className="bands-open-conts">
-            {(['EU', 'NA', 'SA', 'AF', 'AS', 'OC'] as const).map((c) => (
-              <div key={c} className={`bands-open-cont${continents[c] ? ' bands-open-cont--on' : ''}`} title={t(`bands.cont.${c}`)}>
-                <b>{c}</b>
-                <span className="data">{continents[c]}</span>
-              </div>
-            ))}
-          </div>
-          <h3 className="bands-open-title">{t('bands.records')}</h3>
-          <div className="bands-open-records">
-            {[
-              { label: t('bands.today'), r: records.today },
-              { label: t('bands.week'), r: records.week },
-            ].map(({ label, r }) => (
-              <div key={label} className="bands-open-record">
-                <span className="muted">{label}</span>
-                {r ? (
-                  <>
-                    <b className="data">{r.call}</b>
-                    <span className="muted">{r.band}</span>
-                    <span className="data bands-open-km">{formatDistance(r.km, prefs.distanceUnit)}</span>
-                  </>
-                ) : (
-                  <span className="muted">—</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      ) : null}
+      {/* continenti e record di distanza tolti: al loro posto, nella Stazione, i Comandi (scelta del proprietario) */}
     </div>
   );
-}
-
-interface DistanceRecord {
-  call: string;
-  band: string;
-  km: number;
-}
-
-const RECORDS_KEY = 'aurora-record-distanza';
-
-function isRecord(v: unknown): v is DistanceRecord {
-  if (typeof v !== 'object' || v === null) return false;
-  const r = v as Record<string, unknown>;
-  return typeof r.call === 'string' && typeof r.band === 'string' && typeof r.km === 'number' && Number.isFinite(r.km);
-}
-
-/** I record salvati giorno per giorno; un archivio rovinato o scritto da un'altra versione vale come vuoto (non deve far cadere la scheda). */
-function loadRecords(): Record<string, DistanceRecord> {
-  const out: Record<string, DistanceRecord> = {};
-  try {
-    const raw: unknown = JSON.parse(browserStorage()?.getItem(RECORDS_KEY) ?? '{}');
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return out;
-    for (const [day, v] of Object.entries(raw)) if (/^\d{4}-\d{2}-\d{2}$/.test(day) && isRecord(v)) out[day] = v;
-  } catch {
-    // archivio illeggibile: si riparte da zero
-  }
-  return out;
-}
-
-function saveRecords(kept: Record<string, DistanceRecord>): void {
-  try {
-    browserStorage()?.setItem(RECORDS_KEY, JSON.stringify(kept));
-  } catch {
-    // senza archivio il record vale finche' la pagina resta aperta
-  }
-}
-
-/**
- * Il record di oggi e quello degli ultimi 7 giorni di calendario (oggi compreso): ogni giorno si ricorda il piu' lontano visto, su questo
- * dispositivo. Non scrive niente: `kept` e' quello da salvare (lo fa un effetto, fuori dal disegno).
- */
-function recordsFrom(best: { receiver: string; band: string | null; km: number | null } | null): {
-  today: DistanceRecord | null;
-  week: DistanceRecord | null;
-  kept: Record<string, DistanceRecord>;
-} {
-  const day = new Date().toISOString().slice(0, 10);
-  const firstDay = new Date(Date.now() - 6 * 86_400_000).toISOString().slice(0, 10);
-  const saved = loadRecords();
-  const old = saved[day];
-  if (best && best.km !== null && (!old || best.km > old.km)) {
-    saved[day] = { call: best.receiver, band: best.band ?? '', km: best.km };
-  }
-  const kept: Record<string, DistanceRecord> = {};
-  for (const [d, v] of Object.entries(saved)) if (d >= firstDay && d <= day) kept[d] = v;
-  const week = Object.values(kept).reduce<DistanceRecord | null>((a, b) => (!a || b.km > a.km ? b : a), null);
-  return { today: kept[day] ?? null, week, kept };
 }
 
 /** Senza proprieta': si ridisegna solo per i suoi dati, non ogni volta che si ridisegna la Stazione. */

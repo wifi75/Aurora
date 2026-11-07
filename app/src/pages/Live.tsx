@@ -314,7 +314,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
     id === 'dxmap' ? (
-      <BandsOpen />
+      // Bande aperte con i Comandi sotto (al posto di continenti e record: i Comandi servono di piu')
+      <div className="bands-with-cmds">
+        <BandsOpen />
+        <TxCommands txAllowed={info.data?.tx_allowed ?? false} />
+      </div>
     ) : id === 'tx' ? (
       <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />
     ) : (

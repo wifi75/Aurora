@@ -27,6 +27,8 @@
 
 /// Chiusure (RRR/RR73/73) ripetute al massimo per un QSO gia' a log quando non c'e' un limite scelto.
 const LOGGED_CLOSING_TRIES: u32 = 3;
+/// Quante volte si ripete RRR a chi continua a mandare il suo R+rapporto dopo che il QSO e' gia' a log.
+const RRR_REPEATS: u32 = 5;
 
 use std::collections::{HashMap, HashSet};
 
@@ -60,6 +62,8 @@ struct QsoLogInfo {
 
 /// La sequenza automatica dei QSO.
 pub struct Sequencer {
+    /// RRR ripetuti a un QSO gia' a log (vedi `RRR_REPEATS`).
+    rrr_repeats: u32,
     mode: Mode,
     my: Station,
     my_base: String,
@@ -151,6 +155,7 @@ impl Sequencer {
         hist.set_own(&opts.my_continent, &opts.my_prefix, &my.grid, opts.strict_directional_cq);
         let tx_hz = opts.tx_freq_hz as i32;
         Ok(Sequencer {
+            rrr_repeats: 0,
             mode,
             my_base: base_call(&my.call),
             my,
@@ -1084,7 +1089,21 @@ impl Sequencer {
                     }
                     self.txb(3);
                 }
-                Status::Rrreport => self.txb(4),
+                Status::Rrreport => {
+                    // QSO gia' a log (rapporti scambiati) ma l'altro continua a mandare il suo R+rapporto perche' non riceve il nostro RRR:
+                    // si risponde ancora, al massimo RRR_REPEATS volte, poi si smette (prima si continuava all'infinito)
+                    let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
+                    if logged {
+                        self.rrr_repeats += 1;
+                    } else {
+                        self.rrr_repeats = 0;
+                    }
+                    if logged && self.rrr_repeats > RRR_REPEATS {
+                        self.auto_stop_tx(StopReason::QsoFinished, false);
+                    } else {
+                        self.txb(4);
+                    }
+                }
                 Status::Rrr => self.txb(5),
                 Status::Rrr73 => {
                     if !hound {
@@ -1105,7 +1124,10 @@ impl Sequencer {
                 // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra e ci si ferma senza mandare un altro 73 (scelta del
                 // proprietario: JTDX e WSJT-X rispondono ancora 73 con il Tx5)
                 Status::R73 if self.opts.use_rrr && self.ntx == 4 => {
-                    self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    // gia' a log dal nostro primo RRR: non si registra una seconda volta
+                    if self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call) {
+                        self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    }
                     if self.opts.autolog {
                         if self.enabled || self.rx_transmitting {
                             self.halt_tx_reason(StopReason::QsoFinished);
@@ -1246,9 +1268,9 @@ impl Sequencer {
         let plain = text.replace(['<', '>'], "");
         let parts: Vec<&str> = plain.split_whitespace().collect();
         let progress_roger = (3..=5).contains(&n);
-        let is_73 = progress_roger && (parts.contains(&"73") || parts.contains(&"RR73"));
+        let is_73 = progress_roger && (parts.contains(&"73") || parts.contains(&"RR73") || parts.contains(&"RRR"));
         let last_parts: Vec<&str> = self.current_message.split_whitespace().collect();
-        let last_is_73 = last_parts.contains(&"73") || last_parts.contains(&"RR73");
+        let last_is_73 = last_parts.contains(&"73") || last_parts.contains(&"RR73") || last_parts.contains(&"RRR");
         self.last_message_sent = std::mem::take(&mut self.current_message);
         self.current_message = plain.clone();
         let sent_first_73 = is_73

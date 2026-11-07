@@ -20,6 +20,9 @@ import { bandOf } from '../lib/format';
 import { usePrefs } from '../lib/prefs';
 
 const MAX_DECODES = 200;
+/** Decodifiche arrivate e non ancora aggiunte alla lista (vedi il caso «decode»). */
+let pendingDecodes: DecodedMessage[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const MAX_TX_LOG = 50;
 const MAX_WANTED = 20;
 /** Quanto resta la stazione scelta col doppio clic se il motore non la conferma. */
@@ -68,6 +71,8 @@ interface StationState {
   clearedDx: { call: string; until: number } | null;
   /** Quanti QSO sono stati registrati da quando la pagina e' aperta: chi mostra dati del log (scheda DXCC) li rilegge quando cambia. */
   qsosLogged: number;
+  /** I QSO appena messi a log (dall'evento), per mostrarli subito nel pannello Log prima che Log4OM li scriva. */
+  justLogged: { call: string; band: string; mode: string; rst_sent: string; rst_rcvd: string; time_ms: number; at: number }[];
   /** I nominativi colorati dai programmi collegati via UDP (Highlight Callsign), per nominativo in maiuscolo. */
   highlights: Record<string, CallHighlight>;
   apply(event: AuroraEvent): void;
@@ -134,7 +139,12 @@ function clearedOnChange(s: { clearedBand: string | null }, before: StationStatu
   return usePrefs.getState().prefs.clearOnChange && bandOrModeChanged(before, after) && !bandChanged(before, after) ? { decodes: [], txLog: [] } : {};
 }
 
+function dropPending(): void {
+  pendingDecodes = [];
+}
+
 function clearedForBand(band: string | null): Cleared {
+  dropPending();
   return { decodes: [], txLog: [], pendingDx: null, pendingSince: 0, clearedBand: band };
 }
 
@@ -164,6 +174,7 @@ export const useStation = create<StationState>((set) => ({
   clearedBand: null,
   clearedDx: null,
   qsosLogged: 0,
+  justLogged: [],
   highlights: {},
   dismissWanted() {
     set({ wantedBanner: null });
@@ -209,7 +220,17 @@ export const useStation = create<StationState>((set) => ({
       }
       case 'decode': {
         const { type: _type, ...decode } = event;
-        set((s) => ({ decodes: [decode, ...s.decodes].slice(0, MAX_DECODES), lastDecodeAt: Date.now() }));
+        // le decodifiche di un periodo arrivano a raffica (anche 40 in pochi millisecondi): si raccolgono e si aggiungono tutte insieme,
+        // cosi' la lista si ridisegna una volta sola invece che una volta per riga
+        pendingDecodes.unshift(decode);
+        if (flushTimer === null) {
+          flushTimer = setTimeout(() => {
+            flushTimer = null;
+            const batch = pendingDecodes;
+            pendingDecodes = [];
+            set((s) => ({ decodes: [...batch, ...s.decodes].slice(0, MAX_DECODES), lastDecodeAt: Date.now() }));
+          }, 60);
+        }
         break;
       }
       case 'wanted': {
@@ -234,7 +255,10 @@ export const useStation = create<StationState>((set) => ({
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));
         break;
       case 'qso_logged':
-        set((s) => ({ qsosLogged: s.qsosLogged + 1 }));
+        set((s) => ({
+          qsosLogged: s.qsosLogged + 1,
+          justLogged: [{ call: event.call, band: event.band, mode: event.mode, rst_sent: event.rst_sent, rst_rcvd: event.rst_rcvd, time_ms: event.time_ms, at: Date.now() }, ...s.justLogged].slice(0, 10),
+        }));
         break;
       case 'highlight_callsign': {
         const call = event.call.trim().toUpperCase();
@@ -257,6 +281,7 @@ export const useStation = create<StationState>((set) => ({
         break;
       case 'clear_decodes':
         // come «Cancella»: le liste dei messaggi si svuotano (i colori dei nominativi restano)
+        pendingDecodes = [];
         set({ decodes: [], txLog: [] });
         break;
     }

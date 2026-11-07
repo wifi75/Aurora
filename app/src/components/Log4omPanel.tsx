@@ -25,6 +25,23 @@ function Log4omPanelInner() {
     const timers = [1500, 4000, 8000].map((ms) => window.setTimeout(() => void client.invalidateQueries({ queryKey: ['log4om'] }), ms));
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, [logged, client]);
+  // il QSO appena messo a log compare subito in cima (dall'evento di Aurora), anche prima che Log4OM lo scriva; quando arriva dal log
+  // vero si mostra quello. Dopo 2 minuti quello provvisorio sparisce comunque.
+  const justLogged = useStation((st) => st.justLogged);
+  const shownQsos = (() => {
+    const real = log.data?.qsos ?? [];
+    const day = new Date().toISOString().slice(0, 10);
+    const fresh = justLogged
+      .filter((j) => Date.now() - j.at < 120_000)
+      .filter((j) => !real.slice(0, 5).some((q) => q.call.toUpperCase() === j.call.toUpperCase() && q.band === j.band))
+      .map((j) => {
+        const sec = Math.floor((j.time_ms % 86_400_000) / 1000);
+        const hh = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const mm = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        return { date: `${day}T${hh}:${mm}:00Z`, call: j.call, band: j.band, mode: j.mode, rst_sent: j.rst_sent, rst_rcvd: j.rst_rcvd, country: '', grid: '' };
+      });
+    return [...fresh, ...real].slice(0, Math.max(real.length, count));
+  })();
   // un QSO nuovo in cima: tutta la riga lampeggia tre volte, piano
   const topKey = log.data?.qsos[0] ? `${log.data.qsos[0].date}-${log.data.qsos[0].call}` : null;
   const previous = useRef<string | null>(null);
@@ -57,7 +74,7 @@ function Log4omPanelInner() {
           </tr>
         </thead>
         <tbody>
-          {log.data.qsos.map((q, i) => (
+          {shownQsos.map((q, i) => (
             <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && flash === `${q.date}-${q.call}` ? 'log4om-row--flash' : undefined}>
               {/* giorno/mese e ora, senza l'anno: la data intera nel suggerimento */}
               <td className="data log4om-date" title={q.date.replace('Z', '').slice(0, 16)}>

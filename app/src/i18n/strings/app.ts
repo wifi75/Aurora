@@ -67,6 +67,8 @@ export const appStrings = {
   'agent.previewTip': ["mostra come apparirà la cartolina", "shows how the card will look", "zeigt, wie die Karte aussieht", "montre l'aspect de la carte", "muestra cómo se verá la tarjeta", "mostra como ficará o cartão"],
   'agent.msg.open': ["Apri", "Open", "Öffnen", "Ouvrir", "Abrir", "Abrir"],
   'tag.queued': ["IN CODA {n}", "QUEUE {n}", "WARTESCHL. {n}", "FILE {n}", "EN COLA {n}", "NA FILA {n}"],
+  'dxp.onAir': ["IN ONDA", "ON AIR", "AUF SENDUNG", "EN L’AIR", "EN EL AIRE", "NO AR"],
+  'dxp.spotAgo': ["spot {min} min fa", "spotted {min} min ago", "Spot vor {min} min", "spot il y a {min} min", "spot hace {min} min", "spot há {min} min"],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
     '{name} v{version} — By IU3WJQ -Tiziano Cassone',

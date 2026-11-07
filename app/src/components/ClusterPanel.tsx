@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState, type CSSProperties, memo } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, memo } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
@@ -87,6 +87,18 @@ function ClusterPanelInner() {
     }
   };
 
+  // come Attivita' di banda: lo spot nuovo arriva in cima e la lista torna subito in cima per mostrarlo
+  const body = useRef<HTMLTableSectionElement | null>(null);
+  const newestSpot = cluster.data?.spots[0]?.id ?? null;
+  useEffect(() => {
+    for (let el: HTMLElement | null = body.current; el && el !== document.body; el = el.parentElement) {
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+        el.scrollTop = 0;
+        break;
+      }
+    }
+  }, [newestSpot]);
   if (cluster.isError) return <p className="muted cluster-note">{t('set.loadError')}</p>;
   if (!cluster.data) return <p className="muted cluster-note">…</p>;
   const { config, servers, spots } = cluster.data;
@@ -171,7 +183,7 @@ function ClusterPanelInner() {
               <th>{t('cluster.col.time')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={body}>
             {shown.map((s) => {
               const code = flagCode(s.country);
               const mine = s.band !== null && s.band === myBand;
