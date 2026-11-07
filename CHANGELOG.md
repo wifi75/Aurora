@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.174 - 2026-11-07
+- **DXpedition sentite**: riga «SENTITA DA TE» con frequenza esatta, modo, segnale e ora dell'ultimo messaggio ricevuto; doppio clic sulla spedizione la chiama come in Attivita' di banda (un clic apre la scheda).
+
 ## 0.11.173 - 2026-11-07
 - **Filigrana PROVA LOCALE** solo nella prova nel browser, mai nella finestra del programma installato (nemmeno con la grafica di prova).
 - **Prova nel browser** (`vite.prova.config.ts` fuori dal repository, icona «Aurora - Prova locale»): prende la configurazione del PC e non la riscrive.
