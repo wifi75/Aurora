@@ -35,7 +35,7 @@ export function TxQuickControls({ splitOnly = false, inline = false }: { splitOn
       <button type="button" className={`glass chip${split ? ' glass--on' : ''}`} aria-pressed={split} disabled={!reachable} title={t('tip.ctl.split')} onClick={() => void run('split', !split)}>
         {t('ctl.split' as Key)}
       </button>
-      {splitOnly || !(showLog || inline) ? null : (
+      {splitOnly || !showLog ? null : (
         <button type="button" className="glass chip" disabled={!reachable} title={t('tip.cmd.logQso')} onClick={() => void logNow()}>
           {t('cmd.logQso')}
         </button>

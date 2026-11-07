@@ -1,7 +1,7 @@
 import { useStation } from '../state/station';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getControls, postControl, postReport, postRxFrequency, postTune, postTxFrequency, type ControlId } from '../api/client';
+import { getControls, getEngineSettings, postControl, postReport, postRxFrequency, postSpotDxsummit, postTune, postTxFrequency, type ControlId } from '../api/client';
 import { usePrefs } from '../lib/prefs';
 import type { StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -44,6 +44,30 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
     const stop = window.setTimeout(() => setTuning(false), 16_000);
     return () => window.clearTimeout(stop);
   }, [tuning]);
+  // «Spot DX» su DXSummit (come il pulsante di JTDX): solo se acceso in Servizi online e con una stazione DX; una volta per stazione
+  const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, staleTime: 30_000 });
+  const showSpot = engine.data?.values?.AllowSpotsDXSummit === 'true';
+  const dxCall = status?.dx_call ?? '';
+  const [spotted, setSpotted] = useState<Record<string, 'sending' | 'done'>>({});
+  const spotNow = () => {
+    if (!dxCall || spotted[dxCall]) return;
+    setSpotted((old) => ({ ...old, [dxCall]: 'sending' }));
+    setNote(t('ctl.spotSending'));
+    void postSpotDxsummit({ dx_call: dxCall, dx_grid: status?.dx_grid ?? undefined })
+      .then((res) => {
+        setSpotted((old) => ({ ...old, [dxCall]: 'done' }));
+        setNote(t('ctl.spotOk', { call: res.dx_call, khz: (res.frequency_hz / 1000).toFixed(1) }));
+      })
+      .catch((error: unknown) => {
+        // non partito: si puo' riprovare
+        setSpotted((old) => {
+          const next = { ...old };
+          delete next[dxCall];
+          return next;
+        });
+        setNote(replyErrorMessage(error, t));
+      });
+  };
   const toggleTune = () => {
     const on = !tuning;
     void run(t(on ? 'cmd.tuneOn' : 'cmd.tuneOff'), async () => {
@@ -130,7 +154,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
           </label>
         </div>
         {/* i pulsanti dei Comandi in una riga: Hold Tx Freq e Log QSO (qui si aggiungeranno gli altri) */}
-        <div className="cmd-buttons" role="group">
+        <div className={`cmd-buttons${showSpot && showTune ? ' cmd-buttons--dense' : ''}`} role="group">
           <button
             type="button"
             className={`glass chip cmd-hold${hold ? ' glass--on' : ''}`}
@@ -151,6 +175,17 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
               onClick={toggleTune}
             >
               {t('cmd.tune')}
+            </button>
+          ) : null}
+          {showSpot ? (
+            <button
+              type="button"
+              className={`glass chip cmd-spot${spotted[dxCall] === 'done' ? ' glass--on' : ''}`}
+              disabled={!dxCall || spotted[dxCall] !== undefined}
+              title={t('tip.ctl.spot')}
+              onClick={spotNow}
+            >
+              {spotted[dxCall] === 'done' ? t('ctl.spotted') : t('ctl.spot')}
             </button>
           ) : null}
           <TxQuickControls inline />
