@@ -330,3 +330,18 @@ async fn ports_and_detection_read_the_system_only_and_detection_is_local() {
         assert_eq!(resp.status(), StatusCode::BAD_GATEWAY);
     }
 }
+
+#[tokio::test]
+async fn without_a_radio_that_answers_the_frequency_changes_by_hand_even_with_the_engine_rig() {
+    let s = setup("nocat", true);
+    let seen = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let hook = Arc::clone(&seen);
+    // il motore proprio ha sempre il suo Rig (che inoltra alla radio del CAT): non deve nascondere la frequenza a mano
+    let cat = s.state.cat.clone().expect("cat");
+    let state = s.state.clone().with_rig_if(Some(cat as Arc<dyn rig_control::Rig>)).with_manual_dial(Arc::new(move |hz| hook.store(hz, std::sync::atomic::Ordering::Relaxed)));
+    let resp = send(&state, Method::POST, "/api/v1/commands/frequency", Some(json!({ "hz": 7_074_000 })), Via::Network).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["manual"], true);
+    assert_eq!(seen.load(std::sync::atomic::Ordering::Relaxed), 7_074_000);
+    assert_eq!(get(&state, "/api/v1/station-info").await["manual_dial"], true);
+}

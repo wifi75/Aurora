@@ -504,6 +504,15 @@ impl AppState {
         self.cat.as_ref().filter(|c| c.is_usable()).map(|c| Arc::clone(c) as Arc<dyn Rig>)
     }
 
+    /// La radio per cambiare frequenza: `None` se il servizio CAT non ha una radio che risponde (sistema «Nessuno», scollegata o spenta),
+    /// anche se il motore proprio ha il suo `Rig` (che inoltra alla radio). Senza radio le bande cambiano solo la frequenza di Aurora.
+    pub fn dial_rig(&self) -> Option<Arc<dyn Rig>> {
+        if self.cat.as_ref().is_some_and(|c| !c.is_usable()) {
+            return None;
+        }
+        self.active_rig()
+    }
+
     pub fn with_rig_if(self, rig: Option<Arc<dyn Rig>>) -> AppState {
         match rig {
             Some(r) => self.with_rig(r),

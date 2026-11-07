@@ -429,7 +429,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
         ))}
       </datalist>
       <Actions>
-        <button type="button" className="glass glass--on" title={t('tip.cat.apply')} disabled={busy || !dirty || issue !== null} onClick={() => apply.mutate(config)}>
+        <button type="button" className="glass glass--on" title={t('tip.cat.apply')} disabled={busy || issue !== null} onClick={() => apply.mutate(config)}>
           {t('cat.apply')}
         </button>
         {issue === 'share_loop' ? <span className="notice">{t('cat.err.share_loop')}</span> : issue ? <span className="notice">{t('cat.invalid')}</span> : dirty ? <span className="muted">{t('cat.dirty')}</span> : null}
