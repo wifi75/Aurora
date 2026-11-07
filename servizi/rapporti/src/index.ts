@@ -4,6 +4,7 @@
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
  * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
+ * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
@@ -11,6 +12,7 @@
  * L'indirizzo IP del mittente si usa solo come chiave del limite di richieste: non si registra e non si salva da nessuna parte.
  * Ogni notte un Cron Trigger cancella rapporti, pacchetti e righe dell'indice piu' vecchi di GIORNI_CONSERVAZIONE (90).
  */
+import * as messaggi from './messaggi';
 
 interface Env {
   RAPPORTI: R2Bucket;
@@ -240,6 +242,40 @@ export default {
         const no = await ingresso(req, env);
         if (no) return no;
         return await attivo(req, env);
+      }
+      // messaggi del proprietario: pubblici da leggere, solo l'amministratore li scrive e li toglie
+      if (req.method === 'GET' && url.pathname === '/v1/messaggi') {
+        const ver = (url.searchParams.get('v') ?? '').slice(0, 20);
+        const r = risposta(200, { messaggi: await messaggi.attivi(env.INDICE, ver) });
+        // la finestra di Aurora (pagina locale) li legge direttamente: lettura pubblica, nessun dato personale
+        r.headers.set('Access-Control-Allow-Origin', '*');
+        r.headers.set('Cache-Control', 'public, max-age=300');
+        return r;
+      }
+      if (req.method === 'GET' && url.pathname === '/admin/messaggi') {
+        return new Response(messaggi.PAGINA, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+      }
+      if (req.method === 'GET' && url.pathname === '/v1/messaggi/tutti') {
+        return amministratore(req, env) ? risposta(200, { messaggi: await messaggi.tutti(env.INDICE) }) : risposta(401, { error: 'segreto' });
+      }
+      if (req.method === 'POST' && url.pathname === '/v1/messaggi') {
+        if (!amministratore(req, env)) return risposta(401, { error: 'segreto' });
+        const corpo = await leggiCorpo(req, 32_000);
+        if (!corpo) return risposta(413, { error: 'troppo grande' });
+        let dati: unknown;
+        try {
+          dati = JSON.parse(new TextDecoder().decode(corpo));
+        } catch {
+          return risposta(400, { error: 'json' });
+        }
+        const fatto = await messaggi.crea(env.INDICE, dati);
+        return typeof fatto === 'string' ? risposta(400, { error: fatto }) : risposta(200, { messaggio: fatto });
+      }
+      const togli = /^\/v1\/messaggi\/([0-9a-f]{8})$/.exec(url.pathname);
+      if (req.method === 'DELETE' && togli) {
+        if (!amministratore(req, env)) return risposta(401, { error: 'segreto' });
+        await messaggi.togli(env.INDICE, togli[1]);
+        return risposta(200, { ok: true });
       }
       if (req.method === 'GET' && url.pathname === '/v1/attivi') {
         return amministratore(req, env) ? await attivi(env) : risposta(401, { error: 'segreto' });
