@@ -172,6 +172,7 @@ impl CatService {
                 let (state, message) = self.omni.lock().map(|o| o.clone()).unwrap_or((LinkState::Disconnected, String::new()));
                 CatStatus { backend: Backend::Omnirig, state, message, rigctld_found, rig: None, share: None }
             }
+            Backend::None => CatStatus { backend: Backend::None, state: LinkState::Disconnected, message: String::new(), rigctld_found, rig: None, share: None },
         }
     }
 
@@ -213,6 +214,7 @@ impl CatService {
                     Err(e) => self.set_omni(LinkState::Error, &friendly_error(&e.0)),
                 }
             }
+            Backend::None => {}
         }
         Ok(self.status())
     }
@@ -292,6 +294,7 @@ impl CatService {
         match self.backend() {
             Backend::Hamlib => self.current().is_some_and(|r| r.status().state == LinkState::Connected),
             Backend::Omnirig => self.omni.lock().is_ok_and(|o| o.0 == LinkState::Connected),
+            Backend::None => false,
         }
     }
 
@@ -314,6 +317,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_frequency(hz),
             Backend::Omnirig => WindowsRig.set_frequency(hz),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -321,6 +325,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.frequency(),
             Backend::Omnirig => WindowsRig.frequency(),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -328,6 +333,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.meters(),
             Backend::Omnirig => Err(RigError("misuratori non disponibili con OmniRig".into())),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -335,6 +341,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_rx_frequency(hz),
             Backend::Omnirig => WindowsRig.set_rx_frequency(hz),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -342,6 +349,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.output_attenuation(),
             Backend::Omnirig => WindowsRig.output_attenuation(),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -349,6 +357,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_output_attenuation(tenths),
             Backend::Omnirig => WindowsRig.set_output_attenuation(tenths),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -356,6 +365,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_mode(mode),
             Backend::Omnirig => WindowsRig.set_mode(mode),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 
@@ -363,6 +373,7 @@ impl Rig for CatService {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_extra(item),
             Backend::Omnirig => WindowsRig.set_extra(item),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
     }
 }

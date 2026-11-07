@@ -29,6 +29,7 @@ export const catStrings = {
     'O Hamlib comanda mais de 300 rádios e é a escolha base. O OmniRig é o sistema já usado no Windows: só se o rádio já estiver configurado lá.',
   ],
   'cat.backend.hamlib': ['Hamlib (oltre 300 radio)', 'Hamlib (300+ radios)', 'Hamlib (über 300 Geräte)', 'Hamlib (300+ radios)', 'Hamlib (más de 300 radios)', 'Hamlib (mais de 300 rádios)'],
+  'cat.backend.none': ['Nessuno (senza CAT, frequenza a mano)', 'None (no CAT, tune by hand)', 'Keins (ohne CAT, Frequenz von Hand)', 'Aucun (sans CAT, fréquence à la main)', 'Ninguno (sin CAT, frecuencia a mano)', 'Nenhum (sem CAT, frequência à mão)'],
   'cat.backend.omnirig': ['OmniRig', 'OmniRig', 'OmniRig', 'OmniRig', 'OmniRig', 'OmniRig'],
   'cat.omnirig.help': [
     'Con OmniRig la radio, la porta e la velocità si impostano nel programma OmniRig. Qui scegli solo split e modo.',

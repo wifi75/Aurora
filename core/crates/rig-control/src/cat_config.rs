@@ -19,6 +19,8 @@ pub enum Backend {
     Hamlib,
     /// OmniRig (Windows), il percorso storico di Aurora.
     Omnirig,
+    /// Nessuna radio comandata: la frequenza si cambia a mano (le bande muovono solo quella di Aurora).
+    None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -492,6 +494,7 @@ fn suggest_name(config: &RigConfig, profiles: &[RigProfile]) -> String {
     let backend = match config.backend {
         Backend::Hamlib => "Hamlib",
         Backend::Omnirig => "OmniRig",
+        Backend::None => "senza CAT",
     };
     let base: String = format!("{rig} {backend}").chars().take(76).collect();
     let taken = |n: &str| profiles.iter().any(|p| p.name.eq_ignore_ascii_case(n));

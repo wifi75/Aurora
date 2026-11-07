@@ -652,7 +652,7 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-export type CatBackend = 'hamlib' | 'omnirig';
+export type CatBackend = 'hamlib' | 'omnirig' | 'none';
 export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
 export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';

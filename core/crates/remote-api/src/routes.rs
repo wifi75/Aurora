@@ -741,7 +741,14 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
         Ok(Err(e)) => {
             tracing::warn!("cambio banda fallito: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+            // radio configurata ma spenta o scollegata: si cambia almeno la frequenza di Aurora
+            match &state.manual_dial {
+                Some(set) => {
+                    set(hz);
+                    Ok(Json(json!({ "ok": true, "dial_hz": hz, "manual": true, "rig_error": true })))
+                }
+                None => Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error")),
+            }
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
     }
@@ -779,7 +786,14 @@ async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): 
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
         Ok(Err(e)) => {
             tracing::warn!("cambio frequenza fallito: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error"))
+            // radio configurata ma spenta o scollegata: si cambia almeno la frequenza di Aurora
+            match &state.manual_dial {
+                Some(set) => {
+                    set(hz);
+                    Ok(Json(json!({ "ok": true, "dial_hz": hz, "manual": true, "rig_error": true })))
+                }
+                None => Err(ApiError::new(StatusCode::BAD_GATEWAY, "rig_error")),
+            }
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
     }

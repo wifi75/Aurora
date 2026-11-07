@@ -293,6 +293,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             <option value="hamlib">{t('cat.backend.hamlib')}</option>
             {/* OmniRig e' un programma di Windows: su Linux non si propone (se era gia' scelto resta visibile per cambiarlo) */}
             {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}</option> : null}
+            <option value="none">{t('cat.backend.none')}</option>
           </select>
         </Field>
         {fields.rig ? (

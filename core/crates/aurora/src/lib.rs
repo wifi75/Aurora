@@ -1252,6 +1252,7 @@ pub async fn run(
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
+            rig_control::cat_config::Backend::None => {}
         }
     }
     if config.rig_hamlib {
