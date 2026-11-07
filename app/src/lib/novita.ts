@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.187',
-    released: '2026-11-07T18:50:05Z',
+    released: '2026-11-07T18:55:46Z',
     kind: 'new',
     title: ['Tune e Spot DX nei Comandi', 'Tune and Spot DX in Commands', 'Tune und DX-Spot in Befehle', 'Tune et Spot DX dans Commandes', 'Tune y Spot DX en Comandos', 'Tune e Spot DX nos Comandos'],
     text: [
