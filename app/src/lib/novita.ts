@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.192',
+    released: '2026-11-07T23:50:00Z',
+    kind: 'fixed',
+    title: ['Salva sempre attivo', 'Save always available', 'Speichern immer aktiv', 'Enregistrer toujours actif', 'Guardar siempre activo', 'Guardar sempre ativo'],
+    text: [
+      'Nelle Impostazioni «Salva» è sempre attivo; se tutto è già salvato lo dice.',
+      'In Settings “Save” is always available; if everything is already saved it says so.',
+      'In den Einstellungen ist „Speichern“ immer aktiv; ist schon alles gespeichert, sagt es das.',
+      'Dans les Paramètres « Enregistrer » est toujours actif ; si tout est déjà enregistré, il le dit.',
+      'En los Ajustes «Guardar» está siempre activo; si todo ya está guardado, lo dice.',
+      'Nas Definições «Guardar» está sempre ativo; se tudo já está guardado, diz isso.',
+    ],
+  },
+  {
     version: '0.11.191',
     released: '2026-11-07T21:56:52Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Si la carte son de la radio disparaît en cours d’utilisation (radio éteinte, câble USB bougé), réception et émission repartent seules dès qu’elle revient, avec un avis qui explique ce qui se passe. Sous Linux le curseur Pwr baisse vraiment le signal, les mises à jour mènent à la release avec AppImage et .deb et OmniRig n’est plus proposé. Une fenêtre «Enregistrer sous» ouverte longtemps n’est plus prise pour un blocage.",
       "Si la tarjeta de sonido de la radio desaparece durante el uso (radio apagada, cable USB movido), recepción y transmisión vuelven solas en cuanto regresa, con un aviso que explica qué pasa. En Linux el control Pwr ahora baja de verdad la señal, las actualizaciones llevan a la release con AppImage y .deb y OmniRig ya no se ofrece. Una ventana «Guardar como» abierta mucho tiempo ya no se toma por un bloqueo.",
       "Se a placa de som do rádio desaparecer durante o uso (rádio desligado, cabo USB mexido), receção e transmissão recomeçam sozinhas assim que volta, com um aviso a explicar o que se passa. No Linux o cursor Pwr baixa mesmo o sinal, as atualizações levam à release com AppImage e .deb e o OmniRig já não é proposto. Uma janela «Guardar como» aberta muito tempo já não é tomada por um bloqueio.",
-    ],
-  },
-  {
-    version: '0.11.151',
-    released: '2026-11-05T20:08:26Z',
-    kind: 'changed',
-    title: ['Propagazione sulla cartina', 'Propagation on the map', 'Ausbreitung auf der Karte', 'Propagation sur la carte', 'Propagación en el mapa', 'Propagação no mapa'],
-    text: [
-      "Mappa DX: con «Propagazione» acceso, una linea tratteggiata dalla tua stazione a ogni stazione che ti ha ricevuto (PSK Reporter), come in GridTracker2; si spegne e si colora dal menu ⚙. Le linee «Chi chiama chi» usano i quadrati di tutte le stazioni sentite da quando Aurora è aperta, quindi compaiono molte più linee.",
-      "DX Map: with «Propagation» on, a dashed line from your station to every station that received you (PSK Reporter), as in GridTracker2; switch it off and pick its color in the ⚙ menu. «Who calls whom» lines use the squares of every station heard since Aurora started, so many more lines appear.",
-      "DX-Karte: Mit «Ausbreitung» eine gestrichelte Linie von deiner Station zu jeder Station, die dich empfangen hat (PSK Reporter), wie in GridTracker2; im Menü ⚙ abschaltbar und einfärbbar. Die Linien «Wer ruft wen» nutzen die Felder aller seit dem Start gehörten Stationen, daher erscheinen viel mehr Linien.",
-      "Carte DX : avec «Propagation» activé, une ligne en tirets de ta station vers chaque station qui t’a reçu (PSK Reporter), comme dans GridTracker2 ; on la coupe et on choisit sa couleur dans le menu ⚙. Les lignes «Qui appelle qui» utilisent les carrés de toutes les stations entendues depuis le démarrage, donc beaucoup plus de lignes apparaissent.",
-      "Mapa DX: con «Propagación» encendido, una línea discontinua desde tu estación a cada estación que te ha recibido (PSK Reporter), como en GridTracker2; se apaga y se colorea en el menú ⚙. Las líneas «Quién llama a quién» usan las cuadrículas de todas las estaciones oídas desde que Aurora está abierta, así aparecen muchas más líneas.",
-      "Mapa DX: com «Propagação» ligado, uma linha tracejada da tua estação para cada estação que te recebeu (PSK Reporter), como no GridTracker2; desliga-se e escolhe-se a cor no menu ⚙. As linhas «Quem chama quem» usam os quadrados de todas as estações ouvidas desde que a Aurora está aberta, por isso aparecem muitas mais linhas.",
     ],
   },
 ];

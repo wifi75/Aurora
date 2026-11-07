@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.192 - 2026-11-07
+- **Impostazioni**: «Salva» sempre attivo; senza modifiche in sospeso dice «Tutto salvato» (molte voci si salvano da sole appena cambiate, e il pulsante spento sembrava guasto).
+
 ## 0.11.191 - 2026-11-07
 - **Bande senza CAT**: senza radio comandabile i pulsanti delle bande (e il doppio clic sugli spot) impostano solo la frequenza di Aurora, ricordata al riavvio (`frequenza-a-mano.txt`, `ManualDialHook`, `manual_dial` in `/api/v1/station-info`); la radio si sposta a mano. Voce nuova della Guida «Senza CAT: la banda a mano».
 
