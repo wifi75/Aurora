@@ -167,6 +167,7 @@ export const stationStrings = {
   'panel.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
   'log.total': ['{n} QSO nel log', '{n} QSOs in the log', '{n} QSOs im Log', '{n} QSO dans le journal', '{n} QSO en el log', '{n} QSO no log'],
   'log.empty': ['Nessun QSO nel log', 'No QSOs in the log', 'Keine QSOs im Log', 'Aucun QSO dans le journal', 'Ningún QSO en el log', 'Nenhum QSO no log'],
+  'log.loggedBadge': ["A LOG", "LOGGED", "GELOGGT", "AU LOG", "EN LOG", "NO LOG"],
   'log.unavailable': [
     'Log di Log4OM2 non collegato: avvia Aurora con AURORA_LOG4OM_DB',
     'Log4OM2 log not connected: start Aurora with AURORA_LOG4OM_DB',

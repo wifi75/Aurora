@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SetupCta } from './SetupCta';
-import { useEffect, useState, memo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, memo } from 'react';
 import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
@@ -8,8 +8,7 @@ import { useStation } from '../state/station';
 import { playSound } from '../lib/soundBank';
 import { ringState } from '../lib/soundAssign';
 
-/** Quanto resta acceso il lampeggio del QSO appena messo a log (tre lampeggi lenti da 1,4 s). */
-/** Lampeggio verde fluo per 5 s, poi si dissolve in 1,5 s (vedi `.log4om-row--flash`). */
+/** Effetto del QSO appena messo a log: aurora che scorre dentro la riga e scie viola sul bordo per 5 s, poi si dissolve (vedi `.qso-fx`). */
 const FLASH_MS = 6600;
 
 /** Gli ultimi QSO del log di Log4OM2 (sola lettura): quanti, si sceglie in Impostazioni → Generali. */
@@ -62,11 +61,41 @@ function Log4omPanelInner() {
   }, [lastLogged]);
 
 
+  // l'aurora e le scie stanno in uno strato sotto la riga (le celle di una tabella non hanno uno sfondo continuo da un capo all'altro):
+  // lo strato segue la riga finche' l'effetto e' acceso, anche se il pannello scorre o cambia larghezza
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [fx, setFx] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    if (flash === null) {
+      setFx(null);
+      return;
+    }
+    const place = () => {
+      const box = boxRef.current;
+      const row = box?.querySelector<HTMLTableRowElement>('tr.log4om-row--flash');
+      if (!box || !row) return setFx(null);
+      const b = box.getBoundingClientRect();
+      const r = row.getBoundingClientRect();
+      setFx({ top: r.top - b.top + box.scrollTop, left: r.left - b.left + box.scrollLeft, width: r.width, height: r.height });
+    };
+    place();
+    const id = window.setInterval(place, 250);
+    return () => window.clearInterval(id);
+  }, [flash, log.data]);
+
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
   if (log.data.qsos.length === 0) return <SetupCta className="setup-cta--log" href="#/impostazioni/reports" title="cta.log.none" action="cta.log.go" />;
   return (
-    <div className="log4om">
+    <div className="log4om" ref={boxRef}>
+      {fx ? (
+        <div className="qso-fx" aria-hidden="true" style={{ top: fx.top, left: fx.left, width: fx.width, height: fx.height }}>
+          <i className="qso-fx-aurora" />
+          <i className="qso-fx-trail qso-fx-trail--top" />
+          <i className="qso-fx-trail qso-fx-trail--bottom" />
+          <b className="qso-fx-badge">{t('log.loggedBadge')}</b>
+        </div>
+      ) : null}
       <table className="log4om-table">
         <thead>
           <tr>
