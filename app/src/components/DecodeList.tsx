@@ -323,6 +323,14 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     .filter((d): d is DecodedMessage => !!d && d !== pin && !inQso(d));
   const rest = (pin ? decodes.filter((d) => !inQso(d)) : decodes).filter((d) => !queued.includes(d));
   const top = pin ? [pin, ...queued] : queued;
+  // l'etichetta piu' recente di ogni stazione che ho chiamato (per la mia riga Tx)
+  const lastTagOf = new Map<string, DecodedMessage['tag']>();
+  for (const d of decodes) {
+    if (d.id < 0 || !d.tag) continue;
+    const c = senderOf(d.text)?.call.toUpperCase();
+    if (c && !lastTagOf.has(c)) lastTagOf.set(c, d.tag);
+  }
+  const dxTagFor = (txText: string) => lastTagOf.get((txText.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()) ?? null;
   const rows = view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest];
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
@@ -359,7 +367,10 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         if (worked && view.workedDontShow && !toMe && !wanted && /^CQ\s/i.test(d.text.trim())) return null;
         // un tipo con l'evidenziazione spenta si mostra come un messaggio qualunque; un messaggio tra altre stazioni senza «altri messaggi predefiniti» non ha marcatori
         const between = !own && !toMe && !isCq(d.text);
-        const lit = !own && d.tag && notify.highlight[d.tag] && !(between && !view.otherMarker) ? d.tag : null;
+        // la mia riga Tx porta l'etichetta della stazione che sto chiamando (presa dal suo ultimo messaggio ricevuto): si vede subito se e'
+        // un paese nuovo, nuovo per la banda...
+        const ownTag = own && dxTagFor(d.text) ? dxTagFor(d.text) : null;
+        const lit = own ? (ownTag && notify.highlight[ownTag] ? ownTag : null) : d.tag && notify.highlight[d.tag] && !(between && !view.otherMarker) ? d.tag : null;
         const badge = lit ? BADGES[lit] : undefined;
         // il verde dei gia' lavorati compare solo con «Evidenzia gia' lavorati»; di base il messaggio e' barrato e senza colore
         const quiet = worked && !look.color;
