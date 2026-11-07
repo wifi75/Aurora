@@ -225,11 +225,13 @@ export function App() {
       {session.data && !REMOTE ? <ReportsNotice /> : null}
       {session.data && !REMOTE ? <FirstRun /> : null}
       {session.data ? <LogPrompt /> : null}
-      {session.data && !REMOTE ? <UpdatePoster /> : null}
       {/* i messaggi del proprietario (auguri, avvisi): sempre accesi, solo sul PC */}
       {session.data && !REMOTE ? <OwnerMessages /> : null}
     </div>
     {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? (route.tab ?? rememberedTab(browserStorage())) : undefined} onClose={() => { location.hash = '#/'; }} /> : null}
+    {/* fuori dalla pagina principale, dopo le Impostazioni: quando sono aperte la pagina sotto e' disattivata (inert) e la locandina
+        dell'aggiornamento, che stava li' dentro, restava nascosta e non cliccabile */}
+    {session.data && !REMOTE ? <UpdatePoster /> : null}
     </>
   );
 }
