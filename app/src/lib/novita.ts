@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.170',
-    released: '2026-11-07T10:13:11Z',
+    released: '2026-11-07T10:18:34Z',
     kind: 'changed',
     title: ['Messaggi della radio più chiari', 'Clearer radio messages', 'Klarere Funkgerät-Meldungen', 'Messages de la radio plus clairs', 'Mensajes de la radio más claros', 'Mensagens do rádio mais claras'],
     text: [
