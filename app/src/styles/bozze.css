@@ -1077,3 +1077,4 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-panel--tx .tx-dx .tx-queue--side .queue-dot { width: 11px !important; height: 11px !important; font-size: 8px !important; margin: 0 !important; line-height: 11px !important; }
 .dock-panel--tx .tx-dx .tx-queue--side .tx-queue-more { font-size: 10px; line-height: 12px; margin-left: 3px; }
 .dock-panel--tx .tx-dx .tx-queue--side + .rxtx-flag { margin-left: 8px !important; }
+.dock-panel--tx .tx-dx .tx-queue--side { align-self: flex-start !important; justify-content: flex-start !important; margin-top: 2px !important; }
