@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.191',
-    released: '2026-11-07T23:30:00Z',
+    released: '2026-11-07T21:56:52Z',
     kind: 'new',
     title: ['Bande anche senza CAT', 'Bands without CAT too', 'Bänder auch ohne CAT', 'Bandes même sans CAT', 'Bandas también sin CAT', 'Bandas também sem CAT'],
     text: [
