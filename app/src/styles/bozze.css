@@ -1038,11 +1038,6 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 /* intestazione «Comandi» uguale alla barra del titolo delle schede, larga quanto la scheda */
 .bands-with-cmds .bands-cmds-grip { cursor: default; margin: 0 0 6px; border-top: 1px solid var(--border); }
 
-/* riquadro giallo del DX in Trasmissione piu' basso: le due righe (nominativo e paese) vicine, cosi' non spinge giu' la scheda */
-.tx-dx .pill--dx { padding: 1px 11px !important; line-height: 1.05 !important; row-gap: 0 !important; }
-.tx-dx .pill--dx .pill-dx-main, .tx-dx .pill--dx .pill-dx-country { line-height: 1.05 !important; margin: 0 !important; }
-.tx-dx .pill--dx .pill-dx-country { margin-top: -1px !important; }
-
 /* Comandi: Tx, Rx e Rapporto corti (5,6 caratteri) e affiancati a sinistra, non allargati su tutta la scheda */
 .bands-cmds .cmd-big { display: flex !important; flex-wrap: wrap !important; justify-content: flex-start !important; gap: 4px 16px !important; }
 .bands-cmds .cmd-big-row { grid-template-columns: max-content 21px !important; }
@@ -1059,3 +1054,8 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .bands-cmds .cmd-big-row { column-gap: 3px !important; justify-content: start !important; justify-items: start !important; width: auto !important; }
 .bands-cmds .cmd-big { gap: 4px 12px !important; }
 .bands-cmds .cmd-big-row { flex: 0 0 auto !important; min-width: 0 !important; }
+
+/* Trasmissione: meno vuoto sopra e sotto il riquadro giallo del DX (il riquadro resta alto com'e'): 3 px dalla linea del titolo e dalla riga sotto */
+.dock-panel--tx .tx-panel--combo { padding-top: 3px !important; }
+.dock-panel--tx .tx-left.tx-block { margin-top: 0 !important; row-gap: 3px !important; }
+.dock-panel--tx .tx-dx { padding-bottom: 0 !important; margin-bottom: 0 !important; }
