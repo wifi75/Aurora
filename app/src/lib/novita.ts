@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.171',
-    released: '2026-11-07T10:19:14Z',
+    released: '2026-11-07T10:21:59Z',
     kind: 'new',
     title: ['Etichetta anche sulla riga Tx', 'Label on the Tx row too', 'Etikett auch in der Tx-Zeile', 'Étiquette aussi sur la ligne Tx', 'Etiqueta también en la línea Tx', 'Etiqueta também na linha Tx'],
     text: [
