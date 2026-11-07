@@ -104,6 +104,13 @@ pub fn run() {
     let app = tauri::Builder::default()
         .setup(|app| {
             build_tray(app.handle())?;
+            if std::env::var("AURORA_AGENTE_PROVA").as_deref() == Ok("1") {
+                let h = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(3));
+                    show_card(&h, Card { kind: "Prova", title: "Cartolina di prova".into(), text: "Se la vedi, la cartolina funziona.".into(), main: "OK", main_action: "close", update: true });
+                });
+            }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_secs(20));
@@ -440,10 +447,23 @@ struct Card {
     update: bool,
 }
 
+/// Registro dell'agente (non ha la console): `%TEMP%\aurora-agente.log`.
+fn agent_log(line: &str) {
+    use std::io::Write;
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(std::env::temp_dir().join("aurora-agente.log")) {
+        let _ = writeln!(f, "{line}");
+    }
+}
+
+fn agent_webview_dir() -> PathBuf {
+    std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir).join("Aurora").join("agente-webview")
+}
+
 fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
+#[allow(dead_code)]
 fn percent(s: &str) -> String {
     let mut out = String::with_capacity(s.len() * 2);
     for b in s.bytes() {
@@ -466,9 +486,16 @@ fn show_card(app: &AppHandle, card: Card) {
         .replace("{ACTION}", card.main_action)
         .replace("{UPDATE}", if card.update { "1" } else { "0" })
         .replace("{SECONDS}", &(prefs().seconds.clamp(3, 60) * 1000).to_string());
-    let Ok(url) = tauri::Url::parse(&format!("data:text/html;charset=utf-8,{}", percent(&html))) else { return };
+    // la cartolina come file nella cartella temporanea: un indirizzo `data:` non sempre si apre come pagina principale
+    let file = std::env::temp_dir().join("aurora-cartolina.html");
+    if std::fs::write(&file, &html).is_err() {
+        return;
+    }
+    let Ok(url) = tauri::Url::from_file_path(&file) else { return };
+    agent_log("cartolina richiesta");
     let app2 = app.clone();
-    let _ = app.run_on_main_thread(move || {
+    let r = app.run_on_main_thread(move || {
+        agent_log("cartolina: thread principale");
         if let Some(old) = app2.get_webview_window("cartolina") {
             let _ = old.close();
         }
@@ -485,6 +512,8 @@ fn show_card(app: &AppHandle, card: Card) {
             .inner_size(w, h)
             .visible(false)
             .additional_browser_args("--autoplay-policy=no-user-gesture-required --disable-logging --log-level=3")
+            // una cartella del motore web tutta sua: con Aurora aperta (stessa cartella, impostazioni diverse) WebView2 rifiutava la finestra
+            .data_directory(agent_webview_dir())
             .on_navigation({
                 let app = app2.clone();
                 move |u| {
@@ -514,7 +543,13 @@ fn show_card(app: &AppHandle, card: Card) {
                 }
             })
             .build();
-        let Ok(window) = built else { return };
+        let window = match built {
+            Ok(w) => w,
+            Err(e) => {
+                agent_log(&format!("cartolina non aperta: {e}"));
+                return;
+            }
+        };
         // in basso a destra dello schermo principale, sopra la barra delle applicazioni
         if let Ok(Some(m)) = window.primary_monitor() {
             let scale = m.scale_factor();
@@ -524,8 +559,12 @@ fn show_card(app: &AppHandle, card: Card) {
             let y = pos.y + size.height as i32 - ((h + 56.0) * scale) as i32;
             let _ = window.set_position(PhysicalPosition::new(x, y));
         }
-        let _ = window.show();
+        let shown = window.show();
+        agent_log(&format!("cartolina mostrata: {shown:?}"));
     });
+    if let Err(e) = r {
+        agent_log(&format!("thread principale non raggiunto: {e}"));
+    }
 }
 
 const CARD_HTML: &str = r#"<!doctype html><html><head><meta charset="utf-8"><style>
