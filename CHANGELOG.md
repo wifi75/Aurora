@@ -9,6 +9,7 @@
 - **Trasmissione senza CAT**: avviso «non puoi trasmettere, la radio non e' collegata» (la ricezione senza CAT non e' mai limitata).
 - **Finestre staccate**: nascono grandi quanto il pannello sullo schermo, mai a tutto schermo; ridimensionabili.
 - **Bande aperte**: record di distanza piu' visibili (nominativo in oro, km in verde).
+- **Aggiornamenti**: controllo automatico ogni 3 ore di fabbrica (prima 6).
 
 ## 0.11.166 - 2026-11-07
 - **Attivita' di banda**: il ritorno all'ultima stazione dopo 15 s funziona davvero. Il conto riparte solo quando scorre la persona (rotella, dito, tasti, barra); gli spostamenti della lista all'arrivo delle stazioni nuove (ogni 15 s) lo facevano ripartire all'infinito. Il ritorno e' immediato (lo scorrimento morbido veniva annullato).

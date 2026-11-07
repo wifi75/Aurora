@@ -32,7 +32,7 @@ pub struct UpdateConfig {
 
 impl Default for UpdateConfig {
     fn default() -> Self {
-        UpdateConfig { enabled: true, repo: "wifi75/Aurora".into(), interval_hours: 6, prereleases: false, token: String::new() }
+        UpdateConfig { enabled: true, repo: "wifi75/Aurora".into(), interval_hours: 3, prereleases: false, token: String::new() }
     }
 }
 
