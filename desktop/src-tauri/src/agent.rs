@@ -390,6 +390,7 @@ fn check(app: &AppHandle, asked: bool) {
             if !link.is_empty() {
                 LINK.lock().map(|mut l| *l = link).ok();
             }
+            report_seen(&id);
             seen.messages.push(id);
         }
     }
@@ -482,6 +483,30 @@ struct Card {
     update: bool,
     /// Tema grafico dei messaggi dell'autore: natale, anno, pasqua, aggiorna, servizio (vuoto = normale).
     theme: String,
+}
+
+/// «Ho mostrato la cartolina del messaggio `id`»: con il codice anonimo dell'installazione del motore (`rapporti-installazione.txt`), solo se
+/// il conteggio delle installazioni attive e' acceso (`count_active` in `rapporti.json`, acceso se il file non c'e'). Serve solo a contare.
+fn report_seen(id: &str) {
+    let Some(base) = std::env::var_os("APPDATA").map(|b| PathBuf::from(b).join("Aurora")) else { return };
+    let acceso = std::fs::read_to_string(base.join("rapporti.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| v.get("count_active").and_then(|b| b.as_bool()))
+        .unwrap_or(true);
+    let inst = std::fs::read_to_string(base.join("rapporti-installazione.txt")).unwrap_or_default().trim().to_string();
+    if !acceso || inst.len() != 36 || id.is_empty() {
+        return;
+    }
+    let url = format!("{MESSAGES}/{id}/visto");
+    std::thread::spawn(move || {
+        let r = agent()
+            .post(&url)
+            .header("X-Aurora-Key", "aurora-rapporti-v1")
+            .header("User-Agent", "Aurora-agente")
+            .send_json(serde_json::json!({ "installazione": inst }));
+        agent_log(&format!("visto inviato: {}", r.map(|x| x.status().as_u16()).unwrap_or(0)));
+    });
 }
 
 /// Registro dell'agente (non ha la console): `%TEMP%\aurora-agente.log`.

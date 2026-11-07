@@ -2,10 +2,28 @@ import { useEffect, useRef } from 'react';
 import { useLang, useT } from '../i18n';
 import { browserStorage } from '../lib/theme';
 import { showAgentPopup } from './AgentPopup';
+import { getReports } from '../api/client';
 
 /** Il servizio dei messaggi del proprietario (lo stesso dei rapporti degli errori). */
 const URL_MESSAGGI = 'https://aurora-rapporti.tizianocassone.workers.dev/v1/messaggi';
 const SEEN_KEY = 'aurora-messaggi-visti';
+
+/**
+ * Dice al servizio «ho mostrato il messaggio X» con il codice anonimo dell'installazione, per contare quante l'hanno visto.
+ * Solo se in Impostazioni → Assistenza il conteggio delle installazioni attive e' acceso (lo stesso codice e lo stesso interruttore).
+ */
+function reportSeen(id: string): void {
+  void getReports()
+    .then((r) => {
+      if (r.count_active === false || !r.configured || !/^[0-9a-f-]{36}$/.test(r.install_id)) return;
+      return fetch(`${URL_MESSAGGI}/${id}/visto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Aurora-Key': 'aurora-rapporti-v1' },
+        body: JSON.stringify({ installazione: r.install_id }),
+      });
+    })
+    .catch(() => undefined);
+}
 const EVERY_MS = 60 * 60_000;
 
 declare const __AURORA_UI_VERSION__: string;
@@ -81,6 +99,7 @@ export function OwnerMessages() {
           },
           20,
         );
+        reportSeen(next.id);
       } catch {
         // senza internet si riprova al giro dopo
       }

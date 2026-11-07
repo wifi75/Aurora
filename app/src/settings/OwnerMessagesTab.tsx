@@ -25,6 +25,9 @@ interface Msg {
   link: string;
   tema: 'normale' | 'festa';
   stile?: string;
+  /** Installazioni che hanno mostrato la cartolina (dalla 0.11.182) e installazioni attive che potevano riceverlo. */
+  visti?: number;
+  raggiungibili?: number;
 }
 
 /** Modelli pronti, gia' scritti in tutte le lingue: riempiono il modulo (si possono poi cambiare). Date: da oggi per qualche giorno. */
@@ -422,6 +425,11 @@ export function OwnerMessagesTab() {
                       {m.tema === 'festa' ? ' · ✦' : ''}
                       {m.stile ? ` · ${t(`own.theme.${m.stile}` as 'own.theme.natale')}` : ''}
                     </small>
+                    {m.raggiungibili !== undefined ? (
+                      <small className="own-reach" title={t('own.reachTip')}>
+                        {t('own.reach', { seen: m.visti ?? 0, reach: m.raggiungibili })}
+                      </small>
+                    ) : null}
                   </span>
                   <span className="agent-opt-ctl">
                     <button type="button" className="glass" onClick={() => duplicate(m)}>
