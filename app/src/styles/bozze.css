@@ -1034,10 +1034,28 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .bands-with-cmds .tx-commands .cmd-buttons > button.cmd-hold, .bands-with-cmds .cmd-buttons > button.cmd-hold { height: 20px !important; line-height: 20px; }
 
 /* Comandi dentro Bande aperte: una linea li separa dalle bande e il titolo «Comandi» come gli altri titoli della scheda */
-.bands-with-cmds .bands-cmds { margin-top: 8px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
-.bands-with-cmds .bands-cmds-title { margin: 0 0 4px; }
+.bands-with-cmds .bands-cmds { margin-top: 10px; }
+/* intestazione «Comandi» uguale alla barra del titolo delle schede, larga quanto la scheda */
+.bands-with-cmds .bands-cmds-grip { cursor: default; margin: 0 0 6px; border-top: 1px solid var(--border); }
 
 /* riquadro giallo del DX in Trasmissione piu' basso: le due righe (nominativo e paese) vicine, cosi' non spinge giu' la scheda */
 .tx-dx .pill--dx { padding: 1px 11px !important; line-height: 1.05 !important; row-gap: 0 !important; }
 .tx-dx .pill--dx .pill-dx-main, .tx-dx .pill--dx .pill-dx-country { line-height: 1.05 !important; margin: 0 !important; }
 .tx-dx .pill--dx .pill-dx-country { margin-top: -1px !important; }
+
+/* Comandi: Tx, Rx e Rapporto corti (5,6 caratteri) e affiancati a sinistra, non allargati su tutta la scheda */
+.bands-cmds .cmd-big { display: flex !important; flex-wrap: wrap !important; justify-content: flex-start !important; gap: 4px 16px !important; }
+.bands-cmds .cmd-big-row { grid-template-columns: max-content 21px !important; }
+.bands-cmds .cmd-big-row:last-child { grid-template-columns: max-content !important; }
+.bands-cmds .cmd-big-in { width: 5.6em !important; flex: none !important; }
+/* pulsanti dei Comandi larghi quanto la loro scritta, affiancati a sinistra (non piu' allargati su tutta la scheda) */
+.bands-with-cmds .cmd-buttons { justify-content: flex-start !important; flex-wrap: wrap !important; gap: 4px 6px !important; }
+.bands-with-cmds .cmd-buttons > button, .bands-with-cmds .cmd-buttons > button.cmd-hold { flex: 0 0 auto !important; width: auto !important; padding: 0 10px !important; }
+.bands-with-cmds .tx-quick--inline { flex: 0 0 auto !important; width: auto !important; display: flex !important; gap: 4px 6px !important; flex-wrap: wrap; }
+.bands-with-cmds .tx-quick--inline > button { flex: 0 0 auto !important; width: auto !important; padding: 0 10px !important; }
+.bands-with-cmds .tx-quick--inline { margin-left: 0 !important; margin-right: 0 !important; justify-content: flex-start !important; }
+/* Comandi: campo e freccia attaccati, gruppi vicini, tutto staccato di 10 px dal bordo sinistro della scheda (la barra del titolo resta larga) */
+.bands-cmds > :not(.bands-cmds-grip) { padding-left: 10px !important; padding-right: 10px !important; box-sizing: border-box; }
+.bands-cmds .cmd-big-row { column-gap: 3px !important; justify-content: start !important; justify-items: start !important; width: auto !important; }
+.bands-cmds .cmd-big { gap: 4px 12px !important; }
+.bands-cmds .cmd-big-row { flex: 0 0 auto !important; min-width: 0 !important; }

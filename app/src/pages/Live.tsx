@@ -319,7 +319,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         <BandsOpen />
         {/* i Comandi ben separati dalle bande, con il loro titolo (richiesta del proprietario) */}
         <section className="bands-cmds" aria-label={t('panel.station')}>
-          <h3 className="bands-open-title bands-cmds-title">{t('panel.station')}</h3>
+          {/* la stessa barra del titolo delle altre schede (puntini e titolo), qui solo come intestazione: non si trascina */}
+          <header className="dock-grip bands-cmds-grip">
+            <span className="dock-grip-dots" aria-hidden="true" />
+            <h2>{t('panel.station')}</h2>
+          </header>
           <TxCommands txAllowed={info.data?.tx_allowed ?? false} />
         </section>
       </div>
