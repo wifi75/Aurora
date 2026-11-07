@@ -274,8 +274,9 @@ html:has(.solo-display) *, html:has(.solo-display) { scrollbar-width: none; }
 .dxmap-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.7rem; padding-left: 0.6rem; border-left: 1px solid var(--glass-edge); }
 
 .dxmap-legendbox {
-  position: absolute; left: 0.6rem; bottom: 1.6rem; z-index: 500; display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; max-width: 15rem;
-  padding: 0.3rem 0.5rem; border-radius: 0.4rem; background: rgb(0 0 0 / 0.72); color: #fff; font-size: 0.7rem;
+  /* una riga sola, appoggiata in basso a sinistra: copre il meno possibile della cartina (richiesta del proprietario) */
+  position: absolute; left: 0.3rem; bottom: 0.2rem; z-index: 500; display: flex; flex-wrap: nowrap; gap: 0.6rem; white-space: nowrap;
+  padding: 0.12rem 0.45rem; border-radius: 0.3rem; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 0.66rem; line-height: 1.2;
 }
 .dxmap-legendbox span { display: inline-flex; align-items: center; gap: 0.25rem; }
 .dxmap-legendbox i { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; }
