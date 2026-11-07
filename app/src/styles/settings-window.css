@@ -262,3 +262,7 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 /* pagina «Messaggi agli utenti» (aperta solo dall'icona sul desktop dell'autore) */
 .owner-page { max-width: 980px; margin: 0 auto; padding: 12px 16px 40px; }
 .owner-page h1 { margin: 6px 0 12px; font-size: 20px; }
+
+.own-templates { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.own-templates .chip { height: 26px; padding: 0 10px; font-size: 12px; }
+.own-publish { font-weight: 700; }
