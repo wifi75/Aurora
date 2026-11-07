@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.167',
-    released: '2026-11-07T08:43:33Z',
+    released: '2026-11-07T08:50:52Z',
     kind: 'changed',
     title: ['Aurora più leggera', 'Lighter Aurora', 'Leichteres Aurora', 'Aurora plus légère', 'Aurora más ligera', 'Aurora mais leve'],
     text: [
