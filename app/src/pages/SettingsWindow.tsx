@@ -185,6 +185,11 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   };
   // «Salva» salva e lascia aperta la finestra (si continua con le altre schede); si chiude con la X o con «Chiudi»
   const save = async () => {
+    // molte voci si salvano da sole appena cambiate: senza modifiche in sospeso si dice che e' tutto salvato
+    if (count === 0) {
+      setNote(t('sw.allSaved'));
+      return;
+    }
     await apply();
   };
   const discard = () => {
@@ -291,7 +296,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
         <button type="button" className="sw-btn" disabled={busy} onClick={cancel}>
           {t('sw.close')}
         </button>
-        <button type="button" className="sw-btn sw-btn--save" disabled={busy || count === 0} onClick={() => void save()}>
+        <button type="button" className="sw-btn sw-btn--save" disabled={busy} onClick={() => void save()}>
           {t('sw.save')}
         </button>
       </footer>
