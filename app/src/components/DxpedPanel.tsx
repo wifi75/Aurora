@@ -98,8 +98,42 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
     if (idle) idle(run);
     else setTimeout(run, 500);
   }, [calls, client]);
+  // se la lista si scorre a mano, dopo 15 secondi senza toccarla torna in cima (dove stanno quelle in onda), come Attivita' di banda;
+  // contano solo rotella, dito, tasti e clic sopra il pannello (richiesta del proprietario)
+  const boxRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    let timer: number | undefined;
+    const scroller = (): HTMLElement | null => {
+      for (let el: HTMLElement | null = box; el && el !== document.body; el = el.parentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      }
+      for (const el of Array.from(box.querySelectorAll<HTMLElement>('*'))) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      }
+      return null;
+    };
+    const onUser = (e: Event) => {
+      const el = scroller();
+      if (!el || !(e.target instanceof Node) || !el.contains(e.target)) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const now = scroller();
+        if (now && now.scrollTop > 0) now.scrollTop = 0;
+      }, 15_000);
+    };
+    const kinds = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
+    for (const k of kinds) window.addEventListener(k, onUser, { capture: true, passive: true });
+    return () => {
+      for (const k of kinds) window.removeEventListener(k, onUser, { capture: true });
+      window.clearTimeout(timer);
+    };
+  }, []);
   return (
-    <section className="dxped" aria-label={t('dxp.title')}>
+    <section className="dxped" aria-label={t('dxp.title')} ref={boxRef}>
       <header className="dxped-head">
         <strong>{t('dxp.title')}</strong>
         <span className="muted">NG3K</span>
