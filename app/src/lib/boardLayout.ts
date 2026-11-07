@@ -7,7 +7,7 @@ import { browserStorage } from './theme';
  * posizione e la sua misura in celle. Si cambia trascinando (barra del titolo) e ridimensionando (angolo in basso a destra) finche'
  * `EDIT_LAYOUT` (lib/bottomLayout.ts) e' acceso; poi le misure salvate restano fisse. Chiave `aurora-board`, sincronizzata come le altre.
  */
-export const BOARD_IDS = ['all', 'log', 'cluster', 'dxmap', 'cq', 'waterfall', 'tx'] as const;
+export const BOARD_IDS = ['all', 'log', 'cluster', 'dxmap', 'cmds', 'cq', 'waterfall', 'tx'] as const;
 export type BoardId = (typeof BOARD_IDS)[number];
 
 const KEY = 'aurora-board';
@@ -19,7 +19,9 @@ export function defaultBoard(): Record<BoardId, Cell> {
     all: { x: 0, y: 0, w: 3.25, h: 19.25 },
     log: { x: 3.25, y: 0, w: 2.75, h: 19.25 },
     cluster: { x: 6, y: 0, w: 3.5, h: 13.5 },
-    dxmap: { x: 9.5, y: 0, w: 2.5, h: 13.5 },
+    dxmap: { x: 9.5, y: 0, w: 2.5, h: 9.5 },
+    // i Comandi in una finestra a se', sotto Bande aperte (richiesta del proprietario 2026-11-07)
+    cmds: { x: 9.5, y: 9.5, w: 2.5, h: 4 },
     waterfall: { x: 0, y: 19.25, w: 6, h: 4.75 },
     tx: { x: 6, y: 13.5, w: 2.75, h: 10.5 },
     cq: { x: 8.75, y: 13.5, w: 3.25, h: 10.5 },
@@ -40,7 +42,7 @@ const overlaps = (a: Cell, b: Cell) => a.x < b.x + b.w - 1e-6 && b.x < a.x + a.w
  * se non c'e' posto, prova la misura di partenza e, in ultimo, torna tutta la disposizione di partenza.
  */
 export function settleBoard(cells: Record<BoardId, Cell>): Record<BoardId, Cell> {
-  const order: BoardId[] = ['waterfall', 'tx', 'cq', 'all', 'log', 'cluster', 'dxmap'];
+  const order: BoardId[] = ['waterfall', 'tx', 'cq', 'all', 'log', 'cluster', 'dxmap', 'cmds'];
   const placed: Partial<Record<BoardId, Cell>> = {};
   const fits = (c: Cell) => c.x >= 0 && c.y >= 0 && c.x + c.w <= COLS + 1e-6 && c.y + c.h <= MAX_ROWS + 1e-6 && Object.values(placed).every((p) => !overlaps(c, p));
   const spot = (w: number, h: number): Cell | null => {
@@ -66,6 +68,16 @@ export function readBoard(storage: Pick<Storage, 'getItem'> | null): Record<Boar
     if (!raw) return out;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     for (const id of BOARD_IDS) if (valid(parsed[id])) out[id] = parsed[id] as Cell;
+    // disposizioni salvate prima dei Comandi separati: Bande aperte si divide in due nello stesso spazio (sopra le bande, sotto i
+    // Comandi), cosi' nessun'altra finestra si sposta e la disposizione non torna quella di partenza
+    if (!valid(parsed.cmds) && valid(parsed.dxmap)) {
+      const d = parsed.dxmap as Cell;
+      const hc = Math.min(d.h - 2, Math.max(3.5, Math.round(d.h * 0.3 * 4) / 4));
+      if (hc >= 1 && d.h - hc >= 1) {
+        out.dxmap = { ...d, h: d.h - hc };
+        out.cmds = { x: d.x, y: d.y + d.h - hc, w: d.w, h: hc };
+      }
+    }
     // una finestra rimasta sotto la parte visibile o coperta da un'altra viene rimessa a posto
     return settleBoard(out);
   } catch {

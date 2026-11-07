@@ -314,16 +314,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const boardCells = useBoard((st) => st.cells);
   const blockBody = (id: BoardId): ReactNode =>
     id === 'dxmap' ? (
-      // Bande aperte con i Comandi sotto (al posto di continenti e record: i Comandi servono di piu')
-      <div className="bands-with-cmds">
+      <div className="bands-with-cmds bands-only">
         <BandsOpen />
-        {/* i Comandi ben separati dalle bande, con il loro titolo (richiesta del proprietario) */}
+      </div>
+    ) : id === 'cmds' ? (
+      // i Comandi in una finestra a se', sotto Bande aperte (richiesta del proprietario)
+      <div className="bands-with-cmds cmds-only">
         <section className="bands-cmds" aria-label={t('panel.station')}>
-          {/* la stessa barra del titolo delle altre schede (puntini e titolo), qui solo come intestazione: non si trascina */}
-          <header className="dock-grip bands-cmds-grip">
-            <span className="dock-grip-dots" aria-hidden="true" />
-            <h2>{t('panel.station')}</h2>
-          </header>
           <TxCommands txAllowed={info.data?.tx_allowed ?? false} />
         </section>
       </div>
@@ -332,7 +329,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     ) : (
       renderPanel(id)
     );
-  const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : titles[id]);
+  const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : id === 'cmds' ? t('panel.station') : titles[id]);
   const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
@@ -405,7 +402,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
-                  <DetachButton item={id as ItemId} className="dock-detach" />
+                  {id === 'cmds' ? null : <DetachButton item={id as ItemId} className="dock-detach" />}
                 </header>
                 <div className="dock-body">{blockBody(id as BoardId)}</div>
               </section>

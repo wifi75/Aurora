@@ -1079,3 +1079,7 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-panel--tx .tx-dx .tx-queue--side + .rxtx-flag { margin-left: 8px !important; }
 .dock-panel--tx .tx-dx .tx-queue--side { align-self: flex-start !important; justify-content: flex-start !important; margin-top: 2px !important; }
 
+
+/* Comandi in una finestra a se': niente linea e niente spazio in alto, la barra del titolo e' quella della finestra */
+.dock-panel--cmds .bands-with-cmds > :last-child, .dock-panel--cmds .bands-cmds { border-top: 0 !important; padding-top: 6px !important; margin-top: 0 !important; }
+.dock-panel--dxmap .bands-only > :last-child { border-top: 0 !important; padding-top: 0 !important; }
