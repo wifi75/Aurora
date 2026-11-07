@@ -1059,5 +1059,5 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-panel--tx .tx-panel--combo { padding-top: 3px !important; }
 .dock-panel--tx .tx-left.tx-block { margin-top: 0 !important; row-gap: 3px !important; }
 .dock-panel--tx .tx-dx { padding-bottom: 0 !important; margin-bottom: 0 !important; }
-/* Trasmissione: messaggi, pulsanti e cursori 15 px piu' in basso rispetto alla riga del DX (richiesta del proprietario) */
-.dock-panel--tx .tx-dx + .tx-list { margin-top: 15px !important; }
+/* Trasmissione: messaggi, pulsanti e cursori 20 px piu' in basso rispetto alla riga del DX (richiesta del proprietario) */
+.dock-panel--tx .tx-dx + .tx-list { margin-top: 20px !important; }
