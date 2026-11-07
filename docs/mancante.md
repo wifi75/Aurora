@@ -1,6 +1,6 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-11-04, versione 0.11.174. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-11-07, versione 0.11.174. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
@@ -10,6 +10,10 @@ Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF
 Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modello da' a Hamlib dati diversi), lettura NG3K nel tempo (la pagina puo' cambiare formato), cascata oltre 3000 Hz.
 
 ## Da fare, in ordine di lavoro
+
+- **M** Stazione che si adatta da sola alla larghezza della finestra (oggi i blocchi hanno misure fisse e a destra si taglia se la finestra e' piu' stretta).
+- **M** «Installa e riavvia»: mostrare l'avanzamento del download (oggi per qualche secondo sembra che non succeda niente).
+- **B** Pannello Log sotto i 300 px: le colonne dei QSO escono dal riquadro.
 
 | # | Voce | Pri. | Note |
 |---|---|---|---|
