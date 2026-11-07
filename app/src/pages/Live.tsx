@@ -7,7 +7,7 @@ import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList } from '../components/DecodeList';
 import { DiagnosisBar } from '../components/DiagnosisBar';
-import { GridBoard } from '../components/GridBoard';
+import { GridBoard, type Cell } from '../components/GridBoard';
 import { DetachButton } from '../components/DetachButton';
 import { detachedItems, useGroups } from '../lib/detached';
 import { useBoard, type BoardId } from '../lib/boardLayout';
@@ -340,6 +340,21 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const groups = useGroups();
   const awayIds: PanelId[] = [...(layout.hidden ?? []), ...(detachedItems(groups) as PanelId[])];
   const visibleCells = Object.fromEntries(Object.entries(boardCells).filter(([id]) => !(awayIds as string[]).includes(id)));
+  // con una o piu' schede staccate (o nascoste) la pagina si sblocca: le altre si spostano e si ridimensionano per usare il posto libero.
+  // Queste misure si ricordano a parte, una disposizione per ogni insieme di schede staccate: rimesse tutte a posto, torna la pagina
+  // bloccata con le misure di sempre (richiesta del proprietario)
+  const awayKey = [...new Set(awayIds as string[])].filter((id) => id in boardCells).sort().join(',');
+  const [awayBoards, setAwayBoards] = useState<Record<string, Record<string, Cell>>>(readAwayBoards);
+  const awayCells = awayKey ? { ...visibleCells, ...pickCells(awayBoards[awayKey], visibleCells) } : visibleCells;
+  const saveAwayCells = (next: Record<string, Cell>) => {
+    const all = { ...awayBoards, [awayKey]: { ...awayCells, ...next } };
+    setAwayBoards(all);
+    try {
+      browserStorage()?.setItem(AWAY_KEY, JSON.stringify(all));
+    } catch {
+      // senza archivio le misure valgono finche' la finestra resta aperta
+    }
+  };
 
   return (
     <div className="live">
@@ -391,11 +406,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       ) : (
         <div className="live-board">
           <GridBoard
-            cells={visibleCells}
-            locked={!EDIT_LAYOUT}
+            cells={awayKey ? awayCells : visibleCells}
+            locked={!EDIT_LAYOUT && !awayKey}
             swap
             free
-            onChange={(next) => useBoard.getState().set({ ...boardCells, ...next })}
+            onChange={(next) => (awayKey && !EDIT_LAYOUT ? saveAwayCells(next) : useBoard.getState().set({ ...boardCells, ...next }))}
             render={(id, grip) => (
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
                 <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
@@ -413,6 +428,26 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       <StopButton variant="bar" />
     </div>
   );
+}
+
+/** Le disposizioni della Stazione con schede staccate, una per ogni insieme (chiave: gli id staccati in ordine, separati da virgola). */
+const AWAY_KEY = 'aurora-board-staccate';
+
+function readAwayBoards(): Record<string, Record<string, Cell>> {
+  try {
+    const raw = browserStorage()?.getItem(AWAY_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, Record<string, Cell>>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Solo le misure valide delle schede ancora in vista. */
+function pickCells(saved: Record<string, Cell> | undefined, shown: Record<string, Cell>): Record<string, Cell> {
+  if (!saved) return {};
+  const ok = (c: Cell | undefined): c is Cell => !!c && [c.x, c.y, c.w, c.h].every((v) => typeof v === 'number' && Number.isFinite(v)) && c.w > 0 && c.h > 0;
+  return Object.fromEntries(Object.keys(shown).filter((id) => ok(saved[id])).map((id) => [id, saved[id]!]));
 }
 
 /**

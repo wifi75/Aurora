@@ -1104,3 +1104,7 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dock-grip h2, .dock-grip-extra h2 { color: #1d2a44 !important; }
 html:not([data-theme='light']) .dock-grip { background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e) !important; border-bottom-color: #3a2c6e !important; }
 html:not([data-theme='light']) .dock-grip h2, html:not([data-theme='light']) .dock-grip-extra h2 { color: #e6ecf8 !important; }
+
+/* il menu «Nuova finestra / Accanto a…» non resta mai tagliato dalla scheda: aperto, la scheda lo lascia uscire e sta sopra le altre */
+.grid-block:has(.dock-detach-menu) { z-index: 50; }
+.dock-panel:has(.dock-detach-menu) { overflow: visible !important; }
