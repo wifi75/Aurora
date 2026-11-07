@@ -131,6 +131,8 @@ export function OwnerMessagesTab() {
   const [festive, setFestive] = useState(false);
   const [theme, setTheme] = useState<Theme>('');
   const [busy, setBusy] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [langsOpen, setLangsOpen] = useState(false);
   // lingua della cartolina d'anteprima (chi non ha la sua lingua vede l'inglese o l'italiano, come nell'agente)
   const [shown, setShown] = useState<Lang>('it');
 
@@ -184,6 +186,36 @@ export function OwnerMessagesTab() {
       { kind: festive ? '✦ IU3WJQ' : 'IU3WJQ', title: title.it ?? '', text: text.it ?? '', primary: link ? t('agent.msg.open') : t('upd.poster.ok'), secondary: link ? t('upd.poster.ok') : '', festive, theme },
       12,
     );
+
+  // traduzione automatica (servizio dei messaggi, solo con il segreto): dall'italiano alle altre cinque lingue, da ricontrollare
+  const translate = async () => {
+    const others = LANGS.filter((l) => l !== 'it');
+    const already = others.some((l) => (title[l] ?? '').trim() || (text[l] ?? '').trim());
+    if (already && !(await askConfirm(t('own.translateAsk')))) return;
+    setTranslating(true);
+    setNote('');
+    try {
+      const r = await fetch(`${BASE}/traduci`, { method: 'POST', headers: headers(), body: JSON.stringify({ titolo: title.it ?? '', testo: text.it ?? '' }) });
+      if (r.status === 401) {
+        setNote(t('own.badToken'));
+        return;
+      }
+      const j = (await r.json()) as { titolo?: Partial<Record<Lang, string>>; testo?: Partial<Record<Lang, string>> };
+      const got = others.filter((l) => j.titolo?.[l] || j.testo?.[l]);
+      if (got.length === 0) {
+        setNote(t('own.translateFail'));
+        return;
+      }
+      setTitle((cur) => ({ ...cur, ...Object.fromEntries(got.map((l) => [l, j.titolo?.[l] ?? cur[l] ?? ''])) }));
+      setText((cur) => ({ ...cur, ...Object.fromEntries(got.map((l) => [l, j.testo?.[l] ?? cur[l] ?? ''])) }));
+      setLangsOpen(true);
+      setNote(t('own.translated', { n: got.length }));
+    } catch {
+      setNote(t('own.offline'));
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const duplicate = (m: Msg) => {
     setTitle(m.titolo);
@@ -269,7 +301,13 @@ export function OwnerMessagesTab() {
             </span>
             <textarea className="own-text" maxLength={1200} rows={3} value={text.it ?? ''} onChange={(e) => setText({ ...text, it: e.target.value })} />
           </label>
-          <details className="own-langs">
+          <div className="own-translate">
+            <button type="button" className="glass" disabled={translating || token.length < 16 || !(title.it ?? '').trim()} onClick={() => void translate()} title={t('own.translateTip')}>
+              {translating ? t('own.translating') : t('own.translate')}
+            </button>
+            <span className="muted">{t('own.translateHint')}</span>
+          </div>
+          <details className="own-langs" open={langsOpen} onToggle={(e) => setLangsOpen((e.currentTarget as HTMLDetailsElement).open)}>
             <summary className="muted">{t('own.otherLangs')}</summary>
             {LANGS.filter((l) => l !== 'it').map((l) => (
               <div key={l} className="own-lang">
