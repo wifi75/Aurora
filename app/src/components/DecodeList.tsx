@@ -321,7 +321,9 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const queued = queueCalls
     .map((c) => decodes.find((d) => d.id === queueRow.get(c)))
     .filter((d): d is DecodedMessage => !!d && d !== pin && !inQso(d));
-  const rest = (pin ? decodes.filter((d) => !inQso(d)) : decodes).filter((d) => !queued.includes(d));
+  // in cima resta la riga ferma del QSO; delle altre righe del QSO resta in lista solo la sua ultima risposta a me (una basta),
+  // altrimenti quando l'ultimo messaggio e' il mio non si capisce piu' se e cosa ha risposto (richiesta del proprietario)
+  const rest = (pin ? decodes.filter((d) => d !== pin && (!inQso(d) || d === hisLast)) : decodes).filter((d) => !queued.includes(d));
   const top = pin ? [pin, ...queued] : queued;
   // l'etichetta piu' recente di ogni stazione che ho chiamato (per la mia riga Tx)
   const lastTagOf = new Map<string, DecodedMessage['tag']>();

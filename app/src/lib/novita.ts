@@ -25,12 +25,12 @@ export const NOVITA: readonly Novita[] = [
     kind: 'new',
     title: ['Le tue trasmissioni uguali in una riga', 'Your identical transmissions in one row', 'Deine gleichen Sendungen in einer Zeile', 'Tes émissions identiques sur une ligne', 'Tus transmisiones iguales en una fila', 'As tuas transmissões iguais numa linha'],
     text: [
-      "In Attività di banda il CQ ripetuto ogni periodo non riempie più la lista: resta solo l'ultima trasmissione con «×N» (quante volte l'hai mandata). I messaggi diversi del QSO restano tutti.",
-      "In Band activity the CQ repeated every period no longer fills the list: only the last transmission stays, with «×N» (how many times you sent it). The different QSO messages all stay.",
-      "In der Bandaktivität füllt der in jeder Periode wiederholte CQ die Liste nicht mehr: nur die letzte Sendung bleibt, mit «×N» (wie oft du sie gesendet hast). Die unterschiedlichen QSO-Nachrichten bleiben alle.",
-      "Dans l'Activité de bande le CQ répété à chaque période ne remplit plus la liste : seule la dernière émission reste, avec « ×N » (combien de fois tu l'as envoyée). Les messages différents du QSO restent tous.",
-      "En Actividad de banda el CQ repetido cada periodo ya no llena la lista: queda solo la última transmisión con «×N» (cuántas veces la enviaste). Los mensajes distintos del QSO se quedan todos.",
-      "Na Atividade de banda o CQ repetido em cada período já não enche a lista: fica só a última transmissão com «×N» (quantas vezes a enviaste). As mensagens diferentes do QSO ficam todas.",
+      "In Attività di banda il CQ ripetuto ogni periodo non riempie più la lista: resta solo l'ultima trasmissione con «×N» (quante volte l'hai mandata). I messaggi diversi del QSO restano tutti. Durante un QSO, oltre alla riga ferma in cima, resta in lista la sua ultima risposta ricevuta da te.",
+      "In Band activity the CQ repeated every period no longer fills the list: only the last transmission stays, with «×N» (how many times you sent it). The different QSO messages all stay. During a QSO, besides the fixed row at the top, his last reply you received stays in the list.",
+      "In der Bandaktivität füllt der in jeder Periode wiederholte CQ die Liste nicht mehr: nur die letzte Sendung bleibt, mit «×N» (wie oft du sie gesendet hast). Die unterschiedlichen QSO-Nachrichten bleiben alle. Während eines QSO bleibt neben der festen Zeile oben seine letzte von dir empfangene Antwort in der Liste.",
+      "Dans l'Activité de bande le CQ répété à chaque période ne remplit plus la liste : seule la dernière émission reste, avec « ×N » (combien de fois tu l'as envoyée). Les messages différents du QSO restent tous. Pendant un QSO, en plus de la ligne fixe en haut, sa dernière réponse reçue par toi reste dans la liste.",
+      "En Actividad de banda el CQ repetido cada periodo ya no llena la lista: queda solo la última transmisión con «×N» (cuántas veces la enviaste). Los mensajes distintos del QSO se quedan todos. Durante un QSO, además de la fila fija arriba, queda en la lista su última respuesta recibida por ti.",
+      "Na Atividade de banda o CQ repetido em cada período já não enche a lista: fica só a última transmissão com «×N» (quantas vezes a enviaste). As mensagens diferentes do QSO ficam todas. Durante um QSO, além da linha fixa no topo, fica na lista a última resposta dele recebida por ti.",
     ],
   },
   {
