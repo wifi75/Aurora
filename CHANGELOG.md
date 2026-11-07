@@ -3,6 +3,9 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.180 - 2026-11-07
+- **Messaggi dell'autore, traduzione**: pulsante «Traduci in tutte le lingue» nella pagina dei messaggi; il servizio `aurora-rapporti` traduce dall'italiano con Workers AI (Llama 3.3, istruito sul gergo radioamatoriale) in `POST /v1/messaggi/traduci`, solo con ADMIN_TOKEN e con il freno ai tentativi; le traduzioni si ricontrollano nella cartolina prima di pubblicare.
+
 ## 0.11.179 - 2026-11-07
 - **Messaggi dell'autore, temi**: cinque cartoline (Natale con il cappellino sull'angolo, Anno nuovo, Pasqua, Aggiornamento, Servizio) in Aurora e nell'agente nel tray (`AURORA_AGENTE_PROVA=natale` per provarle); il tema viaggia nel campo `stile` del servizio `aurora-rapporti` (colonna D1 nuova), le versioni vecchie mostrano la cartolina normale.
 - **Pagina dei messaggi**: modulo a sinistra e cartolina d'anteprima sempre visibile a destra con scelta della lingua; i modelli sono gia' scritti in tutte e sei le lingue e si chiamano nella lingua dell'interfaccia; scelta del tema a mano.

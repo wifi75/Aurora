@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.180',
+    released: '2026-11-07T14:00:39Z',
+    kind: 'new',
+    title: ["Messaggi dell'autore tradotti in automatico", "Author's messages translated automatically", 'Nachrichten des Autors automatisch übersetzt', "Messages de l'auteur traduits automatiquement", 'Mensajes del autor traducidos automáticamente', 'Mensagens do autor traduzidas automaticamente'],
+    text: [
+      "I messaggi dell'autore ora arrivano più spesso nella tua lingua: la pagina con cui li scrive ha un pulsante che li traduce in inglese, tedesco, francese, spagnolo e portoghese.",
+      "The author's messages now reach you in your language more often: the page he writes them with has a button that translates them into English, German, French, Spanish and Portuguese.",
+      "Die Nachrichten des Autors erreichen dich jetzt öfter in deiner Sprache: Die Seite, auf der er sie schreibt, hat eine Schaltfläche, die sie ins Englische, Deutsche, Französische, Spanische und Portugiesische übersetzt.",
+      "Les messages de l'auteur t'arrivent maintenant plus souvent dans ta langue : la page où il les écrit a un bouton qui les traduit en anglais, allemand, français, espagnol et portugais.",
+      "Los mensajes del autor ahora te llegan más a menudo en tu idioma: la página con la que los escribe tiene un botón que los traduce al inglés, alemán, francés, español y portugués.",
+      "As mensagens do autor agora chegam mais vezes na tua língua: a página onde as escreve tem um botão que as traduz para inglês, alemão, francês, espanhol e português.",
+    ],
+  },
+  {
     version: '0.11.179',
     released: '2026-11-07T13:24:26Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "L’afficheur de la radio passe sur un autre écran avec le petit bouton dans son coin en haut à droite (blanc sur noir, visible sur tout afficheur) : la fenêtre se redimensionne et l’afficheur suit en gardant ses proportions, sans perte de qualité. La page Journal supporte des journaux de dizaines de milliers de QSO : les lignes apparaissent par blocs avec « Afficher plus », filtres et export valent pour tous.",
       "La pantalla de la radio pasa a otra pantalla con el pequeño botón en su esquina superior derecha (blanco sobre negro, visible en cualquier pantalla): la ventana se redimensiona y la pantalla la sigue manteniendo las proporciones, sin perder calidad. La página Log aguanta logs de decenas de miles de QSO: las filas aparecen por bloques con «Mostrar más», filtros y exportación valen para todos.",
       "O ecrã do rádio passa para outro monitor com o pequeno botão no canto superior direito (branco sobre preto, visível em qualquer ecrã): a janela redimensiona-se e o ecrã acompanha mantendo as proporções, sem perder qualidade. A página Log aguenta logs de dezenas de milhares de QSO: as linhas aparecem em blocos com «Mostrar mais», filtros e exportação valem para todos.",
-    ],
-  },
-  {
-    version: '0.11.140',
-    released: '2026-11-05T16:47:38Z',
-    kind: 'fixed',
-    title: ["Aggiornamento senza l'errore di libhamlib", 'Update without the libhamlib error', 'Aktualisierung ohne libhamlib-Fehler', 'Mise à jour sans l’erreur libhamlib', 'Actualización sin el error de libhamlib', 'Atualização sem o erro do libhamlib'],
-    text: [
-      "Aggiornando, l'installazione poteva fermarsi con «Errore nell'apertura del file in scrittura: libhamlib-4.dll», perché il rigctld di Aurora restava aperto. Ora l'installatore lo chiude da solo e riprova, senza chiederti nulla. In Impostazioni › Audio non compare più una cartella dei file audio rimasta da JTDX.",
-      "When updating, the installer could stop with «Error opening file for writing: libhamlib-4.dll», because Aurora's rigctld stayed open. Now the installer closes it by itself and retries, without asking.",
-      "Beim Aktualisieren konnte die Installation mit «Fehler beim Öffnen der Datei zum Schreiben: libhamlib-4.dll» stehen bleiben, weil Auroras rigctld offen blieb. Jetzt schließt das Installationsprogramm es selbst und versucht es erneut, ohne Nachfrage.",
-      "Lors d’une mise à jour, l’installation pouvait s’arrêter sur « Erreur d’ouverture du fichier en écriture : libhamlib-4.dll », car le rigctld d’Aurora restait ouvert. L’installateur le ferme maintenant tout seul et réessaie, sans rien demander.",
-      "Al actualizar, la instalación podía pararse con «Error al abrir el archivo para escritura: libhamlib-4.dll», porque el rigctld de Aurora seguía abierto. Ahora el instalador lo cierra solo y reintenta, sin preguntar.",
-      "Ao atualizar, a instalação podia parar com «Erro ao abrir o ficheiro para escrita: libhamlib-4.dll», porque o rigctld da Aurora ficava aberto. Agora o instalador fecha-o sozinho e tenta de novo, sem perguntar.",
     ],
   },
 ];
