@@ -317,7 +317,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       // Bande aperte con i Comandi sotto (al posto di continenti e record: i Comandi servono di piu')
       <div className="bands-with-cmds">
         <BandsOpen />
-        <TxCommands txAllowed={info.data?.tx_allowed ?? false} />
+        {/* i Comandi ben separati dalle bande, con il loro titolo (richiesta del proprietario) */}
+        <section className="bands-cmds" aria-label={t('panel.station')}>
+          <h3 className="bands-open-title bands-cmds-title">{t('panel.station')}</h3>
+          <TxCommands txAllowed={info.data?.tx_allowed ?? false} />
+        </section>
       </div>
     ) : id === 'tx' ? (
       <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />

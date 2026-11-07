@@ -1026,3 +1026,13 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .app-bar .bar-utc { font-size: 15px; color: var(--text); letter-spacing: .03em; }
 .app-bar .bar-utc i { font-size: 11px; opacity: .8; }
 .app-footer.app-bar > small { font-size: 12px; font-weight: 600; color: var(--text); opacity: .85; }
+
+/* Comandi: campi Tx, Rx e Rapporto e pulsanti sotto piu' sottili e tutti alti uguali, numeri centrati (richiesta del proprietario) */
+.tx-commands .cmd-big-in { height: 21px !important; min-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; text-align: center !important; line-height: 21px; }
+.tx-commands .cmd-big-btn { height: 21px !important; min-height: 0 !important; width: 21px; }
+.tx-commands .cmd-buttons button, .tx-commands .cmd-buttons .glass { height: 20px !important; min-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; line-height: 20px; text-align: center; justify-content: center; }
+.bands-with-cmds .tx-commands .cmd-buttons > button.cmd-hold, .bands-with-cmds .cmd-buttons > button.cmd-hold { height: 20px !important; line-height: 20px; }
+
+/* Comandi dentro Bande aperte: una linea li separa dalle bande e il titolo «Comandi» come gli altri titoli della scheda */
+.bands-with-cmds .bands-cmds { margin-top: 8px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+.bands-with-cmds .bands-cmds-title { margin: 0 0 4px; }
