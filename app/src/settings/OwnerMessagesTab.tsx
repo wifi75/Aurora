@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { askConfirm } from '../components/ConfirmHost';
+import { showAgentPopup } from '../components/AgentPopup';
 import { useT } from '../i18n';
 import { Help } from './common';
 import { Group, Notes, Page } from './layout';
@@ -22,6 +23,17 @@ interface Msg {
   link: string;
   tema: 'normale' | 'festa';
 }
+
+/** Modelli pronti: riempiono il modulo (si possono poi cambiare). Date: da oggi per qualche giorno. */
+const TEMPLATES: readonly { id: string; days: number; festive: boolean; title: string; text: string; before?: 'current' }[] = [
+  { id: 'natale', days: 3, festive: true, title: 'Buon Natale!', text: 'Auguri di buon Natale a te e alla tua famiglia, e buoni DX!' },
+  { id: 'anno', days: 2, festive: true, title: 'Buon anno!', text: "Felice anno nuovo: che sia pieno di paesi nuovi e di bande aperte!" },
+  { id: 'pasqua', days: 2, festive: true, title: 'Buona Pasqua!', text: 'Auguri di buona Pasqua e buoni collegamenti!' },
+  { id: 'aggiorna', days: 7, festive: false, title: 'Aggiorna Aurora', text: "La tua versione ha un problema corretto nella nuova: aggiorna da Impostazioni → Aggiornamenti.", before: 'current' },
+  { id: 'servizio', days: 1, festive: false, title: 'Avviso di servizio', text: 'Oggi alcuni servizi online di Aurora potrebbero non rispondere per qualche ora.' },
+];
+
+declare const __AURORA_UI_VERSION__: string;
 
 function readToken(): string {
   try {
@@ -86,7 +98,39 @@ export function OwnerMessagesTab() {
     }
   };
 
+  const applyTemplate = (id: string) => {
+    const m = TEMPLATES.find((x) => x.id === id);
+    if (!m) return;
+    setTitle({ it: m.title });
+    setText({ it: m.text });
+    setFestive(m.festive);
+    setFrom(localInput(new Date()));
+    setTo(localInput(new Date(Date.now() + m.days * 86_400_000)));
+    setBefore(m.before === 'current' && typeof __AURORA_UI_VERSION__ === 'string' ? __AURORA_UI_VERSION__ : '');
+  };
+
+  // come la vedranno gli utenti: la stessa cartolina con il suono, solo su questo PC (non si pubblica niente)
+  const preview = () =>
+    showAgentPopup(
+      { kind: festive ? '✦ IU3WJQ' : 'IU3WJQ', title: title.it ?? '', text: text.it ?? '', primary: link ? t('agent.msg.open') : t('upd.poster.ok'), secondary: link ? t('upd.poster.ok') : '', festive },
+      12,
+    );
+
+  const duplicate = (m: Msg) => {
+    setTitle(m.titolo);
+    setText(m.testo);
+    setFestive(m.tema === 'festa');
+    setBefore(m.prima_di);
+    setLink(m.link);
+    setFrom(localInput(new Date()));
+    setTo(localInput(new Date(Date.now() + 3 * 86_400_000)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const publish = async () => {
+    // arriva a tutte le installazioni: si chiede conferma, con a chi va e fino a quando
+    const who = before ? t('own.whoOld', { v: before }) : t('own.whoAll');
+    if (!(await askConfirm(t('own.publishAsk', { title: title.it ?? '', who, until: new Date(to).toLocaleString() })))) return;
     setBusy(true);
     try {
       const r = await fetch(BASE, {
@@ -128,12 +172,24 @@ export function OwnerMessagesTab() {
 
       <Group title={t('own.new')} span={2}>
         <div className="own-form">
+          <div className="own-templates">
+            <span className="muted">{t('own.templates')}</span>
+            {TEMPLATES.map((m) => (
+              <button key={m.id} type="button" className="glass chip" onClick={() => applyTemplate(m.id)}>
+                {m.title}
+              </button>
+            ))}
+          </div>
           <label>
-            <span>{t('own.title')}</span>
+            <span>
+              {t('own.title')} <small className="muted">{(title.it ?? '').length}/120</small>
+            </span>
             <input className="agent-input own-wide" maxLength={120} value={title.it ?? ''} onChange={(e) => setTitle({ ...title, it: e.target.value })} />
           </label>
           <label>
-            <span>{t('own.text')}</span>
+            <span>
+              {t('own.text')} <small className="muted">{(text.it ?? '').length}/1200</small>
+            </span>
             <textarea className="own-text" maxLength={1200} rows={3} value={text.it ?? ''} onChange={(e) => setText({ ...text, it: e.target.value })} />
           </label>
           <details className="own-langs">
@@ -169,7 +225,10 @@ export function OwnerMessagesTab() {
             <input className="agent-input own-wide" placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} />
           </label>
           <div className="own-actions">
-            <button type="button" className="glass" disabled={busy || token.length < 16 || !(title.it ?? '').trim() || !(text.it ?? '').trim()} onClick={() => void publish()}>
+            <button type="button" className="glass" disabled={!(title.it ?? '').trim()} onClick={preview}>
+              {t('own.preview')}
+            </button>
+            <button type="button" className="glass own-publish" disabled={busy || token.length < 16 || !(title.it ?? '').trim() || !(text.it ?? '').trim()} onClick={() => void publish()}>
               {t('own.publish')}
             </button>
             {note ? <span className="muted">{note}</span> : null}
@@ -199,6 +258,9 @@ export function OwnerMessagesTab() {
                     </small>
                   </span>
                   <span className="agent-opt-ctl">
+                    <button type="button" className="glass" onClick={() => duplicate(m)}>
+                      {t('own.duplicate')}
+                    </button>
                     <button type="button" className="glass" onClick={() => void remove(m)}>
                       {t('own.remove')}
                     </button>
