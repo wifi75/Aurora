@@ -60,6 +60,14 @@ export const diagnosisStrings = {
     'El audio pierde bloques ({detail} por minuto): comprueba el cable USB de la tarjeta de sonido y quita el ahorro de energía USB de Windows; cierra los programas pesados.',
     'O áudio está a perder blocos ({detail} por minuto): verifica o cabo USB da placa de som e desliga a poupança de energia USB do Windows; fecha os programas pesados.',
   ],
+  'diag.power_knob': [
+    "La radio è ripartita con la potenza al {detail}% e non accetta quella che avevi scelto: su questa radio si regola dalla manopola RF PWR.",
+    "The radio started with power at {detail}% and won't take the one you chose: on this radio set it with the RF PWR knob.",
+    "Das Funkgerät startete mit {detail}% Leistung und nimmt deine Wahl nicht an: hier regelt man sie mit dem RF-PWR-Knopf.",
+    "La radio a redémarré avec la puissance à {detail}% et n’accepte pas celle choisie : sur cette radio, règle-la avec le bouton RF PWR.",
+    "La radio arrancó con la potencia al {detail}% y no acepta la que elegiste: en esta radio se ajusta con el mando RF PWR.",
+    "O rádio arrancou com a potência a {detail}% e não aceita a que escolheste: neste rádio ajusta-se com o botão RF PWR.",
+  ],
   'diag.no_cat': [
     "Attenzione: non puoi trasmettere perché la radio non è collegata (CAT non configurato). La ricezione funziona lo stesso: per trasmettere scegli la radio in Impostazioni › Radio e premi Collega.",
     "Warning: you can't transmit because the radio isn't connected (CAT not set up). Reception still works: to transmit, choose the radio in Settings › Radio and press Connect.",

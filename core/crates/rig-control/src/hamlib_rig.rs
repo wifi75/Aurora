@@ -356,6 +356,8 @@ impl Inner {
         if let Ok(mut extras) = self.extras.lock() {
             *extras = crate::extras::ExtrasPoll::default();
         }
+        // la potenza scelta l'ultima volta con + e − (la radio puo' ripartire con la sua, es. 99%)
+        crate::extras::restore_power(link.client());
         if let Ok(mut slot) = self.link.lock() {
             *slot = Some(link);
         }

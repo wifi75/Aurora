@@ -208,6 +208,22 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
       window.clearTimeout(backTimer.current);
     };
   }, [listEl]);
+  // la priorita' sono sempre le decodifiche nuove (scelta del proprietario): appena arriva un periodo nuovo la lista torna subito
+  // all'ultima decodifica, anche se si stava scorrendo
+  const newestId = decodes.find((d) => d.id >= 0)?.id ?? null;
+  useEffect(() => {
+    const list = listEl;
+    if (!list || newestId === null) return;
+    const invert = list.classList.contains('decode-list--invert');
+    for (let el: HTMLElement | null = list; el && el !== document.body; el = el.parentElement) {
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+        el.scrollTop = invert ? el.scrollHeight : 0;
+        break;
+      }
+    }
+    window.clearTimeout(backTimer.current);
+  }, [newestId, listEl]);
   const tapOnce = (id: number) => {
     const now = Date.now();
     if (lastTap.current && lastTap.current.id === id && now - lastTap.current.at < 2000) return;

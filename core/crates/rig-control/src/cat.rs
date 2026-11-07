@@ -125,6 +125,7 @@ pub struct CatService {
 impl CatService {
     /// Apre il servizio con il file `radio.json` indicato (se manca si parte dai valori di base).
     pub fn open(path: &Path) -> Arc<CatService> {
+        crate::extras::set_power_file(path);
         CatService::with_parts(path, CatParts::system())
     }
 

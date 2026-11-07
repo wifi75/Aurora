@@ -5,6 +5,7 @@ import { getControls, postControl, postReport, postRxFrequency, postTxFrequency,
 import type { StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
+import { TxQuickControls } from './TxQuickControls';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 
 interface Props {
@@ -110,7 +111,9 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
             <input type="number" className="cmd-big-in" aria-label={t('cmd.report')} title={t('tip.cmd.report')} min={-50} max={49} value={report} onChange={(e) => setReport(e.target.value)} onBlur={applyReport} onKeyDown={onEnter(applyReport)} />
             <span className="cmd-big-unit">dB</span>
           </label>
-          {/* Hold Tx Freq: a tutta larghezza sotto i campi, con lo stato ben visibile */}
+        </div>
+        {/* i pulsanti dei Comandi in una riga: Hold Tx Freq e Log QSO (qui si aggiungeranno gli altri) */}
+        <div className="cmd-buttons" role="group">
           <button
             type="button"
             className={`glass chip cmd-hold${hold ? ' glass--on' : ''}`}
@@ -121,6 +124,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
           >
             {t('ctl.hold_tx' as Key)}
           </button>
+<TxQuickControls inline />
         </div>
         {note ? (
           <p className="live-note" role="status">

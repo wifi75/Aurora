@@ -1,4 +1,3 @@
-import { foxCalls } from '../lib/fox';
 import { DxPill } from './DxPill';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -11,7 +10,6 @@ import { useStation } from '../state/station';
 import { InputLevel } from './InputLevel';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
-import { TxQuickControls } from './TxQuickControls';
 import { replyErrorMessage } from '../lib/replyError';
 import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 
@@ -141,7 +139,7 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
   const status = statusProp === undefined ? ownStatus : statusProp;
   const t = useT();
   const [note, setNote] = useState('');
-  const { messages, selected, active, next, hound, skipTx1, controls, pendingDx } = useTxSequence(status, decodes);
+  const { messages, selected, active, next, hound, skipTx1, pendingDx } = useTxSequence(status, decodes);
   const client = useQueryClient();
 
   /** Il testo scritto a mano nel campo di un messaggio: resta finche' i messaggi non si rigenerano. */
@@ -176,17 +174,7 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
                 RX
               </span>
             )}
-            <TxQuickControls />
-            {/* in Hound lo si vede sempre accanto alle frequenze: chiama sopra 1000 Hz e risponde solo al Fox */}
-            {status.dx_call && foxCalls(decodes).has(status.dx_call.toUpperCase()) ? (
-              <span className="hound-badge hound-badge--fox" role="status" title={t('tip.foxBadge')}>
-                {controls.data?.hound === true ? t('tx.foxHoundOn') : t('tx.foxHoundOff')}
-              </span>
-            ) : controls.data?.hound === true ? (
-              <span className="hound-badge" role="status" title={t('tip.houndBadge')}>
-                Hound
-              </span>
-            ) : null}
+            {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi; la scritta Hound qui non serviva (scelta del proprietario) */}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
           {status.tx_alerts && status.tx_alerts.length > 0 ? (

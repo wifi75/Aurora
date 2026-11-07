@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { DxpedDetail } from './DxpedDetail';
-import { getDxcc, getDxped, type Dxpedition } from '../api/client';
+import { getDxcc, getDxped, type Dxpedition, getClusterSpots, type ClusterSpot } from '../api/client';
 import { loadAtlas } from './CountryShape';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
@@ -43,6 +43,15 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
   const q = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, refetchInterval: (query) => (query.state.data?.dxped.fetched_ms ? 10 * 60_000 : 15_000), retry: false });
   const [open, setOpen] = useState<(Dxpedition & { state: DxpedState }) | null>(null);
   const heard = new Set(heardCalls.map((c) => c.toUpperCase()));
+  // spot del DX Cluster degli ultimi 15 minuti: una spedizione spottata adesso e' «in onda» (stessa lettura del pannello DX Cluster)
+  const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), refetchInterval: 4000, retry: false });
+  const onAir = new Map<string, ClusterSpot>();
+  for (const sp of cluster.data?.spots ?? []) {
+    if (Date.now() - sp.received_ms > 15 * 60_000) continue;
+    const call = sp.dx_call.toUpperCase();
+    const old = onAir.get(call);
+    if (!old || sp.received_ms > old.received_ms) onAir.set(call, sp);
+  }
   const items = dxpedList(q.data?.dxped.items ?? [], heard, today(), keepDays, soonDays);
   // la scheda si apre subito: confini del mondo e paese di ogni DXpedition si preparano in anticipo, appena c'e' il calendario
   const client = useQueryClient();
@@ -71,7 +80,7 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
         {items.map((d) => (
           <li
             key={`${d.call}-${d.start}`}
-            className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}`}
+            className={`dxped-item dxped-item--${d.state}${d.heard ? ' dxped-item--heard' : ''}${onAir.has(d.call.toUpperCase()) ? ' dxped-item--onair' : ''}`}
             title={t('tip.dxp.open')}
             tabIndex={0}
             onClick={() => setOpen(d)}
@@ -92,6 +101,21 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
                 {d.heard ? t('dxp.heard') : d.state === 'active' ? t('dxp.until', { date: short(d.end) }) : d.state === 'soon' ? t('dxp.from', { date: short(d.start) }) : t('dxp.ended', { date: short(d.end) })}
               </span>
             </div>
+            {(() => {
+              // spottata adesso: una riga sua sotto il nominativo (mai sopra il testo), con frequenza, modo e da quanto
+              const sp = onAir.get(d.call.toUpperCase());
+              if (!sp) return null;
+              const min = Math.max(0, Math.round((Date.now() - sp.received_ms) / 60_000));
+              return (
+                <div className="dxped-onair" title={sp.comment || undefined}>
+                  <span className="dxped-onair-dot" aria-hidden="true" />
+                  <b>{t('dxp.onAir')}</b>
+                  <span className="data">{(sp.freq_khz / 1000).toFixed(3)} MHz</span>
+                  {sp.mode ? <span className="data">{sp.mode}</span> : null}
+                  <span className="muted">{t('dxp.spotAgo', { min })}</span>
+                </div>
+              );
+            })()}
             {d.state === 'active' ? (
               <div className="dxped-info muted">
                 {d.info}

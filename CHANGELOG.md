@@ -3,6 +3,16 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.169 - 2026-11-07
+- **Attivita' di banda e DX Cluster**: tolti l'aggancio alle righe e l'«ancora» dello scorrimento, che facevano scendere la lista a ogni riga nuova in cima; a ogni periodo (o spot) nuovo la lista torna in cima. Le decodifiche di un periodo si aggiungono tutte insieme (un solo ridisegno).
+- **QSO a log al primo RRR** (come con RR73); se l'altro ripete il rapporto, al massimo 5 RRR poi stop; niente doppio log al suo 73.
+- **Log immediato**: il QSO appena messo a log compare subito in cima al pannello Log, prima che Log4OM lo scriva.
+- **Comandi dentro Bande aperte** (al posto di continenti e record): Tx, Rx e Rapporto su una riga; Hold Tx Freq, Tx/Rx Split, Log QSO e Canc DX in una riga. Tolti dal pannello Trasmissione i pulsanti e la scritta Hound.
+- **Potenza RF ricordata**: quella scelta con + e − si rimette a ogni collegamento della radio; avviso se la radio la rifiuta.
+- **DXpedition in onda**: spottata negli ultimi 15 minuti, riga arancione che lampeggia e «IN ONDA» con frequenza e modo.
+- **Avviso senza CAT**: provando a trasmettere senza radio collegata compare un avviso (la ricezione resta libera).
+- Trasmissione senza la riga sotto il DX; bandiera di Attivita' di banda piu' grande.
+
 ## 0.11.168 - 2026-11-07
 - **Coda**: le stazioni accodate hanno l'etichetta «IN CODA n» (fondo azzurro) e restano ferme sotto la stazione chiamata, nell'ordine della coda; dopo il log salgono di un posto.
 - **Attivita' di banda**: il ritorno in cima dopo 15 s cerca il contenitore che scorre davvero (lista, pannello o blocco), quindi funziona anche nella pagina a blocchi.

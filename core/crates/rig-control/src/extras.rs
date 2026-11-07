@@ -8,6 +8,53 @@ use crate::hamlib::RigctldClient;
 use crate::meters::is_unsupported;
 use crate::RigError;
 
+/// La potenza RF scelta con + e − si ricorda in un file accanto alle impostazioni della radio e si rimette a ogni collegamento:
+/// alcune radio (FT-2000) ripartono con la loro potenza (es. 99%) e il proprietario la vuole come l'aveva lasciata.
+static POWER_FILE: std::sync::Mutex<Option<std::path::PathBuf>> = std::sync::Mutex::new(None);
+
+/// Dove si ricorda la potenza scelta (lo chiama `CatService::open` con il file delle impostazioni della radio).
+pub fn set_power_file(radio_settings: &std::path::Path) {
+    if let Ok(mut f) = POWER_FILE.lock() {
+        *f = Some(radio_settings.with_file_name("potenza-rf.txt"));
+    }
+}
+
+fn power_path() -> Option<std::path::PathBuf> {
+    POWER_FILE.lock().ok().and_then(|f| f.clone())
+}
+
+/// La potenza scelta l'ultima volta (da 0 a 1), se c'e'.
+pub fn remembered_power() -> Option<f32> {
+    let text = std::fs::read_to_string(power_path()?).ok()?;
+    text.trim().parse::<f32>().ok().filter(|v| (0.05..=1.0).contains(v))
+}
+
+fn remember_power(v: f32) {
+    if let Some(p) = power_path()
+        && let Err(e) = std::fs::write(&p, format!("{v:.2}"))
+    {
+        tracing::debug!("potenza scelta non ricordata ({}): {e}", p.display());
+    }
+}
+
+/// Rimette la potenza ricordata appena la radio e' collegata. Se la radio non la accetta (comanda la manopola RF PWR) si avvisa.
+pub fn restore_power(client: &RigctldClient) {
+    let Some(wanted) = remembered_power() else { return };
+    let Ok(now) = client.level("RFPOWER") else { return };
+    if (now - wanted).abs() < 0.015 {
+        return;
+    }
+    if let Err(e) = client.set_level("RFPOWER", wanted) {
+        tracing::info!("potenza RF ricordata ({:.0}%) non rimessa: {e}", wanted * 100.0);
+        return;
+    }
+    let read = client.level("RFPOWER").unwrap_or(now);
+    tracing::info!("potenza RF rimessa come scelta: era {:.0}%, chiesta {:.0}%, ora {:.0}%", now * 100.0, wanted * 100.0, read * 100.0);
+    if (read - wanted).abs() > 0.03 {
+        aurora_core::notice::notice("power_knob", format!("{:.0}", read * 100.0));
+    }
+}
+
 /// Le letture in piu', ognuna presente solo se la radio la sa dare.
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct RigExtras {
@@ -294,6 +341,9 @@ impl ExtrasPoll {
                 // si rilegge: alcune radio (FT-2000 con la manopola RF PWR) rispondono al comando ma tengono la potenza della manopola
                 let read = client.level("RFPOWER").map_err(|e| cannot_read(e, "potenza"))?;
                 tracing::info!("potenza RF: chiesta {:.0}%, la radio ora dice {:.0}%", wanted * 100.0, read * 100.0);
+                if (read - wanted).abs() <= 0.03 {
+                    remember_power(wanted);
+                }
                 if (read - wanted).abs() > 0.03 {
                     return Err(RigError(format!(
                         "la radio non ha cambiato la potenza (chiesta {:.0}%, resta {:.0}%): su questa radio si regola dalla manopola RF PWR",

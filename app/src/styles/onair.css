@@ -6785,3 +6785,9 @@
 .dock-panel--cq .decode-list .badge.badge--queue,
 .decode-list .badge.badge--queue { background: #1f6feb !important; color: #fff !important; font-weight: 800; letter-spacing: 0.04em; }
 html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { background: #dce9ff !important; }
+
+/* bandiera in Attivita' di banda 0,4 px piu' grande */
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  font-size: 12.2px;
+}
