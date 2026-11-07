@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-06, versione 0.11.177. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-07, versione 0.11.177. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.
@@ -10,6 +10,7 @@ Stato al 2026-11-06, versione 0.11.177. Per riprendere il lavoro leggi anche `do
 
 ## Prove della grafica in locale (dal 2026-11-06)
 - Le build (`rilascio-windows.ps1`, `cargo build`) si avviano a priorita' Idle: sullo stesso PC Aurora e' in onda e una build a 18 job faceva andare a scatti la cascata.
+- `rilascio-windows.ps1` va lanciato con **pwsh** (PowerShell 7): avviato con `powershell.exe` (5.1) da questa sessione si ferma al passo di Hamlib perche' non trova `Get-FileHash`, senza scrivere nulla nel log normale (l'errore e' solo in `rilascio.err`).
 - Conferme: `askConfirm()` in `components/ConfirmHost.tsx` crea da sola una finestra nella grafica di Aurora (mai `window.confirm`).
 - Bande aperte mostra «Continenti che ti ascoltano» (`continentAt` in `lib/psk.ts`) e i record di distanza di oggi e degli ultimi 7 giorni (localStorage `aurora-record-distanza`, salvato in un effetto); la mini-mappa e' stata tolta. Il display in alto si allinea al pannello piu' a destra della prima fila (`alignDisplay` in `pages/Live.tsx`).
 - Scorrimento su schermo largo (da 64rem): solo la Stazione (`.app-main:has(> .live)`) resta tutta nella finestra con `overflow: hidden`; le altre pagine scorrono dentro `.app-main` (`bozze.css`). Prima il blocco valeva per tutte e la parte sotto di Fox e Propagazione restava nascosta (corretto nella 0.11.164).
@@ -22,6 +23,13 @@ Stato al 2026-11-06, versione 0.11.177. Per riprendere il lavoro leggi anche `do
 - Scelte lette da `%APPDATA%\Aurora\ui-settings.json` (chiave `aurora-agente`, sincronizzata dalla pagina «Agente nel tray»); stato in `agente.json`; registro in `%TEMP%\aurora-agente.log`; `AURORA_AGENTE_PROVA=1` mostra una cartolina di prova.
 - La cartolina ha una cartella WebView2 sua (`%LOCALAPPDATA%\Aurora\agente-webview`): con la stessa cartella di Aurora WebView2 rifiutava la finestra (0x8007139F). Avvio con Windows nella chiave Run `AuroraAgente`; prima di un aggiornamento Aurora chiude l'agente.
 - Messaggi dell'autore: tabella D1 `messaggi` del Worker `aurora-rapporti`, lettura pubblica `GET /v1/messaggi?v=`, scrittura solo con `ADMIN_TOKEN` e freno ai tentativi. Si scrivono SOLO dalla pagina di Aurora `#/messaggi-autore` (fuori dai menu), aperta dall'icona «Aurora - Messaggi agli utenti» sul desktop dell'autore; il segreto sta in localStorage `auroraOwnerToken` (non sincronizzato). La pagina web del Worker e' stata tolta.
+
+- Pagina dei messaggi (0.11.175): modelli pronti (Natale, Anno, Pasqua, Aggiorna con «solo versioni piu' vecchie» = versione attuale, Servizio), «Anteprima» che mostra la cartolina solo su questo PC, contatori 120/1200, conferma con destinatari e scadenza, «Usa di nuovo» nell'elenco.
+- All'avvio `main.tsx` riporta sempre a `#/` (Stazione, scelta del proprietario) tranne `#/finestra/`, `#/associa`, `#/pair` e `#/messaggi-autore`: senza quest'ultima eccezione l'icona dei messaggi apriva la Stazione (corretto nella 0.11.175).
+- «Aggiorna ora» dell'agente chiama `POST /api/v1/update/install`; l'installatore (`installer.rs`) se Aurora non conosce ancora una versione nuova fa subito `UpdateService::check()` (dalla 0.11.176). Prima rispondeva 502 «nessuna versione nuova trovata» quando l'agente vedeva la release prima del controllo orario di Aurora: chi ha la 0.11.175 o precedenti deve fare «Controlla aggiornamenti» in Impostazioni prima di usare il tray.
+
+## Avvisi della stazione
+- `DiagnosisBar.tsx`: schede in basso a destra calcolate da `lib/diagnosis.ts`. Per `audio_loss` (blocchi audio persi, notizia del core da `audio-spectrum/src/capture.rs`) il testo e «Come risolvere» aprono `AudioLossHelp.tsx` con i sei controlli sul PC (risparmio USB, combinazione energia, cavo e porta, 48 kHz 16 bit e niente miglioramenti audio, altri programmi, memoria), su due colonne da 900 px in su (0.11.177). E' un problema del PC dell'utente, non di Aurora.
 
 ## Mappa DX
 - Attenzione: `time_ms` dei messaggi ricevuti (DecodedMessage) e' in millisecondi dalla mezzanotte UTC, non una data intera; l'eta' si calcola con `ageOf` in `DxMapPage.tsx` (fino alla 0.11.154 era confrontata con l'ora completa e la Mappa DX non mostrava mai stazioni in onda ne' linee degli altri). Gli spot di PSK Reporter invece hanno `time_s` Unix.
