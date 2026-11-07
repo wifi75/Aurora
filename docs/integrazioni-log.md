@@ -121,19 +121,27 @@ Stessa sostanza della voce «Collegare i programmi di log (UDP)» della Guida de
 2. Nel log: impostazione dell'interfaccia WSJT-X/JTDX via UDP, ricezione attiva, 127.0.0.1 e la stessa porta, registrazione automatica dei QSO ricevuti *(nomi delle voci indicativi, non verificati: controllare la versione del programma)*.
 
 ### BBLogger
-Log italiano gratuito di Giorgio IK2VIW (con Gigi IK2UVR), sito bblogger.eu, per Windows 10/11. Per i modi digitali riceve il **flusso UDP in formato WSJT-X**: la sua guida indica «IP del server» 127.0.0.1 e «Porta del Server UDP» di base **2237**, e 2334 quando si mette in mezzo JTAlert. Aurora gli parla direttamente, senza altri programmi.
-1. Aurora: «Integrazioni» > «+ BBLogger» (destinatario pronto, dal 2026-11-04): nome BBLogger, 127.0.0.1, porta 2237, flusso WSJT-X e Logged ADIF (12) accesi, multicast spento.
-2. BBLogger: nel collegamento FT8/FT4 (WSJT-X/JTDX) IP 127.0.0.1 e la stessa porta.
-3. Ordine di avvio: prima Aurora, poi BBLogger (la guida di BBLogger chiede di avviare prima il programma FT8).
-4. Se la 2237 e' gia' usata da un altro destinatario, una porta libera (es. 2239) uguale nei due programmi.
-Fonti: guida di BBLogger su aribusto.it (pagina «Aggiornamenti»), forumradioamatori.it. Non provato dal vivo: la prova con il programma la fa il proprietario.
+Log italiano gratuito per Windows 10/11, sito ufficiale https://www.aribusto.it/bblogger.htm (ARI Busto Arsizio); sviluppato da Giorgio IK2VIW fino alla 1.0.5.8, poi da Mauro IZ2BKT; supporto di Gigi IK2UVR. Versione 14.10 (settembre 2026); in prova BBLogger 2. Le domande vanno al newsgroup di BBLogger, non agli autori.
+
+L'interfaccia per i modi digitali si chiama **Wsjt_I** (versione 2) e si configura in **«Configurazione interfaccia Wsjtx»**, che si apre con l'icona a ingranaggio nelle finestre «Nuovo QSO» e «Fast QSO» (fonte: PDF «Wsjt_I v. 2 - SETUP» su aribusto.it).
+- **Modo UDP**: righe «Msg ID 5», «Msg ID 12» e «Msg ID ADIF», ognuna con IP e porta. Di base 127.0.0.1:2237 per 5 e 12, 127.0.0.1:52001 per ADIF. Con JTAlert le righe 5 e 12 vanno sulla porta di JTAlert, 2334.
+- **Scelta del modo**: menu sotto «Auto-Save» in «Fast QSO»: Disable, UDP 5, UDP 12, UDP ADIF, poi i programmi del Modo ADIF (WSJT-X, JTDX, MSHV, FLDIGI e quelli aggiunti). «UDP 5» funziona con il messaggio QSO Logged; «UDP 12» riceve piu' dati ma vuole il Logged ADIF (12) acceso; «UDP ADIF» solo per pacchetti ADIF testuali (MultiPSK).
+- **«Auto-Save»**: spuntata, il QSO va a log da solo a fine QSO.
+- **Modo ADIF**: tabella «Descrizione / Percorso file ADIF» (lente, + verde): BBLogger legge il file quando il programma salva il QSO. Il PDF «Differenze tra UDP e ADIF» lo indica come il modo piu' sicuro; in UDP il QSO puo' perdersi se il ciclo non arriva fino in fondo.
+
+Con Aurora:
+1. **Rete (consigliato)**: Aurora, «Integrazioni» > «+ BBLogger» (127.0.0.1:2237, flusso WSJT-X e Logged ADIF accesi). BBLogger: righe Msg ID 5 e 12 su 127.0.0.1:2237, menu «UDP 12», «Auto-Save».
+2. **File**: BBLogger, Modo ADIF con descrizione Aurora e percorso `%APPDATA%\Auroraurora_log.adi` (il motore lo scrive sempre), menu «Aurora», «Auto-Save».
+3. Un metodo solo alla volta. Di fabbrica anche i server UDP primario e secondario di Aurora sono su 127.0.0.1:2237: con BBLogger possono dare QSO doppi.
+
+Fonti: https://www.aribusto.it/bblogger.htm, PDF https://www.aribusto.it/BBL/Wsjt_I%20v.%202-SETUP_IT.pdf e https://www.aribusto.it/BBL/Differenze%20tra%20UDP%20e%20ADIF.pdf (letti il 2026-11-07). Non provato dal vivo con Aurora.
 
 ### Verifica e problemi tipici
 - Prova: un QSO (anche su carico fittizio) e la riga deve comparire nel log.
 - Una porta unicast la apre un solo programma: con JTDX, GridTracker o JTAlert aperti la 2237 e' spesso occupata. Soluzioni: un destinatario per programma con porte diverse, oppure il gruppo multicast se tutti i programmi lo ascoltano.
 - QSO doppi: lo stesso log riceve per due strade (flusso + ADIF, o inoltro di GridTracker/JTAlert). Tenerne una.
 - Log su un altro PC: indirizzo IP di quel PC e regola del firewall di Windows per UDP in entrata sulla porta.
-- BBLogger ha il suo destinatario pronto («+ BBLogger»); LogHX3 usa «Flusso WSJT-X» (porte e voci non verificate).
+- BBLogger ha il suo destinatario pronto («+ BBLogger») e il modo file ADIF; LogHX3 usa «Flusso WSJT-X» (porte e voci non verificate).
 
 ## 3. Programma per programma
 
