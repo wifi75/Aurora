@@ -5,6 +5,7 @@
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
  * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
+ * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
  * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
@@ -266,6 +267,31 @@ export default {
         // la finestra di Aurora (pagina locale) li legge direttamente: lettura pubblica, nessun dato personale
         r.headers.set('Access-Control-Allow-Origin', '*');
         r.headers.set('Cache-Control', 'public, max-age=300');
+        return r;
+      }
+      // «ho mostrato la cartolina del messaggio X»: da Aurora (pagina locale, quindi con la domanda preventiva del browser) e dall'agente;
+      // solo il codice anonimo dell'installazione, una riga per messaggio, per contare quanti l'hanno visto
+      const vistoRotta = /^\/v1\/messaggi\/([0-9a-f]{8})\/visto$/.exec(url.pathname);
+      if (vistoRotta && req.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: { ...CORS_ADMIN, 'Access-Control-Allow-Headers': 'Content-Type, X-Aurora-Key' } });
+      }
+      if (vistoRotta && req.method === 'POST') {
+        const aperto = { 'Access-Control-Allow-Origin': '*' };
+        const no = await ingresso(req, env);
+        if (no) {
+          no.headers.set('Access-Control-Allow-Origin', '*');
+          return no;
+        }
+        const corpo = await leggiCorpo(req, 512);
+        let inst = '';
+        try {
+          inst = String((JSON.parse(new TextDecoder().decode(corpo ?? new Uint8Array())) as { installazione?: unknown }).installazione ?? '');
+        } catch {
+          // corpo non valido: niente da contare
+        }
+        const ok = await messaggi.visto(env.INDICE, vistoRotta[1], inst);
+        const r = risposta(ok ? 200 : 400, ok ? { ok: true } : { error: 'visto' });
+        for (const [k, v] of Object.entries(aperto)) r.headers.set(k, v);
         return r;
       }
       // la pagina web per scrivere i messaggi non c'e' piu': si scrivono solo da Aurora sul PC dell'autore

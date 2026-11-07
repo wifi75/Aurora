@@ -14,6 +14,9 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
 - **Messaggi dell'autore e versioni nuove** (dalla 0.11.168): Aurora e l'agente nel tray leggono ogni ora i messaggi pubblicati dall'autore
   (servizio `aurora-rapporti` su Cloudflare) e l'ultima versione su GitHub. Nella richiesta dei messaggi c'è solo il numero di versione di
   Aurora, per i messaggi rivolti alle versioni vecchie: nessun nominativo, nessun dato della stazione.
+  Dalla 0.11.182, quando una cartolina con un messaggio compare, Aurora (o l'agente) lo dice al servizio con il codice casuale
+  dell'installazione, lo stesso del conteggio delle installazioni attive e solo se quel conteggio è acceso: serve solo a sapere quante
+  installazioni hanno visto il messaggio. Nessun nominativo, nessun indirizzo salvato.
 - **Agente nel tray** (dalla 0.11.169): lo stesso programma, avviato con Windows, che fa le letture qui sopra (versioni, messaggi,
   propagazione, DXpedition) anche con Aurora chiusa; legge il riepilogo del giorno dal log di Aurora sul PC, senza mandarlo da nessuna parte.
   Si spegne in Impostazioni → Agente nel tray.

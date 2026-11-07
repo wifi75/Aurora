@@ -77,3 +77,11 @@ CREATE TABLE IF NOT EXISTS messaggi (
 -- database creato prima del 2026-11-07 pomeriggio (temi delle cartoline, 0.11.179):
 -- ALTER TABLE messaggi ADD COLUMN stile TEXT NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS messaggi_dal ON messaggi (dal, al);
+
+-- Chi ha visto un messaggio (dal 2026-11-07, 0.11.182): una riga per messaggio e installazione (codice anonimo), per contarli.
+CREATE TABLE IF NOT EXISTS messaggi_visti (
+  messaggio TEXT NOT NULL,
+  installazione TEXT NOT NULL,
+  giorno TEXT NOT NULL,
+  PRIMARY KEY (messaggio, installazione)
+);

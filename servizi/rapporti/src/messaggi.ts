@@ -83,10 +83,50 @@ export async function attivi(db: D1Database, ver: string): Promise<Messaggio[]> 
   return results.map(daRiga).filter((m) => m.prima_di === '' || ver === '' || piuVecchia(ver, m.prima_di));
 }
 
-/** Tutti i messaggi (amministratore). */
-export async function tutti(db: D1Database): Promise<Messaggio[]> {
+/** Le versioni che sanno ricevere i messaggi (la 0.11.168 e' la prima). */
+const PRIMA_CON_MESSAGGI = '0.11.168';
+
+/**
+ * Tutti i messaggi (amministratore), con due numeri per ognuno: `visti` = installazioni che hanno davvero mostrato la cartolina
+ * (dalla 0.11.182, codice anonimo dell'installazione), `raggiungibili` = installazioni attive nei giorni del messaggio con una versione
+ * che lo riceve (dalla tabella `attivi`, cosi' vale anche per le versioni che non dicono «visto»).
+ */
+export async function tutti(db: D1Database): Promise<(Messaggio & { visti: number; raggiungibili: number })[]> {
   const { results } = await db.prepare('SELECT * FROM messaggi ORDER BY dal DESC LIMIT 200').all();
-  return results.map(daRiga);
+  const lista = results.map(daRiga);
+  if (lista.length === 0) return [];
+  const visti = new Map<string, number>();
+  const v = await db.prepare('SELECT messaggio, COUNT(*) AS n FROM messaggi_visti GROUP BY messaggio').all<{ messaggio: string; n: number }>();
+  for (const r of v.results) visti.set(r.messaggio, r.n);
+  const dal = lista.reduce((min, m) => (m.dal < min ? m.dal : min), lista[0].dal).slice(0, 10);
+  const a = await db
+    .prepare('SELECT installazione, versione, giorno FROM attivi WHERE giorno >= ?1')
+    .bind(dal)
+    .all<{ installazione: string; versione: string; giorno: string }>();
+  return lista.map((m) => {
+    const da = m.dal.slice(0, 10);
+    const a2 = m.al.slice(0, 10);
+    const chi = new Set<string>();
+    for (const r of a.results) {
+      if (r.giorno < da || r.giorno > a2) continue;
+      if (piuVecchia(r.versione, PRIMA_CON_MESSAGGI)) continue;
+      if (m.prima_di !== '' && !piuVecchia(r.versione, m.prima_di)) continue;
+      chi.add(r.installazione);
+    }
+    return { ...m, visti: visti.get(m.id) ?? 0, raggiungibili: chi.size };
+  });
+}
+
+/** Un'installazione ha mostrato la cartolina di un messaggio: una riga sola per messaggio e installazione (codice anonimo). */
+export async function visto(db: D1Database, id: string, installazione: string): Promise<boolean> {
+  if (!/^[0-9a-f]{8}$/.test(id) || !/^[0-9a-f-]{36}$/.test(installazione)) return false;
+  const esiste = await db.prepare('SELECT 1 FROM messaggi WHERE id = ?1').bind(id).first();
+  if (!esiste) return false;
+  await db
+    .prepare('INSERT OR IGNORE INTO messaggi_visti (messaggio, installazione, giorno) VALUES (?1, ?2, ?3)')
+    .bind(id, installazione, new Date().toISOString().slice(0, 10))
+    .run();
+  return true;
 }
 
 /** Crea un messaggio dal corpo JSON (amministratore). Restituisce l'errore in chiaro se manca qualcosa. */
@@ -115,6 +155,7 @@ export async function crea(db: D1Database, corpo: unknown): Promise<Messaggio | 
 
 export async function togli(db: D1Database, id: string): Promise<void> {
   await db.prepare('DELETE FROM messaggi WHERE id = ?1').bind(id).run();
+  await db.prepare('DELETE FROM messaggi_visti WHERE messaggio = ?1').bind(id).run();
 }
 
 /** Istruzioni per il modello: traduzione fedele, gergo radioamatoriale naturale, solo JSON. */
