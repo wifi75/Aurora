@@ -1,13 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SetupCta } from './SetupCta';
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
+import { playSound } from '../lib/soundBank';
+import { ringState } from '../lib/soundAssign';
 
 /** Quanto resta acceso il lampeggio del QSO appena messo a log (tre lampeggi lenti da 1,4 s). */
-const FLASH_MS = 4300;
+/** Lampeggio verde fluo per 5 s, poi si dissolve in 1,5 s (vedi `.log4om-row--flash`). */
+const FLASH_MS = 6600;
 
 /** Gli ultimi QSO del log di Log4OM2 (sola lettura): quanti, si sceglie in Impostazioni → Generali. */
 function Log4omPanelInner() {
@@ -43,19 +46,21 @@ function Log4omPanelInner() {
     return [...fresh, ...real].slice(0, Math.max(real.length, count));
   })();
   // un QSO nuovo in cima: tutta la riga lampeggia tre volte, piano
-  const topKey = log.data?.qsos[0] ? `${log.data.qsos[0].date}-${log.data.qsos[0].call}` : null;
-  const previous = useRef<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  // tutto nello stesso istante, appena il QSO va a log (dall'evento di Aurora, non quando Log4OM lo scrive): la riga compare in cima,
+  // lampeggia e suona. La riga di Log4OM che arriva dopo per lo stesso QSO non lampeggia una seconda volta.
+  const lastLogged = useStation((st) => st.justLogged[0]);
   useEffect(() => {
-    if (topKey === null) return;
-    if (previous.current !== null && previous.current !== topKey) {
-      setFlash(topKey);
-      const timer = window.setTimeout(() => setFlash(null), FLASH_MS);
-      previous.current = topKey;
-      return () => window.clearTimeout(timer);
-    }
-    previous.current = topKey;
-  }, [topKey]);
+    if (!lastLogged || Date.now() - lastLogged.at > 5000) return;
+    const sec = Math.floor((lastLogged.time_ms % 86_400_000) / 1000);
+    const hhmm = `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
+    setFlash(`${lastLogged.call.toUpperCase()}|${hhmm}`);
+    const st = ringState(false);
+    if (st.enabled) playSound('fanfare', st.volume);
+    const timer = window.setTimeout(() => setFlash(null), FLASH_MS);
+    return () => window.clearTimeout(timer);
+  }, [lastLogged]);
+
 
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
@@ -75,7 +80,7 @@ function Log4omPanelInner() {
         </thead>
         <tbody>
           {shownQsos.map((q, i) => (
-            <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && flash === `${q.date}-${q.call}` ? 'log4om-row--flash' : undefined}>
+            <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && flash === `${q.call.toUpperCase()}|${q.date.slice(11, 16)}` ? 'log4om-row--flash' : undefined}>
               {/* giorno/mese e ora, senza l'anno: la data intera nel suggerimento */}
               <td className="data log4om-date" title={q.date.replace('Z', '').slice(0, 16)}>
                 {`${q.date.slice(8, 10)}/${q.date.slice(5, 7)} ${q.date.slice(11, 16)}`}

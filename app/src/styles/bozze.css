@@ -936,3 +936,13 @@ html[data-theme='light'] .dxped-item--onair .dxped-call, html[data-theme='light'
 .tx-queue--side .tx-queue-item { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; white-space: nowrap; }
 .tx-queue--side .queue-dot { width: 15px; height: 15px; font-size: 9.5px; }
 .tx-queue-more { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+
+/* QSO appena messo a log: verde fluo che pulsa per 5 secondi, con una luce che scorre sulla riga, poi si dissolve */
+.log4om-table tr.log4om-row--flash td { position: relative; animation: qso-logged-pulse 0.5s ease-in-out 10, qso-logged-fade 1.5s ease-out 5s 1 forwards !important; background: rgb(57 255 20 / 0.32); color: #eaffe0; }
+.log4om-table tr.log4om-row--flash td:first-child { box-shadow: inset 4px 0 0 #39ff14; }
+.log4om-table tr.log4om-row--flash td::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent); background-size: 200% 100%; animation: qso-logged-sweep 1.2s linear 4; }
+@keyframes qso-logged-pulse { 0%, 100% { background: rgb(57 255 20 / 0.42); text-shadow: 0 0 6px rgb(57 255 20 / 0.9); } 50% { background: rgb(57 255 20 / 0.12); text-shadow: none; } }
+@keyframes qso-logged-fade { from { background: rgb(57 255 20 / 0.35); } to { background: transparent; color: inherit; text-shadow: none; } }
+@keyframes qso-logged-sweep { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+html[data-theme='light'] .log4om-table tr.log4om-row--flash td { color: #063a10; }
+@media (prefers-reduced-motion: reduce) { .log4om-table tr.log4om-row--flash td, .log4om-table tr.log4om-row--flash td::after { animation: qso-logged-fade 1.5s ease-out 4s 1 forwards !important; } }
