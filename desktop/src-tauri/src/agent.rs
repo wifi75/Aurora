@@ -277,6 +277,22 @@ fn yesterday_summary() -> Option<(usize, usize)> {
     (n > 0).then_some((n, countries.len()))
 }
 
+/// Le DXpedition di paesi non ancora lavorati, salvate da Aurora (pannello DXpedition) nelle impostazioni. `None` se l'elenco manca
+/// o e' vecchio di oltre 7 giorni: allora si avvisa per tutte.
+fn missing_dxpeds() -> Option<Vec<String>> {
+    let base = std::env::var_os("APPDATA")?;
+    let text = std::fs::read_to_string(PathBuf::from(base).join("Aurora").join("ui-settings.json")).ok()?;
+    let all: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let raw = all.get("desktop")?.get("aurora-dxped-mancanti")?.as_str()?;
+    let v: serde_json::Value = serde_json::from_str(raw).ok()?;
+    let at = v.get("at")?.as_u64()?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_millis() as u64;
+    if now.saturating_sub(at) > 7 * 86_400_000 {
+        return None;
+    }
+    Some(v.get("calls")?.as_array()?.iter().filter_map(|c| c.as_str().map(str::to_string)).collect())
+}
+
 fn get_json(url: &str) -> Option<serde_json::Value> {
     let mut response = agent().get(url).header("User-Agent", "Aurora-agente").header("Accept", "application/json").call().ok()?;
     response.body_mut().read_json::<serde_json::Value>().ok()
@@ -364,7 +380,13 @@ fn check(app: &AppHandle, asked: bool) {
         // DXpedition che partono domani (NG3K)
         let tomorrow = utc_day(1);
         if let Some(html) = get_text(online_info::dxped::URL) {
-            for d in online_info::dxped::parse(&html).into_iter().filter(|d| d.start == tomorrow).take(3) {
+            let missing = missing_dxpeds();
+            for d in online_info::dxped::parse(&html)
+                .into_iter()
+                .filter(|d| d.start == tomorrow)
+                .filter(|d| missing.as_ref().is_none_or(|m| m.iter().any(|c| c.eq_ignore_ascii_case(&d.call))))
+                .take(3)
+            {
                 want("dxped", format!("dxped-{}-{}", d.call, d.start), Card { kind: "DXpedition", title: format!("Domani parte {} · {}", d.call, d.country), text: d.info.chars().take(160).collect(), main: "Apri Aurora", main_action: "open", update: false }, &mut seen);
             }
         }

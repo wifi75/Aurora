@@ -264,3 +264,11 @@ export function meterReadouts(m: RadioMeters | null | undefined): Array<{ key: '
   if (m.vdd_v !== undefined) out.push({ key: 'Vdd', text: `${trimNumber(m.vdd_v, 1)} V` });
   return out;
 }
+
+/**
+ * La potenza impostata in percentuale. Hamlib la legge in 255 passi: alcune radio (FT-2000) a 100 W rispondono 0,992, che arrotondato
+ * dava 99%. Sopra il 98,5% e' il massimo: si mostra 100%.
+ */
+export function powerPct(v: number): number {
+  return v >= 0.985 ? 100 : Math.round(v * 100);
+}

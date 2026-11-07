@@ -5,7 +5,8 @@ import type { T } from '../i18n';
 export function replyErrorMessage(error: unknown, t: T): string {
   if (error instanceof ApiError) {
     if (error.code === 'transmitting') return t('err.transmitting');
-    if (error.code === 'rig_error') return t('err.rig');
+    // il motivo vero mandato dal core (es. «la radio non ha raggiunto la frequenza»), non un testo fisso
+    if (error.code === 'rig_error') return error.detail ? t('err.rigWhy', { why: error.detail }) : t('err.rig');
     if (error.code === 'rig_unavailable') return t('err.noRig');
     if (error.code === 'bad_text') return t('err.badText');
     if (error.code === 'tx_disabled') return t('err.txDisabled');
