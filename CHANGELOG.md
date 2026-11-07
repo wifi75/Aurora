@@ -3,6 +3,10 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.173 - 2026-11-07
+- **Filigrana PROVA LOCALE** solo nella prova nel browser, mai nella finestra del programma installato (nemmeno con la grafica di prova).
+- **Prova nel browser** (`vite.prova.config.ts` fuori dal repository, icona «Aurora - Prova locale»): prende la configurazione del PC e non la riscrive.
+
 ## 0.11.172 - 2026-11-07
 - **Finestra dell'aggiornamento**: con le Impostazioni aperte dentro la finestra principale restava nascosta e non cliccabile (la pagina sotto e' disattivata, `inert`, e la locandina stava li' dentro); ora e' fuori dalla pagina, sopra le Impostazioni.
 - **Agente nel tray**: la cartolina non si apriva con Aurora aperta (WebView2 rifiutava la finestra: stessa cartella dati con impostazioni diverse, errore 0x8007139F); ora l'agente ha la sua cartella (`%LOCALAPPDATA%\Aurora\agente-webview`) e la pagina della cartolina e' un file temporaneo. Registro dell'agente in `%TEMP%\aurora-agente.log`; `AURORA_AGENTE_PROVA=1` mostra una cartolina di prova all'avvio.
