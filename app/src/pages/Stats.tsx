@@ -22,10 +22,12 @@ export function Stats() {
   return (
     <div className="stats-page">
       <h1 className="page-title">{t('stats.title')}</h1>
-      {query.isError ? <p className="notice">{t('stats.unavailable')}</p> : query.data ? <Numbers data={query.data} /> : <p className="muted">{t('set.loading')}</p>}
+      {/* mentre il log si legge le schede sono gia' tutte al loro posto (con «…» al posto dei numeri): prima la scheda DXCC compariva
+          a sinistra e in alto e poi saltava nella sua colonna quando arrivavano i dati */}
+      {query.isError ? <p className="notice">{t('stats.unavailable')}</p> : <Numbers data={query.data} />}
 
       <div className="stats-columns">
-        {query.data ? <Bands data={query.data} /> : null}
+        {query.isError ? null : <Bands data={query.data} />}
         <section className="panel stats-card dxcc-section" title={t('dxcc.tip.card')}>
           <h2 className="panel-title">{t('dxcc.title')}</h2>
           {matrix.isError ? (
@@ -50,7 +52,7 @@ export function Stats() {
         </section>
       </div>
 
-      {query.data ? <Missing data={query.data} /> : null}
+      {query.isError ? null : <Missing data={query.data} />}
 
       <details className="panel stats-card stats-fold" open>
         <summary className="panel-title">{t('logio.title')}</summary>
@@ -61,28 +63,28 @@ export function Stats() {
 }
 
 /** I numeri principali in riquadri, con la barra di avanzamento dove c'e' un totale. */
-function Numbers({ data }: { data: StatsResponse }) {
+function Numbers({ data }: { data?: StatsResponse }) {
   const t = useT();
-  const s = data.stats;
-  const tiles: Array<{ label: string; value: number; total?: number }> = [
-    { label: t('stats.qsos'), value: s.qsos },
-    { label: t('stats.calls'), value: s.calls },
-    { label: t('stats.dxcc'), value: s.dxcc_worked, total: s.dxcc_total },
-    { label: t('stats.cq'), value: s.cq_zones_worked, total: s.cq_zones_total },
-    { label: t('stats.itu'), value: s.itu_zones_worked, total: s.itu_zones_total },
-    { label: t('stats.grids'), value: s.grids },
-    { label: t('stats.prefixes'), value: s.prefixes },
+  const s = data?.stats;
+  const tiles: Array<{ label: string; value: number | null; total?: number }> = [
+    { label: t('stats.qsos'), value: s?.qsos ?? null },
+    { label: t('stats.calls'), value: s?.calls ?? null },
+    { label: t('stats.dxcc'), value: s?.dxcc_worked ?? null, total: s?.dxcc_total },
+    { label: t('stats.cq'), value: s?.cq_zones_worked ?? null, total: s?.cq_zones_total },
+    { label: t('stats.itu'), value: s?.itu_zones_worked ?? null, total: s?.itu_zones_total },
+    { label: t('stats.grids'), value: s?.grids ?? null },
+    { label: t('stats.prefixes'), value: s?.prefixes ?? null },
   ];
   return (
     <section className="stats-tiles" aria-label={t('stats.awards')} title={t('tip.stats.award')}>
       {tiles.map((tile) => (
-        <div key={tile.label} className="stats-tile">
+        <div key={tile.label} className="stats-tile" aria-busy={tile.value === null}>
           <strong className="data">
-            {tile.value.toLocaleString()}
+            {tile.value === null ? '…' : tile.value.toLocaleString()}
             {tile.total ? <small className="muted"> / {tile.total}</small> : null}
           </strong>
           <span className="muted">{tile.label}</span>
-          {tile.total ? (
+          {tile.total && tile.value !== null ? (
             <span className="stats-progress" aria-hidden="true">
               <i style={{ width: `${Math.min(100, (tile.value / tile.total) * 100)}%` }} />
             </span>
@@ -94,12 +96,14 @@ function Numbers({ data }: { data: StatsResponse }) {
 }
 
 /** Per banda: paesi e QSO con una barra, per vedere a colpo d'occhio dove si e' lavorato di piu'. */
-function Bands({ data }: { data: StatsResponse }) {
+const WAIT_BANDS = ['160m', '80m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m'];
+
+function Bands({ data }: { data?: StatsResponse }) {
   const t = useT();
-  const bands = data.stats.bands;
-  const maxQsos = Math.max(1, ...bands.map((b) => b.qsos));
+  const bands = data?.stats.bands ?? WAIT_BANDS.map((band) => ({ band, dxcc: Number.NaN, qsos: Number.NaN }));
+  const maxQsos = Math.max(1, ...bands.map((b) => (Number.isNaN(b.qsos) ? 0 : b.qsos)));
   return (
-    <section className="panel stats-card">
+    <section className="panel stats-card" aria-busy={!data}>
       <h2 className="panel-title">{t('stats.byBand')}</h2>
       <table className="stats-table stats-bands">
         <thead>
@@ -114,11 +118,11 @@ function Bands({ data }: { data: StatsResponse }) {
           {bands.map((b) => (
             <tr key={b.band}>
               <td className="data">{b.band}</td>
-              <td className="num data">{b.dxcc}</td>
-              <td className="num data">{b.qsos.toLocaleString()}</td>
+              <td className="num data">{Number.isNaN(b.dxcc) ? '…' : b.dxcc}</td>
+              <td className="num data">{Number.isNaN(b.qsos) ? '…' : b.qsos.toLocaleString()}</td>
               <td className="stats-bar-cell" aria-hidden="true">
                 <span className="stats-progress">
-                  <i style={{ width: `${(b.qsos / maxQsos) * 100}%` }} />
+                  <i style={{ width: `${Number.isNaN(b.qsos) ? 0 : (b.qsos / maxQsos) * 100}%` }} />
                 </span>
               </td>
             </tr>
@@ -130,15 +134,17 @@ function Bands({ data }: { data: StatsResponse }) {
 }
 
 /** I paesi che mancano: chiusi, con il conteggio nel titolo. */
-function Missing({ data }: { data: StatsResponse }) {
+function Missing({ data }: { data?: StatsResponse }) {
   const t = useT();
-  const missing = data.missing_dxcc;
+  const missing = data?.missing_dxcc ?? null;
   return (
     <details className="panel stats-card stats-fold">
       <summary className="panel-title">
-        {t('stats.missing')} <span className="muted">({missing.length})</span>
+        {t('stats.missing')} <span className="muted">({missing ? missing.length : '…'})</span>
       </summary>
-      {missing.length === 0 ? (
+      {missing === null ? (
+        <p className="muted">{t('set.loading')}</p>
+      ) : missing.length === 0 ? (
         <p className="muted">{t('stats.missingNone')}</p>
       ) : (
         <ul className="chips stats-missing">
