@@ -64,6 +64,12 @@ struct QsoLogInfo {
 pub struct Sequencer {
     /// RRR ripetuti a un QSO gia' a log (vedi `RRR_REPEATS`).
     rrr_repeats: u32,
+    /// Periodi saltati dopo il nostro RR73 (gia' a log) aspettando il suo 73 o un suo R+rapporto ripetuto (vedi `Status::Srr73`).
+    rr73_waits: u32,
+    /// L'ultimo periodo contato in `rr73_waits` (una volta sola per periodo).
+    rr73_wait_slot: Option<Slot>,
+    /// In questo periodo non si trasmette: si aspetta la risposta al nostro RR73.
+    hold_slot: bool,
     mode: Mode,
     my: Station,
     my_base: String,
@@ -156,6 +162,9 @@ impl Sequencer {
         let tx_hz = opts.tx_freq_hz as i32;
         Ok(Sequencer {
             rrr_repeats: 0,
+            rr73_waits: 0,
+            rr73_wait_slot: None,
+            hold_slot: false,
             mode,
             my_base: base_call(&my.call),
             my,
@@ -309,6 +318,7 @@ impl Sequencer {
         self.status = Status::None;
         self.counter = 0;
         self.process_auto_done = false;
+        self.hold_slot = false;
         self.decode_started_for = None;
         self.ntx = 6;
         self.tx_generated = self.tx_even;
@@ -543,22 +553,26 @@ impl Sequencer {
         }
         self.tx_even = !slot.is_even();
         self.rx_hz = decode.freq_hz as i32;
+        // un messaggio diretto a me dice gia' a che punto e' il QSO (R-07: ha il mio rapporto): lo stato riparte da li', non da zero,
+        // altrimenti al periodo dopo la sequenza tornava al rapporto invece di mandare RR73. Vale anche quando il DX era gia' quello
+        // (ripresa dopo «Canc DX» o da Wait and Reply): prima la memoria restava al suo messaggio vecchio e dopo l'RRR si tornava al
+        // rapporto (BG2EFX, 2026-11-07). Come WSJT-X, che a ogni doppio clic riparte dal messaggio scelto (`processMessage`)
+        let from_click = match &directed {
+            Some(Body::Grid(_)) => Status::Rcall,
+            Some(Body::Report(_)) => Status::Rreport,
+            Some(Body::RReport(_)) => Status::Rrreport,
+            Some(Body::Rrr) => Status::Rrr,
+            Some(Body::Rr73) => Status::Rrr73,
+            Some(Body::Bye) => Status::R73,
+            Some(Body::Other) | None => Status::None,
+        };
         if call_changed {
             self.his_grid.clear();
-            // un messaggio diretto a me dice gia' a che punto e' il QSO (R-07: ha il mio rapporto): lo stato riparte da li', non da zero,
-            // altrimenti al periodo dopo la sequenza tornava al rapporto invece di mandare RR73
-            let from_click = match &directed {
-                Some(Body::Grid(_)) => Status::Rcall,
-                Some(Body::Report(_)) => Status::Rreport,
-                Some(Body::RReport(_)) => Status::Rrreport,
-                Some(Body::Rrr) => Status::Rrr,
-                Some(Body::Rr73) => Status::Rrr73,
-                Some(Body::Bye) => Status::R73,
-                Some(Body::Other) | None => Status::None,
-            };
-            self.hist.reset_count(&call, from_click);
             self.his_call = call.clone();
             self.rpt_rcvd.clear();
+        }
+        if call_changed || from_click != Status::None {
+            self.hist.reset_count(&call, from_click);
         }
         if let Some(g) = grid {
             self.his_grid = g;
@@ -754,6 +768,7 @@ impl Sequencer {
         self.reply_other = false;
         self.reply_cq73 = false;
         self.process_auto_done = false;
+        self.hold_slot = false;
         self.call_first_73 = false;
         self.used_freq = 0;
     }
@@ -888,6 +903,12 @@ impl Sequencer {
         if !his_call.is_empty() {
             io.count = if hound { -1 } else { 0 };
             self.status = self.hist.autoseq_call(&his_call, &mut io, hound);
+            // ogni nuovo calcolo riparte senza attesa: se nel frattempo e' arrivato un suo messaggio si risponde subito
+            self.hold_slot = false;
+            if self.status != Status::Srr73 {
+                self.rr73_waits = 0;
+                self.rr73_wait_slot = None;
+            }
             if self.rx_transmitting {
                 io.count -= 1;
             }
@@ -1123,8 +1144,23 @@ impl Sequencer {
                     }
                 }
                 Status::Srr73 => {
-                    if !self.opts.single_qso && !self.opts.autolog && self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call) {
+                    let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
+                    if !self.opts.single_qso && !self.opts.autolog && logged {
                         self.auto_stop_tx(StopReason::QsoFinished, false);
+                    } else if logged {
+                        // il nostro RR73 e' partito ed e' a log, da lui non e' arrivato niente di nuovo: come WSJT-X non lo si ripete da soli.
+                        // Si salta il periodo e si ascolta: se ripete il suo R+rapporto si risponde (`Status::Rrreport`), se manda il 73 si
+                        // chiude; dopo LOGGED_CLOSING_TRIES periodi senza niente ci si ferma (richiesta del proprietario 2026-11-07, R4PEX)
+                        if self.rr73_wait_slot != Some(self.cur_slot) {
+                            self.rr73_wait_slot = Some(self.cur_slot);
+                            self.rr73_waits += 1;
+                        }
+                        if self.rr73_waits > LOGGED_CLOSING_TRIES {
+                            self.rr73_waits = 0;
+                            self.auto_stop_tx(StopReason::QsoFinished, false);
+                        } else {
+                            self.hold_slot = true;
+                        }
                     }
                 }
                 // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra qui e ci si ferma senza mandare un altro 73 (come
@@ -1249,6 +1285,11 @@ impl Sequencer {
                 self.note_state();
                 return None;
             }
+        }
+        // in attesa della risposta al nostro RR73: per tutto questo periodo non si trasmette
+        if self.hold_slot {
+            self.note_state();
+            return None;
         }
         let tx = self.emit_tx(slot, now, false);
         self.note_state();
