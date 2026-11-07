@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
-import { LanguageSelect } from './components/LanguageSelect';
 import { HeaderAlertSwitch } from './components/AlertSwitch';
 import { useT } from './i18n';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -211,7 +210,7 @@ export function App() {
             </button>
           ) : null}
           {session.data ? <UpdateBar /> : null}
-          <LanguageSelect />
+          {/* la lingua si sceglie in Impostazioni (Generali): nella barra in alto non serve (richiesta del proprietario) */}
           <HeaderAlertSwitch />
           <ThemeToggle />
         </span>
