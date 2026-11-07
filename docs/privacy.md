@@ -11,6 +11,12 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
 - **PSK Reporter**, lettura (Impostazioni → Servizi online, pagina Propagazione): ogni tanto Aurora chiede chi ti ha ricevuto; nella richiesta c'è il tuo nominativo.
 - **PSK Reporter**, spotting (Impostazioni → Programmi collegati): manda i nominativi che ricevi, con frequenza, rapporto, il tuo nominativo e il locatore, come fanno gli altri programmi FT8.
 - **Propagazione** (hamqsl.com) e **calendario delle DXpedition** (NG3K): sola lettura di pagine pubbliche, senza dati tuoi.
+- **Messaggi dell'autore e versioni nuove** (dalla 0.11.168): Aurora e l'agente nel tray leggono ogni ora i messaggi pubblicati dall'autore
+  (servizio `aurora-rapporti` su Cloudflare) e l'ultima versione su GitHub. Nella richiesta dei messaggi c'è solo il numero di versione di
+  Aurora, per i messaggi rivolti alle versioni vecchie: nessun nominativo, nessun dato della stazione.
+- **Agente nel tray** (dalla 0.11.169): lo stesso programma, avviato con Windows, che fa le letture qui sopra (versioni, messaggi,
+  propagazione, DXpedition) anche con Aurora chiusa; legge il riepilogo del giorno dal log di Aurora sul PC, senza mandarlo da nessuna parte.
+  Si spegne in Impostazioni → Agente nel tray.
 - **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
 - **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura.
 
