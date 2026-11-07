@@ -25,9 +25,12 @@ aurora = { path = "../../core/crates/aurora" }
 aurora-core = { path = "../../core/crates/aurora-core" }
 remote-api = { path = "../../core/crates/remote-api" }
 updater = { path = "../../core/crates/updater" }
+online-info = { path = "../../core/crates/online-info" }
 tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# l'agente nel tray chiede le versioni e i messaggi
+ureq = { version = "3.5.0", default-features = false, features = ["rustls", "json"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

@@ -60,8 +60,8 @@ const TABS: readonly TabDef[] = [
   { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
   { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
   { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
-  // l'agente nel tray non c'e' ancora: la sua pagina si vede solo nella grafica di prova
-  ...(import.meta.env.VITE_AURORA_PROVA === '1' ? [{ id: 'agent', label: 'agent.tab' as const, icon: '◳', render: () => <AgentTab /> } satisfies TabDef] : []),
+  // l'agente nel tray: la pagina con le sue scelte (lette dall'agente dal file delle impostazioni)
+  { id: 'agent', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
