@@ -5,6 +5,7 @@
 
 ## 0.11.175 - 2026-11-07
 - **Messaggi agli utenti**: modelli pronti, anteprima della cartolina sul PC dell'autore, contatori dei caratteri, conferma prima di pubblicare con destinatari e scadenza, «Usa di nuovo» nell'elenco dei messaggi.
+- **Icona dei messaggi**: all'avvio Aurora non riporta piu' alla Stazione chi apre `#/messaggi-autore`.
 
 ## 0.11.174 - 2026-11-07
 - **Agente: «Aggiorna ora» installa davvero** la versione nuova (prima apriva solo Aurora): chiede ad Aurora di scaricare e installare; con Aurora chiusa la apre e aspetta che risponda.

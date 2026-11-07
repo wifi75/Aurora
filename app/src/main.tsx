@@ -42,9 +42,11 @@ async function start() {
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
     e.preventDefault();
   });
-  // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fa eccezione solo il collegamento di associazione del telefono
+  // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fanno eccezione le finestre staccate,
+  // il collegamento di associazione del telefono e la pagina dei messaggi dell'autore (aperta dalla sua icona sul desktop)
   const solo = location.hash.startsWith('#/finestra/');
-  if (!solo && !location.hash.startsWith('#/associa') && !location.hash.startsWith('#/pair')) history.replaceState(null, '', '#/');
+  const keep = ['#/finestra/', '#/associa', '#/pair', '#/messaggi-autore'].some((h) => location.hash.startsWith(h));
+  if (!keep) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
   const { Splash } = await import('./components/Splash');
