@@ -6778,3 +6778,10 @@
   font-size: 8.5px;
   width: min(100%, 4.3rem);
 }
+
+/* stazioni in coda: ferme sotto quella chiamata, fondo azzurro, bordo a sinistra e etichetta «IN CODA n» */
+.decode-list .decode-row.decode-row--queue-pin { background: color-mix(in srgb, #1f6feb 16%, transparent) !important; box-shadow: inset 4px 0 0 #3b8cff; }
+.dock-panel--all .decode-list .badge.badge--queue,
+.dock-panel--cq .decode-list .badge.badge--queue,
+.decode-list .badge.badge--queue { background: #1f6feb !important; color: #fff !important; font-weight: 800; letter-spacing: 0.04em; }
+html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { background: #dce9ff !important; }

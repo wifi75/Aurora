@@ -38,7 +38,11 @@ export function noteLines(notes: string): string[] {
  * La locandina della versione nuova: all'apertura, se sul repository c'e' una versione piu' nuova, compare al centro con le novita' e il
  * pulsante per installarla. «Piu' tardi» la nasconde fino alla versione dopo (l'icona in testata resta).
  */
-export function UpdatePoster() {
+/**
+ * `onlyWhenAsked`: la locandina della finestra delle Impostazioni (che sta sempre davanti alla principale): compare solo quando si preme
+ * «Controlla ora», mai da sola, cosi' non si doppia con quella della finestra principale.
+ */
+export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolean } = {}) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: (q) => ((q.state.data?.checked_at_ms ?? 0) === 0 ? 5_000 : 10 * 60_000) });
@@ -63,6 +67,7 @@ export function UpdatePoster() {
   }, [refetch]);
   const release = update.data?.available ?? (notice ? { version: notice.version, tag: notice.tag, name: '', notes: '', url: notice.url, published_at: '', prerelease: false } : null);
   if (!release && forced) return <UpToDate current={update.data?.current ?? ''} onClose={() => setForced(false)} />;
+  if (onlyWhenAsked && !forced) return null;
   if (!release || (seen === release.version && !forced)) return null;
 
   const later = () => {

@@ -39,6 +39,7 @@ import { ReportsNotice } from './components/ReportsNotice';
 import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
 import { UpdatePoster } from './components/UpdatePoster';
+import { OwnerMessages } from './components/OwnerMessages';
 import { CrashPrompt } from './settings/ReportsBox';
 
 /**
@@ -217,6 +218,8 @@ export function App() {
       {session.data && !REMOTE ? <FirstRun /> : null}
       {session.data ? <LogPrompt /> : null}
       {session.data && !REMOTE ? <UpdatePoster /> : null}
+      {/* i messaggi del proprietario (auguri, avvisi): sempre accesi, solo sul PC */}
+      {session.data && !REMOTE ? <OwnerMessages /> : null}
     </div>
     {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? (route.tab ?? rememberedTab(browserStorage())) : undefined} onClose={() => { location.hash = '#/'; }} /> : null}
     </>

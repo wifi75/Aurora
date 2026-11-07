@@ -3,6 +3,12 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.168 - 2026-11-07
+- **Coda**: le stazioni accodate hanno l'etichetta «IN CODA n» (fondo azzurro) e restano ferme sotto la stazione chiamata, nell'ordine della coda; dopo il log salgono di un posto.
+- **Attivita' di banda**: il ritorno in cima dopo 15 s cerca il contenitore che scorre davvero (lista, pannello o blocco), quindi funziona anche nella pagina a blocchi.
+- **Aggiornamenti**: «Controlla ora» dalle Impostazioni (finestra sempre davanti) apre la locandina li', non dietro nella finestra principale.
+- **Messaggi dell'autore**: Aurora legge ogni ora i messaggi pubblicati dal servizio dei rapporti (`/v1/messaggi`) e li mostra una volta sola come cartolina con il suono (tema festa per gli auguri).
+
 ## 0.11.167 - 2026-11-07
 - **Prestazioni**: undici componenti leggono solo i campi dello stato che usano (`useStatusPick`), la Stazione non passa piu' lo stato intero a Trasmissione, Comandi e barra di stato, DX Cluster/Log/Bande aperte sono `memo`: modifiche alla pagina da 749 a 405 ogni 15 s (DX Cluster da 407 a 31). Striscia CQ a 20 passi/s, S-meter ridisegnato al massimo 25 volte/s, barra in basso 2 volte/s; niente aggiornamenti a finestra nascosta.
 - **Aggiornamenti**: «Controlla aggiornamenti» apre sempre la locandina (anche se rimandata); se si e' gia' aggiornati dice «Aurora e' aggiornata» con le novita' della versione installata.
