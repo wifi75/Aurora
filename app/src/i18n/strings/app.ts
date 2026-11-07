@@ -65,6 +65,8 @@ export const appStrings = {
   'agent.try.ignore': ["Ignora", "Ignore", "Ignorieren", "Ignorer", "Ignorar", "Ignorar"],
   'agent.preview': ["Anteprima", "Preview", "Vorschau", "Aperçu", "Vista previa", "Pré-visualização"],
   'agent.previewTip': ["mostra come apparirà la cartolina", "shows how the card will look", "zeigt, wie die Karte aussieht", "montre l'aspect de la carte", "muestra cómo se verá la tarjeta", "mostra como ficará o cartão"],
+  'agent.msg.open': ["Apri", "Open", "Öffnen", "Ouvrir", "Abrir", "Abrir"],
+  'tag.queued': ["IN CODA {n}", "QUEUE {n}", "WARTESCHL. {n}", "FILE {n}", "EN COLA {n}", "NA FILA {n}"],
   'app.retry': ['Riprova', 'Try again', 'Erneut versuchen', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'footer.credit': [
     '{name} v{version} — By IU3WJQ -Tiziano Cassone',

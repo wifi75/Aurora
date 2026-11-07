@@ -10,6 +10,10 @@ export interface AgentNotice {
   primary: string;
   secondary: string;
   update?: boolean;
+  /** Il pulsante principale apre questo indirizzo (nel browser). */
+  link?: string;
+  /** Cartolina di festa (auguri): colori caldi. */
+  festive?: boolean;
 }
 
 /**
@@ -102,7 +106,7 @@ function AgentPopup({ notice, seconds, onClose }: { notice: AgentNotice; seconds
   const leave = () => setLeaving(true);
   return (
     <div
-      className={`agent-card${leaving ? ' agent-card--leaving' : ''}${notice.update ? ' agent-card--update' : ''}`}
+      className={`agent-card${leaving ? ' agent-card--leaving' : ''}${notice.update ? ' agent-card--update' : ''}${notice.festive ? ' agent-card--festa' : ''}`}
       role="status"
       onMouseEnter={() => (hover.current = true)}
       onMouseLeave={() => (hover.current = false)}
@@ -121,10 +125,19 @@ function AgentPopup({ notice, seconds, onClose }: { notice: AgentNotice; seconds
         <h3>{notice.title}</h3>
         <p>{notice.text}</p>
         <div className="agent-card-actions">
-          <button type="button" className="agent-card-btn" onClick={leave}>
-            {notice.secondary}
-          </button>
-          <button type="button" className="agent-card-btn agent-card-btn--main" onClick={leave}>
+          {notice.secondary ? (
+            <button type="button" className="agent-card-btn" onClick={leave}>
+              {notice.secondary}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="agent-card-btn agent-card-btn--main"
+            onClick={() => {
+              if (notice.link) window.open(notice.link, '_blank', 'noopener');
+              leave();
+            }}
+          >
             {notice.primary}
           </button>
         </div>

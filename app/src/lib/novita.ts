@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.168',
+    released: '2026-11-07T09:03:52Z',
+    kind: 'new',
+    title: ['Stazioni in coda sempre in vista', 'Queued stations always in view', 'Stationen in der Warteschlange immer sichtbar', 'Stations en file toujours visibles', 'Estaciones en cola siempre a la vista', 'Estações na fila sempre à vista'],
+    text: [
+      "Le stazioni in coda hanno l'etichetta «IN CODA n» e restano ferme sotto quella che stai chiamando; quando il QSO va a log salgono di un posto. Attività di banda torna in cima dopo 15 secondi anche nella pagina a blocchi. «Controlla ora» mostra la finestra dell'aggiornamento sopra le Impostazioni. Aurora può ricevere i messaggi dell'autore (auguri, avvisi) come cartolina.",
+      "Queued stations show «QUEUE n» and stay below the one you are calling; when the QSO is logged they move up one place. Band activity returns to the top after 15 seconds also in the block layout. «Check now» shows the update window above the Settings. Aurora can receive messages from the author (greetings, notices) as a card.",
+      "Stationen in der Warteschlange zeigen «WARTESCHL. n» und bleiben unter der gerufenen Station; nach dem Loggen rücken sie einen Platz auf. Die Bandaktivität springt auch im Blocklayout nach 15 Sekunden nach oben. «Jetzt prüfen» zeigt das Update-Fenster über den Einstellungen. Aurora kann Nachrichten des Autors (Grüße, Hinweise) als Karte empfangen.",
+      "Les stations en file affichent « FILE n » et restent sous celle que tu appelles ; quand le QSO est loggé elles montent d’une place. L’activité de bande revient en haut après 15 secondes aussi dans la disposition en blocs. « Vérifier » montre la fenêtre de mise à jour au-dessus des Réglages. Aurora peut recevoir des messages de l’auteur (vœux, avis) sous forme de carte.",
+      "Las estaciones en cola muestran «EN COLA n» y quedan bajo la que estás llamando; cuando el QSO va al log suben un puesto. La actividad de banda vuelve arriba tras 15 segundos también en la vista de bloques. «Comprobar ahora» muestra la ventana de actualización sobre los Ajustes. Aurora puede recibir mensajes del autor (felicitaciones, avisos) como tarjeta.",
+      "As estações na fila mostram «NA FILA n» e ficam por baixo da que estás a chamar; quando o QSO vai para o log sobem um lugar. A atividade de banda volta ao topo após 15 segundos também na vista em blocos. «Verificar agora» mostra a janela da atualização por cima das Definições. O Aurora pode receber mensagens do autor (felicitações, avisos) como cartão.",
+    ],
+  },
+  {
     version: '0.11.167',
     released: '2026-11-07T08:50:52Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les façades FT-2000 et IC-7610 prennent la hauteur de leur dessin : plus de bande vide dessous et les panneaux remontent. Dans Activité de bande et CQ les colonnes distance et étiquette sont plus étroites de 7 px, plus de place au message.",
       "Los frontales FT-2000 e IC-7610 tienen la altura de su dibujo: ya no hay franja vacía debajo y los paneles vuelven arriba. En Actividad de banda y CQ las columnas de distancia y etiqueta son 7 px más estrechas, más espacio para el mensaje.",
       "Os frontais FT-2000 e IC-7610 têm a altura do seu desenho: já não há faixa vazia por baixo e os painéis voltam para cima. Na Atividade de banda e CQ as colunas da distância e da etiqueta são 7 px mais estreitas, mais espaço para a mensagem.",
-    ],
-  },
-  {
-    version: '0.11.128',
-    released: '2026-11-04T21:39:51Z',
-    kind: 'changed',
-    title: ['Display estesi 640 × 90', 'Wide displays 640 × 90', 'Breite Anzeigen 640 × 90', 'Afficheurs larges 640 × 90', 'Pantallas anchas 640 × 90', 'Ecrãs largos 640 × 90'],
-    text: [
-      "I display estesi sono alti 90 punti (640 × 90), centrati fra la barra del menu e i pannelli. In Attività di banda e CQ il testo del messaggio è 1 punto più piccolo, così i messaggi lunghi si tagliano meno (solo sul PC).",
-      "Wide displays are 90 points high (640 × 90), centred between the menu bar and the panels. In Band activity and CQ the message text is 1 point smaller, so long messages are cut less (PC only).",
-      "Breite Anzeigen sind 90 Punkte hoch (640 × 90), mittig zwischen Menüleiste und Feldern. In Bandaktivität und CQ ist der Nachrichtentext 1 Punkt kleiner, lange Nachrichten werden weniger abgeschnitten (nur am PC).",
-      "Les afficheurs larges font 90 points de haut (640 × 90), centrés entre la barre du menu et les panneaux. Dans Activité de bande et CQ le texte du message est plus petit d’1 point, les messages longs sont moins coupés (PC seulement).",
-      "Las pantallas anchas miden 90 puntos de alto (640 × 90), centradas entre la barra del menú y los paneles. En Actividad de banda y CQ el texto del mensaje es 1 punto más pequeño, los mensajes largos se cortan menos (solo en el PC).",
-      "Os ecrãs largos têm 90 pontos de altura (640 × 90), centrados entre a barra do menu e os painéis. Na Atividade de banda e CQ o texto da mensagem é 1 ponto mais pequeno, as mensagens longas cortam-se menos (só no PC).",
     ],
   },
 ];

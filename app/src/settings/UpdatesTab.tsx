@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { openUpdatePoster } from '../components/UpdatePoster';
+import { openUpdatePoster, UpdatePoster } from '../components/UpdatePoster';
 import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
 import { Check, Help } from './common';
@@ -88,6 +88,8 @@ export function UpdatesTab() {
 
   return (
     <Page className="upd-page">
+      {/* Impostazioni in una finestra a parte (sempre davanti): la locandina deve comparire qui, non dietro nella finestra principale */}
+      {location.hash.startsWith('#/finestra/') ? <UpdatePoster onlyWhenAsked /> : null}
       {/* Versione: tre numeri grandi in fila, lo stato in una riga sola, i pulsanti sotto */}
       <Group title={t('lay.status')}>
         <div className="upd-stats">

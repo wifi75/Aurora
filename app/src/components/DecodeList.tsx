@@ -179,24 +179,32 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   useEffect(() => {
     const list = listEl;
     if (!list) return;
-    const host = list.closest<HTMLElement>('.dock-body') ?? list;
     const invert = () => list.classList.contains('decode-list--invert');
-    // chi scorre davvero: la lista o il riquadro del pannello (quello che ha qualcosa da scorrere)
-    const scroller = () => (list.scrollHeight > list.clientHeight + 1 ? list : host);
+    // chi scorre davvero: la lista stessa oppure il primo contenitore sopra di lei che ha la barra di scorrimento (pannello, blocco
+    // della pagina a blocchi, finestra staccata). Si cerca ogni volta, perche' la disposizione puo' cambiare.
+    const scroller = (): HTMLElement | null => {
+      for (let el: HTMLElement | null = list; el && el !== document.body; el = el.parentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+      }
+      return null;
+    };
     const atNewest = (el: HTMLElement) => (invert() ? el.scrollHeight - el.clientHeight - el.scrollTop < 4 : el.scrollTop < 4);
-    // il conto riparte solo quando scorre la persona (rotella, dito, tasti, barra di scorrimento): gli spostamenti fatti dalla lista
-    // quando arrivano le stazioni nuove (ogni 15 s) non contano, altrimenti il conto non finiva mai
-    const onUser = () => {
+    // il conto riparte solo quando scorre la persona (rotella, dito, tasti, barra di scorrimento) sopra la lista o il suo contenitore:
+    // gli spostamenti fatti dalla lista quando arrivano le stazioni nuove (ogni 15 s) non contano
+    const onUser = (e: Event) => {
+      const el = scroller();
+      if (!el || !(e.target instanceof Node) || !el.contains(e.target)) return;
       window.clearTimeout(backTimer.current);
       backTimer.current = window.setTimeout(() => {
-        const el = scroller();
-        if (!atNewest(el)) el.scrollTop = invert() ? el.scrollHeight : 0;
+        const now = scroller();
+        if (now && !atNewest(now)) now.scrollTop = invert() ? now.scrollHeight : 0;
       }, 15_000);
     };
     const kinds = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
-    for (const k of kinds) host.addEventListener(k, onUser, { capture: true, passive: true });
+    for (const k of kinds) window.addEventListener(k, onUser, { capture: true, passive: true });
     return () => {
-      for (const k of kinds) host.removeEventListener(k, onUser, { capture: true });
+      for (const k of kinds) window.removeEventListener(k, onUser, { capture: true });
       window.clearTimeout(backTimer.current);
     };
   }, [listEl]);
@@ -292,8 +300,14 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const hisLast = calling ? qsoRows.filter((d) => d.id >= 0 && isCallToMe(d.text, myCall)).reduce<DecodedMessage | null>((a, b) => (!a || b.time_ms >= a.time_ms ? b : a), null) : null;
   const hisWord = hisLast ? (hisLast.text.trim().split(/\s+/).pop() ?? '').toUpperCase() : '';
   const stage = !hisLast ? 'call' : /^(RRR|RR73|73)$/.test(hisWord) ? 'end' : /^R[+-]\d+$/.test(hisWord) ? 'roger' : /^[+-]\d+$/.test(hisWord) ? 'report' : 'reply';
-  const rest = pin ? decodes.filter((d) => !inQso(d)) : decodes;
-  const rows = pin ? (view.invert ? [...rest, pin] : [pin, ...rest]) : decodes;
+  // le stazioni in coda restano ferme subito sotto quella che sto chiamando, nell'ordine della coda: quando la prima va a log esce dalla
+  // coda e le altre salgono di un posto
+  const queued = queueCalls
+    .map((c) => decodes.find((d) => d.id === queueRow.get(c)))
+    .filter((d): d is DecodedMessage => !!d && d !== pin && !inQso(d));
+  const rest = (pin ? decodes.filter((d) => !inQso(d)) : decodes).filter((d) => !queued.includes(d));
+  const top = pin ? [pin, ...queued] : queued;
+  const rows = view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest];
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
@@ -362,7 +376,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}${d === pin ? pinClass : ''}`}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued decode-row--queue-pin' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}${d === pin ? pinClass : ''}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => (tapReply && !own ? tapOnce(d.id) : setSelected(d.id))}
             onDoubleClick={() => (tapReply ? undefined : own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
@@ -395,7 +409,12 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
                 {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
               </span>
             </span>
-            {fox ? (
+            {inQueue ? (
+              // in coda: etichetta ben visibile con il posto (1 = la prossima)
+              <span className="badge badge--tag badge-cell badge--queue" title={t('tip.row.queuedPos', { n: queuePos })}>
+                {t('tag.queued', { n: queuePos })}
+              </span>
+            ) : fox ? (
               <span className="badge badge--tag badge-cell badge--fox" title={t('tip.row.fox')}>
                 FOX
               </span>
