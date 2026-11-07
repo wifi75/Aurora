@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.174',
+    released: '2026-11-07T11:05:48Z',
+    kind: 'new',
+    title: ['DXpedition: chiamale con un doppio clic', 'DXpeditions: call them with a double-click', 'DXpeditionen: per Doppelklick rufen', "DXpéditions : appelle-les d'un double-clic", 'DXpediciones: llámalas con doble clic', 'DXpedições: chama-as com duplo clique'],
+    text: [
+      "Una spedizione che hai ricevuto mostra «SENTITA DA TE» con frequenza, modo, segnale e ora; con un doppio clic la chiami subito, come in Attività di banda (un clic apre la scheda).",
+      "An expedition you received shows «HEARD BY YOU» with frequency, mode, signal and time; double-click to call it right away, as in Band activity (one click opens the details).",
+      "Eine empfangene Expedition zeigt «VON DIR GEHÖRT» mit Frequenz, Betriebsart, Signal und Uhrzeit; per Doppelklick rufst du sie sofort, wie in der Bandaktivität (ein Klick öffnet die Details).",
+      "Une expédition reçue affiche « ENTENDUE PAR TOI » avec fréquence, mode, signal et heure ; un double-clic l'appelle tout de suite, comme dans l'Activité de bande (un clic ouvre la fiche).",
+      "Una expedición que has recibido muestra «OÍDA POR TI» con frecuencia, modo, señal y hora; con doble clic la llamas enseguida, como en Actividad de banda (un clic abre la ficha).",
+      "Uma expedição que recebeste mostra «OUVIDA POR TI» com frequência, modo, sinal e hora; com duplo clique chamas logo, como na Atividade de banda (um clique abre a ficha).",
+    ],
+  },
+  {
     version: '0.11.173',
     released: '2026-11-07T11:04:33Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Sur certains PC l’installation restait bloquée au début de la barre : elle ferme maintenant Aurora sans attendre PowerShell et n’attend jamais plus de quelques secondes. Les fenêtres à part du second écran se rouvrent là où tu les avais laissées, à la même taille (même agrandies).",
       "En algunos PC la instalación se quedaba parada al inicio de la barra: ahora cierra Aurora sin esperar a PowerShell y nunca espera más de unos segundos. Las ventanas aparte de la segunda pantalla se reabren donde las dejaste, con el mismo tamaño (también maximizadas).",
       "Em alguns PC a instalação ficava parada no início da barra: agora fecha a Aurora sem esperar pelo PowerShell e nunca espera mais de alguns segundos. As janelas à parte do segundo ecrã reabrem onde as deixaste, com o mesmo tamanho (também maximizadas).",
-    ],
-  },
-  {
-    version: '0.11.134',
-    released: '2026-11-05T12:50:53Z',
-    kind: 'new',
-    title: ['Finestre sul secondo schermo', 'Windows on the second screen', 'Fenster auf dem zweiten Bildschirm', 'Fenêtres sur le second écran', 'Ventanas en la segunda pantalla', 'Janelas no segundo ecrã'],
-    text: [
-      "Con il pulsantino ⧉ nella barra di un pannello della Stazione, o accanto al titolo di Mappa e Propagazione, l'elemento va in una finestra a parte da portare sul secondo schermo e ridimensionare. Più elementi si affiancano nella stessa finestra (in riga o uno sopra l'altro, con il divisore); ⤓ li rimette al loro posto. Aurora riapre le finestre all'avvio. Sul telefono non cambia niente.",
-      "With the small ⧉ button in the bar of a Station panel, or next to the Map and Propagation titles, the item goes into a separate window to move to the second screen and resize. Several items can share a window (side by side or stacked, with a divider); ⤓ puts them back. Aurora reopens the windows at start. Nothing changes on the phone.",
-      "Mit dem kleinen ⧉ in der Leiste eines Stations-Felds oder neben den Titeln Karte und Ausbreitung kommt das Element in ein eigenes Fenster für den zweiten Bildschirm, frei in der Größe. Mehrere Elemente teilen sich ein Fenster (nebeneinander oder übereinander, mit Teiler); ⤓ holt sie zurück. Aurora öffnet die Fenster beim Start wieder. Am Telefon ändert sich nichts.",
-      "Avec le petit ⧉ dans la barre d’un panneau de la Station, ou à côté des titres Carte et Propagation, l’élément passe dans une fenêtre à part à mettre sur le second écran et à redimensionner. Plusieurs éléments partagent une fenêtre (côte à côte ou l’un sur l’autre, avec un séparateur) ; ⤓ les remet en place. Aurora rouvre les fenêtres au démarrage. Rien ne change sur le téléphone.",
-      "Con el pequeño ⧉ en la barra de un panel de la Estación, o junto a los títulos de Mapa y Propagación, el elemento pasa a una ventana aparte para llevar a la segunda pantalla y redimensionar. Varios elementos comparten ventana (lado a lado o uno sobre otro, con divisor); ⤓ los devuelve. Aurora reabre las ventanas al iniciar. En el teléfono no cambia nada.",
-      "Com o pequeno ⧉ na barra de um painel da Estação, ou junto aos títulos de Mapa e Propagação, o elemento passa para uma janela à parte para levar ao segundo ecrã e redimensionar. Vários elementos partilham uma janela (lado a lado ou um sobre o outro, com divisor); ⤓ repõe-nos. A Aurora reabre as janelas no arranque. No telemóvel não muda nada.",
     ],
   },
 ];
