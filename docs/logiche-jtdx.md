@@ -361,3 +361,13 @@ per la 3.2.0-rc1 come **DEDUZIONE**; per la 2.7 e la 3.0.1 sono **VERIFICATE** s
 
 In sintesi: dalla 0.11.183 (scelta del proprietario, 2026-11-07) Aurora registra come WSJT-X per RR73, 73 e RRR; restano scelte
 proprie la registrazione all'ultimo tentativo quando il 73 non arriva e le risposte ripetute (al massimo 5) dopo la chiusura.
+
+### Modifiche del 2026-11-07 (sera, 0.11.184)
+
+- **RR73 non ripetuto da solo**: dopo il nostro RR73 (gia' a log) Aurora non lo rimanda al periodo dopo se dall'altro non e' arrivato niente
+  (`Status::Srr73`, `hold_slot`): salta il periodo e ascolta. Se ripete il suo R+rapporto risponde (`Status::Rrreport`, al massimo
+  `RRR_REPEATS`), se manda il 73 chiude, dopo `LOGGED_CLOSING_TRIES` periodi senza niente si ferma. Prima, con la registrazione automatica,
+  ripartiva un secondo RR73 che veniva interrotto appena decodificato il suo 73 (R4PEX, 15:44:45).
+- **Ripresa di un QSO con lo stesso DX** (doppio clic o Wait and Reply dopo «Canc DX»): lo stato della memoria riparte dal messaggio scelto
+  anche se il DX non cambia (`reply_to_with`); prima restava al suo messaggio vecchio e dopo l'RRR si tornava al rapporto (BG2EFX, 07:25).
+- **Wait and Reply / Wait and Call spenti di fabbrica** (`WaitFeaturesEnabled` = false): riprendevano da soli i QSO, anche dopo «Canc DX».
