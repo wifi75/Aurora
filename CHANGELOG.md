@@ -3,6 +3,11 @@
 ## Non rilasciato
 - **Rapporti dei crash leggibili subito**: insieme al pacchetto di un crash parte un riassunto (l'inizio del rapporto di testo, gia' ripulito) che il servizio salva nel suo indice: la causa si legge senza scaricare lo zip.
 
+## 0.11.179 - 2026-11-07
+- **Messaggi dell'autore, temi**: cinque cartoline (Natale con il cappellino sull'angolo, Anno nuovo, Pasqua, Aggiornamento, Servizio) in Aurora e nell'agente nel tray (`AURORA_AGENTE_PROVA=natale` per provarle); il tema viaggia nel campo `stile` del servizio `aurora-rapporti` (colonna D1 nuova), le versioni vecchie mostrano la cartolina normale.
+- **Pagina dei messaggi**: modulo a sinistra e cartolina d'anteprima sempre visibile a destra con scelta della lingua; i modelli sono gia' scritti in tutte e sei le lingue e si chiamano nella lingua dell'interfaccia; scelta del tema a mano.
+- **Pannello Log**: scheda DXCC un po' piu' piccola (nominativo e paese, bandiera, campo Prova, caselle).
+
 ## 0.11.178 - 2026-11-07
 - **Attivita' di banda**: le mie trasmissioni con lo stesso testo (il CQ ripetuto ogni periodo) restano una riga sola, la piu' recente, con «×N»; quelle diverse del QSO restano tutte (scelta del proprietario: JTDX le mostra tutte).
 - **QSO in corso**: oltre alla riga ferma in cima resta in lista l'ultima risposta della stazione ricevuta da me (prima spariva quando l'ultimo messaggio era il mio).
