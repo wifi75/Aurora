@@ -195,6 +195,32 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// «Aggiorna ora» dalla cartolina: Aurora scarica e installa la versione nuova. Se Aurora e' chiusa la si apre e si aspetta che risponda.
+fn install_update() {
+    if !aurora_open() {
+        open_aurora();
+        for _ in 0..60 {
+            std::thread::sleep(Duration::from_secs(1));
+            if aurora_open() {
+                break;
+            }
+        }
+    }
+    let result = ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(120)))
+        .build()
+        .new_agent()
+        .post("http://127.0.0.1:8787/api/v1/update/install")
+        .send_empty();
+    match result {
+        Ok(_) => agent_log("aggiornamento chiesto ad Aurora"),
+        Err(e) => {
+            agent_log(&format!("aggiornamento non partito: {e}"));
+            open_aurora();
+        }
+    }
+}
+
 /// Apre Aurora (se e' gia' aperta, il programma porta davanti la sua finestra).
 fn open_aurora() {
     if let Ok(exe) = std::env::current_exe() {
@@ -324,7 +350,7 @@ fn check(app: &AppHandle, asked: bool) {
                 .take(3)
                 .collect::<Vec<_>>()
                 .join(" · ");
-            show_card(app, Card { kind: "Aggiornamento", title: format!("Aurora {tag} è pronta"), text: summary, main: "Aggiorna ora", main_action: "open", update: true });
+            show_card(app, Card { kind: "Aggiornamento", title: format!("Aurora {tag} è pronta"), text: summary, main: "Aggiorna ora", main_action: "update", update: true });
             seen.versions.push(tag);
             shown = true;
         } else if asked {
@@ -526,6 +552,9 @@ fn show_card(app: &AppHandle, card: Card) {
                     let _ = app.clone().run_on_main_thread(move || {
                         match what.as_str() {
                             "aurora-open" => open_aurora(),
+                            "aurora-update" => {
+                                std::thread::spawn(install_update);
+                            }
                             "aurora-link" => {
                                 if let Ok(l) = LINK.lock()
                                     && !l.is_empty()
