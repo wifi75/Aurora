@@ -197,29 +197,32 @@ Function PageDatiAurora
   nsDialogs::Create 1018
   Pop $0
   ${If} $LANGUAGE = 1040
-    StrCpy $1 "Dati che Aurora manda in rete"
-    StrCpy $2 "Aurora tiene log, impostazioni e password sul tuo PC. Escono solo questi dati:$$
-$$
-- rapporti degli errori anonimi (versione, radio, scheda audio, messaggio d'errore ripulito; mai nominativo, locatore, log o password) e conteggio delle installazioni attive con un codice casuale;$$
-- PSK Reporter (spot ricevuti, con nominativo e locatore), DX Cluster, controllo degli aggiornamenti su GitHub, propagazione e messaggi dell'autore;$$
-- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e gli altri servizi solo se li accendi tu.$$
-$$
-Si spengono in qualunque momento in Impostazioni (Assistenza > Rapporti degli errori, Servizi online, Programmi collegati). Dettagli: docs/privacy.md su github.com/wifi75/Aurora."
+    ${NSD_CreateLabel} 0 0 100% 12u "Dati che Aurora manda in rete"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 12u "Aurora tiene log, impostazioni e password sul tuo PC. Escono solo questi dati:"
+    Pop $1
+    ${NSD_CreateLabel} 0 30u 100% 26u "- rapporti degli errori anonimi (versione, radio, scheda audio, messaggio d'errore ripulito; mai nominativo, locatore, log o password) e conteggio delle installazioni attive con un codice casuale;"
+    Pop $1
+    ${NSD_CreateLabel} 0 58u 100% 18u "- PSK Reporter (spot ricevuti, con nominativo e locatore), DX Cluster, controllo degli aggiornamenti su GitHub, propagazione e messaggi dell'autore;"
+    Pop $1
+    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e gli altri servizi solo se li accendi tu."
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 26u "Si spengono in qualunque momento in Impostazioni (Assistenza > Rapporti degli errori, Servizi online, Programmi collegati). Dettagli: docs/privacy.md su github.com/wifi75/Aurora."
+    Pop $1
   ${Else}
-    StrCpy $1 "Data Aurora sends over the network"
-    StrCpy $2 "Aurora keeps your log, settings and passwords on your PC. Only this data leaves it:$$
-$$
-- anonymous error reports (version, radio, sound card, cleaned error message; never callsign, locator, log or passwords) and a count of active installations with a random code;$$
-- PSK Reporter (received spots, with callsign and locator), DX Cluster, update check on GitHub, propagation and messages from the author;$$
-- QRZ.com, HamQTH, eQSL, LoTW, ClubLog and the other services only if you turn them on.$$
-$$
-You can turn them off at any time in Settings (Support > Error reports, Online services, Connected programs). Details: docs/privacy.md at github.com/wifi75/Aurora."
+    ${NSD_CreateLabel} 0 0 100% 12u "Data Aurora sends over the network"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 12u "Aurora keeps your log, settings and passwords on your PC. Only this data leaves it:"
+    Pop $1
+    ${NSD_CreateLabel} 0 30u 100% 26u "- anonymous error reports (version, radio, sound card, cleaned error message; never callsign, locator, log or passwords) and a count of active installations with a random code;"
+    Pop $1
+    ${NSD_CreateLabel} 0 58u 100% 18u "- PSK Reporter (received spots, with callsign and locator), DX Cluster, update check on GitHub, propagation and messages from the author;"
+    Pop $1
+    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog and the other services only if you turn them on."
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 26u "You can turn them off at any time in Settings (Support > Error reports, Online services, Connected programs). Details: docs/privacy.md at github.com/wifi75/Aurora."
+    Pop $1
   ${EndIf}
-  ${NSD_CreateLabel} 0 0 100% 12u $1
-  Pop $3
-  ${NSD_CreateTextMultiline} 0 16u 100% -16u $2
-  Pop $3
-  SendMessage $3 ${EM_SETREADONLY} 1 0
   nsDialogs::Show
 FunctionEnd
 
