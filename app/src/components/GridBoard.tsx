@@ -239,7 +239,16 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
   const dividers: Array<[string, string]> = [];
   {
     const list = Object.entries(shown);
-    for (const [ia, a] of list) for (const [ib, b] of list) if (ia !== ib && Math.abs(a.x + a.w - b.x) < 0.01 && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) >= 1) dividers.push([ia, ib]);
+    const overlapY = (p: Cell, q: Cell) => Math.min(p.y + p.h, q.y + q.h) - Math.max(p.y, q.y) > 0.01;
+    for (const [ia, a] of list)
+      for (const [ib, b] of list) {
+        if (ia === ib || Math.abs(a.x + a.w - b.x) >= 0.01 || Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) < 1) continue;
+        // la maniglia sposta il confine fra i due: c'e' solo se nessun altro blocco tocca quel confine dove uno dei due crescerebbe,
+        // cioe' se allargando non si finisce sotto (o sopra) un'altra finestra (richiesta del proprietario 2026-11-08)
+        const line = a.x + a.w;
+        const blocked = list.some(([ic, c]) => ic !== ia && ic !== ib && ((Math.abs(c.x - line) < 0.01 && overlapY(c, a)) || (Math.abs(c.x + c.w - line) < 0.01 && overlapY(c, b))));
+        if (!blocked) dividers.push([ia, ib]);
+      }
   }
   const trackDivider = (a: string, b: string) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
