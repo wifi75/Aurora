@@ -1,9 +1,6 @@
 # Changelog
 
 ## Non rilasciato
-- **QSO con «R + locatore»**: se la stazione in QSO risponde `MIOCALL SUOCALL R LOCATORE` (formato dei contest usato in un QSO normale) dopo il nostro rapporto, vale come conferma e parte RR73; prima si ripeteva il rapporto all'infinito, come fa WSJT-X.
-- **Attivita' di banda** si svuota sempre al cambio di frequenza della radio (almeno 1 kHz).
-- **Impostazioni**: scegliendo un display la finestra non scorre piu' fuori schermo (restava solo lo sfondo sfocato).
 - **Scheda SDR nelle Impostazioni** (accanto a Radio e Audio): in un posto solo l'indirizzo del server TCI (lo stesso del CAT), lo stato del collegamento con la frequenza, l'audio in uso e il pulsante «Usa il TCI per tutto» che, dopo una conferma, mette il CAT su TCI e l'audio su «TCI (dalla radio)»/«TCI (alla radio)»; l'interruttore «Pagina QMAP nel menu» (spostato qui da Generali, spento di base) con la sorgente I/Q di QMAP e il pulsante per aprirla; le radio adatte e i collegamenti alle sezioni TCI e QMAP della Guida (`#/guida/<sezione>`). Dalla finestra a parte delle Impostazioni le pagine si aprono nella finestra principale, e le preferenze cambiate li' valgono subito anche nella finestra principale.
 - **QMAP come WSJT-X 3**: nel minuto di 60 s cerca anche i Q65-30 nelle due meta' («+30 s»), decodifica gia' a 19,5, 30 e 49,5 s oltre che a fine minuto, salta le meta' in cui si trasmette; sincronismo controllato per ogni candidato prima del decodificatore e ritardo dell'eco lunare fino a 5,5 s; media dei periodi per ogni segnale («Media», con il pulsantino per cancellarla, ×N sui messaggi dalla media); Luna (Az/El) e Doppler della propria eco dal locatore delle impostazioni, con la frequenza «sked» di ogni messaggio.
 
