@@ -175,6 +175,8 @@ pub struct NativeControls {
     attenuation_hook: Mutex<Option<AttenuationHook>>,
     /// Le impostazioni della scheda Sequenza (contatori, «ferma se risponde a un altro», CQ rigoroso, watchdog): le legge la trasmissione quando parte e a ogni cambio.
     sequence: Mutex<Option<crate::tx::SequenceSettings>>,
+    /// La sequenza di contest scelta dalla pagina Contest (`None` = QSO normali).
+    contest: Mutex<Option<aurora_core::ContestSetup>>,
     /// `ALL.TXT`: 0 = solo i messaggi con il proprio nominativo, 1 = tutti i decodificati, 2 = anche le righe di debug (vedi `AllTxtScope`).
     all_txt: AtomicU8,
     /// Il locatore proprio per questa sessione, se un programma collegato l'ha cambiato (Location via UDP); `None` = quello delle impostazioni.
@@ -224,7 +226,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
     }
 }
 
@@ -428,6 +430,24 @@ impl NativeControls {
     /// Le impostazioni di Sequenza date da Aurora (`None` finche' nessuno le ha date: valgono quelle di fabbrica della sequenza).
     pub fn sequence(&self) -> Option<crate::tx::SequenceSettings> {
         self.sequence.lock().ok().and_then(|s| s.clone())
+    }
+
+    /// La sequenza di contest scelta (se c'e').
+    pub fn contest(&self) -> Option<aurora_core::ContestSetup> {
+        self.contest.lock().ok().and_then(|s| s.clone())
+    }
+
+    /// Accende o spegne la sequenza di contest: la trasmissione la usa subito (se e' gia' partita) o appena parte. Con il contest acceso
+    /// Fox e Hound si spengono: i regolamenti dei contest li vietano.
+    pub fn set_contest(&self, setup: Option<aurora_core::ContestSetup>) {
+        if let Ok(mut slot) = self.contest.lock() {
+            *slot = setup.clone();
+        }
+        if setup.is_some() {
+            self.set_switch("fox", false);
+            self.set_switch("hound", false);
+        }
+        let _ = self.send(TxCommand::Contest(setup));
     }
 
     /// Cambia le impostazioni di Sequenza: la trasmissione le usa subito (se e' gia' partita) o appena parte.

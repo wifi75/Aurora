@@ -1,0 +1,96 @@
+# Regole del contest «RSGB FT4 Contest Series / International Activity Day» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Serie serali e un International Activity Day ad aprile: date e orari si scelgono a mano.
+
+[contest]
+id = "rsgb-ft4"
+nome = "RSGB FT4 Contest Series / International Activity Day"
+sponsor = "RSGB"
+edizione = 2026
+url_regole = "https://www.rsgb.org/main/contests/hf-contests/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["calendario", "punti", "moltiplicatori", "bande"]
+
+[sintesi]
+it = "Serie serali RSGB in FT4 e International Activity Day ad aprile (2026: 11-12 aprile, 12:00-12:00). Scambio: solo rapporto. L'RSGB sta valutando di togliere l'obbligo di «CQ RSGB»/«CQ TEST». Punti e moltiplicatori da verificare sul regolamento dell'anno (qui: 1 punto per QSO, moltiplicatori per prefisso). Log Cabrillo all'RSGB."
+en = "RSGB FT4 evening series and International Activity Day in April (2026: 11-12 April, 1200-1200). Exchange: report only. RSGB is considering dropping the «CQ RSGB»/«CQ TEST» requirement. Points and multipliers to be checked on the year's rules (here: 1 point per QSO, prefix multipliers). Cabrillo log to RSGB."
+
+[calendario]
+regola = "sempre"
+inizio = "+0 19:00"
+fine = "+0 20:29"
+
+[bande]
+ammesse = ["80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"80m" = { FT8 = 3573.0, FT4 = 3575.5 }
+"40m" = { FT8 = 7074.0, FT4 = 7047.5 }
+"20m" = { FT8 = 14074.0, FT4 = 14080.0 }
+"15m" = { FT8 = 21074.0, FT4 = 21140.0 }
+"10m" = { FT8 = 28074.0, FT4 = 28180.0 }
+
+[modi]
+ammessi = ["FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr"]
+ricevuto = ["snr"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "prefisso"
+ambito = "per-log"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LP"
+nome = "Single Op Low (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "RSGB-FT4"
+cabrillo_modo = "DG"
+colonne_inviate = ["snr"]
+colonne_ricevute = ["snr"]
+frequenza = "khz"
+invio_url = "https://www.rsgbcc.org/cgi-bin/hfenter.pl"
+scadenza = "7 giorni"

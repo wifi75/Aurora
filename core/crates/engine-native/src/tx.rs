@@ -171,6 +171,21 @@ pub enum TxCommand {
     LogQso,
     /// Un comando della pagina Fox.
     Fox(aurora_core::FoxCommand),
+    /// La sequenza di contest (`None` = QSO normali).
+    Contest(Option<aurora_core::ContestSetup>),
+}
+
+/// La sequenza di contest per `qso-native` dalla scelta della pagina. Un'attivita' sconosciuta vale come «standard».
+pub fn contest_seq(setup: &aurora_core::ContestSetup) -> qso_native::ContestSeq {
+    let activity = qso_native::Activity::from_name(&setup.activity).unwrap_or(qso_native::Activity::Standard);
+    qso_native::ContestSeq {
+        activity,
+        cq_word: setup.cq_word.trim().to_uppercase(),
+        exchange: setup.exchange.trim().to_uppercase(),
+        serial: setup.next_serial.max(1),
+        grid6: setup.grid6.trim().to_string(),
+        rrr: setup.rrr,
+    }
 }
 
 /// Cio' che la pagina mostra della trasmissione.
@@ -335,6 +350,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
         let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None };
         driver.seq.set_rx_freq(rx_published);
+        if let Some(setup) = driver.controls.contest() {
+            driver.seq.set_contest(Some(contest_seq(&setup)));
+        }
         if matches!(mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4) {
             driver.opts.use_rrr = true;
             driver.seq.set_options(driver.opts.clone());
@@ -817,7 +835,17 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 } else {
                     log.push("Log QSO: nessuna stazione in corso".to_string());
                 }
-            }            TxCommand::Fox(cmd) => {
+            }
+            TxCommand::Contest(setup) => {
+                match &setup {
+                    Some(c) => log.push(format!("contest: sequenza {} (CQ {})", c.activity, c.cq_word)),
+                    None => log.push("contest spento: QSO normali".to_string()),
+                }
+                self.seq.set_contest(setup.as_ref().map(contest_seq));
+                self.enforce_contest_rules(&mut log);
+                self.publish_view();
+            }
+            TxCommand::Fox(cmd) => {
                 use aurora_core::FoxCommand as F;
                 match cmd {
                     F::Select { call, top } => {
@@ -917,6 +945,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if self.opts.call_mode == 2 {
             return (Vec::new(), log);
         }
+        self.enforce_contest_rules(&mut log);
         if self.controls.switch_on("fox") {
             // la Fox trasmette da after_slot (fox_slot): qui niente avvio anticipato della sequenza normale
             return (Vec::new(), log);
@@ -1077,6 +1106,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.last_dial_hz = dial_hz;
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
+        self.enforce_contest_rules(&mut log);
         // modo Fox: la sequenza normale non c'entra, la Fox lavora fino a 5 Hound per periodo
         if self.controls.switch_on("fox") {
             let qsos = self.fox_slot(slot, slot_start_ms, decoded, dial_hz, band, &mut log);
@@ -1170,7 +1200,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         time_ms: (rec.time_on_ms % DAY_MS) as u32,
                         time_on_unix_ms: rec.time_on_ms,
                         time_off_unix_ms: tx_slot_ms + tail_ms,
-                        exch_rcvd: self.exchanges.iter().rev().find(|(c, _)| c.eq_ignore_ascii_case(&rec.call)).map(|(_, x)| x.clone()).unwrap_or_default(),
+                        exch_sent: rec.exch_sent.clone(),
+                        exch_rcvd: if rec.exch_rcvd.is_empty() {
+                            self.exchanges.iter().rev().find(|(c, _)| c.eq_ignore_ascii_case(&rec.call)).map(|(_, x)| x.clone()).unwrap_or_default()
+                        } else {
+                            rec.exch_rcvd.clone()
+                        },
                         ..Default::default()
                     });
                 }
@@ -1318,7 +1353,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             self.set_hound(false, aurora_core::TxAlertKind::HoundOff, &old, log);
         }
         let fox = self.foxes.iter().any(|f| f.eq_ignore_ascii_case(&dx));
-        if fox && !self.opts.hound {
+        // in contest Fox/Hound e' vietato: niente Hound automatico
+        if fox && !self.opts.hound && self.seq.contest().is_none() {
             self.set_hound(true, aurora_core::TxAlertKind::FoxDetected, &dx, log);
         }
     }
@@ -1334,6 +1370,23 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.controls.clear_alert(if on { aurora_core::TxAlertKind::HoundOff } else { aurora_core::TxAlertKind::FoxDetected });
         self.controls.raise_alert(aurora_core::TxAlert { kind, detail: call.to_string(), value, limit: None }, Some(std::time::Duration::from_secs(60)));
         log.push(if on { format!("Hound automatico: {call} lavora in Fox/Hound, Hound acceso") } else { format!("Hound spento: {call} non lavora in Fox/Hound") });
+    }
+
+    /// Con un contest attivo Fox e Hound restano spenti (i regolamenti li vietano), anche se qualcuno li riaccende.
+    fn enforce_contest_rules(&mut self, log: &mut Vec<String>) {
+        if self.seq.contest().is_none() {
+            return;
+        }
+        if self.controls.switch_on("fox") {
+            self.controls.set_switch("fox", false);
+            log.push("Fox spenta: il contest attivo vieta Fox/Hound".to_string());
+        }
+        if self.controls.switch_on("hound") || self.opts.hound {
+            self.controls.set_switch("hound", false);
+            self.opts.hound = false;
+            self.seq.set_options(self.opts.clone());
+            log.push("Hound spento: il contest attivo vieta Fox/Hound".to_string());
+        }
     }
 
     /// Gli scambi di contest che mi mandano (`features::contest_exchange`): si tengono gli ultimi 20 per il record del QSO.

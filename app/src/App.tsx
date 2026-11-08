@@ -23,6 +23,7 @@ import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
 import { FoxPage } from './pages/FoxPage';
+import { ContestPage } from './pages/ContestPage';
 import { QmapPage } from './pages/QmapPage';
 import { useStation } from './state/station';
 import { usePrefs } from './lib/prefs';
@@ -163,6 +164,8 @@ export function App() {
     content = <Wiki />;
   } else if (route.name === 'fox') {
     content = <FoxPage />;
+  } else if (route.name === 'contest') {
+    content = <ContestPage />;
   } else if (route.name === 'qmap') {
     content = <QmapPage />;
   } else if (route.name === 'ownerMessages') {
@@ -192,6 +195,7 @@ export function App() {
         <nav className="app-nav" aria-label={t('nav.pages')}>
           <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
           <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox" title={t('tip.nav.fox')}>{t('nav.fox')}</a>
+          <a className={`glass${route.name === 'contest' ? ' glass--on' : ''}`} aria-current={route.name === 'contest' ? 'page' : undefined} href="#/contest" title={t('tip.nav.contest')}>{t('nav.contest')}</a>
           {/* QMAP solo se acceso in Impostazioni (serve un SDR con TCI); la pagina resta raggiungibile da #/qmap */}
           {showQmap || route.name === 'qmap' ? (
             <a className={`glass${route.name === 'qmap' ? ' glass--on' : ''}`} aria-current={route.name === 'qmap' ? 'page' : undefined} href="#/qmap" title={t('tip.nav.qmap')}>{t('nav.qmap')}</a>

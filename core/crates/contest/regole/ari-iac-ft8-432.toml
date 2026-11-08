@@ -1,0 +1,88 @@
+# Regole del contest «ARI FT8 Activity Contest 432 MHz» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Il regolamento vieta Fox/Hound e il «Contest Mode»: messaggi FT8 standard.
+
+[contest]
+id = "ari-iac-ft8-432"
+nome = "ARI FT8 Activity Contest 432 MHz"
+sponsor = "ARI"
+edizione = 2026
+url_regole = "https://contest.ari.it/rules/regolamentoiacft8_2026.pdf"
+verificato_il = "2026-11-08"
+famiglia = "attivita"
+
+[sintesi]
+it = "Secondo mercoledi' del mese, 17:00-20:00 UTC da aprile a ottobre, 18:00-21:00 UTC da novembre a marzo, 432,174 MHz. Procedura FT8 standard: vietati Fox/Hound e il «Contest Mode». Scambio: rapporto + locatore a 4 caratteri. 1 punto per QSO completo; moltiplicatori: locatori a 4 caratteri. Almeno un QSO con una stazione italiana; non valgono EME, satellite e ripetitori. Log ADIF su contest.ari.it entro 3 giorni."
+en = "Second Wednesday of the month, 1700-2000 UTC April to October, 1800-2100 UTC November to March, 432.174 MHz. Standard FT8 procedure: Fox/Hound and «Contest Mode» are not allowed. Exchange: report + 4-character locator. 1 point per complete QSO; multipliers: 4-character locators. At least one QSO with an Italian station; EME, satellite and repeaters do not count. ADIF log to contest.ari.it within 3 days."
+
+[calendario]
+regola = "secondo-mercoledi:tutti"
+inizio = "+0 17:00"
+fine = "+0 19:59"
+inverno = ["+0 18:00", "+0 20:59"]
+
+[bande]
+ammesse = ["70cm"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"70cm" = { FT8 = 432174.0 }
+
+[modi]
+ammessi = ["FT8"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-log"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO"
+nome = "Singolo operatore"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "70CM"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO"
+nome = "Multi operatore"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "70CM"
+assistenza = "ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "adif"
+frequenza = "khz"
+adif_contest_id = "ARI-IAC-FT8-432"
+invio_url = "https://contest.ari.it/"
+scadenza = "3 giorni"

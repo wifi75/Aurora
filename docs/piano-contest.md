@@ -1,6 +1,6 @@
 # Piano: pagina «Contest» di Aurora
 
-Stato: proposta, nessuna riga di codice scritta. Ricerca fatta l'8 novembre 2026 su fonti pubbliche (link in fondo e accanto a ogni scheda).
+Stato: fasi 0-6 fatte nel ramo `lavoro/contest` (2026-11-08); cosa resta in `docs/tasks.md`, voce 27. I file di regole stanno in `core/crates/contest/regole` (non in `data/contest`, che e' la cartella dei dati del programma) e il log del contest in un file JSON per edizione nella cartella dei dati (non in tabelle del `logbook`). Ricerca fatta l'8 novembre 2026 su fonti pubbliche (link in fondo e accanto a ogni scheda).
 Le regole dei contest cambiano ogni anno: ogni scheda riporta l'anno della fonte letta e i punti da ricontrollare.
 
 ## 1. In breve

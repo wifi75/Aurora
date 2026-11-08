@@ -20,6 +20,7 @@ import { useWfPrefs } from '../lib/wfPrefs';
 import { useFox } from '../state/fox';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
+import { getContest } from '../api/contest';
 import '../styles/fox.css';
 
 type Caller = FoxSnapshot['callers'][number];
@@ -108,6 +109,9 @@ export function FoxPage() {
   const t = useT();
   const fox = useFox((s) => s.fox) ?? EMPTY;
   const status = useStation((s) => s.status);
+  // con un contest attivo il regolamento vieta Fox/Hound: la Fox resta spenta e la pagina lo spiega
+  const contest = useQuery({ queryKey: ['contest'], queryFn: getContest, refetchInterval: 10_000, retry: false }).data;
+  const contestBlock = contest?.attivo && contest.fox_vietato ? (contest.regole?.contest.nome ?? contest.attivo) : null;
   const txOn = status?.tx_enabled ?? false;
   const transmitting = status?.transmitting ?? false;
   const [sort, setSort] = useState<SortKey>('snr');
@@ -201,7 +205,7 @@ export function FoxPage() {
         </div>
         <div className="foxc-cmdbar" role="toolbar" aria-label={t('fox.commands')}>
           <div className="foxc-main-actions">
-            <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} onClick={() => void postControl('fox', !fox.enabled)}>
+            <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} disabled={!!contestBlock && !fox.enabled} onClick={() => void postControl('fox', !fox.enabled)}>
               {fox.enabled ? t('fox.on') : t('fox.off')}
             </button>
             <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} title={t('tip.fox.enableTx')} onClick={() => toggleTx(!txOn)}>
@@ -220,6 +224,7 @@ export function FoxPage() {
         </div>
       </header>
 
+      {contestBlock ? <p className="foxc-note">{t('fox.contestBlock', { c: contestBlock })}</p> : null}
       {fox.guard ? <p className="foxc-note">{t('fox.guard', { g: fox.guard })}</p> : null}
       {state === 'waiting' ? <p className="foxc-note">{t('fox.needTx')}</p> : null}
 

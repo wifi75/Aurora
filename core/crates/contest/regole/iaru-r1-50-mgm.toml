@@ -1,0 +1,100 @@
+# Regole del contest «IARU Regione 1 - Contest MGM 50 MHz» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+
+[contest]
+id = "iaru-r1-50-mgm"
+nome = "IARU Regione 1 - Contest MGM 50 MHz"
+sponsor = "IARU R1"
+edizione = 2026
+url_regole = "https://www.iaru-r1.org/wp-content/uploads/2026/02/VHF_Handbook_V10_03_final.pdf"
+verificato_il = "2026-11-08"
+famiglia = "vhf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["frequenze"]
+
+[sintesi]
+it = "Terzo sabato di aprile, 14:00 sabato - 14:00 domenica UTC, 50 MHz, solo MGM (FT8, FT4, MSK144, Q65...). Messaggi normali: rapporto + locatore a 4 caratteri, senza seriale. Doppi una volta sola: vanno a log senza punti e segnati D. Punti: 1 per km fra i centri dei quadrati (111,2 km/grado), stesso quadrato 50. Moltiplicatori: quadrati lavorati. Punteggio = km x quadrati. Log EDI entro il primo mercoledi' dopo il contest. Autospot sul cluster al massimo uno ogni 10 minuti."
+en = "Third Saturday of April, 1400 Sat - 1400 Sun UTC, 50 MHz, MGM only (FT8, FT4, MSK144, Q65...). Normal messages: report + 4-character locator, no serial. Dupes once only: logged with no points and marked D. Points: 1 per km between square centres (111.2 km/degree), same square 50. Multipliers: squares worked. Score = km x squares. EDI log by the first Wednesday after the contest. Self-spotting at most once every 10 minutes."
+
+[calendario]
+regola = "terzo-sabato:aprile"
+inizio = "sab 14:00"
+fine = "dom 14:00"
+
+[bande]
+ammesse = ["6m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+
+[modi]
+ammessi = ["FT8", "FT4", "MSK144", "Q65"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+[doppi]
+chiave = "log"
+log_doppi = "si-senza-punti"
+
+[punti]
+tipo = "km"
+km_per_grado = 111.2
+stesso_quadrato = 50
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-log"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-MGM"
+nome = "Single Op MGM"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "6M"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO-MGM"
+nome = "Multi Op MGM"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "6M"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "6H-MGM"
+nome = "6 ore MGM"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "6M"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+autospot = "ogni-10-min"
+
+[export]
+formato = "edi"
+frequenza = "banda"
+edi_modo = 7
+edi_tname = "IARU R1 50 MHz MGM"
+invio_url = ""
+scadenza = "primo-mercoledi-dopo 23:59:59"

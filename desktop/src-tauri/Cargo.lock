@@ -263,6 +263,7 @@ dependencies = [
  "auth",
  "axum",
  "clock-sync",
+ "contest",
  "decode-history",
  "dx-cluster",
  "dxcc",
@@ -291,6 +292,7 @@ dependencies = [
  "udp-emitter",
  "updater",
  "ureq",
+ "windows",
  "wishlist",
  "zip",
 ]
@@ -731,6 +733,19 @@ name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
+name = "contest"
+version = "0.11.201"
+dependencies = [
+ "aurora-core",
+ "logbook",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml 1.1.8+spec-1.1.0",
+ "tracing",
+]
 
 [[package]]
 name = "cookie"
@@ -3728,6 +3743,7 @@ dependencies = [
  "auth",
  "axum",
  "clock-sync",
+ "contest",
  "decode-history",
  "dx-cluster",
  "engine-jtdx",

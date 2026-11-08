@@ -1,0 +1,124 @@
+# Regole del contest «ARRL September VHF Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# USA e Canada lavorano tutti; il resto del mondo lavora solo USA e Canada (dall'Europa conta solo sui 6 m in Es o TEP).
+
+[contest]
+id = "arrl-vhf-sep"
+nome = "ARRL September VHF Contest"
+sponsor = "ARRL"
+edizione = 2026
+url_regole = "https://contests.arrl.org/ContestRules/JanJunSep-VHF-Rules.pdf"
+verificato_il = "2026-11-08"
+famiglia = "vhf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["calendario"]
+
+[sintesi]
+it = "ARRL VHF di settembre: dai 50 MHz in su, qualunque modo. Scambio: locatore a 4 caratteri. Doppi: una volta per banda da ogni locatore (un rover che cambia locatore e' un QSO nuovo). Punti per banda: 50 e 144 MHz 1, 222 e 432 MHz 2, 902 e 1296 MHz 3. Moltiplicatori: locatori diversi per banda. Fuori da USA e Canada si lavorano solo stazioni USA e Canada. Log Cabrillo all'ARRL entro 10 giorni."
+en = "ARRL September VHF: 50 MHz and up, any mode. Exchange: 4-character grid. Dupes: once per band from each grid (a rover changing grid is a new QSO). Points per band: 50 and 144 MHz 1, 222 and 432 MHz 2, 902 and 1296 MHz 3. Multipliers: different grids per band. Outside USA and Canada only USA and Canada stations count. Cabrillo log to ARRL within 10 days."
+
+[calendario]
+regola = "secondo-weekend-completo:settembre"
+inizio = "sab 18:00"
+fine = "lun 02:59"
+
+[bande]
+ammesse = ["6m", "2m", "1.25m", "70cm", "33cm", "23cm"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+"2m" = { FT8 = 144174.0, FT4 = 144170.0 }
+"1.25m" = { FT8 = 222065.0 }
+"70cm" = { FT8 = 432174.0, FT4 = 432065.0 }
+"33cm" = { FT8 = 903065.0 }
+"23cm" = { FT8 = 1296174.0 }
+
+[modi]
+ammessi = ["FT8", "FT4", "MSK144", "Q65"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "na-vhf"
+parola_cq = "TEST"
+chiusura = "RR73"
+settantatre_finale = "consigliato"
+
+[scambio]
+inviato = ["grid4"]
+ricevuto = ["grid4"]
+
+[doppi]
+chiave = "banda+griglia"
+log_doppi = "no"
+
+[punti]
+tipo = "per-banda"
+tabella = { "6m" = 1, "2m" = 1, "1.25m" = 2, "70cm" = 2, "33cm" = 3, "23cm" = 3 }
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SOLP"
+nome = "Single Op Low Power"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SOHP"
+nome = "Single Op High Power"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO3B"
+nome = "Single Op 3 bande"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "ROVER"
+nome = "Rover"
+operatore = "ROVER"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MULTI"
+nome = "Multi Op"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "UNLIMITED"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "ARRL-VHF-SEP"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "banda"
+invio_url = "https://contest-log-submission.arrl.org/"
+scadenza = "10 giorni"

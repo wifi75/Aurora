@@ -87,6 +87,15 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `GET /dxcc/{call}` | Paese, continente, prefisso e zone dal `cty.dat`; `404 dxcc_unknown` |
 | `GET /callsign/{call}` | `{call, dxcc, person, lookup, subscriber, message}`: `dxcc` come sopra (o null); `person` = `{fname, name, city, country, source}` da QRZ.com (prima) o HamQTH, solo con le ricerche accese; `lookup` = `off`/`found`/`not_found`/`error`; `subscriber` = abbonamento XML di QRZ (null se non si sa). Mai email o indirizzo |
 | `GET/PUT /ui-settings/{kind}` | Preferenze dell'interfaccia (`desktop` o `mobile`), chiavi `aurora-*`; `400 bad_kind`/`bad_settings` |
+| `GET /contest` | Pagina Contest: `{attivo, contest, errori_regole}` e, con un contest attivo, `regole`, `impostazioni`, `sequenza`, `scambio_inviato`, `finestra`, `fase` (`prima`, `in-corso`, `finito`, `sempre`), `totali` (QSO, punti, moltiplicatori, punteggio, per banda), `rate10`, `rate60`, `per_ora`, `previsto`, `ore_usate`, `fox_vietato`, `non_contest`, `banda_ok`, `modo_ok`; `404 contest_unavailable` |
+| `GET /contest/regole/{id}` | `{regole, impostazioni}` di un contest (impostazioni salvate o proposte dalle regole); `404 contest_unknown` |
+| `POST /contest/attiva` · `POST /contest/disattiva` | `{id}`: attiva il contest con le sue impostazioni (sequenza nel motore, Fox/Hound spenti, AutoSeq, Hold Tx Freq, RRR, modo) e ricorda cio' che c'era; `disattiva` torna ai QSO normali e rimette interruttori e modo di prima. Risposta `{ok, avvisi, stato}` |
+| `PUT /contest/impostazioni/{id}` | Salva le impostazioni del contest (attivita', parola del CQ, scambio, seriale, categoria, potenza, bonus, modo, Hold Tx, RRR, locatore a 6, dati del Cabrillo, inizio/fine a mano); `400 bad_contest_settings` |
+| `POST /contest/valuta` | `{stazioni: [{call, grid}], banda?, modo?}` → `{banda, modo, valori: [{call, doppio, punti, km, molt_nuovi, bande_utili, fuori_regola}]}` |
+| `GET /contest/lavorati?banda=` | Moltiplicatori gia' presi sulla banda: `{banda, moltiplicatori: [{tipo, valori}]}` |
+| `GET /contest/log` · `PATCH /contest/log/{n}` · `POST /contest/log/azzera` | Log del contest valutato (`qso` con punti, doppio, molt_nuovi, scambio_ok, stato `valido`/`incerto`/`errore`; `totali`); correzione a mano `{exch_rcvd?, grid?, stato?}` (`404 contest_qso`); nuovo log (il vecchio resta come copia `.bak`) |
+| `GET /contest/esporta?formato=&banda=` | `{testo, nome, problemi, invio_url}`: Cabrillo 3.0, EDI (una banda) o ADIF con il controllo prima dell'invio; `409 contest_off` |
+| `GET /contest/calendario` | I contest dei prossimi 12 mesi `{contest: [{id, nome, inizio_ms, fine_ms, da_verificare}]}` |
 | `GET /stream` | WebSocket: eventi e spettro |
 
 ## Flusso `/stream`

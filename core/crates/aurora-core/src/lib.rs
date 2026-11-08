@@ -10,7 +10,7 @@ pub mod notice;
 pub mod version;
 
 pub use bus::Bus;
-pub use command::{Command, FoxCommand};
+pub use command::{Command, ContestSetup, FoxCommand};
 pub use engine::{Engine, EngineIo};
 pub use filters::{BandFilters, SharedUdpFilters, UdpFilters, UI_FILTERS_KEY};
 pub use event::{AudioLevel, DecodeTag, DecodedMessage, Event, FoxCallerView, FoxLogView, FoxParams, FoxQsoView, FoxSnapshot, FoxVerification, LevelState, PendingQso, QsoRecord, RadioMeters, TxAlert, TxAlertKind, SpectrumRow, StationStatus, UpdateNotice, WantedAlert};

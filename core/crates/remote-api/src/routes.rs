@@ -9,7 +9,7 @@ use axum::{
     extract::{ConnectInfo, FromRequestParts, Path, State},
     http::{header, request::Parts, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
-    routing::{delete, get, post},
+    routing::{delete, get, patch, post, put},
     Json, Router,
 };
 use qso_engine::{Mode, Rules};
@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune))]
+#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -131,6 +131,18 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/qmap/decode", post(crate::qmap_api::qmap_decode))
         .route("/api/v1/qmap/clear-average", post(crate::qmap_api::qmap_clear_average))
         .route("/api/v1/qmap/tune", post(crate::qmap_api::qmap_tune))
+        .route("/api/v1/contest", get(crate::contest_api::contest_get))
+        .route("/api/v1/contest/regole/{id}", get(crate::contest_api::contest_regole))
+        .route("/api/v1/contest/attiva", post(crate::contest_api::contest_attiva))
+        .route("/api/v1/contest/disattiva", post(crate::contest_api::contest_disattiva))
+        .route("/api/v1/contest/impostazioni/{id}", put(crate::contest_api::contest_impostazioni))
+        .route("/api/v1/contest/valuta", post(crate::contest_api::contest_valuta))
+        .route("/api/v1/contest/lavorati", get(crate::contest_api::contest_lavorati))
+        .route("/api/v1/contest/log", get(crate::contest_api::contest_log))
+        .route("/api/v1/contest/log/azzera", post(crate::contest_api::contest_log_azzera))
+        .route("/api/v1/contest/log/{n}", patch(crate::contest_api::contest_log_modifica))
+        .route("/api/v1/contest/esporta", get(crate::contest_api::contest_esporta))
+        .route("/api/v1/contest/calendario", get(crate::contest_api::contest_calendario))
         .route("/api/v1/stream", get(ws::stream))
         .route("/api/v1/openapi.json", get(openapi))
         .layer(axum::middleware::from_fn_with_state(state.clone(), mark_lan))

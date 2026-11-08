@@ -1,0 +1,123 @@
+# Regole del contest «World Wide Digi DX Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+
+[contest]
+id = "ww-digi"
+nome = "World Wide Digi DX Contest"
+sponsor = "WWROF"
+edizione = 2026
+url_regole = "https://ww-digi.com/rules/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+
+[sintesi]
+it = "Ultimo fine settimana completo di agosto, 12:00 sabato - 11:59 domenica UTC. FT4 e FT8 su 160-10 m (niente WARC); ogni stazione una volta per banda. Scambio: locatore a 4 caratteri. Punti: 1 + distanza/3000 km. Moltiplicatori: campi (2 lettere) per banda. Il primo contatto lo avvia un operatore. Fox/Hound e multi-flusso vietati. Log Cabrillo su ww-digi.com entro il 1° settembre."
+en = "Last full weekend of August, 1200 Sat - 1159 Sun UTC. FT4 and FT8 on 160-10 m (no WARC); each station once per band. Exchange: 4-character grid. Points: 1 + distance/3000 km. Multipliers: 2-character fields per band. A human must start each contact. Fox/Hound and multi-streaming not allowed. Cabrillo log to ww-digi.com by 1 September."
+
+[calendario]
+regola = "ultimo-weekend-completo:agosto"
+inizio = "sab 12:00"
+fine = "dom 11:59"
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"160m" = { FT8 = 1844.0, FT4 = 1840.0 }
+"80m" = { FT8 = 3590.0, FT4 = 3580.0 }
+"40m" = { FT8 = 7090.0, FT4 = 7080.0 }
+"20m" = { FT8 = 14090.0, FT4 = 14080.0 }
+"15m" = { FT8 = 21090.0, FT4 = 21080.0 }
+"10m" = { FT8 = 28090.0, FT4 = 28080.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "ww-digi"
+parola_cq = "WW"
+chiusura = "RR73"
+settantatre_finale = "consigliato"
+
+[scambio]
+inviato = ["grid4"]
+ricevuto = ["grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "distanza"
+base = 1
+passo_km = 3000
+arrotonda = "giu"
+
+[[moltiplicatori]]
+tipo = "campo2"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-HIGH"
+nome = "Single Op High"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-LOW"
+nome = "Single Op Low"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO-ONE"
+nome = "Multi-One"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "CHECKLOG"
+nome = "Checklog"
+operatore = "CHECKLOG"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = true
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "WW-DIGI"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "khz"
+invio_url = "https://ww-digi.com/logcheck/"
+scadenza = "2026-09-01T23:59:59Z"

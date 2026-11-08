@@ -21,6 +21,26 @@ pub enum Command {
     LogQso,
     /// Un comando della pagina Fox.
     Fox(FoxCommand),
+    /// La sequenza di contest scelta nella pagina Contest (`None` = QSO normali).
+    Contest(Option<ContestSetup>),
+}
+
+/// La sequenza di contest da usare nel motore: attivita' (come la «Special operating activity» di WSJT-X), parola del CQ, scambio fisso e
+/// seriale. La sceglie la pagina Contest dalle regole del contest attivo.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ContestSetup {
+    /// `standard`, `na-vhf`, `arrl-digi`, `ww-digi`, `eu-vhf`, `field-day`, `roundup`.
+    pub activity: String,
+    /// Parola del CQ (`TEST`, `WW`, `FD`...); vuota = quella dell'attivita'.
+    pub cq_word: String,
+    /// Scambio fisso: Field Day `1D DX`; Roundup lo stato o `#` per il seriale.
+    pub exchange: String,
+    /// Il prossimo numero progressivo da inviare.
+    pub next_serial: u32,
+    /// Locatore a 6 caratteri per EU VHF (vuoto = quello della stazione).
+    pub grid6: String,
+    /// Chiusura con RRR invece di RR73.
+    pub rrr: bool,
 }
 
 /// I comandi della pagina Fox.

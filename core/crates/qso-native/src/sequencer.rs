@@ -32,6 +32,7 @@ const RRR_REPEATS: u32 = 5;
 
 use std::collections::{HashMap, HashSet};
 
+use crate::contest::{ContestSeq, contest_cq, contest_msgs, sent_exchange, translate};
 use crate::classify::{DisplayState, RxContext, classify_rx, classify_tx, de_call_and_grid, report as decoded_report, words};
 use crate::history::{Autoseq, Qso, QsoHistory, Sec, Status, algo};
 use crate::message::{Body, Message, base_call, is_modifier, is_std_call, is_valid_call, is_valid_locator, parse, same_station};
@@ -146,6 +147,12 @@ pub struct Sequencer {
     auto_seq_suspended: bool,
     events: Vec<Event>,
     reported: Option<(Phase, Option<String>, u8)>,
+    /// La sequenza di contest scelta (`None` = QSO normali, comportamento di sempre).
+    contest: Option<ContestSeq>,
+    /// Le scelte dell'operatore che il contest cambia («Salta Tx1», RRR, Hound): tornano com'erano quando il contest si spegne.
+    contest_saved: Option<(bool, bool, bool)>,
+    /// Gli scambi di contest ricevuti, per nominativo di base (l'ultimo vale).
+    contest_rcvd: HashMap<String, String>,
 }
 
 impl Sequencer {
@@ -217,6 +224,9 @@ impl Sequencer {
             auto_seq_suspended: false,
             events: Vec::new(),
             reported: None,
+            contest: None,
+            contest_saved: None,
+            contest_rcvd: HashMap::new(),
         })
     }
 
@@ -245,10 +255,16 @@ impl Sequencer {
     }
 
     pub fn set_options(&mut self, opts: Options) {
-        let skip_changed = opts.skip_tx1 != self.opts.skip_tx1;
-        let skip = opts.skip_tx1;
         let auto_seq_changed = opts.auto_seq != self.opts.auto_seq;
         let strict_changed = opts.strict_directional_cq != self.opts.strict_directional_cq || opts.my_continent != self.opts.my_continent || opts.my_prefix != self.opts.my_prefix;
+        let mut opts = opts;
+        if let Some(c) = &self.contest {
+            // durante il contest le scelte dell'operatore si ricordano per dopo; valgono quelle del contest
+            self.contest_saved = Some((opts.skip_tx1, opts.use_rrr, opts.hound));
+            Self::force_contest_options(c, &mut opts);
+        }
+        let skip_changed = opts.skip_tx1 != self.opts.skip_tx1;
+        let skip = opts.skip_tx1;
         self.opts = opts;
         if strict_changed {
             self.hist.set_own(&self.opts.my_continent, &self.opts.my_prefix, &self.my.grid, self.opts.strict_directional_cq);
@@ -273,6 +289,85 @@ impl Sequencer {
             }
         }
         self.note_state();
+    }
+
+    /// Le opzioni che il contest impone: si parte da Tx2 (tranne EU VHF), chiusura del regolamento, niente Hound.
+    fn force_contest_options(c: &ContestSeq, opts: &mut Options) {
+        if c.activity.is_special() {
+            opts.skip_tx1 = c.activity.starts_with_tx2();
+            opts.use_rrr = c.rrr;
+        }
+        opts.hound = false;
+    }
+
+    /// Accende (`Some`) o spegne (`None`) la sequenza di contest. Fuori dal contest nulla cambia rispetto ai QSO normali. Il seriale non
+    /// torna mai indietro: se quello nuovo e' piu' basso di quello in uso resta quello in uso (un QSO a log l'ha gia' consumato).
+    pub fn set_contest(&mut self, contest: Option<ContestSeq>) {
+        match (contest, self.contest.take()) {
+            (Some(mut c), old) => {
+                if let Some(o) = &old
+                    && o.activity == c.activity
+                {
+                    c.serial = c.serial.max(o.serial);
+                }
+                if self.contest_saved.is_none() {
+                    self.contest_saved = Some((self.opts.skip_tx1, self.opts.use_rrr, self.opts.hound));
+                }
+                let mut opts = self.opts.clone();
+                Self::force_contest_options(&c, &mut opts);
+                self.opts = opts;
+                self.contest = Some(c);
+            }
+            (None, _) => {
+                if let Some((skip, rrr, hound)) = self.contest_saved.take() {
+                    self.opts.skip_tx1 = skip;
+                    self.opts.use_rrr = rrr;
+                    self.opts.hound = hound;
+                }
+                self.contest_rcvd.clear();
+            }
+        }
+        self.note_state();
+    }
+
+    /// La sequenza di contest in uso.
+    pub fn contest(&self) -> Option<&ContestSeq> {
+        self.contest.as_ref()
+    }
+
+    /// Lo scambio di contest ricevuto da una stazione (vuoto se non e' arrivato).
+    pub fn contest_exchange_of(&self, call: &str) -> String {
+        self.contest_rcvd.get(&base_call(call)).cloned().unwrap_or_default()
+    }
+
+    /// Un messaggio decodificato nella forma che la sequenza capisce: in contest lo scambio diretto a noi diventa un rapporto (e si ricorda).
+    fn contest_view(&mut self, d: &Decoded) -> Decoded {
+        let Some(c) = &self.contest else { return d.clone() };
+        match translate(c.activity, &d.text, &self.my.call, d.snr) {
+            Some(t) => {
+                self.contest_rcvd.insert(base_call(&t.from), t.exchange);
+                Decoded { text: t.text, snr: d.snr, freq_hz: d.freq_hz }
+            }
+            None => d.clone(),
+        }
+    }
+
+    /// Il testo che va in onda per Tx`n`: in contest Tx2, Tx3, Tx4 e il CQ prendono la forma del contest (se non li ha scritti l'operatore).
+    fn wire_text(&self, n: u8, std_text: String) -> String {
+        let Some(c) = &self.contest else { return std_text };
+        if self.edit_for(n).is_some() {
+            return std_text;
+        }
+        if n == 6 {
+            return contest_cq(c, &self.my.call, &self.my.grid).unwrap_or(std_text);
+        }
+        if self.his_call.is_empty() || !(2..=4).contains(&n) {
+            return std_text;
+        }
+        let std = self.std_msgs();
+        contest_msgs(c, &std, &self.my.call, &self.my.grid, &self.his_call, self.rpt_value())
+            .and_then(|m| m.get(n).map(str::to_string))
+            .unwrap_or(std_text)
     }
 
     /// Quante volte di fila e' stato trasmesso il messaggio corrente al DX (il `count` di `QsoHistory`).
@@ -442,6 +537,12 @@ impl Sequencer {
                 out[usize::from(n) - 1] = t;
             }
         }
+        if self.contest.is_some() {
+            for n in 1..=6u8 {
+                let i = usize::from(n) - 1;
+                out[i] = self.wire_text(n, std::mem::take(&mut out[i]));
+            }
+        }
         out
     }
 
@@ -523,6 +624,8 @@ impl Sequencer {
     /// Come `reply_to`, ma con `enable` falso non accende «Abilita Tx»: e' il doppio clic con «AutoTX» spento (`doubleClickOnCall` di JTDX accende
     /// Enable Tx solo se `m_autoTx`). Il DX e il messaggio di partenza si scelgono comunque; la trasmissione parte quando Enable Tx si accende.
     pub fn reply_to_with(&mut self, slot: Slot, decode: &Decoded, enable: bool) -> Result<(), SeqError> {
+        let translated = self.contest_view(decode);
+        let decode = &translated;
         self.cur_slot = self.cur_slot.max(slot);
         let (call, grid, directed) = match parse(&decode.text) {
             Message::Cq { call, grid, .. } => (call, grid, None),
@@ -753,7 +856,8 @@ impl Sequencer {
         self.start_decode_if_needed(slot);
         self.rx_transmitting = self.last_tx.as_ref().is_some_and(|(s, _)| s.0 == slot.0 + 1);
         for d in decodes {
-            self.read_line(slot, d);
+            let d = self.contest_view(d);
+            self.read_line(slot, &d);
         }
         // `<DecodeFinished>`
         if self.auto_seq_effective() && !self.process_auto_done {
@@ -1376,6 +1480,8 @@ impl Sequencer {
             self.transmitted_ntx = n;
             self.pending_tx_end = Some(slot.start_s(self.mode) + self.opts.late_limit_s(self.mode) - 0.5);
         }
+        // in contest va in onda la forma del contest; la memoria della sequenza ha registrato quella standard
+        let text = self.wire_text(n, text);
         let tx = Tx { n, text, freq_hz: tx_hz.max(0) as u32, even_slot: self.tx_even, retransmit: restart };
         self.last_tx = Some((slot, tx.clone()));
         Some(tx)
@@ -1437,9 +1543,23 @@ impl Sequencer {
         if off_ms.abs_diff(on_ms) > (self.mode.period_s() as u64) * 10_000 {
             on_ms = off_ms;
         }
+        // contest: lo scambio inviato (con il seriale di questo QSO) e quello ricevuto; il seriale si consuma
+        let (exch_sent, exch_rcvd) = match &self.contest {
+            Some(c) if c.activity.is_special() => (sent_exchange(c, &self.my.grid, self.rpt_value()), self.contest_exchange_of(&self.his_call)),
+            _ => (String::new(), String::new()),
+        };
+        if let Some(c) = &mut self.contest
+            && c.activity.is_special()
+        {
+            c.serial = c.serial.saturating_add(1);
+        }
+        let mut grid: String = self.his_grid.chars().take(4).collect();
+        if grid.is_empty() && exch_rcvd.len() == 4 && crate::message::is_grid(&exch_rcvd) {
+            grid = exch_rcvd.clone();
+        }
         let record = QsoRecord {
             call: self.his_call.clone(),
-            grid: self.his_grid.chars().take(4).collect(),
+            grid,
             rst_sent,
             rst_rcvd,
             mode: self.mode,
@@ -1447,6 +1567,8 @@ impl Sequencer {
             time_off_ms: off_ms,
             tx_freq_hz: self.tx_hz().max(0) as u32,
             rx_freq_hz: self.hist.entry(&self.his_call).map_or(self.rx_hz, |t| t.rx).max(0) as u32,
+            exch_sent,
+            exch_rcvd,
         };
         self.worked.insert(base_call(&self.his_call));
         self.last_logged = Some((self.his_call.clone(), now));

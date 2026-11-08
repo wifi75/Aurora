@@ -1,0 +1,100 @@
+# Regole del contest «PACCdigi Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Lo scambio va controllato sul regolamento dell'anno: qui le stazioni olandesi mandano la sigla della provincia, le altre rapporto e locatore.
+
+[contest]
+id = "paccdigi"
+nome = "PACCdigi Contest"
+sponsor = "VERON"
+edizione = 2026
+url_regole = "https://veron.nl/vereniging/commissies-en-werkgroepen/traffic-bureau/hf-contesten/paccdigi-rules/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["scambio", "punti", "calendario"]
+
+[sintesi]
+it = "Aprile (2026: 18 aprile, 07:00-19:00 UTC). RTTY e FT4/FT8 (FT4 e FT8 sono lo stesso modo per i doppi) su 160-10 m senza WARC. Si lavorano le stazioni olandesi: moltiplicatori = 12 province per banda e per modo (al massimo 24 per banda). Scambio da verificare sul regolamento dell'anno. Log Cabrillo al VERON."
+en = "April (2026: 18 April, 0700-1900 UTC). RTTY and FT4/FT8 (FT4 and FT8 are the same mode for dupes) on 160-10 m, no WARC. Work Dutch stations: multipliers = 12 provinces per band and mode (max 24 per band). Exchange to be checked on the year's rules. Cabrillo log to VERON."
+
+[calendario]
+regola = "terzo-sabato:aprile"
+inizio = "sab 07:00"
+fine = "sab 18:59"
+
+[calendario.date_fisse]
+2026 = ["2026-04-18T07:00Z", "2026-04-18T18:59Z"]
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"160m" = { FT8 = 1840.0, FT4 = 1840.0 }
+"80m" = { FT8 = 3573.0, FT4 = 3575.5 }
+"40m" = { FT8 = 7074.0, FT4 = 7047.5 }
+"20m" = { FT8 = 14074.0, FT4 = 14080.0 }
+"15m" = { FT8 = 21074.0, FT4 = 21140.0 }
+"10m" = { FT8 = 28074.0, FT4 = 28180.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "provincia"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "provincia-pa"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO"
+nome = "Single Op"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO"
+nome = "Multi Op"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "PACC"
+cabrillo_modo = "DG"
+colonne_inviate = ["snr", "grid4"]
+colonne_ricevute = ["snr", "scambio"]
+frequenza = "khz"
+invio_url = "https://pacc.veron.nl/"
+scadenza = "30 giorni"

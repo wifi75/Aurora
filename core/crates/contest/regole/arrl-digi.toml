@@ -1,0 +1,125 @@
+# Regole del contest «ARRL International Digital Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+
+[contest]
+id = "arrl-digi"
+nome = "ARRL International Digital Contest"
+sponsor = "ARRL"
+edizione = 2026
+url_regole = "https://contests.arrl.org/ContestRules/Digital-Rules.pdf"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["cabrillo_contest", "frequenze"]
+
+[sintesi]
+it = "Primo fine settimana completo di giugno, 18:00 sabato - 23:59 domenica UTC (30 ore; single op al massimo 24 ore con pause di almeno 60 minuti). Modi digitali tranne RTTY su 160-6 m; ogni stazione una volta per banda. Scambio: locatore a 4 caratteri. Punti: 1 + 1 ogni 500 km (almeno 2). Niente moltiplicatori: il punteggio e' la somma dei punti. Ogni contatto avviato da un operatore su entrambi i lati. Log Cabrillo all'ARRL entro 7 giorni."
+en = "First full weekend of June, 1800 Sat - 2359 Sun UTC (30 hours; single op max 24 hours with off-times of at least 60 minutes). Digital modes except RTTY on 160-6 m; each station once per band. Exchange: 4-character grid. Points: 1 + 1 per 500 km (at least 2). No multipliers: the score is the sum of the points. Each contact must be initiated by an operator on both sides. Cabrillo log to ARRL within 7 days."
+
+[calendario]
+regola = "primo-weekend-completo:giugno"
+inizio = "sab 18:00"
+fine = "dom 23:59"
+ore_massime = 24.0
+pausa_minima_min = 60
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m", "6m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"160m" = { FT8 = 1840.0, FT4 = 1840.0 }
+"80m" = { FT8 = 3573.0, FT4 = 3575.5 }
+"40m" = { FT8 = 7074.0, FT4 = 7047.5 }
+"20m" = { FT8 = 14074.0, FT4 = 14080.0 }
+"15m" = { FT8 = 21074.0, FT4 = 21140.0 }
+"10m" = { FT8 = 28074.0, FT4 = 28180.0 }
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "arrl-digi"
+parola_cq = "TEST"
+chiusura = "RR73"
+settantatre_finale = "consigliato"
+
+[scambio]
+inviato = ["grid4"]
+ricevuto = ["grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "distanza"
+base = 1
+passo_km = 500
+arrotonda = "su"
+minimo_extra = 1
+
+[punteggio]
+formula = "punti"
+
+[[categorie]]
+id = "SO1R-LP"
+nome = "Single Op 1 radio Low"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO1R-QRP"
+nome = "Single Op 1 radio QRP"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO2R-LP"
+nome = "Single Op 2 radio Low"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "TWO"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MOST-LP"
+nome = "Multi Op Single Tx Low"
+operatore = "MULTI-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "LIMITED"
+nome = "Limited (8 ore)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = true
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "ARRL-DIGI"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "khz"
+invio_url = "https://contest-log-submission.arrl.org/"
+scadenza = "7 giorni"
