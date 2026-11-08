@@ -1508,6 +1508,8 @@ pub async fn run(
         Some(store) => audio_control::input_candidates(&store.audio().input, config.audio_device.as_deref()).into_iter().next().map(|(hint, _)| hint),
         None => config.audio_device.clone().map(Some),
     };
+    // l'ingresso TCI non e' un dispositivo di Windows: niente volume di registrazione da regolare (il livello si regola nella SDR)
+    let level_hint = level_hint.filter(|h| !audio_control::is_tci_device(h.as_deref(), audio_spectrum::TCI_INPUT_NAME));
     let input_level = level_hint.and_then(|hint| match audio_control::find_endpoint(hint.as_deref()) {
         Ok(endpoint) => {
             let service = input_level::InputLevelService::open(Arc::new(endpoint), &config.data_dir.join("input-level.json"));
@@ -1799,14 +1801,16 @@ pub async fn run(
     let audio_manager: Option<Arc<audio_control::AudioManager>> = engine_settings.as_ref().map(|store| {
         let level = input_level.clone();
         let hook: audio_control::InputHook = Arc::new(move |name| {
-            if let Some(level) = &level {
+            if let Some(level) = &level
+                && !audio_control::is_tci_device(Some(name), audio_spectrum::TCI_INPUT_NAME)
+            {
                 match audio_control::find_endpoint(Some(name)) {
                     Ok(endpoint) => level.set_control(Arc::new(endpoint)),
                     Err(e) => tracing::warn!("livello dell'ingresso audio non regolabile su {name}: {e}"),
                 }
             }
         });
-        let backend = Arc::new(audio_control::CpalBackend { rows: bus.spectrum(), events: bus.events() });
+        let backend = Arc::new(audio_control::CpalBackend { rows: bus.spectrum(), events: bus.events(), cat: Some(Arc::clone(&cat)) });
         audio_control::AudioManager::new(backend, native_tx.clone(), store.audio(), config.audio_device.clone(), config.audio_out_device.clone(), &config.data_dir, hook)
     });
     let state = match (&engine_settings, &audio_manager) {

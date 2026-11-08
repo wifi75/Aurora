@@ -549,8 +549,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           ) : null}
           <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => { set({ auto_connect: v }); saveNow.mutate({ auto_connect: v }); }} />
           <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => { set({ read_extras: v }); saveNow.mutate({ read_extras: v }); }} />
-          {/* «Accendi» e «Spegni» di JTDX: solo con Hamlib (con OmniRig JTDX le spegne) */}
-          {hamlib ? (
+          {/* «Accendi» e «Spegni» di JTDX: con Hamlib e con TCI (`start;`/`stop;`); con OmniRig JTDX le spegne */}
+          {hamlib || config.backend === 'tci' ? (
             <>
               <Check label={t('cat.powerOn')} hint={t('tip.cat.powerOn')} checked={config.power_on === true} onChange={(v) => { set({ power_on: v }); saveNow.mutate({ power_on: v }); }} />
               <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
