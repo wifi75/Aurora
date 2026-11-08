@@ -38,6 +38,11 @@ impl CatParts {
         let factory: LinkFactory = Arc::new(|config: &RigConfig| {
             let exe = locate_rigctld().ok_or_else(|| RigError("rigctld non trovato".into()))?;
             let rigctld = config.to_rigctld(&exe)?;
+            // «Accendi»: una volta per avvio di Aurora, prima di Hamlib, il comando di accensione direttamente sulla porta
+            static WOKE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+            if config.power_on && !WOKE.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                crate::wake::wake(config);
+            }
             Rigctld::start(&rigctld).map(Link::from_daemon)
         });
         let models: ModelsFn = Arc::new(|| {

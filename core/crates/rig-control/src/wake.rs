@@ -1,0 +1,94 @@
+//! «Accendi» per le radio che Hamlib non riesce ad aprire da spente: prima di avviare `rigctld`, Aurora apre la porta seriale e manda da se'
+//! il comando di accensione nella lingua della radio. Con l'FT-2000 spento Hamlib 4.7.2 non apre nemmeno il collegamento («rig power is
+//! off?», «Some rigs cannot get_powerstat while off») e `auto_power_on` non parte mai (prova del 8/11/2026).
+//!
+//! - Yaesu (modelli Hamlib 1xxx), Kenwood ed Elecraft (2xxx): `PS1;` due volte, con una pausa (la prima sveglia il processore della radio).
+//! - Icom (3xxx): una serie di byte `FE` di risveglio, poi il comando CI-V 0x18 0x01 all'indirizzo della radio (serve l'indirizzo CI-V).
+//!
+//! Gli altri modelli non si toccano: resta `auto_power_on` di Hamlib.
+
+use std::{io::Write, time::Duration};
+
+use crate::cat_config::RigConfig;
+
+/// Il comando da mandare per accendere questa radio, se Aurora lo conosce.
+pub fn power_on_bytes(config: &RigConfig) -> Option<Vec<Vec<u8>>> {
+    match config.model / 1000 {
+        1 | 2 => Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec()]),
+        3 if config.civ_address != 0 => {
+            // risveglio: piu' byte FE quanto piu' alta e' la velocita' (come il manuale Icom: 150 a 115200, 25 a 19200)
+            let wake = match config.baud {
+                b if b >= 115_200 => 150,
+                b if b >= 57_600 => 75,
+                b if b >= 38_400 => 50,
+                b if b >= 19_200 => 25,
+                _ => 13,
+            };
+            let mut first = vec![0xFE; wake];
+            first.extend_from_slice(&[0xFE, 0xFE, config.civ_address, 0xE0, 0x18, 0x01, 0xFD]);
+            Some(vec![first])
+        }
+        _ => None,
+    }
+}
+
+/// Manda l'accensione sulla porta seriale (solo Windows: la porta si imposta con `mode`); errori solo nel registro.
+pub fn wake(config: &RigConfig) {
+    let Some(messages) = power_on_bytes(config) else {
+        tracing::info!("«Accendi»: per il modello Hamlib {} si usa solo auto_power_on di Hamlib", config.model);
+        return;
+    };
+    if config.port.is_empty() || config.port.contains(':') {
+        return;
+    }
+    #[cfg(windows)]
+    {
+        let port = config.port.trim().to_uppercase();
+        let baud = if config.baud == 0 { 38_400 } else { config.baud };
+        let stop = if config.stop_bits == 2 { 2 } else { 1 };
+        let _ = std::process::Command::new("mode")
+            .args([port.as_str(), &format!("BAUD={baud}"), "PARITY=N", "DATA=8", &format!("STOP={stop}"), "DTR=OFF", "RTS=OFF"])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+        let path = format!("\\\\.\\{port}");
+        match std::fs::OpenOptions::new().write(true).open(&path) {
+            Ok(mut f) => {
+                for (i, m) in messages.iter().enumerate() {
+                    if i > 0 {
+                        std::thread::sleep(Duration::from_millis(1000));
+                    }
+                    let _ = f.write_all(m);
+                    let _ = f.flush();
+                }
+                tracing::info!("«Accendi»: comando di accensione mandato sulla {port}");
+            }
+            Err(e) => tracing::warn!("«Accendi»: porta {port} non aperta: {e}"),
+        }
+        // il tempo che la radio si accenda prima che Hamlib la interroghi
+        std::thread::sleep(Duration::from_secs(4));
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (messages, Duration::ZERO, std::io::sink().flush());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn yaesu_and_kenwood_get_ps1_and_icom_needs_its_address() {
+        let ft2000 = RigConfig { model: 1029, ..RigConfig::default() };
+        assert_eq!(power_on_bytes(&ft2000), Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec()]));
+        let ts590 = RigConfig { model: 2031, ..RigConfig::default() };
+        assert!(power_on_bytes(&ts590).is_some());
+        let icom_no_addr = RigConfig { model: 3073, ..RigConfig::default() };
+        assert_eq!(power_on_bytes(&icom_no_addr), None);
+        let ic7300 = RigConfig { model: 3073, civ_address: 0x94, baud: 19_200, ..RigConfig::default() };
+        let m = power_on_bytes(&ic7300).expect("icom");
+        assert_eq!(&m[0][m[0].len() - 7..], &[0xFE, 0xFE, 0x94, 0xE0, 0x18, 0x01, 0xFD]);
+        assert_eq!(power_on_bytes(&RigConfig { model: 1, ..RigConfig::default() }), None);
+    }
+}
