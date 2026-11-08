@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { getAutomation, getAutomationCountries, putAutomation } from '../api/client';
+import { ApiError, getAutomation, getAutomationCountries, putAutomation } from '../api/client';
+import { askConfirm } from '../components/ConfirmHost';
 import type { AutomationRules, DecisionKind } from '../api/automation';
 import type { DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { coreText } from '../lib/coreText';
 import { formatClock } from '../lib/format';
 import { selectSettingsTab } from '../lib/settingsWindow';
+import { toast } from '../lib/toast';
 import { Help } from './layout';
 import { useDraft, useSettings } from './NativeSettings';
 import { useSharedDraft } from './session';
@@ -119,6 +121,20 @@ export function AutomationTab() {
     mutationFn: (enabled: boolean) => putAutomation({ enabled }),
     onSuccess: (next) => client.setQueryData(['automation'], next),
   });
+  // prova a vuoto <-> modo reale: il modo reale chiede prima la conferma dell'avviso (il core la pretende: `accept_license_notice`)
+  const setMode = useMutation({
+    mutationFn: async (mode: 'dry_run' | 'live') => {
+      if (mode === 'live' && !(await askConfirm(t('auto.liveNotice')))) return null;
+      return putAutomation(mode === 'live' ? { mode, accept_license_notice: true } : { mode });
+    },
+    onSuccess: (next) => {
+      if (next) client.setQueryData(['automation'], next);
+    },
+    onError: (e) => {
+      const code = e instanceof ApiError ? e.code : '';
+      toast(code === 'local_only' ? t('auto.liveLocalOnly') : code === 'tx_disabled' ? t('auto.liveTxClosed') : t('auto.liveFailed'), 'error');
+    },
+  });
   if (state.isError) return <p className="notice">{t('auto.unavailable')}</p>;
   if (!state.data) return <p className="muted">{t('set.loading')}</p>;
   const a = state.data;
@@ -151,9 +167,21 @@ export function AutomationTab() {
         <span className={`pill ${a.enabled ? 'pill--rx' : ''}`} title={t('tip.auto.state')}>
           {a.enabled ? t('auto.on') : t('auto.off')}
         </span>
-        <span className={`pill ${live ? 'au-pill--live' : ''}`} title={`${t('tip.auto.mode')}${a.live_allowed ? '' : t('auto.txClosed')}`}>
-          {live ? t('auto.modeLive') : t('auto.modeDry')}
-        </span>
+        <div className="au-mode" role="radiogroup" aria-label={t('auto.modeChoice')} title={`${t('tip.auto.mode')}${a.live_allowed ? '' : t('auto.txClosed')}`}>
+          <button type="button" role="radio" aria-checked={!live} className={live ? '' : 'is-on'} disabled={setMode.isPending} onClick={() => live && setMode.mutate('dry_run')}>
+            {t('auto.modeDry')}
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={live}
+            className={live ? 'is-on is-live' : ''}
+            disabled={setMode.isPending || (!live && !a.live_allowed)}
+            onClick={() => !live && setMode.mutate('live')}
+          >
+            {t('auto.modeLive')}
+          </button>
+        </div>
         {a.enabled && !a.in_window ? <span className="pill au-pill--wait">{t('auto.outWindow')}</span> : null}
         <dl className="au-stats" title={t('tip.auto.today')}>
           <div>
