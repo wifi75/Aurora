@@ -1,6 +1,15 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-07)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-08)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-08 mattina (passaggio ad altro account)
+
+- **Lavoro solo in locale**: il proprietario ha chiesto di NON pubblicare (niente push, tag, release, sito) finche' non dice «pubblica». Sul ramo `main` locale ci sono circa 17 commit non pubblicati dopo la 0.11.194 (versione nei file: 0.11.195).
+- Installatore locale pronto: `D:\build\Aurora-0.11.1\dist-release\Aurora_0.11.195_x64-setup.exe` (09:20). Il proprietario lo installa e prova; la grafica la vede dal vivo copiando `app/dist` in `%LOCALAPPDATA%\Aurora\dist`.
+- Fatto oggi: correzione del cambio banda che rimbalzava (0.11.194 pubblicata), JT4 A-G, Q65-30A, MSK144 + MSK40 + tempo reale, bande da 2200 m a 24 GHz, selettore delle frequenze (pulsanti delle bande tolti), accesso senza codice in casa di base, frequenza principale all'avvio, «R + locatore» come conferma, tasti del display che non diventano grigi, zoom del display opaco sopra il display fisso, spot a DXSummit nel registro. Dettagli in `memory.md` (sezione «Modi e bande nuovi») e `TODO.md`.
+- Compilare con 9 processi (`jobs = 9` in `~/.cargo/config.toml`): con 18 la memoria finiva e Aurora si chiudeva.
+- **Prossimo passo**: aspettare le prove del proprietario; poi Q65 (periodi e sottomodi selezionabili, media, AP, EME), FST4/FST4W e WSPR, sistemare le prove che falliscono gia' (elenco in `TODO.md`).
+- File non tracciati da lasciare: `app/tsconfig.tsbuildinfo` (generato) e `docs/report-cloudflare-2026-11-06.md` (il proprietario non ha ancora deciso se committarlo).
 
 ## Prompt da incollare nella sessione nuova
 
@@ -9,7 +18,7 @@ Riprendi il lavoro su Aurora nella cartella D:\progetti\Aurora.
 1. Leggi AGENTS.md, docs/ripresa.md, memory.md (sezione «Come riprendere»), TODO.md e docs/tasks.md.
 2. Allineati: git fetch, controlla main e i rami in corso elencati sotto.
 3. Dimmi in breve a che punto siamo, poi riprendi dal punto «Prossimo passo» di docs/ripresa.md.
-Regole: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero; il push e le release sono autorizzati;
+Regole: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero; il push e le release sono autorizzati solo quando il proprietario dice «pubblica» (dal 2026-11-08 si lavora in locale);
 le prove dal vivo con la radio le faccio io.
 ```
 
