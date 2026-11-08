@@ -206,3 +206,28 @@ async fn halt_tx_switches_the_automation_off() {
     status_is(&resp, StatusCode::OK);
     assert!(!a.state().enabled);
 }
+
+#[tokio::test]
+async fn the_countries_for_the_exclusions_come_sorted_and_unique() {
+    let (s, a) = state_with_automation(true);
+    a.set_countries(vec!["Lemuria".into(), "Atlantis".into(), "Lemuria".into()]);
+    let cookie = cookie_for(&s);
+    let resp = call(&build_router(s), req(Method::GET, "/api/v1/automation/countries").cookie(&cookie)).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["countries"], serde_json::json!(["Atlantis", "Lemuria"]));
+}
+
+#[tokio::test]
+async fn the_new_rules_are_saved_and_checked() {
+    let (s, _a) = state_with_automation(true);
+    let cookie = cookie_for(&s);
+    let app = build_router(s);
+    let good = r#"{"rules":{"reply_to":["new_dxcc"],"min_snr":-12,"excluded_calls":[],"max_attempts_per_call":2,"max_qso_per_hour":6,"window_enabled":true,"window_from_min":480,"window_to_min":1320,"excluded_countries":["Atlantis"],"continents":["EU","NA"],"auto_cq_after_min":5,"reply_to_new_mode":true}}"#;
+    let resp = call(&app, req(Method::PUT, "/api/v1/automation").cookie(&cookie).json(good)).await;
+    status_is(&resp, StatusCode::OK);
+    let j = body_json(resp).await;
+    assert_eq!(j["rules"]["max_qso_per_hour"], 6);
+    assert_eq!(j["rules"]["continents"], serde_json::json!(["EU", "NA"]));
+    let bad = r#"{"rules":{"reply_to":["new_dxcc"],"min_snr":-12,"excluded_calls":[],"max_attempts_per_call":2,"continents":["XX"]}}"#;
+    status_is(&call(&app, req(Method::PUT, "/api/v1/automation").cookie(&cookie).json(bad)).await, StatusCode::BAD_REQUEST);
+}

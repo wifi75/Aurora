@@ -1090,6 +1090,54 @@ fn load_rules(path: &Path) -> Rules {
     }
 }
 
+/// Scarto dell'ora locale del PC da UTC, in secondi (ora legale compresa): serve alla fascia oraria dell'automazione.
+#[cfg(windows)]
+fn local_offset_secs() -> i64 {
+    use windows::Win32::System::Time::{GetTimeZoneInformation, TIME_ZONE_INFORMATION};
+    let mut tzi = TIME_ZONE_INFORMATION::default();
+    // SAFETY: la struttura e' nostra e valida per tutta la chiamata, che la riempie soltanto
+    let id = unsafe { GetTimeZoneInformation(&mut tzi) };
+    // 1 = ora solare, 2 = ora legale; 0 = nessuna ora legale; 0xFFFFFFFF = errore (si resta in UTC)
+    let extra = match id {
+        1 => tzi.StandardBias,
+        2 => tzi.DaylightBias,
+        0 => 0,
+        _ => return 0,
+    };
+    // UTC = ora locale + bias (minuti)
+    -i64::from(tzi.Bias + extra) * 60
+}
+
+/// Fuori da Windows: lo scarto da `date +%z` («+0100»), riletto al massimo una volta al minuto; senza `date` si resta in UTC.
+#[cfg(not(windows))]
+fn local_offset_secs() -> i64 {
+    use std::sync::{Mutex as StdMutex, OnceLock};
+    use std::time::Instant;
+    static CACHE: OnceLock<StdMutex<Option<(Instant, i64)>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| StdMutex::new(None));
+    let mut slot = cache.lock().unwrap_or_else(|p| p.into_inner());
+    if let Some((at, secs)) = *slot
+        && at.elapsed().as_secs() < 60
+    {
+        return secs;
+    }
+    let secs = std::process::Command::new("date")
+        .arg("+%z")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .and_then(|s| {
+            let s = s.trim();
+            let sign = if s.starts_with('-') { -1 } else { 1 };
+            let digits = s.trim_start_matches(['+', '-']);
+            let (h, m) = (digits.get(0..2)?.parse::<i64>().ok()?, digits.get(2..4)?.parse::<i64>().ok()?);
+            Some(sign * (h * 3600 + m * 60))
+        })
+        .unwrap_or(0);
+    *slot = Some((Instant::now(), secs));
+    secs
+}
+
 fn save_rules(path: &Path, rules: &Rules) {
     match serde_json::to_string(rules) {
         Ok(json) => {
@@ -1425,6 +1473,16 @@ pub async fn run(
         && let Some(hit) = db.lookup(&my_call)
     {
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
+    }
+    // le regole nuove dell'automazione: ora locale per la fascia oraria, paesi per le esclusioni, «nuovo modo» dal log come la scheda DXCC
+    automation.set_local_offset(Arc::new(local_offset_secs));
+    if let Some((db, worked)) = &enrichment {
+        automation.set_countries((0..db.len()).map(|i| db.entity(i).name.clone()).collect());
+        let (db, worked) = (Arc::clone(db), Arc::clone(worked));
+        automation.set_new_mode_matcher(Arc::new(move |call, mode| {
+            // log vuoto: tutto sarebbe «nuovo», come per le etichette delle decodifiche non si segnala nulla
+            mode.is_some() && worked.read().is_ok_and(|w| !w.is_empty() && w.labels(call, None, None, mode, &db).new_mode)
+        }));
     }
     let live_log = enrichment.as_ref().map(|(db, worked)| (Arc::clone(db), Arc::clone(worked), log_sources.clone()));
     // le schede Sequenza, Generali e Notifiche del motore proprio: dalle impostazioni di Aurora alla sequenza, alle etichette e al log
