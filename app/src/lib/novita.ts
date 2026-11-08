@@ -21,8 +21,8 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.203',
-    released: '',
-    kind: 'fix',
+    released: '2026-11-08T22:15:00Z',
+    kind: 'fixed',
     title: ['Aggiornamento più sicuro, FT-991 Link e 70 cm', 'Safer update, FT-991 Link and 70 cm', 'Sichereres Update, FT-991 Link und 70 cm', 'Mise à jour plus sûre, FT-991 Link et 70 cm', 'Actualización más segura, FT-991 Link y 70 cm', 'Atualização mais segura, FT-991 Link e 70 cm'],
     text: [
       "L’installatore dell’aggiornamento parte solo quando Aurora è davvero chiusa, così non si ferma più a metà con «Impossibile chiudere Aurora», e aggiornando dal tray la locandina non compare più da sola. Con FT-991(A) Link il cambio di banda non mostra più l’errore rosso e rimette sempre DATA-USB invece di lasciare FM. Aggiunte le frequenze FT8 e FT4 dei 70 cm.",
