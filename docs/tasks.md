@@ -69,8 +69,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 17. Band Hopping FT8/FT4: rifiniture
 
 - Fatto: `aurora/src/band_hop.rs` (elenco «FT8 20m», «FT4 40m» e fino a 8 frequenze in kHz, salto ogni due minuti, saltato con Abilita Tx acceso o in trasmissione), voci `BandHopping` e `BandHopList` nella scheda Generali.
-- Fatto anche: clic destro sulla barra delle bande per la voce successiva (`POST /api/v1/commands/band-hop-next`).
-- Manca: MSK144 (modo non presente).
+- Fatto anche: tasto destro sul selettore delle frequenze per la voce successiva (`POST /api/v1/commands/band-hop-next`; dalla 0.11.195, prima sulla barra delle bande tolta).
+- Manca: MSK144 nell'elenco del Band Hopping (il modo c'e' dalla 0.11.195).
 - WSJT-X: `widgets/mainwindow_bandhopping.cpp`.
 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
@@ -88,27 +88,19 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Verifica: il segnale generato si decodifica con `jt9.exe` 3.0.2 e con il decodificatore di Aurora.
 - Interfaccia approvata dal proprietario il 2026-11-01: `docs/mockup-fox.html` (contatori con grafico del ritmo, Hound con doppio ordinamento e filtri, posti del SuperFox con avanzamento e anteprima del pacchetto, parametri visibili, coda, Fox log con ADIF, Cabrillo e ClubLog). Limiti di WSJT-X da superare in `docs/analisi-wsjtx-3.md`.
 
-## 21. Modo Q65
+## 21. Modo Q65 (parziale)
 
-- Cosa fare: aggiungere Q65 (sottomodi A-E, periodi 15/30/60/120/300 s) con codifica, modulazione e decodifica, compresa la media dei messaggi e la decodifica con le ipotesi del QSO (AP).
-- Aurora: nuovo crate `core/crates/q65`; scelta del modo in `engine-native`, `qso-native`, `app/src/components/ModeSwitch.tsx`.
+- Fatto (0.11.195): Q65-30A in `core/crates/jt/src/q65.rs` (codice QRA 15,65 su GF(64), CRC-12, messaggi a 77 bit), `Mode::Q65` nel motore, selettore dei modi e frequenze di WSJT-X (50,275 e 144,180 MHz, EME come alternative).
+- Resta: scelta del periodo (15/30/60/120/300 s) e del sottomodo (A-E), media dei messaggi fra periodi, decodifica con le ipotesi del QSO (AP), modello di evanescenza per EME.
 - WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_decode.f90`, `q65_sync.f90`), `lib/q65params.f90`, `widgets/mainwindow.cpp` (sezioni Q65).
 - Verifica: WAV generati con `q65sim` a vari SNR; Aurora decodifica almeno quanto `jt9.exe`.
 
-## 22. Modo MSK144 (meteor scatter)
-
-- Cosa fare: aggiungere MSK144 (periodi 15/30 s, messaggi brevi «Sh»), decodifica dei ping brevi a blocchi nel periodo, sequenza dei QSO del meteor scatter.
-- Aurora: nuovo crate `core/crates/msk144`; `engine-native`, `qso-native`, `ModeSwitch.tsx`.
-- WSJT-X: `lib/msk144*.f90`, `lib/mskrtd.f90`, `lib/msk144decodeframe.f90`, `widgets/mainwindow.cpp` (MSK144).
-- Verifica: WAV con ping simulati (`msk144sim`), confronto con `jt9.exe`.
-
 ## 23. Pulsanti rapidi dei modi
 
-- Cosa fare: estendere i pulsanti di scelta del modo della pagina Stazione a Q65 e MSK144 quando ci saranno (oggi FT8, FT4, JT65, JT9).
+- Fatto (0.11.194-0.11.195): selettore dei modi con JT4 (sottomodi A-G), Q65 e MSK144, colori propri per modo.
+- Resta: i periodi e i sottomodi di Q65 nel selettore, quando ci saranno (voce 21).
 - Aurora: `app/src/components/ModeSwitch.tsx`, `core/crates/rig-control/src/table.rs` (frequenze per modo).
-- WSJT-X: `widgets/mainwindow.ui` (pulsanti dei modi della 3.0).
-- Verifica: cambio modo dal pulsante con radio collegata.
-
+- Verifica: cambio modo dal selettore con radio collegata.
 
 ## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz
 

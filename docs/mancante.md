@@ -4,6 +4,7 @@ Stato al 2026-11-07, versione 0.11.196. Priorità: **A** indispensabile per sost
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
+- 2026-11-08 (dopo la 0.11.196): «Installa e riavvia» con barra di download (percentuale, MB, velocita', tempo); pannello Log stretto che toglie le colonne meno importanti; elementi nascosti con le finestre vicine che riempiono il posto.
 
 Core Rust (bus, hub UDP davanti a GridTracker2, motore JTDX, log SQLite con ADIF, associazione dispositivi, API e WebSocket); interfaccia a finestra larga e da telefono con finestre trascinabili e ridimensionabili; cascata WebGPU/WebGL2 con barre Rx/Tx; paese con bandiera e novità dei decode (DXCC, zona CQ/ITU, griglia, prefisso, stazione, per banda); avvisi sonori e chiamate verso di te; trasmissione (CQ, testo libero, risposta con doppio clic, STOP TX) chiusa di default; cambio banda, modo FT8/FT4 e frequenza Rx; livello audio di uscita (Pwr); automazioni con prova a vuoto; esportazione dei QSO; impostazioni a 13 schede, sei lingue e tooltip; filtri, macro, frequenze, programmazione; codice di associazione di durata scelta e accesso senza codice per le prove. Dalla 0.11.41 alla 0.11.46: impostazioni a barra laterale con spiegazioni, pagina Informazioni, notifiche, cascata che segue il filtro della radio, display esteso con secondo VFO, calendario DXpedition (NG3K), coda sempre visibile, rigctld orfano chiuso da solo.
 
@@ -15,8 +16,6 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 - **M** Provare dal vivo la nuova chiusura del QSO (RRR, RR73 senza risposta, ripresa dopo «Canc DX») e controllarla nei log del giorno.
 
 - **M** Stazione che si adatta da sola alla larghezza della finestra (oggi i blocchi hanno misure fisse e a destra si taglia se la finestra e' piu' stretta).
-- **M** «Installa e riavvia»: mostrare l'avanzamento del download (oggi per qualche secondo sembra che non succeda niente).
-- **B** Pannello Log sotto i 300 px: le colonne dei QSO escono dal riquadro.
 
 | # | Voce | Pri. | Note |
 |---|---|---|---|

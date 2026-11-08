@@ -1,5 +1,11 @@
 # Changelog
 
+## Non rilasciato
+- **Installa e riavvia**: barra di download come quella di un browser (percentuale, MB, velocita' e tempo che manca); il motore dice l'avanzamento in `GET /api/v1/update` (`download`).
+- **Pannello Log stretto**: le colonne non escono piu' dal riquadro (sotto 380 px si toglie Paese, sotto 300 px anche Modo e Rapporti).
+- **Elementi nascosti o staccati**: le finestre vicine si allargano da sole a riempire il posto lasciato libero (`fillGaps`), poi si possono ritoccare.
+- **Impostazioni**: Dati della stazione su tre colonne allineate con la dimensione del testo a segmenti; Finestre con una tessera per elemento e il pallino del posto.
+
 ## 0.11.196 - 2026-11-08
 - **Maniglie per allargare le finestre**: una sola per ogni confine, che allarga e stringe insieme le finestre delle due parti (per esempio DX Cluster con Bande aperte e Comandi); c'e' solo dove allargando nessuna finestra finisce sotto un'altra.
 - **AutoSeq**: suggerimento che spiega cosa fa acceso e spento (anche la stazione che chiama preparata come prossimo DX, senza trasmettere).
