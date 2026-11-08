@@ -397,12 +397,14 @@ impl Service {
         let result = tokio::task::spawn_blocking(move || dxsummit::send(&url, &request, timeout)).await.unwrap_or_else(|e| Err(format!("invio interrotto: {e}")));
         match result {
             Ok(()) => {
+                tracing::info!("spot inviato a DXSummit: {dx_call} su {} kHz", dxsummit::frequency_khz(freq_hz));
                 self.status.ok("dxsummit", format!("spot inviato: {dx_call} su {} kHz", dxsummit::frequency_khz(freq_hz)));
                 Ok(())
             }
             Err(e) => {
                 // un invio fallito non conta: si puo' riprovare subito
                 *self.last_spot.lock().unwrap_or_else(|p| p.into_inner()) = None;
+                tracing::warn!("spot a DXSummit non riuscito ({dx_call}): {e}");
                 self.status.fail("dxsummit", e.clone());
                 Err(SpotError::Failed(e))
             }
