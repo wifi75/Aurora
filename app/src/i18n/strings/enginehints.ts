@@ -134,12 +134,12 @@ export const engineHintStrings = {
     'A cada dois minutos o rádio passa para a banda ou frequência seguinte da lista, à vez. Não salta com Ativar Tx ligado ou a transmitir. Desligado de origem, como no WSJT-X.',
   ],
   'jxh.BandHopList': [
-    'Voci separate da virgole: «FT8 20m» o «FT4 40m» (frequenza dalla tabella delle frequenze) oppure fino a 8 frequenze proprie in kHz (es. 14090), sempre in FT8.',
-    'Comma-separated entries: «FT8 20m» or «FT4 40m» (frequency from the frequency table) or up to 8 own frequencies in kHz (e.g. 14090), always in FT8.',
-    'Durch Kommas getrennt: «FT8 20m» oder «FT4 40m» (Frequenz aus der Frequenztabelle) oder bis zu 8 eigene Frequenzen in kHz (z. B. 14090), immer in FT8.',
-    'Entrées séparées par des virgules : «FT8 20m» ou «FT4 40m» (fréquence de la table des fréquences) ou jusqu\'à 8 fréquences propres en kHz (ex. 14090), toujours en FT8.',
-    'Entradas separadas por comas: «FT8 20m» o «FT4 40m» (frecuencia de la tabla de frecuencias) o hasta 8 frecuencias propias en kHz (p. ej. 14090), siempre en FT8.',
-    'Entradas separadas por vírgulas: «FT8 20m» ou «FT4 40m» (frequência da tabela de frequências) ou até 8 frequências próprias em kHz (ex. 14090), sempre em FT8.',
+    'Voci separate da virgole: «FT8 20m», «FT4 40m» o «MSK144 6m» (frequenza dalla tabella delle frequenze) oppure fino a 8 frequenze proprie in kHz (es. 14090), sempre in FT8.',
+    'Comma-separated entries: «FT8 20m», «FT4 40m» or «MSK144 6m» (frequency from the frequency table) or up to 8 own frequencies in kHz (e.g. 14090), always in FT8.',
+    'Durch Kommas getrennt: «FT8 20m», «FT4 40m» oder «MSK144 6m» (Frequenz aus der Frequenztabelle) oder bis zu 8 eigene Frequenzen in kHz (z. B. 14090), immer in FT8.',
+    'Entrées séparées par des virgules : «FT8 20m», «FT4 40m» ou «MSK144 6m» (fréquence de la table des fréquences) ou jusqu\'à 8 fréquences propres en kHz (ex. 14090), toujours en FT8.',
+    'Entradas separadas por comas: «FT8 20m», «FT4 40m» o «MSK144 6m» (frecuencia de la tabla de frecuencias) o hasta 8 frecuencias propias en kHz (p. ej. 14090), siempre en FT8.',
+    'Entradas separadas por vírgulas: «FT8 20m», «FT4 40m» ou «MSK144 6m» (frequência da tabela de frequências) ou até 8 frequências próprias em kHz (ex. 14090), sempre em FT8.',
   ],
   'jxh.SWRLimit': [
     'Sicurezza: se in trasmissione la radio legge un ROS piu\' alto di questo valore, Aurora ferma subito la trasmissione e ti avvisa (come WSJT-X, 2,5). Serve il CAT Hamlib con la lettura del ROS. 0 = controllo spento.',

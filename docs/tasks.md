@@ -24,13 +24,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `Transceiver/TCITransceiver.cpp/.hpp`.
 - Verifica: con un server TCI di prova; dal vivo con una SDR.
 
-## 17. Band Hopping FT8/FT4: rifiniture
-
-- Fatto: `aurora/src/band_hop.rs` (elenco «FT8 20m», «FT4 40m» e fino a 8 frequenze in kHz, salto ogni due minuti, saltato con Abilita Tx acceso o in trasmissione), voci `BandHopping` e `BandHopList` nella scheda Generali.
-- Fatto anche: tasto destro sul selettore delle frequenze per la voce successiva (`POST /api/v1/commands/band-hop-next`; dalla 0.11.195, prima sulla barra delle bande tolta).
-- Manca: MSK144 nell'elenco del Band Hopping (il modo c'e' dalla 0.11.195).
-- WSJT-X: `widgets/mainwindow_bandhopping.cpp`.
-
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
 - Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
@@ -67,3 +60,9 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: cartella `qmap/`.
 - Verifica: registrazione I/Q di prova con piu' segnali Q65.
 
+
+## 27. Accensione e spegnimento della radio (come JTDX)
+
+- Cosa fare: pulsanti Accendi/Spegni la radio via CAT (Hamlib `set_powerstat`, comando `\set_powerstat 1/0` a rigctld; OmniRig se lo permette), richiesto da un utente.
+- Aurora: `rig-control` (hamlib.rs), API `POST /api/v1/rig/power`, pulsanti discreti nella scheda Radio o nel display.
+- Verifica: con la radio del proprietario (lo prova lui).

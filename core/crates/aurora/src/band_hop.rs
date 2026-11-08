@@ -1,5 +1,5 @@
-//! Band Hopping FT8/FT4, come `widgets/mainwindow_bandhopping.cpp` di WSJT-X 3.3 (GPL): ogni due minuti la radio passa alla voce scelta successiva
-//! (bande FT8 o FT4 della tabella delle frequenze, oppure fino a 8 frequenze proprie in kHz, in FT8). Il salto non si fa con «Abilita Tx» acceso o in
+//! Band Hopping FT8/FT4/MSK144, come `widgets/mainwindow_bandhopping.cpp` di WSJT-X 3.3 (GPL): ogni due minuti la radio passa alla voce scelta successiva
+//! (bande FT8, FT4 o MSK144 della tabella delle frequenze, oppure fino a 8 frequenze proprie in kHz, in FT8). Il salto non si fa con «Abilita Tx» acceso o in
 //! trasmissione (`schedule_blocked`): la voce si salta e si riprova al giro dopo. L'elenco vuoto non fa niente.
 
 use std::{sync::Arc, time::Duration};
@@ -18,14 +18,14 @@ pub enum HopEntry {
     Custom(u64),
 }
 
-/// L'elenco delle impostazioni (`BandHopList`): voci separate da virgole, `FT8 20m`, `FT4 40m` o una frequenza in kHz (`14090`). Le voci non valide si scartano.
+/// L'elenco delle impostazioni (`BandHopList`): voci separate da virgole, `FT8 20m`, `FT4 40m`, `MSK144 6m` o una frequenza in kHz (`14090`). Le voci non valide si scartano.
 pub fn parse_list(text: &str) -> Vec<HopEntry> {
     let mut out = Vec::new();
     let mut custom = 0;
     for item in text.split(',').map(str::trim).filter(|s| !s.is_empty()) {
         let words: Vec<&str> = item.split_whitespace().collect();
         match words.as_slice() {
-            [mode, band] if matches!(mode.to_uppercase().as_str(), "FT8" | "FT4") && rig_control::bands::canonical_band(band).is_some() => {
+            [mode, band] if matches!(mode.to_uppercase().as_str(), "FT8" | "FT4" | "MSK144") && rig_control::bands::canonical_band(band).is_some() => {
                 out.push(HopEntry::Band { mode: mode.to_uppercase(), band: band.to_lowercase() });
             }
             [khz] if custom < MAX_CUSTOM => {
@@ -143,6 +143,8 @@ mod tests {
 
     #[test]
     fn the_list_takes_bands_and_up_to_eight_custom_frequencies() {
+        // MSK144 (meteor scatter) dalla 0.11.197: la frequenza viene dalla tabella come per FT8 e FT4
+        assert_eq!(parse_list("msk144 6m"), vec![HopEntry::Band { mode: "MSK144".into(), band: "6m".into() }]);
         let list = parse_list("FT8 20m, ft4 40M, 14090, boh, FT8 99m, 1,2,3");
         assert_eq!(
             list,
