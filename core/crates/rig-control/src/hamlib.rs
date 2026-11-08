@@ -337,7 +337,17 @@ impl RigctldClient {
 
     /// Accende o spegne la radio (`\set_powerstat 1/0` di rigctld, come «Accendi»/«Spegni» di JTDX). Non tutte le radio lo permettono.
     pub fn set_powerstat(&self, on: bool) -> Result<(), RigError> {
-        self.ask_raw(&format!("\\set_powerstat {}", u8::from(on)), 0).map(|_| ())
+        // Hamlib, per accendere, manda il comando e aspetta qualche secondo che la radio si svegli: con l'attesa normale (mezzo secondo)
+        // il collegamento sembrava caduto (8/11/2026, FT-2000). Per questo comando si aspetta fino a 15 s, poi si torna all'attesa di prima.
+        let previous = self.io.lock().ok().and_then(|io| io.1.read_timeout().ok().flatten());
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(Some(std::time::Duration::from_secs(15)));
+        }
+        let result = self.ask_raw(&format!("\\set_powerstat {}", u8::from(on)), 0).map(|_| ());
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(previous);
+        }
+        result
     }
 
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {

@@ -8,6 +8,9 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+/// Il core ha finito di chiudersi (PTT spento, radio spenta se scelto, porte liberate): il programma aspetta questo prima di uscire.
+pub static CORE_STOPPED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub mod audio_control;
 pub mod backup;
 pub mod band_hop;
@@ -2107,6 +2110,7 @@ pub async fn run(
         drop(audio);
         // alla chiusura il PTT si spegne e la radio si libera
         let _ = tokio::task::spawn_blocking(move || cat_for_task.shutdown()).await;
+        CORE_STOPPED.store(true, std::sync::atomic::Ordering::SeqCst);
     });
     {
         // radio, PTT, audio e i valori personali da togliere si rileggono a ogni rapporto

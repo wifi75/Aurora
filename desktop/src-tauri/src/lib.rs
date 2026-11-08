@@ -87,8 +87,11 @@ fn stop_core(app: &AppHandle) {
         && let Some(tx) = core.shutdown.lock().ok().and_then(|mut s| s.take())
     {
         let _ = tx.send(());
-        // il tempo di chiudere porte e archivi
-        std::thread::sleep(Duration::from_millis(400));
+        // si aspetta che il core abbia finito (porte, archivi, e con «Spegni» la radio): prima 0,4 s fissi, troppo pochi per spegnere la radio
+        let until = Instant::now() + Duration::from_secs(6);
+        while !aurora::CORE_STOPPED.load(std::sync::atomic::Ordering::SeqCst) && Instant::now() < until {
+            std::thread::sleep(Duration::from_millis(50));
+        }
     }
 }
 
