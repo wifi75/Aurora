@@ -66,7 +66,7 @@ Version 0.11.197: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Send
 - **Logs und Integrationen**: direkter Upload zu Wavelog/Cloudlog, ClubLog, QRZ.com und LoTW (TQSL); UDP-Integrationen mit Multicast und Optionen je Programm, N1MM-XML; ADIF-Exportseite mit „Speichern unter“.
 - **Aus WSJT-X 3**: a7/a8-Dekodierung und Multithread-FT8, Wait and Reply/Call, automatischer Bandwechsel, Vollduplex, Fox-Prüfung (OTP), Sendesperre per UDP, Stopp bei hohem SWR, nicht kodierbare Nachrichten gesperrt, Filter wie WSJT-X 3, Hamlib 4.7.2.
 - **Anzeige und Cluster**: Funkanzeige im Stil Yaesu FT-2000 und Icom IC-7610; NG3K-DXpeditionen im DX-Cluster in einer Farbe deiner Wahl hervorgehoben; Live-Vorschau des Wasserfalls in den Einstellungen; Absturzdiagnose immer aktiv.
-- **UltraFOX**: eigene Rust-Implementierung, kompatibel mit SuperFox von WSJT-X (Senden und Empfang). Experimentell.
+- **UltraFOX**: eigene Rust-Implementierung mit dem Polarcode AQP-127, kompatibel mit SuperFox von WSJT-X (Senden und Empfang). Experimentell.
 
 Was fehlt: `docs/mancante.md`. Ergebnisse der Tests mit JTDX: `docs/fase0-rapporto.md` (Dokumentation auf Italienisch).
 

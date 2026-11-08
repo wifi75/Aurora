@@ -1,4 +1,6 @@
-//! Codice polare q-ario (127, 50) su simboli da 7 bit (q = 128), compatibile con SuperFox di WSJT-X.
+//! **AQP-127** (Aurora Q-ary Polar): codice polare q-ario (127, 50) su simboli da 7 bit (q = 128), compatibile con SuperFox di WSJT-X.
+//! Le posizioni del messaggio (`INFO`) si ricalcolano con `cargo run --release --example tabelle_qpc -- 4 400000`: simulazione del canale
+//! a 128 toni e decodifica col genio; l'ordine dei simboli in `XPOS` e' quello del protocollo SuperFox, da rispettare per la compatibilita'.
 //!
 //! Codifica: i 50 simboli del messaggio vanno nelle posizioni `XPOS[..K]`, le altre restano congelate a zero; poi la trasformata polare
 //! (7 stadi a farfalla come una FFT, `y[b + passo] ^= y[b]`). Il simbolo 0 non si trasmette: restano 127 simboli.

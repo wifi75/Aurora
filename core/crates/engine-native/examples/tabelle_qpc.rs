@@ -1,4 +1,4 @@
-//! Calcolo delle tabelle del codice polare q-ario (127, 50) di UltraFOX con il metodo classico dei codici polari: si simula il canale
+//! Calcolo delle tabelle di AQP-127, il codice polare q-ario (127, 50) di UltraFOX, con il metodo classico dei codici polari: si simula il canale
 //! (128 toni FSK non coerenti con rumore gaussiano, la parola tutta a zero perche' il canale e' simmetrico), si decodifica a cancellazione
 //! successiva con il «genio» (ogni decisione precedente gia' giusta) e si conta la probabilita' di sbagliare ogni posizione. Le posizioni si
 //! ordinano dalla piu' affidabile alla meno affidabile: le prime 50 portano il messaggio, le altre restano congelate. La posizione 0 e'
