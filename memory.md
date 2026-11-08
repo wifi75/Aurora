@@ -1,6 +1,16 @@
 # Memoria di progetto
 
-Stato al 2026-11-07, versione 0.11.199. Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-08, versione 0.11.199 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+
+## Decisioni del 2026-11-08
+- Decodifica anticipata FT8 (11,8 s) SPENTA: i messaggi letti in anticipo si perdevano nella sequenza (R+rapporto ignorato). Da riaccendere solo facendoli passare dalla sequenza.
+- QSO senza il rapporto dell'altra stazione: non va a log (scelta del proprietario); «R + locatore» non vale come conferma.
+- AutoSeq spento = la sequenza non avanza (come WSJT-X): primo controllo quando «non manda RR73».
+- QMAP spento di base, si accende da Impostazioni → SDR; scheda SDR raccoglie TCI e QMAP.
+- AQP-127: nome del codice polare di UltraFOX, «implementazione di Tiziano Cassone IU3WJQ»; le posizioni INFO si ricalcolano con `examples/tabelle_qpc.rs`, l'ordine XPOS e' quello del protocollo.
+- SignPath Foundation: domanda respinta per scarsa visibilita' pubblica; etichetta e policy tolte dai README, si riprova piu' avanti (`docs/signpath.md`).
+- FT-991(A) Link (UDP, autore SP4UBW): backend CAT `ft991link.rs`, un comando per datagramma, `?;` per i comandi sconosciuti.
+- Aggiornamento: scaricato in anticipo con firma controllata, barretta in testata e cartolina del tray con i passi (si vede dalla versione dopo quella che lo introduce).
 
 ## Scelte di fondo
 - Aurora ha il motore proprio FT8/FT4 (core/crates/engine-native: decodifica, trasmissione, CAT, ALL.TXT, log verso Log4OM e GridTracker); JTDX 2.2.159 e Decodium restano solo un confronto facoltativo e vengono letti con REA (Ghidra) e i sorgenti GPL, non indovinati. Con la modalita' JTDX il motore resta quello di JTDX e Aurora lo comanda via UDP.

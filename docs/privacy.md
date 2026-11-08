@@ -21,7 +21,7 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
   propagazione, DXpedition) anche con Aurora chiusa; legge il riepilogo del giorno dal log di Aurora sul PC, senza mandarlo da nessuna parte.
   Si spegne in Impostazioni → Agente nel tray.
 - **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
-- **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura.
+- **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura. Quando c'e' una versione nuova, Aurora scarica in anticipo da GitHub il pacchetto e la sua firma nella cartella temporanea di Windows (`%TEMP%\Aurora-update`), senza mandare dati; si installa solo quando lo chiedi.
 
 Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,
 ricerca dei nominativi su QRZ.com e HamQTH. Con la ricerca accesa Aurora manda a quei servizi solo il nominativo da cercare (anche in
