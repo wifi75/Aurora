@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Spot del DX Cluster sulla cascata** rifatti: etichette piccole e compatte (nominativo in carattere monospazio, sfondo scuro semitrasparente, bordo sottile giallo) nella parte alta della cascata, sotto le etichette Rx/Tx, e non piu' sopra lo spettro o il righello delle frequenze. Gli spot vicini si dispongono su al massimo tre righe senza sovrapporsi; quelli che non trovano posto finiscono in un «+N» che li elenca nel suggerimento. Una tacca sottile segna la frequenza esatta, il clic porta la ricezione li' come prima e il suggerimento mostra anche il commento dello spot.
 
 ## 0.11.198 - 2026-11-08
 - **Attivita' di banda** si svuota sempre al cambio di frequenza della radio (almeno 1 kHz).

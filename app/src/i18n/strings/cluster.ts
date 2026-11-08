@@ -10,6 +10,14 @@ export const clusterStrings = {
     '{call} · spot de {spotter} en {freq} kHz: un clic lleva la recepción a esta frecuencia',
     '{call} · spot de {spotter} em {freq} kHz: um clique leva a receção para esta frequência',
   ],
+  'wf.spotMore': [
+    'Altri {n} spot qui vicino, senza spazio per l’etichetta:',
+    '{n} more spots nearby, with no room for a label:',
+    '{n} weitere Spots in der Nähe, ohne Platz für ein Etikett:',
+    '{n} autres spots à proximité, sans place pour une étiquette :',
+    '{n} spots más aquí cerca, sin espacio para la etiqueta:',
+    'Mais {n} spots aqui perto, sem espaço para a etiqueta:',
+  ],
   'tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'tip.tab.cluster': [
     'Collega Aurora a uno o più DX Cluster (server telnet pubblici o tuoi) per vedere gli spot degli altri radioamatori: chi è in aria, su che frequenza e con che modo.',
