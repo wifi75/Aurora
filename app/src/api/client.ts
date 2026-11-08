@@ -652,7 +652,7 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-export type CatBackend = 'hamlib' | 'omnirig' | 'none';
+export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'none';
 export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
 export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';
@@ -686,6 +686,8 @@ export interface CatConfig {
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;
+  /** Indirizzo `host:porta` del server TCI (ExpertSDR, Thetis); vuoto = `127.0.0.1:40001`. */
+  tci_address?: string;
 }
 
 export interface RigExtras {

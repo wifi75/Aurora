@@ -1,5 +1,5 @@
 //! Il servizio CAT di Aurora: tiene la configurazione e i profili (`radio.json`), collega e scollega la radio e fa da `Rig` verso il resto del
-//! programma. Il backend e' Hamlib (tramite `rigctld`) oppure OmniRig. La connessione non parte mai da sola, salvo `auto_connect` o la scelta
+//! programma. Il backend e' Hamlib (tramite `rigctld`), OmniRig oppure TCI (le SDR, su WebSocket). La connessione non parte mai da sola, salvo `auto_connect` o la scelta
 //! di avvio (`AURORA_RIG`): caricare un profilo non collega nulla (il profilo cancellava in silenzio le scelte fatte dopo, in Decodium).
 
 use std::{
@@ -13,6 +13,7 @@ use crate::{
     cat_config::{friendly_error, Backend, RadioFile, RadioStore, RigConfig, RigProfile, StoreError},
     hamlib::{list_models, locate_rigctld, rigctl_beside, Rigctld, RigModel},
     hamlib_rig::{HamlibRig, Link, LinkState, RigStatus, Timing},
+    tci::TciRig,
     Rig, RigError, WindowsRig,
 };
 
@@ -119,6 +120,7 @@ pub struct CatService {
     parts: CatParts,
     current: Mutex<Option<Arc<HamlibRig>>>,
     omni: Mutex<(LinkState, String)>,
+    tci: Mutex<Option<Arc<TciRig>>>,
     models: Mutex<Option<Vec<RigModel>>>,
 }
 
@@ -135,6 +137,7 @@ impl CatService {
             parts,
             current: Mutex::new(None),
             omni: Mutex::new((LinkState::Disconnected, String::new())),
+            tci: Mutex::new(None),
             models: Mutex::new(None),
         })
     }
@@ -172,6 +175,13 @@ impl CatService {
                 let (state, message) = self.omni.lock().map(|o| o.clone()).unwrap_or((LinkState::Disconnected, String::new()));
                 CatStatus { backend: Backend::Omnirig, state, message, rigctld_found, rig: None, share: None }
             }
+            Backend::Tci => match self.tci_rig() {
+                Some(rig) => {
+                    let rig_status = rig.status();
+                    CatStatus { backend: Backend::Tci, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, rig: Some(rig_status), share: None }
+                }
+                None => CatStatus { backend: Backend::Tci, state: LinkState::Disconnected, message: String::new(), rigctld_found, rig: None, share: None },
+            },
             Backend::None => CatStatus { backend: Backend::None, state: LinkState::Disconnected, message: String::new(), rigctld_found, rig: None, share: None },
         }
     }
@@ -183,7 +193,7 @@ impl CatService {
 
     /// `true` se c'e' qualcosa da riavviare quando cambia la configurazione (collegata, in collegamento o in errore).
     fn is_active(&self) -> bool {
-        self.current().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
+        self.current().is_some() || self.tci_rig().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
     }
 
     /// Collega la radio con la configurazione salvata. Per Hamlib ritorna subito (il collegamento prosegue in un thread e lo stato lo racconta);
@@ -214,6 +224,12 @@ impl CatService {
                     Err(e) => self.set_omni(LinkState::Error, &friendly_error(&e.0)),
                 }
             }
+            Backend::Tci => {
+                let rig = Arc::new(TciRig::start(&config.tci_address, config.cat_mode));
+                if let Ok(mut slot) = self.tci.lock() {
+                    *slot = Some(rig);
+                }
+            }
             Backend::None => {}
         }
         Ok(self.status())
@@ -230,6 +246,10 @@ impl CatService {
         let rig = self.current.lock().ok().and_then(|mut c| c.take());
         if let Some(rig) = rig {
             rig.shutdown();
+        }
+        let tci = self.tci.lock().ok().and_then(|mut c| c.take());
+        if let Some(tci) = tci {
+            tci.shutdown();
         }
         self.set_omni(LinkState::Disconnected, "");
         self.status()
@@ -289,11 +309,21 @@ impl CatService {
         self.current().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni → Radio e premi Collega".into()))
     }
 
+    fn tci_rig(&self) -> Option<Arc<TciRig>> {
+        self.tci.lock().ok().and_then(|c| c.clone())
+    }
+
+    /// La radio TCI collegata (PTT, ganci dell'audio).
+    pub fn tci(&self) -> Result<Arc<TciRig>, RigError> {
+        self.tci_rig().ok_or_else(|| RigError("nessuna radio TCI collegata: scegli TCI in Impostazioni → Radio e premi Collega".into()))
+    }
+
     /// `true` se c'e' una radio che risponde ai comandi (Hamlib collegata, oppure OmniRig scelto).
     pub fn is_usable(&self) -> bool {
         match self.backend() {
             Backend::Hamlib => self.current().is_some_and(|r| r.status().state == LinkState::Connected),
             Backend::Omnirig => self.omni.lock().is_ok_and(|o| o.0 == LinkState::Connected),
+            Backend::Tci => self.tci_rig().is_some_and(|r| r.status().state == LinkState::Connected),
             Backend::None => false,
         }
     }
@@ -319,6 +349,7 @@ impl Rig for CatService {
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_frequency(hz),
+            Backend::Tci => self.tci()?.set_frequency(hz),
             Backend::Omnirig => WindowsRig.set_frequency(hz),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -327,6 +358,7 @@ impl Rig for CatService {
     fn frequency(&self) -> Result<u64, RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.frequency(),
+            Backend::Tci => self.tci()?.frequency(),
             Backend::Omnirig => WindowsRig.frequency(),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -335,6 +367,7 @@ impl Rig for CatService {
     fn meters(&self) -> Result<crate::meters::Meters, RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.meters(),
+            Backend::Tci => Err(RigError("misuratori non ancora letti con TCI".into())),
             Backend::Omnirig => Err(RigError("misuratori non disponibili con OmniRig".into())),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -343,6 +376,7 @@ impl Rig for CatService {
     fn set_rx_frequency(&self, hz: u32) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_rx_frequency(hz),
+            Backend::Tci => self.tci()?.set_rx_frequency(hz),
             Backend::Omnirig => WindowsRig.set_rx_frequency(hz),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -351,6 +385,7 @@ impl Rig for CatService {
     fn output_attenuation(&self) -> Result<u32, RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.output_attenuation(),
+            Backend::Tci => self.tci()?.output_attenuation(),
             Backend::Omnirig => WindowsRig.output_attenuation(),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -359,6 +394,7 @@ impl Rig for CatService {
     fn set_output_attenuation(&self, tenths: u32) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_output_attenuation(tenths),
+            Backend::Tci => self.tci()?.set_output_attenuation(tenths),
             Backend::Omnirig => WindowsRig.set_output_attenuation(tenths),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -367,6 +403,7 @@ impl Rig for CatService {
     fn set_mode(&self, mode: &str) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_mode(mode),
+            Backend::Tci => self.tci()?.set_mode(mode),
             Backend::Omnirig => WindowsRig.set_mode(mode),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -375,6 +412,7 @@ impl Rig for CatService {
     fn set_extra(&self, item: crate::extras::ExtraItem) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_extra(item),
+            Backend::Tci => Err(RigError("comando non supportato da TCI".into())),
             Backend::Omnirig => WindowsRig.set_extra(item),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }

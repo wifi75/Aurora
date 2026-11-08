@@ -1,4 +1,4 @@
-//! Il comando della radio di Aurora: CAT con Hamlib (rigctld incluso) o, facoltativo su Windows, OmniRig.
+//! Il comando della radio di Aurora: CAT con Hamlib (rigctld incluso) o, facoltativo su Windows, OmniRig, o TCI per le SDR.
 
 pub mod bands;
 pub mod cat;
@@ -16,6 +16,7 @@ pub mod omnirig;
 pub mod schedule;
 pub mod session;
 pub mod table;
+pub mod tci;
 
 pub use omnirig::WindowsRig;
 

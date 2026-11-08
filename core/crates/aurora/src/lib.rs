@@ -1158,8 +1158,7 @@ struct CatPtt {
 
 impl tx_native::Ptt for CatPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
-        let rig = self.cat.hamlib().map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
-        rig.set_ptt(on).map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+        cat_ptt(&self.cat, on)?;
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
@@ -1167,6 +1166,15 @@ impl tx_native::Ptt for CatPtt {
     fn is_on(&self) -> bool {
         self.on.load(std::sync::atomic::Ordering::SeqCst)
     }
+}
+
+/// Il PTT dalla radio collegata: `trx` con TCI, `T 1` / `T 0` di rigctld con Hamlib.
+fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native::TxError> {
+    let failed = |e: rig_control::RigError| tx_native::TxError::Ptt(e.to_string());
+    if cat.backend() == rig_control::cat_config::Backend::Tci {
+        return cat.tci().map_err(failed)?.set_ptt(on).map_err(failed);
+    }
+    cat.hamlib().map_err(failed)?.set_ptt(on).map_err(failed)
 }
 
 /// PTT senza scelta da JTDX: a ogni trasmissione guarda Impostazioni > Radio, cosi' vale anche una radio scelta dopo l'avvio
@@ -1179,10 +1187,14 @@ struct AutoPtt {
 impl tx_native::Ptt for AutoPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
         let radio = self.cat.config();
-        let by_rig = radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0 && radio.ptt != rig_control::cat_config::PttMethod::Vox;
+        let by_rig = radio.ptt != rig_control::cat_config::PttMethod::Vox
+            && match radio.backend {
+                rig_control::cat_config::Backend::Hamlib => radio.model != 0,
+                rig_control::cat_config::Backend::Tci => true,
+                _ => false,
+            };
         if by_rig {
-            let rig = self.cat.hamlib().map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
-            rig.set_ptt(on).map_err(|e| tx_native::TxError::Ptt(e.to_string()))?;
+            cat_ptt(&self.cat, on)?;
         } else if on {
             tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni > Radio");
             aurora_core::notice::notice("no_radio", "");
@@ -1203,8 +1215,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     // OmniRig preso da JTDX ma la radio e' collegata con Hamlib: OmniRig non comanda la radio, il PTT passa da rigctld
     // (caso reale: un vecchio JTDX.ini con PTT OmniRig e Aurora su Hamlib, la radio non andava mai in trasmissione)
     if config.ptt_method == "omnirig"
-        && radio.backend == rig_control::cat_config::Backend::Hamlib
-        && radio.model != 0
+        && (radio.backend == rig_control::cat_config::Backend::Tci || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
         && radio.ptt != rig_control::cat_config::PttMethod::Vox
     {
         return "cat".to_string();
@@ -1216,6 +1227,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
         (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
         (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
         (rig_control::cat_config::Backend::Hamlib, _) if radio.model != 0 => "cat".to_string(),
+        (rig_control::cat_config::Backend::Tci, _) => "cat".to_string(),
         _ => "vox".to_string(),
     }
 }
@@ -1287,7 +1299,7 @@ pub async fn run(
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
-            rig_control::cat_config::Backend::None => {}
+            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::None => {}
         }
     }
     if config.rig_hamlib {

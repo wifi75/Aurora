@@ -293,9 +293,22 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             <option value="hamlib">{t('cat.backend.hamlib')}</option>
             {/* OmniRig e' un programma di Windows: su Linux non si propone (se era gia' scelto resta visibile per cambiarlo) */}
             {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}</option> : null}
+            <option value="tci">{t('cat.backend.tci')}</option>
             <option value="none">{t('cat.backend.none')}</option>
           </select>
         </Field>
+        {fields.tci ? (
+          <Field label={t('cat.tci.address')} className="cat-w-l" hint={t('tip.cat.tci.address')}>
+            <input
+              type="text"
+              value={config.tci_address ?? ''}
+              spellCheck={false}
+              autoComplete="off"
+              placeholder="127.0.0.1:40001"
+              onChange={(e) => set({ tci_address: e.target.value.trim() })}
+            />
+          </Field>
+        ) : null}
         {fields.rig ? (
           <>
             <Field label={t('cat.rig.search')} className="cat-w-m" hint={t('tip.cat.rig.search')}>
@@ -509,15 +522,17 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
 
       <Group title={t('cat.grp.split')}>
         <Cells min={14}>
-          <Field label={t('cat.split')} hint={t('tip.cat.split')}>
-            <select value={config.split} onChange={(e) => set({ split: e.target.value as CatSplit })}>
-              {SPLITS.map(([v, k]) => (
-                <option key={v} value={v}>
-                  {t(k)}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {fields.split ? (
+            <Field label={t('cat.split')} hint={t('tip.cat.split')}>
+              <select value={config.split} onChange={(e) => set({ split: e.target.value as CatSplit })}>
+                {SPLITS.map(([v, k]) => (
+                  <option key={v} value={v}>
+                    {t(k)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
           <Field label={t('cat.catmode')} hint={t('tip.cat.catmode')}>
             <select value={config.cat_mode} onChange={(e) => set({ cat_mode: e.target.value as CatMode })}>
               {MODES.map(([v, k]) => (
