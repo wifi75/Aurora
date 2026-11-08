@@ -519,7 +519,10 @@ pub fn start_with_save(
                     assembler.set_early_ms(early);
                 }
                 // decodifica anticipata (`m_earlyDecode` di WSJT-X): solo in FT8
-                assembler.set_preview_ms(if mode == Mode::Ft8 { slots::FT8_PREVIEW_MS } else { 0 });
+                // decodifica anticipata SPENTA (2026-11-08): i messaggi letti a 11,8 s arrivavano alla sequenza prima dell'apertura del periodo e si
+                // perdevano (R-04 di KP3B ignorato, il rapporto ripetuto invece di RR73). Da riaccendere solo dopo averli fatti passare dalla sequenza
+                let _ = slots::FT8_PREVIEW_MS;
+                assembler.set_preview_ms(0);
             }
             // lo S-meter si stima solo in ricezione con l'ascolto acceso; in trasmissione (o con Monitora spento) si ferma
             if let Some(l) = live.as_ref() {
