@@ -145,7 +145,19 @@ function clearedOnChange(s: { clearedBand: string | null }, before: StationStatu
     const call = before?.dx_call?.toUpperCase() ?? '';
     return { ...clearedForBand(bandOfStatus(after)), clearedDx: call ? { call, until: Date.now() + STALE_DX_MS } : null };
   }
+  // cambio di frequenza nella stessa banda (per esempio 14.074 -> 14.090): i messaggi della frequenza di prima non servono piu', si svuota sempre
+  if (dialChanged(before, after)) {
+    dropPending();
+    return { decodes: [], txLog: [] };
+  }
   return usePrefs.getState().prefs.clearOnChange && bandOrModeChanged(before, after) && !bandChanged(before, after) ? { decodes: [], txLog: [] } : {};
+}
+
+/** La frequenza della radio e' cambiata di almeno 1 kHz (non i piccoli ritocchi del RIT o della lettura). */
+export function dialChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
+  const b = before?.dial_hz ?? 0;
+  const a = after?.dial_hz ?? 0;
+  return b > 0 && a > 0 && Math.abs(a - b) >= 1_000;
 }
 
 function dropPending(): void {
