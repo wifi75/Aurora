@@ -1245,3 +1245,12 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .log4om-table th, .log4om-table td { padding-left: 2px !important; padding-right: 2px !important; }
 .log4om-table th { letter-spacing: 0 !important; }
 .log4om-table .log4om-date { letter-spacing: -0.02em; }
+/* le regole vecchie di glass.css nascondevano Rapporti sotto 28rem e Paese sotto 22rem: valgono le soglie nuove (240 e 300 px) */
+@container (min-width: 241px) {
+  .log4om-table th:nth-child(4), .log4om-table td:nth-child(4),
+  .log4om-table th:nth-child(5), .log4om-table td:nth-child(5),
+  .log4om-table th:nth-child(3), .log4om-table td:nth-child(3) { display: table-cell !important; }
+}
+@container (min-width: 301px) {
+  .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { display: table-cell !important; }
+}
