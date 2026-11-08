@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **QMAP come WSJT-X 3**: nel minuto di 60 s cerca anche i Q65-30 nelle due meta' («+30 s»), decodifica gia' a 19,5, 30 e 49,5 s oltre che a fine minuto, salta le meta' in cui si trasmette; sincronismo controllato per ogni candidato prima del decodificatore e ritardo dell'eco lunare fino a 5,5 s; media dei periodi per ogni segnale («Media», con il pulsantino per cancellarla, ×N sui messaggi dalla media); Luna (Az/El) e Doppler della propria eco dal locatore delle impostazioni, con la frequenza «sked» di ogni messaggio.
 
 - **Hound con SuperFox: verifica OTP** come WSJT-X: la riga `$VERIFY$ CALL 123456` che accompagna ogni pacchetto SuperFox/UltraFOX si nasconde (o si mostra con «Mostra i messaggi OTP») e il codice va alla stessa verifica in linea del Fox classico, con l'esito «CALL verified/invalid» a 750 Hz; la riga non va ai programmi collegati via UDP.
 - **Etichetta Hound**: accanto a RX/TX una piccola etichetta «Hound» (o «Super Hound» quando si riceve un SuperFox), rossa finche' il Fox non e' verificato e verde dopo la verifica OTP, come in WSJT-X.
