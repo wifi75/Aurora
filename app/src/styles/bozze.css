@@ -1263,3 +1263,7 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .log4om-table th:nth-child(5), .log4om-table td:nth-child(5) { text-align: center; font-variant-numeric: tabular-nums; }
 .log4om-table td.log4om-date { opacity: .7; }
 .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { padding-left: 8px !important; text-align: left; }
+/* il paese si staccava poco dai rapporti: linea sottile di separazione, piu' spazio e colore diverso */
+.log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { padding-left: 10px !important; border-left: 1px solid rgb(255 255 255 / .12); color: #9fb3d9; }
+.log4om-table td:nth-child(5) { padding-right: 8px !important; }
+html[data-theme='light'] .log4om-table th:nth-child(6), html[data-theme='light'] .log4om-table td:nth-child(6) { border-left-color: rgb(0 0 0 / .12); color: #3d5583; }
