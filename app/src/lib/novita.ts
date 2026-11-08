@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.196',
-    released: '2026-11-08T10:04:05Z',
+    released: '2026-11-08T10:19:11Z',
     kind: 'new',
     title: ['Avviso del DXCC nuovo, finestre sempre davanti, installatore che aggiorna', 'New DXCC alert, windows always on top, installer that updates', 'Hinweis auf neues DXCC, Fenster immer vorn, Installer der aktualisiert', 'Alerte nouveau DXCC, fenêtres toujours devant, installateur qui met à jour', 'Aviso de DXCC nuevo, ventanas siempre delante, instalador que actualiza', 'Alerta de DXCC novo, janelas sempre à frente, instalador que atualiza'],
     text: [
