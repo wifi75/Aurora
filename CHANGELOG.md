@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **QMAP come WSJT-X 3**: nel minuto di 60 s cerca anche i Q65-30 nelle due meta' («+30 s»), decodifica gia' a 19,5, 30 e 49,5 s oltre che a fine minuto, salta le meta' in cui si trasmette; sincronismo controllato per ogni candidato prima del decodificatore e ritardo dell'eco lunare fino a 5,5 s; media dei periodi per ogni segnale («Media», con il pulsantino per cancellarla, ×N sui messaggi dalla media); Luna (Az/El) e Doppler della propria eco dal locatore delle impostazioni, con la frequenza «sked» di ogni messaggio.
 
 ## 0.11.197 - 2026-11-08
 - **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.

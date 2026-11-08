@@ -1256,15 +1256,25 @@ export interface QmapConfig {
   submodes: number[];
   span_hz: number;
   fading: boolean;
+  /** Con 60 s cerca anche i Q65-30 nelle due meta' del minuto. */
+  also_30: boolean;
+  /** Media dei periodi per ogni segnale. */
+  average: boolean;
 }
 
 /** Un messaggio Q65 trovato nella fetta. */
 export interface QmapDecode {
   offset_hz: number;
   rf_hz: number | null;
+  /** Frequenza «sked»: meno meta' del Doppler della propria eco. */
+  sked_hz: number | null;
   period_s: number;
   submode: number;
   mode: string;
+  /** Meta' del minuto per i Q65-30 (0 prima, 1 seconda). */
+  iseq: number;
+  /** Periodi sommati (1 = uno solo). */
+  averaged: number;
   snr_db: number;
   dt_s: number;
   text: string;
@@ -1284,6 +1294,21 @@ export interface QmapSnapshot {
   spectrum_high_hz: number;
   period_start_ms: number;
   updated_ms: number;
+  /** Secondi di dati dell'ultimo passaggio. */
+  pass_s: number;
+  /** Segnali con una media in corso. */
+  averaging: number;
+  /** La Luna e il Doppler della propria eco (serve il locatore nelle impostazioni). */
+  moon: QmapMoon | null;
+}
+
+export interface QmapMoon {
+  az_deg: number;
+  el_deg: number;
+  self_doppler_hz: number;
+  freq_mhz: number;
+  echo_delay_s: number;
+  dec_deg: number;
 }
 
 export async function getQmap(): Promise<QmapSnapshot> {
@@ -1296,6 +1321,11 @@ export async function putQmap(config: QmapConfig): Promise<QmapSnapshot> {
 
 export async function postQmapDecode(): Promise<void> {
   await request('/qmap/decode', { method: 'POST' });
+}
+
+/** «Cancella media». */
+export async function postQmapClearAverage(): Promise<void> {
+  await request('/qmap/clear-average', { method: 'POST' });
 }
 
 /** Clic su un messaggio: Q65 con il suo periodo e sottomodo, radio con il tono 0 a 1000 Hz. */
