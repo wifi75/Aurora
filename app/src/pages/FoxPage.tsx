@@ -223,78 +223,82 @@ export function FoxPage() {
       {fox.guard ? <p className="foxc-note">{t('fox.guard', { g: fox.guard })}</p> : null}
       {state === 'waiting' ? <p className="foxc-note">{t('fox.needTx')}</p> : null}
 
-      {/* a sinistra chi chiama (il riquadro piu' grande), accanto QSO in corso, In onda, In coda e Fox log, sotto la cascata;
-          a destra «Messaggi ricevuti» alto fino in fondo. I riquadri riempiono la finestra fino alla cascata. */}
+      {/* a sinistra «Chi chiama» (il riquadro piu' grande) con sotto la cascata, larga solo quanto lui; in mezzo QSO in corso,
+          In onda, In coda e Fox log fino in fondo alla pagina; a destra «Messaggi ricevuti» a tutta altezza */}
       <div className="foxc-body">
         <div className="foxc-left">
-      <div className="foxc-grid foxc-grid--main foxc-grid--two">
-        <section className="foxc-card foxc-tone--lilac">
-          <header className="foxc-card-head">
-            <h2 title={t('tip.fox.callers')}>{t('fox.callers')}</h2>
-            <span className="foxc-count data">{callers.length}</span>
-            <div className="foxc-tools">
-              <input className="foxc-input" type="search" placeholder={t('fox.filter')} aria-label={t('fox.filter')} title={t('tip.fox.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
-              <select className="foxc-input" aria-label={t('fox.sort')} title={t('tip.fox.sort')} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                <SortOptions />
-              </select>
-              <select className="foxc-input" aria-label={t('fox.sort2')} title={t('tip.fox.sort2')} value={sort2} onChange={(e) => setSort2(e.target.value as SortKey | '')}>
-                <option value="">{t('fox.sort2')} —</option>
-                <SortOptions />
-              </select>
-              <label className="foxc-label" title={t('tip.fox.colSnr')}>
-                {t('fox.snrMin')}
-                <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMin} onChange={(e) => setSnrMin(Number(e.target.value) || -30)} />
-                {t('fox.snrMax')}
-                <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMax} onChange={(e) => setSnrMax(Number(e.target.value) || 30)} />
-              </label>
-              <Switch on={onlyNew} label={t('fox.onlyNew')} title={t('tip.fox.onlyNew')} onChange={setOnlyNew} />
-              <button type="button" className="foxc-btn foxc-btn--small" disabled={callers.length === 0} title={t('tip.fox.addBest')} onClick={() => callers.slice(0, 5).forEach((c) => void postFox({ action: 'select', call: c.call }))}>
-                {t('fox.addBest')}
-              </button>
-            </div>
-          </header>
-          <div className="foxc-scroll">
-            <table className="foxc-table">
-              <thead>
-                <tr>
-                  <th title={t('tip.fox.colCall')}>{t('fox.col.call')}</th>
-                  <th title={t('tip.fox.colGrid')}>{t('fox.col.grid')}</th>
-                  <th className="num" title={t('tip.fox.colSnr')}>SNR</th>
-                  <th className="num" title={t('tip.fox.colHz')}>Hz</th>
-                  <th className="num" title={t('tip.fox.colAge')}>{t('fox.age')}</th>
-                  <th className="num">km</th>
-                  <th className="num" title={t('tip.fox.colOrder')}>#</th>
-                  <th aria-label={t('fox.add')} />
-                </tr>
-              </thead>
-              <tbody>
-                {callers.map((c) => (
-                  <tr key={c.call} onDoubleClick={() => void postFox({ action: 'select', call: c.call })}>
-                    <td className="data foxc-call">{c.call}</td>
-                    <td className="data">{c.grid || '—'}</td>
-                    <td className="num">
-                      <span className={`foxc-snr foxc-snr--${c.snr >= -5 ? 'hi' : c.snr >= -15 ? 'mid' : 'lo'}`}>{snr(c.snr)}</span>
-                    </td>
-                    <td className="num data">{c.freq_hz}</td>
-                    <td className="num data">{c.age}</td>
-                    <td className="num data">{c.km ?? '—'}</td>
-                    <td className="num data">{c.order || ''}</td>
-                    <td className="foxc-actions">
-                      {c.dupe ? <span className="foxc-flag">{t('fox.dupe')}</span> : null}
-                      <button type="button" className="foxc-btn foxc-btn--small" title={t('tip.fox.add')} onClick={() => void postFox({ action: 'select', call: c.call })}>
-                        {t('fox.add')}
-                      </button>
-                      <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" title={t('tip.fox.top')} onClick={() => void postFox({ action: 'select', call: c.call, top: true })}>
-                        {t('fox.top')}
-                      </button>
-                    </td>
+          <section className="foxc-card foxc-callers foxc-tone--lilac">
+            <header className="foxc-card-head">
+              <h2 title={t('tip.fox.callers')}>{t('fox.callers')}</h2>
+              <span className="foxc-count data">{callers.length}</span>
+              <div className="foxc-tools">
+                <input className="foxc-input" type="search" placeholder={t('fox.filter')} aria-label={t('fox.filter')} title={t('tip.fox.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <select className="foxc-input" aria-label={t('fox.sort')} title={t('tip.fox.sort')} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                  <SortOptions />
+                </select>
+                <select className="foxc-input" aria-label={t('fox.sort2')} title={t('tip.fox.sort2')} value={sort2} onChange={(e) => setSort2(e.target.value as SortKey | '')}>
+                  <option value="">{t('fox.sort2')} —</option>
+                  <SortOptions />
+                </select>
+                <label className="foxc-label" title={t('tip.fox.colSnr')}>
+                  {t('fox.snrMin')}
+                  <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMin} onChange={(e) => setSnrMin(Number(e.target.value) || -30)} />
+                  {t('fox.snrMax')}
+                  <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMax} onChange={(e) => setSnrMax(Number(e.target.value) || 30)} />
+                </label>
+                <Switch on={onlyNew} label={t('fox.onlyNew')} title={t('tip.fox.onlyNew')} onChange={setOnlyNew} />
+                <button type="button" className="foxc-btn foxc-btn--small" disabled={callers.length === 0} title={t('tip.fox.addBest')} onClick={() => callers.slice(0, 5).forEach((c) => void postFox({ action: 'select', call: c.call }))}>
+                  {t('fox.addBest')}
+                </button>
+              </div>
+            </header>
+            <div className="foxc-scroll">
+              <table className="foxc-table">
+                <thead>
+                  <tr>
+                    <th title={t('tip.fox.colCall')}>{t('fox.col.call')}</th>
+                    <th title={t('tip.fox.colGrid')}>{t('fox.col.grid')}</th>
+                    <th className="num" title={t('tip.fox.colSnr')}>SNR</th>
+                    <th className="num" title={t('tip.fox.colHz')}>Hz</th>
+                    <th className="num" title={t('tip.fox.colAge')}>{t('fox.age')}</th>
+                    <th className="num">km</th>
+                    <th className="num" title={t('tip.fox.colOrder')}>#</th>
+                    <th aria-label={t('fox.add')} />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {callers.length === 0 ? <Empty text={t('fox.noCallers')} /> : null}
-          </div>
-        </section>
+                </thead>
+                <tbody>
+                  {callers.map((c) => (
+                    <tr key={c.call} onDoubleClick={() => void postFox({ action: 'select', call: c.call })}>
+                      <td className="data foxc-call">{c.call}</td>
+                      <td className="data">{c.grid || '—'}</td>
+                      <td className="num">
+                        <span className={`foxc-snr foxc-snr--${c.snr >= -5 ? 'hi' : c.snr >= -15 ? 'mid' : 'lo'}`}>{snr(c.snr)}</span>
+                      </td>
+                      <td className="num data">{c.freq_hz}</td>
+                      <td className="num data">{c.age}</td>
+                      <td className="num data">{c.km ?? '—'}</td>
+                      <td className="num data">{c.order || ''}</td>
+                      <td className="foxc-actions">
+                        {c.dupe ? <span className="foxc-flag">{t('fox.dupe')}</span> : null}
+                        <button type="button" className="foxc-btn foxc-btn--small" title={t('tip.fox.add')} onClick={() => void postFox({ action: 'select', call: c.call })}>
+                          {t('fox.add')}
+                        </button>
+                        <button type="button" className="foxc-btn foxc-btn--small foxc-btn--ghost" title={t('tip.fox.top')} onClick={() => void postFox({ action: 'select', call: c.call, top: true })}>
+                          {t('fox.top')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {callers.length === 0 ? <Empty text={t('fox.noCallers')} /> : null}
+            </div>
+          </section>
+
+          <DragHandle label={t('fox.resizeMain')} onPointerDown={wf.onPointerDownInverse} />
+
+          <Spectrum height={wf.height} onPointerDown={wf.onPointerDown} />
+        </div>
 
         <div className="foxc-stack">
           <section className="foxc-card foxc-tone--mint">
@@ -365,12 +369,6 @@ export function FoxPage() {
             )}
           </section>
           <FoxLogCard fox={fox} myCall={status?.de_call ?? ''} myGrid={status?.de_grid ?? ''} />
-        </div>
-      </div>
-
-      <DragHandle label={t('fox.resizeMain')} onPointerDown={wf.onPointerDownInverse} />
-
-      <Spectrum height={wf.height} onPointerDown={wf.onPointerDown} />
         </div>
         <div className="foxc-right">
           <Received />

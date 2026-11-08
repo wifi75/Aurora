@@ -2,7 +2,7 @@
 
 ## Non rilasciato
 
-- **Pagina Fox compatta**: la testata sta in due righe basse (nome e stato, i numeri della sessione in tesserine piccole, Posti, CQ verso, UltraFOX, Piu' CQ, Coda automatica e Azzera; sotto Fox, Tx, STOP, i comandi di ricezione, lo split e la verifica OTP), con gli stessi comandi di prima. Intestazioni dei riquadri e righe piu' basse e dense; la pagina riempie la finestra senza scorrere e lo spazio liberato va a «Chi chiama», ora il riquadro piu' grande (su 1880x950 circa 24 righe visibili invece di 8-9), con accanto QSO in corso, In onda, In coda e Fox log. Le due maniglie regolano l'altezza della cascata.
+- **Pagina Fox compatta**: la testata sta in due righe basse (nome e stato, i numeri della sessione in tesserine piccole, Posti, CQ verso, UltraFOX, Piu' CQ, Coda automatica e Azzera; sotto Fox, Tx, STOP, i comandi di ricezione, lo split e la verifica OTP), con gli stessi comandi di prima. Intestazioni dei riquadri e righe piu' basse e dense; la pagina riempie la finestra senza scorrere e lo spazio liberato va a «Chi chiama», ora il riquadro piu' grande (su 1880x950 circa 24 righe visibili invece di 8-9), con sotto la cascata, larga solo quanto lui. In mezzo QSO in corso, In onda, In coda e Fox log scendono fino in fondo alla pagina e si dividono l'altezza in parti uguali; «Messaggi ricevuti» resta a destra a tutta altezza. Le due maniglie regolano l'altezza della cascata.
 
 ## 0.11.198 - 2026-11-08
 - **Attivita' di banda** si svuota sempre al cambio di frequenza della radio (almeno 1 kHz).
