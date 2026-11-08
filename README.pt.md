@@ -66,7 +66,7 @@ Versão 0.11.197: motor próprio FT8, FT4, JT65 e JT9 com recepção e transmiss
 - **Logs e integrações**: envio direto para Wavelog/Cloudlog, ClubLog, QRZ.com e LoTW (TQSL); integrações UDP com multicast e opções por programa, XML do N1MM; página de exportação ADIF com «Guardar como».
 - **Do WSJT-X 3**: descodificação a7/a8 e FT8 multithread, Wait and Reply/Call, mudança de banda automática, full duplex, verificação do Fox (OTP), bloqueio da Tx por UDP, paragem com ROE alta, mensagens não codificáveis bloqueadas, filtros do WSJT-X 3, Hamlib 4.7.2.
 - **Visor e cluster**: visores de rádio estilo Yaesu FT-2000 e Icom IC-7610; DXpedições NG3K realçadas no DX Cluster com a cor que escolheres; pré-visualização ao vivo da cascata nas definições; diagnóstico de falhas sempre ativo.
-- **UltraFOX**: implementação própria em Rust com o código polar AQP-127, compatível com o SuperFox do WSJT-X (transmissão e receção). Experimental.
+- **UltraFOX**: implementação própria em Rust com o código polar AQP-127 (implementação de Tiziano Cassone IU3WJQ), compatível com o SuperFox do WSJT-X (transmissão e receção). Experimental.
 
 O que falta: `docs/mancante.md`. Resultados dos testes com o JTDX: `docs/fase0-rapporto.md` (documentação em italiano).
 
