@@ -18,6 +18,7 @@ import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
 import { useFox } from '../state/fox';
+import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
 import '../styles/fox.css';
 
@@ -133,6 +134,12 @@ export function FoxPage() {
     .sort((a, b) => order(a, b, sort) || (sort2 ? order(a, b, sort2) : 0));
   const target = fox.cq.replace(/^CQ ?/, '');
   const state = !fox.enabled ? 'off' : !txOn ? 'waiting' : transmitting ? 'onair' : 'ready';
+  // con la Fox spenta, l'istruzione arriva una volta come avviso in basso a destra (come nella Stazione), non come riquadro fisso
+  const offHint = state === 'off';
+  useEffect(() => {
+    if (offHint) toast(t('fox.offHint'), 'info');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offHint]);
 
   return (
     <section className={`foxc foxc--neon foxc--${state}`}>
@@ -187,7 +194,6 @@ export function FoxPage() {
 
       {fox.guard ? <p className="foxc-note">{t('fox.guard', { g: fox.guard })}</p> : null}
       {state === 'waiting' ? <p className="foxc-note">{t('fox.needTx')}</p> : null}
-      {state === 'off' ? <p className="foxc-note foxc-note--info">{t('fox.offHint')}</p> : null}
 
       <div className="foxc-options">
         <div className="foxc-field">
