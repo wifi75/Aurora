@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Q65 piu' sensibile e piu' veloce**: la decodifica di un periodo segue ora `q65_decode.f90` di WSJT-X (sincronismo a 1/8 di simbolo, soglia statistica dei candidati, frequenza di ricezione provata sempre, ricerca fine su mezzi bin e sedicesimi di simbolo, equalizzazione della banda) e, con il DX noto, prova la lista dei messaggi del QSO come la decodifica «q3». Su segnali di prova decodifica come `jt9` o meglio (fino a 1 dB in piu' senza Doppler) e costa 0,04-0,9 s per periodo invece di alcuni secondi (`docs/q65-confronto.md`).
 
 ## 0.11.197 - 2026-11-08
 - **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.
