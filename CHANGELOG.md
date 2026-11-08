@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.
 - **Avvio**: appena la radio risponde (controllo ogni 0,3 s) va sull'ultima banda scelta, sulla frequenza principale del modo in uso; la banda si ricorda in `ultima-banda.txt`.
 - **Decodifica anticipata FT8** (come `m_earlyDecode` di WSJT-X): a 11,81 s una decodifica veloce del periodo non ancora finito mostra subito le stazioni forti; a fine periodo la decodifica intera aggiunge solo i messaggi nuovi.
 - **Accendi/Spegni la radio**: 15 s di attesa per l'accensione (Hamlib aspetta la radio) e alla chiusura Aurora aspetta il core, cosi' lo spegnimento fa in tempo.
