@@ -198,9 +198,39 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-/// «Aggiorna ora» dalla cartolina: Aurora scarica e installa la versione nuova. Se Aurora e' chiusa la si apre e si aspetta che risponda.
-fn install_update() {
+/// C'e' gia' un «Aggiorna ora» in corso (un secondo clic su «Riprova» non ne avvia un altro).
+static UPDATING: AtomicBool = AtomicBool::new(false);
+
+/// Manda alla cartolina lo stato dell'aggiornamento (la funzione `upd` della pagina).
+fn card_state(app: &AppHandle, state: &serde_json::Value) -> bool {
+    let Some(w) = app.get_webview_window("cartolina") else { return false };
+    let _ = w.eval(format!("window.upd&&upd({state})"));
+    true
+}
+
+/// Il motivo di un «Aggiorna ora» rifiutato da Aurora, in parole (la risposta ha `error` e a volte `message`).
+fn install_refusal(status: u16, body: &serde_json::Value) -> String {
+    let code = body.get("error").and_then(|v| v.as_str()).unwrap_or("");
+    if let Some(m) = body.get("message").and_then(|v| v.as_str()).filter(|m| !m.is_empty()) {
+        return m.to_string();
+    }
+    match code {
+        "transmitting" => "Aurora sta trasmettendo: riprova a fine trasmissione.".into(),
+        "local_only" => "L'aggiornamento si avvia solo dal PC dove gira Aurora.".into(),
+        "install_unavailable" => "Questa Aurora non sa installare gli aggiornamenti da sola.".into(),
+        _ => format!("Aurora ha risposto {status}{}", if code.is_empty() { String::new() } else { format!(" ({code})") }),
+    }
+}
+
+/// «Aggiorna ora» dalla cartolina: Aurora installa la versione nuova (gia' scaricata in anticipo, oppure la scarica adesso). Se Aurora e'
+/// chiusa la si apre e si aspetta che risponda. La cartolina resta aperta e ogni ~300 ms riceve lo stato da `GET /api/v1/update`:
+/// barra, MB, velocita', tempo e i passi Scarico → Controllo → Installo → Riavvio; in errore mostra il motivo e «Riprova».
+fn install_update(app: AppHandle) {
+    if UPDATING.swap(true, Ordering::SeqCst) {
+        return;
+    }
     if !aurora_open() {
+        card_state(&app, &serde_json::json!({ "phase": "starting" }));
         open_aurora();
         for _ in 0..60 {
             std::thread::sleep(Duration::from_secs(1));
@@ -209,19 +239,83 @@ fn install_update() {
             }
         }
     }
-    let result = ureq::Agent::config_builder()
-        .timeout_global(Some(Duration::from_secs(120)))
-        .build()
-        .new_agent()
-        .post("http://127.0.0.1:8787/api/v1/update/install")
-        .send_empty();
-    match result {
-        Ok(_) => agent_log("aggiornamento chiesto ad Aurora"),
-        Err(e) => {
-            agent_log(&format!("aggiornamento non partito: {e}"));
-            open_aurora();
+    // la richiesta di installazione resta aperta per tutto lo scaricamento (se il pacchetto non era gia' pronto): a parte, con molta pazienza
+    let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+    std::thread::spawn(move || {
+        let response = ureq::Agent::config_builder()
+            .timeout_global(Some(Duration::from_secs(30 * 60)))
+            .http_status_as_error(false)
+            .build()
+            .new_agent()
+            .post("http://127.0.0.1:8787/api/v1/update/install")
+            .send_empty();
+        let outcome = match response {
+            Ok(r) if r.status().as_u16() == 200 => Ok(()),
+            Ok(mut r) => {
+                let status = r.status().as_u16();
+                let body = r.body_mut().read_json::<serde_json::Value>().unwrap_or_default();
+                Err(install_refusal(status, &body))
+            }
+            Err(e) => Err(format!("Aurora non risponde: {e}")),
+        };
+        let _ = tx.send(outcome);
+    });
+    let poll = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(2))).build().new_agent();
+    let mut answer: Option<Result<(), String>> = None;
+    let mut misses = 0u32;
+    loop {
+        if answer.is_none()
+            && let Ok(a) = rx.try_recv()
+        {
+            answer = Some(a);
         }
+        let stage = poll.get("http://127.0.0.1:8787/api/v1/update").call().ok().and_then(|mut r| r.body_mut().read_json::<serde_json::Value>().ok()).map(|v| v["stage"].clone());
+        let shown = match (&answer, stage) {
+            // Aurora ha rifiutato o lo scaricamento non e' riuscito: il motivo e «Riprova»
+            (Some(Err(e)), stage) => {
+                let reason = stage.as_ref().filter(|s| s["phase"] == "error").and_then(|s| s["error"].as_str().map(str::to_string)).unwrap_or_else(|| e.clone());
+                agent_log(&format!("aggiornamento non riuscito: {reason}"));
+                card_state(&app, &serde_json::json!({ "phase": "error", "error": reason }));
+                break;
+            }
+            (_, Some(mut s)) => {
+                misses = 0;
+                // un errore di un giro precedente, finche' Aurora non ha risposto a questa richiesta: si sta ripartendo
+                if answer.is_none() && s["phase"] == "error" {
+                    s = serde_json::json!({ "phase": "idle", "version": s["version"] });
+                }
+                card_state(&app, &s)
+            }
+            // Aurora non risponde piu' dopo aver avviato l'installatore: si sta riavviando
+            (Some(Ok(())), None) => {
+                misses += 1;
+                // di norma l'agente viene chiuso dall'installatore prima: se resta acceso, dopo un minuto si smette di guardare
+                if misses > 200 {
+                    break;
+                }
+                card_state(&app, &serde_json::json!({ "phase": "restart" }))
+            }
+            (None, None) => {
+                misses += 1;
+                if misses > 20 {
+                    card_state(&app, &serde_json::json!({ "phase": "error", "error": "Aurora non risponde." }));
+                    break;
+                }
+                true
+            }
+        };
+        if !shown {
+            // cartolina chiusa: l'installazione va avanti da sola in Aurora
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(300));
     }
+    match &answer {
+        Some(Ok(())) => agent_log("aggiornamento avviato da Aurora"),
+        Some(Err(_)) => {}
+        None => agent_log("cartolina dell'aggiornamento chiusa prima della fine"),
+    }
+    UPDATING.store(false, Ordering::SeqCst);
 }
 
 /// Apre Aurora (se e' gia' aperta, il programma porta davanti la sua finestra).
@@ -574,13 +668,15 @@ fn show_card(app: &AppHandle, card: Card) {
     let Ok(url) = tauri::Url::from_file_path(&file) else { return };
     agent_log("cartolina richiesta");
     let hat = card.theme == "natale";
+    let tall = card.update;
     let app2 = app.clone();
     let r = app.run_on_main_thread(move || {
         agent_log("cartolina: thread principale");
         if let Some(old) = app2.get_webview_window("cartolina") {
             let _ = old.close();
         }
-        let (w, h) = if hat { (430.0, 272.0) } else { (390.0, 230.0) };
+        // la cartolina dell'aggiornamento un po' piu' alta: dopo «Aggiorna ora» ci stanno barra, dati e passi
+        let (w, h) = if hat { (430.0, 272.0) } else if tall { (390.0, 250.0) } else { (390.0, 230.0) };
         let built = WebviewWindowBuilder::new(&app2, "cartolina", WebviewUrl::External(url))
             .title("Aurora")
             .decorations(false)
@@ -608,7 +704,11 @@ fn show_card(app: &AppHandle, card: Card) {
                         match what.as_str() {
                             "aurora-open" => open_aurora(),
                             "aurora-update" => {
-                                std::thread::spawn(install_update);
+                                // la cartolina resta aperta e mostra l'avanzamento (la pagina e' gia' passata alla barra)
+                                allow_foreground();
+                                let app = app.clone();
+                                std::thread::spawn(move || install_update(app));
+                                return;
                             }
                             "aurora-link" => {
                                 if let Ok(l) = LINK.lock()
@@ -664,13 +764,32 @@ html,body{margin:0;background:transparent;font:13px system-ui,sans-serif;color:#
 button.m{background:#2cf5a4;border-color:#2cf5a4;color:#04342c}.t{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,#2cf5a4,#27a0f5);width:100%}
 @keyframes in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes spin{to{transform:rotate(360deg)}}
 .b{position:relative;isolation:isolate}.b>*:not(.dc):not(.x){position:relative;z-index:1}.x{z-index:2}.dc{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}.dc:before{content:'';position:absolute;inset:0}.dc:after{position:absolute;right:46px;top:50%;transform:translateY(-50%);font-size:32px;line-height:1;filter:drop-shadow(0 2px 6px rgb(0 0 0/.45))}.natale{border-color:#e8c063;overflow:visible;top:46px;left:44px}.natale .b{background:radial-gradient(circle at 18% 50%,#8a1626,#3a0b14 72%);border-radius:13px 13px 0 0}.natale .dc:before{background-image:radial-gradient(2px 2px at 12% 20%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 30% 70%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 55% 35%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 72% 80%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 88% 25%,#fff 50%,transparent 51%);animation:snow 6s linear infinite;opacity:.85}.natale .dc:after{content:'🎄'}.natale .k b{background:linear-gradient(100deg,#ffe08a,#fff4d6 50%,#e8c063);-webkit-background-clip:text;background-clip:text}.natale button.m{background:#e8c063;border-color:#e8c063;color:#3a0b14}.natale .t{background:linear-gradient(90deg,#d6303f,#e8c063);border-radius:0 0 0 13px}.natale:before{content:'';position:absolute;z-index:3;left:-35px;top:-45px;width:70px;height:58px;transform:rotate(-45deg);pointer-events:none;filter:drop-shadow(0 4px 6px rgb(0 0 0/.45));background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d5e'/%3E%3Cstop offset='1' stop-color='%23b3121f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M14 78 C26 40 52 14 82 10 C98 8 108 18 104 30 C100 22 90 20 80 26 C66 36 64 60 66 78 Z' fill='url(%23r)'/%3E%3Cpath d='M18 60 C30 44 46 34 60 32' stroke='%23ffffff' stroke-opacity='.18' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Crect x='6' y='70' width='70' height='20' rx='10' fill='%23f7f7f2'/%3E%3Cpath d='M12 76 h58' stroke='%23d9d9d0' stroke-width='3' stroke-linecap='round' stroke-dasharray='2 6'/%3E%3Ccircle cx='106' cy='32' r='11' fill='%23f7f7f2'/%3E%3Ccircle cx='103' cy='29' r='4' fill='%23ffffff'/%3E%3C/svg%3E")}.anno{border-color:#b48cff}.anno .b{background:radial-gradient(circle at 18% 50%,#2b1a5e,#0a0820 72%)}.anno .dc:before{background-image:radial-gradient(2px 2px at 15% 30%,#ffd76a 50%,transparent 51%),radial-gradient(2.5px 2.5px at 38% 65%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 60% 22%,#c9a8ff 50%,transparent 51%),radial-gradient(2px 2px at 78% 70%,#ffd76a 50%,transparent 51%);animation:tw 1.8s ease-in-out infinite alternate}.anno .dc:after{content:'🥂'}.anno .k b{background:linear-gradient(100deg,#ffd76a,#c9a8ff 55%,#8e7bff);-webkit-background-clip:text;background-clip:text}.anno button.m{background:#ffd76a;border-color:#ffd76a;color:#2a1a00}.pasqua{border-color:#f7a8c8}.pasqua .b{background:radial-gradient(circle at 18% 50%,#2f5a3a,#13261b 72%)}.pasqua .dc:before{background-image:radial-gradient(3px 3px at 14% 28%,#f7a8c8 50%,transparent 51%),radial-gradient(3px 3px at 34% 72%,#ffe58a 50%,transparent 51%),radial-gradient(3px 3px at 56% 30%,#c9b6ff 50%,transparent 51%),radial-gradient(3px 3px at 74% 74%,#9ee6b0 50%,transparent 51%);animation:tw 2.6s ease-in-out infinite alternate}.pasqua .dc:after{content:'🐣'}.pasqua .k b{background:linear-gradient(100deg,#f7a8c8,#ffe58a 50%,#9ee6b0);-webkit-background-clip:text;background-clip:text}.pasqua button.m{background:#9ee6b0;border-color:#9ee6b0;color:#0f2e19}.aggiorna .b{background:radial-gradient(circle at 18% 50%,#0f4a44,#071a20 72%)}.aggiorna .dc:before{background:repeating-linear-gradient(0deg,transparent 0 14px,rgb(44 245 164/.07) 14px 15px);animation:up 2.4s linear infinite}.aggiorna .dc:after{content:'⬆';color:#2cf5a4;font-weight:700}.servizio{border-color:#f5a524}.servizio .b{background:repeating-linear-gradient(135deg,#3a2806 0 14px,#2a1d04 14px 28px)}.servizio .dc:after{content:'⚠️'}.servizio .k b{background:linear-gradient(100deg,#ffc65c,#f5a524 60%,#ff8a3d);-webkit-background-clip:text;background-clip:text}.servizio button.m{background:#f5a524;border-color:#f5a524;color:#2a1800}@keyframes snow{from{background-position:0 -60px}to{background-position:0 60px}}@keyframes tw{from{opacity:.35}to{opacity:1}}@keyframes up{from{background-position:0 0}to{background-position:0 -30px}}
+.pg{display:none}.on .pg{display:block}.on #tx,.on #ac{display:none}.br{height:7px;border-radius:99px;background:#1e2c44;overflow:hidden;margin:6px 0 7px}#bf{display:block;height:100%;width:0;background:linear-gradient(90deg,#2cf5a4,#27a0f5);border-radius:inherit;transition:width .3s}#bf.w{width:35%;animation:wt 1.2s ease-in-out infinite}#bf.ko{background:#e5484d}@keyframes wt{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+.mt{font-size:12px;color:#aab6c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}.mt.ko{color:#ffb4a8;white-space:normal;max-height:32px}.ps{display:flex;align-items:center;gap:3px;white-space:nowrap;margin-top:9px;font-size:11.5px}.ps span{padding:3px 7px;border-radius:99px;border:1px solid #2a3850;color:#8fa0b5}.ps span.cur{border-color:#2cf5a4;color:#2cf5a4;background:rgb(44 245 164/.12);font-weight:600}.ps span.ok{color:#dbe6f2;border-color:#24533f}.ps span.ko{border-color:#e5484d;color:#ffb4a8}.ps b{color:#4a5a72;font-weight:400}#ra{display:none;margin-top:8px}
 </style></head><body><div class="c {THEME}" id="c"><div class="b"><i class="dc"></i><div class="l"></div><div class="k"><b>AURORA</b><span>{KIND}</span></div><button class="x" onclick="go('close')">×</button></div>
-<div class="d"><h3>{TITLE}</h3><p>{TEXT}</p><div class="a"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('{ACTION}')">{MAIN}</button></div></div><i class="t" id="t"></i></div>
+<div class="d"><h3>{TITLE}</h3><p id="tx">{TEXT}</p><div class="a" id="ac"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('{ACTION}')">{MAIN}</button></div>
+<div class="pg" id="pg"><div class="br"><i id="bf"></i></div><div class="mt" id="mt">Avvio…</div><div class="ps" id="ps"></div><div class="a" id="ra"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('update')">Riprova</button></div></div></div><i class="t" id="t"></i></div>
 <script>
-function go(a){location.href='https://aurora-'+a+'/'}
-var total={SECONDS},left=total,hover=false,c=document.getElementById('c'),t=document.getElementById('t');
+var prog=false,last=0,STEPS=['Scarico','Controllo','Installo','Riavvio'];
+function $(i){return document.getElementById(i)}
+function go(a){if(a==='update')startProg();location.href='https://aurora-'+a+'/'}
+function mb(b){return (b/1048576).toFixed(1).replace('.',',')}
+function startProg(){prog=true;last=0;$('c').classList.add('on');$('t').style.display='none';upd({phase:'idle'})}
+function upd(s){if(!prog){prog=true;$('c').classList.add('on');$('t').style.display='none'}
+var ph=s.phase||'idle',i={starting:0,idle:0,downloading:0,verifying:1,ready:2,installing:2,restart:3}[ph],err=ph==='error';if(err)i=last;else last=i;
+var h='';STEPS.forEach(function(n,k){var c=k<i?'ok':k===i?(err?'ko':'cur'):'';h+=(k?'<b>›</b>':'')+'<span class="'+c+'">'+(c==='ok'?'✓ ':'')+n+'</span>'});$('ps').innerHTML=h;
+var bf=$('bf'),pc=s.percent==null?null:s.percent,m='';bf.className='';
+if(ph==='downloading'&&pc!=null){bf.style.width=pc+'%';m=pc+'%';if(s.total)m+=' · '+mb(s.done)+' / '+mb(s.total)+' MB';if(s.speed_bps)m+=' · '+mb(s.speed_bps)+' MB/s';if(s.eta_s)m+=' · mancano '+s.eta_s+' s'}
+else if(ph==='starting'||ph==='idle'||ph==='downloading'){bf.className='w';m=ph==='starting'?'Apro Aurora…':ph==='idle'?'Preparo lo scaricamento…':'Scarico la versione nuova…'}
+else if(ph==='verifying'){bf.className='w';m='Controllo la firma del pacchetto…'}
+else if(ph==='ready'){bf.style.width='100%';m='Pacchetto pronto e firmato: avvio l’installazione…'}
+else if(ph==='installing'){bf.style.width='100%';m='Avvio l’installatore: Aurora si chiude e si riapre da sola.'}
+else if(ph==='restart'){bf.style.width='100%';m='Aurora si sta riavviando…'}
+else{bf.style.width='100%';bf.className='ko';m=s.error||'Aggiornamento non riuscito.'}
+$('mt').textContent=m;$('mt').title=m;$('mt').className=err?'mt ko':'mt';$('ra').style.display=err?'flex':'none'}
+var total={SECONDS},left=total,hover=false,c=$('c'),t=$('t');
 c.onmouseenter=function(){hover=true};c.onmouseleave=function(){hover=false};
-setInterval(function(){if(hover)return;left-=100;t.style.width=Math.max(0,left/total*100)+'%';if(left<=0)go('close')},100);
+setInterval(function(){if(hover||prog)return;left-=100;t.style.width=Math.max(0,left/total*100)+'%';if(left<=0)go('close')},100);
 try{var x=new AudioContext(),o=x.createGain();o.gain.value=.9;o.connect(x.destination);var n={UPDATE}?[523.25,659.25,783.99,1046.5,1318.5]:[523.25,659.25,783.99,1046.5],s=x.currentTime+.05;
 n.forEach(function(f,i){var at=s+i*.085,g=x.createGain(),v=x.createOscillator();v.type='triangle';v.frequency.value=f;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16,at+.015);g.gain.exponentialRampToValueAtTime(.0001,at+.9);v.connect(g);g.connect(o);v.start(at);v.stop(at+.95)})}catch(e){}
 </script></body></html>"#;

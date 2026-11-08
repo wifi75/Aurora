@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune))]
+#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -101,6 +101,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/update", get(update_get).put(update_put))
         .route("/api/v1/update/check", post(update_check))
         .route("/api/v1/update/install", post(update_install))
+        .route("/api/v1/update/download", post(update_download))
         .route("/api/v1/engine-settings", get(engine_settings_get).put(engine_settings_put))
         .route("/api/v1/spot/dxsummit", post(spot_dxsummit))
         .route("/api/v1/qso-upload/test", post(qso_upload_test))
@@ -2310,6 +2311,25 @@ async fn update_install(State(state): State<AppState>, _: Authed, Peer(peer): Pe
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_task")),
     }
+}
+
+/// Scarica in anticipo la versione nuova e ne controlla la firma, senza installarla (il «Riprova» dopo uno scaricamento non riuscito).
+/// Risponde subito: l'avanzamento si legge in `stage` di `GET /api/v1/update`.
+#[utoipa::path(post, path = "/api/v1/update/download", responses((status = 200, description = "Scaricamento avviato: stato degli aggiornamenti"), (status = 404, description = "Questo programma non sa installare (install_unavailable)")))]
+async fn update_download(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let installer = state.update_installer.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "install_unavailable"))?;
+    let updates = update_service(&state)?;
+    // la pagina che rilegge lo stato vede subito «downloading», anche prima che parta il thread
+    if let Some(release) = updates.available() {
+        updates.begin(&release.version);
+    }
+    let service = std::sync::Arc::clone(&updates);
+    tokio::task::spawn_blocking(move || {
+        if let Err(e) = installer.prepare(service) {
+            tracing::warn!("scaricamento dell'aggiornamento non riuscito: {e}");
+        }
+    });
+    Ok(Json(update_json(&state, &updates.status())))
 }
 
 fn wishlist_service(state: &AppState) -> Result<std::sync::Arc<wishlist::WishlistService>, ApiError> {

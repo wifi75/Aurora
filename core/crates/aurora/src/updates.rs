@@ -16,8 +16,13 @@ fn notice_text(notice: &UpdateNotice) -> (String, String) {
 
 /// Controlla ora e, se c'e' una versione nuova non ancora comunicata, la comunica. Ritorna `true` se ha avvisato.
 pub fn check_and_announce(service: &Arc<UpdateService>, events: &broadcast::Sender<Event>, phone_url: &dyn Fn() -> String) -> bool {
-    let status = service.check();
-    let Some(release) = status.available else { return false };
+    service.check();
+    announce_known(service, events, phone_url)
+}
+
+/// Come `check_and_announce`, ma con l'esito del controllo gia' fatto.
+fn announce_known(service: &Arc<UpdateService>, events: &broadcast::Sender<Event>, phone_url: &dyn Fn() -> String) -> bool {
+    let Some(release) = service.available() else { return false };
     if !service.first_notice(&release.version) {
         return false;
     }
@@ -36,7 +41,9 @@ pub fn check_and_announce(service: &Arc<UpdateService>, events: &broadcast::Send
 }
 
 /// Avvia il controllo periodico: il primo dopo `first_delay`, poi ogni `interval_hours` delle impostazioni (se accese).
-pub fn spawn_checker(service: Arc<UpdateService>, events: broadcast::Sender<Event>, phone_url: Arc<dyn Fn() -> String + Send + Sync>, first_delay: Duration) {
+/// Con `installer` (il programma Windows) la versione nuova si scarica subito in sottofondo e se ne controlla la firma: quando si preme
+/// «Installa» il pacchetto e' gia' pronto. Una preparazione fallita non si ripete da sola: si riprova a mano.
+pub fn spawn_checker(service: Arc<UpdateService>, events: broadcast::Sender<Event>, phone_url: Arc<dyn Fn() -> String + Send + Sync>, installer: Option<Arc<dyn remote_api::UpdateInstaller>>, first_delay: Duration) {
     tokio::spawn(async move {
         tokio::time::sleep(first_delay).await;
         let mut last = std::time::Instant::now() - Duration::from_secs(10 * 24 * 3600);
@@ -44,9 +51,24 @@ pub fn spawn_checker(service: Arc<UpdateService>, events: broadcast::Sender<Even
             let config = service.config();
             if config.enabled && last.elapsed() >= Duration::from_secs(u64::from(config.interval_hours) * 3600) {
                 last = std::time::Instant::now();
-                let (service, events, phone_url) = (Arc::clone(&service), events.clone(), Arc::clone(&phone_url));
+                let (service, events, phone_url, installer) = (Arc::clone(&service), events.clone(), Arc::clone(&phone_url), installer.clone());
                 // la rete puo' essere lenta: fuori dal thread asincrono
-                let _ = tokio::task::spawn_blocking(move || check_and_announce(&service, &events, &*phone_url)).await;
+                let _ = tokio::task::spawn_blocking(move || {
+                    service.check();
+                    // prima di avvisare: la pagina che rilegge lo stato all'avviso vede gia' lo scaricamento in corso
+                    let wanted = installer.as_ref().and_then(|_| service.should_prepare());
+                    if let Some(version) = &wanted {
+                        service.begin(version);
+                    }
+                    announce_known(&service, &events, &*phone_url);
+                    if let (Some(installer), Some(version)) = (installer, wanted) {
+                        tracing::info!("scarico in anticipo l'aggiornamento {version}");
+                        if let Err(e) = installer.prepare(Arc::clone(&service)) {
+                            tracing::warn!("scaricamento in anticipo dell'aggiornamento {version} non riuscito: {e}");
+                        }
+                    }
+                })
+                .await;
             }
             tokio::time::sleep(TICK).await;
         }
@@ -123,7 +145,7 @@ mod tests {
         let svc = service("periodic", "v0.11.0", 1);
         svc.set_config(UpdateConfig { enabled: false, ..UpdateConfig::default() }, None).unwrap();
         let (events, mut rx) = broadcast::channel::<Event>(8);
-        spawn_checker(Arc::clone(&svc), events.clone(), Arc::new(String::new), Duration::from_millis(10));
+        spawn_checker(Arc::clone(&svc), events.clone(), Arc::new(String::new), None, Duration::from_millis(10));
         tokio::time::sleep(Duration::from_millis(400)).await;
         assert!(rx.try_recv().is_err(), "spento: nessun controllo");
         svc.set_config(UpdateConfig { enabled: true, ..UpdateConfig::default() }, None).unwrap();

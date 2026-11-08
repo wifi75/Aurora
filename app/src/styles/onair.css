@@ -2741,6 +2741,107 @@
   border-color: #0f8f83;
 }
 
+/* La barretta arancio dello scaricamento in anticipo: compatta, alta come l'icona, al posto dell'icona in testata */
+.update-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.1rem;
+  padding: 0 0.35rem 0 0.2rem;
+  color: #ffd9a0;
+  background: rgb(239 159 39 / 0.12);
+  border: 1px solid #ef9f27;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.update-strip-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.7rem;
+  padding: 0 0.5rem;
+  color: #2a1800;
+  background: #ef9f27;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.update-strip-ver:hover {
+  background: #f5b04a;
+}
+
+.update-strip-track {
+  position: relative;
+  display: block;
+  width: 5.5rem;
+  height: 0.4rem;
+  overflow: hidden;
+  background: rgb(239 159 39 / 0.22);
+  border-radius: 999px;
+}
+
+.update-strip-fill {
+  display: block;
+  height: 100%;
+  background: #ef9f27;
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+/* totale sconosciuto o firma in controllo: un tratto che scorre */
+.update-strip-fill--wait {
+  width: 35%;
+  animation: update-strip-wait 1.2s ease-in-out infinite;
+}
+
+@keyframes update-strip-wait {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(290%); }
+}
+
+.update-strip-info {
+  font-variant-numeric: tabular-nums;
+  padding-right: 0.2rem;
+}
+
+.update-strip-btn {
+  height: 1.6rem;
+  padding: 0 0.6rem;
+  color: #2a1800;
+  background: #ef9f27;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-strip-btn:hover {
+  background: #f5b04a;
+}
+
+.update-strip--error {
+  color: #ffb4a8;
+  border-color: #e5484d;
+  background: rgb(229 72 77 / 0.1);
+}
+
+/* tema chiaro: testo scuro sullo stesso arancio */
+html[data-theme='light'] .update-strip { color: #7a4a00; background: rgb(239 159 39 / 0.14); }
+html[data-theme='light'] .update-strip--error { color: #a3161b; }
+
+@media (prefers-reduced-motion: reduce) {
+  .update-strip-fill--wait { animation: none; width: 100%; opacity: 0.5; }
+  .update-strip-fill { transition: none; }
+}
+
 /* Livello dell'audio in ingresso (RX) */
 .in-level {
   display: flex;

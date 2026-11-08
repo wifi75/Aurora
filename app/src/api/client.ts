@@ -967,6 +967,30 @@ export interface UpdateStatus {
   can_install?: boolean;
   /** Lo scaricamento del pacchetto durante «Installa e riavvia». */
   download?: { file: string; done: number; total: number } | null;
+  /** La preparazione dell'aggiornamento: il core scarica in anticipo la versione nuova e ne controlla la firma (Aurora 0.11.200+). */
+  stage?: UpdateStage;
+}
+
+/** A che punto e' la preparazione: `ready` = pacchetto completo e firmato, «Installa» non riscarica. */
+export type UpdatePhase = 'idle' | 'downloading' | 'verifying' | 'ready' | 'installing' | 'error';
+
+export interface UpdateStage {
+  phase: UpdatePhase;
+  version: string;
+  file: string;
+  done: number;
+  total: number;
+  percent: number | null;
+  /** Velocita' media dello scaricamento (byte al secondo). */
+  speed_bps: number;
+  /** Secondi che mancano alla fine dello scaricamento. */
+  eta_s: number | null;
+  error: string | null;
+}
+
+/** Riprova a scaricare in anticipo la versione nuova (dopo uno scaricamento non riuscito): risponde subito, l'avanzamento e' in `stage`. */
+export async function downloadUpdate(): Promise<UpdateStatus> {
+  return (await (await request('/update/download', { method: 'POST' })).json()) as UpdateStatus;
 }
 
 /** Le impostazioni che si mandano: `token` assente = lo si lascia, vuoto = lo si toglie. */

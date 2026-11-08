@@ -129,13 +129,21 @@ struct Shared {
 /// Quante evidenziazioni si ricordano al massimo (le piu' vecchie si scartano).
 const MAX_HIGHLIGHTS: usize = 500;
 
-/// Installa la versione nuova trovata dal controllo: la scarica, ne verifica la firma, avvia l'installazione e chiude il programma.
-/// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.
 /// Racconta lo stato del motore proprio in JSON.
 pub type NativeStatusFn = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
 
+/// Chi sa installare la versione nuova trovata dal controllo (il programma Windows).
 pub trait UpdateInstaller: Send + Sync {
+    /// La installa: usa il pacchetto gia' pronto (o lo scarica), ne ricontrolla la firma, avvia l'installazione e chiude il programma.
+    /// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.
     fn install(&self, updates: Arc<updater::UpdateService>) -> Result<String, String>;
+
+    /// Scarica in anticipo pacchetto e firma e li controlla, senza installare: lo stato si legge in `UpdateService::stage`. Bloccante.
+    /// Chi non sa installare non prepara niente.
+    fn prepare(&self, updates: Arc<updater::UpdateService>) -> Result<(), String> {
+        let _ = updates;
+        Err("questo programma non sa installare gli aggiornamenti".to_string())
+    }
 }
 
 #[derive(Clone)]

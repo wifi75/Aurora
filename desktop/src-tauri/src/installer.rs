@@ -1,24 +1,27 @@
-//! L'installazione di un aggiornamento: scarica il pacchetto e la sua firma dalla release, controlla la firma con la chiave pubblica di
-//! Aurora, avvia l'installatore e chiude il programma, che l'installatore riapre. **Senza firma valida non si installa mai nulla.**
+//! L'installazione di un aggiornamento: il pacchetto e la sua firma si scaricano in anticipo (appena il controllo trova la versione nuova)
+//! e si controllano con la chiave pubblica di Aurora; all'«Installa» si ricontrolla la firma del file pronto, si avvia l'installatore e si
+//! chiude il programma, che l'installatore riapre. **Senza firma valida non si installa mai nulla.**
 
 // su Linux resta solo il rifiuto: le parti dell'installatore di Windows non si usano
 #![cfg_attr(not(windows), allow(dead_code))]
 
+use std::path::PathBuf;
 use std::sync::Arc;
 #[cfg(windows)]
-use std::{path::PathBuf, process::Command, time::Duration};
+use std::{process::Command, time::Duration};
 
 use remote_api::UpdateInstaller;
 use tauri::AppHandle;
-#[cfg(windows)]
-use updater::installer_assets;
-use updater::{verify_signature, UpdateService};
+#[cfg(test)]
+use updater::safe_file_name;
+#[cfg(test)]
+use updater::verify_signature;
+use updater::UpdateService;
 
 /// La chiave pubblica con cui sono firmati i pacchetti (la privata sta fuori dal repository, sul PC di chi rilascia).
 const PUBLIC_KEY: &str = include_str!("../../updater.pub");
 /// Un pacchetto di Aurora e' di qualche decina di MB: oltre questo limite qualcosa non va.
 const MAX_PACKAGE_BYTES: u64 = 300 * 1024 * 1024;
-const MAX_SIGNATURE_BYTES: u64 = 16 * 1024;
 
 /// Gli argomenti dell'installatore NSIS di Tauri: `/P` lo fa girare senza domande (solo l'avanzamento), `/R` fa riaprire Aurora a fine
 /// installazione, `/UPDATE` dice che e' un aggiornamento di una copia gia' installata.
@@ -34,11 +37,9 @@ pub fn detached_command_args(installer: &str) -> Vec<String> {
     args
 }
 
-/// Il nome del file da salvare: solo la parte finale, senza percorsi, e solo se sembra un installatore.
-pub fn safe_file_name(asset_name: &str) -> Option<String> {
-    let name = asset_name.rsplit(['/', '\\']).next()?.trim();
-    let ok = name.len() <= 100 && name.ends_with("-setup.exe") && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
-    ok.then(|| name.to_string())
+/// La cartella dove si tiene il pacchetto scaricato in anticipo.
+fn package_dir() -> PathBuf {
+    std::env::temp_dir().join("Aurora-update")
 }
 
 pub struct DesktopInstaller {
@@ -51,7 +52,9 @@ impl DesktopInstaller {
     }
 }
 
-/// Controlla la firma di un pacchetto con la chiave pubblica di Aurora.
+/// Controlla la firma di un pacchetto con la chiave pubblica di Aurora (il controllo vero lo fa `UpdateService::prepare`, con la stessa
+/// chiave: qui serve alle prove del pacchetto appena compilato).
+#[cfg(test)]
 pub fn verify_package(data: &[u8], signature: &str) -> Result<(), String> {
     verify_signature(data, signature, PUBLIC_KEY)
 }
@@ -64,36 +67,36 @@ impl UpdateInstaller for DesktopInstaller {
         Err("su Linux l'aggiornamento automatico non c'e': si aggiorna ricompilando con scripts/compila-linux.sh".to_string())
     }
 
+    /// Scarica in anticipo e controlla la firma: il file resta pronto per «Installa».
+    #[cfg(windows)]
+    fn prepare(&self, updates: Arc<UpdateService>) -> Result<(), String> {
+        updates.prepare(PUBLIC_KEY, &package_dir(), MAX_PACKAGE_BYTES).map(|_| ())
+    }
+
     #[cfg(windows)]
     fn install(&self, updates: Arc<UpdateService>) -> Result<String, String> {
-        // l'ultimo controllo puo' essere di prima della pubblicazione (l'agente nel tray controlla per conto suo):
-        // se non si conosce ancora una versione nuova, si chiede subito a GitHub invece di rispondere «nessuna versione»
-        let release = match updates.available() {
-            Some(r) => r,
-            None => updates.check().available.ok_or("nessuna versione nuova trovata")?,
-        };
-        let (setup, sig) = installer_assets(&release).ok_or("la release non ha il pacchetto di installazione con la sua firma")?;
-        let file_name = safe_file_name(&setup.name).ok_or("nome del pacchetto non valido")?;
-        let data = updates.download(setup, MAX_PACKAGE_BYTES)?;
-        let signature = String::from_utf8(updates.download(sig, MAX_SIGNATURE_BYTES)?).map_err(|_| "firma illeggibile".to_string())?;
-        verify_package(&data, &signature)?;
-
-        let dir: PathBuf = std::env::temp_dir().join("Aurora-update");
-        std::fs::create_dir_all(&dir).map_err(|e| format!("cartella temporanea: {e}"))?;
-        let path = dir.join(file_name);
-        std::fs::write(&path, &data).map_err(|e| format!("pacchetto non salvato: {e}"))?;
-        let installer = path.to_str().ok_or("percorso del pacchetto non valido")?;
+        // il pacchetto scaricato in anticipo si usa cosi' com'e' (con la firma ricontrollata sul file); se non c'e', si scarica adesso.
+        // Se lo scaricamento in sottofondo e' ancora in corso, si aspetta che finisca invece di ricominciare.
+        let ready = updates.prepare(PUBLIC_KEY, &package_dir(), MAX_PACKAGE_BYTES)?;
+        let installer = ready.path.to_str().ok_or("percorso del pacchetto non valido")?.to_string();
+        updates.set_installing();
+        // un attimo perche' la barra e la cartolina del tray mostrino «Installo» prima che l'agente venga chiuso
+        std::thread::sleep(Duration::from_millis(700));
         // l'agente nel tray e' lo stesso programma: va chiuso, altrimenti l'installatore non puo' sostituirlo
         crate::stop_agent();
         let mut launcher = Command::new("cmd");
-        launcher.args(detached_command_args(installer));
+        launcher.args(detached_command_args(&installer));
         {
             use std::os::windows::process::CommandExt;
             // `cmd` non deve aprire una finestra nera: l'installatore parte da solo
             launcher.creation_flags(0x0800_0000);
         }
-        launcher.spawn().map_err(|e| format!("installatore non avviato: {e}"))?;
-        tracing::info!("aggiornamento {} avviato da {}", release.version, path.display());
+        if let Err(e) = launcher.spawn() {
+            let message = format!("installatore non avviato: {e}");
+            updates.set_error(&message);
+            return Err(message);
+        }
+        tracing::info!("aggiornamento {} avviato da {}", ready.version, ready.path.display());
 
         // un attimo per rispondere alla pagina, poi si chiude: l'installatore non puo' sostituire un programma aperto
         let app = self.app.clone();
@@ -101,7 +104,7 @@ impl UpdateInstaller for DesktopInstaller {
             std::thread::sleep(Duration::from_millis(900));
             app.exit(0);
         });
-        Ok(release.version)
+        Ok(ready.version)
     }
 }
 

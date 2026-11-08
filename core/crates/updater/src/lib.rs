@@ -1,5 +1,6 @@
 //! Controllo delle nuove versioni di Aurora: legge l'ultima release sul repository (GitHub), la confronta con la versione in uso e
-//! ricorda l'esito. Non scarica ne' installa nulla: chi vuole aggiornare usa l'indirizzo della release.
+//! ricorda l'esito. Sa anche preparare l'aggiornamento: scarica in anticipo il pacchetto e la sua firma, li controlla e tiene il file
+//! pronto; l'avvio dell'installatore resta a chi sa farlo (il programma Windows).
 //!
 //! Con un repository privato serve un token di sola lettura (creato da chi usa Aurora): si scrive nelle impostazioni, si tiene solo nel
 //! file di dati del programma, non si restituisce mai all'interfaccia e non si scrive nei registri.
@@ -93,6 +94,60 @@ pub struct DownloadProgress {
     pub total: u64,
 }
 
+/// A che punto e' la preparazione dell'aggiornamento (scaricamento in anticipo, controllo della firma, installazione).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Phase {
+    /// Niente in corso.
+    #[default]
+    Idle,
+    /// Si scarica il pacchetto.
+    Downloading,
+    /// Si controlla la firma.
+    Verifying,
+    /// Pacchetto completo e firmato: «Installa» non riscarica.
+    Ready,
+    /// L'installatore sta partendo (Aurora si chiude).
+    Installing,
+    /// Scaricamento o firma non riusciti: si puo' riprovare.
+    Error,
+}
+
+/// Lo stato della preparazione come lo vede l'interfaccia (barra della testata, cartolina del tray).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
+pub struct Stage {
+    pub phase: Phase,
+    /// La versione che si sta preparando.
+    pub version: String,
+    pub file: String,
+    /// Byte gia' arrivati.
+    pub done: u64,
+    /// Byte in tutto (0 se non si sa).
+    pub total: u64,
+    /// Percentuale scaricata (`None` se il totale non si sa).
+    pub percent: Option<u8>,
+    /// Velocita' media dello scaricamento in corso (byte al secondo).
+    pub speed_bps: u64,
+    /// Secondi che mancano alla fine dello scaricamento (`None` se non si sa).
+    pub eta_s: Option<u64>,
+    /// Il motivo, in fase `error`.
+    pub error: Option<String>,
+}
+
+/// Il pacchetto pronto da installare: completo e con la firma controllata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Prepared {
+    pub version: String,
+    pub path: PathBuf,
+}
+
+/// Il nome del file da salvare: solo la parte finale, senza percorsi, e solo se sembra un installatore.
+pub fn safe_file_name(asset_name: &str) -> Option<String> {
+    let name = asset_name.rsplit(['/', '\\']).next()?.trim();
+    let ok = name.len() <= 100 && name.ends_with("-setup.exe") && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
+    ok.then(|| name.to_string())
+}
+
 /// Esito dell'ultimo controllo.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Status {
@@ -113,6 +168,8 @@ pub struct Status {
     pub error: Option<String>,
     /// Lo scaricamento del pacchetto in corso (o appena finito), se c'e'.
     pub download: Option<DownloadProgress>,
+    /// La preparazione dell'aggiornamento (scaricamento in anticipo, firma, installazione).
+    pub stage: Stage,
 }
 
 /// «v1.2.3», «1.2.3» o «1.2.3-rc1» in (maggiore, minore, patch, prova).
@@ -246,6 +303,17 @@ pub struct UpdateService {
     state: Mutex<State>,
     notified_path: PathBuf,
     download: Mutex<Option<DownloadProgress>>,
+    stage: Mutex<StageState>,
+    /// Una sola preparazione alla volta: chi arriva dopo aspetta e trova il pacchetto pronto.
+    preparing: Mutex<()>,
+}
+
+/// La preparazione con quanto non si mostra: il file pronto e la sua firma (per ricontrollarla prima di installare).
+#[derive(Default)]
+struct StageState {
+    stage: Stage,
+    path: Option<PathBuf>,
+    signature: String,
 }
 
 fn unix_ms() -> u64 {
@@ -272,7 +340,7 @@ impl UpdateService {
             .filter(|c| c.validate().is_ok())
             .unwrap_or_default();
         config.repo = config.repo.trim().to_string();
-        Arc::new(UpdateService { path: path.to_path_buf(), current: current.to_string(), api: api.trim_end_matches('/').to_string(), config: Mutex::new(config), state: Mutex::new(State { notified: std::fs::read_to_string(path.with_extension("notified")).unwrap_or_default().trim().to_string(), checked_at_ms: 0, latest: None, error: None }), notified_path: path.with_extension("notified"), download: Mutex::new(None) })
+        Arc::new(UpdateService { path: path.to_path_buf(), current: current.to_string(), api: api.trim_end_matches('/').to_string(), config: Mutex::new(config), state: Mutex::new(State { notified: std::fs::read_to_string(path.with_extension("notified")).unwrap_or_default().trim().to_string(), checked_at_ms: 0, latest: None, error: None }), notified_path: path.with_extension("notified"), download: Mutex::new(None), stage: Mutex::new(StageState::default()), preparing: Mutex::new(()) })
     }
 
     pub fn config(&self) -> UpdateConfig {
@@ -327,6 +395,7 @@ impl UpdateService {
             latest: state.latest.clone(),
             error: state.error.clone(),
             download: lock(&self.download).clone(),
+            stage: lock(&self.stage).stage.clone(),
         }
     }
 
@@ -428,6 +497,7 @@ impl UpdateService {
         let mut reader = response.body_mut().with_config().limit(max_bytes).reader();
         let mut data = Vec::with_capacity(length.min(max_bytes) as usize);
         let mut buf = vec![0u8; 64 * 1024];
+        let started = std::time::Instant::now();
         loop {
             let n = std::io::Read::read(&mut reader, &mut buf).map_err(|e| (format!("scaricamento di {} interrotto: {e}", asset.name), true))?;
             if n == 0 {
@@ -436,9 +506,161 @@ impl UpdateService {
             data.extend_from_slice(&buf[..n]);
             if tracked {
                 *lock(&self.download) = Some(DownloadProgress { file: asset.name.clone(), done: data.len() as u64, total: length });
+                self.stage_progress(&asset.name, data.len() as u64, length, started.elapsed());
             }
         }
         Ok(data)
+    }
+
+    /// L'avanzamento dello scaricamento nella preparazione (solo se si sta preparando).
+    fn stage_progress(&self, file: &str, done: u64, total: u64, elapsed: Duration) {
+        let mut st = lock(&self.stage);
+        if st.stage.phase != Phase::Downloading {
+            return;
+        }
+        let secs = elapsed.as_secs_f64();
+        // nel primo mezzo secondo la media non dice ancora niente
+        let speed = if secs >= 0.5 { (done as f64 / secs) as u64 } else { 0 };
+        st.stage.file = file.to_string();
+        st.stage.done = done;
+        st.stage.total = total;
+        st.stage.percent = (total > 0).then(|| ((done.min(total) * 100) / total) as u8);
+        st.stage.speed_bps = speed;
+        st.stage.eta_s = (total > 0 && speed > 0).then(|| total.saturating_sub(done).div_ceil(speed));
+    }
+
+    fn set_phase(&self, phase: Phase) {
+        let mut st = lock(&self.stage);
+        st.stage.phase = phase;
+        if phase != Phase::Error {
+            st.stage.error = None;
+        }
+    }
+
+    /// La preparazione o l'avvio dell'installatore sono andati male: lo stato dice perche' (si puo' riprovare).
+    pub fn set_error(&self, message: &str) {
+        let mut st = lock(&self.stage);
+        st.stage.phase = Phase::Error;
+        st.stage.error = Some(message.to_string());
+        st.stage.speed_bps = 0;
+        st.stage.eta_s = None;
+    }
+
+    /// L'installatore sta per partire.
+    pub fn set_installing(&self) {
+        self.set_phase(Phase::Installing);
+    }
+
+    /// Lo stato attuale della preparazione.
+    pub fn stage(&self) -> Stage {
+        lock(&self.stage).stage.clone()
+    }
+
+    /// Dice subito che lo scaricamento sta per partire (prima che ci arrivi il thread che scarica), cosi' la pagina che rilegge lo stato
+    /// vede gia' «downloading». Non tocca una preparazione in corso o gia' pronta per quella versione.
+    pub fn begin(&self, version: &str) {
+        let mut st = lock(&self.stage);
+        let busy = matches!(st.stage.phase, Phase::Downloading | Phase::Verifying | Phase::Installing) || (st.stage.phase == Phase::Ready && st.stage.version == version);
+        if !busy {
+            st.stage = Stage { phase: Phase::Downloading, version: version.to_string(), ..Stage::default() };
+            st.path = None;
+        }
+    }
+
+    /// Conviene preparare adesso la versione nuova? Si' se c'e', ha pacchetto e firma, e non e' gia' pronta, in corso o fallita
+    /// (una preparazione fallita si riprova a mano, non a ogni controllo).
+    pub fn should_prepare(&self) -> Option<String> {
+        let release = self.available()?;
+        installer_assets(&release)?;
+        let st = lock(&self.stage);
+        let busy = matches!(st.stage.phase, Phase::Downloading | Phase::Verifying | Phase::Installing);
+        let same = st.stage.version == release.version;
+        (st.stage.phase == Phase::Idle || (!busy && !same)).then_some(release.version)
+    }
+
+    /// Prepara l'aggiornamento: scarica pacchetto e firma della versione nuova (con le ripetizioni di `download`), controlla la firma con
+    /// `pubkey` e salva il pacchetto in `dir`. Se e' gia' pronto non riscarica: rilegge il file dal disco e ne ricontrolla la firma.
+    /// Un file della grandezza giusta gia' sul disco (da un avvio precedente) si tiene se la firma torna. Ritorna il pacchetto solo se
+    /// completo e firmato; altrimenti lo stato passa a `error` con il motivo. Bloccante: da un thread dedicato.
+    pub fn prepare(&self, pubkey: &str, dir: &Path, max_bytes: u64) -> Result<Prepared, String> {
+        let _one = lock(&self.preparing);
+        let result = self.prepare_locked(pubkey, dir, max_bytes);
+        if let Err(e) = &result {
+            tracing::warn!("preparazione dell'aggiornamento non riuscita: {e}");
+            self.set_error(e);
+        }
+        result
+    }
+
+    fn prepare_locked(&self, pubkey: &str, dir: &Path, max_bytes: u64) -> Result<Prepared, String> {
+        // l'ultimo controllo puo' essere di prima della pubblicazione: se non si conosce una versione nuova, si chiede subito a GitHub
+        let release = match self.available() {
+            Some(r) => r,
+            None => self.check().available.ok_or("nessuna versione nuova trovata")?,
+        };
+        // gia' pronta: si ricontrolla il file sul disco (qualcuno puo' averlo toccato) e non si riscarica
+        let ready = {
+            let st = lock(&self.stage);
+            (st.stage.phase == Phase::Ready && st.stage.version == release.version).then(|| (st.path.clone(), st.signature.clone()))
+        };
+        if let Some((Some(path), signature)) = ready {
+            self.set_phase(Phase::Verifying);
+            let checked = std::fs::read(&path).map_err(|e| format!("pacchetto pronto non leggibile: {e}")).and_then(|data| verify_signature(&data, &signature, pubkey));
+            match checked {
+                Ok(()) => {
+                    self.set_phase(Phase::Ready);
+                    return Ok(Prepared { version: release.version, path });
+                }
+                Err(e) => tracing::warn!("il pacchetto pronto non va piu' ({e}): si riscarica"),
+            }
+        }
+        let (setup, sig) = installer_assets(&release).ok_or("la release non ha il pacchetto di installazione con la sua firma")?;
+        let file_name = safe_file_name(&setup.name).ok_or("nome del pacchetto non valido")?;
+        {
+            let mut st = lock(&self.stage);
+            st.stage = Stage { phase: Phase::Downloading, version: release.version.clone(), file: setup.name.clone(), total: setup.size, percent: Some(0), ..Stage::default() };
+            st.path = None;
+            st.signature.clear();
+        }
+        std::fs::create_dir_all(dir).map_err(|e| format!("cartella temporanea: {e}"))?;
+        let path = dir.join(&file_name);
+        // la firma per prima: e' piccola, e senza di lei il pacchetto non servirebbe
+        let signature = String::from_utf8(self.download(sig, 16 * 1024)?).map_err(|_| "firma illeggibile".to_string())?;
+        // un pacchetto della grandezza giusta gia' sul disco (avvio precedente): se la firma torna, non si riscarica
+        let kept = std::fs::metadata(&path).is_ok_and(|m| setup.size > 0 && m.len() == setup.size) && {
+            self.set_phase(Phase::Verifying);
+            std::fs::read(&path).is_ok_and(|data| verify_signature(&data, &signature, pubkey).is_ok())
+        };
+        if !kept {
+            self.set_phase(Phase::Downloading);
+            let data = self.download(setup, max_bytes)?;
+            self.set_phase(Phase::Verifying);
+            verify_signature(&data, &signature, pubkey)?;
+            // i pacchetti di versioni passate nella stessa cartella non servono piu'
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.filter_map(Result::ok) {
+                    let p = entry.path();
+                    if p != path && p.to_string_lossy().ends_with("-setup.exe") {
+                        let _ = std::fs::remove_file(p);
+                    }
+                }
+            }
+            std::fs::write(&path, &data).map_err(|e| format!("pacchetto non salvato: {e}"))?;
+        }
+        {
+            let mut st = lock(&self.stage);
+            st.stage.phase = Phase::Ready;
+            st.stage.error = None;
+            st.stage.done = setup.size.max(st.stage.done);
+            st.stage.total = setup.size.max(st.stage.total);
+            st.stage.percent = Some(100);
+            st.stage.speed_bps = 0;
+            st.stage.eta_s = Some(0);
+            st.path = Some(path.clone());
+            st.signature = signature;
+        }
+        tracing::info!("aggiornamento {} pronto in {}", release.version, path.display());
+        Ok(Prepared { version: release.version, path })
     }
 
     fn fetch(&self, config: &UpdateConfig) -> Result<Option<Release>, String> {
