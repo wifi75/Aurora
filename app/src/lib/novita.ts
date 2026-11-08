@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.203',
+    released: '2026-11-08T21:56:54Z',
+    kind: 'fix',
+    title: ['Aggiornamento più sicuro, FT-991 Link e 70 cm', 'Safer update, FT-991 Link and 70 cm', 'Sichereres Update, FT-991 Link und 70 cm', 'Mise à jour plus sûre, FT-991 Link et 70 cm', 'Actualización más segura, FT-991 Link y 70 cm', 'Atualização mais segura, FT-991 Link e 70 cm'],
+    text: [
+      "L’installatore dell’aggiornamento parte solo quando Aurora è davvero chiusa, così non si ferma più a metà con «Impossibile chiudere Aurora», e aggiornando dal tray la locandina non compare più da sola. Con FT-991(A) Link il cambio di banda non mostra più l’errore rosso e rimette sempre DATA-USB invece di lasciare FM. Aggiunte le frequenze FT8 e FT4 dei 70 cm.",
+      "The update installer starts only when Aurora is really closed, so it no longer stops halfway with “Could not close Aurora”, and updating from the tray no longer opens the poster by itself. With FT-991(A) Link a band change no longer shows the red error and always sets DATA-USB instead of leaving FM. Added the 70 cm FT8 and FT4 frequencies.",
+      "Das Update-Installationsprogramm startet erst, wenn Aurora wirklich geschlossen ist, und bricht nicht mehr mit „Aurora konnte nicht geschlossen werden“ ab; beim Update über das Tray erscheint das Plakat nicht mehr von selbst. Mit FT-991(A) Link zeigt ein Bandwechsel keinen roten Fehler mehr und setzt immer DATA-USB statt FM. Neu: FT8- und FT4-Frequenzen auf 70 cm.",
+      "L’installateur de mise à jour ne démarre que quand Aurora est vraiment fermée, il ne s’arrête plus à moitié avec « Impossible de fermer Aurora », et la mise à jour depuis la barre des tâches n’ouvre plus l’affiche toute seule. Avec FT-991(A) Link le changement de bande n’affiche plus l’erreur rouge et remet toujours DATA-USB au lieu de laisser FM. Ajout des fréquences FT8 et FT4 du 70 cm.",
+      "El instalador de la actualización solo arranca cuando Aurora está realmente cerrada, así ya no se detiene a mitad con «No se pudo cerrar Aurora», y al actualizar desde la bandeja el cartel ya no aparece solo. Con FT-991(A) Link el cambio de banda ya no muestra el error rojo y siempre pone DATA-USB en lugar de dejar FM. Añadidas las frecuencias FT8 y FT4 de 70 cm.",
+      "O instalador da atualização só arranca quando o Aurora está mesmo fechado, por isso já não para a meio com «Não foi possível fechar o Aurora», e ao atualizar a partir da bandeja o cartaz já não aparece sozinho. Com o FT-991(A) Link a mudança de banda já não mostra o erro vermelho e põe sempre DATA-USB em vez de deixar FM. Adicionadas as frequências FT8 e FT4 dos 70 cm.",
+    ],
+  },
+  {
     version: '0.11.202',
     released: '2026-11-08T21:01:17Z',
     kind: 'new',

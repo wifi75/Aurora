@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-08, versione 0.11.202 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-08, versione 0.11.203 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-08
 - Pagina Contest pubblicata in beta nella 0.11.202 (crate `contest`, regole TOML in `core/crates/contest/regole/`, piano in `docs/piano-contest.md`); mancano allenamento, analisi e controlli prima del PTT (docs/tasks.md voce 27).

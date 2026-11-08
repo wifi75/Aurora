@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.203 - 2026-11-08
+- **Aggiornamento**: l'installatore parte solo con Aurora e l'agente chiusi (prima «Impossibile chiudere Aurora» a meta' installazione); la locandina non compare da sola durante l'aggiornamento dal tray.
+- **FT-991(A) Link**: nessun errore durante il cambio di banda, DATA-USB rimandato a ogni cambio di banda (la radio riprendeva FM).
+- **70 cm**: frequenze FT8 432,174 e FT4 432,170 MHz.
+
 ## 0.11.202 - 2026-11-08
 - **Categoria del contest a pannello**: nella barra solo la sigla (SO-LP, MO, Rover, 2A); il clic apre un pannello come il menu dei contest con le categorie del regolamento e la loro spiegazione, gli operatori (riga OPERATORS; da soli il nominativo della stazione), e potenza, Assisted e classe del Field Day (trasmettitori + lettera A-F) solo dove il regolamento li prevede. Le scelte si salvano per contest e vanno nell'intestazione Cabrillo (CATEGORY-OPERATOR/POWER/ASSISTED/TRANSMITTER/STATION, OPERATORS) ed EDI, e nello scambio del Field Day (2A EMA). Nuovi campi: nominativo in gara, indirizzo ed email (ADDRESS/EMAIL); nome, indirizzo, email e club si scrivono una volta e valgono per tutti i contest. Pagina Contest segnata BETA con un nastro nell'angolo.
 - **Cascata nella pagina Contest**: piccola e senza barre, sotto le Decodifiche e larga quanto loro, come nella Fox (filtro, spot del cluster, barre Rx/Tx trascinabili, clic che sposta la Rx, righello con i messaggi); parte da circa 60 px, con una maniglia sopra per regolarla (fino a 420 px), e l'altezza si ricorda. Le colonne di destra restano a tutta altezza e la pagina sta nella finestra senza scorrere.
