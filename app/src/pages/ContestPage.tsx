@@ -152,10 +152,10 @@ export function ContestPage() {
   );
 }
 
-/** La cascata sotto le Decodifiche: alta circa 120 px (piccola), con la maniglia sopra per regolarla (ricordata, al massimo 420 px per le Decodifiche). */
+/** La cascata sotto le Decodifiche: alta circa 60 px (piccola), con la maniglia sopra per regolarla (ricordata, al massimo 420 px per le Decodifiche). */
 function Cascata() {
   const t = useT();
-  const wf = useDragHeight('aurora-contest-wf-height-v2', 120, 420);
+  const wf = useDragHeight('aurora-contest-wf-height-v3', 60, 420, 40);
   return (
     <section className="dock-panel ctc-box ctc-wf-box" aria-label={t('fox.waterfall')}>
       {/* solo la cascata, compatta: niente barra del titolo ne' barra degli strumenti (si regolano dalla pagina Stazione) */}
