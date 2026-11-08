@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.194',
-    released: '2026-11-08T08:00:00Z',
+    released: '2026-11-08T07:01:11Z',
     kind: 'new',
     title: ['JT4, tendina delle frequenze e correzione del cambio banda', 'JT4, frequency list and band change fix', 'JT4, Frequenzliste und Korrektur des Bandwechsels', 'JT4, liste des fréquences et correction du changement de bande', 'JT4, lista de frecuencias y corrección del cambio de banda', 'JT4, lista de frequências e correção da mudança de banda'],
     text: [
