@@ -1,4 +1,4 @@
-//! Il comando della radio di Aurora: CAT con Hamlib (rigctld incluso) o, facoltativo su Windows, OmniRig, o TCI per le SDR.
+//! Il comando della radio di Aurora: CAT con Hamlib (rigctld incluso) o, facoltativo su Windows, OmniRig, o TCI per le SDR, o FT-991(A) Link (UDP) per le Yaesu FT-991/FT-991A.
 
 pub mod wake;
 pub mod bands;
@@ -9,6 +9,7 @@ pub mod detect;
 pub mod extras;
 #[cfg(any(test, feature = "testing"))]
 pub mod fake_rigctld;
+pub mod ft991link;
 pub mod hamlib;
 pub mod hamlib_rig;
 pub mod meters;

@@ -658,7 +658,7 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'none';
+export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'ft991link' | 'none';
 export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
 export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';
@@ -694,6 +694,8 @@ export interface CatConfig {
   share_port: number;
   /** Indirizzo `host:porta` del server TCI (ExpertSDR, Thetis); vuoto = `127.0.0.1:40001`. */
   tci_address?: string;
+  /** Indirizzo host:porta del server UDP di FT-991(A) Link (di base 127.0.0.1:50001). */
+  ft991_address?: string;
 }
 
 export interface RigExtras {

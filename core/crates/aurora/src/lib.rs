@@ -1197,11 +1197,14 @@ impl tx_native::Ptt for CatPtt {
     }
 }
 
-/// Il PTT dalla radio collegata: `trx` con TCI, `T 1` / `T 0` di rigctld con Hamlib.
+/// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `T 1` / `T 0` di rigctld con Hamlib.
 fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native::TxError> {
     let failed = |e: rig_control::RigError| tx_native::TxError::Ptt(e.to_string());
     if cat.backend() == rig_control::cat_config::Backend::Tci {
         return cat.tci().map_err(failed)?.set_ptt(on).map_err(failed);
+    }
+    if cat.backend() == rig_control::cat_config::Backend::Ft991link {
+        return cat.ft991().map_err(failed)?.set_ptt(on).map_err(failed);
     }
     cat.hamlib().map_err(failed)?.set_ptt(on).map_err(failed)
 }
@@ -1219,7 +1222,7 @@ impl tx_native::Ptt for AutoPtt {
         let by_rig = radio.ptt != rig_control::cat_config::PttMethod::Vox
             && match radio.backend {
                 rig_control::cat_config::Backend::Hamlib => radio.model != 0,
-                rig_control::cat_config::Backend::Tci => true,
+                rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link => true,
                 _ => false,
             };
         if by_rig {
@@ -1244,7 +1247,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     // OmniRig preso da JTDX ma la radio e' collegata con Hamlib: OmniRig non comanda la radio, il PTT passa da rigctld
     // (caso reale: un vecchio JTDX.ini con PTT OmniRig e Aurora su Hamlib, la radio non andava mai in trasmissione)
     if config.ptt_method == "omnirig"
-        && (radio.backend == rig_control::cat_config::Backend::Tci || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
+        && (radio.backend == rig_control::cat_config::Backend::Tci || radio.backend == rig_control::cat_config::Backend::Ft991link || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
         && radio.ptt != rig_control::cat_config::PttMethod::Vox
     {
         return "cat".to_string();
@@ -1256,7 +1259,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
         (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
         (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
         (rig_control::cat_config::Backend::Hamlib, _) if radio.model != 0 => "cat".to_string(),
-        (rig_control::cat_config::Backend::Tci, _) => "cat".to_string(),
+        (rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link, _) => "cat".to_string(),
         _ => "vox".to_string(),
     }
 }
@@ -1328,7 +1331,7 @@ pub async fn run(
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
-            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::None => {}
+            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::None => {}
         }
     }
     if config.rig_hamlib {

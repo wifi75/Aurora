@@ -170,4 +170,28 @@ export const coreTextStrings = {
   'core.svc.psk': ["{n} spot in {p} pacchetti", "{n} spots in {p} packets", "{n} Spots in {p} Paketen", "{n} spots en {p} paquets", "{n} spots en {p} paquetes", "{n} spots em {p} pacotes"],
   'core.svc.tcp': ["QSO inviato a {to}", "QSO sent to {to}", "QSO an {to} gesendet", "QSO envoyé à {to}", "QSO enviado a {to}", "QSO enviado para {to}"],
   'core.svc.aborted': ["Invio interrotto: {why}", "Upload interrupted: {why}", "Senden abgebrochen: {why}", "Envoi interrompu : {why}", "Envío interrumpido: {why}", "Envio interrompido: {why}"],
+  'core.ft991.noAnswer': [
+    'FT-991(A) Link non risponde su {address}: in FT991Link apri COM Port e premi Start UDP.',
+    'FT-991(A) Link does not answer on {address}: in FT991Link open COM Port and press Start UDP.',
+    'FT-991(A) Link antwortet nicht auf {address}: in FT991Link COM Port öffnen und Start UDP drücken.',
+    'FT-991(A) Link ne répond pas sur {address} : dans FT991Link, ouvre COM Port puis appuie sur Start UDP.',
+    'FT-991(A) Link no responde en {address}: en FT991Link abre COM Port y pulsa Start UDP.',
+    'O FT-991(A) Link não responde em {address}: no FT991Link abre COM Port e carrega em Start UDP.',
+  ],
+  'core.ft991.off': [
+    'La radio è spenta (PS0): accendila oppure spunta «Accendi» nella scheda Radio.',
+    'The radio is off (PS0): switch it on or tick “Power on” in the Radio tab.',
+    'Das Funkgerät ist aus (PS0): einschalten oder im Reiter Funkgerät „Einschalten“ ankreuzen.',
+    'La radio est éteinte (PS0) : allume-la ou coche « Allumer » dans l’onglet Radio.',
+    'La radio está apagada (PS0): enciéndela o marca «Encender» en la pestaña Radio.',
+    'O rádio está desligado (PS0): liga-o ou marca «Ligar» no separador Rádio.',
+  ],
+  'core.ft991.lost': [
+    'Collegamento con FT-991(A) Link perso: nuovo tentativo.',
+    'Connection with FT-991(A) Link lost: trying again.',
+    'Verbindung mit FT-991(A) Link verloren: neuer Versuch.',
+    'Liaison avec FT-991(A) Link perdue : nouvel essai.',
+    'Conexión con FT-991(A) Link perdida: nuevo intento.',
+    'Ligação ao FT-991(A) Link perdida: nova tentativa.',
+  ],
 } as const;
