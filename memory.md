@@ -52,6 +52,13 @@ Stato al 2026-11-07, versione 0.11.196. Per riprendere il lavoro leggi anche `do
 - La 0.11.188 e' stata analizzata con Windows Defender e VirusTotal (0 segnalazioni): badge e frase al passato nei 6 README. Dal 2026-11-08 il proprietario non vuole piu' l'analisi a ogni release: non si fa.
 - L'installatore non e' firmato: gli avvisi di SmartScreen e qualche falso positivo vengono da li'.
 
+## Installatore, finestre e avvisi (2026-11-08, 0.11.196)
+- Modello NSIS proprio `desktop/src-tauri/installer/installer.nsi` (da Tauri 2.12.4, `"template"` in `tauri.conf.json`): con una versione piu' vecchia installata la scelta di base e' «Non disinstallare»; niente casella «Elimina i dati» (i dati non si cancellano mai). `@tauri-apps/cli` fissato a 2.12.4: aggiornandolo, rifare le due modifiche segnate «AURORA» sul modello nuovo.
+- Finestre sempre davanti: l'agente chiama `AllowSetForegroundWindow(ASFW_ANY)` prima di svegliare Aurora; `bring_to_front` in `desktop/src-tauri/src/lib.rs` (show, unminimize, always_on_top per 0,6 s, focus). Ogni finestra nuova va aperta cosi'.
+- Maniglie della Stazione (`GridBoard.tsx`): una per ogni tratto di confine verticale dove i blocchi a sinistra e a destra cominciano e finiscono alla stessa altezza; muove insieme tutti i blocchi delle due parti.
+- Avviso del DXCC nuovo: `components/NewDxAlert.tsx`, preferenze `popNew`/`popNewBand` in `notifyView`, evento sonoro `new_dx_popup` con il suono `dxalarm` di fabbrica (anche per chi ha gia' un'assegnazione salvata).
+- Aggiornamento automatico: `UpdateService::download` riprova tre giri alternando indirizzo pubblico e API di GitHub (l'8/11 GitHub dava 504 sugli indirizzi pubblici delle release, l'API funzionava).
+
 ## Avvisi della stazione
 - `DiagnosisBar.tsx`: schede in basso a destra calcolate da `lib/diagnosis.ts`. Per `audio_loss` (blocchi audio persi, notizia del core da `audio-spectrum/src/capture.rs`) il testo e «Come risolvere» aprono `AudioLossHelp.tsx` con i sei controlli sul PC (risparmio USB, combinazione energia, cavo e porta, 48 kHz 16 bit e niente miglioramenti audio, altri programmi, memoria), su due colonne da 900 px in su (0.11.177). E' un problema del PC dell'utente, non di Aurora.
 

@@ -3,8 +3,9 @@
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
 ## Dal lavoro del 2026-11-08 (locale, non pubblicato)
-- [ ] Avviso in evidenza del DXCC nuovo e ora/paese nelle caselle di «CQ e novita'»: commit locale 200a7108, da far vedere al proprietario su localhost:8787 prima di pubblicarlo.
-- [ ] Riga gialla del QSO in corso illeggibile al passaggio del mouse: corretta su main, esce con la prossima versione.
+- [x] Avviso in evidenza del DXCC nuovo e ora/paese in «CQ e novita'» (0.11.196).
+- [x] Riga gialla del QSO in corso leggibile al passaggio del mouse (0.11.196).
+- [ ] Prove dal vivo della 0.11.196: avviso del DXCC nuovo con il suo suono, finestra dal tray davanti a tutto, installatore che propone l'aggiornamento, maniglie uniche, prima installazione del .dmg su un Mac vero.
 - [ ] Prove dal vivo del proprietario: JT4 A-G, Q65-30A, MSK144/MSK40 con tempo reale, bande nuove, frequenza principale all'avvio, «R + locatore» (YB1AM), accesso senza codice in casa.
 - [x] 0.11.195 pubblicata il 2026-11-08 (Windows; Linux e Mac fermati da un guasto di GitHub sugli scaricamenti delle release, da rilanciare).
 - [ ] Q65: scelta di periodo (15-300 s) e sottomodo (A-E), media fra periodi, decodifica AP, modello di evanescenza (EME).
