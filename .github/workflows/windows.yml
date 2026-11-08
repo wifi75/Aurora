@@ -109,8 +109,8 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.CHIAVE_FIRMA_AGGIORNAMENTI }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.PASSWORD_CHIAVE_AGGIORNAMENTI }}
         run: |
           $exe = Get-ChildItem firmato -Recurse -Filter '*-setup.exe' | Select-Object -First 1
           if (-not $exe) { throw 'installatore firmato non trovato' }
