@@ -1,0 +1,125 @@
+# Installatore per Windows compilato su GitHub e firmato con SignPath (firma gratuita della SignPath Foundation per i progetti open source).
+# SignPath firma solo programmi compilati su macchine di GitHub dal codice pubblico: per questo l'installatore si fa qui e non piu' sul PC.
+#
+# Come funziona, a ogni release pubblicata:
+#   1. compila interfaccia e programma (Hamlib ufficiale e cty.dat inclusi, come scripts/rilascio-windows.ps1);
+#   2. carica l'installatore non firmato e chiede la firma a SignPath; il proprietario la APPROVA a mano sul sito di SignPath;
+#   3. con l'installatore firmato prepara la firma degli aggiornamenti (minisign, chiave nei segreti) e allega tutto alla release.
+#
+# Finche' i segreti di SignPath non ci sono, il lavoro compila soltanto (controllo) e non allega niente: la release resta come la fa il PC.
+# Segreti e variabili da impostare in GitHub > Settings > Secrets and variables > Actions: vedi docs/signpath.md.
+name: Windows
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release da compilare e firmare (es. v0.11.198)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    # macchina di GitHub: SignPath accetta solo questo (controlla che tutto sia stato fatto su macchine ospitate da GitHub)
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      SIGNPATH_ON: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            core
+            desktop/src-tauri
+
+      - name: File dei paesi (cty.dat)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force desktop/src-tauri/cty | Out-Null
+          foreach ($i in 1..6) {
+            try { Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile desktop/src-tauri/cty/cty.dat -UserAgent 'Mozilla/5.0 (Aurora build)'; break }
+            catch { Write-Host "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; Start-Sleep 20 }
+          }
+          if ((Get-Item desktop/src-tauri/cty/cty.dat).Length -lt 50000) { throw 'cty.dat troppo piccolo' }
+
+      - name: Hamlib ufficiale (rigctld, SHA-256 verificato)
+        shell: pwsh
+        run: ./scripts/prepara-hamlib.ps1
+
+      - name: Interfaccia
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Programma e installatore (senza firma degli aggiornamenti, che si fa dopo la firma di SignPath)
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm ci
+          npx tauri build --config '{\"bundle\":{\"createUpdaterArtifacts\":false}}'
+          $exe = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'installatore non trovato' }
+          New-Item -ItemType Directory -Force ../non-firmato | Out-Null
+          Copy-Item $exe.FullName ../non-firmato/
+
+      - name: Installatore non firmato (per SignPath)
+        id: carica
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-windows-non-firmato
+          path: non-firmato/*.exe
+
+      - name: Firma con SignPath (da approvare a mano sul sito di SignPath)
+        if: env.SIGNPATH_ON == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'Aurora' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.carica.outputs.artifact-id }}
+          wait-for-completion: true
+          # il proprietario ha tempo per approvare: fino a 12 ore
+          wait-for-completion-timeout-in-seconds: 43200
+          output-artifact-directory: firmato
+
+      - name: Firma degli aggiornamenti e allegati alla release
+        if: env.SIGNPATH_ON == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $exe = Get-ChildItem firmato -Recurse -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'installatore firmato non trovato' }
+          # la firma di Windows deve esserci davvero
+          $sig = Get-AuthenticodeSignature $exe.FullName
+          if ($sig.Status -ne 'Valid') { throw "firma di Windows non valida: $($sig.Status)" }
+          New-Item -ItemType Directory -Force rilascio | Out-Null
+          Copy-Item $exe.FullName rilascio/
+          Push-Location desktop
+          npx tauri signer sign ("../rilascio/" + $exe.Name)
+          Pop-Location
+          Copy-Item ("rilascio/" + $exe.Name) rilascio/Aurora-Setup.exe
+          Get-ChildItem rilascio -Filter '*-setup.exe' | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content rilascio/SHA256SUMS.txt -Encoding ascii
+          Get-ChildItem rilascio | ForEach-Object { Write-Host $_.Name }
+          gh release upload $env:TAG (Get-ChildItem rilascio | ForEach-Object FullName) --clobber

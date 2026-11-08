@@ -134,6 +134,15 @@ cd core && cargo clippy --workspace --all-targets
 
 No PC com o Aurora ligado, os testes do core se executam com `--target-dir target/testrun` (caso contrário o Windows bloqueia o `aurora.exe`).
 
+## Política de assinatura de código (code signing policy)
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Autor e revisor: [Tiziano Cassone](https://github.com/wifi75)
+- Aprovação das assinaturas: [Tiziano Cassone](https://github.com/wifi75)
+
+O instalador do Windows é compilado a partir deste repositório em máquinas do GitHub (`.github/workflows/windows.yml`) e cada assinatura é aprovada à mão. Privacidade: o Aurora só envia os dados descritos em [`docs/privacy.md`](docs/privacy.md) (em italiano); cada serviço desliga-se nas Definições e o instalador lista-os.
+
 ## Licença
 
 O Aurora é software livre, publicado com a **GNU General Public License versão 3** (`GPL-3.0-only`: o motor próprio contém algoritmos do JTDX e do WSJT-X, publicados com a GPL 3): texto completo em [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone (IU3WJQ). As bibliotecas de terceiros e seus avisos estão em [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) e [`docs/licenze-terze-parti.md`](docs/licenze-terze-parti.md) (documentação em italiano).

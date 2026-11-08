@@ -190,6 +190,39 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 Var ReinstallPageCheck
 Page custom PageReinstall PageLeaveReinstall
 
+; AURORA: 5. Dati che escono dal PC (richiesto dalla firma gratuita di SignPath: dirlo durante l'installazione, con il modo di spegnerli)
+Page custom PageDatiAurora
+Function PageDatiAurora
+  ${IfThen} $PassiveMode = 1 ${|} Abort ${|}
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $LANGUAGE = 1040
+    StrCpy $1 "Dati che Aurora manda in rete"
+    StrCpy $2 "Aurora tiene log, impostazioni e password sul tuo PC. Escono solo questi dati:$$
+$$
+- rapporti degli errori anonimi (versione, radio, scheda audio, messaggio d'errore ripulito; mai nominativo, locatore, log o password) e conteggio delle installazioni attive con un codice casuale;$$
+- PSK Reporter (spot ricevuti, con nominativo e locatore), DX Cluster, controllo degli aggiornamenti su GitHub, propagazione e messaggi dell'autore;$$
+- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e gli altri servizi solo se li accendi tu.$$
+$$
+Si spengono in qualunque momento in Impostazioni (Assistenza > Rapporti degli errori, Servizi online, Programmi collegati). Dettagli: docs/privacy.md su github.com/wifi75/Aurora."
+  ${Else}
+    StrCpy $1 "Data Aurora sends over the network"
+    StrCpy $2 "Aurora keeps your log, settings and passwords on your PC. Only this data leaves it:$$
+$$
+- anonymous error reports (version, radio, sound card, cleaned error message; never callsign, locator, log or passwords) and a count of active installations with a random code;$$
+- PSK Reporter (received spots, with callsign and locator), DX Cluster, update check on GitHub, propagation and messages from the author;$$
+- QRZ.com, HamQTH, eQSL, LoTW, ClubLog and the other services only if you turn them on.$$
+$$
+You can turn them off at any time in Settings (Support > Error reports, Online services, Connected programs). Details: docs/privacy.md at github.com/wifi75/Aurora."
+  ${EndIf}
+  ${NSD_CreateLabel} 0 0 100% 12u $1
+  Pop $3
+  ${NSD_CreateTextMultiline} 0 16u 100% -16u $2
+  Pop $3
+  SendMessage $3 ${EM_SETREADONLY} 1 0
+  nsDialogs::Show
+FunctionEnd
+
 ; Find a previous WiX installation and set $R6 to its uninstall registry key, or to "" if none.
 ;
 ; A WiX installer stores the installation info in registry
