@@ -61,5 +61,6 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 ## Limiti dichiarati (non risolvibili dall'esterno)
 
 - **Linux** (non provata dall'autore): mancano OmniRig (solo Windows), PTT diretto su RTS/DTR della seriale, regolazione del volume di registrazione e aggiornamento automatico. Il PTT su seriale si potrebbe portare con `ioctl(TIOCMSET)` se qualcuno lo chiede.
+- **macOS** (non provata dall'autore, dal 2026-11-08): `.github/workflows/macos.yml` compila un `.dmg` universale (Apple Silicon e Intel) a ogni release, allegato come `Aurora-macOS.dmg`. Non firmato da Apple: al primo avvio serve tasto destro > Apri (o `xattr -cr /Applications/Aurora.app`). Come su Linux mancano OmniRig, PTT sulla seriale e aggiornamento automatico; Hamlib va installato a parte (`brew install hamlib`).
 - JTDX 159 non accetta `Configure` via UDP: livello di decodifica, cicli FT8, filtri RX e altre impostazioni del motore restano nella finestra di JTDX.
 - Un Reply fa trasmettere JTDX; i comandi di GridTracker2 passano dall'hub senza il cancello di Aurora.
