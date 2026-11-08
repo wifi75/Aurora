@@ -1,5 +1,10 @@
 # Changelog
 
+## Non rilasciato
+- **Finestre sempre davanti**: aperta dal tray (o da un'altra istanza) la finestra di Aurora, con l'avviso della versione nuova, viene sopra a tutte le altre: l'agente cede il primo piano (`AllowSetForegroundWindow`) e la finestra resta un attimo «sempre in primo piano».
+- **Righe colorate leggibili al passaggio del mouse** (QSO in corso in giallo, mio nominativo in giallo o ciano).
+- **CQ e novita'**: paese e ora dell'ultima ricezione nelle caselle, DXCC nuovo che lampeggia; avviso in evidenza del DXCC nuovo con suono proprio («Allarme DX raro»), regolabile in Notifiche.
+
 ## 0.11.195 - 2026-11-08
 - **LogHX**: tipo pronto in Programmi collegati (flusso WSJT-X sulla 2237 con Logged ADIF) e voce della Guida rifatta dal registro delle versioni di LogHX 3.1: impostazione di JTDX in LogHX, «Active calls» con «Accetta richieste UDP», multicast o rebroadcast con GridTracker, CAT condiviso con OmniRig.
 - **Band Hopping**: tasto destro sul selettore delle frequenze (era sui pulsanti delle bande, tolti).

@@ -208,11 +208,25 @@ fn percent_encode(text: &str) -> String {
         .collect()
 }
 
+/// Porta la finestra principale davanti a TUTTE le altre (mai sotto): mostra, toglie dalla barra, la mette per un attimo «sempre in primo piano»
+/// e le da' il fuoco, poi toglie il «sempre in primo piano». Windows da solo puo' rifiutare il fuoco a chi non ha ricevuto il clic: cosi' la
+/// finestra viene comunque sopra (l'agente nel tray cede il primo piano con `AllowSetForegroundWindow` prima di svegliarla).
+pub(crate) fn bring_to_front(window: &tauri::WebviewWindow) {
+    let _ = window.show();
+    let _ = window.unminimize();
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_focus();
+    let w = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(600));
+        let _ = w.set_always_on_top(false);
+        let _ = w.set_focus();
+    });
+}
+
 fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.unminimize();
-        let _ = window.set_focus();
+        bring_to_front(&window);
     }
 }
 
@@ -262,9 +276,7 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
     crash::activity("apertura di una finestra a parte");
     let label = format!("finestra-{page}");
     if let Some(window) = app.get_webview_window(&label) {
-        let _ = window.unminimize();
-        let _ = window.show();
-        let _ = window.set_focus();
+        bring_to_front(&window);
         return;
     }
     // il titolo vero lo mette la pagina (gli elementi che contiene)

@@ -226,8 +226,19 @@ fn install_update() {
 
 /// Apre Aurora (se e' gia' aperta, il programma porta davanti la sua finestra).
 fn open_aurora() {
+    allow_foreground();
     if let Ok(exe) = std::env::current_exe() {
         let _ = std::process::Command::new(exe).spawn();
+    }
+}
+
+/// L'agente ha appena ricevuto il clic (tray o cartolina): solo lui puo' cedere il primo piano. Senza, Windows non lascia ad Aurora
+/// portare davanti la sua finestra (la finestra dell'aggiornamento finiva sotto a tutto, 2026-11-08).
+fn allow_foreground() {
+    #[cfg(windows)]
+    {
+        // ASFW_ANY: qualunque processo, cioe' Aurora che stiamo per svegliare
+        unsafe { windows_sys::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow(u32::MAX) };
     }
 }
 
