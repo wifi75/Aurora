@@ -39,8 +39,8 @@ Finche' i segreti non ci sono, il lavoro compila soltanto e non allega niente.
    | Variable | `SIGNPATH_ORGANIZATION_ID` | l'ID dell'organizzazione SignPath (sul loro sito) |
    | Variable | `SIGNPATH_PROJECT_SLUG` | `Aurora` (solo se diverso) |
    | Variable | `SIGNPATH_POLICY_SLUG` | `release-signing` (solo se diverso) |
-   | Secret | `CHIAVE_FIRMA_AGGIORNAMENTI` | la chiave che firma gli aggiornamenti automatici: il contenuto del file `%USERPROFILE%\.aurora-signing\aurora.key` |
-   | Secret | `PASSWORD_CHIAVE_AGGIORNAMENTI` | la password di quella chiave |
+   | Secret | `AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY` | la chiave che firma gli aggiornamenti automatici: il contenuto del file `%USERPROFILE%\.aurora-signing\aurora.key` |
+   | Secret | `AURORA_PASSWORD_TIMBRO_AGGIORNAMENTI` | la password di quella chiave |
 
 5. Alla prima release dopo l'attivazione: approvare la richiesta su SignPath e controllare che gli allegati della release siano stati sostituiti.
 
