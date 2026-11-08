@@ -46,9 +46,9 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_ap.f90`, `fadengauss.c`, `fadenlorentz.c`), `lib/q65_decode.f90`.
 - Verifica: WAV di `q65sim` per ogni periodo e sottomodo; QSO dal vivo in Q65-60A su 6 m o 2 m.
 
-## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz
+## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz (parziale)
 
-- Cosa fare: dopo il Q65 (voce 21), un pannello che decodifica tutta una fetta di banda larga fino a 90 kHz e con un clic imposta frequenza e parametri del QSO. Serve un ricevitore SDR a banda larga (flusso I/Q), non la sola scheda audio.
-- Aurora: nuovo ingresso I/Q in `core/crates/audio-*`, decodifica Q65 su piu' canali, pagina nell'interfaccia.
-- WSJT-X: cartella `qmap/`.
-- Verifica: registrazione I/Q di prova con piu' segnali Q65.
+- Fatto (2026-11-08, ramo `lavoro/qmap`): crate `core/crates/qmap`. Sorgente I/Q (`iq.rs`: WAV I/Q a due canali PCM 16/24/32 bit o float, centro letto dal nome `..._144100kHz.wav`; `tci_iq.rs`: collegamento TCI suo, separato da quello del CAT, `iq_samplerate`/`iq_start`/`iq_stop`, centro da `dds:`, blocchi binari di tipo 0 int16/int24/int32/float32). Ricerca (`search.rs`, da `qmapa.f90`, `getcand2.f90`, `q65b.f90`): FFT lunga quanto il periodo, spettro medio a 2,93 Hz normalizzato su 16 tratti (40esimo percentile), picchi del tono di sincronismo presi dal piu' forte con la larghezza del segnale azzerata, ogni candidato riportato a 12 kHz con il tono 0 a 1000 Hz e decodificato da `jt::q65` (piu' sottomodi, AP, evanescenza a scelta). Servizio (`service.rs`): periodo raccolto sull'orologio, ricerca in un thread, configurazione in `qmap.json`. API: `GET/PUT /api/v1/qmap`, `POST /api/v1/qmap/decode` (file), `POST /api/v1/qmap/tune` (Q65 con periodo e sottomodo del messaggio, radio con il tono 0 a 1000 Hz, Rx a 1000 Hz); la configurazione si cambia solo dal PC. Pagina `#/qmap` (link «QMAP» nel menu): sorgente, periodo, sottomodi, spettro della fetta con i segni cliccabili, elenco con «QSO»; 6 lingue. Prove: tre segnali Q65-15A a -31, +4 e +39 kHz in 96 kHz, 60A e 60B insieme, solo rumore, WAV, TCI con server finto.
+- Resta: i periodi da 30 s dentro il minuto di QMAP (`bAlso30`, `iseq`) e la decodifica a meta' periodo; la media dei periodi; il sincronismo per candidato prima del decodificatore (`q65_sync`); Doppler EME (`astro`); prototipo grafico da approvare.
+- Verifica dal vivo: con un SDR TCI (ExpertSDR/Thetis) a 96 kHz su 2 m o 6 m, e una registrazione I/Q vera con piu' segnali Q65.
+- WSJT-X: cartella `qmap/` (`libqmap/qmapa.f90`, `getcand2.f90`, `q65b.f90`), `Transceiver/TCITransceiver.cpp`.
