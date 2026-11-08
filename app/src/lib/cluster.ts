@@ -46,6 +46,8 @@ export interface WaterfallSpot {
   freq_khz: number;
   spotter: string;
   mode: string | null;
+  /** Il commento dello spot (vuoto se non c'e'): solo per il suggerimento sulla cascata. */
+  comment: string;
   /** In quale riga scrivere il nominativo (0 = la piu' bassa); `null` = niente spazio, resta la tacca. */
   row: number | null;
 }
@@ -65,7 +67,7 @@ export function spotsOnWaterfall(spots: readonly ClusterSpot[], dialHz: number, 
     if (!seen || s.received_ms > seen.received_ms) latest.set(key, s);
   }
   const placed = [...latest.values()]
-    .map((s) => ({ call: s.dx_call, hz: Math.round(s.freq_khz * 1000 - dialHz), freq_khz: s.freq_khz, spotter: s.spotter, mode: s.mode, row: null as number | null }))
+    .map((s) => ({ call: s.dx_call, hz: Math.round(s.freq_khz * 1000 - dialHz), freq_khz: s.freq_khz, spotter: s.spotter, mode: s.mode, comment: s.comment ?? '', row: null as number | null }))
     .sort((a, b) => a.hz - b.hz);
   // un nominativo occupa circa 80 Hz piu' 30 Hz a lettera sulla larghezza tipica della cascata
   const rowEnd: number[] = [];

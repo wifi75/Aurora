@@ -3061,50 +3061,102 @@
   font-weight: 600;
 }
 
-/* Spot del DX Cluster sulla cascata */
+/* Spot del DX Cluster sulla cascata: in alto nell'immagine (sotto le etichette Rx/Tx), mai sullo spettro ne' sul righello.
+   Altezza della riga (15 px) e spazio fra le righe (2 px) allineati a SpotMarkers.tsx. */
 .wf-spots {
+  --spot: #ffd84a;
   position: absolute;
   right: 0;
-  bottom: 0;
   left: 0;
   height: 0;
   pointer-events: none;
+  z-index: 1;
 }
 
 .wf-spot {
   position: absolute;
-  display: flex;
-  align-items: flex-end;
-  min-width: 0.5rem;
-  height: 1rem;
-  padding: 0;
-  color: #ffd84a;
+  box-sizing: border-box;
+  height: 15px;
+  padding: 0 4px;
+  color: color-mix(in srgb, var(--spot) 70%, #fff);
   font-family: var(--font-data);
-  font-size: var(--text-xs);
-  line-height: 1;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 13px;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  background: none;
-  border: 0;
-  border-left: 2px solid currentColor;
+  background: rgb(8 12 20 / 0.72);
+  border: 1px solid color-mix(in srgb, var(--spot) 65%, transparent);
+  border-left-width: 2px;
+  border-left-color: var(--spot);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
   cursor: pointer;
   pointer-events: auto;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
-.wf-spot-call {
-  padding: 0 0.25rem;
-  background: rgb(0 0 0 / 0.55);
-  border-radius: 0 0.25rem 0.25rem 0;
-}
-
-.wf-spot--tick {
-  height: 0.6rem;
-  opacity: 0.8;
+/* vicino al bordo destro l'etichetta sta a sinistra della tacca: il segno colorato passa a destra */
+.wf-spot--flip {
+  border-left-width: 1px;
+  border-left-color: color-mix(in srgb, var(--spot) 65%, transparent);
+  border-right-width: 2px;
+  border-right-color: var(--spot);
+  border-radius: 3px 0 0 3px;
 }
 
 .wf-spot:hover,
 .wf-spot:focus-visible {
-  color: #fff;
+  z-index: 2;
+  color: #10131a;
+  background: var(--spot);
   outline: none;
+}
+
+.wf-spot--more {
+  color: color-mix(in srgb, var(--spot) 55%, #fff);
+  font-weight: 500;
+  border-style: dashed;
+  border-left-style: solid;
+  border-radius: 3px;
+  cursor: help;
+}
+
+.wf-spot-probe {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* la tacca: una riga sottile nel punto esatto della frequenza, dal bordo alto della zona all'etichetta */
+.wf-spot-stem {
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  margin-left: 0;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--spot) 30%, transparent), var(--spot));
+  pointer-events: none;
+}
+
+/* spot senza posto per l'etichetta: resta solo una tacca corta, cliccabile */
+.wf-spot-tick {
+  position: absolute;
+  top: -4px;
+  width: 7px;
+  height: 9px;
+  margin-left: -3px;
+  padding: 0;
+  background: linear-gradient(var(--spot), var(--spot)) center / 1px 100% no-repeat;
+  border: 0;
+  opacity: 0.75;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.wf-spot-tick:hover,
+.wf-spot-tick:focus-visible {
+  opacity: 1;
+  outline: none;
+  background-size: 3px 100%;
 }
 
 /* Propagazione e ricezione: cruscotto */
