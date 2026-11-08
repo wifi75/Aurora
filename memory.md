@@ -296,3 +296,12 @@ Stato al 2026-11-07, versione 0.11.195. Per riprendere il lavoro leggi anche `do
 - Senza CAT le bande impostano solo la frequenza di Aurora (`ManualDialHook` in `remote-api`, file `frequenza-a-mano.txt` letto all'avvio): richiesta di IZ0008SWL.
 - BBLogger: fonti ufficiali su https://www.aribusto.it/bblogger.htm e i PDF «Wsjt_I v. 2 - SETUP» e «Differenze tra UDP e ADIF»; dettagli in `docs/integrazioni-log.md`.
 - Prove della app che falliscono gia' prima di questi lavori: cronologia (svuota con conferma), Aggiornamenti (cartella dei crash), regole delle Automazioni, `lastPage` e `route` (mappa); da guardare.
+
+## Modi e bande nuovi (2026-11-08, solo in locale)
+- Crate `jt`: `jt4` (Fano con la metrica di `getmet4`, `fano::Metric::Jt4`), `q65` (codice QRA 15,65 su GF(64), tabelle in `q65tables.rs`, metrica di Bessel senza evanescenza), `msk144` (LDPC 128,90, CRC-13, ricezione dei ping) e `msk40` (messaggi brevi, hash `hashlittle` con valore iniziale 146). Il crate `jt` ora dipende da `ft8` (messaggi a 77 bit).
+- Motore: `Mode::Jt4` (sottomodo in `rig::jt4_submode`, ricordato in `controls.json`), `Mode::Q65` (30A), `Mode::Msk144` (15 s, 1500 Hz fissi, tempo reale in `engine-native/src/mskrt.rs`).
+- Bande: elenco unico in `rig_control::bands::BANDS` (2200 m - 24 GHz); righe di WSJT-X in `table.rs` (`EXTRA_BAND_ROWS`, `Q65_ROWS`, `MSK144_ROWS`), aggiunte da `upgraded()` alle tabelle salvate.
+- Interfaccia: pulsanti delle bande tolti, `FreqPicker` (una riga per banda, pallino sulla principale, viola Aurora sulla banda in uso); colori dei modi in `tokens.css`.
+- Accesso senza codice acceso di base sulla rete di casa (`accesso-libero.txt` lo spegne solo con «0"); da internet il codice resta.
+- All'avvio la radio va sulla frequenza principale (`spawn_start_on_main_frequency`).
+- Il proprietario vede la grafica dal vivo: `vite build` e copia in `%LOCALAPPDATA%\Aurora\dist`. Compilazione con 9 processi.

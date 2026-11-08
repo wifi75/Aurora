@@ -2,6 +2,14 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
+## Dal lavoro del 2026-11-08 (locale, non pubblicato)
+- [ ] Prove dal vivo del proprietario: JT4 A-G, Q65-30A, MSK144/MSK40 con tempo reale, bande nuove, frequenza principale all'avvio, «R + locatore» (YB1AM), accesso senza codice in casa.
+- [ ] Pubblicare la 0.11.195 solo quando il proprietario lo dice (i commit dal 2026-11-08 08:00 sono solo locali).
+- [ ] Q65: scelta di periodo (15-300 s) e sottomodo (A-E), media fra periodi, decodifica AP, modello di evanescenza (EME).
+- [ ] FST4/FST4W e WSPR.
+- [ ] Prove che falliscono gia' da prima: qso-native `autolog_stops_the_transmission_at_the_end_of_the_qso` e `rr73_repeats_without_73_then_closes` (rese vecchie dalla 17be7233), remote-api `the_wsjtx3_features_have_the_wsjtx_defaults_and_are_checked`, una ventina di prove dei componenti dell'interfaccia (testi in italiano attesi in inglese), `lastPage`, `route`, `HistoryPage`, `UpdatesTab`.
+- [ ] Il Band Hopping col tasto destro sui pulsanti delle bande non c'e' piu' (pulsanti tolti): rimetterlo nel selettore delle frequenze se serve.
+
 ## Aperti (2026-11-01)
 - [ ] Prove dal vivo della 0.11.189-0.11.191: testo piu' grande (Ctrl +), Salva nelle Impostazioni, Aggiungi/Elimina/Svuota nel Log, bande senza CAT, QSO verso BBLogger (UDP 12 e file ADIF).
 - [ ] Cinque prove della app che falliscono gia': HistoryPage (svuota con conferma), UpdatesTab (cartella dei crash), Settings (regole delle Automazioni), lastPage, route (mappa).
