@@ -105,7 +105,14 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     });
   }, []);
 
-  const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
+  // finche' la radio non risulta comandabile (all'avvio si collega dopo qualche secondo, o dopo «Accendi») si richiede ogni 3 s:
+  // senza, il menu delle frequenze restava senza comandi fino alla riapertura della finestra
+  const info = useQuery({
+    queryKey: ['station-info'],
+    queryFn: getStationInfo,
+    retry: false,
+    refetchInterval: (query) => (query.state.data?.rig_control === true ? false : 3_000),
+  });
   // la cascata mostra quello che passa dal filtro della radio (letto con il CAT), 0-3000 Hz se non si sa
   const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
   const spanHz = useSpectrumSpan((s) => s.spanHz);
