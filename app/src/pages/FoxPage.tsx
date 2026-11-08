@@ -162,14 +162,24 @@ export function FoxPage() {
             <Kpi tone="muted" label={t('fox.periods')} title={t('tip.fox.periods')} value={fox.periods} />
           </div>
         </div>
-        <div className="foxc-main-actions">
-          <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} onClick={() => void postControl('fox', !fox.enabled)}>
-            {fox.enabled ? t('fox.on') : t('fox.off')}
-          </button>
-          <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} title={t('tip.fox.enableTx')} onClick={() => toggleTx(!txOn)}>
-            {t('fox.enableTx')}
-          </button>
-          <StopButton variant="bar" />
+        {/* una sola barra di comandi, tutti della stessa misura: prima Fox, Tx e STOP, poi i comandi di ricezione e lo split
+            (prima stavano sotto la voce «Cascata») */}
+        <div className="foxc-cmdbar" role="toolbar" aria-label={t('fox.commands')}>
+          <div className="foxc-main-actions">
+            <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} onClick={() => void postControl('fox', !fox.enabled)}>
+              {fox.enabled ? t('fox.on') : t('fox.off')}
+            </button>
+            <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} title={t('tip.fox.enableTx')} onClick={() => toggleTx(!txOn)}>
+              {t('fox.enableTx')}
+            </button>
+            <StopButton variant="bar" />
+          </div>
+          <span className="foxc-cmd-sep" aria-hidden="true" />
+          <div className="foxc-cmd-rx">
+            <RxControls mode={status?.mode ?? ''} transmitting={transmitting} />
+            {/* Tx/Rx Split, come nella Trasmissione della pagina Stazione: la Tx resta ferma quando si sposta la Rx */}
+            <TxQuickControls splitOnly />
+          </div>
         </div>
       </header>
 
@@ -390,12 +400,8 @@ function Spectrum() {
         <h2 title={t('tip.fox.waterfall')}>{t('fox.waterfall')}</h2>
         <span className="foxc-chip data" title={t('tip.fox.txChip')}>Tx {status?.tx_df ?? '—'} Hz</span>
         <span className="foxc-chip foxc-chip--rx data" title={t('tip.fox.rxChip')}>Rx {status?.rx_df ?? '—'} Hz</span>
-        {/* Tx/Rx Split, come nella Trasmissione della pagina Stazione: la Tx resta ferma quando si sposta la Rx */}
-        <TxQuickControls splitOnly />
       </header>
-      <div className="foxc-rx-controls">
-        <RxControls mode={status?.mode ?? ''} transmitting={status?.transmitting ?? false} />
-      </div>
+      {/* i comandi di ricezione e lo split sono saliti nella barra in alto; qui resta solo la barra degli strumenti della cascata */}
       <WaterfallToolbar />
       <div className="foxc-wf" style={{ height }}>
         <div className="wf-stack">
