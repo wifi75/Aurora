@@ -118,8 +118,9 @@ fn jt65_and_jt9_use_the_jtdx_default_rows() {
     assert_eq!(rows(&t, Region::R1, "6m", "JT65"), vec![50_310_000]);
     // da FT8 a JT65 su 20 m si cambia frequenza
     assert_eq!(t.best_working(Region::All, "JT65", 14_074_000), Some(14_076_000));
-    // JTDX non ha JT9 su 60 m e 2 m
-    assert_eq!(t.frequency("60m", "JT9"), None);
+    // JTDX non ha JT9 su 60 m e 2 m; Aurora aggiunge 60 m dalla tabella di WSJT-X
+    assert_eq!(t.frequency("60m", "JT9"), Some(5_357_000));
+    assert_eq!(t.frequency("2m", "JT9"), None);
 }
 
 #[test]
