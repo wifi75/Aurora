@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.204',
-    released: '2026-11-08T22:17:05Z',
+    released: '2026-11-08T22:21:34Z',
     kind: 'new',
     title: ['Tre contest nuovi e frequenze aggiornate', 'Three new contests and updated frequencies', 'Drei neue Contests und aktualisierte Frequenzen', 'Trois nouveaux contests et fréquences mises à jour', 'Tres concursos nuevos y frecuencias actualizadas', 'Três concursos novos e frequências atualizadas'],
     text: [
