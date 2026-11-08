@@ -145,3 +145,14 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 .ctc-wf-handle:hover span { background: var(--ct-violet); }
 /* la tendina del contest: testo centrato in verticale (un select con display flex teneva il testo in alto) */
 .ctc-score select.ctc-chip--sel { display: block; height: 40px; line-height: 38px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
+
+/* Decodifiche come la tabella di Attivita' di banda: fasce alterne, bandiere, etichette colorate, valore a pastiglia verde */
+.ctc-dec tbody tr.ctc-r:nth-child(odd) { background: var(--row-a); }
+.ctc-dec tbody tr.ctc-r:nth-child(even) { background: var(--row-b); }
+.ctc-dec td { border-bottom: 1px solid var(--row-line, var(--ct-line)); }
+.ctc-dec .decode-flag { margin-right: 4px; }
+.ctc-new { display: flex; gap: 3px; flex-wrap: nowrap; }
+.ctc-pill { background: var(--ok); color: #04210f; font-weight: 600; }
+.ctc-dec tr.ctc-r.top { background: color-mix(in srgb, var(--ok) 16%, var(--row-b)); }
+.ctc-dec tr.ctc-r.dup { opacity: 0.5; }
+.ctc-dec tr.ctc-r.qso { background: color-mix(in srgb, #ffe600 22%, var(--row-b)); outline: none; box-shadow: inset 4px 0 0 var(--danger); }

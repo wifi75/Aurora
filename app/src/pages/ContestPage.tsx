@@ -30,6 +30,8 @@ import { useStation } from '../state/station';
 import { WaterfallStack } from '../components/WaterfallStack';
 import { WaterfallToolbar } from '../components/WaterfallToolbar';
 import { DragHandle, useDragHeight } from '../lib/dragHeight';
+import { flagCode } from '../lib/flags';
+import { formatDistance, usePrefs } from '../lib/prefs';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
@@ -171,6 +173,14 @@ function Cascata() {
   );
 }
 
+/** Il colore di un'etichetta come in Attivita' di banda (variabili --tag-* del tema). */
+const tag = (k: string) => ({ background: `var(--tag-${k})`, color: `var(--tag-${k}-ink)` });
+
+/** Il messaggio con il nominativo di chi trasmette a pastiglia, come la stazione DX nella pagina Stazione. */
+function pastiglia(text: string, call: string) {
+  return text.split(/(\s+)/).map((p, i) => (call && p.toUpperCase() === call.toUpperCase() ? <mark key={i} className="dx-call">{p}</mark> : p));
+}
+
 function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
   const tot = s.totali;
   const ora = s.ora_ms ?? Date.now();
@@ -236,6 +246,7 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
   const nonContest = new Set(s.non_contest ?? []);
   const migliori = righe.filter((x) => x.v && !x.v.doppio && !x.v.fuori_regola && x.call !== dx && x.d.text.startsWith('CQ'));
   const stella = migliori[0]?.call;
+  const prefs = usePrefs((p) => p.prefs);
   const tx = useEngineTx((e) => e.tx);
   const autoseq = !!switches?.autoseq;
   const txOn = !!switches?.enable_tx;
@@ -260,6 +271,7 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
                 <th className="num">Hz</th>
                 <th>{t('contest.col.msg')}</th>
                 <th>{t('contest.col.country')}</th>
+                <th className="num">{prefs.distanceUnit}</th>
                 <th>{t('contest.col.new')}</th>
                 <th className="num">{t('contest.col.value')}</th>
               </tr>
@@ -267,22 +279,41 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
             <tbody>
               {righe.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="ctc-muted">{t('contest.noDecodes')}</td>
+                  <td colSpan={8} className="ctc-muted">{t('contest.noDecodes')}</td>
                 </tr>
               ) : null}
               {righe.map(({ d, call, v }) => {
                 const inQso = call === dx;
                 const cls = inQso ? 'qso' : v?.doppio ? 'dup' : call === stella ? 'top' : '';
-                const novita = inQso ? <span className="ctc-warn">{t('contest.inQso')}</span> : v?.doppio ? <span className="ctc-bad">{t('contest.dupe')}</span> : nonContest.has(call) ? <span className="ctc-yellow">{t('contest.nonContest')}</span> : v?.fuori_regola ? <span className="ctc-bad">{t('contest.outOfRules')}</span> : v?.molt_nuovi.length ? <span className="ctc-mult">{v.molt_nuovi.join(' + ')}</span> : '—';
+                // novita' come le etichette di Attivita' di banda: i colori delle etichette (--tag-*) del tema
+                const novita = inQso ? (
+                  <span className="badge badge--tag" style={tag('worked')}>{t('contest.inQso')}</span>
+                ) : v?.doppio ? (
+                  <span className="badge badge--tag badge--quiet">{t('contest.dupe')}</span>
+                ) : nonContest.has(call) ? (
+                  <span className="badge badge--tag badge--quiet">{t('contest.nonContest')}</span>
+                ) : v?.fuori_regola ? (
+                  <span className="badge badge--tag ctc-bad">{t('contest.outOfRules')}</span>
+                ) : v?.molt_nuovi.length ? (
+                  v.molt_nuovi.map((m) => (
+                    <span key={m} className="badge badge--tag" style={tag(/^[A-R]{2}\d{2}$/i.test(m) ? 'new-grid' : 'new-dxcc')}>
+                      {m}
+                    </span>
+                  ))
+                ) : null;
+                const code = prefs.showFlag ? flagCode(d.country ?? null) : null;
                 return (
-                  <tr key={d.id} className={cls} onDoubleClick={() => void postReply(d.id)} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
-                    <td>{utc(d.time_ms)}</td>
+                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void postReply(d.id)} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
+                    <td className="ctc-muted">{utc(d.time_ms)}</td>
                     <td className="num">{d.snr > 0 ? `+${d.snr}` : d.snr}</td>
-                    <td className="num">{d.freq_hz}</td>
-                    <td>{d.text}</td>
-                    <td className="ctc-country">{d.country ?? ''}</td>
-                    <td>{novita}</td>
-                    <td className={`num${v && v.punti > 0 ? ' ctc-val' : ''}`}>{v ? (call === stella ? '★ ' : '') + t('contest.pt', { n: v.punti }) : ''}</td>
+                    <td className="num ctc-muted">{d.freq_hz}</td>
+                    <td>{pastiglia(d.text, call)}</td>
+                    <td className="ctc-country">
+                      {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {d.country ?? ''}
+                    </td>
+                    <td className="num ctc-muted">{v && v.km > 0 ? formatDistance(v.km, prefs.distanceUnit) : ''}</td>
+                    <td className="ctc-new">{novita}</td>
+                    <td className="num">{v && v.punti > 0 ? <span className="badge badge--tag ctc-pill">{(call === stella ? '★ ' : '') + t('contest.pt', { n: v.punti })}</span> : v ? t('contest.pt', { n: v.punti }) : ''}</td>
                   </tr>
                 );
               })}
