@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.195',
-    released: '2026-11-08T12:00:00Z',
+    released: '2026-11-08T09:47:32Z',
     kind: 'new',
     title: ['Q65, MSK144, sottomodi JT4, bande fino a 24 GHz, LogHX e Mac', 'Q65, MSK144, JT4 submodes, bands up to 24 GHz, LogHX and Mac', 'Q65, MSK144, JT4-Untermodi, Bänder bis 24 GHz, LogHX und Mac', 'Q65, MSK144, sous-modes JT4, bandes jusqu’à 24 GHz, LogHX et Mac', 'Q65, MSK144, submodos JT4, bandas hasta 24 GHz, LogHX y Mac', 'Q65, MSK144, submodos JT4, bandas até 24 GHz, LogHX e Mac'],
     text: [
