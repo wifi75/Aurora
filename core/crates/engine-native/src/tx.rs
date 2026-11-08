@@ -417,6 +417,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Jt65 => tx_native::Mode::Jt65,
             Mode::Jt9 => tx_native::Mode::Jt9,
             Mode::Jt4 => tx_native::Mode::Jt4,
+            Mode::Q65 => tx_native::Mode::Q65,
         };
         match self.encode(&text, hz, free) {
             Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
@@ -854,6 +855,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Jt65 => tx_native::Mode::Jt65,
             Mode::Jt9 => tx_native::Mode::Jt9,
             Mode::Jt4 => tx_native::Mode::Jt4,
+            Mode::Q65 => tx_native::Mode::Q65,
         };
         let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).max(1.0);
         let rate = f64::from(tx_native::WAVE_RATE);
@@ -937,6 +939,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Jt65 => tx_native::Mode::Jt65,
                     Mode::Jt9 => tx_native::Mode::Jt9,
                     Mode::Jt4 => tx_native::Mode::Jt4,
+                    Mode::Q65 => tx_native::Mode::Q65,
                 };
                 self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
                 match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
@@ -1455,6 +1458,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Jt65 => tx_native::Mode::Jt65,
                     Mode::Jt9 => tx_native::Mode::Jt9,
                     Mode::Jt4 => tx_native::Mode::Jt4,
+                    Mode::Q65 => tx_native::Mode::Q65,
                 };
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
@@ -1532,6 +1536,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let sub = jt::jt4::Submode(0);
                     jt_check_frequency(freq, 4.0 * sub.tone_spacing_hz())?;
                     Ok(jt::jt4::modulate(&jt::jt4::tones(t), f64::from(freq), sub, 1.0))
+                }
+                // Q65-30A: `freq` e' il tono di sincronismo (tono 0), 65 toni a 3,33 Hz
+                Mode::Q65 => {
+                    check_exact(t, &self.hashes)?;
+                    let setup = jt::q65::Setup::new(30, 0).ok_or("Q65 non valido")?;
+                    jt_check_frequency(freq, setup.bandwidth_hz())?;
+                    let tones = jt::q65::tones(t, &mut self.hashes)?;
+                    Ok(jt::q65::modulate(&tones, f64::from(freq), setup, 1.0))
                 }
             }
         };
@@ -1737,6 +1749,14 @@ mod tests {
             tx_native::Mode::Jt65 => jt::rx::decode(&minute_with(&req.wave), &jt::rx::Options::default()).into_iter().map(|d| d.text).collect(),
             tx_native::Mode::Jt9 => jt::jt9rx::decode(&minute_with(&req.wave), &jt::jt9rx::Options::default()).into_iter().map(|d| d.text).collect(),
             tx_native::Mode::Jt4 => jt::jt4::decode(&minute_with(&req.wave), &jt::jt4::Options::default()).into_iter().map(|d| d.text).collect(),
+            tx_native::Mode::Q65 => {
+                let setup = jt::q65::Setup::new(30, 0).expect("Q65-30A");
+                let mut audio = noise(360_000, 13);
+                for (i, w) in req.wave.iter().enumerate() {
+                    audio[6_000 + i] += 0.05 * w;
+                }
+                jt::q65::decode(&audio, &jt::q65::Options { setup, ..jt::q65::Options::default() }, &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
+            }
         }
     }
 
@@ -2259,6 +2279,19 @@ mod tests {
         assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Jt4, Parity::Odd));
         let decoded = jt::jt4::decode(&minute_with(&requests[0].wave), &jt::jt4::Options::default());
         assert_eq!(decoded.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(), vec!["K1ABC IU3ABC IO91"], "{decoded:?}");
+    }
+
+    /// Q65-30A: risposta nel mezzo minuto opposto, l'onda si ridecodifica.
+    #[test]
+    fn a_q65_reply_goes_out_in_the_opposite_half_minute_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Q65);
+        d.remember(1, "CQ K1ABC FN42", -10, 1500, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 29.0);
+        d.after_slot(JT_SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1500)], JT_BASE + 29.3, 50_275_000, "6m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1);
+        assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Q65, Parity::Odd));
+        assert_eq!(decode_request(&requests[0]), vec!["K1ABC IU3ABC IO91".to_string()]);
     }
 
     /// In JT65 e JT9 la chiusura e' RRR (RR73 non e' un messaggio di quei modi), anche se «Usa RRR» e' spento; tornando in FT8 si ripristina.

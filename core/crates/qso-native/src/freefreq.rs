@@ -53,6 +53,8 @@ impl FreeTxParams {
                 Mode::Jt9 => 20.0,
                 // JT4A: quattro toni a 4,375 Hz
                 Mode::Jt4 => 20.0,
+                // Q65-30A: 65 toni a 3,33 Hz
+                Mode::Q65 => 220.0,
             },
             sweet_lo: 800,
             sweet_hi: 2200,

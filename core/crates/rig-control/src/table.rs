@@ -180,6 +180,14 @@ const JT_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("6m", "JT9", 50_312_000, Region::All, true),
 ];
 
+/// Le righe Q65 dell'elenco di WSJT-X (`FrequencyList.cpp`) sulle bande che Aurora conosce: 50,275 e 144,180 MHz, con quelle EME come alternative.
+const Q65_ROWS: &[(&str, &str, u64, Region, bool)] = &[
+    ("6m", "Q65", 50_211_000, Region::All, false),
+    ("6m", "Q65", 50_275_000, Region::All, true),
+    ("2m", "Q65", 144_116_000, Region::All, false),
+    ("2m", "Q65", 144_180_000, Region::All, true),
+];
+
 /// Le 24 righe della tabella che Aurora usava prima di avere le regioni (una per banda e modo): chi le ha salvate senza cambiarle passa alla tabella di JTDX.
 const LEGACY_ROWS: &[(&str, &str, u64)] = &[
     ("160m", "FT8", 1_840_000),
@@ -209,7 +217,7 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
 
 impl Default for FrequencyTable {
     fn default() -> Self {
-        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
+        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
     }
 }
 
@@ -224,7 +232,7 @@ fn valid_entries(entries: &[Entry]) -> bool {
         let Some(band) = canonical_band(&entry.band) else { return false };
         let mode = entry.mode.trim().to_uppercase();
         let in_band = band_limits(&band).is_some_and(|(lo, hi)| (lo..=hi).contains(&entry.hz));
-        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
+        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
     })
 }
 
@@ -249,6 +257,10 @@ impl FrequencyTable {
         let mut entries = entries;
         if !entries.iter().any(|e| matches!(e.mode.to_uppercase().as_str(), "JT65" | "JT9")) {
             entries.extend(JT_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
+        }
+        // lo stesso per Q65
+        if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("Q65")) {
+            entries.extend(Q65_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
         }
         entries
     }

@@ -42,6 +42,7 @@ impl Bench {
             Mode::Ft8 => 2880,
             Mode::Ft4 => 5760,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 720,
+            Mode::Q65 => 1440,
         };
         Bench {
             seq,

@@ -113,6 +113,7 @@ pub fn mode_symbol(mode: &str) -> char {
         "JT65" => '#',
         "JT9" => '@',
         "JT4" => '$',
+        "Q65" => '!',
         _ => '~',
     }
 }

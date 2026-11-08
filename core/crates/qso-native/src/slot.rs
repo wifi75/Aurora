@@ -14,6 +14,8 @@ pub enum Mode {
     Jt9,
     /// JT4 (sottomodi A-G): un minuto, come JT65.
     Jt4,
+    /// Q65-30A: periodi di 30 s, messaggi a 77 bit come FT8.
+    Q65,
 }
 
 impl Mode {
@@ -23,6 +25,7 @@ impl Mode {
             Mode::Ft8 => 15_000,
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
+            Mode::Q65 => 30_000,
         }
     }
 
@@ -38,6 +41,7 @@ impl Mode {
             Mode::Jt65 => "JT65",
             Mode::Jt9 => "JT9",
             Mode::Jt4 => "JT4",
+            Mode::Q65 => "Q65",
         }
     }
 }

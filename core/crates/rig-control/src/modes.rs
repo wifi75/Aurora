@@ -9,6 +9,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "JT" | "JT65" | "JT9" => Some("jtButton"),
         // JT4 (sottomodo A) solo con il motore proprio
         "JT4" | "JT4A" => Some("jt4Button"),
+        // Q65-30A, solo con il motore proprio
+        "Q65" | "Q65-30A" => Some("q65Button"),
         _ => None,
     }
 }
