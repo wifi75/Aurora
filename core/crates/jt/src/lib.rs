@@ -3,6 +3,7 @@
 //! - [`pack`]: da testo a 72 bit (dodici simboli da 6 bit) e viceversa;
 //! - [`rs`]: codice Reed-Solomon (63,12) di JT65;
 //! - [`jt65`]: simboli e toni di JT65 in trasmissione;
+//! - [`msk144`]: MSK144 (meteor scatter: codice LDPC 128,90, onda MSK, ricezione dei ping);
 //! - [`q65`]: Q65 (toni, onda e ricezione con il codice QRA);
 //! - [`jt4`]: JT4 (toni, onda e ricezione);
 //! - [`fano`]: decodificatore sequenziale di Fano di JT9;
@@ -17,6 +18,8 @@ pub mod jt9;
 pub mod jt9rx;
 pub mod pack;
 pub mod prefixes;
+pub mod msk144;
+mod msk144tables;
 pub mod q65;
 mod q65tables;
 pub mod rs;
