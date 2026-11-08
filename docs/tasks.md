@@ -40,19 +40,12 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Verifica: il segnale generato si decodifica con `jt9.exe` 3.0.2 e con il decodificatore di Aurora.
 - Interfaccia approvata dal proprietario il 2026-11-01: `docs/mockup-fox.html` (contatori con grafico del ritmo, Hound con doppio ordinamento e filtri, posti del SuperFox con avanzamento e anteprima del pacchetto, parametri visibili, coda, Fox log con ADIF, Cabrillo e ClubLog). Limiti di WSJT-X da superare in `docs/analisi-wsjtx-3.md`.
 
-## 21. Modo Q65 (parziale)
+## 21. Modo Q65: verifica con WSJT-X
 
-- Fatto (0.11.195): Q65-30A in `core/crates/jt/src/q65.rs` (codice QRA 15,65 su GF(64), CRC-12, messaggi a 77 bit), `Mode::Q65` nel motore, selettore dei modi e frequenze di WSJT-X (50,275 e 144,180 MHz, EME come alternative).
-- Resta: scelta del periodo (15/30/60/120/300 s) e del sottomodo (A-E), media dei messaggi fra periodi, decodifica con le ipotesi del QSO (AP), modello di evanescenza per EME.
-- WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_decode.f90`, `q65_sync.f90`), `lib/q65params.f90`, `widgets/mainwindow.cpp` (sezioni Q65).
-- Verifica: WAV generati con `q65sim` a vari SNR; Aurora decodifica almeno quanto `jt9.exe`.
-
-## 23. Pulsanti rapidi dei modi
-
-- Fatto (0.11.194-0.11.195): selettore dei modi con JT4 (sottomodi A-G), Q65 e MSK144, colori propri per modo.
-- Resta: i periodi e i sottomodi di Q65 nel selettore, quando ci saranno (voce 21).
-- Aurora: `app/src/components/ModeSwitch.tsx`, `core/crates/rig-control/src/table.rs` (frequenze per modo).
-- Verifica: cambio modo dal selettore con radio collegata.
+- Fatto (0.11.195 e dopo): Q65 completo nel motore proprio. Periodi 15/30/60/120/300 s e sottomodi A-E in trasmissione e ricezione (`core/crates/jt/src/q65.rs`), ipotesi AP del QSO (CQ, mio nominativo, con il DX, RRR/73/RR73, `q65_ap.f90`), metrica dell'evanescenza rapida con le tabelle gaussiane e lorentziane (`q65fading.rs`, `q65_intrinsics_fastfading`) provata dopo Bessel su sette larghezze B90, media dei periodi della stessa parita'. Periodo e sottomodo scelti accanto al selettore dei modi («Q65-60B»), salvati in `controls.json`; durata dei periodi, avvio e finestra di trasmissione e guardia seguono il Q65 scelto. Pulsanti rapidi dei modi (ex voce 23) completi.
+- Resta: il confronto con `jt9.exe` su WAV generati con `q65sim` a vari SNR e Doppler (Aurora deve decodificare almeno quanto WSJT-X); la scelta del modello di evanescenza nell'interfaccia (oggi sempre lorentziano, come WSJT-X) e il pulsante «Clear Avg» (la media si svuota da sola dopo una decodifica e al cambio di modo o periodo).
+- WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_ap.f90`, `fadengauss.c`, `fadenlorentz.c`), `lib/q65_decode.f90`.
+- Verifica: WAV di `q65sim` per ogni periodo e sottomodo; QSO dal vivo in Q65-60A su 6 m o 2 m.
 
 ## 26. QMAP: ricezione panoramica Q65 fino a 90 kHz
 
