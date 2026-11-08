@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-08, versione 0.11.200 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-08, versione 0.11.201 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-08
 - Decodifica anticipata FT8 (11,8 s) SPENTA: i messaggi letti in anticipo si perdevano nella sequenza (R+rapporto ignorato). Da riaccendere solo facendoli passare dalla sequenza.
