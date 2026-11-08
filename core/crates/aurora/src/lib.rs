@@ -975,6 +975,40 @@ fn wire_fox_verifier(controls: &Arc<engine_native::NativeControls>, bus: &Bus) {
     }));
 }
 
+/// All'avvio la radio va sulla frequenza principale della sua banda per il modo in uso (scelta del proprietario, 2026-11-08): se il dial e' su
+/// un'alternativa (14,090 in FT8) passa alla principale (14,074). Si aspetta che la radio risponda (al piu' due minuti); una volta sola.
+fn spawn_start_on_main_frequency(state: AppState) {
+    tokio::spawn(async move {
+        for _ in 0..60 {
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            let Some(rig) = state.dial_rig() else { continue };
+            let reader = Arc::clone(&rig);
+            let Ok(Ok(hz)) = tokio::task::spawn_blocking(move || reader.frequency()).await else { continue };
+            if hz == 0 || state.current_status().is_none() {
+                continue;
+            }
+            if state.is_transmitting() {
+                return;
+            }
+            let mode = state.current_mode();
+            let region = state.frequency_region();
+            let target = {
+                let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
+                let Some(band) = table.band_of(hz) else { return };
+                let on_main = table.visible(region).any(|e| e.band == band && e.mode.eq_ignore_ascii_case(&mode) && e.preferred && e.hz == hz);
+                if on_main { None } else { table.frequency_in(region, &band, &mode) }
+            };
+            if let Some(main) = target.filter(|m| *m != hz) {
+                match tokio::task::spawn_blocking(move || rig.set_frequency(main)).await {
+                    Ok(Ok(())) => tracing::info!("avvio: radio portata sulla frequenza principale {main} Hz (era {hz} Hz)"),
+                    other => tracing::warn!("avvio: frequenza principale non impostata: {other:?}"),
+                }
+            }
+            return;
+        }
+    });
+}
+
 fn spawn_scheduler(state: AppState, rig: Arc<dyn Rig>) {
     tokio::spawn(async move {
         let mut last: Option<(u64, u8, u8)> = None;
@@ -1946,6 +1980,7 @@ pub async fn run(
         });
     }
 
+    spawn_start_on_main_frequency(state.clone());
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {
         spawn_scheduler(state.clone(), rig.clone());
