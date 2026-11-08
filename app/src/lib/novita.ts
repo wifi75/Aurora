@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.200',
+    released: '2026-11-08T17:28:47Z',
+    kind: 'new',
+    title: ['Aggiornamenti che si vedono: scaricati in anticipo, con barra e passi', 'Visible updates: downloaded in advance, with a bar and steps', 'Sichtbare Updates: vorab geladen, mit Balken und Schritten', 'Mises à jour visibles : téléchargées à l’avance, avec barre et étapes', 'Actualizaciones visibles: descargadas por adelantado, con barra y pasos', 'Atualizações visíveis: transferidas antecipadamente, com barra e passos'],
+    text: [
+      "Quando esce una versione nuova Aurora la scarica da sola in sottofondo e ne controlla la firma: si installa solo se il file è completo e valido. Nella testata compare una barretta arancio con percentuale e tempo, poi «Pronto · Installa e riavvia». Dal tray, «Aggiorna ora» lascia aperta la cartolina con la barra e i passi Scarico, Controllo, Installo, Riavvio. Si vede a partire dal prossimo aggiornamento.",
+      "When a new version comes out Aurora downloads it by itself in the background and checks its signature: it installs only if the file is complete and valid. A small orange bar appears in the header with percentage and time, then “Ready · Install and restart”. From the tray, “Update now” keeps the card open with the bar and the steps Download, Check, Install, Restart. You will see it from the next update on.",
+      "Wenn eine neue Version erscheint, lädt Aurora sie selbst im Hintergrund und prüft die Signatur: installiert wird nur, wenn die Datei vollständig und gültig ist. Im Kopfbereich erscheint ein kleiner oranger Balken mit Prozent und Zeit, dann „Bereit · Installieren und neu starten“. Im Tray lässt „Jetzt aktualisieren“ die Karte mit Balken und den Schritten Laden, Prüfen, Installieren, Neustart offen. Sichtbar ab dem nächsten Update.",
+      "Quand une nouvelle version sort, Aurora la télécharge toute seule en arrière-plan et vérifie sa signature : elle ne s’installe que si le fichier est complet et valide. Une petite barre orange apparaît dans l’en-tête avec pourcentage et temps, puis « Prête · Installer et redémarrer ». Depuis la barre des tâches, « Mettre à jour » laisse la carte ouverte avec la barre et les étapes Téléchargement, Vérification, Installation, Redémarrage. Visible dès la prochaine mise à jour.",
+      "Cuando sale una versión nueva Aurora la descarga sola en segundo plano y comprueba su firma: solo se instala si el archivo está completo y es válido. En la cabecera aparece una barrita naranja con porcentaje y tiempo, luego «Lista · Instalar y reiniciar». Desde la bandeja, «Actualizar ahora» deja abierta la tarjeta con la barra y los pasos Descarga, Comprobación, Instalación, Reinicio. Se verá a partir de la próxima actualización.",
+      "Quando sai uma versão nova o Aurora transfere-a sozinho em segundo plano e verifica a assinatura: só instala se o ficheiro estiver completo e válido. No cabeçalho aparece uma pequena barra laranja com percentagem e tempo, depois «Pronta · Instalar e reiniciar». A partir da bandeja, «Atualizar agora» deixa o cartão aberto com a barra e os passos Transferir, Verificar, Instalar, Reiniciar. Vê-se a partir da próxima atualização.",
+    ],
+  },
+  {
     version: '0.11.199',
     released: '2026-11-08T16:57:32Z',
     kind: 'new',
