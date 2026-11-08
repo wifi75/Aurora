@@ -27,6 +27,9 @@ import { saveText } from '../lib/foxLog';
 import { toast } from '../lib/toast';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
+import { WaterfallStack } from '../components/WaterfallStack';
+import { WaterfallToolbar } from '../components/WaterfallToolbar';
+import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
@@ -138,10 +141,28 @@ export function ContestPage() {
         <Corpo s={s} t={t} decodes={decodes} dx={status?.dx_call ?? null} dxGrid={status?.dx_grid ?? null} transmitting={!!status?.transmitting} switches={switches} apri={setModale} fine={() => void fine()} />
       ) : null}
 
+      {/* la cascata a tutta larghezza sotto i riquadri, come nella Fox: barre Rx/Tx trascinabili, clic che sposta la Rx */}
+      <Cascata />
+
       {modale === 'regole' && s?.regole ? <ModaleRegole r={s.regole} t={t} chiudi={() => setModale('')} /> : null}
       {modale === 'calendario' ? <ModaleCalendario t={t} chiudi={() => setModale('')} prepara={(id) => { setModale(''); void attiva(id); }} /> : null}
       {modale === 'export' && attivo ? <ModaleExport t={t} s={s} chiudi={() => setModale('')} /> : null}
       {modale === 'impostazioni' && attivo ? <ModaleImpostazioni id={attivo} t={t} chiudi={() => { setModale(''); refresh(); }} /> : null}
+    </section>
+  );
+}
+
+/** La fascia della cascata: alta circa 160 px, con la maniglia sopra per regolarla (ricordata, al massimo 420 px per le Decodifiche). */
+function Cascata() {
+  const t = useT();
+  const wf = useDragHeight('aurora-contest-wf-height', 160, 420);
+  return (
+    <section className="ctc-wf-box" aria-label={t('fox.waterfall')}>
+      <DragHandle label={t('fox.resize')} className="ctc-wf-handle" onPointerDown={wf.onPointerDownInverse} />
+      <WaterfallToolbar />
+      <div className="ctc-wf" style={{ height: wf.height }}>
+        <WaterfallStack />
+      </div>
     </section>
   );
 }

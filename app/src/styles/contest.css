@@ -133,3 +133,11 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 .ctc-score .ctc-chip { height: 40px; justify-content: center; align-items: center; text-align: center; line-height: 1.15; }
 .ctc-score .ctc-chip--sel { -webkit-appearance: none; appearance: none; align-items: center; text-align: left; padding: 0 30px 0 12px; min-width: 220px; font-size: 13px; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: right 14px center, right 9px center; background-size: 5px 5px; background-repeat: no-repeat; background-color: color-mix(in srgb, var(--ct-violet) 22%, transparent); }
 .ctc-score .ctc-chip--phase, .ctc-score .ctc-chip.ctc-bad { height: 40px; padding: 0 12px; }
+
+/* cascata in basso a tutta larghezza (stessi componenti della Fox) */
+.ctc-wf-box { flex: none; background: var(--panel); border: 1px solid var(--ct-line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.ctc-wf { display: flex; flex-direction: column; background: var(--wf-bg); overflow: hidden; }
+.ctc-wf .wf-stack { flex: 1; min-height: 0; position: relative; }
+.ctc-wf-handle { height: 0.8rem; display: grid; place-items: center; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--text) 6%, transparent); border-bottom: 1px solid var(--ct-line); }
+.ctc-wf-handle span { width: 3rem; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 35%, transparent); }
+.ctc-wf-handle:hover span { background: var(--ct-violet); }

@@ -1,22 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getCat, getControls, postControl, postFox, postRxFrequency, postTxFrequency } from '../api/client';
+import { postControl, postFox } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
-import { FrequencyMarkers } from '../components/FrequencyMarkers';
-import { FrequencyRuler } from '../components/FrequencyRuler';
 import { RxControls } from '../components/RxControls';
 import { StopButton } from '../components/StopButton';
-import { Waterfall } from '../components/Waterfall';
 import { WaterfallToolbar } from '../components/WaterfallToolbar';
+import { WaterfallStack } from '../components/WaterfallStack';
+import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { TxQuickControls } from '../components/TxQuickControls';
-import { SpotMarkers } from '../components/SpotMarkers';
 import { FoxLogCard, FoxOtp, FoxPacket, FoxStats } from '../components/FoxPanels';
 import { distanceKm, gridCenter } from '../lib/geo';
 import { bandOf } from '../lib/format';
 import { useT } from '../i18n';
-import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
-import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
-import { useWfPrefs } from '../lib/wfPrefs';
 import { useFox } from '../state/fox';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
@@ -48,55 +43,6 @@ const EMPTY: FoxSnapshot = {
 };
 
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
-
-const readHeight = (key: string, fallback: number): number => {
-  try {
-    const v = Number(window.localStorage.getItem(key));
-    return v >= 120 && v <= 1600 ? v : fallback;
-  } catch {
-    return fallback;
-  }
-};
-const saveHeight = (key: string, h: number) => {
-  try {
-    if (h >= 120) window.localStorage.setItem(key, String(h));
-  } catch {
-    // senza archivio del browser l'altezza non si ricorda
-  }
-};
-
-/**
- * Un'altezza che si cambia trascinando una maniglia col mouse (o col dito) e che si ricorda. `onPointerDown` la fa crescere
- * trascinando in giu'; `onPointerDownInverse` la fa crescere trascinando in su (la maniglia sopra la cascata: piu' giu' si porta,
- * piu' spazio va ai riquadri e meno alla cascata).
- */
-function useDragHeight(key: string, fallback: number) {
-  const [height, setHeight] = useState(() => readHeight(key, fallback));
-  const drag = (sign: 1 | -1) => (e: React.PointerEvent<HTMLDivElement>) => {
-    const startY = e.clientY;
-    const startH = height;
-    const el = e.currentTarget;
-    el.setPointerCapture?.(e.pointerId);
-    const at = (y: number) => Math.min(1600, Math.max(120, startH + sign * (y - startY)));
-    const move = (ev: PointerEvent) => setHeight(at(ev.clientY));
-    const up = (ev: PointerEvent) => {
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerup', up);
-      saveHeight(key, at(ev.clientY));
-    };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', up);
-  };
-  return { height, onPointerDown: drag(1), onPointerDownInverse: drag(-1) };
-}
-
-function DragHandle({ label, onPointerDown }: { label: string; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
-  return (
-    <div className="foxc-wf-handle" role="separator" aria-orientation="horizontal" aria-label={label} title={label} onPointerDown={onPointerDown}>
-      <span />
-    </div>
-  );
-}
 
 const snr = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 
@@ -387,17 +333,6 @@ export function FoxPage() {
 function Spectrum({ height, onPointerDown }: { height: number; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
   const t = useT();
   const status = useStation((s) => s.status);
-  const decodes = useStation((s) => s.decodes);
-  const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
-  const spanHz = useSpectrumSpan((s) => s.spanHz);
-  const wf = useWfPrefs((s) => s.prefs);
-  const { from, to } = visibleRange(wf.startHz, spanHz);
-  useEffect(() => {
-    useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
-  }, [passbandHz]);
-  // la stessa cascata della pagina Stazione: barra degli strumenti, filtro, spot del cluster, righello con i messaggi e le barre Rx/Tx
-  const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
-  const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">
@@ -408,23 +343,7 @@ function Spectrum({ height, onPointerDown }: { height: number; onPointerDown(e: 
       {/* i comandi di ricezione e lo split sono saliti nella barra in alto; qui resta solo la barra degli strumenti della cascata */}
       <WaterfallToolbar />
       <div className="foxc-wf" style={{ height }}>
-        <div className="wf-stack">
-          <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
-          <FrequencyMarkers
-            fMinHz={from}
-            fMaxHz={to}
-            rxHz={status?.rx_df}
-            txHz={status?.tx_df}
-            bandwidthHz={signalBandwidthHz(status?.mode)}
-            filter={filterWindow}
-            showBars={wf.bars}
-            showFreq={wf.freq}
-            onRx={(hz) => void postRxFrequency(hz)}
-            onTx={(hz) => void postTxFrequency(hz)}
-          />
-          <SpotMarkers fMinHz={from} fMaxHz={to} dialHz={status?.dial_hz} onPick={(hz) => void postRxFrequency(hz)} />
-        </div>
-        <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} />
+        <WaterfallStack />
       </div>
       <DragHandle label={t('fox.resize')} onPointerDown={onPointerDown} />
     </section>
