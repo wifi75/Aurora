@@ -7,7 +7,6 @@
 [![Linux](https://github.com/wifi75/Aurora/actions/workflows/linux.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/linux.yml)
 [![macOS](https://github.com/wifi75/Aurora/actions/workflows/macos.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/macos.yml)
 [![Windows](https://github.com/wifi75/Aurora/actions/workflows/windows.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/windows.yml)
-[![Code signing](https://img.shields.io/badge/Code%20signing-SignPath%20Foundation-0B5394)](#firma-del-codice-code-signing-policy)
 [![Rust](https://img.shields.io/badge/Rust-1.99%20%C2%B7%20edition%202024-000000?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Axum](https://img.shields.io/badge/API-Axum%200.8-1A1A1A)](https://github.com/tokio-rs/axum)
 [![Tokio](https://img.shields.io/badge/Async-Tokio%201.54-1A1A1A)](https://tokio.rs)
@@ -135,14 +134,6 @@ cd core && cargo clippy --workspace --all-targets
 
 Sul PC con Aurora accesa, i test del core si lanciano con `--target-dir target/testrun` (altrimenti Windows blocca `aurora.exe`).
 
-## Firma del codice (code signing policy)
-
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
-
-- Autore e revisore: [Tiziano Cassone](https://github.com/wifi75)
-- Approvazione delle firme: [Tiziano Cassone](https://github.com/wifi75)
-
-L'installatore per Windows si compila da questo repository sulle macchine di GitHub (`.github/workflows/windows.yml`) e ogni richiesta di firma si approva a mano. Privacy: Aurora non manda dati a nessuno oltre a quanto scritto in [`docs/privacy.md`](docs/privacy.md); ogni servizio si spegne in Impostazioni e l'installatore li elenca.
 
 ## Licenza
 

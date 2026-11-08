@@ -47,3 +47,9 @@ Finche' i segreti non ci sono, il lavoro compila soltanto e non allega niente.
 ## Prova senza release
 
 Actions > Windows > Run workflow, con il tag di una release esistente (es. `v0.11.196`).
+
+## Esito della prima domanda (2026-11-08)
+
+SignPath Foundation ha risposto di no per ora: il programma Foundation chiede segnali di visibilita' pubblica (stelle, fork, contributori su
+GitHub, articoli, discussioni esterne, video). Si puo' ripresentare la domanda quando Aurora sara' piu' conosciuta. Nel frattempo
+etichetta e sezione «Code signing policy» sono state tolte dai README; il workflow `windows.yml` resta (senza segreti compila soltanto).
