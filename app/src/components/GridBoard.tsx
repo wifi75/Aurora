@@ -235,34 +235,64 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
     window.addEventListener('pointerup', stop);
   };
 
-  /** Le coppie di blocchi vicini della stessa altezza che si toccano: fra loro c'e' un divisore che stringe uno e allarga l'altro. */
-  const dividers: Array<[string, string]> = [];
+  /**
+   * Le maniglie per allargare: una per ogni tratto di confine verticale dove i blocchi a sinistra e quelli a destra cominciano e finiscono
+   * alla stessa altezza (anche piu' blocchi per parte, per esempio DX Cluster a sinistra e Bande aperte + Comandi a destra). Trascinandola
+   * si allargano o si stringono insieme tutti quelli di una parte e tutti quelli dell'altra; dove le altezze non tornano la maniglia non c'e',
+   * perche' allargando una finestra finirebbe sotto un'altra (richiesta del proprietario 2026-11-08).
+   */
+  const dividers: Array<{ key: string; line: number; top: number; bottom: number; left: string[]; right: string[] }> = [];
   {
     const list = Object.entries(shown);
-    const overlapY = (p: Cell, q: Cell) => Math.min(p.y + p.h, q.y + q.h) - Math.max(p.y, q.y) > 0.01;
-    for (const [ia, a] of list)
-      for (const [ib, b] of list) {
-        if (ia === ib || Math.abs(a.x + a.w - b.x) >= 0.01 || Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) < 1) continue;
-        // la maniglia sposta il confine fra i due: c'e' solo se nessun altro blocco tocca quel confine dove uno dei due crescerebbe,
-        // cioe' se allargando non si finisce sotto (o sopra) un'altra finestra (richiesta del proprietario 2026-11-08)
-        const line = a.x + a.w;
-        const blocked = list.some(([ic, c]) => ic !== ia && ic !== ib && ((Math.abs(c.x - line) < 0.01 && overlapY(c, a)) || (Math.abs(c.x + c.w - line) < 0.01 && overlapY(c, b))));
-        if (!blocked) dividers.push([ia, ib]);
+    const lines = [...new Set(list.map(([, c]) => Math.round((c.x + c.w) * 100) / 100))];
+    for (const line of lines) {
+      const touch = list
+        .map(([id, c]) => ({ id, c, side: Math.abs(c.x + c.w - line) < 0.01 ? 'l' : Math.abs(c.x - line) < 0.01 ? 'r' : null }))
+        .filter((t): t is { id: string; c: Cell; side: 'l' | 'r' } => t.side !== null)
+        .sort((a, b) => a.c.y - b.c.y);
+      // gruppi di blocchi che si toccano in verticale lungo la linea (da una parte o dall'altra)
+      let group: typeof touch = [];
+      let end = -Infinity;
+      const flush = () => {
+        const left = group.filter((t) => t.side === 'l');
+        const right = group.filter((t) => t.side === 'r');
+        if (left.length === 0 || right.length === 0) return;
+        const span = (g: typeof touch) => [Math.min(...g.map((t) => t.c.y)), Math.max(...g.map((t) => t.c.y + t.c.h))] as const;
+        const [lt, lb] = span(left);
+        const [rt, rb] = span(right);
+        if (Math.abs(lt - rt) < 0.01 && Math.abs(lb - rb) < 0.01) {
+          dividers.push({ key: `${line}|${lt}`, line, top: lt, bottom: lb, left: left.map((t) => t.id), right: right.map((t) => t.id) });
+        }
+      };
+      for (const t of touch) {
+        if (group.length > 0 && t.c.y > end + 0.01) {
+          flush();
+          group = [];
+          end = -Infinity;
+        }
+        group.push(t);
+        end = Math.max(end, t.c.y + t.c.h);
       }
+      flush();
+    }
   }
-  const trackDivider = (a: string, b: string) => (e: ReactPointerEvent<HTMLElement>) => {
+  const trackDivider = (lefts: string[], rights: string[]) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    const left = cells[a];
-    const right = cells[b];
-    if (!left || !right) return;
+    const start = cells;
+    if (![...lefts, ...rights].every((id) => start[id])) return;
     const startX = e.clientX;
     let next: Record<string, Cell> = cells;
+    // ogni blocco resta largo almeno 2 colonne
+    const minLeft = Math.min(...lefts.map((id) => start[id]!.w));
+    const minRight = Math.min(...rights.map((id) => start[id]!.w));
     const move = (ev: PointerEvent) => {
       const raw = (ev.clientX - startX) / (colW + GAP);
-      // a quarti di colonna; ogni blocco resta largo almeno 2 colonne
-      const d = Math.max(2 - left.w, Math.min(right.w - 2, Math.round(raw * 4) / 4));
-      next = { ...cells, [a]: { ...left, w: left.w + d }, [b]: { ...right, x: right.x + d, w: right.w - d } };
+      // a quarti di colonna
+      const d = Math.max(2 - minLeft, Math.min(minRight - 2, Math.round(raw * 4) / 4));
+      next = { ...start };
+      for (const id of lefts) next[id] = { ...start[id]!, w: start[id]!.w + d };
+      for (const id of rights) next[id] = { ...start[id]!, x: start[id]!.x + d, w: start[id]!.w - d };
       setLive(next);
     };
     const stop = () => {
@@ -300,21 +330,17 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
         </div>
       ))}
       {locked && swap
-        ? dividers.map(([a, b]) => {
-            const left = shown[a]!;
-            const right = shown[b]!;
-            return (
-              <div
-                key={`${a}|${b}`}
-                className="grid-divider"
-                // blocchi affiancati anche di altezza diversa: la maniglia copre il tratto che hanno in comune
-                style={{ left: GAP + right.x * (colW + GAP) - GAP / 2 - 3, top: GAP + Math.max(left.y, right.y) * (ROW + GAP), height: (Math.min(left.y + left.h, right.y + right.h) - Math.max(left.y, right.y)) * (ROW + GAP) - GAP }}
-                onPointerDown={trackDivider(a, b)}
-                title="↔"
-                aria-hidden="true"
-              />
-            );
-          })
+        ? dividers.map((dv) => (
+            <div
+              key={dv.key}
+              className="grid-divider"
+              // una sola maniglia per tutto il tratto: muove insieme i blocchi delle due parti
+              style={{ left: GAP + dv.line * (colW + GAP) - GAP / 2 - 3, top: GAP + dv.top * (ROW + GAP), height: (dv.bottom - dv.top) * (ROW + GAP) - GAP }}
+              onPointerDown={trackDivider(dv.left, dv.right)}
+              title="↔"
+              aria-hidden="true"
+            />
+          ))
         : null}
     </div>
   );
