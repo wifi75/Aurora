@@ -1,0 +1,18 @@
+[package]
+name = "qmap"
+description = "QMAP di Aurora: ricezione panoramica Q65 da un flusso I/Q a banda larga (fino a 90 kHz), dal TCI o da un file (algoritmi di WSJT-X, GPL 3)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+jt = { path = "../jt" }
+ft8 = { path = "../ft8" }
+rig-control = { path = "../rig-control" }
+rustfft = "6.4.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tungstenite = { workspace = true }
