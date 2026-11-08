@@ -12,12 +12,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Manca: il formato SuperFox `$VERIFY$ CALL 123456` (hz 750) e il filtro `$VERIFY$` verso il server UDP (`udp-bridge/src/emit.rs`): dipende dal ricevitore SuperFox (voci 1-3); l'etichetta Hound/SuperHound verde dell'interfaccia.
 - WSJT-X: `widgets/mainwindow.cpp` `processSFoxVerification` (17360-17415), `handleVerifyMsg`.
 
-## 10. Decodifica FT8 multithread: misura su banda satura
-
-- Fatto: decodifica multithread (`mtd`) e momento di avvio della decodifica (`FT8DecoderStart`: Presto 13,82 s, Normale 14,11 s, Tardi 14,40 s, come `m_ft8DecoderStart`/`fixStop` di WSJT-X) in `engine-native/src/features.rs` e `slots.rs`.
-- Fatto (2026-11-08): misura su 5 periodi veri della stazione con 42-46 messaggi (10 m), `ft8/examples/misura_wav.rs`: profondita' 2 in 0,7-0,85 s, profondita' 3 in 1,7 s (8 thread) - 2,8 s (1 thread), 192 messaggi contro 167. Non serve dividere la banda in fette su piu' processori.
-- Manca: le decodifiche anticipate a due/tre passate di WSJT-X (`m_earlyDecode`, `m_earlyDecode2` a 46-47): una prima decodifica a circa 12 s sul periodo non finito, poi il completamento a fine periodo.
-
 ## 16. TCI
 
 - Cosa fare: controllo radio e audio via TCI (WebSocket) per radio SDR (Expert, SunSDR, ANAN con Thetis).

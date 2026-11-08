@@ -281,6 +281,8 @@ pub fn start_with_save(
         let mut assembler = slots::SlotAssembler::new(mode);
         let mut msk_rt = mskrt::Realtime::default();
         let mut hashes = CallHashes::default();
+        // messaggi gia' mostrati dalla decodifica anticipata FT8, per periodo: la decodifica intera pubblica solo il resto
+        let mut preview_shown: std::collections::HashMap<u64, Vec<String>> = std::collections::HashMap::new();
         // i nominativi conosciuti (log e ascolto) per il filtro contro i falsi decode
         let mut known = known::KnownCalls::load(data_dir.join("known_calls.txt"));
         let mut known_seeded: Option<Instant> = None;
@@ -475,6 +477,8 @@ pub fn start_with_save(
                 if assembler.early_ms() != early {
                     assembler.set_early_ms(early);
                 }
+                // decodifica anticipata (`m_earlyDecode` di WSJT-X): solo in FT8
+                assembler.set_preview_ms(if mode == Mode::Ft8 { slots::FT8_PREVIEW_MS } else { 0 });
             }
             // lo S-meter si stima solo in ricezione con l'ascolto acceso; in trasmissione (o con Monitora spento) si ferma
             if let Some(l) = live.as_ref() {
@@ -487,6 +491,33 @@ pub fn start_with_save(
                 }
             }
             for slot in assembler.push(&samples, chunk.received_unix_ms) {
+                // copia anticipata del periodo FT8 (a 11,81 s): una decodifica veloce (una passata, al piu' 1,5 s, cosi' quella intera non
+                // ritarda) mostra subito le stazioni forti; la decodifica intera a fine periodo pubblica solo i messaggi nuovi
+                if slot.partial {
+                    if mode == Mode::Ft8
+                        && let Some(l) = live.as_ref()
+                        && l.controls.is_monitoring()
+                        && !l.controls.transmitting.load(Ordering::Relaxed)
+                    {
+                        let mut quick = period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms);
+                        quick.passes = 1;
+                        quick.a7 = false;
+                        quick.a8 = None;
+                        quick.deadline = Some(std::time::Instant::now() + std::time::Duration::from_millis(1500));
+                        let found = ft8::decode::decode_slot(&slot.samples, &quick, &mut hashes);
+                        let shown = preview_shown.entry(slot.start_unix_ms).or_default();
+                        let fresh: Vec<ft8::decode::Decoded> = found.into_iter().filter(|d| !shown.contains(&d.text)).collect();
+                        shown.extend(fresh.iter().map(|d| d.text.clone()));
+                        if !fresh.is_empty() {
+                            tracing::debug!("decodifica anticipata FT8: {} messaggi a 11,8 s", fresh.len());
+                            publish(l, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &fresh);
+                        }
+                    }
+                    // i periodi vecchi non servono piu'
+                    let keep_from = slot.start_unix_ms.saturating_sub(60_000);
+                    preview_shown.retain(|start, _| *start >= keep_from);
+                    continue;
+                }
                 // avvio anticipato (AutoSeq 3): il periodo di trasmissione comincia ora, prima della decodifica di quello appena finito; parte il messaggio
                 // che la sequenza ha adesso e, se la decodifica lo cambia, ripartira' con il nuovo (ritrasmissione)
                 if let (Some(d), Some(l)) = (driver.as_mut(), live.as_ref()) {
@@ -569,7 +600,7 @@ pub fn start_with_save(
                 }
                 // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
                 // MSK144: quelli gia' mostrati in tempo reale non si ripubblicano
-                let mut early: Vec<String> = if mode == Mode::Msk144 { msk_rt.shown(slot.start_unix_ms) } else { Vec::new() };
+                let mut early: Vec<String> = if mode == Mode::Msk144 { msk_rt.shown(slot.start_unix_ms) } else { preview_shown.remove(&slot.start_unix_ms).unwrap_or_default() };
                 let mut decoded = if silent {
                     Vec::new()
                 } else if mode == Mode::Ft8 && let Some(l) = live.as_ref() {

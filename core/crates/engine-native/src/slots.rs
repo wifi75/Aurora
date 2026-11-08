@@ -13,6 +13,9 @@ pub const SLOT_MS: u64 = 15_000;
 /// Il periodo si consegna questi millisecondi prima della sua fine (gli ultimi non portano segnale: un messaggio FT8 finisce a 13,1 s):
 /// cosi' la decodifica e la scelta della risposta sono pronte per trasmettere a inizio del periodo dopo.
 pub const EARLY_MS: u64 = 800;
+/// Decodifica anticipata FT8 (`m_earlyDecode` di WSJT-X, al mezzo simbolo 41 da 0,288 s = 11,81 s dall'inizio del periodo): si consegna
+/// una copia parziale del periodo per una decodifica veloce delle stazioni forti, poi il periodo intero come sempre.
+pub const FT8_PREVIEW_MS: u64 = 11_810;
 /// Oltre questo scarto tra l'ora attesa e quella vera si riancora di colpo.
 const JUMP_MS: f64 = 200.0;
 /// Correzione graduale dello scarto (frazione per blocco).
@@ -24,6 +27,8 @@ pub struct Slot {
     /// Inizio del periodo, millisecondi dal 1970 (UTC), multiplo della durata del periodo (15 000 in FT8, 7 500 in FT4).
     pub start_unix_ms: u64,
     pub samples: Vec<f32>,
+    /// Copia parziale per la decodifica anticipata (l'audio dopo il momento della consegna e' a zero); il periodo intero arriva dopo.
+    pub partial: bool,
 }
 
 pub struct SlotAssembler {
@@ -39,6 +44,10 @@ pub struct SlotAssembler {
     next_slot_ms: Option<u64>,
     /// Millisecondi prima della fine del periodo in cui lo si consegna (di base [`EARLY_MS`]; in FT8 lo sceglie il momento di avvio della decodifica).
     early_ms: u64,
+    /// Momento della consegna anticipata, ms dall'inizio del periodo (0 = spenta).
+    preview_ms: u64,
+    /// L'ultimo periodo gia' consegnato in anticipo.
+    previewed: Option<u64>,
 }
 
 fn time_of(anchor: f64, idx: u64) -> f64 {
@@ -64,7 +73,14 @@ impl SlotAssembler {
             total: 0,
             next_slot_ms: None,
             early_ms: EARLY_MS,
+            preview_ms: 0,
+            previewed: None,
         }
+    }
+
+    /// Accende (ms dall'inizio del periodo) o spegne (0) la consegna anticipata: vale dal prossimo periodo.
+    pub fn set_preview_ms(&mut self, preview_ms: u64) {
+        self.preview_ms = if preview_ms > 0 && preview_ms + self.early_ms < self.period_ms { preview_ms } else { 0 };
     }
 
     /// Come [`SlotAssembler::new`], consegnando il periodo `early_ms` prima della sua fine (al piu' la durata del periodo).
@@ -113,6 +129,18 @@ impl SlotAssembler {
         let mut ready = Vec::new();
         let buf_start_ms = time_of(anchor, self.first_idx);
         let mut next = *self.next_slot_ms.get_or_insert_with(|| ((buf_start_ms / self.period_ms as f64).ceil() as u64) * self.period_ms);
+        // la copia anticipata del periodo in corso, una volta sola, se c'e' tutto l'audio dal suo inizio
+        if self.preview_ms > 0 && self.previewed != Some(next) && time_of(anchor, self.total) >= (next + self.preview_ms) as f64 {
+            let from = ((next as f64 - anchor) * RATE as f64 / 1000.0).round() as i64 - self.first_idx as i64;
+            let want = (self.preview_ms as usize) * RATE / 1000;
+            if from >= 0 && from as usize + want <= self.buf.len() {
+                let from = from as usize;
+                let mut samples = self.buf[from..from + want].to_vec();
+                samples.resize(self.slot_samples, 0.0);
+                ready.push(Slot { start_unix_ms: next, samples, partial: true });
+            }
+            self.previewed = Some(next);
+        }
         loop {
             let slot_end_ms = (next + self.period_ms - self.early_ms) as f64;
             if time_of(anchor, self.total) < slot_end_ms {
@@ -124,7 +152,7 @@ impl SlotAssembler {
                 let end = (from + self.slot_samples).min(self.buf.len());
                 let mut samples = self.buf[from..end].to_vec();
                 samples.resize(self.slot_samples, 0.0);
-                ready.push(Slot { start_unix_ms: next, samples });
+                ready.push(Slot { start_unix_ms: next, samples, partial: false });
             }
             next += self.period_ms;
         }
@@ -217,5 +245,38 @@ mod tests {
         let starts: Vec<u64> = slots.iter().map(|s| s.start_unix_ms).collect();
         assert!(!starts.contains(&1_005_000), "il periodo con il buco non e' completo: {starts:?}");
         assert!(starts.contains(&1_035_000), "{starts:?}");
+    }
+}
+
+#[cfg(test)]
+mod preview_tests {
+    use super::*;
+
+    /// Con la consegna anticipata accesa, ogni periodo arriva due volte: prima la copia parziale (a 11,81 s), poi quello intero.
+    #[test]
+    fn the_preview_comes_before_the_full_period() {
+        let mut asm = SlotAssembler::new(Mode::Ft8);
+        asm.set_preview_ms(FT8_PREVIEW_MS);
+        let start = 1_005_000u64;
+        let mut got = Vec::new();
+        // blocchi da 100 ms a partire da poco prima dell'inizio del periodo, per 16 s
+        let block = RATE / 10;
+        for i in 0..170u64 {
+            let end = start - 500 + (i + 1) * 100;
+            got.extend(asm.push(&vec![0.01; block], end).into_iter().map(|s| (s.start_unix_ms, s.partial)));
+        }
+        assert_eq!(got, vec![(start, true), (start, false)]);
+    }
+
+    #[test]
+    fn without_preview_only_the_full_period() {
+        let mut asm = SlotAssembler::new(Mode::Ft8);
+        let start = 1_005_000u64;
+        let mut got = Vec::new();
+        let block = RATE / 10;
+        for i in 0..170u64 {
+            got.extend(asm.push(&vec![0.01; block], start - 500 + (i + 1) * 100).into_iter().map(|s| s.partial));
+        }
+        assert_eq!(got, vec![false]);
     }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## Non rilasciato
+- **Decodifica anticipata FT8** (come `m_earlyDecode` di WSJT-X): a 11,81 s una decodifica veloce del periodo non ancora finito mostra subito le stazioni forti; a fine periodo la decodifica intera aggiunge solo i messaggi nuovi.
+- **Accendi/Spegni la radio**: 15 s di attesa per l'accensione (Hamlib aspetta la radio) e alla chiusura Aurora aspetta il core, cosi' lo spegnimento fa in tempo.
+- **DX Cluster e Log**: colonne compatte, titoli in linea con i dati, paese separato.
+
 ## 0.11.197 - 2026-11-08
 - **Accendi e Spegni la radio** (come JTDX, `RigPower`/`RigPower_off`): due caselle nella scheda Radio con Hamlib; `\set_powerstat 1` al primo collegamento, `\set_powerstat 0` alla chiusura di Aurora.
 - **Band Hopping con MSK144** («MSK144 6m»).
