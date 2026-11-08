@@ -475,9 +475,10 @@ impl AppState {
         self.current_status().is_some_and(|s| s.transmitting)
     }
 
-    /// Modo in uso ("FT8" o "FT4"); FT8 finche' JTDX non lo ha detto.
+    /// Modo in uso ("FT8" o "FT4"); FT8 finche' JTDX non lo ha detto. Q65 senza periodo e sottomodo («Q65-60B» -> «Q65»), come
+    /// nella tabella delle frequenze.
     pub fn current_mode(&self) -> String {
-        self.current_status().map(|s| s.mode).filter(|m| !m.is_empty()).unwrap_or_else(|| "FT8".into())
+        self.current_status().map(|s| rig_control::modes::table_mode(&s.mode)).filter(|m| !m.is_empty()).unwrap_or_else(|| "FT8".into())
     }
 
     /// La regione IARU delle impostazioni Generali (`ALL` senza impostazioni del motore, cioe' con JTDX): decide quali righe della tabella delle frequenze valgono.

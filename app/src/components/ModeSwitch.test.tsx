@@ -39,6 +39,20 @@ describe('ModeSwitch', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
+  it('shows period and submode next to Q65 and asks for the full name', () => {
+    const onPick = vi.fn();
+    render(<ModeSwitch mode="Q65-30A" onPick={onPick} />);
+    const [period, sub] = screen.getAllByRole('combobox') as [HTMLSelectElement, HTMLSelectElement];
+    expect(period.value).toBe('30');
+    expect(sub.value).toBe('A');
+    fireEvent.change(period, { target: { value: '60' } });
+    expect(onPick).toHaveBeenLastCalledWith('Q65-60A');
+    fireEvent.change(sub, { target: { value: 'D' } });
+    expect(onPick).toHaveBeenLastCalledWith('Q65-30D');
+    openMenu();
+    expect(screen.getByRole('menuitemradio', { name: 'Q65' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('lights the JT mode in use, both for JT65+JT9 and JT65 for the old name JT', () => {
     const cases: [string, string[]][] = [['JT65', ['JT65']], ['JT9', ['JT9']], ['JT9+JT65', ['JT65', 'JT9']], ['JT', ['JT65']]];
     for (const [mode, on] of cases) {

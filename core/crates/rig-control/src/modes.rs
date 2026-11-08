@@ -8,6 +8,12 @@ fn is_q65_submode(m: &str) -> bool {
     })
 }
 
+/// Il modo come lo scrive la tabella delle frequenze: «Q65-60B» -> «Q65» (periodo e sottomodo non cambiano la frequenza).
+pub fn table_mode(mode: &str) -> String {
+    let up = mode.trim().to_uppercase();
+    if is_q65_submode(&up) { "Q65".to_string() } else { up }
+}
+
 /// Identificativo del pulsante di un modo; `None` per qualunque altro testo.
 pub fn button_id(mode: &str) -> Option<&'static str> {
     match mode.trim().to_uppercase().as_str() {

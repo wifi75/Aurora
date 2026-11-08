@@ -1,4 +1,12 @@
-use rig_control::modes::button_id;
+use rig_control::modes::{button_id, table_mode};
+
+#[test]
+fn q65_submodes_use_the_q65_rows_of_the_table() {
+    assert_eq!(table_mode("Q65-60B"), "Q65");
+    assert_eq!(table_mode("q65"), "Q65");
+    assert_eq!(table_mode("JT4C"), "JT4C");
+    assert_eq!(table_mode(" ft8 "), "FT8");
+}
 
 #[test]
 fn only_the_known_modes_have_a_button() {

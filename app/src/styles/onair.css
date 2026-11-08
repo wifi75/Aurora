@@ -143,7 +143,7 @@
   --mode-ink: var(--mode-jt4-ink);
 }
 
-.mode-switch button[data-mode='Q65'] {
+.mode-switch button[data-mode^='Q65'] {
   --mode: var(--mode-q65);
   --mode-ink: var(--mode-q65-ink);
 }
@@ -6836,7 +6836,7 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
   .alh-steps { display: grid; grid-template-columns: 1fr 1fr; column-gap: 2.2rem; row-gap: 0.7rem; }
 }
 
-/* il sottomodo di JT4 accanto al selettore dei modi */
+/* il sottomodo di JT4 e periodo e sottomodo di Q65 accanto al selettore dei modi */
 .mode-switch-sub {
   min-height: 2rem;
   margin-left: var(--space-1);
