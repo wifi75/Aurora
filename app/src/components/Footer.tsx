@@ -27,7 +27,7 @@ function usePeriodClock(mode: string | undefined): { elapsed: number; total: num
 export function Footer() {
   const t = useT();
   const { data, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
-  const status = useStatusPick(['mode']);
+  const status = useStatusPick(['mode', 'transmitting']);
   const decodes = useStation((s) => s.decodes);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, staleTime: 30_000 });
   const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, staleTime: 30_000 });
@@ -46,7 +46,7 @@ export function Footer() {
           <span className="bar-item">
             {t('bar.decodes')}: <b>{periodDecodes}</b>
           </span>
-          <span className="bar-progress" role="progressbar" aria-label={t('bar.period')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.floor(elapsed)}>
+          <span className={`bar-progress${status.transmitting ? ' is-tx' : ''}`} role="progressbar" aria-label={t('bar.period')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.floor(elapsed)}>
             <i style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
           </span>
           <span className="bar-item bar-count">{`${shown}/${Math.ceil(total)}`}</span>

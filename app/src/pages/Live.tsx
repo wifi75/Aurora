@@ -66,7 +66,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
   const phone = usePhone();
   const view = useStationView();
-  const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df']);
+  const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df', 'tx_enabled']);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
   const connection = useStation((s) => s.connection);
@@ -382,7 +382,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         <div className="band-row">
           <ModeSwitch
             mode={status?.mode ?? ''}
-            locked={status?.transmitting ?? false}
+            // il modo non si cambia in trasmissione ne' con la trasmissione abilitata (un QSO in corso): prima si ferma la Tx
+            locked={(status?.transmitting ?? false) || (status?.tx_enabled ?? false)}
             onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
           />
           {info.data?.engine === 'native' && q65Parts(status?.mode ?? '') ? <Q65Extras disabled={status?.transmitting ?? false} /> : null}

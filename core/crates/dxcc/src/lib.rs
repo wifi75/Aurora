@@ -158,6 +158,8 @@ impl DxccDb {
         }
         match kept.as_slice() {
             [] => None,
+            // KG4 e' Guantanamo solo con il suffisso di due lettere (KG4AB); KG4ABC e KG4A sono Stati Uniti (regola ARRL, come WSJT-X/JTDX)
+            [only] if only.starts_with("KG4") && only.len() != 5 => self.by_prefix("K"),
             [only] => self.by_prefix(only),
             [a, b] => {
                 // il pezzo piu' corto e' il prefisso; se non da' un paese si prova l'altro

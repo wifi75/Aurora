@@ -362,6 +362,14 @@ pub fn start_with_save(
             }
             let _ = d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: saved.seed, interval: saved.interval.clamp(1, 100), keep: false }), now_unix_ms() as f64 / 1000.0);
         }
+        // il messaggio CQ (Tx6) scritto a mano resta tra un avvio e l'altro (scelta del proprietario, 2026-11-08)
+        let cq_text_path = data_dir.join("tx6-cq.txt");
+        if let (Some(d), Ok(text)) = (driver.as_mut(), std::fs::read_to_string(&cq_text_path)) {
+            let text = text.trim().to_string();
+            if !text.is_empty() {
+                let _ = d.handle(TxCommand::SetTxText { n: 6, text }, now_unix_ms() as f64 / 1000.0);
+            }
+        }
         // gli interruttori ricordati arrivano anche alla sequenza (AutoSeq, Salta Tx1, Bypassa...), come se si fossero appena premuti
         if let (Some(saved), Some(l), Some(_)) = (restored.as_ref(), live.as_ref(), driver.as_ref()) {
             let rig = rig::NativeRig::new(Arc::clone(&l.controls), None);
@@ -392,12 +400,21 @@ pub fn start_with_save(
             while let Ok(command) = command_rx.try_recv() {
                 if let Some(d) = driver.as_mut() {
                     let otp_changed = matches!(command, TxCommand::Fox(aurora_core::FoxCommand::Otp { .. }));
+                    let cq_text = if let TxCommand::SetTxText { n: 6, text } = &command { Some(text.clone()) } else { None };
                     for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
                         tracing::info!("trasmissione: {line}");
                     }
                     // il seme e l'intervallo della verifica OTP si salvano subito, come li ha presi il motore
                     if otp_changed && let Err(e) = persist::save_fox_otp(&fox_otp_path, &d.fox_otp()) {
                         tracing::warn!("seme OTP della Fox non salvato: {e}");
+                    }
+                    // il CQ scritto a mano si ricorda (vuoto = torna quello standard e il file si toglie)
+                    if let Some(text) = cq_text {
+                        let text = text.trim();
+                        let saved = if text.is_empty() { std::fs::remove_file(&cq_text_path).or_else(|e| if e.kind() == std::io::ErrorKind::NotFound { Ok(()) } else { Err(e) }) } else { std::fs::write(&cq_text_path, text) };
+                        if let Err(e) = saved {
+                            tracing::warn!("messaggio CQ non salvato: {e}");
+                        }
                     }
                 }
             }
