@@ -212,6 +212,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     queue: view.queue.clone(),
                     tx_alerts: live.controls.tx_alerts(),
                     fox_verification: live.controls.fox_verification(),
+                    super_hound: live.controls.switch_on("hound") && live.controls.ultrafox_recent(now_unix_ms()),
                     ..StationStatus::default()
                 };
                 // lo stato della Fox quando cambia e comunque ogni 2 s (una pagina appena aperta lo riceve subito);
@@ -353,6 +354,14 @@ pub fn start_with_save(
                 }
             }
         });
+        // il seme OTP della Fox salvato nella cartella dei dati torna al motore (prima si ricordava solo nel browser della pagina Fox)
+        let fox_otp_path = data_dir.join(persist::FOX_OTP_FILE);
+        if let (Some(d), Some(saved)) = (driver.as_mut(), persist::load_fox_otp(&fox_otp_path)) {
+            if saved.seed.is_some() {
+                tracing::info!("seme OTP della Fox ripristinato da {}", fox_otp_path.display());
+            }
+            let _ = d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: saved.seed, interval: saved.interval.clamp(1, 100), keep: false }), now_unix_ms() as f64 / 1000.0);
+        }
         // gli interruttori ricordati arrivano anche alla sequenza (AutoSeq, Salta Tx1, Bypassa...), come se si fossero appena premuti
         if let (Some(saved), Some(l), Some(_)) = (restored.as_ref(), live.as_ref(), driver.as_ref()) {
             let rig = rig::NativeRig::new(Arc::clone(&l.controls), None);
@@ -382,8 +391,13 @@ pub fn start_with_save(
             // i comandi (doppio clic, CQ, STOP, opzioni) si servono subito, anche senza audio in arrivo
             while let Ok(command) = command_rx.try_recv() {
                 if let Some(d) = driver.as_mut() {
+                    let otp_changed = matches!(command, TxCommand::Fox(aurora_core::FoxCommand::Otp { .. }));
                     for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
                         tracing::info!("trasmissione: {line}");
+                    }
+                    // il seme e l'intervallo della verifica OTP si salvano subito, come li ha presi il motore
+                    if otp_changed && let Err(e) = persist::save_fox_otp(&fox_otp_path, &d.fox_otp()) {
+                        tracing::warn!("seme OTP della Fox non salvato: {e}");
                     }
                 }
             }
@@ -664,9 +678,13 @@ pub fn start_with_save(
                     && let Some(fox) = ultrafox_rx::decode(&slot.samples, ultrafox::F0_HZ as f32, 200.0)
                 {
                     tracing::info!("UltraFOX: {} messaggi da {} ({} dB)", fox.messages.len(), fox.fox, fox.snr);
-                    for text in fox.messages.iter().chain(fox.free_text.iter()) {
-                        if !decoded.iter().any(|x| &x.text == text) {
-                            decoded.push(as_decoded(fox.freq_hz, fox.dt, fox.snr, text.clone()));
+                    if let Some(l) = live.as_ref() {
+                        l.controls.note_ultrafox(now_unix_ms());
+                    }
+                    // in coda la riga `$VERIFY$ CALL 123456`, come `sfox_unpack.f90`: `publish` la nasconde o la fa verificare
+                    for text in fox.messages.iter().chain(fox.free_text.iter()).cloned().chain(std::iter::once(fox.verify_line())) {
+                        if !decoded.iter().any(|x| x.text == text) {
+                            decoded.push(as_decoded(fox.freq_hz, fox.dt, fox.snr, text));
                         }
                     }
                 }
@@ -989,11 +1007,19 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
     let time_ms = (slot_start_ms % DAY_MS) as u32;
     let hound = live.controls.switch_on("hound");
     for d in decoded {
-        // Hound: il codice OTP del Fox classico (`CALL.123456`, `processSFoxVerification` di WSJT-X) si nasconde e/o si fa verificare
-        if hound && let Some((call, code)) = features::parse_fox_otp(&d.text) {
+        // Hound: il codice OTP del Fox (`CALL.123456` del Fox classico alla sua frequenza, `$VERIFY$ CALL 123456` del SuperFox a 750 Hz;
+        // `processSFoxVerification` di WSJT-X) si nasconde e/o si fa verificare
+        let otp = if hound {
+            features::parse_fox_otp(&d.text)
+                .map(|(call, code)| (call, code, d.freq_hz.round().max(0.0) as u32))
+                .or_else(|| features::parse_superfox_verify(&d.text).map(|(call, code)| (call, code, features::SUPERFOX_VERIFY_HZ)))
+        } else {
+            None
+        };
+        if let Some((call, code, freq_hz)) = otp {
             let (hide, check) = features::otp_action(&code, &live.controls.otp_settings());
             if check {
-                live.controls.request_otp_check(features::FoxOtp { call, code, freq_hz: d.freq_hz.round().max(0.0) as u32, slot_start_ms });
+                live.controls.request_otp_check(features::FoxOtp { call, code, freq_hz, slot_start_ms });
             }
             if hide {
                 continue;

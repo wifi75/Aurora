@@ -5155,6 +5155,27 @@
   color: #1a7f37;
 }
 
+/* etichetta Hound/Super Hound accanto a RX/TX (labDXped di WSJT-X): rossa finche' il Fox non e' verificato, verde dopo; piccola e discreta */
+.hound-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.35rem;
+  border: 1px solid currentColor;
+  border-radius: 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  color: #b42318;
+  opacity: 0.85;
+}
+
+.hound-tag[data-ok='true'] {
+  color: #1a7f37;
+  background: color-mix(in srgb, #1a7f37 12%, transparent);
+  opacity: 1;
+}
+
 .tx-queue-label {
   color: #1f6feb;
   font-weight: 700;

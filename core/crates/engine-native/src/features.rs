@@ -1,4 +1,4 @@
-//! Funzioni di WSJT-X 3.x portate nel motore proprio: momento di avvio della decodifica FT8, full duplex, codice OTP del Fox (Hound classico)
+//! Funzioni di WSJT-X 3.x portate nel motore proprio: momento di avvio della decodifica FT8, full duplex, codice OTP del Fox (Hound classico e SuperFox)
 //! e Wait and Reply / Wait and Call. Le regole sono quelle dei sorgenti GPL di WSJT-X 3.3.0-beta5 (citati funzione per funzione).
 
 /// Momento di avvio della decodifica FT8 (`m_ft8DecoderStart` e `fixStop` di `widgets/mainwindow.cpp`). WSJT-X conta i mezzi simboli da 0,288 s
@@ -92,10 +92,30 @@ pub struct FoxOtp {
 }
 
 /// Il codice OTP del Fox classico: testo libero `CALL.123456` (nominativo da 2 a 6 caratteri, `stdPayloadRe` di `processSFoxVerification`,
-/// `mainwindow.cpp`). Il formato SuperFox (`$VERIFY$ CALL 123456`) non e' qui: dipende dal ricevitore SuperFox, non ancora nel motore.
+/// `mainwindow.cpp`). Il formato SuperFox e' `parse_superfox_verify`.
 pub fn parse_fox_otp(text: &str) -> Option<(String, String)> {
     let (call, code) = text.trim().split_once('.')?;
     let call_ok = (2..=6).contains(&call.len()) && call.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit());
+    let code_ok = code.len() == 6 && code.bytes().all(|b| b.is_ascii_digit());
+    (call_ok && code_ok).then(|| (call.to_string(), code.to_string()))
+}
+
+/// La frequenza audio che WSJT-X da' alla riga di verifica di un SuperFox (`hz = 750` in `processSFoxVerification`).
+pub const SUPERFOX_VERIFY_HZ: u32 = 750;
+
+/// Il codice OTP di un SuperFox: la riga `$VERIFY$ CALL 123456` che il ricevitore aggiunge a ogni pacchetto (`sfox_unpack.f90`), con il nominativo
+/// da 2 a 13 caratteri (anche con `/`) e spazi qualsiasi tra le parti (`verifyPayloadRe` di `processSFoxVerification`).
+pub fn parse_superfox_verify(text: &str) -> Option<(String, String)> {
+    let rest = text.trim().strip_prefix("$VERIFY$")?;
+    if !rest.starts_with(char::is_whitespace) {
+        return None;
+    }
+    let mut parts = rest.split_whitespace();
+    let (call, code) = (parts.next()?, parts.next()?);
+    if parts.next().is_some() {
+        return None;
+    }
+    let call_ok = (2..=13).contains(&call.len()) && call.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'/');
     let code_ok = code.len() == 6 && code.bytes().all(|b| b.is_ascii_digit());
     (call_ok && code_ok).then(|| (call.to_string(), code.to_string()))
 }
@@ -378,6 +398,11 @@ mod tests {
         assert_eq!(parse_fox_otp("TOOLONG7.123456"), None);
         assert_eq!(parse_fox_otp("$VERIFY$ VP2X/K1JT 920749"), None);
         assert_eq!(parse_fox_otp("CQ K8R FN42"), None);
+        assert_eq!(parse_superfox_verify("$VERIFY$ VP2X/K1JT 920749"), Some(("VP2X/K1JT".into(), "920749".into())));
+        assert_eq!(parse_superfox_verify("$VERIFY$   K8R  000000"), Some(("K8R".into(), "000000".into())));
+        assert_eq!(parse_superfox_verify("$VERIFY$ K8R 92074"), None);
+        assert_eq!(parse_superfox_verify("$VERIFY$K8R 920749"), None);
+        assert_eq!(parse_superfox_verify("K8R.920749"), None);
     }
 
     #[test]

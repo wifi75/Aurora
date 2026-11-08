@@ -324,6 +324,23 @@ impl Service {
         self.queue.retry_now(None, (self.now)());
     }
 
+    /// Mette in coda per un servizio QSO gia' registrati (il Fox log della pagina Fox verso Club Log): stesso record ADIF dell'invio in tempo
+    /// reale, la coda poi li manda uno alla volta con i suoi tentativi; Club Log considera riusciti i doppioni («QSO Duplicate»). Il servizio
+    /// deve essere acceso nelle impostazioni. Restituisce quanti QSO sono entrati in coda.
+    pub fn queue_qsos(&self, target: upload::Target, qsos: &[QsoRecord]) -> Result<usize, String> {
+        let config = self.config.borrow().clone();
+        if !upload::enabled(&config, target) {
+            return Err(format!("{} non e' acceso nelle impostazioni", target.kind()));
+        }
+        let now = (self.now)();
+        let today = adif::utc_date(now);
+        let station = Station { call: config.call.clone(), grid: config.grid.clone(), tx_power: config.tx_power.clone() };
+        for q in qsos {
+            self.queue.push(target, &q.call, adif::jtdx_record(q, &station, &today), now);
+        }
+        Ok(qsos.len())
+    }
+
     /// Quanti QSO aspettano di partire verso un servizio.
     pub fn pending(&self, target: upload::Target) -> usize {
         self.queue.count(target)

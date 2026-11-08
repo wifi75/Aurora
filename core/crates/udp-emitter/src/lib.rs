@@ -413,6 +413,10 @@ impl Session {
                 self.send(datagram).into_iter().collect()
             }
             Event::Decode(m) => {
+                // la riga di verifica di un SuperFox non va ai programmi collegati (`postDecode` di WSJT-X: «Don't send SuperFox OTP messages»)
+                if m.text.contains("$VERIFY$") {
+                    return Vec::new();
+                }
                 // il Reply e il Replay di GridTracker usano solo cio' che e' uscito: una riga nascosta dai filtri non si ricorda nemmeno
                 if !self.passes_filters(m) {
                     return Vec::new();

@@ -5,7 +5,7 @@
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, Ordering},
         mpsc, Arc, Mutex,
     },
 };
@@ -199,10 +199,15 @@ pub struct NativeControls {
     otp_hook: Mutex<Option<OtpHook>>,
     /// L'ultimo esito della verifica del Fox.
     fox_verification: Mutex<Option<aurora_core::FoxVerification>>,
+    /// Quando si e' decodificata l'ultima trasmissione UltraFOX/SuperFox (ms dal 1970, 0 = mai): l'etichetta diventa «Super Hound».
+    ultrafox_seen_ms: AtomicU64,
 }
 
 /// Chi riceve i codici OTP del Fox da verificare.
 pub type OtpHook = Arc<dyn Fn(crate::features::FoxOtp) + Send + Sync>;
+
+/// Per quanto l'etichetta resta «Super Hound» dopo l'ultima trasmissione SuperFox ricevuta.
+const ULTRAFOX_LABEL_KEEP_MS: u64 = 120_000;
 
 /// Soglia di fabbrica del ROS (WSJT-X: «SWR > 2.5», `stopForHighSWR`), in centesimi.
 pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 250;
@@ -219,7 +224,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), status_published: AtomicBool::new(false) }
+        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
     }
 }
 
@@ -279,6 +284,18 @@ impl NativeControls {
 
     pub fn fox_verification(&self) -> Option<aurora_core::FoxVerification> {
         self.fox_verification.lock().ok().and_then(|v| v.clone())
+    }
+
+    /// Segna che in questo periodo e' arrivata una trasmissione UltraFOX/SuperFox.
+    pub(crate) fn note_ultrafox(&self, now_ms: u64) {
+        self.ultrafox_seen_ms.store(now_ms, Ordering::Relaxed);
+    }
+
+    /// Se una UltraFOX/SuperFox e' stata decodificata negli ultimi due minuti: WSJT-X scrive «Super Hound» quando e' acceso il SuperFox nelle
+    /// impostazioni; Aurora cerca sempre anche il SuperFox in Hound, e l'etichetta segue quello che si riceve davvero.
+    pub fn ultrafox_recent(&self, now_ms: u64) -> bool {
+        let seen = self.ultrafox_seen_ms.load(Ordering::Relaxed);
+        seen > 0 && now_ms.saturating_sub(seen) < ULTRAFOX_LABEL_KEEP_MS
     }
 
     /// Il locatore proprio di questa sessione (Location via UDP): lo Status lo riporta e la sequenza lo usa nei messaggi (vedi `TxCommand::SetMyGrid`).

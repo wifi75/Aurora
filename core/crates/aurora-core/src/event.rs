@@ -44,9 +44,12 @@ pub struct StationStatus {
     /// Gli avvisi di sicurezza della trasmissione in corso (messaggio non rappresentabile, ROS alto, Tx bloccata da un controller esterno).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tx_alerts: Vec<TxAlert>,
-    /// Hound: esito della verifica in linea del codice OTP del Fox (`CALL.123456`, come `FoxVerifier` di WSJT-X), se c'e' stata.
+    /// Hound: esito della verifica in linea del codice OTP del Fox (`CALL.123456` o `$VERIFY$ CALL 123456`, come `FoxVerifier` di WSJT-X), se c'e' stata.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fox_verification: Option<FoxVerification>,
+    /// Hound: in questi minuti si riceve un Fox UltraFOX/SuperFox (l'etichetta diventa «Super Hound», come in WSJT-X).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub super_hound: bool,
 }
 
 /// L'esito della verifica del Fox: nominativo e se il server ha detto «VERIFIED» (altrimenti «INVALID»).
@@ -374,6 +377,9 @@ pub struct FoxLogView {
     pub rcvd: String,
     /// Ora del QSO (ms dal 1970, UTC).
     pub time_ms: u64,
+    /// Continente della stazione (`cty.dat`: AF, AN, AS, EU, NA, OC, SA), vuoto se ignoto: per la ripartizione nei numeri della pagina Fox.
+    #[serde(default)]
+    pub continent: String,
 }
 
 /// I parametri fissi della Fox (quelli di WSJT-X), mostrati nella pagina.
