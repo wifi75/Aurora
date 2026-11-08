@@ -207,12 +207,12 @@ export const controlStrings = {
   'ctl.done': ['Fatto.', 'Done.', 'Erledigt.', 'Fait.', 'Hecho.', 'Feito.'],
   'ctl.dxNone': ['nessuna', 'none', 'keine', 'aucune', 'ninguna', 'nenhuma'],
   'tip.ctl.autoseq': [
-    'Sequenza automatica: Aurora passa da solo al messaggio successivo del QSO.',
-    'Automatic sequence: Aurora moves to the next QSO message by itself.',
-    'Automatische Sequenz: Aurora wechselt selbst zur nächsten QSO-Nachricht.',
-    'Séquence automatique : Aurora passe seul au message suivant du QSO.',
-    'Secuencia automática: Aurora pasa solo al siguiente mensaje del QSO.',
-    'Sequência automática: a Aurora passa sozinho à mensagem seguinte do QSO.',
+    'Sequenza automatica. Acceso: a ogni risposta della stazione Aurora passa da solo al messaggio giusto (rapporto, R+rapporto, RR73, 73) e a fine QSO lo mette a log; se intanto un’altra stazione ti chiama, la prepara come prossimo DX (trasmette solo con Abilita Tx acceso). Spento: il messaggio cambia solo quando clicchi tu Tx1…Tx6.',
+    'Automatic sequence. On: at each reply of the station Aurora moves by itself to the right message (report, R+report, RR73, 73) and logs the QSO at the end; if meanwhile another station calls you, it gets it ready as the next DX (it transmits only with Enable Tx on). Off: the message changes only when you click Tx1…Tx6.',
+    'Automatische Sequenz. An: bei jeder Antwort der Station wechselt Aurora selbst zur richtigen Nachricht (Rapport, R+Rapport, RR73, 73) und loggt das QSO am Ende; ruft dich inzwischen eine andere Station, wird sie als nächstes DX vorbereitet (gesendet wird nur mit Enable Tx an). Aus: die Nachricht ändert sich nur, wenn du Tx1…Tx6 klickst.',
+    'Séquence automatique. Activée : à chaque réponse de la station Aurora passe seule au bon message (report, R+report, RR73, 73) et met le QSO au log à la fin ; si entre-temps une autre station t’appelle, elle la prépare comme prochain DX (elle n’émet qu’avec Activer Tx allumé). Éteinte : le message ne change que quand tu cliques Tx1…Tx6.',
+    'Secuencia automática. Activada: en cada respuesta de la estación Aurora pasa sola al mensaje correcto (reporte, R+reporte, RR73, 73) y al final pone el QSO en el log; si mientras tanto otra estación te llama, la prepara como próximo DX (solo transmite con Activar Tx encendido). Apagada: el mensaje cambia solo cuando pulsas Tx1…Tx6.',
+    'Sequência automática. Ligada: a cada resposta da estação a Aurora passa sozinha à mensagem certa (relatório, R+relatório, RR73, 73) e no fim põe o QSO no log; se entretanto outra estação te chamar, prepara-a como próximo DX (só transmite com Ativar Tx ligado). Desligada: a mensagem só muda quando clicas em Tx1…Tx6.',
   ],
   'tip.ctl.single_qso': [
     'Dopo un QSO completato Aurora smette di trasmettere.',
