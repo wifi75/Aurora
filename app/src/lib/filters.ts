@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { putBandFilters } from '../api/client';
 import type { DecodedMessage } from '../api/schemas';
 import { browserStorage } from './theme';
 
@@ -166,9 +167,12 @@ export const useFilters = create<FiltersState>((set, get) => ({
     const next = { ...get().filters, ...change };
     saveFilters(browserStorage(), next);
     set({ filters: next });
+    // anche le Automazioni seguono i filtri di Attivita' di banda
+    void putBandFilters(next);
   },
   reset() {
     saveFilters(browserStorage(), defaultFilters());
     set({ filters: defaultFilters() });
+    void putBandFilters(defaultFilters());
   },
 }));

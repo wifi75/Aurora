@@ -8,13 +8,21 @@ use std::{
     time::Duration,
 };
 
-use aurora_core::{Bus, Command, DecodedMessage, Event};
+use aurora_core::{Bus, Command, DecodedMessage, Event, SharedUdpFilters};
 use tokio::{sync::broadcast::error::RecvError, task::JoinHandle, time::interval};
 
 use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, Rules, WantedMatcher};
 
 /// Scarto dell'ora locale da UTC, in secondi: lo calcola chi conosce il sistema (il cervello non legge l'orologio).
 pub type LocalOffset = Arc<dyn Fn() -> i64 + Send + Sync>;
+
+/// L'interruttore «Abilita Tx» del motore, visto dalle automazioni: come e' adesso (`None` = non si sa) e come cambiarlo
+/// (vero se il motore ha preso il comando).
+#[derive(Clone)]
+pub struct TxSwitch {
+    pub get: Arc<dyn Fn() -> Option<bool> + Send + Sync>,
+    pub set: Arc<dyn Fn(bool) -> bool + Send + Sync>,
+}
 
 pub struct AutomationConfig {
     pub rules: Rules,
@@ -41,6 +49,8 @@ struct Inner {
     offset: Mutex<LocalOffset>,
     /// I paesi di cty.dat, per la scelta dei paesi esclusi nella pagina.
     countries: Mutex<Arc<Vec<String>>>,
+    /// «Abilita Tx» del motore: lo accendono le automazioni in modo reale e lo rimettono com'era quando si fermano.
+    tx_switch: Mutex<Option<TxSwitch>>,
 }
 
 impl Drop for Inner {
@@ -81,6 +91,7 @@ impl Automation {
             commands: bus.commands(),
             offset: Mutex::new(Arc::new(|| 0)),
             countries: Mutex::new(Arc::new(Vec::new())),
+            tx_switch: Mutex::new(None),
         });
         let mut events = bus.subscribe_events();
         let commands = bus.commands();
@@ -100,7 +111,10 @@ impl Automation {
                                 pending.push(d);
                                 flush_at.get_or_insert_with(|| tokio::time::Instant::now() + window);
                             }
-                            Ok(event) => handle_event(&inner, event),
+                            Ok(event) => {
+                                handle_event(&inner, event);
+                                sync_tx_switch(&inner);
+                            }
                             Err(RecvError::Lagged(_)) => {}
                             Err(RecvError::Closed) => break,
                         }
@@ -129,12 +143,17 @@ impl Automation {
                             brain.tick(now, clients)
                         };
                         // il CQ da solo parte solo in modo reale (in prova a vuoto il cervello decide `WouldCallCq`)
-                        if decision.is_some_and(|d| d.kind == DecisionKind::CallCq)
+                        let call_cq = decision.is_some_and(|d| d.kind == DecisionKind::CallCq);
+                        if call_cq {
+                            ensure_tx_enabled(&inner);
+                        }
+                        if call_cq
                             && commands.try_send(Command::CallCq { modifier: String::new() }).is_err()
                         {
                             tracing::warn!("CQ automatico non consegnato al motore");
                         }
                         send_halt_if_requested(&inner);
+                        sync_tx_switch(&inner);
                     }
                 }
             }
@@ -152,6 +171,18 @@ impl Automation {
     pub fn set_enabled(&self, enabled: bool) {
         lock(&self.inner.brain).set_enabled(enabled, (self.inner.now)());
         send_halt_if_requested(&self.inner);
+        sync_tx_switch(&self.inner);
+    }
+
+    /// L'interruttore «Abilita Tx» del motore: le automazioni lo accendono quando trasmettono e lo rimettono com'era quando si fermano.
+    pub fn set_tx_switch(&self, switch: TxSwitch) {
+        *lock(&self.inner.tx_switch) = Some(switch);
+        sync_tx_switch(&self.inner);
+    }
+
+    /// I filtri di Attivita' di banda: le stazioni che nascondono non ricevono mai una risposta automatica.
+    pub fn set_band_filters(&self, filters: SharedUdpFilters) {
+        lock(&self.inner.brain).set_band_filters(filters);
     }
 
     /// Come sapere se un paese e' nuovo nel modo in uso, per la regola «nuovo modo».
@@ -178,7 +209,9 @@ impl Automation {
     }
 
     pub fn set_mode(&self, mode: Mode) -> Result<(), LiveNotAllowed> {
-        lock(&self.inner.brain).set_mode(mode)
+        let result = lock(&self.inner.brain).set_mode(mode);
+        sync_tx_switch(&self.inner);
+        result
     }
 
     pub fn set_rules(&self, rules: Rules) {
@@ -198,6 +231,7 @@ impl Automation {
     /// STOP TX: spegne l'automazione.
     pub fn halt(&self) {
         lock(&self.inner.brain).on_halt((self.inner.now)());
+        sync_tx_switch(&self.inner);
     }
 
     pub fn client_guard(&self) -> ClientGuard {
@@ -218,6 +252,32 @@ fn send_halt_if_requested(inner: &Inner) {
     }
 }
 
+/// «Abilita Tx» segue le automazioni (vedi `Brain::tx_switch_step`): si legge e si cambia solo quando cominciano o smettono di trasmettere.
+fn sync_tx_switch(inner: &Inner) {
+    let Some(switch) = lock(&inner.tx_switch).clone() else { return };
+    let now = (inner.now)();
+    let change = {
+        let mut brain = lock(&inner.brain);
+        if !brain.tx_switch_pending() {
+            return;
+        }
+        brain.tx_switch_step((switch.get)(), now)
+    };
+    if let Some(on) = change
+        && !(switch.set)(on)
+    {
+        tracing::warn!("Abilita Tx non cambiato dalle automazioni: motore non disponibile");
+    }
+}
+
+/// Prima di una risposta o di un CQ automatico «Abilita Tx» deve essere acceso: il motore puo' averlo spento alla fine del QSO precedente.
+fn ensure_tx_enabled(inner: &Inner) {
+    let Some(switch) = lock(&inner.tx_switch).clone() else { return };
+    if (switch.get)() != Some(true) && !(switch.set)(true) {
+        tracing::warn!("Abilita Tx non acceso prima della trasmissione automatica: motore non disponibile");
+    }
+}
+
 /// Valuta i messaggi di un ciclo e manda la risposta al CQ scelto, se c'e'.
 fn flush(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, decodes: Vec<DecodedMessage>) {
     if decodes.is_empty() {
@@ -228,12 +288,15 @@ fn flush(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, decodes: 
     for decision in decisions {
         if decision.kind == DecisionKind::Reply
             && let Some(decode_id) = decision.decode_id
-            && commands.try_send(Command::Reply { decode_id }).is_err()
         {
-            tracing::warn!("risposta automatica non consegnata al motore");
+            ensure_tx_enabled(inner);
+            if commands.try_send(Command::Reply { decode_id }).is_err() {
+                tracing::warn!("risposta automatica non consegnata al motore");
+            }
         }
     }
     send_halt_if_requested(inner);
+    sync_tx_switch(inner);
 }
 
 fn handle_event(inner: &Inner, event: Event) {

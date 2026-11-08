@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune))]
+#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -118,6 +118,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/clock/check", post(clock_check))
         .route("/api/v1/clock/correct", post(clock_correct))
         .route("/api/v1/ui-settings/{kind}", get(ui_settings_get).put(ui_settings_put))
+        .route("/api/v1/band-filters", get(band_filters_get).put(band_filters_put))
         .route("/api/v1/cat", get(crate::cat::cat_get).put(crate::cat::cat_put))
         .route("/api/v1/cat/connect", post(crate::cat::cat_connect))
         .route("/api/v1/cat/disconnect", post(crate::cat::cat_disconnect))
@@ -1968,6 +1969,12 @@ async fn ui_settings_put(
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_settings"));
     }
     let store = state.ui_settings.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "ui_settings_unavailable"))?;
+    // i filtri di Attivita' di banda del PC valgono anche per le Automazioni
+    if kind == "desktop"
+        && let Some(filters) = entries.get(aurora_core::UI_FILTERS_KEY).and_then(|text| serde_json::from_str::<aurora_core::UdpFilters>(text).ok())
+    {
+        *state.band_filters.write().unwrap_or_else(|p| p.into_inner()) = filters;
+    }
     tokio::task::spawn_blocking(move || store.put(&kind, entries))
         .await
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "ui_settings_task"))?
@@ -1975,6 +1982,25 @@ async fn ui_settings_put(
             tracing::warn!("salvataggio delle preferenze fallito: {e}");
             ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "ui_settings_write")
         })?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+/// I filtri di Attivita' di banda che Aurora conosce adesso (quelli che seguono le Automazioni).
+#[utoipa::path(get, path = "/api/v1/band-filters", responses((status = 200, description = "Filtri di Attivita' di banda (nomi dei campi come nella pagina)")))]
+async fn band_filters_get(State(state): State<AppState>, _: Authed) -> Json<Value> {
+    let filters = state.band_filters.read().unwrap_or_else(|p| p.into_inner()).clone();
+    Json(serde_json::to_value(filters).unwrap_or(Value::Null))
+}
+
+/// La pagina manda i filtri di Attivita' di banda quando cambiano: le Automazioni non rispondono mai alle stazioni che nascondono.
+/// Restano in memoria; al riavvio Aurora li rilegge dalle preferenze dell'interfaccia salvate.
+#[utoipa::path(put, path = "/api/v1/band-filters", responses((status = 200, description = "Filtri applicati"), (status = 400, description = "Elenchi troppo lunghi (bad_filters)")))]
+async fn band_filters_put(State(state): State<AppState>, _: Authed, Json(filters): Json<aurora_core::UdpFilters>) -> Result<Json<Value>, ApiError> {
+    let lists = [&filters.hide_continents, &filters.hide_countries, &filters.hide_calls, &filters.show_only_calls, &filters.always_show_calls];
+    if lists.iter().any(|l| l.len() > 1000) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_filters"));
+    }
+    *state.band_filters.write().unwrap_or_else(|p| p.into_inner()) = filters;
     Ok(Json(json!({ "ok": true })))
 }
 

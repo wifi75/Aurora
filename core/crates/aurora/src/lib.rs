@@ -1415,6 +1415,24 @@ pub async fn run(
             now: Arc::new(unix_secs),
         },
     );
+    // i filtri di Attivita' di banda valgono anche per le Automazioni: all'avvio si rileggono dalle preferenze dell'interfaccia salvate,
+    // poi li aggiorna la pagina quando cambiano
+    let ui_settings = Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json")));
+    let band_filters: aurora_core::SharedUdpFilters = Arc::new(std::sync::RwLock::new(
+        ui_settings.get("desktop").get(aurora_core::UI_FILTERS_KEY).and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default(),
+    ));
+    automation.set_band_filters(Arc::clone(&band_filters));
+    // «Abilita Tx» del motore proprio: le automazioni in modo reale lo accendono e lo rimettono com'era quando si fermano
+    if config.engine == EngineKind::Native {
+        let rig = Arc::new(engine_native::NativeRig::new(Arc::clone(&native_controls), None));
+        let reader = Arc::clone(&rig);
+        automation.set_tx_switch(qso_engine::TxSwitch {
+            get: Arc::new(move || {
+                rig_control::Rig::controls(reader.as_ref()).ok().and_then(|all| all.into_iter().find(|(id, _)| id == "enable_tx").map(|(_, on)| on))
+            }),
+            set: Arc::new(move |on| rig_control::Rig::set_control(rig.as_ref(), "enable_tx", Some(on)).is_ok()),
+        });
+    }
     let (targets, worked_paths) = export_targets(&config);
     // motore proprio: le impostazioni sono di Aurora (`settings-motore.json`); il `JTDX.ini` serve solo come valori iniziali, una volta
     let engine_settings = (config.engine == EngineKind::Native).then(|| open_engine_settings(&config));
@@ -1700,7 +1718,8 @@ pub async fn run(
                 })
             }) as remote_api::DxccProvider
         }))
-        .with_ui_settings(Arc::new(remote_api::ui_settings::UiSettings::open(&config.data_dir.join("ui-settings.json"))))
+        .with_ui_settings(ui_settings)
+        .with_band_filters(band_filters)
         .with_stats_if(live_log.clone().map(|(db, worked, sources)| {
             Arc::new(move || {
                 refresh_worked(&sources, &db, &worked);

@@ -20,6 +20,8 @@ import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
 import { readScale, startUiScale, useUiScale } from './lib/uiScale';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
+import { readFilters, useFilters } from './lib/filters';
+import { putBandFilters } from './api/client';
 
 // stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
 document.documentElement.dataset.bozza = 'a';
@@ -36,6 +38,14 @@ async function start() {
     if (import.meta.env.VITE_AURORA_PROVA !== '1') keepSynced(kind);
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
+  }
+  // i filtri di Attivita' di banda portati dal server: l'elenco li usa subito e le Automazioni li ricevono (non rispondono a chi nascondono)
+  try {
+    const filters = readFilters(window.localStorage);
+    useFilters.setState({ filters });
+    void putBandFilters(filters);
+  } catch {
+    // senza archivio del browser restano i filtri predefiniti
   }
   // la dimensione del testo: dopo le preferenze portate dal server
   useUiScale.setState({ scale: readScale() });

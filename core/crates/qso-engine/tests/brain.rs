@@ -460,3 +460,85 @@ fn the_score_weighs_rarity_and_signal_together() {
     let reply = decisions.iter().find(|d| d.kind == DecisionKind::Reply).expect("una risposta");
     assert_eq!(reply.call.as_deref(), Some("AA1AA"), "paese nuovo (4) +4 punti di segnale batte griglia (1) +11");
 }
+
+fn band_filters(f: aurora_core::UdpFilters) -> aurora_core::SharedUdpFilters {
+    std::sync::Arc::new(std::sync::RwLock::new(f))
+}
+
+#[test]
+fn a_station_hidden_by_band_activity_filters_never_gets_an_automatic_reply() {
+    let filters = band_filters(aurora_core::UdpFilters { hide_calls: vec!["AT1*".into()], ..Default::default() });
+    let mut b = live_brain();
+    b.set_band_filters(std::sync::Arc::clone(&filters));
+    let d = b.on_decode(&cq(7, "AT1AA"), T0).expect("lo scarto si registra");
+    assert_eq!(d.kind, DecisionKind::Skipped);
+    assert!(d.reason.contains("nascosta dai filtri di Attivita' di banda"), "{}", d.reason);
+    assert_eq!(b.state().replies_today, 0);
+    // tolto il filtro, la stessa stazione torna a riceverla
+    *filters.write().unwrap() = aurora_core::UdpFilters::default();
+    assert_eq!(kind(&mut b, &cq(8, "AT1AA"), T0 + 15), DecisionKind::Reply);
+}
+
+#[test]
+fn band_activity_filters_hold_in_dry_run_and_in_a_batch_the_hidden_one_is_not_chosen() {
+    let mut hidden_eu = cq(1, "DL1ABC");
+    hidden_eu.continent = Some("EU".into());
+    let mut visible = cq(2, "K1ABC");
+    visible.continent = Some("NA".into());
+    let mut b = Brain::new(Rules::default(), Limits::default(), true);
+    b.set_band_filters(band_filters(aurora_core::UdpFilters { hide_continents: vec!["EU".into()], ..Default::default() }));
+    b.set_enabled(true, T0);
+    let decisions = b.on_batch(&[hidden_eu, visible], T0);
+    assert!(decisions.iter().any(|d| d.kind == DecisionKind::Skipped && d.call.as_deref() == Some("DL1ABC")));
+    let reply = decisions.iter().find(|d| d.kind == DecisionKind::WouldReply).expect("risponderebbe all'altra");
+    assert_eq!(reply.call.as_deref(), Some("K1ABC"));
+}
+
+#[test]
+fn band_activity_bypass_and_always_show_let_the_station_through() {
+    let mut b = live_brain();
+    b.set_band_filters(band_filters(aurora_core::UdpFilters { hide_calls: vec!["AT1AA".into()], bypass: true, ..Default::default() }));
+    assert_eq!(kind(&mut b, &cq(1, "AT1AA"), T0), DecisionKind::Reply);
+    let mut b = live_brain();
+    b.set_band_filters(band_filters(aurora_core::UdpFilters { only: "cq".into(), show_only_calls: vec!["JA*".into()], always_show_calls: vec!["AT1AA".into()], ..Default::default() }));
+    assert_eq!(kind(&mut b, &cq(1, "AT1AA"), T0), DecisionKind::Reply);
+    assert_eq!(kind(&mut b, &cq(2, "K1ABC"), T0 + 70), DecisionKind::Skipped, "non tra quelli da mostrare");
+}
+
+#[test]
+fn enable_tx_follows_the_automation_and_goes_back_as_it_was() {
+    // spento prima: le automazioni in modo reale lo accendono e, quando si spengono, lo rispengono
+    let mut b = Brain::new(Rules::default(), Limits::default(), true);
+    b.set_mode(Mode::Live).unwrap();
+    assert!(!b.tx_switch_pending(), "spente: niente da fare");
+    b.set_enabled(true, T0);
+    assert!(b.tx_switch_pending());
+    assert_eq!(b.tx_switch_step(Some(false), T0), Some(true));
+    assert!(!b.tx_switch_pending());
+    b.set_enabled(false, T0 + 10);
+    assert_eq!(b.tx_switch_step(Some(true), T0 + 10), Some(false));
+    assert!(!b.tx_switch_pending());
+
+    // acceso prima: resta acceso anche dopo
+    b.set_enabled(true, T0 + 20);
+    assert_eq!(b.tx_switch_step(Some(true), T0 + 20), None);
+    b.set_enabled(false, T0 + 30);
+    assert_eq!(b.tx_switch_step(Some(true), T0 + 30), None);
+}
+
+#[test]
+fn enable_tx_is_not_touched_in_dry_run_and_comes_back_on_stop_or_dry_run() {
+    let mut b = Brain::new(Rules::default(), Limits::default(), true);
+    b.set_enabled(true, T0);
+    assert!(!b.tx_switch_pending(), "la prova a vuoto non trasmette");
+    b.set_mode(Mode::Live).unwrap();
+    assert_eq!(b.tx_switch_step(None, T0), Some(true), "non si sa com'era: vale spento");
+    // passare alla prova a vuoto lo rimette com'era
+    b.set_mode(Mode::DryRun).unwrap();
+    assert_eq!(b.tx_switch_step(Some(true), T0 + 5), Some(false));
+    // STOP TX spegne le automazioni: torna com'era
+    b.set_mode(Mode::Live).unwrap();
+    assert_eq!(b.tx_switch_step(Some(false), T0 + 6), Some(true));
+    b.on_halt(T0 + 7);
+    assert_eq!(b.tx_switch_step(Some(false), T0 + 7), Some(false));
+}

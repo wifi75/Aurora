@@ -2,8 +2,12 @@
 //! `ApplyFiltersToUDPmessages` di JTDX: `readFromStdout` manda `postDecode` solo se `!filterUDP || (notified & 2)`, cioe' solo le righe che i filtri
 //! lasciano vedere).
 //!
-//! La scheda Filtri vive nel browser (per dispositivo): quando cambia, la pagina ne manda una copia ad Aurora (`PUT /api/v1/udp-filters`). Le regole sono
-//! le stesse di `app/src/lib/filters.ts` (`applyFilters`), con gli stessi nomi di campo.
+//! Gli stessi filtri decidono anche a chi le Automazioni possono rispondere: una stazione nascosta in Attivita' di banda non riceve mai una
+//! risposta automatica.
+//!
+//! La scheda Filtri vive nel browser: quando cambia, la pagina ne manda una copia ad Aurora (`PUT /api/v1/band-filters`), e all'avvio Aurora la
+//! rilegge dalle preferenze dell'interfaccia salvate sul server (`aurora-filters` di `ui-settings.json`). Le regole sono le stesse di
+//! `app/src/lib/filters.ts` (`applyFilters`), con gli stessi nomi di campo.
 
 use std::sync::{Arc, RwLock};
 
@@ -25,7 +29,21 @@ pub struct UdpFilters {
     pub hide_non_standard: bool,
     pub hide_own_continent: bool,
     pub hide_worked: bool,
+    /// Con `hide_worked`: nasconde anche gli scambi delle stazioni gia' collegate, non solo i loro CQ.
+    pub hide_worked_all: bool,
+    /// Mostra soltanto i messaggi di questi nominativi o prefissi (`JA*`); vuoto = tutti.
+    pub show_only_calls: Vec<String>,
+    /// Nominativi o prefissi sempre visibili, anche se un altro filtro li nasconderebbe.
+    pub always_show_calls: Vec<String>,
+    /// Tutti i filtri sospesi senza perderne le impostazioni.
+    pub bypass: bool,
 }
+
+/// Lo stesso insieme di filtri visto da Attivita' di banda (e dalle Automazioni).
+pub type BandFilters = UdpFilters;
+
+/// La chiave delle preferenze dell'interfaccia dove la pagina tiene i filtri.
+pub const UI_FILTERS_KEY: &str = "aurora-filters";
 
 /// I filtri correnti, condivisi tra l'API che li riceve e l'emettitore UDP che li applica.
 pub type SharedUdpFilters = Arc<RwLock<UdpFilters>>;
@@ -88,6 +106,10 @@ fn call_matches(call: Option<&str>, pattern: &str) -> bool {
     }
 }
 
+fn any_match(call: Option<&str>, patterns: &[String]) -> bool {
+    patterns.iter().any(|p| !p.trim().is_empty() && call_matches(call, p))
+}
+
 fn signoff(text: &str, strict: bool) -> bool {
     let t = tokens(text);
     let last = t.last().map_or("", String::as_str);
@@ -97,6 +119,15 @@ fn signoff(text: &str, strict: bool) -> bool {
 impl UdpFilters {
     /// Vero se la riga resta visibile con questi filtri (e quindi esce via UDP). `own_continent`: il continente di chi opera.
     pub fn allows(&self, d: &DecodedMessage, own_continent: Option<&str>) -> bool {
+        if self.bypass {
+            return true;
+        }
+        if !self.always_show_calls.is_empty() && any_match(call_of(&d.text).as_deref(), &self.always_show_calls) {
+            return true;
+        }
+        if !self.show_only_calls.is_empty() && !any_match(call_of(&d.text).as_deref(), &self.show_only_calls) {
+            return false;
+        }
         if d.continent.as_deref().is_some_and(|c| self.hide_continents.iter().any(|h| h == c)) {
             return false;
         }
@@ -124,7 +155,7 @@ impl UdpFilters {
         if self.hide_non_standard && !is_standard(&d.text) {
             return false;
         }
-        if self.hide_worked && d.tag == Some(DecodeTag::WorkedCall) && cq {
+        if self.hide_worked && d.tag == Some(DecodeTag::WorkedCall) && (self.hide_worked_all || cq) {
             return false;
         }
         true
@@ -193,8 +224,24 @@ mod tests {
     }
 
     #[test]
+    fn bypass_always_show_show_only_and_worked_all_follow_the_page() {
+        let cq = decode("CQ K1ABC FN42", Some("United States"), Some("NA"), None);
+        let hide_na = UdpFilters { hide_continents: vec!["NA".into()], ..UdpFilters::default() };
+        assert!(UdpFilters { bypass: true, ..hide_na.clone() }.allows(&cq, None), "il bypass sospende tutto");
+        assert!(UdpFilters { always_show_calls: vec!["K1*".into()], ..hide_na.clone() }.allows(&cq, None), "sempre visibile vince");
+        let only_ja = UdpFilters { show_only_calls: vec!["JA*".into()], ..UdpFilters::default() };
+        assert!(!only_ja.allows(&cq, None));
+        assert!(only_ja.allows(&decode("CQ JA1ABC PM95", None, None, None), None));
+        let all = UdpFilters { hide_worked: true, hide_worked_all: true, ..UdpFilters::default() };
+        assert!(!all.allows(&decode("IU3ABC K1ABC -10", None, None, Some(DecodeTag::WorkedCall)), None), "anche gli scambi");
+    }
+
+    #[test]
     fn the_page_json_is_read_with_its_own_names_and_missing_fields_default() {
         let f: UdpFilters = serde_json::from_str(r#"{"hideContinents":["AS"],"only":"cq","hideWorked":true}"#).expect("json");
         assert_eq!((f.hide_continents, f.only.as_str(), f.hide_worked, f.hide_calls.len()), (vec!["AS".to_string()], "cq", true, 0));
+        // la pagina manda anche le evidenziazioni: campi in piu' non sono un errore
+        let f: UdpFilters = serde_json::from_str(r#"{"bypass":true,"highlightCalls":["K1*"],"showOnlyCalls":["JA*"]}"#).expect("json");
+        assert!(f.bypass && f.show_only_calls == vec!["JA*".to_string()]);
     }
 }

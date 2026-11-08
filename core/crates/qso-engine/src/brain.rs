@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use aurora_core::{DecodeTag, DecodedMessage, StationStatus};
+use aurora_core::{DecodeTag, DecodedMessage, SharedUdpFilters, StationStatus};
 use engine_jtdx::text::parse_message;
 use serde::{Deserialize, Serialize};
 
@@ -280,6 +280,11 @@ pub struct Brain {
     heard: HashSet<String>,
     dial_hz: Option<u64>,
     wanted: Option<WantedMatcher>,
+    /// I filtri di Attivita' di banda: una stazione che nascondono non riceve mai una risposta automatica (vale anche in prova a vuoto).
+    band_filters: Option<SharedUdpFilters>,
+    /// Com'era «Abilita Tx» quando le automazioni hanno cominciato a trasmettere (modo reale acceso): `Some` finche' trasmettono,
+    /// poi si rimette com'era.
+    tx_before: Option<bool>,
 }
 
 impl Brain {
@@ -317,12 +322,60 @@ impl Brain {
             heard: HashSet::new(),
             dial_hz: None,
             wanted: None,
+            band_filters: None,
+            tx_before: None,
         }
     }
 
     /// Come riconoscere le stazioni desiderate (la lista sta fuori dal cervello).
     pub fn set_wanted_matcher(&mut self, matcher: WantedMatcher) {
         self.wanted = Some(matcher);
+    }
+
+    /// I filtri di Attivita' di banda (li manda la pagina, li tiene chi fa girare il cervello).
+    pub fn set_band_filters(&mut self, filters: SharedUdpFilters) {
+        self.band_filters = Some(filters);
+    }
+
+    /// La stazione e' nascosta dai filtri di Attivita' di banda?
+    fn hidden_by_band_filters(&self, d: &DecodedMessage) -> bool {
+        self.band_filters.as_ref().is_some_and(|f| !f.read().unwrap_or_else(|p| p.into_inner()).allows(d, self.own_continent.as_deref()))
+    }
+
+    /// Le automazioni possono trasmettere adesso (accese, in modo reale)?
+    fn transmits(&self) -> bool {
+        self.state.enabled && self.state.mode == Mode::Live
+    }
+
+    /// Vero se «Abilita Tx» va sistemato: le automazioni hanno cominciato o smesso di trasmettere.
+    pub fn tx_switch_pending(&self) -> bool {
+        self.transmits() != self.tx_before.is_some()
+    }
+
+    /// «Abilita Tx» segue le automazioni: quando cominciano a trasmettere (accese in modo reale) si accende, quando smettono (spente a mano,
+    /// per un tetto, dal dead-man, da STOP o passate in prova a vuoto) torna com'era prima. `current` e' com'e' adesso (`None` = non si sa:
+    /// vale spento). Ritorna il valore da impostare, se va cambiato.
+    pub fn tx_switch_step(&mut self, current: Option<bool>, now: u64) -> Option<bool> {
+        match (self.transmits(), self.tx_before) {
+            (true, None) => {
+                let before = current.unwrap_or(false);
+                self.tx_before = Some(before);
+                if before {
+                    return None;
+                }
+                self.push(now, DecisionKind::Info, None, None, "Abilita Tx acceso dalle automazioni (si rispegne quando le automazioni si fermano)".into());
+                Some(true)
+            }
+            (false, Some(before)) => {
+                self.tx_before = None;
+                if before {
+                    return None;
+                }
+                self.push(now, DecisionKind::Info, None, None, "Abilita Tx rimesso spento, com'era prima delle automazioni".into());
+                Some(false)
+            }
+            _ => None,
+        }
     }
 
     /// La frequenza della radio, per i filtri di banda della lista dei desiderati.
@@ -667,6 +720,11 @@ impl Brain {
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, None, Some(d.id), "Nominativo non leggibile nel messaggio".into()));
         };
         let call_opt = Some(call.clone());
+        // quello che l'operatore ha nascosto in Attivita' di banda non riceve mai una risposta automatica
+        if self.hidden_by_band_filters(d) {
+            let reason = format!("{call}: nascosta dai filtri di Attivita' di banda");
+            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
+        }
         if let Some(why) = ghost::suspicion(&d.text, &call, d.snr, heard_before) {
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call}: {why}")));
         }

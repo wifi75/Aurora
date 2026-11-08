@@ -92,6 +92,18 @@ export async function putAutomation(change: AutomationChange): Promise<Automatio
   return AutomationStateSchema.parse(await (await request('/automation', init)).json());
 }
 
+/**
+ * I filtri di Attivita' di banda vanno anche ad Aurora: le Automazioni non rispondono mai alle stazioni che nascondono.
+ * Senza server (o con il dispositivo non associato) non succede nulla: ci riprova al prossimo cambio.
+ */
+export async function putBandFilters(filters: unknown): Promise<void> {
+  try {
+    await request('/band-filters', { ...jsonInit(filters), method: 'PUT' });
+  } catch {
+    // il core li rilegge comunque dalle preferenze salvate al prossimo avvio
+  }
+}
+
 export interface StationInfo {
   engine?: string;
   tx_allowed: boolean;
