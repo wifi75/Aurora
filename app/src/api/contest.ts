@@ -37,6 +37,12 @@ export interface ContestRef {
   nome: string;
   famiglia: string;
   edizione: number;
+  /** L'edizione in corso o la prossima, calcolata dalla regola del calendario (assente per i contest «sempre»). */
+  finestra?: { inizio_ms: number; fine_ms: number } | null;
+  da_verificare?: boolean;
+  url_regole?: string;
+  ore_massime?: number | null;
+  pausa_minima_min?: number | null;
 }
 
 export interface Categoria {

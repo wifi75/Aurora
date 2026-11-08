@@ -20,6 +20,7 @@ import {
   type LogQso,
   type Regole,
   type Valore,
+  type ContestRef,
 } from '../api/contest';
 import type { DecodedMessage } from '../api/schemas';
 import { useLang, useT, type T } from '../i18n';
@@ -123,6 +124,7 @@ export function ContestPage() {
             </option>
           ))}
         </select>
+        <DateContest c={(s?.contest ?? []).find((c) => c.id === (attivo ?? scelto))} finestra={attivo ? s?.finestra : undefined} t={t} />
         {attivo && s ? (
           <BarraPunteggio s={s} t={t} />
         ) : (
@@ -143,9 +145,6 @@ export function ContestPage() {
         <Corpo s={s} t={t} decodes={decodes} dx={status?.dx_call ?? null} dxGrid={status?.dx_grid ?? null} transmitting={!!status?.transmitting} switches={switches} apri={setModale} fine={() => void fine()} />
       ) : null}
 
-      {/* la cascata a tutta larghezza sotto i riquadri, come nella Fox: barre Rx/Tx trascinabili, clic che sposta la Rx */}
-      <Cascata />
-
       {modale === 'regole' && s?.regole ? <ModaleRegole r={s.regole} t={t} chiudi={() => setModale('')} /> : null}
       {modale === 'calendario' ? <ModaleCalendario t={t} chiudi={() => setModale('')} prepara={(id) => { setModale(''); void attiva(id); }} /> : null}
       {modale === 'export' && attivo ? <ModaleExport t={t} s={s} chiudi={() => setModale('')} /> : null}
@@ -154,10 +153,10 @@ export function ContestPage() {
   );
 }
 
-/** La fascia della cascata: alta circa 160 px, con la maniglia sopra per regolarla (ricordata, al massimo 420 px per le Decodifiche). */
+/** La cascata sotto le Decodifiche: alta circa 120 px (piccola), con la maniglia sopra per regolarla (ricordata, al massimo 420 px per le Decodifiche). */
 function Cascata() {
   const t = useT();
-  const wf = useDragHeight('aurora-contest-wf-height', 160, 420);
+  const wf = useDragHeight('aurora-contest-wf-height-v2', 120, 420);
   return (
     <section className="dock-panel ctc-box ctc-wf-box" aria-label={t('fox.waterfall')}>
       <header className="dock-grip dock-grip--fixed">
@@ -179,6 +178,42 @@ const tag = (k: string) => ({ background: `var(--tag-${k})`, color: `var(--tag-$
 /** Il messaggio con il nominativo di chi trasmette a pastiglia, come la stazione DX nella pagina Stazione. */
 function pastiglia(text: string, call: string) {
   return text.split(/(\s+)/).map((p, i) => (call && p.toUpperCase() === call.toUpperCase() ? <mark key={i} className="dx-call">{p}</mark> : p));
+}
+
+/**
+ * Le date del contest scelto, compatte («29–30 ago 2026»), calcolate ogni anno dalla regola del calendario. Il clic apre un piccolo
+ * pannello con orari UTC e locali, durata, ore massime e pausa minima, link al regolamento. «?» se le date vanno ricontrollate.
+ */
+function DateContest({ c, finestra, t }: { c: ContestRef | undefined; finestra?: { inizio_ms: number; fine_ms: number } | null; t: T }) {
+  const lang = useLang((x) => x.lang);
+  const [aperto, setAperto] = useState(false);
+  const f = finestra ?? c?.finestra;
+  if (!c || !f) return null;
+  // la fine e' esclusa: l'ultimo minuto di gara e' un minuto prima
+  const fine = f.fine_ms - 60_000;
+  const giorno = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const quando = (tz?: string) => new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: tz });
+  const ore = (f.fine_ms - f.inizio_ms) / 3_600_000;
+  return (
+    <span className="ctc-dates">
+      <button type="button" className="ctc-chip ctc-chip--phase" title={t('contest.dates.tip')} aria-expanded={aperto} onClick={() => setAperto(!aperto)}>
+        {giorno.formatRange(f.inizio_ms, fine)}
+        {c.da_verificare ? <sup className="ctc-warn" title={t('contest.dates.verify')}>?</sup> : null}
+      </button>
+      {aperto ? (
+        <div className="ctc-dates-pop" role="dialog" onMouseLeave={() => setAperto(false)}>
+          <b>{c.nome}</b>
+          <span>{t('contest.dates.utc')}: {quando('UTC').format(f.inizio_ms)} → {quando('UTC').format(fine)}</span>
+          <span>{t('contest.dates.local')}: {quando().format(f.inizio_ms)} → {quando().format(fine)}</span>
+          <span>{t('contest.dates.duration')}: {Math.round(ore * 10) / 10} h</span>
+          {c.ore_massime ? <span>{t('contest.dates.maxHours')}: {c.ore_massime} h</span> : null}
+          {c.pausa_minima_min ? <span>{t('contest.dates.pause')}: {c.pausa_minima_min} min</span> : null}
+          {c.da_verificare ? <span className="ctc-warn">? {t('contest.dates.verify')}</span> : null}
+          {c.url_regole ? <a href={c.url_regole} target="_blank" rel="noreferrer">{t('contest.dates.rules')}</a> : null}
+        </div>
+      ) : null}
+    </span>
+  );
 }
 
 function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
@@ -255,6 +290,8 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
 
   return (
     <main className="ctc-main">
+      {/* colonna sinistra: Decodifiche sopra e la cascata sotto, larga uguale, con la maniglia in mezzo */}
+      <div className="ctc-left">
       <section className="dock-panel ctc-box ctc-dec">
         <header className="dock-grip dock-grip--fixed">
           <span className="dock-grip-dots" aria-hidden="true" />
@@ -321,6 +358,8 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
           </table>
         </div>
       </section>
+      <Cascata />
+      </div>
 
       <section className="dock-panel ctc-box">
         <header className="dock-grip dock-grip--fixed">

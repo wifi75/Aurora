@@ -390,7 +390,18 @@ impl ContestService {
         let ora = ora_ms();
         let mut d = self.lock();
         self.carica_log(&mut d);
-        let elenco: Vec<serde_json::Value> = d.regole.iter().map(|r| serde_json::json!({ "id": r.id(), "nome": r.contest.nome, "famiglia": r.contest.famiglia, "edizione": r.contest.edizione })).collect();
+        // per ogni contest anche le date dell'edizione in corso o prossima, calcolate ogni anno dalla regola del calendario
+        let elenco: Vec<serde_json::Value> = d
+            .regole
+            .iter()
+            .map(|r| {
+                serde_json::json!({
+                    "id": r.id(), "nome": r.contest.nome, "famiglia": r.contest.famiglia, "edizione": r.contest.edizione,
+                    "finestra": calendario::prossima(&r.calendario, ora), "da_verificare": !r.contest.da_verificare.is_empty(),
+                    "url_regole": r.contest.url_regole, "ore_massime": r.calendario.ore_massime, "pausa_minima_min": r.calendario.pausa_minima_min,
+                })
+            })
+            .collect();
         let Some(id) = d.stato.attivo.clone() else {
             return serde_json::json!({ "attivo": null, "contest": elenco, "errori_regole": d.errori_regole });
         };
