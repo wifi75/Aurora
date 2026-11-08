@@ -16,9 +16,9 @@ fn the_default_table_is_the_jtdx_one_for_ft8_and_ft4() {
     // 20 m FT8: 14,071 e 14,090 non sono predefinite
     let alt: Vec<bool> = t.visible(Region::All).filter(|x| x.band == "20m" && x.mode == "FT8").map(|x| x.preferred).collect();
     assert_eq!(alt, vec![false, true, false]);
-    // JTDX non ha FT4 su 160 m e 60 m
+    // JTDX non ha FT4 su 160 m e 60 m; Aurora aggiunge 60 m dalla tabella di WSJT-X
     assert_eq!(t.frequency("160m", "FT4"), None);
-    assert_eq!(t.frequency("60m", "FT4"), None);
+    assert_eq!(t.frequency("60m", "FT4"), Some(5_357_000));
 }
 
 #[test]
