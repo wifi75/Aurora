@@ -243,6 +243,7 @@ export function ScreenExtras() {
       <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
       <Check label={t('pref.cmdTune')} hint={t('tip.pref.cmdTune')} checked={prefs.cmdTune} onChange={(v) => set({ cmdTune: v })} />
       <Check label={t('pref.cmdLogQso')} hint={t('tip.pref.cmdLogQso')} checked={prefs.cmdLogQso} onChange={(v) => set({ cmdLogQso: v })} />
+      <Check label={t('pref.showQmap')} hint={t('tip.pref.showQmap')} checked={prefs.showQmap} onChange={(v) => set({ showQmap: v })} />
       <Field label={t('gen.log4omCount')} hint={t('tip.gen.log4omCount')}>
         <input
           type="number"
