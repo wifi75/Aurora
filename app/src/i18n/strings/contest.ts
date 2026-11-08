@@ -10,6 +10,10 @@ export const contestStrings = {
     'Concursos FT8/FT4: sequência de concurso, duplicados, multiplicadores, pontuação, ritmo e Cabrillo num só programa.',
   ],
   'contest.title': ['Contest', 'Contest', 'Contest', 'Concours', 'Concurso', 'Concurso'],
+  'contest.group.hf': ['HF', 'HF', 'KW', 'HF', 'HF', 'HF'],
+  'contest.group.fd': ['Field Day', 'Field Day', 'Field Day', 'Field Day', 'Field Day', 'Field Day'],
+  'contest.group.vhf': ['VHF e oltre', 'VHF and up', 'UKW und höher', 'VHF et plus', 'VHF y superiores', 'VHF e acima'],
+  'contest.group.other': ['Altro', 'Other', 'Sonstige', 'Autre', 'Otros', 'Outros'],
   'contest.choose': ['Scegli il contest', 'Choose the contest', 'Contest wählen', 'Choisir le concours', 'Elige el concurso', 'Escolhe o concurso'],
   'tip.contest.choose': [
     'Il contest da fare: Aurora prepara da sola sequenza dei messaggi, scambio, bande, Fox/Hound spento e dati del Cabrillo.',

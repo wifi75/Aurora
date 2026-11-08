@@ -166,3 +166,22 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 .ctc-dates sup { margin-left: 2px; font-weight: 700; }
 .ctc-dates-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; min-width: 16rem; display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border: 1px solid var(--ct-violet); border-radius: 8px; background: var(--panel); box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); font-size: 12px; white-space: nowrap; }
 .ctc-dates-pop a { color: var(--ct-cyan); }
+
+/* menu dei contest (al posto della tendina del sistema), nello stile del menu delle frequenze */
+.ctc-pick { position: relative; display: inline-flex; }
+.ctc-score .ctc-pick-btn { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; height: 40px; padding: 0 12px; min-width: 240px; background-image: none; color: var(--text); }
+.ctc-pick-caret { margin-left: auto; opacity: 0.7; font-size: 11px; }
+.ctc-pick-name { white-space: nowrap; }
+.ctc-pick-date { color: var(--text-muted); font-weight: 400; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ctc-pick-btn .ctc-pick-date { margin-left: 4px; }
+.ctc-pick-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 320px; max-height: min(70vh, 560px); overflow: auto; padding: 4px; border: 1px solid #27d6f5; border-radius: 10px; background: #0b1220; color: #e6edf3; box-shadow: 0 10px 28px rgb(0 0 0 / 0.45), 0 0 14px rgb(39 214 245 / 0.15); }
+html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; border-color: #1f8fd0; box-shadow: 0 10px 24px rgb(0 0 0 / 0.18); }
+.ctc-pick-pop .ctc-pick-date { color: color-mix(in srgb, currentColor 60%, transparent); }
+.ctc-pick-group { padding: 6px 10px 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ct-cyan); }
+.ctc-pick-item { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.ctc-pick-item .ctc-pick-date { margin-left: auto; padding-left: 16px; }
+.ctc-pick-item.is-act { background: color-mix(in srgb, currentColor 8%, transparent); }
+.ctc-pick-item.is-on { background: color-mix(in srgb, var(--ct-violet) 30%, transparent); box-shadow: inset 3px 0 0 var(--ct-violet); font-weight: 600; }
+.ctc-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
+.ctc-dot--on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.ctc-dot--soon { background: #f59e0b; }

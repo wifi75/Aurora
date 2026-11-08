@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getControls, postControl, postCq, postFrequency, postHalt, postReply, postTxMessage } from '../api/client';
 import {
   attivaContest,
@@ -32,6 +32,7 @@ import { WaterfallStack } from '../components/WaterfallStack';
 import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
+import { TxQuickControls } from '../components/TxQuickControls';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
@@ -115,14 +116,7 @@ export function ContestPage() {
   return (
     <section className="ctc">
       <div className="ctc-score" role="region" aria-label={t('contest.title')}>
-        <select className="ctc-chip ctc-chip--sel" aria-label={t('contest.choose')} title={t('tip.contest.choose')} value={attivo ?? scelto} onChange={(e) => (attivo ? void attiva(e.target.value) : setScelto(e.target.value))}>
-          {attivo ? null : <option value="">{t('contest.choose')} ▾</option>}
-          {(s?.contest ?? []).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome} {c.edizione}
-            </option>
-          ))}
-        </select>
+        <SceltaContest elenco={s?.contest ?? []} valore={attivo ?? scelto} t={t} onScegli={(id) => (attivo ? void attiva(id) : setScelto(id))} />
         <DateContest c={(s?.contest ?? []).find((c) => c.id === (attivo ?? scelto))} finestra={attivo ? s?.finestra : undefined} t={t} />
         {attivo && s ? (
           <BarraPunteggio s={s} t={t} />
@@ -175,6 +169,102 @@ function pastiglia(text: string, call: string) {
   return text.split(/(\s+)/).map((p, i) => (call && p.toUpperCase() === call.toUpperCase() ? <mark key={i} className="dx-call">{p}</mark> : p));
 }
 
+const GRUPPI = ['hf', 'fd', 'vhf', 'other'] as const;
+const gruppoDi = (c: ContestRef): (typeof GRUPPI)[number] =>
+  c.id === 'personalizzato' || !c.finestra ? 'other' : c.famiglia === 'hf' ? 'hf' : c.famiglia === 'field-day' ? 'fd' : 'vhf';
+const GIORNO = 86_400_000;
+/** Pallino di stato: verde in corso, arancio entro 7 giorni, grigio lontano. */
+const statoDi = (c: ContestRef, ora: number) => (!c.finestra ? 'off' : ora >= c.finestra.inizio_ms ? 'on' : c.finestra.inizio_ms - ora <= 7 * GIORNO ? 'soon' : 'off');
+
+/**
+ * Il menu dei contest, nello stile del menu delle frequenze della Stazione: contest raggruppati con titoletti, nome senza anno, a destra
+ * la data della prossima edizione e un pallino di stato. Frecce, Invio, Esc e clic fuori per chiudere.
+ */
+function SceltaContest({ elenco, valore, t, onScegli }: { elenco: ContestRef[]; valore: string; t: T; onScegli(id: string): void }) {
+  const lang = useLang((x) => x.lang);
+  const [aperto, setAperto] = useState(false);
+  const [att, setAtt] = useState(0);
+  const radice = useRef<HTMLDivElement>(null);
+  const ora = Date.now();
+  const ordinati = GRUPPI.flatMap((g) => elenco.filter((c) => gruppoDi(c) === g));
+  const giorno = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const data = (c: ContestRef) => (c.finestra ? giorno.formatRange(c.finestra.inizio_ms, c.finestra.fine_ms - 60_000) : '');
+  const scelto = elenco.find((c) => c.id === valore);
+  useEffect(() => {
+    if (!aperto) return;
+    setAtt(Math.max(0, ordinati.findIndex((c) => c.id === valore)));
+    const fuori = (e: PointerEvent) => {
+      if (!radice.current?.contains(e.target as Node)) setAperto(false);
+    };
+    document.addEventListener('pointerdown', fuori);
+    return () => document.removeEventListener('pointerdown', fuori);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aperto]);
+  useEffect(() => {
+    if (aperto) radice.current?.querySelector(`[data-i="${att}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [aperto, att]);
+  const scegli = (id: string) => {
+    setAperto(false);
+    onScegli(id);
+  };
+  const tasti = (e: React.KeyboardEvent) => {
+    if (!aperto) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setAperto(true);
+      }
+      return;
+    }
+    if (e.key === 'Escape') setAperto(false);
+    else if (e.key === 'ArrowDown') setAtt((i) => Math.min(ordinati.length - 1, i + 1));
+    else if (e.key === 'ArrowUp') setAtt((i) => Math.max(0, i - 1));
+    else if (e.key === 'Enter' && ordinati[att]) scegli(ordinati[att].id);
+    else return;
+    e.preventDefault();
+  };
+  let i = -1;
+  return (
+    <div className="ctc-pick" ref={radice} onKeyDown={tasti}>
+      <button type="button" className="ctc-chip ctc-chip--sel ctc-pick-btn" aria-haspopup="listbox" aria-expanded={aperto} aria-label={t('contest.choose')} title={t('tip.contest.choose')} onClick={() => setAperto(!aperto)}>
+        {scelto ? (
+          <>
+            <span className={`ctc-dot ctc-dot--${statoDi(scelto, ora)}`} aria-hidden="true" />
+            <span className="ctc-pick-name">{scelto.nome}</span>
+            <span className="ctc-pick-date">{data(scelto)}</span>
+          </>
+        ) : (
+          <span className="ctc-pick-name">{t('contest.choose')}</span>
+        )}
+        <span className="ctc-pick-caret" aria-hidden="true">▾</span>
+      </button>
+      {aperto ? (
+        <div className="ctc-pick-pop" role="listbox" aria-label={t('contest.choose')}>
+          {GRUPPI.map((g) => {
+            const voci = elenco.filter((c) => gruppoDi(c) === g);
+            if (voci.length === 0) return null;
+            return (
+              <div key={g} role="group" aria-label={t(`contest.group.${g}`)}>
+                <div className="ctc-pick-group">{t(`contest.group.${g}`)}</div>
+                {voci.map((c) => {
+                  i += 1;
+                  const n = i;
+                  return (
+                    <div key={c.id} data-i={n} role="option" aria-selected={c.id === valore} className={`ctc-pick-item${c.id === valore ? ' is-on' : ''}${n === att ? ' is-act' : ''}`} onPointerEnter={() => setAtt(n)} onClick={() => scegli(c.id)}>
+                      <span className={`ctc-dot ctc-dot--${statoDi(c, ora)}`} aria-hidden="true" />
+                      <span className="ctc-pick-name">{c.nome}</span>
+                      <span className="ctc-pick-date">{data(c)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Le date del contest scelto, compatte («29–30 ago 2026»), calcolate ogni anno dalla regola del calendario. Il clic apre un piccolo
  * pannello con orari UTC e locali, durata, ore massime e pausa minima, link al regolamento. «?» se le date vanno ricontrollate.
@@ -192,7 +282,7 @@ function DateContest({ c, finestra, t }: { c: ContestRef | undefined; finestra?:
   return (
     <span className="ctc-dates">
       <button type="button" className="ctc-chip ctc-chip--phase" title={t('contest.dates.tip')} aria-expanded={aperto} onClick={() => setAperto(!aperto)}>
-        {giorno.formatRange(f.inizio_ms, fine)}
+        <span aria-label={giorno.formatRange(f.inizio_ms, fine)}>ⓘ</span>
         {c.da_verificare ? <sup className="ctc-warn" title={t('contest.dates.verify')}>?</sup> : null}
       </button>
       {aperto ? (
@@ -408,6 +498,8 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
           <button type="button" className="ctc-btn" disabled={!dx} title={t('tip.contest.rr73')} onClick={() => void postTxMessage(4)}>
             {t('contest.rr73')}
           </button>
+          {/* Tx/Rx Split: lo stesso controllo della Stazione e della Fox */}
+          <TxQuickControls splitOnly inline />
           <button type="button" className="ctc-btn ctc-btn--stop" onClick={() => void postHalt()}>
             STOP TX
           </button>
