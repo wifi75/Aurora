@@ -111,6 +111,8 @@ const JTDX_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("80m", "FT4", 3_575_000, Region::All, true),
     ("80m", "FT8", 3_585_000, Region::All, false),
     ("60m", "FT8", 5_357_000, Region::All, true),
+    // FT4 a 60 m: non e' nella tabella di JTDX, e' in quella di WSJT-X (FrequencyList.cpp, provvisoria)
+    ("60m", "FT4", 5_357_000, Region::All, true),
     ("40m", "FT4", 7_047_500, Region::All, true),
     ("40m", "FT8", 7_056_000, Region::All, false),
     ("40m", "FT8", 7_071_000, Region::All, false),
