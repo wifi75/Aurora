@@ -6988,6 +6988,11 @@ html[data-theme='light'] .freq-picker-menu {
 
 .freq-picker-band {
   justify-self: start;
+  /* e' un pulsante: porta sulla frequenza principale della banda */
+  border: 0;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
   padding: 0.1rem 0.45rem;
   border-radius: 0.35rem;
   background: color-mix(in srgb, currentColor 9%, transparent);

@@ -88,7 +88,23 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
           </div>
           {bands.map((b) => (
             <div key={b} className={`freq-picker-row${b === current ? ' is-current' : ''}`}>
-              <span className="freq-picker-band">{b}</span>
+              {(() => {
+                // il nome della banda porta sulla sua frequenza principale (la prima «principale», altrimenti la prima della riga)
+                const main = rows.find((r) => r.band === b && r.preferred) ?? rows.find((r) => r.band === b);
+                return (
+                  <button
+                    type="button"
+                    className="freq-picker-band"
+                    title={t('band.tipMain')}
+                    onClick={() => {
+                      setOpen(false);
+                      if (main && main.hz !== dialHz) onPick(main.hz);
+                    }}
+                  >
+                    {b}
+                  </button>
+                );
+              })()}
               <span className="freq-picker-list">
                 {rows
                   .filter((r) => r.band === b)
