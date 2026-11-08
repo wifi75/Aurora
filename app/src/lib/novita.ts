@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.201',
-    released: '2026-11-08T18:12:06Z',
+    released: '2026-11-08T18:30:30Z',
     kind: 'new',
     title: ['Automazioni rifatte, TCI con RX2 e conferma dei comandi', 'Automation redone, TCI with RX2 and command confirmation', 'Automatik neu gestaltet, TCI mit RX2 und Befehlsbestätigung', 'Automatisations refaites, TCI avec RX2 et confirmation des commandes', 'Automatizaciones rehechas, TCI con RX2 y confirmación de órdenes', 'Automatizações refeitas, TCI com RX2 e confirmação dos comandos'],
     text: [
