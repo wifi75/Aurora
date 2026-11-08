@@ -1267,3 +1267,24 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { padding-left: 10px !important; border-left: 1px solid rgb(255 255 255 / .12); color: #9fb3d9; }
 .log4om-table td:nth-child(5) { padding-right: 8px !important; }
 html[data-theme='light'] .log4om-table th:nth-child(6), html[data-theme='light'] .log4om-table td:nth-child(6) { border-left-color: rgb(0 0 0 / .12); color: #3d5583; }
+
+/* DX Cluster con la stessa logica del Log: colonne strette e spaziate, DE tenue, frequenza con i numeri allineati, nominativo DX in
+   evidenza, paese separato, modo al centro, commento che prende lo spazio che avanza (con «…»), ora a destra */
+.cluster-table { width: 100%; border-collapse: collapse; }
+.cluster-table th, .cluster-table td { padding: 3px 5px !important; white-space: nowrap; }
+.cluster-table th:first-child, .cluster-table td:first-child { padding-left: 8px !important; }
+.cluster-table th:not(:nth-child(7)), .cluster-table td:not(.cluster-comment) { width: 1%; }
+.cluster-table td.cluster-de { opacity: .7; }
+.cluster-table td:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+.cluster-table th:nth-child(2) { text-align: right; }
+.cluster-table td:nth-child(3) { font-weight: 700; padding-left: 10px !important; }
+.cluster-table th:nth-child(3) { padding-left: 10px !important; }
+.cluster-table td.cluster-flag { padding-right: 2px !important; }
+.cluster-table td.cluster-country { color: #9fb3d9; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
+.cluster-table td.cluster-mode, .cluster-table th:nth-child(6) { text-align: center; }
+.cluster-table td.cluster-comment { width: auto; max-width: 0; overflow: hidden; text-overflow: ellipsis; opacity: .8; padding-left: 10px !important; border-left: 1px solid rgb(255 255 255 / .12); }
+.cluster-table th:nth-child(7) { padding-left: 10px !important; }
+.cluster-table td.cluster-utc, .cluster-table th:last-child { text-align: right; padding-right: 8px !important; font-variant-numeric: tabular-nums; }
+html[data-theme='light'] .cluster-table td.cluster-country { color: #3d5583; }
+html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: rgb(0 0 0 / .12); }
+.cluster-table { table-layout: auto !important; }
