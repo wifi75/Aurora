@@ -66,7 +66,7 @@ describe('UpdateBar', () => {
     render(<UpdateBar />);
     await openPanel();
     fireEvent.click(await screen.findByRole('button', { name: 'Installa ora' }));
-    expect(await screen.findByText(/Aurora si chiuderà e si riaprirà da sola/)).toBeInTheDocument();
+    expect(await screen.findByText(/Scaricamento in corso/)).toBeInTheDocument();
     expect(installUpdate).toHaveBeenCalledTimes(1);
   });
 
