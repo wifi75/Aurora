@@ -305,6 +305,17 @@ impl FrequencyTable {
         if !entries.iter().any(|e| EXTRA_BAND_ROWS.iter().any(|r| r.0 == e.band)) {
             entries.extend(EXTRA_BAND_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
         }
+        // righe aggiunte dopo che l'utente aveva gia' salvato la sua tabella (70 cm FT8/FT4, 4 m FT8 70,100): si aggiungono se mancano,
+        // cosi' arrivano a tutti senza toccare le righe dell'utente (2026-11-08)
+        for (band, mode, hz, region, preferred) in [
+            ("70cm", "FT8", 432_174_000u64, Region::All, true),
+            ("70cm", "FT4", 432_170_000, Region::All, true),
+            ("4m", "FT8", 70_100_000, Region::R1, false),
+        ] {
+            if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case(mode) && e.hz == hz) {
+                entries.push(Entry { band: band.into(), mode: mode.into(), hz, region, preferred });
+            }
+        }
         // lo stesso per MSK144
         if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("MSK144")) {
             entries.extend(MSK144_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
