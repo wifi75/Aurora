@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.194 - 2026-11-08
+- **Corretto**: con la radio collegata, un cambio banda che la radio non confermava in tempo scriveva la frequenza «a mano» e la radio rimbalzava fra due bande (difetto della 0.11.193).
+- **JT4** (sottomodo A) nel motore proprio: ricezione, trasmissione e selettore dei modi (`jt::jt4`, Fano con la metrica di `getmet4`).
+- **Frequenze**: tendina con tutte le frequenze del modo in uso, banda per banda, come in WSJT-X (standard, alternative, DXpedition); aggiunte FT4 e JT9 a 60 m e 28,091 MHz FT8 dalla tabella di WSJT-X.
+- **Display della radio**: i tasti non diventano grigi al passaggio del mouse.
+
 ## 0.11.193 - 2026-11-07
 - **Radio senza CAT**: nuovo sistema di controllo «Nessuno» in Impostazioni > Radio. Corretto: con il motore proprio i pulsanti delle bande non cambiavano mai la frequenza senza radio (il `Rig` del motore nascondeva la frequenza a mano, `AppState::dial_rig`); se la radio scelta non risponde le bande cambiano comunque la frequenza di Aurora.
 - **Radio**: «Applica» sempre attivo.

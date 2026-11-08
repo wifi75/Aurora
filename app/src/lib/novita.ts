@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.194',
+    released: '2026-11-08T08:00:00Z',
+    kind: 'new',
+    title: ['JT4, tendina delle frequenze e correzione del cambio banda', 'JT4, frequency list and band change fix', 'JT4, Frequenzliste und Korrektur des Bandwechsels', 'JT4, liste des fréquences et correction du changement de bande', 'JT4, lista de frecuencias y corrección del cambio de banda', 'JT4, lista de frequências e correção da mudança de banda'],
+    text: [
+      'Nuovo modo JT4. Accanto alle bande una tendina con tutte le frequenze del modo, come in WSJT-X. Corretto il rimbalzo della radio fra due bande. I tasti del display non diventano più grigi.',
+      'New JT4 mode. Next to the bands a list with all frequencies of the mode, as in WSJT-X. Fixed the radio bouncing between two bands. Display buttons no longer turn grey.',
+      'Neuer Modus JT4. Neben den Bändern eine Liste aller Frequenzen des Modus, wie in WSJT-X. Behoben: Funkgerät sprang zwischen zwei Bändern. Display-Tasten werden nicht mehr grau.',
+      'Nouveau mode JT4. À côté des bandes une liste de toutes les fréquences du mode, comme dans WSJT-X. Corrigé : la radio sautait entre deux bandes. Les touches de l’afficheur ne deviennent plus grises.',
+      'Nuevo modo JT4. Junto a las bandas una lista con todas las frecuencias del modo, como en WSJT-X. Corregido el salto de la radio entre dos bandas. Los botones del display ya no se vuelven grises.',
+      'Novo modo JT4. Ao lado das bandas uma lista com todas as frequências do modo, como no WSJT-X. Corrigido o salto do rádio entre duas bandas. Os botões do display já não ficam cinzentos.',
+    ],
+  },
+  {
     version: '0.11.193',
     released: '2026-11-07T22:34:44Z',
     kind: 'fixed',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "L’ancienne «Carte» n’est plus dans le menu : elle faisait la même chose que la Carte DX. Son adresse, les fenêtres détachées et la dernière page mémorisée mènent à la Carte DX.",
       "El antiguo «Mapa» ya no está en el menú: hacía lo mismo que el Mapa DX. Su dirección, las ventanas separadas y la última página recordada llevan al Mapa DX.",
       "O antigo «Mapa» já não está no menu: fazia o mesmo que o Mapa DX. O seu endereço, as janelas destacadas e a última página lembrada levam ao Mapa DX.",
-    ],
-  },
-  {
-    version: '0.11.153',
-    released: '2026-11-05T22:11:31Z',
-    kind: 'fixed',
-    title: ['Radio spenta: resta il display', 'Radio off: the display stays', 'Funkgerät aus: das Display bleibt', 'Radio éteinte : l’afficheur reste', 'Radio apagada: el display se queda', 'Rádio desligado: o display fica'],
-    text: [
-      "Con la radio configurata ma spenta (o che non risponde) il display resta al suo posto, spento, con «Radio non risponde», e torna da solo quando riaccendi la radio. Il riquadro «Clicca per configurarla» compare solo se la radio non è mai stata configurata.",
-      "With the radio set up but switched off (or not answering) the display stays in place, dark, with «Radio not responding», and comes back on its own when you switch the radio on. The «Click to set it up» box appears only if the radio was never set up.",
-      "Ist das Funkgerät eingerichtet, aber aus (oder antwortet nicht), bleibt das Display dunkel an seinem Platz mit «Funkgerät antwortet nicht» und kommt von selbst zurück, sobald du es einschaltest. Das Feld «Klicken zum Einrichten» erscheint nur, wenn das Funkgerät nie eingerichtet wurde.",
-      "Avec la radio configurée mais éteinte (ou qui ne répond pas) l’afficheur reste en place, éteint, avec «La radio ne répond pas», et revient seul quand tu rallumes la radio. Le cadre «Clique pour la configurer» n’apparaît que si la radio n’a jamais été configurée.",
-      "Con la radio configurada pero apagada (o que no responde) el display se queda en su sitio, apagado, con «La radio no responde», y vuelve solo cuando enciendes la radio. El recuadro «Haz clic para configurarla» solo aparece si la radio nunca se configuró.",
-      "Com o rádio configurado mas desligado (ou sem resposta) o display fica no lugar, apagado, com «O rádio não responde», e volta sozinho quando ligas o rádio. O quadro «Clica para o configurar» só aparece se o rádio nunca foi configurado.",
     ],
   },
 ];
