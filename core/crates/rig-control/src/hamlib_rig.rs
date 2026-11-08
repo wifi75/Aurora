@@ -155,6 +155,8 @@ pub fn failure_limit(timing: &Timing, message: &str) -> u32 {
 }
 
 struct Inner {
+    /// «Accendi» gia' mandato in questa sessione di Aurora (si accende una volta sola, al primo collegamento).
+    powered_on: AtomicBool,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -335,6 +337,13 @@ impl Inner {
             }
         });
         let link = Arc::new((self.connector)()?);
+        // «Accendi» di JTDX: la radio si accende al primo collegamento (Hamlib aspetta da solo che sia pronta); errori solo nel registro
+        if self.config.power_on && !self.powered_on.swap(true, Ordering::SeqCst) {
+            match link.client().set_powerstat(true) {
+                Ok(()) => tracing::info!("radio accesa via CAT («Accendi»)"),
+                Err(e) => tracing::warn!("accensione della radio via CAT non riuscita: {e}"),
+            }
+        }
         // alcune radio trasmettono all'apertura della porta: PTT spento subito, errori ignorati (un VOX non ha PTT da spegnere)
         if let Err(e) = link.client().set_ptt(false) {
             tracing::debug!("PTT spento dopo l'apertura: {e}");
@@ -695,6 +704,7 @@ impl HamlibRig {
     /// Avvia il supervisore: la connessione avviene in un thread, lo stato racconta come va.
     pub fn start(config: RigConfig, connector: Connector, timing: Timing) -> HamlibRig {
         let inner = Arc::new(Inner {
+            powered_on: AtomicBool::new(false),
             config,
             connector,
             timing,
@@ -882,6 +892,19 @@ impl HamlibRig {
     }
 
     /// Ferma tutto: chiude il supervisore, spegne il PTT (3 tentativi), toglie lo split vero e libera la radio (il demone si ferma).
+    /// «Spegni» di JTDX: alla chiusura di Aurora, se scelto, la radio si spegne via CAT. Va chiamata prima di [`HamlibRig::shutdown`].
+    pub fn power_off_if_chosen(&self) {
+        if !self.inner.config.power_off {
+            return;
+        }
+        let Some(link) = self.inner.link() else { return };
+        let _ = self.inner.ptt_off(&link, 3);
+        match link.client().set_powerstat(false) {
+            Ok(()) => tracing::info!("radio spenta via CAT alla chiusura («Spegni»)"),
+            Err(e) => tracing::warn!("spegnimento della radio via CAT non riuscito: {e}"),
+        }
+    }
+
     pub fn shutdown(&self) {
         self.inner.stop.store(true, Ordering::SeqCst);
         if let Some(handle) = self.thread.lock().ok().and_then(|mut h| h.take()) {

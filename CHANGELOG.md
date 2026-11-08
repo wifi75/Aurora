@@ -1,6 +1,10 @@
 # Changelog
 
 ## Non rilasciato
+- **Accendi e Spegni la radio** (come JTDX, `RigPower`/`RigPower_off`): due caselle nella scheda Radio con Hamlib; `\set_powerstat 1` al primo collegamento, `\set_powerstat 0` alla chiusura di Aurora.
+- **Band Hopping con MSK144** («MSK144 6m»).
+- **Agente nel tray**: «Cerca aggiornamenti» risponde sempre, anche quando GitHub non risponde (prima nessuna finestra).
+- **Misura della decodifica FT8** su periodi veri (`ft8/examples/misura_wav.rs`): banda piena, profondita' 3, 1,7-2,8 s.
 - **Installa e riavvia**: barra di download come quella di un browser (percentuale, MB, velocita' e tempo che manca); il motore dice l'avanzamento in `GET /api/v1/update` (`download`).
 - **Pannello Log stretto**: le colonne non escono piu' dal riquadro (sotto 380 px si toglie Paese, sotto 300 px anche Modo e Rapporti).
 - **Elementi nascosti o staccati**: le finestre vicine si allargano da sole a riempire il posto lasciato libero (`fillGaps`), poi si possono ritoccare.

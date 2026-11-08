@@ -298,8 +298,11 @@ impl CatService {
         }
     }
 
-    /// Chiusura del programma: il PTT si spegne e la radio si libera.
+    /// Chiusura del programma: il PTT si spegne, con «Spegni» la radio si spegne, e la radio si libera.
     pub fn shutdown(&self) {
+        if let Some(rig) = self.current() {
+            rig.power_off_if_chosen();
+        }
         self.disconnect();
     }
 }

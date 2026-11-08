@@ -119,6 +119,10 @@ pub struct RigConfig {
     /// «Leggi anche gli altri dati della radio»: preamplificatore, AGC, NB/NR, guadagni, RIT/XIT, secondo VFO... a turno, in ricezione.
     /// Spento di base: sulle seriali lente occupa la porta.
     pub read_extras: bool,
+    /// «Accendi» di JTDX (`RigPower`): accende la radio via CAT (`\set_powerstat 1`) al primo collegamento dopo l'avvio di Aurora.
+    pub power_on: bool,
+    /// «Spegni» di JTDX (`RigPower_off`): spegne la radio via CAT (`\set_powerstat 0`) alla chiusura di Aurora (non al cambio di radio).
+    pub power_off: bool,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -147,6 +151,8 @@ impl Default for RigConfig {
             read_extras: false,
             share_enabled: false,
             share_port: DEFAULT_SHARE_PORT,
+            power_on: false,
+            power_off: false,
         }
     }
 }

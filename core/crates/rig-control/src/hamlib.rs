@@ -335,6 +335,11 @@ impl RigctldClient {
         Ok(r[0] != "0")
     }
 
+    /// Accende o spegne la radio (`\set_powerstat 1/0` di rigctld, come «Accendi»/«Spegni» di JTDX). Non tutte le radio lo permettono.
+    pub fn set_powerstat(&self, on: bool) -> Result<(), RigError> {
+        self.ask_raw(&format!("\\set_powerstat {}", u8::from(on)), 0).map(|_| ())
+    }
+
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {
         self.ask(&format!("T {}", u8::from(on)), 0).map(|_| ())
     }

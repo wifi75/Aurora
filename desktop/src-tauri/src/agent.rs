@@ -372,6 +372,12 @@ fn check(app: &AppHandle, asked: bool) {
             shown = true;
         }
     }
+    else if asked {
+        // GitHub non risponde (l'8/11/2026 dava 504 anche all'API): dal menu si chiede un controllo, quindi si risponde sempre, anche con un errore
+        agent_log("controllo degli aggiornamenti non riuscito: GitHub non risponde");
+        show_card(app, Card { kind: "Aggiornamenti", title: "Controllo non riuscito".into(), text: "GitHub in questo momento non risponde. Riprova tra qualche minuto: Aurora controlla comunque da sola.".into(), main: "OK", main_action: "close", update: false, theme: String::new() });
+        shown = true;
+    }
     if !shown && !open && let Some(list) = get_json(&format!("{MESSAGES}?v={VERSION}")) {
         let next = list.get("messaggi").and_then(|m| m.as_array()).and_then(|a| {
             a.iter().find(|m| m.get("id").and_then(|i| i.as_str()).is_some_and(|id| !seen.messages.iter().any(|s| s == id)))
