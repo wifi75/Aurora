@@ -11,7 +11,10 @@ use std::{
 use aurora_core::{Bus, Command, DecodedMessage, Event};
 use tokio::{sync::broadcast::error::RecvError, task::JoinHandle, time::interval};
 
-use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, Rules, WantedMatcher};
+use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, Rules, WantedMatcher};
+
+/// Scarto dell'ora locale da UTC, in secondi: lo calcola chi conosce il sistema (il cervello non legge l'orologio).
+pub type LocalOffset = Arc<dyn Fn() -> i64 + Send + Sync>;
 
 pub struct AutomationConfig {
     pub rules: Rules,
@@ -32,6 +35,12 @@ struct Inner {
     clients: AtomicUsize,
     now: Arc<dyn Fn() -> u64 + Send + Sync>,
     task: Mutex<Option<JoinHandle<()>>>,
+    /// Per il CQ da solo e per fermare la trasmissione quando l'automazione si spegne con un suo CQ in onda.
+    commands: tokio::sync::mpsc::Sender<Command>,
+    /// Ora locale del PC (la fascia oraria); di base UTC.
+    offset: Mutex<LocalOffset>,
+    /// I paesi di cty.dat, per la scelta dei paesi esclusi nella pagina.
+    countries: Mutex<Arc<Vec<String>>>,
 }
 
 impl Drop for Inner {
@@ -69,6 +78,9 @@ impl Automation {
             clients: AtomicUsize::new(0),
             now: config.now,
             task: Mutex::new(None),
+            commands: bus.commands(),
+            offset: Mutex::new(Arc::new(|| 0)),
+            countries: Mutex::new(Arc::new(Vec::new())),
         });
         let mut events = bus.subscribe_events();
         let commands = bus.commands();
@@ -110,7 +122,19 @@ impl Automation {
                         let Some(inner) = weak.upgrade() else { break };
                         let now = (inner.now)();
                         let clients = inner.clients.load(Ordering::SeqCst);
-                        lock(&inner.brain).tick(now, clients);
+                        let offset = (lock(&inner.offset).clone())();
+                        let decision = {
+                            let mut brain = lock(&inner.brain);
+                            brain.set_utc_offset(offset);
+                            brain.tick(now, clients)
+                        };
+                        // il CQ da solo parte solo in modo reale (in prova a vuoto il cervello decide `WouldCallCq`)
+                        if decision.is_some_and(|d| d.kind == DecisionKind::CallCq)
+                            && commands.try_send(Command::CallCq { modifier: String::new() }).is_err()
+                        {
+                            tracing::warn!("CQ automatico non consegnato al motore");
+                        }
+                        send_halt_if_requested(&inner);
                     }
                 }
             }
@@ -127,6 +151,30 @@ impl Automation {
 
     pub fn set_enabled(&self, enabled: bool) {
         lock(&self.inner.brain).set_enabled(enabled, (self.inner.now)());
+        send_halt_if_requested(&self.inner);
+    }
+
+    /// Come sapere se un paese e' nuovo nel modo in uso, per la regola «nuovo modo».
+    pub fn set_new_mode_matcher(&self, matcher: NewModeMatcher) {
+        lock(&self.inner.brain).set_new_mode_matcher(matcher);
+    }
+
+    /// Come calcolare lo scarto dell'ora locale (per la fascia oraria); si rilegge a ogni controllo (cambio dell'ora legale).
+    pub fn set_local_offset(&self, offset: LocalOffset) {
+        let secs = offset();
+        *lock(&self.inner.offset) = offset;
+        lock(&self.inner.brain).set_utc_offset(secs);
+    }
+
+    /// I nomi dei paesi di cty.dat, in ordine: la pagina li offre per i paesi esclusi.
+    pub fn set_countries(&self, mut names: Vec<String>) {
+        names.sort();
+        names.dedup();
+        *lock(&self.inner.countries) = Arc::new(names);
+    }
+
+    pub fn countries(&self) -> Arc<Vec<String>> {
+        Arc::clone(&lock(&self.inner.countries))
     }
 
     pub fn set_mode(&self, mode: Mode) -> Result<(), LiveNotAllowed> {
@@ -159,8 +207,15 @@ impl Automation {
 }
 
 /// Un lock avvelenato non deve fermare la radio: si riprende lo stato com'e'.
-fn lock(brain: &Mutex<Brain>) -> MutexGuard<'_, Brain> {
-    brain.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// L'automazione si e' spenta con un suo CQ in onda: si ferma la trasmissione come con STOP TX.
+fn send_halt_if_requested(inner: &Inner) {
+    if lock(&inner.brain).take_halt_request() && inner.commands.try_send(Command::HaltTx).is_err() {
+        tracing::warn!("STOP del CQ automatico non consegnato al motore");
+    }
 }
 
 /// Valuta i messaggi di un ciclo e manda la risposta al CQ scelto, se c'e'.
@@ -178,6 +233,7 @@ fn flush(inner: &Inner, commands: &tokio::sync::mpsc::Sender<Command>, decodes: 
             tracing::warn!("risposta automatica non consegnata al motore");
         }
     }
+    send_halt_if_requested(inner);
 }
 
 fn handle_event(inner: &Inner, event: Event) {
@@ -185,9 +241,9 @@ fn handle_event(inner: &Inner, event: Event) {
     match event {
         // i messaggi si raccolgono a gruppi nel ciclo principale (`flush`)
         Event::Decode(_) => {}
-        Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged(&q.call),
+        Event::QsoLogged(q) => lock(&inner.brain).on_qso_logged_at(&q.call, now),
         Event::TxHalted => lock(&inner.brain).on_halt(now),
-        Event::Status(s) => lock(&inner.brain).on_dial(s.dial_hz),
+        Event::Status(s) => lock(&inner.brain).on_status(&s),
         Event::QsoCompleted(_)
         | Event::QsoPending(_)
         | Event::QsoPendingDone { .. }

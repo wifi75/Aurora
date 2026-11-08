@@ -52,6 +52,10 @@ zip = { version = "9.3.0", default-features = false, features = ["deflate"] }
 ureq = { version = "3.5.0", default-features = false, features = ["rustls"] }
 getrandom = { workspace = true }
 
+# l'ora locale del PC per la fascia oraria dell'automazione
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Time"] }
+
 [dev-dependencies]
 serde_json = { workspace = true }
 tokio-tungstenite = { workspace = true }

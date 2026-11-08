@@ -103,6 +103,7 @@ dependencies = [
  "udp-emitter",
  "updater",
  "ureq",
+ "windows",
  "wishlist",
  "zip",
 ]
