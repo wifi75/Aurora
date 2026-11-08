@@ -11,7 +11,6 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 
 ## Da fare, in ordine di lavoro
 
-- **M** Aggiornare gli scenari di `core/crates/qso-native/tests/scenari.rs` alla chiusura come WSJT-X (0.11.183-0.11.184): l'RRR non registra piu', dopo l'RR73 a log non si ripete da soli; da far girare al proprietario.
 - **B** Comandi senza pulsante nell'interfaccia (dal controllo del 2026-11-07): `gen_msgs` (Gen. Msgs), `show_wanted`, `jt`; testi rimasti dal vecchio pannello Comandi (`cmd.dxCall`, `cmd.cqKind`, `cmd.cap.*`, `ctl.clock`...): il proprietario ha deciso di lasciarli cosi' (2026-11-07).
 - **M** Provare dal vivo la nuova chiusura del QSO (RRR, RR73 senza risposta, ripresa dopo «Canc DX») e controllarla nei log del giorno.
 
