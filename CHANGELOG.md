@@ -4,6 +4,8 @@
 - **LogHX**: tipo pronto in Programmi collegati (flusso WSJT-X sulla 2237 con Logged ADIF) e voce della Guida rifatta dal registro delle versioni di LogHX 3.1: impostazione di JTDX in LogHX, «Active calls» con «Accetta richieste UDP», multicast o rebroadcast con GridTracker, CAT condiviso con OmniRig.
 - **Band Hopping**: tasto destro sul selettore delle frequenze (era sui pulsanti delle bande, tolti).
 - **Stazione**: interruttori di ricezione in una barra a segmenti (acceso = verde), modo, frequenza e interruttori su una riga.
+- **Scaricamento dell'aggiornamento piu' robusto**: con un errore del server di GitHub (5xx, 429) o la rete che cade si riprova tre giri, alternando l'indirizzo pubblico e l'API di GitHub (un utente aveva solo «504» sull'indirizzo pubblico).
+- **macOS**: `.dmg` universale compilato da GitHub a ogni release (non firmato da Apple).
 - **Aggiornamento non riuscito**: la pagina dice il motivo (scaricamento, salvataggio, firma, avvio dell'installatore) invece del solo `install_failed`, e l'errore arriva anche nei rapporti.
 - **Q65-30A** nel motore proprio: ricezione e trasmissione (`jt::q65`: codice QRA 15,65 su GF(64) con passaggio di messaggi, CRC-12, messaggi a 77 bit come FT8), selettore dei modi, frequenze di WSJT-X (6 m 50,275 e 2 m 144,180 MHz; 50,211 e 144,116 EME come alternative). Il decodificatore supporta anche i periodi 15-300 s e i sottomodi A-E, non ancora selezionabili.
 

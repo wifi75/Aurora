@@ -346,24 +346,60 @@ impl UpdateService {
     /// privato; senza, l'indirizzo pubblico. Bloccante: da un thread dedicato.
     pub fn download(&self, asset: &Asset, max_bytes: u64) -> Result<Vec<u8>, String> {
         let config = self.config();
-        let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(600))).http_status_as_error(false).build().into();
-        let mut request;
-        if !config.token.is_empty() && !asset.api_url.is_empty() {
-            request = agent.get(&asset.api_url).header("Accept", "application/octet-stream").header("Authorization", &format!("Bearer {}", config.token));
+        // Strade possibili per lo stesso file: con il token l'API (repository privato); senza, l'indirizzo pubblico e, se non risponde,
+        // l'API di GitHub, che per un repository pubblico scarica anche senza token e passa da server diversi. Un 5xx o una rete che
+        // cade si riprovano (tre giri, una pausa crescente): un utente ha avuto per un quarto d'ora solo «504» sull'indirizzo pubblico.
+        let with_token = !config.token.is_empty() && !asset.api_url.is_empty();
+        let mut ways: Vec<(&str, bool)> = Vec::new();
+        if with_token {
+            ways.push((&asset.api_url, true));
         } else {
-            request = agent.get(&asset.url);
+            ways.push((&asset.url, false));
+            if !asset.api_url.is_empty() {
+                ways.push((&asset.api_url, true));
+            }
         }
-        request = request.header("User-Agent", "Aurora-updater");
-        let mut response = request.call().map_err(|e| e.to_string())?;
+        let mut last = String::new();
+        for round in 0..3u64 {
+            if round > 0 {
+                std::thread::sleep(Duration::from_secs(2 * round));
+            }
+            for &(url, api) in &ways {
+                match self.download_once(url, api, &config, asset, max_bytes) {
+                    Ok(data) => return Ok(data),
+                    Err((message, retry)) => {
+                        tracing::info!("scaricamento di {} non riuscito ({}): {message}", asset.name, if api { "API" } else { "indirizzo pubblico" });
+                        if !retry {
+                            return Err(message);
+                        }
+                        last = message;
+                    }
+                }
+            }
+        }
+        Err(last)
+    }
+
+    /// Un tentativo: `Err((messaggio, si_puo_riprovare))`.
+    fn download_once(&self, url: &str, api: bool, config: &UpdateConfig, asset: &Asset, max_bytes: u64) -> Result<Vec<u8>, (String, bool)> {
+        let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(600))).http_status_as_error(false).build().into();
+        let mut request = agent.get(url).header("User-Agent", "Aurora-updater");
+        if api {
+            request = request.header("Accept", "application/octet-stream");
+            if !config.token.is_empty() {
+                request = request.header("Authorization", &format!("Bearer {}", config.token));
+            }
+        }
+        let mut response = request.call().map_err(|e| (e.to_string(), true))?;
         let status = response.status().as_u16();
         if status != 200 {
             return Err(match status {
-                401 | 403 | 404 if config.token.is_empty() => "file non scaricabile: se il repository e' privato serve un token".to_string(),
-                401 | 403 => "accesso rifiutato da GitHub (token scaduto o senza accesso)".to_string(),
-                other => format!("GitHub ha risposto {other} scaricando {}", asset.name),
+                401 | 403 | 404 if config.token.is_empty() => ("file non scaricabile: se il repository e' privato serve un token".to_string(), false),
+                401 | 403 => ("accesso rifiutato da GitHub (token scaduto o senza accesso)".to_string(), false),
+                other => (format!("GitHub ha risposto {other} scaricando {}", asset.name), other >= 500 || other == 429),
             });
         }
-        response.body_mut().with_config().limit(max_bytes).read_to_vec().map_err(|e| format!("scaricamento di {} interrotto: {e}", asset.name))
+        response.body_mut().with_config().limit(max_bytes).read_to_vec().map_err(|e| (format!("scaricamento di {} interrotto: {e}", asset.name), true))
     }
 
     fn fetch(&self, config: &UpdateConfig) -> Result<Option<Release>, String> {

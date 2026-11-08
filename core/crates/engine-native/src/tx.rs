@@ -1894,6 +1894,8 @@ mod tests {
     #[test]
     fn wait_and_pounce_answers_the_best_cq_and_disarms() {
         let (mut d, port, controls) = driver();
+        // le Wait features sono spente di fabbrica (come WSJT-X): qui si accendono
+        controls.wait_features.store(true, Ordering::Relaxed);
         controls.set_switch("pounce", true);
         controls.pounce_policy.store(crate::features::PouncePolicy::MaxSignal.code(), Ordering::Relaxed);
         d.logged.push("DL1AAA".into());
@@ -1916,6 +1918,7 @@ mod tests {
     #[test]
     fn wait_and_call_calls_the_dx_when_he_is_free_and_gives_up_without_answer() {
         let (mut d, port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
         d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: None, generate: true }, BASE + 1.0);
         controls.set_switch("wait_call", true);
         // il DX e' ancora in QSO con un altro: niente
