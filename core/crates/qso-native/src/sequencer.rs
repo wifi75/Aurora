@@ -528,7 +528,7 @@ impl Sequencer {
             Message::Cq { call, grid, .. } => (call, grid, None),
             Message::Directed { to, from, body } => {
                 let to_me = same_station(&to, &self.my.call);
-                let grid = if let Body::Grid(g) = &body { Some(g.clone()) } else { None };
+                let grid = match &body { Body::Grid(g) | Body::RGrid(g) => Some(g.clone()), _ => None };
                 (from, grid, to_me.then_some(body))
             }
             Message::Other => return Err(SeqError::NotReplyable(decode.text.clone())),
@@ -538,9 +538,10 @@ impl Sequencer {
         }
         self.txwatchdog(false);
         let ntx = match &directed {
-            Some(Body::Grid(_)) | Some(Body::Other) => 2,
+            // «R + locatore» non porta il suo rapporto: si ripete il nostro rapporto e si aspetta il suo (senza, il QSO non e' valido)
+            Some(Body::Grid(_)) | Some(Body::RGrid(_)) | Some(Body::Other) => 2,
             Some(Body::Report(_)) => 3,
-            Some(Body::RReport(_)) | Some(Body::RGrid(_)) => 4,
+            Some(Body::RReport(_)) => 4,
             Some(Body::Rrr) | Some(Body::Rr73) | Some(Body::Bye) => 5,
             None => self.start_ntx(),
         };
@@ -563,9 +564,9 @@ impl Sequencer {
         // (ripresa dopo «Canc DX» o da Wait and Reply): prima la memoria restava al suo messaggio vecchio e dopo l'RRR si tornava al
         // rapporto (BG2EFX, 2026-11-07). Come WSJT-X, che a ogni doppio clic riparte dal messaggio scelto (`processMessage`)
         let from_click = match &directed {
-            Some(Body::Grid(_)) => Status::Rcall,
+            Some(Body::Grid(_)) | Some(Body::RGrid(_)) => Status::Rcall,
             Some(Body::Report(_)) => Status::Rreport,
-            Some(Body::RReport(_)) | Some(Body::RGrid(_)) => Status::Rrreport,
+            Some(Body::RReport(_)) => Status::Rrreport,
             Some(Body::Rrr) => Status::Rrr,
             Some(Body::Rr73) => Status::Rrr73,
             Some(Body::Bye) => Status::R73,
@@ -1419,6 +1420,12 @@ impl Sequencer {
         }
         if rst_sent.is_empty() {
             rst_sent = rpt_text(self.rpt_value());
+        }
+        // senza il rapporto dell'altro il QSO non e' valido e non va a log (scelta del proprietario, 2026-11-08: stazioni che rispondono
+        // «R + locatore» o chiudono senza mai mandare il rapporto)
+        if rst_rcvd.trim().is_empty() {
+            self.events.push(Event::Abandoned { call: self.his_call.clone(), reason: AbandonReason::NoReport });
+            return;
         }
         let off_ms = slot.start_ms(self.mode);
         let day_ms = (off_ms / 86_400_000) * 86_400_000;

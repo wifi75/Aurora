@@ -348,6 +348,8 @@ pub enum AbandonReason {
     Replaced,
     /// Cancellato a mano.
     Cleared,
+    /// Il QSO e' finito senza il rapporto dell'altro: non valido, non va a log.
+    NoReport,
 }
 
 /// Perche' la trasmissione si e' fermata.
