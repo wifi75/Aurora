@@ -84,6 +84,7 @@ dependencies = [
  "input-level",
  "logbook",
  "online-info",
+ "qmap",
  "qso-engine",
  "qso-export",
  "qso-native",
@@ -1365,6 +1366,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "qmap"
+version = "0.11.197"
+dependencies = [
+ "ft8",
+ "jt",
+ "rig-control",
+ "rustfft",
+ "serde",
+ "serde_json",
+ "tracing",
+ "tungstenite 0.30.0",
+]
+
+[[package]]
 name = "qrcode"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1514,9 +1529,11 @@ dependencies = [
  "futures-util",
  "if-addrs",
  "input-level",
+ "jt",
  "logbook",
  "mdns-sd",
  "online-info",
+ "qmap",
  "qrcode",
  "qso-engine",
  "reporting",

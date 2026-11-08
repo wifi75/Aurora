@@ -1,0 +1,56 @@
+/* Pagina QMAP: sobria, colori dai token del tema (chiaro e scuro). */
+.qmap {
+  --qm-surface: color-mix(in srgb, var(--text) 5%, transparent);
+  --qm-line: color-mix(in srgb, var(--text) 14%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) max(var(--space-3), 1vw);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 90rem;
+  margin: 0 auto;
+}
+.qmap h1 { margin: 0; font-size: var(--text-lg); font-weight: 600; }
+.qmap h2 { margin: 0; font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.qmap .muted { color: var(--text-muted); margin: 0.15rem 0 0; font-size: var(--text-sm); }
+.qmap .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.qmap-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.qmap-pill { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; background: var(--qm-surface); color: var(--text-muted); }
+.qmap-pill--receiving, .qmap-pill--decoding { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.qmap-pill--error { color: var(--stop); background: color-mix(in srgb, var(--stop) 14%, transparent); }
+
+.qmap-config, .qmap-panel { padding: var(--space-3); border-radius: 0.85rem; background: var(--qm-surface); border: 1px solid var(--qm-line); }
+.qmap-config { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.qmap-config label { display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-sm); min-width: 0; }
+.qmap-config label > span { color: var(--text-muted); font-size: var(--text-xs); }
+.qmap-config .qmap-wide { flex: 1 1 18rem; }
+.qmap-config .qmap-check { flex-direction: row; align-items: center; gap: 0.4rem; }
+.qmap-subs { display: flex; gap: 0.6rem; border: 0; margin: 0; padding: 0; font-size: var(--text-sm); }
+.qmap-subs legend { color: var(--text-muted); font-size: var(--text-xs); padding: 0; margin-bottom: 0.25rem; }
+.qmap-subs label { flex-direction: row; align-items: center; gap: 0.2rem; }
+.qmap-actions { display: flex; gap: var(--space-2); margin-left: auto; }
+.qmap-note { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
+
+.qmap-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
+.qmap-spectrum { display: block; width: 100%; height: 7.5rem; }
+.qmap-spectrum--empty { border-radius: 0.5rem; background: var(--qm-surface); }
+.qmap-trace { fill: none; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.qmap-center { stroke: var(--qm-line); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.qmap-mark { cursor: pointer; }
+.qmap-mark rect { fill: transparent; }
+.qmap-mark line { stroke: var(--mode-ft8, var(--accent)); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: 0.8; }
+.qmap-mark:hover line { opacity: 1; stroke-width: 2.5; }
+
+.qmap-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.qmap-table th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: var(--text-xs); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--qm-line); }
+.qmap-table td { padding: 0.3rem 0.5rem; border-bottom: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+.qmap-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.qmap-msg { font-family: var(--font-data); white-space: nowrap; }
+.qmap-qso { padding: 0.15rem 0.6rem; font-size: var(--text-xs); }
+
+@media (max-width: 640px) {
+  .qmap-actions { margin-left: 0; }
+  .qmap-msg { white-space: normal; }
+}

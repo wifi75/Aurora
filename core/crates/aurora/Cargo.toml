@@ -40,6 +40,7 @@ qso-native = { path = "../qso-native" }
 auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 remote-api = { path = "../remote-api" }
+qmap = { path = "../qmap" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }

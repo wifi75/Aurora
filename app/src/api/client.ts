@@ -1244,3 +1244,61 @@ export async function dismissCrashReport(): Promise<void> {
 export async function sendSupportBundle(): Promise<{ ok: boolean; code: string }> {
   return (await (await request('/reports/bundle/send', { method: 'POST' })).json()) as { ok: boolean; code: string };
 }
+
+/** QMAP: da dove arriva l'I/Q e cosa cercare. */
+export interface QmapConfig {
+  source: 'off' | 'tci' | 'file';
+  tci_address: string;
+  sample_rate: number;
+  file_path: string;
+  center_hz: number;
+  period_s: number;
+  submodes: number[];
+  span_hz: number;
+  fading: boolean;
+}
+
+/** Un messaggio Q65 trovato nella fetta. */
+export interface QmapDecode {
+  offset_hz: number;
+  rf_hz: number | null;
+  period_s: number;
+  submode: number;
+  mode: string;
+  snr_db: number;
+  dt_s: number;
+  text: string;
+  sync: number;
+}
+
+export interface QmapSnapshot {
+  config: QmapConfig;
+  state: 'off' | 'connecting' | 'receiving' | 'decoding' | 'error';
+  message: string;
+  sample_rate: number;
+  center_hz: number | null;
+  decodes: QmapDecode[];
+  candidates: number;
+  spectrum_db: number[];
+  spectrum_low_hz: number;
+  spectrum_high_hz: number;
+  period_start_ms: number;
+  updated_ms: number;
+}
+
+export async function getQmap(): Promise<QmapSnapshot> {
+  return (await (await request('/qmap')).json()) as QmapSnapshot;
+}
+
+export async function putQmap(config: QmapConfig): Promise<QmapSnapshot> {
+  return (await (await request('/qmap', { ...jsonInit(config), method: 'PUT' })).json()) as QmapSnapshot;
+}
+
+export async function postQmapDecode(): Promise<void> {
+  await request('/qmap/decode', { method: 'POST' });
+}
+
+/** Clic su un messaggio: Q65 con il suo periodo e sottomodo, radio con il tono 0 a 1000 Hz. */
+export async function postQmapTune(rf_hz: number, period_s: number, submode: number): Promise<{ ok: boolean; dial_hz: number; mode: string }> {
+  return (await (await request('/qmap/tune', jsonInit({ rf_hz, period_s, submode }))).json()) as { ok: boolean; dial_hz: number; mode: string };
+}

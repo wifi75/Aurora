@@ -22,6 +22,7 @@ import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
 import { FoxPage } from './pages/FoxPage';
+import { QmapPage } from './pages/QmapPage';
 import { useStation } from './state/station';
 import { SettingsWindow } from './pages/SettingsWindow';
 import { Live } from './pages/Live';
@@ -156,6 +157,8 @@ export function App() {
     content = <Wiki />;
   } else if (route.name === 'fox') {
     content = <FoxPage />;
+  } else if (route.name === 'qmap') {
+    content = <QmapPage />;
   } else if (route.name === 'ownerMessages') {
     content = (
       <div className="owner-page">
@@ -183,6 +186,7 @@ export function App() {
         <nav className="app-nav" aria-label={t('nav.pages')}>
           <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
           <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox" title={t('tip.nav.fox')}>{t('nav.fox')}</a>
+          <a className={`glass${route.name === 'qmap' ? ' glass--on' : ''}`} aria-current={route.name === 'qmap' ? 'page' : undefined} href="#/qmap" title={t('tip.nav.qmap')}>{t('nav.qmap')}</a>
           <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
           <a className={`glass${route.name === 'dxmap' ? ' glass--on' : ''}`} aria-current={route.name === 'dxmap' ? 'page' : undefined} href="#/mappa-dx">{t('nav.dxmap')}</a>
           {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}

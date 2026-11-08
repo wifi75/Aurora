@@ -1577,6 +1577,8 @@ pub async fn run(
         .with_local_trust(config.local_trust)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
+        // QMAP: ricezione panoramica Q65 da un flusso I/Q (TCI o file); spento finche' non si sceglie la sorgente
+        .with_qmap(qmap::QmapService::open(Some(&config.data_dir.join("qmap.json"))))
         .with_log_prompt(Arc::clone(&log_prompt))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level.clone())
