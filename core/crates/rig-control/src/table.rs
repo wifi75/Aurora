@@ -137,6 +137,8 @@ const JTDX_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("12m", "FT8", 24_915_000, Region::All, true),
     ("12m", "FT4", 24_919_000, Region::All, true),
     ("10m", "FT8", 28_074_000, Region::All, true),
+    // 28,091 MHz: la frequenza DXpedition di WSJT-X (FrequencyList.cpp); JTDX ha 28,095
+    ("10m", "FT8", 28_091_000, Region::All, false),
     ("10m", "FT8", 28_095_000, Region::All, false),
     ("10m", "FT4", 28_180_000, Region::All, true),
     ("6m", "FT8", 50_310_000, Region::All, false),
@@ -167,6 +169,7 @@ const JT_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("2m", "JT65", 144_120_000, Region::All, true),
     ("160m", "JT9", 1_839_000, Region::All, true),
     ("80m", "JT9", 3_572_000, Region::All, true),
+    ("60m", "JT9", 5_357_000, Region::All, true),
     ("40m", "JT9", 7_078_000, Region::All, true),
     ("30m", "JT9", 10_140_000, Region::All, true),
     ("20m", "JT9", 14_078_000, Region::All, true),
