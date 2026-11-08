@@ -483,6 +483,12 @@ impl AppState {
         self.current_status().is_some_and(|s| s.transmitting)
     }
 
+    /// Una funzione che dice se si sta trasmettendo, per chi non tiene l'`AppState` (il QMAP salta le meta' del minuto in trasmissione).
+    pub fn transmitting_probe(&self) -> Arc<dyn Fn() -> bool + Send + Sync> {
+        let shared = Arc::clone(&self.shared);
+        Arc::new(move || shared.lock().ok().and_then(|s| s.status.as_ref().map(|st| st.transmitting)).unwrap_or(false))
+    }
+
     /// Modo in uso ("FT8" o "FT4"); FT8 finche' JTDX non lo ha detto. Q65 senza periodo e sottomodo («Q65-60B» -> «Q65»), come
     /// nella tabella delle frequenze.
     pub fn current_mode(&self) -> String {

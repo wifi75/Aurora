@@ -47,6 +47,14 @@ pub(crate) async fn qmap_decode(State(state): State<AppState>, _: Authed, Peer(p
     result.map(|_| Json(json!({ "ok": true }))).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "qmap_file").with_message(e))
 }
 
+/// «Cancella media»: si buttano le medie dei periodi di tutti i segnali.
+#[utoipa::path(post, path = "/api/v1/qmap/clear-average", responses((status = 200, description = "Medie cancellate"), (status = 404, description = "Non disponibile (qmap_unavailable)")))]
+pub(crate) async fn qmap_clear_average(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    tokio::task::spawn_blocking(move || svc.clear_average()).await.map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "qmap_task"))?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 #[derive(Deserialize)]
 pub(crate) struct TuneBody {
     /// Frequenza del tono 0 in radiofrequenza.

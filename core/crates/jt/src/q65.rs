@@ -548,6 +548,9 @@ pub struct Options {
     pub ap: bool,
     /// Metrica dell'evanescenza rapida, provata dopo quella di Bessel su piu' larghezze B90.
     pub fading: Option<Fading>,
+    /// Ritardo dell'eco lunare (`emedelay` di WSJT-X): il ritardo si cerca fino a 5,5 s dopo l'inizio nominale (4 s nel Q65-15)
+    /// invece di 2 s, come `lag2` di `q65.f90` con `emedelay > 0`.
+    pub eme_delay: bool,
 }
 
 impl Default for Options {
@@ -562,6 +565,7 @@ impl Default for Options {
             dx_call: String::new(),
             ap: true,
             fading: None,
+            eme_delay: false,
         }
     }
 }
@@ -611,7 +615,12 @@ fn find_candidates(sp: &[Vec<f32>], options: &Options, per_sym: usize) -> Vec<(u
         .collect();
     let start0 = setup.start_s() * FS / step as f64;
     let lag_lo = (start0 - 2.0 * FS / step as f64).floor().max(0.0) as i64;
-    let lag_hi = ((start0 + 2.0 * FS / step as f64).ceil() as i64).min(sp.len() as i64 - ps * NSYM as i64);
+    let late_s = match (options.eme_delay, setup.period_s) {
+        (false, _) => 2.0,
+        (true, 15) => 4.0,
+        (true, _) => 5.5,
+    };
+    let lag_hi = ((start0 + late_s * FS / step as f64).ceil() as i64).min(sp.len() as i64 - ps * NSYM as i64);
     let ia = ((f64::from(options.f_low_hz) / baud).floor() as usize).max(1);
     let ib = ((f64::from(options.f_high_hz) / baud).ceil() as usize).min(nbins.saturating_sub(65 * spb + M + 1));
     let mut found: Vec<(usize, i64, f32)> = Vec::new();

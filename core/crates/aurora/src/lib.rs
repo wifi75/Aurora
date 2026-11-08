@@ -1574,6 +1574,16 @@ pub async fn run(
     // senza CAT la frequenza la sceglie l'operatore con le bande (`with_manual_dial`) e resta al riavvio
     let manual_file = config.data_dir.join(MANUAL_DIAL_FILE);
     let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(std::fs::read_to_string(&manual_file).ok().and_then(|t| t.trim().parse().ok()).unwrap_or(0)));
+    // QMAP: ricezione panoramica Q65 da un flusso I/Q (TCI o file); spento finche' non si sceglie la sorgente. Nominativo e locatore
+    // (ipotesi AP e Doppler dell'eco) li legge dalle impostazioni della stazione a ogni uso.
+    let qmap_service = qmap::QmapService::open(Some(&config.data_dir.join("qmap.json")));
+    {
+        let station = Arc::clone(&log_station);
+        qmap_service.set_station(Arc::new(move || {
+            let s = station();
+            (s.call, s.grid)
+        }));
+    }
     let state = AppState::new(bus.clone(), auth, Arc::clone(&logbook), TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
         .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
@@ -1581,8 +1591,7 @@ pub async fn run(
         .with_local_trust(config.local_trust)
         .with_clock(Arc::clone(&clock))
         .with_cluster(Arc::clone(&cluster))
-        // QMAP: ricezione panoramica Q65 da un flusso I/Q (TCI o file); spento finche' non si sceglie la sorgente
-        .with_qmap(qmap::QmapService::open(Some(&config.data_dir.join("qmap.json"))))
+        .with_qmap(Arc::clone(&qmap_service))
         .with_log_prompt(Arc::clone(&log_prompt))
         .with_wishlist(Arc::clone(&wishlist))
         .with_input_level_if(input_level.clone())
@@ -1802,6 +1811,8 @@ pub async fn run(
         })
         .with_cat(Arc::clone(&cat))
         .with_automation(automation);
+    // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
+    qmap_service.set_tx_probe(state.transmitting_probe());
     // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
     let (native_tx, native_rx) = std::sync::mpsc::channel();
     let audio_manager: Option<Arc<audio_control::AudioManager>> = engine_settings.as_ref().map(|store| {
