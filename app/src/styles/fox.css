@@ -143,20 +143,9 @@
   .foxc-pill--onair::before { animation: none; }
 }
 
-/* disposizione in una schermata: testata con i numeri, tre colonne, cascata sotto */
+/* stato nella testata */
 .foxc-state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.foxc-grid--main { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr); align-items: stretch; }
-.foxc-grid--main > .foxc-card { display: flex; flex-direction: column; }
-.foxc-grid--main .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
 .foxc-scroll--rx { flex: 1; min-height: 0; }
-@media (max-width: 1300px) {
-  .foxc-grid--main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .foxc-grid--main > :last-child { grid-column: 1 / -1; height: 14rem; }
-}
-@media (max-width: 800px) {
-  .foxc-grid--main { grid-template-columns: 1fr; }
-  .foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: auto; max-height: 26rem; }
-}
 
 /* maniglia per l'altezza della cascata */
 .foxc-wf-handle { height: 0.9rem; display: grid; place-items: center; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--text) 6%, transparent); border-top: 1px solid var(--fx-line); }
@@ -234,10 +223,9 @@
 .foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle:hover { background: rgba(255, 61, 113, 0.15) !important; }
 .foxc-main-actions .stop-bar { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
 
-/* Fox: la cascata e' larga solo fino a «Messaggi ricevuti», che scende fino in fondo alla pagina */
+/* Fox: colonne della pagina e «Messaggi ricevuti» che scende fino in fondo (misure nel blocco compatto in fondo) */
 .foxc-body { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 3fr); gap: var(--space-3); align-items: stretch; }
 .foxc-left { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
-.foxc-grid--main.foxc-grid--two { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); }
 .foxc-right { display: flex; min-width: 0; }
 .foxc-right > .foxc-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .foxc-right > .foxc-card .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
@@ -412,24 +400,31 @@
 .foxc-wf-handle { height: 0.55rem; }
 .foxc-wf-handle span { height: 3px; }
 
-/* disposizione: «Chi chiama» largo, accanto la colonna stretta con QSO in corso, In onda, In coda e Fox log; a destra i messaggi ricevuti */
-.foxc-body { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 6px; }
+/* disposizione a tre colonne: a sinistra «Chi chiama» con sotto la cascata (larga solo quanto lui); in mezzo QSO in corso, In onda,
+   In coda e Fox log fino in fondo alla pagina, con l'altezza divisa in parti uguali; a destra i messaggi ricevuti */
+.foxc-body { grid-template-columns: minmax(0, 13fr) minmax(0, 7fr) minmax(16rem, 22rem); gap: 6px; }
 .foxc-left { gap: 4px; }
-.foxc-grid--main.foxc-grid--two { grid-template-columns: minmax(0, 13fr) minmax(0, 7fr); gap: 6px; }
-.foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: 30rem; }
-.foxc-grid--main .foxc-stack { gap: 4px; }
-.foxc-grid--main .foxc-stack > .foxc-card { display: flex; flex-direction: column; flex: 1 1 0; min-height: 3.2rem; }
-/* In onda: alto quanto quello che trasmette; il Fox log prende un po' di piu' */
-.foxc-grid--main .foxc-stack > .foxc-card.foxc-tone--peach { flex: 0 1 auto; }
-.foxc-grid--main .foxc-stack > .foxc-card:last-child { flex-grow: 1.6; }
-.foxc-grid--main .foxc-stack .foxc-list, .foxc-grid--main .foxc-stack .foxc-slots { flex: 1 1 auto; min-height: 0; overflow: auto; }
-.foxc-left > .foxc-card { flex: none; }
+.foxc-callers { display: flex; flex-direction: column; height: 30rem; }
+.foxc-callers .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
+.foxc-left > .foxc-card:not(.foxc-callers) { flex: none; }
+.foxc-body > .foxc-stack { gap: 4px; min-height: 0; }
+.foxc-body > .foxc-stack > .foxc-card { display: flex; flex-direction: column; flex: 1 1 0; min-height: 3.2rem; }
+.foxc-body > .foxc-stack .foxc-scroll, .foxc-body > .foxc-stack .foxc-list, .foxc-body > .foxc-stack .foxc-slots { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
 
-/* finestra larga: la pagina riempie la finestra senza scorrere; i riquadri crescono fino alla cascata, che tiene la sua altezza */
+/* finestra larga: la pagina riempie la finestra senza scorrere; «Chi chiama» cresce fino alla cascata, che tiene la sua altezza */
 @media (min-width: 82rem) {
   .foxc { flex: 1 0 auto; min-height: 0; }
   .foxc-body { flex: 1 1 0; min-height: 26rem; }
   .foxc-left { min-height: 0; }
-  .foxc-grid--main { flex: 1 1 0; min-height: 12rem; grid-template-rows: minmax(0, 1fr); }
-  .foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: auto; min-height: 0; }
+  .foxc-callers { flex: 1 1 0; height: auto; min-height: 12rem; }
+}
+/* sotto: la colonna in mezzo scende sotto «Chi chiama», a tutta larghezza; poi una colonna sola */
+@media (max-width: 81.99rem) {
+  .foxc-body { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); }
+  .foxc-body > .foxc-stack { grid-column: 1; grid-row: 2; height: 30rem; }
+  .foxc-right { grid-row: 1 / span 2; }
+}
+@media (max-width: 63.99rem) {
+  .foxc-body { grid-template-columns: 1fr; }
+  .foxc-body > .foxc-stack, .foxc-right { grid-column: auto; grid-row: auto; }
 }
