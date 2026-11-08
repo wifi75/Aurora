@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.197',
-    released: '2026-11-08T12:00:00Z',
+    released: '2026-11-08T13:22:15Z',
     kind: 'new',
     title: ["TCI, Q65 completo, QMAP, Fox con verifica, decodifica anticipata e accensione della radio", "TCI, full Q65, QMAP, Fox with verification, early decoding and radio power on", "TCI, vollständiges Q65, QMAP, Fox mit Verifizierung, frühe Dekodierung und Einschalten des Funkgeräts", "TCI, Q65 complet, QMAP, Fox avec vérification, décodage anticipé et allumage de la radio", "TCI, Q65 completo, QMAP, Fox con verificación, decodificación anticipada y encendido de la radio", "TCI, Q65 completo, QMAP, Fox com verificação, descodificação antecipada e ligar o rádio"],
     text: [
