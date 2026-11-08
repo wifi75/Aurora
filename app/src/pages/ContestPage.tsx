@@ -29,7 +29,6 @@ import { toast } from '../lib/toast';
 import { useEngineTx } from '../state/engineTx';
 import { useStation } from '../state/station';
 import { WaterfallStack } from '../components/WaterfallStack';
-import { WaterfallToolbar } from '../components/WaterfallToolbar';
 import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
@@ -159,12 +158,8 @@ function Cascata() {
   const wf = useDragHeight('aurora-contest-wf-height-v2', 120, 420);
   return (
     <section className="dock-panel ctc-box ctc-wf-box" aria-label={t('fox.waterfall')}>
-      <header className="dock-grip dock-grip--fixed">
-        <span className="dock-grip-dots" aria-hidden="true" />
-        <h2>{t('fox.waterfall')}</h2>
-      </header>
+      {/* solo la cascata, compatta: niente barra del titolo ne' barra degli strumenti (si regolano dalla pagina Stazione) */}
       <DragHandle label={t('fox.resize')} className="ctc-wf-handle" onPointerDown={wf.onPointerDownInverse} />
-      <WaterfallToolbar />
       <div className="ctc-wf" style={{ height: wf.height }}>
         <WaterfallStack />
       </div>
