@@ -39,6 +39,7 @@ pub fn installer_args() -> [&'static str; 3] {
 
 /// Come lanciare l'installatore **staccato** da Aurora: tramite `cmd /C start`, che termina subito, cosi' l'installatore non risulta figlio di
 /// Aurora e non viene chiuso insieme a lei quando la chiude per sostituirla (ne' dalla riga di chiusura dei vecchi disinstallatori).
+#[allow(dead_code)]
 pub fn detached_command_args(installer: &str) -> Vec<String> {
     let mut args = vec!["/C".to_string(), "start".to_string(), String::new(), installer.to_string()];
     args.extend(installer_args().iter().map(|a| (*a).to_string()));
@@ -92,8 +93,16 @@ impl UpdateInstaller for DesktopInstaller {
         std::thread::sleep(Duration::from_millis(700));
         // l'agente nel tray e' lo stesso programma: va chiuso, altrimenti l'installatore non puo' sostituirlo
         crate::stop_agent();
-        let mut launcher = Command::new("cmd");
-        launcher.args(detached_command_args(&installer));
+        // l'installatore parte solo quando Aurora (e l'agente) sono davvero chiusi: alla chiusura il core si ferma con calma (porte, archivi,
+        // «Spegni» la radio, fino a 6 s) e l'installatore partito subito trovava Aurora ancora aperta («Impossibile chiudere Aurora»,
+        // 2026-11-08, con la cartella di Hamlib gia' tolta). Si aspetta al massimo 30 s, poi parte comunque
+        let quoted = installer.replace('\'', "''");
+        let script = format!(
+            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              Start-Process -FilePath '{quoted}' -ArgumentList {}",
+            installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",")
+        );
+        let mut launcher = Command::new("powershell");
+        launcher.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &script]);
         {
             use std::os::windows::process::CommandExt;
             // `cmd` non deve aprire una finestra nera: l'installatore parte da solo

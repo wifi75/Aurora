@@ -354,6 +354,9 @@ struct Inner {
     smeter_silent: AtomicU32,
     meters: Mutex<Meters>,
     status: Mutex<RigStatus>,
+    /// Dopo un cambio di frequenza la radio cambia banda (anche 1-2 s) e FT-991(A) Link puo' non rispondere: fino a quest'ora le
+    /// letture mancate non contano come errori (prima compariva l'avviso rosso a ogni cambio di banda, segnalazione SP4UBW).
+    quiet_until: Mutex<Option<std::time::Instant>>,
 }
 
 impl Inner {
@@ -540,6 +543,7 @@ impl Ft991Rig {
             ready: AtomicBool::new(false),
             link: Mutex::new(None),
             tx_audio_hz: AtomicU32::new(0),
+            quiet_until: Mutex::new(None),
             emulate_restore: AtomicU64::new(0),
             smeter: AtomicU32::new(SMETER_UNKNOWN),
             smeter_silent: AtomicU32::new(0),
@@ -716,6 +720,8 @@ fn serve(inner: &Inner) {
                 inner.update(|s| s.failures = 0);
             }
             failures = 0;
+        } else if inner.quiet_until.lock().ok().and_then(|q| *q).is_some_and(|t| std::time::Instant::now() < t) {
+            // cambio di banda in corso: la lettura mancata non conta
         } else {
             failures += 1;
             inner.update(|s| s.failures = failures);
@@ -738,10 +744,20 @@ impl Rig for Ft991Rig {
         if self.transmitting() {
             return Err(RigError("la radio sta trasmettendo: cambio di frequenza rifiutato".into()));
         }
+        if let Ok(mut q) = self.inner.quiet_until.lock() {
+            *q = Some(std::time::Instant::now() + Duration::from_secs(3));
+        }
+        let band_before = self.status().frequency_hz.map(|f| f / 1_000_000);
         self.inner.write_frequency(hz)?;
         if let Some(code) = mode_code(self.inner.cat_mode) {
             let wanted = mode_name(code);
-            if self.status().mode.as_deref() != wanted {
+            // cambiando banda l'FT-991 riprende il modo salvato per quella banda (spesso FM): il modo si rimanda sempre, dopo
+            // una breve attesa perche' la radio finisca la commutazione (prima, con il modo letto ancora della banda vecchia, non partiva)
+            let band_changed = band_before != Some(hz / 1_000_000);
+            if band_changed {
+                std::thread::sleep(Duration::from_millis(300));
+            }
+            if band_changed || self.status().mode.as_deref() != wanted {
                 self.inner.send(&cmd_mode(code))?;
                 self.inner.update(|s| s.mode = wanted.map(str::to_string));
             }
