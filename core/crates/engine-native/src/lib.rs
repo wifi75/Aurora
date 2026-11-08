@@ -9,6 +9,7 @@ pub mod ultrafox;
 pub mod ultrafox_rx;
 mod alltxt;
 mod known;
+mod mskrt;
 pub use ft8::filters::GridCheck;
 pub mod features;
 mod parity;
@@ -278,6 +279,7 @@ pub fn start_with_save(
         // il modo si sceglie con il pulsante: cambia la durata dei periodi, il decoder e la trasmissione
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
+        let mut msk_rt = mskrt::Realtime::default();
         let mut hashes = CallHashes::default();
         // i nominativi conosciuti (log e ascolto) per il filtro contro i falsi decode
         let mut known = known::KnownCalls::load(data_dir.join("known_calls.txt"));
@@ -449,6 +451,21 @@ pub fn start_with_save(
                 }
             };
             let samples = rs.push(&chunk.samples);
+            // MSK144: i ping si decodificano mentre il periodo scorre (come `mskrtd` di WSJT-X)
+            if mode == Mode::Msk144 {
+                if let Some(l) = live.as_ref()
+                    && l.controls.is_monitoring()
+                    && !l.controls.transmitting.load(Ordering::Relaxed)
+                {
+                    let his = driver.as_ref().and_then(|d| d.dx_call()).unwrap_or_default();
+                    if let Some((slot_ms, fresh)) = msk_rt.push(&samples, chunk.received_unix_ms, &l.de_call, &his, &mut hashes) {
+                        tracing::info!("motore proprio (MSK144): {} messaggi in tempo reale nel periodo {slot_ms}", fresh.len());
+                        publish(l, driver.as_mut(), &message_events, &next_id, slot_ms, &fresh);
+                    }
+                }
+            } else {
+                msk_rt.reset();
+            }
             if let Some(l) = live.as_ref() {
                 if l.controls.transmitting.load(Ordering::Relaxed) {
                     tx_periods.note(chunk.received_unix_ms, mode.period_ms());
@@ -551,7 +568,8 @@ pub fn start_with_save(
                     ft4_slot.ap_cq = false;
                 }
                 // FT8: i messaggi di ogni passata vanno subito nell'elenco, senza aspettare le passate seguenti; alla fine si pubblica solo il resto
-                let mut early: Vec<String> = Vec::new();
+                // MSK144: quelli gia' mostrati in tempo reale non si ripubblicano
+                let mut early: Vec<String> = if mode == Mode::Msk144 { msk_rt.shown(slot.start_unix_ms) } else { Vec::new() };
                 let mut decoded = if silent {
                     Vec::new()
                 } else if mode == Mode::Ft8 && let Some(l) = live.as_ref() {

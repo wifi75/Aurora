@@ -14,6 +14,9 @@ pub enum Body {
     Report(i32),
     /// Rapporto con conferma, «R-07» (Tx3).
     RReport(i32),
+    /// «R» seguito dal locatore («R OI33», messaggio a 77 bit con il bit R): conferma come «R-07», senza rapporto.
+    /// JTDX (`processMessage`) guarda solo la «R» iniziale del campo dopo i nominativi e risponde con Tx4.
+    RGrid(String),
     Rrr,
     Rr73,
     /// «73»
@@ -50,6 +53,13 @@ pub fn parse(text: &str) -> Message {
     };
     if first == "CQ" || first == "QRZ" {
         return parse_cq(&tokens);
+    }
+    // «IU3ABC K1ABC R OI33»: conferma con il locatore
+    if tokens.len() == 4 && tokens[2] == "R" && is_grid(&tokens[3]) {
+        let (Some(to), Some(from)) = (call_token(&tokens[0]), call_token(&tokens[1])) else {
+            return Message::Other;
+        };
+        return Message::Directed { to, from, body: Body::RGrid(tokens[3].clone()) };
     }
     if tokens.len() < 2 || tokens.len() > 3 {
         return Message::Other;
@@ -280,6 +290,7 @@ mod tests {
         assert_eq!(d("IU3ABC LZ2KSQ -12").2, Body::Report(-12));
         assert_eq!(d("IU3ABC LZ2KSQ +05").2, Body::Report(5));
         assert_eq!(d("IU3ABC LZ2KSQ R-10").2, Body::RReport(-10));
+        assert_eq!(d("IU3WJQ YB1AM R OI33").2, Body::RGrid("OI33".into()));
         assert_eq!(d("IU3ABC LZ2KSQ RRR").2, Body::Rrr);
         assert_eq!(d("IU3ABC LZ2KSQ RR73").2, Body::Rr73);
         assert_eq!(d("IU3ABC LZ2KSQ 73").2, Body::Bye);

@@ -340,6 +340,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Accende o spegne la frequenza di trasmissione libera (regola A di `docs/analisi-decodium-banda-satura.md`): all'inizio di un QSO nostro, e dopo
     /// due trasmissioni senza risposta, se la frequenza Tx e' occupata da un segnale recente la si sposta nel varco piu' largo. Vale solo con Split acceso
     /// (con Tx = Rx la trasmissione segue la ricezione) e mai a QSO avviato. Ne' JTDX ne' Decodium lo fanno: e' una funzione nuova, spenta di base.
+    /// Il nominativo del DX del QSO in corso (per i messaggi brevi di MSK144).
+    pub fn dx_call(&self) -> Option<String> {
+        self.seq.dx().filter(|c| !c.is_empty()).map(str::to_string)
+    }
+
     pub fn set_free_tx(&mut self, on: bool) {
         self.free_tx = on.then(|| FreeTxParams::for_mode(self.mode));
         self.free_for = None;

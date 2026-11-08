@@ -535,7 +535,7 @@ impl Sequencer {
         let ntx = match &directed {
             Some(Body::Grid(_)) | Some(Body::Other) => 2,
             Some(Body::Report(_)) => 3,
-            Some(Body::RReport(_)) => 4,
+            Some(Body::RReport(_)) | Some(Body::RGrid(_)) => 4,
             Some(Body::Rrr) | Some(Body::Rr73) | Some(Body::Bye) => 5,
             None => self.start_ntx(),
         };
@@ -560,7 +560,7 @@ impl Sequencer {
         let from_click = match &directed {
             Some(Body::Grid(_)) => Status::Rcall,
             Some(Body::Report(_)) => Status::Rreport,
-            Some(Body::RReport(_)) => Status::Rrreport,
+            Some(Body::RReport(_)) | Some(Body::RGrid(_)) => Status::Rrreport,
             Some(Body::Rrr) => Status::Rrr,
             Some(Body::Rr73) => Status::Rrr73,
             Some(Body::Bye) => Status::R73,
