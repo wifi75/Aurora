@@ -155,6 +155,8 @@ pub enum External {
     SwitchConfiguration { name: String },
     /// Configure (15): solo i campi presenti.
     Configure(Configure),
+    /// AnnotationInfo (16): valore di ordinamento di un Hound per la Fox; `None` lo toglie.
+    Annotation { call: String, order: Option<u32> },
 }
 
 /// Il locatore di un Location come lo legge WSJT-X (`MainWindow::locationChange`): oltre sei caratteri serve il prefisso `GRID:`; poi 4, 6 o 8
@@ -583,6 +585,12 @@ impl Session {
             }
             Request::SwitchConfiguration { name } => handled.external.push(External::SwitchConfiguration { name }),
             Request::Configure(c) => handled.external.push(External::Configure(c)),
+            Request::AnnotationInfo { call, order } => {
+                let call = call.trim().to_ascii_uppercase();
+                if !call.is_empty() && call.len() <= 20 {
+                    handled.external.push(External::Annotation { call, order });
+                }
+            }
             Request::Replay => {}
         }
         handled

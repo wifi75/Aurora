@@ -539,6 +539,10 @@ fn external_hook(bus: &Bus, controls: &Arc<engine_native::NativeControls>, state
             // senza trasmissione (nessuna uscita audio) la sequenza non c'e': vale comunque per lo Status
             let _ = controls.send(engine_native::TxCommand::SetMyGrid(grid));
         }
+        External::Annotation { call, order } => {
+            // l'ordinamento dei Hound della Fox dato da un programma esterno (registro della spedizione)
+            let _ = controls.send(engine_native::TxCommand::Fox(aurora_core::FoxCommand::Annotate { call, order }));
+        }
         External::SwitchConfiguration { name } => {
             tracing::info!("Switch Configuration via UDP ({name}) ignorato: Aurora non ha configurazioni con nome");
         }

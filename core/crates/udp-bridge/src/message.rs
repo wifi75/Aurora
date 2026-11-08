@@ -16,6 +16,8 @@ pub const LOGGED_ADIF: u32 = 12;
 pub const HIGHLIGHT_CALLSIGN: u32 = 13;
 pub const SWITCH_CONFIGURATION: u32 = 14;
 pub const CONFIGURE: u32 = 15;
+/// WSJT-X: valore di ordinamento di un nominativo per la coda dei Hound della Fox (in ingresso).
+pub const ANNOTATION_INFO: u32 = 16;
 /// WSJT-X 3.3: stato del blocco della trasmissione (in uscita), vedi [`InhibitStatus`].
 pub const INHIBIT_STATUS: u32 = 17;
 /// WSJT-X 3.3: prenotazione di blocco della trasmissione da un controller (in ingresso), vedi [`crate::request::parse_tx_inhibit`].
@@ -384,6 +386,15 @@ pub fn encode_highlight_callsign(id: &str, schema: u32, call: &str, background: 
     w.qcolor(background);
     w.qcolor(foreground);
     w.bool(last_only);
+    w.into_bytes()
+}
+
+/// AnnotationInfo (tipo 16): valore di ordinamento di un nominativo per la coda dei Hound (`None` = toglilo).
+pub fn encode_annotation_info(id: &str, schema: u32, call: &str, order: Option<u32>) -> Vec<u8> {
+    let mut w = command_header(ANNOTATION_INFO, schema, id);
+    w.utf8(Some(call));
+    w.bool(order.is_some());
+    w.u32(order.unwrap_or(u32::MAX));
     w.into_bytes()
 }
 

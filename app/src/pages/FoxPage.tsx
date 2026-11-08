@@ -10,6 +10,8 @@ import { Waterfall } from '../components/Waterfall';
 import { WaterfallToolbar } from '../components/WaterfallToolbar';
 import { TxQuickControls } from '../components/TxQuickControls';
 import { SpotMarkers } from '../components/SpotMarkers';
+import { FoxLogCard, FoxOtp, FoxPacket, FoxStats } from '../components/FoxPanels';
+import { distanceKm, gridCenter } from '../lib/geo';
 import { bandOf } from '../lib/format';
 import { useT } from '../i18n';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
@@ -20,10 +22,28 @@ import { useStation } from '../state/station';
 import '../styles/fox.css';
 
 type Caller = FoxSnapshot['callers'][number];
-type SortKey = 'snr' | 'call' | 'freq_hz' | 'age';
+type SortKey = 'snr' | 'call' | 'grid' | 'freq_hz' | 'age' | 'order' | 'km';
+type Row = Caller & { km: number | null; dupe: boolean };
 
 /** Prima del primo stato dal motore: Fox spento, valori di base. */
-const EMPTY: FoxSnapshot = { enabled: false, slots: 5, more_cqs: false, cq: 'CQ', auto_queue: false, ultra: false, callers: [], queue: [], in_progress: [], tx: [], periods: 0, logged: 0 };
+const EMPTY: FoxSnapshot = {
+  enabled: false,
+  slots: 5,
+  more_cqs: false,
+  cq: 'CQ',
+  auto_queue: false,
+  ultra: false,
+  callers: [],
+  queue: [],
+  in_progress: [],
+  tx: [],
+  periods: 0,
+  logged: 0,
+  otp: false,
+  otp_interval: 1,
+  log: [],
+  params: { strikes: 3, wait: 3, cq_every: 10, queue_max: 10 },
+};
 
 const CQ_TARGETS = ['', 'DX', 'NA', 'SA', 'EU', 'AS', 'AF', 'OC'];
 
@@ -86,6 +106,10 @@ export function FoxPage() {
   const txOn = status?.tx_enabled ?? false;
   const transmitting = status?.transmitting ?? false;
   const [sort, setSort] = useState<SortKey>('snr');
+  const [sort2, setSort2] = useState<SortKey | ''>('age');
+  const [snrMin, setSnrMin] = useState(-30);
+  const [snrMax, setSnrMax] = useState(30);
+  const [onlyNew, setOnlyNew] = useState(false);
   const main = useDragHeight('aurora-fox-main-height-v3', 620);
   const [filter, setFilter] = useState('');
 
@@ -97,7 +121,16 @@ export function FoxPage() {
   const options = (o: Partial<{ slots: number; more_cqs: boolean; cq: string; auto_queue: boolean; ultra: boolean }>) =>
     void postFox({ action: 'options', slots: fox.slots, more_cqs: fox.more_cqs, cq: fox.cq || 'CQ', auto_queue: fox.auto_queue, ultra: fox.ultra, ...o });
   const queued = new Set(fox.queue.map((q) => q.call));
-  const callers = fox.callers.filter((c) => !queued.has(c.call) && c.call.toUpperCase().includes(filter.toUpperCase())).sort((a, b) => order(a, b, sort));
+  const band = status ? bandOf(status.dial_hz) : null;
+  const home = gridCenter(status?.de_grid ?? '');
+  const worked = new Set(fox.log.filter((q) => q.band === band).map((q) => q.call));
+  const callers: Row[] = fox.callers
+    .map((c) => {
+      const p = gridCenter(c.grid);
+      return { ...c, km: home && p ? distanceKm(home, p) : null, dupe: worked.has(c.call) };
+    })
+    .filter((c) => !queued.has(c.call) && c.call.toUpperCase().includes(filter.toUpperCase()) && c.snr >= snrMin && c.snr <= snrMax && !(onlyNew && c.dupe))
+    .sort((a, b) => order(a, b, sort) || (sort2 ? order(a, b, sort2) : 0));
   const target = fox.cq.replace(/^CQ ?/, '');
   const state = !fox.enabled ? 'off' : !txOn ? 'waiting' : transmitting ? 'onair' : 'ready';
 
@@ -140,6 +173,9 @@ export function FoxPage() {
         </div>
       </header>
 
+      <FoxStats fox={fox} />
+
+      {fox.guard ? <p className="foxc-note">{t('fox.guard', { g: fox.guard })}</p> : null}
       {state === 'waiting' ? <p className="foxc-note">{t('fox.needTx')}</p> : null}
       {state === 'off' ? <p className="foxc-note foxc-note--info">{t('fox.offHint')}</p> : null}
 
@@ -172,6 +208,7 @@ export function FoxPage() {
         <button type="button" className="foxc-btn foxc-btn--ghost" title={t('tip.fox.reset')} onClick={() => void postFox({ action: 'reset' })}>
           {t('fox.reset')}
         </button>
+        <FoxOtp fox={fox} />
       </div>
 
 
@@ -186,11 +223,19 @@ export function FoxPage() {
             <div className="foxc-tools">
               <input className="foxc-input" type="search" placeholder={t('fox.filter')} aria-label={t('fox.filter')} title={t('tip.fox.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
               <select className="foxc-input" aria-label={t('fox.sort')} title={t('tip.fox.sort')} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                <option value="snr">SNR</option>
-                <option value="call">{t('fox.col.call')}</option>
-                <option value="freq_hz">Hz</option>
-                <option value="age">{t('fox.age')}</option>
+                <SortOptions />
               </select>
+              <select className="foxc-input" aria-label={t('fox.sort2')} title={t('tip.fox.sort2')} value={sort2} onChange={(e) => setSort2(e.target.value as SortKey | '')}>
+                <option value="">{t('fox.sort2')} —</option>
+                <SortOptions />
+              </select>
+              <label className="foxc-label" title={t('tip.fox.colSnr')}>
+                {t('fox.snrMin')}
+                <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMin} onChange={(e) => setSnrMin(Number(e.target.value) || -30)} />
+                {t('fox.snrMax')}
+                <input className="foxc-input foxc-input--num data" type="number" min={-30} max={30} value={snrMax} onChange={(e) => setSnrMax(Number(e.target.value) || 30)} />
+              </label>
+              <Switch on={onlyNew} label={t('fox.onlyNew')} title={t('tip.fox.onlyNew')} onChange={setOnlyNew} />
               <button type="button" className="foxc-btn foxc-btn--small" disabled={callers.length === 0} title={t('tip.fox.addBest')} onClick={() => callers.slice(0, 5).forEach((c) => void postFox({ action: 'select', call: c.call }))}>
                 {t('fox.addBest')}
               </button>
@@ -205,6 +250,8 @@ export function FoxPage() {
                   <th className="num" title={t('tip.fox.colSnr')}>SNR</th>
                   <th className="num" title={t('tip.fox.colHz')}>Hz</th>
                   <th className="num" title={t('tip.fox.colAge')}>{t('fox.age')}</th>
+                  <th className="num">km</th>
+                  <th className="num" title={t('tip.fox.colOrder')}>#</th>
                   <th aria-label={t('fox.add')} />
                 </tr>
               </thead>
@@ -218,7 +265,10 @@ export function FoxPage() {
                     </td>
                     <td className="num data">{c.freq_hz}</td>
                     <td className="num data">{c.age}</td>
+                    <td className="num data">{c.km ?? '—'}</td>
+                    <td className="num data">{c.order || ''}</td>
                     <td className="foxc-actions">
+                      {c.dupe ? <span className="foxc-flag">{t('fox.dupe')}</span> : null}
                       <button type="button" className="foxc-btn foxc-btn--small" title={t('tip.fox.add')} onClick={() => void postFox({ action: 'select', call: c.call })}>
                         {t('fox.add')}
                       </button>
@@ -266,6 +316,7 @@ export function FoxPage() {
               <h2 title={t('tip.fox.onAir')}>{t('fox.onAir')}</h2>
               <span className="foxc-count data">{fox.tx.length}</span>
             </header>
+            <FoxPacket fox={fox} />
             {fox.tx.length === 0 ? (
               <Empty text={t('fox.empty')} />
             ) : (
@@ -301,6 +352,7 @@ export function FoxPage() {
               </ol>
             )}
           </section>
+          <FoxLogCard fox={fox} myCall={status?.de_call ?? ''} myGrid={status?.de_grid ?? ''} />
         </div>
       </div>
 
@@ -423,8 +475,29 @@ function Empty({ text }: { text: string }) {
   return <p className="foxc-empty">{text}</p>;
 }
 
-function order(a: Caller, b: Caller, key: SortKey): number {
+/** Le chiavi di ordinamento dei chiamanti (come `sortHoundCalls` di WSJT-X, piu' Hz). */
+function SortOptions() {
+  const t = useT();
+  return (
+    <>
+      <option value="snr">SNR</option>
+      <option value="call">{t('fox.col.call')}</option>
+      <option value="grid">{t('fox.col.grid')}</option>
+      <option value="km">{t('fox.sort.km')}</option>
+      <option value="age">{t('fox.age')}</option>
+      <option value="freq_hz">Hz</option>
+      <option value="order">{t('fox.sort.order')}</option>
+    </>
+  );
+}
+
+/** Confronto fra due chiamanti: SNR, distanza e valore esterno dal piu' alto, attesa dal piu' lungo, il resto in ordine crescente. */
+function order(a: Row, b: Row, key: SortKey): number {
   if (key === 'call') return a.call.localeCompare(b.call);
+  if (key === 'grid') return a.grid.localeCompare(b.grid);
   if (key === 'snr') return b.snr - a.snr;
-  return a[key] - b[key];
+  if (key === 'order') return b.order - a.order;
+  if (key === 'km') return (b.km ?? -1) - (a.km ?? -1);
+  if (key === 'age') return b.age - a.age;
+  return a.freq_hz - b.freq_hz;
 }

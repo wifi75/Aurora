@@ -27,11 +27,9 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 
 ## 20. Modo Fox e SuperFox trasmettitore
 
-- Cosa fare: Fox classico (fino a 5 slot, `foxgen`) e SuperFox (pack 329 bit, QPC, GFSK a 750 Hz), coda dei Hound con ordinamento UDP `AnnotationInfo` (tipo 16) e OTP con seme TOTP.
-- Aurora: `core/crates/superfox`, `tx-native`, `engine-native/src/tx.rs`, `udp-bridge/src/message.rs`.
+- Fatto: Fox classico (fino a 5 posti affiancati a 60 Hz, `foxgen`; coda dei Hound fino a 10, rapporto -> RR73, tentativi e attese di WSJT-X, un QSO a log per banda) e UltraFOX compatibile con SuperFox (pacchetto da 329 bit, QPC, segnale da 750 Hz) in `engine-native/src/fox.rs`, `ultrafox.rs`, `qpc.rs`, `tx.rs`. Verifica OTP come `foxOTPcode` (`otp.rs`: TOTP HMAC-SHA1 a 6 cifre, passo 30 s, seme base32 di 16 caratteri): nel Fox classico `CALL.123456` ogni N periodi, in UltraFOX nel campo d20 del pacchetto. Zone protette come `FoxGuardBands` (niente Fox a meno di 3 kHz dalle frequenze FT8 standard e nella sottobanda WSPR). UDP `AnnotationInfo` (tipo 16) letto da `udp-bridge` e usato per ordinare i Hound e la coda automatica. Pagina Fox secondo `docs/mockup-fox.html`: numeri con il grafico del ritmo, Hound con doppio ordinamento (SNR, nominativo, locatore, distanza, attesa, Hz, valore esterno) e filtri (SNR, solo nuovi sulla banda), pacchetto in onda con la riga `$VERIFY$`, parametri visibili, seme OTP, Fox log con salvataggio ADIF e Cabrillo. Prove: onde Fox a 5 posti e UltraFOX con OTP decodificate dal decodificatore di Aurora.
+- Resta: la prova dal vivo e il confronto con `jt9.exe` 3.0.2 sui WAV generati; il caricamento su ClubLog dal Fox log e la ripartizione per continenti nei numeri; il seme OTP oggi si ricorda solo nel browser (si rimanda al motore quando si apre la pagina Fox).
 - WSJT-X: `lib/superfox/sfox_pack.f90`, `sftx_sub.f90`, `sfox_gen_gfsk.f90`, `sfox_wave_gfsk.f90`, `lib/ft8/foxgen.f90`, `widgets/SuperFoxTxPlanner.cpp`, `FoxGuardBands.cpp`, `FoxLogWindow.cpp`, `mainwindow.cpp` (`foxOTPcode`, `sfox_tx`).
-- Verifica: il segnale generato si decodifica con `jt9.exe` 3.0.2 e con il decodificatore di Aurora.
-- Interfaccia approvata dal proprietario il 2026-11-01: `docs/mockup-fox.html` (contatori con grafico del ritmo, Hound con doppio ordinamento e filtri, posti del SuperFox con avanzamento e anteprima del pacchetto, parametri visibili, coda, Fox log con ADIF, Cabrillo e ClubLog). Limiti di WSJT-X da superare in `docs/analisi-wsjtx-3.md`.
 
 ## 21. Modo Q65: verifica con WSJT-X
 

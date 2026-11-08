@@ -145,7 +145,9 @@ export const HighlightCallsignSchema = z.object({
 });
 export type HighlightCallsign = z.infer<typeof HighlightCallsignSchema>;
 
-const FoxCallerSchema = z.object({ call: z.string(), grid: z.string(), snr: z.number(), freq_hz: z.number(), age: z.number() });
+const FoxCallerSchema = z.object({ call: z.string(), grid: z.string(), snr: z.number(), freq_hz: z.number(), age: z.number(), order: z.number().optional().default(0) });
+const FoxLogSchema = z.object({ call: z.string(), grid: z.string(), band: z.string(), mode: z.string(), freq_hz: z.number(), sent: z.string(), rcvd: z.string(), time_ms: z.number() });
+export type FoxLogEntry = z.infer<typeof FoxLogSchema>;
 export const FoxSnapshotSchema = z.object({
   enabled: z.boolean(),
   slots: z.number(),
@@ -159,6 +161,12 @@ export const FoxSnapshotSchema = z.object({
   tx: z.array(z.string()),
   periods: z.number(),
   logged: z.number(),
+  otp: z.boolean().optional().default(false),
+  otp_interval: z.number().optional().default(1),
+  otp_code: z.string().nullable().optional(),
+  guard: z.string().nullable().optional(),
+  log: z.array(FoxLogSchema).optional().default([]),
+  params: z.object({ strikes: z.number(), wait: z.number(), cq_every: z.number(), queue_max: z.number() }).optional().default({ strikes: 3, wait: 3, cq_every: 10, queue_max: 10 }),
 });
 export type FoxSnapshot = z.infer<typeof FoxSnapshotSchema>;
 

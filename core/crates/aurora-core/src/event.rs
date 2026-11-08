@@ -356,6 +356,37 @@ pub struct FoxCallerView {
     pub snr: i32,
     pub freq_hz: u32,
     pub age: u32,
+    /// Valore di ordinamento dato da un programma esterno (UDP `AnnotationInfo`), 0 se non c'e'.
+    #[serde(default)]
+    pub order: u32,
+}
+
+/// Un QSO registrato dalla Fox in questa sessione.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxLogView {
+    pub call: String,
+    pub grid: String,
+    pub band: String,
+    pub mode: String,
+    /// Frequenza di trasmissione (Hz, sintonia + audio).
+    pub freq_hz: u64,
+    pub sent: String,
+    pub rcvd: String,
+    /// Ora del QSO (ms dal 1970, UTC).
+    pub time_ms: u64,
+}
+
+/// I parametri fissi della Fox (quelli di WSJT-X), mostrati nella pagina.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FoxParams {
+    /// Tentativi per Hound (`maxStrikes`).
+    pub strikes: i64,
+    /// Periodi di attesa prima di lasciar perdere (`maxFoxWait`).
+    pub wait: i64,
+    /// Un CQ almeno ogni tanti periodi con «More CQs» (`foxCQtime`).
+    pub cq_every: i64,
+    /// Posti in coda (`MAX_HOUNDS_IN_QUEUE`).
+    pub queue_max: usize,
 }
 
 /// Un QSO della Fox in corso.
@@ -386,4 +417,20 @@ pub struct FoxSnapshot {
     pub tx: Vec<String>,
     pub periods: i64,
     pub logged: u64,
+    /// Verifica OTP accesa (seme valido) e ogni quanti periodi il Fox classico la manda.
+    #[serde(default)]
+    pub otp: bool,
+    #[serde(default)]
+    pub otp_interval: u32,
+    /// L'ultimo codice OTP mandato.
+    #[serde(default)]
+    pub otp_code: Option<String>,
+    /// La sintonia cade in una zona protetta (`FoxGuardBands`): la Fox non trasmette. Testo come «FT8 14074000» o «WSPR 14095600».
+    #[serde(default)]
+    pub guard: Option<String>,
+    /// Il Fox log della sessione (gli ultimi 500, il piu' recente in fondo).
+    #[serde(default)]
+    pub log: Vec<FoxLogView>,
+    #[serde(default)]
+    pub params: FoxParams,
 }

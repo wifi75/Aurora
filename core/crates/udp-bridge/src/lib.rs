@@ -11,7 +11,7 @@ pub use emit::{
 };
 pub use request::{decode_request, parse_tx_inhibit, Addressed, Configure, InhibitParse, Request, TxInhibit, INHIBIT_DATAGRAM_MAX, TTL_MAX_MS, TTL_MIN_MS};
 pub use message::{
-    decode, encode_clear_window, encode_configure, encode_free_text, encode_halt_tx, encode_highlight_callsign, encode_location, encode_tx_inhibit, encode_replay, encode_reply, encode_set_tx_freq,
+    decode, encode_annotation_info, encode_clear_window, encode_configure, encode_free_text, encode_halt_tx, encode_highlight_callsign, encode_location, encode_tx_inhibit, encode_replay, encode_reply, encode_set_tx_freq,
     encode_switch_configuration, encode_trigger_cq, ConfigureFields, Decode, InhibitStatus, Message, Packet, QsoExtra, Status,
 };
 

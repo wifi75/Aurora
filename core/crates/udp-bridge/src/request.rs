@@ -2,7 +2,7 @@
 //! `MessageClient::impl::parse_message` di JTDX (`REA 0x56c360`) sa leggere. Si decodificano con [`decode_request`].
 
 use crate::{
-    message::{Decode, TX_INHIBIT, CLEAR, CONFIGURE, FREE_TEXT, HALT_TX, HIGHLIGHT_CALLSIGN, LOCATION, REPLAY, REPLY, SET_TX_FREQ, SWITCH_CONFIGURATION, TRIGGER_CQ},
+    message::{Decode, ANNOTATION_INFO, TX_INHIBIT, CLEAR, CONFIGURE, FREE_TEXT, HALT_TX, HIGHLIGHT_CALLSIGN, LOCATION, REPLAY, REPLY, SET_TX_FREQ, SWITCH_CONFIGURATION, TRIGGER_CQ},
     wire::Reader,
     Error, MAGIC,
 };
@@ -32,6 +32,8 @@ pub enum Request {
     SwitchConfiguration { name: String },
     /// Configure (15): i campi vuoti o a `u32::MAX` non cambiano.
     Configure(Configure),
+    /// AnnotationInfo (16): valore di ordinamento di un nominativo per i Hound della Fox. `None` (valore non dato o `0xffffffff`) lo toglie.
+    AnnotationInfo { call: String, order: Option<u32> },
 }
 
 /// Un Configure letto: `None` dove il protocollo dice «non cambiare» (testo vuoto, `u32::MAX`).
@@ -105,6 +107,12 @@ pub fn decode_request(datagram: &[u8]) -> Result<Addressed, Error> {
                 dx_grid: text(r.utf8()?),
                 generate_messages: r.bool()?,
             })
+        }
+        ANNOTATION_INFO => {
+            let call = r.utf8()?.unwrap_or_default();
+            let provided = r.bool()?;
+            let order = r.u32()?;
+            Request::AnnotationInfo { call, order: (provided && order != u32::MAX).then_some(order) }
         }
         _ => return Ok(Addressed { schema, id, request: None }),
     };

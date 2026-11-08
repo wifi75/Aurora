@@ -44,4 +44,8 @@ pub enum FoxCommand {
     },
     /// Tutto da capo.
     Reset,
+    /// La verifica OTP (`foxOTPcode`): seme TOTP di 16 caratteri base32 (`None` = spenta) e ogni quanti periodi il Fox classico la manda.
+    Otp { seed: Option<String>, interval: u32 },
+    /// Valore di ordinamento di un Hound dato da un programma esterno (UDP `AnnotationInfo`, tipo 16); `None` lo toglie.
+    Annotate { call: String, order: Option<u32> },
 }
