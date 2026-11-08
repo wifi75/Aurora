@@ -107,6 +107,10 @@ trasmettitori = "ONE"
 bande = "ALL"
 assistenza = "NON-ASSISTED"
 
+# scelte lasciate a chi gareggia: da verificare sul regolamento dell'anno
+[opzioni_categoria]
+assistenza = true
+
 [restrizioni]
 avvio_umano = true
 fox_hound = "vietato"

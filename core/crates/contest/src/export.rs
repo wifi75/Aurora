@@ -21,6 +21,11 @@ pub struct Intestazione {
     pub nome: String,
     pub location: String,
     pub soapbox: String,
+    /// `CATEGORY-STATION` (`FIXED`, `PORTABLE`, `MOBILE`, `ROVER`).
+    pub stazione: String,
+    /// `ADDRESS` (piu' righe) ed `EMAIL`.
+    pub indirizzo: String,
+    pub email: String,
     /// Nome del contest nel file (vuoto = quello delle regole).
     pub cabrillo_contest: String,
     pub versione: String,
@@ -79,7 +84,7 @@ pub fn cabrillo(r: &Regole, h: &Intestazione, log: &[Valutato], tot: &Totali) ->
     riga("CATEGORY-BAND", if h.bande.is_empty() { "ALL" } else { &h.bande });
     riga("CATEGORY-MODE", "DIGI");
     riga("CATEGORY-POWER", &h.potenza);
-    riga("CATEGORY-STATION", "FIXED");
+    riga("CATEGORY-STATION", if h.stazione.is_empty() { "FIXED" } else { &h.stazione });
     riga("CATEGORY-TRANSMITTER", &h.trasmettitori);
     riga("GRID-LOCATOR", &h.grid.to_ascii_uppercase());
     riga("LOCATION", &h.location);
@@ -87,6 +92,10 @@ pub fn cabrillo(r: &Regole, h: &Intestazione, log: &[Valutato], tot: &Totali) ->
     riga("CLUB", &h.club);
     riga("OPERATORS", &h.operatori);
     riga("NAME", &h.nome);
+    for a in h.indirizzo.lines().take(6) {
+        riga("ADDRESS", a);
+    }
+    riga("EMAIL", &h.email);
     riga("CREATED-BY", &format!("Aurora {}", h.versione));
     for s in h.soapbox.lines() {
         riga("SOAPBOX", s);
@@ -140,6 +149,9 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
         ("PClub", h.club.clone()),
         ("RName", h.nome.clone()),
         ("RCall", h.call.to_ascii_uppercase()),
+        ("RAdr1", h.indirizzo.lines().next().unwrap_or_default().to_string()),
+        ("RAdr2", h.indirizzo.lines().nth(1).unwrap_or_default().to_string()),
+        ("RHBBS", h.email.clone()),
         ("MOpe1", h.operatori.clone()),
         ("SPowe", h.potenza.clone()),
         ("CQSOs", format!("{};1", validi.len())),

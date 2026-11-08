@@ -19,6 +19,7 @@ import {
   type Impostazioni,
   type LogQso,
   type Regole,
+  type Categoria,
   type Valore,
   type ContestRef,
 } from '../api/contest';
@@ -142,7 +143,129 @@ export function ContestPage() {
       {modale === 'calendario' ? <ModaleCalendario t={t} chiudi={() => setModale('')} prepara={(id) => { setModale(''); void attiva(id); }} /> : null}
       {modale === 'export' && attivo ? <ModaleExport t={t} s={s} chiudi={() => setModale('')} /> : null}
       {modale === 'impostazioni' && attivo ? <ModaleImpostazioni id={attivo} t={t} chiudi={() => { setModale(''); refresh(); }} /> : null}
+      {/* la pagina e' pubblicata come beta: nastro di traverso nell'angolo, non blocca i clic */}
+      <div className="ctc-beta" aria-hidden="true">
+        <span>BETA</span>
+      </div>
     </section>
+  );
+}
+
+/** La sigla e la spiegazione di una categoria nella lingua scelta (l'italiano dal campo `nome`, le altre dall'inglese). */
+const sigla = (c: Categoria) => c.sigla || c.id;
+const spiegazione = (c: Categoria, lang: string) => (lang === 'it' ? c.nome : c.en || c.nome);
+
+/**
+ * La tessera «Categoria» della barra: solo la sigla («SO-LP», «2A»). Il clic apre un pannello nello stile del menu dei contest con la
+ * scelta della categoria del regolamento, gli operatori (riga OPERATORS del Cabrillo), e potenza, Assisted e classe del Field Day solo
+ * se il regolamento li prevede. Le scelte si salvano con le impostazioni del contest.
+ */
+function TesseraCategoria({ s, t }: { s: ContestStato; t: T }) {
+  const lang = useLang((x) => x.lang);
+  const qc = useQueryClient();
+  const [aperto, setAperto] = useState(false);
+  const [imp, setImp] = useState<Impostazioni | null>(null);
+  const radice = useRef<HTMLDivElement>(null);
+  const r = s.regole;
+  const id = s.attivo ?? '';
+  useEffect(() => {
+    if (!aperto) return;
+    // si parte dalle impostazioni salvate (con l'anagrafica comune gia' riempita dal servizio)
+    getRegole(id)
+      .then((d) => setImp(d.impostazioni))
+      .catch(() => setImp(s.impostazioni ?? null));
+    const fuori = (e: PointerEvent) => {
+      if (!radice.current?.contains(e.target as Node)) setAperto(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAperto(false);
+    };
+    document.addEventListener('pointerdown', fuori);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', fuori);
+      document.removeEventListener('keydown', esc);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aperto, id]);
+  if (!r) return <Chip label={t('contest.category')} value={s.categoria || '—'} />;
+  const opz = r.opzioni_categoria ?? { potenze: [], assistenza: false, classe_fd: false };
+  const cat = imp ? r.categorie.find((c) => c.id === imp.categoria) : undefined;
+  const multi = cat?.operatore === 'MULTI-OP';
+  const call = s.stazione?.call ?? '';
+  const set = <K extends keyof Impostazioni>(k: K, v: Impostazioni[K]) => imp && setImp({ ...imp, [k]: v });
+  const salva = () => {
+    if (!imp) return;
+    // chi opera da solo: l'operatore e' il nominativo della stazione se il campo e' rimasto vuoto
+    const pronto = { ...imp, operatori: imp.operatori.trim() || (multi ? '' : imp.call_contest || call) };
+    salvaImpostazioni(id, pronto)
+      .then(() => {
+        toast(t('contest.set.saved'), 'info');
+        setAperto(false);
+        void qc.invalidateQueries({ queryKey: ['contest'] });
+        void qc.invalidateQueries({ queryKey: ['contest-regole', id] });
+      })
+      .catch((e: unknown) => toast(String(e), 'error'));
+  };
+  return (
+    <div className="ctc-pick ctc-cat" ref={radice}>
+      <button type="button" className="ctc-chip ctc-cat-btn" aria-haspopup="dialog" aria-expanded={aperto} title={`${s.categoria_nome || ''}\n${t('tip.contest.cat.open')}`.trim()} onClick={() => setAperto(!aperto)}>
+        <small>{t('contest.category')}</small>
+        <b>{s.categoria || '—'}</b>
+      </button>
+      {aperto && imp ? (
+        <div className="ctc-pick-pop ctc-cat-pop" role="dialog" aria-label={t('contest.category')}>
+          <div className="ctc-pick-group">{t('contest.category')}</div>
+          <div role="radiogroup" aria-label={t('contest.category')}>
+            {r.categorie.map((c) => (
+              <label key={c.id} className={`ctc-pick-item ctc-cat-item${c.id === imp.categoria ? ' is-on' : ''}`} title={`${c.operatore} · ${c.potenza} · ${c.trasmettitori}`}>
+                <input type="radio" name="ctc-cat" checked={c.id === imp.categoria} onChange={() => set('categoria', c.id)} />
+                <b className="ctc-cat-sigla">{sigla(c)}</b>
+                <span className="ctc-cat-desc">{spiegazione(c, lang)}</span>
+              </label>
+            ))}
+          </div>
+          {opz.classe_fd ? (
+            <label className="ctc-cat-row" title={t('tip.contest.cat.tx')}>
+              <span>{t('contest.cat.tx')}</span>
+              <input className="ctc-input" type="number" min={1} max={99} value={imp.trasmettitori_n || 1} onChange={(e) => set('trasmettitori_n', Math.max(1, Math.min(99, Number(e.target.value) || 1)))} />
+              <b className="ctc-cat-sigla">{`${imp.trasmettitori_n || 1}${cat ? sigla(cat) : ''}`}</b>
+            </label>
+          ) : null}
+          <label className="ctc-cat-row ctc-cat-col" title={t('tip.contest.cat.operators')}>
+            <span>{multi ? t('contest.cat.operatorsMulti') : t('contest.set.operators')}</span>
+            <input className="ctc-input" value={imp.operatori} placeholder={multi ? 'IU3ABC IU3XYZ' : imp.call_contest || call} onChange={(e) => set('operatori', e.target.value.toUpperCase())} />
+            {multi && !imp.operatori.trim() ? <small className="ctc-warn">{t('contest.cat.operatorsMissing')}</small> : null}
+          </label>
+          {opz.potenze.length ? (
+            <label className="ctc-cat-row" title={t('tip.contest.cat.power')}>
+              <span>{t('contest.cat.power')}</span>
+              <select className="ctc-input" value={imp.potenza || cat?.potenza || ''} onChange={(e) => set('potenza', e.target.value)}>
+                {opz.potenze.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {opz.assistenza ? (
+            <label className="ctc-cat-row" title={t('tip.contest.cat.assisted')}>
+              <span>{t('contest.set.assisted')}</span>
+              <select className="ctc-input" value={imp.assistenza || cat?.assistenza || 'NON-ASSISTED'} onChange={(e) => set('assistenza', e.target.value)}>
+                <option value="NON-ASSISTED">{t('contest.cat.no')}</option>
+                <option value="ASSISTED">{t('contest.cat.yes')}</option>
+              </select>
+            </label>
+          ) : null}
+          <div className="ctc-actions">
+            <button type="button" className="ctc-btn ctc-btn--on" onClick={salva}>
+              {t('contest.set.save')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -319,7 +442,7 @@ function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
       <Chip label={t('contest.rate60')} value={`${s.rate60 ?? 0}/h`} tip={t('tip.contest.rate')} />
       <Chip label={t('contest.forecast')} value={<span className="ctc-warn">{numero(s.previsto)}</span>} tip={t('tip.contest.forecast')} tone="warn" />
       <Chip label={t('contest.sent')} value={<span className="data">{s.scambio_inviato || '—'}</span>} />
-      <Chip label={t('contest.category')} value={s.categoria || '—'} />
+      <TesseraCategoria s={s} t={t} />
       {s.ore_massime ? <Chip label={t('contest.hours')} value={`${(s.ore_usate ?? 0).toFixed(1)} / ${s.ore_massime}`} /> : null}
       {s.banda_ok === false ? <span className="ctc-chip ctc-bad">{t('contest.badBand', { b: s.banda ?? '' })}</span> : null}
       {s.modo_ok === false ? <span className="ctc-chip ctc-bad">{t('contest.badMode', { m: s.modo ?? '' })}</span> : null}
@@ -916,7 +1039,7 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
           <select className="ctc-input" value={imp.categoria} onChange={(e) => set('categoria', e.target.value)}>
             {r.categorie.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nome}
+                {sigla(c)} — {c.nome}
               </option>
             ))}
           </select>
@@ -945,10 +1068,12 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
         <label className="ctc-check">
           <input type="checkbox" checked={imp.rrr} onChange={(e) => set('rrr', e.target.checked)} /> {t('contest.set.rrr')}
         </label>
+        {testo('call_contest', t('contest.set.callContest'), t('tip.contest.set.callContest'))}
         {testo('grid6', t('contest.set.grid6'))}
         {testo('operatori', t('contest.set.operators'))}
         {testo('club', t('contest.set.club'))}
-        {testo('nome', t('contest.set.name'))}
+        {testo('nome', t('contest.set.name'), t('tip.contest.set.shared'))}
+        {testo('email', t('contest.set.email'), t('tip.contest.set.shared'))}
         {testo('location', t('contest.set.location'))}
         {testo('assistenza', t('contest.set.assisted'))}
         {testo('cabrillo_contest', t('contest.set.cabrillo'))}
@@ -959,6 +1084,10 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
         <label title={t('tip.contest.set.dates')}>
           {t('contest.set.end')}
           <input className="ctc-input" type="datetime-local" value={dataOra(imp.fine_ms)} onChange={(e) => set('fine_ms', daDataOra(e.target.value))} />
+        </label>
+        <label className="ctc-wide" title={t('tip.contest.set.shared')}>
+          {t('contest.set.address')}
+          <textarea className="ctc-input" rows={2} value={imp.indirizzo ?? ''} onChange={(e) => set('indirizzo', e.target.value)} />
         </label>
         <label className="ctc-wide">
           {t('contest.set.soapbox')}

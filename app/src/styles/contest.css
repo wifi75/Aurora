@@ -185,3 +185,23 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
 .ctc-dot--on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 .ctc-dot--soon { background: #f59e0b; }
+
+/* Tessera «Categoria»: solo la sigla nella barra, pannello a comparsa come il menu dei contest */
+.ctc-score .ctc-cat-btn { cursor: pointer; }
+.ctc-cat-pop { min-width: 340px; max-width: min(92vw, 440px); padding: 6px 6px 8px; }
+.ctc-cat-item { align-items: baseline; }
+.ctc-cat-item input { margin: 0; accent-color: var(--ct-cyan); }
+.ctc-cat-sigla { min-width: 56px; font-variant-numeric: tabular-nums; }
+.ctc-cat-desc { font-size: 12px; color: color-mix(in srgb, currentColor 72%, transparent); }
+.ctc-cat-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px 0; font-size: 12px; }
+.ctc-cat-row > span { min-width: 120px; }
+.ctc-cat-row .ctc-input { flex: 1; min-width: 0; }
+.ctc-cat-row input[type='number'] { max-width: 70px; flex: 0 0 auto; }
+.ctc-cat-col { flex-wrap: wrap; }
+.ctc-cat-col > span { flex-basis: 100%; }
+.ctc-cat-pop .ctc-actions { padding: 8px 10px 0; }
+
+/* Pagina in prova: nastro BETA di traverso nell'angolo in basso a destra, non copre i clic */
+.ctc { position: relative; }
+.ctc-beta { position: fixed; right: 0; bottom: 0; width: 120px; height: 120px; overflow: hidden; pointer-events: none; z-index: 30; }
+.ctc-beta span { position: absolute; right: -38px; bottom: 22px; width: 170px; transform: rotate(-45deg); text-align: center; padding: 3px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #fff; background: rgb(245 140 30 / 0.72); box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }

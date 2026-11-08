@@ -74,41 +74,77 @@ molt = 2
 fino_a_w = 100000
 molt = 1
 
-[[categorie]]
-id = "1D"
-nome = "1D (stazione di casa, rete elettrica)"
-operatore = "SINGLE-OP"
-potenza = "LOW"
-trasmettitori = "ONE"
-bande = "ALL"
-assistenza = "NON-ASSISTED"
+# Classi del Field Day: la classe inviata e' numero di trasmettitori + lettera (1D, 2A).
+# da verificare sul regolamento dell'anno (operatori e potenza per classe)
+[opzioni_categoria]
+potenze = ["HIGH", "LOW", "QRP"]
+classe_fd = true
 
 [[categorie]]
-id = "1E"
-nome = "1E (casa, alimentazione d'emergenza)"
-operatore = "SINGLE-OP"
-potenza = "LOW"
-trasmettitori = "ONE"
-bande = "ALL"
-assistenza = "NON-ASSISTED"
-
-[[categorie]]
-id = "1B"
-nome = "1B (portatile, 1-2 operatori)"
-operatore = "SINGLE-OP"
-potenza = "QRP"
-trasmettitori = "ONE"
-bande = "ALL"
-assistenza = "NON-ASSISTED"
-
-[[categorie]]
-id = "2A"
-nome = "2A (gruppo, 2 trasmettitori)"
+id = "A"
+nome = "Gruppo all'aperto, con alimentazione propria (3 o piu' operatori)"
+en = "Club or group portable, 3 or more operators"
 operatore = "MULTI-OP"
 potenza = "LOW"
-trasmettitori = "TWO"
+trasmettitori = "ONE"
 bande = "ALL"
 assistenza = "NON-ASSISTED"
+stazione = "PORTABLE"
+
+[[categorie]]
+id = "B"
+nome = "Portatile all'aperto, 1 o 2 operatori"
+en = "Portable, 1 or 2 operators"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+stazione = "PORTABLE"
+
+[[categorie]]
+id = "C"
+nome = "Stazione mobile (auto, barca)"
+en = "Mobile station (vehicle, boat)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+stazione = "MOBILE"
+
+[[categorie]]
+id = "D"
+nome = "Stazione di casa, rete elettrica"
+en = "Home station, commercial power"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+stazione = "FIXED"
+
+[[categorie]]
+id = "E"
+nome = "Stazione di casa, alimentazione d'emergenza"
+en = "Home station, emergency power"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+stazione = "FIXED"
+
+[[categorie]]
+id = "F"
+nome = "Centro operativo d'emergenza (EOC)"
+en = "Emergency Operations Center"
+operatore = "MULTI-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+stazione = "FIXED"
 
 [restrizioni]
 avvio_umano = false

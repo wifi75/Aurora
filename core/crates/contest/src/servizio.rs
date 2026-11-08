@@ -52,6 +52,16 @@ pub struct Impostazioni {
     pub assistenza: String,
     /// Nome del contest nel Cabrillo (vuoto = quello delle regole; serve al «Personalizzato»).
     pub cabrillo_contest: String,
+    /// Potenza dichiarata (`HIGH`, `LOW`, `QRP`; vuota = quella della categoria), se il regolamento la lascia scegliere.
+    pub potenza: String,
+    /// Field Day: numero di trasmettitori della classe (0 = 1).
+    pub trasmettitori_n: u32,
+    /// Nominativo usato in gara se diverso da quello della stazione (`CALLSIGN` del Cabrillo).
+    pub call_contest: String,
+    /// `ADDRESS` del Cabrillo (piu' righe).
+    pub indirizzo: String,
+    /// `EMAIL` del Cabrillo.
+    pub email: String,
     /// Inizio e fine scelti a mano (contest «sempre» o date diverse), ms UTC.
     pub inizio_ms: Option<i64>,
     pub fine_ms: Option<i64>,
@@ -71,8 +81,46 @@ pub struct Ripristino {
 #[serde(default)]
 struct StatoFile {
     attivo: Option<String>,
+    /// Nome, indirizzo, email e club dell'intestazione: scritti una volta, riusati in tutti i contest.
+    anagrafica: Anagrafica,
     impostazioni: BTreeMap<String, Impostazioni>,
     ripristino: Option<Ripristino>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
+struct Anagrafica {
+    nome: String,
+    indirizzo: String,
+    email: String,
+    club: String,
+}
+
+/// Le impostazioni di un contest: quelle salvate (o le proposte), con l'anagrafica comune dove mancano e la classe del Field Day
+/// scritta alla vecchia maniera (`1D`) portata a lettera + numero di trasmettitori.
+fn imp_di(stato: &StatoFile, r: &Regole) -> Impostazioni {
+    let mut imp = stato.impostazioni.get(r.id()).cloned().unwrap_or_else(|| predefinite(r));
+    let a = &stato.anagrafica;
+    for (campo, comune) in [(&mut imp.nome, &a.nome), (&mut imp.indirizzo, &a.indirizzo), (&mut imp.email, &a.email), (&mut imp.club, &a.club)] {
+        if campo.trim().is_empty() {
+            campo.clone_from(comune);
+        }
+    }
+    if r.opzioni_categoria.classe_fd && r.categoria(&imp.categoria).is_none() {
+        let n: String = imp.categoria.chars().take_while(char::is_ascii_digit).collect();
+        let lettera: String = imp.categoria.chars().skip(n.len()).collect();
+        if r.categoria(&lettera).is_some() {
+            imp.trasmettitori_n = n.parse().unwrap_or(1);
+            imp.categoria = lettera;
+        }
+    }
+    imp
+}
+
+/// La classe del Field Day (`1D`, `2A`): numero di trasmettitori + lettera della categoria.
+fn classe_fd(r: &Regole, imp: &Impostazioni) -> String {
+    let lettera = r.categoria(&imp.categoria).map_or("D", |c| c.sigla());
+    format!("{}{lettera}", imp.trasmettitori_n.max(1))
 }
 
 /// La stazione: nominativo e locatore correnti.
@@ -207,7 +255,7 @@ impl ContestService {
     pub fn impostazioni(&self, id: &str) -> Option<Impostazioni> {
         let d = self.lock();
         let r = d.regole.iter().find(|r| r.id() == id)?;
-        Some(d.stato.impostazioni.get(id).cloned().unwrap_or_else(|| predefinite(r)))
+        Some(imp_di(&d.stato, r))
     }
 
     /// Salva le impostazioni di un contest. Se e' quello attivo, la sequenza del motore cambia subito (`Some` da mandare).
@@ -219,6 +267,8 @@ impl ContestService {
         if !imp.attivita.is_empty() && qso_attivita_sconosciuta(&imp.attivita) {
             return Err(format!("attivita' sconosciuta: {}", imp.attivita));
         }
+        // nome, indirizzo, email e club valgono per tutti i contest
+        d.stato.anagrafica = Anagrafica { nome: imp.nome.clone(), indirizzo: imp.indirizzo.clone(), email: imp.email.clone(), club: imp.club.clone() };
         d.stato.impostazioni.insert(id.to_string(), imp);
         self.salva_stato(&d);
         if d.stato.attivo.as_deref() == Some(id) {
@@ -272,13 +322,13 @@ impl ContestService {
     fn setup_di(&self, d: &Dentro) -> Option<ContestSetup> {
         let id = d.stato.attivo.as_ref()?;
         let r = d.regole.iter().find(|r| r.id() == *id)?;
-        let imp = d.stato.impostazioni.get(id).cloned().unwrap_or_else(|| predefinite(r));
+        let imp = imp_di(&d.stato, r);
         let usati = d.log.iter().map(|q| seriale_di(&q.exch_sent)).max().unwrap_or(0);
         let attivita = if imp.attivita.is_empty() { r.messaggi.attivita.clone() } else { imp.attivita.clone() };
         Some(ContestSetup {
             activity: attivita,
             cq_word: if imp.parola_cq.is_empty() { r.messaggi.parola_cq.clone() } else { imp.parola_cq.clone() },
-            exchange: if imp.scambio.is_empty() { r.scambio.predefinito.clone() } else { imp.scambio.clone() },
+            exchange: scambio_fisso(r, &imp),
             next_serial: (usati + 1).max(imp.seriale_partenza.max(1)),
             grid6: imp.grid6.clone(),
             rrr: imp.rrr || r.messaggi.chiusura == "RRR",
@@ -357,7 +407,7 @@ impl ContestService {
     }
 
     fn contesto(&self, d: &Dentro, r: &Regole, grid: &str) -> Contesto {
-        let imp = d.stato.impostazioni.get(r.id()).cloned().unwrap_or_else(|| predefinite(r));
+        let imp = imp_di(&d.stato, r);
         let g = if imp.grid6.len() == 6 && r.punti.tipo == "km" { imp.grid6.clone() } else { grid.to_string() };
         Contesto { mio_grid: g, potenza_w: imp.potenza_w, bonus: imp.bonus }
     }
@@ -421,10 +471,12 @@ impl ContestService {
         let ore_usate = punteggio::ore_attive(&valutati, r.calendario.pausa_minima_min.unwrap_or(60));
         let restanti_attive = r.calendario.ore_massime.map_or(restanti_h, |m| (m - ore_usate).max(0.0).min(restanti_h));
         let previsto = punteggio::previsto(&r, &ctx, &tot, rt.rate60, restanti_attive);
-        let imp = d.stato.impostazioni.get(&id).cloned().unwrap_or_else(|| predefinite(&r));
+        let imp = imp_di(&d.stato, &r);
         let setup = self.setup_di(&d);
         let inviato = setup.as_ref().map(|s| scambio_inviato(&r, s, &grid)).unwrap_or_default();
-        let categoria = r.categoria(&imp.categoria).map(|c| c.nome.clone()).unwrap_or_default();
+        let cat = r.categoria(&imp.categoria);
+        let categoria = if r.opzioni_categoria.classe_fd { classe_fd(&r, &imp) } else { cat.map(|c| c.sigla().to_string()).unwrap_or_default() };
+        let categoria_nome = cat.map(|c| c.nome.clone()).unwrap_or_default();
         let non_contest: Vec<String> = d.non_contest.iter().filter(|(_, t)| ora - *t < 30 * 60_000).map(|(c, _)| c.clone()).collect();
         serde_json::json!({
             "attivo": id,
@@ -436,6 +488,7 @@ impl ContestService {
             "stazione": { "call": call, "grid": grid },
             "scambio_inviato": inviato,
             "categoria": categoria,
+            "categoria_nome": categoria_nome,
             "finestra": fin,
             "fase": fase,
             "ore_restanti": restanti_h,
@@ -507,15 +560,40 @@ impl ContestService {
     fn intestazione(&self, r: &Regole, imp: &Impostazioni, call: &str, grid: &str) -> Intestazione {
         let cat = r.categoria(&imp.categoria).cloned().or_else(|| r.categorie.first().cloned());
         let grid = if imp.grid6.len() == 6 { imp.grid6.clone() } else { grid.to_string() };
+        let call = if imp.call_contest.trim().is_empty() { call.to_string() } else { imp.call_contest.trim().to_ascii_uppercase() };
+        let operatore = cat.as_ref().map(|c| c.operatore.clone()).unwrap_or_else(|| "SINGLE-OP".into());
+        // chi gareggia da solo: l'operatore e' la stazione stessa
+        let operatori = if imp.operatori.trim().is_empty() && operatore != "MULTI-OP" { call.clone() } else { normalizza_operatori(&imp.operatori) };
+        let trasmettitori = if r.opzioni_categoria.classe_fd {
+            match imp.trasmettitori_n.max(1) {
+                1 => "ONE".to_string(),
+                2 => "TWO".to_string(),
+                _ => "UNLIMITED".to_string(),
+            }
+        } else {
+            cat.as_ref().map(|c| c.trasmettitori.clone()).unwrap_or_else(|| "ONE".into())
+        };
+        let stazione = match cat.as_ref() {
+            Some(c) if !c.stazione.is_empty() => c.stazione.clone(),
+            Some(c) if c.operatore == "ROVER" => "ROVER".into(),
+            _ => "FIXED".into(),
+        };
         Intestazione {
-            call: call.to_string(),
+            call,
+            stazione,
+            indirizzo: imp.indirizzo.clone(),
+            email: imp.email.clone(),
             grid,
-            operatore: cat.as_ref().map(|c| c.operatore.clone()).unwrap_or_else(|| "SINGLE-OP".into()),
-            potenza: cat.as_ref().map(|c| c.potenza.clone()).unwrap_or_else(|| "LOW".into()),
-            trasmettitori: cat.as_ref().map(|c| c.trasmettitori.clone()).unwrap_or_else(|| "ONE".into()),
+            operatore: if operatore == "ROVER" { "SINGLE-OP".into() } else { operatore },
+            potenza: if !imp.potenza.is_empty() && r.opzioni_categoria.potenze.contains(&imp.potenza) {
+                imp.potenza.clone()
+            } else {
+                cat.as_ref().map(|c| c.potenza.clone()).unwrap_or_else(|| "LOW".into())
+            },
+            trasmettitori,
             bande: cat.as_ref().map(|c| c.bande.clone()).unwrap_or_else(|| "ALL".into()),
             assistenza: if imp.assistenza.is_empty() { cat.as_ref().map(|c| c.assistenza.clone()).unwrap_or_default() } else { imp.assistenza.clone() },
-            operatori: imp.operatori.clone(),
+            operatori,
             club: imp.club.clone(),
             nome: imp.nome.clone(),
             location: imp.location.clone(),
@@ -533,13 +611,13 @@ impl ContestService {
         self.carica_log(&mut d);
         let id = d.stato.attivo.clone()?;
         let r = d.regole.iter().find(|r| r.id() == id)?.clone();
-        let imp = d.stato.impostazioni.get(&id).cloned().unwrap_or_else(|| predefinite(&r));
+        let imp = imp_di(&d.stato, &r);
         let ctx = self.contesto(&d, &r, &grid);
         let (valutati, tot) = punteggio::valuta_log(&r, &ctx, &d.log);
         let h = self.intestazione(&r, &imp, &call, &grid);
         let problemi = export::controlla(&r, &h, &valutati);
         let formato = formato.unwrap_or(&r.export.formato);
-        let base = format!("{}-{}", call.replace('/', "_"), r.id());
+        let base = format!("{}-{}", h.call.replace('/', "_"), r.id());
         Some(match formato {
             "edi" => {
                 let banda = banda.map(str::to_string).or_else(|| valutati.first().map(|v| v.qso.band.clone())).unwrap_or_else(|| r.bande.ammesse[0].clone());
@@ -598,7 +676,9 @@ impl ContestService {
 
 /// Le impostazioni proposte dalle regole.
 pub fn predefinite(r: &Regole) -> Impostazioni {
-    let cat = r.categorie.iter().find(|c| c.potenza == "LOW").or_else(|| r.categorie.first());
+    // Field Day: dall'Italia si parte da una stazione di casa (classe D)
+    let fd = r.opzioni_categoria.classe_fd.then(|| r.categoria("D")).flatten();
+    let cat = fd.or_else(|| r.categorie.iter().find(|c| c.potenza == "LOW")).or_else(|| r.categorie.first());
     Impostazioni {
         scambio: r.scambio.predefinito.clone(),
         seriale_partenza: 1,
@@ -607,9 +687,32 @@ pub fn predefinite(r: &Regole) -> Impostazioni {
         modo: r.modi.ammessi.first().cloned().unwrap_or_else(|| "FT8".into()),
         hold_tx: true,
         rrr: r.messaggi.chiusura == "RRR",
+        trasmettitori_n: 1,
         location: if r.contest.sponsor == "ARRL" || r.contest.id == "ww-digi" { "DX".into() } else { String::new() },
         ..Default::default()
     }
+}
+
+/// Gli operatori scritti con spazi o virgole diventano l'elenco del Cabrillo (`IU3ABC IU3XYZ`).
+fn normalizza_operatori(s: &str) -> String {
+    s.split(|c: char| c == ',' || c == ';' || c.is_whitespace()).filter(|x| !x.is_empty()).map(str::to_ascii_uppercase).collect::<Vec<_>>().join(" ")
+}
+
+/// Lo scambio fisso che si manda: per il Field Day la classe scelta nella categoria seguita dalla sezione (`2A EMA`, `1D DX`).
+fn scambio_fisso(r: &Regole, imp: &Impostazioni) -> String {
+    let base = if imp.scambio.is_empty() { r.scambio.predefinito.clone() } else { imp.scambio.clone() };
+    if !r.opzioni_categoria.classe_fd {
+        return base;
+    }
+    let resto: Vec<&str> = base.split_whitespace().skip(1).collect();
+    let sezione = if !resto.is_empty() {
+        resto.join(" ")
+    } else if !imp.location.trim().is_empty() {
+        imp.location.trim().to_ascii_uppercase()
+    } else {
+        "DX".into()
+    };
+    format!("{} {sezione}", classe_fd(r, imp))
 }
 
 fn qso_attivita_sconosciuta(a: &str) -> bool {
@@ -684,5 +787,42 @@ mod tests {
         assert_eq!(seriale_di("570123 IO91WM"), 123);
         assert_eq!(seriale_di("559 0013"), 13);
         assert_eq!(seriale_di("IO91"), 0);
+    }
+
+    /// Field Day: la classe nasce da trasmettitori + lettera e va nello scambio; la vecchia «1D» salvata si legge ancora.
+    #[test]
+    fn classe_del_field_day() {
+        let (regole, _) = regole::carica(None);
+        let r = regole.into_iter().find(|r| r.id() == "arrl-fd").expect("fd");
+        let mut imp = predefinite(&r);
+        imp.categoria = "A".into();
+        imp.trasmettitori_n = 2;
+        imp.scambio = "1D EMA".into();
+        assert_eq!(scambio_fisso(&r, &imp), "2A EMA");
+        let mut st = StatoFile::default();
+        let mut vecchia = predefinite(&r);
+        vecchia.categoria = "3E".into();
+        st.impostazioni.insert("arrl-fd".into(), vecchia);
+        let i = imp_di(&st, &r);
+        assert_eq!((i.categoria.as_str(), i.trasmettitori_n), ("E", 3));
+    }
+
+    /// Gli operatori separati da virgole o spazi diventano un elenco pulito.
+    #[test]
+    fn elenco_operatori() {
+        assert_eq!(normalizza_operatori("iu3abc, iu3xyz;k1abc"), "IU3ABC IU3XYZ K1ABC");
+    }
+
+    /// Nome, indirizzo, email e club salvati in un contest tornano negli altri.
+    #[test]
+    fn anagrafica_riusata() {
+        let s = servizio("anagrafica");
+        let mut imp = s.impostazioni("ww-digi").expect("imp");
+        imp.nome = "Mario Rossi".into();
+        imp.email = "mario@example.org".into();
+        s.salva_impostazioni("ww-digi", imp).expect("salva");
+        let altro = s.impostazioni("arrl-digi").expect("altro");
+        assert_eq!(altro.nome, "Mario Rossi");
+        assert_eq!(altro.email, "mario@example.org");
     }
 }

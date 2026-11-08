@@ -97,7 +97,9 @@ assistenza = "NON-ASSISTED"
 
 [[categorie]]
 id = "ROVER"
-nome = "Rover"
+sigla = "Rover"
+nome = "Rover (si sposta tra piu' quadrati)"
+en = "Rover (moves between grid squares)"
 operatore = "ROVER"
 potenza = "LOW"
 trasmettitori = "ONE"
@@ -106,6 +108,7 @@ assistenza = "NON-ASSISTED"
 
 [[categorie]]
 id = "MULTI"
+sigla = "MO"
 nome = "Multi Op"
 operatore = "MULTI-OP"
 potenza = "HIGH"

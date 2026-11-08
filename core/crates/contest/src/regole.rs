@@ -46,6 +46,9 @@ pub struct Regole {
     pub punteggio: Punteggio,
     #[serde(default)]
     pub categorie: Vec<Categoria>,
+    /// Le scelte che il regolamento lascia a chi gareggia oltre alla categoria (potenza, Assisted, classe del Field Day).
+    #[serde(default)]
+    pub opzioni_categoria: OpzioniCategoria,
     #[serde(default)]
     pub restrizioni: Restrizioni,
     pub export: Export,
@@ -234,6 +237,37 @@ pub struct Categoria {
     pub bande: String,
     #[serde(default)]
     pub assistenza: String,
+    /// Sigla corta mostrata nella barra (vuota = l'`id`).
+    #[serde(default)]
+    pub sigla: String,
+    /// La spiegazione breve in inglese (le lingue diverse dall'italiano la mostrano; vuota = `nome`).
+    #[serde(default)]
+    pub en: String,
+    /// `CATEGORY-STATION` del Cabrillo: `FIXED`, `PORTABLE`, `MOBILE`, `ROVER`... (vuoto = `FIXED`, `ROVER` per i rover).
+    #[serde(default)]
+    pub stazione: String,
+}
+
+impl Categoria {
+    /// La sigla corta (`SO-LP`, `MO`, `Rover`).
+    pub fn sigla(&self) -> &str {
+        if self.sigla.is_empty() { &self.id } else { &self.sigla }
+    }
+}
+
+/// Le scelte lasciate dal regolamento oltre alla categoria.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct OpzioniCategoria {
+    /// Potenze tra cui scegliere (`HIGH`, `LOW`, `QRP`); vuoto = quella fissata dalla categoria.
+    #[serde(default)]
+    pub potenze: Vec<String>,
+    /// Assisted si'/no a scelta.
+    #[serde(default)]
+    pub assistenza: bool,
+    /// Field Day: la classe e' numero di trasmettitori + lettera della categoria (`1D`, `2A`).
+    #[serde(default)]
+    pub classe_fd: bool,
 }
 
 fn all() -> String {
@@ -331,6 +365,12 @@ impl Regole {
         if self.bande.ammesse.is_empty() || self.modi.ammessi.is_empty() {
             return Err(ctx("servono almeno una banda e un modo".into()));
         }
+        for p in &self.opzioni_categoria.potenze {
+            uno_di("opzioni_categoria.potenze", p, &["HIGH", "LOW", "QRP"]).map_err(ctx)?;
+        }
+        for c in &self.categorie {
+            uno_di("categorie.operatore", &c.operatore, &["SINGLE-OP", "MULTI-OP", "CHECKLOG", "ROVER"]).map_err(ctx)?;
+        }
         crate::calendario::controlla(&self.calendario).map_err(ctx)?;
         Ok(())
     }
@@ -422,5 +462,17 @@ mod tests {
         let testo = BUILTIN[0].1.replace("tipo = \"campo2\"", "tipo = \"dxcc-mondo\"");
         let e = Regole::from_toml(&testo).expect_err("errore");
         assert!(e.contains("moltiplicatori.tipo"), "{e}");
+    }
+
+    /// Il Field Day ha le classi A-F con la scelta del numero di trasmettitori; la sigla di base e' l'id.
+    #[test]
+    fn categorie_strutturate() {
+        let (regole, _) = carica(None);
+        let fd = regole.iter().find(|r| r.id() == "arrl-fd").expect("fd");
+        assert!(fd.opzioni_categoria.classe_fd);
+        let lettere: Vec<&str> = fd.categorie.iter().map(Categoria::sigla).collect();
+        assert_eq!(lettere, ["A", "B", "C", "D", "E", "F"]);
+        let ww = regole.iter().find(|r| r.id() == "ww-digi").expect("ww");
+        assert_eq!(ww.categorie[0].sigla(), "SO-HIGH");
     }
 }

@@ -53,6 +53,18 @@ export interface Categoria {
   trasmettitori: string;
   bande: string;
   assistenza: string;
+  /** Sigla corta per la barra (vuota = id). */
+  sigla?: string;
+  /** Spiegazione breve in inglese (vuota = nome). */
+  en?: string;
+  stazione?: string;
+}
+
+/** Le scelte lasciate dal regolamento oltre alla categoria. */
+export interface OpzioniCategoria {
+  potenze: string[];
+  assistenza: boolean;
+  classe_fd: boolean;
 }
 
 export interface Regole {
@@ -68,6 +80,7 @@ export interface Regole {
   moltiplicatori: { tipo: string; ambito: string }[];
   punteggio: { formula: string };
   categorie: Categoria[];
+  opzioni_categoria?: OpzioniCategoria;
   restrizioni: { avvio_umano: boolean; fox_hound: string; multi_flusso: string; autospot: string };
   export: { formato: string; cabrillo_contest: string; invio_url: string; scadenza: string };
 }
@@ -93,6 +106,11 @@ export interface Impostazioni {
   cabrillo_contest: string;
   inizio_ms: number | null;
   fine_ms: number | null;
+  potenza?: string;
+  trasmettitori_n?: number;
+  call_contest?: string;
+  indirizzo?: string;
+  email?: string;
 }
 
 export interface TotaleBanda {
@@ -124,6 +142,7 @@ export interface ContestStato {
   stazione?: { call: string; grid: string };
   scambio_inviato?: string;
   categoria?: string;
+  categoria_nome?: string;
   finestra?: { inizio_ms: number; fine_ms: number } | null;
   fase?: 'prima' | 'in-corso' | 'finito' | 'sempre';
   ore_restanti?: number;

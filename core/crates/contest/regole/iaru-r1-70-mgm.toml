@@ -85,6 +85,10 @@ trasmettitori = "ONE"
 bande = "4M"
 assistenza = "NON-ASSISTED"
 
+# scelte lasciate a chi gareggia: da verificare sul regolamento dell'anno
+[opzioni_categoria]
+potenze = ["HIGH", "LOW"]
+
 [restrizioni]
 avvio_umano = false
 fox_hound = "vietato"
