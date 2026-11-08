@@ -1314,3 +1314,5 @@ html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: 
 .cluster-table td.cluster-comment { max-width: calc(10em + 35px); min-width: calc(6em + 35px); }
 /* UTC 5 px piu' a sinistra: piu' margine a destra */
 .cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 13px !important; }
+/* UTC altri 5 px a sinistra (margine destro 18 px) */
+.cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 18px !important; }
