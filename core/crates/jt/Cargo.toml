@@ -8,4 +8,5 @@ license.workspace = true
 publish = false
 
 [dependencies]
+ft8 = { path = "../ft8" }
 rustfft = "6.4.1"
