@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allBands, readBands, saveBands, toggleBand, visibleBands } from './bandFilter';
+import { allBands, defaultBands, readBands, saveBands, toggleBand, visibleBands } from './bandFilter';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -9,9 +9,10 @@ const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { thr
 
 describe('bandFilter', () => {
   it('shows every band by default', () => {
-    expect(readBands(memory())).toEqual(allBands());
-    expect(readBands(null)).toEqual(allBands());
-    expect(allBands()).toHaveLength(12);
+    expect(readBands(memory())).toEqual(defaultBands());
+    expect(readBands(null)).toEqual(defaultBands());
+    expect(defaultBands()).toHaveLength(12);
+    expect(allBands()).toHaveLength(25);
   });
 
   it('remembers a chosen selection in band order', () => {
@@ -22,10 +23,10 @@ describe('bandFilter', () => {
 
   it('drops unknown names and never ends up empty', () => {
     expect(readBands(memory({ 'aurora-bands': '["20m","13m",7]' }))).toEqual(['20m']);
-    expect(readBands(memory({ 'aurora-bands': '[]' }))).toEqual(allBands());
-    expect(readBands(memory({ 'aurora-bands': '["13m"]' }))).toEqual(allBands());
-    expect(readBands(memory({ 'aurora-bands': 'non json' }))).toEqual(allBands());
-    expect(readBands(broken)).toEqual(allBands());
+    expect(readBands(memory({ 'aurora-bands': '[]' }))).toEqual(defaultBands());
+    expect(readBands(memory({ 'aurora-bands': '["13m"]' }))).toEqual(defaultBands());
+    expect(readBands(memory({ 'aurora-bands': 'non json' }))).toEqual(defaultBands());
+    expect(readBands(broken)).toEqual(defaultBands());
     expect(() => saveBands(broken, ['20m'])).not.toThrow();
   });
 

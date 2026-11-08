@@ -16,5 +16,5 @@ L'elenco dei compiti da chiudere a ogni versione e' in `TASK.md`; qui i comandi.
 ## Velocita' della compilazione
 
 - `D:\progetti` e `D:\build` sono esclusi da Windows Defender (impostazione permanente fatta dal proprietario). Senza esclusione la compilazione si bloccava in attesa del disco.
-- Durante la compilazione dell'installatore non devono girare altre compilazioni (agenti, prove): si mettono in pausa. Da sola, con `CARGO_BUILD_JOBS=18`, dura pochi minuti.
+- Durante la compilazione dell'installatore non devono girare altre compilazioni (agenti, prove): si mettono in pausa. Si compila con 9 processi (`jobs = 9` in `~/.cargo/config.toml`): con 18 la memoria finiva e Aurora aperta si chiudeva (`memory allocation ... failed`, 2026-11-08).
 - Prima di `git checkout` del commit nella cartella di compilazione `D:\build\Aurora-0.11.1` si annullano i file rigenerati (`git checkout -- .`, es. `Cargo.lock`) e si controlla che `HEAD` sia il commit giusto: un checkout fallito ricompila la versione vecchia.

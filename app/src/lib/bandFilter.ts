@@ -11,22 +11,29 @@ export function allBands(): string[] {
   return [...BAND_NAMES];
 }
 
+/** Le bande della barra se l'utente non ha scelto: da 160 a 2 m (onde lunghe, 8 m, 4 m, UHF e microonde si accendono nelle impostazioni). */
+const CLASSIC = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '2m'];
+
+export function defaultBands(): string[] {
+  return BAND_NAMES.filter((b) => CLASSIC.includes(b));
+}
+
 const inOrder = (bands: Iterable<string>) => {
   const wanted = new Set(bands);
   return BAND_NAMES.filter((b) => wanted.has(b));
 };
 
-/** Bande scelte per la barra: tutte per impostazione predefinita, mai nessuna. */
+/** Bande scelte per la barra: quelle da 160 a 2 m per impostazione predefinita, mai nessuna. */
 export function readBands(storage: ReadableStorage): string[] {
   try {
     const raw = storage?.getItem(KEY);
-    if (!raw) return allBands();
+    if (!raw) return defaultBands();
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return allBands();
+    if (!Array.isArray(parsed)) return defaultBands();
     const chosen = inOrder(parsed.filter((b): b is string => typeof b === 'string'));
-    return chosen.length > 0 ? chosen : allBands();
+    return chosen.length > 0 ? chosen : defaultBands();
   } catch {
-    return allBands();
+    return defaultBands();
   }
 }
 
@@ -64,7 +71,7 @@ export const useBandFilter = create<BandFilterState>((set, get) => ({
     set({ bands: next });
   },
   reset() {
-    saveBands(browserStorage(), allBands());
-    set({ bands: allBands() });
+    saveBands(browserStorage(), defaultBands());
+    set({ bands: defaultBands() });
   },
 }));
