@@ -467,6 +467,10 @@ function alignDisplay(row: HTMLDivElement | null): void {
   if (!page) return;
   const measure = () => {
     const top = row.getBoundingClientRect();
+    // larghezza del display (sta sopra la riga, a destra): modo, frequenza e interruttori si fermano prima di lui
+    const display = row.lastElementChild instanceof HTMLElement && getComputedStyle(row.lastElementChild).position === 'absolute' ? row.lastElementChild : null;
+    const width = `${display ? Math.round(display.getBoundingClientRect().width) : 0}px`;
+    if (row.style.getPropertyValue('--rd-w') !== width) row.style.setProperty('--rd-w', width);
     const panels = [...page.querySelectorAll<HTMLElement>('.grid-block, .dock-panel')].map((p) => p.getBoundingClientRect()).filter((r) => r.width > 0 && r.top > top.bottom - 1);
     if (panels.length === 0) {
       row.style.removeProperty('--rd-right');

@@ -23,7 +23,7 @@ export const controlStrings = {
     'Escucha activada o no: sin Monitor Aurora no decodifica.',
     'Escuta ligada ou desligada: sem Monitorar a Aurora não decodifica.',
   ],
-  'ctl.swl': ['Modo SWL', 'SWL mode', 'SWL-Modus', 'Mode SWL', 'Modo SWL', 'Modo SWL'],
+  'ctl.swl': ['SWL', 'SWL', 'SWL', 'SWL', 'SWL', 'SWL'],
   'tip.ctl.swl': [
     'Solo ascolto: Aurora decodifica su più cicli senza trasmettere.',
     'Listen only: Aurora decodes over several cycles without transmitting.',

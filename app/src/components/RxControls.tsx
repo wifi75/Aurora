@@ -7,7 +7,8 @@ import { useStation } from '../state/station';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
 // «Sinc» (syncButton di JTDX) non e' collegato al motore proprio: non si mostra finche' non fa davvero qualcosa
-const RX_TOGGLES: ControlId[] = ['hound', 'swl', 'jt_both', 'monitor', 'agc', 'filter', 'ap_list', 'mtd'];
+// Monitora per primo: e' l'interruttore che si guarda di piu' (barra a segmenti, scelta del proprietario 2026-11-08)
+const RX_TOGGLES: ControlId[] = ['monitor', 'hound', 'swl', 'jt_both', 'agc', 'filter', 'ap_list', 'mtd'];
 /** Interruttori del solo decodificatore FT8. */
 const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
@@ -38,14 +39,15 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
   return (
     <div className="rx-row" aria-label={t('ctl.sec.rx')}>
       <div className="cmd-chips">
-        {/* «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra; «a7/a8» e «Multithread» solo in FT8 */}
+        {/* gli interruttori in una sola barra a segmenti (acceso = verde); «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra; «a7/a8» e «Multithread» solo in FT8 */}
+        <div className="rx-seg" role="group" aria-label={t('ctl.sec.rx')}>
         {RX_TOGGLES.filter((id) => (id !== 'jt_both' || /^JT(65|9)?(\+|$)/.test(mode.toUpperCase())) && (!FT8_ONLY.includes(id) || mode.toUpperCase() === 'FT8')).map((id) => {
           const on = state[id] === true;
           const button = (
             <button
               key={id}
               type="button"
-              className={`glass chip${on ? ' glass--on' : ''}${id === 'filter' && on ? ' chip--warn' : ''}`}
+              className={`rx-seg-item${on ? ' rx-seg-item--on' : ''}${id === 'filter' && on ? ' rx-seg-item--warn' : ''}`}
               aria-pressed={on}
               disabled={!reachable}
               // col Filtro acceso la spiegazione «Decodifico solo ±60 Hz attorno a Rx» sta solo nel suggerimento, non scritta accanto
@@ -57,11 +59,15 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
           );
           return button;
         })}
-        {RX_BUTTONS.map((id) => (
-          <button key={id} type="button" className="glass chip" disabled={!reachable} title={t(`tip.ctl.${id}` as Key)} onClick={() => void run(id)}>
-            {t(`ctl.${id}` as Key)}
-          </button>
-        ))}
+        </div>
+        {/* Ferma, Decodifica, Cancella: una barra a parte, sempre insieme (se non c'e' spazio vanno a capo tutti e tre) */}
+        <div className="rx-seg rx-seg--btns" role="group">
+          {RX_BUTTONS.map((id) => (
+            <button key={id} type="button" className="rx-seg-item" disabled={!reachable} title={t(`tip.ctl.${id}` as Key)} onClick={() => void run(id)}>
+              {t(`ctl.${id}` as Key)}
+            </button>
+          ))}
+        </div>
       </div>
       {note ? <span className="live-note" role="status">{note}</span> : null}
       {trailing ? <div className="rx-trailing">{trailing}</div> : null}

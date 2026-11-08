@@ -1120,3 +1120,24 @@ html:not([data-theme='light']) .dock-grip h2, html:not([data-theme='light']) .do
 .bands-with-cmds .cmd-buttons { flex-wrap: nowrap !important; min-width: 0; }
 .bands-with-cmds .cmd-buttons button { flex: 0 1 auto !important; min-width: 0 !important; overflow: hidden; text-overflow: ellipsis; }
 .bands-with-cmds .cmd-buttons.cmd-buttons--dense button { padding: 0 3px !important; font-size: 10px !important; }
+
+/* Interruttori di ricezione in una sola barra a segmenti (acceso = verde), come il prototipo 3 scelto dal proprietario (2026-11-08) */
+.rx-seg { display: inline-flex; align-items: stretch; flex-wrap: nowrap; border: 1px solid rgba(142, 123, 255, .35); border-radius: 8px; overflow: hidden; background: rgba(10, 16, 32, .55); }
+.rx-seg-item { appearance: none; border: 0; border-left: 1px solid rgba(142, 123, 255, .28); background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 600; line-height: 1; padding: 0 11px; min-height: 28px; white-space: nowrap; cursor: pointer; transition: background-color .12s ease-out, color .12s ease-out; }
+.rx-seg-item:first-child { border-left: 0; }
+.rx-seg-item:hover:not(:disabled) { background: rgba(142, 123, 255, .14); }
+.rx-seg-item--on { background: rgba(44, 245, 164, .16); color: #7ff0c0; }
+.rx-seg-item--on:hover:not(:disabled) { background: rgba(44, 245, 164, .24); }
+.rx-seg-item--warn { background: rgba(255, 197, 138, .22); color: #ffc58a; }
+.rx-seg-item:disabled { opacity: .5; cursor: default; }
+.rx-seg-item:focus-visible { outline: 2px solid #8e7bff; outline-offset: -2px; }
+html[data-theme='light'] .rx-seg { background: rgba(255, 255, 255, .7); border-color: rgba(91, 69, 214, .45); }
+html[data-theme='light'] .rx-seg-item { border-left-color: rgba(91, 69, 214, .3); color: #1d2a44; }
+html[data-theme='light'] .rx-seg-item--on { background: rgba(11, 154, 106, .18); color: #075c47; }
+html[data-theme='light'] .rx-seg-item--warn { background: rgba(255, 170, 80, .3); color: #6a3a00; }
+/* modo, banda e frequenza e interruttori di ricezione su UNA riga (prototipo 3 del proprietario); se non entrano vanno a capo */
+.live-top > .live-left { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0.5rem 0.75rem; }
+.live-top > .live-left > .live-left-row { flex: 0 0 auto; }
+.live-top > .live-left > .live-left-line { flex: 1 1 0; min-width: 0; }
+.live-top > .live-left > .live-left-line .cmd-chips { flex-wrap: wrap; row-gap: 4px; }
+.live-top > .live-left { padding-right: calc(var(--rd-w, 0px) + var(--rd-right, 0px) + 0.75rem); }
