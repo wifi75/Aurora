@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.198 - 2026-11-08
 - **Attivita' di banda** si svuota sempre al cambio di frequenza della radio (almeno 1 kHz).
 - **Impostazioni**: scegliendo un display la finestra non scorre piu' fuori schermo (restava solo lo sfondo sfocato).
 - **Display quasi quadrati nella Stazione** (Yaesu ambra, Icom blu, Icom nero): la riga con modo, menu delle frequenze e Monitora/Hound/SWL non sparisce piu', resta a sinistra del display, e i pannelli partono sotto il display invece di salire sotto la testata (anche con «Dimensione del testo» ingrandita). Nella scelta del display (Impostazioni → Radio) il clic su un quasi quadrato non fa piu' scorrere via la finestra delle Impostazioni lasciando solo lo sfondo sfocato.
@@ -17,6 +19,9 @@
 - **Fox log su Club Log**: pulsante «Club Log» nel Fox log che mette i QSO della sessione nella coda dell'invio diretto a Club Log (serve Club Log acceso nelle impostazioni; i doppioni Club Log li tiene buoni).
 - **Fox: QSO per continente** nei numeri della pagina Fox.
 - **Q65 piu' sensibile e piu' veloce**: la decodifica di un periodo segue ora `q65_decode.f90` di WSJT-X (sincronismo a 1/8 di simbolo, soglia statistica dei candidati, frequenza di ricezione provata sempre, ricerca fine su mezzi bin e sedicesimi di simbolo, equalizzazione della banda) e, con il DX noto, prova la lista dei messaggi del QSO come la decodifica «q3». Su segnali di prova decodifica come `jt9` o meglio (fino a 1 dB in piu' senza Doppler) e costa 0,04-0,9 s per periodo invece di alcuni secondi (`docs/q65-confronto.md`).
+- **Correzione urgente**: decodifica anticipata FT8 spenta; nella 0.11.197 un R+rapporto letto a 11,8 s si perdeva nella sequenza e si ripeteva il rapporto invece di RR73.
+- **QSO senza rapporto** dell'altra stazione: non va piu' a log; «R + locatore» cliccato fa ripetere il nostro rapporto.
+- **Cambio di banda**: il menu delle frequenze si riattiva quando la radio si collega dopo l'apertura; il nome della banda porta sulla frequenza principale.
 
 ## 0.11.197 - 2026-11-08
 - **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.
