@@ -183,6 +183,8 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
             let mut ticks = 0u32;
             // quando e' cominciato il blocco in corso (per dire quanto e' durato)
             let mut blocked_since: Option<u64> = None;
+            // il primo battito della finestra (prima, l'avvio: non si controlla)
+            let mut first_beat_seen = false;
             loop {
                 // il battito della finestra: un compito eseguito dal suo thread; se e' fermo resta in coda e il tempo non si aggiorna
                 let _ = app.run_on_main_thread(|| WINDOW.touch());
@@ -197,6 +199,18 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
                 }
                 let beats = [(RUNTIME.name, RUNTIME.last()), (WINDOW.name, WINDOW.last())];
                 let now = now_ms();
+                // all'avvio la finestra non ha ancora battuto: mentre Windows prepara WebView2 (lento la prima volta dopo un aggiornamento,
+                // fino a 30 s su alcuni PC) non e' un blocco del programma ma un avvio lento; si dice una volta sola e non si fa il minidump
+                if WINDOW.last() == 0 || RUNTIME.last() == 0 {
+                    continue;
+                }
+                if !first_beat_seen {
+                    first_beat_seen = true;
+                    if now > HANG_AFTER.as_millis() as u64 {
+                        let secs = now / 1000;
+                        let _ = std::thread::Builder::new().name("aurora-guardiano-log".into()).spawn(move || tracing::info!("avvio lento: la finestra ha cominciato a rispondere dopo {secs} s"));
+                    }
+                }
                 if let Some(stale) = watch.check(now, &beats, HANG_AFTER.as_millis() as u64) {
                     blocked_since = Some(stale.iter().map(|(_, last)| *last).min().unwrap_or(now));
                     report_hang(&stale, &beats);
