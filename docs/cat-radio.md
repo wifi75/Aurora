@@ -241,7 +241,7 @@ e il CP2105 doppio la elenca tra le Yaesu possibili. In tutti gli altri casi bas
 
 ## Da fare ancora
 
-- **TCI** (SDR Expert Electronics e compatibili) come secondo sistema nativo: non fatto. Il protocollo e' descritto in `docs/analisi-decodium-cat.md`, sezione 3.1.
+- **TCI** (SDR Expert Electronics e compatibili): fatto in `rig-control/src/tci.rs` (protocollo e conferme con l'eco letti da WSJT-X 3, ricevitore RX1/RX2, audio nei due sensi); manca la prova dal vivo (`docs/tasks.md`, voce 16).
 - Rilevamento **attivo** (interrogare la radio con le sonde di Hamlib): non fatto, volutamente. Se si fara' sara' un'opzione spenta.
 - Misuratori (S-meter, potenza, ROS, ALC) e limite di ROS; keep-alive e backoff speciali per le Icom con CI-V; sorgente audio TX (Rear/Data, Front/Mic).
 - Rendere disponibili i **sorgenti** di Hamlib (e di libusb) con la stessa versione dei file inclusi, oltre al rimando a https://github.com/Hamlib/Hamlib gia' in `VERSIONE.txt` e nei testi di licenza.
