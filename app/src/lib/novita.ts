@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.204',
+    released: '2026-11-08T22:17:05Z',
+    kind: 'new',
+    title: ['Tre contest nuovi e frequenze aggiornate', 'Three new contests and updated frequencies', 'Drei neue Contests und aktualisierte Frequenzen', 'Trois nouveaux contests et fréquences mises à jour', 'Tres concursos nuevos y frecuencias actualizadas', 'Três concursos novos e frequências atualizadas'],
+    text: [
+      "Nella pagina Contest ci sono il C.S.M.I. Marconi Speed Contest e i contest FT8 DX e FT4 DX dello European FT8 Club; il PACCdigi ha orari, scambio e frequenze corretti secondo il regolamento. Le frequenze dei 70 cm e la frequenza FT8 alternativa 70,100 MHz dei 4 m arrivano anche a chi aveva già una tabella delle frequenze salvata.",
+      "The Contest page now has the C.S.M.I. Marconi Speed Contest and the European FT8 Club FT8 DX and FT4 DX contests; PACCdigi has corrected times, exchange and frequencies according to the rules. The 70 cm frequencies and the alternative 4 m FT8 frequency 70.100 MHz now also reach users who had already saved a frequency table.",
+      "Die Contest-Seite enthält jetzt den C.S.M.I. Marconi Speed Contest sowie die FT8-DX- und FT4-DX-Contests des European FT8 Club; PACCdigi hat laut Regeln korrigierte Zeiten, Austausch und Frequenzen. Die 70-cm-Frequenzen und die alternative 4-m-FT8-Frequenz 70,100 MHz erreichen jetzt auch Nutzer mit bereits gespeicherter Frequenztabelle.",
+      "La page Contest contient maintenant le C.S.M.I. Marconi Speed Contest et les contests FT8 DX et FT4 DX de l’European FT8 Club ; le PACCdigi a des horaires, un échange et des fréquences corrigés selon le règlement. Les fréquences du 70 cm et la fréquence FT8 alternative 70,100 MHz du 4 m arrivent aussi à ceux qui avaient déjà une table de fréquences enregistrée.",
+      "La página Contest incluye ahora el C.S.M.I. Marconi Speed Contest y los concursos FT8 DX y FT4 DX del European FT8 Club; el PACCdigi tiene horarios, intercambio y frecuencias corregidos según el reglamento. Las frecuencias de 70 cm y la frecuencia FT8 alternativa 70,100 MHz de 4 m llegan también a quien ya tenía una tabla de frecuencias guardada.",
+      "A página Contest inclui agora o C.S.M.I. Marconi Speed Contest e os concursos FT8 DX e FT4 DX do European FT8 Club; o PACCdigi tem horários, troca e frequências corrigidos segundo o regulamento. As frequências dos 70 cm e a frequência FT8 alternativa 70,100 MHz dos 4 m chegam também a quem já tinha uma tabela de frequências guardada.",
+    ],
+  },
+  {
     version: '0.11.203',
     released: '2026-11-08T22:01:19Z',
     kind: 'fixed',
