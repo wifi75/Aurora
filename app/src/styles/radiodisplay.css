@@ -286,12 +286,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  /* una sola spaziatura fra le righe: niente margini sparsi che spostano il blocco */
+  gap: 0.75rem;
   background: radial-gradient(circle at 50% 38%, #10213a 0%, #050910 70%);
   color: #e6edf3;
   text-align: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   animation: splash-in 0.45s ease-out both;
+}
+
+.splash > * {
+  margin: 0;
 }
 
 .splash--fade {
@@ -301,14 +306,16 @@
 }
 
 .splash-logo {
+  margin-bottom: 0.5rem;
   filter: drop-shadow(0 0 28px rgb(44 245 164 / 0.35));
 }
 
 .splash-name {
-  margin: 0.6rem 0 0;
   font-family: var(--font-data);
   font-size: 2.4rem;
+  line-height: 1.1;
   letter-spacing: 0.4em;
+  /* la spaziatura resta anche dopo l'ultima lettera: la si pareggia a sinistra perche' la scritta stia al centro */
   padding-left: 0.4em;
   background: linear-gradient(100deg, #2cf5a4, #27a0f5 55%, #8e7bff);
   -webkit-background-clip: text;
@@ -317,14 +324,37 @@
 }
 
 .splash-motto {
-  margin: 0;
   max-width: 34rem;
   color: #aab6c4;
   font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.splash-modes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  max-width: 34rem;
+  padding: 0;
+  list-style: none;
+}
+
+.splash-modes li {
+  min-width: 4.2rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid rgb(44 245 164 / 0.3);
+  border-radius: 999px;
+  background: rgb(44 245 164 / 0.07);
+  color: #9fe9c8;
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
 }
 
 .splash-author {
-  margin: 0.2rem 0 0;
+  margin-top: 0.25rem;
   font-family: var(--font-data);
   font-size: 0.95rem;
   letter-spacing: 0.06em;
@@ -332,7 +362,6 @@
 }
 
 .splash-version {
-  margin: 0.4rem 0 0;
   min-height: 1.2em;
   font-family: var(--font-data);
   font-size: 0.85rem;

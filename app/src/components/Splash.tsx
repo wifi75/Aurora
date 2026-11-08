@@ -4,6 +4,13 @@ import { getHealth } from '../api/client';
 import { useT } from '../i18n';
 import { Logo } from './Logo';
 
+/** La versione dell'interfaccia scritta al momento della compilazione (vite.config.ts, dal package.json). */
+declare const __AURORA_UI_VERSION__: string;
+const UI_VERSION = typeof __AURORA_UI_VERSION__ === 'string' ? __AURORA_UI_VERSION__ : '';
+
+/** I modi che Aurora decodifica e trasmette oggi: sigle tecniche, uguali in tutte le lingue. */
+const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'Q65', 'MSK144'] as const;
+
 /** Mostrata una sola volta per avvio del programma: anche quando la finestra si ricarica (aggiornamento, ricollegamento, Ctrl+R)
  *  la schermata e il saluto sonoro non tornano (lo si ricorda per la sessione della finestra). */
 const SEEN_KEY = 'aurora-splash-seen';
@@ -77,6 +84,7 @@ export function Splash() {
   }, []);
 
   if (phase === 'gone') return null;
+  const version = data?.version || UI_VERSION;
   const skip = () => {
     shown = true;
     setPhase('gone');
@@ -86,8 +94,14 @@ export function Splash() {
       <Logo size={200} animated className="splash-logo" />
       <h1 className="splash-name">AURORA</h1>
       <p className="splash-motto">{t('splash.motto')}</p>
+      <ul className="splash-modes" aria-label={t('splash.modes')}>
+        {MODES.map((m) => (
+          <li key={m}>{m}</li>
+        ))}
+      </ul>
       <p className="splash-author">{t('splash.author')}</p>
-      <p className="splash-version">{data ? `v${data.version}` : ''}</p>
+      {/* la versione del core quando risponde, altrimenti quella dell'interfaccia: mai scritta a mano */}
+      <p className="splash-version">{version ? `v${version}` : ''}</p>
     </div>
   );
 }

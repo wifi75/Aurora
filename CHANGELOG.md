@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Schermata di avvio aggiornata**: sotto il motto le sigle dei modi oggi supportati (FT8, FT4, JT65, JT9, Q65, MSK144) in pastiglie uguali; versione presa dal core o, se non risponde ancora, da quella dell'interfaccia (mai scritta a mano); righe centrate con una sola spaziatura fra gli elementi.
 - **Scheda SDR nelle Impostazioni** (accanto a Radio e Audio): in un posto solo l'indirizzo del server TCI (lo stesso del CAT), lo stato del collegamento con la frequenza, l'audio in uso e il pulsante «Usa il TCI per tutto» che, dopo una conferma, mette il CAT su TCI e l'audio su «TCI (dalla radio)»/«TCI (alla radio)»; l'interruttore «Pagina QMAP nel menu» (spostato qui da Generali, spento di base) con la sorgente I/Q di QMAP e il pulsante per aprirla; le radio adatte e i collegamenti alle sezioni TCI e QMAP della Guida (`#/guida/<sezione>`). Dalla finestra a parte delle Impostazioni le pagine si aprono nella finestra principale, e le preferenze cambiate li' valgono subito anche nella finestra principale.
 - **QMAP come WSJT-X 3**: nel minuto di 60 s cerca anche i Q65-30 nelle due meta' («+30 s»), decodifica gia' a 19,5, 30 e 49,5 s oltre che a fine minuto, salta le meta' in cui si trasmette; sincronismo controllato per ogni candidato prima del decodificatore e ritardo dell'eco lunare fino a 5,5 s; media dei periodi per ogni segnale («Media», con il pulsantino per cancellarla, ×N sui messaggi dalla media); Luna (Az/El) e Doppler della propria eco dal locatore delle impostazioni, con la frequenza «sked» di ogni messaggio.
 
