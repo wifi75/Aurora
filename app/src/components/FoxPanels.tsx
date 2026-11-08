@@ -24,7 +24,10 @@ function takeOldOtp(): { seed: string; interval: number } | null {
   }
 }
 
-/** I numeri della sessione: QSO, ritmo sugli ultimi 10 con le barre dell'ultima ora, ultima ora, chiamanti, coda. */
+/**
+ * I numeri della sessione in tesserine piccole (etichetta minuscola sopra, numero sotto) nella riga alta della testata:
+ * QSO a log, QSO in corso, ritmo sugli ultimi 10 con le barre dell'ultima ora, ultima ora, chiamanti, coda, periodi, continenti.
+ */
 export function FoxStats({ fox }: { fox: FoxSnapshot }) {
   const t = useT();
   const [now, setNow] = useState(() => Date.now());
@@ -37,11 +40,15 @@ export function FoxStats({ fox }: { fox: FoxSnapshot }) {
   const continents = foxContinents(fox.log);
   return (
     <div className="foxc-stats">
-      <div className="foxc-stat" title={t('tip.fox.logged')}>
+      <div className="foxc-stat foxc-stat--ok" title={t('tip.fox.logged')}>
         <small>{t('fox.logged')}</small>
         <b className="data">{fox.logged}</b>
       </div>
-      <div className="foxc-stat" title={t('tip.fox.rate')}>
+      <div className="foxc-stat foxc-stat--accent" title={t('tip.fox.inProgress')}>
+        <small>{t('fox.inProgress')}</small>
+        <b className="data">{fox.in_progress.length}</b>
+      </div>
+      <div className="foxc-stat foxc-stat--rate" title={t('tip.fox.rate')}>
         <small>{t('fox.stat.rate')}</small>
         <b className="data">{rate}/h</b>
         <div className="foxc-spark" aria-hidden="true">
@@ -58,7 +65,7 @@ export function FoxStats({ fox }: { fox: FoxSnapshot }) {
         <small>{t('fox.callers')}</small>
         <b className="data">{fox.callers.length}</b>
       </div>
-      <div className="foxc-stat" title={t('tip.fox.queue')}>
+      <div className="foxc-stat foxc-stat--warn" title={t('tip.fox.queue')}>
         <small>{t('fox.queue')}</small>
         <b className="data">
           {fox.queue.length} / {fox.params.queue_max}
