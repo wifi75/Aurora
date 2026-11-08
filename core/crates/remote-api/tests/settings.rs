@@ -135,7 +135,8 @@ async fn the_default_table_has_the_jtdx_rows_with_their_regions_and_a_saved_tabl
     status_is(&call(&router(&s), req(Method::GET, "/api/v1/frequencies/defaults")).await, StatusCode::UNAUTHORIZED);
     let list = body_json(send(&s, Method::GET, "/api/v1/frequencies/defaults", None).await).await;
     let rows = list.as_array().unwrap();
-    assert_eq!(rows.len(), 41 + 24, "le righe FT8 e FT4 (41) e quelle di JT65 e JT9 (24) di JTDX delle bande che Aurora conosce");
+    // dalla 0.11.194-195 anche JT4, Q65, MSK144 e le bande da 2200 m a 24 GHz con le frequenze di WSJT-X
+    assert_eq!(rows.len(), 114, "le righe di JTDX e di WSJT-X delle bande e dei modi che Aurora conosce");
     assert!(rows.iter().any(|e| e["band"] == "20m" && e["mode"] == "JT65" && e["hz"] == 14_076_000));
     assert!(rows.iter().any(|e| e["band"] == "20m" && e["mode"] == "JT9" && e["hz"] == 14_078_000));
     assert!(rows.iter().any(|e| e["band"] == "160m" && e["hz"] == 1_810_000 && e["region"] == "R1" && e["preferred"] == true));

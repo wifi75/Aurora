@@ -27,7 +27,7 @@
 > ### Scarica Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Ogni programma d'installazione viene analizzato con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender prima della pubblicazione: 0.11.195 — nessun antivirus lo segnala ([risultato](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)).
+> La versione 0.11.188 è stata analizzata con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender: nessun antivirus la segnala ([risultato](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)).
 >
 > **[Installatore per Windows (ultima versione)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Pagina dell'ultima release](https://github.com/wifi75/Aurora/releases/latest)
 >

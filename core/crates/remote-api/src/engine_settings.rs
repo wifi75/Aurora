@@ -1552,7 +1552,8 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
     fn the_wsjtx3_features_have_the_wsjtx_defaults_and_are_checked() {
         let r = interpret(&defaults());
         assert_eq!(r.ft8_decoder_start, "normal");
-        assert!(!r.full_duplex && r.wait_features && !r.show_otp && r.otp_verify && !r.band_hopping);
+        // Wait and Reply / Wait and Call spenti di fabbrica (bbc1dc47)
+        assert!(!r.full_duplex && !r.wait_features && !r.show_otp && r.otp_verify && !r.band_hopping);
         assert_eq!(r.otp_url, "https://www.9dx.cc");
         for key in ["FT8DecoderStart", "FullDuplex", "WaitFeaturesEnabled", "ShowOTP", "OTPVerify", "OTPUrl", "BandHopping", "BandHopList"] {
             assert_eq!(support(key), Support::Live(Apply::Now), "{key}");

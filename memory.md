@@ -48,8 +48,8 @@ Stato al 2026-11-07, versione 0.11.195. Per riprendere il lavoro leggi anche `do
 - Il blocco `cmds` (Comandi) non si stacca. Il blocco `dxmap` della Stazione e' Bande aperte (nome storico): staccato diventa l'elemento `bands`; l'elemento `dxmap` e' la pagina Mappa DX e non toglie niente dalla Stazione (fino alla 0.11.185 i due si confondevano).
 - Aperto: finestre che restano vuote dopo la chiusura nel programma per Windows (vedi `docs/mancante.md`).
 
-## Rilascio e antivirus (dal 2026-11-07, 0.11.187)
-- Dopo ogni `gh release create`: Windows Defender (`MpCmdRun.exe -Scan -ScanType 3 -File <setup> -DisableRemediation`) e VirusTotal (scheda URL con il link di download di GitHub, risultato su `/gui/file/<sha256>`). Poi badge e frase nei 6 README e riga «Analisi antivirus» nelle note della release. La frase dei README e' una promessa pubblica: una release senza analisi la rende falsa.
+## Antivirus (2026-11-07/08)
+- La 0.11.188 e' stata analizzata con Windows Defender e VirusTotal (0 segnalazioni): badge e frase al passato nei 6 README. Dal 2026-11-08 il proprietario non vuole piu' l'analisi a ogni release: non si fa.
 - L'installatore non e' firmato: gli avvisi di SmartScreen e qualche falso positivo vengono da li'.
 
 ## Avvisi della stazione

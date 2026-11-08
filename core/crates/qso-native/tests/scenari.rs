@@ -676,10 +676,10 @@ fn duplicate_rr73_in_one_slot_logs_once() {
     assert_eq!(b.records().len(), 1);
 }
 
-/// `SentRR7373` (qui 3) con la registrazione automatica: l'RR73 si ripete se il 73 non arriva (JTDX non si ferma: aspetta), poi il QSO (gia' registrato alla
-/// prima partenza) si chiude senza segnalare una rinuncia e si torna al CQ.
+/// Chiusura come WSJT-X (dalla 0.11.183): con la registrazione automatica l'RR73 parte una volta e il QSO va a log; se il 73 non arriva l'RR73 non si
+/// ripete (anche con `SentRR7373` a 3) e non si torna da soli al CQ; nessuna rinuncia segnalata.
 #[test]
-fn rr73_repeats_without_73_then_closes() {
+fn rr73_is_sent_once_and_logged_like_wsjtx() {
     let mut b = Bench::ft8(Options {
         autolog: true,
         limits: RepeatLimits {
@@ -693,15 +693,12 @@ fn rr73_repeats_without_73_then_closes() {
     b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
     b.tx(2);
     b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
-    for slot in [4, 6, 8] {
-        assert_eq!(
-            b.tx(slot).as_deref(),
-            Some("LZ2KSQ IU3ABC RR73"),
-            "periodo {slot}"
-        );
-        b.idle(slot + 1);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+    assert_eq!(b.records().len(), 1, "a log alla partenza dell'RR73");
+    for slot in [6, 8] {
+        b.idle(slot - 1);
+        assert_eq!(b.tx(slot), None, "periodo {slot}: l'RR73 non si ripete");
     }
-    assert_eq!(b.tx(10).as_deref(), Some("CQ IU3ABC JN55"));
     assert_eq!(b.records().len(), 1);
     assert!(b.abandons().is_empty());
 }
@@ -738,7 +735,8 @@ fn autolog_stops_the_transmission_at_the_end_of_the_qso() {
     b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
     assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
     b.idle(5);
-    assert_eq!(b.tx(6).as_deref(), Some("LZ2KSQ IU3ABC RR73"), "ancora in attesa del 73");
+    // come WSJT-X l'RR73 a log non si ripete mentre si aspetta il 73
+    assert_eq!(b.tx(6), None);
     b.rx(7, &[("IU3ABC LZ2KSQ 73", -12)]);
     assert_eq!(b.stops(), vec![StopReason::QsoFinished]);
     assert_eq!(b.tx(8), None);
@@ -1525,3 +1523,4 @@ fn sending_73_logs_the_qso_even_without_a_received_report_like_jtdx() {
     assert_eq!(records[0].call, "LZ2KSQ");
     assert_eq!(records[0].rst_rcvd, "");
 }
+

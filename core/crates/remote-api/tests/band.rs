@@ -135,7 +135,8 @@ async fn a_known_mode_is_handed_to_the_rig_uppercase() {
 #[tokio::test]
 async fn an_unknown_mode_is_refused() {
     let (s, rig) = state_with_rig(false);
-    let resp = mode(&s, r#"{"mode":"JT4"}"#).await;
+    // JT4 ora e' un modo vero: per la prova serve un modo che Aurora non ha
+    let resp = mode(&s, r#"{"mode":"PSK31"}"#).await;
     status_is(&resp, StatusCode::BAD_REQUEST);
     assert_eq!(body_json(resp).await["error"], "bad_mode");
     assert!(rig.modes.lock().unwrap().is_empty());
