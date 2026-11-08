@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.200',
-    released: '2026-11-08T17:28:47Z',
+    released: '2026-11-08T17:36:44Z',
     kind: 'new',
     title: ['Aggiornamenti che si vedono: scaricati in anticipo, con barra e passi', 'Visible updates: downloaded in advance, with a bar and steps', 'Sichtbare Updates: vorab geladen, mit Balken und Schritten', 'Mises à jour visibles : téléchargées à l’avance, avec barre et étapes', 'Actualizaciones visibles: descargadas por adelantado, con barra y pasos', 'Atualizações visíveis: transferidas antecipadamente, com barra e passos'],
     text: [
