@@ -12,6 +12,8 @@ interface Props {
   locked?: boolean;
   /** Solo queste bande (quelle scelte per la barra); senza, tutte. */
   bands?: readonly string[];
+  /** Band Hopping: col tasto destro sul pulsante si passa alla frequenza successiva del giro (come facevano i pulsanti delle bande). */
+  onHop?(): void;
 }
 
 /** Frequenza in MHz con tre decimali (quattro se serve: 7,0475). */
@@ -21,7 +23,7 @@ const mhz = (hz: number) => (hz / 1e6).toFixed(hz % 1000 === 0 ? 3 : 4);
  * Come in WSJT-X, tutte le frequenze del modo in uso dalla tabella delle Frequenze: un pulsante con la frequenza attuale apre un pannello
  * con una riga per banda; la frequenza standard e' piena, le alternative (anche DXpedition) piu' tenui.
  */
-export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown }: Props) {
+export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown, onHop }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -57,9 +59,15 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown 
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('band.freqs')}
-        title={t('tip.band.freqs')}
+        title={onHop ? `${t('tip.band.freqs')} ${t('tip.band.hop')}` : t('tip.band.freqs')}
         disabled={locked}
         onClick={() => setOpen((o) => !o)}
+        onContextMenu={(e) => {
+          if (!onHop || locked) return;
+          e.preventDefault();
+          setOpen(false);
+          onHop();
+        }}
       >
         {current ? <span className="freq-picker-btn-band">{current}</span> : null}
         <span className="freq-picker-btn-mhz">{dialHz > 0 ? mhz(dialHz) : '—'}</span>

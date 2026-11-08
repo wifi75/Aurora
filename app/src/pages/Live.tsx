@@ -2,7 +2,7 @@ import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
-import { getCat, getControls, getOnline, getStationInfo, postBand, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList } from '../components/DecodeList';
@@ -377,6 +377,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             mode={status?.mode ?? ''}
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control || info.data?.manual_dial ? (hz) => void attempt(async () => void (await postFrequency(hz)), null) : undefined}
+            onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
         </div>
         <StatusBar connection={connection} hideDial={!displayHidden} />
