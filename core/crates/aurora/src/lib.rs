@@ -980,34 +980,56 @@ fn wire_fox_verifier(controls: &Arc<engine_native::NativeControls>, bus: &Bus) {
 
 /// All'avvio la radio va sulla frequenza principale della sua banda per il modo in uso (scelta del proprietario, 2026-11-08): se il dial e' su
 /// un'alternativa (14,090 in FT8) passa alla principale (14,074). Si aspetta che la radio risponda (al piu' due minuti); una volta sola.
-fn spawn_start_on_main_frequency(state: AppState) {
+/// L'ultima banda scelta (si ricorda tra un avvio e l'altro).
+const LAST_BAND_FILE: &str = "ultima-banda.txt";
+
+/// All'avvio, appena la radio risponde (controllo ogni 0,3 s, non piu' ogni 2): la radio va sull'ultima banda scelta e li' sulla frequenza
+/// principale del modo in uso. Poi si tiene a mente la banda in uso, cosi' al prossimo avvio si riparte da quella (richiesta del proprietario
+/// 2026-11-08: la banda e' l'ultima scelta, la frequenza sempre la principale della banda).
+fn spawn_start_on_main_frequency(state: AppState, data_dir: std::path::PathBuf) {
+    let band_file = data_dir.join(LAST_BAND_FILE);
     tokio::spawn(async move {
-        for _ in 0..60 {
-            tokio::time::sleep(Duration::from_secs(2)).await;
+        let saved = std::fs::read_to_string(&band_file).ok().map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+        let deadline = std::time::Instant::now() + Duration::from_secs(180);
+        while std::time::Instant::now() < deadline {
+            tokio::time::sleep(Duration::from_millis(300)).await;
             let Some(rig) = state.dial_rig() else { continue };
             let reader = Arc::clone(&rig);
             let Ok(Ok(hz)) = tokio::task::spawn_blocking(move || reader.frequency()).await else { continue };
-            if hz == 0 || state.current_status().is_none() {
+            if hz == 0 {
                 continue;
             }
             if state.is_transmitting() {
-                return;
+                break;
             }
             let mode = state.current_mode();
             let region = state.frequency_region();
             let target = {
                 let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
-                let Some(band) = table.band_of(hz) else { return };
-                let on_main = table.visible(region).any(|e| e.band == band && e.mode.eq_ignore_ascii_case(&mode) && e.preferred && e.hz == hz);
-                if on_main { None } else { table.frequency_in(region, &band, &mode) }
+                // la banda: l'ultima scelta, se nella tabella c'e' per questo modo; altrimenti quella su cui si trova la radio
+                let band = saved.clone().filter(|b| table.frequency_in(region, b, &mode).is_some()).or_else(|| table.band_of(hz));
+                band.and_then(|b| table.frequency_in(region, &b, &mode))
             };
             if let Some(main) = target.filter(|m| *m != hz) {
                 match tokio::task::spawn_blocking(move || rig.set_frequency(main)).await {
-                    Ok(Ok(())) => tracing::info!("avvio: radio portata sulla frequenza principale {main} Hz (era {hz} Hz)"),
+                    Ok(Ok(())) => tracing::info!("avvio: radio portata sulla frequenza principale {main} Hz dell'ultima banda (era {hz} Hz)"),
                     other => tracing::warn!("avvio: frequenza principale non impostata: {other:?}"),
                 }
             }
-            return;
+            break;
+        }
+        // da qui si ricorda la banda in uso (ogni 5 s, si scrive solo quando cambia)
+        let mut last = saved;
+        loop {
+            tokio::time::sleep(Duration::from_secs(5)).await;
+            let Some(hz) = state.current_status().map(|s| s.dial_hz).filter(|hz| *hz > 0) else { continue };
+            let band = state.frequencies.lock().unwrap_or_else(|p| p.into_inner()).band_of(hz);
+            if let Some(band) = band
+                && last.as_deref() != Some(band.as_str())
+            {
+                let _ = std::fs::write(&band_file, &band);
+                last = Some(band);
+            }
         }
     });
 }
@@ -1995,7 +2017,7 @@ pub async fn run(
         });
     }
 
-    spawn_start_on_main_frequency(state.clone());
+    spawn_start_on_main_frequency(state.clone(), config.data_dir.clone());
     // la programmazione delle bande ha senso solo se la radio e' comandabile
     if let Some(rig) = state.rig.clone() {
         spawn_scheduler(state.clone(), rig.clone());
