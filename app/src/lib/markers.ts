@@ -27,6 +27,7 @@ export function signalBandwidthHz(mode: string | undefined): number {
     case 'JT9':
       return (9 * 12000) / 6912;
     case 'JT4':
+    case 'JT4A':
       return (4 * 11025) / 2520;
     case 'Q65':
       return (65 * 12000) / 3600;

@@ -9,7 +9,8 @@ fn only_the_known_modes_have_a_button() {
     assert_eq!(button_id("jt65"), Some("jtButton"));
     assert_eq!(button_id("JT9"), Some("jtButton"));
     assert_eq!(button_id("jt4"), Some("jt4Button"));
-    for bad in ["", "JT4B", "FT8; calc", "FT", "'FT8'", "JT; calc"] {
+    assert_eq!(button_id("jt4g"), Some("jt4Button"));
+    for bad in ["", "JT4H", "FT8; calc", "FT", "'FT8'", "JT; calc"] {
         assert_eq!(button_id(bad), None, "{bad}");
     }
 }

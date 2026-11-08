@@ -2,12 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 
 /** I modi che Aurora propone: gli stessi sul PC e sul telefono. */
+/** I sottomodi di JT4: la distanza fra i toni e' 4,375 Hz per 1, 2, 4, 9, 18, 36, 72. */
+const JT4_SUBMODES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
+
 export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65'] as const;
 
 /** Il modo in uso: JTDX con il pulsante JT puo' riportare «JT65+JT9» (si accendono tutti e due) o «JT» (il vecchio nome, acceso JT65). */
 const isActive = (m: string, mode: string) => {
   const up = mode.toUpperCase();
   if (m === 'JT65' && up === 'JT') return true;
+  // JT4A ... JT4G accendono JT4
+  if (m === 'JT4' && /^JT4[A-G]$/.test(up)) return true;
   return up === m || (m.startsWith('JT') && up.split('+').includes(m));
 };
 
@@ -67,6 +72,22 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
           ▾
         </span>
       </button>
+      {/^JT4[A-G]?$/.test(mode.toUpperCase()) ? (
+        <select
+          className="mode-switch-sub"
+          aria-label={t('mode.jt4sub')}
+          title={t('tip.mode.jt4sub')}
+          disabled={disabled}
+          value={mode.toUpperCase().slice(3) || 'A'}
+          onChange={(e) => onPick?.(`JT4${e.target.value}`)}
+        >
+          {JT4_SUBMODES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      ) : null}
       {open && (
         <div className="mode-switch-menu glass" role="menu" aria-label={t('mode.group')}>
           {MODES.map((m) => (

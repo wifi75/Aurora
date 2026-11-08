@@ -53,10 +53,29 @@ pub struct SavedControls {
     /// Abilita Tx: per scelta del proprietario resta com'era al riavvio. Nei file scritti prima manca (spento).
     #[serde(default)]
     pub enable_tx: bool,
+    /// Sottomodo di JT4 (0 = A ... 6 = G). Nei file scritti prima manca (A).
+    #[serde(default)]
+    pub jt4_sub: u8,
 }
 
 impl SavedControls {
     pub const VERSION: u32 = 1;
+}
+
+/// Il sottomodo di JT4 (0 = A ... 6 = G): uno solo per programma, lo leggono ricezione e trasmissione.
+static JT4_SUBMODE: AtomicU8 = AtomicU8::new(0);
+
+/// Il sottomodo di JT4 in uso.
+pub fn jt4_submode() -> jt::jt4::Submode {
+    jt::jt4::Submode(JT4_SUBMODE.load(Ordering::Relaxed).min(6))
+}
+
+/// Il nome del modo come lo mostrano pagina e log: JT4 con la lettera del sottomodo.
+pub fn mode_label(mode: Mode) -> String {
+    match mode {
+        Mode::Jt4 => format!("JT4{}", jt4_submode().letter()),
+        other => other.name().to_string(),
+    }
 }
 
 /// Chi viene avvisato quando cambia l'attenuazione.
@@ -272,6 +291,7 @@ impl NativeControls {
             },
             attenuation: self.attenuation.load(Ordering::Relaxed),
             levels,
+            jt4_sub: JT4_SUBMODE.load(Ordering::Relaxed),
         }
     }
 
@@ -297,6 +317,7 @@ impl NativeControls {
             _ => Mode::Ft8,
         });
         self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
+        JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
         if let Ok(mut memory) = self.levels.lock() {
             memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
         }
@@ -391,7 +412,7 @@ impl NativeControls {
     }
 
     fn level_key(&self, band: &str) -> String {
-        format!("{band}{}", self.mode().name())
+        format!("{band}{}", mode_label(self.mode()))
     }
 
     /// Tocca a noi il primo periodo (interruttore «Tx 1st/even»): lo Status UDP lo manda come `tx_first`, come JTDX.
@@ -631,7 +652,14 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Jt9);
                 Ok(())
             }
-            "JT4" | "JT4A" => {
+            "JT4" => {
+                self.controls.set_mode(Mode::Jt4);
+                Ok(())
+            }
+            // JT4A ... JT4G: il sottomodo cambia la distanza fra i toni
+            m if m.len() == 4 && m.starts_with("JT4") => {
+                let sub = m.chars().nth(3).and_then(jt::jt4::Submode::from_letter).ok_or_else(|| RigError(format!("modo non gestito: {m}")))?;
+                JT4_SUBMODE.store(sub.0, Ordering::Relaxed);
                 self.controls.set_mode(Mode::Jt4);
                 Ok(())
             }

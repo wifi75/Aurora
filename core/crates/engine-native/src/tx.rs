@@ -1533,7 +1533,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 // JT4A: `freq` e' il tono 0, quattro toni a 4,375 Hz
                 Mode::Jt4 => {
-                    let sub = jt::jt4::Submode(0);
+                    let sub = crate::rig::jt4_submode();
                     jt_check_frequency(freq, 4.0 * sub.tone_spacing_hz())?;
                     Ok(jt::jt4::modulate(&jt::jt4::tones(t), f64::from(freq), sub, 1.0))
                 }

@@ -401,6 +401,15 @@ export const stationStrings = {
     'Um som para as novidades: três notas para um país novo, uma para as outras. Começa desligado; o navegador permite-o após um toque.',
   ],
   'band.group': ['Bande', 'Bands', 'Bänder', 'Bandes', 'Bandas', 'Bandas'],
+  'mode.jt4sub': ['Sottomodo JT4', 'JT4 submode', 'JT4-Untermodus', 'Sous-mode JT4', 'Submodo JT4', 'Submodo JT4'],
+  'tip.mode.jt4sub': [
+    'Sottomodo di JT4: da A (toni a 4,375 Hz) a G (315 Hz). A e B per le HF, gli altri per microonde ed EME. Deve essere uguale a quello del corrispondente.',
+    'JT4 submode: from A (tones 4.375 Hz apart) to G (315 Hz). A and B for HF, the others for microwaves and EME. It must match your partner’s.',
+    'JT4-Untermodus: von A (Töne im Abstand von 4,375 Hz) bis G (315 Hz). A und B für KW, die anderen für Mikrowellen und EME. Muss mit dem der Gegenstation übereinstimmen.',
+    'Sous-mode JT4 : de A (tons espacés de 4,375 Hz) à G (315 Hz). A et B pour les HF, les autres pour les hyperfréquences et l’EME. Il doit être le même que celui du correspondant.',
+    'Submodo JT4: de A (tonos a 4,375 Hz) a G (315 Hz). A y B para HF, los demás para microondas y EME. Debe ser el mismo que el del corresponsal.',
+    'Submodo JT4: de A (tons a 4,375 Hz) a G (315 Hz). A e B para HF, os outros para micro-ondas e EME. Tem de ser igual ao do correspondente.',
+  ],
   'band.freqs': ['Frequenze', 'Frequencies', 'Frequenzen', 'Fréquences', 'Frecuencias', 'Frequências'],
   'band.alt': ['alternativa', 'alternative', 'Alternative', 'alternative', 'alternativa', 'alternativa'],
   'tip.band.freqs': [
