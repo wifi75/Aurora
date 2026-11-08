@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.197 - 2026-11-08
 - **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.
 - **Avvio**: appena la radio risponde (controllo ogni 0,3 s) va sull'ultima banda scelta, sulla frequenza principale del modo in uso; la banda si ricorda in `ultima-banda.txt`.
 - **Q65: modello di evanescenza e «Cancella media»**: accanto a periodo e sottomodo di Q65 una tendina Lor/Gau (modello lorentziano come WSJT-X, o gaussiano) e un pulsantino che svuota la media dei periodi; la scelta resta dopo il riavvio.
@@ -11,8 +13,8 @@
 - **TCI** (SunSDR/ExpertSDR, ANAN con Thetis): nuovo sistema di controllo nella scheda Radio con l'indirizzo del server (di base `127.0.0.1:40001`); frequenza, modo USB/USB dati e PTT via rete, ricollegamento automatico. Anche l'audio passa dal TCI, senza cavi audio virtuali: nella scheda Audio l'ingresso «TCI (dalla radio)» porta l'audio ricevuto a cascata, livello e decodificatore, l'uscita «TCI (alla radio)» manda l'onda alla SDR a ogni richiesta del server. S-meter, potenza e ROS dalla SDR; split vero sul VFO 1 o simulato; «Accendi» e «Spegni» accendono e spengono la SDR (`start;`/`stop;`).
 - **Q65 completo**: periodi da 15, 30, 60, 120 e 300 s e sottomodi da A a E, scelti con due tendine accanto al selettore dei modi («Q65-60B») e ricordati alla riapertura; durata dei periodi e trasmissione seguono la scelta. Ricezione come WSJT-X: ipotesi AP del QSO (CQ, mio nominativo, nominativo del DX, RRR/73/RR73), metrica dell'evanescenza rapida per EME e scatter (tabelle lorentziane e gaussiane), media dei periodi della stessa parita' per i segnali troppo deboli per un periodo solo.
 - **QMAP** (ricezione panoramica Q65 come WSJT-X 3): nuova pagina che decodifica tutta una fetta fino a 90 kHz da un SDR (flusso I/Q via TCI o file WAV I/Q), mostra lo spettro con i segnali trovati e con «QSO» porta la radio sul segnale in Q65 con periodo e sottomodo giusti. Da provare dal vivo con un SDR.
-
-## 0.11.197 - 2026-11-08
+- **Installatore**: pagina «Dati che Aurora manda in rete» con i servizi e dove si spengono; firma gratuita con SignPath preparata (`.github/workflows/windows.yml`, `docs/signpath.md`), da attivare.
+- **UltraFOX**: il codice polare si chiama AQP-127 (`docs/aqp-127.md`); le posizioni del messaggio si ricalcolano con `examples/tabelle_qpc.rs`.
 - **Accendi e Spegni la radio** (come JTDX, `RigPower`/`RigPower_off`): due caselle nella scheda Radio con Hamlib; `\set_powerstat 1` al primo collegamento, `\set_powerstat 0` alla chiusura di Aurora.
 - **Band Hopping con MSK144** («MSK144 6m»).
 - **Agente nel tray**: «Cerca aggiornamenti» risponde sempre, anche quando GitHub non risponde (prima nessuna finestra).
