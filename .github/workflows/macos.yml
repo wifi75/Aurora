@@ -65,6 +65,20 @@ jobs:
           npm ci
           npm run build
 
+      - name: Hamlib dentro l'app (rigctld e librerie da Homebrew)
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        run: |
+          # rigctld ufficiale di Hamlib con le sue librerie copiate accanto e i percorsi riscritti (@executable_path/libs):
+          # l'app funziona senza installare niente. La macchina di GitHub e' Apple Silicon: sui Mac Intel Aurora usa l'Hamlib di Homebrew
+          brew install hamlib dylibbundler
+          mkdir -p desktop/src-tauri/hamlib-bundle/libs
+          cp "$(brew --prefix hamlib)/bin/rigctld" desktop/src-tauri/hamlib-bundle/
+          chmod u+w desktop/src-tauri/hamlib-bundle/rigctld
+          dylibbundler -of -b -x desktop/src-tauri/hamlib-bundle/rigctld -d desktop/src-tauri/hamlib-bundle/libs -p @executable_path/libs/
+          codesign --force -s - desktop/src-tauri/hamlib-bundle/libs/*.dylib desktop/src-tauri/hamlib-bundle/rigctld
+          desktop/src-tauri/hamlib-bundle/rigctld --version
+          ls -la desktop/src-tauri/hamlib-bundle desktop/src-tauri/hamlib-bundle/libs
+
       - name: Programma (.dmg universale)
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         working-directory: desktop

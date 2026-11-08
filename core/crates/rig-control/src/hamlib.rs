@@ -532,15 +532,22 @@ pub fn locate_rigctld() -> Option<PathBuf> {
     let mut dirs: Vec<PathBuf> = Vec::new();
     if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)) {
         dirs.push(dir.join("hamlib"));
+        // macOS: l'app tiene le risorse in Contents/Resources (il programma e' in Contents/MacOS), Hamlib incluso in Resources/hamlib
+        dirs.push(dir.join("..").join("Resources").join("hamlib"));
         dirs.push(dir);
     }
     let env = std::env::var("AURORA_RIGCTLD").ok().filter(|v| !v.trim().is_empty()).map(PathBuf::from);
     locate_rigctld_in(&dirs, env.as_deref(), &system_dirs())
 }
 
-/// Le cartelle dove il gestore dei pacchetti di Linux installa Hamlib (su Windows nessuna: Hamlib e' nell'installatore).
+/// Le cartelle dove i gestori dei pacchetti installano Hamlib (su Windows nessuna: Hamlib e' nell'installatore). Su macOS Homebrew
+/// usa /opt/homebrew/bin sui Mac Apple Silicon e /usr/local/bin sugli Intel; MacPorts /opt/local/bin.
 fn system_dirs() -> Vec<PathBuf> {
-    if cfg!(windows) { Vec::new() } else { vec![PathBuf::from("/usr/local/bin"), PathBuf::from("/usr/bin")] }
+    if cfg!(windows) {
+        Vec::new()
+    } else {
+        ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin", "/usr/bin"].iter().map(PathBuf::from).collect()
+    }
 }
 
 /// Il nucleo della ricerca, con gli elenchi passati da fuori (cosi' si prova senza toccare il disco vero).
