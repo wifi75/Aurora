@@ -64,15 +64,19 @@ const saveHeight = (key: string, h: number) => {
   }
 };
 
-/** Un'altezza che si cambia trascinando una maniglia col mouse (o col dito) e che si ricorda. */
+/**
+ * Un'altezza che si cambia trascinando una maniglia col mouse (o col dito) e che si ricorda. `onPointerDown` la fa crescere
+ * trascinando in giu'; `onPointerDownInverse` la fa crescere trascinando in su (la maniglia sopra la cascata: piu' giu' si porta,
+ * piu' spazio va ai riquadri e meno alla cascata).
+ */
 function useDragHeight(key: string, fallback: number) {
   const [height, setHeight] = useState(() => readHeight(key, fallback));
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const drag = (sign: 1 | -1) => (e: React.PointerEvent<HTMLDivElement>) => {
     const startY = e.clientY;
     const startH = height;
     const el = e.currentTarget;
     el.setPointerCapture?.(e.pointerId);
-    const at = (y: number) => Math.min(1600, Math.max(120, startH + y - startY));
+    const at = (y: number) => Math.min(1600, Math.max(120, startH + sign * (y - startY)));
     const move = (ev: PointerEvent) => setHeight(at(ev.clientY));
     const up = (ev: PointerEvent) => {
       el.removeEventListener('pointermove', move);
@@ -82,7 +86,7 @@ function useDragHeight(key: string, fallback: number) {
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
   };
-  return { height, onPointerDown };
+  return { height, onPointerDown: drag(1), onPointerDownInverse: drag(-1) };
 }
 
 function DragHandle({ label, onPointerDown }: { label: string; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
@@ -96,9 +100,9 @@ function DragHandle({ label, onPointerDown }: { label: string; onPointerDown(e: 
 const snr = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 
 /**
- * La console della Fox: tutto quello che serve per lavorare da spedizione in una pagina sola. In testa lo stato (Fox, trasmissione, modo)
- * con i comandi principali, poi le opzioni, i numeri della sessione, la cascata con i messaggi ricevuti e infine chi chiama, la coda,
- * i QSO in corso e quello che e' in onda.
+ * La console della Fox: tutto quello che serve per lavorare da spedizione in una pagina sola. In testa, su due righe basse, lo stato,
+ * i numeri della sessione in tesserine, le opzioni e i comandi; sotto «Chi chiama» (il riquadro piu' grande) con accanto QSO in corso,
+ * In onda, In coda e Fox log, la cascata in basso e a destra i messaggi ricevuti.
  */
 export function FoxPage() {
   const t = useT();
@@ -111,7 +115,8 @@ export function FoxPage() {
   const [snrMin, setSnrMin] = useState(-30);
   const [snrMax, setSnrMax] = useState(30);
   const [onlyNew, setOnlyNew] = useState(false);
-  const main = useDragHeight('aurora-fox-main-height-v3', 620);
+  // i riquadri riempiono la finestra; si sceglie solo l'altezza della cascata, da tutte e due le maniglie
+  const wf = useDragHeight('aurora-fox-wf-height-v3', 120);
   const [filter, setFilter] = useState('');
 
   // il pulsante cambia subito, senza aspettare lo stato del motore; se il comando fallisce torna com'era
@@ -143,34 +148,57 @@ export function FoxPage() {
 
   return (
     <section className={`foxc foxc--neon foxc--${state}`}>
+      {/* testata compatta su due righe basse: 1) nome, stato, numeri in tesserine e le opzioni (Posti, CQ verso, UltraFOX, Piu' CQ,
+          Coda automatica, Azzera); 2) tutti i comandi della stessa misura (Fox, Tx, STOP, ricezione, split) e la verifica OTP */}
       <header className={`foxc-hero foxc-hero--${state}`}>
-        <div className="foxc-id">
-          <span className="foxc-badge" aria-hidden="true">
-            FOX
-          </span>
-          <div>
+        <div className="foxc-top">
+          {/* Fox classica o UltraFOX si legge dall'interruttore UltraFOX; qui resta nel suggerimento per stare su una riga */}
+          <div className="foxc-id" title={`${status?.de_call ?? '—'} · ${fox.ultra ? 'UltraFOX' : t('fox.classic')} · ${status?.mode ?? 'FT8'}`}>
+            <span className="foxc-badge" aria-hidden="true">
+              FOX
+            </span>
             <h1>{t('fox.title')}</h1>
             <p className="foxc-sub">
               <span className="data">{status?.de_call ?? '—'}</span>
               <span className="foxc-dot" aria-hidden="true" />
-              <span>{fox.ultra ? 'UltraFOX' : t('fox.classic')}</span>
-              <span className="foxc-dot" aria-hidden="true" />
               <span className="data">{status?.mode ?? 'FT8'}</span>
             </p>
           </div>
-        </div>
-        <div className="foxc-state" role="status">
-          <span className={`foxc-pill foxc-pill--${state}`} title={t('tip.fox.state')}>{t(`fox.state.${state}`)}</span>
-          <div className="foxc-kpis">
-            <Kpi tone="ok" label={t('fox.logged')} title={t('tip.fox.logged')} value={fox.logged} />
-            <Kpi tone="accent" label={t('fox.inProgress')} title={t('tip.fox.inProgress')} value={fox.in_progress.length} />
-            <Kpi tone="warn" label={t('fox.queue')} title={t('tip.fox.queue')} value={fox.queue.length} />
-            <Kpi tone="muted" label={t('fox.callers')} title={t('tip.fox.callers')} value={fox.callers.length} />
-            <Kpi tone="muted" label={t('fox.periods')} title={t('tip.fox.periods')} value={fox.periods} />
+          <span className="foxc-state" role="status">
+            <span className={`foxc-pill foxc-pill--${state}`} title={t('tip.fox.state')}>{t(`fox.state.${state}`)}</span>
+          </span>
+          <FoxStats fox={fox} />
+          <div className="foxc-opts">
+            <div className="foxc-field">
+              <span className="foxc-label" title={t('tip.fox.slots')}>{t('fox.slots')}</span>
+              <div className="foxc-seg" role="group" aria-label={t('fox.slots')} title={t('tip.fox.slots')}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} type="button" aria-pressed={fox.slots === n} className={fox.slots === n ? 'on' : undefined} onClick={() => options({ slots: n })}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="foxc-field">
+              <span className="foxc-label" title={t('tip.fox.cq')}>{t('fox.cq')}</span>
+              <div className="foxc-seg" role="group" aria-label={t('fox.cq')} title={t('tip.fox.cq')}>
+                {CQ_TARGETS.map((c) => (
+                  <button key={c || 'cq'} type="button" aria-pressed={target === c} className={target === c ? 'on' : undefined} onClick={() => options({ cq: c ? `CQ ${c}` : 'CQ' })}>
+                    {c || 'CQ'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="foxc-switches">
+              <Switch on={fox.ultra} label="UltraFOX" title={t('tip.fox.ultra')} onChange={(v) => options({ ultra: v })} />
+              <Switch on={fox.more_cqs} label={t('fox.moreCqs')} title={t('tip.fox.moreCqs')} onChange={(v) => options({ more_cqs: v })} />
+              <Switch on={fox.auto_queue} label={t('fox.autoQueue')} title={t('tip.fox.autoQueue')} onChange={(v) => options({ auto_queue: v })} />
+            </div>
+            <button type="button" className="foxc-btn foxc-btn--ghost foxc-btn--small" title={t('tip.fox.reset')} onClick={() => void postFox({ action: 'reset' })}>
+              {t('fox.reset')}
+            </button>
           </div>
         </div>
-        {/* una sola barra di comandi, tutti della stessa misura: prima Fox, Tx e STOP, poi i comandi di ricezione e lo split
-            (prima stavano sotto la voce «Cascata») */}
         <div className="foxc-cmdbar" role="toolbar" aria-label={t('fox.commands')}>
           <div className="foxc-main-actions">
             <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} onClick={() => void postControl('fox', !fox.enabled)}>
@@ -187,51 +215,19 @@ export function FoxPage() {
             {/* Tx/Rx Split, come nella Trasmissione della pagina Stazione: la Tx resta ferma quando si sposta la Rx */}
             <TxQuickControls splitOnly />
           </div>
+          <span className="foxc-cmd-sep" aria-hidden="true" />
+          <FoxOtp fox={fox} />
         </div>
       </header>
-
-      <FoxStats fox={fox} />
 
       {fox.guard ? <p className="foxc-note">{t('fox.guard', { g: fox.guard })}</p> : null}
       {state === 'waiting' ? <p className="foxc-note">{t('fox.needTx')}</p> : null}
 
-      <div className="foxc-options">
-        <div className="foxc-field">
-          <span className="foxc-label" title={t('tip.fox.slots')}>{t('fox.slots')}</span>
-          <div className="foxc-seg" role="group" aria-label={t('fox.slots')} title={t('tip.fox.slots')}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" aria-pressed={fox.slots === n} className={fox.slots === n ? 'on' : undefined} onClick={() => options({ slots: n })}>
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="foxc-field">
-          <span className="foxc-label" title={t('tip.fox.cq')}>{t('fox.cq')}</span>
-          <div className="foxc-seg" role="group" aria-label={t('fox.cq')} title={t('tip.fox.cq')}>
-            {CQ_TARGETS.map((c) => (
-              <button key={c || 'cq'} type="button" aria-pressed={target === c} className={target === c ? 'on' : undefined} onClick={() => options({ cq: c ? `CQ ${c}` : 'CQ' })}>
-                {c || 'CQ'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="foxc-switches">
-          <Switch on={fox.ultra} label="UltraFOX" title={t('tip.fox.ultra')} onChange={(v) => options({ ultra: v })} />
-          <Switch on={fox.more_cqs} label={t('fox.moreCqs')} title={t('tip.fox.moreCqs')} onChange={(v) => options({ more_cqs: v })} />
-          <Switch on={fox.auto_queue} label={t('fox.autoQueue')} title={t('tip.fox.autoQueue')} onChange={(v) => options({ auto_queue: v })} />
-        </div>
-        <button type="button" className="foxc-btn foxc-btn--ghost" title={t('tip.fox.reset')} onClick={() => void postFox({ action: 'reset' })}>
-          {t('fox.reset')}
-        </button>
-        <FoxOtp fox={fox} />
-      </div>
-
-
-      {/* a sinistra chi chiama, QSO in corso e cascata (larga solo fin li'); a destra «Messaggi ricevuti» alto fino in fondo */}
+      {/* a sinistra chi chiama (il riquadro piu' grande), accanto QSO in corso, In onda, In coda e Fox log, sotto la cascata;
+          a destra «Messaggi ricevuti» alto fino in fondo. I riquadri riempiono la finestra fino alla cascata. */}
       <div className="foxc-body">
         <div className="foxc-left">
-      <div className="foxc-grid foxc-grid--main foxc-grid--two" style={{ '--main-h': `${main.height}px` } as React.CSSProperties}>
+      <div className="foxc-grid foxc-grid--main foxc-grid--two">
         <section className="foxc-card foxc-tone--lilac">
           <header className="foxc-card-head">
             <h2 title={t('tip.fox.callers')}>{t('fox.callers')}</h2>
@@ -372,9 +368,9 @@ export function FoxPage() {
         </div>
       </div>
 
-      <DragHandle label={t('fox.resizeMain')} onPointerDown={main.onPointerDown} />
+      <DragHandle label={t('fox.resizeMain')} onPointerDown={wf.onPointerDownInverse} />
 
-      <Spectrum />
+      <Spectrum height={wf.height} onPointerDown={wf.onPointerDown} />
         </div>
         <div className="foxc-right">
           <Received />
@@ -385,7 +381,7 @@ export function FoxPage() {
 }
 
 /** La cascata con le barre Rx/Tx e i comandi di ricezione. */
-function Spectrum() {
+function Spectrum({ height, onPointerDown }: { height: number; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
   const t = useT();
   const status = useStation((s) => s.status);
   const decodes = useStation((s) => s.decodes);
@@ -396,7 +392,6 @@ function Spectrum() {
   useEffect(() => {
     useSpectrumSpan.getState().set(spanFromPassband(passbandHz));
   }, [passbandHz]);
-  const { height, onPointerDown } = useDragHeight('aurora-fox-wf-height-v3', 110);
   // la stessa cascata della pagina Stazione: barra degli strumenti, filtro, spot del cluster, righello con i messaggi e le barre Rx/Tx
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
@@ -471,15 +466,6 @@ function Switch({ on, label, title, onChange }: { on: boolean; label: string; ti
       </span>
       {label}
     </button>
-  );
-}
-
-function Kpi({ tone, label, title, value }: { tone: 'ok' | 'accent' | 'warn' | 'muted'; label: string; title?: string; value: number }) {
-  return (
-    <div className={`foxc-kpi foxc-kpi--${tone}`} title={title}>
-      <span className="foxc-kpi-label">{label}</span>
-      <strong className="data">{value}</strong>
-    </div>
   );
 }
 

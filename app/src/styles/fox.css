@@ -64,7 +64,6 @@
 .foxc-note--info { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 
 /* opzioni */
-.foxc-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-3); border-radius: var(--fx-radius); background: var(--fx-surface); border: 1px solid var(--fx-line); }
 .foxc-field { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
 .foxc-label { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 .foxc-seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; padding: 3px; gap: 2px; border-radius: 0.6rem; background: var(--fx-surface-2); }
@@ -76,16 +75,7 @@
 .foxc-switch-thumb { position: absolute; top: 2px; left: 2px; width: 0.85rem; height: 0.85rem; border-radius: 50%; background: var(--text-muted); transition: transform var(--dur-fade) var(--ease-out), background var(--dur-fade); }
 .foxc-switch.on .foxc-switch-track { background: var(--mode-ft8); border-color: var(--mode-ft8); }
 .foxc-switch.on .foxc-switch-thumb { transform: translateX(0.9rem); background: #fff; }
-.foxc-options > .foxc-btn { margin-left: auto; }
 
-/* numeri della sessione */
-.foxc-kpis { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.foxc-kpi { display: inline-flex; align-items: baseline; gap: 0.5rem; padding: 0.3rem 0.75rem; border-radius: 999px; background: var(--fx-surface); border: 1px solid var(--fx-line); border-left: 3px solid var(--k, var(--fx-line)); }
-.foxc-kpi strong { font-size: 1rem; line-height: 1.2; }
-.foxc-kpi-label { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-.foxc-kpi--ok { --k: var(--dxcc-worked); }
-.foxc-kpi--accent { --k: var(--mode-ft8); }
-.foxc-kpi--warn { --k: var(--warn); }
 
 /* griglia e schede */
 .foxc-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-3); align-items: start; }
@@ -148,7 +138,6 @@
 @media (max-width: 640px) {
   .foxc-hero { grid-template-columns: 1fr; }
   .foxc-cmdbar { grid-column: auto; }
-  .foxc-options > .foxc-btn { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .foxc-pill--onair::before { animation: none; }
@@ -157,14 +146,8 @@
 /* disposizione in una schermata: testata con i numeri, tre colonne, cascata sotto */
 .foxc-state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .foxc-grid--main { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr); align-items: stretch; }
-.foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: var(--main-h, 22rem); }
-.foxc > .foxc-wf-handle { border-radius: 0.5rem; margin-top: calc(-1 * var(--space-2)); }
 .foxc-grid--main > .foxc-card { display: flex; flex-direction: column; }
 .foxc-grid--main .foxc-scroll { flex: 1; min-height: 0; max-height: none; }
-.foxc-grid--main .foxc-stack > .foxc-card { flex: 0 1 auto; display: flex; flex-direction: column; min-height: 0; }
-.foxc-grid--main .foxc-stack > .foxc-card:first-child { flex: 1 1 auto; }
-.foxc-grid--main .foxc-stack .foxc-list, .foxc-grid--main .foxc-stack .foxc-slots { overflow: auto; min-height: 0; }
-.foxc-grid--main .foxc-stack { gap: var(--space-2); }
 .foxc-scroll--rx { flex: 1; min-height: 0; }
 @media (max-width: 1300px) {
   .foxc-grid--main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -190,7 +173,6 @@
 .foxc-tone--sky { --tone: #8ec8ff; }
 .foxc-tone--lemon { --tone: #f2d16b; }
 .foxc-tone--slate { --tone: #9fb3cf; }
-.foxc-options { background: linear-gradient(100deg, color-mix(in srgb, #b39dfc 12%, transparent), color-mix(in srgb, #8ec8ff 12%, transparent)); }
 .foxc-table th { background: color-mix(in srgb, #b39dfc 20%, var(--panel-raised)); }
 
 /* ===== Aspetto «Neon UltraFOX» (bozza 3, scelta del proprietario): viola e ciano su fondo scuro, sempre, anche col tema chiaro ===== */
@@ -211,7 +193,7 @@
   border-radius: 1rem;
   max-width: none;
 }
-.foxc--neon h1 { font-size: 1.5rem; letter-spacing: 0.18em; text-transform: uppercase; background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet), var(--nx-pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.foxc--neon h1 { font-size: 0.9rem; letter-spacing: 0.14em; white-space: nowrap; text-transform: uppercase; background: linear-gradient(90deg, var(--nx-cyan), var(--nx-violet), var(--nx-pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .foxc--neon h2 { color: var(--nx-cyan); letter-spacing: 0.12em; }
 .foxc--neon .foxc-hero { background: rgba(20, 10, 50, 0.55); border: 1px solid #5a3fd1; box-shadow: inset 0 0 0 1px #2a1b66, 0 0 30px rgba(140, 90, 255, 0.3); }
 .foxc--neon.foxc--onair .foxc-hero { border-color: var(--nx-pink); box-shadow: inset 0 0 0 1px #5a1b4e, 0 0 34px rgba(255, 95, 210, 0.45); }
@@ -224,12 +206,6 @@
 .foxc--neon .foxc-btn:hover { background: rgba(107, 82, 230, 0.25); }
 .foxc--neon .foxc-btn--accent { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 18px rgba(65, 240, 224, 0.55); }
 .foxc--neon .foxc-btn--tx { background: #ff3d71; border-color: #ff3d71; color: #fff; box-shadow: 0 0 18px rgba(255, 61, 113, 0.5); }
-.foxc--neon .foxc-kpi { background: rgba(80, 50, 180, 0.12); border-color: var(--nx-line); border-left-color: var(--k, var(--nx-violet)); }
-.foxc--neon .foxc-kpi strong { color: #fff; text-shadow: 0 0 12px var(--nx-violet); }
-.foxc--neon .foxc-kpi--ok { --k: var(--nx-cyan); }
-.foxc--neon .foxc-kpi--accent { --k: var(--nx-violet); }
-.foxc--neon .foxc-kpi--warn { --k: var(--nx-pink); }
-.foxc--neon .foxc-options { background: rgba(30, 18, 70, 0.55); border-color: var(--nx-line); }
 .foxc--neon .foxc-seg { background: rgba(80, 50, 180, 0.2); }
 .foxc--neon .foxc-seg button.on, .foxc--neon .foxc-switch.on .foxc-switch-track { background: var(--nx-violet); border-color: var(--nx-violet); color: #12052a; box-shadow: 0 0 12px rgba(176, 107, 255, 0.6); }
 .foxc--neon .foxc-card[class*='foxc-tone--'] { background: rgba(30, 18, 70, 0.6); border-color: var(--nx-line); }
@@ -347,4 +323,113 @@
 .foxc-cmd-rx .live-note { font-size: var(--text-xs); color: var(--stop); }
 @media (max-width: 640px) {
   .foxc-cmd-sep { display: none; }
+}
+
+/* ===== Pagina compatta (finestra di circa 1880x950): testata in due righe basse, tesserine piccole per i numeri,
+   intestazioni e righe dense; tutto lo spazio va ai riquadri dei dati, prima di tutti «Chi chiama» ===== */
+.foxc { gap: 6px; padding: 6px 8px; }
+.foxc--neon { border-radius: 0.7rem; }
+
+/* testata: riga alta (nome, stato, tesserine, Posti e CQ verso) e barra dei comandi con le altre opzioni */
+.foxc-hero { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 8px; border-radius: 0.6rem; }
+.foxc-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.foxc-id { flex: none; gap: 6px; }
+.foxc-badge { width: 1.5rem; height: 1.5rem; border-radius: 0.45rem; font-size: 0.55rem; letter-spacing: 0.04em; }
+.foxc--neon .foxc-badge { box-shadow: 0 0 10px rgba(65, 240, 224, 0.45); }
+.foxc-sub { margin: 0; gap: 0.35rem; font-size: var(--text-xs); white-space: nowrap; }
+.foxc-state { flex: none; }
+.foxc-pill { padding: 0.12rem 0.55rem; gap: 0.35rem; font-size: 0.62rem; }
+.foxc-pill::before { width: 0.4rem; height: 0.4rem; }
+.foxc-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-left: auto; }
+.foxc-field { gap: 4px; }
+.foxc-label { font-size: 0.62rem; letter-spacing: 0.05em; }
+.foxc-seg { padding: 2px; gap: 1px; border-radius: 0.45rem; }
+.foxc-seg button { min-width: 1.45rem; height: 1.35rem; padding: 0 0.35rem; border-radius: 0.35rem; font-size: 0.68rem; }
+
+/* tesserine dei numeri: etichetta minuscola sopra, numero sotto; il ritmo con le barre accanto al numero */
+.foxc-stats { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.foxc-stat { display: grid; grid-template-columns: auto auto; justify-content: start; align-items: end; column-gap: 5px; min-width: 3.4rem; padding: 1px 7px 2px; border-radius: 0.4rem; border-left: 2px solid var(--k, var(--fx-line)); }
+.foxc-stat small { grid-column: 1 / -1; font-size: 0.56rem; line-height: 1.2; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.foxc-stat b { font-size: 0.85rem; line-height: 1.15; white-space: nowrap; }
+.foxc-spark { width: 3rem; height: 0.8rem; margin: 0 0 2px; gap: 1px; }
+.foxc-stat--cont { grid-column: auto; }
+.foxc-conts { flex-wrap: nowrap; gap: 0 0.4rem; font-size: 0.68rem; line-height: 1.15; white-space: nowrap; }
+.foxc-conts b { font-size: 0.68rem; }
+.foxc-stat--ok { --k: var(--dxcc-worked); }
+.foxc-stat--accent { --k: var(--mode-ft8); }
+.foxc-stat--warn { --k: var(--warn); }
+.foxc--neon .foxc-stat { background: rgba(80, 50, 180, 0.12); border-color: var(--nx-line); border-left-color: var(--k, var(--nx-violet)); }
+.foxc--neon .foxc-stat b { color: #fff; text-shadow: 0 0 10px var(--nx-violet); }
+.foxc--neon .foxc-stat--ok { --k: var(--nx-cyan); }
+.foxc--neon .foxc-stat--accent { --k: var(--nx-violet); }
+.foxc--neon .foxc-stat--warn { --k: var(--nx-pink); }
+
+/* barra dei comandi: tutti piu' bassi, stessi bordi e caratteri di prima */
+.foxc-cmdbar { --fx-btn-h: 1.45rem; gap: 4px 6px; padding-top: 4px; }
+.foxc-cmdbar .foxc-main-actions, .foxc-cmd-rx, .foxc-cmd-rx .rx-row, .foxc-cmd-rx .cmd-chips, .foxc--neon .foxc-cmd-rx .rx-seg { gap: 4px; }
+.foxc--neon .foxc-cmdbar .foxc-btn,
+.foxc--neon .foxc-cmd-rx .rx-seg-item,
+.foxc--neon .foxc-cmd-rx .tx-quick .chip { padding: 0 0.55rem; border-radius: 0.4rem; }
+.foxc--neon .foxc-cmdbar .stop-btn { padding: 0 0.55rem !important; border-radius: 0.4rem !important; }
+.foxc-cmd-sep { margin: 0 2px; }
+.foxc-switches { gap: 8px; }
+.foxc-switch { gap: 0.3rem; padding: 0; font-size: var(--text-xs); }
+.foxc-switch-track { width: 1.6rem; height: 0.95rem; }
+.foxc-switch-thumb { top: 1px; left: 1px; width: 0.65rem; height: 0.65rem; }
+.foxc-switch.on .foxc-switch-thumb { transform: translateX(0.65rem); }
+.foxc-otp { gap: 4px; }
+.foxc-otp input[type='password'] { width: 8.5rem; }
+
+/* campi e pulsantini dentro i riquadri */
+.foxc-input { height: 1.35rem; padding: 0 0.4rem; border-radius: 0.35rem; }
+.foxc-input[type='search'] { width: 6.5rem; }
+.foxc-input--num { width: 3.2rem; }
+.foxc-btn--small { height: 1.35rem; padding: 0 0.45rem; border-radius: 0.35rem; font-size: 0.68rem; }
+.foxc-note { padding: 3px 8px; font-size: var(--text-xs); }
+
+/* riquadri: intestazioni basse, righe dense */
+.foxc-card { border-radius: 0.6rem; }
+.foxc-card-head { gap: 6px; min-height: 1.55rem; padding: 2px 8px; }
+.foxc h2 { font-size: 0.68rem; letter-spacing: 0.08em; }
+.foxc-count { min-width: 1.2rem; padding: 0 0.35rem; font-size: 0.62rem; }
+.foxc-tools { gap: 4px; align-items: center; }
+.foxc-tools .foxc-switch { font-size: 0.68rem; }
+.foxc-chip { padding: 0 0.45rem; font-size: 0.62rem; }
+.foxc-empty { padding: 3px 8px; font-size: var(--text-xs); }
+.foxc-table { font-size: 0.8rem; }
+.foxc-table th { padding: 2px 8px; font-size: 0.6rem; }
+.foxc-table td { padding: 1px 8px; line-height: 1.25; }
+.foxc-actions .foxc-btn--small, .foxc-list .foxc-btn--small { height: 1.15rem; padding: 0 0.4rem; font-size: 0.62rem; }
+.foxc-snr { min-width: 2rem; padding: 0 0.3rem; }
+.foxc-flag { font-size: 0.62rem; }
+.foxc-list, .foxc-slots { padding: 0; }
+.foxc-list li, .foxc-slots li { gap: 6px; padding: 1px 8px; font-size: 0.8rem; }
+.foxc-slot { width: 1.1rem; height: 1.1rem; font-size: 0.6rem; }
+.foxc-steps i { padding: 0 0.3rem; font-size: 0.62rem; }
+.foxc-packet { margin: 3px 8px 0; padding: 2px 6px; }
+.foxc-params { margin: 2px 8px; font-size: 0.62rem; }
+.foxc-rx li { padding: 1px 8px; }
+.foxc-wf-handle { height: 0.55rem; }
+.foxc-wf-handle span { height: 3px; }
+
+/* disposizione: «Chi chiama» largo, accanto la colonna stretta con QSO in corso, In onda, In coda e Fox log; a destra i messaggi ricevuti */
+.foxc-body { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 6px; }
+.foxc-left { gap: 4px; }
+.foxc-grid--main.foxc-grid--two { grid-template-columns: minmax(0, 13fr) minmax(0, 7fr); gap: 6px; }
+.foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: 30rem; }
+.foxc-grid--main .foxc-stack { gap: 4px; }
+.foxc-grid--main .foxc-stack > .foxc-card { display: flex; flex-direction: column; flex: 1 1 0; min-height: 3.2rem; }
+/* In onda: alto quanto quello che trasmette; il Fox log prende un po' di piu' */
+.foxc-grid--main .foxc-stack > .foxc-card.foxc-tone--peach { flex: 0 1 auto; }
+.foxc-grid--main .foxc-stack > .foxc-card:last-child { flex-grow: 1.6; }
+.foxc-grid--main .foxc-stack .foxc-list, .foxc-grid--main .foxc-stack .foxc-slots { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.foxc-left > .foxc-card { flex: none; }
+
+/* finestra larga: la pagina riempie la finestra senza scorrere; i riquadri crescono fino alla cascata, che tiene la sua altezza */
+@media (min-width: 82rem) {
+  .foxc { flex: 1 0 auto; min-height: 0; }
+  .foxc-body { flex: 1 1 0; min-height: 26rem; }
+  .foxc-left { min-height: 0; }
+  .foxc-grid--main { flex: 1 1 0; min-height: 12rem; grid-template-rows: minmax(0, 1fr); }
+  .foxc-grid--main > .foxc-card, .foxc-grid--main > .foxc-stack { height: auto; min-height: 0; }
 }
