@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.11.196 - 2026-11-08
+- **Maniglie per allargare le finestre**: una sola per ogni confine, che allarga e stringe insieme le finestre delle due parti (per esempio DX Cluster con Bande aperte e Comandi); c'e' solo dove allargando nessuna finestra finisce sotto un'altra.
+- **AutoSeq**: suggerimento che spiega cosa fa acceso e spento (anche la stazione che chiama preparata come prossimo DX, senza trasmettere).
+- **README**: macOS nei badge e link diretto al `.dmg`; badge di Tauri.
 - **Installatore**: con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento («Non disinstallare»); la disinstallazione non cancella mai i dati (tolta la casella «Elimina i dati»). Modello NSIS proprio (`desktop/src-tauri/installer/installer.nsi`, da quello di Tauri 2.12.4).
 - **Finestre sempre davanti**: aperta dal tray (o da un'altra istanza) la finestra di Aurora, con l'avviso della versione nuova, viene sopra a tutte le altre: l'agente cede il primo piano (`AllowSetForegroundWindow`) e la finestra resta un attimo «sempre in primo piano».
 - **Righe colorate leggibili al passaggio del mouse** (QSO in corso in giallo, mio nominativo in giallo o ciano).
