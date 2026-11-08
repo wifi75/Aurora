@@ -188,27 +188,34 @@ fn bp_decode(llr: &[f32; N], max_iter: usize) -> Option<(Bits77, usize)> {
                         t *= tanhtoc[ichk][k];
                     }
                 }
-                // platanh di WSJT-X: arcotangente iperbolica limitata
-                let x = -t;
-                let y = if x.abs() <= 0.664 {
-                    x / 0.83
-                } else if x.abs() <= 0.9217 {
-                    x.signum() * (x.abs() - 0.4064) / 0.322
-                } else if x.abs() <= 0.9951 {
-                    x.signum() * (x.abs() - 0.8378) / 0.0524
-                } else if x.abs() <= 0.9998 {
-                    x.signum() * (x.abs() - 0.9914) / 0.0012
-                } else {
-                    x.signum() * 7.0
-                };
-                tov[j][i] = 2.0 * y;
+                tov[j][i] = 2.0 * platanh(-t);
             }
         }
     }
     None
 }
 
+/// `platanh` di WSJT-X: arcotangente iperbolica approssimata a tratti e limitata.
+pub(crate) fn platanh(x: f32) -> f32 {
+    let z = x.abs();
+    if z <= 0.664 {
+        x / 0.83
+    } else if z <= 0.9217 {
+        x.signum() * (z - 0.4064) / 0.322
+    } else if z <= 0.9951 {
+        x.signum() * (z - 0.8378) / 0.0524
+    } else if z <= 0.9998 {
+        x.signum() * (z - 0.9914) / 0.0012
+    } else {
+        x.signum() * 7.0
+    }
+}
+
 /// Mezza sinusoide del simbolo (12 campioni).
+pub(crate) fn half_sine() -> [f32; 12] {
+    pp()
+}
+
 fn pp() -> [f32; 12] {
     let mut p = [0f32; 12];
     for (i, v) in p.iter_mut().enumerate() {
@@ -317,11 +324,14 @@ pub struct Options {
     pub tolerance_hz: f32,
     /// Al piu' quante finestre (ping) si provano per periodo.
     pub max_pings: usize,
+    /// Il proprio nominativo e quello del corrispondente: servono a riconoscere i messaggi brevi (MSK40), che portano solo un hash.
+    pub my_call: String,
+    pub his_call: String,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { f_center_hz: 1500.0, tolerance_hz: 100.0, max_pings: 40 }
+        Options { f_center_hz: 1500.0, tolerance_hz: 100.0, max_pings: 40, my_call: String::new(), his_call: String::new() }
     }
 }
 
@@ -371,6 +381,8 @@ pub fn decode(audio: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<
     let ntol = (f64::from(options.tolerance_hz) / 5.0).round() as i64;
     let mut out: Vec<Decoded> = Vec::new();
     let mut tried = 0usize;
+    // per i messaggi brevi (20 ms) bastano le finestre di un quadro
+    let short_windows: Vec<(usize, f32)> = windows.iter().filter(|w| w.1 == 1).take(options.max_pings).map(|w| (w.0, w.2)).collect();
     for (start, nfr, ratio) in windows {
         if tried >= options.max_pings {
             break;
@@ -427,6 +439,17 @@ pub fn decode(audio: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<
             }
         }
     }
+    // i messaggi brevi, solo con la coppia di nominativi del QSO in corso (portano un hash, non i nominativi)
+    if !options.my_call.trim().is_empty() && !options.his_call.trim().is_empty() {
+        for (a, b) in [(&options.my_call, &options.his_call), (&options.his_call, &options.my_call)] {
+            if let Some((text, f, at, ratio)) = crate::msk40::decode_windows(&z, &short_windows, fc, f64::from(options.tolerance_hz), a, b)
+                && !out.iter().any(|d| d.text == text)
+            {
+                let snr = 10.0 * (f64::from(ratio) - 1.0).max(0.01).log10();
+                out.push(Decoded { text, freq_hz: f as f32, t_s: (at as f64 / FS) as f32, snr_db: snr.round() as i32 });
+            }
+        }
+    }
     out
 }
 
@@ -473,7 +496,7 @@ mod tests {
         let mut audio = noise(15 * 12_000, 1.0, 3);
         let t = tones("IU3ABC K1ABC R-05", &mut CallHashes::default()).expect("messaggio");
         // ping di 3 quadri (216 ms) a 6,2 s, frequenza 1520 Hz
-        let wave = modulate(&t, 1520.0, 3, 0.7);
+        let wave = modulate(&t, 1520.0, 3, 0.8);
         let at = 74_400 + 123;
         for (k, v) in wave.iter().enumerate() {
             audio[at + k] += v;
@@ -482,6 +505,21 @@ mod tests {
         let hit = d.iter().find(|d| d.text == "IU3ABC K1ABC R-05").expect("decodificato");
         assert!((hit.freq_hz - 1520.0).abs() <= 10.0, "{hit:?}");
         assert!((hit.t_s - 6.2).abs() < 0.3, "{hit:?}");
+    }
+
+    #[test]
+    fn a_short_msk40_ping_decodes_with_the_qso_calls() {
+        let t = crate::msk40::tones40("<IU3ABC K1ABC> R+03").expect("breve");
+        let mut audio = noise(15 * 12_000, 1.0, 21);
+        let wave = crate::msk40::modulate40(&t, 1500.0, 10, 1.0);
+        for (k, v) in wave.iter().enumerate() {
+            audio[60_000 + k] += v;
+        }
+        let o = Options { my_call: "K1ABC".into(), his_call: "IU3ABC".into(), ..Options::default() };
+        let d = decode(&audio, &o, &mut CallHashes::default());
+        assert!(d.iter().any(|d| d.text == "<IU3ABC K1ABC> R+03"), "{d:?}");
+        // senza nominativi del QSO i messaggi brevi non si riconoscono
+        assert!(decode(&audio, &Options::default(), &mut CallHashes::default()).iter().all(|d| !d.text.starts_with('<')));
     }
 
     #[test]

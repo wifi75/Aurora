@@ -1551,6 +1551,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 // MSK144: frequenza centrale fissa a 1500 Hz (toni a 1000 e 2000 Hz, come WSJT-X); il quadro di 72 ms si ripete per 14 s
                 Mode::Msk144 => {
+                    // messaggio breve «<IU3ABC K1ABC> R+03» (MSK40): quadri da 20 ms per 14 s
+                    if let Some(short) = jt::msk40::tones40(t) {
+                        return Ok(jt::msk40::modulate40(&short, 1500.0, 700, 1.0));
+                    }
                     check_exact(t, &self.hashes)?;
                     let tones = jt::msk144::tones(t, &mut self.hashes)?;
                     Ok(jt::msk144::modulate(&tones, 1500.0, 194, 1.0))

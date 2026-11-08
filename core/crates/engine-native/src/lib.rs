@@ -876,7 +876,15 @@ fn decode_period(
         Mode::Jt65 => jt::rx::decode(samples, &jt::rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
         Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
         Mode::Jt4 => jt::jt4::decode(samples, &jt::jt4::Options { submode: rig::jt4_submode(), ..jt::jt4::Options::default() }).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
-        Mode::Msk144 => jt::msk144::decode(samples, &jt::msk144::Options::default(), hashes).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
+        Mode::Msk144 => jt::msk144::decode(
+            samples,
+            &jt::msk144::Options {
+                my_call: ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
+                his_call: ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
+                ..jt::msk144::Options::default()
+            },
+            hashes,
+        ).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
         Mode::Q65 => {
             let setup = jt::q65::Setup::new(30, 0).unwrap_or_default();
             jt::q65::decode(samples, &jt::q65::Options { setup, ..jt::q65::Options::default() }, hashes).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect()
