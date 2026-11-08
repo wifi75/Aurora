@@ -74,7 +74,7 @@ pub fn decode(py: &[f32]) -> Option<([u8; K], [u8; NP])> {
     p[Q..].copy_from_slice(py);
     let mut x = [0u8; N];
     let mut y = [0u8; N];
-    decode_rows(&mut x, &mut y, &mut p, &INFO);
+    decode_rows(&mut x, &mut y, &mut p, &INFO, None);
     let mut message = [0u8; K];
     for (k, m) in message.iter_mut().enumerate() {
         *m = x[XPOS[k]];
@@ -84,10 +84,15 @@ pub fn decode(py: &[f32]) -> Option<([u8; K], [u8; NP])> {
     Some((message, word))
 }
 
-fn decode_rows(x: &mut [u8], y: &mut [u8], py: &mut [f32], info: &[u8]) {
+fn decode_rows(x: &mut [u8], y: &mut [u8], py: &mut [f32], info: &[u8], errors: Option<&mut [f64]>) {
     let rows = x.len();
     if rows == 1 {
         x[0] = argmax(py);
+        if let Some(e) = errors {
+            // probabilita' di sbagliare questa posizione (misura morbida: con le probabilita' tutte uguali la stima varrebbe 0 per caso)
+            let total: f32 = py.iter().sum();
+            e[0] += if total > 0.0 { 1.0 - f64::from(py[0] / total) } else { 1.0 };
+        }
         // congelato: il valore vero e' 0 qualunque sia la stima
         y[0] = if info[0] == 0 { 0 } else { x[0] };
         return;
@@ -104,17 +109,37 @@ fn decode_rows(x: &mut [u8], y: &mut [u8], py: &mut [f32], info: &[u8]) {
     }
     let (x_low, x_high) = x.split_at_mut(half);
     let (y_low, y_high) = y.split_at_mut(half);
-    decode_rows(x_high, y_high, &mut upper, &info[half..]);
+    let (mut e_low, mut e_high) = match errors {
+        Some(e) => {
+            let (a, b) = e.split_at_mut(half);
+            (Some(a), Some(b))
+        }
+        None => (None, None),
+    };
+    decode_rows(x_high, y_high, &mut upper, &info[half..], e_high.take());
     // meta' bassa: la meta' alta ricevuta spostata dalla decisione presa, per la meta' bassa ricevuta
     for r in 0..half {
         let hd = usize::from(y_high[r]);
         let shifted: Vec<f32> = (0..Q).map(|v| received_high[r * Q + (v ^ hd)]).collect();
         multiply(&mut py_low[r * Q..(r + 1) * Q], &shifted);
     }
-    decode_rows(x_low, y_low, py_low, &info[..half]);
+    decode_rows(x_low, y_low, py_low, &info[..half], e_low.take());
     for r in 0..half {
         y_high[r] ^= y_low[r];
     }
+}
+
+/// Per il calcolo delle tabelle (`tabelle_qpc`): decodifica a cancellazione successiva con il «genio» (parola tutta a zero, ogni
+/// decisione precedente gia' giusta) e somma, per ognuna delle 128 posizioni, la probabilita' di sbagliarla.
+#[doc(hidden)]
+pub fn genie_errors(py: &[f32], errors: &mut [f64; N]) {
+    assert_eq!(py.len(), NP * Q);
+    let mut p = vec![0f32; N * Q];
+    p[0] = 1.0;
+    p[Q..].copy_from_slice(py);
+    let mut x = [0u8; N];
+    let mut y = [0u8; N];
+    decode_rows(&mut x, &mut y, &mut p, &[0u8; N], Some(&mut errors[..]));
 }
 
 fn argmax(p: &[f32]) -> u8 {
