@@ -1234,3 +1234,5 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .where-list { grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)) !important; }
 .where-row > span { white-space: nowrap; }
 .where-row select { width: 11rem; flex: none; }
+.where-list { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)) !important; }
+.where-row select { width: 13.5rem; max-width: 62%; }

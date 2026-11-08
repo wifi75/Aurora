@@ -43,7 +43,7 @@ import { armAudio, playSound } from '../lib/soundBank';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
-import { readLayout, type Layout, type PanelId } from '../lib/layout';
+import { useLayout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone, useStationView } from '../lib/phone';
 import { PhoneLive } from './PhoneLive';
@@ -120,7 +120,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const heardCalls = decodes.slice(0, 300).map((d) => senderOf(d.text)?.call ?? '').filter(Boolean);
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const filterWindow = switches?.filter === true ? filterWindowHz(status?.mode, switches.hound === true) : null;
-  const [layout] = useState<Layout>(() => readLayout(browserStorage()));
+  const layout = useLayout();
 
   const titles: Record<PanelId, string> = {
     waterfall: t('panel.waterfall'),

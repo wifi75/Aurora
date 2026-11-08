@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { browserStorage } from './theme';
 export type PanelId = 'waterfall' | 'station' | 'tx' | 'cq' | 'all' | 'log' | 'cluster';
 export type Zone = 'left' | 'right';
 
@@ -124,4 +126,30 @@ export function saveLayout(storage: WritableStorage, layout: Layout): void {
   } catch {
     // senza archivio la disposizione non viene ricordata, ma l'interfaccia funziona lo stesso
   }
+  // chi mostra la Stazione si aggiorna subito (prima leggeva la disposizione solo all'apertura: «Nascosto» non toglieva niente)
+  try {
+    window.dispatchEvent(new Event(CHANGED));
+  } catch {
+    // fuori dal browser (prove) non c'e' nessuno da avvisare
+  }
+}
+
+const CHANGED = 'aurora-layout-changed';
+
+/** La disposizione salvata, sempre aggiornata: cambia appena la si salva in questa pagina o in un'altra finestra di Aurora. */
+export function useLayout(): Layout {
+  const [layout, setLayout] = useState<Layout>(() => readLayout(browserStorage()));
+  useEffect(() => {
+    const update = (e: Event) => {
+      if (e instanceof StorageEvent && e.key !== null && e.key !== KEY) return;
+      setLayout(readLayout(browserStorage()));
+    };
+    window.addEventListener(CHANGED, update);
+    window.addEventListener('storage', update);
+    return () => {
+      window.removeEventListener(CHANGED, update);
+      window.removeEventListener('storage', update);
+    };
+  }, []);
+  return layout;
 }
