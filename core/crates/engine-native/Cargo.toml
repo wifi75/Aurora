@@ -20,6 +20,7 @@ rustfft = "6.4.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+sha1 = "0.10"
 tracing = { workspace = true }
 
 [dev-dependencies]

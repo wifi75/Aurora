@@ -657,9 +657,15 @@ struct FoxBody {
     auto_queue: bool,
     #[serde(default)]
     ultra: bool,
+    /// Seme TOTP della verifica (azione `otp`), vuoto = spenta.
+    #[serde(default)]
+    seed: Option<String>,
+    /// Ogni quanti periodi il Fox classico manda il codice (azione `otp`).
+    #[serde(default)]
+    interval: Option<u32>,
 }
 
-/// I comandi della pagina Fox: `select` (in coda, `top` in testa), `unqueue`, `drop` (chiude un QSO in corso), `options`, `reset`.
+/// I comandi della pagina Fox: `select` (in coda, `top` in testa), `unqueue`, `drop` (chiude un QSO in corso), `options`, `reset`, `otp` (seme e intervallo della verifica).
 #[utoipa::path(post, path = "/api/v1/fox", responses((status = 200, description = "Comando consegnato al motore"), (status = 400, description = "Azione o nominativo non validi (bad_fox)")))]
 async fn fox_command(State(state): State<AppState>, _: Authed, Json(body): Json<FoxBody>) -> Result<Json<Value>, ApiError> {
     use aurora_core::FoxCommand as F;
@@ -681,6 +687,13 @@ async fn fox_command(State(state): State<AppState>, _: Authed, Json(body): Json<
             F::Options { slots: body.slots.unwrap_or(5).clamp(1, 5), more_cqs: body.more_cqs, cq, free_text, auto_queue: body.auto_queue, ultra: body.ultra }
         }
         "reset" => F::Reset,
+        "otp" => {
+            let seed = body.seed.as_deref().map(|s| s.trim().to_uppercase()).filter(|s| !s.is_empty());
+            if seed.as_deref().is_some_and(|s| s.len() != 16 || !s.bytes().all(|b| b.is_ascii_uppercase() || (b'2'..=b'7').contains(&b))) {
+                return Err(bad());
+            }
+            F::Otp { seed, interval: body.interval.unwrap_or(1).clamp(1, 100) }
+        }
         _ => return Err(bad()),
     };
     dispatch(&state, Command::Fox(cmd))

@@ -23,6 +23,8 @@ use crate::rig::NativeControls;
 
 const DAY_MS: u64 = 86_400_000;
 const RECENT_KEEP: usize = 300;
+/// Quanti QSO del Fox log si mandano alla pagina.
+const FOX_LOG_VIEW: usize = 500;
 /// Un messaggio di JTDX e' lungo al massimo 37 caratteri (`character*37 msg` di `pack77`); se non e' standard si trasmettono i primi 13.
 pub const MESSAGE_MAX: usize = 37;
 /// Caratteri del testo libero.
@@ -283,6 +285,10 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     fox: crate::fox::Fox,
     fox_logged: u64,
     fox_last_tx: Vec<String>,
+    /// Il Fox log della sessione per la pagina (gli ultimi [`FOX_LOG_VIEW`]).
+    fox_log: VecDeque<aurora_core::FoxLogView>,
+    /// La zona protetta in cui cade la sintonia (`FoxGuardBands`), se c'e'.
+    fox_guard: Option<String>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -327,7 +333,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new() };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None };
         driver.seq.set_rx_freq(rx_published);
         if matches!(mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4) {
             driver.opts.use_rrr = true;
@@ -822,6 +828,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.fox.opts = crate::fox::FoxOptions { slots: slots.clamp(1, crate::fox::MAX_SLOTS), more_cqs, cq, free_text, auto_queue, ultra };
                     }
                     F::Reset => self.fox.reset(),
+                    F::Otp { seed, interval } => {
+                        let wanted = seed.as_deref().is_some_and(|s| !s.trim().is_empty());
+                        self.fox.set_otp(seed, i64::from(interval));
+                        if wanted && self.fox.otp_seed.is_none() {
+                            log.push("Fox: seme OTP non valido (servono 16 caratteri A-Z e 2-7), verifica spenta".to_string());
+                        }
+                    }
+                    F::Annotate { call, order } => self.fox.annotate(&call, order),
                 }
                 self.publish_fox();
             }            TxCommand::Erase => self.recent.clear(),
@@ -918,20 +932,35 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.fox.on_decodes(decoded);
         let mut qsos = Vec::new();
         let next = slot.next();
+        // `FoxGuardBands`: vicino a una frequenza FT8 standard o nella sottobanda WSPR la Fox non trasmette
+        self.fox_guard = crate::fox::guard_band(dial_hz).map(|(kind, hz)| match kind {
+            crate::fox::GuardKind::StandardFt8 => format!("FT8 {hz}"),
+            crate::fox::GuardKind::Wspr => format!("WSPR {hz}"),
+        });
+        if self.seq.is_enabled() && next.is_even() && self.last_planned != Some(next) && dial_hz > 0 && self.fox_guard.is_some() {
+            log.push(format!("Fox: niente trasmissione, la sintonia {dial_hz} Hz e' nella zona protetta {}", self.fox_guard.as_deref().unwrap_or_default()));
+            self.last_planned = Some(next);
+        }
         if self.seq.is_enabled() && next.is_even() && self.last_planned != Some(next) {
-            let (msgs, logged) = self.fox.plan_tx(band);
+            let next_start = next.start_ms(self.mode);
+            let (msgs, logged) = self.fox.plan_tx(band, next_start);
             let tx_hz = self.controls.tx_df.load(Ordering::Relaxed);
             let mut waves = Vec::new();
             let mut sent = Vec::new();
             let ultra = self.fox.opts.ultra;
             if ultra {
                 // UltraFOX: tutti i posti in un solo segnale compatibile con SuperFox (da 750 Hz, in FT8)
-                let extras = crate::ultrafox::Extras { more_cqs: false, free_text: self.fox.opts.free_text.clone(), otp: 0 };
+                // il codice di verifica nel campo d20 (`sfox_tx`: «OTP:123456»), 0 senza seme
+                let otp = self.fox.otp_code(next_start).and_then(|c| c.parse().ok()).unwrap_or(0);
+                let extras = crate::ultrafox::Extras { more_cqs: false, free_text: self.fox.opts.free_text.clone(), otp };
                 match crate::ultrafox::content_from_fox(&msgs, &self.my_call, &self.fox.my_grid()) {
                     Some((content, more_cqs)) => match crate::ultrafox::transmission(&content, &crate::ultrafox::Extras { more_cqs: more_cqs || self.fox.opts.more_cqs, ..extras }) {
                         Ok(w) => {
                             waves.push(w);
                             sent.clone_from(&msgs);
+                            if otp != 0 {
+                                sent.push(format!("$VERIFY$ {} {otp:06}", self.my_call));
+                            }
                         }
                         Err(e) => log.push(format!("UltraFOX: messaggio non impacchettabile ({e:?}): {}", msgs.join(" | "))),
                     },
@@ -970,6 +999,19 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             let start = next.start_ms(self.mode);
             for l in logged {
                 self.fox_logged += 1;
+                self.fox_log.push_back(aurora_core::FoxLogView {
+                    call: l.call.clone(),
+                    grid: l.grid.clone(),
+                    band: l.band.clone(),
+                    mode: self.mode.name().to_string(),
+                    freq_hz: dial_hz + u64::from(tx_hz),
+                    sent: l.sent.clone(),
+                    rcvd: l.rcvd.clone(),
+                    time_ms: start + 14_000,
+                });
+                while self.fox_log.len() > FOX_LOG_VIEW {
+                    self.fox_log.pop_front();
+                }
                 qsos.push(QsoRecord {
                     call: l.call,
                     grid: l.grid,
@@ -992,7 +1034,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Lo stato della Fox per l'interfaccia.
     fn publish_fox(&self) {
         let f = &self.fox;
-        let view = |c: &crate::fox::HoundCaller| aurora_core::FoxCallerView { call: c.call.clone(), grid: c.grid.clone(), snr: c.snr, freq_hz: c.freq_hz, age: c.age };
+        let view = |c: &crate::fox::HoundCaller| aurora_core::FoxCallerView { call: c.call.clone(), grid: c.grid.clone(), snr: c.snr, freq_hz: c.freq_hz, age: c.age, order: f.annotation(&c.call) };
         let snap = aurora_core::FoxSnapshot {
             enabled: self.controls.switch_on("fox"),
             slots: f.opts.slots,
@@ -1001,7 +1043,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             cq: f.opts.cq.clone(),
             auto_queue: f.opts.auto_queue,
             callers: f.callers.values().map(view).collect(),
-            queue: f.queue.iter().map(|q| aurora_core::FoxCallerView { call: q.call.clone(), grid: q.grid.clone(), snr: q.report.parse().unwrap_or(0), freq_hz: 0, age: 0 }).collect(),
+            queue: f.queue.iter().map(|q| aurora_core::FoxCallerView { call: q.call.clone(), grid: q.grid.clone(), snr: q.report.parse().unwrap_or(0), freq_hz: 0, age: 0, order: f.annotation(&q.call) }).collect(),
             in_progress: f
                 .in_progress
                 .iter()
@@ -1010,6 +1052,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             tx: self.fox_last_tx.clone(),
             periods: f.periods(),
             logged: self.fox_logged,
+            otp: f.otp_seed.is_some(),
+            otp_interval: u32::try_from(f.otp_interval).unwrap_or(1),
+            otp_code: f.last_otp.clone(),
+            guard: self.fox_guard.clone(),
+            log: self.fox_log.iter().cloned().collect(),
+            params: aurora_core::FoxParams { strikes: crate::fox::MAX_STRIKES, wait: crate::fox::MAX_FOX_WAIT, cq_every: crate::fox::FOX_CQ_TIME, queue_max: crate::fox::MAX_HOUNDS_IN_QUEUE },
         };
         if let Ok(mut v) = self.controls.fox_view.lock() {
             *v = snap;
@@ -3160,6 +3208,72 @@ mod tests {
         let last = requests.last().expect("una trasmissione");
         assert_eq!(last.wave.len(), (crate::ultrafox::TONES + 2) * crate::ultrafox::NSPS, "{log:?}");
         assert!(controls.fox_view.lock().expect("fox").ultra);
+    }
+
+    /// Fox classico con 5 posti e verifica OTP: l'onda sommata porta 5 segnali FT8 e si decodificano tutti, compreso «IU3ABC.123456».
+    #[test]
+    fn classic_fox_five_slots_with_otp_round_trip() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("fox", true);
+        controls.tx_df.store(400, Ordering::Relaxed);
+        d.handle(TxCommand::Enable(true), BASE);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1 }), BASE + 0.5);
+        let odd = SLOT_MS + 15_000;
+        let hounds = ["K1ABC", "W9XYZ", "JA1XYZ", "DL1ABC"];
+        let decodes: Vec<(String, i32, u32)> = hounds.iter().map(|h| (format!("IU3ABC {h} JN45"), -10, 1500)).collect();
+        d.after_slot(odd, &decodes, BASE + 29.2, 14_090_000, "20m");
+        for h in hounds {
+            d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: h.into(), top: false }), BASE + 29.5);
+        }
+        let (_, log) = d.after_slot(odd + 30_000, &[], BASE + 59.2, 14_090_000, "20m");
+        assert!(log.iter().any(|l| l.contains("Fox: trasmetto 5 posti")), "{log:?}");
+        let code = controls.fox_view.lock().expect("fox").otp_code.clone().expect("codice");
+        let mut sent = last_text(&port);
+        sent.sort();
+        let mut want: Vec<String> = hounds.iter().map(|h| format!("{h} IU3ABC -10")).collect();
+        want.push(format!("IU3ABC.{code}"));
+        want.sort();
+        assert_eq!(sent, want, "{log:?}");
+        assert!(controls.fox_view.lock().expect("fox").otp);
+    }
+
+    /// UltraFOX con OTP: il segnale si decodifica con il ricevitore SuperFox di Aurora e porta il codice del momento nel campo d20.
+    #[test]
+    fn ultrafox_with_otp_round_trip() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("fox", true);
+        d.handle(TxCommand::Enable(true), BASE);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Options { slots: 5, more_cqs: false, cq: "CQ".into(), free_text: None, auto_queue: false, ultra: true }), BASE + 1.0);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1 }), BASE + 1.5);
+        let odd = SLOT_MS + 15_000;
+        d.after_slot(odd, &[("IU3ABC K1ABC FN42".to_string(), -10, 1500)], BASE + 29.2, 14_090_000, "20m");
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "K1ABC".into(), top: false }), BASE + 29.5);
+        d.after_slot(odd + 30_000, &[], BASE + 59.2, 14_090_000, "20m");
+        let code = controls.fox_view.lock().expect("fox").otp_code.clone().expect("codice");
+        assert!(controls.fox_view.lock().expect("fox").tx.iter().any(|t| *t == format!("$VERIFY$ IU3ABC {code}")));
+        let wave = port.requests.lock().expect("richieste").last().expect("una trasmissione").wave.clone();
+        let mut audio = vec![0.0f32; 15 * 12_000];
+        for (i, w) in wave.iter().enumerate() {
+            if let Some(a) = audio.get_mut(6_000 + i) {
+                *a += 0.1 * w;
+            }
+        }
+        let got = crate::ultrafox_rx::decode(&audio, 750.0, 100.0).expect("decodificato");
+        assert_eq!(got.otp, code.parse::<u32>().expect("numero"));
+        assert!(got.messages.iter().any(|m| m.starts_with("K1ABC IU3ABC")), "{:?}", got.messages);
+    }
+
+    /// `FoxGuardBands`: sulla frequenza FT8 standard la Fox non trasmette e la pagina lo sa.
+    #[test]
+    fn fox_does_not_transmit_on_a_guard_band() {
+        let (mut d, port, controls) = driver();
+        controls.set_switch("fox", true);
+        d.handle(TxCommand::Enable(true), BASE);
+        let odd = SLOT_MS + 15_000;
+        let (_, log) = d.after_slot(odd, &[], BASE + 29.2, 14_074_000, "20m");
+        assert!(log.iter().any(|l| l.contains("zona protetta")), "{log:?}");
+        assert!(port.requests.lock().expect("richieste").is_empty());
+        assert_eq!(controls.fox_view.lock().expect("fox").guard.as_deref(), Some("FT8 14074000"));
     }
 
     #[test]

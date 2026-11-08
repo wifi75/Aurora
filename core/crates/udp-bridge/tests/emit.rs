@@ -1,7 +1,7 @@
 //! Gli encoder dei datagrammi di JTDX si rileggono con il decoder esistente (e con i comandi di ritorno).
 
 use udp_bridge::{
-    decode, decode_request, encode_clear, encode_clear_window, encode_close, encode_configure, encode_decode, encode_free_text, encode_halt_tx, encode_heartbeat, encode_highlight_callsign,
+    decode, decode_request, encode_annotation_info, encode_clear, encode_clear_window, encode_close, encode_configure, encode_decode, encode_free_text, encode_halt_tx, encode_heartbeat, encode_highlight_callsign,
     encode_location, encode_logged_adif, encode_qso_logged, encode_replay, encode_reply, encode_set_tx_freq, encode_status, encode_switch_configuration, encode_trigger_cq, Configure,
     ConfigureFields, Decode, Message, QsoLoggedData, Request, Status, ADIF_HEADER, MAGIC,
 };
@@ -150,6 +150,8 @@ fn the_new_incoming_commands_are_read() {
         decode_request(&encode_highlight_callsign("JTDX", 3, "K1ABC", None, None, false)).expect("hl").request,
         Some(Request::HighlightCallsign { call: "K1ABC".into(), background: None, foreground: None, last_only: false })
     );
+    assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "K1ABC", Some(12))).expect("ann").request, Some(Request::AnnotationInfo { call: "K1ABC".into(), order: Some(12) }));
+    assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "K1ABC", None)).expect("ann").request, Some(Request::AnnotationInfo { call: "K1ABC".into(), order: None }));
     assert_eq!(decode_request(&encode_switch_configuration("JTDX", 3, "Gara")).expect("sw").request, Some(Request::SwitchConfiguration { name: "Gara".into() }));
     let unchanged = decode_request(&encode_configure("JTDX", 3, &ConfigureFields::default())).expect("cfg").request;
     assert_eq!(unchanged, Some(Request::Configure(Configure::default())));
