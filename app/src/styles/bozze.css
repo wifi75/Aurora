@@ -1291,3 +1291,20 @@ html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: 
 /* commenti piu' corti (con «…»): lo spazio che avanza va al paese, cosi' modo e commenti stanno piu' a destra */
 .cluster-table td.cluster-country { width: auto !important; max-width: none; }
 .cluster-table td.cluster-comment { width: 1% !important; max-width: 10em; min-width: 6em; }
+/* titoli del DX Cluster con «Paese» su due colonne: Modo e il 5o titolo, Commenti il 6o */
+.cluster-table th:nth-child(6) { text-align: left; padding-left: 10px !important; }
+.cluster-table th:nth-child(5) { text-align: center; }
+.cluster-table th:nth-child(7) { padding-left: 5px !important; }
+.cluster-table th.cluster-th-country { text-align: left; }
+/* titoli sempre in linea con l'inizio dei dati (richiesta del proprietario 2026-11-08): tutto a sinistra, stesso margine per titolo e cella */
+.cluster-table th, .cluster-table td, .log4om-table th, .log4om-table td { text-align: left !important; }
+.cluster-table th, .cluster-table td { padding-left: 6px !important; padding-right: 6px !important; }
+.cluster-table td.cluster-flag { padding-right: 2px !important; }
+.cluster-table td.cluster-country { padding-left: 2px !important; }
+.cluster-table th:first-child, .cluster-table td:first-child { padding-left: 8px !important; }
+.log4om-table th, .log4om-table td { padding-left: 5px !important; padding-right: 5px !important; }
+.log4om-table th:first-child, .log4om-table td:first-child { padding-left: 8px !important; }
+.log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { padding-left: 10px !important; }
+.cluster-table td.cluster-comment, .cluster-table th:nth-child(6) { padding-left: 10px !important; }
+.cluster-table th:nth-child(6) { border-left: 1px solid transparent; }
+.cluster-table th:nth-child(5), .cluster-table th:nth-child(7) { padding-left: 6px !important; }

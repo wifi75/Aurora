@@ -176,8 +176,8 @@ function ClusterPanelInner() {
               <th>{t('cluster.col.freq')}</th>
               <th>{t('cluster.col.call')}</th>
               {/* «Paese» parte sopra le bandierine: il titolo sta nella colonna della bandiera e sborda nella successiva */}
-              <th aria-hidden="true" />
-              <th className="cluster-th-country">{t('cluster.col.country')}</th>
+              {/* il titolo copre bandiera e nome: comincia in linea con la bandiera */}
+              <th className="cluster-th-country" colSpan={2}>{t('cluster.col.country')}</th>
               <th>{t('cluster.col.mode')}</th>
               <th title={t('tip.ui.clusterComment')}>{t('cluster.col.comment')}</th>
               <th>{t('cluster.col.time')}</th>
