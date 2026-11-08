@@ -129,6 +129,8 @@ pub struct RigConfig {
     pub power_off: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
+    /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
+    pub tci_receiver: u8,
     /// Indirizzo host:porta del server UDP di FT-991(A) Link; vuoto = quello di base, 127.0.0.1:50001.
     pub ft991_address: String,
 }
@@ -162,6 +164,7 @@ impl Default for RigConfig {
             power_on: false,
             power_off: false,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
+            tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),
         }
     }
@@ -206,6 +209,9 @@ impl RigConfig {
         }
         if !self.tci_address.is_empty() && !token_ok(&self.tci_address) {
             return Err("bad_tci_address");
+        }
+        if self.tci_receiver > 1 {
+            return Err("bad_tci_receiver");
         }
         if !self.ft991_address.is_empty() && !token_ok(&self.ft991_address) {
             return Err("bad_ft991_address");

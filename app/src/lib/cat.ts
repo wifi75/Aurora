@@ -25,6 +25,7 @@ export const DEFAULT_CAT: CatConfig = {
   share_enabled: false,
   share_port: 4532,
   tci_address: '127.0.0.1:40001',
+  tci_receiver: 0,
   ft991_address: '127.0.0.1:50001',
 };
 
@@ -44,6 +45,7 @@ export function catIssue(c: CatConfig): string | null {
   if (c.port !== '' && !PORT.test(c.port)) return 'bad_port';
   if (c.ptt_port !== '' && !PORT.test(c.ptt_port)) return 'bad_port';
   if (c.tci_address !== undefined && c.tci_address !== '' && !PORT.test(c.tci_address)) return 'bad_tci_address';
+  if (c.tci_receiver !== undefined && c.tci_receiver !== 0 && c.tci_receiver !== 1) return 'bad_tci_receiver';
   if (c.ft991_address !== undefined && c.ft991_address !== '' && !PORT.test(c.ft991_address)) return 'bad_ft991_address';
   if (c.baud !== 0 && !(BAUDS as readonly number[]).includes(c.baud)) return 'bad_baud';
   if (![0, 7, 8].includes(c.data_bits) || ![0, 1, 2].includes(c.stop_bits)) return 'bad_serial';

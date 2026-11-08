@@ -33,6 +33,9 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['nessuna risposta', 'core.noReply'],
   ["La radio e' spenta (PS0): accendila oppure spunta «Accendi» nella scheda Radio", 'core.ft991.off'],
   ['Collegamento con FT-991(A) Link perso: nuovo tentativo', 'core.ft991.lost'],
+  ['Accensione del ricevitore RX2', 'core.tci.rx2Wait'],
+  ["La SDR non ha acceso il ricevitore RX2 (rx_enable): controlla che la SDR sia accesa e che abbia RX2, poi ricollega", 'core.tci.rx2Failed'],
+  ['La SDR non ha ancora detto la potenza (drive): cambiala una volta dalla SDR', 'core.tci.noDrive'],
   ['servono il tuo nominativo e il tuo locatore (scheda Generali)', 'core.svc.needCall'],
   ['password di eQSL non impostata (o non leggibile da questo utente)', 'core.svc.eqslPassword'],
   ["Automazione spenta dall'operatore", 'core.au.offByUser'],
@@ -53,6 +56,9 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
 const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
   // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
   { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
+  // TCI: comando senza eco (nome del comando del protocollo) e frequenza rifiutata
+  { re: /^La radio TCI non ha confermato il comando (\S+) \(nessuna eco dal server, ripetuto una volta\)$/s, key: 'core.tci.noEcho', vars: ['cmd'] },
+  { re: /^La radio TCI ha rifiutato la frequenza (\d+) Hz: e' rimasta su (\d+) Hz$/s, key: 'core.tci.freqRefused', vars: ['asked', 'got'] },
   // il modo arriva da `format!` nel core: non e' una frase intera da controllare
   { re: /^Automazione accesa, modo reale$/s, key: 'core.au.onLive', vars: [] },
   { re: /^Automazione accesa, modo in prova a vuoto$/s, key: 'core.au.onDry', vars: [] },
