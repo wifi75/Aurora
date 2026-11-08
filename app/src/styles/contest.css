@@ -120,3 +120,10 @@ textarea.ctc-input { height: auto; padding: 4px 6px; }
   .ctc-dec { grid-row: auto; min-height: 320px; }
   .ctc-box { min-height: 220px; }
 }
+
+/* le tendine della pagina Contest: le voci aperte con i colori dell'app (prima sfondo chiaro e testo chiaro, illeggibili) */
+.ctc-chip--sel, .ctc-mini, .ctc-input { color-scheme: dark; }
+.ctc-chip--sel option, .ctc-mini option, .ctc-input option { background: #0b1220; color: #e6edf3; }
+.ctc-chip--sel option:checked, .ctc-mini option:checked, .ctc-input option:checked { background: #2a2150; color: #cfc6ff; }
+html[data-theme='light'] .ctc-chip--sel, html[data-theme='light'] .ctc-mini, html[data-theme='light'] .ctc-input { color-scheme: light; }
+html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mini option, html[data-theme='light'] .ctc-input option { background: #ffffff; color: #1a2233; }
