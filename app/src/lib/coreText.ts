@@ -47,6 +47,9 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['il nominativo non ha la forma di un nominativo', 'core.au.badShape'],
   ['segnale molto debole di una stazione mai sentita prima: possibile falso decode', 'core.au.ghost'],
   ['tentativi esauriti senza QSO', 'core.au.exhausted'],
+  ['paese nuovo in questo modo', 'core.au.newMode'],
+  ['continente sconosciuto', 'core.au.contUnknown'],
+  ["Di nuovo nella fascia oraria: l'automazione riprende", 'core.au.inWindow'],
 ];
 
 /** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
@@ -63,6 +66,12 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
   { re: /^(\S+) e' nell'elenco delle esclusioni$/s, key: 'core.au.excluded', vars: ['call'] },
   { re: /^Raggiunte (\d+) risposte di fila senza QSO: automazione spenta$/s, key: 'core.au.maxRow', vars: ['n'] },
   { re: /^Raggiunto il tetto di (\d+) risposte al giorno$/s, key: 'core.au.maxDay', vars: ['n'] },
+  { re: /^Raggiunto il limite di (\d+) QSO all'ora$/s, key: 'core.au.maxHour', vars: ['n'] },
+  { re: /^Fuori dalla fascia oraria (\S+) \(ora locale\): automazione in attesa$/s, key: 'core.au.outWindow', vars: ['range'] },
+  { re: /^Nessun CQ a cui rispondere da (\d+) min: chiamerei CQ \(prova a vuoto\)$/s, key: 'core.au.wouldCallCq', vars: ['n'] },
+  { re: /^Nessun CQ a cui rispondere da (\d+) min: chiamo CQ$/s, key: 'core.au.callCq', vars: ['n'] },
+  { re: /^(\S+): (.+) e' tra i paesi esclusi$/s, key: 'core.au.countryExcluded', vars: ['call', 'country'] },
+  { re: /^(\S+): continente (\S+) non tra quelli scelti$/s, key: 'core.au.contOff', vars: ['call', 'cont'] },
   { re: /^Rispondo a (\S+): (.*)$/s, key: 'core.au.reply', vars: ['call', 'why'], inner: ['why'] },
   { re: /^Risponderei a (\S+): (.*) \(prova a vuoto\)$/s, key: 'core.au.wouldReply', vars: ['call', 'why'], inner: ['why'] },
   { re: /^nella lista dei desiderati \((.*)\)$/s, key: 'core.au.wanted', vars: ['why'] },

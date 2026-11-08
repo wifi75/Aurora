@@ -1,4 +1,4 @@
-import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
+import { AutomationCountriesSchema, AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
 import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
@@ -73,6 +73,11 @@ export async function finishPairing(code: string, deviceName: string): Promise<v
 
 export async function getAutomation(): Promise<AutomationState> {
   return AutomationStateSchema.parse(await (await request('/automation')).json());
+}
+
+/** I paesi di cty.dat per le esclusioni dell'automazione (vuoto senza cty.dat). */
+export async function getAutomationCountries(): Promise<string[]> {
+  return AutomationCountriesSchema.parse(await (await request('/automation/countries')).json()).countries;
 }
 
 export interface AutomationChange {
