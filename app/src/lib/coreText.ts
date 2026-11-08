@@ -31,6 +31,8 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
     'core.omniNoExtras',
   ],
   ['nessuna risposta', 'core.noReply'],
+  ["La radio e' spenta (PS0): accendila oppure spunta «Accendi» nella scheda Radio", 'core.ft991.off'],
+  ['Collegamento con FT-991(A) Link perso: nuovo tentativo', 'core.ft991.lost'],
   ['servono il tuo nominativo e il tuo locatore (scheda Generali)', 'core.svc.needCall'],
   ['password di eQSL non impostata (o non leggibile da questo utente)', 'core.svc.eqslPassword'],
   ["Automazione spenta dall'operatore", 'core.au.offByUser'],
@@ -49,6 +51,8 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
 
 /** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
 const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
+  // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
+  { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
   // il modo arriva da `format!` nel core: non e' una frase intera da controllare
   { re: /^Automazione accesa, modo reale$/s, key: 'core.au.onLive', vars: [] },
   { re: /^Automazione accesa, modo in prova a vuoto$/s, key: 'core.au.onDry', vars: [] },

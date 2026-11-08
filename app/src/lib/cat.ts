@@ -25,6 +25,7 @@ export const DEFAULT_CAT: CatConfig = {
   share_enabled: false,
   share_port: 4532,
   tci_address: '127.0.0.1:40001',
+  ft991_address: '127.0.0.1:50001',
 };
 
 /** Una porta seriale (COM3, /dev/ttyUSB0) e non un indirizzo di rete (host:porta). */
@@ -43,6 +44,7 @@ export function catIssue(c: CatConfig): string | null {
   if (c.port !== '' && !PORT.test(c.port)) return 'bad_port';
   if (c.ptt_port !== '' && !PORT.test(c.ptt_port)) return 'bad_port';
   if (c.tci_address !== undefined && c.tci_address !== '' && !PORT.test(c.tci_address)) return 'bad_tci_address';
+  if (c.ft991_address !== undefined && c.ft991_address !== '' && !PORT.test(c.ft991_address)) return 'bad_ft991_address';
   if (c.baud !== 0 && !(BAUDS as readonly number[]).includes(c.baud)) return 'bad_baud';
   if (![0, 7, 8].includes(c.data_bits) || ![0, 1, 2].includes(c.stop_bits)) return 'bad_serial';
   if (!Number.isInteger(c.poll_secs) || c.poll_secs < 1 || c.poll_secs > 99) return 'bad_poll';
@@ -60,6 +62,7 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
   const network = c.port !== '' && !isSerialPort(c.port);
   return {
     tci: c.backend === 'tci',
+    ft991: c.backend === 'ft991link',
     rig: hamlib,
     port: hamlib,
     baud: hamlib && !network,
@@ -67,8 +70,9 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
     civ: hamlib && ((model?.manufacturer ?? c.rig_name).toLowerCase().includes('icom') || c.civ_address !== 0),
     pttPort: hamlib && (c.ptt === 'dtr' || c.ptt === 'rts'),
     ptt: hamlib,
-    // con TCI lo split della radio non e' ancora comandato
+    // con TCI lo split della radio non e' ancora comandato; con FT-991(A) Link c'e' solo lo split simulato (solo VFO A)
     split: c.backend !== 'tci',
+    splitRig: c.backend !== 'ft991link',
     catMode: true,
     poll: hamlib,
   };

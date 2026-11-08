@@ -21,6 +21,8 @@ pub enum Backend {
     Omnirig,
     /// TCI (Expert Electronics) su WebSocket: SunSDR/ExpertSDR, ANAN con Thetis e le altre SDR che lo parlano.
     Tci,
+    /// FT-991(A) Link: il programma che tiene la porta COM delle Yaesu FT-991/FT-991A e riceve i comandi CAT su UDP.
+    Ft991link,
     /// Nessuna radio comandata: la frequenza si cambia a mano (le bande muovono solo quella di Aurora).
     None,
 }
@@ -127,6 +129,8 @@ pub struct RigConfig {
     pub power_off: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
+    /// Indirizzo host:porta del server UDP di FT-991(A) Link; vuoto = quello di base, 127.0.0.1:50001.
+    pub ft991_address: String,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -158,6 +162,7 @@ impl Default for RigConfig {
             power_on: false,
             power_off: false,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
+            ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),
         }
     }
 }
@@ -201,6 +206,9 @@ impl RigConfig {
         }
         if !self.tci_address.is_empty() && !token_ok(&self.tci_address) {
             return Err("bad_tci_address");
+        }
+        if !self.ft991_address.is_empty() && !token_ok(&self.ft991_address) {
+            return Err("bad_ft991_address");
         }
         if !self.ptt_port.is_empty() && !token_ok(&self.ptt_port) {
             return Err("bad_port");
@@ -514,6 +522,7 @@ fn suggest_name(config: &RigConfig, profiles: &[RigProfile]) -> String {
         Backend::Hamlib => "Hamlib",
         Backend::Omnirig => "OmniRig",
         Backend::Tci => "TCI",
+        Backend::Ft991link => "FT-991(A) Link",
         Backend::None => "senza CAT",
     };
     let base: String = format!("{rig} {backend}").chars().take(76).collect();

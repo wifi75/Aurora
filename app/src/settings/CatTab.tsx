@@ -298,6 +298,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             {/* OmniRig e' un programma di Windows: su Linux non si propone (se era gia' scelto resta visibile per cambiarlo) */}
             {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}</option> : null}
             <option value="tci">{t('cat.backend.tci')}</option>
+            <option value="ft991link">{t('cat.backend.ft991link')}</option>
             <option value="none">{t('cat.backend.none')}</option>
           </select>
         </Field>
@@ -310,6 +311,18 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               autoComplete="off"
               placeholder="127.0.0.1:40001"
               onChange={(e) => set({ tci_address: e.target.value.trim() })}
+            />
+          </Field>
+        ) : null}
+        {fields.ft991 ? (
+          <Field label={t('cat.ft991.address')} className="cat-w-l" hint={t('tip.cat.ft991.address')}>
+            <input
+              type="text"
+              value={config.ft991_address ?? ''}
+              spellCheck={false}
+              autoComplete="off"
+              placeholder="127.0.0.1:50001"
+              onChange={(e) => set({ ft991_address: e.target.value.trim() })}
             />
           </Field>
         ) : null}
@@ -528,8 +541,9 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
         <Cells min={14}>
           {fields.split ? (
             <Field label={t('cat.split')} hint={t('tip.cat.split')}>
-              <select value={config.split} onChange={(e) => set({ split: e.target.value as CatSplit })}>
-                {SPLITS.map(([v, k]) => (
+              {/* con FT-991(A) Link lo split «della radio» non c'e' (solo VFO A): il core lo fa comunque simulato */}
+              <select value={!fields.splitRig && config.split === 'rig' ? 'emulate' : config.split} onChange={(e) => set({ split: e.target.value as CatSplit })}>
+                {SPLITS.filter(([v]) => fields.splitRig || v !== 'rig').map(([v, k]) => (
                   <option key={v} value={v}>
                     {t(k)}
                   </option>
@@ -553,8 +567,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           ) : null}
           <Check label={t('cat.auto')} hint={t('tip.cat.auto')} checked={config.auto_connect} onChange={(v) => { set({ auto_connect: v }); saveNow.mutate({ auto_connect: v }); }} />
           <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => { set({ read_extras: v }); saveNow.mutate({ read_extras: v }); }} />
-          {/* «Accendi» e «Spegni» di JTDX: con Hamlib e con TCI (`start;`/`stop;`); con OmniRig JTDX le spegne */}
-          {hamlib || config.backend === 'tci' ? (
+          {/* «Accendi» e «Spegni» di JTDX: con Hamlib, con TCI (`start;`/`stop;`) e con FT-991(A) Link (`PS1;`/`PS0;`); con OmniRig JTDX le spegne */}
+          {hamlib || config.backend === 'tci' || config.backend === 'ft991link' ? (
             <>
               <Check label={t('cat.powerOn')} hint={t('tip.cat.powerOn')} checked={config.power_on === true} onChange={(v) => { set({ power_on: v }); saveNow.mutate({ power_on: v }); }} />
               <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
