@@ -397,6 +397,11 @@ impl CatService {
         }
     }
 
+    /// La portante di accordo della SDR TCI e' accesa (TUNE): il suo spegnimento si accetta anche se la SDR dice di trasmettere.
+    pub fn tci_tuning(&self) -> bool {
+        self.backend() == Backend::Tci && self.tci_rig().is_some_and(|r| r.tuning())
+    }
+
     /// La radio sta trasmettendo (Hamlib, TCI o FT-991(A) Link).
     pub fn transmitting(&self) -> bool {
         self.current().is_some_and(|r| r.transmitting()) || self.tci_rig().is_some_and(|r| r.transmitting()) || self.ft991_rig().is_some_and(|r| r.transmitting())
@@ -510,7 +515,8 @@ impl Rig for CatService {
     fn set_extra(&self, item: crate::extras::ExtraItem) -> Result<(), RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_extra(item),
-            Backend::Tci => Err(RigError("comando non supportato da TCI".into())),
+            // PWR − / + e TUNE dei display: `drive` e `tune` della SDR
+            Backend::Tci => self.tci()?.set_extra(item),
             Backend::Ft991link => Err(RigError("comando non supportato da FT-991(A) Link".into())),
             Backend::Omnirig => WindowsRig.set_extra(item),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),

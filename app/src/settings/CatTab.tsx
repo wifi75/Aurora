@@ -314,6 +314,14 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             />
           </Field>
         ) : null}
+        {fields.tci ? (
+          <Field label={t('cat.tci.receiver')} className="cat-w-s" hint={t('tip.cat.tci.receiver')}>
+            <select value={config.tci_receiver ?? 0} onChange={(e) => set({ tci_receiver: Number(e.target.value) })}>
+              <option value={0}>RX1</option>
+              <option value={1}>RX2</option>
+            </select>
+          </Field>
+        ) : null}
         {fields.ft991 ? (
           <Field label={t('cat.ft991.address')} className="cat-w-l" hint={t('tip.cat.ft991.address')}>
             <input

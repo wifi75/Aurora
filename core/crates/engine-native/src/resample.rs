@@ -78,7 +78,8 @@ mod tests {
 
     #[test]
     fn a_tone_keeps_its_level_and_the_rate_is_right() {
-        for in_rate in [48_000u32, 44_100, 96_000] {
+        // anche le frequenze che un server TCI puo' chiedere con `audio_samplerate` (24, 16, 8 kHz)
+        for in_rate in [48_000u32, 44_100, 96_000, 24_000, 16_000, 8_000] {
             let mut r = Resampler::new(in_rate, 12_000);
             let input = tone(in_rate, 1500.0, 2.0);
             // a blocchi irregolari, come arrivano dalla scheda

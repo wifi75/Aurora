@@ -2,7 +2,7 @@ import { powerPct } from '../../lib/radioDisplay';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, getCat, postCatExtra, type CatExtraItem } from '../../api/client';
-import { useT } from '../../i18n';
+import { useT, type Key } from '../../i18n';
 import { coreText } from '../../lib/coreText';
 import { toast } from '../../lib/toast';
 import { agcName, formatVfo, useRadioExtras } from '../../lib/radioExtras';
@@ -83,7 +83,8 @@ export function RadioExtras() {
   const m = status?.meters ?? null;
   const tx = status?.transmitting ?? false;
 
-  const chips: Array<{ key: CatExtraItem; text: string; on?: boolean }> = [];
+  const chips: Array<{ key: CatExtraItem; text: string; on?: boolean; tip?: Key }> = [];
+  const tci = cat.data?.config.backend === 'tci';
   if (prefs.frontEnd) {
     if (x.preamp_db != null) chips.push({ key: 'preamp', text: x.preamp_db > 0 ? `PRE ${Math.round(x.preamp_db)}` : 'PRE', on: x.preamp_db > 0 });
     if (x.att_db != null) chips.push({ key: 'att', text: x.att_db > 0 ? `ATT ${Math.round(x.att_db)}` : 'ATT', on: x.att_db > 0 });
@@ -94,7 +95,10 @@ export function RadioExtras() {
     if (x.nr != null) chips.push({ key: 'nr', text: 'NR', on: x.nr });
     if (x.notch != null) chips.push({ key: 'notch', text: 'NOTCH', on: x.notch });
   }
-  if (prefs.tuner && x.tuner != null) {
+  if (prefs.tuner && x.tuner != null && tci) {
+    // TCI: niente accordatore, TUNE accende e spegne la portante di accordo della SDR (acceso = portante in onda)
+    chips.push({ key: 'tune', text: 'TUNE', on: x.tuner, tip: 'rx.act.tuneTci' });
+  } else if (prefs.tuner && x.tuner != null) {
     chips.push({ key: 'atu', text: 'ATU', on: x.tuner });
     // avvia l'accordatura: la radio emette da sola una portante bassa per qualche secondo
     chips.push({ key: 'tune', text: 'TUNE', on: false });
@@ -161,8 +165,8 @@ export function RadioExtras() {
               key={c.key}
               type="button"
               className={`rx-chip rx-chip--btn${c.on ? ' rx-chip--on' : ''}${waiting === c.key ? ' rx-chip--wait' : ''}`}
-              title={t(ACTION_TIP[c.key])}
-              aria-label={`${c.text}: ${t(ACTION_TIP[c.key])}`}
+              title={t(c.tip ?? ACTION_TIP[c.key])}
+              aria-label={`${c.text}: ${t(c.tip ?? ACTION_TIP[c.key])}`}
               aria-busy={waiting === c.key}
               disabled={waiting !== null}
               onClick={() => void click(c.key)}

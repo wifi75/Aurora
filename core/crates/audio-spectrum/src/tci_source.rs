@@ -1,7 +1,7 @@
 //! L'ingresso «TCI (dalla radio)»: l'audio ricevuto arriva dalla SDR sul collegamento TCI invece che da una scheda audio.
 //!
 //! La radio TCI (in `rig-control`) chiama il ricevitore restituito da [`run_tci_feed`] con blocchi mono alla frequenza del server
-//! (di base 48 kHz, quella scritta nell'intestazione di ogni blocco). Qui i blocchi passano a un thread che fa le stesse cose di
+//! (di base 48 kHz, quella scritta nell'intestazione di ogni blocco: anche 24, 12 o 8 kHz se il server la cambia con `audio_samplerate`). Qui i blocchi passano a un thread che fa le stesse cose di
 //! [`crate::run_capture_with`]: righe della cascata, livello d'ingresso e copia al decodificatore. Il decodificatore riceve i blocchi
 //! alla frequenza del server con l'ora di arrivo, come da una scheda audio: e' lui a portarli a 12 kHz (filtro e decimazione di
 //! `engine-native/src/resample.rs`), cosi' ricezione da scheda e da TCI seguono la stessa strada.
@@ -117,13 +117,19 @@ mod tests {
 
     #[test]
     fn tci_blocks_reach_the_decoder_and_the_waterfall() {
-        let (rows, mut rows_rx) = broadcast::channel(64);
+        // 48 kHz di base e le frequenze che il server puo' chiedere con `audio_samplerate`
+        for rate in [48_000u32, 24_000, 12_000, 8_000] {
+            blocks_reach_the_decoder_and_the_waterfall(rate);
+        }
+    }
+
+    fn blocks_reach_the_decoder_and_the_waterfall(rate: u32) {
+        let (rows, mut rows_rx) = broadcast::channel(256);
         let (events, _) = broadcast::channel(64);
         let (tap_tx, tap_rx) = mpsc::channel();
         let (mut handle, sink) = run_tci_feed(rows, events, Some(tap_tx));
         // due secondi di tono a 1500 Hz (la FFT della cascata e' di 1,365 s) in blocchi da 2048 campioni a 48 kHz, come li manda ExpertSDR
-        let rate = 48_000;
-        let tone: Vec<f32> = (0..2 * rate).map(|i| (2.0 * std::f32::consts::PI * 1500.0 * i as f32 / rate as f32).sin() * 0.5).collect();
+        let tone: Vec<f32> = (0..2 * rate as usize).map(|i| (2.0 * std::f32::consts::PI * 1500.0 * i as f32 / rate as f32).sin() * 0.5).collect();
         for block in tone.chunks(2048) {
             sink(block, rate);
         }
