@@ -44,15 +44,25 @@ const XX0: [f32; 256] = [
 const MAXBITS: usize = 103;
 const NDELTA: i32 = 170;
 
+/// Quale tabella delle metriche: JT9 (`jt9fano.f90`, rampa di pendenza 2 oltre 160) o JT4 (`getmet4.f90`, rampa di 6,822/65,3 sui valori).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Metric {
+    Jt9,
+    Jt4,
+}
+
 /// `mettab(-128:127, 0:1)`: metrica di un simbolo soft per ipotesi di bit zero (indice 0) e uno (indice 1); l'indice e' il simbolo piu' 128.
-fn metric_table() -> Vec<[i32; 2]> {
+fn metric_table(kind: Metric) -> Vec<[i32; 2]> {
     let nint = |x: f32| x.round() as i32;
     let mut t = vec![[0i32; 2]; 256];
     let (bias, scale, ib, slope) = (0.5f32, 50.0f32, 160usize, 2i32);
     for i in 0..256usize {
         t[i][0] = nint(scale * (XX0[i] - bias));
         if i > ib {
-            t[i][0] = t[ib][0] - slope * (i - ib) as i32;
+            t[i][0] = match kind {
+                Metric::Jt9 => t[ib][0] - slope * (i - ib) as i32,
+                Metric::Jt4 => nint(scale * (XX0[ib] - (i - ib) as f32 * 6.822 / 65.3 - bias)),
+            };
         }
         if i >= 1 {
             t[256 - i][1] = t[i][0];
@@ -75,7 +85,12 @@ pub struct FanoResult {
 
 /// `fano232`: `symbols` sono 206 simboli soft con segno, `nbits` 103 (72 + 31 di coda). Ritorna i byte decodificati e i cicli fatti.
 pub fn fano232(symbols: &[i8], nbits: usize, maxcycles: usize) -> Option<FanoResult> {
-    let mettab = metric_table();
+    fano232_with(symbols, nbits, maxcycles, Metric::Jt9)
+}
+
+/// Come [`fano232`], con la tabella delle metriche scelta.
+pub fn fano232_with(symbols: &[i8], nbits: usize, maxcycles: usize, kind: Metric) -> Option<FanoResult> {
+    let mettab = metric_table(kind);
     let at = |s: i8, b: usize| mettab[(i32::from(s) + 128) as usize][b];
     let ntail = nbits - 31;
     let mut metrics = [[0i32; 4]; MAXBITS + 1];
@@ -172,7 +187,12 @@ pub fn fano232(symbols: &[i8], nbits: usize, maxcycles: usize) -> Option<FanoRes
 
 /// `jt9fano`: da 207 simboli soft al messaggio, se il decodificatore di Fano arriva in fondo entro `limit` cicli per bit.
 pub fn decode_message(symbols: &[i8; 207], limit: usize) -> Option<String> {
-    let r = fano232(&symbols[..206], 72 + 31, limit)?;
+    decode_message_with(symbols, limit, Metric::Jt9)
+}
+
+/// Come [`decode_message`], con la tabella delle metriche scelta (JT4 usa la sua).
+pub fn decode_message_with(symbols: &[i8; 207], limit: usize, kind: Metric) -> Option<String> {
+    let r = fano232_with(&symbols[..206], 72 + 31, limit, kind)?;
     if r.cycles >= (72 + 31) * limit {
         return None;
     }
@@ -213,7 +233,7 @@ mod tests {
 
     #[test]
     fn the_metric_table_has_the_expected_shape() {
-        let t = metric_table();
+        let t = metric_table(Metric::Jt9);
         assert_eq!(t[128][0], -25, "il simbolo 0: (0 - 0,5) * 50");
         assert!(t[255][0] < t[200][0]);
         assert_eq!(t[0][1], t[1][1]);
