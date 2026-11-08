@@ -19,6 +19,8 @@ pub enum Backend {
     Hamlib,
     /// OmniRig (Windows), il percorso storico di Aurora.
     Omnirig,
+    /// TCI (Expert Electronics) su WebSocket: SunSDR/ExpertSDR, ANAN con Thetis e le altre SDR che lo parlano.
+    Tci,
     /// Nessuna radio comandata: la frequenza si cambia a mano (le bande muovono solo quella di Aurora).
     None,
 }
@@ -123,6 +125,8 @@ pub struct RigConfig {
     pub power_on: bool,
     /// «Spegni» di JTDX (`RigPower_off`): spegne la radio via CAT (`\set_powerstat 0`) alla chiusura di Aurora (non al cambio di radio).
     pub power_off: bool,
+    /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
+    pub tci_address: String,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -153,6 +157,7 @@ impl Default for RigConfig {
             share_port: DEFAULT_SHARE_PORT,
             power_on: false,
             power_off: false,
+            tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
         }
     }
 }
@@ -193,6 +198,9 @@ impl RigConfig {
         }
         if !self.port.is_empty() && !token_ok(&self.port) {
             return Err("bad_port");
+        }
+        if !self.tci_address.is_empty() && !token_ok(&self.tci_address) {
+            return Err("bad_tci_address");
         }
         if !self.ptt_port.is_empty() && !token_ok(&self.ptt_port) {
             return Err("bad_port");
@@ -505,6 +513,7 @@ fn suggest_name(config: &RigConfig, profiles: &[RigProfile]) -> String {
     let backend = match config.backend {
         Backend::Hamlib => "Hamlib",
         Backend::Omnirig => "OmniRig",
+        Backend::Tci => "TCI",
         Backend::None => "senza CAT",
     };
     let base: String = format!("{rig} {backend}").chars().take(76).collect();

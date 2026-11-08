@@ -1556,6 +1556,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tracing",
+ "tungstenite 0.30.0",
 ]
 
 [[package]]

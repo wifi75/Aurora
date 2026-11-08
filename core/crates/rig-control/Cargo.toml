@@ -1,6 +1,6 @@
 [package]
 name = "rig-control"
-description = "Comando della radio (frequenza e banda) condiviso con JTDX tramite OmniRig"
+description = "Comando della radio (frequenza e banda) condiviso con JTDX tramite Hamlib, OmniRig o TCI"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -12,6 +12,7 @@ aurora-core = { path = "../aurora-core" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
+tungstenite = { workspace = true }
 
 [features]
 # il finto rigctld per le prove di chi usa questo crate

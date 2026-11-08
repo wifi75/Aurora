@@ -12,12 +12,17 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Manca: il formato SuperFox `$VERIFY$ CALL 123456` (hz 750) e il filtro `$VERIFY$` verso il server UDP (`udp-bridge/src/emit.rs`): dipende dal ricevitore SuperFox (voci 1-3); l'etichetta Hound/SuperHound verde dell'interfaccia.
 - WSJT-X: `widgets/mainwindow.cpp` `processSFoxVerification` (17360-17415), `handleVerifyMsg`.
 
-## 16. TCI
+## 16. TCI (parziale)
 
-- Cosa fare: controllo radio e audio via TCI (WebSocket) per radio SDR (Expert, SunSDR, ANAN con Thetis).
-- Aurora: `core/crates/rig-control` (nuovo `tci.rs`), `audio-spectrum` (ingresso audio TCI), `tx-native` (uscita audio).
-- WSJT-X: `Transceiver/TCITransceiver.cpp/.hpp`.
-- Verifica: con un server TCI di prova; dal vivo con una SDR.
+- Fatto (2026-11-08, ramo `lavoro/tci`): backend CAT «TCI» (`rig-control/src/tci.rs`, `cat_config.rs` `Backend::Tci` e `tci_address`, base `127.0.0.1:40001`; `cat.rs` lo instrada). Protocollo letto da WSJT-X 3 (`TCITransceiver.cpp`, `TCIStream.hpp`, `TCIProtocol.hpp`): lettura dei comandi di testo (`vfo`, `modulation` anche nella forma a tre argomenti di ExpertSDR3/Thetis, `trx`, `protocol`, `device`, `start`/`stop`, `audio_start`/`audio_stop`, `audio_samplerate`, `ready`) e costruzione (`vfo:0,0,<hz>;`, `modulation:0,<usb|digu>;`, `trx:0,<bool>[,tci];`, `audio_start/stop:0;`, `audio_samplerate:`); intestazione binaria di 64 byte (ricevitore, frequenza, formato 3 = float32, codec, crc, lunghezza, tipo 0 IQ / 1 audio Rx / 2 audio Tx / 3 chrono, canali dalla 1.9) con lettura, scrittura, controllo del chrono e risposta audio Tx; 11 prove, anche con un server TCI finto. `TciRig` su `tungstenite` (thread, ricollegamento con attesa crescente, collegata solo dopo `ready;`): frequenza, modo USB/USB dati del «Modo CAT», PTT con `trx` (anche dal motore: `aurora/src/lib.rs` `cat_ptt`). Ganci per l'audio pronti: `set_rx_audio` (manda `audio_start` e consegna mono alla frequenza del server) e `set_tx_audio` (risponde ai chrono). Scheda Radio: scelta «TCI» con il campo indirizzo, 6 lingue; lo split e' nascosto con TCI.
+- Resta:
+  - audio ricevuto via TCI nel motore: una sorgente in `audio-spectrum` (accanto a `capture.rs`) che usa `TciRig::set_rx_audio`, porta i 48 kHz a 12 kHz (filtro e decimazione, vedi `engine-native/src/resample.rs`) e prende il posto del dispositivo di ingresso quando nella scheda Audio si sceglie «TCI»; anche analizzatore e livello d'ingresso;
+  - audio da trasmettere via TCI: un `tx_native::AudioSink` che consegna l'onda (a 48 kHz) a `TciRig::set_tx_audio` e la fa uscire un chrono alla volta, con `is_playing`/`stop`; il PTT allora manda `trx:0,true,tci;` (gia' fatto in `set_ptt` quando il gancio Tx c'e');
+  - scelta del ricevitore (oggi sempre 0; WSJT-X sa usare anche RX2 con `rx_enable:1,true;`), split con il VFO 1 (`vfo:0,1,<hz>;`, `split_enable`), misuratori (`rx_smeter`, `rx_sensors`/`tx_sensors`, `tx_power`, `tx_swr`), `drive`/`tune`, accensione con `start;`/`stop;`;
+  - conferma dei comandi come WSJT-X (attesa dell'eco di `vfo`/`trx`): oggi si scrive e si aggiorna lo stato subito, poi l'eco del server lo corregge;
+  - il controllo «sta trasmettendo» dell'API (`remote-api/src/cat.rs`) guarda solo Hamlib.
+- WSJT-X: `Transceiver/TCITransceiver.cpp/.hpp`, `TCIStream.hpp`, `TCIProtocol.hpp`, prove in `tests/unit/tci`.
+- Verifica: dal vivo con una SDR (ExpertSDR3 o Thetis con TCI attivo): collegamento, cambio di banda, modo, PTT.
 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
