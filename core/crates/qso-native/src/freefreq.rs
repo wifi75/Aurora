@@ -55,6 +55,8 @@ impl FreeTxParams {
                 Mode::Jt4 => 20.0,
                 // Q65-30A: 65 toni a 3,33 Hz
                 Mode::Q65 => 220.0,
+                // MSK144 occupa tutta la banda audio (toni a 1000 e 2000 Hz)
+                Mode::Msk144 => 1000.0,
             },
             sweet_lo: 800,
             sweet_hi: 2200,

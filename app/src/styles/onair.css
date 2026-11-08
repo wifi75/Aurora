@@ -148,6 +148,12 @@
   --mode-ink: var(--mode-q65-ink);
 }
 
+/* MSK144 giallo meteora */
+.mode-switch button[data-mode='MSK144'] {
+  --mode: var(--mode-msk144);
+  --mode-ink: var(--mode-msk144-ink);
+}
+
 /* a riposo il colore del modo resta sul bordo e sul testo, cosi' si distinguono anche da spenti */
 .mode-switch button {
   border-color: color-mix(in srgb, var(--mode) 55%, transparent);

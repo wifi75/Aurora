@@ -234,6 +234,7 @@ impl Options {
             // 1 s + 206 simboli da 0,2286 s
             Mode::Jt4 => 48.09,
             Mode::Q65 => 26.0,
+            Mode::Msk144 => 12.0,
         })
     }
 
@@ -246,6 +247,7 @@ impl Options {
             Mode::Jt9 => 16,
             Mode::Jt4 => 18,
             Mode::Q65 => 217,
+            Mode::Msk144 => 1000,
         }
     }
 }

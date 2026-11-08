@@ -1559,6 +1559,7 @@ impl Sequencer {
             Mode::Ft4 => 16.0,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 32.0,
             Mode::Q65 => 32.0,
+            Mode::Msk144 => 32.0,
         };
         for m in (last + 1)..=cur_min {
             let t = m as f64 * 60.0;

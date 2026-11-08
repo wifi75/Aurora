@@ -11,6 +11,7 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "JT4" | "JT4A" | "JT4B" | "JT4C" | "JT4D" | "JT4E" | "JT4F" | "JT4G" => Some("jt4Button"),
         // Q65-30A, solo con il motore proprio
         "Q65" | "Q65-30A" => Some("q65Button"),
+        "MSK144" => Some("msk144Button"),
         _ => None,
     }
 }

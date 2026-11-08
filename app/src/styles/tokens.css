@@ -23,6 +23,8 @@
   --mode-jt4-ink: #3a2200;
   --mode-q65: #a98bff;
   --mode-q65-ink: #1c0f45;
+  --mode-msk144: #ffe066;
+  --mode-msk144-ink: #332700;
   --accent-ink: #04201d;
   --rare: #f2a93b;
   --rare-ink: #241604;
@@ -121,6 +123,8 @@
   --mode-jt4-ink: #ffffff;
   --mode-q65: #6a46d6;
   --mode-q65-ink: #ffffff;
+  --mode-msk144: #8a6d00;
+  --mode-msk144-ink: #ffffff;
   --accent-ink: #ffffff;
   --rare: #9a5d00;
   --rare-ink: #ffffff;

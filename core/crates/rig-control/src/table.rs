@@ -166,6 +166,17 @@ const JT_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("6m", "JT9", 50_312_000, Region::All, true),
 ];
 
+/// Le righe MSK144 dell'elenco di WSJT-X (`FrequencyList.cpp`); la' sono tutte non predefinite, qui sono le principali della loro regione.
+const MSK144_ROWS: &[(&str, &str, u64, Region, bool)] = &[
+    ("6m", "MSK144", 50_260_000, Region::R2, true),
+    ("6m", "MSK144", 50_260_000, Region::R3, true),
+    ("6m", "MSK144", 50_380_000, Region::R1, true),
+    ("4m", "MSK144", 70_230_000, Region::R1, true),
+    ("2m", "MSK144", 144_150_000, Region::R2, true),
+    ("2m", "MSK144", 144_360_000, Region::R1, true),
+    ("70cm", "MSK144", 432_360_000, Region::All, true),
+];
+
 /// Le bande da 2200 m, 630 m, 8 m, 4 m e da 1,25 m in su (UHF, microonde): tutte le righe di questi modi nell'elenco di WSJT-X (`FrequencyList.cpp`).
 const EXTRA_BAND_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("2200m", "JT9", 136_000, Region::All, false),
@@ -242,7 +253,7 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
 
 impl Default for FrequencyTable {
     fn default() -> Self {
-        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
+        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).chain(MSK144_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
     }
 }
 
@@ -257,7 +268,7 @@ fn valid_entries(entries: &[Entry]) -> bool {
         let Some(band) = canonical_band(&entry.band) else { return false };
         let mode = entry.mode.trim().to_uppercase();
         let in_band = band_limits(&band).is_some_and(|(lo, hi)| (lo..=hi).contains(&entry.hz));
-        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
+        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4" | "MSK144") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
     })
 }
 
@@ -286,6 +297,10 @@ impl FrequencyTable {
         // e per le bande aggiunte dopo (2200 m, 630 m, 8 m, 4 m, UHF e microonde)
         if !entries.iter().any(|e| EXTRA_BAND_ROWS.iter().any(|r| r.0 == e.band)) {
             entries.extend(EXTRA_BAND_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
+        }
+        // lo stesso per MSK144
+        if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("MSK144")) {
+            entries.extend(MSK144_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
         }
         // lo stesso per Q65
         if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("Q65")) {

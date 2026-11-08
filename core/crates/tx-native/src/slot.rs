@@ -12,12 +12,13 @@ pub enum Mode {
     Jt9,
     Jt4,
     Q65,
+    Msk144,
 }
 
 impl Mode {
     pub fn slot_len(self) -> Duration {
         match self {
-            Mode::Ft8 => Duration::from_millis(15_000),
+            Mode::Ft8 | Mode::Msk144 => Duration::from_millis(15_000),
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
             Mode::Q65 => Duration::from_millis(30_000),
@@ -27,7 +28,7 @@ impl Mode {
     /// Ritardo dell'inizio dell'audio dall'inizio del periodo: 0,5 s in FT8 e FT4, 1 s in JT65 e JT9.
     pub fn tx_delay(self) -> Duration {
         match self {
-            Mode::Ft8 | Mode::Ft4 | Mode::Q65 => Duration::from_millis(500),
+            Mode::Ft8 | Mode::Ft4 | Mode::Q65 | Mode::Msk144 => Duration::from_millis(500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(1_000),
         }
     }
@@ -45,6 +46,8 @@ impl Mode {
             Mode::Jt4 => Duration::from_millis(47_090),
             // 85 simboli da 0,3 s dopo 0,5 s
             Mode::Q65 => Duration::from_millis(26_000),
+            // il quadro si ripete fino a fine periodo: si puo' partire fino a 12 s
+            Mode::Msk144 => Duration::from_millis(12_000),
         }
     }
 }

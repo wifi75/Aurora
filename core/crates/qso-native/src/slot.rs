@@ -16,13 +16,15 @@ pub enum Mode {
     Jt4,
     /// Q65-30A: periodi di 30 s, messaggi a 77 bit come FT8.
     Q65,
+    /// MSK144 (meteor scatter): periodi di 15 s, quadro di 72 ms ripetuto per tutto il periodo.
+    Msk144,
 }
 
 impl Mode {
     /// Durata del periodo in millisecondi.
     pub fn period_ms(self) -> u64 {
         match self {
-            Mode::Ft8 => 15_000,
+            Mode::Ft8 | Mode::Msk144 => 15_000,
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
             Mode::Q65 => 30_000,
@@ -42,6 +44,7 @@ impl Mode {
             Mode::Jt9 => "JT9",
             Mode::Jt4 => "JT4",
             Mode::Q65 => "Q65",
+            Mode::Msk144 => "MSK144",
         }
     }
 }

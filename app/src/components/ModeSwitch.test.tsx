@@ -5,12 +5,12 @@ import { ModeSwitch } from './ModeSwitch';
 const openMenu = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('ModeSwitch', () => {
-  it('shows the current mode and opens a menu with FT8, FT4, JT65, JT9, JT4 and Q65', () => {
+  it('shows the current mode and opens a menu with FT8, FT4, JT65, JT9, JT4, Q65 and MSK144', () => {
     render(<ModeSwitch mode="FT8" onPick={() => {}} />);
     expect(screen.getByRole('button').textContent).toContain('FT8');
     expect(screen.queryByRole('menu')).toBeNull();
     openMenu();
-    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65']);
+    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144']);
     expect(screen.getByRole('menuitemradio', { name: 'FT8' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('menuitemradio', { name: 'FT4' })).toHaveAttribute('aria-checked', 'false');
   });
