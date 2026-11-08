@@ -157,7 +157,11 @@ function Cascata() {
   const t = useT();
   const wf = useDragHeight('aurora-contest-wf-height', 160, 420);
   return (
-    <section className="ctc-wf-box" aria-label={t('fox.waterfall')}>
+    <section className="dock-panel ctc-box ctc-wf-box" aria-label={t('fox.waterfall')}>
+      <header className="dock-grip dock-grip--fixed">
+        <span className="dock-grip-dots" aria-hidden="true" />
+        <h2>{t('fox.waterfall')}</h2>
+      </header>
       <DragHandle label={t('fox.resize')} className="ctc-wf-handle" onPointerDown={wf.onPointerDownInverse} />
       <WaterfallToolbar />
       <div className="ctc-wf" style={{ height: wf.height }}>
@@ -240,10 +244,13 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
 
   return (
     <main className="ctc-main">
-      <section className="ctc-box ctc-dec">
-        <h3 title={t('tip.contest.decodes')}>
+      <section className="dock-panel ctc-box ctc-dec">
+        <header className="dock-grip dock-grip--fixed">
+          <span className="dock-grip-dots" aria-hidden="true" />
+          <h2 title={t('tip.contest.decodes')}>
           {t('contest.decodes')} <span className="r">{campo ? <button type="button" className="ctc-link" onClick={() => setCampo('')}>{campo} ✕</button> : t('contest.decodesHint')}</span>
-        </h3>
+        </h2>
+        </header>
         <div className="ctc-scroll data">
           <table>
             <thead>
@@ -284,10 +291,13 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
         </div>
       </section>
 
-      <section className="ctc-box">
-        <h3>
+      <section className="dock-panel ctc-box">
+        <header className="dock-grip dock-grip--fixed">
+          <span className="dock-grip-dots" aria-hidden="true" />
+          <h2>
           {t('contest.qsoNow')} <span className="r">{t('contest.seqHint')}</span>
-        </h3>
+        </h2>
+        </header>
         {dx ? (
           <div className="ctc-dx">
             <span className="ctc-pill data">
@@ -357,8 +367,11 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
 
       <LogContest t={t} qso={s.totali?.qso ?? 0} />
 
-      <section className="ctc-box">
-        <h3>{t('contest.tips')}</h3>
+      <section className="dock-panel ctc-box">
+        <header className="dock-grip dock-grip--fixed">
+          <span className="dock-grip-dots" aria-hidden="true" />
+          <h2>{t('contest.tips')}</h2>
+        </header>
         <Avvisi s={s} t={t} />
         <div className="ctc-rate">
           {(s.per_ora ?? []).map((n, i, all) => {
@@ -430,10 +443,13 @@ function Moltiplicatori({ r, t, banda, righe, scegli }: { r: Regole; t: T; banda
   const inOnda = new Set(righe.filter((x) => x.grid).map((x) => x.grid.slice(0, 2).toUpperCase()));
   const aGriglia = tipo === 'campo2' || tipo === 'grid4';
   return (
-    <section className="ctc-box">
-      <h3 title={t('tip.contest.missing')}>
+    <section className="dock-panel ctc-box">
+      <header className="dock-grip dock-grip--fixed">
+        <span className="dock-grip-dots" aria-hidden="true" />
+        <h2 title={t('tip.contest.missing')}>
         {t('contest.missing')} <span className="r">{scelta} · {tipo}</span>
-      </h3>
+      </h2>
+        </header>
       {r.moltiplicatori.length === 0 ? (
         <p className="ctc-tip">{t('contest.noMult')}</p>
       ) : (
@@ -477,8 +493,10 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
   };
   const salva = (n: number, patch: Parameters<typeof modificaQso>[1]) => modificaQso(n, patch).then(aggiorna).catch((e: unknown) => toast(String(e), 'error'));
   return (
-    <section className="ctc-box">
-      <h3 title={t('tip.contest.log')}>
+    <section className="dock-panel ctc-box">
+      <header className="dock-grip dock-grip--fixed">
+        <span className="dock-grip-dots" aria-hidden="true" />
+        <h2 title={t('tip.contest.log')}>
         {t('contest.log')}{' '}
         <span className="r">
           {t('contest.logCount', { n: righe.length, u: incerti })}{' '}
@@ -486,7 +504,8 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
             {t('contest.resetLog')}
           </button>
         </span>
-      </h3>
+      </h2>
+        </header>
       <div className="ctc-scroll data">
         <table>
           <thead>
