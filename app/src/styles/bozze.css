@@ -1201,10 +1201,10 @@ html[data-theme='light'] .install-progress-pct { color: #0b7f75; }
    (prima Paese, poi Modo e Rapporti); restano sempre data, nominativo e banda */
 .log4om { container-type: inline-size; }
 .log4om-table { width: 100%; max-width: 100%; }
-@container (max-width: 380px) {
+@container (max-width: 300px) {
   .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { display: none; }
 }
-@container (max-width: 300px) {
+@container (max-width: 240px) {
   .log4om-table th:nth-child(4), .log4om-table td:nth-child(4),
   .log4om-table th:nth-child(5), .log4om-table td:nth-child(5) { display: none; }
 }
@@ -1236,3 +1236,8 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .where-row select { width: 11rem; flex: none; }
 .where-list { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)) !important; }
 .where-row select { width: 13.5rem; max-width: 62%; }
+
+/* Log: colonne strette, il paese prende lo spazio che avanza (prima le colonne si allargavano tutte) */
+.log4om-table th, .log4om-table td { padding-left: 4px !important; padding-right: 4px !important; white-space: nowrap; }
+.log4om-table th:not(:last-child), .log4om-table td:not(:last-child) { width: 1%; }
+.log4om-table .log4om-country { overflow: hidden; text-overflow: ellipsis; max-width: 0; width: auto; }
