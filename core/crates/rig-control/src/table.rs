@@ -133,6 +133,9 @@ const JTDX_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("6m", "FT8", 50_323_000, Region::All, true),
     ("2m", "FT4", 144_170_000, Region::All, true),
     ("2m", "FT8", 144_174_000, Region::All, true),
+    // 70 cm (FT-991A, IC-9700 e simili): frequenze FT8/FT4 d'uso (richiesta SP4UBW, 2026-11-08)
+    ("70cm", "FT8", 432_174_000, Region::All, true),
+    ("70cm", "FT4", 432_170_000, Region::All, true),
 ];
 
 /// Le righe di JT65 e JT9 della tabella iniziale di JTDX 2.2.159 per le bande che Aurora conosce: lette con REA da `jtdx.exe`
@@ -249,6 +252,8 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
     ("6m", "FT4", 50_318_000),
     ("2m", "FT8", 144_174_000),
     ("2m", "FT4", 144_170_000),
+    ("70cm", "FT8", 432_174_000),
+    ("70cm", "FT4", 432_170_000),
 ];
 
 impl Default for FrequencyTable {
