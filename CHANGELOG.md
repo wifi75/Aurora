@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.11.195 - 2026-11-08
+- **Aggiornamento non riuscito**: la pagina dice il motivo (scaricamento, salvataggio, firma, avvio dell'installatore) invece del solo `install_failed`, e l'errore arriva anche nei rapporti.
 - **Q65-30A** nel motore proprio: ricezione e trasmissione (`jt::q65`: codice QRA 15,65 su GF(64) con passaggio di messaggi, CRC-12, messaggi a 77 bit come FT8), selettore dei modi, frequenze di WSJT-X (6 m 50,275 e 2 m 144,180 MHz; 50,211 e 144,116 EME come alternative). Il decodificatore supporta anche i periodi 15-300 s e i sottomodi A-E, non ancora selezionabili.
 
 ## 0.11.194 - 2026-11-08

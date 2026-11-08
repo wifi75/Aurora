@@ -47,7 +47,7 @@ export function UpdatesTab() {
       await installUpdate();
     } catch (error) {
       setInstalling(false);
-      setInstallFailure(t('upd.installFailed', { message: error instanceof ApiError ? error.code : '—' }));
+      setInstallFailure(t('upd.installFailed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
     }
   };
 

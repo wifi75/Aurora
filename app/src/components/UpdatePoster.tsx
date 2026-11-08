@@ -86,7 +86,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
       await installUpdate();
     } catch (error) {
       setInstalling(false);
-      setFailure(t('upd.installFailed', { message: error instanceof ApiError ? error.code : '—' }));
+      setFailure(t('upd.installFailed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
     }
   };
   const when = release.published_at ? new Date(release.published_at).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' }) : '';

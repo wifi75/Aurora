@@ -2223,8 +2223,9 @@ async fn update_install(State(state): State<AppState>, _: Authed, Peer(peer): Pe
     match tokio::task::spawn_blocking(move || installer.install(updates)).await {
         Ok(Ok(version)) => Ok(Json(json!({ "ok": true, "version": version }))),
         Ok(Err(e)) => {
-            tracing::warn!("installazione dell'aggiornamento non riuscita: {e}");
-            Err(ApiError::new(StatusCode::BAD_GATEWAY, "install_failed"))
+            // errore (non avviso): cosi' arriva anche nei rapporti, e la pagina mostra il motivo invece del solo codice
+            tracing::error!("installazione dell'aggiornamento non riuscita: {e}");
+            Err(ApiError::new(StatusCode::BAD_GATEWAY, "install_failed").with_message(e))
         }
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "update_task")),
     }

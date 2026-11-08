@@ -35,7 +35,7 @@ export function UpdateBar() {
       await installUpdate();
     } catch (error) {
       setInstalling(false);
-      setFailure(t('upd.installFailed', { message: error instanceof ApiError ? error.code : '—' }));
+      setFailure(t('upd.installFailed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
     }
   };
   // quando il core avvisa di una versione nuova i dati della pagina sono vecchi (senza «Installa ora»): si rileggono
