@@ -1,0 +1,59 @@
+//! Confronto della decodifica Q65 con `jt9.exe` (voce 21 di `docs/tasks.md`, tabella in `docs/q65-confronto.md`): legge WAV a 12 kHz,
+//! 16 bit, mono (per esempio quelli di `q65sim` di WSJT-X) e li decodifica con il periodo e il sottomodo indicati.
+//!
+//! Uso: `cargo run --release -p jt --example misura_q65 -- <periodo> <sottomodo A-E> [--gauss] [--media] [--senza-evanescenza] <file.wav> ...`
+//!
+//! Con `--media` i file sono periodi successivi della stessa parita' e si sommano come fa la media di Q65 (`decode_averaged`).
+//! Stampa una riga per file: `nome;messaggi;testo|snr|dt|freq|ap|periodi|b90` per ogni messaggio.
+
+use jt::q65::{Averager, Fading, Options, Setup, decode, decode_averaged};
+use ft8::message::CallHashes;
+
+/// I campioni di un WAV PCM 16 bit mono (si cerca il blocco `data`).
+fn read_wav(path: &str) -> Vec<f32> {
+    let bytes = std::fs::read(path).expect("file WAV");
+    let mut i = 12;
+    while i + 8 <= bytes.len() {
+        let id = &bytes[i..i + 4];
+        let len = u32::from_le_bytes([bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]]) as usize;
+        if id == b"data" {
+            let data = &bytes[i + 8..(i + 8 + len).min(bytes.len())];
+            return data.chunks_exact(2).map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect();
+        }
+        i += 8 + len + (len & 1);
+    }
+    panic!("nessun blocco data in {path}");
+}
+
+fn main() {
+    let mut args = std::env::args().skip(1);
+    let period: u32 = args.next().and_then(|p| p.parse().ok()).expect("periodo in secondi");
+    let sub = args.next().and_then(|s| s.bytes().next()).map(|b| b.to_ascii_uppercase().wrapping_sub(b'A')).expect("sottomodo A-E");
+    let setup = Setup::new(period, sub).expect("periodo o sottomodo non validi");
+    let mut fading = Some(Fading::Lorentzian);
+    let mut average = false;
+    let mut files = Vec::new();
+    for a in args {
+        match a.as_str() {
+            "--gauss" => fading = Some(Fading::Gaussian),
+            "--senza-evanescenza" => fading = None,
+            "--media" => average = true,
+            _ => files.push(a),
+        }
+    }
+    assert!(!files.is_empty(), "nessun file WAV");
+    let options = Options { setup, fading, ..Options::default() };
+    let mut averager = Averager::new();
+    for (n, f) in files.iter().enumerate() {
+        let audio = read_wav(f);
+        let mut hashes = CallHashes::default();
+        // nella media ogni file e' un periodo della stessa parita' (indici pari)
+        let found = if average { decode_averaged(&audio, &options, &mut hashes, &mut averager, 2 * n as u64) } else { decode(&audio, &options, &mut hashes) };
+        let name = std::path::Path::new(f).file_name().and_then(|n| n.to_str()).unwrap_or(f);
+        let texts: Vec<String> = found
+            .iter()
+            .map(|d| format!("{}|{}|{:.1}|{:.0}|{}|{}|{}", d.text, d.snr_db, d.dt_s, d.freq_hz, d.ap, d.averaged, d.b90_hz.map_or("-".to_string(), |b| format!("{b:.1}"))))
+            .collect();
+        println!("{name};{};{}", found.len(), texts.join(";"));
+    }
+}

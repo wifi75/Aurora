@@ -27,7 +27,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
 
 - Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
-- Resta: tendina della stazione Wavelog nelle Impostazioni (oggi le stazioni del server compaiono nel messaggio della prova); lo scambio di contest inviato (`exch_sent`) resta vuoto finche' il motore non fa la sequenza dei contest (lo scambio ricevuto e i campi ADIF sono fatti).
+- Fatto anche: tendina della stazione Wavelog/Cloudlog nelle Impostazioni (`settings/WavelogStationSelect.tsx`, letta dal server con `POST /api/v1/qso-upload/wavelog-stations`; senza risposta resta la casella del numero).
+- Resta: lo scambio di contest inviato (`exch_sent`) resta vuoto finche' il motore non fa la sequenza dei contest (lo scambio ricevuto e i campi ADIF sono fatti): dipende da un lavoro che non c'e' ancora, non da questa voce.
 - WSJT-X: note 3.2 «Networking, logging, and integrations», `logbook/AdifQso.cpp`.
 - Verifica: test unitari sui casi di mezzanotte e cambio banda.
 
@@ -42,7 +43,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 21. Modo Q65: verifica con WSJT-X
 
 - Fatto (0.11.195 e dopo): Q65 completo nel motore proprio. Periodi 15/30/60/120/300 s e sottomodi A-E in trasmissione e ricezione (`core/crates/jt/src/q65.rs`), ipotesi AP del QSO (CQ, mio nominativo, con il DX, RRR/73/RR73, `q65_ap.f90`), metrica dell'evanescenza rapida con le tabelle gaussiane e lorentziane (`q65fading.rs`, `q65_intrinsics_fastfading`) provata dopo Bessel su sette larghezze B90, media dei periodi della stessa parita'. Periodo e sottomodo scelti accanto al selettore dei modi («Q65-60B»), salvati in `controls.json`; durata dei periodi, avvio e finestra di trasmissione e guardia seguono il Q65 scelto. Pulsanti rapidi dei modi (ex voce 23) completi.
-- Resta: il confronto con `jt9.exe` su WAV generati con `q65sim` a vari SNR e Doppler (Aurora deve decodificare almeno quanto WSJT-X); la scelta del modello di evanescenza nell'interfaccia (oggi sempre lorentziano, come WSJT-X) e il pulsante «Clear Avg» (la media si svuota da sola dopo una decodifica e al cambio di modo o periodo).
+- Fatto anche (2026-11-08): scelta del modello di evanescenza (Lor/Gau) e «Cancella media» accanto a periodo e sottomodo (interruttore `q65_gauss` ricordato in `controls.json`, pulsante `q65_clear_avg`); primo confronto con `jt9.exe` 3.2.0-rc1 su WAV di `q65sim` in `docs/q65-confronto.md` (esempio `core/crates/jt/examples/misura_q65.rs`): pari con Doppler e nei periodi lunghi, indietro di 1-2 dB senza Doppler in 15A/30A/60A, e molto piu' lento.
+- Resta: recuperare quei 1-2 dB (ricerca del sincronismo e soglie come `q65_decode.f90`), trovare le soglie vere di `jt9` con piu' file per punto, confronto della media, velocita' della decodifica (dettagli in `docs/q65-confronto.md`).
 - WSJT-X: `lib/qra/q65/` (`q65.c`, `q65.f90`, `q65_ap.f90`, `fadengauss.c`, `fadenlorentz.c`), `lib/q65_decode.f90`.
 - Verifica: WAV di `q65sim` per ogni periodo e sottomodo; QSO dal vivo in Q65-60A su 6 m o 2 m.
 
