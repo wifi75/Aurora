@@ -1,0 +1,126 @@
+# Regole del contest «ARRL Field Day» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Dall'Italia si manda la classe con «DX» al posto della sezione (per esempio 1D DX).
+
+[contest]
+id = "arrl-fd"
+nome = "ARRL Field Day"
+sponsor = "ARRL"
+edizione = 2026
+url_regole = "https://www.arrl.org/field-day-rules"
+verificato_il = "2026-11-08"
+famiglia = "field-day"
+# da verificare sul regolamento dell'anno
+da_verificare = ["bande"]
+
+[sintesi]
+it = "Quarto fine settimana completo di giugno, 18:00 sabato - 20:59 domenica UTC. Bande HF (niente 60, 30, 17 e 12 m) e VHF/UHF. Scambio: classe (trasmettitori + lettera A-F) e sezione ARRL/RAC; fuori da USA e Canada si manda DX. Doppi per banda e modo (tutto il digitale e' un modo solo). 2 punti per QSO digitale, moltiplicatore di potenza (x5 fino a 5 W a batteria, x2 fino a 100 W, x1 oltre) e bonus da spuntare. Log su field-day.arrl.org."
+en = "Fourth full weekend of June, 1800 Sat - 2059 Sun UTC. HF (no 60, 30, 17 and 12 m) and VHF/UHF bands. Exchange: class (transmitters + letter A-F) and ARRL/RAC section; outside USA and Canada send DX. Dupes per band and mode (all digital is one mode). 2 points per digital QSO, power multiplier (x5 up to 5 W on battery, x2 up to 100 W, x1 above) and bonus points. Log via field-day.arrl.org."
+
+[calendario]
+regola = "quarto-weekend-completo:giugno"
+inizio = "sab 18:00"
+fine = "dom 20:59"
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m", "6m", "2m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"160m" = { FT8 = 1840.0, FT4 = 1840.0 }
+"80m" = { FT8 = 3573.0, FT4 = 3575.5 }
+"40m" = { FT8 = 7074.0, FT4 = 7047.5 }
+"20m" = { FT8 = 14074.0, FT4 = 14080.0 }
+"15m" = { FT8 = 21074.0, FT4 = 21140.0 }
+"10m" = { FT8 = 28074.0, FT4 = 28180.0 }
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+"2m" = { FT8 = 144174.0, FT4 = 144170.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "field-day"
+parola_cq = "FD"
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["classe", "sezione"]
+ricevuto = ["classe", "sezione"]
+predefinito = "1D DX"
+
+[doppi]
+chiave = "banda+modo"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 2
+
+[punteggio]
+formula = "punti*potenza+bonus"
+
+[[punteggio.potenza]]
+fino_a_w = 5
+molt = 5
+
+[[punteggio.potenza]]
+fino_a_w = 100
+molt = 2
+
+[[punteggio.potenza]]
+fino_a_w = 100000
+molt = 1
+
+[[categorie]]
+id = "1D"
+nome = "1D (stazione di casa, rete elettrica)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "1E"
+nome = "1E (casa, alimentazione d'emergenza)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "1B"
+nome = "1B (portatile, 1-2 operatori)"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "2A"
+nome = "2A (gruppo, 2 trasmettitori)"
+operatore = "MULTI-OP"
+potenza = "LOW"
+trasmettitori = "TWO"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "ammesso"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "ARRL-FD"
+cabrillo_modo = "DG"
+colonne_inviate = ["classe", "sezione"]
+colonne_ricevute = ["classe", "sezione"]
+frequenza = "khz"
+invio_url = "https://field-day.arrl.org/"
+scadenza = "2026-07-28T23:59:59Z"

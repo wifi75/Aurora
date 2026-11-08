@@ -1,0 +1,129 @@
+# Regole del contest «CQ World Wide VHF Contest (digitale)» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+
+[contest]
+id = "cq-ww-vhf-digi"
+nome = "CQ World Wide VHF Contest (digitale)"
+sponsor = "CQ Magazine"
+edizione = 2026
+url_regole = "https://cqww-vhf.com/rules/2026_cq_ww_vhf_rules.pdf"
+verificato_il = "2026-11-08"
+famiglia = "vhf"
+
+[sintesi]
+it = "Dal 2026 il fine settimana digitale e' separato: 18-19 luglio 2026, 14:00 sabato - 14:00 domenica UTC. Solo 6 m e 2 m, solo modi digitali. Scambio: locatore a 4 caratteri (il rapporto non va a log). Punti: 1 sui 6 m, 2 sui 2 m. Moltiplicatori: locatori diversi per banda. Modo DG nel Cabrillo (non RY). Log su cqww-vhf.com entro il 24 luglio."
+en = "Since 2026 the digital weekend is separate: 18-19 July 2026, 1400 Sat - 1400 Sun UTC. 6 m and 2 m only, digital modes only. Exchange: 4-character grid (no report in the log). Points: 1 on 6 m, 2 on 2 m. Multipliers: different grids per band. Mode DG in Cabrillo (not RY). Log to cqww-vhf.com by 24 July."
+
+[calendario]
+regola = "terzo-weekend-completo:luglio"
+inizio = "sab 14:00"
+fine = "dom 14:00"
+
+[calendario.date_fisse]
+2026 = ["2026-07-18T14:00Z", "2026-07-19T14:00Z"]
+
+[bande]
+ammesse = ["6m", "2m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+"2m" = { FT8 = 144174.0, FT4 = 144170.0 }
+
+[modi]
+ammessi = ["FT8", "FT4", "MSK144", "Q65"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "na-vhf"
+parola_cq = "TEST"
+chiusura = "RR73"
+settantatre_finale = "consigliato"
+
+[scambio]
+inviato = ["grid4"]
+ricevuto = ["grid4"]
+
+[doppi]
+chiave = "banda+griglia"
+log_doppi = "no"
+
+[punti]
+tipo = "per-banda"
+tabella = { "6m" = 1, "2m" = 2 }
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-HP"
+nome = "Single Op High (1500 W)"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-LP"
+nome = "Single Op Low (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP (10 W)"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "HILLTOP"
+nome = "Hilltopper (6 ore)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "ROVER"
+nome = "Rover"
+operatore = "ROVER"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MULTI"
+nome = "Multi Op"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "UNLIMITED"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "CQ-VHF"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "banda"
+invio_url = "https://cqww-vhf.com/logcheck/"
+scadenza = "2026-07-24T23:59:59Z"

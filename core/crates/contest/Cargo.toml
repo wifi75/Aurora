@@ -1,0 +1,17 @@
+[package]
+name = "contest"
+description = "Contest di Aurora: regole lette dai file TOML, calendario, doppi, punti, moltiplicatori, punteggio in diretta, rate, log del contest ed esportazione Cabrillo/EDI/ADIF"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+logbook = { path = "../logbook" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+toml = "1.1.8"

@@ -1,0 +1,99 @@
+# Regole del contest «DARC FT4 Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+
+[contest]
+id = "darc-ft4"
+nome = "DARC FT4 Contest"
+sponsor = "DARC"
+edizione = 2026
+url_regole = "https://www.darc.de/der-club/referate/conteste/ft4-contest/darc-ft4-contest-english-version/darc-ft4-rules"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+
+[sintesi]
+it = "Secondo martedi' di febbraio, maggio, agosto e novembre, 19:00-20:29 UTC. Solo FT4 su 80 m (3576, 3579, 3582 kHz) e 40 m (7047,5 kHz), una volta per banda; Fox vietato. Messaggi standard con rapporti veri e locatore a 4 caratteri. 1 punto per QSO; moltiplicatori: prefissi diversi per banda. Log Cabrillo via web entro 7 giorni (niente /P o /QRP nel nominativo)."
+en = "Second Tuesday of February, May, August and November, 1900-2029 UTC. FT4 only on 80 m (3576, 3579, 3582 kHz) and 40 m (7047.5 kHz), once per band; Fox not allowed. Standard messages with real reports and 4-character locator. 1 point per QSO; multipliers: different prefixes per band. Cabrillo log via web within 7 days (no /P or /QRP in the call)."
+
+[calendario]
+regola = "secondo-martedi:febbraio,maggio,agosto,novembre"
+inizio = "+0 19:00"
+fine = "+0 20:29"
+
+[bande]
+ammesse = ["80m", "40m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"80m" = { FT4 = 3576.0 }
+"40m" = { FT4 = 7047.5 }
+
+[modi]
+ammessi = ["FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "prefisso"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LP"
+nome = "Single Op Low (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP (5 W)"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "CHECKLOG"
+nome = "Checklog"
+operatore = "CHECKLOG"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "DARC-FT4"
+cabrillo_modo = "DG"
+colonne_inviate = ["snr", "grid4"]
+colonne_ricevute = ["snr", "grid4"]
+frequenza = "khz"
+invio_url = "https://dxhf2.darc.de/~ft4log/upload.cgi?form=referat&lang=en"
+scadenza = "7 giorni"

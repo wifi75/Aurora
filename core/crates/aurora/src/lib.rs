@@ -1645,8 +1645,24 @@ pub async fn run(
             (s.call, s.grid)
         }));
     }
+    // la pagina Contest: regole, contest attivo, log del contest; ascolta i QSO registrati e le decodifiche. Se un contest era attivo alla
+    // chiusura, il motore riparte con la sua sequenza
+    let contest_service = {
+        let station = Arc::clone(&log_station);
+        contest::ContestService::open(&config.data_dir, Arc::new(move || {
+            let s = station();
+            (s.call, s.grid)
+        }), aurora_core::version::APP_VERSION)
+    };
+    contest_service.spawn(&bus);
+    if let Some(setup) = contest_service.setup()
+        && bus.commands().try_send(aurora_core::Command::Contest(Some(setup))).is_err()
+    {
+        tracing::warn!("contest: la sequenza del contest attivo non e' arrivata al motore");
+    }
     let state = AppState::new(bus.clone(), auth, Arc::clone(&logbook), TxPolicy::default_safe().with_live_tx(live_tx), config.secure_cookie)
         .with_station_info(info)
+        .with_contest(Arc::clone(&contest_service))
         .with_open_access(config.open_access || read_open_access(&config.data_dir.join(OPEN_ACCESS_FILE)))
         .with_open_access_file(config.data_dir.join(OPEN_ACCESS_FILE))
         .with_local_trust(config.local_trust)

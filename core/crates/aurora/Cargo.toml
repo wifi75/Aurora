@@ -41,6 +41,7 @@ auth = { path = "../auth" }
 logbook = { path = "../logbook" }
 remote-api = { path = "../remote-api" }
 qmap = { path = "../qmap" }
+contest = { path = "../contest" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }

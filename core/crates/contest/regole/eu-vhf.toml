@@ -1,0 +1,92 @@
+# Regole del contest «EU VHF (contest nazionali con seriale)» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Formato generico dei messaggi EU VHF di WSJT-X: da associare ai contest nazionali che accettano i modi digitali con lo scambio classico. Date e orari li sceglie l'operatore.
+
+[contest]
+id = "eu-vhf"
+nome = "EU VHF (contest nazionali con seriale)"
+sponsor = "vari"
+edizione = 2026
+url_regole = "https://wsjt.sourceforge.io/wsjtx-doc/wsjtx-main-2.7.0.html"
+verificato_il = "2026-11-08"
+famiglia = "vhf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["punti", "calendario"]
+
+[sintesi]
+it = "Formato EU VHF di WSJT-X per i contest nazionali che accettano i modi digitali con lo scambio IARU classico: rapporto + numero progressivo + locatore a 6 caratteri (messaggi con due nominativi tra parentesi). Doppi una volta per banda. Punti: 1 per km. Non serve per i contest MGM IARU ne' per le attivita' mensili. Log EDI."
+en = "WSJT-X EU VHF format for national contests that accept digital modes with the classic IARU exchange: report + serial number + 6-character locator (messages with two hashed calls). Dupes once per band. Points: 1 per km. Not for the IARU MGM contests or the monthly activities. EDI log."
+
+[calendario]
+regola = "sempre"
+inizio = "+0 00:00"
+fine = "+0 23:59"
+
+[bande]
+ammesse = ["6m", "4m", "2m", "70cm", "23cm"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"6m" = { FT8 = 50313.0, FT4 = 50318.0 }
+"4m" = { FT8 = 70154.0 }
+"2m" = { FT8 = 144174.0, FT4 = 144170.0 }
+"70cm" = { FT8 = 432174.0, FT4 = 432065.0 }
+"23cm" = { FT8 = 1296174.0 }
+
+[modi]
+ammessi = ["FT8", "FT4", "MSK144", "Q65"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "eu-vhf"
+parola_cq = "TEST"
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["rst", "seriale", "grid6"]
+ricevuto = ["rst", "seriale", "grid6"]
+seriale = "per-log"
+
+[doppi]
+chiave = "banda"
+log_doppi = "si-senza-punti"
+
+[punti]
+tipo = "km"
+km_per_grado = 111.2
+stesso_quadrato = 1
+
+[punteggio]
+formula = "punti"
+
+[[categorie]]
+id = "SO"
+nome = "Single Op"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO"
+nome = "Multi Op"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "edi"
+frequenza = "banda"
+edi_modo = 7
+edi_tname = "EU VHF"
+invio_url = ""
+scadenza = ""
