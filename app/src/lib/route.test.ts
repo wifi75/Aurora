@@ -31,7 +31,8 @@ describe('parseRoute', () => {
   });
 
   it('reads the map and history pages', () => {
-    expect(parseRoute('#/mappa')).toEqual({ name: 'map' });
+    // la vecchia Mappa ora porta alla Mappa DX
+    expect(parseRoute('#/mappa')).toEqual({ name: 'dxmap' });
     expect(parseRoute('#/storico')).toEqual({ name: 'history' });
     expect(parseRoute('#/propagazione')).toEqual({ name: 'propagation' });
   });

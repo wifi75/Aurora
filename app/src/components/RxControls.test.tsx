@@ -13,14 +13,17 @@ function show(transmitting: boolean) {
   );
 }
 
-describe('RxControls period', () => {
-  it('shows only the UTC clock: the period progress is in the bottom status bar', () => {
+describe('RxControls', () => {
+  it('puts the switches in one segmented bar, Monitora first, without a period bar (the clock is in the bottom status bar)', () => {
     const { container } = show(false);
     expect(container.querySelector('[role="progressbar"]')).toBeNull();
-    expect(container.querySelector('.period--clock')).not.toBeNull();
+    const items = [...container.querySelectorAll('.rx-seg:not(.rx-seg--btns) .rx-seg-item')].map((b) => b.textContent);
+    expect(items[0]).toBe('Monitora');
+    expect(items).toContain('SWL');
   });
 
-  it('keeps the clock while transmitting', () => {
-    expect(show(true).container.querySelector('.period--clock')).not.toBeNull();
+  it('keeps Ferma, Decodifica and Cancella together in their own bar', () => {
+    const items = [...show(true).container.querySelectorAll('.rx-seg--btns .rx-seg-item')].map((b) => b.textContent);
+    expect(items).toHaveLength(3);
   });
 });

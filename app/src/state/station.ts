@@ -114,6 +114,15 @@ function bandOfStatus(s: StationStatus | null | undefined): string | null {
 }
 
 /** La banda e' diversa da prima (e prima era nota): al cambio di banda si svuota sempre tutto, come JTDX. */
+/** Aggiunge subito alla lista le decodifiche ancora in attesa (le prove non aspettano i 60 ms della raccolta). */
+export function flushDecodes(): void {
+  if (flushTimer !== null) clearTimeout(flushTimer);
+  flushTimer = null;
+  const batch = pendingDecodes;
+  pendingDecodes = [];
+  if (batch.length > 0) useStation.setState((s) => ({ decodes: [...batch, ...s.decodes].slice(0, MAX_DECODES), lastDecodeAt: Date.now() }));
+}
+
 export function bandChanged(before: StationStatus | null | undefined, after: StationStatus | null | undefined): boolean {
   const b = bandOfStatus(before);
   const a = bandOfStatus(after);

@@ -10,8 +10,8 @@ describe('lastPage', () => {
   it('starts on the page that was open last, only when no address was given', () => {
     const s = memory();
     rememberRoute(s, { name: 'map' });
-    expect(lastPageToRestore(s, '')).toBe('#/mappa');
-    expect(lastPageToRestore(s, '#/')).toBe('#/mappa');
+    expect(lastPageToRestore(s, '')).toBe('#/mappa-dx');
+    expect(lastPageToRestore(s, '#/')).toBe('#/mappa-dx');
     expect(lastPageToRestore(s, '#/storico')).toBeNull();
     expect(lastPageToRestore(s, '#/pair/12345678')).toBeNull();
   });

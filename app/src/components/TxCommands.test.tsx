@@ -10,6 +10,9 @@ vi.mock('../api/client', async (importActual) => ({
   postTxFrequency: vi.fn().mockResolvedValue(undefined),
   postRxFrequency: vi.fn().mockResolvedValue(undefined),
   postReport: vi.fn().mockResolvedValue(undefined),
+  getEngineSettings: vi.fn().mockResolvedValue({}),
+  postTune: vi.fn().mockResolvedValue(undefined),
+  postSpotDxsummit: vi.fn().mockResolvedValue(undefined),
 }));
 import { getControls, postControl, postReport, postRxFrequency, postTxFrequency } from '../api/client';
 import type { StationStatus } from '../api/schemas';

@@ -19,6 +19,9 @@ describe('ThemeToggle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tema chiaro' }));
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem('aurora-theme')).toBe('light');
+    // dal 0.11.165 il giro e' Scuro, Chiaro, Automatico
+    fireEvent.click(screen.getByRole('button', { name: 'Tema automatico (come il sistema)' }));
+    expect(window.localStorage.getItem('aurora-theme')).toBe('auto');
     fireEvent.click(screen.getByRole('button', { name: 'Tema scuro' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(window.localStorage.getItem('aurora-theme')).toBe('dark');
@@ -28,6 +31,6 @@ describe('ThemeToggle', () => {
     window.localStorage.setItem('aurora-theme', 'light');
     render(<ThemeToggle />);
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(screen.getByRole('button', { name: 'Tema scuro' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tema automatico (come il sistema)' })).toBeInTheDocument();
   });
 });

@@ -57,6 +57,7 @@ vi.mock('../api/client', () => ({
 }));
 import * as api from '../api/client';
 import { Settings } from './Settings';
+import { AutomationTab } from '../settings/AutomationTab';
 
 const it_ = (key: Parameters<typeof translate>[1]) => translate('it', key);
 
@@ -188,8 +189,12 @@ describe('Radio, Audio, Reports and Advanced', () => {
 
 describe('Sequence', () => {
   it('shows the automation rules', async () => {
-    open();
-    goTo('Sequenza');
+    // le regole delle risposte automatiche non stanno piu' in «Sequenza»: hanno la loro scheda Automazioni
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <AutomationTab />
+      </QueryClientProvider>,
+    );
     expect(await screen.findByLabelText(it_('auto.minSnr'))).toHaveValue(-18);
   });
 });

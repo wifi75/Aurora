@@ -25,8 +25,10 @@ describe('Log4omPanel', () => {
     );
     const first = await screen.findByText('AA1AA');
     expect(first.closest('tr')).not.toHaveClass('log4om-row--flash');
+    // la riga lampeggia quando Aurora mette a log il QSO (evento «logged»), non quando Log4OM lo scrive
     vi.mocked(getLog4om).mockResolvedValue({ total: 3, qsos: [qso('CC3CC', '2026-10-25 14:24:00Z'), qso('AA1AA', '2026-10-25 14:22:00Z'), qso('BB2BB', '2026-10-25 14:00:00Z')] });
     await act(async () => {
+      useStation.setState({ justLogged: [{ call: 'CC3CC', band: '20m', mode: 'FT4', rst_sent: '', rst_rcvd: '', time_ms: (14 * 3600 + 24 * 60) * 1000, at: Date.now() }] });
       await client.invalidateQueries({ queryKey: ['log4om'] });
     });
     const fresh = await screen.findByText('CC3CC');

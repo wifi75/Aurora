@@ -360,16 +360,19 @@ describe('DecodeList', () => {
         onReply={() => {}}
       />,
     );
+    // le stazioni in coda stanno in cima alla lista: le righe si cercano per nominativo, non per posizione
     const rows = screen.getAllByRole('button');
-    expect(rows[0]).toHaveAttribute('title', expect.stringContaining('Tasto destro'));
-    fireEvent.contextMenu(rows[0] as HTMLElement);
+    const bb = rows.find((r) => r.textContent?.includes('BB2BB')) as HTMLElement;
+    const cc = rows.find((r) => r.textContent?.includes('CC3CC')) as HTMLElement;
+    expect(bb).toHaveAttribute('title', expect.stringContaining('Tasto destro'));
+    fireEvent.contextMenu(bb);
     expect(onQueue).toHaveBeenCalledWith(1);
-    expect(rows[1]).toHaveClass('decode-row--queued');
+    expect(cc).toHaveClass('decode-row--queued');
     // il pallino porta il posto in coda, con la spiegazione nel suggerimento, e resta fuori dal testo del messaggio
     const mark = screen.getByLabelText(/In coda, posto 1/);
     expect(mark).toHaveTextContent('1');
     expect(mark.closest('.data')).toBeNull();
-    expect(rows[0]).not.toHaveClass('decode-row--queued');
+    expect(bb).not.toHaveClass('decode-row--queued');
     useStation.setState({ status: null });
   });
 

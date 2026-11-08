@@ -68,13 +68,14 @@ describe('HistoryPage', () => {
   });
 
   it('clears the history only after a confirmation', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+    // la conferma e' la finestra di Aurora (askConfirm), non window.confirm
     render(<HistoryPage />);
     const button = await screen.findByRole('button', { name: 'Svuota lo storico' });
     fireEvent.click(button);
+    fireEvent.click(await screen.findByRole('button', { name: 'Annulla' }));
     expect(clearHistory).not.toHaveBeenCalled();
     fireEvent.click(button);
+    fireEvent.click(await screen.findByRole('button', { name: 'OK' }));
     await waitFor(() => expect(clearHistory).toHaveBeenCalledTimes(1));
-    confirm.mockRestore();
   });
 });

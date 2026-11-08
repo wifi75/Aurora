@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecodedMessage, StationStatus } from '../api/schemas';
 import { usePrefs } from '../lib/prefs';
-import { bandChanged, bandOrModeChanged, useStation } from './station';
+import { bandChanged, bandOrModeChanged, flushDecodes, useStation } from './station';
 
 const status: StationStatus = {
   dial_hz: 14_074_000, mode: 'FT8', tx_enabled: true, transmitting: false, decoding: true,
@@ -23,14 +23,15 @@ describe('useStation', () => {
 
   it('apply decode keeps newest first', () => {
     const { apply } = useStation.getState();
-    apply({ type: 'decode', ...decode(1) });
-    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'decode', ...decode(1) }); flushDecodes();
+    apply({ type: 'decode', ...decode(2) }); flushDecodes();
     expect(useStation.getState().decodes.map((d) => d.id)).toEqual([2, 1]);
   });
 
   it('apply decode caps at 200', () => {
     const { apply } = useStation.getState();
     for (let i = 1; i <= 250; i++) apply({ type: 'decode', ...decode(i) });
+    flushDecodes();
     const list = useStation.getState().decodes;
     expect(list).toHaveLength(200);
     expect(list[0]?.id).toBe(250);
@@ -136,12 +137,12 @@ describe('useStation', () => {
   it('clears the band activity when the band or the mode changes, if the option is on', () => {
     const { apply } = useStation.getState();
     apply({ type: 'status', ...status });
-    apply({ type: 'decode', ...decode(1) });
+    apply({ type: 'decode', ...decode(1) }); flushDecodes();
     apply({ type: 'status', ...status, dial_hz: 14_075_000 }); // stessa banda: resta
     expect(useStation.getState().decodes).toHaveLength(1);
     apply({ type: 'status', ...status, dial_hz: 7_074_000 }); // un'altra banda: si svuota
     expect(useStation.getState().decodes).toHaveLength(0);
-    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'decode', ...decode(2) }); flushDecodes();
     apply({ type: 'status', ...status, dial_hz: 7_074_000, mode: 'FT4' }); // un altro modo: si svuota
     expect(useStation.getState().decodes).toHaveLength(0);
   });
@@ -149,10 +150,10 @@ describe('useStation', () => {
   it('clears at once when the change is commanded from Aurora, and only once', () => {
     const { apply, patchStatus } = useStation.getState();
     apply({ type: 'status', ...status });
-    apply({ type: 'decode', ...decode(1) });
+    apply({ type: 'decode', ...decode(1) }); flushDecodes();
     patchStatus({ dial_hz: 7_074_000 });
     expect(useStation.getState().decodes).toHaveLength(0);
-    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'decode', ...decode(2) }); flushDecodes();
     apply({ type: 'status', ...status, dial_hz: 7_074_000 }); // il motore conferma: non si svuota di nuovo
     expect(useStation.getState().decodes.map((d) => d.id)).toEqual([2]);
   });
@@ -162,7 +163,7 @@ describe('useStation', () => {
     try {
       const { apply } = useStation.getState();
       apply({ type: 'status', ...status });
-      apply({ type: 'decode', ...decode(1) });
+      apply({ type: 'decode', ...decode(1) }); flushDecodes();
       apply({ type: 'status', ...status, mode: 'FT4' }); // solo il modo: l'opzione spenta le lascia
       expect(useStation.getState().decodes).toHaveLength(1);
       apply({ type: 'status', ...status, mode: 'FT4', dial_hz: 7_047_500 }); // la banda: si svuota sempre
@@ -171,7 +172,7 @@ describe('useStation', () => {
       usePrefs.getState().set({ clearOnChange: true });
     }
     useStation.getState().reset();
-    useStation.getState().apply({ type: 'decode', ...decode(5) });
+    useStation.getState().apply({ type: 'decode', ...decode(5) }); flushDecodes();
     useStation.getState().apply({ type: 'status', ...status });
     expect(useStation.getState().decodes).toHaveLength(1);
   });
@@ -179,7 +180,7 @@ describe('useStation', () => {
   it('a band change empties the lists and the DX station, but a move inside the band does not', () => {
     const { apply, setPendingDx } = useStation.getState();
     apply({ type: 'status', ...status, dx_call: 'K1ABC', dx_grid: 'FN42', report: '-10' });
-    apply({ type: 'decode', ...decode(1) });
+    apply({ type: 'decode', ...decode(1) }); flushDecodes();
     setPendingDx('K1ABC');
     apply({ type: 'status', ...status, dial_hz: 14_075_000, dx_call: 'K1ABC', dx_grid: 'FN42' });
     expect(useStation.getState().decodes).toHaveLength(1);
@@ -200,12 +201,12 @@ describe('useStation', () => {
   it('the band_changed event from the engine clears everything once, even without a status on the new band', () => {
     const { apply } = useStation.getState();
     apply({ type: 'status', ...status, dx_call: 'K1ABC' });
-    apply({ type: 'decode', ...decode(1) });
+    apply({ type: 'decode', ...decode(1) }); flushDecodes();
     apply({ type: 'band_changed', band: '40m', dial_hz: 7_074_000, epoch: 1 });
     expect(useStation.getState().decodes).toHaveLength(0);
     expect(useStation.getState().status?.dx_call).toBeNull();
     // i messaggi della banda nuova restano: lo stato che conferma la banda e un secondo avviso non svuotano di nuovo
-    apply({ type: 'decode', ...decode(2) });
+    apply({ type: 'decode', ...decode(2) }); flushDecodes();
     apply({ type: 'status', ...status, dial_hz: 7_074_000 });
     apply({ type: 'band_changed', band: '40m', dial_hz: 7_074_000, epoch: 1 });
     expect(useStation.getState().decodes.map((d) => d.id)).toEqual([2]);
@@ -218,7 +219,7 @@ describe('useStation', () => {
     const { apply } = useStation.getState();
     apply({ type: 'status', ...status });
     apply({ type: 'status', ...status, dial_hz: 7_074_000 });
-    apply({ type: 'decode', ...decode(3) });
+    apply({ type: 'decode', ...decode(3) }); flushDecodes();
     apply({ type: 'band_changed', band: '40m', dial_hz: 7_074_000, epoch: 1 });
     expect(useStation.getState().decodes.map((d) => d.id)).toEqual([3]);
   });
