@@ -8,6 +8,7 @@ pub mod lan;
 pub mod log_prompt;
 pub mod pair_watch;
 mod policy;
+mod qmap_api;
 mod routes;
 pub use routes::{is_secret_name, redact_json};
 pub mod ui_settings;
@@ -197,6 +198,8 @@ pub struct AppState {
     pub clock: Option<Arc<clock_sync::ClockService>>,
     /// Client DX Cluster: spot dei cluster telnet.
     pub cluster: Option<Arc<dx_cluster::ClusterService>>,
+    /// QMAP: ricezione panoramica Q65 da un flusso I/Q a banda larga.
+    pub qmap: Option<Arc<qmap::QmapService>>,
     /// I QSO conclusi che aspettano la conferma dell'operatore («Richiedimi di loggare il QSO»).
     pub log_prompt: Arc<log_prompt::LogPrompt>,
     /// I tentativi di associazione dal telefono, per il rapporto quando non riescono.
@@ -270,7 +273,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown) }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -366,6 +369,11 @@ impl AppState {
 
     pub fn with_cluster(mut self, cluster: Arc<dx_cluster::ClusterService>) -> AppState {
         self.cluster = Some(cluster);
+        self
+    }
+
+    pub fn with_qmap(mut self, qmap: Arc<qmap::QmapService>) -> AppState {
+        self.qmap = Some(qmap);
         self
     }
 
