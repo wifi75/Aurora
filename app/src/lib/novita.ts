@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.199',
-    released: '2026-11-08T16:49:54Z',
+    released: '2026-11-08T16:57:32Z',
     kind: 'new',
     title: ['Pagina Fox compatta, FT-991 con FT-991(A) Link, spot sulla cascata rifatti', 'Compact Fox page, FT-991 with FT-991(A) Link, redone spots on the waterfall', 'Kompakte Fox-Seite, FT-991 mit FT-991(A) Link, neue Spots im Wasserfall', 'Page Fox compacte, FT-991 avec FT-991(A) Link, spots refaits sur la cascade', 'Página Fox compacta, FT-991 con FT-991(A) Link, spots rehechos en la cascada', 'Página Fox compacta, FT-991 com FT-991(A) Link, spots refeitos na cascata'],
     text: [
