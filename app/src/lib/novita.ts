@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.203',
-    released: '2026-11-08T22:15:00Z',
+    released: '2026-11-08T22:01:19Z',
     kind: 'fixed',
     title: ['Aggiornamento più sicuro, FT-991 Link e 70 cm', 'Safer update, FT-991 Link and 70 cm', 'Sichereres Update, FT-991 Link und 70 cm', 'Mise à jour plus sûre, FT-991 Link et 70 cm', 'Actualización más segura, FT-991 Link y 70 cm', 'Atualização mais segura, FT-991 Link e 70 cm'],
     text: [
