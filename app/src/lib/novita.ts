@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.202',
-    released: '2026-11-08T20:56:33Z',
+    released: '2026-11-08T21:01:17Z',
     kind: 'new',
     title: ['Nuova pagina Contest (beta), automazioni in modo reale, Mac con Hamlib', 'New Contest page (beta), automation in live mode, Mac with Hamlib', 'Neue Contest-Seite (Beta), Automatik im Echtbetrieb, Mac mit Hamlib', 'Nouvelle page Contest (bêta), automatisations en mode réel, Mac avec Hamlib', 'Nueva página Contest (beta), automatizaciones en modo real, Mac con Hamlib', 'Nova página Contest (beta), automatizações em modo real, Mac com Hamlib'],
     text: [
