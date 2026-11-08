@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Contest**: nuovi regolamenti C.S.M.I. Marconi Speed Contest (25 aprile, FT4/FT8, stazioni IY, log non da inviare), FT8 DX Contest e FT4 DX Contest dell'European FT8 Club; PACCdigi corretto (orari 12:00-11:59, frequenze FT8 1,843-3,577-7,077-14,077-21,077-28,077 MHz e FT4 dal regolamento, scambio rapporto e numero progressivo).
 
 ## 0.11.203 - 2026-11-08
 - **Aggiornamento**: l'installatore parte solo con Aurora e l'agente chiusi (prima «Impossibile chiudere Aurora» a meta' installazione); la locandina non compare da sola durante l'aggiornamento dal tray.

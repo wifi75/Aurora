@@ -1,0 +1,125 @@
+# Regole del contest «FT4 DX Contest (European FT8 Club)» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Il sito del club e' privato: scambio, punti e moltiplicatori vengono dal regolamento 2021 ripubblicato (cq.sk), simile al Roundup ARRL.
+
+[contest]
+id = "eu-ft8club-ft4"
+nome = "FT4 DX Contest (European FT8 Club)"
+sponsor = "European FT8 Club"
+edizione = 2026
+url_regole = "https://europeanft8club.wordpress.com/2025/04/27/ft4-dx-contest-2026/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["calendario", "scambio", "punti", "moltiplicatori", "export"]
+
+[sintesi]
+it = "Febbraio, 24 ore (2026: 21 febbraio 12:00 - 22 febbraio 12:00 UTC). Solo FT4 su 80/40/20/15/10 m, una volta per banda. Scambio come il Roundup: rapporto e numero progressivo (USA stato, Canada provincia). 1 punto a QSO; moltiplicatori stati, province e paesi DXCC una volta nel log (i DXCC qui non si calcolano). Categorie SO/MO LOW (100 W) e QRP (5 W). Log Cabrillo via email. Frequenze, scambio, punteggio e scadenza da verificare sul regolamento dell'anno."
+en = "February, 24 hours (2026: 21 February 1200 - 22 February 1200 UTC). FT4 only on 80/40/20/15/10 m, once per band. Roundup-style exchange: report and serial (USA state, Canada province). 1 point per QSO; multipliers states, provinces and DXCC entities once per log (DXCC not computed here). Categories SO/MO LOW (100 W) and QRP (5 W). Cabrillo log by email. Frequencies, exchange, scoring and deadline to be checked on the year's rules."
+
+[calendario]
+# data che cambia ogni anno: da verificare sul regolamento dell'anno
+regola = "terzo-weekend:febbraio"
+inizio = "sab 12:00"
+fine = "dom 11:59"
+
+[calendario.date_fisse]
+2026 = ["2026-02-21T12:00Z", "2026-02-22T11:59Z"]
+
+[bande]
+ammesse = ["80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB); il club chiede un multiplo di 2 kHz
+[bande.frequenze]
+# da verificare sul regolamento dell'anno (FT4 standard)
+"80m" = { FT4 = 3575.5 }
+"40m" = { FT4 = 7047.5 }
+"20m" = { FT4 = 14080.0 }
+"15m" = { FT4 = 21140.0 }
+"10m" = { FT4 = 28180.0 }
+
+[modi]
+ammessi = ["FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+# scambio come il Roundup: 5x9 e stato/provincia (USA/Canada) o numero progressivo (DX)
+attivita = "roundup"
+parola_cq = "RU"
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["rst", "seriale"]
+ricevuto = ["rst", "stato"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+# stati USA (piu' DC) e province canadesi una volta nel log; i paesi DXCC contano anch'essi, ma qui non si calcolano
+[[moltiplicatori]]
+tipo = "stato"
+ambito = "per-log"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LOW"
+nome = "Single Op Low (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP (5 W)"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO-LOW"
+nome = "Multi Op Low (100 W)"
+operatore = "MULTI-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "MO-QRP"
+nome = "Multi Op QRP (5 W)"
+operatore = "MULTI-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+# scelte lasciate a chi gareggia: da verificare sul regolamento dell'anno
+[opzioni_categoria]
+potenze = ["LOW", "QRP"]
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+# nome del contest nel Cabrillo: da verificare sul regolamento dell'anno
+cabrillo_contest = "FT4-DX"
+cabrillo_modo = "DG"
+colonne_inviate = ["rst", "seriale"]
+colonne_ricevute = ["rst", "scambio"]
+frequenza = "khz"
+invio_url = "mailto:ft4club@yahoo.com"
+scadenza = "7 giorni"

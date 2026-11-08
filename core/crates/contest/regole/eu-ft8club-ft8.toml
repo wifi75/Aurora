@@ -1,0 +1,124 @@
+# Regole del contest «FT8 DX Contest (European FT8 Club)» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Il sito del club e' privato: scambio, punti e moltiplicatori vengono dal regolamento 2021 ripubblicato (cq.sk), simile al Roundup ARRL.
+
+[contest]
+id = "eu-ft8club-ft8"
+nome = "FT8 DX Contest (European FT8 Club)"
+sponsor = "European FT8 Club"
+edizione = 2026
+url_regole = "https://europeanft8club.wordpress.com/2026/02/22/ft8-dx-contest-2026/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["calendario", "scambio", "punti", "moltiplicatori", "export"]
+
+[sintesi]
+it = "Aprile, 24 ore (2026: 25 aprile 12:00 - 26 aprile 12:00 UTC). Solo FT8 su 80/40/20/15/10 m, una volta per banda, tutti con tutti. Frequenze consigliate 3.590-3.600, 7.090-7.100, 14.090-14.100, 21.090-21.100, 28.090-28.100 MHz. Scambio come il Roundup: rapporto e numero progressivo (USA stato, Canada provincia). 1 punto a QSO; moltiplicatori stati, province e paesi DXCC una volta nel log (i DXCC qui non si calcolano). Categorie SO/MO LOW (100 W) e QRP (5 W). Log Cabrillo via email a ft4club@yahoo.com (2026: entro il 1° maggio 22:00 UTC). Scambio e punteggio da verificare sul regolamento dell'anno."
+en = "April, 24 hours (2026: 25 April 1200 - 26 April 1200 UTC). FT8 only on 80/40/20/15/10 m, once per band, everyone works everyone. Suggested 3.590-3.600, 7.090-7.100, 14.090-14.100, 21.090-21.100, 28.090-28.100 MHz. Roundup-style exchange: report and serial (USA state, Canada province). 1 point per QSO; multipliers states, provinces and DXCC entities once per log (DXCC not computed here). Categories SO/MO LOW (100 W) and QRP (5 W). Cabrillo log by email to ft4club@yahoo.com (2026: by 1 May 2200 UTC). Exchange and scoring to be checked on the year's rules."
+
+[calendario]
+# data che cambia ogni anno: da verificare sul regolamento dell'anno
+regola = "ultimo-weekend:aprile"
+inizio = "sab 12:00"
+fine = "dom 11:59"
+
+[calendario.date_fisse]
+2026 = ["2026-04-25T12:00Z", "2026-04-26T11:59Z"]
+
+[bande]
+ammesse = ["80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB); il club chiede un multiplo di 2 kHz
+[bande.frequenze]
+"80m" = { FT8 = 3590.0 }
+"40m" = { FT8 = 7090.0 }
+"20m" = { FT8 = 14090.0 }
+"15m" = { FT8 = 21090.0 }
+"10m" = { FT8 = 28090.0 }
+
+[modi]
+ammessi = ["FT8"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+# scambio come il Roundup: 5x9 e stato/provincia (USA/Canada) o numero progressivo (DX)
+attivita = "roundup"
+parola_cq = "RU"
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["rst", "seriale"]
+ricevuto = ["rst", "stato"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+# stati USA (piu' DC) e province canadesi una volta nel log; i paesi DXCC contano anch'essi, ma qui non si calcolano
+[[moltiplicatori]]
+tipo = "stato"
+ambito = "per-log"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LOW"
+nome = "Single Op Low (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-QRP"
+nome = "Single Op QRP (5 W)"
+operatore = "SINGLE-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO-LOW"
+nome = "Multi Op Low (100 W)"
+operatore = "MULTI-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "MO-QRP"
+nome = "Multi Op QRP (5 W)"
+operatore = "MULTI-OP"
+potenza = "QRP"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+# scelte lasciate a chi gareggia: da verificare sul regolamento dell'anno
+[opzioni_categoria]
+potenze = ["LOW", "QRP"]
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+# nome del contest nel Cabrillo: da verificare sul regolamento dell'anno
+cabrillo_contest = "FT8-DX"
+cabrillo_modo = "DG"
+colonne_inviate = ["rst", "seriale"]
+colonne_ricevute = ["rst", "scambio"]
+frequenza = "khz"
+invio_url = "mailto:ft4club@yahoo.com"
+scadenza = "2026-05-01T22:00:00Z"

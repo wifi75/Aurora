@@ -1,0 +1,92 @@
+# Regole del contest «C.S.M.I. Marconi Speed Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Gara a tempo: vince chi collega piu' stazioni marconiane IY aderenti nel minor tempo; il tempo lo da' l'ora del QSO nel log
+# dell'ultima IY collegata. Il formato non ha un punteggio a tempo ne' un moltiplicatore «stazioni IY»: qui ogni QSO vale 1 punto,
+# senza moltiplicatori, e il log non si manda (fanno fede i log delle stazioni IY).
+
+[contest]
+id = "csmi-marconi-speed"
+nome = "C.S.M.I. Marconi Speed Contest"
+sponsor = "C.S.M.I."
+edizione = 2026
+url_regole = "https://csmi.altervista.org/wp/"
+verificato_il = "2026-11-08"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno
+da_verificare = ["scambio", "punti", "moltiplicatori"]
+
+[sintesi]
+it = "25 aprile (International Marconi Day), 00:00-23:59 UTC. Categoria A3 FT4/FT8 su 80/40/20/15/10 m e WARC. Aperto ai radioamatori italiani, senza iscrizione. Si collegano le 14 stazioni marconiane IY aderenti (2026: IY0GA, IY0IMD, IY0TC, IY0ORP, IY0CG, IY0MMR, IY1MR, IY1SP, IY1TO, IY1SM, IY4FGM, IY5PIS, IY6GM, IY7M): vince chi ne collega di piu' nel minor tempo, misurato sull'ora del QSO nel log dell'ultima IY collegata. Aurora non calcola il tempo: conta un punto per QSO, senza moltiplicatori. Il log non si manda."
+en = "25 April (International Marconi Day), 0000-2359 UTC. Category A3 FT4/FT8 on 80/40/20/15/10 m and WARC. Open to Italian amateurs, no registration. Work the 14 participating IY Marconi stations (2026: IY0GA, IY0IMD, IY0TC, IY0ORP, IY0CG, IY0MMR, IY1MR, IY1SP, IY1TO, IY1SM, IY4FGM, IY5PIS, IY6GM, IY7M): the winner works the most in the shortest time, timed by the QSO in the last IY station's log. Aurora does not compute the time: one point per QSO, no multipliers. No log to submit."
+
+[calendario]
+# sempre il 25 aprile: il calendario non ha date fisse ricorrenti, la regola vale quando il 25 cade di sabato; per gli altri anni
+# servono le date fisse
+regola = "ultimo-sabato:aprile"
+inizio = "+0 00:00"
+fine = "+0 23:59"
+
+[calendario.date_fisse]
+2026 = ["2026-04-25T00:00Z", "2026-04-25T23:59Z"]
+2027 = ["2027-04-25T00:00Z", "2027-04-25T23:59Z"]
+2028 = ["2028-04-25T00:00Z", "2028-04-25T23:59Z"]
+
+[bande]
+ammesse = ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB): quelle standard, il regolamento rimanda al band plan
+[bande.frequenze]
+"80m" = { FT8 = 3573.0, FT4 = 3575.5 }
+"40m" = { FT8 = 7074.0, FT4 = 7047.5 }
+"30m" = { FT8 = 10136.0, FT4 = 10140.0 }
+"20m" = { FT8 = 14074.0, FT4 = 14080.0 }
+"17m" = { FT8 = 18100.0, FT4 = 18104.0 }
+"15m" = { FT8 = 21074.0, FT4 = 21140.0 }
+"12m" = { FT8 = 24915.0, FT4 = 24919.0 }
+"10m" = { FT8 = 28074.0, FT4 = 28180.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+# il regolamento non indica uno scambio: messaggi normali con rapporto e locatore (da verificare sul regolamento dell'anno)
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+# conta collegare ogni stazione IY: da verificare sul regolamento dell'anno se valgono anche altre bande
+[doppi]
+chiave = "log"
+log_doppi = "no"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[punteggio]
+formula = "punti"
+
+[[categorie]]
+id = "A3"
+nome = "A3 HF FT4/FT8"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+# nessun invio: fanno fede i log delle stazioni IY; l'ADIF resta per il proprio registro
+[export]
+formato = "adif"
+frequenza = "khz"

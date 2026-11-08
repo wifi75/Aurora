@@ -25,6 +25,9 @@ const BUILTIN: &[(&str, &str)] = &[
     ("darc-ft4", include_str!("../regole/darc-ft4.toml")),
     ("rsgb-ft4", include_str!("../regole/rsgb-ft4.toml")),
     ("paccdigi", include_str!("../regole/paccdigi.toml")),
+    ("csmi-marconi-speed", include_str!("../regole/csmi-marconi-speed.toml")),
+    ("eu-ft8club-ft8", include_str!("../regole/eu-ft8club-ft8.toml")),
+    ("eu-ft8club-ft4", include_str!("../regole/eu-ft8club-ft4.toml")),
     ("personalizzato", include_str!("../regole/personalizzato.toml")),
 ];
 
