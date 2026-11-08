@@ -239,7 +239,7 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
   const dividers: Array<[string, string]> = [];
   {
     const list = Object.entries(shown);
-    for (const [ia, a] of list) for (const [ib, b] of list) if (ia !== ib && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.h - b.h) < 0.01 && Math.abs(a.x + a.w - b.x) < 0.01) dividers.push([ia, ib]);
+    for (const [ia, a] of list) for (const [ib, b] of list) if (ia !== ib && Math.abs(a.x + a.w - b.x) < 0.01 && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) >= 1) dividers.push([ia, ib]);
   }
   const trackDivider = (a: string, b: string) => (e: ReactPointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
@@ -298,7 +298,8 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
               <div
                 key={`${a}|${b}`}
                 className="grid-divider"
-                style={{ left: GAP + right.x * (colW + GAP) - GAP / 2 - 3, top: GAP + left.y * (ROW + GAP), height: left.h * (ROW + GAP) - GAP }}
+                // blocchi affiancati anche di altezza diversa: la maniglia copre il tratto che hanno in comune
+                style={{ left: GAP + right.x * (colW + GAP) - GAP / 2 - 3, top: GAP + Math.max(left.y, right.y) * (ROW + GAP), height: (Math.min(left.y + left.h, right.y + right.h) - Math.max(left.y, right.y)) * (ROW + GAP) - GAP }}
                 onPointerDown={trackDivider(a, b)}
                 title="↔"
                 aria-hidden="true"
