@@ -15,7 +15,7 @@
 
 - **Pagina Fox compatta**: la testata sta in due righe basse (nome e stato, i numeri della sessione in tesserine piccole, Posti, CQ verso, UltraFOX, Piu' CQ, Coda automatica e Azzera; sotto Fox, Tx, STOP, i comandi di ricezione, lo split e la verifica OTP), con gli stessi comandi di prima. Intestazioni dei riquadri e righe piu' basse e dense; la pagina riempie la finestra senza scorrere e lo spazio liberato va a «Chi chiama», ora il riquadro piu' grande (su 1880x950 circa 24 righe visibili invece di 8-9), con sotto la cascata, larga solo quanto lui. In mezzo QSO in corso, In onda, In coda e Fox log scendono fino in fondo alla pagina e si dividono l'altezza in parti uguali; «Messaggi ricevuti» resta a destra a tutta altezza. Le due maniglie regolano l'altezza della cascata.
 - **KG4**: Guantanamo solo con il suffisso di due lettere; KG4ABC e simili sono Stati Uniti.
-- **Trasmissione**: modo bloccato anche con la Tx abilitata; il CQ (Tx6) scritto a mano si salva in `tx6-cq.txt` e torna al riavvio; barra del periodo arancio e rossa in Tx.
+- **Trasmissione**: il CQ (Tx6) scritto a mano si salva in `tx6-cq.txt` e torna al riavvio; barra del periodo arancio e rossa in Tx.
 - **Avvio lento della finestra** (WebView2 dopo un aggiornamento) non piu' segnalato come blocco del programma.
 - **README**: tolte etichetta e sezione SignPath (domanda non accolta per ora).
 

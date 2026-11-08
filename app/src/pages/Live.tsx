@@ -382,8 +382,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         <div className="band-row">
           <ModeSwitch
             mode={status?.mode ?? ''}
-            // il modo non si cambia in trasmissione ne' con la trasmissione abilitata (un QSO in corso): prima si ferma la Tx
-            locked={(status?.transmitting ?? false) || (status?.tx_enabled ?? false)}
+            // il modo non si cambia mentre si trasmette (anche il motore lo rifiuta); con Abilita Tx acceso ma in ricezione si puo'
+            locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
           />
           {info.data?.engine === 'native' && q65Parts(status?.mode ?? '') ? <Q65Extras disabled={status?.transmitting ?? false} /> : null}
