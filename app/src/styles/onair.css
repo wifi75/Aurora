@@ -317,7 +317,8 @@
   height: 1.25em;
   margin-right: 0.4rem;
   border-radius: 2px;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+  /* niente cornice: il riquadro e' piu' alto della bandiera (background-size: contain) e la cornice chiara
+     disegnava un rettangolo vuoto attorno */
   vertical-align: -0.1em;
 }
 
@@ -6828,6 +6829,22 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
 .dock-panel--all .decode-list .decode-row .decode-where .fi,
 .dock-panel--cq .decode-list .decode-row .decode-where .fi {
   font-size: 12.2px;
+}
+
+/* bandiere nelle liste circa 22% piu' grandi, con il riquadro nelle proporzioni della bandiera (4:3) e senza cornice:
+   l'altezza resta sotto quella della riga, cosi' l'allineamento non cambia */
+.dock-panel--all .decode-list .decode-row .decode-where .fi,
+.dock-panel--cq .decode-list .decode-row .decode-where .fi {
+  width: 1.53em;
+  height: 1.15em;
+  vertical-align: middle;
+  box-shadow: none;
+}
+.cluster-table .decode-flag {
+  width: 1.85em;
+  height: 1.3em;
+  vertical-align: middle;
+  box-shadow: none;
 }
 
 /* avviso «l'audio perde blocchi»: il testo e «Come risolvere» aprono la scheda con i controlli */
