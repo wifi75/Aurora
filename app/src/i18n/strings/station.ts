@@ -411,7 +411,7 @@ export const stationStrings = {
     'Submodo JT4: de A (tons a 4,375 Hz) a G (315 Hz). A e B para HF, os outros para micro-ondas e EME. Tem de ser igual ao do correspondente.',
   ],
   'band.freqs': ['Frequenze', 'Frequencies', 'Frequenzen', 'Fréquences', 'Frecuencias', 'Frequências'],
-  'band.alt': ['alternativa', 'alternative', 'Alternative', 'alternative', 'alternativa', 'alternativa'],
+  'band.main': ['principale', 'main', 'Hauptfrequenz', 'principale', 'principal', 'principal'],
   'tip.band.freqs': [
     'Tutte le frequenze della tabella per questo modo, banda per banda: la standard e le alternative (anche quelle delle DXpedition). Si cambiano in Impostazioni > Frequenze.',
     'All table frequencies for this mode, band by band: the standard one and the alternatives (DXpedition ones too). Edit them in Settings > Frequencies.',

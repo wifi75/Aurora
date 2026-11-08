@@ -6824,3 +6824,183 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
   min-height: 2rem;
   margin-left: var(--space-1);
 }
+
+/* Frequenze del modo (come in WSJT-X): pulsante con banda e frequenza, pannello con una riga per banda */
+.freq-picker {
+  position: relative;
+  display: inline-flex;
+}
+
+.freq-picker-btn {
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.freq-picker-btn-band {
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--fp-accent) 22%, transparent);
+  color: var(--fp-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.freq-picker-btn-mhz {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.freq-picker-btn-unit {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.freq-picker {
+  --fp-accent: #3ee6a8;
+}
+
+.freq-picker-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  display: grid;
+  width: max-content;
+  min-width: 20rem;
+  max-width: min(36rem, calc(100vw - 2rem));
+  max-height: min(70vh, 34rem);
+  overflow-y: auto;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, #0b1220 92%, transparent);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.45);
+  animation: mode-menu-in 0.14s ease-out;
+}
+
+html[data-theme='light'] .freq-picker-menu {
+  background: color-mix(in srgb, #ffffff 96%, transparent);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.18);
+}
+
+.freq-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0.4rem 0.5rem;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.freq-picker-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.freq-picker-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.freq-picker-dot,
+.freq-picker-list button.is-main::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--fp-accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--fp-accent) 70%, transparent);
+}
+
+.freq-picker-row {
+  display: grid;
+  grid-template-columns: 3.6rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.5rem;
+}
+
+.freq-picker-row + .freq-picker-row {
+  border-top: 1px solid color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.freq-picker-row.is-current {
+  background: color-mix(in srgb, var(--fp-accent) 9%, transparent);
+}
+
+.freq-picker-band {
+  justify-self: start;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.freq-picker-row.is-current .freq-picker-band {
+  background: color-mix(in srgb, var(--fp-accent) 25%, transparent);
+  color: var(--fp-accent);
+}
+
+.freq-picker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.freq-picker-list button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.45rem;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.freq-picker-list button.is-main {
+  border-color: color-mix(in srgb, var(--fp-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--fp-accent) 10%, transparent);
+  font-weight: 700;
+}
+
+.freq-picker-list button.is-alt {
+  opacity: 0.72;
+  font-weight: 400;
+}
+
+.freq-picker-list button:hover {
+  opacity: 1;
+  border-color: var(--fp-accent);
+}
+
+.freq-picker-list button.is-on {
+  opacity: 1;
+  border-color: var(--fp-accent);
+  background: var(--fp-accent);
+  color: #06261a;
+}
+
+.freq-picker-list button.is-on::before {
+  background: #06261a;
+  box-shadow: none;
+}
+
+.freq-picker-list sup {
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
