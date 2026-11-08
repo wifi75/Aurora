@@ -28,6 +28,7 @@ import { icomBaudWarning, presetApplied, presetFor, type RigPreset } from '../li
 import { Check, Help, Row } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
+import { selectSettingsTab } from '../lib/settingsWindow';
 
 const STATE_KEY: Record<CatState, Key> = {
   disconnected: 'cat.state.disconnected',
@@ -158,7 +159,10 @@ function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatCon
         </Cell>
         <Cell label={t('cat.preset.audio')}>
           <p>{t(preset.audio === 'codec' ? 'cat.preset.codec' : 'cat.preset.external')}</p>
-          <a href="#/impostazioni/audio">{t('cat.preset.openAudio')}</a>
+          {/* passa alla scheda Audio della stessa finestra Impostazioni (un semplice collegamento non la cambiava) */}
+          <button type="button" className="cat-preset-open" onClick={() => selectSettingsTab('audio')}>
+            {t('cat.preset.openAudio')}
+          </button>
         </Cell>
       </Cells>
       <Actions>

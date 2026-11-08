@@ -22,9 +22,9 @@
 /* testata: identita, stato, comandi principali */
 .foxc-hero {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3) var(--space-4);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--fx-radius);
   background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--mode-ft8) 10%, transparent) 60%, var(--fx-surface));
@@ -104,7 +104,6 @@
 /* cascata */
 .foxc-wf { height: 16rem; min-height: 80px; max-height: 1200px; display: flex; flex-direction: column; background: var(--wf-bg); overflow: hidden; }
 .foxc-wf .wf-stack { flex: 1; min-height: 0; position: relative; }
-.foxc-rx-controls { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--fx-line); }
 
 /* messaggi ricevuti */
 .foxc-scroll { max-height: 22rem; overflow: auto; }
@@ -148,6 +147,7 @@
 }
 @media (max-width: 640px) {
   .foxc-hero { grid-template-columns: 1fr; }
+  .foxc-cmdbar { grid-column: auto; }
   .foxc-options > .foxc-btn { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -192,12 +192,6 @@
 .foxc-tone--slate { --tone: #9fb3cf; }
 .foxc-options { background: linear-gradient(100deg, color-mix(in srgb, #b39dfc 12%, transparent), color-mix(in srgb, #8ec8ff 12%, transparent)); }
 .foxc-table th { background: color-mix(in srgb, #b39dfc 20%, var(--panel-raised)); }
-
-/* pulsanti di ricezione nella pagina Fox: pastello, acceso in lilla pieno */
-.foxc-rx-controls .chip { background: color-mix(in srgb, #8ec8ff 18%, transparent); border-color: color-mix(in srgb, #8ec8ff 45%, transparent); color: var(--text); }
-.foxc-rx-controls .chip:hover { background: color-mix(in srgb, #8ec8ff 30%, transparent); }
-.foxc-rx-controls .chip.glass--on { background: #a993f5; border-color: #a993f5; color: #1d1442; }
-.foxc-rx-controls .chip.chip--warn { background: #ffc58a; border-color: #ffc58a; color: #3a2000; }
 
 /* ===== Aspetto «Neon UltraFOX» (bozza 3, scelta del proprietario): viola e ciano su fondo scuro, sempre, anche col tema chiaro ===== */
 .foxc--neon {
@@ -259,9 +253,6 @@
 .foxc--neon .foxc-wf-handle span { background: var(--nx-violet); box-shadow: 0 0 8px var(--nx-violet); }
 .foxc--neon .foxc-note { background: rgba(255, 209, 102, 0.1); border-left-color: #ffd166; }
 .foxc--neon .foxc-note--info { background: rgba(65, 240, 224, 0.08); border-left-color: var(--nx-cyan); }
-.foxc--neon .foxc-rx-controls .chip { background: rgba(80, 50, 180, 0.2); border-color: #5a3fd1; color: var(--text); }
-.foxc--neon .foxc-rx-controls .chip.glass--on { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 10px rgba(65, 240, 224, 0.5); }
-.foxc--neon .foxc-rx-controls .chip.chip--warn { background: var(--nx-pink); border-color: var(--nx-pink); color: #2a0620; }
 .foxc--neon .foxc-main-actions .stop-btn { width: auto; min-height: 0; height: 2.4rem; padding: 0 1.1rem; border-radius: 0.6rem; font: 700 var(--text-sm) var(--font-ui); letter-spacing: 0.04em; opacity: 1; background: #ff3d71 !important; color: #fff !important; border: 1px solid #ff3d71 !important; box-shadow: 0 0 18px rgba(255, 61, 113, 0.6) !important; }
 .foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle { background: transparent !important; color: #ff8fb0 !important; box-shadow: none !important; }
 .foxc--neon .foxc-main-actions .stop-btn.stop-btn--idle:hover { background: rgba(255, 61, 113, 0.15) !important; }
@@ -299,3 +290,61 @@
 .foxc-params { margin: var(--space-1) var(--space-3); font-size: var(--text-xs); }
 .foxc-flag { margin-right: 0.3rem; padding: 0 0.35rem; border-radius: 0.3rem; font-size: var(--text-xs); color: var(--text-muted); background: var(--fx-surface-2); }
 .foxc-scroll--log { max-height: 14rem; }
+
+/* Barra unica dei comandi nella testata: Fox, Tx, STOP, comandi di ricezione e split con le stesse misure e lo stesso stile.
+   Le regole battono quelle generali di .rx-seg (bozze.css, anche col tema chiaro) perche' la pagina Fox resta sempre «neon». */
+.foxc-cmdbar {
+  --fx-btn-h: 2rem;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--fx-line);
+}
+.foxc-cmdbar .foxc-main-actions { gap: var(--space-2); }
+.foxc-cmd-sep { align-self: stretch; width: 1px; margin: 0 var(--space-1); background: var(--fx-line); }
+.foxc-cmd-rx { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.foxc-cmd-rx .rx-row, .foxc-cmd-rx .cmd-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; padding: 0; }
+.foxc-cmd-rx .tx-quick { display: inline-flex; margin: 0; }
+.foxc--neon .foxc-cmd-rx .rx-seg { display: flex; flex-wrap: wrap; gap: var(--space-2); border: 0; border-radius: 0; overflow: visible; background: none; }
+
+/* stessa misura per tutti: altezza, bordo, angoli e carattere */
+.foxc--neon .foxc-cmdbar .foxc-btn,
+.foxc--neon .foxc-cmdbar .stop-btn,
+.foxc--neon .foxc-cmd-rx .rx-seg-item,
+.foxc--neon .foxc-cmd-rx .tx-quick .chip {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 0;
+  height: var(--fx-btn-h);
+  min-height: 0;
+  padding: 0 0.85rem;
+  border: 1px solid #6b52e6;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  font: 600 var(--text-xs) / 1 var(--font-ui);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: none;
+  cursor: pointer;
+}
+.foxc--neon .foxc-cmdbar .stop-btn { height: var(--fx-btn-h) !important; padding: 0 0.85rem !important; font: 700 var(--text-xs) / 1 var(--font-ui) !important; }
+.foxc--neon .foxc-cmdbar .foxc-btn:hover { background: rgba(107, 82, 230, 0.25); }
+.foxc--neon .foxc-cmdbar .foxc-btn--accent { background: var(--nx-cyan); border-color: var(--nx-cyan); color: #061815; box-shadow: 0 0 14px rgba(65, 240, 224, 0.5); }
+.foxc--neon .foxc-cmdbar .foxc-btn--tx { background: #ff3d71; border-color: #ff3d71; color: #fff; box-shadow: 0 0 14px rgba(255, 61, 113, 0.45); }
+.foxc--neon .foxc-cmd-rx .rx-seg-item:hover:not(:disabled),
+.foxc--neon .foxc-cmd-rx .tx-quick .chip:hover:not(:disabled) { background: rgba(107, 82, 230, 0.25); }
+.foxc--neon .foxc-cmd-rx .rx-seg-item--on,
+.foxc--neon .foxc-cmd-rx .tx-quick .chip.glass--on { background: rgba(65, 240, 224, 0.16); border-color: var(--nx-cyan); color: var(--nx-cyan); }
+.foxc--neon .foxc-cmd-rx .rx-seg-item--on:hover:not(:disabled),
+.foxc--neon .foxc-cmd-rx .tx-quick .chip.glass--on:hover:not(:disabled) { background: rgba(65, 240, 224, 0.26); }
+.foxc--neon .foxc-cmd-rx .rx-seg-item--warn { background: rgba(255, 95, 210, 0.18); border-color: var(--nx-pink); color: #ffb3ea; }
+.foxc--neon .foxc-cmd-rx .rx-seg-item:disabled,
+.foxc--neon .foxc-cmd-rx .tx-quick .chip:disabled { opacity: 0.45; cursor: default; }
+.foxc-cmd-rx .live-note { font-size: var(--text-xs); color: var(--stop); }
+@media (max-width: 640px) {
+  .foxc-cmd-sep { display: none; }
+}

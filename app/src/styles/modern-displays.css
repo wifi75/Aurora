@@ -164,3 +164,23 @@ body:not(.rd-square) .app-header .app-tools {
 body:not(.rd-square) .app-header .app-tools-dot {
   display: none;
 }
+
+/* Quasi quadrato nella Stazione: il display e' fuori dalla riga in alto (sta nel body, fisso nell'angolo), quindi l'ultimo figlio della
+   riga e' la colonna dei comandi (modo, menu delle frequenze, Monitora/Hound/SWL). Le regole che tolgono dal flusso «l'ultimo figlio»
+   (pensate per il display) la facevano sparire: la riga restava alta zero e i pannelli salivano sotto la testata. Qui resta al suo posto,
+   si ferma prima del display e la riga e' alta almeno fin sotto il display, cosi' i pannelli partono dopo. */
+.live .live-top > .live-left.live-left:last-child {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  transform: none;
+}
+body.rd-square .live .live-top > .live-left {
+  padding-right: 21.75rem;
+}
+/* il display e' alto 8,125rem da 0,4rem sotto il bordo: la riga (che parte sotto la barra del menu) arriva oltre il suo bordo basso.
+   Misure in rem: con «Dimensione del testo» (zoom sulla radice) crescono insieme al display */
+body.rd-square .live .live-top {
+  min-height: 5.6rem;
+}

@@ -17,6 +17,7 @@ export const foxStrings = {
     'Una sola señal ancha (de 750 a 2260 Hz) con hasta 9 estaciones por periodo, compatible con SuperFox de WSJT-X. Apagado: las ranuras FT8 contiguas del Fox clásico.',
     'Um só sinal largo (de 750 a 2260 Hz) com até 9 estações por período, compatível com o SuperFox do WSJT-X. Desligado: as posições FT8 lado a lado do Fox clássico.',
   ],
+  'fox.commands': ['Comandi della Fox', 'Fox commands', 'Fox-Befehle', 'Commandes du Fox', 'Mandos del Fox', 'Comandos da Fox'],
   'fox.title': ['Fox (DXpedition)', 'Fox (DXpedition)', 'Fox (DXpedition)', 'Fox (DXpédition)', 'Fox (DXpedición)', 'Fox (DXpedição)'],
   'fox.dev': ['Fox classico o UltraFOX, in fase di prova. Solo in FT8.', 'Classic Fox or UltraFOX, under testing. FT8 only.', 'Klassischer Fox oder UltraFOX, im Test. Nur FT8.', 'Fox classique ou UltraFOX, en test. FT8 seulement.', 'Fox clásico o UltraFOX, en pruebas. Solo FT8.', 'Fox clássico ou UltraFOX, em teste. Só FT8.'],
   'fox.needTx': ['Fox è acceso ma la trasmissione no: senza Abilita Tx non parte né il CQ né la risposta a chi chiama.', 'Fox is on but transmit is not: without Enable Tx neither the CQ nor the replies go out.', 'Fox ist an, Senden aber nicht: ohne Tx aktivieren gehen weder CQ noch Antworten hinaus.', 'Fox est actif mais pas l’émission : sans Activer Tx ni le CQ ni les réponses ne partent.', 'Fox está activo pero la transmisión no: sin Habilitar Tx no salen ni el CQ ni las respuestas.', 'O Fox está ligado mas a transmissão não: sem Ativar Tx não saem nem o CQ nem as respostas.'],
