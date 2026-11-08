@@ -1288,3 +1288,6 @@ html[data-theme='light'] .log4om-table th:nth-child(6), html[data-theme='light']
 html[data-theme='light'] .cluster-table td.cluster-country { color: #3d5583; }
 html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: rgb(0 0 0 / .12); }
 .cluster-table { table-layout: auto !important; }
+/* commenti piu' corti (con «…»): lo spazio che avanza va al paese, cosi' modo e commenti stanno piu' a destra */
+.cluster-table td.cluster-country { width: auto !important; max-width: none; }
+.cluster-table td.cluster-comment { width: 1% !important; max-width: 10em; min-width: 6em; }
