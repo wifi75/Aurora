@@ -1310,3 +1310,5 @@ html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: 
 .cluster-table th:nth-child(5), .cluster-table th:nth-child(7) { padding-left: 6px !important; }
 /* Modo e Commenti 25 px piu' a sinistra: il commento si allarga di 25 px e il paese cede lo stesso spazio */
 .cluster-table td.cluster-comment { max-width: calc(10em + 25px); min-width: calc(6em + 25px); }
+/* altri 10 px a sinistra (35 in tutto) */
+.cluster-table td.cluster-comment { max-width: calc(10em + 35px); min-width: calc(6em + 35px); }
