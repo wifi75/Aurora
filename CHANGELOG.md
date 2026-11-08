@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display quasi quadrati nella Stazione** (Yaesu ambra, Icom blu, Icom nero): la riga con modo, menu delle frequenze e Monitora/Hound/SWL non sparisce piu', resta a sinistra del display, e i pannelli partono sotto il display invece di salire sotto la testata (anche con «Dimensione del testo» ingrandita). Nella scelta del display (Impostazioni → Radio) il clic su un quasi quadrato non fa piu' scorrere via la finestra delle Impostazioni lasciando solo lo sfondo sfocato.
 - **Impostazioni → Radio, «Apri Audio»** nel riquadro delle impostazioni consigliate ora porta davvero alla scheda Audio della stessa finestra (nel riquadro e nella finestra a parte); anche un nuovo indirizzo `#/impostazioni/<scheda>` con le Impostazioni gia' aperte cambia scheda.
 - **Bandiere nelle liste**: tolta la cornice chiara che disegnava un rettangolo attorno alla bandiera; in Attivita' di banda e nel DX Cluster le bandiere sono circa il 22% piu' grandi, con il riquadro nelle proporzioni della bandiera e le righe allineate come prima.
 - **Pagina Fox: una sola barra di comandi in alto**: sotto titolo, stato e contatori, Accendi Fox, Abilita Tx e STOP TX stanno nella stessa barra dei comandi di ricezione (Monitora, Hound, SWL, AGC, Filtro, Ferma, Decodifica, Cancella...) e dello Split, che prima erano sotto la voce «Cascata»; tutti i pulsanti hanno le stesse misure e lo stesso stile. Sulla cascata resta solo la sua barra degli strumenti.

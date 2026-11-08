@@ -82,8 +82,15 @@
   cursor: pointer;
 }
 
+/* il pallino nascosto resta dentro la sua scheda: senza, si posizionava rispetto al riquadro delle Impostazioni e, al clic su
+   una scheda in fondo all'elenco (i quasi quadrati), il riquadro scorreva via lasciando solo lo sfondo sfocato */
+.rd-card {
+  position: relative;
+}
+
 .rd-card input[type='radio'] {
   position: absolute;
+  inset: 0 auto auto 0;
   opacity: 0;
   pointer-events: none;
 }
