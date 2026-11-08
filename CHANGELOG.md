@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.195 - 2026-11-08
+- **Q65-30A** nel motore proprio: ricezione e trasmissione (`jt::q65`: codice QRA 15,65 su GF(64) con passaggio di messaggi, CRC-12, messaggi a 77 bit come FT8), selettore dei modi, frequenze di WSJT-X (6 m 50,275 e 2 m 144,180 MHz; 50,211 e 144,116 EME come alternative). Il decodificatore supporta anche i periodi 15-300 s e i sottomodi A-E, non ancora selezionabili.
+
 ## 0.11.194 - 2026-11-08
 - **Corretto**: con la radio collegata, un cambio banda che la radio non confermava in tempo scriveva la frequenza «a mano» e la radio rimbalzava fra due bande (difetto della 0.11.193).
 - **JT4** (sottomodo A) nel motore proprio: ricezione, trasmissione e selettore dei modi (`jt::jt4`, Fano con la metrica di `getmet4`).

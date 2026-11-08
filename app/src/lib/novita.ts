@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.195',
+    released: '2026-11-08T12:00:00Z',
+    kind: 'new',
+    title: ['Nuovo modo Q65', 'New Q65 mode', 'Neuer Modus Q65', 'Nouveau mode Q65', 'Nuevo modo Q65', 'Novo modo Q65'],
+    text: [
+      'Q65-30A nel selettore dei modi: periodi di 30 s, messaggi come FT8, molto sensibile. Frequenze 50,275 MHz (6 m) e 144,180 MHz (2 m), con quelle EME nella tendina.',
+      'Q65-30A in the mode selector: 30 s periods, FT8-style messages, very sensitive. Frequencies 50.275 MHz (6 m) and 144.180 MHz (2 m), with the EME ones in the list.',
+      'Q65-30A in der Modusauswahl: 30-s-Perioden, Nachrichten wie FT8, sehr empfindlich. Frequenzen 50,275 MHz (6 m) und 144,180 MHz (2 m), mit den EME-Frequenzen in der Liste.',
+      'Q65-30A dans le sélecteur de modes : périodes de 30 s, messages comme FT8, très sensible. Fréquences 50,275 MHz (6 m) et 144,180 MHz (2 m), avec celles EME dans la liste.',
+      'Q65-30A en el selector de modos: periodos de 30 s, mensajes como FT8, muy sensible. Frecuencias 50,275 MHz (6 m) y 144,180 MHz (2 m), con las EME en la lista.',
+      'Q65-30A no seletor de modos: períodos de 30 s, mensagens como FT8, muito sensível. Frequências 50,275 MHz (6 m) e 144,180 MHz (2 m), com as EME na lista.',
+    ],
+  },
+  {
     version: '0.11.194',
     released: '2026-11-08T07:01:11Z',
     kind: 'new',
@@ -564,20 +578,6 @@ export const NOVITA: readonly Novita[] = [
       "Carte DX : les stations en l’air, les carrés QSX/CQ/CQDX/QRZ et les lignes «Qui appelle qui» entre les autres stations n’apparaissaient jamais («0 en l’air») : l’heure des messages était mal lue et tout semblait ancien. Maintenant elles s’affichent. Le menu pour détacher la carte sur un autre écran ne reste plus caché sous la carte. Le côté nuit est plus sombre (réglable avec «Nuit» dans le menu ⚙).",
       "Mapa DX: las estaciones en el aire, las cuadrículas QSX/CQ/CQDX/QRZ y las líneas «Quién llama a quién» entre otras estaciones nunca aparecían («0 en el aire»): la hora de los mensajes se leía mal y todo parecía viejo. Ahora se ven. El menú para separar el mapa a otra pantalla ya no queda oculto bajo el mapa. La parte de noche es más oscura (se ajusta con «Noche» en el menú ⚙).",
       "Mapa DX: as estações no ar, os quadrados QSX/CQ/CQDX/QRZ e as linhas «Quem chama quem» entre outras estações nunca apareciam («0 no ar»): a hora das mensagens era lida mal e tudo parecia antigo. Agora aparecem. O menu para destacar o mapa para outro ecrã já não fica escondido debaixo do mapa. A parte da noite é mais escura (ajusta-se com «Noite» no menu ⚙).",
-    ],
-  },
-  {
-    version: '0.11.154',
-    released: '2026-11-05T22:14:34Z',
-    kind: 'changed',
-    title: ['Una sola mappa: Mappa DX', 'One map only: DX Map', 'Nur eine Karte: DX-Karte', 'Une seule carte : Carte DX', 'Un solo mapa: Mapa DX', 'Um só mapa: Mapa DX'],
-    text: [
-      "La vecchia «Mappa» non è più nel menu: faceva le stesse cose della Mappa DX. Il suo indirizzo, le finestre staccate e l'ultima pagina ricordata portano alla Mappa DX.",
-      "The old «Map» is no longer in the menu: it did the same things as the DX Map. Its address, detached windows and the last remembered page lead to the DX Map.",
-      "Die alte «Karte» ist nicht mehr im Menü: Sie konnte dasselbe wie die DX-Karte. Ihre Adresse, abgetrennte Fenster und die zuletzt gemerkte Seite führen zur DX-Karte.",
-      "L’ancienne «Carte» n’est plus dans le menu : elle faisait la même chose que la Carte DX. Son adresse, les fenêtres détachées et la dernière page mémorisée mènent à la Carte DX.",
-      "El antiguo «Mapa» ya no está en el menú: hacía lo mismo que el Mapa DX. Su dirección, las ventanas separadas y la última página recordada llevan al Mapa DX.",
-      "O antigo «Mapa» já não está no menu: fazia o mesmo que o Mapa DX. O seu endereço, as janelas destacadas e a última página lembrada levam ao Mapa DX.",
     ],
   },
 ];
