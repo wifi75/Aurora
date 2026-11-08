@@ -2002,6 +2002,11 @@ pub async fn run(
                         aurora_core::Command::Tune { on } => engine_native::TxCommand::Tune(on),
                         aurora_core::Command::LogQso => engine_native::TxCommand::LogQso,
                         aurora_core::Command::Fox(cmd) => engine_native::TxCommand::Fox(cmd),
+                        aurora_core::Command::Contest(setup) => {
+                            // si ricorda nei controlli, cosi' vale anche per una trasmissione che riparte da capo
+                            controls.set_contest(setup);
+                            continue;
+                        }
                     };
                     if let Err(e) = controls.send(mapped) {
                         tracing::warn!("comando di trasmissione non consegnato: {e}");

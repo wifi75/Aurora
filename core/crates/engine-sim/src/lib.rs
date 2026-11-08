@@ -204,7 +204,8 @@ impl State {
             | Command::SetReport { .. }
             | Command::Tune { .. }
             | Command::LogQso
-            | Command::Fox(_) => {}
+            | Command::Fox(_)
+            | Command::Contest(_) => {}
         }
     }
 }

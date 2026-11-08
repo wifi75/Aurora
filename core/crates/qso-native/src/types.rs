@@ -335,6 +335,10 @@ pub struct QsoRecord {
     pub tx_freq_hz: u32,
     /// Frequenza audio del DX.
     pub rx_freq_hz: u32,
+    /// Scambio di contest inviato (`IO91`, `1D DX`, `549 0013`, `570123 IO91WM`); vuoto fuori dai contest.
+    pub exch_sent: String,
+    /// Scambio di contest ricevuto; vuoto fuori dai contest o se non e' arrivato.
+    pub exch_rcvd: String,
 }
 
 /// Perche' un tentativo di QSO e' finito senza esito.

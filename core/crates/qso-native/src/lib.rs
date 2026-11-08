@@ -7,6 +7,7 @@
 //!   coda dei chiamanti, watchdog);
 //! - [`message`]: lettura dei messaggi e confronto dei nominativi;
 //! - [`stdmsg`]: composizione dei messaggi standard (`genStdMsgs` e `genCQMsg` di JTDX);
+//! - [`contest`]: messaggi di contest a 77 bit (attivita' di WSJT-X) e lettura dello scambio ricevuto;
 //! - [`report`]: rapporto segnale («-07», «R-07», «+05»);
 //! - [`Mode`] e [`Slot`]: FT8 (15 s) e FT4 (7,5 s), periodi pari e dispari.
 //!
@@ -22,6 +23,7 @@
 //! [`Sequencer::drain_events`].
 
 pub mod classify;
+pub mod contest;
 pub mod freefreq;
 pub mod history;
 pub mod message;
@@ -32,6 +34,7 @@ pub mod slot;
 pub mod stdmsg;
 pub mod types;
 
+pub use contest::{Activity, ContestSeq};
 pub use freefreq::{FreeTxParams, Heard, choose_free_tx};
 pub use message::{Body, Message, base_call, is_std_call, parse, same_station};
 pub use score::{CallerFacts, best_index, caller_score};
