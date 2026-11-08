@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.196 - 2026-11-08
 - **Installatore**: con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento («Non disinstallare»); la disinstallazione non cancella mai i dati (tolta la casella «Elimina i dati»). Modello NSIS proprio (`desktop/src-tauri/installer/installer.nsi`, da quello di Tauri 2.12.4).
 - **Finestre sempre davanti**: aperta dal tray (o da un'altra istanza) la finestra di Aurora, con l'avviso della versione nuova, viene sopra a tutte le altre: l'agente cede il primo piano (`AllowSetForegroundWindow`) e la finestra resta un attimo «sempre in primo piano».
 - **Righe colorate leggibili al passaggio del mouse** (QSO in corso in giallo, mio nominativo in giallo o ciano).
