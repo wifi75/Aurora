@@ -1241,3 +1241,7 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 .log4om-table th, .log4om-table td { padding-left: 4px !important; padding-right: 4px !important; white-space: nowrap; }
 .log4om-table th:not(:last-child), .log4om-table td:not(:last-child) { width: 1%; }
 .log4om-table .log4om-country { overflow: hidden; text-overflow: ellipsis; max-width: 0; width: auto; }
+/* Log ancora piu' compatto: celle a 2 px, intestazioni corte, data senza spazio in piu' */
+.log4om-table th, .log4om-table td { padding-left: 2px !important; padding-right: 2px !important; }
+.log4om-table th { letter-spacing: 0 !important; }
+.log4om-table .log4om-date { letter-spacing: -0.02em; }
