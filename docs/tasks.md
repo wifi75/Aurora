@@ -41,3 +41,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Resta: prototipo grafico da approvare (i controlli nuovi della pagina compresi); click-to-decode su una frequenza scelta (`nagain`, `fselected`, `ntol`); `nfcal` e `offset` di QMAP.
 - Verifica dal vivo: con un SDR TCI (ExpertSDR/Thetis) a 96 kHz su 2 m o 6 m, e una registrazione I/Q vera con piu' segnali Q65 (anche Q65-30 nelle due meta' e segnali EME per la media e il Doppler); confronto dei numeri della Luna con la finestra Astro di QMAP.
 - WSJT-X: cartella `qmap/` (`libqmap/qmapa.f90`, `getcand2.f90`, `q65_sync.f90`, `q65b.f90`, `symspec.f90`, `astro*.f90`, `moondop.f90`, `moon2.f90`, `mainwindow.cpp`), `Transceiver/TCITransceiver.cpp`.
+
+## 27. Pagina Contest (da progettare)
+
+- Piano completo in `docs/piano-contest.md` (ricerca del 2026-11-08 su WSJT-X, MSHV, DigiRite, N1MM, JTDX_contest e sui regolamenti): regole per contest in file TOML, sequenza contest nel motore come WSJT-X, doppi, punteggio e moltiplicatori in diretta, log del contest con Cabrillo/EDI.
+- Resta: prototipo grafico da approvare, poi le fasi del piano.
