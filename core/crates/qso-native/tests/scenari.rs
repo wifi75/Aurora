@@ -41,7 +41,7 @@ impl Bench {
         let base = match mode {
             Mode::Ft8 => 2880,
             Mode::Ft4 => 5760,
-            Mode::Jt65 | Mode::Jt9 => 720,
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 720,
         };
         Bench {
             seq,

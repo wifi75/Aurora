@@ -232,6 +232,7 @@ impl NativeControls {
             1 => Mode::Ft4,
             2 => Mode::Jt65,
             3 => Mode::Jt9,
+            4 => Mode::Jt4,
             _ => Mode::Ft8,
         }
     }
@@ -242,6 +243,7 @@ impl NativeControls {
             Mode::Ft4 => 1,
             Mode::Jt65 => 2,
             Mode::Jt9 => 3,
+            Mode::Jt4 => 4,
         };
         self.mode_code.store(code, Ordering::Relaxed);
     }
@@ -262,6 +264,7 @@ impl NativeControls {
             jt: match self.mode() {
                 Mode::Jt65 => 1,
                 Mode::Jt9 => 2,
+                Mode::Jt4 => 3,
                 _ => 0,
             },
             attenuation: self.attenuation.load(Ordering::Relaxed),
@@ -285,6 +288,7 @@ impl NativeControls {
         self.set_mode(match (saved.jt, saved.ft4) {
             (1, _) => Mode::Jt65,
             (2, _) => Mode::Jt9,
+            (3, _) => Mode::Jt4,
             (_, true) => Mode::Ft4,
             _ => Mode::Ft8,
         });
@@ -623,6 +627,10 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Jt9);
                 Ok(())
             }
+            "JT4" | "JT4A" => {
+                self.controls.set_mode(Mode::Jt4);
+                Ok(())
+            }
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -640,8 +648,8 @@ impl Rig for NativeRig {
             (Mode::Ft8, false) => "TX 15/45",
             (Mode::Ft4, true) => "TX 00",
             (Mode::Ft4, false) => "TX 7.5",
-            (Mode::Jt65 | Mode::Jt9, true) => "TX even",
-            (Mode::Jt65 | Mode::Jt9, false) => "TX odd",
+            (Mode::Jt65 | Mode::Jt9 | Mode::Jt4, true) => "TX even",
+            (Mode::Jt65 | Mode::Jt9 | Mode::Jt4, false) => "TX odd",
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),

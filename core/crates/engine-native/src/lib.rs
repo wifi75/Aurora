@@ -201,7 +201,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     tr_period: Some(match live.controls.mode() {
                         Mode::Ft8 => 15,
                         Mode::Ft4 => 7,
-                        Mode::Jt65 | Mode::Jt9 => 60,
+                        Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60,
                     }),
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
@@ -873,6 +873,7 @@ fn decode_period(
         }
         Mode::Jt65 => jt::rx::decode(samples, &jt::rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
         Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
+        Mode::Jt4 => jt::jt4::decode(samples, &jt::jt4::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
     }
 }
 

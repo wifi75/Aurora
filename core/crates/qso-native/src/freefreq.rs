@@ -51,6 +51,8 @@ impl FreeTxParams {
                 // JT65 occupa 177 Hz, JT9 16 Hz (`m_nguardfreq`): la guardia segue la larghezza del segnale
                 Mode::Jt65 => 180.0,
                 Mode::Jt9 => 20.0,
+                // JT4A: quattro toni a 4,375 Hz
+                Mode::Jt4 => 20.0,
             },
             sweet_lo: 800,
             sweet_hi: 2200,

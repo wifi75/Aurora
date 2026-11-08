@@ -721,7 +721,8 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
     let region = state.frequency_region();
     let found = {
         let table = state.frequencies.lock().unwrap_or_else(|p| p.into_inner());
-        table.frequency_in(region, &body.band, &mode)
+        // JT4 ha frequenze solo sulle microonde (elenco di WSJT-X): sulle altre bande si usa quella di JT65
+        table.frequency_in(region, &body.band, &mode).or_else(|| mode.to_uppercase().starts_with("JT4").then(|| table.frequency_in(region, &body.band, "JT65")).flatten())
     };
     let hz = found.ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_band"))?;
     if state.current_status().is_some_and(|s| s.transmitting) {

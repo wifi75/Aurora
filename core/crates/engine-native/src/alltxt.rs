@@ -112,12 +112,13 @@ pub fn mode_symbol(mode: &str) -> char {
         "FT4" => ':',
         "JT65" => '#',
         "JT9" => '@',
+        "JT4" => '$',
         _ => '~',
     }
 }
 
 /// Riga di decodifica. `hhmmss` e' l'inizio del periodo; il messaggio e' troncato a 26 caratteri come in JTDX (`msg26`); `flag` e' l'indicatore
-/// finale (spazio = nessuno). Il segno del modo: `~` FT8, `:` FT4, `#` JT65, `@` JT9 (vedi [`mode_symbol`]).
+/// finale (spazio = nessuno). Il segno del modo: `~` FT8, `:` FT4, `#` JT65, `@` JT9, `$` JT4 (vedi [`mode_symbol`]).
 pub fn decode_line(date: &str, hhmmss: &str, row: (i32, f32, i64), symbol: char, text: &str, flag: char) -> String {
     let (snr, dt, freq_hz) = row;
     let msg: String = text.chars().take(26).collect();

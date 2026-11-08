@@ -231,6 +231,8 @@ impl Options {
             // 1 s + 126 simboli da 0,3715 s (JT65) o 85 da 0,576 s (JT9): la durata del messaggio come `txDuration` di JTDX
             Mode::Jt65 => 47.81,
             Mode::Jt9 => 49.96,
+            // 1 s + 206 simboli da 0,2286 s
+            Mode::Jt4 => 48.09,
         })
     }
 
@@ -241,6 +243,7 @@ impl Options {
             Mode::Ft4 => 84,
             Mode::Jt65 => 176,
             Mode::Jt9 => 16,
+            Mode::Jt4 => 18,
         }
     }
 }

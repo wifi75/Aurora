@@ -39,7 +39,7 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
     <div className="rx-row" aria-label={t('ctl.sec.rx')}>
       <div className="cmd-chips">
         {/* «JT65+JT9» ha senso solo nei modi JT: in FT8 e FT4 non si mostra; «a7/a8» e «Multithread» solo in FT8 */}
-        {RX_TOGGLES.filter((id) => (id !== 'jt_both' || mode.toUpperCase().startsWith('JT')) && (!FT8_ONLY.includes(id) || mode.toUpperCase() === 'FT8')).map((id) => {
+        {RX_TOGGLES.filter((id) => (id !== 'jt_both' || /^JT(65|9)?(\+|$)/.test(mode.toUpperCase())) && (!FT8_ONLY.includes(id) || mode.toUpperCase() === 'FT8')).map((id) => {
           const on = state[id] === true;
           const button = (
             <button

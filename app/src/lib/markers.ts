@@ -26,6 +26,8 @@ export function signalBandwidthHz(mode: string | undefined): number {
       return (66 * 11025) / 4096;
     case 'JT9':
       return (9 * 12000) / 6912;
+    case 'JT4':
+      return (4 * 11025) / 2520;
     case 'T10':
       return (9 * 4 * 12000) / 6912;
     default:
@@ -47,6 +49,8 @@ export function filterWindowHz(mode: string | undefined, hound = false): { below
       return { below: 200, above: 375 };
     case 'JT9':
       return { below: 50, above: 65.6 };
+    case 'JT4':
+      return { below: 50, above: 67.5 };
     case 'T10':
       return { below: 80, above: 142.4 };
     default:

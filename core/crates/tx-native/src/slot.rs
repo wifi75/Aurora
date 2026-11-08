@@ -10,6 +10,7 @@ pub enum Mode {
     Ft4,
     Jt65,
     Jt9,
+    Jt4,
 }
 
 impl Mode {
@@ -17,7 +18,7 @@ impl Mode {
         match self {
             Mode::Ft8 => Duration::from_millis(15_000),
             Mode::Ft4 => Duration::from_millis(7_500),
-            Mode::Jt65 | Mode::Jt9 => Duration::from_millis(60_000),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
         }
     }
 
@@ -25,7 +26,7 @@ impl Mode {
     pub fn tx_delay(self) -> Duration {
         match self {
             Mode::Ft8 | Mode::Ft4 => Duration::from_millis(500),
-            Mode::Jt65 | Mode::Jt9 => Duration::from_millis(1_000),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(1_000),
         }
     }
 
@@ -38,6 +39,8 @@ impl Mode {
             Mode::Ft4 => Duration::from_millis(6_040),
             Mode::Jt65 => Duration::from_millis(47_810),
             Mode::Jt9 => Duration::from_millis(49_960),
+            // 206 simboli da 0,2286 s
+            Mode::Jt4 => Duration::from_millis(47_090),
         }
     }
 }

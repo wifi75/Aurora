@@ -7,6 +7,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "FT4" => Some("ft4Button"),
         // JT65 e JT9 stanno dietro al pulsante JT (il motore li distingue)
         "JT" | "JT65" | "JT9" => Some("jtButton"),
+        // JT4 (sottomodo A) solo con il motore proprio
+        "JT4" | "JT4A" => Some("jt4Button"),
         _ => None,
     }
 }

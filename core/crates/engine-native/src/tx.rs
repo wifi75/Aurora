@@ -329,7 +329,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
         let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new() };
         driver.seq.set_rx_freq(rx_published);
-        if matches!(mode, Mode::Jt65 | Mode::Jt9) {
+        if matches!(mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4) {
             driver.opts.use_rrr = true;
             driver.seq.set_options(driver.opts.clone());
         }
@@ -416,6 +416,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Ft4 => tx_native::Mode::Ft4,
             Mode::Jt65 => tx_native::Mode::Jt65,
             Mode::Jt9 => tx_native::Mode::Jt9,
+            Mode::Jt4 => tx_native::Mode::Jt4,
         };
         match self.encode(&text, hz, free) {
             Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
@@ -453,7 +454,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.seq.set_mode(mode);
         self.mode = mode;
         // RR73 esiste solo in FT8 e FT4: in JT65 e JT9 la chiusura e' RRR
-        self.opts.use_rrr = self.rrr_user || matches!(mode, Mode::Jt65 | Mode::Jt9);
+        self.opts.use_rrr = self.rrr_user || matches!(mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4);
         self.seq.set_options(self.opts.clone());
         if self.free_tx.is_some() {
             self.free_tx = Some(FreeTxParams::for_mode(mode));
@@ -714,7 +715,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     OptionChange::AnswerWorkedBefore(v) => self.opts.answer_worked_before = v,
                     OptionChange::UseRrr(v) => {
                         self.rrr_user = v;
-                        self.opts.use_rrr = v || matches!(self.mode, Mode::Jt65 | Mode::Jt9);
+                        self.opts.use_rrr = v || matches!(self.mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4);
                     }
                     OptionChange::Hound(v) => {
                         self.opts.hound = v;
@@ -852,6 +853,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Ft4 => tx_native::Mode::Ft4,
             Mode::Jt65 => tx_native::Mode::Jt65,
             Mode::Jt9 => tx_native::Mode::Jt9,
+            Mode::Jt4 => tx_native::Mode::Jt4,
         };
         let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).max(1.0);
         let rate = f64::from(tx_native::WAVE_RATE);
@@ -934,6 +936,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Ft4 => tx_native::Mode::Ft4,
                     Mode::Jt65 => tx_native::Mode::Jt65,
                     Mode::Jt9 => tx_native::Mode::Jt9,
+                    Mode::Jt4 => tx_native::Mode::Jt4,
                 };
                 self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
                 match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
@@ -1451,6 +1454,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Ft4 => tx_native::Mode::Ft4,
                     Mode::Jt65 => tx_native::Mode::Jt65,
                     Mode::Jt9 => tx_native::Mode::Jt9,
+                    Mode::Jt4 => tx_native::Mode::Jt4,
                 };
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
@@ -1522,6 +1526,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 Mode::Jt9 => {
                     jt_check_frequency(freq, 8.0 * jt::jt9::TONE_SPACING_HZ)?;
                     Ok(jt::jt9::modulate(&jt::jt9::tones(t), f64::from(freq), 1.0))
+                }
+                // JT4A: `freq` e' il tono 0, quattro toni a 4,375 Hz
+                Mode::Jt4 => {
+                    let sub = jt::jt4::Submode(0);
+                    jt_check_frequency(freq, 4.0 * sub.tone_spacing_hz())?;
+                    Ok(jt::jt4::modulate(&jt::jt4::tones(t), f64::from(freq), sub, 1.0))
                 }
             }
         };
@@ -1726,6 +1736,7 @@ mod tests {
             // l'onda dei modi JT comincia a un secondo dall'inizio del minuto, che e' dove la mette il trasmettitore
             tx_native::Mode::Jt65 => jt::rx::decode(&minute_with(&req.wave), &jt::rx::Options::default()).into_iter().map(|d| d.text).collect(),
             tx_native::Mode::Jt9 => jt::jt9rx::decode(&minute_with(&req.wave), &jt::jt9rx::Options::default()).into_iter().map(|d| d.text).collect(),
+            tx_native::Mode::Jt4 => jt::jt4::decode(&minute_with(&req.wave), &jt::jt4::Options::default()).into_iter().map(|d| d.text).collect(),
         }
     }
 
@@ -2233,6 +2244,20 @@ mod tests {
         assert_eq!(requests.len(), 1);
         assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Jt9, Parity::Odd));
         let decoded = jt::jt9rx::decode(&minute_with(&requests[0].wave), &jt::jt9rx::Options::default());
+        assert_eq!(decoded.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(), vec!["K1ABC IU3ABC IO91"], "{decoded:?}");
+    }
+
+    /// JT4A: lo stesso, con 206 simboli da 0,2286 s.
+    #[test]
+    fn a_jt4_reply_goes_out_in_the_opposite_minute_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Jt4);
+        d.remember(1, "CQ K1ABC FN42", -10, 1500, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 59.0);
+        d.after_slot(JT_SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1500)], JT_BASE + 59.3, 14_078_000, "20m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1);
+        assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Jt4, Parity::Odd));
+        let decoded = jt::jt4::decode(&minute_with(&requests[0].wave), &jt::jt4::Options::default());
         assert_eq!(decoded.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(), vec!["K1ABC IU3ABC IO91"], "{decoded:?}");
     }
 
