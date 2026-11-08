@@ -984,10 +984,17 @@ fn decode_period(
         // e media dei periodi della stessa parita'; i messaggi da AP o dalla media hanno il segno di quelli a priori di FT8
         Mode::Q65 => {
             let setup = rig::q65_setup();
+            let ap = ft8_options.ap.as_ref();
+            // la frequenza di ricezione (`nfqso` di WSJT-X): il picco migliore entro 50 Hz si prova sempre, e con il DX noto vi si
+            // prova la lista dei messaggi del QSO
+            let rx_hz = ap.and_then(|a| a.rx_freq_hz).or_else(|| ft8_options.a8.as_ref().map(|q| q.rx_freq_hz));
             let o = jt::q65::Options {
                 setup,
-                my_call: ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
-                dx_call: ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
+                my_call: ap.map(|a| a.mycall.clone()).unwrap_or_default(),
+                dx_call: ap.map(|a| a.hiscall.clone()).unwrap_or_default(),
+                dx_grid: ap.map(|a| a.hisgrid.clone()).unwrap_or_default(),
+                rx_hz,
+                threads: ft8_options.threads,
                 fading: Some(rig::q65_fading()),
                 ..jt::q65::Options::default()
             };

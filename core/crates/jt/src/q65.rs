@@ -6,6 +6,10 @@
 //! La ricezione usa la metrica di Bessel (`qra_mfskbesselmetric`) e, a scelta, quella dell'evanescenza rapida per EME e scatter
 //! (`q65_intrinsics_fastfading`, tabelle gaussiane e lorentziane); prova le ipotesi AP del QSO (`q65_ap.f90`) e puo' sommare i periodi
 //! della stessa parita' per i segnali troppo deboli (`q65_avg`).
+//!
+//! Un periodo si decodifica come `q65_decode.f90` e `q65.f90`: correlazione sui 22 simboli di sincronismo negli spettri a 1/8 di
+//! simbolo (`q65_ccf_22`), lista dei messaggi del QSO sulla frequenza di ricezione se il DX e' noto (`q65_dec_q3`), poi per ogni
+//! candidato la ricerca fine di `q65_loops` (mezzi bin, sedicesimi di simbolo, larghezze B90) sulle energie normalizzate di `spec64`.
 
 use ft8::message::{Bits77, CallHashes, pack, unpack};
 use rustfft::{FftPlanner, num_complex::Complex};
@@ -206,11 +210,13 @@ fn fwht(v: &mut [f32]) {
     let n = v.len();
     let mut h = 1;
     while h < n {
-        for i in (0..n).step_by(2 * h) {
-            for j in i..i + h {
-                let (a, b) = (v[j], v[j + h]);
-                v[j] = a + b;
-                v[j + h] = a - b;
+        // blocchi di 2h: la prima meta' e la seconda si combinano a coppie (il compilatore le vettorizza)
+        for block in v.chunks_exact_mut(2 * h) {
+            let (lo, hi) = block.split_at_mut(h);
+            for (a, b) in lo.iter_mut().zip(hi.iter_mut()) {
+                let (x, y) = (*a, *b);
+                *a = x + y;
+                *b = x - y;
             }
         }
         h *= 2;
@@ -495,6 +501,65 @@ fn ap_list(my_call: &str, dx_call: &str, hashes: &CallHashes) -> Vec<Ap> {
     out
 }
 
+/// Soglia della verosimiglianza della decodifica da lista (`PLOG_MIN` di `q65.f90`).
+const PLOG_MIN: f32 = -242.0;
+
+/// Un messaggio della lista del QSO: i 13 simboli di messaggio e la parola di codice trasmessa.
+struct ListWord {
+    msg: [i32; NK],
+    cw: [i32; NTX],
+}
+
+/// `stdcall`: nominativo standard (prefisso con almeno una lettera, cifra dell'area al secondo o terzo posto, al piu' tre lettere dopo).
+fn std_call(call: &str) -> bool {
+    let c = call.as_bytes();
+    let n = c.len();
+    let Some(iarea) = (1..n).rev().find(|&i| c[i].is_ascii_digit()) else { return false };
+    let npdig = c[..iarea].iter().filter(|b| b.is_ascii_digit()).count();
+    let nplet = c[..iarea].iter().filter(|b| b.is_ascii_uppercase()).count();
+    let nslet = c[iarea + 1..].iter().filter(|b| b.is_ascii_uppercase()).count();
+    // `iarea` qui parte da 0: in WSJT-X l'area sta fra la seconda e la terza posizione
+    (1..=2).contains(&iarea) && nplet > 0 && npdig < iarea && nslet <= 3
+}
+
+/// `q65_set_list`: i 206 messaggi possibili del QSO con il DX (solo i due nominativi, RRR, RR73, 73, il CQ del DX, il locatore e i
+/// rapporti da -50 a +49 con e senza R), per la decodifica da lista (`q65_dec_q3`).
+fn qso_list(my_call: &str, dx_call: &str, dx_grid: &str, hashes: &CallHashes) -> Vec<ListWord> {
+    let (my, dx) = (my_call.trim().to_uppercase(), dx_call.trim().to_uppercase());
+    let grid: String = dx_grid.trim().to_uppercase().chars().take(4).collect();
+    if my.is_empty() || dx.is_empty() {
+        return Vec::new();
+    }
+    let (my_std, dx_std) = (std_call(&my), std_call(&dx));
+    let mut out = Vec::new();
+    for i in 1..=206 {
+        let pair = if !my_std {
+            if i == 1 || i >= 6 { format!("<{my}> {dx}") } else if (2..=4).contains(&i) { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
+        } else if !dx_std {
+            if i <= 4 || i == 6 { format!("<{my}> {dx}") } else if i >= 7 { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
+        } else {
+            format!("{my} {dx}")
+        };
+        let text = match i {
+            2 => format!("{pair} RRR"),
+            3 => format!("{pair} RR73"),
+            4 => format!("{pair} 73"),
+            5 if dx_std => format!("CQ {dx} {grid}").trim_end().to_string(),
+            5 => format!("CQ {dx}"),
+            6 if dx_std && !grid.is_empty() => format!("{pair} {grid}"),
+            7.. => {
+                let snr = -50 + (i - 7) / 2;
+                if i % 2 == 1 { format!("{pair} {snr:+03}") } else { format!("{pair} R{snr:+03}") }
+            }
+            _ => pair,
+        };
+        let Ok(bits) = pack(&text, &mut hashes.clone()) else { continue };
+        let msg = bits_to_symbols(&bits);
+        out.push(ListWord { msg, cw: encode_symbols(&msg) });
+    }
+    out
+}
+
 /// `_q65_mask`: azzera le probabilita' dei valori che contraddicono i bit noti.
 fn apply_ap(ix: &mut [f32], ap: &Ap) {
     for k in 0..NK {
@@ -525,7 +590,8 @@ pub struct Decoded {
     /// Rapporto segnale/rumore in 2500 Hz, in dB.
     pub snr_db: i32,
     pub sync: f32,
-    /// Ipotesi AP usata (0 = nessuna, poi i tipi di `q65_ap.f90`: 1 CQ, 2 mio nominativo, 3 con il DX, 4 RRR, 5 73, 6 RR73).
+    /// Ipotesi AP usata (0 = nessuna, poi i tipi di `q65_ap.f90`: 1 CQ, 2 mio nominativo, 3 con il DX o dalla lista dei messaggi del
+    /// QSO, il «q3» di WSJT-X, 4 RRR, 5 73, 6 RR73).
     pub ap: u8,
     /// Periodi sommati per decodificarlo (1 = un periodo solo).
     pub averaged: u32,
@@ -539,11 +605,22 @@ pub struct Options {
     pub f_low_hz: f32,
     pub f_high_hz: f32,
     pub max_candidates: usize,
-    /// Soglia del sincronismo (rapporto dell'energia sui simboli di sincronismo rispetto al rumore).
+    /// Soglia del sincronismo della media dei periodi (rapporto dell'energia sui simboli di sincronismo rispetto al rumore).
     pub min_sync: f32,
+    /// Soglia dei candidati di un periodo, come `q65_ccf_22`: altezza del picco della correlazione sui 22 simboli di sincronismo
+    /// sopra la mediana, in unita' della dispersione (84° meno 50° percentile). WSJT-X usa 6.
+    pub sync_snr: f32,
+    /// Frequenza di ricezione (`nfqso`): il picco di sincronismo piu' alto entro `rx_tol_hz` si prova sempre, anche sotto soglia.
+    pub rx_hz: Option<f32>,
+    /// Tolleranza attorno alla frequenza di ricezione (`ntol`).
+    pub rx_tol_hz: f32,
+    /// Thread per provare i candidati (1 = solo quello che chiama).
+    pub threads: usize,
     /// Il mio nominativo e quello del DX per le ipotesi AP (vuoti = sconosciuti).
     pub my_call: String,
     pub dx_call: String,
+    /// Locatore del DX (4 caratteri, vuoto = sconosciuto) per la lista dei messaggi del QSO (`q65_set_list`).
+    pub dx_grid: String,
     /// Decodifica con le ipotesi AP (CQ sempre, le altre se ci sono i nominativi).
     pub ap: bool,
     /// Metrica dell'evanescenza rapida, provata dopo quella di Bessel su piu' larghezze B90.
@@ -561,8 +638,13 @@ impl Default for Options {
             f_high_hz: 3000.0,
             max_candidates: 20,
             min_sync: 2.5,
+            sync_snr: 6.0,
+            rx_hz: None,
+            rx_tol_hz: 50.0,
+            threads: 1,
             my_call: String::new(),
             dx_call: String::new(),
+            dx_grid: String::new(),
             ap: true,
             fading: None,
             eme_delay: false,
@@ -726,6 +808,634 @@ fn snr_of(wide: &[f32], msg: &[i32; NK], setup: Setup) -> f64 {
     esno - 10.0 * (2500.0 / setup.baud()).log10()
 }
 
+// ---------------------------------------------------------------- un periodo: sincronismo e ricerca come WSJT-X
+
+/// Passi di tempo per simbolo negli spettri del sincronismo (`NSTEP` di `q65.f90`).
+const NSTEP: usize = 8;
+/// Tetto delle energie normalizzate dei simboli (`s3lim` di `q65_loops.f90`).
+const S3LIM: f32 = 20.0;
+/// Passi di frequenza (mezzo bin) e di tempo (1/16 di simbolo) provati attorno al candidato, e distanza massima della ricerca
+/// (`idfmax`, `idtmax`, `maxdist` di `q65_loops` alla profondita' 3).
+const IDFMAX: i32 = 5;
+const IDTMAX: i32 = 5;
+const MAXDIST: i32 = 5;
+
+/// `pctile`: il valore al percentile `pct` (posto `nint(n·pct/100)`, da 1, dei valori ordinati). Riordina `x`.
+fn pctile(x: &mut [f32], pct: f32) -> f32 {
+    if x.is_empty() {
+        return 1.0;
+    }
+    let n = x.len();
+    let j = ((n as f32 * 0.01 * pct).round() as usize).clamp(1, n) - 1;
+    *x.select_nth_unstable_by(j, f32::total_cmp).1
+}
+
+/// `smo121`: media mobile 1-2-1 sul posto.
+fn smo121(x: &mut [f32]) {
+    if x.len() < 3 {
+        return;
+    }
+    let mut x0 = x[0];
+    for i in 1..x.len() - 1 {
+        let x1 = x[i];
+        x[i] = 0.5 * x[i] + 0.25 * (x0 + x[i + 1]);
+        x0 = x1;
+    }
+}
+
+/// I passi `1, -1, 2, -2, ...` dall'indice da 1 (`ndf=idf/2`, negativo se `idf` e' pari).
+fn zigzag(k: i32) -> i32 {
+    let n = k / 2;
+    if k % 2 == 0 { -n } else { n }
+}
+
+/// Le larghezze B90 = 1,72^ibw provate alla profondita' 3 di `q65_decode.f90` (da `ibwa-2` a `ibwa+6+2`).
+fn ibw_range(setup: Setup) -> (i32, i32) {
+    let ibwa = [1, 3, 8, 8, 8][usize::from(setup.submode.min(4))];
+    ((ibwa - 2).max(1), (ibwa + 6 + 2).min(15))
+}
+
+/// Spettri dei simboli a passi di 1/8 di simbolo (`q65_symspec`), per il sincronismo e il rapporto S/N.
+struct SyncSpectra {
+    /// Riga `j` (tempo, passi da `istep` campioni) per colonna `i` (bin di frequenza da 0 a `iz`).
+    s1: Vec<f32>,
+    w: usize,
+    jz: usize,
+    istep: usize,
+    /// Riga dell'inizio nominale del segnale e ritardi provati attorno (da -1 a +1 s).
+    j0: i64,
+    lag1: i64,
+    lag2: i64,
+}
+
+impl SyncSpectra {
+    fn new(audio: &[f32], setup: Setup, iz: usize) -> SyncSpectra {
+        let nsps = setup.nsps();
+        let istep = nsps / NSTEP;
+        let txt = (NSYM * nsps) as f64 / FS;
+        let jz = ((txt + if nsps >= 6912 { 2.0 } else { 1.0 }) * FS / istep as f64) as usize;
+        let mode = 1usize << setup.submode;
+        let nsmo = (0.5 * (mode * mode) as f64) as usize;
+        let nsmo = if nsmo <= 1 { 0 } else { nsmo };
+        let w = iz + 1;
+        let mut s1 = vec![0f32; jz * w];
+        let fft = FftPlanner::<f32>::new().plan_fft_forward(nsps);
+        let mut buf = vec![Complex::new(0f32, 0.0); nsps];
+        let rows: Vec<usize> = (0..jz).step_by(2).collect();
+        // due finestre reali in una FFT complessa: la prima nella parte reale, la seconda in quella immaginaria
+        for pair in rows.chunks(2) {
+            let (ja, jb) = (pair[0], pair.get(1).copied());
+            for (k, b) in buf.iter_mut().enumerate() {
+                let a = audio.get(ja * istep + k).copied().unwrap_or(0.0);
+                let c = jb.and_then(|jb| audio.get(jb * istep + k).copied()).unwrap_or(0.0);
+                *b = Complex::new(a, c);
+            }
+            fft.process(&mut buf);
+            for i in 1..=iz {
+                let (x, y) = (buf[i], buf[nsps - i].conj());
+                s1[ja * w + i] = 0.25 * (x + y).norm_sqr();
+                if let Some(jb) = jb {
+                    s1[jb * w + i] = 0.25 * (x - y).norm_sqr();
+                }
+            }
+            for &j in pair {
+                for _ in 0..nsmo {
+                    smo121(&mut s1[j * w + 1..(j + 1) * w]);
+                }
+            }
+        }
+        // le righe saltate sono la media delle vicine
+        for j in (1..jz).step_by(2) {
+            if j + 1 < jz {
+                for i in 0..w {
+                    s1[j * w + i] = 0.5 * (s1[(j - 1) * w + i] + s1[(j + 1) * w + i]);
+                }
+            }
+        }
+        let dtstep = istep as f64 / FS;
+        let j0 = ((if nsps >= 7200 { 1.0 } else { 0.5 }) / dtstep) as i64;
+        SyncSpectra { s1, w, jz, istep, j0, lag1: (-1.0 / dtstep) as i64, lag2: (1.0 / dtstep + 0.9999) as i64 }
+    }
+
+    fn at(&self, i: usize, j: i64) -> f32 {
+        if j < 0 || j as usize >= self.jz || i >= self.w { 0.0 } else { self.s1[j as usize * self.w + i] }
+    }
+
+    /// `q65_ccf_22`: per ogni bin del tono 0 da `ia` a `ib` la correlazione migliore sui 22 simboli di sincronismo (tolta la media
+    /// del bin) e il suo ritardo.
+    fn ccf22(&self, ia: usize, ib: usize) -> (Vec<f32>, Vec<i64>) {
+        let mut ccf2 = vec![0f32; self.w];
+        let mut lags = vec![0i64; self.w];
+        let k22 = 22.0 / self.jz as f32;
+        for i in ia..=ib {
+            let avg: f32 = (0..self.jz).map(|j| self.s1[j * self.w + i]).sum::<f32>() * k22;
+            let mut best = (0f32, 0i64);
+            for lag in self.lag1..=self.lag2 {
+                let t: f32 = ISYNC.iter().map(|&p| self.at(i, (NSTEP * (p - 1)) as i64 + lag + self.j0)).sum::<f32>() - avg;
+                if t > best.0 {
+                    best = (t, lag);
+                }
+            }
+            ccf2[i] = best.0;
+            lags[i] = best.1;
+        }
+        (ccf2, lags)
+    }
+}
+
+/// I candidati di `q65_ccf_22`: i 20 picchi piu' alti (massimi locali entro un tono), finche' l'altezza sopra la mediana supera
+/// `sync_snr` volte la dispersione. Ritorna (bin, ritardo, altezza) in ordine di frequenza.
+fn sync_candidates(ccf2: &[f32], lags: &[i64], ia: usize, ib: usize, mode: usize, options: &Options) -> Vec<(usize, i64, f32)> {
+    let mut ccf2 = ccf2.to_vec();
+    // come WSJT-X, anche i due bin agli estremi si azzerano
+    ccf2[..=ia].fill(0.0);
+    ccf2[ib..].fill(0.0);
+    let mut v = ccf2[ia..=ib].to_vec();
+    let ave = pctile(&mut v, 50.0);
+    let rms = pctile(&mut v, 84.0) - ave;
+    if rms <= 0.0 {
+        return Vec::new();
+    }
+    let mut order: Vec<usize> = (ia..=ib).collect();
+    order.sort_by(|&a, &b| ccf2[b].total_cmp(&ccf2[a]));
+    let mut out = Vec::new();
+    for &i in order.iter().take(20) {
+        let (i3, i4) = (i.saturating_sub(mode).max(1), (i + mode).min(ccf2.len() - 1));
+        if ccf2[i3..=i4].iter().any(|&c| c > ccf2[i]) {
+            continue;
+        }
+        let snr = (ccf2[i] - ave) / rms;
+        if snr < options.sync_snr {
+            break;
+        }
+        out.push((i, lags[i], snr));
+        if out.len() >= options.max_candidates.min(20) {
+            break;
+        }
+    }
+    out.sort_by_key(|c| c.0);
+    out
+}
+
+/// `q65_bzap`: le colonne che fanno da massimo in piu' di 15 simboli sono portanti, non toni: si spianano a 1.
+fn bzap(s3: &mut [f32], ll: usize) {
+    let mut hist = vec![0u32; ll];
+    for row in s3.chunks_exact(ll) {
+        let mut best = 0;
+        for (i, &v) in row.iter().enumerate() {
+            if v > row[best] {
+                best = i;
+            }
+        }
+        hist[best] += 1;
+    }
+    if hist.iter().any(|&h| h > 15) {
+        for row in s3.chunks_exact_mut(ll) {
+            for (v, &h) in row.iter_mut().zip(&hist) {
+                if h > 15 {
+                    *v = 1.0;
+                }
+            }
+        }
+    }
+}
+
+/// Equalizzazione della banda passante di `spec64`: ogni colonna si divide per il suo 45° percentile, lisciato su 50 bin.
+fn equalize(s3: &mut [f32], ll: usize) {
+    let mut col = vec![0f32; NTX];
+    let x0: Vec<f32> = (0..ll)
+        .map(|i| {
+            col.iter_mut().enumerate().for_each(|(n, c)| *c = s3[n * ll + i]);
+            pctile(&mut col, 45.0)
+        })
+        .collect();
+    const NH: usize = 25;
+    let mut xb = vec![0f32; ll];
+    let head = x0[..NH - 1].iter().sum::<f32>() / (NH - 1) as f32;
+    let tail = x0[ll - NH..].iter().sum::<f32>() / (NH - 1) as f32;
+    xb[..NH - 1].fill(head);
+    xb[ll - NH..].fill(tail);
+    for i in NH - 1..=ll - NH - 1 {
+        xb[i] = x0[i + 1 - NH..=i + NH].iter().sum::<f32>() / (2 * NH + 1) as f32;
+    }
+    for row in s3.chunks_exact_mut(ll) {
+        row.iter_mut().zip(&xb).for_each(|(v, b)| *v /= b + 0.001);
+    }
+}
+
+/// Cio' che serve per provare i candidati di un periodo: lo spettro di tutto il periodo, da cui si ritaglia la banda di ogni
+/// candidato (al posto di `ana64` e `twkfreq`), e le FFT per simbolo.
+struct Searcher<'a> {
+    options: &'a Options,
+    aps: &'a [Ap],
+    sp: &'a SyncSpectra,
+    spectrum: Vec<Complex<f32>>,
+    /// Bin dello spettro del periodo per ogni bin di simbolo.
+    ratio: usize,
+    /// Campioni per simbolo dopo il ritaglio (multiplo di 16).
+    nsd: usize,
+    inverse: std::sync::Arc<dyn rustfft::Fft<f32>>,
+    sym_fft: std::sync::Arc<dyn rustfft::Fft<f32>>,
+}
+
+impl<'a> Searcher<'a> {
+    fn new(audio: &[f32], options: &'a Options, aps: &'a [Ap], sp: &'a SyncSpectra) -> Searcher<'a> {
+        let setup = options.setup;
+        let nsps = setup.nsps();
+        let ll = M * (2 + (1usize << setup.submode));
+        // periodo allungato a un numero intero di simboli; la banda ritagliata ha 64 bin di margine attorno ai 64·(2+spb) usati
+        let ratio = audio.len().div_ceil(nsps).max(NSYM);
+        let npad = ratio * nsps;
+        let nsd = (ll + 64).div_ceil(16) * 16;
+        let mut planner = FftPlanner::<f32>::new();
+        let mut spectrum: Vec<Complex<f32>> = (0..npad).map(|k| Complex::new(audio.get(k).copied().unwrap_or(0.0), 0.0)).collect();
+        planner.plan_fft_forward(npad).process(&mut spectrum);
+        spectrum.truncate(npad / 2);
+        let inverse = planner.plan_fft_inverse(ratio * nsd);
+        let sym_fft = planner.plan_fft_forward(nsd);
+        Searcher { options, aps, sp, spectrum, ratio, nsd, inverse, sym_fft }
+    }
+
+    fn setup(&self) -> Setup {
+        self.options.setup
+    }
+
+    /// Il segnale complesso della banda del candidato a `f0`, con `nsd` campioni per simbolo; ritorna anche la frequenza che
+    /// finisce a 0 Hz (quella di `f0` arrotondata alla risoluzione dello spettro del periodo).
+    fn band(&self, f0: f64) -> (Vec<Complex<f32>>, f64) {
+        let setup = self.setup();
+        let mode = 1i64 << setup.submode;
+        let nd = self.ratio * self.nsd;
+        let df_big = setup.baud() / self.ratio as f64;
+        let b0 = (f0 / df_big).round() as i64;
+        let ll = M as i64 * (2 + mode);
+        // centro dei bin di simbolo usati: da -64+spb a LL-65+spb attorno al tono 0
+        let center = (ll - 129 + 2 * mode) as f64 / 2.0;
+        let olo = ((center - self.nsd as f64 / 2.0) * self.ratio as f64).round() as i64;
+        let mut z = vec![Complex::new(0f32, 0.0); nd];
+        for o in olo..olo + nd as i64 {
+            let b = b0 + o;
+            if b > 0 && (b as usize) < self.spectrum.len() {
+                z[o.rem_euclid(nd as i64) as usize] = self.spectrum[b as usize];
+            }
+        }
+        self.inverse.process(&mut z);
+        (z, b0 as f64 * df_big)
+    }
+
+    /// `spec64` + la normalizzazione di `q65_loops`: energie dei 63 simboli di dati (64·(2+spb) bin, il tono 0 dei dati a 64 bin
+    /// dall'inizio), equalizzate, divise per il 40° percentile, con il tetto `S3LIM` e senza le portanti.
+    fn energies(&self, y: &[Complex<f32>], d0: i64) -> Vec<f32> {
+        let mode = 1i64 << self.setup().submode;
+        let ll = M * (2 + mode as usize);
+        let nsd = self.nsd;
+        let mut buf = vec![Complex::new(0f32, 0.0); nsd];
+        let mut s3 = vec![0f32; NTX * ll];
+        let mut n = 0;
+        for s in 0..NSYM {
+            if ISYNC.contains(&(s + 1)) {
+                continue;
+            }
+            let a = d0 + (s * nsd) as i64;
+            for (k, b) in buf.iter_mut().enumerate() {
+                let idx = a + k as i64;
+                *b = if idx >= 0 && (idx as usize) < y.len() { y[idx as usize] } else { Complex::new(0.0, 0.0) };
+            }
+            self.sym_fft.process(&mut buf);
+            for (ii, o) in s3[n * ll..(n + 1) * ll].iter_mut().enumerate() {
+                *o = buf[(ii as i64 - 64 + mode).rem_euclid(nsd as i64) as usize].norm_sqr();
+            }
+            n += 1;
+        }
+        equalize(&mut s3, ll);
+        let base = pctile(&mut s3.clone(), 40.0).max(f32::MIN_POSITIVE);
+        s3.iter_mut().for_each(|v| *v = (*v / base).min(S3LIM));
+        bzap(&mut s3, ll);
+        s3
+    }
+
+    /// Prova le metriche su un insieme di energie: prima Bessel (sui segnali senza allargamento Doppler rende circa 1 dB piu' della
+    /// sola evanescenza che usa WSJT-X), poi, se c'e' un modello, l'evanescenza rapida per ogni larghezza B90 ammessa da `ok_ibw`.
+    fn try_metrics(&self, s3: &[f32], ap: Option<&Ap>, ok_ibw: impl Fn(i32) -> bool) -> Option<Hit> {
+        let setup = self.setup();
+        let spb = 1usize << setup.submode;
+        let kind = ap.map_or(0, |a| a.kind);
+        if let Some(msg) = qra_decode(&bessel_intrinsics(&narrow(s3, spb)), ap) {
+            return Some(Hit { msg, ap: kind, b90_hz: None });
+        }
+        let Some(model) = self.options.fading else { return None };
+        let (ibwa, ibwb) = ibw_range(setup);
+        for ibw in ibwa..=ibwb {
+            let b90 = 1.72f32.powi(ibw);
+            if !ok_ibw(ibw) || b90 > 345.0 {
+                continue;
+            }
+            let pix = fading_intrinsics(s3, spb, b90 / setup.baud() as f32, model, 1.0);
+            if let Some(msg) = qra_decode(&pix, ap) {
+                return Some(Hit { msg, ap: kind, b90_hz: Some(b90) });
+            }
+        }
+        None
+    }
+
+    /// `q65_dec_q012` sulle energie prese dagli spettri del sincronismo (`q65_s1_to_s3`), al bin `i` del tono 0 e alla riga `jrow`
+    /// del primo simbolo: e' il primo tentativo sulla frequenza di ricezione.
+    fn from_sync_spectra(&self, i: usize, jrow: i64) -> Option<Hit> {
+        let s3 = self.s3_from_sync(i, jrow)?;
+        std::iter::once(None).chain(self.aps.iter().map(Some)).find_map(|ap| self.try_metrics(&s3, ap, |_| true))
+    }
+
+    /// `q65_s1_to_s3`: le energie dei 63 simboli di dati prese dagli spettri del sincronismo, senza le portanti.
+    fn s3_from_sync(&self, i: usize, jrow: i64) -> Option<Vec<f32>> {
+        let mode = 1usize << self.setup().submode;
+        let ll = M * (2 + mode);
+        let i1 = (i + mode).checked_sub(64).filter(|&i1| i1 >= 1 && i1 + ll - 1 < self.sp.w)?;
+        let mut s3 = vec![0f32; NTX * ll];
+        let mut n = 0;
+        for s in 0..NSYM {
+            if ISYNC.contains(&(s + 1)) {
+                continue;
+            }
+            let j = jrow + (NSTEP * s) as i64;
+            for (ii, o) in s3[n * ll..(n + 1) * ll].iter_mut().enumerate() {
+                *o = self.sp.at(i1 + ii, j);
+            }
+            n += 1;
+        }
+        bzap(&mut s3, ll);
+        Some(s3)
+    }
+
+    /// `q65_loops`: attorno al candidato (tono 0 a `f0`, primo simbolo al campione `start`) prova mezzi bin di frequenza, sedicesimi
+    /// di simbolo di tempo e larghezze B90 entro la distanza `MAXDIST`, prima senza AP e poi con ogni ipotesi.
+    fn loops(&self, f0: f64, start: i64) -> Option<(Hit, f64, i64)> {
+        let setup = self.setup();
+        let nsps = setup.nsps() as f64;
+        let baud = setup.baud();
+        let (z, fbase) = self.band(f0);
+        let fsd = self.nsd as f64 * baud;
+        let (ibwa, ibwb) = ibw_range(setup);
+        let ibw0 = (ibwa + ibwb) / 2;
+        let mut shifted: Vec<Option<Vec<Complex<f32>>>> = vec![None; IDFMAX as usize];
+        let mut cache: Vec<Option<Vec<f32>>> = vec![None; (IDFMAX * IDTMAX) as usize];
+        for ap in std::iter::once(None).chain(self.aps.iter().map(Some)) {
+            for idf in 1..=IDFMAX {
+                let ndf = zigzag(idf);
+                let f1 = f0 + 0.5 * baud * f64::from(ndf);
+                for idt in 1..=IDTMAX {
+                    let ndt = zigzag(idt);
+                    let base = ndf * ndf + ndt * ndt;
+                    if base > MAXDIST {
+                        continue;
+                    }
+                    let off = nsps * f64::from(ndt) / 16.0;
+                    let slot = ((idf - 1) * IDTMAX + idt - 1) as usize;
+                    if cache[slot].is_none() {
+                        let y = shifted[(idf - 1) as usize].get_or_insert_with(|| {
+                            let w = -2.0 * std::f64::consts::PI * (f1 - fbase) / fsd;
+                            z.iter()
+                                .enumerate()
+                                .map(|(n, v)| {
+                                    let p = w * n as f64;
+                                    v * Complex::new(p.cos() as f32, p.sin() as f32)
+                                })
+                                .collect()
+                        });
+                        let d0 = ((start as f64 + off) * self.nsd as f64 / nsps).round() as i64;
+                        cache[slot] = Some(self.energies(y, d0));
+                    }
+                    let Some(s3) = cache[slot].as_deref() else { continue };
+                    let ok = |ibw: i32| base + (ibw - ibw0) * (ibw - ibw0) <= MAXDIST;
+                    if let Some(hit) = self.try_metrics(s3, ap, ok) {
+                        return Some((hit, f1, start + off.round() as i64));
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// `q65_ccf_85` + `q65_dec_q3`: sincronismo con tutti gli 85 simboli di ogni messaggio della lista entro `rx_tol_hz` dalla
+    /// frequenza di ricezione (bin `i0`); se il migliore stacca gli altri del 10% (o il sottomodo e' D o E), decodifica da lista: vince
+    /// la parola di codice piu' verosimile sopra `PLOG_MIN`. Ritorna il messaggio, il bin del tono 0 e la riga del primo simbolo.
+    fn list_decode(&self, list: &[ListWord], i0: usize) -> Option<(Hit, usize, i64)> {
+        let setup = self.setup();
+        let df = setup.baud();
+        let mode = 1usize << setup.submode;
+        let sp = self.sp;
+        let iz = sp.w as i64 - 1;
+        let ia = (f64::from(self.options.rx_tol_hz) / df) as i64;
+        let ia2 = ia.max(10 * mode as i64).max((100.0 / df).round() as i64);
+        let iia = (200.0 / df) as i64;
+        let nlag = (sp.lag2 - sp.lag1 + 1) as usize;
+        let width = (2 * ia2 + 1) as usize;
+        let mut ccf = vec![0f32; width * nlag];
+        let mut best_of = vec![0f32; list.len()];
+        let mut best: Option<(f32, i64, i64, usize)> = None;
+        for (m, w) in list.iter().enumerate() {
+            let mut tones = [0usize; NSYM];
+            let mut k = 0;
+            for (s, t) in tones.iter_mut().enumerate() {
+                if !ISYNC.contains(&(s + 1)) {
+                    *t = w.cw[k] as usize + 1;
+                    k += 1;
+                }
+            }
+            ccf.fill(0.0);
+            for (l, lag) in (sp.lag1..=sp.lag2).enumerate() {
+                let row = &mut ccf[l * width..(l + 1) * width];
+                for (s, &t) in tones.iter().enumerate() {
+                    let j = sp.j0 + (NSTEP * s) as i64 + lag;
+                    if j < 0 || j as usize >= sp.jz {
+                        continue;
+                    }
+                    let line = &sp.s1[j as usize * sp.w..(j as usize + 1) * sp.w];
+                    let first = i0 as i64 + (mode * t) as i64 - ia2;
+                    for (x, o) in row.iter_mut().enumerate() {
+                        let ii = first + x as i64;
+                        if ii >= iia && ii <= iz {
+                            *o += line[ii as usize];
+                        }
+                    }
+                }
+            }
+            let mut top = (0f32, 0i64, 0i64);
+            for (l, lag) in (sp.lag1..=sp.lag2).enumerate() {
+                for i in -ia..=ia {
+                    let v = ccf[l * width + (i + ia2) as usize];
+                    if v > top.0 {
+                        top = (v, i, lag);
+                    }
+                }
+            }
+            best_of[m] = top.0;
+            if top.0 > best.map_or(0.0, |b| b.0) {
+                best = Some((top.0, top.1, top.2, m));
+            }
+        }
+        let (ccf_best, ipk, jpk, m) = best?;
+        best_of[m] = 0.0;
+        let second = best_of.iter().copied().fold(0f32, f32::max);
+        let better = if second > 0.0 { ccf_best / second } else { f32::MAX };
+        if better < 1.10 && mode < 8 {
+            return None;
+        }
+        // `q65_s1_to_s3` + la verosimiglianza di ogni parola della lista per ogni larghezza B90
+        let i = usize::try_from(i0 as i64 + ipk).ok()?;
+        let jrow = sp.j0 + jpk;
+        let s3 = self.s3_from_sync(i, jrow)?;
+        let spb = mode;
+        let model = self.options.fading.unwrap_or(Fading::Lorentzian);
+        let threshold = (LLH_THRESHOLD + (list.len() as f32 / 3.0).ln()).max(PLOG_MIN);
+        let (ibwa, ibwb) = ibw_range(setup);
+        for ibw in ibwa..=ibwb {
+            let b90 = 1.72f32.powi(ibw);
+            let pix = fading_intrinsics(&s3, spb, b90 / df as f32, model, 1.0);
+            let mut win: Option<(f32, usize)> = None;
+            for (k, w) in list.iter().enumerate() {
+                let llh: f32 = w.cw.iter().enumerate().map(|(n, &y)| row(&pix, n)[y as usize].max(1e-36).ln()).sum();
+                if llh > threshold && win.is_none_or(|(b, _)| llh > b) {
+                    win = Some((llh, k));
+                }
+            }
+            if let Some((_, k)) = win
+                && list[k].msg.iter().sum::<i32>() > 0
+            {
+                return Some((Hit { msg: list[k].msg, ap: 3, b90_hz: Some(b90) }, i, jrow));
+            }
+        }
+        None
+    }
+
+    /// `q65_snr`: S/N in 2500 Hz sommando gli spettri dei sincronismi allineati sugli 85 toni del messaggio decodificato.
+    fn snr(&self, msg: &[i32; NK], f0: f64, start: i64) -> i32 {
+        let setup = self.setup();
+        let df = setup.baud();
+        let mode = 1usize << setup.submode;
+        let cw = encode_symbols(msg);
+        let mut tones = [0usize; NSYM];
+        let mut k = 0;
+        for (s, t) in tones.iter_mut().enumerate() {
+            if !ISYNC.contains(&(s + 1)) {
+                *t = cw[k] as usize + 1;
+                k += 1;
+            }
+        }
+        let nominal = (setup.start_s() * FS).round() as i64;
+        let jrow = self.sp.j0 + ((start - nominal) as f64 / self.sp.istep as f64).round() as i64;
+        let iz = self.sp.w - 1;
+        let nsum = (10 * mode).max((50.0 / df).round() as usize);
+        let i0 = (f0 / df).round() as usize;
+        let ia = i0.saturating_sub(2 * nsum).max(1);
+        let ib = (i0 + 2 * nsum).min(iz);
+        if ib < ia + 2 * nsum {
+            return -35;
+        }
+        let spec: Vec<f32> = (ia..=ib)
+            .map(|i| tones.iter().enumerate().map(|(s, &t)| self.sp.at(i + mode * t, jrow + (NSTEP * s) as i64)).sum())
+            .collect();
+        let avg = (spec[..nsum].iter().sum::<f32>() + spec[spec.len() - nsum..].iter().sum::<f32>()) / (2 * nsum) as f32;
+        if avg <= 0.0 {
+            return -35;
+        }
+        let area: f32 = spec[nsum..spec.len() - nsum].iter().map(|v| v / avg - 1.0).sum();
+        (10.0 * f64::from(area.max(1.0)).log10() - 10.0 * (2500.0 / df).log10()).round() as i32
+    }
+}
+
+/// Decodifica di un periodo come `q65_decode.f90`: correlazione sui sincronismi (`q65_ccf_22`), primo tentativo sulla frequenza di
+/// ricezione, poi `q65_loops` sui candidati in ordine di frequenza, saltando quelli che cadono su un segnale gia' decodificato.
+fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]) -> Vec<Found> {
+    let setup = options.setup;
+    let nsps = setup.nsps();
+    let mode = 1usize << setup.submode;
+    let df = setup.baud();
+    let ia = (f64::from(options.f_low_hz).max(100.0) / df) as usize;
+    let ib = (f64::from(options.f_high_hz).min(4900.0) / df) as usize;
+    let nsum = (10 * mode).max((50.0 / df).round() as usize);
+    let iz = (ib + 2 * nsum + 66 * mode + M + 2).min(nsps / 2 - 1);
+    if ia < 1 || ia >= ib || ib >= iz {
+        return Vec::new();
+    }
+    let sp = SyncSpectra::new(audio, setup, iz);
+    let (ccf2, lags) = sp.ccf22(ia, ib);
+    let nominal = (setup.start_s() * FS).round() as i64;
+    let start_of = |lag: i64| nominal + lag * sp.istep as i64;
+    let rx = options.rx_hz.and_then(|rx| {
+        (ia..=ib)
+            .filter(|&i| (i as f64 * df - f64::from(rx)).abs() <= f64::from(options.rx_tol_hz) && ccf2[i] > 0.0)
+            .max_by(|&a, &b| ccf2[a].total_cmp(&ccf2[b]).then(b.cmp(&a)))
+    });
+    let candidates = sync_candidates(&ccf2, &lags, ia, ib, mode, options);
+    let searcher = Searcher::new(audio, options, aps, &sp);
+    let mut found: Vec<Found> = Vec::new();
+    let finish = |hit: Hit, f: f64, start: i64, sync: f32| Found { snr_db: searcher.snr(&hit.msg, f, start), hit, freq_hz: f, start, sync, averaged: 1 };
+
+    // con il DX noto, prima la decodifica da lista sulla frequenza di ricezione (`q65_dec0` con `ncw>0`)
+    let listed = options.rx_hz.filter(|_| !list.is_empty()).and_then(|f| searcher.list_decode(list, (f64::from(f) / df).round() as usize));
+    let mut rx_tried = None;
+    if let Some((hit, i, jrow)) = listed {
+        let start = nominal + (jrow - sp.j0) * sp.istep as i64;
+        found.push(finish(hit, i as f64 * df, start, ccf2.get(i).copied().unwrap_or(0.0)));
+    } else if let Some(i) = rx {
+        rx_tried = Some(i);
+        let f0 = i as f64 * df;
+        let hit = searcher.from_sync_spectra(i, sp.j0 + lags[i]).map(|h| (h, f0, start_of(lags[i]))).or_else(|| searcher.loops(f0, start_of(lags[i])));
+        if let Some((hit, f, start)) = hit {
+            found.push(finish(hit, f, start, ccf2[i]));
+        }
+    }
+    let width = df * mode as f64;
+    let overlaps = |f0: f64, found: &[Found]| found.iter().any(|d| f0 - d.freq_hz > -width && f0 - d.freq_hz < 65.0 * width);
+    // il candidato gia' provato sulla frequenza di ricezione non si ripete
+    let todo: Vec<(usize, i64, f32)> = candidates.into_iter().filter(|c| Some(c.0) != rx_tried).collect();
+    let threads = options.threads.max(1).min(todo.len().max(1));
+    if threads <= 1 {
+        for (i, lag, snr) in todo {
+            let f0 = i as f64 * df;
+            if overlaps(f0, &found) {
+                continue;
+            }
+            if let Some((hit, f, start)) = searcher.loops(f0, start_of(lag)) {
+                found.push(finish(hit, f, start, snr));
+            }
+        }
+    } else {
+        // in parallelo si provano tutti; poi, in ordine di frequenza, si scartano quelli caduti su un segnale gia' preso
+        let next = std::sync::atomic::AtomicUsize::new(0);
+        let mut results: Vec<Option<(Hit, f64, i64)>> = Vec::new();
+        results.resize_with(todo.len(), || None);
+        let slots = std::sync::Mutex::new(results);
+        std::thread::scope(|scope| {
+            for _ in 0..threads {
+                scope.spawn(|| {
+                    loop {
+                        let k = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(&(i, lag, _)) = todo.get(k) else { break };
+                        if overlaps(i as f64 * df, &found) {
+                            continue;
+                        }
+                        let r = searcher.loops(i as f64 * df, start_of(lag));
+                        if let Ok(mut s) = slots.lock() {
+                            s[k] = r;
+                        }
+                    }
+                });
+            }
+        });
+        let results = slots.into_inner().unwrap_or_default();
+        for ((i, _, snr), r) in todo.iter().zip(results) {
+            if overlaps(*i as f64 * df, &found) {
+                continue;
+            }
+            if let Some((hit, f, start)) = r {
+                found.push(finish(hit, f, start, *snr));
+            }
+        }
+    }
+    found
+}
+
 /// Media dei periodi (`q65_avg` di WSJT-X): somma gli spettri dei periodi con la stessa parita' finche' un segnale debole si decodifica.
 #[derive(Debug, Default, Clone)]
 pub struct Averager {
@@ -782,21 +1492,31 @@ pub fn decode_averaged(audio: &[f32], options: &Options, hashes: &mut CallHashes
     decode_inner(audio, options, hashes, Some((averager, period_index)))
 }
 
-#[allow(clippy::too_many_arguments)]
-fn push_hit(out: &mut Vec<Decoded>, hit: &Hit, wide: &[f32], setup: Setup, i: usize, start: i64, sync: f32, averaged: u32, hashes: &mut CallHashes) -> bool {
-    let Ok(text) = unpack(&symbols_to_bits(&hit.msg), hashes) else { return false };
+/// Un messaggio trovato, prima di spacchettarlo.
+struct Found {
+    hit: Hit,
+    freq_hz: f64,
+    /// Inizio del primo simbolo, in campioni a 12 kHz dall'inizio del periodo.
+    start: i64,
+    snr_db: i32,
+    sync: f32,
+    averaged: u32,
+}
+
+fn push_found(out: &mut Vec<Decoded>, f: &Found, setup: Setup, hashes: &mut CallHashes) -> bool {
+    let Ok(text) = unpack(&symbols_to_bits(&f.hit.msg), hashes) else { return false };
     if out.iter().any(|d| d.text == text) {
         return false;
     }
     out.push(Decoded {
         text,
-        freq_hz: (i as f64 * setup.baud()) as f32,
-        dt_s: (start as f64 / FS - setup.start_s()) as f32,
-        snr_db: (snr_of(wide, &hit.msg, setup).round() as i32).clamp(-35, 25),
-        sync,
-        ap: hit.ap,
-        averaged,
-        b90_hz: hit.b90_hz,
+        freq_hz: f.freq_hz as f32,
+        dt_s: (f.start as f64 / FS - setup.start_s()) as f32,
+        snr_db: f.snr_db.clamp(-35, 25),
+        sync: f.sync,
+        ap: f.hit.ap,
+        averaged: f.averaged,
+        b90_hz: f.hit.b90_hz,
     });
     true
 }
@@ -805,38 +1525,11 @@ fn decode_inner(audio: &[f32], options: &Options, hashes: &mut CallHashes, avera
     let setup = options.setup;
     let nsps = setup.nsps();
     let spb = 1usize << setup.submode;
-    let half = nsps / 2;
-    let sp = spectra(audio, nsps, bins_for(options), half);
     let aps = if options.ap { ap_list(&options.my_call, &options.dx_call, hashes) } else { Vec::new() };
+    let list = if options.ap { qso_list(&options.my_call, &options.dx_call, &options.dx_grid, hashes) } else { Vec::new() };
     let mut out: Vec<Decoded> = Vec::new();
-
-    let fft = FftPlanner::<f32>::new().plan_fft_forward(nsps);
-    let mut buf = vec![Complex::new(0f32, 0.0); nsps];
-    let mut spec = vec![0f32; half];
-    for (i, lag, sync) in find_candidates(&sp, options, 2) {
-        // si prova il ritardo trovato e i quarti di simbolo vicini
-        for off in [0i64, -1, 1, -2, 2] {
-            let start = lag * half as i64 + off * (nsps as i64 / 4);
-            let mut last = usize::MAX;
-            let wide = wide_energies(i, spb, |s, bin| {
-                if s != last {
-                    last = s;
-                    let a = start + (s * nsps) as i64;
-                    for (j, b) in buf.iter_mut().enumerate() {
-                        let idx = a + j as i64;
-                        let v = if idx >= 0 && (idx as usize) < audio.len() { audio[idx as usize] } else { 0.0 };
-                        *b = Complex::new(v, 0.0);
-                    }
-                    fft.process(&mut buf);
-                    spec.iter_mut().zip(&buf).for_each(|(o, c)| *o = c.norm_sqr());
-                }
-                spec.get(bin).copied().unwrap_or(0.0)
-            });
-            if let Some(hit) = decode_wide(&wide, options, &aps, 1.0) {
-                push_hit(&mut out, &hit, &wide, setup, i, start, sync, 1, hashes);
-                break;
-            }
-        }
+    for f in decode_single(audio, options, &aps, &list) {
+        push_found(&mut out, &f, setup, hashes);
     }
 
     if let Some((averager, index)) = averager {
@@ -856,7 +1549,9 @@ fn decode_inner(audio: &[f32], options: &Options, hashes: &mut CallHashes, avera
             for (i, lag, sync) in find_candidates(sum, options, 4) {
                 let wide = wide_energies(i, spb, |s, bin| sum[(lag + 4 * s as i64) as usize].get(bin).copied().unwrap_or(0.0));
                 if let Some(hit) = decode_wide(&wide, options, &aps, n as f32) {
-                    any |= push_hit(&mut out, &hit, &wide, setup, i, lag * quarter as i64, sync, n, hashes);
+                    let snr_db = snr_of(&wide, &hit.msg, setup).round() as i32;
+                    let f = Found { hit, freq_hz: i as f64 * setup.baud(), start: lag * quarter as i64, snr_db, sync, averaged: n };
+                    any |= push_found(&mut out, &f, setup, hashes);
                 }
             }
             if any {
@@ -966,7 +1661,8 @@ mod tests {
                     continue;
                 }
                 let audio = period("IU3ABC K1ABC FN42", f0, 0.2, setup, 0.12, 1.0);
-                let o = Options { setup, f_low_hz: f0 as f32 - 50.0, f_high_hz: f0 as f32 + 50.0, ap: false, ..Options::default() };
+                // in una finestra cosi' stretta la soglia statistica dei candidati non ha senso: si prova la frequenza di ricezione
+                let o = Options { setup, f_low_hz: f0 as f32 - 50.0, f_high_hz: f0 as f32 + 50.0, rx_hz: Some(f0 as f32), ap: false, ..Options::default() };
                 let d = decode(&audio, &o, &mut CallHashes::default());
                 let hit = d.iter().find(|d| d.text == "IU3ABC K1ABC FN42").unwrap_or_else(|| panic!("Q65-{p}{}: {d:?}", (b'A' + s) as char));
                 assert!((hit.freq_hz - f0 as f32).abs() <= setup.baud() as f32 * 1.5, "{p} {s}: {hit:?}");
@@ -1017,7 +1713,7 @@ mod tests {
             let mut audio = noise(15 * 12_000, 1.0, 40 + seed);
             let at = (setup.start_s() * FS) as usize;
             audio[at..at + wave.len()].iter_mut().zip(&wave).for_each(|(a, w)| *a += w);
-            let base = Options { setup, f_low_hz: 950.0, f_high_hz: 1050.0, min_sync: 1.5, ..Options::default() };
+            let base = Options { setup, f_low_hz: 950.0, f_high_hz: 1050.0, rx_hz: Some(1000.0), ..Options::default() };
             let plain = decode(&audio, &Options { ap: false, ..base.clone() }, &mut CallHashes::default());
             let with_ap = decode(&audio, &Options { my_call: "IU3ABC".into(), dx_call: "K1ABC".into(), ..base }, &mut CallHashes::default());
             let p = plain.iter().any(|d| d.text == msg);
@@ -1048,8 +1744,9 @@ mod tests {
         let setup = Setup::new(15, 2).expect("modo"); // Q65-15C: 26,7 Hz fra i toni
         let msg = "IU3ABC K1ABC FN42";
         let tn = tones(msg, &mut CallHashes::default()).expect("messaggio");
-        // il segnale e' la somma di molte copie con frequenza e fase casuali (allargamento di circa 30 Hz)
-        const SPREAD: f64 = 30.0;
+        // il segnale e' la somma di molte copie con frequenza e fase casuali (allargamento di circa 60 Hz, due toni: con 30 Hz la
+        // ricerca fine del sincronismo basta gia' a Bessel)
+        const SPREAD: f64 = 60.0;
         const AMP: f32 = 0.15;
         let mut audio = noise(15 * 12_000, 1.0, 3);
         let mut x = 99u64;
@@ -1070,7 +1767,7 @@ mod tests {
                 audio[at + k] += w * flip / 24f32.sqrt();
             }
         }
-        let o = Options { setup, f_low_hz: 750.0, f_high_hz: 850.0, ap: false, min_sync: 1.5, ..Options::default() };
+        let o = Options { setup, f_low_hz: 750.0, f_high_hz: 850.0, rx_hz: Some(800.0), ap: false, ..Options::default() };
         let fading = decode(&audio, &Options { fading: Some(Fading::Lorentzian), ..o.clone() }, &mut CallHashes::default());
         let plain = decode(&audio, &o, &mut CallHashes::default());
         let hit = fading.iter().find(|d| d.text == msg).expect("decodificato con l'evanescenza");

@@ -1,9 +1,13 @@
 //! Confronto della decodifica Q65 con `jt9.exe` (voce 21 di `docs/tasks.md`, tabella in `docs/q65-confronto.md`): legge WAV a 12 kHz,
 //! 16 bit, mono (per esempio quelli di `q65sim` di WSJT-X) e li decodifica con il periodo e il sottomodo indicati.
 //!
-//! Uso: `cargo run --release -p jt --example misura_q65 -- <periodo> <sottomodo A-E> [--gauss] [--media] [--senza-evanescenza] <file.wav> ...`
+//! Uso: `cargo run --release -p jt --example misura_q65 -- <periodo> <sottomodo A-E> [--gauss] [--media] [--senza-evanescenza]
+//! [--rx <Hz>] [--thread <n>] [--mio <nominativo>] [--dx <nominativo>] [--locatore <griglia>] <file.wav> ...`
 //!
 //! Con `--media` i file sono periodi successivi della stessa parita' e si sommano come fa la media di Q65 (`decode_averaged`).
+//! `--rx` e' la frequenza di ricezione (come `-f` di `jt9`, tolleranza 50 Hz); `--thread` i thread per i candidati. Con `--mio`,
+//! `--dx` e `--locatore` (come `-c`, `-x` e il locatore di `jt9`, che di suo usa K1ABC, W9XYZ, EN37) si provano le ipotesi AP e la
+//! lista dei messaggi del QSO.
 //! Stampa una riga per file: `nome;messaggi;testo|snr|dt|freq|ap|periodi|b90` per ogni messaggio.
 
 use jt::q65::{Averager, Fading, Options, Setup, decode, decode_averaged};
@@ -32,17 +36,26 @@ fn main() {
     let setup = Setup::new(period, sub).expect("periodo o sottomodo non validi");
     let mut fading = Some(Fading::Lorentzian);
     let mut average = false;
+    let mut rx_hz = None;
+    let mut threads = 1;
+    let (mut my_call, mut dx_call, mut dx_grid) = (String::new(), String::new(), String::new());
     let mut files = Vec::new();
-    for a in args {
+    while let Some(a) = args.next() {
         match a.as_str() {
             "--gauss" => fading = Some(Fading::Gaussian),
             "--senza-evanescenza" => fading = None,
             "--media" => average = true,
+            "--rx" => rx_hz = args.next().and_then(|f| f.parse().ok()),
+            "--thread" => threads = args.next().and_then(|n| n.parse().ok()).unwrap_or(1),
+            "--mio" => my_call = args.next().unwrap_or_default(),
+            "--dx" => dx_call = args.next().unwrap_or_default(),
+            "--locatore" => dx_grid = args.next().unwrap_or_default(),
             _ => files.push(a),
         }
     }
     assert!(!files.is_empty(), "nessun file WAV");
-    let options = Options { setup, fading, ..Options::default() };
+    let options = Options { setup, fading, rx_hz, threads, my_call, dx_call, dx_grid, ..Options::default() };
+    let t0 = std::time::Instant::now();
     let mut averager = Averager::new();
     for (n, f) in files.iter().enumerate() {
         let audio = read_wav(f);
@@ -56,4 +69,5 @@ fn main() {
             .collect();
         println!("{name};{};{}", found.len(), texts.join(";"));
     }
+    eprintln!("tempo medio per file: {:.2} s", t0.elapsed().as_secs_f64() / files.len() as f64);
 }

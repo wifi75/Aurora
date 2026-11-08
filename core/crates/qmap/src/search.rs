@@ -257,6 +257,9 @@ pub fn search_pass(iq: &[Complex<f32>], sample_rate: u32, center_hz: Option<u64>
         f_low_hz: SYNC_AUDIO_HZ as f32 - tol,
         f_high_hz: SYNC_AUDIO_HZ as f32 + tol,
         max_candidates: 4,
+        // il candidato e' riportato a 1000 Hz: si prova sempre li', come la frequenza di ricezione di WSJT-X
+        rx_hz: Some(SYNC_AUDIO_HZ as f32),
+        rx_tol_hz: tol,
         my_call: options.my_call.clone(),
         dx_call: options.dx_call.clone(),
         ap: true,
