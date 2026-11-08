@@ -203,6 +203,17 @@ pub fn classify_rx(text: &str, ctx: &RxContext<'_>, ds: &mut DisplayState, hist:
         // un messaggio indirizzato a noi
         out.std_type = 2;
         let (mut check_call, mut grid) = de_call_and_grid(text);
+        // «MIOCALL SUOCALL R LOCATORE» dalla stazione in QSO dopo il nostro rapporto: e' il «R + locatore» dei contest (NA VHF, WW Digi)
+        // usato in un QSO normale. WSJT-X in modo normale non lo riconosce e ripete il rapporto all'infinito (5B4AMM, 2026-11-08):
+        // qui vale come conferma (come R+rapporto), cosi' parte RR73 e il QSO si chiude. Il rapporto ricevuto resta vuoto.
+        let r_grid = w.len() == 4 && w[2] == "R" && is_grid(&w[3]) && contains_his(&w[1]) && mystatus >= Status::Sreport && mystatus < Status::Rrr;
+        if r_grid {
+            out.status = Some(Status::Rrreport);
+            out.param = String::new();
+            out.grid = w[3].clone();
+            out.check_call = w[1].clone();
+            return out;
+        }
         if !grid.is_empty() || (!check_call.is_empty() && w.len() == 2) {
             out.status = Some(Status::Rcall);
             if grid.is_empty() {
