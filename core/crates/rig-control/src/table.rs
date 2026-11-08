@@ -187,6 +187,8 @@ const EXTRA_BAND_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("4m", "JT65", 70_102_000, Region::R1, false),
     ("4m", "JT9", 70_104_000, Region::R1, false),
     ("4m", "FT8", 70_154_000, Region::R1, true),
+    // 70,100 MHz: frequenza FT8 dei 4 m indicata da ft8.it (piano IARU), alternativa a quella di WSJT-X
+    ("4m", "FT8", 70_100_000, Region::R1, false),
     ("1.25m", "JT65", 222_065_000, Region::R2, false),
     ("1.25m", "Q65", 222_065_000, Region::R2, false),
     ("1.25m", "FT8", 222_174_000, Region::R2, true),
