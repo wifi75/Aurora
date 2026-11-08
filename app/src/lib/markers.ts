@@ -17,6 +17,12 @@ export function hzAt(fraction: number, fMinHz: number, fMaxHz: number): number {
  * Per gli altri modi 0: resta la barra sottile.
  */
 export function signalBandwidthHz(mode: string | undefined): number {
+  // Q65-15A ... Q65-300E: 65 toni alla velocita' del periodo per 1, 2, 4, 8, 16
+  const q65 = /^Q65-(15|30|60|120|300)([A-E])$/.exec(mode?.toUpperCase() ?? '');
+  if (q65?.[1] && q65[2]) {
+    const nsps: Record<string, number> = { '15': 1800, '30': 3600, '60': 7200, '120': 16000, '300': 41472 };
+    return (65 * 12000 * 2 ** (q65[2].charCodeAt(0) - 65)) / (nsps[q65[1]] ?? 3600);
+  }
   switch (mode) {
     case 'FT8':
       return (7 * 12000) / 1920;

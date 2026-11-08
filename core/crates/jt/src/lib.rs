@@ -22,6 +22,7 @@ pub mod msk144;
 pub mod msk40;
 mod msk144tables;
 pub mod q65;
+mod q65fading;
 mod q65tables;
 pub mod rs;
 pub mod rx;

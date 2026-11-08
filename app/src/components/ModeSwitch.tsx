@@ -5,6 +5,18 @@ import { useT } from '../i18n';
 /** I sottomodi di JT4: la distanza fra i toni e' 4,375 Hz per 1, 2, 4, 9, 18, 36, 72. */
 const JT4_SUBMODES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
+/** I periodi di Q65 in secondi e i sottomodi (distanza fra i toni = velocita' x 1, 2, 4, 8, 16), come WSJT-X. */
+const Q65_PERIODS = ['15', '30', '60', '120', '300'] as const;
+const Q65_SUBMODES = ['A', 'B', 'C', 'D', 'E'] as const;
+
+/** «Q65-60B» -> ['60', 'B']; «Q65» da solo e' il Q65-30A di prima. */
+export function q65Parts(mode: string): [string, string] | null {
+  const up = mode.toUpperCase();
+  if (up === 'Q65') return ['30', 'A'];
+  const m = /^Q65-(15|30|60|120|300)([A-E])$/.exec(up);
+  return m?.[1] && m[2] ? [m[1], m[2]] : null;
+}
+
 export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144'] as const;
 
 /** Il modo in uso: JTDX con il pulsante JT puo' riportare «JT65+JT9» (si accendono tutti e due) o «JT» (il vecchio nome, acceso JT65). */
@@ -13,6 +25,8 @@ const isActive = (m: string, mode: string) => {
   if (m === 'JT65' && up === 'JT') return true;
   // JT4A ... JT4G accendono JT4
   if (m === 'JT4' && /^JT4[A-G]$/.test(up)) return true;
+  // Q65-15A ... Q65-300E accendono Q65
+  if (m === 'Q65' && q65Parts(up)) return true;
   return up === m || (m.startsWith('JT') && up.split('+').includes(m));
 };
 
@@ -53,6 +67,7 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   }, [disabled]);
 
   const label = mode.toUpperCase() === 'JT' ? 'JT65' : mode || '—';
+  const q65 = q65Parts(mode);
   return (
     <div className="mode-switch" ref={box}>
       <button
@@ -87,6 +102,38 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
             </option>
           ))}
         </select>
+      ) : null}
+      {q65 ? (
+        <>
+          <select
+            className="mode-switch-sub"
+            aria-label={t('mode.q65period')}
+            title={t('tip.mode.q65period')}
+            disabled={disabled}
+            value={q65[0]}
+            onChange={(e) => onPick?.(`Q65-${e.target.value}${q65[1]}`)}
+          >
+            {Q65_PERIODS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <select
+            className="mode-switch-sub"
+            aria-label={t('mode.q65sub')}
+            title={t('tip.mode.q65sub')}
+            disabled={disabled}
+            value={q65[1]}
+            onChange={(e) => onPick?.(`Q65-${q65[0]}${e.target.value}`)}
+          >
+            {Q65_SUBMODES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </>
       ) : null}
       {open && (
         <div className="mode-switch-menu glass" role="menu" aria-label={t('mode.group')}>

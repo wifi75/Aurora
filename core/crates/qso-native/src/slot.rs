@@ -4,6 +4,55 @@
 //! tratto di 15 s (FT8) o 7,5 s (FT4) contato dall'inizio dell'epoca UNIX; pari e dispari si
 //! leggono dall'indice, come il pulsante `TxMinuteButton` di JTDX.
 
+use std::sync::atomic::{AtomicU8, AtomicU32, Ordering};
+
+/// Periodo di Q65 in secondi (15, 30, 60, 120, 300): uno solo per programma, lo sceglie il motore.
+static Q65_PERIOD_S: AtomicU32 = AtomicU32::new(30);
+/// Sottomodo di Q65 (0 = A ... 4 = E).
+static Q65_SUBMODE: AtomicU8 = AtomicU8::new(0);
+
+/// Sceglie periodo e sottomodo di Q65; valori fuori campo si ignorano.
+pub fn set_q65(period_s: u32, submode: u8) {
+    if matches!(period_s, 15 | 30 | 60 | 120 | 300) {
+        Q65_PERIOD_S.store(period_s, Ordering::Relaxed);
+    }
+    if submode <= 4 {
+        Q65_SUBMODE.store(submode, Ordering::Relaxed);
+    }
+}
+
+/// Periodo di Q65 in uso, in secondi.
+pub fn q65_period_s() -> u32 {
+    Q65_PERIOD_S.load(Ordering::Relaxed)
+}
+
+/// Sottomodo di Q65 in uso (0 = A ... 4 = E).
+pub fn q65_submode() -> u8 {
+    Q65_SUBMODE.load(Ordering::Relaxed)
+}
+
+/// Campioni per simbolo di Q65 a 12 kHz (`q65params`).
+fn q65_nsps(period_s: u32) -> f64 {
+    match period_s {
+        15 => 1_800.0,
+        30 => 3_600.0,
+        60 => 7_200.0,
+        120 => 16_000.0,
+        _ => 41_472.0,
+    }
+}
+
+/// Fine del messaggio Q65 dall'inizio del periodo, in secondi: 0,5 s (1 s dai 60 s in su) piu' 85 simboli.
+pub fn q65_message_end_s() -> f64 {
+    let p = q65_period_s();
+    (if p >= 60 { 1.0 } else { 0.5 }) + 85.0 * q65_nsps(p) / 12_000.0
+}
+
+/// Larghezza del segnale Q65 in uso (65 toni), in hertz.
+pub fn q65_bandwidth_hz() -> f64 {
+    65.0 * 12_000.0 / q65_nsps(q65_period_s()) * f64::from(1u32 << q65_submode())
+}
+
 /// Modo digitale: cambia solo la durata del periodo, la logica dei QSO e' la stessa.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Mode {
@@ -14,7 +63,7 @@ pub enum Mode {
     Jt9,
     /// JT4 (sottomodi A-G): un minuto, come JT65.
     Jt4,
-    /// Q65-30A: periodi di 30 s, messaggi a 77 bit come FT8.
+    /// Q65: periodi da 15 a 300 s ([`set_q65`]), messaggi a 77 bit come FT8.
     Q65,
     /// MSK144 (meteor scatter): periodi di 15 s, quadro di 72 ms ripetuto per tutto il periodo.
     Msk144,
@@ -27,7 +76,7 @@ impl Mode {
             Mode::Ft8 | Mode::Msk144 => 15_000,
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
-            Mode::Q65 => 30_000,
+            Mode::Q65 => u64::from(q65_period_s()) * 1000,
         }
     }
 

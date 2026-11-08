@@ -233,7 +233,7 @@ impl Options {
             Mode::Jt9 => 49.96,
             // 1 s + 206 simboli da 0,2286 s
             Mode::Jt4 => 48.09,
-            Mode::Q65 => 26.0,
+            Mode::Q65 => crate::slot::q65_message_end_s(),
             Mode::Msk144 => 12.0,
         })
     }
@@ -246,7 +246,7 @@ impl Options {
             Mode::Jt65 => 176,
             Mode::Jt9 => 16,
             Mode::Jt4 => 18,
-            Mode::Q65 => 217,
+            Mode::Q65 => crate::slot::q65_bandwidth_hz().ceil() as i32,
             Mode::Msk144 => 1000,
         }
     }

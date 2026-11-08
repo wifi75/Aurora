@@ -453,6 +453,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     }
 
     /// Cambio di modo (FT8 <-> FT4): ferma la trasmissione in corso, ripulisce i messaggi ricordati e riparte la sequenza da capo.
+    /// Q65 con un altro periodo: la trasmissione in corso si ferma e si riparte come dopo un cambio di modo (gli indici dei periodi cambiano).
+    pub fn period_changed(&mut self) -> Vec<String> {
+        let mode = self.mode;
+        // un modo diverso da quello vero, perche' `set_mode` rifaccia tutto
+        self.mode = if mode == Mode::Ft8 { Mode::Ft4 } else { Mode::Ft8 };
+        self.set_mode(mode)
+    }
+
     pub fn set_mode(&mut self, mode: Mode) -> Vec<String> {
         if mode == self.mode {
             return Vec::new();
@@ -1546,10 +1554,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     jt_check_frequency(freq, 4.0 * sub.tone_spacing_hz())?;
                     Ok(jt::jt4::modulate(&jt::jt4::tones(t), f64::from(freq), sub, 1.0))
                 }
-                // Q65-30A: `freq` e' il tono di sincronismo (tono 0), 65 toni a 3,33 Hz
+                // Q65: `freq` e' il tono di sincronismo (tono 0), 65 toni alla distanza del sottomodo (3,33 Hz in Q65-30A)
                 Mode::Q65 => {
                     check_exact(t, &self.hashes)?;
-                    let setup = jt::q65::Setup::new(30, 0).ok_or("Q65 non valido")?;
+                    let setup = crate::rig::q65_setup();
                     jt_check_frequency(freq, setup.bandwidth_hz())?;
                     let tones = jt::q65::tones(t, &mut self.hashes)?;
                     Ok(jt::q65::modulate(&tones, f64::from(freq), setup, 1.0))
@@ -1776,8 +1784,8 @@ mod tests {
                 jt::msk144::decode(&audio, &jt::msk144::Options::default(), &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
             }
             tx_native::Mode::Q65 => {
-                let setup = jt::q65::Setup::new(30, 0).expect("Q65-30A");
-                let mut audio = noise(360_000, 13);
+                let setup = crate::rig::q65_setup();
+                let mut audio = noise(setup.period_s as usize * 12_000, 13);
                 for (i, w) in req.wave.iter().enumerate() {
                     audio[6_000 + i] += 0.05 * w;
                 }

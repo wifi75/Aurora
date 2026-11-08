@@ -2,7 +2,36 @@
 
 use std::time::Duration;
 
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::error::TxError;
+
+/// Periodo di Q65 in secondi (15, 30, 60, 120, 300), scelto dal motore.
+static Q65_PERIOD_S: AtomicU32 = AtomicU32::new(30);
+
+/// Sceglie il periodo di Q65; valori fuori campo si ignorano.
+pub fn set_q65_period_s(period_s: u32) {
+    if matches!(period_s, 15 | 30 | 60 | 120 | 300) {
+        Q65_PERIOD_S.store(period_s, Ordering::Relaxed);
+    }
+}
+
+/// Periodo di Q65 in uso, in secondi.
+pub fn q65_period_s() -> u32 {
+    Q65_PERIOD_S.load(Ordering::Relaxed)
+}
+
+/// Durata del messaggio Q65 in millisecondi (85 simboli, `q65params`).
+fn q65_message_ms(period_s: u32) -> u64 {
+    let nsps = match period_s {
+        15 => 1_800,
+        30 => 3_600,
+        60 => 7_200,
+        120 => 16_000,
+        _ => 41_472,
+    };
+    85 * nsps / 12
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -21,15 +50,17 @@ impl Mode {
             Mode::Ft8 | Mode::Msk144 => Duration::from_millis(15_000),
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
-            Mode::Q65 => Duration::from_millis(30_000),
+            Mode::Q65 => Duration::from_millis(u64::from(q65_period_s()) * 1000),
         }
     }
 
     /// Ritardo dell'inizio dell'audio dall'inizio del periodo: 0,5 s in FT8 e FT4, 1 s in JT65 e JT9.
     pub fn tx_delay(self) -> Duration {
         match self {
-            Mode::Ft8 | Mode::Ft4 | Mode::Q65 | Mode::Msk144 => Duration::from_millis(500),
-            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(1_000),
+            Mode::Ft8 | Mode::Ft4 | Mode::Msk144 => Duration::from_millis(500),
+            // Q65: 0,5 s a 15 e 30 s, 1 s dai 60 s in su
+            Mode::Q65 if q65_period_s() < 60 => Duration::from_millis(500),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 => Duration::from_millis(1_000),
         }
     }
 
@@ -44,8 +75,8 @@ impl Mode {
             Mode::Jt9 => Duration::from_millis(49_960),
             // 206 simboli da 0,2286 s
             Mode::Jt4 => Duration::from_millis(47_090),
-            // 85 simboli da 0,3 s dopo 0,5 s
-            Mode::Q65 => Duration::from_millis(26_000),
+            // 85 simboli dopo il ritardo d'inizio (26 s in Q65-30)
+            Mode::Q65 => Mode::Q65.tx_delay() + Duration::from_millis(q65_message_ms(q65_period_s())),
             // il quadro si ripete fino a fine periodo: si puo' partire fino a 12 s
             Mode::Msk144 => Duration::from_millis(12_000),
         }

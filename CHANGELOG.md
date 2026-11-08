@@ -5,6 +5,7 @@
 - **Accendi/Spegni la radio**: 15 s di attesa per l'accensione (Hamlib aspetta la radio) e alla chiusura Aurora aspetta il core, cosi' lo spegnimento fa in tempo.
 - **DX Cluster e Log**: colonne compatte, titoli in linea con i dati, paese separato.
 - **TCI** (SunSDR/ExpertSDR, ANAN con Thetis): nuovo sistema di controllo nella scheda Radio con l'indirizzo del server (di base `127.0.0.1:40001`); frequenza, modo USB/USB dati e PTT via rete, ricollegamento automatico. L'audio passa ancora dal cavo audio virtuale.
+- **Q65 completo**: periodi da 15, 30, 60, 120 e 300 s e sottomodi da A a E, scelti con due tendine accanto al selettore dei modi («Q65-60B») e ricordati alla riapertura; durata dei periodi e trasmissione seguono la scelta. Ricezione come WSJT-X: ipotesi AP del QSO (CQ, mio nominativo, nominativo del DX, RRR/73/RR73), metrica dell'evanescenza rapida per EME e scatter (tabelle lorentziane e gaussiane), media dei periodi della stessa parita' per i segnali troppo deboli per un periodo solo.
 
 ## 0.11.197 - 2026-11-08
 - **Accendi e Spegni la radio** (come JTDX, `RigPower`/`RigPower_off`): due caselle nella scheda Radio con Hamlib; `\set_powerstat 1` al primo collegamento, `\set_powerstat 0` alla chiusura di Aurora.
