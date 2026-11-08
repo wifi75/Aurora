@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.198',
-    released: '2026-11-08T15:19:57Z',
+    released: '2026-11-08T15:28:16Z',
     kind: 'new',
     title: ['QSO che si chiudono di nuovo, scheda SDR, Q65 più sensibile e veloce, verifica SuperFox', 'QSOs completing again, SDR tab, more sensitive and faster Q65, SuperFox verification', 'QSOs schließen wieder ab, SDR-Reiter, empfindlicheres und schnelleres Q65, SuperFox-Prüfung', 'Les QSO se terminent de nouveau, onglet SDR, Q65 plus sensible et rapide, vérification SuperFox', 'Los QSO vuelven a cerrarse, pestaña SDR, Q65 más sensible y rápido, verificación SuperFox', 'Os QSO voltam a fechar-se, separador SDR, Q65 mais sensível e rápido, verificação SuperFox'],
     text: [
