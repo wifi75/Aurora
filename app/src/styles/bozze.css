@@ -99,11 +99,11 @@ html[data-bozza] input[type='submit'] {
 }
 
 /* al passaggio del mouse lo sfondo di ogni pulsante cambia in modo ben visibile (senza ombre); i tasti del display della radio no: hanno i colori dello stato (TUNER, BUSY, ATT) e il loro bordo bianco */
-html[data-bozza] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
+html[data-bozza] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
   background: #1d3157 !important;
   border-color: #4b6bb0 !important;
 }
-html[data-bozza][data-theme='light'] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
+html[data-bozza][data-theme='light'] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):hover:not(:disabled) {
   background: #dfe8f6 !important;
   border-color: #3f5a8e !important;
 }

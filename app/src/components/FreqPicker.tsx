@@ -53,7 +53,7 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown 
     <div className="freq-picker" ref={box}>
       <button
         type="button"
-        className="glass freq-picker-btn"
+        className="glass freq-picker-btn fp-chip"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('band.freqs')}
@@ -90,8 +90,8 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown 
                       type="button"
                       role="menuitemradio"
                       aria-checked={r.hz === dialHz}
-                      className={`${r.preferred ? 'is-main' : 'is-alt'}${r.hz === dialHz ? ' is-on' : ''}`}
-                      title={`${mhz(r.hz)} MHz${r.region !== 'ALL' ? ` (${r.region})` : ''}`}
+                      className={`fp-chip ${r.preferred ? 'is-main' : 'is-alt'}${r.hz === dialHz ? ' is-on' : ''}`}
+                      title={`${r.preferred ? t('band.tipMain') : t('band.tipAlt')}${r.region !== 'ALL' ? ` · ${t('band.tipRegion', { r: r.region.slice(1) })}` : ''}`}
                       onClick={() => {
                         setOpen(false);
                         if (r.hz !== dialHz) onPick(r.hz);

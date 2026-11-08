@@ -2,8 +2,7 @@ import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
-import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
-import { BandBar } from '../components/BandBar';
+import { getCat, getControls, getOnline, getStationInfo, postBand, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList } from '../components/DecodeList';
@@ -68,7 +67,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df']);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
-  const pendingBand = useStation((s) => s.pendingBand);
   const connection = useStation((s) => s.connection);
   const displayHidden = useRadioDisplay((s) => s.pref.hidden);
   const chosenBands = useBandFilter((s) => s.bands);
@@ -372,14 +370,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             mode={status?.mode ?? ''}
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
-          />
-          <BandBar
-            bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
-            dialHz={status?.dial_hz ?? 0}
-            pendingBand={pendingBand}
-            locked={status?.transmitting ?? false}
-            onPick={info.data?.rig_control || info.data?.manual_dial ? (band) => void pickBand(band) : undefined}
-            onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
           <FreqPicker
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
