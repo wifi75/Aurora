@@ -141,3 +141,5 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 .ctc-wf-handle { height: 0.8rem; display: grid; place-items: center; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--text) 6%, transparent); border-bottom: 1px solid var(--ct-line); }
 .ctc-wf-handle span { width: 3rem; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 35%, transparent); }
 .ctc-wf-handle:hover span { background: var(--ct-violet); }
+/* la tendina del contest: testo centrato in verticale (un select con display flex teneva il testo in alto) */
+.ctc-score select.ctc-chip--sel { display: block; height: 40px; line-height: 38px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
