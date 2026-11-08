@@ -675,6 +675,8 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
           <AlertBox k="alertMyCall" label={t('not2.alertMy')} hint={t('tip.not2.alertMy')} />
           <AlertBox k="alertDxCall" label={t('not2.alertDx')} hint={t('tip.not2.alertDx')} />
           <SoundBox kinds={['my_call']} label={t('not2.soundMy')} hint={t('tip.not2.soundMy')} />
+          <Check label={t('not2.popNew')} hint={t('tip.not2.popNew')} checked={view.popNew} onChange={(v) => setView({ popNew: v })} />
+          <Check label={t('not2.popNewBand')} hint={t('tip.not2.popNew')} checked={view.popNewBand} onChange={(v) => setView({ popNewBand: v })} />
           <Check
             label={t('not2.soundFirst')}
             hint={t('tip.not2.soundFirst')}

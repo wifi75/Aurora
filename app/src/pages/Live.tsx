@@ -22,6 +22,7 @@ import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
+import { NewDxAlert } from '../components/NewDxAlert';
 import { StatusBar } from '../components/StatusBar';
 import { SpotMarkers } from '../components/SpotMarkers';
 import { StopButton } from '../components/StopButton';
@@ -394,6 +395,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         <RadioDisplayHeader />
       </div>
       <DiagnosisBar />
+      {phone ? null : <NewDxAlert onReply={(id) => void onReply(id)} />}
       {phone ? (
         <PhoneTabs
           titles={titles}

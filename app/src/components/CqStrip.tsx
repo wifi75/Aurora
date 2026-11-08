@@ -3,6 +3,7 @@ import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { senderOf } from '../lib/wishlist';
+import { utcTime } from './NewDxAlert';
 
 interface Props {
   decodes: DecodedMessage[];
@@ -102,7 +103,7 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
           <button
             key={d.id}
             type="button"
-            className={`cq-chip${d.tag && d.tag !== 'cq' ? ' cq-chip--new' : ''}${d.tag === 'worked_call' ? ' cq-chip--worked' : ''}`}
+            className={`cq-chip${d.tag && d.tag !== 'cq' ? ' cq-chip--new' : ''}${d.tag === 'worked_call' ? ' cq-chip--worked' : ''}${d.tag === 'new_dxcc' || d.tag === 'new_dxcc_band' ? ' cq-chip--flash' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as React.CSSProperties) : undefined}
             title={d.country ?? undefined}
             onDoubleClick={() => onReply(d.id)}
@@ -115,6 +116,9 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
             <span className="cq-chip-flag">{code ? <span className={`fi fi-${code}`} aria-hidden="true" /> : null}</span>
             <span className="cq-chip-text">{d.text}</span>
             <span className="cq-chip-snr num muted">{d.snr}</span>
+            {d.country ? <span className="cq-chip-country">{d.country}</span> : null}
+            {/* l'ora dell'ultima ricezione: la casella mostra sempre il messaggio piu' recente della stazione */}
+            <span className="cq-chip-time num">{utcTime(d.time_ms)}</span>
           </button>
         );
       })}

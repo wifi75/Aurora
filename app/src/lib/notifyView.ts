@@ -51,6 +51,9 @@ export interface NotifyView {
   alertDxccOb: boolean;
   alertGridOb: boolean;
   alertPxOb: boolean;
+  /** Avviso in evidenza (scheda che lampeggia e suono proprio) per un DXCC nuovo e per un DXCC nuovo sulla banda: accesi di fabbrica. */
+  popNew: boolean;
+  popNewBand: boolean;
 }
 
 /** Le chiavi degli avvisi, nell'ordine della schermata. */
@@ -63,7 +66,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultNotifyView(): NotifyView {
-  return { workedColor: false, workedStriked: true, workedUnderlined: false, workedDontShow: false, invert: false, otherMarker: true, redMarker: true, blueMarker: false, hideHint: false, differentBackground: false, diffYellow: false, highlightDxCall: true, highlightDxGrid: false, beepFirst: false, alertMyCall: true, alertDxCall: false, alertCqz: false, alertItu: false, alertDxcc: false, alertGrid: false, alertPx: false, alertCqzOb: false, alertItuOb: false, alertDxccOb: false, alertGridOb: false, alertPxOb: false };
+  return { workedColor: false, workedStriked: true, workedUnderlined: false, workedDontShow: false, invert: false, otherMarker: true, redMarker: true, blueMarker: false, hideHint: false, differentBackground: false, diffYellow: false, highlightDxCall: true, highlightDxGrid: false, beepFirst: false, alertMyCall: true, alertDxCall: false, alertCqz: false, alertItu: false, alertDxcc: false, alertGrid: false, alertPx: false, alertCqzOb: false, alertItuOb: false, alertDxccOb: false, alertGridOb: false, alertPxOb: false, popNew: true, popNewBand: true };
 }
 
 /** Le dipendenze del motore: barra e sottolinea si escludono (vince la barra), il blu vale solo con il rosso. */

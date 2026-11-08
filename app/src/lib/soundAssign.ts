@@ -38,12 +38,13 @@ export const SOUND_EVENTS = [
   'alert_dx_call',
   'first_message',
   'wanted',
+  'new_dx_popup',
 ] as const;
 export type SoundEvent = (typeof SOUND_EVENTS)[number];
 export type Assign = Record<SoundEvent, string | null>;
 
 /** Le funzioni che non sono un tipo di messaggio con colore: il loro nome sta nei testi `snd.ev.*`. */
-export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted'] as const satisfies readonly SoundEvent[];
+export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted', 'new_dx_popup'] as const satisfies readonly SoundEvent[];
 export type ExtraEvent = (typeof EXTRA_EVENTS)[number];
 
 export function isTagEvent(event: SoundEvent): event is Extract<SoundEvent, ColorKey> {
@@ -63,6 +64,8 @@ export function legacySound(event: SoundEvent, alertSound: string): string {
       return 'rise3';
     case 'wanted':
       return 'rise4';
+    case 'new_dx_popup':
+      return 'dxalarm';
     case 'alert_my_call':
     case 'alert_dx_call':
       return alertSound;
@@ -94,6 +97,7 @@ export const AUTO_SOUNDS: Record<SoundEvent, string> = {
   alert_dx_call: 'cwdx',
   first_message: 'chirp',
   wanted: 'rise4',
+  new_dx_popup: 'dxalarm',
 };
 
 export function emptyAssign(): Assign {
@@ -121,7 +125,7 @@ export function eventOfAlert(key: AlertKey): SoundEvent {
   return (Object.entries(ALERT_OF_TAG).find(([, k]) => k === key)?.[0] ?? 'new_dxcc') as SoundEvent;
 }
 
-type GateView = Pick<NotifyView, AlertKey | 'beepFirst'>;
+type GateView = Pick<NotifyView, AlertKey | 'beepFirst' | 'popNew' | 'popNewBand'>;
 
 /** (a) L'avviso della funzione e' acceso come prima? */
 export function gateOn(event: SoundEvent, sound: Partial<Record<string, boolean>>, view: GateView): boolean {
@@ -134,6 +138,8 @@ export function gateOn(event: SoundEvent, sound: Partial<Record<string, boolean>
       return view.beepFirst;
     case 'wanted':
       return true;
+    case 'new_dx_popup':
+      return view.popNew || view.popNewBand;
     default: {
       const alert = ALERT_OF_TAG[event];
       return sound[event] === true || (alert !== undefined && view[alert]);
@@ -185,6 +191,10 @@ export function readAssign(storage: ReadableStorage): Assign {
             const value = (map as Record<string, unknown>)[event];
             if (typeof value === 'string' && hasSound(value)) assign[event] = value;
           }
+          // l'avviso del DXCC nuovo e' arrivato dopo: chi non l'ha mai scelto ha il suo suono di fabbrica (null salvato = nessun suono, scelto a mano)
+          if (!('new_dx_popup' in map)) assign.new_dx_popup = 'dxalarm';
+        } else {
+          assign.new_dx_popup = 'dxalarm';
         }
         return assign;
       }
@@ -192,7 +202,7 @@ export function readAssign(storage: ReadableStorage): Assign {
   } catch {
     return emptyAssign();
   }
-  return migrateLegacy(storage);
+  return { ...migrateLegacy(storage), new_dx_popup: 'dxalarm' };
 }
 
 export function saveAssign(storage: WritableStorage, assign: Assign): void {
@@ -216,6 +226,9 @@ export function enableGate(event: SoundEvent): void {
       useNotifyView.getState().set({ beepFirst: true });
       break;
     case 'wanted':
+      break;
+    case 'new_dx_popup':
+      useNotifyView.getState().set({ popNew: true });
       break;
     default:
       useNotify.getState().setFlag('sound', event, true);

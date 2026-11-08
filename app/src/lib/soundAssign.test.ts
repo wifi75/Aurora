@@ -11,7 +11,7 @@ const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { thr
 
 const decode = (id: number, tag: DecodedMessage['tag'], text = `msg ${id}`): DecodedMessage => ({ id, time_ms: id, snr: -10, delta_time: 0, freq_hz: 1500, text, tag });
 
-const NO_ALERTS = { alertMyCall: false, alertDxCall: false, alertCqz: false, alertItu: false, alertDxcc: false, alertGrid: false, alertPx: false, alertCqzOb: false, alertItuOb: false, alertDxccOb: false, alertGridOb: false, alertPxOb: false, beepFirst: false };
+const NO_ALERTS = { alertMyCall: false, alertDxCall: false, alertCqz: false, alertItu: false, alertDxcc: false, alertGrid: false, alertPx: false, alertCqzOb: false, alertItuOb: false, alertDxccOb: false, alertGridOb: false, alertPxOb: false, beepFirst: false, popNew: false, popNewBand: false };
 
 function state(assign: Partial<Assign>, over: Partial<RingState> = {}): RingState {
   return { assign: { ...emptyAssign(), ...assign }, sound: {}, view: NO_ALERTS, enabled: true, muteWhileTx: true, transmitting: false, volume: 0.5, ...over };
@@ -49,7 +49,8 @@ describe('migration of the old preferences', () => {
   it('assigns nothing when nothing was ever saved', () => {
     expect(migrateLegacy(memory())).toEqual(emptyAssign());
     expect(migrateLegacy(null)).toEqual(emptyAssign());
-    expect(readAssign(memory())).toEqual(emptyAssign());
+    // solo l'avviso in evidenza del DXCC nuovo ha il suo suono di fabbrica
+    expect(readAssign(memory())).toEqual({ ...emptyAssign(), new_dx_popup: 'dxalarm' });
   });
 
   it('gives the old standard sound to every type that had its sound on', () => {
