@@ -56,6 +56,16 @@ pub struct SavedControls {
     /// Sottomodo di JT4 (0 = A ... 6 = G). Nei file scritti prima manca (A).
     #[serde(default)]
     pub jt4_sub: u8,
+    /// Periodo di Q65 in secondi (15, 30, 60, 120, 300). Nei file scritti prima manca (30).
+    #[serde(default = "default_q65_period")]
+    pub q65_period: u32,
+    /// Sottomodo di Q65 (0 = A ... 4 = E). Nei file scritti prima manca (A).
+    #[serde(default)]
+    pub q65_sub: u8,
+}
+
+fn default_q65_period() -> u32 {
+    30
 }
 
 impl SavedControls {
@@ -70,10 +80,37 @@ pub fn jt4_submode() -> jt::jt4::Submode {
     jt::jt4::Submode(JT4_SUBMODE.load(Ordering::Relaxed).min(6))
 }
 
-/// Il nome del modo come lo mostrano pagina e log: JT4 con la lettera del sottomodo.
+/// Periodo e sottomodo di Q65 in uso: li tengono `qso_native` (durata del periodo) e `tx_native` (avvio della trasmissione).
+pub fn q65_setup() -> jt::q65::Setup {
+    jt::q65::Setup::new(qso_native::slot::q65_period_s(), qso_native::slot::q65_submode()).unwrap_or_default()
+}
+
+/// Sceglie periodo e sottomodo di Q65 per sequenza, trasmissione e ricezione. Valori fuori campo si ignorano.
+pub fn set_q65(period_s: u32, submode: u8) {
+    if jt::q65::Setup::new(period_s, submode).is_some() {
+        qso_native::slot::set_q65(period_s, submode);
+        tx_native::slot::set_q65_period_s(period_s);
+    }
+}
+
+/// «Q65-60B» -> (60, 1): il nome di WSJT-X con periodo e sottomodo.
+pub fn parse_q65(mode: &str) -> Option<(u32, u8)> {
+    let rest = mode.trim().to_uppercase();
+    let rest = rest.strip_prefix("Q65-")?;
+    let letter = rest.chars().last()?;
+    let period: u32 = rest[..rest.len() - 1].parse().ok()?;
+    let sub = u8::try_from(u32::from(letter).checked_sub(u32::from('A'))?).ok()?;
+    jt::q65::Setup::new(period, sub).map(|s| (s.period_s, s.submode))
+}
+
+/// Il nome del modo come lo mostrano pagina e log: JT4 con la lettera del sottomodo, Q65 con periodo e sottomodo («Q65-30A»).
 pub fn mode_label(mode: Mode) -> String {
     match mode {
         Mode::Jt4 => format!("JT4{}", jt4_submode().letter()),
+        Mode::Q65 => {
+            let s = q65_setup();
+            format!("Q65-{}{}", s.period_s, char::from(b'A' + s.submode))
+        }
         other => other.name().to_string(),
     }
 }
@@ -295,6 +332,8 @@ impl NativeControls {
             attenuation: self.attenuation.load(Ordering::Relaxed),
             levels,
             jt4_sub: JT4_SUBMODE.load(Ordering::Relaxed),
+            q65_period: q65_setup().period_s,
+            q65_sub: q65_setup().submode,
         }
     }
 
@@ -322,6 +361,7 @@ impl NativeControls {
         });
         self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
+        set_q65(saved.q65_period, saved.q65_sub);
         if let Ok(mut memory) = self.levels.lock() {
             memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
         }
@@ -667,7 +707,14 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Jt4);
                 Ok(())
             }
-            "Q65" | "Q65-30A" => {
+            "Q65" => {
+                self.controls.set_mode(Mode::Q65);
+                Ok(())
+            }
+            // Q65-15A ... Q65-300E: periodo e sottomodo; il motore cambia periodi al blocco di audio dopo
+            m if m.starts_with("Q65-") => {
+                let (period, sub) = parse_q65(m).ok_or_else(|| RigError(format!("modo non gestito: {m}")))?;
+                set_q65(period, sub);
                 self.controls.set_mode(Mode::Q65);
                 Ok(())
             }
@@ -694,8 +741,8 @@ impl Rig for NativeRig {
             (Mode::Ft4, false) => "TX 7.5",
             (Mode::Jt65 | Mode::Jt9 | Mode::Jt4, true) => "TX even",
             (Mode::Jt65 | Mode::Jt9 | Mode::Jt4, false) => "TX odd",
-            (Mode::Q65, true) => "TX 00",
-            (Mode::Q65, false) => "TX 30",
+            (Mode::Q65, true) => "TX even",
+            (Mode::Q65, false) => "TX odd",
             (Mode::Msk144, true) => "TX 00/30",
             (Mode::Msk144, false) => "TX 15/45",
         };
@@ -784,6 +831,17 @@ impl Rig for NativeRig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// I nomi di WSJT-X «Q65-60B»: periodo e sottomodo; quelli che non esistono si scartano.
+    #[test]
+    fn q65_names_carry_period_and_submode() {
+        assert_eq!(parse_q65("Q65-30A"), Some((30, 0)));
+        assert_eq!(parse_q65("q65-60b"), Some((60, 1)));
+        assert_eq!(parse_q65("Q65-300E"), Some((300, 4)));
+        for bad in ["Q65", "Q65-30F", "Q65-45A", "Q65-", "Q65-A", "Q65-30"] {
+            assert_eq!(parse_q65(bad), None, "{bad}");
+        }
+    }
 
     fn rig() -> (NativeRig, Arc<NativeControls>) {
         let controls = Arc::new(NativeControls::default());

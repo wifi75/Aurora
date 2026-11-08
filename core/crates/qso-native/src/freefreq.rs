@@ -53,8 +53,8 @@ impl FreeTxParams {
                 Mode::Jt9 => 20.0,
                 // JT4A: quattro toni a 4,375 Hz
                 Mode::Jt4 => 20.0,
-                // Q65-30A: 65 toni a 3,33 Hz
-                Mode::Q65 => 220.0,
+                // Q65: 65 toni (217 Hz in Q65-30A, fino a 3,5 kHz in Q65-30E)
+                Mode::Q65 => crate::slot::q65_bandwidth_hz().ceil() as f32 + 3.0,
                 // MSK144 occupa tutta la banda audio (toni a 1000 e 2000 Hz)
                 Mode::Msk144 => 1000.0,
             },

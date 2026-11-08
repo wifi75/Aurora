@@ -203,7 +203,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                         Mode::Ft8 => 15,
                         Mode::Ft4 => 7,
                         Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60,
-                        Mode::Q65 => 30,
+                        Mode::Q65 => rig::q65_setup().period_s,
                         Mode::Msk144 => 15,
                     }),
                     own_continent: live.own_continent.clone(),
@@ -279,6 +279,9 @@ pub fn start_with_save(
         // il modo si sceglie con il pulsante: cambia la durata dei periodi, il decoder e la trasmissione
         let mut mode = live.as_ref().map_or(Mode::Ft8, |l| l.controls.mode());
         let mut assembler = slots::SlotAssembler::new(mode);
+        // Q65: periodo e sottomodo in uso (cambiano la durata dei periodi) e la media dei periodi deboli
+        let mut q65_now = rig::q65_setup();
+        let mut q65_avg = jt::q65::Averager::new();
         let mut msk_rt = mskrt::Realtime::default();
         let mut hashes = CallHashes::default();
         // i nominativi conosciuti (log e ascolto) per il filtro contro i falsi decode
@@ -415,9 +418,27 @@ pub fn start_with_save(
                     assembler = slots::SlotAssembler::new(mode);
                     last_slot = None;
                     last_texts.clear();
+                    q65_avg.clear();
                     if let Some(d) = driver.as_mut() {
                         for line in d.set_mode(mode) {
                             tracing::info!("trasmissione: {line}");
+                        }
+                    }
+                }
+                // Q65: un altro periodo o sottomodo rifa' i periodi come un cambio di modo
+                let q65_wanted = rig::q65_setup();
+                if q65_wanted != q65_now {
+                    q65_now = q65_wanted;
+                    q65_avg.clear();
+                    if mode == Mode::Q65 {
+                        tracing::info!("motore proprio: {}", rig::mode_label(mode));
+                        assembler = slots::SlotAssembler::new(mode);
+                        last_slot = None;
+                        last_texts.clear();
+                        if let Some(d) = driver.as_mut() {
+                            for line in d.period_changed() {
+                                tracing::info!("trasmissione: {line}");
+                            }
                         }
                     }
                 }
@@ -426,7 +447,7 @@ pub fn start_with_save(
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_period_options(&ft4_options, &l.controls, &l.de_call), &mut hashes, &mut ft8_history);
+                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_period_options(&ft4_options, &l.controls, &l.de_call), &mut hashes, &mut ft8_history, &mut jt::q65::Averager::new());
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -580,7 +601,7 @@ pub fn start_with_save(
                     };
                     ft8::decode::decode_slot_streaming(&slot.samples, &options, &mut hashes, Some(&mut ft8_history), &mut on_pass).into_iter().map(|d| d.decoded).collect()
                 } else {
-                    decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history)
+                    decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history, &mut q65_avg)
                 };
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 if matches!(mode, Mode::Ft8 | Mode::Ft4) {
@@ -594,7 +615,7 @@ pub fn start_with_save(
                 };
                 let mut other_texts: Vec<String> = Vec::new();
                 if let Some(other) = other_mode.filter(|_| live.as_ref().is_some_and(|l| l.controls.switch_on("jt_both"))) {
-                    for d in decode_period(other, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history) {
+                    for d in decode_period(other, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history, &mut q65_avg) {
                         if !decoded.iter().any(|x| x.text == d.text) {
                             other_texts.push(d.text.clone());
                             decoded.push(d);
@@ -882,6 +903,7 @@ fn decode_period(
     ft4_options: &ft4::decode::Options,
     hashes: &mut CallHashes,
     ft8_history: &mut ft8::decode::PeriodHistory,
+    q65_avg: &mut jt::q65::Averager,
 ) -> Vec<ft8::decode::Decoded> {
     match mode {
         Mode::Ft8 => ft8::decode::decode_slot_with_history(samples, ft8_options, hashes, ft8_history),
@@ -903,9 +925,23 @@ fn decode_period(
             },
             hashes,
         ).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
+        // Q65: periodo e sottomodo scelti, ipotesi AP con il mio nominativo e il DX, metrica dell'evanescenza (lorentziana, come WSJT-X)
+        // e media dei periodi della stessa parita'; i messaggi da AP o dalla media hanno il segno di quelli a priori di FT8
         Mode::Q65 => {
-            let setup = jt::q65::Setup::new(30, 0).unwrap_or_default();
-            jt::q65::decode(samples, &jt::q65::Options { setup, ..jt::q65::Options::default() }, hashes).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect()
+            let setup = rig::q65_setup();
+            let o = jt::q65::Options {
+                setup,
+                my_call: ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
+                dx_call: ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
+                fading: Some(jt::q65::Fading::Lorentzian),
+                ..jt::q65::Options::default()
+            };
+            // il numero del periodo dall'inizio del periodo (`period_key` conta i quarti di minuto)
+            let index = ft8_options.period_key.map_or(0, |k| k * 15 / u64::from(setup.period_s));
+            jt::q65::decode_averaged(samples, &o, hashes, q65_avg, index)
+                .into_iter()
+                .map(|d| ft8::decode::Decoded { hint: d.ap > 0 || d.averaged > 1, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
+                .collect()
         }
     }
 }
