@@ -67,7 +67,7 @@ Version 0.11.204: own FT8, FT4, JT65 and JT9 engine with receive and transmit, C
 - **Logs and integrations**: direct upload to Wavelog/Cloudlog, ClubLog, QRZ.com and LoTW (TQSL); UDP integrations with multicast and per-program options, N1MM XML; ADIF export page with «Save as».
 - **From WSJT-X 3**: a7/a8 decoding and multithread FT8, Wait and Reply/Call, band hopping, full duplex, Fox verification (OTP), Tx block over UDP, stop on high SWR, unencodable messages blocked, WSJT-X 3 filters, Hamlib 4.7.2.
 - **Display and cluster**: Yaesu FT-2000 and Icom IC-7610 style radio displays; NG3K DXpeditions highlighted in the DX Cluster in a colour of your choice; live waterfall preview in the settings; always-on crash diagnostics.
-- **Contest (beta)**: dedicated page with 17 FT8/FT4 and VHF contests (rules and yearly dates), contest sequencing as in WSJT-X, live dupes, points, multipliers and projected score, category and operators, log with Cabrillo, EDI and ADIF.
+- **Contest (beta)**: dedicated page with 20 FT8/FT4 and VHF contests (rules and yearly dates), contest sequencing as in WSJT-X, live dupes, points, multipliers and projected score, category and operators, log with Cabrillo, EDI and ADIF.
 - **UltraFOX**: Aurora's own Rust implementation with the AQP-127 polar code (implementation by Tiziano Cassone IU3WJQ), compatible with WSJT-X SuperFox (transmit and receive). Experimental.
 
 What is missing: `docs/mancante.md`. Results of the tests with JTDX: `docs/fase0-rapporto.md` (documentation in Italian).
