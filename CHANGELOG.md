@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 - **Avvio**: appena la radio risponde (controllo ogni 0,3 s) va sull'ultima banda scelta, sulla frequenza principale del modo in uso; la banda si ricorda in `ultima-banda.txt`.
+- **Q65: modello di evanescenza e «Cancella media»**: accanto a periodo e sottomodo di Q65 una tendina Lor/Gau (modello lorentziano come WSJT-X, o gaussiano) e un pulsantino che svuota la media dei periodi; la scelta resta dopo il riavvio.
+- **Q65: confronto con WSJT-X** su segnali di prova in `docs/q65-confronto.md`.
 - **Decodifica anticipata FT8** (come `m_earlyDecode` di WSJT-X): a 11,81 s una decodifica veloce del periodo non ancora finito mostra subito le stazioni forti; a fine periodo la decodifica intera aggiunge solo i messaggi nuovi.
 - **Accendi/Spegni la radio**: 15 s di attesa per l'accensione (Hamlib aspetta la radio) e alla chiusura Aurora aspetta il core, cosi' lo spegnimento fa in tempo.
 - **DX Cluster e Log**: colonne compatte, titoli in linea con i dati, paese separato.

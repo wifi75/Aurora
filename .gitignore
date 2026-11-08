@@ -16,3 +16,4 @@ desktop/src-tauri/hamlib-bundle/*
 # File dei paesi incluso nel programma: lo scaricano da country-files.com gli script di compilazione, non si committa
 desktop/src-tauri/cty/*
 !desktop/src-tauri/cty/.gitkeep
+app/tsconfig.tsbuildinfo
