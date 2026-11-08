@@ -1254,3 +1254,12 @@ html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
 @container (min-width: 301px) {
   .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { display: table-cell !important; }
 }
+/* Log: spaziatura regolare e allineamenti logici (data tenue, nominativo in evidenza, banda e modo al centro, rapporti numeri allineati,
+   paese a sinistra con «…» se non entra) */
+.log4om-table th, .log4om-table td { padding-left: 5px !important; padding-right: 5px !important; }
+.log4om-table th:first-child, .log4om-table td:first-child { padding-left: 8px !important; }
+.log4om-table th:nth-child(3), .log4om-table td:nth-child(3),
+.log4om-table th:nth-child(4), .log4om-table td:nth-child(4) { text-align: center; }
+.log4om-table th:nth-child(5), .log4om-table td:nth-child(5) { text-align: center; font-variant-numeric: tabular-nums; }
+.log4om-table td.log4om-date { opacity: .7; }
+.log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { padding-left: 8px !important; text-align: left; }
