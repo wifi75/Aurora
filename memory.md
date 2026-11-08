@@ -3,6 +3,8 @@
 Stato al 2026-11-08, versione 0.11.203 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-08
+- Le issue di GitHub le gestisce il proprietario: il controllo automatico ogni ora e' stato eliminato (aveva risposto con informazioni superate); mai rispondere sulle issue senza il suo via libera.
+- Aggiornamento su Windows: l'installatore parte da uno script staccato che aspetta la chiusura di Aurora e dell'agente (0.11.203); prima «Impossibile chiudere Aurora» a meta' installazione.
 - Pagina Contest pubblicata in beta nella 0.11.202 (crate `contest`, regole TOML in `core/crates/contest/regole/`, piano in `docs/piano-contest.md`); mancano allenamento, analisi e controlli prima del PTT (docs/tasks.md voce 27).
 - Automazioni: interruttore Prova a vuoto / Modo reale nella scheda; in modo reale Abilita Tx automatico; seguono i filtri di Attivita' di banda (richiesta ON7KEC, issue #6).
 - Decodifica anticipata FT8 (11,8 s) SPENTA: i messaggi letti in anticipo si perdevano nella sequenza (R+rapporto ignorato). Da riaccendere solo facendoli passare dalla sequenza.

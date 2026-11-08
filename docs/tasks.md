@@ -55,3 +55,13 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
   - EDI: righe `ERROR` per i seriali persi (oggi solo per i QSO segnati come errore) e controllo dei campi `PSect`/`SAnte`;
   - fasi 7-12 del piano: consiglio di banda e modo, mappa con PSK Reporter, ponte N1MM, simulatore («Allenamento»), analisi del dopo-gara («Analisi»), scheda per il telefono, multi-op in rete;
   - date e valori segnati «da verificare» nei file di regole (FT Challenge, ARRL Jan/Sep VHF, RSGB FT4, PACCdigi, EU VHF).
+
+## 28. Automazioni: idee di ON7KEC (issue #6)
+
+- Fatto (0.11.202-0.11.203): interruttore Prova a vuoto / Modo reale, Abilita Tx automatico in modo reale, filtri di Attivita' di banda seguiti dalle risposte automatiche.
+- Resta (dalle schermate del suo «WSJT-X Auto»): filtri di caccia a pulsanti (chip) al posto delle caselle, coda «prossime stazioni» visibile nella scheda, pannellino degli ultimi QSO fatti in automatico.
+
+## 29. FT-991(A) Link (SP4UBW)
+
+- Fatto (0.11.203): nessun errore durante il cambio di banda, DATA-USB rimandato a ogni cambio di banda, frequenze dei 70 cm.
+- Resta: prova dal vivo con FTLink 4.16 e lo S-meter `SM0;`.
