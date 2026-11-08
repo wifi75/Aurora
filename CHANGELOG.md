@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.197 - 2026-11-08
 - **Accendi e Spegni la radio** (come JTDX, `RigPower`/`RigPower_off`): due caselle nella scheda Radio con Hamlib; `\set_powerstat 1` al primo collegamento, `\set_powerstat 0` alla chiusura di Aurora.
 - **Band Hopping con MSK144** («MSK144 6m»).
 - **Agente nel tray**: «Cerca aggiornamenti» risponde sempre, anche quando GitHub non risponde (prima nessuna finestra).

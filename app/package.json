@@ -1,7 +1,7 @@
 {
   "name": "aurora-app",
   "private": true,
-  "version": "0.11.196",
+  "version": "0.11.197",
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
