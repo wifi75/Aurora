@@ -137,6 +137,17 @@
   --mode-ink: var(--mode-jt9-ink);
 }
 
+/* JT4 arancio (anche JT4A ... JT4G sul pulsante del modo in uso) e Q65 viola */
+.mode-switch button[data-mode^='JT4'] {
+  --mode: var(--mode-jt4);
+  --mode-ink: var(--mode-jt4-ink);
+}
+
+.mode-switch button[data-mode='Q65'] {
+  --mode: var(--mode-q65);
+  --mode-ink: var(--mode-q65-ink);
+}
+
 /* a riposo il colore del modo resta sul bordo e sul testo, cosi' si distinguono anche da spenti */
 .mode-switch button {
   border-color: color-mix(in srgb, var(--mode) 55%, transparent);

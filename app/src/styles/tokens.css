@@ -19,6 +19,10 @@
   --mode-jt65-ink: #06260f;
   --mode-jt9: #ff7eb6;
   --mode-jt9-ink: #35081d;
+  --mode-jt4: #ffb347;
+  --mode-jt4-ink: #3a2200;
+  --mode-q65: #a98bff;
+  --mode-q65-ink: #1c0f45;
   --accent-ink: #04201d;
   --rare: #f2a93b;
   --rare-ink: #241604;
@@ -113,6 +117,10 @@
   --mode-jt65-ink: #ffffff;
   --mode-jt9: #b3306c;
   --mode-jt9-ink: #ffffff;
+  --mode-jt4: #b86a00;
+  --mode-jt4-ink: #ffffff;
+  --mode-q65: #6a46d6;
+  --mode-q65-ink: #ffffff;
   --accent-ink: #ffffff;
   --rare: #9a5d00;
   --rare-ink: #ffffff;
