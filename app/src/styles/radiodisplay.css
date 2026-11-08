@@ -966,3 +966,18 @@
 .live-top > :last-child {
   right: var(--rd-right, 0px);
 }
+
+/* lo zoom copre il display fisso (stesso angolo in alto a destra) e ha uno sfondo pieno: prima stava sotto, trasparente, e si mescolava con le finestre */
+.rd-zoom {
+  top: 0;
+  right: 0;
+  background: #070b10;
+  border-color: #2a3f55;
+  box-shadow: 0 22px 50px -8px rgb(0 0 0 / 0.75);
+  backdrop-filter: none;
+}
+
+html[data-theme='light'] .rd-zoom {
+  background: #f4f6fa;
+  border-color: #c4cdda;
+}
