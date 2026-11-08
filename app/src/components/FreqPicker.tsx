@@ -10,6 +10,8 @@ interface Props {
   /** Va sulla frequenza scelta; senza, il selettore non si mostra. */
   onPick?(hz: number): void;
   locked?: boolean;
+  /** Solo queste bande (quelle scelte per la barra); senza, tutte. */
+  bands?: readonly string[];
 }
 
 /** Frequenza in MHz con tre decimali (quattro se serve: 7,0475). */
@@ -19,7 +21,7 @@ const mhz = (hz: number) => (hz / 1e6).toFixed(hz % 1000 === 0 ? 3 : 4);
  * Come in WSJT-X, tutte le frequenze del modo in uso dalla tabella delle Frequenze: un pulsante con la frequenza attuale apre un pannello
  * con una riga per banda; la frequenza standard e' piena, le alternative (anche DXpedition) piu' tenui.
  */
-export function FreqPicker({ dialHz, mode, onPick, locked = false }: Props) {
+export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -42,7 +44,7 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false }: Props) {
   }, [open]);
 
   const m = mode.toUpperCase().split('+')[0];
-  const rows = (table.data ?? []).filter((r) => r.mode.toUpperCase() === m).sort((a, b) => a.hz - b.hz);
+  const rows = (table.data ?? []).filter((r) => r.mode.toUpperCase() === m && (!shown || shown.includes(r.band))).sort((a, b) => a.hz - b.hz);
   if (!onPick || rows.length === 0) return null;
   const bands = [...new Set(rows.map((r) => r.band))];
   const current = bandOf(dialHz);

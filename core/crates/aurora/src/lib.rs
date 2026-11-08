@@ -361,11 +361,12 @@ impl RunningServer {
     }
 }
 
-/// La scelta dell'accesso senza codice fatta dal PC (Impostazioni > Smartphone/Tablet): «1» acceso, altrimenti spento.
+/// La scelta dell'accesso senza codice fatta dal PC (Impostazioni > Smartphone/Tablet): acceso di base (scelta del proprietario, 2026-11-08:
+/// sulla rete di casa niente codice); spento solo se il file dice «0». Da internet il codice resta sempre (`is_home_network`).
 const OPEN_ACCESS_FILE: &str = "accesso-libero.txt";
 
 fn read_open_access(path: &Path) -> bool {
-    std::fs::read_to_string(path).is_ok_and(|s| s.trim() == "1")
+    std::fs::read_to_string(path).map_or(true, |s| s.trim() != "0")
 }
 
 fn open_storage(data_dir: &Path, pair_ttl_secs: u64) -> Result<(Arc<DeviceStore>, Arc<Logbook>), StartError> {

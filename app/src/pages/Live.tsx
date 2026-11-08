@@ -382,6 +382,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
           />
           <FreqPicker
+            bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}
             mode={status?.mode ?? ''}
             locked={status?.transmitting ?? false}
