@@ -83,6 +83,16 @@ pub struct Release {
     pub assets: Vec<Asset>,
 }
 
+/// A che punto e' lo scaricamento del pacchetto d'installazione (per la barra di «Installa e riavvia»).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DownloadProgress {
+    pub file: String,
+    /// Byte gia' arrivati.
+    pub done: u64,
+    /// Byte in tutto (0 se non si sa).
+    pub total: u64,
+}
+
 /// Esito dell'ultimo controllo.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Status {
@@ -101,6 +111,8 @@ pub struct Status {
     /// L'ultima release trovata in assoluto.
     pub latest: Option<Release>,
     pub error: Option<String>,
+    /// Lo scaricamento del pacchetto in corso (o appena finito), se c'e'.
+    pub download: Option<DownloadProgress>,
 }
 
 /// «v1.2.3», «1.2.3» o «1.2.3-rc1» in (maggiore, minore, patch, prova).
@@ -233,6 +245,7 @@ pub struct UpdateService {
     config: Mutex<UpdateConfig>,
     state: Mutex<State>,
     notified_path: PathBuf,
+    download: Mutex<Option<DownloadProgress>>,
 }
 
 fn unix_ms() -> u64 {
@@ -259,7 +272,7 @@ impl UpdateService {
             .filter(|c| c.validate().is_ok())
             .unwrap_or_default();
         config.repo = config.repo.trim().to_string();
-        Arc::new(UpdateService { path: path.to_path_buf(), current: current.to_string(), api: api.trim_end_matches('/').to_string(), config: Mutex::new(config), state: Mutex::new(State { notified: std::fs::read_to_string(path.with_extension("notified")).unwrap_or_default().trim().to_string(), checked_at_ms: 0, latest: None, error: None }), notified_path: path.with_extension("notified") })
+        Arc::new(UpdateService { path: path.to_path_buf(), current: current.to_string(), api: api.trim_end_matches('/').to_string(), config: Mutex::new(config), state: Mutex::new(State { notified: std::fs::read_to_string(path.with_extension("notified")).unwrap_or_default().trim().to_string(), checked_at_ms: 0, latest: None, error: None }), notified_path: path.with_extension("notified"), download: Mutex::new(None) })
     }
 
     pub fn config(&self) -> UpdateConfig {
@@ -313,6 +326,7 @@ impl UpdateService {
             available,
             latest: state.latest.clone(),
             error: state.error.clone(),
+            download: lock(&self.download).clone(),
         }
     }
 
@@ -359,6 +373,10 @@ impl UpdateService {
                 ways.push((&asset.api_url, true));
             }
         }
+        let tracked = max_bytes > 1024 * 1024;
+        if tracked {
+            *lock(&self.download) = Some(DownloadProgress { file: asset.name.clone(), done: 0, total: asset.size });
+        }
         let mut last = String::new();
         for round in 0..3u64 {
             if round > 0 {
@@ -370,12 +388,18 @@ impl UpdateService {
                     Err((message, retry)) => {
                         tracing::info!("scaricamento di {} non riuscito ({}): {message}", asset.name, if api { "API" } else { "indirizzo pubblico" });
                         if !retry {
+                            if tracked {
+                                *lock(&self.download) = None;
+                            }
                             return Err(message);
                         }
                         last = message;
                     }
                 }
             }
+        }
+        if tracked {
+            *lock(&self.download) = None;
         }
         Err(last)
     }
@@ -399,7 +423,22 @@ impl UpdateService {
                 other => (format!("GitHub ha risposto {other} scaricando {}", asset.name), other >= 500 || other == 429),
             });
         }
-        response.body_mut().with_config().limit(max_bytes).read_to_vec().map_err(|e| (format!("scaricamento di {} interrotto: {e}", asset.name), true))
+        let tracked = max_bytes > 1024 * 1024;
+        let length = response.headers().get("content-length").and_then(|v| v.to_str().ok()).and_then(|v| v.parse::<u64>().ok()).unwrap_or(asset.size);
+        let mut reader = response.body_mut().with_config().limit(max_bytes).reader();
+        let mut data = Vec::with_capacity(length.min(max_bytes) as usize);
+        let mut buf = vec![0u8; 64 * 1024];
+        loop {
+            let n = std::io::Read::read(&mut reader, &mut buf).map_err(|e| (format!("scaricamento di {} interrotto: {e}", asset.name), true))?;
+            if n == 0 {
+                break;
+            }
+            data.extend_from_slice(&buf[..n]);
+            if tracked {
+                *lock(&self.download) = Some(DownloadProgress { file: asset.name.clone(), done: data.len() as u64, total: length });
+            }
+        }
+        Ok(data)
     }
 
     fn fetch(&self, config: &UpdateConfig) -> Result<Option<Release>, String> {

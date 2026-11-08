@@ -4,6 +4,7 @@ import { ApiError, getUpdate, installUpdate } from '../api/client';
 import { useT } from '../i18n';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
+import { InstallProgress } from './InstallProgress';
 
 const KEY = 'aurora-update-dismissed';
 
@@ -83,7 +84,7 @@ export function UpdateBar() {
           {t('upd.install')}
         </button>
       ) : null}
-      {installing ? <span className="muted">{t('upd.installing')}</span> : null}
+      <InstallProgress active={installing} />
       {failure ? <span role="alert">{failure}</span> : null}
       {release.url ? (
         <a className="glass glass--link" href={release.url} target="_blank" rel="noreferrer noopener">

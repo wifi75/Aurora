@@ -37,20 +37,23 @@ export function GeneralWindowTab() {
 
       <section className="sw-box" aria-label={t('sw.station')}>
         <h3>{t('sw.station')}</h3>
-        {/* prima riga: chi sei (nominativo, locatore, regione); seconda: lingua e tema piccoli a sinistra, i nominativi composti a destra */}
+        {/* tre colonne allineate: chi sei (nominativo, locatore, regione); poi come si vede Aurora (lingua e tema, dimensione del testo,
+            nominativi composti), ogni voce sotto la colonna di sopra (ritocco del proprietario 2026-11-08) */}
         <div className="sw-grid sw-station-who">
           {f('MyCall', 'text', 'gen2.call')}
           {f('MyGrid', 'text', 'gen2.grid')}
           {f('Region', 'choice', 'gen2.region', { options: REGION_OPTIONS })}
         </div>
-        <div className="sw-grid sw-station-more">
-          <div className="sw-field sw-field--compact">
-            <span className="sw-label">{t('gen.language')}</span>
-            <LanguageSelect />
-          </div>
-          <div className="sw-field sw-field--compact">
-            <span className="sw-label">{t('gen.theme')}</span>
-            <ThemeToggle />
+        <div className="sw-grid sw-station-who sw-station-look">
+          <div className="sw-station-pair">
+            <div className="sw-field sw-field--compact">
+              <span className="sw-label">{t('gen.language')}</span>
+              <LanguageSelect />
+            </div>
+            <div className="sw-field sw-field--compact">
+              <span className="sw-label">{t('gen.theme')}</span>
+              <ThemeToggle />
+            </div>
           </div>
           <TextSize />
           {f('Type2MsgGen', 'choice', 'gen2.type2', { options: TYPE2_OPTIONS })}

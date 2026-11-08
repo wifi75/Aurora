@@ -952,6 +952,8 @@ export interface UpdateStatus {
   error: string | null;
   /** Il programma Windows sa installare la versione nuova da solo (pacchetto e firma ci sono). */
   can_install?: boolean;
+  /** Lo scaricamento del pacchetto durante «Installa e riavvia». */
+  download?: { file: string; done: number; total: number } | null;
 }
 
 /** Le impostazioni che si mandano: `token` assente = lo si lascia, vuoto = lo si toglie. */

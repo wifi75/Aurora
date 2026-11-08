@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { InstallProgress } from '../components/InstallProgress';
 import { openUpdatePoster, UpdatePoster } from '../components/UpdatePoster';
 import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
@@ -148,7 +149,7 @@ export function UpdatesTab() {
           </div>
         </div>
         {status.error ? <Message kind="alert">{t('upd.offline', { message: status.error })}</Message> : null}
-        {installing ? <Message kind="muted">{t('upd.installing')}</Message> : null}
+        <InstallProgress active={installing} />
         {installFailure ? <Message kind="alert">{installFailure}</Message> : null}
       </Group>
 

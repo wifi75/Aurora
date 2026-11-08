@@ -7,6 +7,7 @@ import { useLang, useT } from '../i18n';
 import { pick } from '../i18n/core';
 import { NOVITA } from '../lib/novita';
 import { browserStorage } from '../lib/theme';
+import { InstallProgress } from './InstallProgress';
 
 const SEEN_KEY = 'aurora-update-poster-seen';
 const OPEN_EVENT = 'aurora-update-poster-open';
@@ -120,6 +121,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
             </>
           ) : null}
           <p className="upd-poster__ver">{t('upd.poster.current', { current: update.data?.current ?? '…', when })}</p>
+          <InstallProgress active={installing} />
           {failure ? (
             <p className="first-run__error" role="alert">
               {failure}
@@ -136,7 +138,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
             </button>
             {update.data?.can_install ? (
               <button type="button" className="first-run__next" onClick={() => void install()} disabled={installing}>
-                {installing ? t('upd.installing') : t('upd.poster.install')}
+                {installing ? t('upd.installShort') : t('upd.poster.install')}
               </button>
             ) : null}
           </div>

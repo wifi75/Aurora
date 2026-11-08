@@ -349,7 +349,12 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // bloccata con le misure di sempre (richiesta del proprietario)
   const awayKey = [...new Set(awayIds as string[])].filter((id) => id in boardCells).sort().join(',');
   const [awayBoards, setAwayBoards] = useState<Record<string, Record<string, Cell>>>(readAwayBoards);
-  const awayCells = awayKey ? { ...visibleCells, ...pickCells(awayBoards[awayKey], visibleCells) } : visibleCells;
+  // senza misure salvate per questo insieme, le finestre vicine si allargano da sole a riempire il posto lasciato libero
+  const awayCells = !awayKey
+    ? visibleCells
+    : awayBoards[awayKey]
+      ? { ...visibleCells, ...pickCells(awayBoards[awayKey], visibleCells) }
+      : fillGaps(visibleCells, Object.entries(boardCells).filter(([id]) => (awayIds as string[]).includes(id)).map(([, c]) => c));
   const saveAwayCells = (next: Record<string, Cell>) => {
     const all = { ...awayBoards, [awayKey]: { ...awayCells, ...next } };
     setAwayBoards(all);
@@ -449,6 +454,42 @@ function readAwayBoards(): Record<string, Record<string, Cell>> {
 }
 
 /** Solo le misure valide delle schede ancora in vista. */
+/**
+ * Riempie i buchi lasciati dalle finestre nascoste o staccate: per ogni buco si allargano le finestre che lo toccano su un lato e lo coprono
+ * esattamente da un capo all'altro (prima a sinistra, poi a destra, sopra, sotto). Cosi' nascondendo per esempio Log e DX Cluster, Attivita' di
+ * banda si allarga al posto del Log e Bande aperte con Comandi al posto del DX Cluster. Un buco che nessuno copre esattamente resta vuoto.
+ */
+export function fillGaps(cells: Record<string, Cell>, holes: readonly Cell[]): Record<string, Cell> {
+  const out: Record<string, Cell> = { ...cells };
+  const eq = (a: number, b: number) => Math.abs(a - b) < 0.01;
+  const pending = [...holes];
+  for (let round = 0; round < 4 && pending.length > 0; round++) {
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const h = pending[i]!;
+      const list = Object.entries(out);
+      // le finestre su un lato del buco che, messe insieme, lo coprono da un capo all'altro senza uscire
+      const side = (touch: (c: Cell) => boolean, from: (c: Cell) => number, to: (c: Cell) => number, start: number, end: number) => {
+        const g = list.filter(([, c]) => touch(c) && from(c) >= start - 0.01 && to(c) <= end + 0.01).sort((a, b) => from(a[1]) - from(b[1]));
+        if (g.length === 0 || !eq(from(g[0]![1]), start) || !eq(to(g[g.length - 1]![1]), end)) return null;
+        for (let k = 1; k < g.length; k++) if (!eq(from(g[k]![1]), to(g[k - 1]![1]))) return null;
+        return g.map(([id]) => id);
+      };
+      const y0 = h.y, y1 = h.y + h.h, x0 = h.x, x1 = h.x + h.w;
+      const left = side((c) => eq(c.x + c.w, x0), (c) => c.y, (c) => c.y + c.h, y0, y1);
+      const right = left ? null : side((c) => eq(c.x, x1), (c) => c.y, (c) => c.y + c.h, y0, y1);
+      const above = left || right ? null : side((c) => eq(c.y + c.h, y0), (c) => c.x, (c) => c.x + c.w, x0, x1);
+      const below = left || right || above ? null : side((c) => eq(c.y, y1), (c) => c.x, (c) => c.x + c.w, x0, x1);
+      if (left) for (const id of left) out[id] = { ...out[id]!, w: out[id]!.w + h.w };
+      else if (right) for (const id of right) out[id] = { ...out[id]!, x: out[id]!.x - h.w, w: out[id]!.w + h.w };
+      else if (above) for (const id of above) out[id] = { ...out[id]!, h: out[id]!.h + h.h };
+      else if (below) for (const id of below) out[id] = { ...out[id]!, y: out[id]!.y - h.h, h: out[id]!.h + h.h };
+      else continue;
+      pending.splice(i, 1);
+    }
+  }
+  return out;
+}
+
 function pickCells(saved: Record<string, Cell> | undefined, shown: Record<string, Cell>): Record<string, Cell> {
   if (!saved) return {};
   const ok = (c: Cell | undefined): c is Cell => !!c && [c.x, c.y, c.w, c.h].every((v) => typeof v === 'number' && Number.isFinite(v)) && c.w > 0 && c.h > 0;

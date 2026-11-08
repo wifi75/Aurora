@@ -1177,3 +1177,60 @@ html[data-theme='light'] .newdx-kind { color: #8a6400; }
 html[data-theme='light'] .newdx-card--band .newdx-kind { color: #6b2fbf; }
 html[data-theme='light'] .newdx-close { background: rgb(0 0 0 / .08); }
 @media (prefers-reduced-motion: reduce) { .newdx-card, .newdx-card--band, .cq-chip--flash { animation: none; } }
+
+/* «Installa e riavvia»: barra dello scaricamento come quella di un browser (titolo e percentuale, barra, MB, velocita' e tempo) */
+.install-progress { display: grid; gap: 6px; margin: 8px 0; min-width: 240px; padding: 10px 12px; border-radius: 10px; background: rgb(255 255 255 / .04); border: 1px solid rgb(255 255 255 / .1); }
+.install-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
+.install-progress-pct { font-variant-numeric: tabular-nums; font-weight: 800; color: #3fd6c8; }
+.install-progress-track { position: relative; height: 10px; border-radius: 999px; background: rgb(255 255 255 / .1); overflow: hidden; box-shadow: inset 0 1px 2px rgb(0 0 0 / .4); }
+.install-progress-fill { position: relative; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3fd6c8, #8e7bff); transition: width .45s ease-out; overflow: hidden; }
+.install-progress-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 0 35%, rgb(255 255 255 / .35) 50%, transparent 65% 100%); background-size: 200% 100%; animation: install-shine 1.4s linear infinite; }
+.install-progress-fill--done { background: linear-gradient(90deg, #2cf5a4, #3fd6c8); }
+.install-progress-fill--done::after { animation: none; display: none; }
+.install-progress-fill--wait { width: 100%; background: repeating-linear-gradient(135deg, rgb(63 214 200 / .9) 0 12px, rgb(142 123 255 / .9) 12px 24px); background-size: 34px 34px; animation: install-stripes .8s linear infinite; }
+.install-progress-fill--wait::after { display: none; }
+@keyframes install-shine { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@keyframes install-stripes { from { background-position: 0 0; } to { background-position: 34px 0; } }
+.install-progress-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+html[data-theme='light'] .install-progress { background: rgb(0 0 0 / .03); border-color: rgb(0 0 0 / .1); }
+html[data-theme='light'] .install-progress-track { background: rgb(0 0 0 / .08); }
+html[data-theme='light'] .install-progress-pct { color: #0b7f75; }
+@media (prefers-reduced-motion: reduce) { .install-progress-fill--wait, .install-progress-fill::after { animation: none; } }
+
+/* Pannello Log stretto: le colonne non escono mai dal riquadro. Si tolgono le meno importanti man mano che il pannello si stringe
+   (prima Paese, poi Modo e Rapporti); restano sempre data, nominativo e banda */
+.log4om { container-type: inline-size; }
+.log4om-table { width: 100%; max-width: 100%; }
+@container (max-width: 380px) {
+  .log4om-table th:nth-child(6), .log4om-table td:nth-child(6) { display: none; }
+}
+@container (max-width: 300px) {
+  .log4om-table th:nth-child(4), .log4om-table td:nth-child(4),
+  .log4om-table th:nth-child(5), .log4om-table td:nth-child(5) { display: none; }
+}
+
+/* Dati della stazione: seconda riga sulle stesse tre colonne della prima; lingua e tema affiancati, dimensione del testo in una barra
+   a segmenti su una riga (come gli interruttori della Stazione) */
+.sw-station-look { margin-top: 0.75rem; align-items: start !important; }
+.sw-station-pair { display: flex; gap: 1.25rem; align-items: flex-start; }
+.sw-station-look .sw-scale { display: inline-flex; flex-wrap: nowrap; gap: 0; border: 1px solid rgba(142, 123, 255, .35); border-radius: 8px; overflow: hidden; background: rgba(10, 16, 32, .55); }
+.sw-station-look .sw-scale .chip { border: 0 !important; border-left: 1px solid rgba(142, 123, 255, .28) !important; border-radius: 0 !important; min-height: 34px; padding: 0 10px; box-shadow: none !important; background: transparent; font-weight: 600; }
+.sw-station-look .sw-scale .chip:first-child { border-left: 0 !important; }
+.sw-station-look .sw-scale .chip.glass--on { background: rgba(44, 245, 164, .16) !important; color: #7ff0c0; }
+html[data-theme='light'] .sw-station-look .sw-scale { background: rgba(255, 255, 255, .7); border-color: rgba(91, 69, 214, .45); }
+html[data-theme='light'] .sw-station-look .sw-scale .chip.glass--on { background: rgba(11, 154, 106, .18) !important; color: #075c47; }
+
+/* Finestre › Dove sta ogni elemento: una tessera per elemento, il nome a sinistra, la scelta a destra alta come gli altri campi; il pallino
+   dice dove sta (verde finestra principale, viola a parte, grigio nascosto) */
+.where-list { grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr)) !important; gap: 8px 10px !important; }
+.where-row { padding: 6px 8px 6px 12px; border: 1px solid var(--border, rgba(255, 255, 255, .12)); border-radius: 10px; background: rgba(255, 255, 255, .03); }
+.where-row > span { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+.where-row > span::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2cf5a4; box-shadow: 0 0 6px rgba(44, 245, 164, .6); }
+.where-row[data-place='hidden'] > span::before { background: #6b7590; box-shadow: none; }
+.where-row[data-place='away'] > span::before { background: #b18cff; box-shadow: 0 0 6px rgba(177, 140, 255, .6); }
+.where-row[data-place='hidden'] > span { opacity: .65; }
+.where-row select { width: 12.5rem; max-width: 55%; min-height: 32px; padding: 0 28px 0 10px; border-radius: 8px; font-size: 12.5px; font-weight: 500; }
+html[data-theme='light'] .where-row { background: rgba(0, 0, 0, .025); }
+.where-list { grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)) !important; }
+.where-row > span { white-space: nowrap; }
+.where-row select { width: 11rem; flex: none; }

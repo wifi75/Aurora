@@ -58,6 +58,12 @@ export const updateStrings = {
   'upd.check': ['Controlla ora', 'Check now', 'Jetzt prüfen', 'Contrôler maintenant', 'Comprobar ahora', 'Verificar agora'],
   'upd.open': ['Note e download', 'Notes and download', 'Hinweise und Download', 'Notes et téléchargement', 'Notas y descarga', 'Notas e descarga'],
   'upd.install': ['Installa ora', 'Install now', 'Jetzt installieren', 'Installer maintenant', 'Instalar ahora', 'Instalar agora'],
+  'upd.progress.title': ['Scaricamento della versione nuova', 'Downloading the new version', 'Neue Version wird heruntergeladen', 'Téléchargement de la nouvelle version', 'Descargando la versión nueva', 'A transferir a versão nova'],
+  'upd.progress.speed': ['{speed} MB/s', '{speed} MB/s', '{speed} MB/s', '{speed} Mo/s', '{speed} MB/s', '{speed} MB/s'],
+  'upd.progress.left': ['mancano {s} s', '{s} s left', 'noch {s} s', 'encore {s} s', 'faltan {s} s', 'faltam {s} s'],
+  'upd.progress.connect': ['Scaricamento in corso…', 'Downloading…', 'Wird heruntergeladen…', 'Téléchargement…', 'Descargando…', 'A transferir…'],
+  'upd.progress.start': ['Scaricato: controllo della firma e avvio dell’installatore… Aurora si chiude e si riapre da sola.', 'Downloaded: checking the signature and starting the installer… Aurora closes and reopens by itself.', 'Heruntergeladen: Signatur wird geprüft und der Installer gestartet… Aurora schließt sich und öffnet sich von selbst wieder.', 'Téléchargé : vérification de la signature et lancement de l’installateur… Aurora se ferme et se rouvre toute seule.', 'Descargado: comprobando la firma y arrancando el instalador… Aurora se cierra y se vuelve a abrir sola.', 'Transferido: a verificar a assinatura e a arrancar o instalador… a Aurora fecha e volta a abrir sozinha.'],
+  'upd.installShort': ['Installazione…', 'Installing…', 'Installation…', 'Installation…', 'Instalando…', 'A instalar…'],
   'upd.installing': [
     'Scarico e controllo la versione… Aurora si chiuderà e si riaprirà da sola.',
     'Downloading and checking the version… Aurora will close and reopen by itself.',

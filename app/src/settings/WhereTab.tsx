@@ -56,7 +56,7 @@ export function WhereGroups() {
             const place = placeOf(item);
             const page = item === 'map' || item === 'dxmap' || item === 'propagation' || item === 'display';
             return (
-              <label key={item} className="where-row">
+              <label key={item} className="where-row" data-place={place === 'main' ? 'main' : place === 'hidden' ? 'hidden' : 'away'}>
                 <span>{t(ITEM_TITLE[item])}</span>
                 <select value={place} onChange={(e) => choose(item, e.target.value)}>
                   <option value="main">{t('win.place.main')}</option>
