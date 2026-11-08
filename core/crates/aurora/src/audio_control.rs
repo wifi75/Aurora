@@ -49,9 +49,75 @@ pub trait Backend: Send + Sync {
 pub struct CpalBackend {
     pub rows: broadcast::Sender<SpectrumRow>,
     pub events: broadcast::Sender<Event>,
+    /// La radio: con il CAT su TCI ingresso e uscita possono essere il flusso audio della SDR.
+    pub cat: Option<Arc<rig_control::cat::CatService>>,
+}
+
+impl CpalBackend {
+    fn tci_cat(&self) -> Option<&Arc<rig_control::cat::CatService>> {
+        self.cat.as_ref().filter(|c| c.backend() == rig_control::cat_config::Backend::Tci)
+    }
+}
+
+/// La scelta e' l'ingresso o l'uscita TCI (il nome, senza distinzione di maiuscole).
+pub fn is_tci_device(hint: Option<&str>, name: &str) -> bool {
+    hint.is_some_and(|h| h.trim().eq_ignore_ascii_case(name))
 }
 
 struct Capture(audio_spectrum::CaptureHandle);
+
+/// L'ingresso TCI: chiuderlo ferma il flusso audio della SDR (`audio_stop`).
+struct TciInput {
+    _feed: audio_spectrum::TciFeedHandle,
+    hook: audio_spectrum::TciRxSink,
+    cat: Arc<rig_control::cat::CatService>,
+}
+
+impl InputStream for TciInput {
+    fn name(&self) -> String {
+        audio_spectrum::TCI_INPUT_NAME.to_string()
+    }
+}
+
+impl Drop for TciInput {
+    fn drop(&mut self) {
+        self.cat.release_tci_rx_audio(&self.hook);
+    }
+}
+
+/// L'uscita TCI: chiuderla rida' alla SDR la sua sorgente audio.
+struct TciOutput {
+    sink: tx_native::TciSink,
+    source: tx_native::TciTxSource,
+    cat: Arc<rig_control::cat::CatService>,
+}
+
+impl AudioSink for TciOutput {
+    fn sample_rate(&self) -> u32 {
+        self.sink.sample_rate()
+    }
+    fn start(&mut self, samples: Vec<f32>) -> Result<(), tx_native::TxError> {
+        self.sink.start(samples)
+    }
+    fn is_playing(&self) -> bool {
+        self.sink.is_playing()
+    }
+    fn stop(&mut self) {
+        self.sink.stop();
+    }
+    fn live_gain(&self) -> Option<Arc<AtomicU32>> {
+        self.sink.live_gain()
+    }
+    fn has_failed(&self) -> bool {
+        self.sink.has_failed()
+    }
+}
+
+impl Drop for TciOutput {
+    fn drop(&mut self) {
+        self.cat.release_tci_tx_audio(&self.source);
+    }
+}
 
 impl InputStream for Capture {
     fn name(&self) -> String {
@@ -64,18 +130,38 @@ impl InputStream for Capture {
 
 impl Backend for CpalBackend {
     fn input_devices(&self) -> Vec<AudioDevice> {
-        audio_spectrum::list_input_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect()
+        let mut list: Vec<AudioDevice> = audio_spectrum::list_input_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect();
+        if self.tci_cat().is_some() {
+            list.insert(0, AudioDevice { name: audio_spectrum::TCI_INPUT_NAME.to_string(), channels: 1, is_default: false });
+        }
+        list
     }
 
     fn output_devices(&self) -> Vec<AudioDevice> {
-        tx_native::list_output_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect()
+        let mut list: Vec<AudioDevice> = tx_native::list_output_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect();
+        if self.tci_cat().is_some() {
+            list.insert(0, AudioDevice { name: tx_native::TCI_OUTPUT_NAME.to_string(), channels: 1, is_default: false });
+        }
+        list
     }
 
     fn open_input(&self, hint: Option<&str>, channel: Arc<AtomicU8>, tap: mpsc::Sender<AudioChunk>) -> Result<Box<dyn InputStream>, String> {
+        if is_tci_device(hint, audio_spectrum::TCI_INPUT_NAME) {
+            let cat = self.tci_cat().ok_or("ingresso TCI: scegli prima TCI in Impostazioni → Radio")?;
+            let (feed, sink) = audio_spectrum::run_tci_feed(self.rows.clone(), self.events.clone(), Some(tap));
+            cat.set_tci_rx_audio(Some(Arc::clone(&sink)));
+            return Ok(Box::new(TciInput { _feed: feed, hook: sink, cat: Arc::clone(cat) }));
+        }
         audio_spectrum::run_capture_with(hint, channel, self.rows.clone(), self.events.clone(), Some(tap)).map(|h| Box::new(Capture(h)) as Box<dyn InputStream>).map_err(|e| e.to_string())
     }
 
     fn open_output(&self, hint: Option<&str>, gain: Arc<AtomicU32>, channel: Arc<AtomicU8>) -> Result<(Box<dyn AudioSink>, String), String> {
+        if is_tci_device(hint, tx_native::TCI_OUTPUT_NAME) {
+            let cat = self.tci_cat().ok_or("uscita TCI: scegli prima TCI in Impostazioni → Radio")?;
+            let (sink, source) = tx_native::TciSink::new(gain);
+            cat.set_tci_tx_audio(Some(Arc::clone(&source)));
+            return Ok((Box::new(TciOutput { sink, source, cat: Arc::clone(cat) }), tx_native::TCI_OUTPUT_NAME.to_string()));
+        }
         let sink = tx_native::CpalSink::open_with(hint, gain, channel).map_err(|e| e.to_string())?;
         let name = sink.device_name().to_string();
         Ok((Box::new(sink), name))

@@ -18,6 +18,7 @@ pub mod ptt_serial;
 pub mod resample;
 pub mod scheduler;
 pub mod slot;
+pub mod tci_sink;
 pub mod testing;
 pub mod watchdog;
 
@@ -30,6 +31,7 @@ pub use ptt::{HamlibPtt, InhibitLeases, InhibitSnapshot, NoPtt, OmniRigPtt, Ptt,
 pub use ptt_serial::{Line, SerialLinePtt};
 pub use scheduler::{Transmitter, TxConfig, TxOutcome, TxPlan, TxRequest, TxState};
 pub use slot::{Mode, Parity};
+pub use tci_sink::{TciSink, TciTxSource, TCI_OUTPUT_NAME, TCI_RATE};
 
 /// Frequenza di campionamento dell'onda in ingresso.
 pub const WAVE_RATE: u32 = 12_000;

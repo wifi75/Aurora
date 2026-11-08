@@ -13,7 +13,7 @@ use crate::{
     cat_config::{friendly_error, Backend, RadioFile, RadioStore, RigConfig, RigProfile, StoreError},
     hamlib::{list_models, locate_rigctld, rigctl_beside, Rigctld, RigModel},
     hamlib_rig::{HamlibRig, Link, LinkState, RigStatus, Timing},
-    tci::TciRig,
+    tci::{RxAudioFn, TciRig, TxAudioFn},
     Rig, RigError, WindowsRig,
 };
 
@@ -126,6 +126,8 @@ pub struct CatService {
     current: Mutex<Option<Arc<HamlibRig>>>,
     omni: Mutex<(LinkState, String)>,
     tci: Mutex<Option<Arc<TciRig>>>,
+    /// L'audio TCI chiesto dalla scheda Audio (ricezione, trasmissione): si da' a ogni radio TCI collegata, anche dopo un cambio.
+    tci_hooks: Mutex<(Option<RxAudioFn>, Option<TxAudioFn>)>,
     models: Mutex<Option<Vec<RigModel>>>,
 }
 
@@ -143,6 +145,7 @@ impl CatService {
             current: Mutex::new(None),
             omni: Mutex::new((LinkState::Disconnected, String::new())),
             tci: Mutex::new(None),
+            tci_hooks: Mutex::new((None, None)),
             models: Mutex::new(None),
         })
     }
@@ -230,7 +233,11 @@ impl CatService {
                 }
             }
             Backend::Tci => {
-                let rig = Arc::new(TciRig::start(&config.tci_address, config.cat_mode));
+                let rig = Arc::new(TciRig::from_config(&config));
+                // i flussi audio scelti nella scheda Audio valgono anche per la radio appena collegata
+                let (rx, tx) = self.tci_hooks.lock().map(|h| h.clone()).unwrap_or_default();
+                rig.set_tx_audio(tx);
+                rig.set_rx_audio(rx);
                 if let Ok(mut slot) = self.tci.lock() {
                     *slot = Some(rig);
                 }
@@ -323,6 +330,47 @@ impl CatService {
         self.tci_rig().ok_or_else(|| RigError("nessuna radio TCI collegata: scegli TCI in Impostazioni → Radio e premi Collega".into()))
     }
 
+    /// L'audio ricevuto via TCI va a `hook` (`None` = flusso fermato), anche per le radio TCI collegate dopo.
+    pub fn set_tci_rx_audio(&self, hook: Option<RxAudioFn>) {
+        if let Ok(mut h) = self.tci_hooks.lock() {
+            h.0 = hook.clone();
+        }
+        if let Some(rig) = self.tci_rig() {
+            rig.set_rx_audio(hook);
+        }
+    }
+
+    /// L'audio da trasmettere via TCI viene da `hook` (`None` = la SDR usa la sua sorgente audio).
+    pub fn set_tci_tx_audio(&self, hook: Option<TxAudioFn>) {
+        if let Ok(mut h) = self.tci_hooks.lock() {
+            h.1 = hook.clone();
+        }
+        if let Some(rig) = self.tci_rig() {
+            rig.set_tx_audio(hook);
+        }
+    }
+
+    /// Toglie l'audio TCI di ricezione solo se e' ancora `hook` (un ingresso nuovo puo' averlo gia' sostituito).
+    pub fn release_tci_rx_audio(&self, hook: &RxAudioFn) {
+        let mine = self.tci_hooks.lock().is_ok_and(|h| h.0.as_ref().is_some_and(|c| Arc::ptr_eq(c, hook)));
+        if mine {
+            self.set_tci_rx_audio(None);
+        }
+    }
+
+    /// Come [`CatService::release_tci_rx_audio`] per l'audio da trasmettere.
+    pub fn release_tci_tx_audio(&self, hook: &TxAudioFn) {
+        let mine = self.tci_hooks.lock().is_ok_and(|h| h.1.as_ref().is_some_and(|c| Arc::ptr_eq(c, hook)));
+        if mine {
+            self.set_tci_tx_audio(None);
+        }
+    }
+
+    /// La radio sta trasmettendo (Hamlib o TCI).
+    pub fn transmitting(&self) -> bool {
+        self.current().is_some_and(|r| r.transmitting()) || self.tci_rig().is_some_and(|r| r.transmitting())
+    }
+
     /// `true` se c'e' una radio che risponde ai comandi (Hamlib collegata, oppure OmniRig scelto).
     pub fn is_usable(&self) -> bool {
         match self.backend() {
@@ -336,6 +384,9 @@ impl CatService {
     /// Chiusura del programma: il PTT si spegne, con «Spegni» la radio si spegne, e la radio si libera.
     pub fn shutdown(&self) {
         if let Some(rig) = self.current() {
+            rig.power_off_if_chosen();
+        }
+        if let Some(rig) = self.tci_rig() {
             rig.power_off_if_chosen();
         }
         self.disconnect();
@@ -372,7 +423,7 @@ impl Rig for CatService {
     fn meters(&self) -> Result<crate::meters::Meters, RigError> {
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.meters(),
-            Backend::Tci => Err(RigError("misuratori non ancora letti con TCI".into())),
+            Backend::Tci => self.tci()?.meters(),
             Backend::Omnirig => Err(RigError("misuratori non disponibili con OmniRig".into())),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }

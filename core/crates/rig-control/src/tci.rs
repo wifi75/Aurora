@@ -17,7 +17,7 @@ use std::{
     io::ErrorKind,
     net::{TcpStream, ToSocketAddrs},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc, Mutex,
     },
     thread::JoinHandle,
@@ -27,8 +27,9 @@ use std::{
 use tungstenite::{Message, WebSocket};
 
 use crate::{
-    cat_config::CatMode,
+    cat_config::{split_tx_dial_hz, CatMode, RigConfig, SplitMode},
     hamlib_rig::{valid_dial_hz, LinkState, RigStatus},
+    meters::{self, Level, Meters},
     Rig, RigError,
 };
 
@@ -142,6 +143,50 @@ pub fn cmd_audio_stop(rx: u32) -> String {
 /// `audio_samplerate:<hz>;` (WSJT-X non lo manda e resta sui 48000 di base del server).
 pub fn cmd_audio_samplerate(hz: u32) -> String {
     format!("audio_samplerate:{hz};")
+}
+
+/// `split_enable:<rx>,<true|false>;`: la trasmissione sul VFO 1 (B).
+pub fn cmd_split(rx: u32, on: bool) -> String {
+    format!("split_enable:{rx},{on};")
+}
+
+/// `drive:<rx>,<0..100>;`: la potenza d'uscita in percento.
+pub fn cmd_drive(rx: u32, percent: u32) -> String {
+    format!("drive:{rx},{};", percent.min(100))
+}
+
+/// `tune:<rx>,<true|false>;`: portante di accordo.
+pub fn cmd_tune(rx: u32, on: bool) -> String {
+    format!("tune:{rx},{on};")
+}
+
+/// `start;` / `stop;`: accende o spegne la SDR.
+pub fn cmd_power(on: bool) -> String {
+    if on { "start;".into() } else { "stop;".into() }
+}
+
+/// Chiede al server i misuratori ogni `ms` millisecondi (`rx_sensors_enable` e `tx_sensors_enable` del protocollo 1.9).
+pub fn cmd_sensors(ms: u32) -> String {
+    let ms = ms.clamp(30, 1000);
+    format!("rx_sensors_enable:true,{ms};tx_sensors_enable:true,{ms};")
+}
+
+/// Le letture dei misuratori nei comandi del server: `rx_smeter:<rx>,<canale>,<dBm>;`, `rx_sensors:<rx>,<dBm>;`, `tx_power:<W>;`,
+/// `tx_swr:<ROS>;`, `tx_sensors:<rx>,<mic dBm>,<W medi>,<W di picco>,<ROS>;`. Ritorna i livelli letti (S-meter in dB rispetto a S9,
+/// come Hamlib: S9 = -73 dBm); vuoto per gli altri comandi, per un altro ricevitore o per valori non validi.
+pub fn meter_reading(name: &str, args: &[String], rx: u32) -> Vec<(Level, f32)> {
+    let num = |i: usize| args.get(i).and_then(|a| a.parse::<f32>().ok()).filter(|v| v.is_finite());
+    let same_rx = || args.first().and_then(|a| a.parse::<u32>().ok()) == Some(rx);
+    let s9 = |dbm: f32| (Level::Strength, dbm + 73.0);
+    let last = args.len().saturating_sub(1);
+    match name {
+        "rx_smeter" if same_rx() && args.get(1).map(String::as_str) == Some("0") => num(2).map(s9).into_iter().collect(),
+        "rx_sensors" if same_rx() => num(1).map(s9).into_iter().collect(),
+        "tx_power" => num(last).map(|w| (Level::PowerWatts, w)).into_iter().collect(),
+        "tx_swr" => num(last).map(|s| (Level::Swr, s)).into_iter().collect(),
+        "tx_sensors" if same_rx() => [num(2).map(|w| (Level::PowerWatts, w)), num(4).map(|s| (Level::Swr, s))].into_iter().flatten().collect(),
+        _ => Vec::new(),
+    }
 }
 
 /// Il modo della radio per il modo CAT scelto: USB oppure USB dati (`digu`); `None` = non si tocca.
@@ -328,8 +373,16 @@ pub type TxAudioFn = Arc<dyn Fn(&mut [f32], u32) -> usize + Send + Sync>;
 struct Inner {
     address: String,
     cat_mode: CatMode,
+    split: SplitMode,
+    power_on: bool,
+    power_off: bool,
     rx: u32,
     stop: AtomicBool,
+    /// La frequenza audio di trasmissione (Hz, 0 = non ancora data): serve allo split.
+    tx_audio_hz: AtomicU32,
+    /// Split simulato: la frequenza di ricezione da rimettere a fine trasmissione (0 = niente).
+    emulate_restore: AtomicU64,
+    meters: Mutex<Meters>,
     ready: AtomicBool,
     channels_field: AtomicBool,
     /// Il flusso audio ricevuto e' acceso sul server (`audio_start` confermato).
@@ -367,7 +420,24 @@ impl Inner {
             match event {
                 TciEvent::Vfo { rx, vfo: 0, hz } if rx == self.rx => self.update(|s| s.frequency_hz = Some(hz)),
                 TciEvent::Modulation { rx, mode } if rx == self.rx => self.update(|s| s.mode = Some(mode.to_ascii_uppercase())),
-                TciEvent::Trx { rx, on } if rx == self.rx => self.update(|s| s.ptt = on),
+                TciEvent::Trx { rx, on } if rx == self.rx => {
+                    self.update(|s| s.ptt = on);
+                    if !on && let Ok(mut m) = self.meters.lock() {
+                        // a fine trasmissione potenza e ROS non valgono piu'
+                        m.power_w = None;
+                        m.swr = None;
+                    }
+                }
+                TciEvent::Other { name, args } => {
+                    let readings = meter_reading(&name, &args, self.rx);
+                    if !readings.is_empty()
+                        && let Ok(mut m) = self.meters.lock()
+                    {
+                        for (level, value) in readings {
+                            meters::store(&mut m, level, value);
+                        }
+                    }
+                }
                 TciEvent::Protocol { version, .. } => self.channels_field.store(protocol_has_channels(&version), Ordering::SeqCst),
                 TciEvent::AudioStart { rx } if rx == self.rx => self.audio_on.store(true, Ordering::SeqCst),
                 TciEvent::AudioStop { rx } if rx == self.rx => self.audio_on.store(false, Ordering::SeqCst),
@@ -379,6 +449,13 @@ impl Inner {
                         s.message.clear();
                         s.reconnect_attempt = 0;
                     });
+                    // «Accendi»: la SDR si accende appena il server risponde
+                    if self.power_on {
+                        self.send(cmd_power(true));
+                    }
+                    self.send(cmd_sensors(500));
+                    // split vero gia' chiesto prima del collegamento (o prima di un ricollegamento)
+                    self.apply_split();
                     // con un ricevitore dell'audio gia' scelto si chiede il flusso, come `stream_audio(true)` di WSJT-X
                     if self.rx_audio.lock().is_ok_and(|a| a.is_some()) {
                         self.send(cmd_audio_start(self.rx));
@@ -387,6 +464,19 @@ impl Inner {
                 _ => {}
             }
         }
+    }
+
+    /// Split vero: il VFO 1 sulla frequenza di trasmissione (stessa regola di Hamlib, `split_tx_dial_hz`) e lo split acceso per ultimo.
+    fn apply_split(&self) {
+        if self.split != SplitMode::Rig {
+            return;
+        }
+        let audio = self.tx_audio_hz.load(Ordering::SeqCst);
+        let dial = self.status.lock().ok().and_then(|s| s.frequency_hz);
+        let (Some(dial), true) = (dial, audio != 0) else { return };
+        self.send(cmd_vfo(self.rx, 1, split_tx_dial_hz(dial, audio)));
+        self.send(cmd_split(self.rx, true));
+        self.update(|s| s.split = Some(true));
     }
 
     /// Un blocco binario: audio ricevuto al ricevitore o richiesta di audio da trasmettere (la risposta, se c'e').
@@ -426,12 +516,24 @@ pub struct TciRig {
 
 impl TciRig {
     pub fn start(address: &str, cat_mode: CatMode) -> TciRig {
-        let address = if address.trim().is_empty() { DEFAULT_TCI_ADDRESS.to_string() } else { address.trim().to_string() };
+        TciRig::from_config(&RigConfig { tci_address: address.to_string(), cat_mode, ..RigConfig::default() })
+    }
+
+    /// Dalla configurazione della radio: indirizzo, modo CAT, split, «Accendi» e «Spegni».
+    pub fn from_config(config: &RigConfig) -> TciRig {
+        let address = config.tci_address.trim();
+        let address = if address.is_empty() { DEFAULT_TCI_ADDRESS.to_string() } else { address.to_string() };
         let inner = Arc::new(Inner {
             address,
-            cat_mode,
+            cat_mode: config.cat_mode,
+            split: config.split,
+            power_on: config.power_on,
+            power_off: config.power_off,
             rx: 0,
             stop: AtomicBool::new(false),
+            tx_audio_hz: AtomicU32::new(0),
+            emulate_restore: AtomicU64::new(0),
+            meters: Mutex::new(Meters::default()),
             ready: AtomicBool::new(false),
             channels_field: AtomicBool::new(false),
             audio_on: AtomicBool::new(false),
@@ -473,10 +575,70 @@ impl TciRig {
     /// Il PTT con `trx`. Senza ricevitore dell'audio TCI per la trasmissione la SDR prende l'audio dalla sua sorgente (cavo virtuale).
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {
         self.inner.connected()?;
-        let tci_audio = self.inner.tx_audio.lock().is_ok_and(|a| a.is_some());
-        self.inner.send(cmd_trx(self.inner.rx, on, tci_audio));
-        self.inner.update(|s| s.ptt = on);
+        let inner = &self.inner;
+        // split simulato: in trasmissione il VFO di ricezione va sulla frequenza di trasmissione, poi torna
+        if on && inner.split == SplitMode::Emulate {
+            let audio = inner.tx_audio_hz.load(Ordering::SeqCst);
+            if let Some(dial) = self.status().frequency_hz
+                && audio != 0
+            {
+                let tx = split_tx_dial_hz(dial, audio);
+                if tx != dial {
+                    inner.send(cmd_vfo(inner.rx, 0, tx));
+                    inner.emulate_restore.store(dial, Ordering::SeqCst);
+                }
+            }
+        }
+        let tci_audio = inner.tx_audio.lock().is_ok_and(|a| a.is_some());
+        inner.send(cmd_trx(inner.rx, on, tci_audio));
+        inner.update(|s| s.ptt = on);
+        if !on {
+            let back = inner.emulate_restore.swap(0, Ordering::SeqCst);
+            if back != 0 {
+                inner.send(cmd_vfo(inner.rx, 0, back));
+                inner.update(|s| s.frequency_hz = Some(back));
+            }
+        }
         Ok(())
+    }
+
+    /// La frequenza audio con cui si trasmette (Hz): con lo split vero sposta il VFO 1 (`vfo:0,1,<hz>;` e `split_enable:0,true;`),
+    /// con lo split simulato serve al PTT.
+    pub fn set_tx_audio_frequency(&self, hz: u32) -> Result<(), RigError> {
+        if hz > 5000 {
+            return Err(RigError(format!("frequenza audio di trasmissione non valida: {hz} Hz")));
+        }
+        self.inner.tx_audio_hz.store(hz, Ordering::SeqCst);
+        if self.inner.split == SplitMode::Rig {
+            self.inner.connected()?;
+            self.inner.apply_split();
+        }
+        Ok(())
+    }
+
+    /// La potenza d'uscita della SDR in percento (`drive`).
+    pub fn set_drive(&self, percent: u32) -> Result<(), RigError> {
+        self.inner.connected()?;
+        self.inner.send(cmd_drive(self.inner.rx, percent));
+        Ok(())
+    }
+
+    /// Portante di accordo (`tune`).
+    pub fn set_tune(&self, on: bool) -> Result<(), RigError> {
+        self.inner.connected()?;
+        self.inner.send(cmd_tune(self.inner.rx, on));
+        Ok(())
+    }
+
+    /// «Spegni»: alla chiusura del programma la SDR si spegne con `stop;`.
+    pub fn power_off_if_chosen(&self) {
+        if self.inner.power_off && self.inner.ready.load(Ordering::SeqCst) {
+            if self.transmitting() {
+                self.inner.send(cmd_trx(self.inner.rx, false, false));
+            }
+            self.inner.send(cmd_power(false));
+            tracing::info!("SDR spenta via TCI alla chiusura («Spegni»)");
+        }
     }
 
     /// Il ricevitore dell'audio della radio (mono, alla frequenza del server). Con `Some` si chiede il flusso (`audio_start`), con `None`
@@ -597,6 +759,12 @@ fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
             }
         }
         if inner.stop.load(Ordering::SeqCst) {
+            // gli ultimi comandi (PTT spento, `stop;` di «Spegni») messi in coda insieme alla chiusura
+            let last: Vec<String> = inner.outbox.lock().map(|mut o| o.drain(..).collect()).unwrap_or_default();
+            for text in last {
+                let _ = ws.send(Message::text(text));
+            }
+            let _ = ws.flush();
             return "chiuso".into();
         }
         match ws.read() {
@@ -649,6 +817,12 @@ impl Rig for TciRig {
             (LinkState::Connected, Some(hz)) => Ok(hz),
             _ => Err(RigError("radio TCI non collegata".into())),
         }
+    }
+
+    /// I misuratori mandati dal server (`rx_sensors`, `tx_sensors`, `rx_smeter`, `tx_power`, `tx_swr`).
+    fn meters(&self) -> Result<Meters, RigError> {
+        self.inner.connected()?;
+        Ok(self.inner.meters.lock().map(|m| *m).unwrap_or_default())
     }
 
     fn set_rx_frequency(&self, _hz: u32) -> Result<(), RigError> {
@@ -833,11 +1007,139 @@ mod tests {
         rig.set_ptt(true).expect("PTT");
         assert!(rig.set_frequency(7_074_000).is_err(), "niente cambio di frequenza in trasmissione");
         rig.set_ptt(false).expect("PTT");
-        assert!(wait(|| seen.lock().unwrap().len() >= 4));
-        assert_eq!(*seen.lock().unwrap(), vec!["vfo:0,0,14074000;", "modulation:0,digu;", "trx:0,true;", "trx:0,false;"]);
+        let commands = || seen.lock().unwrap().iter().filter(|c| !c.contains("sensors_enable")).cloned().collect::<Vec<_>>();
+        assert!(wait(|| commands().len() >= 4));
+        assert_eq!(commands(), vec!["vfo:0,0,14074000;", "modulation:0,digu;", "trx:0,true;", "trx:0,false;"]);
+        assert!(seen.lock().unwrap().iter().any(|c| c == "rx_sensors_enable:true,500;tx_sensors_enable:true,500;"), "misuratori chiesti dopo ready");
         assert!(wait(|| rig.frequency() == Ok(14_074_000)));
         rig.shutdown();
         assert_eq!(rig.status().state, LinkState::Disconnected);
+    }
+
+    #[test]
+    fn it_reads_the_meters() {
+        let args = |s: &str| s.split(',').map(str::to_string).collect::<Vec<_>>();
+        assert_eq!(meter_reading("rx_smeter", &args("0,0,-73"), 0), vec![(Level::Strength, 0.0)]);
+        assert_eq!(meter_reading("rx_smeter", &args("0,1,-73"), 0), vec![], "solo il canale 0");
+        assert_eq!(meter_reading("rx_sensors", &args("1,-90"), 0), vec![], "altro ricevitore");
+        assert_eq!(meter_reading("tx_power", &args("50.5"), 0), vec![(Level::PowerWatts, 50.5)]);
+        assert_eq!(meter_reading("tx_swr", &args("1.3"), 0), vec![(Level::Swr, 1.3)]);
+        assert_eq!(meter_reading("tx_sensors", &args("0,-20,40,55,1.2"), 0), vec![(Level::PowerWatts, 40.0), (Level::Swr, 1.2)]);
+        assert_eq!(meter_reading("tx_swr", &args("x"), 0), vec![]);
+        assert_eq!(cmd_split(0, true), "split_enable:0,true;");
+        assert_eq!(cmd_drive(0, 140), "drive:0,100;");
+        assert_eq!(cmd_tune(0, false), "tune:0,false;");
+        assert_eq!((cmd_power(true), cmd_power(false)), ("start;".to_string(), "stop;".to_string()));
+    }
+
+    /// Server TCI con audio: dopo `ready;` manda un blocco di audio ricevuto stereo e tre «chrono» di lunghezze diverse; registra
+    /// i comandi di testo e i blocchi binari che riceve.
+    #[allow(clippy::type_complexity)]
+    fn fake_audio_server(greeting: &'static str) -> (String, Arc<Mutex<Vec<String>>>, Arc<Mutex<Vec<Vec<u8>>>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("porta");
+        let address = listener.local_addr().expect("indirizzo").to_string();
+        let (text, binary) = (Arc::new(Mutex::new(Vec::new())), Arc::new(Mutex::new(Vec::new())));
+        let (log_text, log_binary) = (Arc::clone(&text), Arc::clone(&binary));
+        std::thread::spawn(move || {
+            let (stream, _) = listener.accept().expect("accept");
+            let mut ws = tungstenite::accept(stream).expect("handshake");
+            ws.send(Message::text(greeting)).expect("stato");
+            let mut sent_audio = false;
+            while let Ok(msg) = ws.read() {
+                match msg {
+                    Message::Text(t) => {
+                        let t = t.as_str().to_string();
+                        let start = t.contains("audio_start") || t.contains("trx:0,true");
+                        log_text.lock().unwrap().push(t);
+                        if start && !sent_audio {
+                            sent_audio = true;
+                            let rx = StreamHeader { receiver: 0, sample_rate: 48_000, format: 3, codec: 0, crc: 0, length: 4, kind: StreamType::RxAudio, channels: 2 };
+                            let mut frame = rx.to_bytes().to_vec();
+                            for s in [0.2f32, 0.4, -0.2, -0.4] {
+                                frame.extend_from_slice(&s.to_le_bytes());
+                            }
+                            let _ = ws.send(Message::binary(frame));
+                            for length in [8u32, 4, 6] {
+                                let chrono = StreamHeader { length, kind: StreamType::TxChrono, ..rx };
+                                let _ = ws.send(Message::binary(chrono.to_bytes().to_vec()));
+                            }
+                        }
+                    }
+                    Message::Binary(b) => log_binary.lock().unwrap().push(b.to_vec()),
+                    _ => {}
+                }
+            }
+        });
+        (address, text, binary)
+    }
+
+    #[test]
+    fn it_streams_audio_both_ways() {
+        let (address, text, binary) = fake_audio_server("protocol:ExpertSDR3,1.9;vfo:0,0,14074000;trx:0,false;ready;");
+        let rig = TciRig::start(&address, CatMode::None);
+        let heard: Arc<Mutex<Vec<(Vec<f32>, u32)>>> = Arc::new(Mutex::new(Vec::new()));
+        let h = Arc::clone(&heard);
+        rig.set_rx_audio(Some(Arc::new(move |s: &[f32], rate| h.lock().unwrap().push((s.to_vec(), rate)))));
+        // l'onda da trasmettere: 1, 2, 3... consegnata un chrono alla volta
+        let next = Arc::new(Mutex::new(1.0f32));
+        let n = Arc::clone(&next);
+        rig.set_tx_audio(Some(Arc::new(move |buf: &mut [f32], rate| {
+            assert_eq!(rate, 48_000);
+            let mut v = n.lock().unwrap();
+            for s in buf.iter_mut() {
+                *s = *v;
+                *v += 1.0;
+            }
+            buf.len()
+        })));
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        assert!(wait(|| text.lock().unwrap().iter().any(|t| t == "audio_start:0;")), "{:?}", text.lock().unwrap());
+        rig.set_ptt(true).expect("PTT");
+        assert!(wait(|| text.lock().unwrap().iter().any(|t| t == "trx:0,true,tci;")), "PTT con l'audio dal flusso TCI");
+        assert!(wait(|| !heard.lock().unwrap().is_empty()));
+        assert_eq!(heard.lock().unwrap()[0], (vec![0.3, -0.3], 48_000), "stereo portato a mono");
+        assert!(wait(|| binary.lock().unwrap().len() == 3));
+        let frames = binary.lock().unwrap().clone();
+        let mut all = Vec::new();
+        for (frame, length) in frames.iter().zip([8u32, 4, 6]) {
+            let h = StreamHeader::parse(frame).expect("intestazione");
+            assert_eq!((h.kind, h.length, h.channels, h.sample_rate), (StreamType::TxAudio, length, 2, 48_000), "stessa lunghezza del chrono");
+            let samples = float_payload(frame, &h).expect("campioni");
+            all.extend(downmix(&samples, 2));
+        }
+        assert_eq!(all, (1..=9).map(|v| v as f32).collect::<Vec<_>>(), "l'onda continua da un chrono all'altro");
+        rig.shutdown();
+    }
+
+    #[test]
+    fn split_and_power_follow_the_config() {
+        let (address, text, _) = fake_audio_server("protocol:ExpertSDR3,1.9;vfo:0,0,14074000;ready;");
+        let config = RigConfig { tci_address: address, split: SplitMode::Rig, power_on: true, power_off: true, ..RigConfig::default() };
+        let rig = TciRig::from_config(&config);
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        rig.set_tx_audio_frequency(2200).expect("split");
+        rig.power_off_if_chosen();
+        rig.shutdown();
+        let seen = text.lock().unwrap().clone();
+        let pos = |c: &str| seen.iter().position(|t| t == c).unwrap_or_else(|| panic!("{c} manca: {seen:?}"));
+        assert!(pos("start;") < pos("vfo:0,1,14074500;"));
+        assert!(pos("vfo:0,1,14074500;") < pos("split_enable:0,true;"));
+        assert_eq!(seen.last().map(String::as_str), Some("stop;"));
+        assert_eq!(rig.status().split, Some(true));
+    }
+
+    #[test]
+    fn emulated_split_moves_the_vfo_only_while_transmitting() {
+        let (address, text, _) = fake_audio_server("vfo:0,0,14074000;ready;");
+        let rig = TciRig::from_config(&RigConfig { tci_address: address, split: SplitMode::Emulate, ..RigConfig::default() });
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        rig.set_tx_audio_frequency(300).expect("frequenza audio");
+        rig.set_ptt(true).expect("PTT");
+        rig.set_ptt(false).expect("PTT");
+        let expected = ["vfo:0,0,14072500;", "trx:0,true;", "trx:0,false;", "vfo:0,0,14074000;"];
+        let filtered = || text.lock().unwrap().iter().filter(|c| !c.contains("sensors")).cloned().collect::<Vec<_>>();
+        assert!(wait(|| filtered().len() >= 4));
+        assert_eq!(filtered(), expected);
     }
 
     #[test]

@@ -143,7 +143,7 @@ pub(crate) async fn cat_extra(State(state): State<AppState>, _: Authed, Peer(pee
     require_local(peer, &headers)?;
     let item = ExtraItem::parse(body.item.trim()).ok_or_else(|| CatApiError { status: StatusCode::BAD_REQUEST, code: "bad_item", message: "impostazione sconosciuta".into() })?;
     let result = blocking(move || {
-        if cat.hamlib().is_ok_and(|r| r.transmitting()) {
+        if cat.transmitting() {
             return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
         }
         cat.set_extra(item).map_err(|e| {
