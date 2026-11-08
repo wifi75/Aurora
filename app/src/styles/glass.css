@@ -476,7 +476,7 @@ button.glass,
 /* le frequenze della banda (standard, alternative, DXpedition) accanto ai pulsanti */
 .freq-picker {
   min-height: 2rem;
-  max-width: 12rem;
+  max-width: 16rem;
   font-variant-numeric: tabular-nums;
 }
 
