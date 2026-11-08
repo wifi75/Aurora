@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { STRINGS, useLang, useT, type Key } from '../i18n';
 import { pick, type Entry, type Lang } from '../i18n/core';
 import { GUIDE, type GuideSection } from '../i18n/guide';
@@ -18,6 +18,20 @@ export function Wiki() {
   const lang = useLang((s) => s.lang);
   const [query, setQuery] = useState('');
   const needle = query.trim().toLowerCase();
+
+  // `#/guida/<sezione>` (dalla scheda SDR delle Impostazioni): si scorre fino a quella sezione, anche se la Guida era gia' aperta
+  useEffect(() => {
+    const go = () => {
+      const m = /^#\/guida\/([a-z0-9-]{1,30})$/.exec(location.hash);
+      if (m) document.getElementById(`guida-sez-${m[1]}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    const timer = window.setTimeout(go, 50);
+    window.addEventListener('hashchange', go);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('hashchange', go);
+    };
+  }, []);
 
   const chapters = useMemo(
     () =>
@@ -60,7 +74,7 @@ export function Wiki() {
             </h2>
             <div className="guide-sections">
               {c.sections.map((s) => (
-                <article key={s.id} className="guide-section">
+                <article key={s.id} id={`guida-sez-${s.id}`} className="guide-section">
                   <h3>{guideText(s.title, lang)}</h3>
                   {s.text ? <p>{guideText(s.text, lang)}</p> : null}
                   {s.steps ? (

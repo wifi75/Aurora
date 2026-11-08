@@ -92,3 +92,10 @@ export const usePrefs = create<PrefsState>((set, get) => ({
     set({ prefs: defaultPrefs() });
   },
 }));
+
+// le preferenze cambiate nella finestra a parte delle Impostazioni (per esempio «Pagina QMAP nel menu») valgono subito anche qui
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === KEY) usePrefs.setState({ prefs: readPrefs(browserStorage()) });
+  });
+}

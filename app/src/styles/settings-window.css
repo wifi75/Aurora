@@ -298,3 +298,11 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .own-translate .muted { font-size: 12px; }
 
 .own-reach { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--accent); }
+
+/* scheda SDR: comandi piccoli sotto i riquadri, esito in righe brevi */
+.sdr-page .sw-row { gap: 8px; }
+.sdr-actions { margin-top: 8px; }
+.sdr-page .glass.chip { height: 26px; padding: 0 10px; font-size: 12px; }
+.sdr-text { margin-top: 0; }
+.sdr-result { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11.5px; opacity: .8; }
+.sdr-result--bad { color: var(--danger, #e5534b); opacity: 1; }

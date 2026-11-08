@@ -23,7 +23,8 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/mappa-dx') return { name: 'dxmap' };
   if (hash === '#/storico') return { name: 'history' };
   if (hash === '#/propagazione') return { name: 'propagation' };
-  if (hash === '#/guida') return { name: 'guide' };
+  // `#/guida/<sezione>`: la Guida aperta su una sezione (per esempio dalla scheda SDR delle Impostazioni)
+  if (hash === '#/guida' || /^#\/guida\/[a-z0-9-]{1,30}$/.test(hash)) return { name: 'guide' };
   if (hash === '#/novita') return { name: 'news' };
   // pagina dei messaggi agli utenti: non e' in nessun menu, la apre solo l'icona sul desktop dell'autore
   if (hash === '#/messaggi-autore') return { name: 'ownerMessages' };

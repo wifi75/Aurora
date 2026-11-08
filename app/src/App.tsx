@@ -18,6 +18,7 @@ import { useEscapeStop } from './lib/escapeStop';
 import { rememberRoute, rememberedTab } from './lib/lastPage';
 import { addressFromName, findOtherAddress, rememberAddresses } from './lib/knownAddresses';
 import { REMOTE_HOST } from './lib/phone';
+import { followNavigateRequests } from './lib/sdr';
 import { useRoute } from './lib/route';
 import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
@@ -111,6 +112,9 @@ export function App() {
     const timer = window.setTimeout(dropClosed, 800);
     return () => window.clearTimeout(timer);
   }, [groups, isSolo]);
+
+  // la finestra principale apre le pagine chieste dalle finestre a parte (per esempio QMAP o la Guida dalla scheda SDR delle Impostazioni)
+  useEffect(() => (isSolo ? undefined : followNavigateRequests()), [isSolo]);
 
   // le Impostazioni sono un riquadro al centro sopra l'applicazione, che dietro si oscura e non si puo' usare
   const settingsOpen = route.name === 'settings' && !REMOTE && session.data === true;

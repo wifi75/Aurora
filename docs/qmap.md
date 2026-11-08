@@ -17,7 +17,7 @@ l'uscita audio (FT-2000, IC-7300, FT-991 e simili) QMAP non ha niente da leggere
 
 ## Come si configura
 
-1. Impostazioni → Generali → «Pagina QMAP nel menu» (spenta di base): compare la voce QMAP.
+1. Impostazioni → SDR → «Pagina QMAP nel menu» (spenta di base): compare la voce QMAP.
 2. Nel programma della SDR: server TCI acceso (di solito porta 40001), flusso I/Q a 96 kHz, SDR sintonizzata al centro della fetta.
 3. Pagina QMAP → «Sorgente I/Q»: «SDR via TCI» con l'indirizzo (per esempio `127.0.0.1:40001`) oppure «File WAV I/Q» con il percorso;
    periodo e sottomodo (per esempio 60 s, A); «Applica».
