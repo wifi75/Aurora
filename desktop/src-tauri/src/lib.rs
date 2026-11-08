@@ -150,8 +150,9 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
     let installer = installer::DesktopInstaller::new(handle.clone());
 
     let started = settings::config_from(&values).map_err(|e| e.to_string()).and_then(|mut config| {
-        // l'aggiornamento da dentro il programma e' l'installatore di Windows: su Linux resta il link alla release (AppImage e .deb)
-        if cfg!(windows) {
+        // l'aggiornamento da dentro il programma: su Windows l'installatore, su macOS la sostituzione di Aurora.app;
+        // su Linux resta il link alla release (AppImage e .deb)
+        if cfg!(any(windows, target_os = "macos")) {
             config.update_installer = Some(aurora::UpdateInstallerHandle(installer.clone()));
         }
         config.save_dialog = Some(aurora::SaveDialogHandle(save_dialog::dialog(handle.clone())));

@@ -1,6 +1,7 @@
 //! Controllo delle nuove versioni di Aurora: legge l'ultima release sul repository (GitHub), la confronta con la versione in uso e
 //! ricorda l'esito. Sa anche preparare l'aggiornamento: scarica in anticipo il pacchetto e la sua firma, li controlla e tiene il file
-//! pronto; l'avvio dell'installatore resta a chi sa farlo (il programma Windows).
+//! pronto; l'avvio dell'installazione resta a chi sa farlo (il programma Windows con l'installatore NSIS, il programma macOS sostituendo
+//! Aurora.app).
 //!
 //! Con un repository privato serve un token di sola lettura (creato da chi usa Aurora): si scrive nelle impostazioni, si tiene solo nel
 //! file di dati del programma, non si restituisce mai all'interfaccia e non si scrive nei registri.
@@ -141,10 +142,39 @@ pub struct Prepared {
     pub path: PathBuf,
 }
 
-/// Il nome del file da salvare: solo la parte finale, senza percorsi, e solo se sembra un installatore.
+/// Il pacchetto di aggiornamento della versione macOS: Aurora.app compressa (come gli «updater artifacts» di Tauri), con nome fisso.
+pub const MAC_PACKAGE: &str = "Aurora-macOS.app.tar.gz";
+
+/// Il tipo di pacchetto di aggiornamento che un sistema sa installare.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PackageKind {
+    /// L'installatore NSIS di Windows (`*-setup.exe`).
+    WindowsSetup,
+    /// Aurora.app compressa per macOS (`*.app.tar.gz`).
+    MacApp,
+}
+
+impl PackageKind {
+    /// Il pacchetto di questo sistema: su macOS l'app compressa, altrove l'installatore di Windows (Linux non installa niente).
+    pub const fn current() -> PackageKind {
+        if cfg!(target_os = "macos") { PackageKind::MacApp } else { PackageKind::WindowsSetup }
+    }
+
+    /// Come finisce il nome del file.
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            PackageKind::WindowsSetup => "-setup.exe",
+            PackageKind::MacApp => ".app.tar.gz",
+        }
+    }
+}
+
+/// Il nome del file da salvare: solo la parte finale, senza percorsi, e solo se sembra un pacchetto di aggiornamento
+/// (installatore di Windows o app compressa per macOS).
 pub fn safe_file_name(asset_name: &str) -> Option<String> {
     let name = asset_name.rsplit(['/', '\\']).next()?.trim();
-    let ok = name.len() <= 100 && name.ends_with("-setup.exe") && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
+    let known = [PackageKind::WindowsSetup, PackageKind::MacApp].iter().any(|k| name.len() > k.suffix().len() && name.ends_with(k.suffix()));
+    let ok = name.len() <= 100 && known && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
     ok.then(|| name.to_string())
 }
 
@@ -237,9 +267,20 @@ pub fn parse_release(json: &serde_json::Value) -> Option<Release> {
     })
 }
 
-/// Il pacchetto di installazione di una release (`*-setup.exe`) e la sua firma (`*-setup.exe.sig`), se ci sono tutti e due.
+/// Il pacchetto di aggiornamento di una release per questo sistema e la sua firma (`<pacchetto>.sig`), se ci sono tutti e due:
+/// su Windows `*-setup.exe`, su macOS `Aurora-macOS.app.tar.gz`.
 pub fn installer_assets(release: &Release) -> Option<(&Asset, &Asset)> {
-    let setup = release.assets.iter().find(|a| a.name.ends_with("-setup.exe"))?;
+    installer_assets_for(release, PackageKind::current())
+}
+
+/// Come `installer_assets`, per un tipo di pacchetto scelto (le prove guardano tutti e due i sistemi).
+pub fn installer_assets_for(release: &Release, kind: PackageKind) -> Option<(&Asset, &Asset)> {
+    let with_sig = |a: &&Asset| release.assets.iter().any(|s| s.name == format!("{}.sig", a.name));
+    let setup = match kind {
+        PackageKind::WindowsSetup => release.assets.iter().find(|a| a.name.ends_with("-setup.exe")),
+        // il nome fisso per primo; altrimenti un'altra app compressa che abbia la sua firma
+        PackageKind::MacApp => release.assets.iter().find(|a| a.name == MAC_PACKAGE).or_else(|| release.assets.iter().filter(|a| a.name.ends_with(".app.tar.gz")).find(with_sig)),
+    }?;
     let sig = release.assets.iter().find(|a| a.name == format!("{}.sig", setup.name))?;
     Some((setup, sig))
 }
@@ -637,10 +678,11 @@ impl UpdateService {
             self.set_phase(Phase::Verifying);
             verify_signature(&data, &signature, pubkey)?;
             // i pacchetti di versioni passate nella stessa cartella non servono piu'
+            let suffix = if file_name.ends_with(PackageKind::MacApp.suffix()) { PackageKind::MacApp.suffix() } else { PackageKind::WindowsSetup.suffix() };
             if let Ok(entries) = std::fs::read_dir(dir) {
                 for entry in entries.filter_map(Result::ok) {
                     let p = entry.path();
-                    if p != path && p.to_string_lossy().ends_with("-setup.exe") {
+                    if p != path && p.is_file() && p.to_string_lossy().ends_with(suffix) {
                         let _ = std::fs::remove_file(p);
                     }
                 }
@@ -908,6 +950,30 @@ mod tests {
         assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe"])).is_none(), "senza firma non si installa");
         assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe.sig"])).is_none());
         assert!(installer_assets(&release_with(&["Aurora_1.0.0_x64-setup.exe", "Altro-setup.exe.sig"])).is_none(), "la firma deve essere di quel pacchetto");
+    }
+
+    #[test]
+    fn on_macos_the_app_package_with_its_signature_is_chosen() {
+        let all = release_with(&["Aurora_1.0.0_x64-setup.exe", "Aurora_1.0.0_x64-setup.exe.sig", "Aurora-macOS.dmg", "Aurora-macOS.app.tar.gz", "Aurora-macOS.app.tar.gz.sig"]);
+        let (pkg, sig) = installer_assets_for(&all, PackageKind::MacApp).expect("app compressa e firma");
+        assert_eq!((pkg.name.as_str(), sig.name.as_str()), ("Aurora-macOS.app.tar.gz", "Aurora-macOS.app.tar.gz.sig"));
+        // Windows continua a scegliere l'installatore anche se la release ha il pacchetto del Mac
+        let (setup, _) = installer_assets_for(&all, PackageKind::WindowsSetup).expect("installatore");
+        assert_eq!(setup.name, "Aurora_1.0.0_x64-setup.exe");
+        assert!(installer_assets_for(&release_with(&["Aurora-macOS.app.tar.gz", "Aurora-macOS.dmg"]), PackageKind::MacApp).is_none(), "senza firma non si installa");
+        assert!(installer_assets_for(&release_with(&["Aurora-macOS.dmg", "Aurora_1.0.0_x64-setup.exe", "Aurora_1.0.0_x64-setup.exe.sig"]), PackageKind::MacApp).is_none(), "il .dmg non e' un pacchetto di aggiornamento");
+        let other = release_with(&["Aurora_universal.app.tar.gz", "Aurora_universal.app.tar.gz.sig"]);
+        assert_eq!(installer_assets_for(&other, PackageKind::MacApp).map(|(p, _)| p.name.as_str()), Some("Aurora_universal.app.tar.gz"));
+    }
+
+    #[test]
+    fn safe_names_cover_both_packages() {
+        assert_eq!(safe_file_name("Aurora-macOS.app.tar.gz").as_deref(), Some("Aurora-macOS.app.tar.gz"));
+        assert_eq!(safe_file_name("../../Aurora-macOS.app.tar.gz").as_deref(), Some("Aurora-macOS.app.tar.gz"));
+        assert_eq!(safe_file_name("Aurora_1.0.0_x64-setup.exe").as_deref(), Some("Aurora_1.0.0_x64-setup.exe"));
+        assert!(safe_file_name(".app.tar.gz").is_none());
+        assert!(safe_file_name("Aurora.tar.gz").is_none());
+        assert!(safe_file_name("Aurora-macOS.dmg").is_none());
     }
 
     #[test]

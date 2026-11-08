@@ -132,7 +132,7 @@ const MAX_HIGHLIGHTS: usize = 500;
 /// Racconta lo stato del motore proprio in JSON.
 pub type NativeStatusFn = Arc<dyn Fn() -> serde_json::Value + Send + Sync>;
 
-/// Chi sa installare la versione nuova trovata dal controllo (il programma Windows).
+/// Chi sa installare la versione nuova trovata dal controllo (il programma Windows o macOS).
 pub trait UpdateInstaller: Send + Sync {
     /// La installa: usa il pacchetto gia' pronto (o lo scarica), ne ricontrolla la firma, avvia l'installazione e chiude il programma.
     /// Riceve il servizio degli aggiornamenti (release trovata e token). Ritorna la versione che sta installando; e' bloccante.

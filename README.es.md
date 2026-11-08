@@ -38,7 +38,7 @@
 >
 > 🐧 **[Linux (no probada por el autor, sin soporte): AppImage, .deb o compilación con un comando](https://github.com/wifi75/Aurora/blob/main/docs/linux.es.md)**
 >
-> 🍎 **[macOS (no probada por el autor, sin soporte): Aurora-macOS.dmg para Apple Silicon e Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — no firmada por Apple: en el primer arranque clic derecho › Abrir (o `xattr -cr /Applications/Aurora.app`). Para el CAT instala Hamlib con `brew install hamlib`.
+> 🍎 **[macOS (no probada por el autor, sin soporte): Aurora-macOS.dmg para Apple Silicon e Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — no firmada por Apple: en el primer arranque clic derecho › Abrir (o `xattr -cr /Applications/Aurora.app`). Para el CAT instala Hamlib con `brew install hamlib`. Las actualizaciones se instalan desde la app («Instalar y reiniciar»), como en Windows: deja Aurora en Aplicaciones, no abierta desde el .dmg; en el primer arranque tras una actualización macOS puede volver a pedir confirmación, porque Aurora no está firmada por Apple.
 
 Una estación digital FT8, FT4, JT65 y JT9 de nuevo concepto: interfaz de impacto, automatización de los QSO y control remoto desde el teléfono. Tiene un motor propio de decodificación y transmisión FT8; Aurora es cerebro, motor y pantalla.
 

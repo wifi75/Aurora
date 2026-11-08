@@ -1,5 +1,7 @@
 # Versione macOS di Aurora (non provata dall'autore, senza assistenza): a ogni push controlla che il motore compili anche sul Mac; a ogni release
 # pubblicata prepara il .dmg universale (Apple Silicon e Intel) e lo allega alla release con un nome fisso (link "latest/download" sempre validi).
+# Accanto al .dmg allega il pacchetto di aggiornamento (Aurora.app compressa, Aurora-macOS.app.tar.gz) con la sua firma minisign (.sig),
+# fatta con la stessa chiave degli aggiornamenti di Windows: Aurora lo scarica, ne controlla la firma e si sostituisce da sola.
 # Il programma non e' firmato da Apple (solo firma ad hoc): al primo avvio macOS chiede conferma (tasto destro > Apri, oppure `xattr -cr`).
 name: macOS
 
@@ -87,7 +89,33 @@ jobs:
           npx tauri build --target universal-apple-darwin --bundles app,dmg
           mkdir -p ../dist-macos
           cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg ../dist-macos/Aurora-macOS.dmg
-          cd ../dist-macos && shasum -a 256 * > SHA256SUMS-macos.txt
+
+      - name: Pacchetto di aggiornamento (Aurora.app compressa e firmata)
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        working-directory: desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.AURORA_PASSWORD_TIMBRO_AGGIORNAMENTI }}
+        run: |
+          # senza la chiave (copia del repository senza segreti) si allega solo il .dmg: Aurora sul Mac mostrera' il link alla release
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::warning::chiave degli aggiornamenti assente: niente pacchetto di aggiornamento per macOS"
+            exit 0
+          fi
+          app_dir=src-tauri/target/universal-apple-darwin/release/bundle/macos
+          test -d "$app_dir/Aurora.app"
+          # come gli «updater artifacts» di Tauri: la cartella Aurora.app compressa, senza i file ._ di macOS
+          COPYFILE_DISABLE=1 tar -czf ../dist-macos/Aurora-macOS.app.tar.gz -C "$app_dir" Aurora.app
+          # firma minisign accanto al pacchetto (Aurora-macOS.app.tar.gz.sig); la password e' vuota se il segreto non c'e'
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
+          npx tauri signer sign ../dist-macos/Aurora-macOS.app.tar.gz
+          test -s ../dist-macos/Aurora-macOS.app.tar.gz.sig
+          ls -la ../dist-macos
+
+      - name: Impronte dei file
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        working-directory: dist-macos
+        run: shasum -a 256 Aurora-macOS.dmg $(ls Aurora-macOS.app.tar.gz 2>/dev/null) > SHA256SUMS-macos.txt
 
       - name: Allegati alla release
         if: github.event_name == 'release' || inputs.tag != ''

@@ -41,7 +41,7 @@ fn announce_known(service: &Arc<UpdateService>, events: &broadcast::Sender<Event
 }
 
 /// Avvia il controllo periodico: il primo dopo `first_delay`, poi ogni `interval_hours` delle impostazioni (se accese).
-/// Con `installer` (il programma Windows) la versione nuova si scarica subito in sottofondo e se ne controlla la firma: quando si preme
+/// Con `installer` (il programma Windows o macOS) la versione nuova si scarica subito in sottofondo e se ne controlla la firma: quando si preme
 /// «Installa» il pacchetto e' gia' pronto. Una preparazione fallita non si ripete da sola: si riprova a mano.
 pub fn spawn_checker(service: Arc<UpdateService>, events: broadcast::Sender<Event>, phone_url: Arc<dyn Fn() -> String + Send + Sync>, installer: Option<Arc<dyn remote_api::UpdateInstaller>>, first_delay: Duration) {
     tokio::spawn(async move {

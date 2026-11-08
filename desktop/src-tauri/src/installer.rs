@@ -1,14 +1,19 @@
 //! L'installazione di un aggiornamento: il pacchetto e la sua firma si scaricano in anticipo (appena il controllo trova la versione nuova)
-//! e si controllano con la chiave pubblica di Aurora; all'«Installa» si ricontrolla la firma del file pronto, si avvia l'installatore e si
-//! chiude il programma, che l'installatore riapre. **Senza firma valida non si installa mai nulla.**
+//! e si controllano con la chiave pubblica di Aurora; all'«Installa» si ricontrolla la firma del file pronto e si installa:
+//! - Windows: si avvia l'installatore NSIS e si chiude il programma, che l'installatore riapre;
+//! - macOS: si estrae Aurora.app dal pacchetto, si sostituisce quella in uso, si toglie la quarantena e si riapre Aurora dopo la chiusura.
+//!
+//! **Senza firma valida non si installa mai nulla.**
 
-// su Linux resta solo il rifiuto: le parti dell'installatore di Windows non si usano
+// su Linux resta solo il rifiuto e su macOS non si usano le parti dell'installatore di Windows
 #![cfg_attr(not(windows), allow(dead_code))]
 
 use std::path::PathBuf;
 use std::sync::Arc;
 #[cfg(windows)]
-use std::{process::Command, time::Duration};
+use std::process::Command;
+#[cfg(any(windows, target_os = "macos"))]
+use std::time::Duration;
 
 use remote_api::UpdateInstaller;
 use tauri::AppHandle;
@@ -22,6 +27,9 @@ use updater::UpdateService;
 const PUBLIC_KEY: &str = include_str!("../../updater.pub");
 /// Un pacchetto di Aurora e' di qualche decina di MB: oltre questo limite qualcosa non va.
 const MAX_PACKAGE_BYTES: u64 = 300 * 1024 * 1024;
+/// Dove scaricare a mano la versione nuova se l'aggiornamento dall'app non si puo' fare.
+#[cfg(any(target_os = "macos", test))]
+const RELEASES_URL: &str = "https://github.com/wifi75/Aurora/releases/latest";
 
 /// Gli argomenti dell'installatore NSIS di Tauri: `/P` lo fa girare senza domande (solo l'avanzamento), `/R` fa riaprire Aurora a fine
 /// installazione, `/UPDATE` dice che e' un aggiornamento di una copia gia' installata.
@@ -60,15 +68,15 @@ pub fn verify_package(data: &[u8], signature: &str) -> Result<(), String> {
 }
 
 impl UpdateInstaller for DesktopInstaller {
-    /// Fuori da Windows non c'e' un installatore da lanciare: chi usa Linux aggiorna ricompilando (vedi `docs/linux.md`).
-    #[cfg(not(windows))]
+    /// Su Linux non c'e' un installatore da lanciare: chi usa Linux aggiorna ricompilando (vedi `docs/linux.md`).
+    #[cfg(not(any(windows, target_os = "macos")))]
     fn install(&self, _updates: Arc<UpdateService>) -> Result<String, String> {
         let _ = &self.app;
         Err("su Linux l'aggiornamento automatico non c'e': si aggiorna ricompilando con scripts/compila-linux.sh".to_string())
     }
 
     /// Scarica in anticipo e controlla la firma: il file resta pronto per «Installa».
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     fn prepare(&self, updates: Arc<UpdateService>) -> Result<(), String> {
         updates.prepare(PUBLIC_KEY, &package_dir(), MAX_PACKAGE_BYTES).map(|_| ())
     }
@@ -105,6 +113,179 @@ impl UpdateInstaller for DesktopInstaller {
             app.exit(0);
         });
         Ok(ready.version)
+    }
+
+    /// macOS: Aurora.app pronta e firmata si estrae e prende il posto di quella in uso; Aurora si chiude e un piccolo comando staccato
+    /// la riapre appena la vecchia e' uscita (prima non si potrebbe: il programma ammette una sola istanza).
+    #[cfg(target_os = "macos")]
+    fn install(&self, updates: Arc<UpdateService>) -> Result<String, String> {
+        let ready = updates.prepare(PUBLIC_KEY, &package_dir(), MAX_PACKAGE_BYTES)?;
+        let release_url = updates.available().map(|r| r.url).filter(|u| !u.is_empty()).unwrap_or_else(|| RELEASES_URL.to_string());
+        updates.set_installing();
+        let fail = |e: String| {
+            let message = mac::with_release_link(&e, &release_url);
+            updates.set_error(&message);
+            message
+        };
+        let app_path = mac::replace_running_app(&ready.path, &package_dir()).map_err(fail)?;
+        if let Err(e) = mac::relaunch_after_exit(&app_path) {
+            // l'app e' gia' quella nuova: basta riaprirla
+            let message = format!("Aurora {} e' installata ma non si e' riaperta da sola ({e}): chiudila e riaprila", ready.version);
+            updates.set_error(&message);
+            return Err(message);
+        }
+        tracing::info!("aggiornamento {} installato in {}", ready.version, app_path.display());
+
+        // un attimo per rispondere alla pagina, poi si chiude: il comando staccato riapre la versione nuova
+        let app = self.app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(900));
+            app.exit(0);
+        });
+        Ok(ready.version)
+    }
+}
+
+/// Le parti della sostituzione di Aurora.app su macOS. Le funzioni pure si provano anche su Windows.
+#[cfg(any(target_os = "macos", test))]
+mod mac {
+    #[cfg(target_os = "macos")]
+    use std::ffi::OsStr;
+    use std::path::{Path, PathBuf};
+
+    /// Il pacchetto `.app` che contiene il programma in uso: si risale dal percorso dell'eseguibile
+    /// (`.../Aurora.app/Contents/MacOS/aurora-desktop`) alla prima cartella che finisce in `.app`.
+    pub fn app_bundle_of(exe: &Path) -> Option<PathBuf> {
+        exe.ancestors().skip(1).find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("app"))).map(Path::to_path_buf)
+    }
+
+    /// Perche' l'app in quel posto non si puo' sostituire, se non si puo'.
+    pub fn replace_blocker(app: &Path) -> Option<&'static str> {
+        let text = app.to_string_lossy();
+        if text.starts_with("/Volumes/") {
+            return Some("Aurora e' aperta direttamente dal disco .dmg: trascinala in Applicazioni, aprila da li' e riprova");
+        }
+        // Gatekeeper fa girare le app scaricate e mai spostate da una copia di sola lettura (App Translocation)
+        if text.contains("/AppTranslocation/") {
+            return Some("macOS fa girare Aurora da una copia protetta (non e' mai stata spostata dopo lo scaricamento): spostala in Applicazioni, riaprila e riprova");
+        }
+        None
+    }
+
+    /// Il messaggio d'errore con l'indirizzo dove scaricare a mano la versione nuova.
+    pub fn with_release_link(error: &str, release_url: &str) -> String {
+        format!("aggiornamento dall'app non riuscito: {error}. Scarica la versione nuova da {release_url}")
+    }
+
+    /// Gli argomenti di `/bin/sh` per riaprire Aurora quando questa istanza e' uscita (al massimo dopo un minuto): il percorso e il numero
+    /// del processo passano come argomenti, non dentro il testo del comando.
+    pub fn relaunch_args(pid: u32, app: &Path) -> Vec<String> {
+        let script = "i=0; while kill -0 \"$1\" 2>/dev/null && [ $i -lt 120 ]; do sleep 0.5; i=$((i+1)); done; \
+                      /usr/bin/xattr -dr com.apple.quarantine \"$2\" 2>/dev/null; /usr/bin/open -n \"$2\"";
+        vec!["-c".into(), script.into(), "aurora-riavvio".into(), pid.to_string(), app.to_string_lossy().into_owned()]
+    }
+
+    /// La sola cartella `.app` dentro la cartella estratta.
+    pub fn find_extracted_app(dir: &Path) -> Result<PathBuf, String> {
+        let apps: Vec<PathBuf> = std::fs::read_dir(dir)
+            .map_err(|e| format!("pacchetto estratto non leggibile: {e}"))?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.is_dir() && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("app")))
+            .collect();
+        match apps.as_slice() {
+            [app] if app.join("Contents").join("MacOS").is_dir() && app.join("Contents").join("Info.plist").is_file() => Ok(app.clone()),
+            [_] => Err("il pacchetto non contiene un'app completa".into()),
+            [] => Err("il pacchetto non contiene Aurora.app".into()),
+            _ => Err("il pacchetto contiene piu' di un'app".into()),
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn run(program: &str, args: &[&OsStr]) -> Result<(), String> {
+        let out = std::process::Command::new(program).args(args).output().map_err(|e| format!("{program} non avviato: {e}"))?;
+        if out.status.success() { Ok(()) } else { Err(format!("{program}: {}", String::from_utf8_lossy(&out.stderr).trim())) }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn not_writable(dir: &Path, e: &std::io::Error) -> String {
+        // 30 = EROFS (disco di sola lettura)
+        if e.kind() == std::io::ErrorKind::PermissionDenied || e.raw_os_error() == Some(30) {
+            format!("non ho il permesso di scrivere in {} (serve un utente amministratore, oppure tieni Aurora in una cartella tua)", dir.display())
+        } else {
+            format!("non riesco a scrivere in {}: {e}", dir.display())
+        }
+    }
+
+    /// Estrae `package` (Aurora.app compressa, firma gia' controllata) in una cartella temporanea dentro `work_dir`, la porta accanto
+    /// all'app in uso e scambia le due cartelle; la vecchia si cancella. Se lo scambio non riesce, la vecchia torna al suo posto.
+    /// Ritorna il percorso dell'app aggiornata (lo stesso di prima).
+    #[cfg(target_os = "macos")]
+    pub fn replace_running_app(package: &Path, work_dir: &Path) -> Result<PathBuf, String> {
+        let exe = std::env::current_exe().map_err(|e| format!("percorso del programma sconosciuto: {e}"))?;
+        let exe = std::fs::canonicalize(&exe).unwrap_or(exe);
+        let app = app_bundle_of(&exe).ok_or("Aurora non gira da un pacchetto .app")?;
+        if let Some(why) = replace_blocker(&app) {
+            return Err(why.to_string());
+        }
+        let parent = app.parent().ok_or("cartella dell'app sconosciuta")?;
+        let app_name = app.file_name().ok_or("nome dell'app sconosciuto")?;
+        let pid = std::process::id();
+        let cleanup = |p: &Path| {
+            let _ = std::fs::remove_dir_all(p);
+        };
+
+        // per prima cosa: si puo' scrivere accanto all'app? (cartella d'appoggio sullo stesso disco, per gli spostamenti)
+        let staging = parent.join(format!(".Aurora-aggiornamento-{pid}"));
+        cleanup(&staging);
+        std::fs::create_dir(&staging).map_err(|e| not_writable(parent, &e))?;
+
+        // estrazione nella cartella temporanea (tar di sistema: niente dipendenze in piu')
+        let extracted = work_dir.join(format!("estratto-{pid}"));
+        cleanup(&extracted);
+        let result = (|| {
+            std::fs::create_dir_all(&extracted).map_err(|e| format!("cartella temporanea: {e}"))?;
+            run("/usr/bin/tar", &[OsStr::new("-xzf"), package.as_os_str(), OsStr::new("-C"), extracted.as_os_str()]).map_err(|e| format!("pacchetto non estratto: {e}"))?;
+            let new_app = find_extracted_app(&extracted)?;
+            // la quarantena si toglie prima di metterla al suo posto (e di nuovo alla riapertura)
+            let _ = run("/usr/bin/xattr", &[OsStr::new("-dr"), OsStr::new("com.apple.quarantine"), new_app.as_os_str()]);
+            let staged = staging.join(app_name);
+            // stesso disco: basta spostarla; altrimenti si copia con ditto (tiene firme, collegamenti e attributi)
+            if std::fs::rename(&new_app, &staged).is_err() {
+                run("/usr/bin/ditto", &[new_app.as_os_str(), staged.as_os_str()]).map_err(|e| format!("app nuova non copiata accanto a quella in uso: {e}"))?;
+            }
+            let old = staging.join("precedente.app");
+            std::fs::rename(&app, &old).map_err(|e| not_writable(parent, &e))?;
+            if let Err(e) = std::fs::rename(&staged, &app) {
+                // la vecchia torna al suo posto: Aurora resta com'era
+                let _ = std::fs::rename(&old, &app);
+                return Err(not_writable(parent, &e));
+            }
+            Ok::<(), String>(())
+        })();
+        cleanup(&extracted);
+        // dentro c'e' anche la vecchia app: il programma in uso continua a girare (i file aperti restano validi fino alla chiusura)
+        cleanup(&staging);
+        result?;
+        let _ = run("/usr/bin/xattr", &[OsStr::new("-dr"), OsStr::new("com.apple.quarantine"), app.as_os_str()]);
+        Ok(app)
+    }
+
+    /// Lancia, staccato da Aurora, il comando che la riapre quando questa istanza e' uscita.
+    #[cfg(target_os = "macos")]
+    pub fn relaunch_after_exit(app: &Path) -> Result<(), String> {
+        use std::os::unix::process::CommandExt;
+        use std::process::{Command, Stdio};
+        Command::new("/bin/sh")
+            .args(relaunch_args(std::process::id(), app))
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            // gruppo di processi suo: la chiusura di Aurora non se lo porta dietro
+            .process_group(0)
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 }
 
@@ -148,6 +329,51 @@ mod tests {
         // la chiave incorporata si legge: una firma fasulla viene rifiutata per la firma, non perche' la chiave e' illeggibile
         let e = verify_package(b"x", "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZQo=").unwrap_err();
         assert!(!e.contains("chiave pubblica non valida"), "{e}");
+    }
+
+    #[test]
+    fn the_running_app_is_found_from_the_executable() {
+        use std::path::Path;
+        let exe = Path::new("/Applications/Aurora.app/Contents/MacOS/aurora-desktop");
+        assert_eq!(mac::app_bundle_of(exe).as_deref(), Some(Path::new("/Applications/Aurora.app")));
+        let nested = Path::new("/Users/x/Programmi/Aurora.app/Contents/Resources/hamlib/rigctld");
+        assert_eq!(mac::app_bundle_of(nested).as_deref(), Some(Path::new("/Users/x/Programmi/Aurora.app")));
+        assert!(mac::app_bundle_of(Path::new("/usr/local/bin/aurora-desktop")).is_none(), "fuori da un .app non si sostituisce niente");
+    }
+
+    #[test]
+    fn an_app_on_the_dmg_or_translocated_is_not_replaced() {
+        use std::path::Path;
+        assert!(mac::replace_blocker(Path::new("/Volumes/Aurora/Aurora.app")).is_some_and(|w| w.contains(".dmg")));
+        assert!(mac::replace_blocker(Path::new("/private/var/folders/ab/T/AppTranslocation/1234/d/Aurora.app")).is_some());
+        assert!(mac::replace_blocker(Path::new("/Applications/Aurora.app")).is_none());
+        let message = mac::with_release_link("permesso negato", RELEASES_URL);
+        assert!(message.contains("permesso negato") && message.contains(RELEASES_URL));
+    }
+
+    #[test]
+    fn the_relaunch_waits_for_this_process_and_passes_the_path_as_an_argument() {
+        let args = mac::relaunch_args(4321, std::path::Path::new("/Applications/Aurora \"prova\".app"));
+        assert_eq!(args[0], "-c");
+        assert!(args[1].contains("kill -0") && args[1].contains("open -n \"$2\"") && args[1].contains("com.apple.quarantine"));
+        assert!(!args[1].contains("prova"), "il percorso non entra nel testo del comando");
+        assert_eq!(&args[3..], ["4321", "/Applications/Aurora \"prova\".app"]);
+    }
+
+    #[test]
+    fn the_extracted_package_must_hold_exactly_one_complete_app() {
+        let dir = std::env::temp_dir().join(format!("aurora-mac-estratto-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(mac::find_extracted_app(&dir).is_err(), "vuota");
+        let app = dir.join("Aurora.app");
+        std::fs::create_dir_all(app.join("Contents").join("MacOS")).unwrap();
+        assert!(mac::find_extracted_app(&dir).is_err(), "senza Info.plist");
+        std::fs::write(app.join("Contents").join("Info.plist"), "<plist/>").unwrap();
+        assert_eq!(mac::find_extracted_app(&dir).unwrap(), app);
+        std::fs::create_dir_all(dir.join("Altra.app")).unwrap();
+        assert!(mac::find_extracted_app(&dir).is_err(), "due app");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Se c'e' un pacchetto appena fatto con `scripts/rilascio-windows.ps1`, la sua firma deve tornare con la chiave pubblica incorporata.
