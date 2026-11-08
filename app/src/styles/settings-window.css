@@ -149,7 +149,8 @@ html.sw-fixed,html.sw-fixed body{height:100%;margin:0;overflow:hidden}
 
 /* le Impostazioni come riquadro centrale sopra l'applicazione, che dietro si oscura e si sfoca (stesse proporzioni dello stile di riferimento) */
 .settings-backdrop{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(4,7,12,.62);-webkit-backdrop-filter:blur(12px) brightness(.8);backdrop-filter:blur(12px) brightness(.8);animation:swveil .18s ease-out}
-.settings-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1160px,calc(100vw - 80px));height:min(828px,calc(100vh - 80px));border-radius:14px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.settings-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1160px,calc(100vw - 80px));height:min(828px,calc(100vh - 80px));border-radius:14px;overflow:hidden;overflow:clip;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+/* overflow:clip e non solo hidden: un riquadro hidden si puo' ancora far scorrere da codice (scrollIntoView del display scelto) e la finestra spariva fuori schermo lasciando solo lo sfondo sfocato */
 .sw-window.sw-window--in{width:100%;height:100%;border-radius:14px}
 @keyframes swveil{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.settings-backdrop{animation:none}}
