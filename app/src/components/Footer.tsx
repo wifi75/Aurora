@@ -47,7 +47,7 @@ export function Footer() {
             {t('bar.decodes')}: <b>{periodDecodes}</b>
           </span>
           <span className={`bar-progress${status.transmitting ? ' is-tx' : ''}`} role="progressbar" aria-label={t('bar.period')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.floor(elapsed)}>
-            <i style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
+            <i className={elapsed < 0.6 ? 'is-reset' : undefined} style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
           </span>
           <span className="bar-item bar-count">{`${shown}/${Math.ceil(total)}`}</span>
           {profile ? (
