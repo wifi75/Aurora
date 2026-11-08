@@ -427,6 +427,11 @@ pub fn start_with_save(
                         }
                     }
                 }
+                // Q65: «Clear Avg» svuota la media dei periodi
+                if rig::take_q65_clear_avg() {
+                    q65_avg.clear();
+                    tracing::info!("motore proprio: media Q65 svuotata");
+                }
                 // Q65: un altro periodo o sottomodo rifa' i periodi come un cambio di modo
                 let q65_wanted = rig::q65_setup();
                 if q65_wanted != q65_now {
@@ -956,7 +961,7 @@ fn decode_period(
             },
             hashes,
         ).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
-        // Q65: periodo e sottomodo scelti, ipotesi AP con il mio nominativo e il DX, metrica dell'evanescenza (lorentziana, come WSJT-X)
+        // Q65: periodo e sottomodo scelti, ipotesi AP con il mio nominativo e il DX, metrica dell'evanescenza (lorentziana come WSJT-X, o gaussiana)
         // e media dei periodi della stessa parita'; i messaggi da AP o dalla media hanno il segno di quelli a priori di FT8
         Mode::Q65 => {
             let setup = rig::q65_setup();
@@ -964,7 +969,7 @@ fn decode_period(
                 setup,
                 my_call: ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
                 dx_call: ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
-                fading: Some(jt::q65::Fading::Lorentzian),
+                fading: Some(rig::q65_fading()),
                 ..jt::q65::Options::default()
             };
             // il numero del periodo dall'inizio del periodo (`period_key` conta i quarti di minuto)

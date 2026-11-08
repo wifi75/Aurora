@@ -17,7 +17,8 @@ import { EDIT_LAYOUT } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
-import { ModeSwitch } from '../components/ModeSwitch';
+import { ModeSwitch, q65Parts } from '../components/ModeSwitch';
+import { Q65Extras } from '../components/Q65Extras';
 import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
 import { TxCommands } from '../components/TxCommands';
@@ -377,6 +378,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
           />
+          {info.data?.engine === 'native' && q65Parts(status?.mode ?? '') ? <Q65Extras disabled={status?.transmitting ?? false} /> : null}
           <FreqPicker
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}

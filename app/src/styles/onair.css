@@ -6842,6 +6842,16 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
   margin-left: var(--space-1);
 }
 
+/* Q65: «Clear Avg» piccolo e discreto accanto ai selettori */
+.mode-switch-clear {
+  min-width: 2rem;
+  padding: 0 var(--space-1);
+  opacity: 0.75;
+}
+.mode-switch-clear:hover:not(:disabled) {
+  opacity: 1;
+}
+
 /* Frequenze del modo (come in WSJT-X): pulsante con banda e frequenza, pannello con una riga per banda */
 .freq-picker {
   position: relative;

@@ -34,6 +34,11 @@ const fn own_toggle(id: &'static str) -> Control {
     Control { id, ui_id: "", kind: Kind::Toggle, tx: false, inverted: false, own: true }
 }
 
+/// Pulsante semplice del solo motore proprio.
+const fn own_press(id: &'static str) -> Control {
+    Control { id, ui_id: "", kind: Kind::Press, tx: false, inverted: false, own: true }
+}
+
 const fn arming(id: &'static str, ui_id: &'static str) -> Control {
     Control { id, ui_id, kind: Kind::Toggle, tx: true, inverted: false, own: false }
 }
@@ -66,6 +71,8 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("pounce"),
     own_toggle("hold_tx"),
     own_toggle("fox"),
+    // Q65: modello dell'evanescenza gaussiano invece del lorentziano di WSJT-X (`fadingModel` di `q65_intrinsics_fastfading`)
+    own_toggle("q65_gauss"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
@@ -88,6 +95,8 @@ pub const CONTROLS: &[Control] = &[
     press("gen_msgs", "genStdMsgsPushButton"),
     press("rx_to_tx", "pbR2T"),
     press("tx_to_rx", "pbT2R"),
+    // Q65: «Clear Avg» di WSJT-X, svuota la media dei periodi
+    own_press("q65_clear_avg"),
 ];
 
 pub fn find(id: &str) -> Option<&'static Control> {

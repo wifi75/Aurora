@@ -80,6 +80,21 @@ pub fn jt4_submode() -> jt::jt4::Submode {
     jt::jt4::Submode(JT4_SUBMODE.load(Ordering::Relaxed).min(6))
 }
 
+/// Q65: modello gaussiano dell'evanescenza (interruttore «q65_gauss»); spento = lorentziano, come WSJT-X.
+static Q65_GAUSS: AtomicBool = AtomicBool::new(false);
+/// Q65: richiesta di svuotare la media dei periodi («Clear Avg»), raccolta dal motore al giro successivo.
+static Q65_CLEAR_AVG: AtomicBool = AtomicBool::new(false);
+
+/// Il modello dell'evanescenza scelto per Q65.
+pub fn q65_fading() -> jt::q65::Fading {
+    if Q65_GAUSS.load(Ordering::Relaxed) { jt::q65::Fading::Gaussian } else { jt::q65::Fading::Lorentzian }
+}
+
+/// Vero una volta dopo «Clear Avg»: chi lo legge svuota la media.
+pub fn take_q65_clear_avg() -> bool {
+    Q65_CLEAR_AVG.swap(false, Ordering::Relaxed)
+}
+
 /// Periodo e sottomodo di Q65 in uso: li tengono `qso_native` (durata del periodo) e `tx_native` (avvio della trasmissione).
 pub fn q65_setup() -> jt::q65::Setup {
     jt::q65::Setup::new(qso_native::slot::q65_period_s(), qso_native::slot::q65_submode()).unwrap_or_default()
@@ -469,6 +484,9 @@ impl NativeControls {
     }
 
     pub(crate) fn set_switch(&self, id: &str, on: bool) {
+        if id == "q65_gauss" {
+            Q65_GAUSS.store(on, Ordering::Relaxed);
+        }
         if id == "monitor" {
             self.monitor.store(on, Ordering::Relaxed);
         } else if let Ok(mut all) = self.switches.lock()
@@ -819,6 +837,7 @@ impl Rig for NativeRig {
                     }
                     // «Decodifica»: rielabora l'ultimo periodo (se non ce n'e' ancora uno, il motore non fa nulla)
                     "decode" => self.controls.redecode.store(true, Ordering::Relaxed),
+                    "q65_clear_avg" => Q65_CLEAR_AVG.store(true, Ordering::Relaxed),
                     _ => {}
                 }
                 Ok(())
