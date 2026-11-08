@@ -1,7 +1,8 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { FreqPicker } from '../components/FreqPicker';
+import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { BandBar } from '../components/BandBar';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
@@ -379,6 +380,12 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             locked={status?.transmitting ?? false}
             onPick={info.data?.rig_control || info.data?.manual_dial ? (band) => void pickBand(band) : undefined}
             onHop={info.data?.rig_control ? () => void attempt(() => postBandHopNext(), t('note.bandHop')) : undefined}
+          />
+          <FreqPicker
+            dialHz={status?.dial_hz ?? 0}
+            mode={status?.mode ?? ''}
+            locked={status?.transmitting ?? false}
+            onPick={info.data?.rig_control || info.data?.manual_dial ? (hz) => void attempt(async () => void (await postFrequency(hz)), null) : undefined}
           />
         </div>
         <StatusBar connection={connection} hideDial={!displayHidden} />

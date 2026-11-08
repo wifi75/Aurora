@@ -401,6 +401,16 @@ export const stationStrings = {
     'Um som para as novidades: três notas para um país novo, uma para as outras. Começa desligado; o navegador permite-o após um toque.',
   ],
   'band.group': ['Bande', 'Bands', 'Bänder', 'Bandes', 'Bandas', 'Bandas'],
+  'band.freqs': ['Frequenze della banda', 'Band frequencies', 'Frequenzen des Bands', 'Fréquences de la bande', 'Frecuencias de la banda', 'Frequências da banda'],
+  'band.alt': ['alternativa', 'alternative', 'Alternative', 'alternative', 'alternativa', 'alternativa'],
+  'tip.band.freqs': [
+    'Tutte le frequenze della tabella per questa banda e questo modo: la standard e le alternative (anche quelle delle DXpedition). Si cambiano in Impostazioni > Frequenze.',
+    'All table frequencies for this band and mode: the standard one and the alternatives (DXpedition ones too). Edit them in Settings > Frequencies.',
+    'Alle Tabellenfrequenzen für dieses Band und diesen Modus: die Standardfrequenz und die Alternativen (auch für DXpeditionen). Änderbar unter Einstellungen > Frequenzen.',
+    'Toutes les fréquences de la table pour cette bande et ce mode : la standard et les alternatives (aussi celles des DXpéditions). Modifiables dans Réglages > Fréquences.',
+    'Todas las frecuencias de la tabla para esta banda y este modo: la estándar y las alternativas (también las de DXpediciones). Se cambian en Ajustes > Frecuencias.',
+    'Todas as frequências da tabela para esta banda e este modo: a padrão e as alternativas (também as de DXpedições). Mudam-se em Definições > Frequências.',
+  ],
   'band.pick': ['Vai su {band}', 'Go to {band}', 'Wechsle auf {band}', 'Aller sur {band}', 'Ir a {band}', 'Ir para {band}'],
   'band.locked': [
     'Non si cambia banda in trasmissione',

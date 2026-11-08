@@ -473,6 +473,13 @@ button.glass,
   padding: 0 var(--space-2);
 }
 
+/* le frequenze della banda (standard, alternative, DXpedition) accanto ai pulsanti */
+.freq-picker {
+  min-height: 2rem;
+  max-width: 12rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Telefono: orario, dB e messaggio; paese sotto il messaggio; niente DT e frequenza */
 @media (max-width: 63.99rem) {
   .decode-row {
