@@ -1,28 +1,26 @@
 import { useEffect, useState } from 'react';
-import { postFox } from '../api/client';
+import { ApiError, postFox, postFoxClublog } from '../api/client';
 import type { FoxSnapshot } from '../api/schemas';
 import { useT } from '../i18n';
-import { foxLogAdif, foxLogCabrillo, foxRates, saveText } from '../lib/foxLog';
+import { foxContinents, foxLogAdif, foxLogCabrillo, foxRates, saveText } from '../lib/foxLog';
+import { replyErrorMessage } from '../lib/replyError';
+import { toast } from '../lib/toast';
 
+/** Il vecchio posto del seme (solo nel browser): si passa una volta al motore e si cancella. */
 const OTP_KEY = 'aurora-fox-otp-v1';
 const SEED_RE = /^[A-Z2-7]{16}$/;
 
-type OtpSaved = { seed: string; interval: number };
-
-function readOtp(): OtpSaved {
+/** Il seme rimasto nel browser da una versione di prima, se c'e'; lo legge una volta sola e lo toglie. */
+function takeOldOtp(): { seed: string; interval: number } | null {
   try {
-    const v = JSON.parse(window.localStorage.getItem(OTP_KEY) ?? 'null') as Partial<OtpSaved> | null;
-    return { seed: typeof v?.seed === 'string' ? v.seed : '', interval: typeof v?.interval === 'number' ? v.interval : 1 };
+    const raw = window.localStorage.getItem(OTP_KEY);
+    if (raw === null) return null;
+    window.localStorage.removeItem(OTP_KEY);
+    const v = JSON.parse(raw) as { seed?: unknown; interval?: unknown } | null;
+    const seed = typeof v?.seed === 'string' ? v.seed : '';
+    return SEED_RE.test(seed) ? { seed, interval: typeof v?.interval === 'number' ? v.interval : 1 } : null;
   } catch {
-    return { seed: '', interval: 1 };
-  }
-}
-
-function saveOtp(v: OtpSaved) {
-  try {
-    window.localStorage.setItem(OTP_KEY, JSON.stringify(v));
-  } catch {
-    // senza archivio del browser il seme si riscrive a ogni avvio
+    return null;
   }
 }
 
@@ -36,6 +34,7 @@ export function FoxStats({ fox }: { fox: FoxSnapshot }) {
   }, []);
   const { rate, lastHour, buckets } = foxRates(fox.log, now);
   const peak = Math.max(1, ...buckets);
+  const continents = foxContinents(fox.log);
   return (
     <div className="foxc-stats">
       <div className="foxc-stat" title={t('tip.fox.logged')}>
@@ -69,25 +68,43 @@ export function FoxStats({ fox }: { fox: FoxSnapshot }) {
         <small>{t('fox.periods')}</small>
         <b className="data">{fox.periods}</b>
       </div>
+      {continents.length > 0 ? (
+        <div className="foxc-stat foxc-stat--cont" title={t('tip.fox.continents')}>
+          <small>{t('fox.continents')}</small>
+          <span className="foxc-conts data">
+            {continents.map(([c, n]) => (
+              <span key={c}>
+                {c} <b>{n}</b>
+              </span>
+            ))}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-/** La verifica OTP: seme (solo su questo computer) e intervallo; il seme salvato si rimanda al motore quando si apre la pagina. */
+/** La verifica OTP: seme e intervallo salvati nel motore (`fox-otp.json` nella cartella dati); il seme non torna alla pagina, che sa solo se c'e'. */
 export function FoxOtp({ fox }: { fox: FoxSnapshot }) {
   const t = useT();
-  const [saved] = useState(readOtp);
-  const [seed, setSeed] = useState(saved.seed);
-  const [every, setEvery] = useState(saved.interval);
+  const [seed, setSeed] = useState('');
+  const [every, setEvery] = useState(fox.otp_interval || 1);
+  // l'intervallo segue quello del motore finche' non lo si cambia qui
+  useEffect(() => setEvery(fox.otp_interval || 1), [fox.otp_interval]);
+  // un seme lasciato nel browser da una versione di prima passa al motore una volta, poi si dimentica
+  const [old] = useState(takeOldOtp);
   useEffect(() => {
-    if (SEED_RE.test(saved.seed)) void postFox({ action: 'otp', seed: saved.seed, interval: saved.interval });
-  }, [saved]);
+    if (old) void postFox({ action: 'otp', seed: old.seed, interval: old.interval });
+  }, [old]);
   const clean = seed.trim().toUpperCase();
   const bad = clean !== '' && !SEED_RE.test(clean);
+  const send = (body: Parameters<typeof postFox>[0]) =>
+    void postFox(body)
+      .then(() => setSeed(''))
+      .catch((error: unknown) => toast(replyErrorMessage(error, t), 'error'));
+  // casella vuota con un seme gia' salvato: cambia solo l'intervallo
   const apply = () => {
-    if (bad) return;
-    saveOtp({ seed: clean, interval: every });
-    void postFox({ action: 'otp', seed: clean || null, interval: every });
+    if (!bad) send(clean === '' && fox.otp ? { action: 'otp', keep_seed: true, interval: every } : { action: 'otp', seed: clean || null, interval: every });
   };
   return (
     <div className="foxc-otp" title={t('tip.fox.otp')}>
@@ -95,7 +112,18 @@ export function FoxOtp({ fox }: { fox: FoxSnapshot }) {
       {fox.otp && fox.otp_code ? <span className="data muted">{fox.otp_code}</span> : null}
       <label className="foxc-label">
         {t('fox.otpSeed')}
-        <input className="foxc-input data" type="password" autoComplete="off" spellCheck={false} maxLength={16} size={16} value={seed} aria-invalid={bad} onChange={(e) => setSeed(e.target.value)} />
+        <input
+          className="foxc-input data"
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={16}
+          size={16}
+          value={seed}
+          placeholder={fox.otp ? t('fox.otpSaved') : ''}
+          aria-invalid={bad}
+          onChange={(e) => setSeed(e.target.value)}
+        />
       </label>
       <label className="foxc-label">
         {t('fox.otpEvery')}
@@ -104,6 +132,11 @@ export function FoxOtp({ fox }: { fox: FoxSnapshot }) {
       <button type="button" className="foxc-btn foxc-btn--small" disabled={bad} onClick={apply}>
         {t('fox.otpSave')}
       </button>
+      {fox.otp ? (
+        <button type="button" className="foxc-btn foxc-btn--small" title={t('tip.fox.otpRemove')} onClick={() => send({ action: 'otp', seed: null, interval: every })}>
+          {t('fox.otpRemove')}
+        </button>
+      ) : null}
       {bad ? <span className="foxc-warn">{t('fox.otpBad')}</span> : null}
     </div>
   );
@@ -134,6 +167,14 @@ export function FoxLogCard({ fox, myCall, myGrid }: { fox: FoxSnapshot; myCall: 
   const t = useT();
   const stamp = new Date().toISOString().slice(0, 10).replaceAll('-', '');
   const rows = [...fox.log].reverse();
+  const [sending, setSending] = useState(false);
+  const toClublog = () => {
+    setSending(true);
+    postFoxClublog(fox.log)
+      .then((n) => toast(t('fox.clublogQueued', { n })))
+      .catch((error: unknown) => toast(error instanceof ApiError && error.code === 'clublog_off' ? t('fox.clublogOff') : replyErrorMessage(error, t), 'error'))
+      .finally(() => setSending(false));
+  };
   return (
     <section className="foxc-card foxc-tone--mint">
       <header className="foxc-card-head">
@@ -145,6 +186,9 @@ export function FoxLogCard({ fox, myCall, myGrid }: { fox: FoxSnapshot; myCall: 
           </button>
           <button type="button" className="foxc-btn foxc-btn--small" disabled={fox.log.length === 0} title={t('tip.fox.cabrillo')} onClick={() => saveText(`fox_${myCall.replaceAll('/', '-')}_${stamp}.log`, foxLogCabrillo(fox.log, myCall))}>
             Cabrillo
+          </button>
+          <button type="button" className="foxc-btn foxc-btn--small" disabled={fox.log.length === 0 || sending} title={t('tip.fox.clublog')} onClick={toClublog}>
+            Club Log
           </button>
         </div>
       </header>

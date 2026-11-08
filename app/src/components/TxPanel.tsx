@@ -192,7 +192,13 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
                 RX
               </span>
             )}
-            {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi; la scritta Hound qui non serviva (scelta del proprietario) */}
+            {/* Hound: etichetta come `labDXped` di WSJT-X, «Super Hound» se arriva un SuperFox; verde quando la verifica OTP del Fox e' riuscita */}
+            {hound ? (
+              <span className="hound-tag" data-ok={status.fox_verification?.verified === true} role="status" title={t('tip.tx.houndTag')}>
+                {status.super_hound ? 'Super Hound' : 'Hound'}
+              </span>
+            ) : null}
+            {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi */}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
           {status.tx_alerts && status.tx_alerts.length > 0 ? (

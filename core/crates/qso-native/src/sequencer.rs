@@ -239,6 +239,11 @@ impl Sequencer {
         self.caller_info = info;
     }
 
+    /// Il continente di una stazione secondo chi lo sa (vuoto se ignoto): serve anche ai numeri della Fox.
+    pub fn continent_of(&self, call: &str) -> String {
+        self.caller_info.as_ref().map(|f| f(call).continent).unwrap_or_default()
+    }
+
     pub fn set_options(&mut self, opts: Options) {
         let skip_changed = opts.skip_tx1 != self.opts.skip_tx1;
         let skip = opts.skip_tx1;

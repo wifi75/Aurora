@@ -59,6 +59,8 @@ export const StationStatusSchema = z.object({
   tx_alerts: z.array(TxAlertSchema).optional(),
   /** Hound: esito della verifica in linea del codice OTP del Fox. */
   fox_verification: z.object({ call: z.string(), verified: z.boolean() }).nullable().optional(),
+  /** Hound: in questi minuti si riceve un Fox UltraFOX/SuperFox (etichetta «Super Hound»). */
+  super_hound: z.boolean().optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 
@@ -146,7 +148,7 @@ export const HighlightCallsignSchema = z.object({
 export type HighlightCallsign = z.infer<typeof HighlightCallsignSchema>;
 
 const FoxCallerSchema = z.object({ call: z.string(), grid: z.string(), snr: z.number(), freq_hz: z.number(), age: z.number(), order: z.number().optional().default(0) });
-const FoxLogSchema = z.object({ call: z.string(), grid: z.string(), band: z.string(), mode: z.string(), freq_hz: z.number(), sent: z.string(), rcvd: z.string(), time_ms: z.number() });
+const FoxLogSchema = z.object({ call: z.string(), grid: z.string(), band: z.string(), mode: z.string(), freq_hz: z.number(), sent: z.string(), rcvd: z.string(), time_ms: z.number(), continent: z.string().optional() });
 export type FoxLogEntry = z.infer<typeof FoxLogSchema>;
 export const FoxSnapshotSchema = z.object({
   enabled: z.boolean(),

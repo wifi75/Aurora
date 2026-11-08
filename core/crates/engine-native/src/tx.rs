@@ -351,6 +351,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.seq.dx().filter(|c| !c.is_empty()).map(str::to_string)
     }
 
+    /// Il seme OTP del Fox in uso (`None` = verifica spenta) e ogni quanti periodi il Fox classico manda il codice: si salva in `fox-otp.json`.
+    pub(crate) fn fox_otp(&self) -> crate::persist::FoxOtpFile {
+        crate::persist::FoxOtpFile { seed: self.fox.otp_seed.clone(), interval: u32::try_from(self.fox.otp_interval).unwrap_or(1).max(1) }
+    }
+
     pub fn set_free_tx(&mut self, on: bool) {
         self.free_tx = on.then(|| FreeTxParams::for_mode(self.mode));
         self.free_for = None;
@@ -828,7 +833,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.fox.opts = crate::fox::FoxOptions { slots: slots.clamp(1, crate::fox::MAX_SLOTS), more_cqs, cq, free_text, auto_queue, ultra };
                     }
                     F::Reset => self.fox.reset(),
-                    F::Otp { seed, interval } => {
+                    F::Otp { seed, interval, keep } => {
+                        let seed = if keep { self.fox.otp_seed.clone() } else { seed };
                         let wanted = seed.as_deref().is_some_and(|s| !s.trim().is_empty());
                         self.fox.set_otp(seed, i64::from(interval));
                         if wanted && self.fox.otp_seed.is_none() {
@@ -1008,6 +1014,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     sent: l.sent.clone(),
                     rcvd: l.rcvd.clone(),
                     time_ms: start + 14_000,
+                    continent: self.seq.continent_of(&l.call),
                 });
                 while self.fox_log.len() > FOX_LOG_VIEW {
                     self.fox_log.pop_front();
@@ -3217,7 +3224,7 @@ mod tests {
         controls.set_switch("fox", true);
         controls.tx_df.store(400, Ordering::Relaxed);
         d.handle(TxCommand::Enable(true), BASE);
-        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1 }), BASE + 0.5);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1, keep: false }), BASE + 0.5);
         let odd = SLOT_MS + 15_000;
         let hounds = ["K1ABC", "W9XYZ", "JA1XYZ", "DL1ABC"];
         let decodes: Vec<(String, i32, u32)> = hounds.iter().map(|h| (format!("IU3ABC {h} JN45"), -10, 1500)).collect();
@@ -3244,7 +3251,7 @@ mod tests {
         controls.set_switch("fox", true);
         d.handle(TxCommand::Enable(true), BASE);
         d.handle(TxCommand::Fox(aurora_core::FoxCommand::Options { slots: 5, more_cqs: false, cq: "CQ".into(), free_text: None, auto_queue: false, ultra: true }), BASE + 1.0);
-        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1 }), BASE + 1.5);
+        d.handle(TxCommand::Fox(aurora_core::FoxCommand::Otp { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 1, keep: false }), BASE + 1.5);
         let odd = SLOT_MS + 15_000;
         d.after_slot(odd, &[("IU3ABC K1ABC FN42".to_string(), -10, 1500)], BASE + 29.2, 14_090_000, "20m");
         d.handle(TxCommand::Fox(aurora_core::FoxCommand::Select { call: "K1ABC".into(), top: false }), BASE + 29.5);

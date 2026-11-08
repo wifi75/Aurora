@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+- **Hound con SuperFox: verifica OTP** come WSJT-X: la riga `$VERIFY$ CALL 123456` che accompagna ogni pacchetto SuperFox/UltraFOX si nasconde (o si mostra con «Mostra i messaggi OTP») e il codice va alla stessa verifica in linea del Fox classico, con l'esito «CALL verified/invalid» a 750 Hz; la riga non va ai programmi collegati via UDP.
+- **Etichetta Hound**: accanto a RX/TX una piccola etichetta «Hound» (o «Super Hound» quando si riceve un SuperFox), rossa finche' il Fox non e' verificato e verde dopo la verifica OTP, come in WSJT-X.
+- **Fox: seme OTP salvato nel programma** (`fox-otp.json` nella cartella dei dati, tolto dal pacchetto per l'assistenza): torna da solo a ogni avvio, non solo quando si apre la pagina Fox; la pagina non lo rilegge (casella vuota = resta quello salvato, «Togli» lo cancella). Un seme rimasto nel browser passa al programma una volta.
+- **Fox log su Club Log**: pulsante «Club Log» nel Fox log che mette i QSO della sessione nella coda dell'invio diretto a Club Log (serve Club Log acceso nelle impostazioni; i doppioni Club Log li tiene buoni).
+- **Fox: QSO per continente** nei numeri della pagina Fox.
+
 ## 0.11.197 - 2026-11-08
 - **Fox (DXpedition)**: verifica OTP come WSJT-X (codice a 6 cifre dal seme di 16 caratteri: `CALL.123456` nel Fox classico, nel pacchetto con UltraFOX); niente trasmissione Fox sulle frequenze FT8 standard e nella sottobanda WSPR; ordinamento dei Hound da un programma esterno via UDP (AnnotationInfo); pagina Fox con ritmo dei QSO, doppio ordinamento e filtri dei chiamanti, distanza, prossimo pacchetto, parametri e Fox log salvabile in ADIF e Cabrillo.
 - **Avvio**: appena la radio risponde (controllo ogni 0,3 s) va sull'ultima banda scelta, sulla frequenza principale del modo in uso; la banda si ricorda in `ultima-banda.txt`.

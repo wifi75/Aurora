@@ -233,6 +233,14 @@ fn likelihoods(s: &[f32]) -> Vec<f32> {
     py
 }
 
+impl Decoded {
+    /// La riga di verifica che WSJT-X scrive dopo ogni pacchetto (`sfox_unpack.f90` con la firma sempre richiesta da `sfrx_sub.f90`):
+    /// `$VERIFY$ CALL 123456`, anche con codice `000000`; il Hound la nasconde o la fa verificare (`features::parse_superfox_verify`).
+    pub fn verify_line(&self) -> String {
+        format!("$VERIFY$ {} {:06}", self.fox, self.otp)
+    }
+}
+
 /// Dai 50 simboli (come escono dal codice polare) al testo (`sfox_unpack.f90`).
 pub fn unpack(symbols: &[u8; SYMBOLS]) -> Option<Decoded> {
     let mut x = *symbols;

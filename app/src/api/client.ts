@@ -1,7 +1,7 @@
 import { AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
+import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
@@ -127,8 +127,14 @@ export async function postTune(on: boolean): Promise<void> {
 }
 
 /** Un comando della pagina Fox: select (in coda), unqueue, drop (chiude un QSO), options, reset. */
-export async function postFox(body: { action: 'select' | 'unqueue' | 'drop' | 'options' | 'reset' | 'otp'; call?: string; top?: boolean; slots?: number; more_cqs?: boolean; cq?: string; free_text?: string | null; auto_queue?: boolean; ultra?: boolean; seed?: string | null; interval?: number }): Promise<void> {
+export async function postFox(body: { action: 'select' | 'unqueue' | 'drop' | 'options' | 'reset' | 'otp'; call?: string; top?: boolean; slots?: number; more_cqs?: boolean; cq?: string; free_text?: string | null; auto_queue?: boolean; ultra?: boolean; seed?: string | null; interval?: number; keep_seed?: boolean }): Promise<void> {
   await request('/fox', jsonInit(body));
+}
+
+/** Il Fox log nella coda dell'invio diretto a Club Log (serve Club Log acceso nelle impostazioni); restituisce quanti QSO sono entrati. */
+export async function postFoxClublog(qsos: FoxLogEntry[]): Promise<number> {
+  const body: unknown = await (await request('/fox/clublog', jsonInit({ qsos }))).json();
+  return body && typeof body === 'object' && 'queued' in body && typeof body.queued === 'number' ? body.queued : 0;
 }
 
 /** «Log QSO» a mano. */

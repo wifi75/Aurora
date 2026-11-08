@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_tune))]
+#[openapi(paths(update_install, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_tune))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -44,6 +44,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/commands/tune", post(tune))
         .route("/api/v1/commands/log-qso", post(log_qso))
         .route("/api/v1/fox", post(fox_command))
+        .route("/api/v1/fox/clublog", post(fox_clublog))
         .route("/api/v1/commands/cq", post(call_cq))
         .route("/api/v1/commands/tx-frequency", post(tx_frequency))
         .route("/api/v1/commands/band", post(change_band))
@@ -666,6 +667,9 @@ struct FoxBody {
     /// Ogni quanti periodi il Fox classico manda il codice (azione `otp`).
     #[serde(default)]
     interval: Option<u32>,
+    /// Azione `otp`: il seme salvato nel motore resta com'e' (la pagina non lo conosce), cambia solo l'intervallo.
+    #[serde(default)]
+    keep_seed: bool,
 }
 
 /// I comandi della pagina Fox: `select` (in coda, `top` in testa), `unqueue`, `drop` (chiude un QSO in corso), `options`, `reset`, `otp` (seme e intervallo della verifica).
@@ -695,11 +699,71 @@ async fn fox_command(State(state): State<AppState>, _: Authed, Json(body): Json<
             if seed.as_deref().is_some_and(|s| s.len() != 16 || !s.bytes().all(|b| b.is_ascii_uppercase() || (b'2'..=b'7').contains(&b))) {
                 return Err(bad());
             }
-            F::Otp { seed, interval: body.interval.unwrap_or(1).clamp(1, 100) }
+            F::Otp { seed, interval: body.interval.unwrap_or(1).clamp(1, 100), keep: body.keep_seed }
         }
         _ => return Err(bad()),
     };
     dispatch(&state, Command::Fox(cmd))
+}
+
+/// Un QSO del Fox log come lo ha la pagina Fox (`FoxLogView`).
+#[derive(Deserialize)]
+struct FoxLogQso {
+    call: String,
+    #[serde(default)]
+    grid: String,
+    band: String,
+    mode: String,
+    freq_hz: u64,
+    #[serde(default)]
+    sent: String,
+    #[serde(default)]
+    rcvd: String,
+    time_ms: u64,
+}
+
+#[derive(Deserialize)]
+struct FoxClublogBody {
+    qsos: Vec<FoxLogQso>,
+}
+
+/// Quanti QSO del Fox log si mandano al massimo in una volta (quanti ne tiene la pagina).
+const FOX_CLUBLOG_MAX: usize = 500;
+
+/// «Club Log» del Fox log: i QSO della sessione Fox entrano nella coda dell'invio diretto a Club Log (gli stessi record dell'invio in tempo reale;
+/// Club Log tiene buoni i doppioni). Serve Club Log acceso nelle impostazioni.
+#[utoipa::path(post, path = "/api/v1/fox/clublog", responses((status = 200, description = "`{queued}`: QSO messi in coda"), (status = 400, description = "Nessun QSO valido o troppi (bad_fox_log)"), (status = 404, description = "Solo con il motore proprio (upload_unavailable)"), (status = 409, description = "Club Log spento nelle impostazioni (clublog_off, con `message`)")))]
+async fn fox_clublog(State(state): State<AppState>, _: Authed, Json(body): Json<FoxClublogBody>) -> Result<Json<Value>, ApiError> {
+    let bad = || ApiError::new(StatusCode::BAD_REQUEST, "bad_fox_log");
+    if body.qsos.is_empty() || body.qsos.len() > FOX_CLUBLOG_MAX {
+        return Err(bad());
+    }
+    let mut qsos = Vec::with_capacity(body.qsos.len());
+    for q in body.qsos {
+        let call = clean_dx_call(&q.call).filter(|c| !c.is_empty()).ok_or_else(bad)?;
+        if q.time_ms == 0 || q.freq_hz == 0 || q.band.len() > 8 || q.mode.len() > 8 || q.grid.len() > 8 || q.sent.len() > 8 || q.rcvd.len() > 8 {
+            return Err(bad());
+        }
+        // la Fox chiude il QSO 14 s dopo l'inizio del periodo dell'RR73 (`FoxLogView::time_ms`): inizio e fine come nel registro
+        qsos.push(aurora_core::QsoRecord {
+            call,
+            grid: q.grid.trim().to_string(),
+            band: q.band.trim().to_string(),
+            mode: q.mode.trim().to_uppercase(),
+            freq_hz: q.freq_hz,
+            rst_sent: q.sent.trim().to_string(),
+            rst_rcvd: q.rcvd.trim().to_string(),
+            time_ms: (q.time_ms % 86_400_000) as u32,
+            time_on_unix_ms: q.time_ms.saturating_sub(14_000),
+            time_off_unix_ms: q.time_ms,
+            ..Default::default()
+        });
+    }
+    let service = state.engine_settings.as_ref().and_then(|s| s.reporting()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "upload_unavailable"))?;
+    match service.queue_qsos(reporting::upload::Target::Clublog, &qsos) {
+        Ok(queued) => Ok(Json(json!({ "queued": queued }))),
+        Err(message) => Err(ApiError::new(StatusCode::CONFLICT, "clublog_off").with_message(message)),
+    }
 }
 
 #[derive(Deserialize, Default)]
@@ -1924,7 +1988,7 @@ struct SupportBody {
 }
 
 /// Parti di nome di campo che possono nascondere un segreto: il loro valore diventa «***».
-const SECRET_WORDS: [&str; 8] = ["password", "passwd", "key", "token", "secret", "code", "pin", "credential"];
+const SECRET_WORDS: [&str; 9] = ["password", "passwd", "key", "token", "secret", "code", "pin", "credential", "seed"];
 
 /// Vero se il nome del campo (o della variabile d'ambiente) fa pensare a un segreto.
 pub fn is_secret_name(name: &str) -> bool {

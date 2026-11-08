@@ -81,3 +81,19 @@ export function foxRates(log: FoxLogEntry[], now: number, n = 10): { rate: numbe
   }
   return { rate, lastHour, buckets };
 }
+
+/** L'ordine dei continenti nei numeri della Fox (sigle di `cty.dat`). */
+const CONTINENTS = ['EU', 'NA', 'AS', 'SA', 'AF', 'OC', 'AN'];
+
+/** Quanti QSO del Fox log per continente, nell'ordine fisso; i continenti senza QSO non ci sono, quelli ignoti finiscono sotto «?». */
+export function foxContinents(log: FoxLogEntry[]): [string, number][] {
+  const count = new Map<string, number>();
+  for (const q of log) {
+    const c = q.continent && CONTINENTS.includes(q.continent) ? q.continent : '?';
+    count.set(c, (count.get(c) ?? 0) + 1);
+  }
+  return [...CONTINENTS, '?'].flatMap((c): [string, number][] => {
+    const n = count.get(c);
+    return n ? [[c, n]] : [];
+  });
+}

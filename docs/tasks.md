@@ -4,13 +4,7 @@ Elenco dei lavori presi da WSJT-X 3.x: ogni voce si cancella quando e' integrata
 
 Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti di riferimento: `D:\build\analisi-wsjtx\sorgenti`, tag `v3.3.0-beta5` (GPL-3, compatibile con Aurora GPL-3.0-only: citare la provenienza nei commenti e in `docs/licenze-terze-parti.md`).
 
-**UltraFOX (0.11.70)**: le voci SuperFox 1-5 e 7 sono fatte come UltraFOX, compatibile con SuperFox, e sono state tolte; della 6 resta solo la parte qui sotto. Regola: ogni voce finita si toglie da questo file.
-
-## 6. Verifica del Fox con OTP: parte SuperFox
-
-- Fatto (Hound classico): riconoscimento di `CALL.123456`, righe nascoste con «Mostra i messaggi OTP» spento o codice `000000`, richiesta `GET {url}/check/{call}/{ora ISO}/{codice}.text` (5 s) solo con verifica in linea accesa e codice diverso da `000000`, esito nella pagina Stazione e riga «CALL verified/invalid» (`engine-native/src/features.rs`, `online-info/src/foxcheck.rs`, `aurora/src/lib.rs` `wire_fox_verifier`).
-- Manca: il formato SuperFox `$VERIFY$ CALL 123456` (hz 750) e il filtro `$VERIFY$` verso il server UDP (`udp-bridge/src/emit.rs`): dipende dal ricevitore SuperFox (voci 1-3); l'etichetta Hound/SuperHound verde dell'interfaccia.
-- WSJT-X: `widgets/mainwindow.cpp` `processSFoxVerification` (17360-17415), `handleVerifyMsg`.
+**UltraFOX (0.11.70)**: le voci SuperFox 1-5 e 7 sono fatte come UltraFOX, compatibile con SuperFox, e sono state tolte, la 6 (verifica OTP del SuperFox) e' fatta. Regola: ogni voce finita si toglie da questo file.
 
 ## 16. TCI: verifica dal vivo
 
@@ -28,7 +22,8 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 ## 20. Modo Fox e SuperFox trasmettitore
 
 - Fatto: Fox classico (fino a 5 posti affiancati a 60 Hz, `foxgen`; coda dei Hound fino a 10, rapporto -> RR73, tentativi e attese di WSJT-X, un QSO a log per banda) e UltraFOX compatibile con SuperFox (pacchetto da 329 bit, QPC, segnale da 750 Hz) in `engine-native/src/fox.rs`, `ultrafox.rs`, `qpc.rs`, `tx.rs`. Verifica OTP come `foxOTPcode` (`otp.rs`: TOTP HMAC-SHA1 a 6 cifre, passo 30 s, seme base32 di 16 caratteri): nel Fox classico `CALL.123456` ogni N periodi, in UltraFOX nel campo d20 del pacchetto. Zone protette come `FoxGuardBands` (niente Fox a meno di 3 kHz dalle frequenze FT8 standard e nella sottobanda WSPR). UDP `AnnotationInfo` (tipo 16) letto da `udp-bridge` e usato per ordinare i Hound e la coda automatica. Pagina Fox secondo `docs/mockup-fox.html`: numeri con il grafico del ritmo, Hound con doppio ordinamento (SNR, nominativo, locatore, distanza, attesa, Hz, valore esterno) e filtri (SNR, solo nuovi sulla banda), pacchetto in onda con la riga `$VERIFY$`, parametri visibili, seme OTP, Fox log con salvataggio ADIF e Cabrillo. Prove: onde Fox a 5 posti e UltraFOX con OTP decodificate dal decodificatore di Aurora.
-- Resta: la prova dal vivo e il confronto con `jt9.exe` 3.0.2 sui WAV generati; il caricamento su ClubLog dal Fox log e la ripartizione per continenti nei numeri; il seme OTP oggi si ricorda solo nel browser (si rimanda al motore quando si apre la pagina Fox).
+- Fatto anche (ramo `lavoro/otp`): seme OTP salvato dal motore in `fox-otp.json` (letto all'avvio, campo `seed` tolto dal pacchetto per l'assistenza); pulsante «Club Log» nel Fox log (`POST /api/v1/fox/clublog`, coda dell'invio diretto); QSO per continente nei numeri (continente da `cty.dat` in `FoxLogView`). Hound: verifica OTP del SuperFox (`$VERIFY$ CALL 123456` a 750 Hz, `parse_superfox_verify`), riga esclusa dall'UDP in `udp-emitter`, etichetta Hound/Super Hound rossa o verde accanto a RX/TX.
+- Resta: la prova dal vivo (anche della verifica OTP SuperFox con un Fox vero e del caricamento su Club Log) e il confronto con `jt9.exe` 3.0.2 sui WAV generati.
 - WSJT-X: `lib/superfox/sfox_pack.f90`, `sftx_sub.f90`, `sfox_gen_gfsk.f90`, `sfox_wave_gfsk.f90`, `lib/ft8/foxgen.f90`, `widgets/SuperFoxTxPlanner.cpp`, `FoxGuardBands.cpp`, `FoxLogWindow.cpp`, `mainwindow.cpp` (`foxOTPcode`, `sfox_tx`).
 
 ## 21. Modo Q65: verifica con WSJT-X

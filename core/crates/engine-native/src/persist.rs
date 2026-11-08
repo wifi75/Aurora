@@ -30,6 +30,42 @@ pub fn save(path: &Path, saved: &SavedControls) -> std::io::Result<()> {
     std::fs::rename(&tmp, path)
 }
 
+/// Il file del seme OTP del Fox, a parte da `controls.json`: e' un segreto (il campo `seed` si toglie dal pacchetto per l'assistenza).
+pub const FOX_OTP_FILE: &str = "fox-otp.json";
+
+/// La verifica OTP della Fox come si ricorda tra un avvio e l'altro (`OTPSeed` e `OTPinterval` che WSJT-X tiene nelle impostazioni).
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct FoxOtpFile {
+    /// Seme TOTP di 16 caratteri base32; `None` = verifica spenta.
+    #[serde(default)]
+    pub seed: Option<String>,
+    /// Ogni quanti periodi il Fox classico manda `CALL.123456`.
+    #[serde(default = "one")]
+    pub interval: u32,
+}
+
+fn one() -> u32 {
+    1
+}
+
+/// Legge il seme OTP salvato; file assente o rovinato = verifica spenta.
+pub fn load_fox_otp(path: &Path) -> Option<FoxOtpFile> {
+    let raw = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&raw).map_err(|e| tracing::warn!("{} non leggibile: {e}", path.display())).ok()
+}
+
+/// Scrive il seme OTP (atomico come `save`).
+pub fn save_fox_otp(path: &Path, otp: &FoxOtpFile) -> std::io::Result<()> {
+    let text = serde_json::to_string_pretty(otp).map_err(std::io::Error::other)?;
+    let tmp = path.with_extension("json.tmp");
+    {
+        let mut file = std::fs::File::create(&tmp)?;
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+    }
+    std::fs::rename(&tmp, path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -48,6 +84,16 @@ mod tests {
         saved.levels.insert("20mFT8".into(), 150);
         save(&path, &saved).expect("scrive");
         assert_eq!(load(&path), Some(saved));
+    }
+
+    #[test]
+    fn the_fox_otp_seed_is_read_back() {
+        let path = temp("fox-otp").with_file_name(FOX_OTP_FILE);
+        let otp = FoxOtpFile { seed: Some("JBSWY3DPEHPK3PXP".into()), interval: 3 };
+        save_fox_otp(&path, &otp).expect("scrive");
+        assert_eq!(load_fox_otp(&path), Some(otp));
+        std::fs::write(&path, "{}").expect("scrive");
+        assert_eq!(load_fox_otp(&path), Some(FoxOtpFile { seed: None, interval: 1 }));
     }
 
     #[test]
