@@ -276,6 +276,11 @@ impl RigConfig {
         }
         // «meno scatti» negli split delle Icom
         conf.push(("no_xchg".into(), "1".into()));
+        // «Accendi»: Hamlib accende la radio da solo quando apre la porta (`auto_power_on`). Il comando `\set_powerstat 1` dopo il
+        // collegamento non bastava: con la radio spenta il collegamento non andava a buon fine (FT-2000, 8/11/2026)
+        if self.power_on {
+            conf.push(("auto_power_on".into(), "1".into()));
+        }
         Ok(RigctldConfig {
             exe: exe.to_path_buf(),
             model: self.model,

@@ -338,11 +338,9 @@ impl Inner {
         });
         let link = Arc::new((self.connector)()?);
         // «Accendi» di JTDX: la radio si accende al primo collegamento (Hamlib aspetta da solo che sia pronta); errori solo nel registro
+        // (l'accensione la fa Hamlib all'apertura della porta, `auto_power_on`: qui si annota solo che e' avvenuta)
         if self.config.power_on && !self.powered_on.swap(true, Ordering::SeqCst) {
-            match link.client().set_powerstat(true) {
-                Ok(()) => tracing::info!("radio accesa via CAT («Accendi»)"),
-                Err(e) => tracing::warn!("accensione della radio via CAT non riuscita: {e}"),
-            }
+            tracing::info!("radio collegata con «Accendi» (auto_power_on di Hamlib)");
         }
         // alcune radio trasmettono all'apertura della porta: PTT spento subito, errori ignorati (un VOX non ha PTT da spegnere)
         if let Err(e) = link.client().set_ptt(false) {
