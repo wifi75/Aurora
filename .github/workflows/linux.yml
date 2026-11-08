@@ -67,12 +67,26 @@ jobs:
         working-directory: desktop/src-tauri
         run: cargo check
 
+      # gli strumenti dell'AppImage (AppRun, linuxdeploy) Tauri li scarica dalle release di GitHub: restano in cache, cosi' un guasto di
+      # GitHub sugli scaricamenti (504 dell'8/11/2026) non ferma la compilazione
+      - name: Cache degli strumenti dell'AppImage
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tauri
+          key: tauri-appimage-tools-v1
+
       - name: AppImage e .deb
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         working-directory: desktop
         run: |
           npm ci
-          npx tauri build --bundles deb,appimage
+          # se lo scaricamento degli strumenti non riesce si riprova (fino a 5 volte, un minuto fra un tentativo e l'altro)
+          for i in 1 2 3 4 5; do
+            if npx tauri build --bundles deb,appimage; then break; fi
+            if [ "$i" = 5 ]; then exit 1; fi
+            echo "compilazione non riuscita (tentativo $i), riprovo tra 60 s"; sleep 60
+          done
           mkdir -p ../dist-linux
           cp src-tauri/target/release/bundle/appimage/*.AppImage ../dist-linux/Aurora-Linux-x86_64.AppImage
           cp src-tauri/target/release/bundle/deb/*.deb ../dist-linux/Aurora-Linux-amd64.deb
