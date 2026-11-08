@@ -7,6 +7,7 @@ import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { rememberTab } from '../lib/lastPage';
+import { SETTINGS_TAB_EVENT } from '../lib/settingsWindow';
 import { browserStorage } from '../lib/theme';
 import { AboutTab } from '../settings/AboutTab';
 import { AccessTab } from '../settings/AccessTab';
@@ -113,6 +114,22 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   useEffect(() => {
     document.title = `Aurora - ${t('set.title')}`;
   }, [t]);
+  // i collegamenti dentro le schede («Apri Audio» nel riquadro della radio) chiedono di cambiare scheda con un evento
+  useEffect(() => {
+    const onTab = (e: Event) => {
+      const want = (e as CustomEvent<string>).detail;
+      if (!TABS.some((x) => x.id === want)) return;
+      e.preventDefault();
+      setId(want);
+      rememberTab(browserStorage(), want);
+    };
+    window.addEventListener(SETTINGS_TAB_EVENT, onTab);
+    return () => window.removeEventListener(SETTINGS_TAB_EVENT, onTab);
+  }, []);
+  // nel riquadro un nuovo indirizzo `#/impostazioni/<scheda>` con la finestra gia' aperta porta su quella scheda
+  useEffect(() => {
+    if (initialTab && TABS.some((x) => x.id === initialTab)) setId(initialTab);
+  }, [initialTab]);
   // finestra a parte: la pagina e' fissa (scorre solo il contenuto della scheda); nel riquadro non serve
   useEffect(() => {
     const cls = embedded ? 'sw-lock' : 'sw-fixed';
