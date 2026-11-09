@@ -46,6 +46,7 @@ export const settingsStrings = {
   ],
   'tab.frequencies': ['Frequenze', 'Frequencies', 'Frequenzen', 'Fréquences', 'Frecuencias', 'Frequências'],
   'tab.notifications': ['Notifiche', 'Notifications', 'Hinweise', 'Notifications', 'Notificaciones', 'Notificações'],
+  'tab.cqnews': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
   'tab.filters': ['Filtri', 'Filters', 'Filter', 'Filtres', 'Filtros', 'Filtros'],
   'tab.schedule': ['Programmazione', 'Schedule', 'Zeitplan', 'Programmation', 'Programación', 'Programação'],
   'tab.windows': ['Finestre', 'Windows', 'Fenster', 'Fenêtres', 'Ventanas', 'Janelas'],
@@ -113,6 +114,14 @@ export const settingsStrings = {
     'Couleurs, étiquettes et sons pour chaque type de message.',
     'Colores, etiquetas y sonidos para cada tipo de mensaje.',
     'Cores, etiquetas e sons para cada tipo de mensagem.',
+  ],
+  'tip.tab.cqnews': [
+    'Cosa elencare nella finestra «CQ e novità»: novità, stazioni da mostrare sempre o mai, quante righe.',
+    'What to list in the “CQ and new ones” window: new ones, stations to always or never show, how many rows.',
+    'Was im Fenster „CQ und Neues“ steht: Neues, immer oder nie gezeigte Stationen, wie viele Zeilen.',
+    'Ce qui s’affiche dans la fenêtre « CQ et nouveautés » : nouveautés, stations toujours ou jamais affichées, nombre de lignes.',
+    'Qué mostrar en la ventana «CQ y novedades»: novedades, estaciones a mostrar siempre o nunca, cuántas filas.',
+    'O que mostrar na janela «CQ e novidades»: novidades, estações a mostrar sempre ou nunca, quantas linhas.',
   ],
   'tip.tab.filters': [
     "Nascondi o mostra solo certi messaggi nell'elenco.",

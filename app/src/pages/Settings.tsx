@@ -6,7 +6,7 @@ import { AccessTab } from '../settings/AccessTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { DxccTab } from '../settings/DxccTab';
-import { FiltersTab } from '../settings/FiltersTab';
+import { CqNewsTab, FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralTab } from '../settings/GeneralTab';
 import { AudioTab, ReportsTab } from '../settings/InfoTabs';
@@ -45,6 +45,7 @@ const TAB: Record<string, TabDef> = Object.fromEntries(
       ['macros', <MacrosTab />],
       ['schedule', <ScheduleTab />],
       ['filters', <FiltersTab />],
+      ['cqnews', <CqNewsTab />],
       ['notifications', <NotificationsTab />],
       ['wishlist', <WishlistTab />],
       ['dxcc', <DxccTab />],
@@ -71,7 +72,7 @@ interface TabRow {
 /** La barra delle schede: sei gruppi per argomento, dalla stazione al sistema. */
 const ROWS: readonly TabRow[] = [
   { id: 'station', title: 'tabg.station', tabs: ['general', 'radio', 'audio', 'clock'] },
-  { id: 'rx', title: 'tabg.rx', tabs: ['waterfall', 'filters', 'bands', 'frequencies'] },
+  { id: 'rx', title: 'tabg.rx', tabs: ['waterfall', 'filters', 'cqnews', 'bands', 'frequencies'] },
   { id: 'tx', title: 'tabg.tx', tabs: ['sequence', 'macros', 'schedule'] },
   { id: 'alerts', title: 'tabg.alerts', tabs: ['notifications', 'wishlist', 'dxcc'] },
   { id: 'net', title: 'tabg.net', tabs: ['cluster', 'online', 'logservices', 'reports'] },

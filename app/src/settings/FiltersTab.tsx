@@ -1,5 +1,5 @@
-import { useT, type Key } from '../i18n';
 import { CQ_TAGS, useCqPrefs } from '../lib/cqPrefs';
+import { useT, type Key } from '../i18n';
 import { CONTINENTS, useFilters, type OnlyMode } from '../lib/filters';
 import { Check, Help } from './common';
 import { EngineValues } from './EngineValues';
@@ -21,8 +21,6 @@ export function FiltersTab() {
   const t = useT();
   const filters = useFilters((s) => s.filters);
   const set = useFilters.getState().set;
-  const cq = useCqPrefs((s) => s.prefs);
-  const setCq = useCqPrefs.getState().set;
   const csv = (text: string) => text.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
   const native = useIsNative();
   const toggleContinent = (code: string) =>
@@ -87,6 +85,27 @@ export function FiltersTab() {
           </Field>
         </Cells>
       </Group>
+      {native ? <NativeDecodeOptions /> : null}
+      {native === false ? (
+        <Group title={t('fil.decode')} span={2}>
+          <EngineValues group="advanced" />
+        </Group>
+      ) : null}
+      <Notes span={3}>
+        <Help>{t('fil.help')}</Help>
+      </Notes>
+    </Page>
+  );
+}
+
+/** Scheda «CQ e novita'»: cosa elencare nella finestra «CQ e novita'» (prima era dentro Filtri e non si trovava). */
+export function CqNewsTab() {
+  const t = useT();
+  const cq = useCqPrefs((s) => s.prefs);
+  const setCq = useCqPrefs.getState().set;
+  const csv = (text: string) => text.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
+  return (
+    <Page>
       <Group title={t('cqp.title')} span={3}>
         <Cells min={13}>
           {CQ_TAGS.map((tag) => (
@@ -111,15 +130,6 @@ export function FiltersTab() {
         </Actions>
         <Help>{t('cqp.help')}</Help>
       </Group>
-      {native ? <NativeDecodeOptions /> : null}
-      {native === false ? (
-        <Group title={t('fil.decode')} span={2}>
-          <EngineValues group="advanced" />
-        </Group>
-      ) : null}
-      <Notes span={3}>
-        <Help>{t('fil.help')}</Help>
-      </Notes>
     </Page>
   );
 }

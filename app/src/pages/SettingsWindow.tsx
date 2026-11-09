@@ -15,7 +15,7 @@ import { AutomationTab, AUTOMATION_DRAFT } from '../settings/AutomationTab';
 import { ClockTab } from '../settings/ClockTab';
 import { ClusterTab } from '../settings/ClusterTab';
 import { DxccTab } from '../settings/DxccTab';
-import { FiltersTab } from '../settings/FiltersTab';
+import { CqNewsTab, FiltersTab } from '../settings/FiltersTab';
 import { FrequenciesTab } from '../settings/FrequenciesTab';
 import { GeneralWindowTab } from '../settings/GeneralWindowTab';
 import { AudioTab, ReportsTab } from '../settings/InfoTabs';
@@ -67,6 +67,7 @@ const TABS: readonly TabDef[] = [
   // l'agente nel tray: la pagina con le sue scelte (lette dall'agente dal file delle impostazioni)
   { id: 'agent', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
   { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
+  { id: 'cqnews', label: 'panel.cq', icon: '◉', render: () => <CqNewsTab /> },
   // solo di Aurora
   { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
   { id: 'automation', label: 'nav.automation', icon: '⚡', extra: true, render: () => <AutomationTab /> },
