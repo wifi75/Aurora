@@ -409,3 +409,10 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 /* «Come funziona» e il conto alla rovescia in fondo a destra della barra, dove stava la scritta Fox/Hound */
 .ctc-score .ctc-dates { order: 20; margin-left: auto; }
 .ctc-score .ctc-chip--phase:not(.ctc-dates .ctc-chip--phase) { order: 21; }
+/* riga delle schede con le stesse colonne della pagina: schede sopra QSO e log, frequenza e RX/TX sopra le decodifiche */
+@media (min-width: 1101px) {
+  .ctc-views { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 0.9fr); gap: 8px; align-items: center; }
+  .ctc-views > .ctc-freq { grid-column: 2; margin: 0 !important; justify-self: start; }
+}
+.ctc-views-tabs { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.ctc-freq { display: inline-flex; align-items: center; gap: 8px; }

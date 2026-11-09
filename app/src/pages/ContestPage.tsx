@@ -147,11 +147,13 @@ export function ContestPage() {
         )}
       </div>
       <div className="ctc-views" role="tablist">
+        <span className="ctc-views-tabs">
         {(['gara', 'allena', 'analisi'] as const).map((v) => (
           <button key={v} type="button" role="tab" aria-selected={vista === v} className={vista === v ? 'on' : undefined} onClick={() => setVista(v)}>
             {t(v === 'gara' ? 'contest.tab.race' : v === 'allena' ? 'contest.training' : 'contest.analysis')}
           </button>
         ))}
+        </span>
         {/* il selettore delle frequenze della pagina Stazione, sulla riga delle schede, con le sole bande ammesse dal regolamento */}
         <SelettoreBanda bande={attivo ? (s?.regole?.bande.ammesse ?? []) : []} t={t} />
       </div>
@@ -498,6 +500,26 @@ function SelettoreBanda({ bande, t }: { bande: readonly string[]; t: T }) {
   const tx = useStation((x) => x.status?.transmitting ?? false);
   return (
     <div className="ctc-freq" title={t('tip.contest.freq')}>
+      {/* RX verde in ascolto, TX rosso in trasmissione: un clic sul TX ferma subito la trasmissione (come nel pannello Trasmissione) */}
+      {tx ? (
+        <button type="button" className="rxtx-flag rxtx-flag--stop" data-state="tx" title={t('tip.txStop')} aria-label={t('stop.button')} onClick={() => void postHalt().catch(() => toast(t('stop.fail'), 'error'))}>
+          TX
+        </button>
+      ) : (
+        // clic su RX: libera il QSO in corso (come «Canc DX»: nominativo e locatore del DX, e la stazione scelta)
+        <button
+          type="button"
+          className="rxtx-flag"
+          data-state="rx"
+          title={t('tip.contest.rxClear')}
+          onClick={() => {
+            useStation.getState().setPendingDx(null);
+            void postControl('clear_dx').catch(() => undefined);
+          }}
+        >
+          RX
+        </button>
+      )}
       <FreqPicker
         bands={bande.length ? bande : undefined}
         dialHz={dial}
