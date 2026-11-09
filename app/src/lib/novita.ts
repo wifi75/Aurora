@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.211',
-    released: '2026-11-09T12:28:37Z',
+    released: '2026-11-09T12:32:20Z',
     kind: 'changed',
     title: ['Pannello RX separato', 'Separate RX panel', 'Eigenes RX-Fenster', 'Panneau RX séparé', 'Panel RX separado', 'Painel RX separado'],
     text: [

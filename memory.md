@@ -9,6 +9,7 @@ Stato al 2026-11-09, versione 0.11.211 (pubblicata). Per riprendere il lavoro le
 - Automazioni (0.11.209, segnalazione di ON7KEC): pulsante «Automatico» nella barra; in modo reale Abilita Tx resta acceso e i chiamanti esclusi da regole e filtri non si lavorano.
 - Pannello Log con linguette «Log | Mappa» e «RX» (finestra RX come WSJT-X) in alto; filtro a pillole delle novita' in Attivita' di banda; scheda «Aspetto» (alto contrasto, caratteri, dimensione, colore); regione IARU dal nominativo; OmniRig Rig 1/Rig 2 (IK1SOW).
 - Meno lavoro inutile: riletture del log unite, niente confronto JTDX senza JTDX, registrazioni WAV spente di base.
+- 0.11.210-0.11.211: filtro ed Automazioni accendono da soli le evidenziazioni delle novita' scelte (prima filtro vuoto, ON7KEC #7); eccezioni del filtro come GridTracker; database di Log4OM a scelta; cascata con etichette in basso; Aurora si riapre se l'installatore silenzioso non lo fa (portatile, aggiornamento dal tray); RX pannello separato sopra il Log.
 - Rifiutato: RTTY, CW, SSTV (prima si finisce il lavoro in corso).
 
 ## Decisioni del 2026-11-08
