@@ -204,6 +204,9 @@ pub struct QsoRecord {
     pub exch_sent: String,
     #[serde(default)]
     pub exch_rcvd: String,
+    /// Stato o provincia del corrispondente (`STATE` dell'ADIF), dalla ricerca QRZ.com/HamQTH; vuoto se non si sa.
+    #[serde(default)]
+    pub state: String,
 }
 
 /// Un QSO concluso che aspetta di essere registrato.

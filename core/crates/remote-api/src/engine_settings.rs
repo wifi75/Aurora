@@ -1173,6 +1173,11 @@ impl EngineSettingsStore {
         None
     }
 
+    /// Lo stato di un nominativo gia' cercato su QRZ.com o HamQTH (solo dalla memoria: niente rete), per «nuovo stato».
+    pub fn cached_state(&self, call: &str) -> Option<String> {
+        self.lookups.qrz.cached_state(call).or_else(|| self.lookups.hamqth.cached_state(call))
+    }
+
     /// Utente e password salvati di una ricerca anche se spenta (per «Prova»).
     pub fn lookup_saved_credentials(&self, provider: reporting::qrz_xml::Provider) -> Option<(String, String)> {
         let r = self.reports();

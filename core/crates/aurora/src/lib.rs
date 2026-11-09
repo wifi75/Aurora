@@ -788,6 +788,12 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
                             q.qth = qth;
                         }
                     }
+                    // lo stato (per «nuovo stato»): dalla ricerca appena fatta o da quelle precaricate dall'interfaccia
+                    if q.state.is_empty()
+                        && let Some(st) = store.cached_state(&q.call)
+                    {
+                        q.state = st;
+                    }
                     // «Richiedimi di loggare il QSO»: il QSO aspetta la conferma della finestra; con la coda piena il piu' vecchio va a log
                     if r.prompt_to_log {
                         tracing::info!("QSO con {} in attesa di conferma", q.call);
@@ -976,6 +982,31 @@ impl Log4omChoice {
         });
         remote_api::Log4omDbControl { get, set }
     }
+}
+
+/// Gli stati gia' lavorati con le bande: dal log di Aurora (colonna `state`) e da quello di Log4OM2 (stati USA), uniti.
+fn worked_states(own: &Logbook, log4om: &std::sync::RwLock<Option<PathBuf>>) -> std::collections::BTreeMap<String, std::collections::BTreeSet<String>> {
+    let mut out: std::collections::BTreeMap<String, std::collections::BTreeSet<String>> = std::collections::BTreeMap::new();
+    for (st, band) in own.worked_states().unwrap_or_default() {
+        out.entry(st).or_default().insert(band);
+    }
+    if let Some(path) = log4om.read().ok().and_then(|p| p.clone()) {
+        for w in logbook::log4om::worked_states(&path).unwrap_or_default() {
+            out.entry(w.state).or_default().extend(w.bands);
+        }
+    }
+    out
+}
+
+/// Aggiunge alla risposta dei quadrati lavorati gli stati lavorati (log di Aurora + Log4OM2).
+fn with_states(own: Arc<Logbook>, log4om: Arc<std::sync::RwLock<Option<PathBuf>>>, inner: Option<remote_api::WorkedMapProvider>) -> Option<remote_api::WorkedMapProvider> {
+    let inner = inner?;
+    Some(Arc::new(move || {
+        let mut v = inner()?;
+        let states: Vec<serde_json::Value> = worked_states(&own, &log4om).into_iter().map(|(state, bands)| serde_json::json!({ "state": state, "bands": bands })).collect();
+        v["states"] = serde_json::json!(states);
+        Ok(v)
+    }))
 }
 
 fn refresh_worked(sources: &LogSources, db: &DxccDb, shared: &SharedWorked) {
@@ -1983,12 +2014,9 @@ pub async fn run(
         .with_log4om_db(log4om_choice.control(live_log.clone()))
         // i quadrati lavorati: dagli stessi log della scheda DXCC (Aurora, file ADIF, Log4OM2), anche per banda, modo e conferma (Mappa DX);
         // senza paesi caricati, solo da Log4OM2 come prima
-        .with_worked_map_if(match (live_log.clone(), log4om_choice.current.read().ok().and_then(|p| p.clone())) {
-            (Some((db, worked, sources)), _) => Some({
-                let log4om_now = Arc::clone(&log4om_choice.current);
-                Arc::new(move || {
+        .with_worked_map_if(with_states(Arc::clone(&own_log), Arc::clone(&log4om_choice.current), match (live_log.clone(), log4om_choice.current.read().ok().and_then(|p| p.clone())) {
+            (Some((db, worked, sources)), _) => Some(Arc::new(move || {
                 refresh_worked(&sources, &db, &worked);
-                let states = log4om_now.read().ok().and_then(|p| p.clone()).and_then(|p| logbook::log4om::worked_states(&p).ok()).unwrap_or_default();
                 let w = worked.read().map_err(|_| "QSO gia' fatti non disponibili".to_string())?;
                 let cells = w.grid_cells();
                 let mut squares: Vec<serde_json::Value> = Vec::new();
@@ -2005,13 +2033,11 @@ pub async fn run(
                     }
                     squares.push(serde_json::json!({ "grid": grid, "count": count, "bands": bands }));
                 }
-                Ok(serde_json::json!({ "squares": squares, "cells": cells, "states": states }))
-            }) as remote_api::WorkedMapProvider
-            }),
+                Ok(serde_json::json!({ "squares": squares, "cells": cells }))
+            }) as remote_api::WorkedMapProvider),
             (None, Some(path)) => Some(Arc::new(move || {
-                let states = logbook::log4om::worked_states(&path).unwrap_or_default();
                 logbook::log4om::worked_squares(&path)
-                    .map(|squares| serde_json::json!({ "squares": squares, "states": states }))
+                    .map(|squares| serde_json::json!({ "squares": squares }))
                     .map_err(|e| e.to_string())
             }) as remote_api::WorkedMapProvider),
             // senza file dei paesi: i quadrati dal solo log di Aurora
@@ -2062,7 +2088,7 @@ pub async fn run(
                     Ok(serde_json::json!({ "squares": squares, "cells": cells }))
                 }) as remote_api::WorkedMapProvider)
             }
-        })
+        }))
         .with_frequencies(Arc::clone(&frequencies))
         .with_schedule(Arc::clone(&schedule))
         .with_settings_saver(settings_saver)

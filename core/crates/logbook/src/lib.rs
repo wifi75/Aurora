@@ -132,6 +132,13 @@ impl Logbook {
                  PRAGMA user_version = 2;",
             )?;
         }
+        if version < 3 {
+            // terza versione (0.11.215): lo stato o la provincia del corrispondente (`STATE`), per «nuovo stato»
+            conn.execute_batch(
+                "ALTER TABLE qso ADD COLUMN state TEXT NOT NULL DEFAULT '';
+                 PRAGMA user_version = 3;",
+            )?;
+        }
         Ok(Logbook { conn: Mutex::new(conn) })
     }
 
@@ -150,8 +157,8 @@ impl Logbook {
         let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
         let conn = self.conn()?;
         conn.execute(
-            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 q.call.to_uppercase(),
                 q.grid,
@@ -164,7 +171,8 @@ impl Logbook {
                 date,
                 time_on,
                 date_off,
-                time_off
+                time_off,
+                q.state.trim().to_uppercase()
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -411,8 +419,8 @@ impl Logbook {
         {
             let mut find = tx.prepare("SELECT time_on FROM qso WHERE call = ?1 AND band = ?2 AND mode = ?3 AND date = ?4")?;
             let mut insert = tx.prepare(
-                "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, confirmed)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, confirmed, state)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
             )?;
             for record in &records {
                 let Some(q) = AdifQso::from_fields(record) else {
@@ -448,13 +456,22 @@ impl Logbook {
                     time_on,
                     date_off,
                     time_off,
-                    q.confirmed.map(i64::from)
+                    q.confirmed.map(i64::from),
+                    record.get("STATE").map(|s| s.trim().to_uppercase()).unwrap_or_default()
                 ])?;
                 report.added += 1;
             }
         }
         tx.commit()?;
         Ok(report)
+    }
+
+    /// Gli stati gia' lavorati (colonna `state`, due lettere), con le bande: per «nuovo stato» e «nuovo stato sulla banda».
+    pub fn worked_states(&self) -> Result<Vec<(String, String)>, LogError> {
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare("SELECT DISTINCT state, LOWER(band) FROM qso WHERE LENGTH(state) = 2 ORDER BY 1")?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
     pub fn export_adif(&self) -> Result<String, LogError> {

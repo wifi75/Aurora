@@ -266,6 +266,15 @@ impl Lookup {
         *self.state() = State::default();
     }
 
+    /// Lo stato di un nominativo gia' cercato (solo dalla memoria, nessuna richiesta in rete); `None` se non e' in memoria o non lo dice.
+    pub fn cached_state(&self, call: &str) -> Option<String> {
+        let call = call.trim().to_uppercase();
+        match self.state().cache.get(&call) {
+            Some((_, Found::Yes(p))) if !p.state.is_empty() => Some(p.state.clone()),
+            _ => None,
+        }
+    }
+
     /// La sessione attuale e' senza abbonamento XML (`None` = nessuna sessione ancora).
     pub fn subscriber(&self) -> Option<bool> {
         self.state().subscriber

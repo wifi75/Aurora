@@ -243,6 +243,10 @@ pub fn jtdx_record_with(q: &QsoRecord, station: &Station, fallback_date: &str, e
     if !q.qth.is_empty() {
         jtdx_field(&mut r, "QTH", &q.qth);
     }
+    // lo stato dalla ricerca dei nominativi; nei contest «STATE» puo' essere gia' lo scambio ricevuto
+    if !q.state.is_empty() && q.exch_rcvd.is_empty() {
+        jtdx_field(&mut r, "STATE", &q.state);
+    }
     if !q.comment.is_empty() {
         jtdx_field(&mut r, "COMMENT", &q.comment);
     }
