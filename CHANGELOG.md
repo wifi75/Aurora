@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Filtro e Automazioni**: scegliendo una novita' (nuova griglia, nuova zona…) si accende da sola la sua evidenziazione in Segnalazioni, se era spenta: prima il filtro mostrava solo le proprie trasmissioni (ON7KEC); messaggio chiaro quando nessuna stazione ha le novita' scelte.
+
 - **Nuova griglia**: evidenziazione «nuova griglia» e «griglia su nuova banda» accese di base (prima spente: Automazioni e filtri «Nuova griglia» non trovavano niente); «Griglia su nuova banda» anche tra le risposte delle Automazioni (ON7KEC).
 
 - **Automazioni**: tra «A chi rispondere» anche «Nuova stazione» e «Stazione su nuova banda o modo»; la pausa per stazione puo' essere 0 (nessuna pausa, la richiama subito) (richieste di ON7KEC).

@@ -1,3 +1,4 @@
+import { ensureHighlightFor } from '../lib/highlightFor';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { ApiError, getAutomation, getAutomationCountries, putAutomation } from '../api/client';
@@ -147,7 +148,11 @@ export function AutomationTab() {
     const next = { ...rules, ...patch };
     shared?.setDraftOf(AUTOMATION_DRAFT, JSON.stringify(next) === JSON.stringify(a.rules) ? undefined : next);
   };
-  const toggleTag = (tag: DecodeTag) => edit({ reply_to: rules.reply_to.includes(tag) ? rules.reply_to.filter((x) => x !== tag) : [...rules.reply_to, tag] });
+  const toggleTag = (tag: DecodeTag) => {
+    const on = !rules.reply_to.includes(tag);
+    edit({ reply_to: on ? [...rules.reply_to, tag] : rules.reply_to.filter((x) => x !== tag) });
+    if (on) void ensureHighlightFor(tag);
+  };
   const toggleContinent = (c: string) => edit({ continents: rules.continents.includes(c) ? rules.continents.filter((x) => x !== c) : [...rules.continents, c] });
   const live = a.mode === 'live';
 

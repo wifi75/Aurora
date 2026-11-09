@@ -1,5 +1,6 @@
 /** Impostazioni della finestra «CQ e novità». [it, en, de, fr, es, pt] */
 export const cqPrefsStrings = {
+  'bfl.empty': ['Adesso nessuna stazione con le novità scelte nel Filtro', 'No station with the chosen new ones right now', 'Gerade keine Station mit den gewählten Neuheiten', 'Aucune station avec les nouveautés choisies pour l’instant', 'Ahora ninguna estación con las novedades elegidas', 'Agora nenhuma estação com as novidades escolhidas'],
   'bfl.except': ['Eccezioni', 'Exceptions', 'Ausnahmen', 'Exceptions', 'Excepciones', 'Exceções'],
   'bfl.cqOnly': ['Solo CQ', 'CQ only', 'Nur CQ', 'CQ seul', 'Solo CQ', 'Só CQ'],
   'bfl.rr73AsCq': ['RR73 come CQ', 'RR73 as CQ', 'RR73 als CQ', 'RR73 comme CQ', 'RR73 como CQ', 'RR73 como CQ'],
