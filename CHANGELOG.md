@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Meno lavoro inutile**: le riletture del log che arrivano insieme si uniscono (dopo un QSO se ne facevano quattro, ognuna con decine di migliaia di QSO); niente confronto con JTDX quando JTDX non c'e' (una riga e una scrittura ogni periodo); registrazioni WAV di ogni periodo spente di base (circa 144 MB e una scrittura ogni 15 s, si riaccendono con AURORA_NATIVE_RECORD=1).
+
 - **Contest e Fox**: interruttore verde «acceso / spento» ben visibile; a contest spento i QSO non vanno nel log del contest e il servizio non lavora sulle decodifiche.
 - **Impostazioni**: scheda «CQ e novità» tutta sua (prima era dentro Filtri); scheda Frequenze con i comandi in alto, tabella alta quanto la finestra e righe fitte.
 - **Novità**: le etichette «su nuova banda» si chiamano «su nuova banda o modo» (valgono anche per modo con «per modo» in Segnalazioni).

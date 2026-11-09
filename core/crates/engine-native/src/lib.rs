@@ -794,7 +794,8 @@ pub fn start_with_save(
                 last_texts = decoded.iter().map(|d| d.text.clone()).collect();
                 last_slot = Some((slot.start_unix_ms, mode, slot.samples));
             }
-            for summary in parity.finalize(now_unix_ms()) {
+            // senza JTDX acceso il confronto non dice niente: niente riga nel registro e niente file (prima una riga ogni periodo)
+            for summary in parity.finalize(now_unix_ms()).into_iter().filter(|s| s.jtdx > 0) {
                 tracing::info!(
                     "confronto con JTDX, periodo {}: JTDX {}, proprio {}, in comune {}",
                     summary.slot_unix_ms,

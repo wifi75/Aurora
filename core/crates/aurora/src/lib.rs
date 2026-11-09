@@ -865,11 +865,27 @@ fn forget_in_own_file(path: &Path, gone: Option<&[logbook::LogEntry]>) {
     }
 }
 
+/// Rilegge i QSO gia' fatti. Le richieste che arrivano insieme (dopo un QSO ne arrivavano quattro nello stesso istante, e ogni volta si
+/// rileggevano decine di migliaia di QSO piu' il log di Log4OM) si uniscono: se una rilettura e' gia' in corso, ne parte una sola alla fine.
 fn refresh_worked(sources: &LogSources, db: &DxccDb, shared: &SharedWorked) {
-    let fresh = load_worked(sources, db);
-    if let Ok(mut w) = shared.write() {
-        *w = fresh;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static RUNNING: AtomicBool = AtomicBool::new(false);
+    static AGAIN: AtomicBool = AtomicBool::new(false);
+    if RUNNING.swap(true, Ordering::SeqCst) {
+        AGAIN.store(true, Ordering::SeqCst);
+        return;
     }
+    loop {
+        AGAIN.store(false, Ordering::SeqCst);
+        let fresh = load_worked(sources, db);
+        if let Ok(mut w) = shared.write() {
+            *w = fresh;
+        }
+        if !AGAIN.load(Ordering::SeqCst) {
+            break;
+        }
+    }
+    RUNNING.store(false, Ordering::SeqCst);
 }
 
 fn unix_secs() -> u64 {

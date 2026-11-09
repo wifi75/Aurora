@@ -83,8 +83,9 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
     v.insert("AURORA_TRUST_LOCAL".into(), "1".into());
     // il motore proprio decodifica (`AURORA_NATIVE_DECODE=0` lo spegne)
     v.insert("AURORA_NATIVE_DECODE".into(), "1".into());
-    // gli ultimi 400 periodi (circa 144 MB) si tengono in WAV nella cartella dei dati: servono a misurare il motore proprio sulle stesse registrazioni
-    v.insert("AURORA_NATIVE_RECORD".into(), "1".into());
+    // le registrazioni WAV di ogni periodo (circa 144 MB su disco e una scrittura ogni 15 s) restano spente: servono solo a chi misura il
+    // motore e si accendono con `AURORA_NATIVE_RECORD=1` in aurora.env
+    v.insert("AURORA_NATIVE_RECORD".into(), "0".into());
     if let Some(file) = env_file {
         v.extend(parse_env_file(file));
     }
