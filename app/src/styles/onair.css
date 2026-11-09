@@ -7476,8 +7476,8 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .dock-panel--rx .log-rx > * { flex: 1; min-height: 0; overflow-y: auto; }
 .dock-grip--fixed { cursor: default !important; }
 .dock-panel--rx .log-rx-freq { margin-left: auto; font-family: var(--font-data); font-size: 0.72rem; opacity: 0.85; }
-/* pulsante «Auto»: sempre colorato; spento = viola, prova a vuoto = arancio, modo reale = verde */
-.auto-switch { color: #f1edff !important; background: #5b45d6 !important; font-weight: 700; }
+/* pulsante «Auto»: spento = come gli altri pulsanti della barra; acceso = colorato (arancio in prova a vuoto, verde in modo reale) */
+.auto-switch { font-weight: 700; }
 .auto-switch--dry { color: #2b1700 !important; background: #ffb340 !important; }
 .auto-switch--live { color: #04201c !important; background: #2cf5a4 !important; }
 .auto-switch:hover { filter: brightness(1.1); }

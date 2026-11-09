@@ -991,6 +991,8 @@ export interface UpdateStatus {
   download?: { file: string; done: number; total: number } | null;
   /** La preparazione dell'aggiornamento: il core scarica in anticipo la versione nuova e ne controlla la firma (Aurora 0.11.200+). */
   stage?: UpdateStage;
+  /** Aggiornamento chiesto dal tray: niente locandina (un core piu' vecchio non lo manda). */
+  quiet?: boolean;
 }
 
 /** A che punto e' la preparazione: `ready` = pacchetto completo e firmato, «Installa» non riscarica. */

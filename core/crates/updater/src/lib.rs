@@ -198,6 +198,8 @@ pub struct Status {
     pub error: Option<String>,
     /// Lo scaricamento del pacchetto in corso (o appena finito), se c'e'.
     pub download: Option<DownloadProgress>,
+    /// L'aggiornamento l'ha chiesto il tray («Aggiorna ora»): la pagina non mostra la locandina, c'e' gia' la cartolina del tray.
+    pub quiet: bool,
     /// La preparazione dell'aggiornamento (scaricamento in anticipo, firma, installazione).
     pub stage: Stage,
 }
@@ -336,6 +338,9 @@ struct State {
 }
 
 /// Il servizio: le impostazioni, il file dove si salvano e l'esito dell'ultimo controllo.
+/// Il segno lasciato dal tray quando chiede l'aggiornamento (vedi `UpdateService::from_tray`).
+pub const TRAY_MARK: &str = "aggiornamento-dal-tray";
+
 pub struct UpdateService {
     path: PathBuf,
     current: String,
@@ -424,6 +429,13 @@ impl UpdateService {
     }
 
     /// Lo stato da mostrare: impostazioni (senza il token) e ultimo esito.
+    /// Il tray ha appena chiesto l'aggiornamento: lascia il file `aggiornamento-dal-tray` accanto a `update.json` (anche prima di aprire
+    /// Aurora), che vale 5 minuti.
+    fn from_tray(&self) -> bool {
+        let mark = self.path.with_file_name(TRAY_MARK);
+        std::fs::metadata(&mark).and_then(|m| m.modified()).ok().and_then(|t| t.elapsed().ok()).is_some_and(|age| age.as_secs() < 300)
+    }
+
     pub fn status(&self) -> Status {
         let config = lock(&self.config).clone();
         let state = lock(&self.state);
@@ -440,6 +452,7 @@ impl UpdateService {
             latest: state.latest.clone(),
             error: state.error.clone(),
             download: lock(&self.download).clone(),
+            quiet: self.from_tray(),
             stage: lock(&self.stage).stage.clone(),
         }
     }

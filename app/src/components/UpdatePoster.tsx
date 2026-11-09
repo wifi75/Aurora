@@ -64,6 +64,8 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   const release = update.data?.available ?? (notice ? { version: notice.version, tag: notice.tag, name: '', notes: '', url: notice.url, published_at: '', prerelease: false } : null);
   if (!release && forced) return <UpToDate current={update.data?.current ?? ''} onClose={() => setForced(false)} />;
   if (onlyWhenAsked && !forced) return null;
+  // aggiornamento chiesto dal tray: niente locandina, fa tutto la cartolina del tray
+  if (!forced && update.data?.quiet) return null;
   // con l'aggiornamento scaricato in anticipo la barretta in testata (e la cartolina del tray) mostrano tutto: la locandina si apre solo
   // quando la si chiede (clic sulla barretta). Prima compariva da sola mentre si aggiornava dal tray e si chiudeva dopo pochi secondi
   if (!forced && update.data?.stage?.phase === 'installing') return null;

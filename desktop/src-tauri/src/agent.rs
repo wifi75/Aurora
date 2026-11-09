@@ -229,6 +229,11 @@ fn install_update(app: AppHandle) {
     if UPDATING.swap(true, Ordering::SeqCst) {
         return;
     }
+    // il segno per Aurora: l'aggiornamento parte dal tray, niente locandina nella finestra (c'e' gia' questa cartolina). Si lascia prima
+    // di aprire Aurora, cosi' vale anche all'avvio
+    if let Some(base) = std::env::var_os("APPDATA") {
+        let _ = std::fs::write(PathBuf::from(base).join("Aurora").join(updater::TRAY_MARK), b"1");
+    }
     if !aurora_open() {
         card_state(&app, &serde_json::json!({ "phase": "starting" }));
         open_aurora();

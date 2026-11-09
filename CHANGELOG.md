@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- **Aggiornamento dal tray**: con «Aggiorna ora» del tray la finestra di Aurora non mostra la locandina (c'e' gia' la cartolina del tray), anche se Aurora viene aperta per l'occasione.
+- **Auto**: colorato solo quando e' acceso (arancio in prova a vuoto, verde in modo reale); spento e' come gli altri pulsanti.
+
 ## 0.11.212 - 2026-11-09
 - **Automatico**: il pulsante accende le Automazioni nel modo scelto nelle Impostazioni (prova a vuoto o reale); prima chiedeva sempre il modo reale senza la conferma dell'avviso, il motore rifiutava e non succedeva nulla. Se non si accendono, un avviso apre le Impostazioni → Automazioni.
 - **Auto**: il pulsante si chiama «Auto» ed e' sempre colorato: viola spento, arancio in prova a vuoto, verde in modo reale.
