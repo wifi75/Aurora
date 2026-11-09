@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.217',
+    released: '2026-11-09T23:30:00Z',
+    kind: 'new',
+    title: ["Mappa DX più chiara e paesi non confermati", "Clearer DX Map and unconfirmed countries", "Klarere DX-Karte und nicht bestätigte Länder", "Carte DX plus claire et pays non confirmés", "Mapa DX más claro y países no confirmados", "Mapa DX mais claro e países não confirmados"],
+    text: [
+      "La Mappa DX segue la banda in uso, può mostrare solo chi ti sente su PSK Reporter, scrive i nominativi solo al passaggio del mouse e in trasmissione traccia una linea rossa verso la stazione chiamata; la mappa del pannello Log è quella completa. A scelta, un paese lavorato ma non confermato resta «DXCC nuovo». La Finestra RX torna sempre all'ultima riga.",
+      "The DX Map follows the band in use, can show only who hears you on PSK Reporter, shows callsigns on hover and draws a red line to the station you call while transmitting; the Log panel map is the full one. Optionally, a country worked but not confirmed stays “new DXCC”. The RX window always jumps to the latest line.",
+      "Die DX-Karte folgt dem aktuellen Band, zeigt auf Wunsch nur, wer dich auf PSK Reporter hört, Rufzeichen beim Überfahren und beim Senden eine rote Linie zur gerufenen Station; die Karte im Log-Bereich ist die vollständige. Auf Wunsch bleibt ein gearbeitetes, nicht bestätigtes Land „neues DXCC“. Das RX-Fenster springt immer zur letzten Zeile.",
+      "La carte DX suit la bande utilisée, peut montrer seulement qui t’entend sur PSK Reporter, affiche les indicatifs au survol et trace une ligne rouge vers la station appelée en émission ; la carte du panneau Journal est la carte complète. Au choix, un pays contacté mais non confirmé reste « nouveau DXCC ». La fenêtre RX revient toujours à la dernière ligne.",
+      "El mapa DX sigue la banda en uso, puede mostrar solo quien te oye en PSK Reporter, muestra los indicativos al pasar el ratón y al transmitir traza una línea roja a la estación llamada; el mapa del panel Log es el completo. A elección, un país trabajado pero no confirmado sigue siendo «DXCC nuevo». La ventana RX vuelve siempre a la última línea.",
+      "O mapa DX segue a banda em uso, pode mostrar só quem te ouve no PSK Reporter, mostra os indicativos ao passar o rato e, a transmitir, traça uma linha vermelha para a estação chamada; o mapa do painel Log é o completo. À escolha, um país trabalhado mas não confirmado continua «DXCC novo». A janela RX volta sempre à última linha.",
+    ],
+  },
+  {
     version: '0.11.216',
     released: '2026-11-09T20:06:15Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Dans l'Activité de bande le CQ répété à chaque période ne remplit plus la liste : seule la dernière émission reste, avec « ×N » (combien de fois tu l'as envoyée). Les messages différents du QSO restent tous. Pendant un QSO, en plus de la ligne fixe en haut, sa dernière réponse reçue par toi reste dans la liste.",
       "En Actividad de banda el CQ repetido cada periodo ya no llena la lista: queda solo la última transmisión con «×N» (cuántas veces la enviaste). Los mensajes distintos del QSO se quedan todos. Durante un QSO, además de la fila fija arriba, queda en la lista su última respuesta recibida por ti.",
       "Na Atividade de banda o CQ repetido em cada período já não enche a lista: fica só a última transmissão com «×N» (quantas vezes a enviaste). As mensagens diferentes do QSO ficam todas. Durante um QSO, além da linha fixa no topo, fica na lista a última resposta dele recebida por ti.",
-    ],
-  },
-  {
-    version: '0.11.177',
-    released: '2026-11-07T12:23:14Z',
-    kind: 'new',
-    title: ['Audio che perde blocchi: la scheda con cosa controllare', 'Audio losing blocks: a card with what to check', 'Audio verliert Blöcke: eine Karte mit den Prüfungen', 'Audio qui perd des blocs : une fiche avec quoi vérifier', 'Audio que pierde bloques: una ficha con qué comprobar', 'Áudio a perder blocos: um cartão com o que verificar'],
-    text: [
-      "Sull'avviso «L'audio perde blocchi» ora c'è «Come risolvere»: apre una scheda con i sei controlli da fare sul PC, in ordine (risparmio energetico USB, combinazione di risparmio energia, cavo e porta, formato dell'audio, altri programmi, memoria).",
-      "The «The audio is losing blocks» notice now has «How to fix»: it opens a card with the six checks to do on the PC, in order (USB power saving, power plan, cable and port, audio format, other programs, memory).",
-      "Der Hinweis «Das Audio verliert Blöcke» hat jetzt «So behebst du es»: Es öffnet eine Karte mit den sechs Prüfungen am PC, der Reihe nach (USB-Energiesparen, Energiesparplan, Kabel und Anschluss, Audioformat, andere Programme, Speicher).",
-      "L'avis « L'audio perd des blocs » a maintenant « Comment corriger » : il ouvre une fiche avec les six vérifications à faire sur le PC, dans l'ordre (économie d'énergie USB, mode d'alimentation, câble et port, format audio, autres programmes, mémoire).",
-      "El aviso «El audio pierde bloques» ahora tiene «Cómo arreglarlo»: abre una ficha con las seis comprobaciones en el PC, en orden (ahorro de energía USB, plan de energía, cable y puerto, formato de audio, otros programas, memoria).",
-      "O aviso «O áudio está a perder blocos» agora tem «Como resolver»: abre um cartão com as seis verificações a fazer no PC, por ordem (poupança de energia USB, plano de energia, cabo e porta, formato do áudio, outros programas, memória).",
     ],
   },
 ];

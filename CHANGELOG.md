@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.217 - 2026-11-09
+- **Paesi non confermati** (richiesta di Luc): a scelta, un paese lavorato ma non confermato (LoTW o QSL nel log) resta «DXCC nuovo», nei colori, nel filtro e nelle Automazioni.
+- **Mappa DX**: banda in uso di base, «Solo chi mi sente» (solo le linee di PSK Reporter), nominativi visibili al passaggio del mouse, linea rossa verso la stazione chiamata in trasmissione; la linguetta Mappa del pannello Log e' la Mappa DX completa.
+- **Finestra RX**: torna all'ultima riga anche dopo il doppio clic (cambio della frequenza RX) e con le righe Tx.
+
 ## 0.11.216 - 2026-11-09
 - **Aggiornamento**: l'installatore parte anche sui PC dove PowerShell non e' nel PATH (dai rapporti: «installatore non avviato: program not found»).
 - **Rapporti degli errori**: niente piu' falsi «programma bloccato» e panic nei secondi in cui Aurora si chiude per aggiornarsi; non si mandano piu' «radio non collegata» e l'uscita audio che Windows rifa' e Aurora riapre da sola.
