@@ -89,7 +89,13 @@ pub fn run_tci_feed(rows: broadcast::Sender<SpectrumRow>, events: broadcast::Sen
                             }
                         }
                         let Some((_, analyzer, meter)) = current.as_mut() else { continue };
-                        for level in meter.push(&samples) {
+                        for mut level in meter.push(&samples) {
+                            // con il TCI l'audio arriva in digitale dalla SDR, spesso molto sotto il fondo scala ma decodificabile: «debole» qui
+                            // non vuol dire niente e il consiglio «alza il volume di registrazione» non vale (non c'e' un volume di Windows).
+                            // Restano gli avvisi di muto e di saturazione.
+                            if level.state == aurora_core::LevelState::Low {
+                                level.state = aurora_core::LevelState::Good;
+                            }
                             let _ = events.send(Event::AudioLevel(level));
                         }
                         for bins in analyzer.push(&samples) {
