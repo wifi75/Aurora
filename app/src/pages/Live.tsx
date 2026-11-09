@@ -70,19 +70,35 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 const LOG_TAB_KEY = 'aurora-log-linguetta';
 /** Mezza larghezza della finestra RX attorno alla barretta Rx (come la finestra «Rx Frequency» di WSJT-X). */
 const RX_WINDOW_HZ = 50;
+const RX_ON_KEY = 'aurora-finestra-rx';
 
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
   // pannello Log a linguette «Log | Mappa»: la scelta si ricorda; con «Log» la mappa non esiste proprio (niente timer, niente disegno)
-  const [logTab, setLogTabState] = useState<'log' | 'map' | 'rx'>(() => {
+  // la finestra RX si accende a parte e sta sempre in alto; sotto il log o la mappa
+  const [rxOn, setRxOnState] = useState<boolean>(() => {
     try {
-      const v = browserStorage()?.getItem(LOG_TAB_KEY);
-      return v === 'map' || v === 'rx' ? v : 'log';
+      return browserStorage()?.getItem(RX_ON_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setRxOn = (on: boolean) => {
+    setRxOnState(on);
+    try {
+      browserStorage()?.setItem(RX_ON_KEY, on ? '1' : '0');
+    } catch {
+      // senza archivio vale fino alla chiusura
+    }
+  };
+  const [logTab, setLogTabState] = useState<'log' | 'map'>(() => {
+    try {
+      return browserStorage()?.getItem(LOG_TAB_KEY) === 'map' ? 'map' : 'log';
     } catch {
       return 'log';
     }
   });
-  const setLogTab = (tab: 'log' | 'map' | 'rx') => {
+  const setLogTab = (tab: 'log' | 'map') => {
     setLogTabState(tab);
     try {
       browserStorage()?.setItem(LOG_TAB_KEY, tab);
@@ -229,35 +245,55 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         }
       case 'cluster':
         return <ClusterPanel />;
-      case 'log':
-        // tre linguette, una alla volta nello stesso spazio: il log (con la scheda DXCC), la Mappa DX, la finestra RX
-        if (logTab === 'rx' && !soloPanel) {
-          // la finestra RX: chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
-          const rxHz = status?.rx_df ?? null;
-          const me = (status?.de_call ?? '').toUpperCase();
-          const rxList = decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me));
-          return <DecodeList decodes={withOwnTx(rxList, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={t('rxw.empty')} />;
-        }
-        if (logTab === 'map' && !soloPanel) {
-          return (
+      case 'log': {
+        // in alto, se accesa, la finestra RX: chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
+        const rxHz = status?.rx_df ?? null;
+        const me = (status?.de_call ?? '').toUpperCase();
+        const rx = rxOn && !soloPanel ? (
+          <div className="log-rx">
+            <div className="log-rx-label">
+              {t('rxw.title')} <span className="log-rx-freq">{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+            </div>
+            <DecodeList
+              decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
+              myGrid={status?.de_grid}
+              myCall={status?.de_call}
+              dxCall={status?.dx_call}
+              dxGrid={status?.dx_grid}
+              onReply={onReply}
+              onQueue={onQueue}
+              emptyText={t('rxw.empty')}
+            />
+          </div>
+        ) : null;
+        // sotto: il log (con la scheda DXCC) oppure la Mappa DX
+        const below =
+          logTab === 'map' && !soloPanel ? (
             <div className="log-map">
               <DxMapPage bare inPanel />
             </div>
+          ) : (
+            <>
+              <div className="log-dxcc-top">
+                <Log4omPanel />
+              </div>
+              <div className="log-dxcc-bottom">
+                <DxccCard panel call={status?.dx_call ?? ''} grid={status?.dx_grid ?? undefined} band={subjectBand(status?.dial_hz)} mode={subjectMode(status?.mode)} />
+              </div>
+            </>
           );
-        }
         return (
           <div className="log-dxcc">
-            <div className="log-dxcc-top">
-              <Log4omPanel />
-            </div>
-            <div className="log-dxcc-bottom">
-              <DxccCard panel call={status?.dx_call ?? ''} grid={status?.dx_grid ?? undefined} band={subjectBand(status?.dial_hz)} mode={subjectMode(status?.mode)} />
-            </div>
+            {rx}
+            {below}
           </div>
         );
+      }
       case 'all': {
         const pills = tagPills ? <ActivityTagPills /> : null;
-        const list = <DecodeList decodes={withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
+        // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
+        const rxShown = rxOn && !soloPanel;
+        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
@@ -411,11 +447,14 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   ) : id === 'log' ? (
     <>
       <div className="dock-tabs" role="tablist" onPointerDown={(e) => e.stopPropagation()}>
-        {(['log', 'map', 'rx'] as const).map((tab) => (
-          <button key={tab} type="button" role="tab" aria-selected={logTab === tab} className={logTab === tab ? 'dock-mini dock-mini--on' : 'dock-mini'} title={t(tab === 'log' ? 'log.tab.logTip' : tab === 'map' ? 'log.tab.mapTip' : 'tip.rxw.toggle')} onClick={() => setLogTab(tab)}>
-            {tab === 'rx' ? 'RX' : t(tab === 'log' ? 'log.tab.log' : 'log.tab.map')}
+        {(['log', 'map'] as const).map((tab) => (
+          <button key={tab} type="button" role="tab" aria-selected={logTab === tab} className={logTab === tab ? 'dock-mini dock-mini--on' : 'dock-mini'} title={t(tab === 'log' ? 'log.tab.logTip' : 'log.tab.mapTip')} onClick={() => setLogTab(tab)}>
+            {t(tab === 'log' ? 'log.tab.log' : 'log.tab.map')}
           </button>
         ))}
+        <button type="button" aria-pressed={rxOn} className={rxOn ? 'dock-mini dock-mini--on dock-mini--rx' : 'dock-mini dock-mini--rx'} title={t('tip.rxw.toggle')} onClick={() => setRxOn(!rxOn)}>
+          RX
+        </button>
       </div>
       {logTab === 'log' ? <LogHeader /> : null}
     </>
@@ -516,7 +555,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
                 <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
                   <span className="dock-grip-dots" aria-hidden="true" />
-                  <h2>{id === 'log' ? (logTab === 'rx' ? `${t('rxw.title')}${status?.rx_df != null ? ` · ${status.rx_df} Hz` : ''}` : t(logTab === 'map' ? 'log.tab.map' : 'log.tab.log')) : blockTitle(id as BoardId)}</h2>
+                  <h2>{id === 'log' ? t(logTab === 'map' ? 'log.tab.map' : 'log.tab.log') : blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
                   {id === 'cmds' ? null : <DetachButton item={(id === 'dxmap' ? 'bands' : id) as ItemId} className="dock-detach" />}
                 </header>

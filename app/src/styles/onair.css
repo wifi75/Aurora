@@ -7339,7 +7339,10 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 .rx-split-rx > :last-child, .rx-split-all > :last-child { flex: 1; min-height: 0; }
 .dock-mini { margin-left: auto; padding: 0 0.5rem; height: 1.3rem; border: 1px solid #4a5d82; border-radius: 6px; background: rgb(255 255 255 / 0.04); color: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
 .dock-mini:hover { border-color: var(--accent); }
-.dock-mini--on { border-color: var(--accent); color: var(--accent); opacity: 1; }
+.dock-mini--on { border-color: var(--accent); background: var(--accent); color: #04201c; opacity: 1; }
+/* acceso = fondo pieno del colore di Aurora, testo scuro sul tema scuro e chiaro sul tema chiaro (l'accento chiaro e' scuro) */
+html[data-theme='light'] .dock-mini--on { color: #ffffff; }
+.dock-mini--on:hover { filter: brightness(1.08); }
 /* linguette «Log | Mappa» nella barra del pannello Log: due pulsantini accostati */
 .dock-tabs { display: flex; gap: 2px; margin-left: auto; }
 .dock-tabs .dock-mini { margin-left: 0; }
@@ -7375,3 +7378,21 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 .dock-panel--log .dock-grip .dock-grip-dots { order: -3; }
 .dock-panel--log .dock-grip h2 { order: -2; }
 .dock-panel--log .dock-grip .dock-tabs { margin-left: auto; }
+
+/* finestra RX in alto nel pannello Log, con una scritta piccola al posto di un titolo */
+.log-rx-label { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.4rem; opacity: 0.85; }
+.dock-mini--rx { margin-left: 0.4rem !important; }
+
+/* pannello Log: titolo e totale a sinistra, tutti i pulsantini in fondo a destra (prima del ⧉) */
+.dock-panel--log .dock-grip .dock-grip-extra--right { flex: 0 0 auto !important; width: auto !important; }
+.dock-panel--log .dock-grip .dock-tabs { order: 5; margin-left: auto !important; }
+.dock-panel--log .dock-grip .dock-detach-host, .dock-panel--log .dock-grip .dock-detach { order: 6; }
+/* il ⧉ aveva anche lui margin-left:auto: lo spazio libero si divideva in due e le linguette restavano a meta' barra */
+.dock-panel--log .dock-grip .dock-detach-host { margin-left: 0.35rem !important; }
+/* in ogni pannello con pulsantini nella barra (Filtro, linguette...) i pulsantini stanno in fondo a destra, prima del ⧉ */
+.dock-grip:has(.dock-mini) .dock-detach-host { margin-left: 0.35rem !important; }
+.dock-grip > .dock-mini:first-of-type { margin-left: auto; }
+
+/* finestra RX: stretta dentro il pannello Log; si tolgono paese, km ed etichette perche' il messaggio si legga intero */
+.log-rx .w-country, .log-rx .w-km, .log-rx .badge-cell, .log-rx .c-dt, .log-rx .c-freq { display: none !important; }
+.log-rx .decode-text { min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
