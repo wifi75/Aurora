@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.216 - 2026-11-09
+- **Aggiornamento**: l'installatore parte anche sui PC dove PowerShell non e' nel PATH (dai rapporti: «installatore non avviato: program not found»).
+- **Rapporti degli errori**: niente piu' falsi «programma bloccato» e panic nei secondi in cui Aurora si chiude per aggiornarsi; non si mandano piu' «radio non collegata» e l'uscita audio che Windows rifa' e Aurora riapre da sola.
+- **Contest, moltiplicatori**: tessere colorate per stato (nuovo, nuovo qui ma preso su un'altra banda, gia' preso qui, stazione gia' lavorata) con la legenda; nelle decodifiche le stazioni gia' lavorate sulla banda sono depennate.
+
 ## 0.11.215 - 2026-11-09
 - **Nuovo stato nelle Automazioni**: «Nuovo stato (USA)» e «Stato sulla nuova banda (USA)» anche come regole di Auto.
 - **Stato nel log**: lo stato del corrispondente si salva nel log di Aurora (dalla ricerca QRZ/HamQTH e dagli ADIF importati) e va nel record ADIF; gli stati lavorati uniscono il log di Aurora e Log4OM.

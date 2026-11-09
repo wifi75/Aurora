@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.216',
+    released: '2026-11-09T23:00:00Z',
+    kind: 'fixed',
+    title: ["Aggiornamenti più sicuri e moltiplicatori a colori", "Safer updates and coloured multipliers", "Sicherere Updates und farbige Multiplikatoren", "Mises à jour plus sûres et multiplicateurs en couleur", "Actualizaciones más seguras y multiplicadores en color", "Atualizações mais seguras e multiplicadores a cores"],
+    text: [
+      "L'aggiornamento parte anche sui PC dove prima non si avviava, e la chiusura per aggiornarsi non manda più falsi rapporti di errore. Nella pagina Contest i moltiplicatori hanno colori per stato con la legenda, e le stazioni già lavorate sulla banda sono depennate.",
+      "Updates now start on PCs where they did not before, and closing to update no longer sends false error reports. On the Contest page multipliers are coloured by state with a legend, and stations already worked on the band are struck through.",
+      "Updates starten jetzt auch auf PCs, wo sie vorher nicht starteten, und das Schließen zum Aktualisieren sendet keine falschen Fehlerberichte mehr. Auf der Contest-Seite sind Multiplikatoren nach Zustand farbig mit Legende, schon gearbeitete Stationen auf dem Band sind durchgestrichen.",
+      "La mise à jour démarre aussi sur les PC où elle ne démarrait pas, et la fermeture pour mettre à jour n'envoie plus de faux rapports d'erreur. Sur la page Contest, les multiplicateurs sont colorés selon leur état avec une légende, et les stations déjà contactées sur la bande sont barrées.",
+      "La actualización arranca también en los PC donde antes no lo hacía, y el cierre para actualizar ya no envía falsos informes de error. En la página Contest los multiplicadores tienen colores por estado con leyenda, y las estaciones ya trabajadas en la banda aparecen tachadas.",
+      "A atualização arranca também nos PC onde antes não arrancava, e o fecho para atualizar já não envia falsos relatórios de erro. Na página Contest os multiplicadores têm cores por estado com legenda, e as estações já trabalhadas na banda aparecem riscadas.",
+    ],
+  },
+  {
     version: '0.11.215',
     released: '2026-11-09T18:41:34Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "L'avis « L'audio perd des blocs » a maintenant « Comment corriger » : il ouvre une fiche avec les six vérifications à faire sur le PC, dans l'ordre (économie d'énergie USB, mode d'alimentation, câble et port, format audio, autres programmes, mémoire).",
       "El aviso «El audio pierde bloques» ahora tiene «Cómo arreglarlo»: abre una ficha con las seis comprobaciones en el PC, en orden (ahorro de energía USB, plan de energía, cable y puerto, formato de audio, otros programas, memoria).",
       "O aviso «O áudio está a perder blocos» agora tem «Como resolver»: abre um cartão com as seis verificações a fazer no PC, por ordem (poupança de energia USB, plano de energia, cabo e porta, formato do áudio, outros programas, memória).",
-    ],
-  },
-  {
-    version: '0.11.176',
-    released: '2026-11-07T12:16:55Z',
-    kind: 'fixed',
-    title: ['«Aggiorna ora» dal tray funziona sempre', '«Update now» from the tray always works', '«Jetzt aktualisieren» im Infobereich klappt immer', '« Mettre à jour » depuis la barre des tâches marche toujours', '«Actualizar ahora» desde la bandeja funciona siempre', '«Atualizar agora» na bandeja funciona sempre'],
-    text: [
-      "Se l'agente nel tray vede una versione nuova prima di Aurora, «Aggiorna ora» non risponde più «nessuna versione nuova»: Aurora la cerca subito su GitHub e la installa.",
-      "If the tray agent sees a new version before Aurora does, «Update now» no longer answers «no new version»: Aurora looks it up on GitHub right away and installs it.",
-      "Sieht der Agent im Infobereich eine neue Version vor Aurora, meldet «Jetzt aktualisieren» nicht mehr «keine neue Version»: Aurora sucht sie sofort auf GitHub und installiert sie.",
-      "Si l'agent voit une nouvelle version avant Aurora, « Mettre à jour » ne répond plus « aucune nouvelle version » : Aurora la cherche aussitôt sur GitHub et l'installe.",
-      "Si el agente de la bandeja ve una versión nueva antes que Aurora, «Actualizar ahora» ya no responde «ninguna versión nueva»: Aurora la busca enseguida en GitHub y la instala.",
-      "Se o agente da bandeja vê uma versão nova antes da Aurora, «Atualizar agora» já não responde «nenhuma versão nova»: a Aurora procura-a logo no GitHub e instala-a.",
     ],
   },
 ];
