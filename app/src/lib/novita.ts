@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.214',
-    released: '2026-11-09T19:00:00Z',
+    released: '2026-11-09T17:00:23Z',
     kind: 'new',
     title: ['Mappa viva, voce degli avvisi e nuovo stato', 'Live map, spoken alerts and new state', 'Lebendige Karte, gesprochene Hinweise und neuer Staat', 'Carte vivante, alertes parlées et nouvel État', 'Mapa viva, avisos hablados y nuevo estado', 'Mapa viva, alertas faladas e novo estado'],
     text: [
