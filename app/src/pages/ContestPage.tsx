@@ -534,6 +534,31 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   const prefs = usePrefs((p) => p.prefs);
   const tx = useEngineTx((e) => e.tx);
   const autoseq = !!switches?.autoseq;
+  // Auto CQ: il CQ del contest ripetuto a ogni periodo finche' qualcuno risponde (messaggio 6 scelto e Abilita Tx acceso); F1 lo avvia,
+  // Esc ferma subito la trasmissione (come in N1MM e JTDX)
+  const autoCq = !!switches?.enable_tx && tx?.selected === 6;
+  const avviaCq = async () => {
+    try {
+      await postCq(s.sequenza?.parola_cq ?? '', true);
+      await postControl('enable_tx', true);
+    } catch (e) {
+      toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
+  };
+  const fermaCq = async () => {
+    await Promise.allSettled([postControl('enable_tx', false), postHalt()]);
+  };
+  const avviaRef = useRef(avviaCq);
+  avviaRef.current = avviaCq;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'F1') return;
+      e.preventDefault();
+      void avviaRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const txOn = !!switches?.enable_tx;
   const dxRiga = dx ? righe.find((x) => x.call === dx) : undefined;
   const mio = useStation((x) => x.status?.de_call ?? '');
@@ -694,8 +719,8 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
           <button type="button" className={`ctc-btn${txOn ? ' ctc-btn--on' : ''}`} aria-pressed={txOn} onClick={() => void postControl('enable_tx', !txOn)}>
             ● {t('contest.enableTx')}
           </button>
-          <button type="button" className="ctc-btn" title={t('tip.contest.cq')} onClick={() => void postCq(s.sequenza?.parola_cq ?? '', true)}>
-            {t('contest.cq')}
+          <button type="button" className={`ctc-btn${autoCq ? ' ctc-btn--on' : ''}`} aria-pressed={autoCq} title={t('tip.contest.autoCq')} onClick={() => void (autoCq ? fermaCq() : avviaCq())}>
+            ● {t('contest.autoCq')} <kbd className="ctc-kbd">F1</kbd>
           </button>
           <button type="button" className="ctc-btn" disabled={!dx} title={t('tip.contest.rr73')} onClick={() => void postTxMessage(4)}>
             {t('contest.rr73')}
