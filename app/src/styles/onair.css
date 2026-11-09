@@ -7300,3 +7300,12 @@ html[data-theme='light'] .freq-picker-menu {
 @keyframes update-strip-pulse { 50% { opacity: 0.35; transform: scale(0.8); } }
 html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; background: #39ff14; }
 @media (prefers-reduced-motion: reduce) { .update-strip-dot { animation: none; } }
+
+/* interruttori Q65 (EME, Deriva, Cont): pulsanti di Aurora (glass, acceso = glass--on), compatti come le tendine accanto */
+.mode-switch-flag {
+  min-width: 0;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
