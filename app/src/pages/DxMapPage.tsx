@@ -10,6 +10,7 @@ import { useGroups } from '../lib/detached';
 import { MAP_STYLES } from '../lib/mapStyles';
 import { stationsWithGrid } from '../lib/mapStations';
 import { gridToLatLon } from '../lib/maidenhead';
+import { bandOf } from '../lib/format';
 import { browserStorage } from '../lib/theme';
 import { useStation, useStatusPick } from '../state/station';
 
@@ -42,6 +43,8 @@ const DEFAULTS: DxMapSettings = {
   spotPaths: true,
   spotColor: '#d4ff2a',
   spotMaxMin: 15,
+  onlyHeardMe: false,
+  callLabels: false,
   arcsAnimated: true,
   decayMin: 15,
 };
@@ -85,7 +88,10 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
   const [settings, setSettings] = useState<DxMapSettings>(readSettings);
-  const [band, setBand] = useState('all');
+  // «in uso»: la banda della radio adesso (richiesta di Luc: lavorando sui 15 m si vedono solo quadrati e spot dei 15 m)
+  const [band, setBand] = useState('auto');
+  const bandNow = dial ? bandOf(dial) : null;
+  const effBand = band === 'auto' ? (bandNow ?? 'all') : band;
   const [mode, setMode] = useState('all');
   const [showSquares, setShowSquares] = useState(!bare);
   const [open, setOpen] = useState(false);
@@ -117,10 +123,12 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
       const age = Math.max(0, tick / 1000 - r.time_s);
       const old = last.get(r.receiver);
       if (!r.locator || (old && old.age <= age)) continue;
+      // solo gli spot della banda scelta (o di quella in uso)
+      if (effBand !== 'all' && r.freq_hz > 0 && bandOf(r.freq_hz) !== effBand) continue;
       last.set(r.receiver, { call: r.receiver, grid: r.locator, snr: r.snr, age });
     }
     return [...last.values()];
-  }, [psk.data, tick]);
+  }, [psk.data, tick, effBand]);
   const liveSpots = spots.filter((p) => p.age <= settings.spotMaxMin * 60).length;
   // chi chiama chi: «K1ABC G0XYZ …» e' G0XYZ che chiama K1ABC; vale l'ultimo messaggio di ogni mittente, se i due quadrati sono noti
   const me = status?.de_call?.toUpperCase() ?? '';
@@ -227,12 +235,12 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
     const confirmedText = t('dxmap.confirmed');
     if (!cells) {
       return squares
-        .filter((s) => band === 'all' || s.bands.includes(band))
+        .filter((s) => effBand === 'all' || s.bands.includes(effBand))
         .map((s) => ({ grid: s.grid, confirmed: false, text: `${workedText}: ${s.count} QSO${s.bands.length ? ` · ${s.bands.join(', ')}` : ''}` }));
     }
     const byGrid = new Map<string, { qsos: number; confirmed: number; bands: Set<string>; modes: Set<string> }>();
     for (const c of cells) {
-      if ((band !== 'all' && c.band !== band) || (mode !== 'all' && c.mode !== mode)) continue;
+      if ((effBand !== 'all' && c.band !== effBand) || (mode !== 'all' && c.mode !== mode)) continue;
       const g = byGrid.get(c.grid) ?? { qsos: 0, confirmed: 0, bands: new Set<string>(), modes: new Set<string>() };
       g.qsos += c.qsos;
       g.confirmed += c.confirmed;
@@ -278,11 +286,20 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
           <input type="checkbox" checked={settings.links} onChange={(e) => change({ links: e.target.checked })} />
           {t('dxmap.links')}
         </label>
+        <label className="toggle" title={t('dxmap.onlyHeardMe.tip')}>
+          <input type="checkbox" checked={settings.onlyHeardMe} onChange={(e) => change({ onlyHeardMe: e.target.checked })} />
+          {t('dxmap.onlyHeardMe')}
+        </label>
+        <label className="toggle" title={t('dxmap.callLabels.tip')}>
+          <input type="checkbox" checked={settings.callLabels} onChange={(e) => change({ callLabels: e.target.checked })} />
+          {t('dxmap.callLabels')}
+        </label>
         <label className="toggle">
           <input type="checkbox" checked={showSquares} onChange={(e) => setShowSquares(e.target.checked)} />
           {t('dxmap.squares')}
         </label>
-        <select value={band} onChange={(e) => setBand(e.target.value)} disabled={!showSquares}>
+        <select value={band} onChange={(e) => setBand(e.target.value)}>
+          <option value="auto">{t('dxmap.bandNow')}{bandNow ? ` (${bandNow})` : ''}</option>
           <option value="all">{t('dxmap.allBands')}</option>
           {bands.map((b) => (
             <option key={b} value={b}>
@@ -395,8 +412,10 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
       ) : null}
       <DxMap
         whole={bare && !inPanel}
-        onPick={inPanel ? (call) => jumpToQueued(call, status?.de_call ?? undefined, t) : undefined}
-        settings={bare ? { ...settings, links: false } : settings}
+        onPick={(call) => jumpToQueued(call, status?.de_call ?? undefined, t)}
+        // «solo chi mi sente»: niente linee verso le stazioni sentite ne' fra chi si chiama, restano quelle di PSK Reporter
+        settings={settings.onlyHeardMe ? { ...settings, arcs: false, links: false } : bare ? { ...settings, links: false } : settings}
+        txTo={status?.transmitting && status.dx_grid ? gridToLatLon(status.dx_grid) ?? undefined : undefined}
         stations={stations}
         links={links}
         spots={spots}

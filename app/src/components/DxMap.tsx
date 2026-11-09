@@ -101,6 +101,10 @@ export interface DxMapSettings {
   spotColor: string;
   /** Minuti: gli spot piu' vecchi non contano. */
   spotMaxMin: number;
+  /** «Solo chi mi sente»: niente linee verso le stazioni sentite ne' fra chi si chiama, solo quelle di PSK Reporter. */
+  onlyHeardMe?: boolean;
+  /** Nominativi sempre scritti accanto alle stazioni; spento: si vedono passando col mouse. */
+  callLabels?: boolean;
   /** Linee fra le stazioni che si chiamano (chi chiama chi). */
   links: boolean;
   /** Colore delle linee fra altre stazioni (QSX). */
@@ -122,6 +126,8 @@ interface Props {
   whole?: boolean;
   /** Pannello Log: nominativo scritto accanto a ogni stazione e clic = chiamala. */
   onPick?: (call: string) => void;
+  /** In trasmissione: la stazione chiamata, per la linea rossa da noi a lei. */
+  txTo?: { lat: number; lon: number };
   settings: DxMapSettings;
   stations: readonly DxStation[];
   links: readonly DxLink[];
@@ -155,7 +161,7 @@ function cssColor(variable: string | null, fallback: string): string {
 const wrap = (lon: number) => ((((lon + 180) % 360) + 360) % 360) - 180;
 
 /** Mappa DX: sfondi a scelta, linea grigia con i crepuscoli, Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate. */
-export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels, whole = false, onPick }: Props) {
+export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels, whole = false, onPick, txTo }: Props) {
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
   const box = useRef<HTMLDivElement | null>(null);
@@ -336,7 +342,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
       if (pickRef.current) {
         // pannello Log: il nominativo sempre scritto, nel colore della novita'; clic = chiamala
         dot
-          .bindTooltip(s.call, { permanent: true, direction: 'right', offset: [5, 0], className: `dxmap-call${s.cq ? ' dxmap-call--cq' : ''}`, opacity: fade })
+          .bindTooltip(s.call, { permanent: !!settings.callLabels, direction: 'right', offset: [5, 0], className: `dxmap-call${s.cq ? ' dxmap-call--cq' : ''}`, opacity: fade })
           .on('click', () => pickRef.current?.(s.call))
           .addTo(group);
         const tip = dot.getTooltip()?.getElement() as HTMLElement | undefined;
@@ -357,7 +363,17 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         .addTo(group);
     }
     replace('stations', group);
-  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, settings.dots, home?.lat, home?.lon]);
+  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, settings.dots, settings.callLabels, home?.lat, home?.lon]);
+
+  // in trasmissione: linea rossa da noi alla stazione chiamata (richiesta di Luc: si vede dove sta il corrispondente)
+  useEffect(() => {
+    if (!txTo || !home) {
+      replace('tx', null);
+      return;
+    }
+    const path = greatCircle(home, txTo, 60).map((p) => [p.lat, p.lon] as [number, number]);
+    replace('tx', L.layerGroup([L.polyline(path, { interactive: false, color: '#ff3b3b', weight: 3, opacity: 0.9, className: 'dxmap-tx' })]));
+  }, [txTo?.lat, txTo?.lon, home?.lat, home?.lon]);
 
   // chi chiama chi: una linea fra le due stazioni, dorata se chiamano noi; sbiadisce come le stazioni
   useEffect(() => {

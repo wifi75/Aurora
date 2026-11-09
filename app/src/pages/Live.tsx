@@ -269,7 +269,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const below =
           logTab === 'map' && !soloPanel ? (
             <div className="log-map">
-              <DxMapPage bare inPanel />
+              <DxMapPage inPanel />
             </div>
           ) : (
             <>
