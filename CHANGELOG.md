@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- **Finestra RX**: accanto ad Attività di banda (pulsantino «RX» per accenderla o spegnerla), con i messaggi sulla tua frequenza di ricezione (±50 Hz), quelli diretti a te e le tue trasmissioni, come la finestra «Rx Frequency» di WSJT-X.
+- **Automazioni**: pulsante «Automatico» nella barra in alto per accenderle o spegnerle con un clic (verde in modo reale, arancio in prova; richiesta di ON7KEC).
+
 ## 0.11.208 - 2026-11-09
 - **TCI**: niente piu' avviso «segnale debole: alza il volume di registrazione» con l'audio dal TCI (non c'e' un volume di Windows da alzare e il segnale si decodifica); restano gli avvisi di ingresso muto e saturo.
 - **Contest**: linguette «Allenamento» (pile-up finto leggero, medio o fitto per 15, 30 o 60 minuti con lo scambio del contest scelto, errori, doppi e chi non riceve RR73: niente trasmissione e niente log, punteggio a parte) e «Analisi» (dal log del contest: QSO, moltiplicatori, punteggio, QSO incerti, QSO ora per ora, per banda rate migliore e tempo perso, un consiglio).

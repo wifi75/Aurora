@@ -63,8 +63,28 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
   return txLog.length === 0 ? shown : [...txLog, ...shown].sort((a, b) => b.time_ms - a.time_ms);
 }
 
+/** Mezza larghezza della finestra RX attorno alla frequenza di ricezione (come la finestra «Rx Frequency» di WSJT-X). */
+const RX_WINDOW_HZ = 50;
+const RX_SPLIT_KEY = 'aurora-finestra-rx';
+
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
+  // finestra RX accanto ad Attivita' di banda: accesa di base, si spegne dal pulsantino «RX» nella barra del pannello
+  const [rxSplit, setRxSplitState] = useState<boolean>(() => {
+    try {
+      return browserStorage()?.getItem(RX_SPLIT_KEY) !== '0';
+    } catch {
+      return true;
+    }
+  });
+  const setRxSplit = (on: boolean) => {
+    setRxSplitState(on);
+    try {
+      browserStorage()?.setItem(RX_SPLIT_KEY, on ? '1' : '0');
+    } catch {
+      // senza archivio vale fino alla chiusura
+    }
+  };
   const phone = usePhone();
   const view = useStationView();
   const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df', 'tx_enabled']);
@@ -199,8 +219,25 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             </div>
           </div>
         );
-      case 'all':
-        return <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
+      case 'all': {
+        const list = <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
+        if (!rxSplit) return list;
+        // la finestra RX (come «Rx Frequency» di WSJT-X): i messaggi sulla mia frequenza di ricezione, quelli diretti a me e le mie trasmissioni
+        const rxHz = status?.rx_df ?? null;
+        const me = (status?.de_call ?? '').toUpperCase();
+        const rxList = decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me));
+        return (
+          <div className="rx-split">
+            <div className="rx-split-all">{list}</div>
+            <div className="rx-split-rx" aria-label={t('rxw.title')}>
+              <div className="rx-split-head">
+                {t('rxw.title')} <span className="muted">{rxHz !== null ? `Rx ${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+              </div>
+              <DecodeList decodes={withOwnTx(rxList, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={t('rxw.empty')} />
+            </div>
+          </div>
+        );
+      }
     }
   };
 
@@ -342,7 +379,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       renderPanel(id)
     );
   const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : id === 'cmds' ? t('panel.station') : titles[id]);
-  const blockExtra = (id: BoardId): ReactNode => (id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
+  const blockExtra = (id: BoardId): ReactNode => (id === 'all' ? (
+    <button type="button" className={rxSplit ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={rxSplit} title={t('tip.rxw.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setRxSplit(!rxSplit)}>
+      RX
+    </button>
+  ) : id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
       <span className="muted">NG3K</span>

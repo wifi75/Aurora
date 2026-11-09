@@ -183,6 +183,16 @@ export const stationStrings = {
   'log.col.mode': ['Modo', 'Mode', 'Modus', 'Mode', 'Modo', 'Modo'],
   'log.col.rst': ['Rapporti', 'Reports', 'Rapporte', 'Rapports', 'Reportes', 'Relatórios'],
   'log.col.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
+  'rxw.title': ['Finestra RX', 'RX window', 'RX-Fenster', 'Fenêtre RX', 'Ventana RX', 'Janela RX'],
+  'rxw.empty': ['Niente sulla tua frequenza di ricezione', 'Nothing on your receive frequency', 'Nichts auf deiner Empfangsfrequenz', 'Rien sur ta fréquence de réception', 'Nada en tu frecuencia de recepción', 'Nada na tua frequência de receção'],
+  'tip.rxw.toggle': [
+    'Finestra RX accanto ad Attività di banda: i messaggi sulla tua frequenza di ricezione (±50 Hz), quelli diretti a te e le tue trasmissioni, per seguire il QSO.',
+    'RX window next to Band activity: messages on your receive frequency (±50 Hz), those addressed to you and your transmissions, to follow the QSO.',
+    'RX-Fenster neben der Bandaktivität: Nachrichten auf deiner Empfangsfrequenz (±50 Hz), an dich gerichtete und deine Aussendungen, um dem QSO zu folgen.',
+    'Fenêtre RX à côté de l’Activité de bande : les messages sur ta fréquence de réception (±50 Hz), ceux qui te sont adressés et tes émissions, pour suivre le QSO.',
+    'Ventana RX junto a Actividad de banda: los mensajes en tu frecuencia de recepción (±50 Hz), los dirigidos a ti y tus transmisiones, para seguir el QSO.',
+    'Janela RX ao lado da Atividade de banda: as mensagens na tua frequência de receção (±50 Hz), as dirigidas a ti e as tuas transmissões, para seguir o QSO.',
+  ],
   'panel.all': ['Attività di banda', 'Band activity', 'Bandaktivität', 'Activité de la bande', 'Actividad de banda', 'Atividade da banda'],
   'tip.row.txRepeat': ["Hai trasmesso questo messaggio {n} volte: si vede solo l'ultima", "You sent this message {n} times: only the last one is shown", "Du hast diese Nachricht {n} Mal gesendet: nur die letzte wird gezeigt", "Tu as envoyé ce message {n} fois : seule la dernière est affichée", "Has enviado este mensaje {n} veces: solo se ve la última", "Enviaste esta mensagem {n} vezes: só se vê a última"],
   'tip.row.tx': [

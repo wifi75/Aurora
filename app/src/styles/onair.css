@@ -7330,3 +7330,17 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 .rd-rigsw--ft2000, .rd-rigsw--yaesuq { --rs-bg: #0a0d10; --rs-line: #3a4048; --rs-ink: #ffa63a; --rs-on: #ffa63a; --rs-on-ink: #1c0f00; }
 .rd-rigsw--ic7610, .rd-rigsw--icdual, .rd-rigsw--icblue, .rd-rigsw--icblueq { --rs-bg: #04122e; --rs-line: #1f4a9a; --rs-ink: #8fd2ff; --rs-on: #8fd2ff; --rs-on-ink: #04122e; }
 .rd-rigsw--icblackq { --rs-bg: #050608; --rs-line: #2c3138; --rs-ink: #e8eef6; --rs-on: #e8eef6; --rs-on-ink: #050608; }
+
+/* finestra RX accanto ad Attivita' di banda (due colonne come WSJT-X) */
+.rx-split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 0.4rem; height: 100%; min-height: 0; }
+.rx-split-all, .rx-split-rx { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.rx-split-rx { border-left: 1px solid var(--line, #1e2c44); padding-left: 0.4rem; }
+.rx-split-head { font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.3rem; display: flex; gap: 0.5rem; align-items: baseline; }
+.rx-split-rx > :last-child, .rx-split-all > :last-child { flex: 1; min-height: 0; }
+.dock-mini { margin-left: auto; padding: 0 0.45rem; height: 1.25rem; border: 1px solid var(--line, #2a3a55); border-radius: 6px; background: transparent; color: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer; opacity: 0.75; }
+.dock-mini:hover { opacity: 1; }
+.dock-mini--on { border-color: var(--accent); color: var(--accent); opacity: 1; }
+
+/* il pulsante delle Automazioni nella barra in alto: verde in modo reale, arancio in prova a vuoto */
+.auto-switch--live { color: #04201c; background: #2cf5a4; font-weight: 700; }
+.auto-switch--dry { color: #2b1700; background: #ffb340; font-weight: 700; }

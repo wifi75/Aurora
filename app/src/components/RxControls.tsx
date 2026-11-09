@@ -4,6 +4,7 @@ import { getControls, postControl, type ControlId } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { replyErrorMessage } from '../lib/replyError';
 import { useStation } from '../state/station';
+import { AutoSwitch } from './AutoSwitch';
 
 /** Interruttori di ricezione del motore, nell'ordine della sua finestra. */
 // «Sinc» (syncButton di JTDX) non e' collegato al motore proprio: non si mostra finche' non fa davvero qualcosa
@@ -68,6 +69,7 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
             </button>
           ))}
         </div>
+        <AutoSwitch />
       </div>
       {note ? <span className="live-note" role="status">{note}</span> : null}
       {trailing ? <div className="rx-trailing">{trailing}</div> : null}
