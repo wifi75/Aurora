@@ -7470,3 +7470,9 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .dock-panel--log .dxcc-card--panel { gap: 0.25rem !important; padding: 0.25rem 0.4rem !important; }
 .dock-panel--log .dxcc-subject { margin: 0 !important; padding: 0 !important; min-height: 0; }
 .dock-panel--log .dxcc-labels { margin: 0 !important; }
+
+/* pannello RX separato: niente bordo interno, la barra del titolo non si trascina; la frequenza a destra */
+.dock-panel--rx .log-rx { margin: 0 !important; border: 0 !important; border-radius: 0; flex: 1 1 auto; height: 100%; display: flex; flex-direction: column; }
+.dock-panel--rx .log-rx > * { flex: 1; min-height: 0; overflow-y: auto; }
+.dock-grip--fixed { cursor: default !important; }
+.dock-panel--rx .log-rx-freq { margin-left: auto; font-family: var(--font-data); font-size: 0.72rem; opacity: 0.85; }

@@ -246,26 +246,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'cluster':
         return <ClusterPanel />;
       case 'log': {
-        // in alto, se accesa, la finestra RX: chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
-        const rxHz = status?.rx_df ?? null;
-        const me = (status?.de_call ?? '').toUpperCase();
-        const rx = rxOn && !soloPanel ? (
-          <div className="log-rx">
-            <div className="log-rx-label">
-              {t('rxw.title')} <span className="log-rx-freq">{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
-            </div>
-            <DecodeList
-              decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
-              myGrid={status?.de_grid}
-              myCall={status?.de_call}
-              dxCall={status?.dx_call}
-              dxGrid={status?.dx_grid}
-              onReply={onReply}
-              onQueue={onQueue}
-              emptyText={t('rxw.empty')}
-            />
-          </div>
-        ) : null;
         // sotto: il log (con la scheda DXCC) oppure la Mappa DX
         const below =
           logTab === 'map' && !soloPanel ? (
@@ -284,7 +264,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           );
         return (
           <div className="log-dxcc">
-            {rx}
             {below}
           </div>
         );
@@ -419,6 +398,37 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // la pagina a blocchi: ogni finestra ha la sua posizione e la sua misura (lib/boardLayout.ts) e, in fase di progetto (`EDIT_LAYOUT`),
   // si sposta dalla barra del titolo e si ridimensiona dall'angolo in basso a destra; poi le misure salvate restano fisse.
   const boardCells = useBoard((st) => st.cells);
+  // il pannello RX (come «Rx Frequency» di WSJT-X): chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
+  const rxHz = status?.rx_df ?? null;
+  const rxBody = (): ReactNode => {
+    const me = (status?.de_call ?? '').toUpperCase();
+    return (
+      <div className="log-rx">
+        <DecodeList
+          decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
+          myGrid={status?.de_grid}
+          myCall={status?.de_call}
+          dxCall={status?.dx_call}
+          dxGrid={status?.dx_grid}
+          onReply={onReply}
+          onQueue={onQueue}
+          emptyText={t('rxw.empty')}
+        />
+      </div>
+    );
+  };
+  // con RX acceso il posto del Log si divide: RX sopra (un pannello a se', come Bande aperte e Comandi), Log sotto; la disposizione salvata non cambia
+  const withRx = (cells: Record<string, Cell>): Record<string, Cell> => {
+    const log = cells.log;
+    if (!rxOn || !log || soloPanel) return cells;
+    const rxH = Math.max(3, Math.round(log.h * 0.38 * 2) / 2);
+    return { ...cells, rx: { x: log.x, y: log.y, w: log.w, h: rxH }, log: { ...log, y: log.y + rxH, h: log.h - rxH } };
+  };
+  const withoutRx = (next: Record<string, Cell>): Record<string, Cell> => {
+    const { rx, ...rest } = next;
+    if (!rx || !rest.log) return rest;
+    return { ...rest, log: { x: rest.log.x, w: rest.log.w, y: Math.min(rx.y, rest.log.y), h: rx.h + rest.log.h } };
+  };
   const blockBody = (id: BoardId): ReactNode =>
     id === 'dxmap' ? (
       <div className="bands-with-cmds bands-only">
@@ -546,12 +556,24 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       ) : (
         <div className="live-board">
           <GridBoard
-            cells={awayKey ? awayCells : visibleCells}
+            cells={withRx(awayKey ? awayCells : visibleCells)}
             locked={!EDIT_LAYOUT && !awayKey}
             swap
             free
-            onChange={(next) => (awayKey && !EDIT_LAYOUT ? saveAwayCells(next) : useBoard.getState().set({ ...boardCells, ...next }))}
-            render={(id, grip) => (
+            onChange={(raw) => {
+              const next = withoutRx(raw);
+              return awayKey && !EDIT_LAYOUT ? saveAwayCells(next) : useBoard.getState().set({ ...boardCells, ...next });
+            }}
+            render={(id, grip) => id === 'rx' ? (
+              <section className="dock-panel dock-panel--rx grid-panel" data-panel="rx">
+                <header className="dock-grip dock-grip--fixed">
+                  <span className="dock-grip-dots" aria-hidden="true" />
+                  <h2>{t('rxw.title')}</h2>
+                  <span className="log-rx-freq">{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+                </header>
+                <div className="dock-body">{rxBody()}</div>
+              </section>
+            ) : (
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
                 <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
                   <span className="dock-grip-dots" aria-hidden="true" />
