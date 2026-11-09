@@ -69,7 +69,9 @@ async function start() {
   // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fanno eccezione le finestre staccate,
   // il collegamento di associazione del telefono e la pagina dei messaggi dell'autore (aperta dalla sua icona sul desktop)
   const solo = location.hash.startsWith('#/finestra/');
-  const keep = ['#/finestra/', '#/associa', '#/pair', '#/messaggi-autore'].some((h) => location.hash.startsWith(h));
+  // ricaricando la pagina (F5, «Ricarica») si resta dove si era: solo l'apertura di Aurora riparte dalla Stazione
+  const reload = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)?.type === 'reload';
+  const keep = reload || ['#/finestra/', '#/associa', '#/pair', '#/messaggi-autore'].some((h) => location.hash.startsWith(h));
   if (!keep) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
