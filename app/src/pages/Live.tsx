@@ -713,7 +713,10 @@ function alignDisplay(row: HTMLDivElement | null): void {
   ro.observe(page);
   page.querySelectorAll('.grid-board, .dock').forEach((el) => ro.observe(el));
   // i blocchi si spostano anche senza cambiare la misura della pagina: si ricontrolla ogni tanto
-  const timer = window.setInterval(measure, 1500);
+  // con la finestra nascosta o ridotta a icona non serve misurare: si riprende quando torna visibile
+  const timer = window.setInterval(() => {
+    if (!document.hidden) measure();
+  }, 1500);
   alignStop = () => {
     ro.disconnect();
     window.clearInterval(timer);

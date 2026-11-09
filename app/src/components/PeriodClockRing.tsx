@@ -19,7 +19,10 @@ export function PeriodClockRing({ mode, label }: { mode: string; label: string }
   const [now, setNow] = useState(() => Date.now());
   const selected = useEngineTx((s) => s.tx?.selected ?? null);
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    const timer = window.setInterval(() => {
+      // finestra nascosta: l'anello non si vede, non si ridisegna
+      if (!document.hidden) setNow(Date.now());
+    }, 250);
     return () => window.clearInterval(timer);
   }, []);
   const { seconds, fraction, length } = periodPosition(now, mode || 'FT8');

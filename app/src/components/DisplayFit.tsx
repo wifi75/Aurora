@@ -77,7 +77,10 @@ export function DisplayFit({ hugWindow = false }: { hugWindow?: boolean } = {}) 
     });
     ro.observe(outer);
     // il display cambia misura da solo (radio collegata, altro stile): si riprova ogni tanto
-    const timer = window.setInterval(fit, 2000);
+    const timer = window.setInterval(() => {
+      // finestra nascosta o ridotta a icona: niente misure inutili
+      if (!document.hidden) fit();
+    }, 2000);
     return () => {
       ro.disconnect();
       window.clearInterval(timer);
