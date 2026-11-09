@@ -713,6 +713,8 @@ export interface CatConfig {
   tci_address?: string;
   /** Ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 (come «TCI Client RX1/RX2» di WSJT-X). */
   tci_receiver?: number;
+  /** La radio di OmniRig: 1 o 2. */
+  omnirig_rig?: number;
   /** Indirizzo host:porta del server UDP di FT-991(A) Link (di base 127.0.0.1:50001). */
   ft991_address?: string;
 }

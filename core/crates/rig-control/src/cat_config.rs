@@ -133,6 +133,8 @@ pub struct RigConfig {
     pub tci_receiver: u8,
     /// Indirizzo host:porta del server UDP di FT-991(A) Link; vuoto = quello di base, 127.0.0.1:50001.
     pub ft991_address: String,
+    /// La radio di OmniRig comandata: 1 (Rig1) o 2 (Rig2), per chi ha due radio in OmniRig.
+    pub omnirig_rig: u8,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -166,6 +168,7 @@ impl Default for RigConfig {
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),
+            omnirig_rig: 1,
         }
     }
 }
@@ -212,6 +215,9 @@ impl RigConfig {
         }
         if self.tci_receiver > 1 {
             return Err("bad_tci_receiver");
+        }
+        if !(1..=2).contains(&self.omnirig_rig) {
+            return Err("bad_omnirig_rig");
         }
         if !self.ft991_address.is_empty() && !token_ok(&self.ft991_address) {
             return Err("bad_ft991_address");

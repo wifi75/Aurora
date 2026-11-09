@@ -867,6 +867,28 @@ fn forget_in_own_file(path: &Path, gone: Option<&[logbook::LogEntry]>) {
 
 /// Rilegge i QSO gia' fatti. Le richieste che arrivano insieme (dopo un QSO ne arrivavano quattro nello stesso istante, e ogni volta si
 /// rileggevano decine di migliaia di QSO piu' il log di Log4OM) si uniscono: se una rilettura e' gia' in corso, ne parte una sola alla fine.
+/// La regione IARU di un paese DXCC: Europa e Africa nella 1, le Americhe nella 2, Oceania nella 3; l'Asia si divide (Medio Oriente, Caucaso,
+/// Russia asiatica, Asia centrale e Mongolia nella 1, il resto nella 3). Hawaii e isole del Pacifico orientale stanno nella 2. Antartide: nessuna.
+fn iaru_region(e: &dxcc::Entity) -> Option<&'static str> {
+    let name = e.name.to_ascii_lowercase();
+    const REGION2_PACIFIC: &[&str] = &["hawaii", "easter island", "juan fernandez", "galapagos", "clipperton", "revillagigedo", "malpelo", "cocos island", "san felix"];
+    const REGION1_ASIA: &[&str] = &[
+        "asiatic russia", "kazakhstan", "uzbekistan", "kyrgyzstan", "tajikistan", "turkmenistan", "mongolia", "georgia", "armenia", "azerbaijan",
+        "asiatic turkey", "israel", "palestine", "jordan", "lebanon", "syria", "iraq", "kuwait", "saudi arabia", "united arab emirates", "qatar",
+        "bahrain", "oman", "yemen", "cyprus", "sov mil order", "uk base areas",
+    ];
+    if REGION2_PACIFIC.iter().any(|n| name.contains(n)) {
+        return Some("R2");
+    }
+    match e.continent.as_str() {
+        "EU" | "AF" => Some("R1"),
+        "NA" | "SA" => Some("R2"),
+        "OC" => Some("R3"),
+        "AS" => Some(if REGION1_ASIA.iter().any(|n| name.contains(n)) { "R1" } else { "R3" }),
+        _ => None,
+    }
+}
+
 fn refresh_worked(sources: &LogSources, db: &DxccDb, shared: &SharedWorked) {
     use std::sync::atomic::{AtomicBool, Ordering};
     static RUNNING: AtomicBool = AtomicBool::new(false);
@@ -1345,7 +1367,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
                 }
             }
         }
-        "omnirig" => match tx_native::OmniRigPtt::new(1) {
+        "omnirig" => match tx_native::OmniRigPtt::new(rig_control::omnirig::rig()) {
             Ok(ptt) => Arc::new(ptt),
             Err(e) => {
                 tracing::error!("PTT con OmniRig non attivo ({e}): niente trasmissione");
@@ -1507,6 +1529,26 @@ pub async fn run(
         && let Some(hit) = db.lookup(&my_call)
     {
         automation.set_own_continent(Some(db.entity(hit.entity).continent.clone()));
+    }
+    // la regione IARU dal nominativo, una volta sola: se e' ancora «Tutte» (il valore di partenza) diventa quella del paese di chi opera.
+    // Un segno nella cartella dei dati ricorda che e' stato fatto: chi poi sceglie «Tutte» a mano non se la vede cambiare.
+    if let (Some((db, _)), Some(store)) = (&enrichment, &engine_settings) {
+        let mark = config.data_dir.join("regione-iaru-automatica.txt");
+        if !mark.exists()
+            && !my_call.is_empty()
+            && store.values().get("Region").is_none_or(|r| r == "ALL" || r.is_empty())
+            && let Some(hit) = db.lookup(&my_call)
+            && let Some(region) = iaru_region(db.entity(hit.entity))
+        {
+            let changes: std::collections::BTreeMap<String, String> = [("Region".to_string(), region.to_string())].into();
+            match store.update(&changes) {
+                Ok(()) => {
+                    tracing::info!("regione IARU impostata da {my_call}: {region}");
+                    let _ = std::fs::write(&mark, format!("{my_call} {region}\n"));
+                }
+                Err(e) => tracing::warn!("regione IARU non impostata: {e}"),
+            }
+        }
     }
     // le regole nuove dell'automazione: ora locale per la fascia oraria, paesi per le esclusioni, «nuovo modo» dal log come la scheda DXCC
     automation.set_local_offset(Arc::new(local_offset_secs));

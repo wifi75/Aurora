@@ -40,6 +40,15 @@ export const catStrings = {
     'Dirección y puerto del servidor TCI de la SDR (host:puerto). Por defecto 127.0.0.1:40001: activa el TCI en ExpertSDR o Thetis. Para el audio elige «TCI (dalla radio)» y «TCI (alla radio)» en la pestaña Audio, o usa el cable de audio virtual.',
     'Endereço e porta do servidor TCI do SDR (host:porta). Por omissão 127.0.0.1:40001: ativa o TCI no ExpertSDR ou no Thetis. Para o áudio escolhe «TCI (dalla radio)» e «TCI (alla radio)» no separador Áudio, ou usa o cabo de áudio virtual.',
   ],
+  'cat.omnirig.rig': ['Radio di OmniRig', 'OmniRig radio', 'OmniRig-Gerät', 'Radio OmniRig', 'Radio de OmniRig', 'Rádio do OmniRig'],
+  'tip.cat.omnirig.rig': [
+    'OmniRig gestisce due radio (Rig 1 e Rig 2): scegli quella che Aurora comanda, frequenza e PTT compresi.',
+    'OmniRig handles two radios (Rig 1 and Rig 2): choose the one Aurora controls, frequency and PTT included.',
+    'OmniRig verwaltet zwei Geräte (Rig 1 und Rig 2): wähle das, das Aurora steuert, Frequenz und PTT inklusive.',
+    'OmniRig gère deux radios (Rig 1 et Rig 2) : choisis celle qu’Aurora commande, fréquence et PTT compris.',
+    'OmniRig maneja dos radios (Rig 1 y Rig 2): elige la que Aurora controla, frecuencia y PTT incluidos.',
+    'O OmniRig gere dois rádios (Rig 1 e Rig 2): escolhe o que o Aurora comanda, frequência e PTT incluídos.',
+  ],
   'cat.tci.receiver': ['Ricevitore', 'Receiver', 'Empfänger', 'Récepteur', 'Receptor', 'Recetor'],
   'tip.cat.tci.receiver': [
     'Il ricevitore della SDR che Aurora comanda: frequenza, modo, PTT e audio usano quello scelto. Con RX2 Aurora lo accende se è spento e lo rispegne alla chiusura, come WSJT-X.',

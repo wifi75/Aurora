@@ -2,7 +2,20 @@ use std::process::Command;
 
 use crate::{Rig, RigError};
 
-/// La radio via OmniRig (radio 1): solo frequenza. OmniRig e' un driver CAT facoltativo che l'utente sceglie in Impostazioni › Radio;
+/// Quale delle due radio di OmniRig si comanda: 1 (`Rig1`) o 2 (`Rig2`), scelta in Impostazioni › Radio (richiesta di IK1SOW, 2026-11-09).
+static RIG: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(1);
+
+/// Sceglie la radio di OmniRig (1 o 2; ogni altro valore vale 1).
+pub fn set_rig(n: u8) {
+    RIG.store(if n == 2 { 2 } else { 1 }, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// La radio di OmniRig scelta (1 o 2).
+pub fn rig() -> u8 {
+    RIG.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// La radio via OmniRig (Rig1 o Rig2, vedi [`set_rig`]): solo frequenza. OmniRig e' un driver CAT facoltativo che l'utente sceglie in Impostazioni › Radio;
 /// Aurora non comanda nessun altro programma.
 pub struct WindowsRig;
 
@@ -73,9 +86,10 @@ const NOT_HERE: &str = "con OmniRig Aurora comanda solo la frequenza della radio
 
 impl Rig for WindowsRig {
     fn frequency(&self) -> Result<u64, RigError> {
-        let out = powershell_output(
-            "$o = New-Object -ComObject OmniRig.OmniRigX; $r = $o.Rig1; if ($r.Status -ne 4) { Write-Error 'radio non in linea'; exit 3 }; [int64]$r.GetRxFrequency()",
-        )?;
+        let out = powershell_output(&format!(
+            "$o = New-Object -ComObject OmniRig.OmniRigX; $r = $o.Rig{}; if ($r.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; [int64]$r.GetRxFrequency()",
+            rig()
+        ))?;
         out.trim().parse::<u64>().map_err(|_| RigError(format!("frequenza illeggibile: {out}")))
     }
 

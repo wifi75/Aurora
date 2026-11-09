@@ -142,8 +142,10 @@ impl CatService {
     }
 
     pub fn with_parts(path: &Path, parts: CatParts) -> Arc<CatService> {
+        let store = RadioStore::open(path);
+        crate::omnirig::set_rig(store.config().omnirig_rig);
         Arc::new(CatService {
-            store: RadioStore::open(path),
+            store,
             parts,
             current: Mutex::new(None),
             omni: Mutex::new((LinkState::Disconnected, String::new())),
@@ -291,7 +293,9 @@ impl CatService {
 
     /// Salva la configurazione e la applica: se la radio era collegata (o in errore) la ricollega con i valori nuovi.
     pub fn apply_config(&self, config: RigConfig) -> Result<CatStatus, CatError> {
+        let rig = config.omnirig_rig;
         self.store.set_config(config)?;
+        crate::omnirig::set_rig(rig);
         if self.is_active() { self.connect() } else { Ok(self.status()) }
     }
 

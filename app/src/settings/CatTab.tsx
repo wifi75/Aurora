@@ -322,6 +322,14 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             </select>
           </Field>
         ) : null}
+        {config.backend === 'omnirig' ? (
+          <Field label={t('cat.omnirig.rig')} className="cat-w-s" hint={t('tip.cat.omnirig.rig')}>
+            <select value={config.omnirig_rig ?? 1} onChange={(e) => set({ omnirig_rig: Number(e.target.value) })}>
+              <option value={1}>Rig 1</option>
+              <option value={2}>Rig 2</option>
+            </select>
+          </Field>
+        ) : null}
         {fields.ft991 ? (
           <Field label={t('cat.ft991.address')} className="cat-w-l" hint={t('tip.cat.ft991.address')}>
             <input
