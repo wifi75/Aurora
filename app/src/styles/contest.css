@@ -435,3 +435,6 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtile .ctc-mult { max-width: none; }
 /* RX/TX: testo centrato in orizzontale e in verticale dentro il quadratino */
 .ctc-freq .rxtx-flag { display: inline-flex !important; align-items: center !important; justify-content: center !important; line-height: 1 !important; box-sizing: border-box; width: 40px; padding: 0 !important; font-size: 12px; text-align: center; vertical-align: middle; }
+/* Abilita Tx e Auco CQ accesi: fondo rosso pieno (si trasmette), testo bianco leggibile in tutti e due i temi */
+.ctc-btn.ctc-btn--tx.ctc-btn--on { background: #e5484d !important; border-color: #e5484d !important; color: #ffffff !important; }
+.ctc-btn.ctc-btn--tx.ctc-btn--on .ctc-kbd { border-color: rgb(255 255 255 / 0.6); color: #ffffff; }
