@@ -333,6 +333,17 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
       </div>
       {open && !bare ? (
         <div className="dxmap-bar dxmap-bar--more">
+          {/* gli spot di PSK Reporter: quanti e da quanto tempo (prima un riquadro sopra la mappa, tolto perche' copriva) */}
+          <label title={t('dxmap.spotRx', { n: liveSpots })}>
+            {t('dxmap.spotMax')}
+            <select value={settings.spotMaxMin} onChange={(e) => change({ spotMaxMin: Number(e.target.value) })}>
+              {[5, 15, 30, 60, 120, 360].map((m) => (
+                <option key={m} value={m}>
+                  {String(Math.floor(m / 60)).padStart(2, '0')}:{String(m % 60).padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </label>
           <label title={t('dxmap.background')}>
             {t('dxmap.background')}
             <input type="color" value={settings.background} onChange={(e) => change({ background: e.target.value })} />
@@ -432,22 +443,6 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
           </span>
         ))}
       </div>}
-      {settings.heat && !bare ? (
-        <div className="dxmap-spotbox">
-          <strong>{t('dxmap.spotRx', { n: liveSpots })}</strong>
-          <label>
-            {t('dxmap.spotMax')}
-            <select value={settings.spotMaxMin} onChange={(e) => change({ spotMaxMin: Number(e.target.value) })}>
-              {[5, 15, 30, 60, 120, 360].map((m) => (
-                <option key={m} value={m}>
-                  {String(Math.floor(m / 60)).padStart(2, '0')}:{String(m % 60).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-          </label>
-          {online.data?.psk === false ? <span className="dxmap-spotoff">{t('dxmap.pskOff')}</span> : null}
-        </div>
-      ) : null}
     </section>
   );
 }
