@@ -365,3 +365,5 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-dec-table td:nth-child(2), .ctc-dec-table td:nth-child(3), .ctc-dec-table td:nth-child(6) { text-align: left !important; }
 /* «fuori regola» piu' piccolo: entra intero nella colonna Novita' */
 .ctc-dec-table .badge.ctc-bad { font-size: 9.5px !important; padding: 0 5px !important; line-height: 14px !important; letter-spacing: 0; }
+/* Valore (e Novita') allineati a sinistra come i titoli */
+.ctc-dec-table td:last-child, .ctc-dec-table td.ctc-new-cell { text-align: left !important; }
