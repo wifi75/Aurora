@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.214',
+    released: '2026-11-09T19:00:00Z',
+    kind: 'new',
+    title: ['Mappa viva, voce degli avvisi e nuovo stato', 'Live map, spoken alerts and new state', 'Lebendige Karte, gesprochene Hinweise und neuer Staat', 'Carte vivante, alertes parlées et nouvel État', 'Mapa viva, avisos hablados y nuevo estado', 'Mapa viva, alertas faladas e novo estado'],
+    text: [
+      "La mappa del pannello Log mostra i nominativi nel colore della novità: un clic li chiama, si ingrandisce e si sposta, e si pulisce a ogni cambio di frequenza. I nominativi in coda si cliccano e » passa al prossimo. Gli avvisi possono parlare con la voce di Ava o usare un tuo file WAV/MP3; l'avviso del DXCC nuovo compare una volta sola e scegli dove. Nuove pillole «Nuovo stato» per gli USA, filtro di chi risponde al tuo CQ anche senza Auto, Finestra RX più leggibile e l'interruttore «Invia statistiche».",
+      "The Log panel map shows callsigns in the colour of what's new: a click calls them, you can zoom and drag, and it clears on every frequency change. Queued calls are clickable and » jumps to the next. Alerts can speak with Ava's voice or use your own WAV/MP3; the new DXCC alert shows once and you choose where. New «New state» pills for the USA, filtering of who answers your CQ even without Auto, a clearer RX window and the «Send statistics» switch.",
+      "Die Karte im Log-Bereich zeigt Rufzeichen in der Farbe der Neuheit: ein Klick ruft sie, man kann zoomen und verschieben, und sie leert sich bei jedem Frequenzwechsel. Rufzeichen in der Warteschlange sind anklickbar, » springt zum nächsten. Hinweise können mit Avas Stimme sprechen oder eine eigene WAV/MP3 nutzen; der Hinweis zum neuen DXCC erscheint nur einmal und wo du willst. Neue Knöpfe «Neuer Staat» für die USA, Filter für Antworten auf deinen CQ auch ohne Auto, ein klareres RX-Fenster und der Schalter «Statistik senden».",
+      "La carte du panneau Journal montre les indicatifs dans la couleur de la nouveauté : un clic les appelle, on zoome et on déplace, et elle se vide à chaque changement de fréquence. Les indicatifs en file sont cliquables et » passe au suivant. Les alertes peuvent parler avec la voix d'Ava ou utiliser ton fichier WAV/MP3 ; l'alerte du nouveau DXCC n'apparaît qu'une fois, où tu veux. Nouvelles pastilles « Nouvel État » pour les USA, filtre de qui répond à ton CQ même sans Auto, fenêtre RX plus lisible et l'interrupteur « Envoyer les statistiques ».",
+      "El mapa del panel Log muestra los indicativos en el color de la novedad: un clic los llama, se amplía y se mueve, y se limpia en cada cambio de frecuencia. Los indicativos en cola se pueden pulsar y » pasa al siguiente. Los avisos pueden hablar con la voz de Ava o usar tu archivo WAV/MP3; el aviso del DXCC nuevo aparece una sola vez y donde elijas. Nuevas píldoras «Nuevo estado» para EE. UU., filtro de quien responde a tu CQ también sin Auto, ventana RX más legible y el interruptor «Enviar estadísticas».",
+      "O mapa do painel Log mostra os indicativos na cor da novidade: um clique chama-os, faz-se zoom e arrasta-se, e limpa-se a cada mudança de frequência. Os indicativos na fila são clicáveis e » passa ao seguinte. Os alertas podem falar com a voz da Ava ou usar o teu ficheiro WAV/MP3; o alerta do DXCC novo aparece uma só vez e onde escolheres. Novas pílulas «Novo estado» para os EUA, filtro de quem responde ao teu CQ mesmo sem Auto, janela RX mais legível e o interruptor «Enviar estatísticas».",
+    ],
+  },
+  {
     version: '0.11.213',
     released: '2026-11-09T16:00:08Z',
     kind: 'fixed',

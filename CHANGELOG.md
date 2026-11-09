@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.214 - 2026-11-09
+- **Mappa nel pannello Log**: nominativi accanto alle stazioni nel colore della novita', clic per chiamare, zoom (rotella e +/-), trascinamento; si pulisce a ogni cambio di frequenza.
+- **Coda TX**: i nominativi in coda si cliccano per passare subito a loro; il pulsantino » passa al primo della coda.
+- **Suoni**: per ogni avviso la voce (Ava: frase dell'avviso e nominativo con l'alfabeto fonetico, nella lingua di Aurora o in inglese) o un proprio file WAV/MP3.
+- **Avviso del DXCC nuovo**: compare una volta sola per stazione, anche cambiando pagina; si sceglie dove mostrarlo e con quale suono.
+- **Nuovo stato (USA)**: pillole «Nuovo stato» e «Stato sulla nuova banda» in Attivita' di banda (stato da QRZ/HamQTH, stati lavorati dal log di Log4OM).
+- **Automazioni**: «Filtra chi risponde al mio CQ anche senza Auto» applica i filtri di Attivita' di banda anche al CQ fatto a mano.
+- **Finestra RX**: bandierina e paese spostati a destra, la riga Tx non si taglia piu'.
 - **Statistiche**: l'interruttore si chiama «Invia statistiche» (acceso di fabbrica) e dice cosa si manda. Con il nominativo impostato, il segnale giornaliero aggiunge un codice ricavato dal nominativo sul PC (SHA-256, il nominativo non si manda mai) per contare le persone e non i PC; il servizio lo salva solo dopo un HMAC con una chiave segreta.
 ## 0.11.213 - 2026-11-09
 - **Aggiornamento dal tray**: con «Aggiorna ora» del tray la finestra di Aurora non mostra la locandina (c'e' gia' la cartolina del tray), anche se Aurora viene aperta per l'occasione.
