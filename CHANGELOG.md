@@ -6,7 +6,7 @@
 - **Aggiornamento**: all'avvio Aurora chiude un Aurora di un'altra versione rimasto acceso sulla stessa porta (anche solo su 127.0.0.1), che si prendeva la finestra e mostrava la versione vecchia anche dopo l'aggiornamento; la finestra del programma non usa piu' il service worker e toglie quello vecchio.
 - **Aggiornamento**: il controllo si ripete ogni ora (prima ogni 3 ore) e parte 1 secondo dopo l'avvio; la locandina compare subito anche mentre la versione nuova si scarica, con il nastrino «Nuova versione» in diagonale; «Piu' tardi» vale fino alla prossima apertura.
 - **Aggiornamento silenzioso**: come le app che si aggiornano da sole, a pacchetto pronto e verificato la locandina installa da sola dopo 5 secondi (con «Annulla», mai mentre la radio trasmette), senza la finestra dell'installatore, e Aurora si riapre da sola.
-- **Installatore**: con una versione piu' vecchia installata la scelta in alto e gia' selezionata e' «Aggiorna (consigliato)».
+- **Installatore**: grafica nuova con tutti i modi (FT8, FT4, Q65, MSK144, JT65, JT9, JT4), Contest e DXpedition; con una versione piu' vecchia installata la scelta in alto e gia' selezionata e' «Aggiorna (consigliato)».
 
 ## 0.11.204 - 2026-11-08
 - **Contest**: nuovi regolamenti C.S.M.I. Marconi Speed Contest (25 aprile, FT4/FT8, stazioni IY, log non da inviare), FT8 DX Contest e FT4 DX Contest dell'European FT8 Club; PACCdigi corretto (orari 12:00-11:59, frequenze FT8 1,843-3,577-7,077-14,077-21,077-28,077 MHz e FT4 dal regolamento, scambio rapporto e numero progressivo).
@@ -108,7 +108,7 @@
 - **AutoSeq**: suggerimento che spiega cosa fa acceso e spento (anche la stazione che chiama preparata come prossimo DX, senza trasmettere).
 - **README**: macOS nei badge e link diretto al `.dmg`; badge di Tauri.
 - **Aggiornamento silenzioso**: dall'app l'aggiornamento si installa senza aprire la finestra dell'installatore e Aurora si riapre da sola.
-- **Installatore**: con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento («Non disinstallare»); la disinstallazione non cancella mai i dati (tolta la casella «Elimina i dati»). Modello NSIS proprio (`desktop/src-tauri/installer/installer.nsi`, da quello di Tauri 2.12.4).
+- **Installatore**: grafica nuova con tutti i modi (FT8, FT4, Q65, MSK144, JT65, JT9, JT4), Contest e DXpedition; con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento («Non disinstallare»); la disinstallazione non cancella mai i dati (tolta la casella «Elimina i dati»). Modello NSIS proprio (`desktop/src-tauri/installer/installer.nsi`, da quello di Tauri 2.12.4).
 - **Finestre sempre davanti**: aperta dal tray (o da un'altra istanza) la finestra di Aurora, con l'avviso della versione nuova, viene sopra a tutte le altre: l'agente cede il primo piano (`AllowSetForegroundWindow`) e la finestra resta un attimo «sempre in primo piano».
 - **Righe colorate leggibili al passaggio del mouse** (QSO in corso in giallo, mio nominativo in giallo o ciano).
 - **CQ e novita'**: paese e ora dell'ultima ricezione nelle caselle, DXCC nuovo che lampeggia; avviso in evidenza del DXCC nuovo con suono proprio («Allarme DX raro»), regolabile in Notifiche.
