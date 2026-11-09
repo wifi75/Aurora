@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-08, versione 0.11.204 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-08, versione 0.11.205 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-08
 - Le issue di GitHub le gestisce il proprietario: il controllo automatico ogni ora e' stato eliminato (aveva risposto con informazioni superate); mai rispondere sulle issue senza il suo via libera.

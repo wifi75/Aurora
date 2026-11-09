@@ -19,6 +19,7 @@ export const setupCtaStrings = {
   'upd.poster.allNews': ["Tutte le novità", "All news", "Alle Neuigkeiten", "Toutes les nouveautés", "Todas las novedades", "Todas as novidades"],
   'upd.poster.ok': ["Chiudi", "Close", "Schließen", "Fermer", "Cerrar", "Fechar"],
   'upd.poster.available': ['È disponibile una nuova versione', 'A new version is available', 'Eine neue Version ist verfügbar', 'Une nouvelle version est disponible', 'Hay una versión nueva disponible', 'Há uma nova versão disponível'],
+  'upd.poster.ribbon': ['NUOVA VERSIONE', 'NEW VERSION', 'NEUE VERSION', 'NOUVELLE VERSION', 'NUEVA VERSIÓN', 'NOVA VERSÃO'],
   'upd.poster.news': ['Novità', 'What’s new', 'Neuigkeiten', 'Nouveautés', 'Novedades', 'Novidades'],
   'upd.poster.current': ['Hai la {current} · nuova pubblicata il {when}', 'You have {current} · new one released {when}', 'Du hast {current} · neue veröffentlicht am {when}', 'Tu as la {current} · nouvelle publiée le {when}', 'Tienes la {current} · nueva publicada el {when}', 'Tens a {current} · nova publicada a {when}'],
   'upd.poster.install': ['Installa e riavvia', 'Install and restart', 'Installieren und neu starten', 'Installer et redémarrer', 'Instalar y reiniciar', 'Instalar e reiniciar'],

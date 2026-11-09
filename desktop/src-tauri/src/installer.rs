@@ -31,10 +31,10 @@ const MAX_PACKAGE_BYTES: u64 = 300 * 1024 * 1024;
 #[cfg(any(target_os = "macos", test))]
 const RELEASES_URL: &str = "https://github.com/wifi75/Aurora/releases/latest";
 
-/// Gli argomenti dell'installatore NSIS di Tauri: `/P` lo fa girare senza domande (solo l'avanzamento), `/R` fa riaprire Aurora a fine
+/// Gli argomenti dell'installatore NSIS di Tauri: `/S` lo fa girare in silenzio, senza finestre (come le app che si aggiornano da sole), `/R` fa riaprire Aurora a fine
 /// installazione, `/UPDATE` dice che e' un aggiornamento di una copia gia' installata.
 pub fn installer_args() -> [&'static str; 3] {
-    ["/P", "/R", "/UPDATE"]
+    ["/S", "/R", "/UPDATE"]
 }
 
 /// Come lanciare l'installatore **staccato** da Aurora: tramite `cmd /C start`, che termina subito, cosi' l'installatore non risulta figlio di
@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn the_installer_runs_without_questions_and_reopens_aurora() {
         let args = installer_args();
-        assert!(args.contains(&"/P") && args.contains(&"/R"));
+        assert!(args.contains(&"/S") && args.contains(&"/R"));
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod tests {
         let args = detached_command_args(r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
         assert_eq!(&args[..3], ["/C", "start", ""], "start vuole prima il titolo (vuoto)");
         assert_eq!(args[3], r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
-        assert_eq!(&args[4..], ["/P", "/R", "/UPDATE"]);
+        assert_eq!(&args[4..], ["/S", "/R", "/UPDATE"]);
     }
 
     #[test]

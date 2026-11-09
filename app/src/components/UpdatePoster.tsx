@@ -17,13 +17,6 @@ export function openUpdatePoster(): void {
   window.dispatchEvent(new Event(OPEN_EVENT));
 }
 
-function seenVersion(): string {
-  try {
-    return browserStorage()?.getItem(SEEN_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
 
 /** Le note della release in punti brevi: una riga per frase (al massimo sei), senza i segni del Markdown. */
 export function noteLines(notes: string): string[] {
@@ -47,7 +40,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   const t = useT();
   const lang = useLang((s) => s.lang);
   const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, refetchInterval: (q) => ((q.state.data?.checked_at_ms ?? 0) === 0 ? 5_000 : 10 * 60_000) });
-  const [seen, setSeen] = useState(seenVersion);
+  const [seen, setSeen] = useState('');
   const [installing, setInstalling] = useState(false);
   const [failure, setFailure] = useState('');
   // il core avvisa appena trova la versione nuova: si rileggono i dettagli (note, data, installazione)
@@ -71,7 +64,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   if (onlyWhenAsked && !forced) return null;
   // con l'aggiornamento scaricato in anticipo la barretta in testata (e la cartolina del tray) mostrano tutto: la locandina si apre solo
   // quando la si chiede (clic sulla barretta). Prima compariva da sola mentre si aggiornava dal tray e si chiudeva dopo pochi secondi
-  if (!forced && update.data?.stage) return null;
+  if (!forced && update.data?.stage?.phase === 'installing') return null;
   if (!release || (seen === release.version && !forced)) return null;
 
   const later = () => {
@@ -100,6 +93,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
     <div className="first-run upd-poster" role="dialog" aria-modal="true" aria-labelledby="upd-poster-title">
       <div className="first-run__card upd-poster__card">
         <div className="upd-poster__art">
+          <span className="upd-poster__ribbon" aria-hidden="true">{t('upd.poster.ribbon')}</span>
           <svg viewBox="0 0 560 150" preserveAspectRatio="none" aria-hidden="true">
             <g fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="1.5">
               <path d="M0 110 Q140 40 280 90 T560 60" />

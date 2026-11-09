@@ -74,6 +74,8 @@ ${StrLoc}
 !define ESTIMATEDSIZE "{{estimated_size}}"
 !define STARTMENUFOLDER "{{start_menu_folder}}"
 
+Var AuroraTop
+Var AuroraLow
 Var PassiveMode
 Var UpdateMode
 Var NoShortcutMode
@@ -298,7 +300,7 @@ Function PageReinstall
   ${ElseIf} $R0 = 1
     StrCpy $R1 "$(olderOrUnknownVersionInstalled)"
     StrCpy $R2 "$(uninstallBeforeInstalling)"
-    StrCpy $R3 "$(dontUninstall)"
+    StrCpy $R3 "$(auroraUpdate)"
     !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$R5"
   ; Downgrading
   ${ElseIf} $R0 = -1
@@ -330,11 +332,18 @@ Function PageReinstall
     ${NSD_CreateLabel} 0 0 100% 24u $R1
     Pop $R1
 
-    ${NSD_CreateRadioButton} 30u 50u -30u 8u $R2
+    ; AURORA: nell'aggiornamento «Aggiorna» ($R3) sta sopra e «Disinstalla prima» sotto
+    StrCpy $AuroraTop 50u
+    StrCpy $AuroraLow 70u
+    ${If} $R0 = 1
+      StrCpy $AuroraTop 70u
+      StrCpy $AuroraLow 50u
+    ${EndIf}
+    ${NSD_CreateRadioButton} 30u $AuroraTop -30u 10u $R2
     Pop $R2
     ${NSD_OnClick} $R2 PageReinstallUpdateSelection
 
-    ${NSD_CreateRadioButton} 30u 70u -30u 8u $R3
+    ${NSD_CreateRadioButton} 30u $AuroraLow -30u 10u $R3
     Pop $R3
     ; Disable this radio button if downgrading and downgrades are disabled
     !if "${ALLOWDOWNGRADES}" == "false"
@@ -357,7 +366,11 @@ Function PageReinstall
       SendMessage $R3 ${BM_SETCHECK} ${BST_CHECKED} 0
     ${EndIf}
 
-    ${NSD_SetFocus} $R2
+    ${If} $ReinstallPageCheck = 2
+      ${NSD_SetFocus} $R3
+    ${Else}
+      ${NSD_SetFocus} $R2
+    ${EndIf}
     nsDialogs::Show
   ${EndIf}
 FunctionEnd
@@ -550,6 +563,9 @@ FunctionEnd
 LangString choowHowToInstall 0 ""
 {{/each}}
 !insertmacro MUI_RESERVEFILE_LANGDLL
+; AURORA: con una versione piu' vecchia installata la scelta si chiama «Aggiorna» e sta sopra
+LangString auroraUpdate ${LANG_ITALIAN} "Aggiorna (consigliato)"
+LangString auroraUpdate ${LANG_ENGLISH} "Update (recommended)"
 {{#each language_files}}
   !include "{{this}}"
 {{/each}}

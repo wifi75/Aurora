@@ -7,6 +7,7 @@ mod health;
 mod installer;
 mod links;
 mod save_dialog;
+mod stale;
 mod settings;
 mod window_state;
 
@@ -147,6 +148,9 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
         bundled_cty: handle.path().resource_dir().ok().map(|d| d.join("cty").join("cty.dat")).filter(|p| p.is_file()).or_else(|| Some(PathBuf::from("cty/cty.dat"))),
     };
     let values = settings::build(&places, &data_dir, &ui_dir(&handle), std::fs::read_to_string(&env_path).ok().as_deref(), std::env::vars());
+    // un Aurora di un'altra versione rimasto acceso sulla stessa porta (anche solo su 127.0.0.1) si prenderebbe la finestra: lo si chiude prima
+    let port = values.get("AURORA_BIND").and_then(|b| b.rsplit(':').next()).and_then(|p| p.parse::<u16>().ok()).unwrap_or(8787);
+    stale::evict(port);
     let installer = installer::DesktopInstaller::new(handle.clone());
 
     let started = settings::config_from(&values).map_err(|e| e.to_string()).and_then(|mut config| {

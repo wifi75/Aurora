@@ -80,7 +80,13 @@ void start();
 // aggiornamento di Aurora sul PC: il telefono si ricarica da solo con la pagina nuova, senza cache
 if (import.meta.env.PROD) watchFreshUi();
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// la finestra del programma (Tauri) legge sempre la pagina dal core accanto: niente service worker, e quello di una versione vecchia si toglie,
+// cosi' dopo un aggiornamento non resta mai la grafica di prima
+const inDesktop = '__TAURI_INTERNALS__' in window;
+if (inDesktop && 'serviceWorker' in navigator) {
+  void navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => void r.unregister())).catch(() => undefined);
+}
+if ('serviceWorker' in navigator && import.meta.env.PROD && !inDesktop) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       // senza service worker l'app funziona lo stesso, solo non offline

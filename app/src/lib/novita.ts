@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.205',
+    released: '2026-11-09T07:40:14Z',
+    kind: 'fixed',
+    title: ['Aggiornamento sicuro e silenzioso', 'Safe, silent updates', 'Sichere, stille Updates', 'Mises à jour sûres et silencieuses', 'Actualizaciones seguras y silenciosas', 'Atualizações seguras e silenciosas'],
+    text: [
+      "All’avvio Aurora controlla subito se c’è una versione nuova e la mostra con il nastrino «Nuova versione»; l’aggiornamento si installa in silenzio, senza la finestra dell’installatore, e Aurora si riapre da sola. Se un Aurora vecchio era rimasto acceso e si prendeva la finestra, ora viene chiuso all’avvio. Nell’installatore la scelta «Aggiorna» è in alto e già selezionata.",
+      "At startup Aurora checks right away for a new version and shows it with the “New version” ribbon; the update installs silently, without the installer window, and Aurora reopens by itself. An old Aurora left running that took over the window is now closed at startup. In the installer “Update” is on top and already selected.",
+      "Beim Start prüft Aurora sofort auf eine neue Version und zeigt sie mit dem Band „Neue Version“; das Update wird still installiert, ohne Installationsfenster, und Aurora startet von selbst neu. Ein altes, noch laufendes Aurora, das das Fenster übernahm, wird jetzt beim Start beendet. Im Installer steht „Aktualisieren“ oben und ist bereits ausgewählt.",
+      "Au démarrage Aurora vérifie tout de suite s’il existe une nouvelle version et l’affiche avec le ruban « Nouvelle version » ; la mise à jour s’installe en silence, sans la fenêtre de l’installateur, et Aurora se relance seule. Un ancien Aurora resté ouvert qui prenait la fenêtre est maintenant fermé au démarrage. Dans l’installateur « Mettre à jour » est en haut et déjà sélectionné.",
+      "Al arrancar Aurora comprueba enseguida si hay una versión nueva y la muestra con la cinta «Nueva versión»; la actualización se instala en silencio, sin la ventana del instalador, y Aurora se vuelve a abrir sola. Un Aurora antiguo que seguía abierto y se quedaba con la ventana ahora se cierra al arrancar. En el instalador «Actualizar» está arriba y ya seleccionado.",
+      "Ao arrancar o Aurora verifica logo se há uma versão nova e mostra-a com a fita «Nova versão»; a atualização instala-se em silêncio, sem a janela do instalador, e o Aurora volta a abrir sozinho. Um Aurora antigo que ficara aberto e tomava a janela é agora fechado ao arrancar. No instalador «Atualizar» está em cima e já selecionado.",
+    ],
+  },
+  {
     version: '0.11.204',
     released: '2026-11-08T22:21:34Z',
     kind: 'new',
