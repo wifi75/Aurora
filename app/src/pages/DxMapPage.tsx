@@ -258,6 +258,29 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
 
   return (
     <section className={`dxmap-page${solo ? ' map-page--solo' : ''}${bare ? ' dxmap-page--bare' : ''}${inPanel ? ' dxmap-page--panel' : ''}`}>
+      {inPanel ? (
+        // pannello Log: le stesse informazioni della Mappa DX con una riga sola di comandi (banda, chi mi sente, nominativi);
+        // il resto (stile, linee, quadrati...) segue le impostazioni della pagina Mappa DX, che sono le stesse
+        <div className="dxmap-bar dxmap-bar--mini">
+          <select value={band} onChange={(e) => setBand(e.target.value)} title={t('dxmap.bandNow')}>
+            <option value="auto">{t('dxmap.bandNow')}{bandNow ? ` (${bandNow})` : ''}</option>
+            <option value="all">{t('dxmap.allBands')}</option>
+            {bands.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+          <label className="toggle" title={t('dxmap.onlyHeardMe.tip')}>
+            <input type="checkbox" checked={settings.onlyHeardMe} onChange={(e) => change({ onlyHeardMe: e.target.checked })} />
+            {t('dxmap.onlyHeardMe')}
+          </label>
+          <label className="toggle" title={t('dxmap.callLabels.tip')}>
+            <input type="checkbox" checked={settings.callLabels} onChange={(e) => change({ callLabels: e.target.checked })} />
+            {t('dxmap.callLabels')}
+          </label>
+        </div>
+      ) : (
       <div className="dxmap-bar">
         <select className="map-style" value={settings.style} title={t('map.style')} onChange={(e) => change({ style: e.target.value })}>
           {MAP_STYLES.map((s) => (
@@ -331,7 +354,8 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
         </button>
         {solo || inPanel ? null : <DetachButton item="dxmap" />}
       </div>
-      {open && !bare ? (
+      )}
+      {open && !bare && !inPanel ? (
         <div className="dxmap-bar dxmap-bar--more">
           {/* gli spot di PSK Reporter: quanti e da quanto tempo (prima un riquadro sopra la mappa, tolto perche' copriva) */}
           <label title={t('dxmap.spotRx', { n: liveSpots })}>
