@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.208',
-    released: '2026-11-09T10:08:49Z',
+    released: '2026-11-09T10:13:17Z',
     kind: 'new',
     title: ['Contest completo, Q65, OmniRig a due radio e meno lavoro inutile', 'Full contest page, Q65, two-radio OmniRig and less useless work', 'Vollständige Contest-Seite, Q65, OmniRig mit zwei Geräten und weniger unnötige Arbeit', 'Page Contest complète, Q65, OmniRig à deux radios et moins de travail inutile', 'Página Contest completa, Q65, OmniRig con dos radios y menos trabajo inútil', 'Página Contest completa, Q65, OmniRig com dois rádios e menos trabalho inútil'],
     text: [
