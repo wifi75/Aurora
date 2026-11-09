@@ -39,7 +39,7 @@ use tokio::sync::broadcast;
 
 pub use alltxt::{decode_line as all_txt_decode_line, format_g as all_txt_format_g, tx_line as all_txt_tx_line, AllTxt, AllTxtScope, Utc};
 pub use parity::{compare, Parity, ParitySummary, SlotSummary};
-pub use rig::{NativeControls, NativeRig, SavedControls};
+pub use rig::{CallerFilter, NativeControls, NativeRig, SavedControls};
 pub use wav::{jtdx_stem, jtdx_wav_bytes, save_jtdx_style, SaveInfo, SaveMode, SaveSettings};
 pub use tx::{OptionChange, SequenceSettings, TxCommand, TxDriver, TxNote, TxPort, TxView};
 

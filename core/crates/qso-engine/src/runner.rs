@@ -22,6 +22,9 @@ pub type LocalOffset = Arc<dyn Fn() -> i64 + Send + Sync>;
 pub struct TxSwitch {
     pub get: Arc<dyn Fn() -> Option<bool> + Send + Sync>,
     pub set: Arc<dyn Fn(bool) -> bool + Send + Sync>,
+    /// Avvisa il motore se le automazioni trasmettono (accese in modo reale): finche' e' vero non spegne «Abilita Tx» a fine QSO e
+    /// non risponde a chi le regole escludono.
+    pub live: Arc<dyn Fn(bool) + Send + Sync>,
 }
 
 pub struct AutomationConfig {
@@ -228,6 +231,11 @@ impl Automation {
         lock(&self.inner.brain).set_own_continent(continent);
     }
 
+    /// Chi risponde al nostro CQ va scartato? Il motivo se le regole o i filtri di Attivita' di banda lo escludono (automazioni in modo reale).
+    pub fn refuse_caller(&self, d: &DecodedMessage, call: &str) -> Option<String> {
+        lock(&self.inner.brain).refuse_caller(d, call, (self.inner.now)())
+    }
+
     /// STOP TX: spegne l'automazione.
     pub fn halt(&self) {
         lock(&self.inner.brain).on_halt((self.inner.now)());
@@ -258,6 +266,7 @@ fn sync_tx_switch(inner: &Inner) {
     let now = (inner.now)();
     let change = {
         let mut brain = lock(&inner.brain);
+        (switch.live)(brain.transmitting());
         if !brain.tx_switch_pending() {
             return;
         }

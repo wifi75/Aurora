@@ -1152,6 +1152,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         self.last_dial_hz = dial_hz;
+        // con le Automazioni accese in modo reale chi mi chiama e non va lavorato (regole, filtri di Attivita' di banda) sparisce dalla scelta
+        let screened = self.screen_callers(decoded, &mut log);
+        let decoded = screened.as_slice();
         let slot = Slot(slot_start_ms / self.mode.period_ms());
         let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
         self.enforce_contest_rules(&mut log);
@@ -1486,6 +1489,29 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
 
     /// «Rispondi a tutti» (`answer_all`): ogni stazione che mi chiama direttamente (non un CQ, non un messaggio di chiusura) si mette in coda, se non e'
     /// gia' il DX, non e' gia' in coda e, con «Risp B4» spento, non e' gia' stata collegata. Senza QSO in corso si risponde subito alla prima.
+    /// Toglie i messaggi di chi mi chiama ed e' escluso dalle Automazioni (solo se sono accese in modo reale): il motore non gli risponde, ne' da
+    /// solo al nostro CQ ne' con «Rispondi a tutti». Il DX del QSO in corso non si tocca: l'ha scelto l'operatore o il cervello.
+    fn screen_callers(&self, decoded: &[(String, i32, u32)], log: &mut Vec<String>) -> Vec<(String, i32, u32)> {
+        let Some(filter) = self.controls.active_caller_filter() else { return decoded.to_vec() };
+        decoded
+            .iter()
+            .filter(|(text, _, _)| {
+                let qso_native::message::Message::Directed { to, from, .. } = qso_native::message::parse(text) else { return true };
+                if !qso_native::message::same_station(&to, &self.my_call) || self.seq.dx().is_some_and(|dx| qso_native::message::same_station(dx, &from)) {
+                    return true;
+                }
+                match filter(&from, text) {
+                    Some(why) => {
+                        log.push(format!("{from} ti chiama ma e' escluso dalle Automazioni ({why}): nessuna risposta"));
+                        false
+                    }
+                    None => true,
+                }
+            })
+            .cloned()
+            .collect()
+    }
+
     fn queue_callers(&mut self, slot: Slot, slot_start_ms: u64, decoded: &[(String, i32, u32)], log: &mut Vec<String>) {
         if !self.controls.switch_on("answer_all") {
             return;
@@ -1609,6 +1635,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         };
         // un CQ che nessuno ha chiesto (la sequenza ci torna da sola a QSO finito) parte solo con AutoTX: senza, la trasmissione si ferma
         if n == 6 && !self.cq_by_user && !self.auto_tx {
+            // con le Automazioni accese in modo reale «Abilita Tx» resta acceso: il CQ lo chiamano loro quando serve
+            if self.controls.automation_live.load(Ordering::Relaxed) {
+                return log;
+            }
             self.seq.set_enabled(false);
             log.push("QSO finito: AutoTX spento, niente CQ automatico (Abilita Tx spento)".to_string());
             return log;

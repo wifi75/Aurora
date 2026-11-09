@@ -172,8 +172,15 @@ pub fn mode_label(mode: Mode) -> String {
 /// Chi viene avvisato quando cambia l'attenuazione.
 type AttenuationHook = Arc<dyn Fn(u32) + Send + Sync>;
 
+/// Il filtro delle Automazioni sui chiamanti: riceve nominativo e testo del messaggio, restituisce il motivo se la stazione non va lavorata.
+pub type CallerFilter = Arc<dyn Fn(&str, &str) -> Option<String> + Send + Sync>;
+
 /// Lo stato dei pulsanti: il decoder lo legge a ogni periodo.
 pub struct NativeControls {
+    /// Le Automazioni sono accese in modo reale: a fine QSO «Abilita Tx» resta acceso anche con AutoTX spento.
+    pub automation_live: AtomicBool,
+    /// Il filtro delle Automazioni su chi risponde al nostro CQ (regole e filtri di Attivita' di banda); vale solo con `automation_live`.
+    caller_filter: Mutex<Option<CallerFilter>>,
     /// Lo stato della stazione si sta gia' pubblicando (lo avvia `publish_status`, anche senza ingresso audio): il motore non ne avvia un secondo.
     pub status_published: AtomicBool,
     /// Monitora: con ascolto spento non si decodifica (e lo stato dice che non si sta decodificando). Di base acceso.
@@ -265,7 +272,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
     }
 }
 
@@ -719,6 +726,21 @@ impl NativeControls {
         if let Ok(mut slot) = self.sender.lock() {
             *slot = Some(sender);
         }
+    }
+
+    /// Il filtro delle Automazioni sui chiamanti (lo imposta chi collega il cervello al motore).
+    pub fn set_caller_filter(&self, filter: Option<CallerFilter>) {
+        if let Ok(mut slot) = self.caller_filter.lock() {
+            *slot = filter;
+        }
+    }
+
+    /// Il filtro sui chiamanti, solo se le Automazioni sono accese in modo reale: senza, il motore sceglie come sempre.
+    pub fn active_caller_filter(&self) -> Option<CallerFilter> {
+        if !self.automation_live.load(Ordering::Relaxed) {
+            return None;
+        }
+        self.caller_filter.lock().ok().and_then(|slot| slot.clone())
     }
 
     /// Cosa fare SUBITO per fermare la trasmissione (audio e PTT), senza aspettare il ciclo del motore: lo imposta chi ha la catena di trasmissione.

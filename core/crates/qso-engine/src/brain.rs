@@ -295,7 +295,17 @@ pub struct Brain {
     /// Com'era «Abilita Tx» quando le automazioni hanno cominciato a trasmettere (modo reale acceso): `Some` finche' trasmettono,
     /// poi si rimette com'era.
     tx_before: Option<bool>,
+    /// Da quando (secondi UTC) «Abilita Tx» risulta spento mentre le automazioni trasmettono: si riaccende solo dopo `TX_OFF_GRACE_SECS`,
+    /// cosi' uno STOP dell'operatore arriva prima al cervello (`on_halt`) e non viene scavalcato.
+    tx_off_since: Option<u64>,
+    /// Chiamanti del nostro CQ scartati dal motore per le regole: l'ultimo istante annotato nel registro, per non ripeterlo a ogni periodo.
+    refused_callers: HashMap<String, u64>,
 }
+
+/// Quanto «Abilita Tx» deve restare spento (con le automazioni che trasmettono) prima che lo riaccendano.
+const TX_OFF_GRACE_SECS: u64 = 2;
+/// Ogni quanto si ripete nel registro lo scarto dello stesso chiamante.
+const REFUSED_LOG_SECS: u64 = 600;
 
 impl Brain {
     pub fn new(rules: Rules, limits: Limits, live_allowed: bool) -> Brain {
@@ -335,6 +345,8 @@ impl Brain {
             wanted: None,
             band_filters: None,
             tx_before: None,
+            tx_off_since: None,
+            refused_callers: HashMap::new(),
         }
     }
 
@@ -360,7 +372,13 @@ impl Brain {
 
     /// Vero se «Abilita Tx» va sistemato: le automazioni hanno cominciato o smesso di trasmettere.
     pub fn tx_switch_pending(&self) -> bool {
-        self.transmits() != self.tx_before.is_some()
+        // mentre trasmettono si controlla sempre: il motore puo' averlo spento a fine QSO
+        self.transmits() || self.tx_before.is_some()
+    }
+
+    /// Le automazioni sono accese in modo reale (il motore lo usa per non spegnere «Abilita Tx» e per filtrare chi ci chiama).
+    pub fn transmitting(&self) -> bool {
+        self.transmits()
     }
 
     /// «Abilita Tx» segue le automazioni: quando cominciano a trasmettere (accese in modo reale) si accende, quando smettono (spente a mano,
@@ -377,8 +395,22 @@ impl Brain {
                 self.push(now, DecisionKind::Info, None, None, "Abilita Tx acceso dalle automazioni (si rispegne quando le automazioni si fermano)".into());
                 Some(true)
             }
+            (true, Some(_)) => {
+                if current != Some(false) {
+                    self.tx_off_since = None;
+                    return None;
+                }
+                let since = *self.tx_off_since.get_or_insert(now);
+                if now.saturating_sub(since) < TX_OFF_GRACE_SECS {
+                    return None;
+                }
+                self.tx_off_since = None;
+                self.push(now, DecisionKind::Info, None, None, "Abilita Tx riacceso dalle automazioni (era stato spento a fine QSO)".into());
+                Some(true)
+            }
             (false, Some(before)) => {
                 self.tx_before = None;
+                self.tx_off_since = None;
                 if before {
                     return None;
                 }
@@ -703,6 +735,51 @@ impl Brain {
         decisions
     }
 
+    /// Nominativi esclusi, paesi esclusi e continenti scelti: il motivo se la stazione non va lavorata.
+    fn excluded_by_rules(&self, d: &DecodedMessage, call: &str) -> Option<String> {
+        if self.state.rules.excluded_calls.iter().any(|c| c.trim().eq_ignore_ascii_case(call)) {
+            return Some(format!("{call} e' nell'elenco delle esclusioni"));
+        }
+        if let Some(country) = d.country.as_deref()
+            && self.state.rules.excluded_countries.iter().any(|c| c.trim().eq_ignore_ascii_case(country.trim()))
+        {
+            return Some(format!("{call}: {country} e' tra i paesi esclusi"));
+        }
+        if !self.state.rules.continents.is_empty() {
+            let allowed = |c: &str| self.state.rules.continents.iter().any(|x| x.trim().eq_ignore_ascii_case(c.trim()));
+            return match d.continent.as_deref() {
+                Some(c) if allowed(c) => None,
+                Some(c) => Some(format!("{call}: continente {} non tra quelli scelti", c.trim().to_uppercase())),
+                // senza continente noto non si puo' dire che vada bene: con il filtro acceso si salta
+                None => Some(format!("{call}: continente sconosciuto")),
+            };
+        }
+        None
+    }
+
+    /// Chi risponde al nostro CQ (anche quello automatico) e' escluso dalle regole o nascosto dai filtri di Attivita' di banda? Vale solo con le
+    /// automazioni accese in modo reale; il motivo resta nel registro delle decisioni (una volta ogni dieci minuti per stazione).
+    pub fn refuse_caller(&mut self, d: &DecodedMessage, call: &str, now: u64) -> Option<String> {
+        if !self.transmits() {
+            return None;
+        }
+        let hidden = self.band_filters.as_ref().is_some_and(|f| !f.read().unwrap_or_else(|p| p.into_inner()).allows_station(d, self.own_continent.as_deref()));
+        let reason = if hidden {
+            format!("{call}: nascosta dai filtri di Attivita' di banda")
+        } else {
+            self.excluded_by_rules(d, call)?
+        };
+        let key = call.to_ascii_uppercase();
+        if self.refused_callers.get(&key).is_none_or(|&at| now.saturating_sub(at) >= REFUSED_LOG_SECS) {
+            if self.refused_callers.len() >= HEARD_CAPACITY {
+                self.refused_callers.clear();
+            }
+            self.refused_callers.insert(key, now);
+            self.push(now, DecisionKind::Skipped, Some(call.to_string()), Some(d.id), format!("{reason} (ci chiama: il motore non risponde)"));
+        }
+        Some(reason)
+    }
+
     /// Valuta un messaggio senza cambiare lo stato della risposta: lo scarta (con il motivo) o lo propone come candidato.
     fn screen(&mut self, d: &DecodedMessage, now: u64) -> Screened {
         let parsed = parse_message(&d.text);
@@ -748,26 +825,8 @@ impl Brain {
             let reason = format!("{call}: segnale {} dB sotto il minimo di {} dB", d.snr, self.state.rules.min_snr);
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
         }
-        if self.state.rules.excluded_calls.iter().any(|c| c.trim().eq_ignore_ascii_case(&call)) {
-            return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), format!("{call} e' nell'elenco delle esclusioni")));
-        }
-        if let Some(country) = d.country.as_deref()
-            && self.state.rules.excluded_countries.iter().any(|c| c.trim().eq_ignore_ascii_case(country.trim()))
-        {
-            let reason = format!("{call}: {country} e' tra i paesi esclusi");
+        if let Some(reason) = self.excluded_by_rules(d, &call) {
             return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
-        }
-        if !self.state.rules.continents.is_empty() {
-            let allowed = |c: &str| self.state.rules.continents.iter().any(|x| x.trim().eq_ignore_ascii_case(c.trim()));
-            let reason = match d.continent.as_deref() {
-                Some(c) if allowed(c) => None,
-                Some(c) => Some(format!("{call}: continente {} non tra quelli scelti", c.trim().to_uppercase())),
-                // senza continente noto non si puo' dire che vada bene: con il filtro acceso si salta
-                None => Some(format!("{call}: continente sconosciuto")),
-            };
-            if let Some(reason) = reason {
-                return Screened::Skipped(self.push(now, DecisionKind::Skipped, call_opt, Some(d.id), reason));
-            }
         }
         if let Some(&(_, last)) = self.attempts.get(&call)
             && now.saturating_sub(last) >= self.state.rules.cooldown_secs

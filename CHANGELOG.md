@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Automazioni**: in modo reale «Abilita Tx» resta acceso a fine QSO (se il motore lo spegne lo riaccendono; STOP le ferma come prima) e il motore non risponde piu' a chi ci chiama ed e' escluso da continenti, paesi o nominativi delle regole o nascosto dai filtri di Attivita' di banda; lo scarto resta nel registro delle decisioni.
 
 ## 0.11.208 - 2026-11-09
 - **TCI**: niente piu' avviso «segnale debole: alza il volume di registrazione» con l'audio dal TCI (non c'e' un volume di Windows da alzare e il segnale si decodifica); restano gli avvisi di ingresso muto e saturo.
