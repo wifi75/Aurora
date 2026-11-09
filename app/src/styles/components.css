@@ -1203,3 +1203,11 @@ button.primary {
 .freq-picker-btn .freq-picker-btn-band { font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #8e7bff !important; color: #ffffff !important; }
 .freq-picker-btn .freq-picker-btn-mhz { font-size: 17px; font-weight: 800; color: var(--text, #e6edf3); letter-spacing: 0.02em; }
 .freq-picker-btn .freq-picker-btn-unit { font-size: 11px; opacity: 0.75; }
+/* sfondo pieno del blocco banda-frequenza, ben visibile nei due temi */
+.freq-picker-btn { background: #1b2540 !important; border: 1px solid #8e7bff !important; }
+.freq-picker-btn .freq-picker-btn-mhz { color: #ffffff !important; }
+.freq-picker-btn .freq-picker-btn-unit { color: #c7d2fe !important; }
+html[data-theme='light'] .freq-picker-btn { background: #ffffff !important; border-color: #6d5bf0 !important; }
+html[data-theme='light'] .freq-picker-btn .freq-picker-btn-mhz { color: #0f172a !important; }
+html[data-theme='light'] .freq-picker-btn .freq-picker-btn-unit { color: #475569 !important; }
+html[data-theme='light'] .freq-picker-btn .freq-picker-btn-band { background: #6d5bf0 !important; }
