@@ -160,7 +160,7 @@ impl Rules {
         tags_ok && calls_ok && countries_ok && continents_ok && window_ok && cq_ok
             && (-30..=20).contains(&self.min_snr)
             && (1..=10).contains(&self.max_attempts_per_call)
-            && (60..=7200).contains(&self.cooldown_secs)
+            && (self.cooldown_secs == 0 || (60..=7200).contains(&self.cooldown_secs))
             && self.max_qso_per_hour <= 120
     }
 

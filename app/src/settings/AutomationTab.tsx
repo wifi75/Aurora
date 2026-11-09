@@ -19,6 +19,9 @@ const TAGS: ReadonlyArray<{ tag: DecodeTag; label: Key; tip: Key }> = [
   { tag: 'new_dxcc_band', label: 'kind.new_dxcc_band', tip: 'tip.auto.tag.new_dxcc_band' },
   { tag: 'new_grid', label: 'kind.new_grid', tip: 'tip.auto.tag.new_grid' },
   { tag: 'new_zone', label: 'kind.new_zone', tip: 'tip.auto.tag.new_zone' },
+  // nuova stazione e stazione su nuova banda/modo (richiesta di ON7KEC)
+  { tag: 'new_call', label: 'kind.new_call', tip: 'tip.auto.tag.new_call' },
+  { tag: 'new_call_band', label: 'kind.new_call_band', tip: 'tip.auto.tag.new_call_band' },
 ];
 
 const PREFER = [
@@ -253,7 +256,7 @@ export function AutomationTab() {
             </label>
             <label className="sw-field au-num" title={t('tip.auto.cooldown')}>
               <span className="sw-label">{t('auto.cooldown')}</span>
-              <NumInput min={1} max={120} value={Math.round(rules.cooldown_secs / 60)} onChange={(n) => edit({ cooldown_secs: n * 60 })} />
+              <NumInput min={0} max={120} value={Math.round(rules.cooldown_secs / 60)} onChange={(n) => edit({ cooldown_secs: n * 60 })} />
             </label>
             <label className="sw-field au-num" title={t('tip.auto.perHour')}>
               <span className="sw-label">{t('auto.perHour')}</span>
