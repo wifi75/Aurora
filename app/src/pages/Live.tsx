@@ -114,12 +114,12 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       // senza archivio vale fino alla chiusura
     }
   };
-  // un QSO appena a log, con la Mappa aperta e un log esterno (Log4OM) collegato: si passa un attimo al Log per vedere la riga che
+  // un QSO appena a log, con la Mappa aperta (log esterno o log interno di Aurora): si passa un attimo al Log per vedere la riga che
   // lampeggia, poi (finita l'animazione, piu' 2 secondi) si torna alla Mappa. Non cambia la scelta ricordata.
   const external = useQuery({ queryKey: ['log4om-c'], queryFn: () => getLog4om(1), refetchInterval: 60_000, retry: false }).isSuccess;
   const lastLogged = useStation((st) => st.justLogged[0]);
   useEffect(() => {
-    if (!lastLogged || Date.now() - lastLogged.at > 5000 || !external || logTab !== 'map') return;
+    if (!lastLogged || Date.now() - lastLogged.at > 5000 || logTab !== 'map') return;
     setLogTabState('log');
     const back = window.setTimeout(() => setLogTabState('map'), 6600 + 2000);
     return () => window.clearTimeout(back);
@@ -607,7 +607,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
                 <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
                   <span className="dock-grip-dots" aria-hidden="true" />
-                  <h2>{id === 'log' ? t(logTab === 'map' ? 'log.tab.map' : 'log.tab.log') : blockTitle(id as BoardId)}</h2>
+                  <h2>{id === 'log' ? t(logTab === 'map' ? 'log.tab.map' : external ? 'log.tab.log' : 'log.tab.internal') : blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
                   {id === 'cmds' ? null : <DetachButton item={(id === 'dxmap' ? 'bands' : id) as ItemId} className="dock-detach" />}
                 </header>

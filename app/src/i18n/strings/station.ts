@@ -166,6 +166,7 @@ export const stationStrings = {
   'panel.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'panel.cq': ['CQ e novità', 'CQ and new ones', 'CQ und Neues', 'CQ et nouveautés', 'CQ y novedades', 'CQ e novidades'],
   'panel.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
+  'log.tab.internal': ['Log interno', 'Internal log', 'Internes Log', 'Journal interne', 'Log interno', 'Log interno'],
   'log.tab.log': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
   'log.tab.map': ['Mappa', 'Map', 'Karte', 'Carte', 'Mapa', 'Mapa'],
   'log.tab.logTip': ['Mostra il log', 'Show the log', 'Log anzeigen', 'Afficher le journal', 'Mostrar el log', 'Mostrar o log'],
