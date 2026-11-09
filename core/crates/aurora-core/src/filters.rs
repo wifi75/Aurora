@@ -119,31 +119,8 @@ fn signoff(text: &str, strict: bool) -> bool {
 impl UdpFilters {
     /// Vero se la riga resta visibile con questi filtri (e quindi esce via UDP). `own_continent`: il continente di chi opera.
     pub fn allows(&self, d: &DecodedMessage, own_continent: Option<&str>) -> bool {
-        if self.bypass {
-            return true;
-        }
-        if !self.always_show_calls.is_empty() && any_match(call_of(&d.text).as_deref(), &self.always_show_calls) {
-            return true;
-        }
-        if !self.show_only_calls.is_empty() && !any_match(call_of(&d.text).as_deref(), &self.show_only_calls) {
-            return false;
-        }
-        if d.continent.as_deref().is_some_and(|c| self.hide_continents.iter().any(|h| h == c)) {
-            return false;
-        }
-        if self.hide_own_continent && own_continent.is_some() && d.continent.as_deref() == own_continent {
-            return false;
-        }
-        if let Some(country) = d.country.as_deref()
-            && self.hide_countries.iter().any(|c| c.trim().eq_ignore_ascii_case(country))
-        {
-            return false;
-        }
-        if !self.hide_calls.is_empty() {
-            let call = call_of(&d.text);
-            if self.hide_calls.iter().any(|p| call_matches(call.as_deref(), p)) {
-                return false;
-            }
+        if let Some(verdict) = self.station_verdict(d, own_continent) {
+            return verdict;
         }
         let cq = is_cq(&d.text);
         match self.only.as_str() {
@@ -159,6 +136,43 @@ impl UdpFilters {
             return false;
         }
         true
+    }
+
+    /// Vero se la stazione che trasmette non e' nascosta (nominativi, continenti, paesi), qualunque sia il tipo di messaggio: serve a chi
+    /// risponde al nostro CQ, che non e' un CQ e cadrebbe sempre nel filtro «solo CQ».
+    pub fn allows_station(&self, d: &DecodedMessage, own_continent: Option<&str>) -> bool {
+        self.station_verdict(d, own_continent) != Some(false)
+    }
+
+    /// Le regole sulla stazione: `Some` se decidono da sole, `None` se la riga dipende dal tipo di messaggio.
+    fn station_verdict(&self, d: &DecodedMessage, own_continent: Option<&str>) -> Option<bool> {
+        if self.bypass {
+            return Some(true);
+        }
+        if !self.always_show_calls.is_empty() && any_match(call_of(&d.text).as_deref(), &self.always_show_calls) {
+            return Some(true);
+        }
+        if !self.show_only_calls.is_empty() && !any_match(call_of(&d.text).as_deref(), &self.show_only_calls) {
+            return Some(false);
+        }
+        if d.continent.as_deref().is_some_and(|c| self.hide_continents.iter().any(|h| h == c)) {
+            return Some(false);
+        }
+        if self.hide_own_continent && own_continent.is_some() && d.continent.as_deref() == own_continent {
+            return Some(false);
+        }
+        if let Some(country) = d.country.as_deref()
+            && self.hide_countries.iter().any(|c| c.trim().eq_ignore_ascii_case(country))
+        {
+            return Some(false);
+        }
+        if !self.hide_calls.is_empty() {
+            let call = call_of(&d.text);
+            if self.hide_calls.iter().any(|p| call_matches(call.as_deref(), p)) {
+                return Some(false);
+            }
+        }
+        None
     }
 }
 

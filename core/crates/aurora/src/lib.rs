@@ -1460,6 +1460,8 @@ pub async fn run(
         ui_settings.get("desktop").get(aurora_core::UI_FILTERS_KEY).and_then(|text| serde_json::from_str(text).ok()).unwrap_or_default(),
     ));
     automation.set_band_filters(Arc::clone(&band_filters));
+    // per il filtro del motore sui chiamanti (piu' sotto, quando il motore proprio e' pronto)
+    let caller_automation = automation.clone();
     // «Abilita Tx» del motore proprio: le automazioni in modo reale lo accendono e lo rimettono com'era quando si fermano
     if config.engine == EngineKind::Native {
         let rig = Arc::new(engine_native::NativeRig::new(Arc::clone(&native_controls), None));
@@ -1469,6 +1471,10 @@ pub async fn run(
                 rig_control::Rig::controls(reader.as_ref()).ok().and_then(|all| all.into_iter().find(|(id, _)| id == "enable_tx").map(|(_, on)| on))
             }),
             set: Arc::new(move |on| rig_control::Rig::set_control(rig.as_ref(), "enable_tx", Some(on)).is_ok()),
+            live: {
+                let controls = Arc::clone(&native_controls);
+                Arc::new(move |on| controls.automation_live.store(on, std::sync::atomic::Ordering::Relaxed))
+            },
         });
     }
     let (targets, worked_paths) = export_targets(&config);
@@ -2017,6 +2023,19 @@ pub async fn run(
             let grid_db = enrichment.as_ref().map(|(db, _)| Arc::clone(db));
             let enrich = enrichment.map(|(db, worked)| Arc::new(Mutex::new(engine_jtdx::enrich::Enrichment::with_shared(db, worked).with_flags(Arc::clone(&highlight_flags)))));
             let mode_controls = Arc::clone(&native_controls);
+            // con le Automazioni accese in modo reale il motore non risponde a chi le loro regole o i filtri di Attivita' di banda escludono
+            {
+                let (automation, enrich, dial, controls) = (caller_automation.clone(), enrich.clone(), Arc::clone(&dial_hz), Arc::clone(&native_controls));
+                native_controls.set_caller_filter(Some(Arc::new(move |call: &str, text: &str| {
+                    let band = rig_control::bands::amateur_band(dial.load(std::sync::atomic::Ordering::Relaxed));
+                    let (country, continent) = enrich
+                        .as_ref()
+                        .and_then(|e| e.lock().ok().map(|e| e.annotate_in(text, band, Some(controls.mode().name()))))
+                        .map_or((None, None), |a| (a.country, a.continent));
+                    let d = aurora_core::DecodedMessage { text: text.to_string(), country, continent, ..aurora_core::DecodedMessage::default() };
+                    automation.refuse_caller(&d, call)
+                })));
+            }
             // un QSO appena registrato non e' piu' una novita' (con JTDX lo fa il suo motore: `to_qso` + `record_qso`)
             if let Some(enrich) = &enrich {
                 let enrich = Arc::clone(enrich);
