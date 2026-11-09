@@ -377,6 +377,8 @@ export interface Picked {
   event: SoundEvent | null;
   sound: string | null;
   lastId: number | null;
+  /** La stazione che ha fatto suonare (per la voce). */
+  call?: string;
 }
 
 /**
@@ -436,5 +438,6 @@ export function pickSoundEvent(decodes: DecodedMessage[], lastId: number | null,
       for (const key of newSenders) notifiedAt.set(key, now);
     }
   }
-  return { event, sound, lastId: newest === null ? lastId : Math.max(lastId, newest) };
+  const call = event ? (keysOf.get(event) ?? [...newSenders]).find((k) => !k.includes('|')) : undefined;
+  return { event, sound, lastId: newest === null ? lastId : Math.max(lastId, newest), call };
 }

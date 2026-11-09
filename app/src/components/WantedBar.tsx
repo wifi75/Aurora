@@ -4,7 +4,7 @@ import { getWishlist, postFrequency } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { formatKhz } from '../lib/format';
 import { ringState, soundFor } from '../lib/soundAssign';
-import { playSound } from '../lib/soundBank';
+import { playAlert } from '../lib/voice';
 import { useStation } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 
@@ -31,7 +31,7 @@ export function WantedBar() {
     if (!banner) return;
     const st = ringState(useStation.getState().status?.transmitting ?? false);
     const sound = soundFor('wanted', st);
-    if (sound) playSound(sound, st.volume);
+    if (sound) playAlert(sound, st.volume, { event: 'wanted', call: banner.call });
     try {
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification(`${banner.call}`, { body: banner.text, tag: `wanted-${banner.call}` });

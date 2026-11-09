@@ -1,7 +1,9 @@
 import { useT, useLang } from '../i18n';
 import { useAlertPrefs } from '../lib/alerts';
 import { gateOn, AUTO_SOUNDS, EXTRA_EVENTS, eventNameKey, useSoundAssign, type SoundEvent } from '../lib/soundAssign';
-import { SOUNDS, SOUND_CATEGORIES, categoryName, previewSound, soundName, stopAll } from '../lib/soundBank';
+import { SOUNDS, SOUND_CATEGORIES, categoryName, soundName, stopAll } from '../lib/soundBank';
+import { FILE_PREFIX, VOICE_ID, addSoundFile, playAlert, removeSoundFile, setVoiceLang, useSoundFiles, useVoiceLang } from '../lib/voice';
+import { toast } from '../lib/toast';
 import { useNotify } from '../lib/notify';
 import { useNotifyView } from '../lib/notifyView';
 import { Help } from './common';
@@ -13,17 +15,44 @@ export function SoundPicker({ event, label }: { event: SoundEvent; label?: strin
   const lang = useLang((s) => s.lang);
   const id = useSoundAssign((s) => s.assign[event]);
   const volume = useAlertPrefs((s) => s.prefs.volume);
+  const files = useSoundFiles();
   const name = label ?? t(eventNameKey(event));
   const current = id ? soundName(id, lang) : t('snd.none');
+  const choose = (value: string) => {
+    if (value === '__add') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'audio/wav,audio/x-wav,audio/mpeg,audio/mp3,audio/ogg,.wav,.mp3,.ogg';
+      input.onchange = () => {
+        const f = input.files?.[0];
+        if (!f) return;
+        addSoundFile(f)
+          .then((newId) => useSoundAssign.getState().set(event, newId))
+          .catch(() => toast(t('snd.fileFail'), 'error'));
+      };
+      input.click();
+      return;
+    }
+    useSoundAssign.getState().set(event, value === '' ? null : value);
+  };
   return (
     <span className="snd-pick" title={t('tip.snd.pick')}>
       <select
         className="snd-select"
         aria-label={t('snd.choose', { name })}
         value={id ?? ''}
-        onChange={(e) => useSoundAssign.getState().set(event, e.target.value === '' ? null : e.target.value)}
+        onChange={(e) => choose(e.target.value)}
       >
         <option value="">{t('snd.none')}</option>
+        <option value={VOICE_ID}>{soundName(VOICE_ID, lang)}</option>
+        <optgroup label={t('snd.myFiles')}>
+          {files.map((f) => (
+            <option key={f} value={FILE_PREFIX + f}>
+              {f}
+            </option>
+          ))}
+          <option value="__add">{t('snd.addFile')}</option>
+        </optgroup>
         {SOUND_CATEGORIES.map((c) => (
           <optgroup key={c.id} label={categoryName(c.id, lang)}>
             {SOUNDS.filter((s) => s.category === c.id).map((s) => (
@@ -40,11 +69,31 @@ export function SoundPicker({ event, label }: { event: SoundEvent; label?: strin
         title={t('tip.snd.try')}
         aria-label={t('snd.tryName', { name: `${name} - ${current}` })}
         disabled={!id}
-        onClick={() => id && previewSound(id, volume)}
+        onClick={() => id && playAlert(id, volume, { event, call: 'Z62NS' }, true)}
       >
         <span aria-hidden="true">▶</span>
       </button>
+      {id?.startsWith(FILE_PREFIX) ? (
+        <button type="button" className="glass snd-try" title={t('snd.removeFile')} aria-label={t('snd.removeFile')} onClick={() => void removeSoundFile(id.slice(FILE_PREFIX.length)).then(() => useSoundAssign.getState().set(event, null))}>
+          <span aria-hidden="true">×</span>
+        </button>
+      ) : null}
     </span>
+  );
+}
+
+/** La lingua in cui parla la voce: quella di Aurora o sempre l'inglese. */
+export function VoiceLangPick() {
+  const t = useT();
+  const v = useVoiceLang();
+  return (
+    <label className="sw-field" title={t('tip.snd.voiceLang')}>
+      <span className="sw-label">{t('snd.voiceLang')}</span>
+      <select value={v} onChange={(e) => setVoiceLang(e.target.value === 'en' ? 'en' : 'ui')}>
+        <option value="ui">{t('snd.voiceLang.ui')}</option>
+        <option value="en">{t('snd.voiceLang.en')}</option>
+      </select>
+    </label>
   );
 }
 
@@ -84,6 +133,7 @@ export function SoundsGroup() {
             />
             <span className="muted">{Math.round(volume * 100)}%</span>
           </Cell>
+          <VoiceLangPick />
           <Actions>
             <button title={t('tip.ui.soundAuto')} type="button" className="glass" onClick={() => useSoundAssign.getState().setAll({ ...AUTO_SOUNDS })}>
               {t('snd.auto')}
@@ -134,7 +184,7 @@ export function SoundsGroup() {
               <h4>{categoryName(c.id, lang)}</h4>
               <div className="snd-grid">
                 {SOUNDS.filter((s) => s.category === c.id).map((s) => (
-                  <button title={t('tip.ui.soundPreview')} key={s.id} type="button" className="glass" onClick={() => previewSound(s.id, volume)}>
+                  <button title={t('tip.ui.soundPreview')} key={s.id} type="button" className="glass" onClick={() => playAlert(s.id, volume, {}, true)}>
                     <span aria-hidden="true">▶ </span>
                     {soundName(s.id, lang)}
                   </button>

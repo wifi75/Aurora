@@ -167,12 +167,14 @@ export function getSound(id: string): SoundDef | undefined {
 }
 
 export function hasSound(id: string | null | undefined): id is string {
-  return typeof id === 'string' && BY_ID.has(id);
+  // anche la voce e i file dell'utente (`voice.ts`)
+  return typeof id === 'string' && (BY_ID.has(id) || id === 'voice' || (id.startsWith('file:') && id.length > 5));
 }
 
 export function soundName(id: string, lang: Lang): string {
   const s = BY_ID.get(id);
-  return s ? pick(s.name, lang) : id;
+  if (id === 'voice') return pick(['Voce (Ava)', 'Voice (Ava)', 'Stimme (Ava)', 'Voix (Ava)', 'Voz (Ava)', 'Voz (Ava)'], lang);
+  return s ? pick(s.name, lang) : id.startsWith('file:') ? id.slice(5) : id;
 }
 
 export function categoryName(id: SoundCategory, lang: Lang): string {
