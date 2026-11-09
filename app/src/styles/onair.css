@@ -529,7 +529,8 @@
 
 .decode-row--me .data {
   color: #fff;
-  text-shadow: 0 0 6px rgb(255 240 0 / 0.8);
+  /* niente alone: sporcava i caratteri (scelta del proprietario, 2026-11-09) */
+  text-shadow: none;
 }
 
 /* tema chiaro: scritte scure sul giallo, il bianco non si legge */
@@ -7444,3 +7445,9 @@ html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #
 .log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem minmax(0, 1fr) calc(5rem + 40px) !important; }
 /* finestra RX: niente alone bianco intorno ai caratteri (veniva dallo stile delle righe evidenziate) */
 .log-rx .decode-row, .log-rx .decode-row * { text-shadow: none !important; }
+/* finestra RX: la bandierina parte subito dopo il messaggio (a 20 px), qualunque sia la sua lunghezza */
+.log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem minmax(0, max-content) minmax(5rem, 1fr) !important; column-gap: 0.3rem; }
+.log-rx .decode-where { padding-left: 20px !important; }
+/* finestra RX: bandierine tutte in colonna, a misura dei messaggi FT8 (fino a ~20 caratteri), senza spazio vuoto in mezzo */
+.log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem 7.9rem minmax(0, 1fr) !important; column-gap: 0.3rem; }
+.log-rx .decode-where { padding-left: 0 !important; }
