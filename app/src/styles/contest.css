@@ -385,3 +385,11 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtiles { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 2px !important; padding: 3px 4px !important; }
 .ctc-mtile { grid-template-columns: 2.6em minmax(0, 1fr) 1.9em !important; gap: 2px !important; padding: 0 3px !important; height: 20px !important; font-size: 10.5px !important; }
 .ctc-mtile .ctc-mult, .ctc-mtile-snr { font-size: 9.5px; }
+/* quadratini della legenda nella barra del titolo della mappa dei moltiplicatori */
+.ctc-mkeys { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.ctc-mkeys i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; cursor: help; }
+.ctc-mkeys i.k-nuovo { background: var(--ct-violet, #8e7bff); }
+.ctc-mkeys i.k-altra { background: var(--warn, #ef9f27); }
+.ctc-mkeys i.k-preso { background: var(--ok, #2cf5a4); opacity: 0.6; }
+.ctc-mkeys i.k-doppio { background: #5b6b85; }
+.ctc-mkeys i.k-cq { background: #1e2c44; box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); }

@@ -1015,7 +1015,16 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
       <header className="dock-grip dock-grip--fixed">
         <span className="dock-grip-dots" aria-hidden="true" />
         <h2 title={t('tip.contest.map')}>
-          {t('contest.map')} <span className="r">{scelta} · {tipo || '—'}</span>
+          {t('contest.map')}
+          {/* legenda nella barra del titolo: solo i quadratini dei colori, il significato passando col mouse */}
+          <span className="ctc-mkeys" aria-label={t('contest.map')}>
+            <i className="k-nuovo" title={t('contest.mt.nuovo')} />
+            <i className="k-altra" title={t('contest.mt.altra')} />
+            <i className="k-preso" title={t('contest.mt.preso')} />
+            <i className="k-doppio" title={t('contest.mt.doppio')} />
+            <i className="k-cq" title="CQ" />
+          </span>
+          <span className="r">{scelta} · {tipo || '—'}</span>
         </h2>
       </header>
       {r.moltiplicatori.length === 0 ? (
@@ -1078,14 +1087,6 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
                   ))}
                 </div>
               )}
-              {/* legenda in una riga sola: pallini pieni e parole corte, la spiegazione intera passando col mouse */}
-              <div className="ctc-mlegend">
-                <span title={t('contest.mt.nuovo')}><i className="k-nuovo" />{t('contest.mts.nuovo')}</span>
-                <span title={t('contest.mt.altra')}><i className="k-altra" />{t('contest.mts.altra')}</span>
-                <span title={t('contest.mt.preso')}><i className="k-preso" />{t('contest.mts.preso')}</span>
-                <span title={t('contest.mt.doppio')}><i className="k-doppio" />{t('contest.mts.doppio')}</span>
-                <span><i className="k-cq" />CQ</span>
-              </div>
               <div className="ctc-legend">{t('contest.multTaken', { b: scelta, n: m?.lavorati.length ?? 0 })}</div>
             </div>
           )}
