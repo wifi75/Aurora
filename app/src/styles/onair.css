@@ -7459,3 +7459,14 @@ html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #
 /* filtro di Attivita' di banda: separatore e titolino del gruppo «Eccezioni» */
 .bfl-sep { width: 1px; align-self: stretch; margin: 0 0.3rem; background: #3d5078; }
 .bfl-group { font-size: 0.68rem; font-weight: 700; opacity: 0.75; align-self: center; }
+
+/* pannello Log: la finestra RX e' un riquadro a se', con la sua barra del titolo come i pannelli (separata dal log) */
+.dock-panel--log .log-rx { margin: 0.3rem 0.3rem 0.4rem; border: 1px solid #3d5078 !important; border-radius: 8px; background: transparent; }
+.dock-panel--log .log-rx-label { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 700; opacity: 1; color: #e6ecf8; background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-radius: 7px 7px 0 0; }
+html[data-theme='light'] .dock-panel--log .log-rx { border-color: #9fb0c8 !important; }
+html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); }
+
+/* scheda DXCC sotto il log: meno spazio vuoto intorno alla riga con bandiera e nominativo */
+.dock-panel--log .dxcc-card--panel { gap: 0.25rem !important; padding: 0.25rem 0.4rem !important; }
+.dock-panel--log .dxcc-subject { margin: 0 !important; padding: 0 !important; min-height: 0; }
+.dock-panel--log .dxcc-labels { margin: 0 !important; }
