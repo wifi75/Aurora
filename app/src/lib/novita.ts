@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.210',
-    released: '2026-11-09T12:14:28Z',
+    released: '2026-11-09T12:19:30Z',
     kind: 'fixed',
     title: ['Filtri e Automazioni più affidabili, Log4OM a scelta, cascata più pulita', 'More reliable filters and Automation, Log4OM path, cleaner waterfall', 'Zuverlässigere Filter und Automatik, Log4OM-Pfad, klarerer Wasserfall', 'Filtres et Automatisations plus fiables, chemin Log4OM, cascade plus claire', 'Filtros y Automatizaciones más fiables, ruta de Log4OM, cascada más limpia', 'Filtros e Automatizações mais fiáveis, caminho do Log4OM, cascata mais limpa'],
     text: [
