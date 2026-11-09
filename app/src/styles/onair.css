@@ -7442,3 +7442,5 @@ html[data-theme='light'] .dock-panel--log .log-rx { background: rgb(0 0 0 / 0.03
 html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #e3eaf5 !important; color: #1d2a44; }
 /* finestra RX: bandierina e paese 20 pixel piu' a sinistra (colonna del paese piu' larga, messaggio di 20 px piu' stretto) */
 .log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem minmax(0, 1fr) calc(5rem + 40px) !important; }
+/* finestra RX: niente alone bianco intorno ai caratteri (veniva dallo stile delle righe evidenziate) */
+.log-rx .decode-row, .log-rx .decode-row * { text-shadow: none !important; }
