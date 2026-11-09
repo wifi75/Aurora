@@ -7311,7 +7311,9 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 }
 
 /* OmniRig: Rig 1 / Rig 2 a sinistra del display, nei colori dello stile del display */
-.rd-with-rig { display: flex; align-items: stretch; gap: 0.35rem; }
+/* il contenitore non conta per l'impaginazione: il display resta dov'era; il blocchetto RIG si allinea al centro accanto */
+.rd-with-rig { display: contents; }
+.rd-rigsw { align-self: center; margin-right: 0.35rem; }
 .rd-rigsw { --rs-bg: #0b1424; --rs-line: #2a3a5c; --rs-ink: #7fd8ff; --rs-on: #7fd8ff; --rs-on-ink: #06121f;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.25rem 0.3rem;
   border: 1px solid var(--rs-line); border-radius: 6px; background: var(--rs-bg); color: var(--rs-ink); }
