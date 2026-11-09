@@ -1195,3 +1195,6 @@ button.primary {
 .toaster { z-index: 100300 !important; }
 .newdx { z-index: 100200 !important; }
 .diag { z-index: 100100 !important; }
+/* in trasmissione il modo non si cambia: il pulsante diventa grigio come quello della banda e della frequenza */
+.mode-switch-btn:disabled, .freq-picker-btn:disabled { opacity: 0.45 !important; filter: grayscale(1); box-shadow: none !important; cursor: not-allowed; }
+.mode-switch-btn:disabled { border-color: var(--line, #33415c) !important; color: var(--text-muted, #9fb0c4) !important; }
