@@ -7273,3 +7273,17 @@ html[data-theme='light'] .freq-picker-menu {
   background: var(--fp-sel);
   color: #ffffff;
 }
+
+/* passaggio del mouse sui pulsanti della striscia di aggiornamento: restano arancio chiaro con testo scuro leggibile
+   (una regola generica della testata li scuriva e il testo spariva) */
+.update-strip .update-strip-ver:hover,
+.update-strip .update-strip-btn:hover,
+.update-strip .update-strip-ver:focus-visible,
+.update-strip .update-strip-btn:focus-visible {
+  color: #2a1800;
+  background: #ffc266;
+  background-image: none;
+  filter: none;
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgb(255 194 102 / 0.35);
+}
