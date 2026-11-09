@@ -1198,3 +1198,8 @@ button.primary {
 /* in trasmissione il modo non si cambia: il pulsante diventa grigio come quello della banda e della frequenza */
 .mode-switch-btn:disabled, .freq-picker-btn:disabled { opacity: 0.45 !important; filter: grayscale(1); box-shadow: none !important; cursor: not-allowed; }
 .mode-switch-btn:disabled { border-color: var(--line, #33415c) !important; color: var(--text-muted, #9fb0c4) !important; }
+/* blocco banda e frequenza piu' leggibile: banda in una pastiglia piena, frequenza grande e chiara */
+.freq-picker-btn { height: 34px; padding: 0 10px 0 6px; gap: 8px; }
+.freq-picker-btn .freq-picker-btn-band { font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #8e7bff !important; color: #ffffff !important; }
+.freq-picker-btn .freq-picker-btn-mhz { font-size: 17px; font-weight: 800; color: var(--text, #e6edf3); letter-spacing: 0.02em; }
+.freq-picker-btn .freq-picker-btn-unit { font-size: 11px; opacity: 0.75; }
