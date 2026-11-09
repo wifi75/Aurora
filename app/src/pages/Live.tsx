@@ -49,6 +49,7 @@ import { useLayout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone, useStationView } from '../lib/phone';
 import { PhoneLive } from './PhoneLive';
+import { DxMapPage } from './DxMapPage';
 import { useRadioDisplay } from '../lib/radioDisplay';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
@@ -66,6 +67,7 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 /** Mezza larghezza della finestra RX attorno alla frequenza di ricezione (come la finestra «Rx Frequency» di WSJT-X). */
 const RX_WINDOW_HZ = 50;
 const RX_SPLIT_KEY = 'aurora-finestra-rx';
+const LOG_TAB_KEY = 'aurora-log-linguetta';
 
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
@@ -81,6 +83,22 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     setRxSplitState(on);
     try {
       browserStorage()?.setItem(RX_SPLIT_KEY, on ? '1' : '0');
+    } catch {
+      // senza archivio vale fino alla chiusura
+    }
+  };
+  // pannello Log a linguette «Log | Mappa»: la scelta si ricorda; con «Log» la mappa non esiste proprio (niente timer, niente disegno)
+  const [logTab, setLogTabState] = useState<'log' | 'map'>(() => {
+    try {
+      return browserStorage()?.getItem(LOG_TAB_KEY) === 'map' ? 'map' : 'log';
+    } catch {
+      return 'log';
+    }
+  });
+  const setLogTab = (tab: 'log' | 'map') => {
+    setLogTabState(tab);
+    try {
+      browserStorage()?.setItem(LOG_TAB_KEY, tab);
     } catch {
       // senza archivio vale fino alla chiusura
     }
@@ -208,6 +226,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'cluster':
         return <ClusterPanel />;
       case 'log':
+        // linguetta «Mappa»: la Mappa DX compatta al posto del log, nello stesso spazio (solo nella Stazione, non nella finestra staccata)
+        if (logTab === 'map' && !soloPanel) return <DxMapPage bare inPanel />;
         // il log in alto e, sotto, la scheda DXCC: lo stesso pannello diviso in due
         return (
           <div className="log-dxcc">
@@ -383,7 +403,18 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     <button type="button" className={rxSplit ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={rxSplit} title={t('tip.rxw.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setRxSplit(!rxSplit)}>
       RX
     </button>
-  ) : id === 'log' ? <LogHeader /> : id === 'cq' && dxpedOn ? (
+  ) : id === 'log' ? (
+    <>
+      <div className="dock-tabs" role="tablist" onPointerDown={(e) => e.stopPropagation()}>
+        {(['log', 'map'] as const).map((tab) => (
+          <button key={tab} type="button" role="tab" aria-selected={logTab === tab} className={logTab === tab ? 'dock-mini dock-mini--on' : 'dock-mini'} title={t(tab === 'log' ? 'log.tab.logTip' : 'log.tab.mapTip')} onClick={() => setLogTab(tab)}>
+            {t(tab === 'log' ? 'log.tab.log' : 'log.tab.map')}
+          </button>
+        ))}
+      </div>
+      {logTab === 'log' ? <LogHeader /> : null}
+    </>
+  ) : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>
       <span className="muted">NG3K</span>

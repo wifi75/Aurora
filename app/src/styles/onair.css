@@ -7340,6 +7340,11 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 .dock-mini { margin-left: auto; padding: 0 0.45rem; height: 1.25rem; border: 1px solid var(--line, #2a3a55); border-radius: 6px; background: transparent; color: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer; opacity: 0.75; }
 .dock-mini:hover { opacity: 1; }
 .dock-mini--on { border-color: var(--accent); color: var(--accent); opacity: 1; }
+/* linguette «Log | Mappa» nella barra del pannello Log: due pulsantini accostati */
+.dock-tabs { display: flex; gap: 2px; margin-left: auto; }
+.dock-tabs .dock-mini { margin-left: 0; }
+/* la Mappa DX dentro il pannello Log: riempie il corpo del pannello */
+.dxmap-page.dxmap-page--panel { height: 100%; min-height: 0; }
 
 /* il pulsante delle Automazioni nella barra in alto: verde in modo reale, arancio in prova a vuoto */
 .auto-switch--live { color: #04201c; background: #2cf5a4; font-weight: 700; }

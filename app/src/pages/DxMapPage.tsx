@@ -61,13 +61,13 @@ function readSettings(): DxMapSettings {
 }
 
 /** Mappa DX: le stazioni in onda sul planisfero, alla GridTracker. */
-export function DxMapPage({ solo = false, bare = false }: { solo?: boolean; /** Nella pagina a blocchi: solo la mappa con le linee e la propagazione, niente comandi, legenda e riquadri. */ bare?: boolean } = {}) {
+export function DxMapPage({ solo = false, bare = false, inPanel = false }: { solo?: boolean; /** Nella pagina a blocchi: solo la mappa con le linee e la propagazione, niente comandi, legenda e riquadri. */ bare?: boolean; /** Linguetta «Mappa» del pannello Log: si vede anche con la Mappa DX staccata altrove, senza il pulsante per staccarla. */ inPanel?: boolean } = {}) {
   const elsewhere = useGroups().some((g) => g.open && g.items.includes('dxmap'));
-  if (elsewhere && !solo) return <DetachedNote item="dxmap" />;
-  return <DxMapBody solo={solo} bare={bare} />;
+  if (elsewhere && !solo && !inPanel) return <DetachedNote item="dxmap" />;
+  return <DxMapBody solo={solo} bare={bare} inPanel={inPanel} />;
 }
 
-function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
+function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boolean; inPanel?: boolean }) {
   const t = useT();
   const decodes = useStation((s) => s.decodes);
   const status = useStatusPick(['de_call', 'de_grid', 'dx_call', 'dx_grid', 'tx_enabled', 'transmitting']);
@@ -239,7 +239,7 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
   const confirmedCount = shown.filter((s) => s.confirmed).length;
 
   return (
-    <section className={`dxmap-page${solo ? ' map-page--solo' : ''}${bare ? ' dxmap-page--bare' : ''}`}>
+    <section className={`dxmap-page${solo ? ' map-page--solo' : ''}${bare ? ' dxmap-page--bare' : ''}${inPanel ? ' dxmap-page--panel' : ''}`}>
       <div className="dxmap-bar">
         <select className="map-style" value={settings.style} title={t('map.style')} onChange={(e) => change({ style: e.target.value })}>
           {MAP_STYLES.map((s) => (
@@ -302,7 +302,7 @@ function DxMapBody({ solo, bare }: { solo: boolean; bare: boolean }) {
         <button type="button" className="solo-btn dxmap-more" aria-expanded={open} title={t('dxmap.more')} aria-label={t('dxmap.more')} onClick={() => setOpen(!open)}>
           ⚙
         </button>
-        {solo ? null : <DetachButton item="dxmap" />}
+        {solo || inPanel ? null : <DetachButton item="dxmap" />}
       </div>
       {open && !bare ? (
         <div className="dxmap-bar dxmap-bar--more">

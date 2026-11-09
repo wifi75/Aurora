@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Stazione: il pannello Log ha le linguette «Log | Mappa»; con «Mappa» la Mappa DX compatta compare al posto del log, nello stesso spazio (la scelta si ricorda).
+
 ## 0.11.209 - 2026-11-09
 - **Automazioni**: in modo reale «Abilita Tx» resta acceso a fine QSO (se il motore lo spegne lo riaccendono; STOP le ferma come prima) e il motore non risponde piu' a chi ci chiama ed e' escluso da continenti, paesi o nominativi delle regole o nascosto dai filtri di Attivita' di banda; lo scarto resta nel registro delle decisioni.
 - **Finestra RX**: accanto ad Attività di banda (pulsantino «RX» per accenderla o spegnerla), con i messaggi sulla tua frequenza di ricezione (±50 Hz), quelli diretti a te e le tue trasmissioni, come la finestra «Rx Frequency» di WSJT-X.
