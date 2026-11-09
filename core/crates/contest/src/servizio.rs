@@ -651,6 +651,126 @@ impl ContestService {
         Some(serde_json::json!({ "banda": banda, "tipo": tipo, "griglia": tipo == "grid4" || tipo == "campo2", "mio_grid": ctx.mio_grid, "lavorati": lavorati, "sentiti": sentiti }))
     }
 
+    /// Le edizioni di cui c'e' un log del contest su disco: `(id, anno)`, la piu' recente prima.
+    pub fn edizioni(&self) -> Vec<(String, i64)> {
+        let mut out: Vec<(String, i64)> = std::fs::read_dir(&self.dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| {
+                let nome = e.file_name().to_string_lossy().to_string();
+                // solo «log-<id>-<anno>.json» (le copie azzerate finiscono in «.<ora>.bak» e restano fuori)
+                let base = nome.strip_prefix("log-")?.strip_suffix(".json")?;
+                let (id, anno) = base.rsplit_once('-')?;
+                Some((id.to_string(), anno.parse::<i64>().ok()?))
+            })
+            .collect();
+        out.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        out
+    }
+
+    /// L'analisi dopo la gara di un'edizione (o del contest attivo): totali, QSO ora per ora, per banda il rate migliore e il tempo perso,
+    /// e i dati per un consiglio. Si calcola solo quando la pagina la chiede (linguetta «Analisi» aperta).
+    pub fn analisi(&self, scelta: Option<(String, i64)>) -> Option<serde_json::Value> {
+        let (_, grid) = (self.stazione)();
+        let mut d = self.lock();
+        self.carica_log(&mut d);
+        let (id, anno) = match scelta {
+            Some(x) => x,
+            None => d.log_di.clone()?,
+        };
+        let r = d.regole.iter().find(|r| r.id() == id)?.clone();
+        // il log in memoria se e' quello attivo (puo' non essere ancora sul disco), altrimenti il file dell'edizione
+        let log: Vec<ContestQso> = if d.log_di.as_ref() == Some(&(id.clone(), anno)) {
+            d.log.clone()
+        } else {
+            std::fs::read_to_string(self.file_log(&id, anno)).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+        };
+        let ctx = self.contesto(&d, &r, &grid);
+        drop(d);
+        let (valutati, tot) = punteggio::valuta_log(&r, &ctx, &log);
+        let pausa_ms = i64::from(r.calendario.pausa_minima_min.unwrap_or(60)) * 60_000;
+        let mut buoni: Vec<&Valutato> = valutati.iter().filter(|v| !v.doppio && v.qso.stato != Stato::Errore).collect();
+        buoni.sort_by_key(|v| v.qso.time_ms);
+        const ORA: i64 = 3_600_000;
+        // QSO ora per ora (ore UTC intere), con quelli di ogni banda
+        let mut ore: Vec<(i64, BTreeMap<String, u32>)> = Vec::new();
+        if let (Some(a), Some(b)) = (buoni.first(), buoni.last()) {
+            let (h0, h1) = (a.qso.time_ms.div_euclid(ORA), b.qso.time_ms.div_euclid(ORA));
+            for h in h0..=h1.min(h0 + 240) {
+                ore.push((h * ORA, BTreeMap::new()));
+            }
+            for v in &buoni {
+                let i = (v.qso.time_ms.div_euclid(ORA) - h0) as usize;
+                if let Some((_, m)) = ore.get_mut(i) {
+                    *m.entry(v.qso.band.clone()).or_default() += 1;
+                }
+            }
+        }
+        let prevalente = |m: &BTreeMap<String, u32>| m.iter().max_by_key(|(_, n)| **n).map(|(b, n)| (b.clone(), *n));
+        // tempo perso: i buchi fra due QSO piu' lunghi di 15 minuti ma piu' corti di una pausa valida, dati alla banda su cui si era
+        let mut perso: BTreeMap<String, (i64, u32)> = BTreeMap::new();
+        let mut buco_max: Option<(i64, i64, String)> = None;
+        for w in buoni.windows(2) {
+            let gap = w[1].qso.time_ms - w[0].qso.time_ms;
+            if gap >= 15 * 60_000 && gap < pausa_ms {
+                let e = perso.entry(w[0].qso.band.clone()).or_default();
+                e.0 += gap;
+                e.1 += 1;
+                if buco_max.as_ref().is_none_or(|(_, g, _)| gap > *g) {
+                    buco_max = Some((w[0].qso.time_ms, gap, w[0].qso.band.clone()));
+                }
+            }
+        }
+        let bande: Vec<serde_json::Value> = tot
+            .per_banda
+            .iter()
+            .map(|b| {
+                let migliore = ore.iter().filter_map(|(h, m)| m.get(&b.banda).map(|n| (*n, *h))).max_by_key(|(n, h)| (*n, -*h));
+                let (perso_ms, buchi) = perso.get(&b.banda).copied().unwrap_or_default();
+                serde_json::json!({
+                    "banda": b.banda, "qso": b.qso, "molt": b.molt, "punti": b.punti,
+                    "rate_migliore": migliore.map(|x| x.0).unwrap_or(0), "ora_migliore_ms": migliore.map(|x| x.1),
+                    "perso_min": perso_ms / 60_000, "buchi": buchi,
+                })
+            })
+            .collect();
+        // consiglio: l'ora in cui una banda rendeva molto di piu' (nel suo momento migliore) di quella su cui si era; vale solo con
+        // almeno il doppio dei QSO e almeno 10 all'ora, cosi' non si consiglia per differenze piccole
+        let mut consiglio: Option<serde_json::Value> = None;
+        let mut scarto = 0i64;
+        for (h, m) in &ore {
+            let Some((su, n)) = prevalente(m) else { continue };
+            for b in &tot.per_banda {
+                if b.banda == su {
+                    continue;
+                }
+                let Some((rb, hb)) = ore.iter().filter_map(|(h2, m2)| m2.get(&b.banda).map(|x| (*x, *h2))).max_by_key(|(x, _)| *x) else { continue };
+                if rb >= 10 && rb >= 2 * n && i64::from(rb - n) > scarto {
+                    scarto = i64::from(rb - n);
+                    consiglio = Some(serde_json::json!({ "tipo": "banda", "ora_ms": h, "banda_su": su, "qso_su": n, "banda_meglio": b.banda, "rate_meglio": rb, "ora_meglio_ms": hb }));
+                }
+            }
+        }
+        if consiglio.is_none()
+            && let Some((t, gap, banda)) = buco_max
+        {
+            consiglio = Some(serde_json::json!({ "tipo": "buco", "ora_ms": t, "minuti": gap / 60_000, "banda": banda }));
+        }
+        let righe_ore: Vec<serde_json::Value> = ore
+            .iter()
+            .map(|(h, m)| serde_json::json!({ "ora_ms": h, "qso": m.values().sum::<u32>(), "banda": prevalente(m).map(|x| x.0).unwrap_or_default() }))
+            .collect();
+        Some(serde_json::json!({
+            "id": id, "anno": anno, "nome": r.contest.nome,
+            "totali": tot,
+            "ore_attive": punteggio::ore_attive(&valutati, r.calendario.pausa_minima_min.unwrap_or(60)),
+            "ore": righe_ore,
+            "bande": bande,
+            "consiglio": consiglio,
+        }))
+    }
+
     fn contesto(&self, d: &Dentro, r: &Regole, grid: &str) -> Contesto {
         let imp = imp_di(&d.stato, r);
         let g = if imp.grid6.len() == 6 && r.punti.tipo == "km" { imp.grid6.clone() } else { grid.to_string() };

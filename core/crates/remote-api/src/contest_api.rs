@@ -248,3 +248,24 @@ pub(crate) async fn contest_esporta(State(state): State<AppState>, _: Authed, Qu
 pub(crate) async fn contest_calendario(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     Ok(Json(json!({ "contest": service(&state)?.calendario(366) })))
 }
+
+#[derive(Deserialize)]
+pub(crate) struct AnalisiQuery {
+    #[serde(default)]
+    id: Option<String>,
+    #[serde(default)]
+    anno: Option<i64>,
+}
+
+/// Analisi dopo la gara: dal log del contest attivo (o dell'edizione scelta con `id` e `anno`) totali, QSO ora per ora, per banda rate
+/// migliore e tempo perso, e un consiglio. C'e' sempre l'elenco delle edizioni con un log.
+#[utoipa::path(get, path = "/api/v1/contest/analisi", responses((status = 200, description = "`{edizioni, analisi}` (analisi nulla se non c'e' un log)")))]
+pub(crate) async fn contest_analisi(State(state): State<AppState>, _: Authed, Query(q): Query<AnalisiQuery>) -> Result<Json<Value>, ApiError> {
+    let s = service(&state)?;
+    let scelta = match (q.id.filter(|i| !i.is_empty()), q.anno) {
+        (Some(id), Some(anno)) => Some((id, anno)),
+        _ => None,
+    };
+    let edizioni: Vec<Value> = s.edizioni().into_iter().map(|(id, anno)| json!({ "id": id, "anno": anno })).collect();
+    Ok(Json(json!({ "edizioni": edizioni, "analisi": s.analisi(scelta) })))
+}

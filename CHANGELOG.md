@@ -3,6 +3,7 @@
 ## Non rilasciato
 
 - **TCI**: niente piu' avviso «segnale debole: alza il volume di registrazione» con l'audio dal TCI (non c'e' un volume di Windows da alzare e il segnale si decodifica); restano gli avvisi di ingresso muto e saturo.
+- **Contest**: linguette «Allenamento» (pile-up finto leggero, medio o fitto per 15, 30 o 60 minuti con lo scambio del contest scelto, errori, doppi e chi non riceve RR73: niente trasmissione e niente log, punteggio a parte) e «Analisi» (dal log del contest: QSO, moltiplicatori, punteggio, QSO incerti, QSO ora per ora, per banda rate migliore e tempo perso, un consiglio).
 
 - **Contest**: consiglio di banda e modo (per ogni banda del regolamento rate stimato e moltiplicatori nuovi in ascolto, FT4 quando il pile-up e' fitto, pulsante «Porta la radio su …» con le frequenze del regolamento, cambi di banda nell'ora se limitati) e mappa dei moltiplicatori della banda (gia' lavorati, nuovi in ascolto in arancio, sentiti non nuovi; per sezioni, stati e paesi l'elenco dei nuovi): un clic chiama la stazione.
 

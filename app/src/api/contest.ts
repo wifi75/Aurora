@@ -283,3 +283,33 @@ export interface Mappa {
 
 export const getConsiglio = () => call<Consiglio>('/consiglio');
 export const getMappa = (banda: string) => call<Mappa>(`/mappa?banda=${encodeURIComponent(banda)}`);
+
+/** Analisi dopo la gara (`/analisi`). */
+export interface AnalisiBanda {
+  banda: string;
+  qso: number;
+  molt: number;
+  punti: number;
+  rate_migliore: number;
+  ora_migliore_ms: number | null;
+  perso_min: number;
+  buchi: number;
+}
+
+export type ConsiglioAnalisi =
+  | { tipo: 'banda'; ora_ms: number; banda_su: string; qso_su: number; banda_meglio: string; rate_meglio: number; ora_meglio_ms: number }
+  | { tipo: 'buco'; ora_ms: number; minuti: number; banda: string };
+
+export interface Analisi {
+  id: string;
+  anno: number;
+  nome: string;
+  totali: Totali;
+  ore_attive: number;
+  ore: { ora_ms: number; qso: number; banda: string }[];
+  bande: AnalisiBanda[];
+  consiglio: ConsiglioAnalisi | null;
+}
+
+export const getAnalisi = (id?: string, anno?: number) =>
+  call<{ edizioni: { id: string; anno: number }[]; analisi: Analisi | null }>(id && anno ? `/analisi?id=${encodeURIComponent(id)}&anno=${anno}` : '/analisi');
