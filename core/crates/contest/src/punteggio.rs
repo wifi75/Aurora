@@ -355,28 +355,40 @@ pub struct Valore {
 
 /// Il valore di una stazione decodificata (`grid` puo' essere vuoto) su `banda` e `modo`, rispetto al log.
 pub fn valore(r: &Regole, ctx: &Contesto, log: &[ContestQso], call: &str, grid: &str, banda: &str, modo: &str) -> Valore {
-    let prova = ContestQso { call: call.to_ascii_uppercase(), band: banda.to_ascii_lowercase(), mode: modo.to_ascii_uppercase(), grid: grid.to_string(), exch_rcvd: grid.to_string(), rst_rcvd: "-10".into(), ..Default::default() };
+    let lista = [(call.to_string(), grid.to_string(), banda.to_string(), modo.to_string())];
+    valori(r, ctx, log, &lista).pop().unwrap_or(Valore { call: call.to_ascii_uppercase(), doppio: false, punti: 0, km: 0.0, molt_nuovi: Vec::new(), bande_utili: Vec::new(), fuori_regola: true })
+}
+
+/// Il valore di tante stazioni `(nominativo, locatore, banda, modo)`: doppi e moltiplicatori aperti si calcolano una volta sola sul log
+/// (il consiglio di banda e la mappa valutano centinaia di stazioni a ogni giro).
+pub fn valori(r: &Regole, ctx: &Contesto, log: &[ContestQso], stazioni: &[(String, String, String, String)]) -> Vec<Valore> {
     let validi: Vec<&ContestQso> = log.iter().filter(|q| q.stato != Stato::Errore).collect();
     let chiavi: HashSet<String> = validi.iter().map(|q| chiave_doppio(r, q)).collect();
-    let doppio = chiavi.contains(&chiave_doppio(r, &prova));
-    let fuori = !r.banda_ammessa(banda) || !r.modo_ammesso(modo);
-    let (punti, km) = punti_qso(r, ctx, &prova);
     let mut aperti: BTreeSet<(String, String)> = BTreeSet::new();
     for q in &validi {
         aperti.extend(molt_di(r, ctx, q));
     }
-    let molt_nuovi = if doppio || fuori { Vec::new() } else { molt_di(r, ctx, &prova).into_iter().filter(|m| !aperti.contains(m)).map(|(_, v)| v).collect() };
-    let bande_utili = r
-        .bande
-        .ammesse
+    stazioni
         .iter()
-        .filter(|b| {
-            let altra = ContestQso { band: b.to_ascii_lowercase(), ..prova.clone() };
-            !chiavi.contains(&chiave_doppio(r, &altra))
+        .map(|(call, grid, banda, modo)| {
+            let prova = ContestQso { call: call.to_ascii_uppercase(), band: banda.to_ascii_lowercase(), mode: modo.to_ascii_uppercase(), grid: grid.to_string(), exch_rcvd: grid.to_string(), rst_rcvd: "-10".into(), ..Default::default() };
+            let doppio = chiavi.contains(&chiave_doppio(r, &prova));
+            let fuori = !r.banda_ammessa(banda) || !r.modo_ammesso(modo);
+            let (punti, km) = punti_qso(r, ctx, &prova);
+            let molt_nuovi = if doppio || fuori { Vec::new() } else { molt_di(r, ctx, &prova).into_iter().filter(|m| !aperti.contains(m)).map(|(_, v)| v).collect() };
+            let bande_utili = r
+                .bande
+                .ammesse
+                .iter()
+                .filter(|b| {
+                    let altra = ContestQso { band: b.to_ascii_lowercase(), ..prova.clone() };
+                    !chiavi.contains(&chiave_doppio(r, &altra))
+                })
+                .cloned()
+                .collect();
+            Valore { call: prova.call, doppio, punti: if doppio || fuori { 0 } else { punti }, km, molt_nuovi, bande_utili, fuori_regola: fuori }
         })
-        .cloned()
-        .collect();
-    Valore { call: prova.call, doppio, punti: if doppio || fuori { 0 } else { punti }, km, molt_nuovi, bande_utili, fuori_regola: fuori }
+        .collect()
 }
 
 /// I moltiplicatori gia' presi su una banda (per la mappa dei mancanti): (tipo, valori).

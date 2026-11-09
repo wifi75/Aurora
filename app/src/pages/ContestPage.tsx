@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getControls, postControl, postCq, postFrequency, postHalt, postReply, postTxMessage } from '../api/client';
+import { getControls, postControl, postCq, postFrequency, postHalt, postMode, postReply, postTxMessage } from '../api/client';
 import {
   attivaContest,
   azzeraLog,
@@ -9,7 +9,8 @@ import {
   getCalendario,
   getContest,
   getContestLog,
-  getLavorati,
+  getConsiglio,
+  getMappa,
   getRegole,
   modificaQso,
   salvaImpostazioni,
@@ -37,7 +38,6 @@ import { TxQuickControls } from '../components/TxQuickControls';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
-const LETTERE = 'ABCDEFGHIJKLMNOPQR';
 
 /** Durata leggibile: «3d 4h», «6h 12m», «12m». */
 function durata(ms: number): string {
@@ -652,7 +652,11 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
         ) : null}
       </section>
 
-      <Moltiplicatori r={r} t={t} banda={banda} righe={righe0} scegli={setCampo} />
+      {/* colonna destra in alto: consiglio di banda e modo sopra, mappa dei moltiplicatori sotto */}
+      <div className="ctc-stack">
+        <ConsiglioBanda t={t} />
+        <MappaMoltiplicatori r={r} t={t} banda={banda} decodes={decodes} scegli={setCampo} />
+      </div>
 
       <LogContest t={t} qso={s.totali?.qso ?? 0} />
 
@@ -720,25 +724,168 @@ function Avvisi({ s, t }: { s: ContestStato; t: T }) {
   );
 }
 
-function Moltiplicatori({ r, t, banda, righe, scegli }: { r: Regole; t: T; banda: string; righe: Riga[]; scegli: (c: string) => void }) {
+/** Il riquadro del moltiplicatore come rettangolo in gradi (lon, lat in basso a sinistra, larghezza, altezza): campo (20x10) o quadrato (2x1). */
+function rettangolo(k: string): { x: number; y: number; w: number; h: number } | null {
+  const g = k.toUpperCase();
+  if (!/^[A-R]{2}(\d{2})?$/.test(g)) return null;
+  const x = (g.charCodeAt(0) - 65) * 20 - 180;
+  const y = (g.charCodeAt(1) - 65) * 10 - 90;
+  if (g.length === 2) return { x, y, w: 20, h: 10 };
+  return { x: x + Number(g[2]) * 2, y: y + Number(g[3]), w: 2, h: 1 };
+}
+
+/** Consiglio di banda e modo: per ogni banda ammessa rate stimato e moltiplicatori nuovi in ascolto, la banda migliore e FT8/FT4. */
+function ConsiglioBanda({ t }: { t: T }) {
+  const q = useQuery({ queryKey: ['contest-consiglio'], queryFn: getConsiglio, refetchInterval: 15_000, retry: false }).data;
+  const [ignora, setIgnora] = useState('');
+  const [invio, setInvio] = useState(false);
+  if (!q) return null;
+  const best = q.bande.find((b) => b.banda === q.migliore);
+  const chiave = best ? `${best.banda}|${best.modo}` : '';
+  const qui = q.bande.find((b) => b.banda === q.banda);
+  const resta = !!best && best.banda === q.banda && best.modo.toUpperCase() === q.modo.toUpperCase();
+  const max = Math.max(1, ...q.bande.map((b) => b.punteggio));
+  const porta = async () => {
+    if (!best || best.khz == null) return;
+    setInvio(true);
+    try {
+      // prima il modo (la radio va sulla frequenza del modo nella banda di adesso), poi la frequenza del consiglio
+      if (best.modo.toUpperCase() !== q.modo.toUpperCase()) await postMode(best.modo);
+      await postFrequency(Math.round(best.khz * 1000));
+      toast(t('contest.adv.done', { b: best.banda, m: best.modo }), 'info');
+    } catch (e) {
+      toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    } finally {
+      setInvio(false);
+    }
+  };
+  return (
+    <section className="dock-panel ctc-box ctc-adv">
+      <header className="dock-grip dock-grip--fixed">
+        <span className="dock-grip-dots" aria-hidden="true" />
+        <h2 title={t('tip.contest.adv')}>
+          {t('contest.adv')} <span className="r">{t('contest.adv.every')}</span>
+        </h2>
+      </header>
+      <div className="ctc-adv-in">
+        {!best ? (
+          <p className="ctc-tip">{t('contest.adv.noData')}</p>
+        ) : resta ? (
+          <div className="ctc-adv-big ctc-val">{t('contest.adv.stay', { b: best.banda, m: best.modo })}</div>
+        ) : (
+          <div className="ctc-adv-big ctc-val">{t('contest.adv.go', { b: best.banda, m: best.modo })}</div>
+        )}
+        {best ? (
+          <div className="ctc-tip">
+            {t('contest.adv.why', { b: best.banda, n: best.molt_nuovi.length, r: best.rate_stimato })}
+            {qui && qui.banda !== best.banda ? ' ' + t('contest.adv.here', { b: qui.banda, r: qui.rate_stimato }) : ''}
+            {best.modo.toUpperCase() === 'FT4' ? ' ' + t('contest.adv.ft4', { n: best.affollamento }) : ''}
+          </div>
+        ) : null}
+        <div className="ctc-adv-bands data">
+          {q.bande.map((b) => (
+            <div key={b.banda} className="ctc-adv-row" title={b.molt_nuovi.join(' ') || undefined}>
+              <b>{b.banda}</b>
+              <div className="ctc-adv-bar">
+                <i className={b.banda === q.migliore ? 'best' : undefined} style={{ width: `${b.dati ? Math.max(4, (b.punteggio / max) * 100) : 0}%` }} />
+              </div>
+              <span className={b.banda === q.migliore ? 'ctc-val' : b.dati ? undefined : 'ctc-muted'}>
+                {b.dati ? t('contest.adv.row', { r: b.rate_stimato, n: b.molt_nuovi.length }) : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+        {q.cambi_banda_limite != null ? (
+          <div className={`ctc-alert ctc-alert--${(q.cambi_banda_ora ?? 0) >= q.cambi_banda_limite ? 'r' : 'o'}`}>
+            {t('contest.adv.changes', { n: q.cambi_banda_ora ?? 0, m: q.cambi_banda_limite })}
+          </div>
+        ) : null}
+        {best && !resta && ignora !== chiave ? (
+          <div className="ctc-actions">
+            <button type="button" className="ctc-btn ctc-btn--on" disabled={invio || best.khz == null} title={best.khz != null ? `${best.khz} kHz` : undefined} onClick={() => void porta()}>
+              {t('contest.adv.move', { b: best.banda, m: best.modo })}
+            </button>
+            <button type="button" className="ctc-btn" onClick={() => setIgnora(chiave)}>
+              {t('contest.adv.ignore')}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/** Mappa dei moltiplicatori di una banda: lavorati, nuovi e in ascolto (arancio), sentiti non nuovi. Clic = chiama la stazione. */
+function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T; banda: string; decodes: DecodedMessage[]; scegli: (c: string) => void }) {
   const [scelta, setScelta] = useState(banda || r.bande.ammesse[0] || '');
   useEffect(() => {
     if (banda && r.bande.ammesse.includes(banda)) setScelta(banda);
   }, [banda, r.bande.ammesse]);
-  const lav = useQuery({ queryKey: ['contest-lavorati', scelta], queryFn: () => getLavorati(scelta), refetchInterval: 15_000, retry: false, enabled: r.moltiplicatori.length > 0 }).data;
-  const tipo = r.moltiplicatori[0]?.tipo ?? '';
-  const valori = lav?.moltiplicatori[0]?.valori ?? [];
-  const campiFatti = new Set(valori.map((v) => v.slice(0, 2).toUpperCase()));
-  const inOnda = new Set(righe.filter((x) => x.grid).map((x) => x.grid.slice(0, 2).toUpperCase()));
-  const aGriglia = tipo === 'campo2' || tipo === 'grid4';
+  const m = useQuery({ queryKey: ['contest-mappa', scelta], queryFn: () => getMappa(scelta), refetchInterval: 15_000, retry: false, enabled: r.moltiplicatori.length > 0 && !!scelta }).data;
+  // l'ultima decodifica di ogni nominativo: serve il suo numero per rispondere (lo stesso comando del doppio clic sulle decodifiche)
+  const ultima = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const d of decodes) {
+      const x = mittente(d.text);
+      if (x?.call) out.set(x.call, d.id);
+    }
+    return out;
+  }, [decodes]);
+  const chiama = (call: string) => {
+    const id = ultima.get(call);
+    if (id == null) {
+      toast(t('contest.map.gone', { c: call }), 'info');
+      return;
+    }
+    void postReply(id).catch((e: unknown) => toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error'));
+  };
+  const tipo = m?.tipo ?? r.moltiplicatori[0]?.tipo ?? '';
+  const quad = tipo === 'grid4';
+  const chiaveDi = (g: string) => (g ? (quad ? g.slice(0, 4) : g.slice(0, 2)).toUpperCase() : '');
+  // i riquadri: per ognuno lo stato e la stazione migliore da chiamare (prima chi da' un moltiplicatore nuovo, poi il segnale piu' forte)
+  const celle = useMemo(() => {
+    const out = new Map<string, { stato: 'f' | 'n' | 'h'; call?: string; snr?: number }>();
+    if (!m?.griglia) return out;
+    for (const v of m.lavorati) out.set(v.toUpperCase(), { stato: 'f' });
+    const sentiti = [...m.sentiti].filter((s) => s.grid && !s.doppio).sort((a, b) => b.molt_nuovi.length - a.molt_nuovi.length || b.snr - a.snr);
+    for (const s of sentiti) {
+      const k = chiaveDi(s.grid);
+      const c = out.get(k);
+      const nuovo = s.molt_nuovi.length > 0;
+      if (!c) out.set(k, { stato: nuovo ? 'n' : 'h', call: s.call, snr: s.snr });
+      else if (!c.call) out.set(k, { stato: nuovo ? 'n' : 'f', call: s.call, snr: s.snr });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m, quad]);
+  const nuovi = useMemo(() => (m?.sentiti ?? []).filter((s) => s.molt_nuovi.length > 0).sort((a, b) => b.snr - a.snr), [m]);
+  // il riquadro della mappa: tutti i riquadri e la stazione, con un margine; almeno 40x20 gradi
+  const vista = useMemo(() => {
+    const rr = [...celle.keys()].map(rettangolo).filter((x): x is NonNullable<typeof x> => !!x);
+    const mio = m?.mio_grid ? rettangolo(m.mio_grid.slice(0, 4)) : null;
+    if (mio) rr.push(mio);
+    if (rr.length === 0) return { x: -180, y: -90, w: 360, h: 180, mio };
+    let x0 = Math.min(...rr.map((q) => q.x));
+    let x1 = Math.max(...rr.map((q) => q.x + q.w));
+    let y0 = Math.min(...rr.map((q) => q.y));
+    let y1 = Math.max(...rr.map((q) => q.y + q.h));
+    const pad = quad ? 2 : 10;
+    x0 -= pad;
+    x1 += pad;
+    y0 -= pad / 2;
+    y1 += pad / 2;
+    if (x1 - x0 < 40) [x0, x1] = [(x0 + x1) / 2 - 20, (x0 + x1) / 2 + 20];
+    if (y1 - y0 < 20) [y0, y1] = [(y0 + y1) / 2 - 10, (y0 + y1) / 2 + 10];
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, mio };
+  }, [celle, m?.mio_grid, quad]);
   return (
-    <section className="dock-panel ctc-box">
+    <section className="dock-panel ctc-box ctc-map-box">
       <header className="dock-grip dock-grip--fixed">
         <span className="dock-grip-dots" aria-hidden="true" />
-        <h2 title={t('tip.contest.missing')}>
-        {t('contest.missing')} <span className="r">{scelta} · {tipo}</span>
-      </h2>
-        </header>
+        <h2 title={t('tip.contest.map')}>
+          {t('contest.map')} <span className="r">{scelta} · {tipo || '—'}</span>
+        </h2>
+      </header>
       {r.moltiplicatori.length === 0 ? (
         <p className="ctc-tip">{t('contest.noMult')}</p>
       ) : (
@@ -750,20 +897,61 @@ function Moltiplicatori({ r, t, banda, righe, scegli }: { r: Regole; t: T; banda
               </button>
             ))}
           </div>
-          {aGriglia ? (
-            <div className="ctc-grid">
-              {Array.from({ length: 18 * 18 }, (_, i) => {
-                const c = `${LETTERE[i % 18]}${LETTERE[17 - Math.floor(i / 18)]}`;
-                const cls = campiFatti.has(c) ? 'f' : inOnda.has(c) ? 'a' : '';
-                return <i key={c} className={cls} title={c} onClick={() => scegli(c)} />;
-              })}
-            </div>
+          {m?.griglia ? (
+            <>
+              <svg className="ctc-map" viewBox={`${vista.x} ${-(vista.y + vista.h)} ${vista.w} ${vista.h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={t('contest.map')}>
+                {[...celle.entries()].map(([k, c]) => {
+                  const q = rettangolo(k);
+                  if (!q) return null;
+                  const tip = c.call ? `${k} · ${c.call} ${c.snr ?? ''} dB${c.stato === 'n' ? ' · ' + t('contest.map.new') : ''}` : k;
+                  return (
+                    <rect
+                      key={k}
+                      className={`ctc-cell ctc-cell--${c.stato}${c.call ? ' is-call' : ''}`}
+                      x={q.x + q.w * 0.06}
+                      y={-(q.y + q.h) + q.h * 0.08}
+                      width={q.w * 0.88}
+                      height={q.h * 0.84}
+                      onClick={() => (c.call ? chiama(c.call) : scegli(k.slice(0, 2)))}
+                    >
+                      <title>{tip}</title>
+                    </rect>
+                  );
+                })}
+                {vista.mio ? <circle className="ctc-map-me" cx={vista.mio.x + vista.mio.w / 2} cy={-(vista.mio.y + vista.mio.h / 2)} r={quad ? 0.6 : 3} /> : null}
+              </svg>
+              <div className="ctc-legend">
+                <span className="ctc-sq f" /> {t('contest.map.done')} &nbsp; <span className="ctc-sq n" /> {t('contest.map.newHeard')} &nbsp; <span className="ctc-sq h" /> {t('contest.map.heard')} · {t('contest.multTaken', { b: scelta, n: m.lavorati.length })}
+              </div>
+            </>
           ) : (
-            <div className="ctc-tip data">{valori.join(' ') || '—'}</div>
+            <div className="ctc-scroll data">
+              <table>
+                <tbody>
+                  {nuovi.length === 0 ? (
+                    <tr>
+                      <td className="ctc-muted">{t('contest.map.noneNew')}</td>
+                    </tr>
+                  ) : (
+                    nuovi.map((s) => (
+                      <tr key={s.call} className="ctc-r ctc-map-row" title={t('tip.contest.mapCall')} onClick={() => chiama(s.call)}>
+                        <td className="ctc-mult">{s.molt_nuovi.join(' ')}</td>
+                        <td>
+                          <b>{s.call}</b>
+                        </td>
+                        <td className="num">{s.snr}</td>
+                        <td className="ctc-muted">{s.cq ? 'CQ' : ''}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <div className="ctc-legend">{t('contest.multTaken', { b: scelta, n: m?.lavorati.length ?? 0 })}</div>
+            </div>
           )}
-          <div className="ctc-legend">
-            <span className="ctc-sq f" /> {t('contest.legend.done')} &nbsp; <span className="ctc-sq a" /> {t('contest.legend.onair')} &nbsp; <span className="ctc-sq" /> {t('contest.legend.missing')} · {t('contest.multTaken', { b: scelta, n: valori.length })}
-          </div>
+          {nuovi.length > 0 && m?.griglia ? (
+            <div className="ctc-alert ctc-alert--g">{t('contest.map.summary', { b: scelta, n: new Set(nuovi.flatMap((s) => s.molt_nuovi)).size, l: [...new Set(nuovi.flatMap((s) => s.molt_nuovi))].slice(0, 6).join(', ') })}</div>
+          ) : null}
         </>
       )}
     </section>

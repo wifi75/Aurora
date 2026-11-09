@@ -230,3 +230,56 @@ export const esporta = (formato?: string, banda?: string) => {
   return call<Esportazione>(`/esporta${s ? `?${s}` : ''}`);
 };
 export const getCalendario = () => call<{ contest: Prossimo[] }>('/calendario');
+
+/** Una banda nel consiglio di banda e modo. */
+export interface BandaConsiglio {
+  banda: string;
+  sentiti: number;
+  non_doppi: number;
+  molt_nuovi: string[];
+  qso_ora: number;
+  rate_stimato: number;
+  affollamento: number;
+  modo: string;
+  khz: number | null;
+  punteggio: number;
+  /** false: nessuna decodifica recente su questa banda, non si consiglia. */
+  dati: boolean;
+}
+
+export interface Consiglio {
+  banda: string;
+  modo: string;
+  bande: BandaConsiglio[];
+  migliore: string | null;
+  modo_migliore: string | null;
+  /** Cambi di banda nell'ora UTC in corso (solo se il regolamento li limita). */
+  cambi_banda_ora: number | null;
+  cambi_banda_limite: number | null;
+  ora_ms: number;
+}
+
+/** Una stazione in ascolto sulla banda della mappa. */
+export interface SentitoMappa {
+  call: string;
+  grid: string;
+  snr: number;
+  t: number;
+  cq: boolean;
+  molt_nuovi: string[];
+  doppio: boolean;
+  punti: number;
+}
+
+export interface Mappa {
+  banda: string;
+  tipo: string;
+  /** I moltiplicatori sono locatori (campi o quadrati): si disegna la mappa. */
+  griglia: boolean;
+  mio_grid: string;
+  lavorati: string[];
+  sentiti: SentitoMappa[];
+}
+
+export const getConsiglio = () => call<Consiglio>('/consiglio');
+export const getMappa = (banda: string) => call<Mappa>(`/mappa?banda=${encodeURIComponent(banda)}`);
