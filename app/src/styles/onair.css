@@ -7408,5 +7408,5 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 /* finestra RX: il messaggio ha sempre almeno 9rem; paese in 5,5rem con i puntini se lungo */
 .log-rx .decode-row { grid-template-columns: 4.2rem 2.2rem minmax(9rem, 1fr) 5.5rem !important; }
 /* finestra RX: carattere un po' piu' piccolo, cosi' i messaggi lunghi ci stanno interi */
-.log-rx .decode-row { font-size: 0.78rem; }
+.log-rx .decode-row { font-size: 0.7rem; }
 .log-rx .decode-row .badge { font-size: 0.62rem; }
