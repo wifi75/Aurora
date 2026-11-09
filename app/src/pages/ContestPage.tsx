@@ -936,6 +936,28 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m, quad]);
   const nuovi = useMemo(() => (m?.sentiti ?? []).filter((s) => s.molt_nuovi.length > 0).sort((a, b) => b.snr - a.snr), [m]);
+  // i moltiplicatori gia' presi sulle altre bande: un prefisso preso su 80 m vale ancora su 40 m (colore a parte)
+  const altre = r.bande.ammesse.filter((b) => b !== scelta);
+  const altrove = useQuery({
+    queryKey: ['contest-mappa-altre', altre.join(',')],
+    queryFn: async () => new Set((await Promise.all(altre.map((b) => getMappa(b).catch(() => null)))).flatMap((x) => (x?.lavorati ?? []).map((v) => v.toUpperCase()))),
+    refetchInterval: 30_000,
+    retry: false,
+    enabled: r.moltiplicatori.length > 0 && altre.length > 0,
+  }).data;
+  // il prefisso WPX di un nominativo (fino all'ultima cifra del prefisso): per le stazioni che non danno un moltiplicatore nuovo
+  const prefisso = (call: string) => (call.split('/').sort((a, b) => b.length - a.length)[0] ?? call).match(/^[A-Z0-9]*?\d+/)?.[0] ?? call;
+  // tutte le stazioni sentite, a tessere colorate: nuovo ovunque, nuovo qui ma preso su un'altra banda, gia' preso qui, gia' lavorata
+  const tessere = useMemo(() => {
+    const out = (m?.sentiti ?? []).map((s) => {
+      const chiave = (s.molt_nuovi[0] ?? (tipo === 'prefisso' ? prefisso(s.call) : '')).toUpperCase();
+      const stato: 'nuovo' | 'altra' | 'preso' | 'doppio' = s.doppio ? 'doppio' : s.molt_nuovi.length > 0 ? (altrove?.has(chiave) ? 'altra' : 'nuovo') : 'preso';
+      return { s, chiave, stato };
+    });
+    const ordine = { nuovo: 0, altra: 1, preso: 2, doppio: 3 };
+    return out.sort((a, b) => ordine[a.stato] - ordine[b.stato] || b.s.snr - a.s.snr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m, altrove, tipo]);
   // il riquadro della mappa: tutti i riquadri e la stazione, con un margine; almeno 40x20 gradi
   const vista = useMemo(() => {
     const rr = [...celle.keys()].map(rettangolo).filter((x): x is NonNullable<typeof x> => !!x);
@@ -1003,26 +1025,33 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
             </>
           ) : (
             <div className="ctc-scroll data">
-              {/* a tessere su piu' colonne: molti piu' nominativi a vista; chi fa CQ ha il bordo verde */}
-              {nuovi.length === 0 ? (
+              {/* a tessere su piu' colonne, colorate: viola nuovo ovunque, arancio nuovo qui ma preso su un'altra banda, verde gia' preso qui */}
+              {tessere.length === 0 ? (
                 <p className="ctc-muted">{t('contest.map.noneNew')}</p>
               ) : (
                 <div className="ctc-mtiles">
-                  {nuovi.map((s) => (
+                  {tessere.map(({ s, chiave, stato }) => (
                     <button
                       type="button"
                       key={s.call}
-                      className={`ctc-mtile${s.cq ? ' ctc-mtile--cq' : ''}`}
-                      title={`${t('tip.contest.mapCall')} · ${s.molt_nuovi.join(' ')} · ${s.snr} dB${s.cq ? ' · CQ' : ''}`}
+                      className={`ctc-mtile ctc-mtile--${stato}${s.cq ? ' ctc-mtile--cq' : ''}`}
+                      title={`${t('tip.contest.mapCall')} · ${chiave} · ${t(`contest.mt.${stato}` as 'contest.mt.nuovo')} · ${s.snr} dB${s.cq ? ' · CQ' : ''}`}
                       onClick={() => chiama(s.call)}
                     >
-                      <span className="ctc-mult">{s.molt_nuovi.join(' ')}</span>
+                      <span className="ctc-mult">{chiave}</span>
                       <b>{s.call}</b>
                       <span className="ctc-mtile-snr">{s.snr}</span>
                     </button>
                   ))}
                 </div>
               )}
+              <div className="ctc-mlegend">
+                <span><i className="ctc-mtile--nuovo" />{t('contest.mt.nuovo')}</span>
+                <span><i className="ctc-mtile--altra" />{t('contest.mt.altra')}</span>
+                <span><i className="ctc-mtile--preso" />{t('contest.mt.preso')}</span>
+                <span><i className="ctc-mtile--doppio" />{t('contest.mt.doppio')}</span>
+                <span><i className="ctc-mtile--cqk" />CQ</span>
+              </div>
               <div className="ctc-legend">{t('contest.multTaken', { b: scelta, n: m?.lavorati.length ?? 0 })}</div>
             </div>
           )}

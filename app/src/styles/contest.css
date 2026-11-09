@@ -347,3 +347,17 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtile b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctc-mtile .ctc-mult { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctc-mtile-snr { text-align: right; opacity: 0.75; }
+/* tessere dei moltiplicatori colorate per stato, con la legenda */
+.ctc-mtile--nuovo { border-color: var(--ct-violet, #8e7bff); background: color-mix(in srgb, var(--ct-violet, #8e7bff) 18%, transparent); }
+.ctc-mtile--altra { border-color: var(--warn, #ef9f27); background: color-mix(in srgb, var(--warn, #ef9f27) 16%, transparent); }
+.ctc-mtile--preso { border-color: color-mix(in srgb, var(--ok, #2cf5a4) 55%, transparent); background: color-mix(in srgb, var(--ok, #2cf5a4) 8%, transparent); opacity: 0.75; }
+.ctc-mtile--doppio { opacity: 0.45; }
+.ctc-mtile--doppio b { text-decoration: line-through; }
+.ctc-mtile.ctc-mtile--cq { box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); }
+.ctc-mlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 4px 8px 6px; font-size: 10.5px; opacity: 0.85; }
+.ctc-mlegend span { display: inline-flex; align-items: center; gap: 5px; }
+.ctc-mlegend i { display: inline-block; width: 12px; height: 10px; border-radius: 3px; border: 1px solid var(--ct-line, #2a3a55); }
+.ctc-mlegend i.ctc-mtile--cqk { border: 0; box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); background: var(--ct-line, #2a3a55); }
+/* stazione gia' lavorata su questa banda: nelle decodifiche il messaggio resta, ma depennato e attenuato */
+.ctc-dec-table tr.ctc-r.dup td { opacity: 0.55; }
+.ctc-dec-table tr.ctc-r.dup td:nth-child(4) { text-decoration: line-through; }
