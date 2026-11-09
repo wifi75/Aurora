@@ -552,6 +552,13 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   avviaRef.current = avviaCq;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // F2, F3, F4: scelgono i messaggi 2 (scambio), 3 (R + scambio) e 4 (chiusura), come il clic sulla riga
+      const n = { F2: 2, F3: 3, F4: 4 }[e.key];
+      if (n) {
+        e.preventDefault();
+        void postTxMessage(n).catch(() => undefined);
+        return;
+      }
       if (e.key !== 'F1') return;
       e.preventDefault();
       void avviaRef.current();
@@ -707,6 +714,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
                 <span>
                   {n} · {testo || '—'}
                 </span>
+                <kbd className="ctc-kbd ctc-kbd--row">{n === 6 ? 'F1' : `F${n}`}</kbd>
                 <span className={ora && transmitting ? 'ctc-val' : 'ctc-muted'}>{ora && transmitting ? t('contest.onAir') : t(k as 'contest.step.exch')}</span>
               </div>
             );
