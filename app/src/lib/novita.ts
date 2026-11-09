@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.216',
-    released: '2026-11-09T23:00:00Z',
+    released: '2026-11-09T20:06:15Z',
     kind: 'fixed',
     title: ["Aggiornamenti più sicuri e moltiplicatori a colori", "Safer updates and coloured multipliers", "Sicherere Updates und farbige Multiplikatoren", "Mises à jour plus sûres et multiplicateurs en couleur", "Actualizaciones más seguras y multiplicadores en color", "Atualizações mais seguras e multiplicadores a cores"],
     text: [
