@@ -1,12 +1,15 @@
 import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
 import { getContest } from '../api/contest';
 import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
-import { DecodeList } from '../components/DecodeList';
+import { DecodeList, gridOfSender } from '../components/DecodeList';
+import { ActivityTagPills } from '../components/ActivityTagPills';
+import { distanceKm, gridCenter } from '../lib/geo';
+import { isCallToMe } from '../lib/mycall';
 import { DiagnosisBar } from '../components/DiagnosisBar';
 import { GridBoard, type Cell } from '../components/GridBoard';
 import { DetachButton } from '../components/DetachButton';
@@ -38,7 +41,7 @@ import { subjectBand, subjectMode } from '../lib/dxccCard';
 import { Waterfall } from '../components/Waterfall';
 import { WaterfallToolbar } from '../components/WaterfallToolbar';
 import { useT } from '../i18n';
-import { applyFilters, callOf, useFilters } from '../lib/filters';
+import { applyActivityFilters, applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
 import { armAudio, playSound } from '../lib/soundBank';
@@ -116,7 +119,24 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const contestBands = contest.data?.attivo ? contest.data.regole?.bande.ammesse : undefined;
   const filters = useFilters((s) => s.filters);
   const cqPrefs = useCqPrefs((s) => s.prefs);
-  const shown = applyFilters(decodes, filters, status?.own_continent);
+  const shown = useMemo(() => applyFilters(decodes, filters, status?.own_continent), [decodes, filters, status?.own_continent]);
+  // Attivita' di banda: in piu' le novita' scelte, SNR, distanza, bande e messaggi a me (ricalcolato solo quando cambia qualcosa)
+  const activityBand = status?.dial_hz ? bandOf(status.dial_hz) : null;
+  const deCall = status?.de_call;
+  const deGrid = status?.de_grid;
+  const activity = useMemo(() => {
+    const mine = deGrid ? gridCenter(deGrid) : null;
+    return applyActivityFilters(shown, filters, {
+      band: activityBand,
+      isToMe: (text) => isCallToMe(text, deCall),
+      distance: (text) => {
+        const grid = mine ? gridOfSender(text) : null;
+        const theirs = grid ? gridCenter(grid) : null;
+        return mine && theirs ? distanceKm(mine, theirs) : null;
+      },
+    });
+  }, [shown, filters, activityBand, deCall, deGrid]);
+  const [tagPills, setTagPills] = useState(false);
   const alerts = useAlertPrefs((s) => s.prefs);
 
 
@@ -240,15 +260,16 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           </div>
         );
       case 'all': {
-        const list = <DecodeList decodes={withOwnTx(shown, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
-        if (!rxSplit) return list;
+        const pills = tagPills ? <ActivityTagPills /> : null;
+        const list = <DecodeList decodes={withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
+        if (!rxSplit) return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
         // la finestra RX (come «Rx Frequency» di WSJT-X): i messaggi sulla mia frequenza di ricezione, quelli diretti a me e le mie trasmissioni
         const rxHz = status?.rx_df ?? null;
         const me = (status?.de_call ?? '').toUpperCase();
         const rxList = decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me));
         return (
           <div className="rx-split">
-            <div className="rx-split-all">{list}</div>
+            <div className="rx-split-all">{pills}{list}</div>
             <div className="rx-split-rx" aria-label={t('rxw.title')}>
               <div className="rx-split-head">
                 {t('rxw.title')} <span className="muted">{rxHz !== null ? `Rx ${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
@@ -366,7 +387,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             />
           </div>
         }
-        decodes={withOwnTx(shown, txLog)}
+        decodes={withOwnTx(activity, txLog)}
         onReply={(id) => void onReply(id)}
         onQueue={(id) => void onQueue(id)}
         pickBand={(band) => void pickBand(band)}
@@ -399,10 +420,16 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       renderPanel(id)
     );
   const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : id === 'cmds' ? t('panel.station') : titles[id]);
+  const tagFilterOn = filters.tags.length > 0;
   const blockExtra = (id: BoardId): ReactNode => (id === 'all' ? (
-    <button type="button" className={rxSplit ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={rxSplit} title={t('tip.rxw.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setRxSplit(!rxSplit)}>
+    <>
+    <button type="button" className={tagPills || tagFilterOn ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={tagPills} aria-expanded={tagPills} title={t('tip.bfl.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setTagPills(!tagPills)}>
+      {t('bfl.button')}{tagFilterOn ? ` ${filters.tags.length}` : ''}
+    </button>
+    <button type="button" className={rxSplit ? 'dock-mini dock-mini--next dock-mini--on' : 'dock-mini dock-mini--next'} aria-pressed={rxSplit} title={t('tip.rxw.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setRxSplit(!rxSplit)}>
       RX
     </button>
+    </>
   ) : id === 'log' ? (
     <>
       <div className="dock-tabs" role="tablist" onPointerDown={(e) => e.stopPropagation()}>
