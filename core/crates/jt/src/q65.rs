@@ -560,6 +560,129 @@ fn qso_list(my_call: &str, dx_call: &str, dx_grid: &str, hashes: &CallHashes) ->
     out
 }
 
+/// Capienza della lista dei chiamanti dei contest (`Q65_CALLER_CAPACITY` di `q65_limits.h`).
+pub const MAX_CALLERS: usize = 50;
+
+/// Una stazione sentita in contest (`type q3list` di `types.f90`): nominativo (6 caratteri al piu', come in WSJT-X), locatore a 4
+/// caratteri, ora dell'ultimo ascolto in secondi e frequenza.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Caller {
+    pub call: String,
+    pub grid: String,
+    pub nsec: i64,
+    pub nfreq: i32,
+}
+
+/// La lista dei chiamanti dei contest di `q65_callers.F90` (NA VHF, WW Digi, ARRL Digi: `ncontest = 1`), tenuta in memoria come fa
+/// il motore di WSJT-X (`engine_active`); ne nasce la lista dei messaggi del contest di `q65_set_list2`.
+#[derive(Debug, Clone, Default)]
+pub struct Callers {
+    list: Vec<Caller>,
+}
+
+/// `valid_grid` di `q65_callers.F90` (e `isgrid` di `q65_set_list2.f90`): locatore a 4 caratteri, non «RR73».
+fn valid_grid(g: &str) -> bool {
+    let b = g.as_bytes();
+    b.len() == 4 && (b'A'..=b'R').contains(&b[0]) && (b'A'..=b'R').contains(&b[1]) && b[2].is_ascii_digit() && b[3].is_ascii_digit() && g != "RR73"
+}
+
+impl Callers {
+    pub fn list(&self) -> &[Caller] {
+        &self.list
+    }
+
+    /// `q65_expire_callers`: toglie chi non si sente da piu' di 24 ore.
+    pub fn expire(&mut self, now: i64) {
+        self.list.retain(|c| now - c.nsec <= 86_400);
+    }
+
+    /// `q65_record_caller`: dal messaggio decodificato «X CALL GRID» (o «X CALL R GRID») ricorda CALL e GRID; se CALL c'e' gia' ne
+    /// aggiorna ora e frequenza. Messaggi con «/» si ignorano; piena la lista, esce il piu' vecchio.
+    pub fn record(&mut self, freq: i32, msg: &str, now: i64) {
+        self.expire(now);
+        if msg.contains('/') || !msg.is_ascii() {
+            return;
+        }
+        // come in Fortran: il testo a 37 caratteri, posizioni da 1
+        let mut text: String = format!("{msg:<37}").chars().take(37).collect();
+        if let Some(i0) = text.find(" R ").map(|i| i + 1)
+            && i0 >= 7
+        {
+            text = format!("{}{}", &text[..i0], &text[i0 + 2..]);
+            text = format!("{text:<37}");
+        }
+        let Some(i1) = text.find(' ').map(|i| i + 1) else { return };
+        if !(4..=13).contains(&i1) {
+            return;
+        }
+        let Some(i2) = text[i1..].find(' ').map(|i| i + 1 + i1) else { return };
+        if i2 <= i1 + 1 || i2 + 4 > text.len() {
+            return;
+        }
+        let call: String = text[i1..i2 - 1].chars().take(6).collect();
+        let grid = text[i2..i2 + 4].to_string();
+        if let Some(c) = self.list.iter_mut().find(|c| c.call == call) {
+            c.nsec = now;
+            c.nfreq = freq;
+            return;
+        }
+        if !valid_grid(&grid) {
+            return;
+        }
+        if self.list.len() == MAX_CALLERS
+            && let Some(oldest) = self.list.iter().enumerate().min_by_key(|(_, c)| c.nsec).map(|(i, _)| i)
+        {
+            self.list.remove(oldest);
+        }
+        self.list.push(Caller { call, grid, nsec: now, nfreq: freq });
+    }
+
+    /// `q65_remove_caller`.
+    pub fn remove(&mut self, call: &str) {
+        let call: String = call.trim().to_uppercase().chars().take(6).collect();
+        if let Some(i) = self.list.iter().position(|c| c.call == call) {
+            self.list.remove(i);
+        }
+    }
+}
+
+/// `q65_set_list2`: la lista dei messaggi dei contest. Per ogni chiamante (e per il DX, se ha nominativo standard e locatore e non e'
+/// gia' fra i chiamanti) «MIO CALL GRID», «MIO CALL R GRID», RRR, RR73 e 73, ognuno con il 78° bit a 0 e a 1 (il chiamante puo' aver
+/// copiato o no il bit dell'ultima trasmissione: `iflag` di `genq65`).
+fn contest_list(my_call: &str, dx_call: &str, dx_grid: &str, callers: &[Caller], hashes: &CallHashes) -> Vec<ListWord> {
+    let my = my_call.trim().to_uppercase();
+    if my.is_empty() || callers.len() > MAX_CALLERS {
+        return Vec::new();
+    }
+    let dx: String = dx_call.trim().to_uppercase().chars().take(6).collect();
+    let grid: String = dx_grid.trim().to_uppercase().chars().take(4).collect();
+    let mut who: Vec<(String, String)> = callers.iter().map(|c| (c.call.clone(), c.grid.clone())).collect();
+    if std_call(dx_call.trim()) && valid_grid(&grid) && !callers.iter().any(|c| c.call == dx) {
+        who.push((dx, grid));
+    }
+    let mut out = Vec::new();
+    for (c6, g4) in &who {
+        for k in 1..=5 {
+            let pair = format!("{my} {c6}");
+            let text = match k {
+                1 => format!("{pair} {g4}"),
+                2 => format!("{pair} R {g4}"),
+                3 => format!("{pair} RRR"),
+                4 => format!("{pair} RR73"),
+                _ => format!("{pair} 73"),
+            };
+            let Ok(bits) = pack(text.trim_end(), &mut hashes.clone()) else { continue };
+            let msg = bits_to_symbols(&bits);
+            for iflag in 0..=1 {
+                let mut m = msg;
+                m[12] |= iflag;
+                out.push(ListWord { msg: m, cw: encode_symbols(&m) });
+            }
+        }
+    }
+    out
+}
+
 /// `_q65_mask`: azzera le probabilita' dei valori che contraddicono i bit noti.
 fn apply_ap(ix: &mut [f32], ap: &Ap) {
     for k in 0..NK {
@@ -628,6 +751,14 @@ pub struct Options {
     /// Ritardo dell'eco lunare (`emedelay` di WSJT-X): il ritardo si cerca fino a 5,5 s dopo l'inizio nominale (4 s nel Q65-15)
     /// invece di 2 s, come `lag2` di `q65.f90` con `emedelay > 0`.
     pub eme_delay: bool,
+    /// Deriva massima di frequenza (`max_drift` di WSJT-X, contributo di W3SZ), in bin (= velocita' di simbolo) per trasmissione,
+    /// da 0 a 50 a passi di 5 come lo «Max Drift» di WSJT-X. Diverso da 0, `q65_ccf_22` prova le derive da -max a +max e cerca solo
+    /// entro `rx_tol_hz` dalla frequenza di ricezione; a 50 c'e' in piu' l'ultimo tentativo di lista sugli spettri raddrizzati.
+    pub max_drift: i32,
+    /// Lista dei messaggi dei contest (`ncontest = 1`, `q65_set_list2`) al posto di quella del QSO, fatta con `callers`.
+    pub contest: bool,
+    /// Le stazioni sentite in contest (da [`Callers::list`]).
+    pub callers: Vec<Caller>,
 }
 
 impl Default for Options {
@@ -648,6 +779,9 @@ impl Default for Options {
             ap: true,
             fading: None,
             eme_delay: false,
+            max_drift: 0,
+            contest: false,
+            callers: Vec::new(),
         }
     }
 }
@@ -869,11 +1003,16 @@ struct SyncSpectra {
 }
 
 impl SyncSpectra {
-    fn new(audio: &[f32], setup: Setup, iz: usize) -> SyncSpectra {
+    /// `eme`: `emedelay > 0` di `q65_dec0`, il ritardo si cerca fino a 5,5 s (4 s nel Q65-15) e gli spettri coprono tutto il periodo.
+    fn new(audio: &[f32], setup: Setup, iz: usize, eme: bool) -> SyncSpectra {
         let nsps = setup.nsps();
         let istep = nsps / NSTEP;
         let txt = (NSYM * nsps) as f64 / FS;
-        let jz = ((txt + if nsps >= 6912 { 2.0 } else { 1.0 }) * FS / istep as f64) as usize;
+        let mut jz = ((txt + if nsps >= 6912 { 2.0 } else { 1.0 }) * FS / istep as f64) as usize;
+        if eme {
+            // `jz=(ntrperiod*12000-nsps)/istep + 1` di `q65_dec0`: ogni finestra di simbolo completa del periodo
+            jz = jz.max((setup.period_s as usize * FS as usize - nsps) / istep + 1);
+        }
         let mode = 1usize << setup.submode;
         let nsmo = (0.5 * (mode * mode) as f64) as usize;
         let nsmo = if nsmo <= 1 { 0 } else { nsmo };
@@ -914,7 +1053,31 @@ impl SyncSpectra {
         }
         let dtstep = istep as f64 / FS;
         let j0 = ((if nsps >= 7200 { 1.0 } else { 0.5 }) / dtstep) as i64;
-        SyncSpectra { s1, w, jz, istep, j0, lag1: (-1.0 / dtstep) as i64, lag2: (1.0 / dtstep + 0.9999) as i64 }
+        // `lag2` di `q65_dec0`: 1 s dopo l'inizio nominale, con `emedelay > 0` 5,5 s se `nsps >= 3600` e 4 s nel Q65-15
+        let late = match (eme, setup.period_s) {
+            (true, 15) if nsps >= 900 => 4.0,
+            (true, _) if nsps >= 3600 => 5.5,
+            _ => 1.0,
+        };
+        SyncSpectra { s1, w, jz, istep, j0, lag1: (-1.0 / dtstep) as i64, lag2: (late / dtstep + 0.9999) as i64 }
+    }
+
+    /// Gli spettri raddrizzati della deriva `drift_hz` per trasmissione (`s1w` della fase 5 di `q65_dec0`, W3SZ): nella riga `j`
+    /// il bin `i` prende il valore del bin `i + nint(drift*j/(85*NSTEP*df))`; se quello esce dagli spettri resta il suo.
+    fn drifted(&self, drift_hz: f64, df: f64) -> SyncSpectra {
+        let mut s1 = self.s1.clone();
+        let iz = self.w as i64 - 1;
+        for j in 0..self.jz {
+            // `w3t` parte da 1
+            let shift = (drift_hz * (j + 1) as f64 / (85.0 * NSTEP as f64 * df)).round() as i64;
+            for i in 1..=iz {
+                let mm = i + shift;
+                if (1..=iz).contains(&mm) {
+                    s1[j * self.w + i as usize] = self.s1[j * self.w + mm as usize];
+                }
+            }
+        }
+        SyncSpectra { s1, ..*self }
     }
 
     fn at(&self, i: usize, j: i64) -> f32 {
@@ -923,23 +1086,37 @@ impl SyncSpectra {
 
     /// `q65_ccf_22`: per ogni bin del tono 0 da `ia` a `ib` la correlazione migliore sui 22 simboli di sincronismo (tolta la media
     /// del bin) e il suo ritardo.
-    fn ccf22(&self, ia: usize, ib: usize) -> (Vec<f32>, Vec<i64>) {
+    /// Con `max_drift` diverso da 0 prova anche le derive da `-max_drift` a `+max_drift` bin per trasmissione (W3SZ): il simbolo `k`
+    /// si legge al bin `i + nint(idrift*(k-43)/85)`. Ritorna anche la deriva migliore di ogni bin.
+    fn ccf22(&self, ia: usize, ib: usize, max_drift: i32) -> (Vec<f32>, Vec<i64>, Vec<i32>) {
         let mut ccf2 = vec![0f32; self.w];
         let mut lags = vec![0i64; self.w];
+        let mut drifts = vec![0i32; self.w];
         let k22 = 22.0 / self.jz as f32;
+        let iz = self.w as i64 - 1;
         for i in ia..=ib {
             let avg: f32 = (0..self.jz).map(|j| self.s1[j * self.w + i]).sum::<f32>() * k22;
-            let mut best = (0f32, 0i64);
+            let mut best = (0f32, 0i64, 0i32);
             for lag in self.lag1..=self.lag2 {
-                let t: f32 = ISYNC.iter().map(|&p| self.at(i, (NSTEP * (p - 1)) as i64 + lag + self.j0)).sum::<f32>() - avg;
-                if t > best.0 {
-                    best = (t, lag);
+                for idrift in -max_drift..=max_drift {
+                    let t: f32 = ISYNC
+                        .iter()
+                        .map(|&k| {
+                            let ii = i as i64 + (f64::from(idrift) * (k as f64 - 43.0) / 85.0).round() as i64;
+                            if ii < 1 || ii > iz { 0.0 } else { self.at(ii as usize, (NSTEP * (k - 1)) as i64 + lag + self.j0) }
+                        })
+                        .sum::<f32>()
+                        - avg;
+                    if t > best.0 {
+                        best = (t, lag, idrift);
+                    }
                 }
             }
             ccf2[i] = best.0;
             lags[i] = best.1;
+            drifts[i] = best.2;
         }
-        (ccf2, lags)
+        (ccf2, lags, drifts)
     }
 }
 
@@ -1141,15 +1318,15 @@ impl<'a> Searcher<'a> {
     /// `q65_dec_q012` sulle energie prese dagli spettri del sincronismo (`q65_s1_to_s3`), al bin `i` del tono 0 e alla riga `jrow`
     /// del primo simbolo: e' il primo tentativo sulla frequenza di ricezione.
     fn from_sync_spectra(&self, i: usize, jrow: i64) -> Option<Hit> {
-        let s3 = self.s3_from_sync(i, jrow)?;
+        let s3 = self.s3_from_sync(self.sp, i, jrow)?;
         std::iter::once(None).chain(self.aps.iter().map(Some)).find_map(|ap| self.try_metrics(&s3, ap, |_| true))
     }
 
     /// `q65_s1_to_s3`: le energie dei 63 simboli di dati prese dagli spettri del sincronismo, senza le portanti.
-    fn s3_from_sync(&self, i: usize, jrow: i64) -> Option<Vec<f32>> {
+    fn s3_from_sync(&self, sp: &SyncSpectra, i: usize, jrow: i64) -> Option<Vec<f32>> {
         let mode = 1usize << self.setup().submode;
         let ll = M * (2 + mode);
-        let i1 = (i + mode).checked_sub(64).filter(|&i1| i1 >= 1 && i1 + ll - 1 < self.sp.w)?;
+        let i1 = (i + mode).checked_sub(64).filter(|&i1| i1 >= 1 && i1 + ll - 1 < sp.w)?;
         let mut s3 = vec![0f32; NTX * ll];
         let mut n = 0;
         for s in 0..NSYM {
@@ -1158,7 +1335,7 @@ impl<'a> Searcher<'a> {
             }
             let j = jrow + (NSTEP * s) as i64;
             for (ii, o) in s3[n * ll..(n + 1) * ll].iter_mut().enumerate() {
-                *o = self.sp.at(i1 + ii, j);
+                *o = sp.at(i1 + ii, j);
             }
             n += 1;
         }
@@ -1218,11 +1395,12 @@ impl<'a> Searcher<'a> {
     /// `q65_ccf_85` + `q65_dec_q3`: sincronismo con tutti gli 85 simboli di ogni messaggio della lista entro `rx_tol_hz` dalla
     /// frequenza di ricezione (bin `i0`); se il migliore stacca gli altri del 10% (o il sottomodo e' D o E), decodifica da lista: vince
     /// la parola di codice piu' verosimile sopra `PLOG_MIN`. Ritorna il messaggio, il bin del tono 0 e la riga del primo simbolo.
-    fn list_decode(&self, list: &[ListWord], i0: usize) -> Option<(Hit, usize, i64)> {
+    /// `sp` sono gli spettri del sincronismo o quelli raddrizzati della deriva (`s1w`): con questi ultimi (`drift`) vale solo il
+    /// distacco del 10%, senza l'eccezione dei sottomodi D ed E.
+    fn list_decode(&self, sp: &SyncSpectra, list: &[ListWord], i0: usize, drift: bool) -> Option<(Hit, usize, i64)> {
         let setup = self.setup();
         let df = setup.baud();
         let mode = 1usize << setup.submode;
-        let sp = self.sp;
         let iz = sp.w as i64 - 1;
         let ia = (f64::from(self.options.rx_tol_hz) / df) as i64;
         let ia2 = ia.max(10 * mode as i64).max((100.0 / df).round() as i64);
@@ -1277,13 +1455,13 @@ impl<'a> Searcher<'a> {
         best_of[m] = 0.0;
         let second = best_of.iter().copied().fold(0f32, f32::max);
         let better = if second > 0.0 { ccf_best / second } else { f32::MAX };
-        if better < 1.10 && mode < 8 {
+        if better < 1.10 && (mode < 8 || drift) {
             return None;
         }
         // `q65_s1_to_s3` + la verosimiglianza di ogni parola della lista per ogni larghezza B90
         let i = usize::try_from(i0 as i64 + ipk).ok()?;
         let jrow = sp.j0 + jpk;
-        let s3 = self.s3_from_sync(i, jrow)?;
+        let s3 = self.s3_from_sync(sp, i, jrow)?;
         let spb = mode;
         let model = self.options.fading.unwrap_or(Fading::Lorentzian);
         let threshold = (LLH_THRESHOLD + (list.len() as f32 / 3.0).ln()).max(PLOG_MIN);
@@ -1350,15 +1528,26 @@ fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
     let nsps = setup.nsps();
     let mode = 1usize << setup.submode;
     let df = setup.baud();
-    let ia = (f64::from(options.f_low_hz).max(100.0) / df) as usize;
-    let ib = (f64::from(options.f_high_hz).min(4900.0) / df) as usize;
+    let mut ia = (f64::from(options.f_low_hz).max(100.0) / df) as usize;
+    let mut ib = (f64::from(options.f_high_hz).min(4900.0) / df) as usize;
+    // con la deriva (`max_drift`, W3SZ) `q65_ccf_22` cerca solo entro `ntol` dalla frequenza di ricezione
+    if let Some(rx) = options.rx_hz.filter(|_| options.max_drift != 0) {
+        let (rx, tol) = (f64::from(rx), f64::from(options.rx_tol_hz));
+        ia = ((100.0 / df).round() as i64).max(((rx - tol) / df).round() as i64).max(0) as usize;
+        ib = ((4900.0 / df).round() as i64).min(((rx + tol) / df).round() as i64).max(0) as usize;
+        if ia >= ib {
+            ia = ib.saturating_sub((tol / df) as usize);
+        }
+        ia = ia.max(1);
+    }
     let nsum = (10 * mode).max((50.0 / df).round() as usize);
     let iz = (ib + 2 * nsum + 66 * mode + M + 2).min(nsps / 2 - 1);
     if ia < 1 || ia >= ib || ib >= iz {
         return Vec::new();
     }
-    let sp = SyncSpectra::new(audio, setup, iz);
-    let (ccf2, lags) = sp.ccf22(ia, ib);
+    let sp = SyncSpectra::new(audio, setup, iz, options.eme_delay);
+    let max_drift = options.max_drift.clamp(0, 50);
+    let (ccf2, lags, drifts) = sp.ccf22(ia, ib, max_drift);
     let nominal = (setup.start_s() * FS).round() as i64;
     let start_of = |lag: i64| nominal + lag * sp.istep as i64;
     let rx = options.rx_hz.and_then(|rx| {
@@ -1372,7 +1561,7 @@ fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
     let finish = |hit: Hit, f: f64, start: i64, sync: f32| Found { snr_db: searcher.snr(&hit.msg, f, start), hit, freq_hz: f, start, sync, averaged: 1 };
 
     // con il DX noto, prima la decodifica da lista sulla frequenza di ricezione (`q65_dec0` con `ncw>0`)
-    let listed = options.rx_hz.filter(|_| !list.is_empty()).and_then(|f| searcher.list_decode(list, (f64::from(f) / df).round() as usize));
+    let listed = options.rx_hz.filter(|_| !list.is_empty()).and_then(|f| searcher.list_decode(&sp, list, (f64::from(f) / df).round() as usize, false));
     let mut rx_tried = None;
     if let Some((hit, i, jrow)) = listed {
         let start = nominal + (jrow - sp.j0) * sp.istep as i64;
@@ -1383,6 +1572,19 @@ fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
         let hit = searcher.from_sync_spectra(i, sp.j0 + lags[i]).map(|h| (h, f0, start_of(lags[i]))).or_else(|| searcher.loops(f0, start_of(lags[i])));
         if let Some((hit, f, start)) = hit {
             found.push(finish(hit, f, start, ccf2[i]));
+        }
+    }
+    // fase 5 di W3SZ (`stageno = 5` di `q65_decode.f90`, solo con `max_drift = 50`): niente sulla frequenza di ricezione, si riprova
+    // la lista sugli spettri raddrizzati con la deriva del picco migliore entro `ntol` (`drift = df*idrift_best` di `q65_ccf_22`)
+    if found.is_empty()
+        && max_drift == 50
+        && !list.is_empty()
+        && let (Some(f), Some(i)) = (options.rx_hz, rx)
+    {
+        let s1w = sp.drifted(df * f64::from(drifts[i]), df);
+        if let Some((hit, i, jrow)) = searcher.list_decode(&s1w, list, (f64::from(f) / df).round() as usize, true) {
+            let start = nominal + (jrow - sp.j0) * sp.istep as i64;
+            found.push(finish(hit, i as f64 * df, start, ccf2.get(i).copied().unwrap_or(0.0)));
         }
     }
     let width = df * mode as f64;
@@ -1526,7 +1728,12 @@ fn decode_inner(audio: &[f32], options: &Options, hashes: &mut CallHashes, avera
     let nsps = setup.nsps();
     let spb = 1usize << setup.submode;
     let aps = if options.ap { ap_list(&options.my_call, &options.dx_call, hashes) } else { Vec::new() };
-    let list = if options.ap { qso_list(&options.my_call, &options.dx_call, &options.dx_grid, hashes) } else { Vec::new() };
+    // in contest la lista dei chiamanti (`q65_set_list2`), altrimenti quella del QSO con il DX (`q65_set_list`)
+    let list = match (options.ap, options.contest) {
+        (false, _) => Vec::new(),
+        (true, true) => contest_list(&options.my_call, &options.dx_call, &options.dx_grid, &options.callers, hashes),
+        (true, false) => qso_list(&options.my_call, &options.dx_call, &options.dx_grid, hashes),
+    };
     let mut out: Vec<Decoded> = Vec::new();
     for f in decode_single(audio, options, &aps, &list) {
         push_found(&mut out, &f, setup, hashes);
