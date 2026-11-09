@@ -756,13 +756,13 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
         </div>
         <div className="ctc-actions">
           <button type="button" className={`ctc-btn${autoseq ? ' ctc-btn--on' : ''}`} aria-pressed={autoseq} title={t('tip.contest.autoseq')} onClick={() => void postControl('autoseq', !autoseq)}>
-            ● {t('contest.autoseq')}
+            {t('contest.autoseq')}
           </button>
           <button type="button" className={`ctc-btn${txOn ? ' ctc-btn--on' : ''}`} aria-pressed={txOn} onClick={() => void postControl('enable_tx', !txOn)}>
-            ● {t('contest.enableTx')}
+            {t('contest.enableTx')}
           </button>
           <button type="button" className={`ctc-btn${autoCq ? ' ctc-btn--on' : ''}`} aria-pressed={autoCq} title={t('tip.contest.autoCq')} onClick={() => void (autoCq ? fermaCq() : avviaCq())}>
-            ● {t('contest.autoCq')} <kbd className="ctc-kbd">F1</kbd>
+            {t('contest.autoCq')} <kbd className="ctc-kbd">F1</kbd>
           </button>
           <button type="button" className="ctc-btn" disabled={!dx} title={t('tip.contest.rr73')} onClick={() => void postTxMessage(4)}>
             {t('contest.rr73')}
