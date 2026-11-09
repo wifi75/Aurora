@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-09, versione 0.11.209 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-09, versione 0.11.210 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-09
 - Aggiornamenti: controllo 1 s dopo l'avvio e ogni ora; locandina con nastrino «Nuova versione», installazione silenziosa (`/S`) dopo 5 s con «Annulla», mai in trasmissione; striscia verde fluo in testata (0.11.205-0.11.207).

@@ -2,14 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.210 - 2026-11-09
 - **Filtro e Automazioni**: scegliendo una novita' (nuova griglia, nuova zona…) si accende da sola la sua evidenziazione in Segnalazioni, se era spenta: prima il filtro mostrava solo le proprie trasmissioni (ON7KEC); messaggio chiaro quando nessuna stazione ha le novita' scelte.
-
 - **Nuova griglia**: evidenziazione «nuova griglia» e «griglia su nuova banda» accese di base (prima spente: Automazioni e filtri «Nuova griglia» non trovavano niente); «Griglia su nuova banda» anche tra le risposte delle Automazioni (ON7KEC).
-
 - **Automazioni**: tra «A chi rispondere» anche «Nuova stazione» e «Stazione su nuova banda o modo»; la pausa per stazione puo' essere 0 (nessuna pausa, la richiama subito) (richieste di ON7KEC).
-
 - **Attivita' di banda**: nel «Filtro» anche le eccezioni come GridTracker: Solo CQ, RR73 come CQ, Ha locatore, Non il mio continente (richiesta di ON7KEC).
-
 - **TCI**: niente avviso «audio muto» quando l'audio TCI arriva basso ma c'e' (issue #9); resta solo con zeri veri.
 - Impostazioni, scheda del Log: nuovo riquadro «Database di Log4OM» per scegliere (finestra «Apri file» o percorso a mano) o togliere il file di Log4OM 2; si controlla, si ricorda e i QSO già fatti si ricaricano subito.
 

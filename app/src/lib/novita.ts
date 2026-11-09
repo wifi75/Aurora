@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.210',
+    released: '2026-11-09T12:14:28Z',
+    kind: 'fixed',
+    title: ['Filtri e Automazioni più affidabili, Log4OM a scelta, cascata più pulita', 'More reliable filters and Automation, Log4OM path, cleaner waterfall', 'Zuverlässigere Filter und Automatik, Log4OM-Pfad, klarerer Wasserfall', 'Filtres et Automatisations plus fiables, chemin Log4OM, cascade plus claire', 'Filtros y Automatizaciones más fiables, ruta de Log4OM, cascada más limpia', 'Filtros e Automatizações mais fiáveis, caminho do Log4OM, cascata mais limpa'],
+    text: [
+      "Scegliendo una novità nel Filtro o nelle Automazioni si accende da sola la sua evidenziazione, e «nuova griglia» è accesa di base. Nel Filtro ci sono anche le eccezioni: Solo CQ, RR73 come CQ, Ha locatore, Non il mio continente. Le Automazioni rispondono anche a nuove stazioni e griglie su nuova banda, e la pausa per stazione può essere 0. Nelle Impostazioni si sceglie il database di Log4OM. Nella cascata le etichette Rx e Tx sono in basso e le bande trasparenti. Con il TCI niente più falso «audio muto».",
+      "Choosing a new one in the Filter or in Automation turns on its highlight by itself, and «new grid» is on by default. The Filter also has exceptions: CQ only, RR73 as CQ, has grid, not my continent. Automation also answers new calls and grids on a new band, and the per-station pause can be 0. In Settings you can choose the Log4OM database. In the waterfall the Rx and Tx labels are at the bottom and the bands are transparent. No more false «silent audio» with TCI.",
+      "Wählt man eine Neuheit im Filter oder in der Automatik, schaltet sich ihre Hervorhebung selbst ein; «neuer Locator» ist standardmäßig an. Der Filter hat auch Ausnahmen: nur CQ, RR73 als CQ, mit Locator, nicht mein Kontinent. Die Automatik antwortet auch auf neue Rufzeichen und Locatoren auf neuem Band, die Pause pro Station kann 0 sein. In den Einstellungen wählt man die Log4OM-Datenbank. Im Wasserfall stehen Rx und Tx unten und die Bänder sind transparent. Mit TCI kein falsches «Audio stumm» mehr.",
+      "En choisissant une nouveauté dans le Filtre ou les Automatisations, sa mise en évidence s’allume seule ; « nouveau locator » est activé par défaut. Le Filtre a aussi des exceptions : CQ seul, RR73 comme CQ, avec locator, pas mon continent. Les Automatisations répondent aussi aux nouveaux indicatifs et locators sur une nouvelle bande, et la pause par station peut être 0. Dans les Réglages on choisit la base Log4OM. Dans la cascade les repères Rx et Tx sont en bas et les bandes transparentes. Plus de faux « audio muet » avec TCI.",
+      "Al elegir una novedad en el Filtro o en las Automatizaciones su resaltado se enciende solo, y «nuevo locator» viene encendido. El Filtro tiene también excepciones: solo CQ, RR73 como CQ, con locator, no mi continente. Las Automatizaciones responden también a indicativos nuevos y locators en banda nueva, y la pausa por estación puede ser 0. En Ajustes se elige la base de Log4OM. En la cascada las etiquetas Rx y Tx están abajo y las bandas son transparentes. Con TCI ya no hay falso «audio mudo».",
+      "Ao escolher uma novidade no Filtro ou nas Automatizações o destaque liga-se sozinho, e «novo locator» vem ligado. O Filtro tem também exceções: só CQ, RR73 como CQ, com locator, não o meu continente. As Automatizações respondem também a indicativos novos e locators em banda nova, e a pausa por estação pode ser 0. Nas Definições escolhe-se a base do Log4OM. Na cascata as etiquetas Rx e Tx estão em baixo e as bandas transparentes. Com TCI acabou o falso «áudio mudo».",
+    ],
+  },
+  {
     version: '0.11.209',
     released: '2026-11-09T11:35:05Z',
     kind: 'new',
