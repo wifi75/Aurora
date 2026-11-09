@@ -20,7 +20,7 @@ fn answering_version(port: u16) -> Option<String> {
     (value.get("name")?.as_str()? == "Aurora").then(|| value.get("version")?.as_str().map(str::to_string))?
 }
 
-/// I processi che ascoltano su `port` (da `netstat -ano`), escluso questo.
+/// I processi che tengono `port` dal lato server (in ascolto o con connessioni aperte, da `netstat -ano`), escluso questo.
 #[cfg(windows)]
 fn listeners(port: u16) -> Vec<u32> {
     use std::os::windows::process::CommandExt;
@@ -31,7 +31,9 @@ fn listeners(port: u16) -> Vec<u32> {
         .lines()
         .filter_map(|line| {
             let cols: Vec<&str> = line.split_whitespace().collect();
-            (cols.len() >= 5 && cols[1].ends_with(&suffix) && cols[3].eq_ignore_ascii_case("LISTENING")).then(|| cols[4].parse::<u32>().ok()).flatten()
+            // chi ascolta sulla porta, ma anche chi tiene ancora connessioni aperte dal lato server: il 2026-11-09 il core 0.11.155 non
+            // compariva piu' in ascolto ma serviva ancora la finestra sulle connessioni gia' aperte (ESTABLISHED, indirizzo locale :8787)
+            (cols.len() >= 5 && cols[1].ends_with(&suffix) && !cols[3].eq_ignore_ascii_case("TIME_WAIT")).then(|| cols[4].parse::<u32>().ok()).flatten()
         })
         .filter(|pid| *pid != me && *pid > 4)
         .collect();
@@ -56,8 +58,38 @@ fn kill(pid: u32) {
     let _ = std::process::Command::new("kill").args(["-9", &pid.to_string()]).status();
 }
 
-/// Chiude l'Aurora di un'altra versione che risponde sulla porta; al massimo tre tentativi.
+/// Il nome del programma del processo `pid` (`aurora-desktop.exe`), da `tasklist`.
+#[cfg(windows)]
+fn image_name(pid: u32) -> String {
+    use std::os::windows::process::CommandExt;
+    std::process::Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .creation_flags(0x0800_0000)
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).split(',').next().unwrap_or("").trim_matches(|c: char| c == '"' || c.is_whitespace()).to_string())
+        .unwrap_or_default()
+}
+
+#[cfg(not(windows))]
+fn image_name(_pid: u32) -> String {
+    String::new()
+}
+
+/// Prima che questo Aurora apra la porta, nessun altro Aurora deve tenerla: ne' in ascolto ne' con connessioni gia' aperte con la finestra
+/// (il 2026-11-09 la finestra della 0.11.205 riusava le connessioni ancora aperte con il core 0.11.155, che non era piu' in ascolto,
+/// e mostrava la versione vecchia). Si chiudono i processi `aurora-desktop` che tengono la porta dal lato server.
 pub fn evict(port: u16) {
+    evict_answering(port);
+    let leftovers: Vec<u32> = listeners(port).into_iter().filter(|pid| image_name(*pid).eq_ignore_ascii_case("aurora-desktop.exe")).collect();
+    if !leftovers.is_empty() {
+        tracing::warn!("sulla porta {port} un Aurora rimasto acceso (processi {leftovers:?}) teneva ancora connessioni aperte: lo chiudo");
+        leftovers.into_iter().for_each(kill);
+        std::thread::sleep(Duration::from_millis(800));
+    }
+}
+
+/// Chiude l'Aurora di un'altra versione che risponde sulla porta; al massimo tre tentativi.
+fn evict_answering(port: u16) {
     let mine = env!("CARGO_PKG_VERSION");
     for _ in 0..3 {
         let Some(other) = answering_version(port) else { return };
@@ -74,3 +106,4 @@ pub fn evict(port: u16) {
         std::thread::sleep(Duration::from_millis(800));
     }
 }
+
