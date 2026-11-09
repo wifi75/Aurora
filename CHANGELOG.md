@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Nuova griglia**: evidenziazione «nuova griglia» e «griglia su nuova banda» accese di base (prima spente: Automazioni e filtri «Nuova griglia» non trovavano niente); «Griglia su nuova banda» anche tra le risposte delle Automazioni (ON7KEC).
+
 - **Automazioni**: tra «A chi rispondere» anche «Nuova stazione» e «Stazione su nuova banda o modo»; la pausa per stazione puo' essere 0 (nessuna pausa, la richiama subito) (richieste di ON7KEC).
 
 - **Attivita' di banda**: nel «Filtro» anche le eccezioni come GridTracker: Solo CQ, RR73 come CQ, Ha locatore, Non il mio continente (richiesta di ON7KEC).

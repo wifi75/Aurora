@@ -688,8 +688,9 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("newDXCC", "true"),
         ("newDXCCBand", "true"),
         ("newDXCCBandMode", "true"),
-        ("newGrid", "false"),
-        ("newGridBand", "false"),
+        // nuova griglia accesa di base (anche per banda): senza, le Automazioni e i filtri «Nuova griglia» non trovavano mai niente (ON7KEC)
+        ("newGrid", "true"),
+        ("newGridBand", "true"),
         ("newGridBandMode", "false"),
         ("newPx", "false"),
         ("newPxBand", "false"),

@@ -18,6 +18,7 @@ const TAGS: ReadonlyArray<{ tag: DecodeTag; label: Key; tip: Key }> = [
   { tag: 'new_dxcc', label: 'kind.new_dxcc', tip: 'tip.auto.tag.new_dxcc' },
   { tag: 'new_dxcc_band', label: 'kind.new_dxcc_band', tip: 'tip.auto.tag.new_dxcc_band' },
   { tag: 'new_grid', label: 'kind.new_grid', tip: 'tip.auto.tag.new_grid' },
+  { tag: 'new_grid_band', label: 'kind.new_grid_band', tip: 'tip.auto.tag.new_grid_band' },
   { tag: 'new_zone', label: 'kind.new_zone', tip: 'tip.auto.tag.new_zone' },
   // nuova stazione e stazione su nuova banda/modo (richiesta di ON7KEC)
   { tag: 'new_call', label: 'kind.new_call', tip: 'tip.auto.tag.new_call' },
