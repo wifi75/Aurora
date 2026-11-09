@@ -128,13 +128,15 @@ export function App() {
     return <SoloWindow id={route.id} />;
   }
 
-  let content;
+  // la Stazione: un segnaposto, la pagina vera e' tenuta viva qui sotto (`keepLive`)
+  const LIVE = <Live />;
+  let content: React.ReactNode;
   if (route.name === 'pair' && session.data !== true) {
     content = <Pair initialCode={route.code} autoSubmit={route.code.length === 8} onPaired={onPaired} />;
   } else if (session.isPending) {
     content = <p className="muted">{t('app.verifying')}</p>;
   } else if (REMOTE_TOUCH && session.data === true) {
-    content = <Live />;
+    content = LIVE;
   } else if (session.isError) {
     content = (
       <div className="notice">
@@ -149,7 +151,7 @@ export function App() {
     content = <Pair onPaired={onPaired} />;
   } else if (route.name === 'settings' && !REMOTE) {
     // le Impostazioni stanno nel riquadro (qui sotto): dietro resta la Stazione
-    content = <Live />;
+    content = LIVE;
   } else if (route.name === 'stats') {
     content = <Stats />;
   } else if (route.name === 'map') {
@@ -180,9 +182,10 @@ export function App() {
   } else if (route.name === 'export') {
     content = <ExportPage />;
   } else {
-    content = <Live />;
+    content = LIVE;
   }
 
+  const keepLive = session.data === true && !REMOTE_TOUCH;
   return (
     <>
     <div className="app-shell" inert={settingsOpen ? true : undefined}>
@@ -234,7 +237,16 @@ export function App() {
       </header>
       )}
       {session.data ? <WantedBar /> : null}
-      <main className="app-main">{content}</main>
+      <main className="app-main">
+        {/* la Stazione resta viva anche sulle altre pagine (nascosta): prima si ricostruiva da zero a ogni ritorno (cascata, pannelli,
+            mappa, liste) e il passaggio Contest -> Stazione era lento (2026-11-09) */}
+        {keepLive ? (
+          <div className="live-keep" style={content === LIVE ? undefined : { display: 'none' }}>
+            <Live />
+          </div>
+        ) : null}
+        {keepLive && content === LIVE ? null : content}
+      </main>
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
       <ConfirmHost />
