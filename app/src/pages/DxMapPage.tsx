@@ -264,6 +264,10 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
         // il resto (stile, linee, quadrati...) segue le impostazioni della pagina Mappa DX, che sono le stesse
         <div className="dxmap-bar dxmap-bar--mini">
           <span className="dxmap-band-now">{bandNow ?? '—'}</span>
+          <label className="toggle">
+            <input type="checkbox" checked={settings.arcs} onChange={(e) => change({ arcs: e.target.checked, links: e.target.checked })} />
+            {t('dxmap.arcs')}
+          </label>
           <label className="toggle" title={t('dxmap.onlyHeardMe.tip')}>
             <input type="checkbox" checked={settings.onlyHeardMe} onChange={(e) => change({ onlyHeardMe: e.target.checked })} />
             {t('dxmap.onlyHeardMe')}
