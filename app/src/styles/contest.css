@@ -416,3 +416,7 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 }
 .ctc-views-tabs { display: inline-flex; gap: 5px; flex-wrap: wrap; }
 .ctc-freq { display: inline-flex; align-items: center; gap: 8px; }
+/* tessere dei moltiplicatori un po' piu' grandi (sempre 4 per riga) */
+.ctc-mtiles { gap: 3px !important; }
+.ctc-mtile { height: 24px !important; font-size: 12px !important; padding: 0 5px !important; grid-template-columns: 2.8em minmax(0, 1fr) 2em !important; }
+.ctc-mtile .ctc-mult, .ctc-mtile-snr { font-size: 10.5px !important; }
