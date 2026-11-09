@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.219',
-    released: '2026-11-10T01:00:00Z',
+    released: '2026-11-09T21:56:50Z',
     kind: 'changed',
     title: ["Mappa del Log più pulita e pagine più rapide", "Cleaner Log map and faster pages", "Aufgeräumte Log-Karte und schnellere Seiten", "Carte du Journal plus nette et pages plus rapides", "Mapa del Log más limpio y páginas más rápidas", "Mapa do Log mais limpo e páginas mais rápidas"],
     text: [
