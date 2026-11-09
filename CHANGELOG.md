@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Contest**: consiglio di banda e modo (per ogni banda del regolamento rate stimato e moltiplicatori nuovi in ascolto, FT4 quando il pile-up e' fitto, pulsante «Porta la radio su …» con le frequenze del regolamento, cambi di banda nell'ora se limitati) e mappa dei moltiplicatori della banda (gia' lavorati, nuovi in ascolto in arancio, sentiti non nuovi; per sezioni, stati e paesi l'elenco dei nuovi): un clic chiama la stazione.
+
 - **Contest**: avviso quando un nominativo composto (tuo o del DX) non permette i messaggi di contest; PACCdigi con 3 punti per le stazioni olandesi (nuovo tipo di punti «per paese»).
 
 - **Contest**: con il contest acceso, su una banda o in un modo non ammessi dal regolamento la trasmissione non parte (Abilita Tx si spegne, con un avviso); il menu delle frequenze mostra solo le bande del contest; lo scambio ricevuto si controlla con le liste di sezioni ARRL/RAC, stati, province canadesi e olandesi (fuori lista: segnato nel log con il motivo e niente moltiplicatore); moltiplicatori DXCC; EDI con righe ERROR per i seriali persi, PSect e antenna (SAnte).

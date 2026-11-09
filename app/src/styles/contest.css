@@ -215,3 +215,30 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-toggle--on .ctc-toggle-knob { background: #2cf5a4; }
 .ctc-toggle--on .ctc-toggle-knob::after { transform: translateX(0.95rem); }
 @media (prefers-reduced-motion: reduce) { .ctc-toggle-knob, .ctc-toggle-knob::after { transition: none; } }
+
+/* consiglio di banda e modo e mappa dei moltiplicatori, uno sopra l'altra nella colonna destra */
+.ctc-stack { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.ctc-adv { flex: none; max-height: 55%; }
+.ctc-adv-in { overflow: auto; min-height: 0; }
+.ctc-adv-big { padding: 6px 9px 0; font-size: 17px; font-weight: 700; }
+.ctc-adv-bands { display: grid; gap: 3px; padding: 2px 9px 4px; }
+.ctc-adv-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 12px; }
+.ctc-adv-bar { height: 8px; border-radius: 5px; background: var(--ct-line); overflow: hidden; }
+.ctc-adv-bar i { display: block; height: 100%; background: var(--ct-violet); }
+.ctc-adv-bar i.best { background: var(--ok); }
+.ctc-map-box { flex: 1 1 0; min-height: 160px; }
+.ctc-map { flex: 1; min-height: 110px; width: calc(100% - 16px); margin: 6px 8px; border: 1px solid var(--ct-line); border-radius: 8px; background: color-mix(in srgb, var(--ct-cyan) 4%, var(--panel)); }
+.ctc-cell { fill: var(--ct-line); }
+.ctc-cell.is-call { cursor: pointer; }
+.ctc-cell--f, .ctc-sq.f { fill: color-mix(in srgb, var(--ok) 45%, transparent); }
+.ctc-cell--n { fill: var(--warn); stroke: color-mix(in srgb, var(--warn) 60%, #fff); stroke-width: 0.3; vector-effect: non-scaling-stroke; }
+.ctc-cell--h { fill: color-mix(in srgb, var(--ct-cyan) 40%, transparent); }
+.ctc-cell.is-call:hover { stroke: var(--text); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.ctc-sq.n { background: var(--warn); }
+.ctc-sq.h { background: color-mix(in srgb, var(--ct-cyan) 40%, transparent); }
+.ctc-map-me { fill: var(--ct-yellow); }
+.ctc-map-row { cursor: pointer; }
+.ctc-map-row:hover { background: var(--ct-surface); }
+@media (max-width: 1100px) {
+  .ctc-adv { max-height: none; }
+}

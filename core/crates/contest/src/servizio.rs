@@ -139,6 +139,89 @@ struct Dentro {
     recenti: Vec<(String, u32, i64)>,
     /// Stazioni che hanno risposto con un rapporto in dB invece dello scambio del contest.
     non_contest: Vec<(String, i64)>,
+    /// Stazioni sentite di recente su ogni banda (solo a contest acceso), per il consiglio di banda e la mappa dei moltiplicatori.
+    sentiti: Vec<Sentito>,
+    /// Banda e modo della radio adesso (dallo stato della stazione).
+    radio: (String, String),
+    /// L'ultimo consiglio calcolato e quando: si ricalcola al piu' ogni 10 s anche con piu' pagine aperte.
+    consiglio: Option<(i64, serde_json::Value)>,
+}
+
+/// Una stazione sentita: chi trasmette, il suo locatore (se l'ha mandato), banda e modo, segnale, quando e se chiamava CQ.
+#[derive(Clone, Debug)]
+struct Sentito {
+    call: String,
+    grid: String,
+    banda: String,
+    modo: String,
+    snr: i32,
+    t: i64,
+    cq: bool,
+}
+
+/// Quanto resta in memoria una stazione sentita.
+const SENTITI_MS: i64 = 20 * 60_000;
+/// La finestra «in ascolto adesso» del consiglio e della mappa.
+const ASCOLTO_MS: i64 = 15 * 60_000;
+/// La finestra per l'affollamento (pile-up): gli ultimi 3 minuti.
+const FOLLA_MS: i64 = 3 * 60_000;
+/// Stazioni diverse in 3 minuti oltre le quali la banda e' fitta e conviene FT4.
+const FOLLA_FT4: usize = 25;
+/// Tetto delle stazioni ricordate.
+const SENTITI_MAX: usize = 3000;
+
+/// Un nominativo plausibile: lettere e cifre (e `/`), almeno una cifra e una lettera.
+fn nominativo(c: &str) -> bool {
+    (3..=12).contains(&c.len())
+        && c.chars().all(|x| x.is_ascii_alphanumeric() || x == '/')
+        && c.chars().any(|x| x.is_ascii_digit())
+        && c.chars().any(|x| x.is_ascii_alphabetic())
+}
+
+/// Chi trasmette un messaggio decodificato, il suo locatore (vuoto se non c'e') e se chiama CQ.
+fn mittente(testo: &str) -> Option<(String, String, bool)> {
+    let w: Vec<String> = testo.replace(['<', '>'], "").split_whitespace().map(str::to_ascii_uppercase).collect();
+    if w.len() < 2 {
+        return None;
+    }
+    let griglia = |g: &str| crate::geo::grid_valido(g) && g.len() == 4 && g != "RR73";
+    if w[0] == "CQ" || w[0] == "QRZ" {
+        // «CQ TEST K1ABC FN42» o «CQ K1ABC FN42»: la parola dopo CQ, se non e' un nominativo, e' la parola del CQ
+        let resto = &w[1..];
+        let call = if resto.len() >= 2 && !nominativo(&resto[0]) { &resto[1] } else { &resto[0] };
+        if !nominativo(call) {
+            return None;
+        }
+        let ultimo = resto.last().map(String::as_str).unwrap_or_default();
+        let grid = if ultimo != call && griglia(ultimo) { ultimo.to_string() } else { String::new() };
+        return Some((call.clone(), grid, true));
+    }
+    let call = &w[1];
+    if !nominativo(call) {
+        return None;
+    }
+    let grid = w.get(2).filter(|g| griglia(g)).cloned().or_else(|| w.get(3).filter(|g| w[2] == "R" && griglia(g)).cloned()).unwrap_or_default();
+    Some((call.clone(), grid, false))
+}
+
+/// Le frequenze consuete (kHz) di FT8 e FT4 per banda, quando il regolamento non ne indica.
+fn frequenza_standard(banda: &str, modo: &str) -> Option<f64> {
+    let ft4 = modo.eq_ignore_ascii_case("FT4");
+    let (ft8, f4) = match banda {
+        "160m" => (1840.0, None),
+        "80m" => (3573.0, Some(3575.5)),
+        "40m" => (7074.0, Some(7047.5)),
+        "30m" => (10136.0, Some(10140.0)),
+        "20m" => (14074.0, Some(14080.0)),
+        "17m" => (18100.0, Some(18104.0)),
+        "15m" => (21074.0, Some(21140.0)),
+        "12m" => (24915.0, Some(24919.0)),
+        "10m" => (28074.0, Some(28180.0)),
+        "6m" => (50313.0, Some(50318.0)),
+        "2m" => (144174.0, Some(144170.0)),
+        _ => return None,
+    };
+    if ft4 { f4 } else { Some(ft8) }
 }
 
 pub struct ContestService {
@@ -173,7 +256,7 @@ impl ContestService {
             stazione,
             versione: versione.to_string(),
             paese: Mutex::new(None),
-            dentro: Mutex::new(Dentro { regole, errori_regole, stato, log: Vec::new(), log_di: None, recenti: Vec::new(), non_contest: Vec::new() }),
+            dentro: Mutex::new(Dentro { regole, errori_regole, stato, log: Vec::new(), log_di: None, recenti: Vec::new(), non_contest: Vec::new(), sentiti: Vec::new(), radio: (String::new(), String::new()), consiglio: None }),
         });
         if let Ok(mut d) = s.dentro.lock() {
             s.carica_log(&mut d);
@@ -382,6 +465,9 @@ impl ContestService {
         if self.lock().stato.attivo.is_none() {
             return;
         }
+        if let Some((call, grid, cq)) = mittente(&m.text) {
+            self.nota_sentito(call, grid, cq, m.snr);
+        }
         let (mio, _) = (self.stazione)();
         if mio.is_empty() {
             return;
@@ -420,6 +506,149 @@ impl ContestService {
         if cambiato {
             self.salva_log(&d);
         }
+    }
+
+    /// Ricorda una stazione sentita sulla banda e nel modo di adesso (una riga per nominativo e banda, la piu' recente).
+    fn nota_sentito(&self, call: String, grid: String, cq: bool, snr: i32) {
+        let t = ora_ms();
+        let mut d = self.lock();
+        let (banda, modo) = d.radio.clone();
+        if banda.is_empty() {
+            return;
+        }
+        d.sentiti.retain(|x| t - x.t < SENTITI_MS);
+        if let Some(x) = d.sentiti.iter_mut().find(|x| x.call == call && x.banda == banda) {
+            // il locatore resta quello gia' visto se questo messaggio non lo porta
+            if !grid.is_empty() {
+                x.grid = grid;
+            }
+            x.modo = modo;
+            x.snr = snr;
+            x.t = t;
+            x.cq = cq;
+        } else {
+            d.sentiti.push(Sentito { call, grid, banda, modo, snr, t, cq });
+            if d.sentiti.len() > SENTITI_MAX {
+                d.sentiti.remove(0);
+            }
+        }
+    }
+
+    /// La banda e il modo della radio (dallo stato della stazione). A contest spento non si tiene niente.
+    pub fn nota_radio(&self, dial_hz: u64, modo: &str) {
+        let mut d = self.lock();
+        if d.stato.attivo.is_none() {
+            return;
+        }
+        let banda = rig_control::bands::amateur_band(dial_hz).unwrap_or_default();
+        if d.radio.0 != banda || !d.radio.1.eq_ignore_ascii_case(modo) {
+            d.radio = (banda.to_string(), modo.to_ascii_uppercase());
+        }
+    }
+
+    /// Consiglio di banda e modo: per ogni banda ammessa stazioni in ascolto, moltiplicatori nuovi, rate stimato e affollamento; la banda
+    /// migliore e il modo (FT4 se il pile-up e' fitto). Calcolato al piu' ogni 10 s. `None` a contest spento.
+    ///
+    /// Rate stimato: il piu' alto fra i QSO validi fatti su quella banda nell'ultima ora e la meta' delle stazioni non doppie sentite negli
+    /// ultimi 15 minuti riportata all'ora (x4 /2), con un tetto di 120. Punteggio della banda: rate stimato + 15 per ogni moltiplicatore
+    /// nuovo in ascolto. Una banda senza decodifiche recenti non si consiglia (non sappiamo com'e').
+    pub fn consiglio(&self) -> Option<serde_json::Value> {
+        let (_, grid) = (self.stazione)();
+        let ora = ora_ms();
+        let mut d = self.lock();
+        if d.stato.attivo.is_none() {
+            return None;
+        }
+        if let Some((t, v)) = &d.consiglio
+            && ora - t < 10_000
+        {
+            return Some(v.clone());
+        }
+        self.carica_log(&mut d);
+        let id = d.stato.attivo.clone()?;
+        let r = d.regole.iter().find(|r| r.id() == id)?.clone();
+        let ctx = self.contesto(&d, &r, &grid);
+        let (banda_ora, modo_ora) = d.radio.clone();
+        let validi: Vec<&ContestQso> = d.log.iter().filter(|q| q.stato != Stato::Errore).collect();
+        let modo_di = |m: &str| if m.is_empty() { "FT8".to_string() } else { m.to_string() };
+        let mut bande = Vec::new();
+        for b in &r.bande.ammesse {
+            let qui: Vec<&Sentito> = d.sentiti.iter().filter(|x| x.banda.eq_ignore_ascii_case(b) && ora - x.t < ASCOLTO_MS).collect();
+            let lista: Vec<(String, String, String, String)> = qui.iter().map(|x| (x.call.clone(), x.grid.clone(), b.clone(), modo_di(&x.modo))).collect();
+            let val = punteggio::valori(&r, &ctx, &d.log, &lista);
+            let non_doppi = val.iter().filter(|v| !v.doppio && !v.fuori_regola).count();
+            let mut molt: Vec<String> = val.iter().flat_map(|v| v.molt_nuovi.iter().cloned()).collect();
+            molt.sort();
+            molt.dedup();
+            let qso_ora = validi.iter().filter(|q| q.band.eq_ignore_ascii_case(b) && ora - q.time_ms < 3_600_000 && q.time_ms <= ora).count() as u32;
+            let stimato = qso_ora.max(((non_doppi * 2) as u32).min(120));
+            let folla = qui.iter().filter(|x| ora - x.t < FOLLA_MS).count();
+            let modo = if r.modo_ammesso("FT4") && folla >= FOLLA_FT4 {
+                "FT4".to_string()
+            } else if r.modo_ammesso("FT8") {
+                "FT8".to_string()
+            } else {
+                r.modi.ammessi.first().cloned().unwrap_or_default()
+            };
+            let khz = r.bande.frequenze.get(b).and_then(|f| f.iter().find(|(m, _)| m.eq_ignore_ascii_case(&modo)).map(|(_, k)| *k)).or_else(|| frequenza_standard(b, &modo));
+            let punteggio = stimato + 15 * molt.len() as u32;
+            bande.push(serde_json::json!({
+                "banda": b, "sentiti": qui.len(), "non_doppi": non_doppi, "molt_nuovi": molt, "qso_ora": qso_ora, "rate_stimato": stimato,
+                "affollamento": folla, "modo": modo, "khz": khz, "punteggio": punteggio, "dati": !qui.is_empty(),
+            }));
+        }
+        let migliore = bande
+            .iter()
+            .filter(|v| v["dati"].as_bool() == Some(true))
+            .max_by_key(|v| v["punteggio"].as_u64().unwrap_or(0))
+            .map(|v| (v["banda"].as_str().unwrap_or_default().to_string(), v["modo"].as_str().unwrap_or_default().to_string()));
+        // cambi di banda nell'ora UTC in corso, contati dal log del contest (solo se il regolamento li limita)
+        let limite = r.restrizioni.cambi_banda_ora;
+        let cambi = limite.map(|_| {
+            let inizio_ora = ora - ora.rem_euclid(3_600_000);
+            let mut nell_ora: Vec<&&ContestQso> = validi.iter().filter(|q| q.time_ms >= inizio_ora && q.time_ms <= ora).collect();
+            nell_ora.sort_by_key(|q| q.time_ms);
+            let mut ultima = validi.iter().filter(|q| q.time_ms < inizio_ora).max_by_key(|q| q.time_ms).map(|q| q.band.to_ascii_lowercase());
+            let mut n = 0u32;
+            for q in nell_ora {
+                let b = q.band.to_ascii_lowercase();
+                if ultima.as_ref().is_some_and(|u| *u != b) {
+                    n += 1;
+                }
+                ultima = Some(b);
+            }
+            n
+        });
+        let v = serde_json::json!({
+            "banda": banda_ora, "modo": modo_ora, "bande": bande,
+            "migliore": migliore.as_ref().map(|m| m.0.clone()), "modo_migliore": migliore.map(|m| m.1),
+            "cambi_banda_ora": cambi, "cambi_banda_limite": limite, "ora_ms": ora,
+        });
+        d.consiglio = Some((ora, v.clone()));
+        Some(v)
+    }
+
+    /// La mappa dei moltiplicatori di una banda: tipo del primo moltiplicatore, quelli gia' presi e le stazioni in ascolto negli ultimi
+    /// 15 minuti con il loro valore (moltiplicatori nuovi, doppio). `None` a contest spento.
+    pub fn mappa(&self, banda: &str) -> Option<serde_json::Value> {
+        let (_, grid) = (self.stazione)();
+        let ora = ora_ms();
+        let mut d = self.lock();
+        self.carica_log(&mut d);
+        let id = d.stato.attivo.clone()?;
+        let r = d.regole.iter().find(|r| r.id() == id)?.clone();
+        let ctx = self.contesto(&d, &r, &grid);
+        let tipo = r.moltiplicatori.first().map(|m| m.tipo.clone()).unwrap_or_default();
+        let lavorati = punteggio::molt_lavorati(&r, &ctx, &d.log, banda).into_iter().next().map(|(_, v)| v).unwrap_or_default();
+        let qui: Vec<Sentito> = d.sentiti.iter().filter(|x| x.banda.eq_ignore_ascii_case(banda) && ora - x.t < ASCOLTO_MS).cloned().collect();
+        let lista: Vec<(String, String, String, String)> = qui.iter().map(|x| (x.call.clone(), x.grid.clone(), banda.to_string(), if x.modo.is_empty() { "FT8".into() } else { x.modo.clone() })).collect();
+        let val = punteggio::valori(&r, &ctx, &d.log, &lista);
+        let sentiti: Vec<serde_json::Value> = qui
+            .iter()
+            .zip(val)
+            .map(|(x, v)| serde_json::json!({ "call": x.call, "grid": x.grid, "snr": x.snr, "t": x.t, "cq": x.cq, "molt_nuovi": v.molt_nuovi, "doppio": v.doppio, "punti": v.punti }))
+            .collect();
+        Some(serde_json::json!({ "banda": banda, "tipo": tipo, "griglia": tipo == "grid4" || tipo == "campo2", "mio_grid": ctx.mio_grid, "lavorati": lavorati, "sentiti": sentiti }))
     }
 
     fn contesto(&self, d: &Dentro, r: &Regole, grid: &str) -> Contesto {
@@ -530,7 +759,7 @@ impl ContestService {
         let Some(id) = d.stato.attivo.clone() else { return Vec::new() };
         let Some(r) = d.regole.iter().find(|r| r.id() == id).cloned() else { return Vec::new() };
         let ctx = self.contesto(&d, &r, &grid);
-        stazioni.iter().map(|(c, g, b, m)| punteggio::valore(&r, &ctx, &d.log, c, g, b, m)).collect()
+        punteggio::valori(&r, &ctx, &d.log, stazioni)
     }
 
     /// I moltiplicatori gia' presi su una banda.
@@ -686,6 +915,7 @@ impl ContestService {
                         }
                     }
                     Ok(Event::Decode(m)) => me.nota_decodifica(&m),
+                    Ok(Event::Status(s)) => me.nota_radio(s.dial_hz, &s.mode),
                     Ok(_) | Err(RecvError::Lagged(_)) => {}
                     Err(RecvError::Closed) => break,
                 }

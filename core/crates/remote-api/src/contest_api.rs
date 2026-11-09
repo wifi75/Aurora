@@ -173,6 +173,21 @@ pub(crate) async fn contest_lavorati(State(state): State<AppState>, _: Authed, Q
     Ok(Json(json!({ "banda": banda, "moltiplicatori": tipi })))
 }
 
+/// Consiglio di banda e modo: per ogni banda ammessa stazioni in ascolto, moltiplicatori nuovi, rate stimato, la banda e il modo migliori.
+#[utoipa::path(get, path = "/api/v1/contest/consiglio", responses((status = 200, description = "Consiglio di banda e modo"), (status = 409, description = "Nessun contest attivo (contest_off)")))]
+pub(crate) async fn contest_consiglio(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let s = service(&state)?;
+    s.consiglio().map(Json).ok_or_else(|| ApiError::new(StatusCode::CONFLICT, "contest_off"))
+}
+
+/// La mappa dei moltiplicatori di una banda: presi, e stazioni in ascolto con i moltiplicatori nuovi che darebbero.
+#[utoipa::path(get, path = "/api/v1/contest/mappa", responses((status = 200, description = "Moltiplicatori presi e stazioni in ascolto"), (status = 409, description = "Nessun contest attivo (contest_off)")))]
+pub(crate) async fn contest_mappa(State(state): State<AppState>, _: Authed, Query(q): Query<BandaQuery>) -> Result<Json<Value>, ApiError> {
+    let s = service(&state)?;
+    let banda = q.banda.filter(|b| !b.is_empty()).unwrap_or_else(|| banda_modo(&state).0);
+    s.mappa(&banda).map(Json).ok_or_else(|| ApiError::new(StatusCode::CONFLICT, "contest_off"))
+}
+
 /// Il log del contest valutato (punti, doppi, moltiplicatori aperti, stato).
 #[utoipa::path(get, path = "/api/v1/contest/log", responses((status = 200, description = "QSO del log del contest e totali")))]
 pub(crate) async fn contest_log(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
