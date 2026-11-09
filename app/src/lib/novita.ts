@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.217',
-    released: '2026-11-09T23:30:00Z',
+    released: '2026-11-09T20:20:31Z',
     kind: 'new',
     title: ["Mappa DX più chiara e paesi non confermati", "Clearer DX Map and unconfirmed countries", "Klarere DX-Karte und nicht bestätigte Länder", "Carte DX plus claire et pays non confirmés", "Mapa DX más claro y países no confirmados", "Mapa DX mais claro e países não confirmados"],
     text: [
