@@ -362,4 +362,4 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-dec-table tr.ctc-r.dup td { opacity: 0.55; }
 .ctc-dec-table tr.ctc-r.dup td:nth-child(4) { text-decoration: line-through; }
 /* decodifiche del contest: dB e Hz allineati a sinistra come i loro titoli */
-.ctc-dec-table td:nth-child(2), .ctc-dec-table td:nth-child(3) { text-align: left !important; }
+.ctc-dec-table td:nth-child(2), .ctc-dec-table td:nth-child(3), .ctc-dec-table td:nth-child(6) { text-align: left !important; }
