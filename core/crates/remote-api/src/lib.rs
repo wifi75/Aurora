@@ -65,6 +65,16 @@ pub type LogDeletedHook = Arc<dyn Fn(Option<Vec<logbook::LogEntry>>) + Send + Sy
 /// La finestra «Salva con nome» del sistema, aperta nel programma Windows: riceve il nome proposto e ritorna il file scelto
 /// (`None` = annullato). E' bloccante: si chiama fuori dal thread asincrono.
 pub type SaveFileDialog = Arc<dyn Fn(&str) -> Option<std::path::PathBuf> + Send + Sync>;
+/// La finestra «Apri file» del programma Windows (titolo, filtri): il file scelto o `None` se annullata.
+pub type OpenFileDialog = Arc<dyn Fn(&str) -> Option<std::path::PathBuf> + Send + Sync>;
+/// Il database di Log4OM2 usato per i QSO gia' fatti: `get` dice quale e da dove viene, `set` lo cambia (`None` = non usarlo piu'),
+/// controlla il file, lo ricorda nella cartella dei dati e ricarica i QSO. Le due funzioni possono leggere il disco (vanno chiamate fuori
+/// dal thread asincrono).
+#[derive(Clone)]
+pub struct Log4omDbControl {
+    pub get: Arc<dyn Fn() -> serde_json::Value + Send + Sync>,
+    pub set: Arc<dyn Fn(Option<std::path::PathBuf>) -> Result<serde_json::Value, String> + Send + Sync>,
+}
 
 /// Apre in Esplora risorse la cartella dei crash del programma Windows (solo dal PC stesso).
 pub type OpenCrashFolder = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
@@ -175,6 +185,10 @@ pub struct AppState {
     pub manual_dial: Option<ManualDialHook>,
     /// «Salva con nome» del programma Windows, per salvare il log ADIF dove si vuole (solo dal PC stesso).
     pub save_dialog: Option<SaveFileDialog>,
+    /// «Apri file» del programma Windows, per scegliere il database di Log4OM2 (solo dal PC stesso).
+    pub open_dialog: Option<OpenFileDialog>,
+    /// Il database di Log4OM2 scelto dalle Impostazioni.
+    pub log4om_db: Option<Log4omDbControl>,
     /// «Apri la cartella dei crash» (solo nel programma Windows).
     pub crash_folder: Option<OpenCrashFolder>,
     /// «Prepara il pacchetto per l'assistenza» (solo dal PC stesso).
@@ -286,7 +300,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -447,6 +461,16 @@ impl AppState {
 
     pub fn with_save_dialog_if(mut self, dialog: Option<SaveFileDialog>) -> AppState {
         self.save_dialog = dialog;
+        self
+    }
+
+    pub fn with_open_dialog_if(mut self, dialog: Option<OpenFileDialog>) -> AppState {
+        self.open_dialog = dialog;
+        self
+    }
+
+    pub fn with_log4om_db(mut self, control: Log4omDbControl) -> AppState {
+        self.log4om_db = Some(control);
         self
     }
 

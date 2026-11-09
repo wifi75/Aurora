@@ -1213,6 +1213,32 @@ export async function addLogQso(q: ManualQso): Promise<void> {
   await request('/log/qsos', jsonInit(q));
 }
 
+/** Il database di Log4OM2 per i QSO gia' fatti: percorso, da dove viene (`auto`, `chosen`, `env`, `none`), se e' bloccato da aurora.env. */
+export interface Log4omDb {
+  path: string | null;
+  exists: boolean;
+  source: 'auto' | 'chosen' | 'env' | 'none';
+  locked: boolean;
+  /** Si puo' aprire la finestra «Apri file» (programma Windows, dal PC stesso). */
+  dialog?: boolean;
+  /** QSO trovati nel file appena scelto. */
+  count?: number | null;
+}
+
+export async function getLog4omDb(): Promise<Log4omDb> {
+  return (await (await request('/log4om-db')).json()) as Log4omDb;
+}
+
+/** Cambia il database (`null` = non usarlo piu'): il core lo controlla e ricarica subito i QSO gia' fatti. */
+export async function setLog4omDb(path: string | null): Promise<Log4omDb> {
+  return (await (await request('/log4om-db', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path }) })).json()) as Log4omDb;
+}
+
+/** Apre la finestra «Apri file» del programma Windows per scegliere il database. */
+export async function chooseLog4omDb(): Promise<Log4omDb | { cancelled: true }> {
+  return (await (await request('/log4om-db/choose', { method: 'POST' })).json()) as Log4omDb | { cancelled: true };
+}
+
 export type LogSaveResult = { ok: true; cancelled: true } | { ok: true; cancelled: false; path: string; count: number };
 
 /** Salva i QSO scelti (o tutti) con la finestra «Salva con nome» del programma Windows. */

@@ -73,6 +73,7 @@ pub fn detect(places: &Places) -> Values {
 /// la cartella dei dati, quella dell'interfaccia e l'indirizzo, se nessuno li ha scelti.
 pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&str>, process_env: impl IntoIterator<Item = (String, String)>) -> Values {
     let mut v = detect(places);
+    let detected_log4om = v.get("AURORA_LOG4OM_DB").cloned();
     // il motore e' quello proprio di Aurora: ascolta l'ingresso audio e decodifica da solo, senza JTDX (`AURORA_ENGINE=jtdx` per usare JTDX)
     v.insert("AURORA_ENGINE".into(), "native".into());
     v.insert("AURORA_DATA_DIR".into(), text(data_dir));
@@ -90,6 +91,10 @@ pub fn build(places: &Places, data_dir: &Path, ui_dir: &Path, env_file: Option<&
         v.extend(parse_env_file(file));
     }
     v.extend(process_env.into_iter().filter(|(k, _)| k.starts_with("AURORA_")));
+    // il database di Log4OM2 trovato da solo (non scritto a mano): la scelta fatta nelle Impostazioni puo' sostituirlo
+    if detected_log4om.is_some() && v.get("AURORA_LOG4OM_DB") == detected_log4om.as_ref() {
+        v.insert("AURORA_LOG4OM_DB_AUTO".into(), "1".into());
+    }
     // il secondo server UDP (Log4OM2) e' una impostazione di Aurora (`settings-motore.json`); `AURORA_EXPORT_UDP` resta solo per destinatari in piu'.
     v
 }

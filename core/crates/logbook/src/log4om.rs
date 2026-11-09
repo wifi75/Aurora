@@ -92,6 +92,20 @@ pub fn worked_squares(path: &Path) -> Result<Vec<WorkedSquare>, LogError> {
     Ok(squares)
 }
 
+/// Controlla che `path` sia un database di Log4OM2: si apre in sola lettura e deve avere la tabella `Log` con le colonne che Aurora legge.
+/// Restituisce quanti QSO contiene.
+pub fn check(path: &Path) -> Result<u64, String> {
+    if !path.is_file() {
+        return Err(format!("file non trovato: {}", path.display()));
+    }
+    let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX).map_err(|e| format!("non e' un database SQLite: {e}"))?;
+    let _ = conn.busy_timeout(std::time::Duration::from_secs(2));
+    // la stessa forma che leggono `read_all` e `read_recent`
+    conn.query_row("SELECT COUNT(*) FROM Log WHERE callsign IS NOT NULL OR qsodate IS NOT NULL OR band IS NOT NULL", [], |r| r.get::<_, i64>(0))
+        .map(|n| n.max(0) as u64)
+        .map_err(|_| "non sembra un database di Log4OM2 (manca la tabella dei QSO)".to_string())
+}
+
 /// Le colonne di Log4OM2 che dicono se il QSO e' confermato (QSL cartacea, LoTW, eQSL): quelle che il file ha davvero.
 const CONFIRMATION_COLUMNS: [&str; 6] = ["qslrcvd", "qslreceived", "lotwqslrcvd", "lotwreceived", "eqslqslrcvd", "eqslreceived"];
 
