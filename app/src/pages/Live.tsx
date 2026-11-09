@@ -115,13 +115,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     }
   };
   // un QSO appena a log, con la Mappa aperta (log esterno o log interno di Aurora): si passa un attimo al Log per vedere la riga che
-  // lampeggia, poi (finita l'animazione, piu' 2 secondi) si torna alla Mappa. Non cambia la scelta ricordata.
+  // lampeggia, poi (finita l'animazione, piu' 4 secondi) si torna alla Mappa. Non cambia la scelta ricordata.
   const external = useQuery({ queryKey: ['log4om-c'], queryFn: () => getLog4om(1), refetchInterval: 60_000, retry: false }).isSuccess;
   const lastLogged = useStation((st) => st.justLogged[0]);
   useEffect(() => {
     if (!lastLogged || Date.now() - lastLogged.at > 5000 || logTab !== 'map') return;
     setLogTabState('log');
-    const back = window.setTimeout(() => setLogTabState('map'), 6600 + 2000);
+    const back = window.setTimeout(() => setLogTabState('map'), 6600 + 4000);
     return () => window.clearTimeout(back);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastLogged, external]);

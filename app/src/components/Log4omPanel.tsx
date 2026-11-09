@@ -51,9 +51,9 @@ function Log4omPanelInner() {
   const lastLogged = useStation((st) => st.justLogged[0]);
   useEffect(() => {
     if (!lastLogged || Date.now() - lastLogged.at > 5000) return;
-    const sec = Math.floor((lastLogged.time_ms % 86_400_000) / 1000);
-    const hhmm = `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
-    setFlash(`${lastLogged.call.toUpperCase()}|${hhmm}`);
+    // si riconosce dal nominativo (la prima riga con quel nominativo): l'ora scritta nel log puo' essere quella di fine QSO, un minuto
+    // dopo quella dell'evento, e con l'ora la riga non si trovava (2026-11-09, BG4UCZ: niente animazione)
+    setFlash(lastLogged.call.toUpperCase());
     const st = ringState(false);
     if (st.enabled) playSound('fanfare', st.volume);
     const timer = window.setTimeout(() => setFlash(null), FLASH_MS);
@@ -109,7 +109,7 @@ function Log4omPanelInner() {
         </thead>
         <tbody>
           {shownQsos.map((q, i) => (
-            <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && flash === `${q.call.toUpperCase()}|${q.date.slice(11, 16)}` ? 'log4om-row--flash' : undefined}>
+            <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && i === shownQsos.findIndex((x) => x.call.toUpperCase() === flash) ? 'log4om-row--flash' : undefined}>
               {/* giorno/mese e ora, senza l'anno: la data intera nel suggerimento */}
               <td className="data log4om-date" title={q.date.replace('Z', '').slice(0, 16)}>
                 {`${q.date.slice(8, 10)}/${q.date.slice(5, 7)} ${q.date.slice(11, 16)}`}
