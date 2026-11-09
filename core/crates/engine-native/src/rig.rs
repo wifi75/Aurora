@@ -85,6 +85,36 @@ static Q65_GAUSS: AtomicBool = AtomicBool::new(false);
 /// Q65: richiesta di svuotare la media dei periodi («Clear Avg»), raccolta dal motore al giro successivo.
 static Q65_CLEAR_AVG: AtomicBool = AtomicBool::new(false);
 
+/// Q65: ritardo dell'eco lunare (interruttore «q65_eme», `emedelay` di WSJT-X).
+static Q65_EME: AtomicBool = AtomicBool::new(false);
+/// Q65: deriva massima (interruttore «q65_drift»: acceso = `max_drift` 50 di WSJT-X, spento = 0).
+static Q65_DRIFT: AtomicBool = AtomicBool::new(false);
+/// Q65: lista dei messaggi dei contest (interruttore «q65_contest», `ncontest = 1` di WSJT-X).
+static Q65_CONTEST: AtomicBool = AtomicBool::new(false);
+/// Q65: i chiamanti sentiti in contest (`q65_callers.F90`), in memoria per tutto il programma come nel motore di WSJT-X.
+static Q65_CALLERS: std::sync::Mutex<Option<jt::q65::Callers>> = std::sync::Mutex::new(None);
+
+/// Ritardo EME acceso per Q65.
+pub fn q65_eme() -> bool {
+    Q65_EME.load(Ordering::Relaxed)
+}
+
+/// La deriva massima di Q65 in bin per trasmissione (`max_drift`).
+pub fn q65_max_drift() -> i32 {
+    if Q65_DRIFT.load(Ordering::Relaxed) { 50 } else { 0 }
+}
+
+/// Lista dei contest accesa per Q65.
+pub fn q65_contest() -> bool {
+    Q65_CONTEST.load(Ordering::Relaxed)
+}
+
+/// Lavora sulla lista dei chiamanti dei contest Q65.
+pub fn with_q65_callers<R>(f: impl FnOnce(&mut jt::q65::Callers) -> R) -> R {
+    let mut guard = Q65_CALLERS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    f(guard.get_or_insert_with(jt::q65::Callers::default))
+}
+
 /// Il modello dell'evanescenza scelto per Q65.
 pub fn q65_fading() -> jt::q65::Fading {
     if Q65_GAUSS.load(Ordering::Relaxed) { jt::q65::Fading::Gaussian } else { jt::q65::Fading::Lorentzian }
@@ -521,8 +551,12 @@ impl NativeControls {
     }
 
     pub(crate) fn set_switch(&self, id: &str, on: bool) {
-        if id == "q65_gauss" {
-            Q65_GAUSS.store(on, Ordering::Relaxed);
+        match id {
+            "q65_gauss" => Q65_GAUSS.store(on, Ordering::Relaxed),
+            "q65_eme" => Q65_EME.store(on, Ordering::Relaxed),
+            "q65_drift" => Q65_DRIFT.store(on, Ordering::Relaxed),
+            "q65_contest" => Q65_CONTEST.store(on, Ordering::Relaxed),
+            _ => {}
         }
         if id == "monitor" {
             self.monitor.store(on, Ordering::Relaxed);

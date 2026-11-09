@@ -73,6 +73,12 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("fox"),
     // Q65: modello dell'evanescenza gaussiano invece del lorentziano di WSJT-X (`fadingModel` di `q65_intrinsics_fastfading`)
     own_toggle("q65_gauss"),
+    // Q65: ritardo dell'eco lunare (`emedelay` di WSJT-X, «Decode after EME delay»): il sincronismo si cerca fino a 5,5 s
+    own_toggle("q65_eme"),
+    // Q65: deriva di frequenza al massimo (`max_drift = 50` di WSJT-X, W3SZ), con l'ultimo tentativo di lista raddrizzato
+    own_toggle("q65_drift"),
+    // Q65: contest NA VHF / WW Digi / ARRL Digi (`ncontest = 1`): lista dei messaggi dei chiamanti (`q65_set_list2`)
+    own_toggle("q65_contest"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),

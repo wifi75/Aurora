@@ -1008,6 +1008,10 @@ fn decode_period(
             // la frequenza di ricezione (`nfqso` di WSJT-X): il picco migliore entro 50 Hz si prova sempre, e con il DX noto vi si
             // prova la lista dei messaggi del QSO
             let rx_hz = ap.and_then(|a| a.rx_freq_hz).or_else(|| ft8_options.a8.as_ref().map(|q| q.rx_freq_hz));
+            // contest (`ncontest = 1`): i chiamanti di oggi fanno la lista dei messaggi; l'ora e' quella del periodo
+            let contest = rig::q65_contest();
+            let now = ft8_options.period_key.map_or(0, |k| (k * 15) as i64);
+            let callers = if contest { rig::with_q65_callers(|c| { c.expire(now); c.list().to_vec() }) } else { Vec::new() };
             let o = jt::q65::Options {
                 setup,
                 my_call: ap.map(|a| a.mycall.clone()).unwrap_or_default(),
@@ -1016,11 +1020,20 @@ fn decode_period(
                 rx_hz,
                 threads: ft8_options.threads,
                 fading: Some(rig::q65_fading()),
+                eme_delay: rig::q65_eme(),
+                max_drift: rig::q65_max_drift(),
+                contest,
+                callers,
                 ..jt::q65::Options::default()
             };
             // il numero del periodo dall'inizio del periodo (`period_key` conta i quarti di minuto)
             let index = ft8_options.period_key.map_or(0, |k| k * 15 / u64::from(setup.period_s));
-            jt::q65::decode_averaged(samples, &o, hashes, q65_avg, index)
+            let decoded = jt::q65::decode_averaged(samples, &o, hashes, q65_avg, index);
+            // `record_caller` di `q65_decode.f90`: ogni messaggio del contest aggiorna la lista dei chiamanti
+            if contest {
+                rig::with_q65_callers(|c| decoded.iter().for_each(|d| c.record(d.freq_hz.round() as i32, &d.text, now)));
+            }
+            decoded
                 .into_iter()
                 .map(|d| ft8::decode::Decoded { hint: d.ap > 0 || d.averaged > 1, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
                 .collect()
