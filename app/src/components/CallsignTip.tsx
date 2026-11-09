@@ -8,6 +8,14 @@ const cache = new Map<string, Promise<CallsignInfo | null>>();
 /** Le risposte gia' arrivate: il riquadro di questi nominativi si apre subito, senza attesa. */
 const ready = new Map<string, CallsignInfo | null>();
 
+/** Chi vuole sapere quando arriva una risposta (lo stato USA per «nuovo stato»). */
+export const readyListeners = new Set<() => void>();
+
+/** La risposta gia' arrivata per un nominativo, senza attendere (undefined = non ancora cercato). */
+export function knownCallsign(call: string): CallsignInfo | null | undefined {
+  return ready.get(call.toUpperCase());
+}
+
 /** Solo per le prove. */
 export function clearCallsignCache(): void {
   cache.clear();
@@ -22,6 +30,7 @@ export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
       .catch(() => null)
       .then((v) => {
         ready.set(key, v);
+        for (const f of readyListeners) f();
         return v;
       });
     cache.set(key, p);

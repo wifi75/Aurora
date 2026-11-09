@@ -92,6 +92,51 @@ pub fn worked_squares(path: &Path) -> Result<Vec<WorkedSquare>, LogError> {
     Ok(squares)
 }
 
+/// Uno stato USA gia' lavorato, con le bande.
+#[derive(Clone, Debug, serde::Serialize, PartialEq, Eq)]
+pub struct WorkedState {
+    pub state: String,
+    pub bands: Vec<String>,
+}
+
+/// Gli stati USA gia' lavorati (colonna `state` dei QSO con gli Stati Uniti: `dxcc` 291 o il paese che comincia con «United States»),
+/// per «nuovo stato» e «nuovo stato sulla banda». Vuoto se il log non ha la colonna.
+pub fn worked_states(path: &Path) -> Result<Vec<WorkedState>, LogError> {
+    let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX)?;
+    conn.busy_timeout(std::time::Duration::from_secs(2))?;
+    let columns: Vec<String> = {
+        let mut stmt = conn.prepare("PRAGMA table_info(Log)")?;
+        let names = stmt.query_map([], |r| r.get::<_, String>(1))?.collect::<Result<Vec<_>, _>>()?;
+        names.into_iter().map(|n| n.to_lowercase()).collect()
+    };
+    let has = |c: &str| columns.iter().any(|x| x == c);
+    if !has("state") {
+        return Ok(Vec::new());
+    }
+    let usa = match (has("dxcc"), has("country")) {
+        (true, true) => "(dxcc = 291 OR UPPER(country) LIKE 'UNITED STATES%')",
+        (true, false) => "dxcc = 291",
+        (false, true) => "UPPER(country) LIKE 'UNITED STATES%'",
+        (false, false) => return Ok(Vec::new()),
+    };
+    let sql = format!("SELECT DISTINCT UPPER(TRIM(state)), LOWER(COALESCE(band, '')) FROM Log WHERE {usa} AND LENGTH(TRIM(state)) = 2 ORDER BY 1");
+    let mut stmt = conn.prepare(&sql)?;
+    let mut rows = stmt.query([])?;
+    let mut out: Vec<WorkedState> = Vec::new();
+    while let Some(r) = rows.next()? {
+        let (state, band): (String, String) = (r.get(0)?, r.get(1)?);
+        match out.last_mut() {
+            Some(last) if last.state == state => {
+                if !band.is_empty() && !last.bands.contains(&band) {
+                    last.bands.push(band);
+                }
+            }
+            _ => out.push(WorkedState { state, bands: if band.is_empty() { Vec::new() } else { vec![band] } }),
+        }
+    }
+    Ok(out)
+}
+
 /// Controlla che `path` sia un database di Log4OM2: si apre in sola lettura e deve avere la tabella `Log` con le colonne che Aurora legge.
 /// Restituisce quanti QSO contiene.
 pub fn check(path: &Path) -> Result<u64, String> {

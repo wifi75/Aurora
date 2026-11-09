@@ -151,7 +151,12 @@ export interface ActivityContext {
   isToMe: (text: string) => boolean;
   /** Distanza in km dalla stazione che trasmette, se se ne conosce il locatore. */
   distance: (text: string) => number | null;
+  /** «Nuovo stato» / «nuovo stato sulla banda» (stati USA), se si sa. */
+  stateTag?: (d: DecodedMessage) => string | null;
 }
+
+/** Le pillole degli stati USA: le decide Aurora (ricerca dei nominativi e log), non il motore. */
+export const STATE_TAG_LIST = ['new_state', 'new_state_band'] as const;
 
 /**
  * Filtri propri di Attività di banda, dopo `applyFilters` (che vale anche per «CQ e novità»): novità in «o»,
@@ -168,7 +173,8 @@ export function applyActivityFilters(decodes: DecodedMessage[], filters: Filters
     if (filters.alwaysShowCalls.length > 0 && anyMatch(callOf(d.text), filters.alwaysShowCalls)) return true;
     if (tags) {
       // «CQ» comprende ogni CQ, anche quelli con un'etichetta di novità
-      const hit = (d.tag !== null && tags.has(d.tag)) || (tags.has('cq') && isCq(d.text));
+      const st = tags.has('new_state') || tags.has('new_state_band') ? ctx.stateTag?.(d) ?? null : null;
+      const hit = (d.tag !== null && tags.has(d.tag)) || (tags.has('cq') && isCq(d.text)) || (st !== null && tags.has(st));
       if (!hit) return false;
     }
     if (filters.minSnr !== null && d.snr < filters.minSnr) return false;

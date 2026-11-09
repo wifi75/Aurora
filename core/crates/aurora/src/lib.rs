@@ -1984,8 +1984,11 @@ pub async fn run(
         // i quadrati lavorati: dagli stessi log della scheda DXCC (Aurora, file ADIF, Log4OM2), anche per banda, modo e conferma (Mappa DX);
         // senza paesi caricati, solo da Log4OM2 come prima
         .with_worked_map_if(match (live_log.clone(), log4om_choice.current.read().ok().and_then(|p| p.clone())) {
-            (Some((db, worked, sources)), _) => Some(Arc::new(move || {
+            (Some((db, worked, sources)), _) => Some({
+                let log4om_now = Arc::clone(&log4om_choice.current);
+                Arc::new(move || {
                 refresh_worked(&sources, &db, &worked);
+                let states = log4om_now.read().ok().and_then(|p| p.clone()).and_then(|p| logbook::log4om::worked_states(&p).ok()).unwrap_or_default();
                 let w = worked.read().map_err(|_| "QSO gia' fatti non disponibili".to_string())?;
                 let cells = w.grid_cells();
                 let mut squares: Vec<serde_json::Value> = Vec::new();
@@ -2002,11 +2005,13 @@ pub async fn run(
                     }
                     squares.push(serde_json::json!({ "grid": grid, "count": count, "bands": bands }));
                 }
-                Ok(serde_json::json!({ "squares": squares, "cells": cells }))
-            }) as remote_api::WorkedMapProvider),
+                Ok(serde_json::json!({ "squares": squares, "cells": cells, "states": states }))
+            }) as remote_api::WorkedMapProvider
+            }),
             (None, Some(path)) => Some(Arc::new(move || {
+                let states = logbook::log4om::worked_states(&path).unwrap_or_default();
                 logbook::log4om::worked_squares(&path)
-                    .map(|squares| serde_json::json!({ "squares": squares }))
+                    .map(|squares| serde_json::json!({ "squares": squares, "states": states }))
                     .map_err(|e| e.to_string())
             }) as remote_api::WorkedMapProvider),
             // senza file dei paesi: i quadrati dal solo log di Aurora

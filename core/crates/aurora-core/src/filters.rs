@@ -159,7 +159,8 @@ impl UdpFilters {
         if self.hide_worked && d.tag == Some(DecodeTag::WorkedCall) && (self.hide_worked_all || cq) {
             return false;
         }
-        if !self.tags.is_empty() {
+        // «nuovo stato» lo decide l'interfaccia (ricerca dei nominativi): qui non conta; se e' l'unica pillola accesa non filtra
+        if self.tags.iter().any(|t| !t.starts_with("new_state")) {
             // «cq» comprende ogni CQ, anche quelli con un'etichetta di novita'
             let tagged = d.tag.is_some_and(|tag| self.tags.iter().any(|t| t == tag_name(tag)));
             if !tagged && !(cq && self.tags.iter().any(|t| t == "cq")) {

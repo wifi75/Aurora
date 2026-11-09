@@ -67,6 +67,9 @@ pub struct Person {
     /// Citta' (`addr2`).
     pub city: String,
     pub country: String,
+    /// Stato o provincia (`state` di QRZ, `us_state` di HamQTH), vuoto se il servizio non lo dice.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub state: String,
     /// Usa LoTW (`lotw` di QRZ, `lotw` di HamQTH); `None` se il servizio non lo dice.
     pub lotw: Option<bool>,
     /// Accetta eQSL (`eqsl`).
@@ -96,6 +99,9 @@ impl Person {
         }
         if self.city.is_empty() {
             self.city = other.city.clone();
+        }
+        if self.state.is_empty() {
+            self.state = other.state.clone();
         }
         if self.fname.is_empty() && self.name.is_empty() {
             self.fname = other.fname.clone();
@@ -218,6 +224,7 @@ pub fn read_person(body: &str) -> Option<Person> {
             name,
             city,
             country: get("country"),
+            state: get("us_state").to_uppercase(),
             lotw: yes_no(tag(h, "lotw")),
             eqsl: yes_no(tag(h, "eqsl")),
             direct: yes_no(tag(h, "qsldirect")),
@@ -236,6 +243,7 @@ pub fn read_person(body: &str) -> Option<Person> {
         name: get("name"),
         city: get("addr2"),
         country: get("country"),
+        state: get("state").to_uppercase(),
         lotw: yes_no(tag(c, "lotw")),
         eqsl: yes_no(tag(c, "eqsl")),
         direct: yes_no(tag(c, "mqsl")),

@@ -1,5 +1,5 @@
 import { useT, type Key } from '../i18n';
-import { CQ_TAG_LIST, useFilters } from '../lib/filters';
+import { CQ_TAG_LIST, STATE_TAG_LIST, useFilters } from '../lib/filters';
 import { ensureHighlightFor } from '../lib/highlightFor';
 
 /**
@@ -21,7 +21,7 @@ export function ActivityTagPills() {
       <button type="button" className={tags.length === 0 ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={tags.length === 0} onClick={() => set({ tags: [] })}>
         {t('bfl.all')}
       </button>
-      {CQ_TAG_LIST.map((tag) => (
+      {[...CQ_TAG_LIST, ...STATE_TAG_LIST].map((tag) => (
         <button key={tag} type="button" className={tags.includes(tag) ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={tags.includes(tag)} onClick={() => toggle(tag)}>
           {t(`kind.${tag}` as Key)}
         </button>
