@@ -2,13 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.209 - 2026-11-09
 - **Pannello Log**: linguette «Log | Mappa | RX» a destra; il titolo segue la linguetta; con «RX» la finestra RX come in WSJT-X (chi trasmette dove sta la barretta Rx, ±50 Hz, i messaggi diretti a te e le tue trasmissioni); totale «N QSO» accanto al titolo.
 - **Aspetto**: nuova scheda delle Impostazioni con tema (scuro, chiaro, automatico), «Alto contrasto» in chiaro e in scuro per una lettura piu' facile, carattere dell'interfaccia e dei dati, dimensione del testo dal 90% al 140%, colore del testo con controllo del contrasto, anteprima immediata e «Ripristina».
-
 - Stazione: il pannello Log ha le linguette «Log | Mappa»; con «Mappa» la Mappa DX compatta compare al posto del log, nello stesso spazio (la scelta si ricorda).
 - **Attivita' di banda**: pulsantino «Filtro» nella barra con le pillole delle novita' (nuovo DXCC, DXCC su banda, nuova griglia, gia' lavorata...; «Tutte» = nessun filtro), seguito anche dalle Automazioni; nella scheda Filtri una sezione completa con novita', SNR minimo, distanza minima e massima, bande, messaggi a me e mie trasmissioni.
-
-## 0.11.209 - 2026-11-09
 - **Automazioni**: in modo reale «Abilita Tx» resta acceso a fine QSO (se il motore lo spegne lo riaccendono; STOP le ferma come prima) e il motore non risponde piu' a chi ci chiama ed e' escluso da continenti, paesi o nominativi delle regole o nascosto dai filtri di Attivita' di banda; lo scarto resta nel registro delle decisioni.
 - **Automazioni**: pulsante «Automatico» nella barra in alto per accenderle o spegnerle con un clic (verde in modo reale, arancio in prova; richiesta di ON7KEC).
 
