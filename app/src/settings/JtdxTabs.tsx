@@ -10,6 +10,7 @@ import { useAlertPrefs } from '../lib/alerts';
 import { eventOfAlert, useSoundAssign, type SoundEvent } from '../lib/soundAssign';
 import { armAudio } from '../lib/soundBank';
 import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
+import { NEWDX_POSITIONS, setNewDxPos, useNewDxPos, type NewDxPos } from '../lib/newDxPos';
 import { useNotifyView, workedLook, type AlertKey, type NotifyView } from '../lib/notifyView';
 import { usePrefs, type Prefs } from '../lib/prefs';
 import { browserStorage } from '../lib/theme';
@@ -677,6 +678,8 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
           <SoundBox kinds={['my_call']} label={t('not2.soundMy')} hint={t('tip.not2.soundMy')} />
           <Check label={t('not2.popNew')} hint={t('tip.not2.popNew')} checked={view.popNew} onChange={(v) => setView({ popNew: v })} />
           <Check label={t('not2.popNewBand')} hint={t('tip.not2.popNew')} checked={view.popNewBand} onChange={(v) => setView({ popNewBand: v })} />
+          <NewDxPosPick />
+          <SoundPicker event="new_dx_popup" label={t('not2.popSound')} />
           <Check
             label={t('not2.soundFirst')}
             hint={t('tip.not2.soundFirst')}
@@ -740,5 +743,23 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
       ) : null}
       <ApplyBar draft={draft} doc={doc} />
     </Page>
+  );
+}
+
+/** Dove compare l'avviso in evidenza del DXCC nuovo. */
+function NewDxPosPick() {
+  const t = useT();
+  const pos = useNewDxPos();
+  return (
+    <label className="sw-field" title={t('tip.not2.popPos')}>
+      <span className="sw-label">{t('not2.popPos')}</span>
+      <select value={pos} onChange={(e) => setNewDxPos(e.target.value as NewDxPos)}>
+        {NEWDX_POSITIONS.map((p) => (
+          <option key={p} value={p}>
+            {t(`not2.pos.${p}` as Key)}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

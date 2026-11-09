@@ -3,7 +3,8 @@ import type { DecodedMessage } from '../api/schemas';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { useNotifyView } from '../lib/notifyView';
-import { playSound } from '../lib/soundBank';
+import { playAlert } from '../lib/voice';
+import { useNewDxPos } from '../lib/newDxPos';
 import { ringState, soundFor } from '../lib/soundAssign';
 import { senderOf } from '../lib/wishlist';
 import { useStation } from '../state/station';
@@ -14,6 +15,10 @@ const KEEP_MS = 10 * 60_000;
 const MAX = 4;
 
 /** L'ora UTC del giorno (hh:mm:ss) di una decodifica. */
+/** Le stazioni gia' mostrate e quelle chiuse: restano finche' Aurora e' aperto, anche cambiando pagina. */
+const SEEN = new Map<string, number>();
+const HIDDEN = new Set<string>();
+
 export function utcTime(timeMs: number): string {
   const sec = Math.floor((((timeMs % 86_400_000) + 86_400_000) % 86_400_000) / 1000);
   const p = (n: number) => String(n).padStart(2, '0');
@@ -40,10 +45,17 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
   const decodes = useStation((s) => s.decodes);
   const transmitting = useStation((s) => s.status?.transmitting ?? false);
   const popNew = useNotifyView((s) => s.view.popNew);
+  const pos = useNewDxPos();
   const popNewBand = useNotifyView((s) => s.view.popNewBand);
   // chiusa con la ×: non torna finche' Aurora resta aperta
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
-  const seen = useRef<Map<string, number>>(new Map());
+  // una volta sola per stazione: chi e' gia' stato mostrato non ricompare tornando sulla pagina Stazione da un'altra pagina
+  const [hidden, setHiddenState] = useState<ReadonlySet<string>>(() => new Set([...HIDDEN, ...SEEN.keys()]));
+  const setHidden = (f: (x: ReadonlySet<string>) => ReadonlySet<string>) => setHiddenState((x) => {
+    const next = f(x);
+    next.forEach((c) => HIDDEN.add(c));
+    return next;
+  });
+  const seen = useRef<Map<string, number>>(SEEN);
 
   const hits = useMemo(() => {
     if (!popNew && !popNewBand) return [] as Hit[];
@@ -70,17 +82,17 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
 
   // il suono solo quando una stazione compare (non a ogni sua nuova trasmissione); di nuovo solo dopo che e' uscita dall'avviso
   useEffect(() => {
-    let fresh = false;
+    let fresh: Hit | null = null;
     for (const hit of hits) {
       if (!seen.current.has(hit.call)) {
         seen.current.set(hit.call, Date.now());
-        fresh = true;
+        fresh ??= hit;
       }
     }
     if (!fresh) return;
     const st = ringState(transmitting);
     const id = soundFor('new_dx_popup', st);
-    if (id) playSound(id, st.volume);
+    if (id) playAlert(id, st.volume, { event: fresh.band ? 'new_dxcc_band' : 'new_dx_popup', call: fresh.call });
   }, [hits, transmitting]);
 
   // resta finche' la stazione si riceve: esce 10 minuti dopo la sua ultima ricezione (rispetto alla decodifica piu' recente)
@@ -88,7 +100,7 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
   const shown = hits.filter((h) => newest - h.last.time_ms < KEEP_MS && !hidden.has(h.call)).slice(0, MAX);
   if (shown.length === 0) return null;
   return (
-    <div className="newdx" role="alert" aria-live="assertive">
+    <div className={`newdx newdx--${pos}`} role="alert" aria-live="assertive">
       {shown.map((h) => {
         const code = flagCode(h.country ?? undefined);
         return (
