@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.209',
+    released: '2026-11-09T10:34:45Z',
+    kind: 'new',
+    title: ['Finestra RX e Automazioni più affidabili', 'RX window and more reliable Automation', 'RX-Fenster und zuverlässigere Automatik', 'Fenêtre RX et Automatisations plus fiables', 'Ventana RX y Automatizaciones más fiables', 'Janela RX e Automatizações mais fiáveis'],
+    text: [
+      "Accanto ad Attività di banda c’è la finestra RX, come in WSJT-X: i messaggi sulla tua frequenza di ricezione, quelli diretti a te e le tue trasmissioni. Le Automazioni si accendono con il pulsante «Automatico» nella barra in alto; in modo reale tengono acceso Abilita Tx e non lavorano le stazioni escluse dalle regole o dai filtri, nemmeno quando rispondono al tuo CQ.",
+      "Next to Band Activity there is the RX window, as in WSJT-X: messages on your receive frequency, those addressed to you and your transmissions. Automation is switched on with the “Auto” button in the top bar; in live mode it keeps Enable Tx on and doesn’t work stations excluded by the rules or filters, not even when they answer your CQ.",
+      "Neben der Bandaktivität gibt es das RX-Fenster wie in WSJT-X: Nachrichten auf deiner Empfangsfrequenz, an dich gerichtete und deine Aussendungen. Die Automatik schaltet man mit „Automatik“ in der oberen Leiste ein; im Echtbetrieb bleibt Senden aktivieren an und ausgeschlossene Stationen werden nicht gearbeitet, auch nicht als Antwort auf deinen CQ.",
+      "À côté de l’Activité de bande il y a la fenêtre RX, comme dans WSJT-X : les messages sur ta fréquence de réception, ceux qui te sont adressés et tes émissions. Les Automatisations s’activent avec le bouton « Auto » de la barre du haut ; en mode réel elles gardent Activer Tx allumé et ne contactent pas les stations exclues, même quand elles répondent à ton CQ.",
+      "Junto a Actividad de banda está la ventana RX, como en WSJT-X: los mensajes en tu frecuencia de recepción, los dirigidos a ti y tus transmisiones. Las Automatizaciones se encienden con el botón «Automático» de la barra superior; en modo real mantienen Habilitar Tx encendido y no trabajan las estaciones excluidas, ni siquiera cuando responden a tu CQ.",
+      "Ao lado da Atividade de banda está a janela RX, como no WSJT-X: as mensagens na tua frequência de receção, as dirigidas a ti e as tuas transmissões. As Automatizações ligam-se com o botão «Automático» da barra de cima; em modo real mantêm Ativar Tx ligado e não trabalham estações excluídas, nem quando respondem ao teu CQ.",
+    ],
+  },
+  {
     version: '0.11.208',
     released: '2026-11-09T10:13:17Z',
     kind: 'new',
