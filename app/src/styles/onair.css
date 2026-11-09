@@ -7400,3 +7400,10 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 .log-rx .decode-row { grid-template-columns: 4.6rem 2.4rem minmax(0, 1fr) 1.7rem !important; }
 .log-rx .decode-where { display: flex !important; width: auto !important; justify-content: center; }
 .log-rx .decode-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* finestra RX: anche il paese, dopo una bandierina con le sue proporzioni (non schiacciata) */
+.log-rx .decode-row { grid-template-columns: 4.6rem 2.4rem minmax(0, 1fr) minmax(5.5rem, 8rem) !important; }
+.log-rx .w-country { display: inline !important; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.log-rx .decode-where { justify-content: flex-start !important; gap: 0.35rem; min-width: 0; overflow: hidden; }
+.log-rx .w-flag, .log-rx .decode-flag { flex: 0 0 auto; width: 1.33em !important; height: 1em !important; background-size: cover; }
+/* finestra RX: il messaggio ha sempre almeno 9rem; paese in 5,5rem con i puntini se lungo */
+.log-rx .decode-row { grid-template-columns: 4.2rem 2.2rem minmax(9rem, 1fr) 5.5rem !important; }
