@@ -11,13 +11,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Fatto (2026-11-08, rami `lavoro/tci` e `lavoro/tci2`): backend CAT «TCI» (`rig-control/src/tci.rs`, protocollo letto da WSJT-X 3) con frequenza, modo, PTT, split vero e simulato, misuratori, «Accendi»/«Spegni», audio nei due sensi; ricevitore RX1/RX2 scelto nella scheda Radio (`tci_receiver`, RX2 acceso e rispento come `rx2_enable`); conferma di ogni comando con l'eco come WSJT-X (tempi dei `mysleep`, una ripetizione, poi errore); audio da trasmettere ricampionato se il server non vuole 48 kHz; PWR −/+ e TUNE dei display su `drive` e `tune`. Guida: «SDR con TCI».
 - Resta: verifica dal vivo con ExpertSDR3/Thetis (collegamento, RX2, cambio di banda e modo con l'eco, PTT, audio nei due sensi anche con `audio_samplerate` diverso da 48000, misuratori, PWR e TUNE, accensione). Lo split non e' comandato dal motore con nessun CAT (anche `HamlibRig::set_tx_audio_frequency` non ha chiamanti): resta com'e' e nascosto nella scheda Radio. La scelta del VFO A/B non c'e', come in WSJT-X: si ascolta sul VFO A del ricevitore e il VFO B serve allo split.
 
-## 18. Controlli dalla 3.2 su PSK Reporter, ALL.TXT, Wavelog, ADIF (parziale)
-
-- Fatto (2026-11-01, ramo `wsjtx-cat`): pacchetti PSK Reporter entro 952 byte; ora dello spot = periodo del messaggio con la data giusta a mezzanotte; messaggi dei periodi prima di un cambio di banda/modo segnalati con la banda di allora; prova Wavelog/Cloudlog con permesso di scrittura (`api/auth`) ed elenco delle stazioni lette dal server nel messaggio della prova; `ADIF_VER` 3.1.8 (export ed eQSL); funzione `logbook::adif::contest_fields` con le regole di `AdifQso.cpp`.
-- Fatto anche: tendina della stazione Wavelog/Cloudlog nelle Impostazioni (`settings/WavelogStationSelect.tsx`, letta dal server con `POST /api/v1/qso-upload/wavelog-stations`; senza risposta resta la casella del numero).
-- Resta: lo scambio di contest inviato (`exch_sent`) resta vuoto finche' il motore non fa la sequenza dei contest (lo scambio ricevuto e i campi ADIF sono fatti): dipende da un lavoro che non c'e' ancora, non da questa voce.
-- WSJT-X: note 3.2 «Networking, logging, and integrations», `logbook/AdifQso.cpp`.
-- Verifica: test unitari sui casi di mezzanotte e cambio banda.
 
 ## 20. Modo Fox e SuperFox trasmettitore
 
