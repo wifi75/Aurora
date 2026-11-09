@@ -146,6 +146,8 @@ export function ContestPage() {
           </>
         )}
       </div>
+      {/* contest spento: niente schede, RX/TX e frequenza (si vedono solo con un contest acceso) */}
+      {attivo ? (
       <div className="ctc-views" role="tablist">
         <span className="ctc-views-tabs">
         {(['gara', 'allena', 'analisi'] as const).map((v) => (
@@ -157,6 +159,7 @@ export function ContestPage() {
         {/* il selettore delle frequenze della pagina Stazione, sulla riga delle schede, con le sole bande ammesse dal regolamento */}
         <SelettoreBanda bande={attivo ? (s?.regole?.bande.ammesse ?? []) : []} t={t} />
       </div>
+      ) : null}
       {s?.errori_regole?.length ? <p className="ctc-note ctc-bad">{s.errori_regole.join(' · ')}</p> : null}
 
       {vista === 'allena' ? <Allenamento s={s} t={t} /> : null}
