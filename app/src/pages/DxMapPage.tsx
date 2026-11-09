@@ -459,7 +459,7 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
         homeGrid={status?.de_grid}
         labels={{ aria: t('map.aria'), you: t('dxmap.you'), moon: t('dxmap.moon'), square: t('dxmap.square'), worked: t('dxmap.worked'), never: t('dxmap.never'), cq: t('dxmap.cq'), itu: t('dxmap.itu') }}
       />
-      {bare ? null : <div className="dxmap-legendbox" aria-label={t('dxmap.legend')}>
+      {bare || inPanel ? null : <div className="dxmap-legendbox" aria-label={t('dxmap.legend')}>
         {(['qso', 'qsl', 'qsx', 'cq', 'cqdx', 'qrz'] as const).map((k) => (
           <span key={k} title={t(`dxmap.code.${k}`)}>
             <i style={{ background: LIVE_COLORS[k] }} />
