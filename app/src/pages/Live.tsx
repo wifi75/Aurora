@@ -44,7 +44,9 @@ import { useT } from '../i18n';
 import { applyActivityFilters, applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
-import { armAudio, playSound } from '../lib/soundBank';
+import { armAudio } from '../lib/soundBank';
+import { playAlert } from '../lib/voice';
+import { loadWorkedStates, prefetchUsStations, stateTag, useUsStates } from '../lib/usStates';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
@@ -130,6 +132,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const activityBand = status?.dial_hz ? bandOf(status.dial_hz) : null;
   const deCall = status?.de_call;
   const deGrid = status?.de_grid;
+  const statesVersion = useUsStates((s) => s.version + (s.loaded ? 1e9 : 0));
   const activity = useMemo(() => {
     const mine = deGrid ? gridCenter(deGrid) : null;
     return applyActivityFilters(shown, filters, {
@@ -140,8 +143,17 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const theirs = grid ? gridCenter(grid) : null;
         return mine && theirs ? distanceKm(mine, theirs) : null;
       },
+      stateTag: (d) => stateTag(d, activityBand),
     });
-  }, [shown, filters, activityBand, deCall, deGrid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown, filters, activityBand, deCall, deGrid, statesVersion]);
+  // stati USA: servono solo con una delle due pillole accese
+  const wantStates = filters.tags.includes('new_state') || filters.tags.includes('new_state_band');
+  useEffect(() => {
+    if (!wantStates) return;
+    loadWorkedStates();
+    prefetchUsStations(shown);
+  }, [wantStates, shown]);
   const [tagPills, setTagPills] = useState(false);
   const alerts = useAlertPrefs((s) => s.prefs);
 
@@ -162,12 +174,12 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       const st = ringState(transmitting);
       const picked = pickSoundEvent(state.decodes, lastId, st, state.status?.de_call, state.status?.dx_call);
       lastId = picked.lastId;
-      if (picked.sound) playSound(picked.sound, st.volume);
+      if (picked.sound) playAlert(picked.sound, st.volume, { event: picked.event ?? undefined, call: picked.call });
       // «Mio messaggio in trasmissione»: una riga Tx nuova
       const txTop = state.txLog[0]?.id ?? null;
       if (lastTx !== undefined && txTop !== null && txTop !== lastTx) {
         const id = soundFor('tx_msg', st);
-        if (id) playSound(id, st.volume);
+        if (id) playAlert(id, st.volume, { event: 'tx_msg' });
       }
       lastTx = txTop;
     });

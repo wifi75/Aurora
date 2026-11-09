@@ -234,6 +234,11 @@ export const stationStrings = {
     'Na fila: respondes-lhe assim que o QSO em curso for registado.',
   ],
   'row.queued': ['IN CODA', 'QUEUED', 'WARTET', 'EN FILE', 'EN COLA', 'NA FILA'],
+  'kind.new_state': ['Nuovo stato (USA)', 'New state (USA)', 'Neuer Staat (USA)', 'Nouvel État (USA)', 'Nuevo estado (EE. UU.)', 'Novo estado (EUA)'],
+  'kind.new_state_band': ['Stato sulla nuova banda (USA)', 'State on a new band (USA)', 'Staat auf neuem Band (USA)', 'État sur une nouvelle bande (USA)', 'Estado en banda nueva (EE. UU.)', 'Estado numa banda nova (EUA)'],
+  'txq.jump': ['Passa subito a {call}: lascia il QSO in corso e risponde a lui', 'Switch to {call} now: leave the current QSO and answer them', 'Sofort zu {call} wechseln: laufendes QSO verlassen und antworten', 'Passer tout de suite à {call} : quitte le QSO en cours et lui répond', 'Pasar ya a {call}: deja el QSO en curso y le responde', 'Passar já a {call}: deixa o QSO em curso e responde-lhe'],
+  'txq.next': ['Prossimo della coda: {call}', 'Next in queue: {call}', 'Nächster in der Warteschlange: {call}', 'Suivant dans la file : {call}', 'Siguiente en la cola: {call}', 'Próximo na fila: {call}'],
+  'txq.notHeard': ['{call} non è più tra i messaggi ricevuti', '{call} is no longer among the received messages', '{call} ist nicht mehr unter den Empfangenen', "{call} n'est plus parmi les messages reçus", '{call} ya no está entre los mensajes recibidos', '{call} já não está entre as mensagens recebidas'],
   'tip.row.queuedPos': ['In coda, posto {n}: le risponderai appena finito il QSO in corso. Tasto destro di nuovo per toglierla.', 'Queued, position {n}: you will answer it as soon as the current QSO ends. Right-click again to remove it.', 'Warteschlange, Platz {n}: du antwortest nach dem laufenden QSO. Erneut rechtsklicken zum Entfernen.', 'En file, place {n} : tu lui répondras dès la fin du QSO en cours. Clic droit à nouveau pour la retirer.', 'En cola, puesto {n}: le responderás al terminar el QSO en curso. Clic derecho otra vez para quitarla.', 'Na fila, lugar {n}: vais responder-lhe assim que acabar o QSO em curso. Clique direito outra vez para a tirar.'],
   'tx.alert.unrepresentable': [
     'Messaggio non trasmesso: «{text}» non si rappresenta esattamente in FT8/FT4 (nominativo, prefisso o rapporto). Trasmissione spenta.',

@@ -1,7 +1,7 @@
 import { DxPill } from './DxPill';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getControls, postControl, postHalt, postTxMessage, postTxText } from '../api/client';
+import { getControls, postControl, postHalt, postReply, postTxMessage, postTxText } from '../api/client';
 import { toast } from '../lib/toast';
 import type { DecodedMessage, StationStatus, TxAlert } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -25,6 +25,20 @@ interface Props {
 }
 
 /** Il testo di un avviso di sicurezza della trasmissione. */
+/** Passa subito a una stazione della coda: si risponde al suo ultimo messaggio (meglio se diretto a noi). */
+export function jumpToQueued(call: string, me: string | undefined, t: ReturnType<typeof useT>): void {
+  const words = (text: string) => text.toUpperCase().split(/\s+/).map((w) => w.replace(/[<>]/g, ''));
+  const mine = (me ?? '').toUpperCase();
+  const decodes = useStation.getState().decodes;
+  const from = decodes.filter((d) => words(d.text).includes(call.toUpperCase()));
+  const target = from.find((d) => mine !== '' && words(d.text)[0] === mine) ?? from[0];
+  if (!target) {
+    toast(t('txq.notHeard', { call }), 'error');
+    return;
+  }
+  postReply(target.id).catch((e) => toast(replyErrorMessage(e, t), 'error'));
+}
+
 export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
   if (a.kind === 'high_swr') return t('tx.alert.highSwr', { swr: (a.value ?? 0).toFixed(1), limit: (a.limit ?? 0).toFixed(1) });
   if (a.kind === 'fox_detected') return t('tx.alert.foxDetected', { call: a.detail || '—', hz: Math.round(a.value ?? 0) });
@@ -168,12 +182,15 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
             {status.queue && status.queue.length > 0 ? (
               <span className="tx-queue tx-queue--side" title={`${t('tip.tx.queue')}: ${status.queue.join(', ')}`}>
                 {status.queue.slice(0, 4).map((call, i) => (
-                  <span key={call} className="tx-queue-item" title={t('tip.row.queuedPos', { n: i + 1 })}>
+                  <button type="button" key={call} className="tx-queue-item tx-queue-jump" title={t('txq.jump', { call })} onClick={() => jumpToQueued(call, status.de_call ?? undefined, t)}>
                     <span className="queue-dot">{i + 1}</span>
                     <span className="data">{call}</span>
-                  </span>
+                  </button>
                 ))}
               </span>
+            ) : null}
+            {status.queue && status.queue.length > 0 ? (
+              <button type="button" className="tx-queue-next" title={t('txq.next', { call: (status.queue?.[0] ?? "") })} aria-label={t('txq.next', { call: (status.queue?.[0] ?? "") })} onClick={() => jumpToQueued((status.queue?.[0] ?? ""), status.de_call ?? undefined, t)}>»</button>
             ) : null}
             {/* accanto al DX: RX verde in ascolto; in onda TX rosso lampeggiante, ed e' anche lo STOP (un clic ferma la trasmissione) */}
             {status.transmitting ? (

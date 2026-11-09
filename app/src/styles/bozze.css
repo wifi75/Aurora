@@ -1316,3 +1316,23 @@ html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: 
 .cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 13px !important; }
 /* UTC altri 5 px a sinistra (margine destro 18 px) */
 .cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 18px !important; }
+/* coda TX cliccabile e pulsantino » per il prossimo */
+.tx-queue-jump { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; font: inherit; }
+.tx-queue-jump:hover .data { color: var(--accent, #8e7bff); text-decoration: underline; }
+.dock-panel--tx .tx-dx .tx-queue-next { flex: none; margin-left: 4px; width: 16px; height: 16px; padding: 0; line-height: 14px; font-size: 12px; font-weight: 700; border: 1px solid var(--line, #2a3a55); border-radius: 4px; background: transparent; color: var(--text-muted); cursor: pointer; align-self: flex-start; margin-top: 2px; }
+.dock-panel--tx .tx-dx .tx-queue-next:hover { color: var(--text); border-color: var(--accent, #8e7bff); }
+.dock-panel--tx .tx-dx .tx-queue-next + .rxtx-flag { margin-left: 8px !important; }
+/* mappa: pulsantini + e − piccoli e discreti */
+.leaflet-control-zoom.leaflet-bar { border: 1px solid var(--line, #2a3a55) !important; box-shadow: none !important; border-radius: 5px; overflow: hidden; }
+.leaflet-control-zoom.leaflet-bar a { width: 18px !important; height: 18px !important; line-height: 17px !important; font-size: 13px !important; background: rgba(7, 11, 20, 0.75) !important; color: var(--text-muted, #9fb0c4) !important; border-bottom-color: var(--line, #2a3a55) !important; }
+.leaflet-control-zoom.leaflet-bar a:hover { color: var(--text, #e6edf3) !important; }
+/* mappa del pannello Log: nominativi accanto alle stazioni, nel colore della novita' */
+.leaflet-tooltip.dxmap-call { background: rgba(7, 11, 20, 0.78); border: 0; box-shadow: none; padding: 0 4px; border-radius: 3px; font: 600 10.5px/14px "JetBrains Mono", Consolas, monospace; color: var(--call-color, #e6edf3); cursor: pointer; pointer-events: auto; }
+.leaflet-tooltip.dxmap-call::before { display: none; }
+.leaflet-tooltip.dxmap-call--cq { outline: 1px solid var(--call-color, #e6edf3); }
+/* avviso DXCC nuovo: posizione scelta nelle Impostazioni */
+.newdx.newdx--top-left { right: auto; left: 16px; }
+.newdx.newdx--top-center { right: auto; left: 50%; transform: translateX(-50%); }
+.newdx.newdx--bottom-right { top: auto; bottom: 16px; }
+.newdx.newdx--bottom-left { top: auto; bottom: 16px; right: auto; left: 16px; }
+.newdx.newdx--bottom-center { top: auto; bottom: 16px; right: auto; left: 50%; transform: translateX(-50%); }

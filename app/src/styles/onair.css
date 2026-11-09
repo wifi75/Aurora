@@ -7481,3 +7481,9 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .auto-switch--dry { color: #2b1700 !important; background: #ffb340 !important; }
 .auto-switch--live { color: #04201c !important; background: #2cf5a4 !important; }
 .auto-switch:hover { filter: brightness(1.1); }
+
+/* Finestra RX: bandierina e paese 10 punti piu' a destra */
+.dock-panel--rx .decode-list .decode-row .decode-where { position: relative; left: 10px; }
+/* finestra RX: la colonna del messaggio tiene anche la mia riga Tx (nominativo evidenziato e «×N») senza i puntini */
+.log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem 9.8rem minmax(0, 1fr) !important; }
+.log-rx .decode-row--tx .decode-text .tx-rep { margin-left: 0.2rem; }
