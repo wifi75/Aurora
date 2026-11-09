@@ -96,6 +96,11 @@ pub fn run_tci_feed(rows: broadcast::Sender<SpectrumRow>, events: broadcast::Sen
                             if level.state == aurora_core::LevelState::Low {
                                 level.state = aurora_core::LevelState::Good;
                             }
+                            // anche «muto»: la soglia del silenzio e' per le schede audio; con il TCI e' muto solo se arrivano zeri veri
+                            // (issue #9: l'avviso compariva con l'audio TCI che decodificava)
+                            if level.state == aurora_core::LevelState::Silent && level.peak > 0.0 {
+                                level.state = aurora_core::LevelState::Good;
+                            }
                             let _ = events.send(Event::AudioLevel(level));
                         }
                         for bins in analyzer.push(&samples) {
