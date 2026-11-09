@@ -366,6 +366,10 @@ impl ContestService {
     /// Una decodifica: chi abbiamo appena messo a log e ripete lo scambio (non ha ricevuto il nostro RR73) diventa «incerto»; il suo
     /// RR73/73 lo rimette valido. Chi risponde con un rapporto in dB a un contest con scambio diverso si segna come «non fa il contest».
     pub fn nota_decodifica(&self, m: &DecodedMessage) {
+        // a contest spento non si fa niente (niente lavoro a ogni decodifica)
+        if self.lock().stato.attivo.is_none() {
+            return;
+        }
         let (mio, _) = (self.stazione)();
         if mio.is_empty() {
             return;

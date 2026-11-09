@@ -117,15 +117,24 @@ export function ContestPage() {
   return (
     <section className="ctc">
       <div className="ctc-score" role="region" aria-label={t('contest.title')}>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!attivo}
+          className={attivo ? 'ctc-toggle ctc-toggle--on' : 'ctc-toggle'}
+          disabled={!attivo && !scelto}
+          title={t(attivo ? 'tip.contest.toggleOff' : 'tip.contest.toggleOn')}
+          onClick={() => (attivo ? void fine() : void attiva(scelto))}
+        >
+          <span className="ctc-toggle-knob" aria-hidden="true" />
+          {t(attivo ? 'contest.toggleOn' : 'contest.toggleOff')}
+        </button>
         <SceltaContest elenco={s?.contest ?? []} valore={attivo ?? scelto} t={t} onScegli={(id) => (attivo ? void attiva(id) : setScelto(id))} />
         <DateContest c={(s?.contest ?? []).find((c) => c.id === (attivo ?? scelto))} finestra={attivo ? s?.finestra : undefined} t={t} />
         {attivo && s ? (
           <BarraPunteggio s={s} t={t} />
         ) : (
           <>
-            <button type="button" className="ctc-btn ctc-btn--on" disabled={!scelto} title={t('tip.contest.activate')} onClick={() => void attiva(scelto)}>
-              {t('contest.activate')}
-            </button>
             <span className="ctc-muted">{t('contest.none')}</span>
             <button type="button" className="ctc-btn" style={{ marginLeft: 'auto' }} title={t('tip.contest.calendar')} onClick={() => setModale('calendario')}>
               {t('contest.calendar')}

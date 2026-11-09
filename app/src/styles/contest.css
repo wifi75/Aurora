@@ -205,3 +205,13 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc { position: relative; }
 .ctc-beta { position: fixed; right: 0; bottom: 0; width: 120px; height: 120px; overflow: hidden; pointer-events: none; z-index: 30; }
 .ctc-beta span { position: absolute; right: -38px; bottom: 22px; width: 170px; transform: rotate(-45deg); text-align: center; padding: 3px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #fff; background: rgb(245 140 30 / 0.72); box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }
+
+/* interruttore del contest: si vede subito se e' acceso (verde) o spento */
+.ctc-toggle { display: inline-flex; align-items: center; gap: 0.5rem; height: 2rem; padding: 0 0.8rem 0 0.3rem; border-radius: 999px; border: 1px solid var(--line, #33415c); background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.ctc-toggle:disabled { opacity: 0.5; cursor: default; }
+.ctc-toggle-knob { position: relative; width: 2.2rem; height: 1.25rem; border-radius: 999px; background: #3a4560; transition: background-color .15s ease-out; }
+.ctc-toggle-knob::after { content: ''; position: absolute; top: 0.15rem; left: 0.15rem; width: 0.95rem; height: 0.95rem; border-radius: 50%; background: #fff; transition: transform .15s ease-out; }
+.ctc-toggle--on { border-color: #2cf5a4; color: #2cf5a4; }
+.ctc-toggle--on .ctc-toggle-knob { background: #2cf5a4; }
+.ctc-toggle--on .ctc-toggle-knob::after { transform: translateX(0.95rem); }
+@media (prefers-reduced-motion: reduce) { .ctc-toggle-knob, .ctc-toggle-knob::after { transition: none; } }

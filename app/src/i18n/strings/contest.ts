@@ -1,5 +1,23 @@
 /** Pagina Contest. [it, en, de, fr, es, pt] */
 export const contestStrings = {
+  'contest.toggleOn': ['Contest acceso', 'Contest on', 'Contest an', 'Contest activé', 'Concurso activo', 'Concurso ligado'],
+  'contest.toggleOff': ['Contest spento', 'Contest off', 'Contest aus', 'Contest désactivé', 'Concurso apagado', 'Concurso desligado'],
+  'tip.contest.toggleOn': [
+    'Accende il contest scelto: sequenza di contest, scambio, punteggio e log del contest. Finché è acceso ogni QSO va anche nel log del contest.',
+    'Turns on the chosen contest: contest sequence, exchange, score and contest log. While it is on every QSO also goes into the contest log.',
+    'Schaltet den gewählten Contest ein: Contest-Ablauf, Austausch, Punkte und Contest-Log. Solange er an ist, landet jedes QSO auch im Contest-Log.',
+    'Active le concours choisi : séquence, échange, score et log du concours. Tant qu’il est actif, chaque QSO va aussi dans le log du concours.',
+    'Activa el concurso elegido: secuencia, intercambio, puntuación y log del concurso. Mientras está activo cada QSO va también al log del concurso.',
+    'Liga o concurso escolhido: sequência, troca, pontuação e log do concurso. Enquanto estiver ligado cada QSO vai também para o log do concurso.',
+  ],
+  'tip.contest.toggleOff': [
+    'Spegne il contest: tornano la sequenza e le impostazioni normali e i QSO non vanno più nel log del contest.',
+    'Turns the contest off: the normal sequence and settings come back and QSOs no longer go into the contest log.',
+    'Schaltet den Contest aus: normaler Ablauf und Einstellungen kehren zurück, QSOs gehen nicht mehr ins Contest-Log.',
+    'Désactive le concours : la séquence et les réglages normaux reviennent et les QSO ne vont plus dans le log du concours.',
+    'Apaga el concurso: vuelven la secuencia y los ajustes normales y los QSO ya no van al log del concurso.',
+    'Desliga o concurso: voltam a sequência e as definições normais e os QSO deixam de ir para o log do concurso.',
+  ],
   'nav.contest': ['Contest', 'Contest', 'Contest', 'Contest', 'Concurso', 'Concurso'],
   'tip.nav.contest': [
     'Contest in FT8/FT4: sequenza di contest, doppi, moltiplicatori, punteggio, rate e Cabrillo in un solo programma.',

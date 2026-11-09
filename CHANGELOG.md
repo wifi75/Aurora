@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+- **Contest e Fox**: interruttore verde «acceso / spento» ben visibile; a contest spento i QSO non vanno nel log del contest e il servizio non lavora sulle decodifiche.
+- **Impostazioni**: scheda «CQ e novità» tutta sua (prima era dentro Filtri); scheda Frequenze con i comandi in alto, tabella alta quanto la finestra e righe fitte.
+- **Novità**: le etichette «su nuova banda» si chiamano «su nuova banda o modo» (valgono anche per modo con «per modo» in Segnalazioni).
+
 - **Esporta log**: «Salva Cabrillo…» accanto a «Salva ADIF…» (Cabrillo 3.0 con frequenza, data, ora, rapporto e locatore inviati e ricevuti).
 - **Q65**: deriva di frequenza (max_drift di W3SZ), ritardo EME fino a 5,5 s nel sincronismo e lista dei messaggi dei contest (q65_set_list2), con i pulsanti «EME», «Deriva» e «Cont» accanto a «Lor/Gau».
 

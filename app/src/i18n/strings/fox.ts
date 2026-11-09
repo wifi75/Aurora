@@ -40,7 +40,7 @@ export const foxStrings = {
   'fox.enableTx': ['Abilita Tx', 'Enable Tx', 'Tx aktivieren', 'Activer Tx', 'Habilitar Tx', 'Ativar Tx'],
   'fox.offHint': ['Premi «Accendi Fox», poi Abilita Tx: Aurora chiama CQ nei periodi pari e qui compaiono le stazioni che ti chiamano.', 'Press “Turn Fox on”, then Enable Tx: Aurora calls CQ in even periods and the stations calling you appear here.', 'Drücke „Fox einschalten“, dann Tx aktivieren: Aurora ruft CQ in geraden Perioden und die anrufenden Stationen erscheinen hier.', 'Appuie sur « Activer Fox », puis Activer Tx : Aurora lance CQ dans les périodes paires et les stations qui t’appellent apparaissent ici.', 'Pulsa «Activar Fox» y luego Habilitar Tx: Aurora llama CQ en los periodos pares y aquí aparecen las estaciones que te llaman.', 'Carrega em «Ligar Fox» e depois Ativar Tx: o Aurora chama CQ nos períodos pares e aqui aparecem as estações que te chamam.'],
   'fox.on': ['Fox acceso', 'Fox on', 'Fox an', 'Fox actif', 'Fox activo', 'Fox ligado'],
-  'fox.off': ['Accendi Fox', 'Turn Fox on', 'Fox einschalten', 'Activer Fox', 'Activar Fox', 'Ligar Fox'],
+  'fox.off': ['Fox spento', 'Fox off', 'Fox aus', 'Fox inactif', 'Fox apagado', 'Fox desligado'],
   'fox.slots': ['Posti', 'Slots', 'Plätze', 'Places', 'Ranuras', 'Posições'],
   'fox.moreCqs': ['Più CQ', 'More CQs', 'Mehr CQs', 'Plus de CQ', 'Más CQ', 'Mais CQ'],
   'fox.cq': ['CQ verso', 'CQ to', 'CQ an', 'CQ vers', 'CQ a', 'CQ para'],

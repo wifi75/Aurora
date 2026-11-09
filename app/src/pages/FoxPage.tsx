@@ -1,3 +1,4 @@
+import '../styles/contest.css';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { postControl, postFox } from '../api/client';
@@ -151,7 +152,8 @@ export function FoxPage() {
         </div>
         <div className="foxc-cmdbar" role="toolbar" aria-label={t('fox.commands')}>
           <div className="foxc-main-actions">
-            <button type="button" className={`foxc-btn${fox.enabled ? ' foxc-btn--accent' : ''}`} aria-pressed={fox.enabled} title={t('tip.fox.power')} disabled={!!contestBlock && !fox.enabled} onClick={() => void postControl('fox', !fox.enabled)}>
+            <button type="button" role="switch" aria-checked={fox.enabled} className={fox.enabled ? 'ctc-toggle ctc-toggle--on' : 'ctc-toggle'} title={t('tip.fox.power')} disabled={!!contestBlock && !fox.enabled} onClick={() => void postControl('fox', !fox.enabled)}>
+              <span className="ctc-toggle-knob" aria-hidden="true" />
               {fox.enabled ? t('fox.on') : t('fox.off')}
             </button>
             <button type="button" className={`foxc-btn${txOn ? ' foxc-btn--tx' : ''}`} aria-pressed={txOn} title={t('tip.fox.enableTx')} onClick={() => toggleTx(!txOn)}>

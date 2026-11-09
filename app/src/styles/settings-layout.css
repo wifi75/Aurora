@@ -1836,3 +1836,15 @@
 /* prima «Controlla ora», poi lo stato («Aurora e' aggiornata») */
 .upd-status-row .upd-buttons { order: -1; }
 .sw-scale { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+/* Frequenze: comandi sopra la tabella, tabella alta quanto la finestra (niente riquadro piccolo con lo scorrimento), righe fitte */
+.freq-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; }
+.freq-bar .glass--on { margin-left: auto; }
+.sx-tablewrap--scroll.freq-wrap { max-height: calc(100vh - 13.5rem); }
+.freq-tab { width: 100%; }
+.freq-tab td { padding-top: 0.15rem; padding-bottom: 0.15rem; vertical-align: middle; }
+.freq-tab td:nth-child(5), .freq-tab th:nth-child(5) { text-align: center; width: 6.5rem; }
+.freq-tab td:last-child, .freq-tab th:last-child { width: 2.6rem; text-align: center; }
+.freq-tab td select, .freq-tab td input[type='number'] { min-height: 1.85rem; max-width: none; }
+.freq-del { min-width: 1.8rem; min-height: 1.8rem; padding: 0; font-size: 0.8rem; opacity: 0.7; }
+.freq-del:hover:not(:disabled) { opacity: 1; color: #ff8a80; border-color: #ff8a80; }

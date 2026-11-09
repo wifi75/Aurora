@@ -4,7 +4,7 @@ import { getFrequencies, getFrequencyDefaults, putFrequencies, type FrequencyEnt
 import { useT, type Key } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { Help } from './common';
-import { Actions, Group, Message, Notes, Page } from './layout';
+import { Group, Message, Notes, Page } from './layout';
 import { useSettings } from './NativeSettings';
 import { useAutosave } from './useAutosave';
 
@@ -46,8 +46,21 @@ export function FrequenciesTab() {
   return (
     <Page>
       <Group title={t('tab.frequencies')} span={2}>
-        <div className="sx-tablewrap sx-tablewrap--scroll">
-          <table className="sx-table sx-table--compact">
+        <div className="freq-bar">
+          <button title={t('tip.ui.add')} type="button" className="glass" onClick={() => setDraft([...rows, { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true }])}>
+            {t('freq.addRow')}
+          </button>
+          <button title={t('tip.ui.reset')} type="button" className="glass" disabled={defaults.isPending} onClick={() => defaults.mutate()}>
+            {t('freq.reset')}
+          </button>
+          <button title={t('tip.ui.save')} type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
+            {t('set.save')}
+          </button>
+        </div>
+        {save.isError ? <Message kind="alert">{t('freq.invalid')}</Message> : null}
+        {defaults.isError ? <Message kind="alert">{t('set.loadError')}</Message> : null}
+        <div className="sx-tablewrap sx-tablewrap--scroll freq-wrap">
+          <table className="sx-table sx-table--compact freq-tab">
             <thead>
               <tr>
                 <th scope="col">{t('freq.band')}</th>
@@ -103,8 +116,8 @@ export function FrequenciesTab() {
                       <input title={t('tip.ui.freqPreferred')} type="checkbox" aria-label={t('freq.preferred')} checked={r.preferred} onChange={(e) => change(i, { preferred: e.target.checked })} />
                     </td>
                     <td>
-                      <button title={t('tip.ui.remove')} type="button" className="glass" aria-label={`${t('set.remove')} ${r.band} ${r.mode} ${(r.hz / 1e6).toFixed(3)}`} onClick={() => setDraft(rows.filter((_, k) => k !== i))}>
-                        {t('set.remove')}
+                      <button title={t('tip.ui.remove')} type="button" className="glass freq-del" aria-label={`${t('set.remove')} ${r.band} ${r.mode} ${(r.hz / 1e6).toFixed(3)}`} onClick={() => setDraft(rows.filter((_, k) => k !== i))}>
+                        ✕
                       </button>
                     </td>
                   </tr>
@@ -113,21 +126,6 @@ export function FrequenciesTab() {
             </tbody>
           </table>
         </div>
-      </Group>
-      <Group title={t('lay.actions')}>
-        <Actions>
-          <button title={t('tip.ui.add')} type="button" className="glass" onClick={() => setDraft([...rows, { band: '20m', mode: 'FT8', hz: 14_074_000, region: 'ALL', preferred: true }])}>
-            {t('freq.addRow')}
-          </button>
-          <button title={t('tip.ui.reset')} type="button" className="glass" disabled={defaults.isPending} onClick={() => defaults.mutate()}>
-            {t('freq.reset')}
-          </button>
-          <button title={t('tip.ui.save')} type="button" className="glass glass--on" disabled={!draft} onClick={() => draft && save.mutate(draft)}>
-            {t('set.save')}
-          </button>
-        </Actions>
-        {save.isError ? <Message kind="alert">{t('freq.invalid')}</Message> : null}
-        {defaults.isError ? <Message kind="alert">{t('set.loadError')}</Message> : null}
       </Group>
       <Notes>
         <Help>{t('freq.help')}</Help>
