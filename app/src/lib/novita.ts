@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.206',
-    released: '2026-11-09T08:01:09Z',
+    released: '2026-11-09T08:04:56Z',
     kind: 'fixed',
     title: ['Nessun Aurora vecchio rimasto acceso', 'No old Aurora left running', 'Kein altes Aurora läuft mehr weiter', 'Plus d’ancien Aurora resté ouvert', 'Ningún Aurora antiguo sigue abierto', 'Nenhum Aurora antigo fica aberto'],
     text: [
