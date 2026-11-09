@@ -3,7 +3,7 @@
 ## Non rilasciato
 
 - **Regione IARU**: al primo avvio, se e' ancora «Tutte», si imposta da sola dal nominativo (IU3WJQ -> Regione 1); nelle Impostazioni ogni regione dice a cosa corrisponde (1 Europa, Africa, Medio Oriente, Russia; 2 Americhe; 3 Asia e Oceania).
-- **OmniRig**: scelta della radio Rig 1 o Rig 2 nella scheda Radio, per chi ha due radio in OmniRig (frequenza e PTT; richiesta di IK1SOW).
+- **OmniRig**: scelta della radio Rig 1 o Rig 2 nella scheda Radio e con il blocchetto «RIG 1 / RIG 2» a sinistra del display, nei colori dello stile del display (frequenza e PTT; richiesta di IK1SOW).
 
 - **Meno lavoro inutile**: le riletture del log che arrivano insieme si uniscono (dopo un QSO se ne facevano quattro, ognuna con decine di migliaia di QSO); niente confronto con JTDX quando JTDX non c'e' (una riga e una scrittura ogni periodo); registrazioni WAV di ogni periodo spente di base (circa 144 MB e una scrittura ogni 15 s, si riaccendono con AURORA_NATIVE_RECORD=1).
 

@@ -16,12 +16,25 @@ import { RadioDisplay } from './RadioDisplay';
 import { useQuery } from '@tanstack/react-query';
 import { getCat } from '../../api/client';
 import { SetupCta } from '../SetupCta';
+import { RigSwitch } from './RigSwitch';
 
 /**
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
  * indicatori cliccabili, per leggerlo bene. Sul telefono niente zoom. Con "Nascondi il display" non c'e' affatto.
  */
 export function RadioDisplayHeader({ solo = false }: { solo?: boolean } = {}) {
+  const pref = useRadioDisplay((s) => s.pref);
+  const inner = <RadioDisplayHeaderInner solo={solo} />;
+  // con OmniRig il blocchetto Rig 1 / Rig 2 sta a sinistra del display, nello stesso stile
+  return (
+    <div className="rd-with-rig">
+      {!pref.hidden ? <RigSwitch style={pref.style} /> : null}
+      {inner}
+    </div>
+  );
+}
+
+function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const detached = useGroups().some((g) => g.open && g.items.includes('display'));
   const phone = usePhone();
   const pref = useRadioDisplay((s) => s.pref);

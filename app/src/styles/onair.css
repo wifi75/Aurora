@@ -7309,3 +7309,22 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
   font-weight: 600;
   cursor: pointer;
 }
+
+/* OmniRig: Rig 1 / Rig 2 a sinistra del display, nei colori dello stile del display */
+.rd-with-rig { display: flex; align-items: stretch; gap: 0.35rem; }
+.rd-rigsw { --rs-bg: #0b1424; --rs-line: #2a3a5c; --rs-ink: #7fd8ff; --rs-on: #7fd8ff; --rs-on-ink: #06121f;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.25rem 0.3rem;
+  border: 1px solid var(--rs-line); border-radius: 6px; background: var(--rs-bg); color: var(--rs-ink); }
+.rd-rigsw-label { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em; opacity: 0.8; }
+.rd-rigsw-btn { width: 1.6rem; height: 1.15rem; padding: 0; border: 1px solid var(--rs-line); border-radius: 3px; background: transparent; color: var(--rs-ink);
+  font: inherit; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
+.rd-rigsw-btn:hover { border-color: var(--rs-on); }
+.rd-rigsw-btn--on { background: var(--rs-on); border-color: var(--rs-on); color: var(--rs-on-ink); }
+.rd-rigsw--fluorescent { --rs-bg: #06141a; --rs-line: #1d4a52; --rs-ink: #5ff6e6; --rs-on: #5ff6e6; --rs-on-ink: #032024; }
+.rd-rigsw--amber { --rs-bg: #140b02; --rs-line: #5a3a0c; --rs-ink: #ffb340; --rs-on: #ffb340; --rs-on-ink: #241300; }
+.rd-rigsw--led, .rd-rigsw--ledline { --rs-bg: #120404; --rs-line: #5a1414; --rs-ink: #ff4a3a; --rs-on: #ff4a3a; --rs-on-ink: #200404; }
+.rd-rigsw--analog { --rs-bg: #f1e7cf; --rs-line: #a08a5c; --rs-ink: #3a2c12; --rs-on: #3a2c12; --rs-on-ink: #f1e7cf; }
+.rd-rigsw--color { --rs-bg: #0e1630; --rs-line: #34508e; --rs-ink: #9fd0ff; --rs-on: #ffd23f; --rs-on-ink: #1a1400; }
+.rd-rigsw--ft2000, .rd-rigsw--yaesuq { --rs-bg: #0a0d10; --rs-line: #3a4048; --rs-ink: #ffa63a; --rs-on: #ffa63a; --rs-on-ink: #1c0f00; }
+.rd-rigsw--ic7610, .rd-rigsw--icdual, .rd-rigsw--icblue, .rd-rigsw--icblueq { --rs-bg: #04122e; --rs-line: #1f4a9a; --rs-ink: #8fd2ff; --rs-on: #8fd2ff; --rs-on-ink: #04122e; }
+.rd-rigsw--icblackq { --rs-bg: #050608; --rs-line: #2c3138; --rs-ink: #e8eef6; --rs-on: #e8eef6; --rs-on-ink: #050608; }
