@@ -769,8 +769,8 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
           </button>
           {/* Tx/Rx Split: lo stesso controllo della Stazione e della Fox */}
           <TxQuickControls splitOnly inline />
-          <button type="button" className="ctc-btn ctc-btn--stop" onClick={() => void postHalt()}>
-            STOP TX
+          <button type="button" className="ctc-btn ctc-btn--stop" title={t('tip.txStop')} onClick={() => void postHalt()}>
+            STOP TX <kbd className="ctc-kbd">Esc</kbd>
           </button>
         </div>
         {migliori.length ? (
