@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.215',
+    released: '2026-11-09T22:00:00Z',
+    kind: 'new',
+    title: ["Nuovo stato in Auto e pagina Contest più ordinata", "New state in Auto and a tidier Contest page", "Neuer Staat in Auto und aufgeräumte Contest-Seite", "Nouvel État dans Auto et page Contest plus nette", "Nuevo estado en Auto y página Contest más ordenada", "Novo estado no Auto e página Contest mais arrumada"],
+    text: [
+      "Le Automazioni rispondono anche a «nuovo stato» USA; lo stato si salva nel log. Pagina Contest più ordinata: colonne fisse con griglia, selettore delle frequenze, moltiplicatori a tessere; nel log del contest entrano solo i QSO fatti dalla pagina Contest durante la gara, chi non fa il contest vale 0 punti e si chiude con i messaggi normali; tasto destro sul log. Nuova voce degli avvisi a licenza libera.",
+      "Automation now also answers US «new state»; the state is saved in the log. Tidier Contest page: fixed columns with grid, frequency selector, multiplier tiles; the contest log only takes QSOs made from the Contest page during the race, non-contest stations score 0 and can be closed with normal messages; right-click on the log. New, freely licensed alert voice.",
+      "Die Automatik antwortet jetzt auch auf US-«neuer Staat»; der Staat wird im Log gespeichert. Aufgeräumte Contest-Seite: feste Spalten mit Raster, Frequenzwahl, Multiplikatoren als Kacheln; ins Contest-Log kommen nur QSOs von der Contest-Seite während des Contests, Nicht-Teilnehmer zählen 0 und lassen sich mit normalen Meldungen beenden; Rechtsklick im Log. Neue, frei lizenzierte Stimme für Hinweise.",
+      "Les Automatisations répondent aussi au « nouvel État » US ; l’État est enregistré au journal. Page Contest plus nette : colonnes fixes avec grille, sélecteur de fréquence, multiplicateurs en tuiles ; le journal du contest ne prend que les QSO faits depuis la page Contest pendant l’épreuve, les non-participants valent 0 et se terminent avec les messages normaux ; clic droit sur le journal. Nouvelle voix des alertes sous licence libre.",
+      "Las Automatizaciones responden también a «nuevo estado» de EE. UU.; el estado se guarda en el log. Página Contest más ordenada: columnas fijas con cuadrícula, selector de frecuencia, multiplicadores en fichas; el log del concurso solo recoge los QSO hechos desde la página Contest durante la prueba, quien no participa vale 0 y se cierra con mensajes normales; clic derecho en el log. Nueva voz de avisos con licencia libre.",
+      "As Automatizações respondem também a «novo estado» dos EUA; o estado fica guardado no log. Página Contest mais arrumada: colunas fixas com grelha, seletor de frequência, multiplicadores em mosaico; o log do concurso só recebe os QSO feitos a partir da página Contest durante a prova, quem não participa vale 0 e fecha-se com mensagens normais; clique direito no log. Nova voz dos alertas com licença livre.",
+    ],
+  },
+  {
     version: '0.11.214',
     released: '2026-11-09T17:00:23Z',
     kind: 'new',

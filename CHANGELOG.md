@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.215 - 2026-11-09
+- **Nuovo stato nelle Automazioni**: «Nuovo stato (USA)» e «Stato sulla nuova banda (USA)» anche come regole di Auto.
+- **Stato nel log**: lo stato del corrispondente si salva nel log di Aurora (dalla ricerca QRZ/HamQTH e dagli ADIF importati) e va nel record ADIF; gli stati lavorati uniscono il log di Aurora e Log4OM.
+- **Contest**: nel log del contest entrano solo i QSO avviati dalla pagina Contest e fatti durante la gara (quelli di prima si tolgono da soli); chi non fa il contest entra non valido a 0 punti e il Cabrillo lo scarta; riga per chiudere il QSO con i messaggi normali; tasto destro sul log (valido, incerto, non in contest).
+- **Pagina Contest**: colonne fisse con griglia e titoli a sinistra, selettore delle frequenze accanto alle schede, bande del consiglio cliccabili, QSO e log a sinistra, moltiplicatori a tessere, «Consigli e ritmo» compatto.
+- **Voce degli avvisi**: frasi rifatte con Kokoro (licenza libera Apache 2.0), voci femminili; il tedesco usa le frasi inglesi.
+- **DX Cluster**: tolta la riga «Radio portata su…» sopra la tabella.
+
 ## 0.11.214 - 2026-11-09
 - **Mappa nel pannello Log**: nominativi accanto alle stazioni nel colore della novita', clic per chiamare, zoom (rotella e +/-), trascinamento; si pulisce a ogni cambio di frequenza.
 - **Coda TX**: i nominativi in coda si cliccano per passare subito a loro; il pulsantino » passa al primo della coda.
