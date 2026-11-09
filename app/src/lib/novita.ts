@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.213',
-    released: '2026-11-09T18:00:00Z',
+    released: '2026-11-09T16:00:08Z',
     kind: 'fixed',
     title: ['Continenti da escludere e aggiornamento dal tray più pulito', 'Continents to exclude and a cleaner tray update', 'Kontinente ausschließen und saubereres Update aus dem Tray', 'Continents à exclure et mise à jour depuis la barre plus propre', 'Continentes para excluir y actualización desde la bandeja más limpia', 'Continentes a excluir e atualização pela bandeja mais limpa'],
     text: [
