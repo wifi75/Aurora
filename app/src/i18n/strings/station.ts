@@ -451,12 +451,12 @@ export const stationStrings = {
   ],
   'mode.q65drift': ['Deriva', 'Drift', 'Drift', 'Dérive', 'Deriva', 'Deriva'],
   'tip.mode.q65drift': [
-    'Deriva di frequenza (Max Drift 50 di WSJT-X): segue i segnali che scivolano in frequenza, ma decodifica solo attorno alla frequenza di ricezione.',
-    'Frequency drift (WSJT-X Max Drift 50): follows signals that slide in frequency, but decodes only around the receive frequency.',
-    'Frequenzdrift (Max Drift 50 von WSJT-X): folgt driftenden Signalen, dekodiert aber nur um die Empfangsfrequenz.',
-    'Dérive de fréquence (Max Drift 50 de WSJT-X) : suit les signaux qui glissent, mais ne décode qu’autour de la fréquence de réception.',
-    'Deriva de frecuencia (Max Drift 50 de WSJT-X): sigue las señales que se desplazan, pero decodifica solo alrededor de la frecuencia de recepción.',
-    'Deriva de frequência (Max Drift 50 do WSJT-X): segue os sinais que deslizam, mas descodifica só à volta da frequência de receção.',
+    'Deriva massima di frequenza (Max Drift di WSJT-X), da 0 a 50 a passi di 5; 0 = spenta. Segue i segnali che scivolano in frequenza, ma decodifica solo attorno alla frequenza di ricezione.',
+    'Maximum frequency drift (WSJT-X Max Drift), 0 to 50 in steps of 5; 0 = off. Follows signals that slide in frequency, but decodes only around the receive frequency.',
+    'Maximaler Frequenzdrift (Max Drift von WSJT-X), 0 bis 50 in Fünferschritten; 0 = aus. Folgt driftenden Signalen, dekodiert aber nur um die Empfangsfrequenz.',
+    'Dérive de fréquence maximale (Max Drift de WSJT-X), de 0 à 50 par pas de 5 ; 0 = désactivée. Suit les signaux qui glissent, mais ne décode qu’autour de la fréquence de réception.',
+    'Deriva de frecuencia máxima (Max Drift de WSJT-X), de 0 a 50 en pasos de 5; 0 = apagada. Sigue las señales que se desplazan, pero decodifica solo alrededor de la frecuencia de recepción.',
+    'Deriva de frequência máxima (Max Drift do WSJT-X), de 0 a 50 em passos de 5; 0 = desligada. Segue os sinais que deslizam, mas descodifica só à volta da frequência de receção.',
   ],
   'mode.q65contest': ['Cont', 'Cont', 'Cont', 'Conc', 'Conc', 'Conc'],
   'tip.mode.q65contest': [

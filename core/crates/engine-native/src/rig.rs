@@ -62,6 +62,9 @@ pub struct SavedControls {
     /// Sottomodo di Q65 (0 = A ... 4 = E). Nei file scritti prima manca (A).
     #[serde(default)]
     pub q65_sub: u8,
+    /// Deriva massima di Q65 (0-50 a passi di 5, «Max Drift» di WSJT-X). Nei file scritti prima manca: vale l'interruttore «q65_drift» (acceso = 50).
+    #[serde(default)]
+    pub q65_max_drift: Option<u8>,
 }
 
 fn default_q65_period() -> u32 {
@@ -87,8 +90,8 @@ static Q65_CLEAR_AVG: AtomicBool = AtomicBool::new(false);
 
 /// Q65: ritardo dell'eco lunare (interruttore «q65_eme», `emedelay` di WSJT-X).
 static Q65_EME: AtomicBool = AtomicBool::new(false);
-/// Q65: deriva massima (interruttore «q65_drift»: acceso = `max_drift` 50 di WSJT-X, spento = 0).
-static Q65_DRIFT: AtomicBool = AtomicBool::new(false);
+/// Q65: deriva massima (`max_drift` di WSJT-X, «Max Drift»): da 0 a 50 a passi di 5, 0 = spenta.
+static Q65_DRIFT: AtomicU8 = AtomicU8::new(0);
 /// Q65: lista dei messaggi dei contest (interruttore «q65_contest», `ncontest = 1` di WSJT-X).
 static Q65_CONTEST: AtomicBool = AtomicBool::new(false);
 /// Q65: i chiamanti sentiti in contest (`q65_callers.F90`), in memoria per tutto il programma come nel motore di WSJT-X.
@@ -101,7 +104,13 @@ pub fn q65_eme() -> bool {
 
 /// La deriva massima di Q65 in bin per trasmissione (`max_drift`).
 pub fn q65_max_drift() -> i32 {
-    if Q65_DRIFT.load(Ordering::Relaxed) { 50 } else { 0 }
+    i32::from(Q65_DRIFT.load(Ordering::Relaxed))
+}
+
+/// Imposta la deriva massima di Q65, portata a 0-50 e al passo di 5 piu' vicino come la tendina di WSJT-X.
+fn set_q65_max_drift(value: u32) {
+    let value = ((value.min(50) + 2) / 5 * 5) as u8;
+    Q65_DRIFT.store(value, Ordering::Relaxed);
 }
 
 /// Lista dei contest accesa per Q65.
@@ -398,6 +407,7 @@ impl NativeControls {
             jt4_sub: JT4_SUBMODE.load(Ordering::Relaxed),
             q65_period: q65_setup().period_s,
             q65_sub: q65_setup().submode,
+            q65_max_drift: Some(Q65_DRIFT.load(Ordering::Relaxed)),
         }
     }
 
@@ -426,6 +436,9 @@ impl NativeControls {
         self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
         set_q65(saved.q65_period, saved.q65_sub);
+        if let Some(drift) = saved.q65_max_drift {
+            self.set_value("q65_drift", u32::from(drift));
+        }
         if let Ok(mut memory) = self.levels.lock() {
             memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
         }
@@ -554,7 +567,14 @@ impl NativeControls {
         match id {
             "q65_gauss" => Q65_GAUSS.store(on, Ordering::Relaxed),
             "q65_eme" => Q65_EME.store(on, Ordering::Relaxed),
-            "q65_drift" => Q65_DRIFT.store(on, Ordering::Relaxed),
+            // l'interruttore acceso senza un valore scelto vale 50 (com'era prima della tendina); spento azzera
+            "q65_drift" => {
+                if !on {
+                    Q65_DRIFT.store(0, Ordering::Relaxed);
+                } else if Q65_DRIFT.load(Ordering::Relaxed) == 0 {
+                    Q65_DRIFT.store(50, Ordering::Relaxed);
+                }
+            }
             "q65_contest" => Q65_CONTEST.store(on, Ordering::Relaxed),
             _ => {}
         }
@@ -565,6 +585,29 @@ impl NativeControls {
         {
             entry.1 = on;
         }
+    }
+
+    /// Imposta un controllo a valore numerico (oggi solo «q65_drift», la deriva massima di Q65); `false` se il controllo non ha un valore.
+    pub(crate) fn set_value(&self, id: &str, value: u32) -> bool {
+        match id {
+            "q65_drift" => {
+                set_q65_max_drift(value);
+                // l'interruttore resta allineato: acceso quando la deriva e' diversa da 0
+                let on = Q65_DRIFT.load(Ordering::Relaxed) > 0;
+                if let Ok(mut all) = self.switches.lock()
+                    && let Some(entry) = all.iter_mut().find(|(name, _)| name == id)
+                {
+                    entry.1 = on;
+                }
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// I controlli a valore numerico con il valore in uso.
+    pub fn values(&self) -> Vec<(String, u32)> {
+        vec![("q65_drift".to_string(), u32::from(Q65_DRIFT.load(Ordering::Relaxed)))]
     }
 
     /// Registra gli strumenti letti dalla radio; `None` (o nessuna lettura) li spegne. Li legge `meters()` per lo stato della stazione.
@@ -817,6 +860,14 @@ impl Rig for NativeRig {
 
     fn controls(&self) -> Result<Vec<(String, bool)>, RigError> {
         Ok(self.controls.snapshot())
+    }
+
+    fn control_values(&self) -> Result<Vec<(String, u32)>, RigError> {
+        Ok(self.controls.values())
+    }
+
+    fn set_control_value(&self, id: &str, value: u32) -> Result<(), RigError> {
+        if self.controls.set_value(id, value) { Ok(()) } else { Err(RigError(format!("il controllo {id} non ha un valore"))) }
     }
 
     fn controls_and_tx(&self) -> Result<Reading, RigError> {

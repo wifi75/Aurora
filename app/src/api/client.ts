@@ -3,6 +3,7 @@ import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
 import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
+import { parseControlValues, useControlValues } from '../state/controlValues';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 
 const BASE = '/api/v1';
@@ -1229,15 +1230,23 @@ export type ControlId =
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {
-  const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>>; tx?: unknown };
+  const body = (await (await request('/controls')).json()) as { controls?: Partial<Record<ControlId, boolean>>; values?: unknown; tx?: unknown };
   // la stessa lettura porta anche i sei messaggi Tx del motore e quello selezionato
   useEngineTx.getState().set(parseEngineTx(body.tx));
+  // e i controlli a valore numerico (la deriva di Q65)
+  useControlValues.getState().set(parseControlValues(body.values));
   return body.controls ?? {};
 }
 
 /** Porta un interruttore allo stato voluto, o preme un pulsante semplice (senza `on`). */
 export async function postControl(id: ControlId, on?: boolean): Promise<void> {
   await request('/commands/control', jsonInit(on === undefined ? { id } : { id, on }));
+}
+
+/** Imposta un controllo a valore numerico del motore (la deriva massima di Q65, 0-50 a passi di 5). */
+export async function postControlValue(id: ControlId, value: number): Promise<void> {
+  await request('/commands/control', jsonInit({ id, value }));
+  useControlValues.getState().set({ ...useControlValues.getState().values, [id]: value });
 }
 
 /** I rapporti degli errori (facoltativi, spenti di fabbrica): impostazioni, identificativo anonimo, coda e crash da segnalare. */

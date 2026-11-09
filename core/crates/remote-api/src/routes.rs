@@ -1102,12 +1102,14 @@ async fn input_level_put(State(state): State<AppState>, _: Authed, Json(body): J
 #[utoipa::path(get, path = "/api/v1/controls", responses((status = 200, description = "Stato di ogni interruttore"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
-    match tokio::task::spawn_blocking(move || rig.controls_and_tx()).await {
-        Ok(Ok((list, tx))) => {
+    match tokio::task::spawn_blocking(move || rig.controls_and_tx().map(|reading| (reading, rig.control_values().unwrap_or_default()))).await {
+        Ok(Ok(((list, tx), values))) => {
             let map: serde_json::Map<String, Value> = list.into_iter().map(|(id, on)| (id, Value::Bool(on))).collect();
+            // i controlli a valore numerico (la deriva di Q65), solo nel motore proprio
+            let values: serde_json::Map<String, Value> = values.into_iter().map(|(id, v)| (id, Value::from(v))).collect();
             // i sei messaggi Tx di JTDX e quello selezionato (1-6), quando la radio li sa leggere
             let tx = tx.map(|t| json!({ "messages": t.messages, "selected": t.selected, "minute": t.minute_label, "autoseq": t.autoseq_label }));
-            Ok(Json(json!({ "controls": map, "tx": tx })))
+            Ok(Json(json!({ "controls": map, "values": values, "tx": tx })))
         }
         Ok(Err(e)) => {
             tracing::warn!("lettura dei controlli di JTDX fallita: {e}");
@@ -1121,6 +1123,8 @@ async fn controls_get(State(state): State<AppState>, _: Authed) -> Result<Json<V
 struct ControlBody {
     id: String,
     on: Option<bool>,
+    /// Valore numerico per i controlli che lo hanno (la deriva massima di Q65, 0-50): al posto di `on`.
+    value: Option<u32>,
 }
 
 /// Imposta un interruttore di JTDX o preme un suo pulsante. Accendere Abilita Tx o AutoTX puo' far trasmettere:
@@ -1128,6 +1132,22 @@ struct ControlBody {
 #[utoipa::path(post, path = "/api/v1/commands/control", responses((status = 200, description = "Fatto"), (status = 400, description = "Controllo sconosciuto o argomenti sbagliati (bad_control)"), (status = 403, description = "Trasmissione non abilitata o via non consentita"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn control_press(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<ControlBody>) -> Result<Json<Value>, ApiError> {
     let control = rig_control::controls::find(&body.id).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_control"))?;
+    // un valore numerico va solo ai controlli del motore proprio che ne hanno uno (lo verifica il motore)
+    if let Some(value) = body.value {
+        if body.on.is_some() || control.tx {
+            return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_control"));
+        }
+        let rig = state.active_rig().ok_or_else(|| ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"))?;
+        let id = control.id;
+        return match tokio::task::spawn_blocking(move || rig.set_control_value(id, value)).await {
+            Ok(Ok(())) => Ok(Json(json!({ "ok": true, "id": id, "value": value }))),
+            Ok(Err(e)) => {
+                tracing::warn!("valore del controllo {id} non impostato: {e}");
+                Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_control"))
+            }
+            Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "rig_task")),
+        };
+    }
     let wants_state = control.kind == rig_control::controls::Kind::Toggle;
     if wants_state != body.on.is_some() {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_control"));

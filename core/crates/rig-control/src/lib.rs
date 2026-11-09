@@ -64,6 +64,16 @@ pub trait Rig: Send + Sync {
         Err(RigError("comando non supportato da questa radio".into()))
     }
 
+    /// I controlli a valore numerico del motore (per esempio «q65_drift», la deriva massima di Q65): coppie nome e valore.
+    fn control_values(&self) -> Result<Vec<(String, u32)>, RigError> {
+        Ok(Vec::new())
+    }
+
+    /// Imposta un controllo a valore numerico del motore.
+    fn set_control_value(&self, _id: &str, _value: u32) -> Result<(), RigError> {
+        Err(RigError("comando non supportato da questa radio".into()))
+    }
+
     /// Gli interruttori e, se la radio li sa leggere, i sei messaggi Tx con quello selezionato, in una lettura sola.
     fn controls_and_tx(&self) -> Result<controls::Reading, RigError> {
         Ok((self.controls()?, None))
