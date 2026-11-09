@@ -98,7 +98,7 @@ impl UpdateInstaller for DesktopInstaller {
         // 2026-11-08, con la cartella di Hamlib gia' tolta). Si aspetta al massimo 30 s, poi parte comunque
         let quoted = installer.replace('\'', "''");
         let script = format!(
-            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              Start-Process -FilePath '{quoted}' -ArgumentList {}",
+            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              Start-Process -FilePath '{quoted}' -ArgumentList {}",
             installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",")
         );
         let mut launcher = Command::new("powershell");

@@ -6,6 +6,9 @@
 !macro AuroraStopRunning
   nsExec::Exec /TIMEOUT=6000 'taskkill /F /IM aurora-desktop.exe'
   Pop $0
+  ; anche il core avviato da solo (aurora.exe): il 2026-11-09 un 0.11.155 rimasto acceso teneva la porta e la finestra dopo l'aggiornamento
+  nsExec::Exec /TIMEOUT=6000 'taskkill /F /IM aurora.exe'
+  Pop $0
   ; il tempo di lasciare i file a Windows
   Sleep 500
 !macroend

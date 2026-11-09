@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- **Aggiornamento**: all'avvio, prima dell'installazione e nell'aggiornamento dall'app si chiude anche il core avviato da solo (`aurora.exe`) rimasto acceso, che teneva la porta e mostrava la versione vecchia; si chiude anche l'Aurora che non e' piu' in ascolto ma tiene connessioni aperte con la finestra.
+- **Testata**: i pulsanti della striscia di aggiornamento restano leggibili al passaggio del mouse.
+
 ## 0.11.205 - 2026-11-09
 - **Aggiornamento**: all'avvio Aurora chiude un Aurora di un'altra versione rimasto acceso sulla stessa porta (anche solo su 127.0.0.1), che si prendeva la finestra e mostrava la versione vecchia anche dopo l'aggiornamento; la finestra del programma non usa piu' il service worker e toglie quello vecchio.
 - **Aggiornamento**: il controllo si ripete ogni ora (prima ogni 3 ore) e parte 1 secondo dopo l'avvio; la locandina compare subito anche mentre la versione nuova si scarica, con il nastrino «Nuova versione» in diagonale; «Piu' tardi» vale fino alla prossima apertura.

@@ -77,10 +77,14 @@ fn image_name(_pid: u32) -> String {
 
 /// Prima che questo Aurora apra la porta, nessun altro Aurora deve tenerla: ne' in ascolto ne' con connessioni gia' aperte con la finestra
 /// (il 2026-11-09 la finestra della 0.11.205 riusava le connessioni ancora aperte con il core 0.11.155, che non era piu' in ascolto,
-/// e mostrava la versione vecchia). Si chiudono i processi `aurora-desktop` che tengono la porta dal lato server.
+/// e mostrava la versione vecchia). Si chiudono i processi `aurora` e `aurora-desktop` che tengono la porta dal lato server.
 pub fn evict(port: u16) {
     evict_answering(port);
-    let leftovers: Vec<u32> = listeners(port).into_iter().filter(|pid| image_name(*pid).eq_ignore_ascii_case("aurora-desktop.exe")).collect();
+    let leftovers: Vec<u32> = listeners(port).into_iter().filter(|pid| {
+        // il core da solo (`aurora.exe`, 2026-11-09: era lui il 0.11.155 rimasto acceso) e il programma Windows
+        let name = image_name(*pid);
+        name.eq_ignore_ascii_case("aurora.exe") || name.eq_ignore_ascii_case("aurora-desktop.exe")
+    }).collect();
     if !leftovers.is_empty() {
         tracing::warn!("sulla porta {port} un Aurora rimasto acceso (processi {leftovers:?}) teneva ancora connessioni aperte: lo chiudo");
         leftovers.into_iter().for_each(kill);
