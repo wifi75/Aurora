@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Testata**: con la versione nuova pronta la striscia diventa una pillola verde fluo «Nuova 0.11.x» con il puntino che pulsa e «Installa».
+
 ## 0.11.206 - 2026-11-09
 - **Aggiornamento**: all'avvio, prima dell'installazione e nell'aggiornamento dall'app si chiude anche il core avviato da solo (`aurora.exe`) rimasto acceso, che teneva la porta e mostrava la versione vecchia; si chiude anche l'Aurora che non e' piu' in ascolto ma tiene connessioni aperte con la finestra.
 - **Testata**: i pulsanti della striscia di aggiornamento restano leggibili al passaggio del mouse.

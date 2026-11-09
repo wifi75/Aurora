@@ -177,19 +177,21 @@ function UpdateStrip({ stage, installing, open, onToggle, onInstall, onRetry }: 
   return (
     <span className={`update-strip update-strip--${phase}`} title={tip}>
       <button type="button" className="update-strip-ver" aria-expanded={open} aria-haspopup="true" onClick={onToggle}>
-        <span aria-hidden="true">⬇</span> {stage.version}
+        {phase === 'ready' ? <span className="update-strip-dot" aria-hidden="true" /> : <span aria-hidden="true">⬇</span>} {phase === 'ready' ? `${t('upd.strip.ready')} ${stage.version}` : stage.version}
       </button>
       {showBar ? (
         <span className="update-strip-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined} aria-label={tip}>
           <span className={`update-strip-fill${moving ? ' update-strip-fill--wait' : ''}`} style={moving ? undefined : { width: `${pct}%` }} />
         </span>
       ) : null}
-      <span className="update-strip-info" role={phase === 'error' ? 'alert' : 'status'}>
-        {info}
-      </span>
+      {phase === 'ready' ? null : (
+        <span className="update-strip-info" role={phase === 'error' ? 'alert' : 'status'}>
+          {info}
+        </span>
+      )}
       {phase === 'ready' ? (
         <button type="button" className="update-strip-btn" onClick={onInstall}>
-          {t('upd.poster.install')}
+          {t('upd.strip.install')}
         </button>
       ) : null}
       {phase === 'error' ? (

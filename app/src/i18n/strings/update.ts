@@ -73,8 +73,9 @@ export const updateStrings = {
   ],
   'upd.strip.verifying': ['Controllo…', 'Checking…', 'Prüfung…', 'Contrôle…', 'Comprobando…', 'A verificar…'],
   'upd.strip.installing': ['Installo…', 'Installing…', 'Installiere…', 'Installation…', 'Instalando…', 'A instalar…'],
-  'upd.strip.ready': ['Pronto', 'Ready', 'Bereit', 'Prête', 'Lista', 'Pronta'],
+  'upd.strip.ready': ['Nuova', 'New', 'Neu', 'Nouvelle', 'Nueva', 'Nova'],
   'upd.strip.failed': ['Download non riuscito', 'Download failed', 'Download fehlgeschlagen', 'Téléchargement échoué', 'Descarga fallida', 'Descarga falhou'],
+  'upd.strip.install': ['Installa', 'Install', 'Installieren', 'Installer', 'Instalar', 'Instalar'],
   'upd.strip.retry': ['Riprova', 'Retry', 'Erneut', 'Réessayer', 'Reintentar', 'Tentar de novo'],
   'upd.installShort': ['Installazione…', 'Installing…', 'Installation…', 'Installation…', 'Instalando…', 'A instalar…'],
   'upd.installing': [

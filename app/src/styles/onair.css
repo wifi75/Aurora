@@ -7287,3 +7287,16 @@ html[data-theme='light'] .freq-picker-menu {
   opacity: 1;
   box-shadow: 0 0 0 2px rgb(255 194 102 / 0.35);
 }
+
+/* versione nuova pronta: pillola verde fluo con il puntino che pulsa (scelta del proprietario, 2026-11-09) */
+.update-strip.update-strip--ready { gap: 0.4rem; padding: 0 0.2rem 0 0.15rem; color: #062a00; background: #39ff14; border-color: #39ff14; }
+.update-strip--ready .update-strip-ver,
+.update-strip--ready .update-strip-ver:hover,
+.update-strip--ready .update-strip-ver:focus-visible { color: #062a00; background: transparent; box-shadow: none; font-weight: 700; }
+.update-strip--ready .update-strip-btn { color: #39ff14; background: #062a00; font-weight: 700; }
+.update-strip--ready .update-strip-btn:hover,
+.update-strip--ready .update-strip-btn:focus-visible { color: #062a00; background: #b6ff9e; box-shadow: 0 0 0 2px #062a00; }
+.update-strip-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #062a00; animation: update-strip-pulse 1.2s ease-in-out infinite; }
+@keyframes update-strip-pulse { 50% { opacity: 0.35; transform: scale(0.8); } }
+html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; background: #39ff14; }
+@media (prefers-reduced-motion: reduce) { .update-strip-dot { animation: none; } }
