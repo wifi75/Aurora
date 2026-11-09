@@ -129,7 +129,6 @@ export function App() {
     return <SoloWindow id={route.id} />;
   }
 
-  // la Stazione: un segnaposto, la pagina vera e' tenuta viva qui sotto (`keepLive`)
   const LIVE = <Live />;
   let content: React.ReactNode;
   if (route.name === 'pair' && session.data !== true) {
@@ -186,7 +185,6 @@ export function App() {
     content = LIVE;
   }
 
-  const keepLive = session.data === true && !REMOTE_TOUCH;
   return (
     <>
     <div className="app-shell" inert={settingsOpen ? true : undefined}>
@@ -239,16 +237,7 @@ export function App() {
       )}
       {session.data ? <WantedBar /> : null}
       <main className="app-main">
-        {/* la Stazione resta viva anche sulle altre pagine (nascosta): prima si ricostruiva da zero a ogni ritorno (cascata, pannelli,
-            mappa, liste) e il passaggio Contest -> Stazione era lento (2026-11-09) */}
-        {keepLive ? (
-          <div className="live-keep" style={content === LIVE ? undefined : { display: 'none' }}>
-            <PageGuard resetKey={route.name}>
-              <Live />
-            </PageGuard>
-          </div>
-        ) : null}
-        {keepLive && content === LIVE ? null : <PageGuard resetKey={route.name}>{content}</PageGuard>}
+        <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />

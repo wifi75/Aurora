@@ -166,7 +166,15 @@ interface Props {
   forceFlag?: boolean;
 }
 
+/** Righe disegnate al primo colpo; le altre al giro dopo. */
+const FIRST_ROWS = 40;
+
 export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false }: Props) {
+  const [firstPaint, setFirstPaint] = useState(true);
+  useEffect(() => {
+    const id = window.setTimeout(() => setFirstPaint(false), 60);
+    return () => window.clearTimeout(id);
+  }, []);
   // telefono: un tocco chiama la stazione; un secondo tocco sulla stessa riga subito dopo (o un doppio tocco) non richiama,
   // altrimenti la sequenza ripartiva a ogni richiesta e la trasmissione non partiva
   const lastTap = useRef<{ id: number; at: number } | null>(null);
@@ -349,7 +357,10 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   }
   const txRepeat = (d: DecodedMessage) => (d.id < 0 ? (txCount.get(txKey(d)) ?? 1) : 1);
   const shown = (d: DecodedMessage) => d.id >= 0 || d === pin || txNewest.get(txKey(d)) === d;
-  const rows = (view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest]).filter(shown);
+  const allRows = (view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest]).filter(shown);
+  // all'apertura della pagina si disegnano subito le righe che si vedono e le altre un attimo dopo: con 200 righe la Stazione
+  // impiegava quasi un secondo a comparire tornando dal Contest (2026-11-09)
+  const rows = firstPaint ? (view.invert ? allRows.slice(-FIRST_ROWS) : allRows.slice(0, FIRST_ROWS)) : allRows;
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
