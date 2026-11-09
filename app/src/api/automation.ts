@@ -25,6 +25,7 @@ export const AutomationStateSchema = z.object({
     excluded_countries: z.array(z.string()).default([]),
     continents: z.array(z.string()).default([]),
     continents_exclude: z.boolean().default(false),
+    filter_callers_always: z.boolean().default(false),
     auto_cq_after_min: z.number().default(0),
   }),
   limits: z.object({

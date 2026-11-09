@@ -78,6 +78,9 @@ pub struct Rules {
     /// I continenti scelti sono da escludere invece che i soli ammessi.
     #[serde(default)]
     pub continents_exclude: bool,
+    /// Anche ad Automazioni spente (CQ a mano): non rispondere a chi i filtri di Attivita' di banda e le esclusioni nascondono.
+    #[serde(default)]
+    pub filter_callers_always: bool,
     /// Dopo tanti minuti senza nessun CQ a cui rispondere Aurora chiama CQ da sola (0 = mai). Trasmette solo in modo reale.
     #[serde(default)]
     pub auto_cq_after_min: u32,
@@ -137,6 +140,7 @@ impl Default for Rules {
             excluded_countries: Vec::new(),
             continents: Vec::new(),
             continents_exclude: false,
+            filter_callers_always: false,
             auto_cq_after_min: 0,
         }
     }
@@ -767,7 +771,7 @@ impl Brain {
     /// Chi risponde al nostro CQ (anche quello automatico) e' escluso dalle regole o nascosto dai filtri di Attivita' di banda? Vale solo con le
     /// automazioni accese in modo reale; il motivo resta nel registro delle decisioni (una volta ogni dieci minuti per stazione).
     pub fn refuse_caller(&mut self, d: &DecodedMessage, call: &str, now: u64) -> Option<String> {
-        if !self.transmits() {
+        if !self.transmits() && !self.state.rules.filter_callers_always {
             return None;
         }
         let hidden = self.band_filters.as_ref().is_some_and(|f| !f.read().unwrap_or_else(|p| p.into_inner()).allows_station(d, self.own_continent.as_deref()));

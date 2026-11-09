@@ -288,6 +288,9 @@ export function AutomationTab() {
         </Block>
 
         <Block title={t('auto.b4')} tip={t('tip.auto.b4')}>
+          <label className="sw-check" title={t('tip.auto.filterCallers')}>
+            <input type="checkbox" checked={!!rules.filter_callers_always} onChange={() => edit({ filter_callers_always: !rules.filter_callers_always })} /> {t('auto.filterCallers')}
+          </label>
           <label className="sw-field" title={t('tip.auto.excluded')}>
             <span className="sw-label">{t('auto.excluded')}</span>
             <input type="text" value={rules.excluded_calls.join(', ')} onChange={(e) => edit({ excluded_calls: e.target.value.split(',').map((c) => c.trim().toUpperCase()).filter(Boolean) })} />
