@@ -433,3 +433,5 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 /* prefisso e nominativo in colonne fisse: tutti i nominativi partono dallo stesso punto */
 .ctc-mtile { grid-template-columns: 3.4em minmax(0, 1fr) !important; gap: 4px !important; }
 .ctc-mtile .ctc-mult { max-width: none; }
+/* RX/TX: testo centrato in orizzontale e in verticale dentro il quadratino */
+.ctc-freq .rxtx-flag { display: inline-flex !important; align-items: center !important; justify-content: center !important; line-height: 1 !important; box-sizing: border-box; width: 40px; padding: 0 !important; font-size: 12px; text-align: center; vertical-align: middle; }
