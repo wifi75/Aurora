@@ -369,3 +369,15 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-dec-table td:last-child, .ctc-dec-table td.ctc-new-cell { text-align: left !important; }
 .ctc-kbd { margin-left: 4px; padding: 0 4px; border: 1px solid var(--ct-line, #2a3a55); border-radius: 3px; font-size: 9.5px; opacity: 0.8; }
 .ctc-steps .ctc-kbd--row { margin-left: auto; margin-right: 8px; }
+/* legenda dei moltiplicatori compatta: una riga, pallini pieni nei colori veri delle tessere */
+.ctc-mlegend { flex-wrap: nowrap; gap: 0 9px; padding: 2px 8px 3px; font-size: 9.5px; white-space: nowrap; overflow: hidden; opacity: 0.8; }
+.ctc-mlegend span { gap: 3px; }
+.ctc-mlegend i { width: 8px; height: 8px; border-radius: 50%; border: 0; }
+.ctc-mlegend i.k-nuovo { background: var(--ct-violet, #8e7bff); }
+.ctc-mlegend i.k-altra { background: var(--warn, #ef9f27); }
+.ctc-mlegend i.k-preso { background: var(--ok, #2cf5a4); opacity: 0.6; }
+.ctc-mlegend i.k-doppio { background: #5b6b85; }
+.ctc-mlegend i.k-cq { background: transparent; border-radius: 1px; box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); }
+/* tessere: colori piu' pieni, si distinguono a colpo d'occhio */
+.ctc-mtile--nuovo { border-color: var(--ct-violet, #8e7bff) !important; background: color-mix(in srgb, var(--ct-violet, #8e7bff) 30%, transparent) !important; }
+.ctc-mtile--altra { border-color: var(--warn, #ef9f27) !important; background: color-mix(in srgb, var(--warn, #ef9f27) 28%, transparent) !important; }

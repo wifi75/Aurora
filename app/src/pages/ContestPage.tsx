@@ -1078,12 +1078,13 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
                   ))}
                 </div>
               )}
+              {/* legenda in una riga sola: pallini pieni e parole corte, la spiegazione intera passando col mouse */}
               <div className="ctc-mlegend">
-                <span><i className="ctc-mtile--nuovo" />{t('contest.mt.nuovo')}</span>
-                <span><i className="ctc-mtile--altra" />{t('contest.mt.altra')}</span>
-                <span><i className="ctc-mtile--preso" />{t('contest.mt.preso')}</span>
-                <span><i className="ctc-mtile--doppio" />{t('contest.mt.doppio')}</span>
-                <span><i className="ctc-mtile--cqk" />CQ</span>
+                <span title={t('contest.mt.nuovo')}><i className="k-nuovo" />{t('contest.mts.nuovo')}</span>
+                <span title={t('contest.mt.altra')}><i className="k-altra" />{t('contest.mts.altra')}</span>
+                <span title={t('contest.mt.preso')}><i className="k-preso" />{t('contest.mts.preso')}</span>
+                <span title={t('contest.mt.doppio')}><i className="k-doppio" />{t('contest.mts.doppio')}</span>
+                <span><i className="k-cq" />CQ</span>
               </div>
               <div className="ctc-legend">{t('contest.multTaken', { b: scelta, n: m?.lavorati.length ?? 0 })}</div>
             </div>
