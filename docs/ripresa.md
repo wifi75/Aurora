@@ -1,6 +1,13 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-08)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-09)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-09 sera
+
+- **0.11.214** pubblicata: mappa del pannello Log con nominativi e clic per chiamare, coda TX cliccabile, voce degli avvisi (frasi di Ava in `app/public/voice/<lingua>/<funzione>.mp3`, nominativo con l'alfabeto fonetico in `voice/nato/`, `lib/voice.ts`) e file audio propri (IndexedDB), avviso del DXCC nuovo una volta sola con posizione a scelta, «Nuovo stato» USA (stato da QRZ/HamQTH, stati lavorati da Log4OM, `lib/usStates.ts`), filtro di chi risponde al CQ anche senza Auto (`filter_callers_always`), conteggio delle persone (`rapporti::codice_persona`, colonna `persona` su D1 gia' aggiunta, segreto `PERSONA_SEGRETO` impostato, Worker pubblicato).
+- Le frasi della voce sono generate con la sintesi vocale di Microsoft (edge-tts, voce Ava Multilingual): controllare che le condizioni ne permettano la distribuzione.
+- **Prossimo passo**: «nuovo stato» anche nelle Automazioni (oggi solo pillole di Attivita' di banda); stato anche dal log interno di Aurora; prove del proprietario sulla 0.11.214.
+- Wrangler: con la 4.45 `d1 execute --file` fallisce con «Authentication error» (via di importazione); usare `--command`.
 
 ## Stato al 2026-11-08 mattina (passaggio ad altro account)
 
