@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Distanze**: i km sempre interi, senza decimali (nella pagina Contest comparivano con dieci cifre dopo la virgola).
+
 - **Testata**: con la versione nuova pronta la striscia diventa una pillola verde fluo «Nuova 0.11.x» con il puntino che pulsa e «Installa».
 
 ## 0.11.206 - 2026-11-09

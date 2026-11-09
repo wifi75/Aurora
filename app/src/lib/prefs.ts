@@ -71,7 +71,7 @@ export function savePrefs(storage: WritableStorage, prefs: Prefs): void {
 }
 
 export function formatDistance(km: number, unit: 'km' | 'mi'): string {
-  return unit === 'mi' ? `${Math.round(km * 0.621371)} mi` : `${km} km`;
+  return unit === 'mi' ? `${Math.round(km * 0.621371)} mi` : `${Math.round(km)} km`;
 }
 
 interface PrefsState {
