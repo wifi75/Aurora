@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
 import { getContest } from '../api/contest';
-import { getAutomation, getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getAutomation, getCat, getLog4om, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList, gridOfSender } from '../components/DecodeList';
@@ -114,6 +114,17 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       // senza archivio vale fino alla chiusura
     }
   };
+  // un QSO appena a log, con la Mappa aperta e un log esterno (Log4OM) collegato: si passa un attimo al Log per vedere la riga che
+  // lampeggia, poi (finita l'animazione, piu' 2 secondi) si torna alla Mappa. Non cambia la scelta ricordata.
+  const external = useQuery({ queryKey: ['log4om-c'], queryFn: () => getLog4om(1), refetchInterval: 60_000, retry: false }).isSuccess;
+  const lastLogged = useStation((st) => st.justLogged[0]);
+  useEffect(() => {
+    if (!lastLogged || Date.now() - lastLogged.at > 5000 || !external || logTab !== 'map') return;
+    setLogTabState('log');
+    const back = window.setTimeout(() => setLogTabState('map'), 6600 + 2000);
+    return () => window.clearTimeout(back);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastLogged, external]);
   const phone = usePhone();
   const view = useStationView();
   const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df', 'tx_enabled']);
