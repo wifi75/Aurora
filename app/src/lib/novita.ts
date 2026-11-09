@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.212',
-    released: '2026-11-09T12:37:02Z',
+    released: '2026-11-09T12:40:44Z',
     kind: 'fixed',
     title: ['Il pulsante Auto funziona', 'The Auto button works', 'Die Schaltfläche Auto funktioniert', 'Le bouton Auto fonctionne', 'El botón Auto funciona', 'O botão Auto funciona'],
     text: [
