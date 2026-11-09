@@ -66,8 +66,8 @@ enum Regola {
     Sempre,
     /// N-esimo fine settimana (`completo`: sabato e domenica nello stesso mese).
     Weekend { n: i32, completo: bool, mesi: Vec<u32> },
-    /// N-esimo giorno della settimana del mese.
-    Giorno { n: i32, giorno: u32, mesi: Vec<u32> },
+    /// Giorni della settimana del mese scelti per ordinale (`primo,secondo-mercoledi`); vuoto = ogni settimana (`ogni-giovedi`).
+    Giorno { n: Vec<i32>, giorno: u32, mesi: Vec<u32> },
 }
 
 fn leggi(regola: &str) -> Result<Regola, String> {
@@ -79,10 +79,17 @@ fn leggi(regola: &str) -> Result<Regola, String> {
     let mesi = mesi(destra).ok_or_else(|| format!("calendario.regola «{regola}»: mese sconosciuto"))?;
     let parti: Vec<&str> = sinistra.splitn(2, '-').collect();
     let [ord, resto] = parti.as_slice() else { return Err(format!("calendario.regola «{regola}» non valida")) };
-    let n = ordinale(ord).ok_or_else(|| format!("calendario.regola «{regola}»: ordinale sconosciuto"))?;
+    // «ogni» = tutte le settimane (contest settimanali); piu' ordinali separati da virgola (`primo,secondo,terzo-mercoledi`)
+    let n: Vec<i32> = if *ord == "ogni" {
+        Vec::new()
+    } else {
+        ord.split(',').map(|o| ordinale(o.trim())).collect::<Option<Vec<i32>>>().ok_or_else(|| format!("calendario.regola «{regola}»: ordinale sconosciuto"))?
+    };
     match *resto {
-        "weekend-completo" => Ok(Regola::Weekend { n, completo: true, mesi }),
-        "weekend" => Ok(Regola::Weekend { n, completo: false, mesi }),
+        "weekend-completo" | "weekend" => {
+            let [n] = n.as_slice() else { return Err(format!("calendario.regola «{regola}»: per il fine settimana serve un solo ordinale")) };
+            Ok(Regola::Weekend { n: *n, completo: *resto == "weekend-completo", mesi })
+        }
         g => {
             let giorno = GIORNI.iter().position(|x| *x == g).ok_or_else(|| format!("calendario.regola «{regola}»: giorno sconosciuto"))? as u32;
             Ok(Regola::Giorno { n, giorno, mesi })
@@ -158,11 +165,18 @@ fn ancore(r: &Regola, anno: i64) -> Vec<i64> {
                 let primo = days_from_civil(anno, m, 1);
                 let ultimo = primo + i64::from(days_in_month(anno, m)) - 1;
                 let giorni: Vec<i64> = (primo..=ultimo).filter(|d| weekday(*d) == *giorno).collect();
-                let scelto = if *n < 0 { giorni.last().copied() } else { giorni.get((*n - 1) as usize).copied() };
-                out.extend(scelto);
+                if n.is_empty() {
+                    out.extend(giorni);
+                    continue;
+                }
+                for &k in n {
+                    let scelto = if k < 0 { giorni.last().copied() } else { giorni.get((k - 1) as usize).copied() };
+                    out.extend(scelto);
+                }
             }
         }
     }
+    out.sort_unstable();
     out
 }
 

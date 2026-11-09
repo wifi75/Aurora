@@ -1,0 +1,102 @@
+# Regole del contest «VHF-UHF FT8 Activity Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Una prova per banda ogni mese: 144 MHz il primo mercoledi', 432 MHz il secondo, 1296 MHz il terzo (la data si riferisce al mercoledi').
+
+[contest]
+id = "ft8activity-eu"
+nome = "VHF-UHF FT8 Activity Contest"
+sponsor = "ft8activity"
+edizione = 2026
+url_regole = "https://ft8activity.eu/rules/"
+verificato_il = "2026-11-09"
+famiglia = "attivita"
+# da verificare: il regolamento non indica l'indirizzo di invio dei log ne' l'identificativo ADIF; la banda della prova non e' legata alla data in Aurora
+da_verificare = ["export", "bande"]
+
+[sintesi]
+it = "Primo, secondo e terzo mercoledi' del mese, 17:00-21:00 UTC. La banda cambia: 144 MHz il primo (FT8 144,174, FT4 144,170 MHz), 432 MHz il secondo (FT8 432,174, FT4 432,170 MHz), 1296 MHz il terzo (FT8 o altro modo digitale). Scambio: nominativo e locatore a 4 caratteri. 1 punto per nominativo diverso, qualunque sia il modo; moltiplicatori: locatori a 4 caratteri della prova; punteggio punti x locatori. Categorie LP (2 m fino a 100 W, 70 cm fino a 75 W, 23 cm fino a 10 W) e HP. Log ADIF, uno per banda (nominativo.adi), entro 5 giorni dalla prova."
+en = "First, second and third Wednesday of the month, 1700-2100 UTC. The band rotates: 144 MHz on the first (FT8 144.174, FT4 144.170 MHz), 432 MHz on the second (FT8 432.174, FT4 432.170 MHz), 1296 MHz on the third (FT8 or another digital mode). Exchange: callsign and 4-character locator. 1 point per different callsign, whatever the mode; multipliers: 4-character locators of the round; score points x locators. Categories LP (2 m up to 100 W, 70 cm up to 75 W, 23 cm up to 10 W) and HP. ADIF log, one per band (callsign.adi), within 5 days of the round."
+
+[calendario]
+regola = "primo,secondo,terzo-mercoledi:tutti"
+inizio = "+0 17:00"
+fine = "+0 20:59"
+
+[bande]
+ammesse = ["2m", "70cm", "23cm"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB) per modo
+[bande.frequenze]
+"2m" = { FT8 = 144174.0, FT4 = 144170.0 }
+"70cm" = { FT8 = 432174.0, FT4 = 432170.0 }
+
+[modi]
+ammessi = ["FT8", "FT4"]
+# un nominativo vale una volta sola, in FT8 o in FT4
+stesso_modo_per_doppi = false
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "si"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LP"
+nome = "Singolo operatore LP"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "SO-HP"
+nome = "Singolo operatore HP"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MO"
+nome = "Multi operatore"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[opzioni_categoria]
+potenze = ["HIGH", "LOW"]
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "adif"
+frequenza = "khz"
+invio_url = "https://ft8activity.eu/rules/"
+scadenza = "5 giorni"

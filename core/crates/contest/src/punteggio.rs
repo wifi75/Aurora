@@ -60,11 +60,15 @@ pub struct Contesto {
     pub bonus: u32,
     /// Ricerca del paese DXCC (moltiplicatori `dxcc`); senza, quei moltiplicatori non si contano.
     pub paese: Option<PaeseFn>,
+    /// Ricerca del continente (`EU`, `AS`, ... di cty.dat) per i punti `per-continente`.
+    pub continente: Option<PaeseFn>,
+    /// Il proprio nominativo (paese e continente di partenza per i punti `per-continente`).
+    pub mio_call: String,
 }
 
 impl std::fmt::Debug for Contesto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Contesto").field("mio_grid", &self.mio_grid).field("potenza_w", &self.potenza_w).field("bonus", &self.bonus).field("paese", &self.paese.is_some()).finish()
+        f.debug_struct("Contesto").field("mio_grid", &self.mio_grid).field("potenza_w", &self.potenza_w).field("bonus", &self.bonus).field("paese", &self.paese.is_some()).field("continente", &self.continente.is_some()).field("mio_call", &self.mio_call).finish()
     }
 }
 
@@ -211,6 +215,18 @@ pub fn punti_qso(r: &Regole, ctx: &Contesto, q: &ContestQso) -> (u32, f64) {
             .and_then(|f| f(&q.call))
             .and_then(|px| p.tabella.iter().find(|(k, _)| k.eq_ignore_ascii_case(&px)).map(|(_, v)| *v))
             .unwrap_or(p.fisso.max(1)),
+        // punti secondo paese e continente (YBDXPI): chiavi `stesso-paese`, `stesso-continente`, `altro-continente`; senza dati vale `fisso`
+        "per-continente" => {
+            let paese = |c: &str| ctx.paese.as_ref().and_then(|f| f(c));
+            let cont = |c: &str| ctx.continente.as_ref().and_then(|f| f(c));
+            let chiave = match (paese(&ctx.mio_call), paese(&q.call), cont(&ctx.mio_call), cont(&q.call)) {
+                (Some(a), Some(b), _, _) if a == b => Some("stesso-paese"),
+                (_, _, Some(a), Some(b)) if a == b => Some("stesso-continente"),
+                (_, _, Some(_), Some(_)) => Some("altro-continente"),
+                _ => None,
+            };
+            chiave.and_then(|k| p.tabella.get(k).copied()).unwrap_or(p.fisso.max(1))
+        }
         "distanza" => {
             if suo.is_empty() || ctx.mio_grid.is_empty() {
                 // senza locatore (FT Challenge: ZZ00) vale solo la base

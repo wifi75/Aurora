@@ -28,6 +28,10 @@ const BUILTIN: &[(&str, &str)] = &[
     ("csmi-marconi-speed", include_str!("../regole/csmi-marconi-speed.toml")),
     ("eu-ft8club-ft8", include_str!("../regole/eu-ft8club-ft8.toml")),
     ("eu-ft8club-ft4", include_str!("../regole/eu-ft8club-ft4.toml")),
+    ("ybdxpi-ft8", include_str!("../regole/ybdxpi-ft8.toml")),
+    ("ft8activity-eu", include_str!("../regole/ft8activity-eu.toml")),
+    ("ft8activity-na", include_str!("../regole/ft8activity-na.toml")),
+    ("nccc-ft4", include_str!("../regole/nccc-ft4.toml")),
     ("personalizzato", include_str!("../regole/personalizzato.toml")),
 ];
 
@@ -176,7 +180,7 @@ pub struct Doppi {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Punti {
-    /// `fisso`, `distanza`, `per-banda`, `km`.
+    /// `fisso`, `distanza`, `per-banda`, `per-paese`, `per-continente`, `km`.
     pub tipo: String,
     #[serde(default)]
     pub fisso: u32,
@@ -326,7 +330,7 @@ pub struct Export {
 const ATTIVITA: &[&str] = &["standard", "na-vhf", "arrl-digi", "ww-digi", "eu-vhf", "field-day", "roundup"];
 const CAMPI: &[&str] = &["grid4", "grid6", "rst", "snr", "seriale", "classe", "sezione", "stato", "provincia", "scambio"];
 const DOPPI: &[&str] = &["banda", "banda+modo", "banda+griglia", "log"];
-const PUNTI: &[&str] = &["fisso", "distanza", "per-banda", "per-paese", "km"];
+const PUNTI: &[&str] = &["fisso", "distanza", "per-banda", "per-paese", "per-continente", "km"];
 const MOLT: &[&str] = &["campo2", "grid4", "prefisso", "sezione", "stato", "provincia-pa", "dxcc"];
 const AMBITI: &[&str] = &["per-banda", "per-log", "per-banda-modo"];
 const FORMULE: &[&str] = &["punti*molt", "punti", "punti*potenza+bonus"];

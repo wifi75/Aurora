@@ -231,6 +231,8 @@ pub struct ContestService {
     dentro: Mutex<Dentro>,
     /// Ricerca del paese DXCC (cty.dat) per i moltiplicatori `dxcc`: la imposta chi apre il servizio.
     paese: Mutex<Option<punteggio::PaeseFn>>,
+    /// Ricerca del continente (cty.dat) per i punti `per-continente`.
+    continente: Mutex<Option<punteggio::PaeseFn>>,
 }
 
 fn ora_ms() -> i64 {
@@ -256,6 +258,7 @@ impl ContestService {
             stazione,
             versione: versione.to_string(),
             paese: Mutex::new(None),
+            continente: Mutex::new(None),
             dentro: Mutex::new(Dentro { regole, errori_regole, stato, log: Vec::new(), log_di: None, recenti: Vec::new(), non_contest: Vec::new(), sentiti: Vec::new(), radio: (String::new(), String::new()), consiglio: None }),
         });
         if let Ok(mut d) = s.dentro.lock() {
@@ -267,6 +270,11 @@ impl ContestService {
     /// Da usare per i moltiplicatori DXCC: il paese di un nominativo (prefisso principale di cty.dat).
     pub fn imposta_paese(&self, f: punteggio::PaeseFn) {
         *self.paese.lock().unwrap_or_else(|e| e.into_inner()) = Some(f);
+    }
+
+    /// Da usare per i punti `per-continente`: il continente di un nominativo (cty.dat).
+    pub fn imposta_continente(&self, f: punteggio::PaeseFn) {
+        *self.continente.lock().unwrap_or_else(|e| e.into_inner()) = Some(f);
     }
 
     fn lock(&self) -> MutexGuard<'_, Dentro> {
@@ -775,7 +783,10 @@ impl ContestService {
         let imp = imp_di(&d.stato, r);
         let g = if imp.grid6.len() == 6 && r.punti.tipo == "km" { imp.grid6.clone() } else { grid.to_string() };
         let paese = self.paese.lock().unwrap_or_else(|e| e.into_inner()).clone();
-        Contesto { mio_grid: g, potenza_w: imp.potenza_w, bonus: imp.bonus, paese }
+        let continente = self.continente.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        // il nominativo di gara se c'e', altrimenti quello della stazione
+        let mio_call = if imp.call_contest.trim().is_empty() { (self.stazione)().0 } else { imp.call_contest.trim().to_ascii_uppercase() };
+        Contesto { mio_grid: g, potenza_w: imp.potenza_w, bonus: imp.bonus, paese, continente, mio_call }
     }
 
     /// Il log del contest attivo con i numeri di ogni QSO e i totali.

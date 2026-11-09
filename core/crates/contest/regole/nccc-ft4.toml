@@ -1,0 +1,88 @@
+# Regole del contest «NCCC FT4 Sprint» (FT4 NS) per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# Ogni giovedi' alle 01:00 UTC (mercoledi' sera in Nord America), 30 minuti.
+
+[contest]
+id = "nccc-ft4"
+nome = "NCCC FT4 Sprint"
+sponsor = "NCCC"
+edizione = 2026
+url_regole = "https://www.ncccsprint.com/ft4ns.html"
+verificato_il = "2026-11-09"
+famiglia = "hf"
+# la pagina non indica punti per QSO, doppi e categorie (rimanda alle regole generali NS): qui 1 punto per QSO, un QSO per banda
+da_verificare = ["punti", "doppi", "categorie", "export"]
+
+[sintesi]
+it = "Ogni giovedi', 01:00-01:30 UTC (mercoledi' sera in Nord America). Solo FT4 da 160 a 6 m: 160 m ovunque, 3575, 7047,5, 14080, 21140, 28180, 50318 kHz; massimo 100 W. Scambio: locatore a 4 caratteri (protocollo FT4 breve NCCC). Punteggio: QSO x somma dei locatori per banda (qui 1 punto per QSO, un QSO per banda: da verificare sulle regole generali NS). Punteggi su 3830scores.com; log su LoTW per controllare i NIL."
+en = "Every Thursday, 0100-0130 UTC (Wednesday evening in North America). FT4 only, 160 to 6 m: 160 m anywhere, 3575, 7047.5, 14080, 21140, 28180, 50318 kHz; 100 W maximum. Exchange: 4-character locator (NCCC short FT4 protocol). Score: QSOs x sum of locators per band (here 1 point per QSO, one QSO per band: to be checked against the general NS rules). Scores on 3830scores.com; log to LoTW to check NILs."
+
+[calendario]
+regola = "ogni-giovedi:tutti"
+inizio = "+0 01:00"
+fine = "+0 01:29"
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m", "6m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB); 160 m: frequenza libera
+[bande.frequenze]
+"80m" = { FT4 = 3575.0 }
+"40m" = { FT4 = 7047.5 }
+"20m" = { FT4 = 14080.0 }
+"15m" = { FT4 = 21140.0 }
+"10m" = { FT4 = 28180.0 }
+"6m" = { FT4 = 50318.0 }
+
+[modi]
+ammessi = ["FT4"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["grid4"]
+ricevuto = ["grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "si"
+
+[punti]
+tipo = "fisso"
+fisso = 1
+
+[[moltiplicatori]]
+tipo = "grid4"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SO-LP"
+nome = "Single Op (100 W)"
+operatore = "SINGLE-OP"
+potenza = "LOW"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "NCCC-FT4"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "khz"
+invio_url = "https://www.3830scores.com/"
+scadenza = ""

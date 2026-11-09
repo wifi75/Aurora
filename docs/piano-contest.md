@@ -293,7 +293,7 @@ Da novembre 2026. Le date vanno confermate ogni anno.
 |---|---|---|
 | `[contest]` | `id`, `nome`, `sponsor`, `edizione`, `url_regole`, `verificato_il` | identità |
 | | `famiglia` | `hf`, `vhf`, `field-day`, `attivita` |
-| `[calendario]` | `regola` | `"primo-weekend-completo:giugno"`, `"ultimo-weekend-completo:agosto"`, `"terzo-sabato:aprile"`, `"mercoledi:1"`, `"secondo-martedi:febbraio,maggio,agosto,novembre"` |
+| `[calendario]` | `regola` | `"primo-weekend-completo:giugno"`, `"ultimo-weekend-completo:agosto"`, `"terzo-sabato:aprile"`, `"mercoledi:1"`, `"secondo-martedi:febbraio,maggio,agosto,novembre"`, `"primo,secondo,terzo-mercoledi:tutti"` (piu' ordinali), `"ogni-giovedi:tutti"` (settimanale) |
 | | `inizio`, `fine` | ora UTC e giorno relativo (`sab 18:00`, `dom 23:59`) |
 | | `date_fisse` | eccezioni per anno (`2026 = ["2026-07-18T14:00Z", "2026-07-19T14:00Z"]`) |
 | | `ore_massime_single`, `pausa_minima_min`, `pause_massime` | ARRL Digi 24/60/2; FT Challenge 24/30; IARU 6H |

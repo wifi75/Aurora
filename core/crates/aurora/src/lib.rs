@@ -1741,6 +1741,11 @@ pub async fn run(
     if let Some((db, _)) = &enrichment {
         let db = Arc::clone(db);
         contest_service.imposta_paese(Arc::new(move |call: &str| db.lookup(call).map(|l| db.entity(l.entity).prefix.clone())));
+        // punti per continente (YBDXPI): il continente del nominativo dal cty.dat
+        if let Some((db_c, _)) = &enrichment {
+            let db_c = Arc::clone(db_c);
+            contest_service.imposta_continente(Arc::new(move |call: &str| db_c.lookup(call).map(|l| db_c.entity(l.entity).continent.clone())));
+        }
     }
     if let Some(setup) = contest_service.setup()
         && bus.commands().try_send(aurora_core::Command::Contest(Some(setup))).is_err()

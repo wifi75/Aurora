@@ -1,0 +1,119 @@
+# Regole del contest «YBDXPI FT8 Contest» per la pagina Contest di Aurora.
+# Formato descritto in docs/piano-contest.md (sezione 4). Le regole cambiano ogni anno: controllare la fonte prima della gara.
+# I 5 punti per i QSO con i soci YBDXPI non sono calcolabili (manca l'elenco dei soci): il punteggio di Aurora e' per difetto.
+
+[contest]
+id = "ybdxpi-ft8"
+nome = "YBDXPI FT8 Contest"
+sponsor = "YBDXPI"
+edizione = 2026
+url_regole = "https://contest.ybdxpi.net/ft8/rules/"
+verificato_il = "2026-11-09"
+famiglia = "hf"
+# da verificare sul regolamento dell'anno: date degli anni futuri e nome Cabrillo (il regolamento non lo indica)
+da_verificare = ["calendario", "export", "restrizioni"]
+
+[sintesi]
+it = "2026: 7-8 novembre, 00:00Z del sabato - 23:59Z della domenica. Solo FT8 da 160 a 10 m, senza bande WARC (sottobande consigliate 1844-1848, 3590-3600, 7090-7100, 14090-14100, 21090-21100, 28090-28100 kHz). Scambio: locatore a 4 caratteri. Punti: 1 stesso paese, 2 stesso continente, 3 altro continente, 5 con i soci YBDXPI (Aurora non li riconosce: conta i punti normali). Moltiplicatori: prefissi e paesi DXCC per banda. Un QSO per banda con la stessa stazione. Log Cabrillo (nome file nominativo.log) su contest.ybdxpi.net entro 7 giorni."
+en = "2026: 7-8 November, 0000Z Saturday - 2359Z Sunday. FT8 only, 160 to 10 m, no WARC bands (recommended sub-bands 1844-1848, 3590-3600, 7090-7100, 14090-14100, 21090-21100, 28090-28100 kHz). Exchange: 4-character locator. Points: 1 same country, 2 same continent, 3 other continent, 5 with YBDXPI members (Aurora cannot recognise them: it counts the normal points). Multipliers: prefixes and DXCC countries per band. One QSO per band with the same station. Cabrillo log (file name callsign.log) on contest.ybdxpi.net within 7 days."
+
+[calendario]
+regola = "primo-weekend-completo:novembre"
+inizio = "sab 00:00"
+fine = "dom 23:59"
+
+[calendario.date_fisse]
+"2026" = ["2026-11-07T00:00Z", "2026-11-08T23:59Z"]
+
+[bande]
+ammesse = ["160m", "80m", "40m", "20m", "15m", "10m"]
+
+# frequenze di partenza in kHz (frequenza della radio, USB): inizio delle sottobande consigliate
+[bande.frequenze]
+"160m" = { FT8 = 1844.0 }
+"80m" = { FT8 = 3590.0 }
+"40m" = { FT8 = 7090.0 }
+"20m" = { FT8 = 14090.0 }
+"15m" = { FT8 = 21090.0 }
+"10m" = { FT8 = 28090.0 }
+
+[modi]
+ammessi = ["FT8"]
+stesso_modo_per_doppi = true
+
+[messaggi]
+attivita = "standard"
+parola_cq = ""
+chiusura = "RR73"
+settantatre_finale = "facoltativo"
+
+[scambio]
+inviato = ["snr", "grid4"]
+ricevuto = ["snr", "grid4"]
+
+[doppi]
+chiave = "banda"
+log_doppi = "si"
+
+# 1 stesso paese, 2 stesso continente, 3 altro continente (paese e continente da cty.dat)
+[punti]
+tipo = "per-continente"
+fisso = 1
+
+[punti.tabella]
+stesso-paese = 1
+stesso-continente = 2
+altro-continente = 3
+
+[[moltiplicatori]]
+tipo = "prefisso"
+ambito = "per-banda"
+
+[[moltiplicatori]]
+tipo = "dxcc"
+ambito = "per-banda"
+
+[punteggio]
+formula = "punti*molt"
+
+[[categorie]]
+id = "SOAB"
+nome = "Single Operator All Band"
+operatore = "SINGLE-OP"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[[categorie]]
+id = "MOAB"
+nome = "Multi Operator All Band"
+operatore = "MULTI-OP"
+potenza = "HIGH"
+trasmettitori = "UNLIMITED"
+bande = "ALL"
+assistenza = "ASSISTED"
+
+[[categorie]]
+id = "CHECKLOG"
+nome = "Check Log"
+operatore = "CHECKLOG"
+potenza = "HIGH"
+trasmettitori = "ONE"
+bande = "ALL"
+assistenza = "NON-ASSISTED"
+
+[restrizioni]
+avvio_umano = false
+fox_hound = "vietato"
+multi_flusso = "vietato"
+
+[export]
+formato = "cabrillo"
+cabrillo_contest = "YBDXPI-FT8"
+cabrillo_modo = "DG"
+colonne_inviate = ["grid4"]
+colonne_ricevute = ["grid4"]
+frequenza = "khz"
+invio_url = "https://contest.ybdxpi.net/log-submit/"
+scadenza = "7 giorni"
