@@ -7410,3 +7410,7 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 /* finestra RX: carattere un po' piu' piccolo, cosi' i messaggi lunghi ci stanno interi */
 .log-rx .decode-row { font-size: 0.7rem; }
 .log-rx .decode-row .badge { font-size: 0.62rem; }
+/* finestra RX: bandiera e paese sulla stessa riga e con la stessa misura del resto */
+.log-rx .decode-row { align-items: center; }
+.log-rx .decode-where, .log-rx .w-country, .log-rx .decode-country { font-size: inherit !important; line-height: inherit; align-items: center; align-self: center; }
+.log-rx .w-flag { display: inline-flex; align-items: center; }
