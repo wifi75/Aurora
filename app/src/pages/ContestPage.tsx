@@ -813,7 +813,7 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
                 <td>{utcHm(q.time_ms)}</td>
                 <td>{q.band}</td>
                 <td>{q.call}</td>
-                <td onClick={() => setModifica({ n: q.n, testo: q.exch_rcvd || q.grid })} className={q.scambio_ok ? undefined : 'ctc-bad'} title={q.modificato ? t('contest.edited') : undefined}>
+                <td onClick={() => setModifica({ n: q.n, testo: q.exch_rcvd || q.grid })} className={q.scambio_ok ? undefined : 'ctc-bad'} title={q.scambio_nota || (q.modificato ? t('contest.edited') : undefined)}>
                   {modifica?.n === q.n ? (
                     <input
                       className="ctc-input"
@@ -1079,6 +1079,7 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
         </label>
         {testo('call_contest', t('contest.set.callContest'), t('tip.contest.set.callContest'))}
         {testo('grid6', t('contest.set.grid6'))}
+        {testo('antenna', t('contest.set.antenna'), t('tip.contest.set.antenna'))}
         {testo('operatori', t('contest.set.operators'))}
         {testo('club', t('contest.set.club'))}
         {testo('nome', t('contest.set.name'), t('tip.contest.set.shared'))}

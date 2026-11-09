@@ -97,6 +97,8 @@ export interface Impostazioni {
   hold_tx: boolean;
   rrr: boolean;
   grid6: string;
+  /** Antenna per l'intestazione EDI (`SAnte`). */
+  antenna?: string;
   operatori: string;
   club: string;
   nome: string;
@@ -191,6 +193,8 @@ export interface LogQso {
   km: number;
   molt_nuovi: string[];
   scambio_ok: boolean;
+  /** Perche' lo scambio non va (fuori lista, formato...); vuota se va bene. */
+  scambio_nota?: string;
 }
 
 export interface Esportazione {
