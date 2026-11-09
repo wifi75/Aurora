@@ -7396,3 +7396,7 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 /* finestra RX: stretta dentro il pannello Log; si tolgono paese, km ed etichette perche' il messaggio si legga intero */
 .log-rx .w-country, .log-rx .w-km, .log-rx .badge-cell, .log-rx .c-dt, .log-rx .c-freq { display: none !important; }
 .log-rx .decode-text { min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* finestra RX: quattro colonne fisse (ora, dB, messaggio che prende tutto lo spazio, bandierina); le altre celle sono nascoste */
+.log-rx .decode-row { grid-template-columns: 4.6rem 2.4rem minmax(0, 1fr) 1.7rem !important; }
+.log-rx .decode-where { display: flex !important; width: auto !important; justify-content: center; }
+.log-rx .decode-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
