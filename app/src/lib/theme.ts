@@ -66,3 +66,13 @@ export function browserStorage(): Storage | null {
     return null;
   }
 }
+
+/** Evento della stessa finestra quando il tema cambia fuori dall'interruttore (Impostazioni > Aspetto). */
+export const THEME_EVENT = 'aurora-theme-change';
+
+/** Sceglie, salva e applica il tema, e avvisa l'interruttore della testata. */
+export function chooseTheme(choice: ThemeChoice): void {
+  saveThemeChoice(browserStorage(), choice);
+  applyTheme(document.documentElement, resolveTheme(choice));
+  window.dispatchEvent(new CustomEvent(THEME_EVENT));
+}

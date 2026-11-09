@@ -31,6 +31,7 @@ import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
 import { SupportTab } from '../settings/SupportBox';
 import { AgentTab } from '../settings/AgentTab';
+import { AppearanceTab } from '../settings/AppearanceTab';
 import { WaterfallTab } from '../settings/WaterfallTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
@@ -59,6 +60,7 @@ const TABS: readonly TabDef[] = [
   { id: 'macros', label: 'sw.tab.macros', icon: '≡', render: () => <MacrosTab /> },
   { id: 'reporting', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
   { id: 'freq', label: 'sw.tab.freq', icon: '∼', render: () => <FrequenciesTab /> },
+  { id: 'aspetto', label: 'sw.tab.appearance', icon: 'Aa', render: () => <AppearanceTab /> },
   { id: 'colors', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
   { id: 'logbooks', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
   { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },

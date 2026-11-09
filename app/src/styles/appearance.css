@@ -1,0 +1,130 @@
+/*
+ * Aspetto (Impostazioni > Aspetto): «Alto contrasto» e colore del testo scelto.
+ * Alto contrasto: fondo neutro senza tinte, testo pieno, bordi netti, colori di stato saturi; versione scura e chiara.
+ * Caricato dopo tokens.css e bozze.css: i blocchi qui hanno la meglio sui valori dei temi.
+ */
+
+/* Alto contrasto, scuro */
+:root[data-contrast='high']:not([data-theme='light']) {
+  --bg: #121212;
+  --panel: #1c1c1c;
+  --panel-raised: #262626;
+  --border: #9a9a9a;
+  --text: #ffffff;
+  --text-muted: #d4d4d4;
+  --accent: #33c3ff;
+  --accent-ink: #001826;
+  --ok: #3ddc6e;
+  --warn: #ffc400;
+  --danger: #ff5252;
+  --stop: #ff5252;
+  --stop-ink: #1a0000;
+  --rare: #ffc400;
+  --rare-ink: #1f1600;
+  --row-a: #1c1c1c;
+  --row-b: #242424;
+  --row-line: rgb(255 255 255 / 0.28);
+  --col-line: #7a7a7a;
+  --glass-hi: rgb(255 255 255 / 0.04);
+  --glass-lo: rgb(255 255 255 / 0.02);
+  --glass-edge: rgb(255 255 255 / 0.55);
+  --glass-shine: rgb(255 255 255 / 0.08);
+  --panel-glass: #1c1c1c;
+  --glow: transparent;
+  --aurora-a: transparent;
+  --aurora-b: transparent;
+  --aurora-c: transparent;
+}
+
+/* Alto contrasto, chiaro */
+:root[data-contrast='high'][data-theme='light'] {
+  --bg: #f1f1f1;
+  --panel: #ffffff;
+  --panel-raised: #e9ecef;
+  --border: #4a4f55;
+  --text: #000000;
+  --text-muted: #2f3337;
+  --accent: #0050b3;
+  --accent-ink: #ffffff;
+  --ok: #10712f;
+  --warn: #8a5300;
+  --danger: #b0001e;
+  --stop: #b0001e;
+  --stop-ink: #ffffff;
+  --rare: #8a5300;
+  --rare-ink: #ffffff;
+  --row-a: #ffffff;
+  --row-b: #f1f3f5;
+  --row-line: rgb(0 0 0 / 0.35);
+  --col-line: #5c636a;
+  --glass-hi: #ffffff;
+  --glass-lo: rgb(0 0 0 / 0.03);
+  --glass-edge: rgb(0 0 0 / 0.6);
+  --glass-shine: #ffffff;
+  --panel-glass: #ffffff;
+  --glow: transparent;
+  --aurora-a: transparent;
+  --aurora-b: transparent;
+  --aurora-c: transparent;
+}
+
+/* Colore del testo scelto dall'utente, uno per tema (vince anche sull'alto contrasto) */
+:root[data-text-dark]:not([data-theme='light']) {
+  --text: var(--user-text-dark);
+}
+:root[data-text-light][data-theme='light'] {
+  --text: var(--user-text-light);
+}
+
+/* Scheda Aspetto: tavolozza e anteprima */
+.ap-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+.ap-swatch {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.ap-swatch[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ap-color {
+  width: 2.4rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: none;
+}
+.ap-preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3, 0.75rem);
+  font-family: var(--font-ui);
+}
+.ap-preview .ap-muted {
+  color: var(--text-muted);
+}
+.ap-preview .ap-data {
+  font-family: var(--font-data);
+}
+.ap-preview .ap-ok {
+  color: var(--ok);
+}
+.ap-preview .ap-warn {
+  color: var(--warn);
+}
+.ap-preview .ap-danger {
+  color: var(--danger);
+}
+.ap-preview .ap-accent {
+  color: var(--accent);
+}

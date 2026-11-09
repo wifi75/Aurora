@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Aspetto**: nuova scheda delle Impostazioni con tema (scuro, chiaro, automatico), «Alto contrasto» in chiaro e in scuro per una lettura piu' facile, carattere dell'interfaccia e dei dati, dimensione del testo dal 90% al 140%, colore del testo con controllo del contrasto, anteprima immediata e «Ripristina».
 
 ## 0.11.209 - 2026-11-09
 - **Automazioni**: in modo reale «Abilita Tx» resta acceso a fine QSO (se il motore lo spegne lo riaccendono; STOP le ferma come prima) e il motore non risponde piu' a chi ci chiama ed e' escluso da continenti, paesi o nominativi delle regole o nascosto dai filtri di Attivita' di banda; lo scarto resta nel registro delle decisioni.
