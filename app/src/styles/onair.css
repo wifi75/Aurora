@@ -7451,3 +7451,7 @@ html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #
 /* finestra RX: bandierine tutte in colonna, a misura dei messaggi FT8 (fino a ~20 caratteri), senza spazio vuoto in mezzo */
 .log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem 7.9rem minmax(0, 1fr) !important; column-gap: 0.3rem; }
 .log-rx .decode-where { padding-left: 0 !important; }
+
+/* cascata: le etichette Rx/Tx in basso e la banda trasparente, cosi' si vede se il posto scelto e' libero (richiesta di un utente) */
+.wf-marker-tag { top: auto !important; bottom: 0; }
+.wf-marker--band { background: transparent !important; box-shadow: none !important; }
