@@ -104,7 +104,8 @@ impl UpdateInstaller for DesktopInstaller {
             "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              $p = Start-Process -FilePath '{quoted}' -ArgumentList {} -PassThru;              $p | Wait-Process -Timeout 240 -ErrorAction SilentlyContinue; Start-Sleep -Seconds 6;              if ('{exe}' -ne '' -and -not (Get-Process aurora-desktop -ErrorAction SilentlyContinue)) {{ Start-Process -FilePath '{exe}' }}",
             installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",")
         );
-        let mut launcher = Command::new("powershell");
+        // percorso intero: su alcuni PC «powershell» non e' nel PATH del programma (2026-11-09: «installatore non avviato: program not found»)
+        let mut launcher = Command::new(powershell_exe());
         launcher.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &script]);
         {
             use std::os::windows::process::CommandExt;
@@ -122,6 +123,7 @@ impl UpdateInstaller for DesktopInstaller {
         let app = self.app.clone();
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(900));
+            crate::crash::exiting();
             app.exit(0);
         });
         Ok(ready.version)
@@ -152,6 +154,7 @@ impl UpdateInstaller for DesktopInstaller {
         let app = self.app.clone();
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(900));
+            crate::crash::exiting();
             app.exit(0);
         });
         Ok(ready.version)
@@ -406,4 +409,13 @@ mod tests {
             assert!(verify_package(&tampered, &signature).is_err(), "un pacchetto alterato va rifiutato");
         }
     }
+}
+
+/// PowerShell con il percorso intero (`%SystemRoot%\System32\WindowsPowerShell1.0\powershell.exe`): su alcuni PC «powershell» non e'
+/// nel PATH del programma (2026-11-09: «installatore non avviato: program not found»). Se non c'e', il nome semplice.
+pub fn powershell_exe() -> std::path::PathBuf {
+    std::env::var_os("SystemRoot")
+        .map(|r| std::path::PathBuf::from(r).join("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe"))
+        .filter(|p| p.is_file())
+        .unwrap_or_else(|| std::path::PathBuf::from("powershell"))
 }

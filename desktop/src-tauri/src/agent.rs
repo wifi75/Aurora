@@ -92,7 +92,7 @@ fn promote_icon() {
     {
         use std::os::windows::process::CommandExt;
         let script = "Get-ChildItem 'HKCU:\\Control Panel\\NotifyIconSettings' -ErrorAction SilentlyContinue | ForEach-Object { $p = (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).ExecutablePath; if ($p -and $p -like '*aurora-desktop.exe') { Set-ItemProperty $_.PSPath -Name IsPromoted -Value 1 -Type DWord } }";
-        let _ = std::process::Command::new("powershell").args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script]).creation_flags(0x0800_0000).status();
+        let _ = std::process::Command::new(crate::installer::powershell_exe()).args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script]).creation_flags(0x0800_0000).status();
     }
 }
 
@@ -122,6 +122,7 @@ pub fn run() {
                     // spento dalla pagina «Agente nel tray»: si toglie dall'avvio con Windows ed esce
                     if !prefs().enabled {
                         crate::set_agent_autostart(false);
+                        crate::crash::exiting();
                         handle.exit(0);
                         return;
                     }
@@ -185,7 +186,10 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             let app = app.clone();
             std::thread::spawn(move || check(&app, true));
         }
-        "quit" => app.exit(0),
+        "quit" => {
+            crate::crash::exiting();
+            app.exit(0)
+        }
         _ => {}
     })
     .on_tray_icon_event(|_, event| {

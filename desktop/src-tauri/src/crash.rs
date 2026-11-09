@@ -64,6 +64,23 @@ pub static WINDOW: Beat = Beat::new("finestra");
 static ACTIVITY: Mutex<(&'static str, u64)> = Mutex::new(("nessuna", 0));
 /// Una finestra modale di Windows aperta («Salva con nome»): la finestra principale e' ferma apposta, non e' un blocco.
 static MODAL: AtomicU64 = AtomicU64::new(0);
+/// Aurora si sta chiudendo (anche per installare un aggiornamento): il thread della finestra si ferma per chiudere il core e tao puo'
+/// andare in panic durante l'uscita. Non e' un blocco ne' un crash da segnalare (2026-11-09: tutti i «programma bloccato» e i panic
+/// «event handler is re-entrant» dei rapporti arrivavano nei 20 s della chiusura per l'aggiornamento).
+static EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Da chiamare appena comincia la chiusura del programma.
+pub fn exiting() {
+    EXITING.store(true, Ordering::SeqCst);
+}
+
+fn is_exiting() -> bool {
+    EXITING.load(Ordering::SeqCst)
+}
+
+pub fn is_exiting_pub() -> bool {
+    is_exiting()
+}
 
 /// Segna cosa sta per fare il thread della finestra (aprire una finestra a parte, salvarne la posizione...).
 pub fn activity(what: &'static str) {
@@ -193,6 +210,10 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
                     let _ = app.run_on_main_thread(|| std::thread::sleep(Duration::from_secs(30)));
                 }
                 std::thread::sleep(BEAT_EVERY);
+                if is_exiting() {
+                    // in chiusura: niente minidump ne' rapporti di blocco
+                    continue;
+                }
                 if MODAL.load(Ordering::SeqCst) > 0 {
                     // «Salva con nome» aperta: la finestra principale aspetta l'operatore
                     WINDOW.touch();
@@ -268,6 +289,9 @@ fn report_hang(stale: &[(&str, u64)], beats: &[(&str, u64)]) {
 
 /// Il file di un panic: messaggio, thread, punto e backtrace. Si chiama dal gancio dei panic.
 pub fn write_panic_report(info: &std::panic::PanicHookInfo<'_>) {
+    if is_exiting() {
+        return;
+    }
     let Some(dir) = dir() else { return };
     let stamp = platform::timestamp();
     let mut text = header("Panic", &stamp);

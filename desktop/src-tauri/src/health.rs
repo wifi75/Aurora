@@ -14,6 +14,12 @@ pub fn install_panic_hook() {
     std::panic::set_hook(Box::new(move |info| {
         let thread = std::thread::current();
         crate::crash::write_panic_report(info);
+        if crate::crash::is_exiting_pub() {
+            // in chiusura: resta nel log come avviso, non va tra gli errori
+            tracing::warn!("panic durante la chiusura nel thread «{}»: {info}", thread.name().unwrap_or("senza nome"));
+            previous(info);
+            return;
+        }
         tracing::error!("panic nel thread «{}»: {info}", thread.name().unwrap_or("senza nome"));
         previous(info);
     }));

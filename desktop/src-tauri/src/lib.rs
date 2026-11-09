@@ -71,7 +71,11 @@ pub fn run() {
         .build(tauri::generate_context!());
     match built {
         Ok(app) => app.run(|handle, event| {
+            if matches!(event, RunEvent::ExitRequested { .. }) {
+                crate::crash::exiting();
+            }
             if let RunEvent::Exit = event {
+                crate::crash::exiting();
                 // la principale e le finestre a parte: ognuna si ricorda dove stava
                 for window in handle.webview_windows().values() {
                     remember_window(&window.as_ref().window());
