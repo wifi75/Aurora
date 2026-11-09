@@ -430,3 +430,6 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-freq .rxtx-flag { border-radius: 6px !important; height: 26px; min-width: 40px; padding: 0 8px; border: 0 !important; font-weight: 800; letter-spacing: 0.04em; cursor: pointer; box-shadow: none !important; text-shadow: none !important; }
 .ctc-freq .rxtx-flag[data-state='rx'] { background: #22c55e !important; color: #052e14 !important; }
 .ctc-freq .rxtx-flag[data-state='tx'] { background: #e5484d !important; color: #ffffff !important; }
+/* prefisso e nominativo in colonne fisse: tutti i nominativi partono dallo stesso punto */
+.ctc-mtile { grid-template-columns: 3.4em minmax(0, 1fr) !important; gap: 4px !important; }
+.ctc-mtile .ctc-mult { max-width: none; }
