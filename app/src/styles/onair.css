@@ -7440,3 +7440,5 @@ html[data-theme='light'] .dock-panel--log .log-rx { background: rgb(0 0 0 / 0.03
 /* intestazione del log: bassa e con un fondo, come le intestazioni delle altre tabelle */
 .dock-panel--log .log4om-table thead th { height: 1.35rem; padding-top: 0.1rem !important; padding-bottom: 0.1rem !important; line-height: 1.1; background: #16243d !important; color: #c9d6ea; position: sticky; top: 0; z-index: 1; }
 html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #e3eaf5 !important; color: #1d2a44; }
+/* finestra RX: bandierina e paese 20 pixel piu' a sinistra (colonna del paese piu' larga, messaggio di 20 px piu' stretto) */
+.log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem minmax(0, 1fr) calc(5rem + 20px) !important; }
