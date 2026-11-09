@@ -101,6 +101,8 @@ export const automationStrings = {
   'auto.saveRules': ['Salva le regole', 'Save the rules', 'Regeln speichern', 'Enregistrer les règles', 'Guardar las reglas', 'Guardar as regras'],
   'auto.rejected': ['Modifica non accettata da Aurora.', 'Aurora did not accept the change.', 'Aurora hat die Änderung nicht akzeptiert.', "Aurora n'a pas accepté la modification.", 'Aurora no aceptó el cambio.', 'A Aurora não aceitou a alteração.'],
   'auto.log': ['Registro delle decisioni', 'Decision log', 'Entscheidungsprotokoll', 'Journal des décisions', 'Registro de decisiones', 'Registo de decisões'],
+  'auto.queue': ['Prossime stazioni', 'Next stations', 'Nächste Stationen', 'Prochaines stations', 'Próximas estaciones', 'Próximas estações'],
+  'auto.noQueue': ['Nessun altro CQ interessante nell’ultimo ciclo.', 'No other interesting CQ in the last cycle.', 'Kein weiterer interessanter CQ im letzten Durchgang.', 'Aucun autre CQ intéressant au dernier cycle.', 'Ningún otro CQ interesante en el último ciclo.', 'Nenhum outro CQ interessante no último ciclo.'],
   'auto.recent': ['Ultime stazioni chiamate in automatico', 'Last stations called automatically', 'Zuletzt automatisch gerufene Stationen', 'Dernières stations appelées automatiquement', 'Últimas estaciones llamadas automáticamente', 'Últimas estações chamadas automaticamente'],
   'auto.noRecent': ['Ancora nessuna.', 'None yet.', 'Noch keine.', 'Aucune pour le moment.', 'Ninguna todavía.', 'Ainda nenhuma.'],
   'auto.noLog': ['Nessuna decisione ancora.', 'No decisions yet.', 'Noch keine Entscheidungen.', 'Aucune décision pour le moment.', 'Ninguna decisión todavía.', 'Ainda nenhuma decisão.'],

@@ -247,6 +247,16 @@ pub struct BrainState {
     pub in_window: bool,
     /// Le ultime decisioni, le piu' vecchie per prime.
     pub log: Vec<Decision>,
+    /// Le prossime stazioni: i CQ interessanti dell'ultimo ciclo non scelti, dal migliore secondo la preferenza (idea di ON7KEC, issue #6).
+    pub queue: Vec<QueueEntry>,
+}
+
+/// Una stazione in coda: la si chiamerebbe se ricomincia il CQ quando l'automazione e' libera.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct QueueEntry {
+    pub call: String,
+    pub snr: i32,
+    pub why: String,
 }
 
 pub struct Brain {
@@ -303,6 +313,7 @@ impl Brain {
                 qsos_last_hour: 0,
                 in_window: true,
                 log: Vec::new(),
+                queue: Vec::new(),
             },
             day: 0,
             hour_marks: VecDeque::new(),
@@ -664,6 +675,7 @@ impl Brain {
             }
         }
         if candidates.is_empty() {
+            self.state.queue.clear();
             return decisions;
         }
         // c'e' qualcuno a cui rispondere: il conto del CQ da solo riparte
@@ -677,6 +689,10 @@ impl Brain {
             }
         }
         let chosen = candidates.swap_remove(best);
+        // la coda: gli altri, dal migliore
+        let mut rest = candidates.clone();
+        rest.sort_by(|a, b| if a.better_than(b, prefer) { std::cmp::Ordering::Less } else if b.better_than(a, prefer) { std::cmp::Ordering::Greater } else { std::cmp::Ordering::Equal });
+        self.state.queue = rest.into_iter().take(10).map(|c| QueueEntry { call: c.call, snr: c.snr, why: c.why }).collect();
         if !candidates.is_empty() {
             let mut others: Vec<String> = candidates.iter().map(|c| c.call.clone()).collect();
             others.sort();
@@ -861,6 +877,7 @@ impl Brain {
 }
 
 /// Un CQ che ha passato tutti i controlli e puo' essere scelto.
+#[derive(Clone)]
 struct Candidate {
     call: String,
     decode_id: u64,

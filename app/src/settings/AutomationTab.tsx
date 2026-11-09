@@ -358,6 +358,18 @@ export function AutomationTab() {
         </Block>
       </div>
 
+      <section className="sw-box au-recent" aria-label={t('auto.queue')}>
+        <h3>{t('auto.queue')}</h3>
+        <ol className="au-chips au-recent-list">
+          {a.queue.map((q, i) => (
+            <li key={q.call} className="au-recent-item" title={coreText(q.why, t)}>
+              <span className="num muted">{i + 1}</span> <strong>{q.call}</strong> <span className="num muted">{q.snr > 0 ? `+${q.snr}` : q.snr} dB</span>
+            </li>
+          ))}
+          {a.queue.length === 0 ? <li className="muted">{t('auto.noQueue')}</li> : null}
+        </ol>
+      </section>
+
       <section className="sw-box au-recent" aria-label={t('auto.recent')}>
         <h3>{t('auto.recent')}</h3>
         <ul className="au-chips au-recent-list">

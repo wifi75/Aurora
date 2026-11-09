@@ -2,7 +2,7 @@
 
 ## Non rilasciato
 
-- **Automazioni**: filtri di caccia a pulsanti a pillola e riquadro «Ultime stazioni chiamate in automatico» (idee di ON7KEC, issue #6).
+- **Automazioni**: filtri di caccia a pulsanti a pillola riquadri «Prossime stazioni» (i CQ interessanti non scelti, dal migliore) e «Ultime stazioni chiamate in automatico» (idee di ON7KEC, issue #6).
 
 ## 0.11.207 - 2026-11-09
 - **Distanze**: i km sempre interi, senza decimali (nella pagina Contest comparivano con dieci cifre dopo la virgola).

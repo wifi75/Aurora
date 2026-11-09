@@ -38,6 +38,8 @@ export const AutomationStateSchema = z.object({
   qsos_today: z.number().default(0),
   qsos_last_hour: z.number().default(0),
   in_window: z.boolean().default(true),
+  /** Le prossime stazioni (un core piu' vecchio non la manda: vuota). */
+  queue: z.array(z.object({ call: z.string(), snr: z.number(), why: z.string() })).default([]),
   log: z.array(
     z.object({
       at: z.number(),
