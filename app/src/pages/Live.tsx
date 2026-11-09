@@ -67,38 +67,22 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
   return txLog.length === 0 ? shown : [...txLog, ...shown].sort((a, b) => b.time_ms - a.time_ms);
 }
 
-/** Mezza larghezza della finestra RX attorno alla frequenza di ricezione (come la finestra «Rx Frequency» di WSJT-X). */
-const RX_WINDOW_HZ = 50;
-const RX_SPLIT_KEY = 'aurora-finestra-rx';
 const LOG_TAB_KEY = 'aurora-log-linguetta';
+/** Mezza larghezza della finestra RX attorno alla barretta Rx (come la finestra «Rx Frequency» di WSJT-X). */
+const RX_WINDOW_HZ = 50;
 
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
-  // finestra RX accanto ad Attivita' di banda: accesa di base, si spegne dal pulsantino «RX» nella barra del pannello
-  const [rxSplit, setRxSplitState] = useState<boolean>(() => {
-    try {
-      return browserStorage()?.getItem(RX_SPLIT_KEY) !== '0';
-    } catch {
-      return true;
-    }
-  });
-  const setRxSplit = (on: boolean) => {
-    setRxSplitState(on);
-    try {
-      browserStorage()?.setItem(RX_SPLIT_KEY, on ? '1' : '0');
-    } catch {
-      // senza archivio vale fino alla chiusura
-    }
-  };
   // pannello Log a linguette «Log | Mappa»: la scelta si ricorda; con «Log» la mappa non esiste proprio (niente timer, niente disegno)
-  const [logTab, setLogTabState] = useState<'log' | 'map'>(() => {
+  const [logTab, setLogTabState] = useState<'log' | 'map' | 'rx'>(() => {
     try {
-      return browserStorage()?.getItem(LOG_TAB_KEY) === 'map' ? 'map' : 'log';
+      const v = browserStorage()?.getItem(LOG_TAB_KEY);
+      return v === 'map' || v === 'rx' ? v : 'log';
     } catch {
       return 'log';
     }
   });
-  const setLogTab = (tab: 'log' | 'map') => {
+  const setLogTab = (tab: 'log' | 'map' | 'rx') => {
     setLogTabState(tab);
     try {
       browserStorage()?.setItem(LOG_TAB_KEY, tab);
@@ -246,9 +230,21 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'cluster':
         return <ClusterPanel />;
       case 'log':
-        // linguetta «Mappa»: la Mappa DX compatta al posto del log, nello stesso spazio (solo nella Stazione, non nella finestra staccata)
-        if (logTab === 'map' && !soloPanel) return <DxMapPage bare inPanel />;
-        // il log in alto e, sotto, la scheda DXCC: lo stesso pannello diviso in due
+        // tre linguette, una alla volta nello stesso spazio: il log (con la scheda DXCC), la Mappa DX, la finestra RX
+        if (logTab === 'rx' && !soloPanel) {
+          // la finestra RX: chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
+          const rxHz = status?.rx_df ?? null;
+          const me = (status?.de_call ?? '').toUpperCase();
+          const rxList = decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me));
+          return <DecodeList decodes={withOwnTx(rxList, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={t('rxw.empty')} />;
+        }
+        if (logTab === 'map' && !soloPanel) {
+          return (
+            <div className="log-map">
+              <DxMapPage bare inPanel />
+            </div>
+          );
+        }
         return (
           <div className="log-dxcc">
             <div className="log-dxcc-top">
@@ -262,22 +258,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'all': {
         const pills = tagPills ? <ActivityTagPills /> : null;
         const list = <DecodeList decodes={withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} />;
-        if (!rxSplit) return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
-        // la finestra RX (come «Rx Frequency» di WSJT-X): i messaggi sulla mia frequenza di ricezione, quelli diretti a me e le mie trasmissioni
-        const rxHz = status?.rx_df ?? null;
-        const me = (status?.de_call ?? '').toUpperCase();
-        const rxList = decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me));
-        return (
-          <div className="rx-split">
-            <div className="rx-split-all">{pills}{list}</div>
-            <div className="rx-split-rx" aria-label={t('rxw.title')}>
-              <div className="rx-split-head">
-                {t('rxw.title')} <span className="muted">{rxHz !== null ? `Rx ${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
-              </div>
-              <DecodeList decodes={withOwnTx(rxList, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={t('rxw.empty')} />
-            </div>
-          </div>
-        );
+        return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
   };
@@ -426,16 +407,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     <button type="button" className={tagPills || tagFilterOn ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={tagPills} aria-expanded={tagPills} title={t('tip.bfl.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setTagPills(!tagPills)}>
       {t('bfl.button')}{tagFilterOn ? ` ${filters.tags.length}` : ''}
     </button>
-    <button type="button" className={rxSplit ? 'dock-mini dock-mini--next dock-mini--on' : 'dock-mini dock-mini--next'} aria-pressed={rxSplit} title={t('tip.rxw.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setRxSplit(!rxSplit)}>
-      RX
-    </button>
     </>
   ) : id === 'log' ? (
     <>
       <div className="dock-tabs" role="tablist" onPointerDown={(e) => e.stopPropagation()}>
-        {(['log', 'map'] as const).map((tab) => (
-          <button key={tab} type="button" role="tab" aria-selected={logTab === tab} className={logTab === tab ? 'dock-mini dock-mini--on' : 'dock-mini'} title={t(tab === 'log' ? 'log.tab.logTip' : 'log.tab.mapTip')} onClick={() => setLogTab(tab)}>
-            {t(tab === 'log' ? 'log.tab.log' : 'log.tab.map')}
+        {(['log', 'map', 'rx'] as const).map((tab) => (
+          <button key={tab} type="button" role="tab" aria-selected={logTab === tab} className={logTab === tab ? 'dock-mini dock-mini--on' : 'dock-mini'} title={t(tab === 'log' ? 'log.tab.logTip' : tab === 'map' ? 'log.tab.mapTip' : 'tip.rxw.toggle')} onClick={() => setLogTab(tab)}>
+            {tab === 'rx' ? 'RX' : t(tab === 'log' ? 'log.tab.log' : 'log.tab.map')}
           </button>
         ))}
       </div>
@@ -538,7 +516,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               <section className={`dock-panel dock-panel--${id} grid-panel`} data-panel={id}>
                 <header className={`dock-grip${EDIT_LAYOUT ? '' : ' dock-grip--swap'}`} onPointerDown={grip.onPointerDown}>
                   <span className="dock-grip-dots" aria-hidden="true" />
-                  <h2>{blockTitle(id as BoardId)}</h2>
+                  <h2>{id === 'log' ? (logTab === 'rx' ? `${t('rxw.title')}${status?.rx_df != null ? ` · ${status.rx_df} Hz` : ''}` : t(logTab === 'map' ? 'log.tab.map' : 'log.tab.log')) : blockTitle(id as BoardId)}</h2>
                   {blockExtra(id as BoardId)}
                   {id === 'cmds' ? null : <DetachButton item={(id === 'dxmap' ? 'bands' : id) as ItemId} className="dock-detach" />}
                 </header>
@@ -650,3 +628,4 @@ function alignDisplay(row: HTMLDivElement | null): void {
     window.clearInterval(timer);
   };
 }
+
