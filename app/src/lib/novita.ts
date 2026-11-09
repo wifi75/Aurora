@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.205',
-    released: '2026-11-09T07:40:14Z',
+    released: '2026-11-09T07:50:32Z',
     kind: 'fixed',
     title: ['Aggiornamento sicuro e silenzioso', 'Safe, silent updates', 'Sichere, stille Updates', 'Mises à jour sûres et silencieuses', 'Actualizaciones seguras y silenciosas', 'Atualizações seguras e silenciosas'],
     text: [
