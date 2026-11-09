@@ -1190,3 +1190,8 @@ button.primary {
 .export-danger:not(:disabled) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 
 .export-head .export-add-btn { margin-left: 1rem; margin-right: auto; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+/* avvisi sempre in primo piano: messaggi a scomparsa, avviso del DXCC nuovo e schede della stazione sopra le Impostazioni (9999) e le
+   finestre della pagina; sotto solo la locandina dell'aggiornamento e la scheda dell'agente (2026-11-09: «Prova i messaggi» non si vedeva) */
+.toaster { z-index: 100300 !important; }
+.newdx { z-index: 100200 !important; }
+.diag { z-index: 100100 !important; }
