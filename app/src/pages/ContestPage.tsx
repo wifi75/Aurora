@@ -445,7 +445,7 @@ function DateContest({ c, finestra, t, regole, scambio = '' }: { c: ContestRef |
               <code className="ctc-how-qso">
                 {`CQ ${regole.messaggi.parola_cq ? regole.messaggi.parola_cq + ' ' : ''}${mio || 'IU3ABC'} ${loc || 'JN55'}`}
                 <br />
-                {`DL1ABC ${mio || 'IU3ABC'} ${(scambio || 'dB').replace(/dB/, '-10')}`}
+                {`DL1ABC ${mio || 'IU3ABC'} ${(scambio || 'dB').replace(/dB/, '-10')}`}
                 <br />
                 {`DL1ABC ${mio || 'IU3ABC'} ${regole.messaggi.chiusura || 'RR73'}`}
               </code>
