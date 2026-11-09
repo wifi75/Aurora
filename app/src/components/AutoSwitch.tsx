@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAutomation, putAutomation } from '../api/client';
 import { useT } from '../i18n';
+import { toast } from '../lib/toast';
+import { openSettingsWindow } from '../lib/settingsWindow';
 
 /**
  * Le Automazioni a portata di mano nella barra in alto (richiesta di ON7KEC): un clic le accende in modo reale o le spegne, senza aprire
@@ -15,10 +17,15 @@ export function AutoSwitch() {
   const live = a.enabled && a.mode === 'live';
   const dry = a.enabled && a.mode !== 'live';
   const toggle = () => {
-    const change = a.enabled ? { enabled: false } : { enabled: true, mode: a.live_allowed ? ('live' as const) : ('dry_run' as const) };
+    // si accende nel modo scelto nelle Impostazioni (prova a vuoto o reale): passare al modo reale chiede la conferma dell'avviso, che si da'
+    // in Impostazioni → Automazioni. Prima il pulsante chiedeva sempre il modo reale senza conferma: il core rifiutava e non succedeva nulla
+    const change = a.enabled ? { enabled: false } : { enabled: true };
     void putAutomation(change)
       .then((next) => qc.setQueryData(['automation'], next))
-      .catch(() => undefined);
+      .catch(() => {
+        toast(t('autoSwitch.failed'), 'error');
+        openSettingsWindow('automation');
+      });
   };
   return (
     <div className="rx-seg rx-seg--btns" role="group">

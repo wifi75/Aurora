@@ -103,6 +103,7 @@ export const automationStrings = {
   'auto.log': ['Registro delle decisioni', 'Decision log', 'Entscheidungsprotokoll', 'Journal des décisions', 'Registro de decisiones', 'Registo de decisões'],
   'autoSwitch.live': ['Automatico ON', 'Auto ON', 'Automatik AN', 'Auto ON', 'Automático ON', 'Automático ON'],
   'autoSwitch.dry': ['Automatico (prova)', 'Auto (test)', 'Automatik (Test)', 'Auto (test)', 'Automático (prueba)', 'Automático (teste)'],
+  'autoSwitch.failed': ['Automazioni non accese: controlla le regole in Impostazioni → Automazioni (per il modo reale serve confermare l’avviso)', 'Automation not switched on: check the rules in Settings → Automation (live mode needs the notice confirmed)', 'Automatik nicht eingeschaltet: Regeln in Einstellungen → Automatik prüfen (Echtbetrieb braucht die Bestätigung)', 'Automatisations non activées : vérifie les règles dans Réglages → Automatisations (le mode réel demande de confirmer l’avis)', 'Automatizaciones no encendidas: revisa las reglas en Ajustes → Automatizaciones (el modo real requiere confirmar el aviso)', 'Automatizações não ligadas: verifica as regras em Definições → Automatizações (o modo real pede confirmação do aviso)'],
   'autoSwitch.off': ['Automatico', 'Auto', 'Automatik', 'Auto', 'Automático', 'Automático'],
   'tip.autoSwitch': [
     'Accende o spegne le Automazioni con le regole scelte in Impostazioni → Automazioni: in modo reale rispondono da sole e Abilita Tx si accende.',
