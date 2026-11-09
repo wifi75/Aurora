@@ -7493,3 +7493,6 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .dxmap-bar--mini .dxmap-band-now { font-weight: 700; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, #8e7bff 30%, transparent); }
 /* mappa del pannello Log: niente riquadro con locatore, coordinate e km che segue il mouse */
 .log-map .worldmap-readout { display: none !important; }
+/* righe delle decodifiche fuori dallo schermo: il browser non le impagina ne' le disegna finche' non si scorre li' (meno lavoro a ogni
+   periodo e al ritorno sulla Stazione); l'altezza stimata tiene giusta la barra di scorrimento */
+.decode-list .decode-row { content-visibility: auto; contain-intrinsic-size: auto 26px; }
