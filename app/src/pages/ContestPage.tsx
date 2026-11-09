@@ -486,11 +486,7 @@ function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
       {s.ore_massime ? <Chip label={t('contest.hours')} value={`${(s.ore_usate ?? 0).toFixed(1)} / ${s.ore_massime}`} /> : null}
       {s.banda_ok === false ? <span className="ctc-chip ctc-bad">{t('contest.badBand', { b: s.banda ?? '' })}</span> : null}
       {s.modo_ok === false ? <span className="ctc-chip ctc-bad">{t('contest.badMode', { m: s.modo ?? '' })}</span> : null}
-      {s.fox_vietato ? (
-        <span className="ctc-chip ctc-bad" style={{ marginLeft: 'auto' }} title={t('tip.contest.foxBlocked')}>
-          {t('contest.foxBlocked')}
-        </span>
-      ) : null}
+      {/* Fox/Hound: vietato da tutti i regolamenti, il blocco resta ma la scritta non serve (la dice «Come funziona») */}
     </>
   );
 }
