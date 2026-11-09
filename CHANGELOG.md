@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Aspetto**: nuova scheda delle Impostazioni con tema (scuro, chiaro, automatico), «Alto contrasto» in chiaro e in scuro per una lettura piu' facile, carattere dell'interfaccia e dei dati, dimensione del testo dal 90% al 140%, colore del testo con controllo del contrasto, anteprima immediata e «Ripristina».
 
 - Stazione: il pannello Log ha le linguette «Log | Mappa»; con «Mappa» la Mappa DX compatta compare al posto del log, nello stesso spazio (la scelta si ricorda).
 

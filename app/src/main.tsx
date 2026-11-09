@@ -13,18 +13,25 @@ import './styles/dxcc.css';
 import './styles/settings-layout.css';
 import './styles/news.css';
 import './styles/bozze.css';
+import './styles/appearance.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
 import { readScale, startUiScale, useUiScale } from './lib/uiScale';
+import { applyAppearance, readAppearance, startAppearance } from './lib/appearance';
+import { applyTheme, browserStorage, readThemeChoice, resolveTheme } from './lib/theme';
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 import { readFilters, useFilters } from './lib/filters';
 import { putBandFilters } from './api/client';
 
 // stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
 document.documentElement.dataset.bozza = 'a';
+
+// tema e aspetto (carattere, colore del testo, alto contrasto) subito, prima del primo disegno
+applyTheme(document.documentElement, resolveTheme(readThemeChoice(browserStorage())));
+startAppearance();
 
 const queryClient = new QueryClient();
 const root = document.getElementById('root');
@@ -48,6 +55,9 @@ async function start() {
     // senza archivio del browser restano i filtri predefiniti
   }
   // la dimensione del testo: dopo le preferenze portate dal server
+  // le preferenze portate dal server possono cambiare l'aspetto scelto
+  applyTheme(document.documentElement, resolveTheme(readThemeChoice(browserStorage())));
+  applyAppearance(document.documentElement, readAppearance());
   useUiScale.setState({ scale: readScale() });
   startUiScale();
   // il menu del tasto destro del browser (Indietro, Ricarica, Ispeziona...) non serve: resta solo nei campi di testo, per copia e incolla

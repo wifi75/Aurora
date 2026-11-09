@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../i18n';
-import { applyTheme, browserStorage, readThemeChoice, resolveTheme, saveThemeChoice, type ThemeChoice } from '../lib/theme';
+import { applyTheme, browserStorage, readThemeChoice, resolveTheme, saveThemeChoice, THEME_EVENT, type ThemeChoice } from '../lib/theme';
 
 const ORDER: readonly ThemeChoice[] = ['dark', 'light', 'auto'];
 
@@ -8,6 +8,20 @@ const ORDER: readonly ThemeChoice[] = ['dark', 'light', 'auto'];
 export function ThemeToggle() {
   const t = useT();
   const [choice, setChoice] = useState<ThemeChoice>(() => readThemeChoice(browserStorage()));
+
+  // il tema scelto in Impostazioni > Aspetto (o in un'altra finestra) aggiorna anche l'interruttore
+  useEffect(() => {
+    const sync = () => setChoice(readThemeChoice(browserStorage()));
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'aurora-theme') sync();
+    };
+    window.addEventListener(THEME_EVENT, sync);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(THEME_EVENT, sync);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     const apply = () => applyTheme(document.documentElement, resolveTheme(choice));
