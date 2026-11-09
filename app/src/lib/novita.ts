@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.206',
+    released: '2026-11-09T08:01:09Z',
+    kind: 'fixed',
+    title: ['Nessun Aurora vecchio rimasto acceso', 'No old Aurora left running', 'Kein altes Aurora läuft mehr weiter', 'Plus d’ancien Aurora resté ouvert', 'Ningún Aurora antiguo sigue abierto', 'Nenhum Aurora antigo fica aberto'],
+    text: [
+      "All’avvio, durante l’installazione e nell’aggiornamento dall’app si chiude anche il motore di Aurora avviato da solo e rimasto acceso da una versione vecchia, che dopo l’aggiornamento faceva vedere ancora la versione di prima. I pulsanti dell’aggiornamento in testata restano leggibili al passaggio del mouse.",
+      "At startup, during installation and when updating from the app, the Aurora engine started on its own and left running from an old version is also closed: after the update it still showed the previous version. The update buttons in the header stay readable on mouse-over.",
+      "Beim Start, bei der Installation und beim Update aus der App wird auch die allein gestartete, von einer alten Version noch laufende Aurora-Engine beendet, die nach dem Update weiter die alte Version zeigte. Die Update-Schaltflächen in der Kopfzeile bleiben beim Überfahren lesbar.",
+      "Au démarrage, pendant l’installation et lors de la mise à jour depuis l’app, le moteur d’Aurora lancé seul et resté ouvert d’une ancienne version est aussi fermé : après la mise à jour il affichait encore l’ancienne version. Les boutons de mise à jour de l’en-tête restent lisibles au survol.",
+      "Al arrancar, durante la instalación y al actualizar desde la app se cierra también el motor de Aurora iniciado por separado y que seguía abierto de una versión antigua, que tras la actualización seguía mostrando la versión anterior. Los botones de actualización de la cabecera siguen legibles al pasar el ratón.",
+      "Ao arrancar, durante a instalação e ao atualizar a partir da app fecha-se também o motor do Aurora iniciado à parte e que ficara aberto de uma versão antiga, que depois da atualização ainda mostrava a versão anterior. Os botões de atualização do cabeçalho ficam legíveis ao passar o rato.",
+    ],
+  },
+  {
     version: '0.11.205',
     released: '2026-11-09T07:50:32Z',
     kind: 'fixed',
