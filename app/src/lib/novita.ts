@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.213',
+    released: '2026-11-09T18:00:00Z',
+    kind: 'fixed',
+    title: ['Continenti da escludere e aggiornamento dal tray più pulito', 'Continents to exclude and a cleaner tray update', 'Kontinente ausschließen und saubereres Update aus dem Tray', 'Continents à exclure et mise à jour depuis la barre plus propre', 'Continentes para excluir y actualización desde la bandeja más limpia', 'Continentes a excluir e atualização pela bandeja mais limpa'],
+    text: [
+      "Nelle Automazioni la nuova casella «Escludi» fa saltare i continenti scelti invece di rispondere solo a quelli. Con la finestra RX aperta, la stazione del QSO in corso non compare più anche in Attività di banda. «Auto» è colorato solo quando è acceso. Aggiornando dal tray non compare più la locandina grande: Aurora scarica, si chiude e si aggiorna.",
+      "In Automation the new «Exclude» box skips the chosen continents instead of answering only them. With the RX window open, the station of the current QSO no longer also shows in Band activity. «Auto» is coloured only when on. Updating from the tray no longer shows the big poster: Aurora downloads, closes and updates.",
+      "In der Automatik überspringt das neue Feld «Ausschließen» die gewählten Kontinente, statt nur ihnen zu antworten. Bei offenem RX-Fenster erscheint die Station des laufenden QSO nicht mehr auch in Bandaktivität. «Auto» ist nur eingeschaltet farbig. Beim Update aus dem Tray erscheint das große Plakat nicht mehr: Aurora lädt, schließt sich und aktualisiert.",
+      "Dans les Automatisations, la nouvelle case « Exclure » ignore les continents choisis au lieu de ne répondre qu'à eux. Avec la fenêtre RX ouverte, la station du QSO en cours n'apparaît plus aussi dans Activité de bande. « Auto » n'est coloré qu'allumé. La mise à jour depuis la barre n'affiche plus la grande affiche : Aurora télécharge, se ferme et se met à jour.",
+      "En Automatizaciones la nueva casilla «Excluir» salta los continentes elegidos en vez de responder solo a ellos. Con la ventana RX abierta, la estación del QSO en curso ya no aparece también en Actividad de banda. «Auto» solo tiene color cuando está encendido. Al actualizar desde la bandeja ya no aparece el cartel grande: Aurora descarga, se cierra y se actualiza.",
+      "Nas Automatizações a nova caixa «Excluir» salta os continentes escolhidos em vez de responder só a eles. Com a janela RX aberta, a estação do QSO em curso já não aparece também na Atividade de banda. «Auto» só tem cor quando está ligado. Ao atualizar pela bandeja já não aparece o cartaz grande: o Aurora descarrega, fecha-se e atualiza-se.",
+    ],
+  },
+  {
     version: '0.11.212',
     released: '2026-11-09T12:40:44Z',
     kind: 'fixed',

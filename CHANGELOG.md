@@ -2,8 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.213 - 2026-11-09
 - **Aggiornamento dal tray**: con «Aggiorna ora» del tray la finestra di Aurora non mostra la locandina (c'e' gia' la cartolina del tray), anche se Aurora viene aperta per l'occasione.
 - **Auto**: colorato solo quando e' acceso (arancio in prova a vuoto, verde in modo reale); spento e' come gli altri pulsanti.
+- **Automazioni, continenti**: nuova casella «Escludi»: spuntata, Aurora non risponde ai continenti scelti; spenta, risponde solo a quelli (prima era solo «solo questi», e chi spuntava EU per escluderla otteneva il contrario).
+- **Attivita' di banda**: con la finestra RX aperta, i messaggi della stazione con cui si sta facendo il QSO restano solo nella finestra RX.
+- **Finestra RX**: il suggerimento su «Hz ±50» spiega che mostra solo la propria frequenza, mentre Auto guarda tutta la banda.
 
 ## 0.11.212 - 2026-11-09
 - **Automatico**: il pulsante accende le Automazioni nel modo scelto nelle Impostazioni (prova a vuoto o reale); prima chiedeva sempre il modo reale senza la conferma dell'avviso, il motore rifiutava e non succedeva nulla. Se non si accendono, un avviso apre le Impostazioni → Automazioni.

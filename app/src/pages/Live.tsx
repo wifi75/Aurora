@@ -70,6 +70,12 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 const LOG_TAB_KEY = 'aurora-log-linguetta';
 /** Mezza larghezza della finestra RX attorno alla barretta Rx (come la finestra «Rx Frequency» di WSJT-X). */
 const RX_WINDOW_HZ = 50;
+
+/** Il messaggio contiene il nominativo della stazione con cui si sta facendo il QSO: con la finestra RX aperta lo si vede lì e si toglie da Attività di banda. */
+function fromDx(text: string, dx: string | null | undefined): boolean {
+  const call = dx?.trim().toUpperCase();
+  return !!call && text.toUpperCase().split(/\s+/).some((w) => w.replace(/[<>]/g, '') === call);
+}
 const RX_ON_KEY = 'aurora-finestra-rx';
 
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
@@ -272,7 +278,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
         const rxShown = rxOn && !soloPanel;
-        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} />;
+        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
@@ -569,7 +575,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                 <header className="dock-grip dock-grip--fixed">
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{t('rxw.title')}</h2>
-                  <span className="log-rx-freq">{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+                  <span className="log-rx-freq" title={t('rxw.tip')}>{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
                 </header>
                 <div className="dock-body">{rxBody()}</div>
               </section>

@@ -331,6 +331,9 @@ export function AutomationTab() {
           <div className="sw-field" title={t('tip.auto.continents')}>
             <span className="sw-label">{t('auto.continents')}</span>
             <div className="au-conts au-chips">
+              <label className="sw-check au-chip" title={t('auto.contExclude')}>
+                <input type="checkbox" checked={!!rules.continents_exclude} onChange={() => edit({ continents_exclude: !rules.continents_exclude })} /> {t('auto.contExcludeShort')}
+              </label>
               {CONTINENTS.map((c) => (
                 <label key={c} className="sw-check au-chip" title={t(`auto.cont.${c}` as Key)}>
                   <input type="checkbox" checked={rules.continents.includes(c)} onChange={() => toggleContinent(c)} /> {c}

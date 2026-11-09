@@ -75,6 +75,9 @@ pub struct Rules {
     /// Solo i CQ da questi continenti (EU, NA, SA, AF, AS, OC, AN); vuoto = tutti.
     #[serde(default)]
     pub continents: Vec<String>,
+    /// I continenti scelti sono da escludere invece che i soli ammessi.
+    #[serde(default)]
+    pub continents_exclude: bool,
     /// Dopo tanti minuti senza nessun CQ a cui rispondere Aurora chiama CQ da sola (0 = mai). Trasmette solo in modo reale.
     #[serde(default)]
     pub auto_cq_after_min: u32,
@@ -133,6 +136,7 @@ impl Default for Rules {
             window_to_min: default_window_to(),
             excluded_countries: Vec::new(),
             continents: Vec::new(),
+            continents_exclude: false,
             auto_cq_after_min: 0,
         }
     }
@@ -747,6 +751,9 @@ impl Brain {
         }
         if !self.state.rules.continents.is_empty() {
             let allowed = |c: &str| self.state.rules.continents.iter().any(|x| x.trim().eq_ignore_ascii_case(c.trim()));
+            if self.state.rules.continents_exclude {
+                return d.continent.as_deref().filter(|c| allowed(c)).map(|c| format!("{call}: continente {} escluso", c.trim().to_uppercase()));
+            }
             return match d.continent.as_deref() {
                 Some(c) if allowed(c) => None,
                 Some(c) => Some(format!("{call}: continente {} non tra quelli scelti", c.trim().to_uppercase())),

@@ -179,6 +179,7 @@ fn fake_switch(start: bool) -> (qso_engine::TxSwitch, Arc<std::sync::atomic::Ato
             set_on.store(v, Ordering::SeqCst);
             true
         }),
+        live: Arc::new(|_| {}),
     };
     (switch, on)
 }
