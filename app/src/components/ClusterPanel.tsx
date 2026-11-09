@@ -1,3 +1,4 @@
+import { toast } from '../lib/toast';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type CSSProperties, memo } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
@@ -69,7 +70,6 @@ function ClusterPanelInner() {
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
-  const [note, setNote] = useState('');
   const wishlist = useWishlist((s) => s.list);
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
@@ -130,14 +130,14 @@ function ClusterPanelInner() {
 
   const tune = async (spot: ClusterSpot) => {
     if (!info.data?.rig_control && !info.data?.manual_dial) {
-      setNote(t('cluster.noRig'));
+      toast(t('cluster.noRig'), 'error');
       return;
     }
     try {
+      // niente riga «Radio portata su…» sopra la tabella: si vede gia' sul display; gli errori in un avviso che sparisce
       await tuneSpot(spot);
-      setNote(t('cluster.tuned', { freq: formatKhz(spot.freq_khz) }));
     } catch (error) {
-      setNote(replyErrorMessage(error, t));
+      toast(replyErrorMessage(error, t), 'error');
     }
   };
 
@@ -163,7 +163,6 @@ function ClusterPanelInner() {
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
         </span>
       </div>
-      {note ? <p className="live-note" role="status">{note}</p> : null}
       {spots.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.waiting')}</p>
       ) : shown.length === 0 ? (
