@@ -34,7 +34,7 @@ pub struct UpdateConfig {
 
 impl Default for UpdateConfig {
     fn default() -> Self {
-        UpdateConfig { enabled: true, repo: "wifi75/Aurora".into(), interval_hours: 3, prereleases: false, token: String::new() }
+        UpdateConfig { enabled: true, repo: "wifi75/Aurora".into(), interval_hours: 1, prereleases: false, token: String::new() }
     }
 }
 
@@ -381,6 +381,10 @@ impl UpdateService {
             .filter(|c| c.validate().is_ok())
             .unwrap_or_default();
         config.repo = config.repo.trim().to_string();
+        // le 3 ore erano il vecchio valore predefinito (fino alla 0.11.205): diventa ogni ora, come l'agente nel tray
+        if config.interval_hours == 3 {
+            config.interval_hours = 1;
+        }
         Arc::new(UpdateService { path: path.to_path_buf(), current: current.to_string(), api: api.trim_end_matches('/').to_string(), config: Mutex::new(config), state: Mutex::new(State { notified: std::fs::read_to_string(path.with_extension("notified")).unwrap_or_default().trim().to_string(), checked_at_ms: 0, latest: None, error: None }), notified_path: path.with_extension("notified"), download: Mutex::new(None), stage: Mutex::new(StageState::default()), preparing: Mutex::new(()) })
     }
 
