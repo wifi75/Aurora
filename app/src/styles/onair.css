@@ -7414,3 +7414,6 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 .log-rx .decode-row { align-items: center; }
 .log-rx .decode-where, .log-rx .w-country, .log-rx .decode-country { font-size: inherit !important; line-height: inherit; align-items: center; align-self: center; }
 .log-rx .w-flag { display: inline-flex; align-items: center; }
+/* finestra RX: bandiera e paese subito dopo il messaggio (non in fondo alla riga) */
+.log-rx .decode-row { grid-template-columns: 3.9rem 2rem max-content minmax(0, 1fr) !important; column-gap: 0.6rem; }
+.log-rx .decode-where { justify-content: flex-start !important; padding-left: 0.4rem; }
