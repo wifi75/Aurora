@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.215',
-    released: '2026-11-09T22:00:00Z',
+    released: '2026-11-09T18:41:34Z',
     kind: 'new',
     title: ["Nuovo stato in Auto e pagina Contest più ordinata", "New state in Auto and a tidier Contest page", "Neuer Staat in Auto und aufgeräumte Contest-Seite", "Nouvel État dans Auto et page Contest plus nette", "Nuevo estado en Auto y página Contest más ordenada", "Novo estado no Auto e página Contest mais arrumada"],
     text: [
