@@ -403,3 +403,6 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-toggle-knob { border-radius: 4px !important; }
 .ctc-toggle-knob::after { border-radius: 3px !important; }
 .ctc-toggle--on { background: color-mix(in srgb, #2cf5a4 10%, transparent); }
+/* il riassunto va a capo dentro il pannello (la barra in alto non va a capo) */
+.ctc-dates-pop { width: min(420px, 90vw); white-space: normal !important; }
+.ctc-dates-pop .ctc-how-text { white-space: normal !important; overflow-wrap: anywhere; display: block; }
