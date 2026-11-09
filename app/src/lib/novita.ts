@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.211',
+    released: '2026-11-09T12:28:37Z',
+    kind: 'changed',
+    title: ['Pannello RX separato', 'Separate RX panel', 'Eigenes RX-Fenster', 'Panneau RX séparé', 'Panel RX separado', 'Painel RX separado'],
+    text: [
+      "La finestra RX è un pannello a sé sopra il Log, con la sua barra del titolo, come Bande aperte e Comandi: si accende e si spegne con «RX» nella barra del Log. La scheda DXCC sotto il log è più compatta.",
+      "The RX window is a panel of its own above the Log, with its own title bar, like Open bands and Commands: switch it on and off with «RX» in the Log bar. The DXCC card under the log is more compact.",
+      "Das RX-Fenster ist ein eigenes Feld über dem Log, mit eigener Titelleiste wie Offene Bänder und Befehle: ein- und ausschalten mit «RX» in der Log-Leiste. Die DXCC-Karte unter dem Log ist kompakter.",
+      "La fenêtre RX est un panneau à part au-dessus du Log, avec sa barre de titre, comme Bandes ouvertes et Commandes : on l’allume et l’éteint avec « RX » dans la barre du Log. La fiche DXCC sous le log est plus compacte.",
+      "La ventana RX es un panel propio sobre el Log, con su barra de título, como Bandas abiertas y Comandos: se enciende y apaga con «RX» en la barra del Log. La ficha DXCC bajo el log es más compacta.",
+      "A janela RX é um painel próprio sobre o Log, com a sua barra de título, como Bandas abertas e Comandos: liga-se e desliga-se com «RX» na barra do Log. A ficha DXCC por baixo do log é mais compacta.",
+    ],
+  },
+  {
     version: '0.11.210',
     released: '2026-11-09T12:19:30Z',
     kind: 'fixed',

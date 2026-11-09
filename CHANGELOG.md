@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.211 - 2026-11-09
+- **Pannello RX**: la finestra RX e' un pannello separato sopra il Log, con la sua barra del titolo (come Bande aperte e Comandi); il pulsantino «RX» del Log lo accende e lo spegne.
+- **Log**: scheda DXCC sotto il log piu' compatta.
+
 ## 0.11.210 - 2026-11-09
 - **Aggiornamento**: se l'installatore silenzioso finisce senza riaprire Aurora (successo aggiornando dal tray), lo script che lo ha lanciato la riapre da solo.
 - **Filtro e Automazioni**: scegliendo una novita' (nuova griglia, nuova zona…) si accende da sola la sua evidenziazione in Segnalazioni, se era spenta: prima il filtro mostrava solo le proprie trasmissioni (ON7KEC); messaggio chiaro quando nessuna stazione ha le novita' scelte.
