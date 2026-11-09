@@ -2,15 +2,17 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-09 notte (0.11.218 pubblicata)
+## Stato al 2026-11-09 notte (0.11.219 pubblicata)
 
 - **Versioni del giorno**: 0.11.205-0.11.218. Ultime: 0.11.215 nuovo stato in Auto e pagina Contest ordinata, voce degli avvisi rifatta con Kokoro (licenza Apache 2.0, `scripts/genera-voce-kokoro.py`; le frasi di Edge/Ava sono state tolte); 0.11.216 correzioni dai rapporti di Cloudflare (PowerShell con percorso intero per l'installatore, niente falsi blocchi/panic in chiusura `crash::exiting`, rapporti senza «radio non collegata»); 0.11.217 paesi non confermati come DXCC nuovo (`newDXCCUnconfirmed`), Mappa DX con banda in uso, «solo chi mi sente», linea rossa in TX; 0.11.218 Contest da tastiera (F1 Auto CQ, F2-F4, Esc), «Come funziona», avvisi sopra le Impostazioni, ricarica che resta sulla pagina.
+- **0.11.219** (23:00): mappa del pannello Log semplificata (sempre banda in uso, riga di comandi corta) e passaggio automatico al Log quando un QSO va a log; selettore banda/frequenza piu' leggibile; Contest spento pulito; correzione della pagina vuota ricaricando (mappa di calore su tela larga 0) e `PageGuard` contro gli errori di pagina; alleggerimenti (righe visibili prima, `content-visibility`, misure ferme con la finestra nascosta). Tentativo di tenere viva la Stazione nascosta **tolto**: dava la pagina nera (non riprovarlo senza prove serie).
 - **Contest**: nel log del contest entrano solo i QSO avviati dalla pagina Contest (intestazione `x-aurora-origine: contest` su reply e CQ) e fatti durante la gara; chi non fa il contest entra a 0 punti (errore, fuori dal Cabrillo). Da provare dal vivo al DARC FT4 del 2026-11-10, 19:00 UTC.
 - **Conteggio delle persone**: `rapporti::codice_persona` (SHA-256 del nominativo sul PC) nel segnale `/v1/attivo`; sul Worker HMAC con `PERSONA_SEGRETO` (impostato) e colonne `persona` su D1 (aggiunte). Rapporti degli errori svuotati il 2026-11-09 dopo la lettura.
 - **Riordino**: in `D:\progetti` restano `Aurora` e `Aurora-archivio` (LEGGIMI dentro); copie di lavoro git chiuse (i rami restano), compilazioni vecchie di `D:uild` cancellate.
 - **Test**: i test del motore toccati passano; nell'interfaccia 39 test falliscono gia' da prima del 2026-11-09 (elenco confrontato con la 0.11.212), da sistemare a parte.
 - **In attesa**: issue #9 (TCI «Audio silent», avllucken: chieste versione e pacchetto); risposte di Luc sulle sue richieste; frase «Virus free» dei README da rivedere (VirusTotal non si fa piu').
-- **Prossimo passo**: prove del proprietario al contest; poi i lavori di `docs/tasks.md`.
+- **Blocchi della finestra**: su Cloudflare arrivano «programma bloccato (finestra)» da altre installazioni subito dopo ogni release (uno «finito dopo 29 s»): non spiegati, servono un pacchetto di assistenza o il minidump.
+- **Prossimo passo**: prove del proprietario al DARC FT4 (2026-11-10 19:00 UTC); controllare i rapporti dopo la 0.11.219; poi i lavori di `docs/tasks.md`.
 
 ## Stato al 2026-11-08 mattina (passaggio ad altro account)
 
