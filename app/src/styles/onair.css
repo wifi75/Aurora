@@ -7491,3 +7491,5 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .dxmap-bar.dxmap-bar--mini { gap: 8px; padding: 2px 6px; font-size: 11px; flex-wrap: nowrap; overflow: hidden; }
 .dxmap-bar.dxmap-bar--mini select { font-size: 11px; height: 22px; }
 .dxmap-bar--mini .dxmap-band-now { font-weight: 700; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, #8e7bff 30%, transparent); }
+/* mappa del pannello Log: niente riquadro con locatore, coordinate e km che segue il mouse */
+.log-map .worldmap-readout { display: none !important; }
