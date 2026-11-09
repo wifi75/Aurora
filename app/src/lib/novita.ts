@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.207',
+    released: '2026-11-09T08:17:21Z',
+    kind: 'fixed',
+    title: ['Versione nuova in verde fluo e km interi', 'New version in fluo green and whole km', 'Neue Version in Neongrün und ganze km', 'Nouvelle version en vert fluo et km entiers', 'Versión nueva en verde flúor y km enteros', 'Versão nova em verde flúor e km inteiros'],
+    text: [
+      "Quando la versione nuova è pronta, in testata compare una pillola verde fluo «Nuova» con il numero, il puntino che pulsa e «Installa». Le distanze sono sempre in km interi, senza decimali (nella pagina Contest comparivano con molte cifre dopo la virgola).",
+      "When the new version is ready, a fluo green “New” pill with the number, a pulsing dot and “Install” appears in the header. Distances are always in whole km, without decimals (the Contest page showed many digits after the point).",
+      "Wenn die neue Version bereit ist, erscheint in der Kopfzeile eine neongrüne Pille „Neu“ mit der Nummer, einem pulsierenden Punkt und „Installieren“. Entfernungen stehen immer in ganzen km ohne Nachkommastellen (die Contest-Seite zeigte viele Nachkommastellen).",
+      "Quand la nouvelle version est prête, une pastille vert fluo « Nouvelle » avec le numéro, un point qui pulse et « Installer » apparaît dans l’en-tête. Les distances sont toujours en km entiers, sans décimales (la page Contest affichait beaucoup de chiffres après la virgule).",
+      "Cuando la versión nueva está lista, en la cabecera aparece una píldora verde flúor «Nueva» con el número, un punto que late e «Instalar». Las distancias van siempre en km enteros, sin decimales (la página Contest mostraba muchas cifras tras la coma).",
+      "Quando a versão nova está pronta, no cabeçalho aparece uma pílula verde flúor «Nova» com o número, um ponto a pulsar e «Instalar». As distâncias ficam sempre em km inteiros, sem decimais (a página Contest mostrava muitos algarismos depois da vírgula).",
+    ],
+  },
+  {
     version: '0.11.206',
     released: '2026-11-09T08:04:56Z',
     kind: 'fixed',
