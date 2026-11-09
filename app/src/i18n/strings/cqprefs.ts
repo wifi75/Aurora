@@ -1,5 +1,10 @@
 /** Impostazioni della finestra «CQ e novità». [it, en, de, fr, es, pt] */
 export const cqPrefsStrings = {
+  'bfl.except': ['Eccezioni', 'Exceptions', 'Ausnahmen', 'Exceptions', 'Excepciones', 'Exceções'],
+  'bfl.cqOnly': ['Solo CQ', 'CQ only', 'Nur CQ', 'CQ seul', 'Solo CQ', 'Só CQ'],
+  'bfl.rr73AsCq': ['RR73 come CQ', 'RR73 as CQ', 'RR73 als CQ', 'RR73 comme CQ', 'RR73 como CQ', 'RR73 como CQ'],
+  'bfl.hasGrid': ['Ha locatore', 'Has grid', 'Mit Locator', 'Avec locator', 'Con locator', 'Com locator'],
+  'bfl.notMyCont': ['Non il mio continente', 'Not my continent', 'Nicht mein Kontinent', 'Pas mon continent', 'No mi continente', 'Não o meu continente'],
   'cqp.title': ['CQ e novità: cosa elencare', 'CQ and new ones: what to list', 'CQ und Neues: was angezeigt wird', 'CQ et nouveautés : quoi lister', 'CQ y novedades: qué listar', 'CQ e novidades: o que listar'],
   'cqp.tags': ['Tipi di messaggio elencati', 'Message types listed', 'Angezeigte Nachrichtenarten', 'Types de messages listés', 'Tipos de mensaje listados', 'Tipos de mensagem listados'],
   'cqp.only': ['Elenca SOLO queste stazioni (virgola; JA* = tutti i JA; vuoto = tutte)', 'List ONLY these stations (comma; JA* = all JA; empty = all)', 'NUR diese Stationen anzeigen (Komma; JA* = alle JA; leer = alle)', 'Lister SEULEMENT ces stations (virgule ; JA* = tous les JA ; vide = toutes)', 'Listar SOLO estas estaciones (coma; JA* = todos los JA; vacío = todas)', 'Listar SÓ estas estações (vírgula; JA* = todos os JA; vazio = todas)'],

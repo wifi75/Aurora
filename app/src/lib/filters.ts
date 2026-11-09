@@ -39,6 +39,8 @@ export interface Filters {
   bands: string[];
   /** Nasconde i messaggi diretti a me (di solito restano evidenziati). */
   hideToMe: boolean;
+  /** Solo chi manda il locatore (eccezione «Ha locatore» del filtro di Attivita' di banda). */
+  hasGrid: boolean;
 }
 
 const KEY = 'aurora-filters';
@@ -48,7 +50,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultFilters(): Filters {
-  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false, hideWorkedAll: false, showOnlyCalls: [], alwaysShowCalls: [], highlightCalls: [], highlightCountries: [], bypass: false, tags: [], minSnr: null, minKm: null, maxKm: null, bands: [], hideToMe: false };
+  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false, hideWorkedAll: false, showOnlyCalls: [], alwaysShowCalls: [], highlightCalls: [], highlightCountries: [], bypass: false, tags: [], minSnr: null, minKm: null, maxKm: null, bands: [], hideToMe: false, hasGrid: false };
 }
 
 const isCallToken = (token: string) =>
@@ -159,7 +161,7 @@ export function applyActivityFilters(decodes: DecodedMessage[], filters: Filters
   if (filters.bypass) return decodes;
   const tags = filters.tags.length > 0 ? new Set(filters.tags) : null;
   const useKm = filters.minKm !== null || filters.maxKm !== null;
-  if (!tags && filters.minSnr === null && !useKm && !filters.hideToMe && filters.bands.length === 0) return decodes;
+  if (!tags && filters.minSnr === null && !useKm && !filters.hideToMe && !filters.hasGrid && filters.bands.length === 0) return decodes;
   // banda esclusa: nessuna riga (si vede soltanto la propria trasmissione)
   if (filters.bands.length > 0 && ctx.band !== null && !filters.bands.includes(ctx.band)) return [];
   return decodes.filter((d) => {
@@ -171,6 +173,8 @@ export function applyActivityFilters(decodes: DecodedMessage[], filters: Filters
     }
     if (filters.minSnr !== null && d.snr < filters.minSnr) return false;
     if (filters.hideToMe && ctx.isToMe(d.text)) return false;
+    // «Ha locatore»: dopo i due nominativi c'e' un locatore a 4 (RR73 non conta)
+    if (filters.hasGrid && !d.text.split(/\s+/).slice(2).some((w) => /^[A-R]{2}[0-9]{2}$/.test(w) && w !== 'RR73')) return false;
     if (useKm) {
       const km = ctx.distance(d.text);
       if (km === null) return false;
@@ -206,6 +210,7 @@ export function readFilters(storage: ReadableStorage): Filters {
     filters.maxKm = numberOrNull(parsed.maxKm, 0, 25000);
     filters.bands = strings(parsed.bands);
     filters.hideToMe = parsed.hideToMe === true;
+    filters.hasGrid = parsed.hasGrid === true;
   } catch {
     return defaultFilters();
   }

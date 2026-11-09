@@ -8,6 +8,7 @@ import { CQ_TAG_LIST, useFilters } from '../lib/filters';
 export function ActivityTagPills() {
   const t = useT();
   const tags = useFilters((s) => s.filters.tags);
+  const f = useFilters((s) => s.filters);
   const set = useFilters.getState().set;
   const toggle = (tag: string) => set({ tags: tags.includes(tag) ? tags.filter((x) => x !== tag) : [...tags, tag] });
   return (
@@ -20,6 +21,21 @@ export function ActivityTagPills() {
           {t(`kind.${tag}` as Key)}
         </button>
       ))}
+      <span className="bfl-sep" aria-hidden="true" />
+      <span className="bfl-group">{t('bfl.except')}</span>
+      {/* le «eccezioni» come in GridTracker (richiesta di ON7KEC): restringono quello che resta */}
+      <button type="button" className={f.only === 'cq' ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={f.only === 'cq'} onClick={() => set({ only: f.only === 'cq' ? 'all' : 'cq' })}>
+        {t('bfl.cqOnly')}
+      </button>
+      <button type="button" className={f.only === 'cq_rr73' ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={f.only === 'cq_rr73'} onClick={() => set({ only: f.only === 'cq_rr73' ? 'all' : 'cq_rr73' })}>
+        {t('bfl.rr73AsCq')}
+      </button>
+      <button type="button" className={f.hasGrid ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={f.hasGrid} onClick={() => set({ hasGrid: !f.hasGrid })}>
+        {t('bfl.hasGrid')}
+      </button>
+      <button type="button" className={f.hideOwnContinent ? 'bfl-pill bfl-pill--on' : 'bfl-pill'} aria-pressed={f.hideOwnContinent} onClick={() => set({ hideOwnContinent: !f.hideOwnContinent })}>
+        {t('bfl.notMyCont')}
+      </button>
     </div>
   );
 }

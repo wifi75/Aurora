@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Attivita' di banda**: nel «Filtro» anche le eccezioni come GridTracker: Solo CQ, RR73 come CQ, Ha locatore, Non il mio continente (richiesta di ON7KEC).
+
 - **TCI**: niente avviso «audio muto» quando l'audio TCI arriva basso ma c'e' (issue #9); resta solo con zeri veri.
 - Impostazioni, scheda del Log: nuovo riquadro «Database di Log4OM» per scegliere (finestra «Apri file» o percorso a mano) o togliere il file di Log4OM 2; si controlla, si ricorda e i QSO già fatti si ricaricano subito.
 

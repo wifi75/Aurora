@@ -7455,3 +7455,7 @@ html[data-theme='light'] .dock-panel--log .log4om-table thead th { background: #
 /* cascata: le etichette Rx/Tx in basso e la banda trasparente, cosi' si vede se il posto scelto e' libero (richiesta di un utente) */
 .wf-marker-tag { top: auto !important; bottom: 0; }
 .wf-marker--band { background: transparent !important; box-shadow: none !important; }
+
+/* filtro di Attivita' di banda: separatore e titolino del gruppo «Eccezioni» */
+.bfl-sep { width: 1px; align-self: stretch; margin: 0 0.3rem; background: #3d5078; }
+.bfl-group { font-size: 0.68rem; font-weight: 700; opacity: 0.75; align-self: center; }
