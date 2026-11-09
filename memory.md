@@ -1,6 +1,15 @@
 # Memoria di progetto
 
-Stato al 2026-11-08, versione 0.11.209 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-09, versione 0.11.209 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+
+## Decisioni del 2026-11-09
+- Aggiornamenti: controllo 1 s dopo l'avvio e ogni ora; locandina con nastrino «Nuova versione», installazione silenziosa (`/S`) dopo 5 s con «Annulla», mai in trasmissione; striscia verde fluo in testata (0.11.205-0.11.207).
+- Un Aurora vecchio rimasto acceso (anche `aurora.exe`, il core da solo) si prendeva la finestra: all'avvio, nell'installatore e nell'aggiornamento si chiude (`desktop/src-tauri/src/stale.rs`, `installer/hooks.nsh`; 0.11.205-0.11.206).
+- Contest completo (0.11.208): interruttore acceso/spento, niente trasmissione fuori regola, avviso nominativi composti, scambi validati (liste ARRL/RAC, province), moltiplicatori DXCC, EDI con ERROR/SAnte, consiglio di banda, mappa dei moltiplicatori, Allenamento (solo nella pagina) e Analisi. 24 contest dalla 0.11.209 (YBDXPI FT8, FT8 Activity EU/NA, NCCC FT4 aggiunti dal calendario WA7BNM).
+- Automazioni (0.11.209, segnalazione di ON7KEC): pulsante «Automatico» nella barra; in modo reale Abilita Tx resta acceso e i chiamanti esclusi da regole e filtri non si lavorano.
+- Pannello Log con linguette «Log | Mappa» e «RX» (finestra RX come WSJT-X) in alto; filtro a pillole delle novita' in Attivita' di banda; scheda «Aspetto» (alto contrasto, caratteri, dimensione, colore); regione IARU dal nominativo; OmniRig Rig 1/Rig 2 (IK1SOW).
+- Meno lavoro inutile: riletture del log unite, niente confronto JTDX senza JTDX, registrazioni WAV spente di base.
+- Rifiutato: RTTY, CW, SSTV (prima si finisce il lavoro in corso).
 
 ## Decisioni del 2026-11-08
 - Le issue di GitHub le gestisce il proprietario: il controllo automatico ogni ora e' stato eliminato (aveva risposto con informazioni superate); mai rispondere sulle issue senza il suo via libera.
