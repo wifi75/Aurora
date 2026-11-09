@@ -91,7 +91,8 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
   // «in uso»: la banda della radio adesso (richiesta di Luc: lavorando sui 15 m si vedono solo quadrati e spot dei 15 m)
   const [band, setBand] = useState('auto');
   const bandNow = dial ? bandOf(dial) : null;
-  const effBand = band === 'auto' ? (bandNow ?? 'all') : band;
+  // nel pannello Log sempre la banda in uso (niente menu)
+  const effBand = inPanel || band === 'auto' ? (bandNow ?? 'all') : band;
   const [mode, setMode] = useState('all');
   const [showSquares, setShowSquares] = useState(!bare);
   const [open, setOpen] = useState(false);
@@ -262,15 +263,7 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
         // pannello Log: le stesse informazioni della Mappa DX con una riga sola di comandi (banda, chi mi sente, nominativi);
         // il resto (stile, linee, quadrati...) segue le impostazioni della pagina Mappa DX, che sono le stesse
         <div className="dxmap-bar dxmap-bar--mini">
-          <select value={band} onChange={(e) => setBand(e.target.value)} title={t('dxmap.bandNow')}>
-            <option value="auto">{t('dxmap.bandNow')}{bandNow ? ` (${bandNow})` : ''}</option>
-            <option value="all">{t('dxmap.allBands')}</option>
-            {bands.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          <span className="dxmap-band-now">{bandNow ?? '—'}</span>
           <label className="toggle" title={t('dxmap.onlyHeardMe.tip')}>
             <input type="checkbox" checked={settings.onlyHeardMe} onChange={(e) => change({ onlyHeardMe: e.target.checked })} />
             {t('dxmap.onlyHeardMe')}
