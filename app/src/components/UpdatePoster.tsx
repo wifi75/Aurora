@@ -43,6 +43,8 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   const [seen, setSeen] = useState('');
   const [installing, setInstalling] = useState(false);
   const [failure, setFailure] = useState('');
+  const [cancelled, setCancelled] = useState(false);
+  const transmitting = useStation((st) => st.status?.transmitting === true);
   // il core avvisa appena trova la versione nuova: si rileggono i dettagli (note, data, installazione)
   const notice = useStation((st) => st.updateNotice);
   const refetch = update.refetch;
@@ -86,6 +88,10 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
       setFailure(t('upd.installFailed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
     }
   };
+  // come le app che si aggiornano da sole: a pacchetto pronto e verificato l'installazione parte da sola dopo pochi secondi,
+  // mai mentre la radio trasmette; «Annulla» la ferma (resta il pulsante «Installa»)
+  const ready = update.data?.can_install === true && update.data?.stage?.phase === 'ready' && update.data.stage.version === release.version;
+  const autoGo = ready && !installing && !cancelled && !transmitting && !failure;
   const when = release.published_at ? new Date(release.published_at).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' }) : '';
   const lines = noteLines(release.notes || release.name || '');
 
@@ -118,6 +124,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
             </>
           ) : null}
           <p className="upd-poster__ver">{t('upd.poster.current', { current: update.data?.current ?? '…', when })}</p>
+          {autoGo ? <AutoInstall onGo={() => void install()} onCancel={() => setCancelled(true)} /> : null}
           <InstallProgress active={installing} />
           {failure ? (
             <p className="first-run__error" role="alert">
@@ -142,6 +149,34 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
         </div>
       </div>
     </div>
+  );
+}
+
+const AUTO_SECONDS = 5;
+
+/** Il conto alla rovescia dell'installazione automatica, con «Annulla». */
+function AutoInstall({ onGo, onCancel }: { onGo(): void; onCancel(): void }) {
+  const t = useT();
+  const [left, setLeft] = useState(AUTO_SECONDS);
+  const [gone, setGone] = useState(false);
+  useEffect(() => {
+    if (gone) return;
+    if (left <= 0) {
+      setGone(true);
+      onGo();
+      return;
+    }
+    const id = window.setTimeout(() => setLeft((n) => n - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [left, gone, onGo]);
+  return (
+    <p className="upd-poster__auto" role="status">
+      <span className="upd-poster__spin" aria-hidden="true" />
+      {t('upd.poster.auto', { seconds: String(Math.max(left, 0)) })}
+      <button type="button" className="first-run__later upd-poster__cancel" onClick={onCancel}>
+        {t('upd.poster.cancel')}
+      </button>
+    </p>
   );
 }
 

@@ -5,7 +5,7 @@
 ## 0.11.205 - 2026-11-09
 - **Aggiornamento**: all'avvio Aurora chiude un Aurora di un'altra versione rimasto acceso sulla stessa porta (anche solo su 127.0.0.1), che si prendeva la finestra e mostrava la versione vecchia anche dopo l'aggiornamento; la finestra del programma non usa piu' il service worker e toglie quello vecchio.
 - **Aggiornamento**: il controllo parte 1 secondo dopo l'avvio; la locandina compare subito anche mentre la versione nuova si scarica, con il nastrino «Nuova versione» in diagonale; «Piu' tardi» vale fino alla prossima apertura.
-- **Aggiornamento silenzioso**: dall'app l'aggiornamento si installa senza aprire la finestra dell'installatore e Aurora si riapre da sola.
+- **Aggiornamento silenzioso**: come le app che si aggiornano da sole, a pacchetto pronto e verificato la locandina installa da sola dopo 5 secondi (con «Annulla», mai mentre la radio trasmette), senza la finestra dell'installatore, e Aurora si riapre da sola.
 - **Installatore**: con una versione piu' vecchia installata la scelta in alto e gia' selezionata e' «Aggiorna (consigliato)».
 
 ## 0.11.204 - 2026-11-08
