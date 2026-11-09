@@ -426,3 +426,7 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtile { grid-template-columns: auto minmax(max-content, 1fr) !important; gap: 5px !important; }
 .ctc-mtile b { overflow: visible !important; text-overflow: clip !important; }
 .ctc-mtile .ctc-mult { max-width: 3.2em; }
+/* RX/TX della pagina Contest: quadrato, fondo pieno, testo scuro su verde e bianco su rosso (leggibili nel tema scuro e chiaro) */
+.ctc-freq .rxtx-flag { border-radius: 6px !important; height: 26px; min-width: 40px; padding: 0 8px; border: 0 !important; font-weight: 800; letter-spacing: 0.04em; cursor: pointer; box-shadow: none !important; text-shadow: none !important; }
+.ctc-freq .rxtx-flag[data-state='rx'] { background: #22c55e !important; color: #052e14 !important; }
+.ctc-freq .rxtx-flag[data-state='tx'] { background: #e5484d !important; color: #ffffff !important; }
