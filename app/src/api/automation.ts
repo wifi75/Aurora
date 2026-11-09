@@ -18,6 +18,8 @@ export const AutomationStateSchema = z.object({
     respect_cq_direction: z.boolean().default(true),
     /** Le regole nuove: un core piu' vecchio non le manda e valgono i valori prudenti (tutto spento, nessun limite orario). */
     reply_to_new_mode: z.boolean().default(false),
+    reply_to_new_state: z.boolean().default(false),
+    reply_to_new_state_band: z.boolean().default(false),
     max_qso_per_hour: z.number().default(0),
     window_enabled: z.boolean().default(false),
     window_from_min: z.number().default(480),

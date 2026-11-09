@@ -1688,6 +1688,39 @@ pub async fn run(
             mode.is_some() && worked.read().is_ok_and(|w| !w.is_empty() && w.labels(call, None, None, mode, &db).new_mode)
         }));
     }
+    // «nuovo stato» (USA): lo stato dalle ricerche QRZ.com/HamQTH gia' fatte (in memoria), gli stati lavorati dal log di Aurora e da Log4OM2
+    if let Some(store) = &engine_settings {
+        let (store, own, l4) = (Arc::clone(store), Arc::clone(&logbook), Arc::clone(&log4om_choice.current));
+        let cache: Arc<Mutex<(u64, std::collections::BTreeMap<String, std::collections::BTreeSet<String>>)>> = Arc::default();
+        automation.set_new_state_matcher(Arc::new(move |d, call, dial| {
+            if !d.country.as_deref().is_some_and(|c| c.to_ascii_lowercase().starts_with("united states")) {
+                return None;
+            }
+            let st = store.cached_state(call)?.trim().to_uppercase();
+            if st.len() != 2 {
+                return None;
+            }
+            let mut c = cache.lock().ok()?;
+            let now = unix_secs();
+            // gli stati lavorati si rileggono ogni 5 minuti
+            if c.0 == 0 || now.saturating_sub(c.0) >= 300 {
+                c.1 = worked_states(&own, &l4);
+                c.0 = now.max(1);
+            }
+            // log senza stati: tutto sarebbe «nuovo», come per le altre novita' non si segnala nulla
+            if c.1.is_empty() {
+                return None;
+            }
+            let band = dial.and_then(rig_control::bands::amateur_band).map(str::to_ascii_lowercase);
+            match c.1.get(&st) {
+                None => Some((st, true)),
+                Some(bands) => match band {
+                    Some(b) if !bands.contains(&b) => Some((st, false)),
+                    _ => None,
+                },
+            }
+        }));
+    }
     let live_log = enrichment.as_ref().map(|(db, worked)| (Arc::clone(db), Arc::clone(worked), log_sources.clone()));
     // le schede Sequenza, Generali e Notifiche del motore proprio: dalle impostazioni di Aurora alla sequenza, alle etichette e al log
     if let Some(store) = &engine_settings {

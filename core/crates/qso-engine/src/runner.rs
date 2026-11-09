@@ -11,7 +11,7 @@ use std::{
 use aurora_core::{Bus, Command, DecodedMessage, Event, SharedUdpFilters};
 use tokio::{sync::broadcast::error::RecvError, task::JoinHandle, time::interval};
 
-use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, Rules, WantedMatcher};
+use crate::brain::{Brain, BrainState, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, NewStateMatcher, Rules, WantedMatcher};
 
 /// Scarto dell'ora locale da UTC, in secondi: lo calcola chi conosce il sistema (il cervello non legge l'orologio).
 pub type LocalOffset = Arc<dyn Fn() -> i64 + Send + Sync>;
@@ -191,6 +191,11 @@ impl Automation {
     /// Come sapere se un paese e' nuovo nel modo in uso, per la regola «nuovo modo».
     pub fn set_new_mode_matcher(&self, matcher: NewModeMatcher) {
         lock(&self.inner.brain).set_new_mode_matcher(matcher);
+    }
+
+    /// Come sapere se lo stato USA di una stazione e' nuovo, per le regole «nuovo stato».
+    pub fn set_new_state_matcher(&self, matcher: NewStateMatcher) {
+        lock(&self.inner.brain).set_new_state_matcher(matcher);
     }
 
     /// Come calcolare lo scarto dell'ora locale (per la fascia oraria); si rilegge a ogni controllo (cambio dell'ora legale).

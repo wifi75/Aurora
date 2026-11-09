@@ -81,6 +81,12 @@ pub struct Rules {
     /// Anche ad Automazioni spente (CQ a mano): non rispondere a chi i filtri di Attivita' di banda e le esclusioni nascondono.
     #[serde(default)]
     pub filter_callers_always: bool,
+    /// Risponde ai CQ di stazioni USA di uno stato mai lavorato («nuovo stato»).
+    #[serde(default)]
+    pub reply_to_new_state: bool,
+    /// Risponde ai CQ di stazioni USA di uno stato non ancora lavorato su questa banda.
+    #[serde(default)]
+    pub reply_to_new_state_band: bool,
     /// Dopo tanti minuti senza nessun CQ a cui rispondere Aurora chiama CQ da sola (0 = mai). Trasmette solo in modo reale.
     #[serde(default)]
     pub auto_cq_after_min: u32,
@@ -121,6 +127,10 @@ pub type WantedMatcher = Arc<dyn Fn(&DecodedMessage, Option<u64>) -> Option<Stri
 /// Dice se il paese di un nominativo non e' mai stato collegato nel modo indicato (`FT8`, `FT4`...).
 pub type NewModeMatcher = Arc<dyn Fn(&str, Option<&str>) -> bool + Send + Sync>;
 
+/// Lo stato USA di chi trasmette e se e' nuovo: `Some((stato, true))` mai lavorato, `Some((stato, false))` nuovo su questa banda,
+/// `None` se non e' una stazione USA, lo stato non si sa o e' gia' lavorato sulla banda. Riceve il messaggio, il nominativo e la frequenza.
+pub type NewStateMatcher = Arc<dyn Fn(&DecodedMessage, &str, Option<u64>) -> Option<(String, bool)> + Send + Sync>;
+
 impl Default for Rules {
     fn default() -> Self {
         Rules {
@@ -141,6 +151,8 @@ impl Default for Rules {
             continents: Vec::new(),
             continents_exclude: false,
             filter_callers_always: false,
+            reply_to_new_state: false,
+            reply_to_new_state_band: false,
             auto_cq_after_min: 0,
         }
     }
@@ -150,7 +162,7 @@ impl Rules {
     /// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
     pub fn is_valid(&self) -> bool {
         // senza etichette si risponde solo ai desiderati (o ai modi nuovi); nessuna delle tre vorrebbe dire non rispondere mai
-        let tags_ok = (!self.reply_to.is_empty() || self.reply_to_wanted || self.reply_to_new_mode)
+        let tags_ok = (!self.reply_to.is_empty() || self.reply_to_wanted || self.reply_to_new_mode || self.reply_to_new_state || self.reply_to_new_state_band)
             && self
                 .reply_to
                 .iter()
@@ -277,6 +289,7 @@ pub struct Brain {
     /// Il modo della radio (`FT8`, `FT4`...), per «nuovo modo».
     radio_mode: Option<String>,
     new_mode: Option<NewModeMatcher>,
+    new_state: Option<NewStateMatcher>,
     /// La trasmissione del motore e' accesa (CQ, QSO in corso): il CQ da solo non parte.
     engine_tx: bool,
     /// Da quando non c'e' nessun CQ a cui rispondere (secondi UTC): il CQ da solo parte dopo `auto_cq_after_min`.
@@ -338,6 +351,7 @@ impl Brain {
             utc_offset_secs: 0,
             radio_mode: None,
             new_mode: None,
+            new_state: None,
             engine_tx: false,
             idle_since: 0,
             cq_since: None,
@@ -442,6 +456,11 @@ impl Brain {
     /// Come sapere se un paese e' nuovo nel modo in uso (il log sta fuori dal cervello).
     pub fn set_new_mode_matcher(&mut self, matcher: NewModeMatcher) {
         self.new_mode = Some(matcher);
+    }
+
+    /// Come sapere se lo stato USA di una stazione e' nuovo (ricerche dei nominativi e log stanno fuori dal cervello).
+    pub fn set_new_state_matcher(&mut self, matcher: NewStateMatcher) {
+        self.new_state = Some(matcher);
     }
 
     /// Scarto dell'ora locale del PC da UTC, in secondi (+3600 = ora italiana d'inverno).
@@ -817,7 +836,17 @@ impl Brain {
         let new_mode = self.state.rules.reply_to_new_mode
             && parsed.is_cq
             && parsed.sender.as_deref().is_some_and(|call| self.new_mode.as_ref().is_some_and(|m| m(call, self.radio_mode.as_deref())));
-        if !(tag_wanted || list_reason.is_some() || new_mode) || !parsed.is_cq {
+        let rules = &self.state.rules;
+        let new_state = if parsed.is_cq && (rules.reply_to_new_state || rules.reply_to_new_state_band) {
+            parsed
+                .sender
+                .as_deref()
+                .and_then(|call| self.new_state.as_ref().and_then(|m| m(d, call, self.dial_hz)))
+                .filter(|(_, never)| (*never && (rules.reply_to_new_state || rules.reply_to_new_state_band)) || (!*never && rules.reply_to_new_state_band))
+        } else {
+            None
+        };
+        if !(tag_wanted || list_reason.is_some() || new_mode || new_state.is_some()) || !parsed.is_cq {
             return Screened::Ignore;
         }
         let Some(call) = parsed.sender else {
@@ -863,10 +892,19 @@ impl Brain {
             (Some(reason), _) if !tag_wanted => format!("nella lista dei desiderati ({reason})"),
             (_, Some(tag)) if tag_wanted => tag_text(tag).to_string(),
             _ if new_mode => "paese nuovo in questo modo".to_string(),
+            _ if new_state.is_some() => match &new_state {
+                Some((st, true)) => format!("stato nuovo ({st})"),
+                Some((st, false)) => format!("stato nuovo sulla banda ({st})"),
+                None => String::new(),
+            },
             _ => "CQ di interesse".to_string(),
         };
         let tag_rank = if tag_wanted { d.tag.map_or(0, rank_of) } else { 0 };
-        let mode_rank = if new_mode { NEW_MODE_RANK } else { 0 };
+        let mode_rank = if new_mode { NEW_MODE_RANK } else { 0 }.max(match &new_state {
+            Some((_, true)) => NEW_MODE_RANK,
+            Some((_, false)) => NEW_MODE_RANK.saturating_sub(1),
+            None => 0,
+        });
         let rank = if list_reason.is_some() { WISHLIST_RANK.max(tag_rank) } else { tag_rank.max(mode_rank) };
         Screened::Candidate(Candidate { call, decode_id: d.id, snr: d.snr, rank, why })
     }

@@ -229,6 +229,12 @@ export function AutomationTab() {
             <label className="sw-check au-chip" title={t('tip.auto.newMode')}>
               <input type="checkbox" checked={rules.reply_to_new_mode} onChange={(e) => edit({ reply_to_new_mode: e.target.checked })} /> {t('auto.newMode')}
             </label>
+            <label className="sw-check au-chip" title={t('tip.auto.newState')}>
+              <input type="checkbox" checked={!!rules.reply_to_new_state} onChange={(e) => edit({ reply_to_new_state: e.target.checked })} /> {t('kind.new_state')}
+            </label>
+            <label className="sw-check au-chip" title={t('tip.auto.newState')}>
+              <input type="checkbox" checked={!!rules.reply_to_new_state_band} onChange={(e) => edit({ reply_to_new_state_band: e.target.checked })} /> {t('kind.new_state_band')}
+            </label>
             <label className="sw-check au-chip" title={t('tip.auto.wanted')}>
               <input type="checkbox" checked={rules.reply_to_wanted} onChange={(e) => edit({ reply_to_wanted: e.target.checked })} /> {t('tab.wishlist')}
             </label>

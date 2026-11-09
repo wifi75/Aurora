@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
 import { getContest } from '../api/contest';
-import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
+import { getAutomation, getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList, gridOfSender } from '../components/DecodeList';
@@ -148,7 +148,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shown, filters, activityBand, deCall, deGrid, statesVersion]);
   // stati USA: servono solo con una delle due pillole accese
-  const wantStates = filters.tags.includes('new_state') || filters.tags.includes('new_state_band');
+  const autoRules = useQuery({ queryKey: ['automation'], queryFn: getAutomation, refetchInterval: 30_000, retry: false }).data?.rules;
+  const wantStates = filters.tags.includes('new_state') || filters.tags.includes('new_state_band') || !!autoRules?.reply_to_new_state || !!autoRules?.reply_to_new_state_band;
   useEffect(() => {
     if (!wantStates) return;
     loadWorkedStates();
