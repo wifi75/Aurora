@@ -97,8 +97,11 @@ impl UpdateInstaller for DesktopInstaller {
         // «Spegni» la radio, fino a 6 s) e l'installatore partito subito trovava Aurora ancora aperta («Impossibile chiudere Aurora»,
         // 2026-11-08, con la cartella di Hamlib gia' tolta). Si aspetta al massimo 30 s, poi parte comunque
         let quoted = installer.replace('\'', "''");
+        // se l'installatore silenzioso finisce senza riaprire Aurora (sul portatile, 2026-11-09, dopo l'aggiornamento dal tray non si
+        // riapriva nulla e sembrava sparito tutto), lo script la riapre lui
+        let exe = std::env::current_exe().ok().and_then(|p| p.to_str().map(|s| s.replace('\'', "''"))).unwrap_or_default();
         let script = format!(
-            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              Start-Process -FilePath '{quoted}' -ArgumentList {}",
+            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              $p = Start-Process -FilePath '{quoted}' -ArgumentList {} -PassThru;              $p | Wait-Process -Timeout 240 -ErrorAction SilentlyContinue; Start-Sleep -Seconds 6;              if ('{exe}' -ne '' -and -not (Get-Process aurora-desktop -ErrorAction SilentlyContinue)) {{ Start-Process -FilePath '{exe}' }}",
             installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",")
         );
         let mut launcher = Command::new("powershell");

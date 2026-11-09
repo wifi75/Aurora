@@ -3,6 +3,7 @@
 ## Non rilasciato
 
 ## 0.11.210 - 2026-11-09
+- **Aggiornamento**: se l'installatore silenzioso finisce senza riaprire Aurora (successo aggiornando dal tray), lo script che lo ha lanciato la riapre da solo.
 - **Filtro e Automazioni**: scegliendo una novita' (nuova griglia, nuova zona…) si accende da sola la sua evidenziazione in Segnalazioni, se era spenta: prima il filtro mostrava solo le proprie trasmissioni (ON7KEC); messaggio chiaro quando nessuna stazione ha le novita' scelte.
 - **Nuova griglia**: evidenziazione «nuova griglia» e «griglia su nuova banda» accese di base (prima spente: Automazioni e filtri «Nuova griglia» non trovavano niente); «Griglia su nuova banda» anche tra le risposte delle Automazioni (ON7KEC).
 - **Automazioni**: tra «A chi rispondere» anche «Nuova stazione» e «Stazione su nuova banda o modo»; la pausa per stazione puo' essere 0 (nessuna pausa, la richiama subito) (richieste di ON7KEC).
