@@ -46,6 +46,10 @@ pub struct WorkedLog {
     pub(crate) entities: HashSet<usize>,
     /// (paese, banda) collegati.
     pub(crate) entity_bands: HashSet<(usize, String)>,
+    /// Paesi (e paesi per banda) con almeno un QSO confermato; `has_confirmations` = il log dice le conferme di qualche QSO.
+    pub(crate) confirmed_entities: HashSet<usize>,
+    pub(crate) confirmed_entity_bands: HashSet<(usize, String)>,
+    pub(crate) has_confirmations: bool,
     zones: HashSet<u8>,
     zone_bands: HashSet<(u8, String)>,
     itu: HashSet<u8>,
@@ -182,19 +186,22 @@ pub struct HighlightFlags {
     pub call: Criterion,
     /// «Mostra anche i messaggi tra altre stazioni» (`newPotential`): le novita' valgono anche per i messaggi che non sono CQ.
     pub potential: bool,
+    /// «Paese non confermato = nuovo» (`newDXCCUnconfirmed`, solo di Aurora, come GridTracker): un paese lavorato ma senza conferma
+    /// (LoTW o QSL nel log) conta ancora come DXCC nuovo, anche per banda. Vale solo se il log dice le conferme.
+    pub dxcc_unconfirmed: bool,
 }
 
 impl HighlightFlags {
     /// Tutto acceso, per banda e per modo.
     pub const fn all_on() -> HighlightFlags {
         let c = Criterion::new(true, true, true);
-        HighlightFlags { cqz: c, itu: c, dxcc: c, grid: c, px: c, call: c, potential: false }
+        HighlightFlags { cqz: c, itu: c, dxcc: c, grid: c, px: c, call: c, potential: false, dxcc_unconfirmed: false }
     }
 
     /// Nessuna evidenziazione di «nuovo».
     pub const fn none() -> HighlightFlags {
         let c = Criterion::new(false, false, false);
-        HighlightFlags { cqz: c, itu: c, dxcc: c, grid: c, px: c, call: c, potential: false }
+        HighlightFlags { cqz: c, itu: c, dxcc: c, grid: c, px: c, call: c, potential: false, dxcc_unconfirmed: false }
     }
 
     /// Almeno una evidenziazione accesa (`newCQZ_ || newITUZ_ || newDXCC_ || newGrid_ || newPx_ || newCall_`).
@@ -207,7 +214,7 @@ impl HighlightFlags {
     pub const fn jtdx_defaults() -> HighlightFlags {
         let on = Criterion::new(true, true, true);
         let off = Criterion::new(false, false, false);
-        HighlightFlags { cqz: off, itu: off, dxcc: on, grid: off, px: off, call: on, potential: false }
+        HighlightFlags { cqz: off, itu: off, dxcc: on, grid: off, px: off, call: on, potential: false, dxcc_unconfirmed: false }
     }
 
     /// Dai valori delle impostazioni (nomi di `JTDX.ini`: `newCQZ`, `newCQZBand`, `newCQZBandMode`...): `get` risponde `None` se la voce manca
@@ -215,7 +222,7 @@ impl HighlightFlags {
     pub fn from_lookup(get: impl Fn(&str) -> Option<bool>) -> HighlightFlags {
         let d = HighlightFlags::jtdx_defaults();
         let one = |name: &str, d: Criterion| Criterion::new(get(name).unwrap_or(d.on), get(&format!("{name}Band")).unwrap_or(d.band), get(&format!("{name}BandMode")).unwrap_or(d.band_mode));
-        HighlightFlags { cqz: one("newCQZ", d.cqz), itu: one("newITUZ", d.itu), dxcc: one("newDXCC", d.dxcc), grid: one("newGrid", d.grid), px: one("newPx", d.px), call: one("newCall", d.call), potential: get("newPotential").unwrap_or(false) }
+        HighlightFlags { cqz: one("newCQZ", d.cqz), itu: one("newITUZ", d.itu), dxcc: one("newDXCC", d.dxcc), grid: one("newGrid", d.grid), px: one("newPx", d.px), call: one("newCall", d.call), potential: get("newPotential").unwrap_or(false), dxcc_unconfirmed: get("newDXCCUnconfirmed").unwrap_or(false) }
     }
 }
 
@@ -321,6 +328,13 @@ impl WorkedLog {
             self.itu.insert(found.itu_zone);
             self.itu_bands.insert((found.itu_zone, band.clone()));
             self.any_cells.entry((found.entity, band.clone())).or_default().add(q.confirmed);
+            if q.confirmed.is_some() {
+                self.has_confirmations = true;
+            }
+            if q.confirmed == Some(true) {
+                self.confirmed_entities.insert(found.entity);
+                self.confirmed_entity_bands.insert((found.entity, band.clone()));
+            }
             if let Some(class) = class {
                 self.entity_modes.insert((found.entity, class));
                 self.cells.entry((found.entity, band.clone(), class)).or_default().add(q.confirmed);
@@ -421,6 +435,15 @@ impl WorkedLog {
             }
             if let Some(n) = pick(news(Crit::Dxcc, &f.entity.to_string(), flags.dxcc), Novelty::NewDxcc, Novelty::NewDxccBand) {
                 return Some(n);
+            }
+            // lavorato ma non confermato: con la scelta accesa conta ancora come nuovo (come GridTracker)
+            if flags.dxcc_unconfirmed && flags.dxcc.on && self.has_confirmations {
+                if !self.confirmed_entities.contains(&f.entity) {
+                    return Some(Novelty::NewDxcc);
+                }
+                if (flags.dxcc.band || flags.dxcc.band_mode) && !band.is_empty() && !self.confirmed_entity_bands.contains(&(f.entity, band.clone())) {
+                    return Some(Novelty::NewDxccBand);
+                }
             }
         }
         if let Some(g) = grid.and_then(grid4)
@@ -716,6 +739,20 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
 
     fn qso(call: &str, band: &str, mode: &str) -> AdifQso {
         AdifQso { call: call.into(), band: band.into(), mode: mode.into(), ..AdifQso::default() }
+    }
+
+    #[test]
+    fn a_country_worked_but_not_confirmed_is_still_new_when_chosen() {
+        let db = db();
+        let mut log = WorkedLog::new();
+        log.add_adif_qso(&AdifQso { confirmed: Some(false), ..qso("AT3AB", "20m", "FT8") }, &db);
+        let mut flags = HighlightFlags::jtdx_defaults();
+        assert_ne!(log.novelty_flags("AT1XY", None, "20m", Some("FT8"), &flags, &db), Some(Novelty::NewDxcc), "di base conta il lavorato");
+        flags.dxcc_unconfirmed = true;
+        assert_eq!(log.novelty_flags("AT1XY", None, "20m", Some("FT8"), &flags, &db), Some(Novelty::NewDxcc), "lavorato ma non confermato");
+        log.add_adif_qso(&AdifQso { confirmed: Some(true), ..qso("AT3CD", "40m", "FT8") }, &db);
+        assert_eq!(log.novelty_flags("AT1XY", None, "20m", Some("FT8"), &flags, &db), Some(Novelty::NewDxccBand), "confermato solo su 40 m");
+        assert_ne!(log.novelty_flags("AT1XY", None, "40m", Some("FT8"), &flags, &db), Some(Novelty::NewDxccBand), "confermato su 40 m");
     }
 
     #[test]

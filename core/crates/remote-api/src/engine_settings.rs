@@ -304,7 +304,7 @@ pub fn support(key: &str) -> Support {
         "InsertBlank" | "Scroll" | "HideTxMessages" | "Tx2QSO" | "countryPrefix" | "showAzimuth" | "AlignDistanceAzimuth" | "AlignInt" => Support::Hidden("own_screen"),
         // scheda Notifiche: evidenziazioni di «nuovo» (anche per la sequenza), «gia' lavorato», colori invertiti e marcatori
         k if is_highlight_key(k) => Support::Live(Apply::Now),
-        "newPotential" | "73RR73Marker" => Support::Live(Apply::Now),
+        "newPotential" | "newDXCCUnconfirmed" | "73RR73Marker" => Support::Live(Apply::Now),
         // come si disegnano i messaggi (barrato, colori invertiti, marcatori): scelte dell'interfaccia, per dispositivo (scheda Notifiche)
         "workedColor" | "workedStriked" | "workedUnderlined" | "workedDontShow" | "txtColor" | "OtherStandardMessagesMarker" | "redMarker" | "blueMarker" | "hidehintMarker" => {
             Support::Hidden("own_notify")
@@ -699,6 +699,7 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("newCallBand", "true"),
         ("newCallBandMode", "true"),
         ("newPotential", "false"),
+        ("newDXCCUnconfirmed", "false"),
         ("73RR73Marker", "true"),
     ]
     .iter()
