@@ -34,7 +34,7 @@ async fn shows_the_version_in_use_and_the_defaults_without_a_token() {
     assert_eq!(v["current"], "0.9.0");
     assert_eq!(v["enabled"], true);
     assert_eq!(v["repo"], "wifi75/Aurora");
-    assert_eq!(v["interval_hours"], 3);
+    assert_eq!(v["interval_hours"], 1);
     assert_eq!(v["has_token"], false);
     assert!(v["available"].is_null());
     std::fs::remove_dir_all(&dir).ok();

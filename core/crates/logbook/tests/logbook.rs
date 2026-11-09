@@ -94,9 +94,9 @@ fn reopening_keeps_data() {
 }
 
 #[test]
-fn migration_sets_user_version_2() {
+fn migration_sets_user_version_3() {
     let lb = Logbook::open_in_memory().unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 2);
+    assert_eq!(lb.schema_version().unwrap(), 3);
 }
 
 fn station() -> logbook::adif::Station {
@@ -210,7 +210,7 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
         .unwrap();
     }
     let lb = Logbook::open(&path).unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 2);
+    assert_eq!(lb.schema_version().unwrap(), 3);
     let all = lb.all_qsos().unwrap();
     assert_eq!((all.len(), all[0].time_on.as_str(), all[0].date_off.as_str(), all[0].confirmed), (1, "123015", "20261024", None));
     drop(lb);

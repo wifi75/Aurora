@@ -514,7 +514,8 @@ fn enable_tx_follows_the_automation_and_goes_back_as_it_was() {
     b.set_enabled(true, T0);
     assert!(b.tx_switch_pending());
     assert_eq!(b.tx_switch_step(Some(false), T0), Some(true));
-    assert!(!b.tx_switch_pending());
+    // accese in modo reale si controlla sempre (il motore puo' spegnere «Abilita Tx» a fine QSO, dalla 0.11.209)
+    assert!(b.tx_switch_pending());
     b.set_enabled(false, T0 + 10);
     assert_eq!(b.tx_switch_step(Some(true), T0 + 10), Some(false));
     assert!(!b.tx_switch_pending());

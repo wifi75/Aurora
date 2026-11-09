@@ -1181,7 +1181,13 @@ mod tests {
         let setup = s.attiva("ww-digi", Some(Ripristino { controlli: vec![("fox".into(), true)], modo: "FT8".into() })).expect("attiva");
         assert_eq!(setup.activity, "ww-digi");
         assert_eq!(setup.cq_word, "WW");
-        let q = QsoRecord { call: "K1ABC".into(), grid: "FN42".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 14_074_000, exch_sent: "IO91".into(), exch_rcvd: "FN42".into(), rst_rcvd: "-10".into(), time_on_unix_ms: 1_788_000_000_000, ..Default::default() };
+        // sabato 29 agosto 2026 alle 14:00 UTC, durante la gara (comincia alle 12:00)
+        let q = QsoRecord { call: "K1ABC".into(), grid: "FN42".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 14_074_000, exch_sent: "IO91".into(), exch_rcvd: "FN42".into(), rst_rcvd: "-10".into(), time_on_unix_ms: 1_788_012_000_000, ..Default::default() };
+        // un QSO avviato dalla pagina Stazione non entra nel log del contest
+        assert_eq!(s.registra(&q), None);
+        s.imposta_origine(true);
+        // ne' uno fatto prima dell'inizio della gara (10:40 UTC)
+        assert_eq!(s.registra(&QsoRecord { time_on_unix_ms: 1_788_000_000_000, ..q.clone() }), None);
         assert_eq!(s.registra(&q), Some(1));
         let (v, t) = s.log().expect("log");
         assert_eq!(v.len(), 1);

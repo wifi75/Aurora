@@ -1683,7 +1683,11 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
     #[test]
     fn the_notification_flags_become_jtdx_highlights_and_a_bad_value_changes_nothing() {
         let r = interpret(&defaults());
-        assert_eq!(r.highlights, engine_jtdx::worked::HighlightFlags::jtdx_defaults(), "come i valori di fabbrica di JTDX");
+        // come i valori di fabbrica di JTDX, piu' «nuova griglia» e «nuova griglia sulla banda» accese (filtro di Attivita' di banda, 0.11.212)
+        let mut attese = engine_jtdx::worked::HighlightFlags::jtdx_defaults();
+        attese.grid.on = true;
+        attese.grid.band = true;
+        assert_eq!(r.highlights, attese, "come i valori di fabbrica di JTDX con la griglia nuova");
         let store = EngineSettingsStore::open(&temp("flags"), defaults);
         let before = store.reports();
         store.update(&map(&[("newCQZ", "true"), ("newCQZBand", "true"), ("newDXCCBandMode", "false"), ("newPotential", "true")])).unwrap();
@@ -1691,8 +1695,8 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert!(h.cqz.on && h.cqz.band && !h.cqz.band_mode && h.potential);
         assert!(h.dxcc.on && h.dxcc.band && !h.dxcc.band_mode);
         // un valore non valido rifiuta tutto, anche le voci buone della stessa richiesta
-        assert!(store.update(&map(&[("newGrid", "true"), ("SeqSentRReportCounterValue", "9")])).is_err());
-        assert!(!store.reports().highlights.grid.on);
+        assert!(store.update(&map(&[("newPx", "true"), ("SeqSentRReportCounterValue", "9")])).is_err());
+        assert!(!store.reports().highlights.px.on, "la griglia e' accesa di fabbrica: si prova con il prefisso");
         assert_ne!(before.highlights, store.reports().highlights);
     }
 

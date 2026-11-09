@@ -76,7 +76,8 @@ describe('ClusterPanel', () => {
     show();
     fireEvent.doubleClick(await screen.findByText('K1ABC'));
     await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_074_000));
-    expect(await screen.findByText('Radio portata su 14.074,0 kHz.')).toBeInTheDocument();
+    // la riga «Radio portata su…» non c'e' piu': la frequenza si vede sul display
+    expect(screen.queryByText(/Radio portata su/)).not.toBeInTheDocument();
   });
 
   it('a single click only selects: the radio does not move', async () => {
