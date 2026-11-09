@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.212',
+    released: '2026-11-09T12:37:02Z',
+    kind: 'fixed',
+    title: ['Il pulsante Auto funziona', 'The Auto button works', 'Die Schaltfläche Auto funktioniert', 'Le bouton Auto fonctionne', 'El botón Auto funciona', 'O botão Auto funciona'],
+    text: [
+      "Il pulsante «Auto» nella barra in alto ora accende davvero le Automazioni, nel modo scelto nelle Impostazioni: prima non succedeva nulla. È sempre colorato: viola spento, arancio in prova a vuoto, verde in modo reale. Se non si accendono, un avviso apre le Impostazioni → Automazioni.",
+      "The «Auto» button in the top bar now really switches Automation on, in the mode chosen in Settings: before, nothing happened. It's always coloured: purple off, orange in test, green in live mode. If it can't switch on, a notice opens Settings → Automation.",
+      "Die Schaltfläche «Auto» oben schaltet die Automatik jetzt wirklich ein, im in den Einstellungen gewählten Modus: vorher passierte nichts. Sie ist immer farbig: violett aus, orange im Test, grün im Echtbetrieb. Klappt es nicht, öffnet ein Hinweis Einstellungen → Automatik.",
+      "Le bouton « Auto » de la barre du haut active vraiment les Automatisations, dans le mode choisi dans les Réglages : avant, rien ne se passait. Il est toujours coloré : violet éteint, orange en test, vert en mode réel. Sinon, un avis ouvre Réglages → Automatisations.",
+      "El botón «Auto» de la barra superior ahora enciende de verdad las Automatizaciones, en el modo elegido en Ajustes: antes no pasaba nada. Siempre tiene color: violeta apagado, naranja en prueba, verde en modo real. Si no se encienden, un aviso abre Ajustes → Automatizaciones.",
+      "O botão «Auto» da barra de cima liga agora mesmo as Automatizações, no modo escolhido nas Definições: antes não acontecia nada. Tem sempre cor: violeta desligado, laranja em teste, verde em modo real. Se não ligarem, um aviso abre Definições → Automatizações.",
+    ],
+  },
+  {
     version: '0.11.211',
     released: '2026-11-09T12:32:20Z',
     kind: 'changed',

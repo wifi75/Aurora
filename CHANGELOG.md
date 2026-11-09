@@ -2,7 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.212 - 2026-11-09
 - **Automatico**: il pulsante accende le Automazioni nel modo scelto nelle Impostazioni (prova a vuoto o reale); prima chiedeva sempre il modo reale senza la conferma dell'avviso, il motore rifiutava e non succedeva nulla. Se non si accendono, un avviso apre le Impostazioni → Automazioni.
+- **Auto**: il pulsante si chiama «Auto» ed e' sempre colorato: viola spento, arancio in prova a vuoto, verde in modo reale.
 
 ## 0.11.211 - 2026-11-09
 - **Pannello RX**: la finestra RX e' un pannello separato sopra il Log, con la sua barra del titolo (come Bande aperte e Comandi); il pulsantino «RX» del Log lo accende e lo spegne.
