@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getControls, postControl, postCq, postFrequency, postHalt, postMode, postReply, postTxMessage } from '../api/client';
+import { getControls, postControl, postCq, postFrequency, postHalt, postMode, postReply, postTxMessage, postTxText } from '../api/client';
 import {
   attivaContest,
   azzeraLog,
@@ -35,6 +35,7 @@ import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
 import { TxQuickControls } from '../components/TxQuickControls';
+import { FreqPicker } from '../components/FreqPicker';
 import { Allenamento, AnalisiGara } from './ContestExtra';
 import '../styles/contest.css';
 
@@ -151,6 +152,8 @@ export function ContestPage() {
             {t(v === 'gara' ? 'contest.tab.race' : v === 'allena' ? 'contest.training' : 'contest.analysis')}
           </button>
         ))}
+        {/* il selettore delle frequenze della pagina Stazione, sulla riga delle schede, con le sole bande ammesse dal regolamento */}
+        <SelettoreBanda bande={attivo ? (s?.regole?.bande.ammesse ?? []) : []} t={t} />
       </div>
       {s?.errori_regole?.length ? <p className="ctc-note ctc-bad">{s.errori_regole.join(' · ')}</p> : null}
 
@@ -476,6 +479,24 @@ function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
   );
 }
 
+/** Il selettore delle frequenze (lo stesso della pagina Stazione) con le sole bande del contest. */
+function SelettoreBanda({ bande, t }: { bande: readonly string[]; t: T }) {
+  const dial = useStation((x) => x.status?.dial_hz ?? 0);
+  const mode = useStation((x) => x.status?.mode ?? '');
+  const tx = useStation((x) => x.status?.transmitting ?? false);
+  return (
+    <div className="ctc-freq" title={t('tip.contest.freq')}>
+      <FreqPicker
+        bands={bande.length ? bande : undefined}
+        dialHz={dial}
+        mode={mode}
+        locked={tx}
+        onPick={(hz) => void postFrequency(hz).catch((e: unknown) => toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error'))}
+      />
+    </div>
+  );
+}
+
 function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, fine }: { s: ContestStato; t: T; vai: (v: 'allena' | 'analisi') => void; decodes: DecodedMessage[]; dx: string | null; dxGrid: string | null; transmitting: boolean; switches?: Partial<Record<string, boolean>>; apri: (m: 'regole' | 'calendario' | 'export' | 'impostazioni') => void; fine: () => void }) {
   const r = s.regole as Regole;
   const [campo, setCampo] = useState('');
@@ -515,6 +536,23 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   const autoseq = !!switches?.autoseq;
   const txOn = !!switches?.enable_tx;
   const dxRiga = dx ? righe.find((x) => x.call === dx) : undefined;
+  const mio = useStation((x) => x.status?.de_call ?? '');
+  // il DX non fa il contest: per non perdere il QSO lo si chiude con i messaggi normali (rapporto, R+rapporto, RR73), scritti nei Tx 2-4
+  const dxFuori = !!dx && nonContest.has(dx);
+  const chiudiNormale = async (n: 2 | 3 | 4) => {
+    if (!dx || !mio) return;
+    const snr = dxRiga?.d.snr ?? -10;
+    const rpt = `${snr >= 0 ? '+' : '-'}${String(Math.min(99, Math.abs(snr))).padStart(2, '0')}`;
+    try {
+      if (autoseq) await postControl('autoseq', false);
+      await postTxText(2, `${dx} ${mio} ${rpt}`);
+      await postTxText(3, `${dx} ${mio} R${rpt}`);
+      await postTxText(4, `${dx} ${mio} RR73`);
+      await postTxMessage(n);
+    } catch (e) {
+      toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
+  };
   const banda = s.banda ?? '';
 
   return (
@@ -529,7 +567,17 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
         </h2>
         </header>
         <div className="ctc-scroll data">
-          <table>
+          <table className="ctc-dec-table">
+            <colgroup>
+              <col className="w-utc" />
+              <col className="w-db" />
+              <col className="w-hz" />
+              <col className="w-msg" />
+              <col className="w-country" />
+              <col className="w-km" />
+              <col className="w-new" />
+              <col className="w-val" />
+            </colgroup>
             <thead>
               <tr>
                 <th>{t('contest.col.utc')}</th>
@@ -569,7 +617,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
                 ) : null;
                 const code = prefs.showFlag ? flagCode(d.country ?? null) : null;
                 return (
-                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void postReply(d.id)} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
+                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void postReply(d.id, true)} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
                     <td className="ctc-muted">{utc(d.time_ms)}</td>
                     <td className="num">{d.snr > 0 ? `+${d.snr}` : d.snr}</td>
                     <td className="num ctc-muted">{d.freq_hz}</td>
@@ -578,7 +626,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
                       {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {d.country ?? ''}
                     </td>
                     <td className="num ctc-muted">{v && v.km > 0 ? formatDistance(v.km, prefs.distanceUnit) : ''}</td>
-                    <td className="ctc-new">{novita}</td>
+                    <td className="ctc-new-cell"><span className="ctc-new">{novita}</span></td>
                     <td className="num">{v && v.punti > 0 ? <span className="badge badge--tag ctc-pill">{(call === stella ? '★ ' : '') + t('contest.pt', { n: v.punti })}</span> : v ? t('contest.pt', { n: v.punti }) : ''}</td>
                   </tr>
                 );
@@ -590,7 +638,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
       <Cascata />
       </div>
 
-      <section className="dock-panel ctc-box">
+      <section className="dock-panel ctc-box ctc-qso">
         <header className="dock-grip dock-grip--fixed">
           <span className="dock-grip-dots" aria-hidden="true" />
           <h2>
@@ -610,6 +658,16 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
         ) : (
           <p className="ctc-tip">{t('contest.idle')}</p>
         )}
+        {dxFuori ? (
+          <div className="ctc-alert ctc-alert--o ctc-normal">
+            <span>{t('contest.normal.title', { c: dx ?? '' })}</span>
+            <span className="ctc-actions">
+              <button type="button" className="ctc-btn" onClick={() => void chiudiNormale(2)}>{t('contest.normal.rpt')}</button>
+              <button type="button" className="ctc-btn" onClick={() => void chiudiNormale(3)}>{t('contest.normal.rrpt')}</button>
+              <button type="button" className="ctc-btn" onClick={() => void chiudiNormale(4)}>RR73</button>
+            </span>
+          </div>
+        ) : null}
         <div className="ctc-steps data">
           {[
             [2, 'contest.step.exch'],
@@ -636,7 +694,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
           <button type="button" className={`ctc-btn${txOn ? ' ctc-btn--on' : ''}`} aria-pressed={txOn} onClick={() => void postControl('enable_tx', !txOn)}>
             ● {t('contest.enableTx')}
           </button>
-          <button type="button" className="ctc-btn" title={t('tip.contest.cq')} onClick={() => void postCq(s.sequenza?.parola_cq ?? '')}>
+          <button type="button" className="ctc-btn" title={t('tip.contest.cq')} onClick={() => void postCq(s.sequenza?.parola_cq ?? '', true)}>
             {t('contest.cq')}
           </button>
           <button type="button" className="ctc-btn" disabled={!dx} title={t('tip.contest.rr73')} onClick={() => void postTxMessage(4)}>
@@ -652,7 +710,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
           <div className="ctc-tip" title={t('tip.contest.next')}>
             {t('contest.next')}{' '}
             {migliori.slice(0, 3).map((x, i) => (
-              <span key={x.call} className="ctc-next" onDoubleClick={() => void postReply(x.d.id)}>
+              <span key={x.call} className="ctc-next" onDoubleClick={() => void postReply(x.d.id, true)}>
                 {i > 0 ? ' → ' : ''}
                 <b>{x.call}</b> ({x.call === stella ? '★ ' : ''}
                 {t('contest.pt', { n: x.v?.punti ?? 0 })}
@@ -668,47 +726,47 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
       <div className="ctc-stack">
         <ConsiglioBanda t={t} />
         <MappaMoltiplicatori r={r} t={t} banda={banda} decodes={decodes} scegli={setCampo} />
+        <section className="dock-panel ctc-box ctc-tipsbox">
+          <header className="dock-grip dock-grip--fixed">
+            <span className="dock-grip-dots" aria-hidden="true" />
+            <h2>{t('contest.tips')}</h2>
+          </header>
+          <Avvisi s={s} t={t} />
+          <div className="ctc-rate">
+            {(s.fase === 'prima' ? (s.per_ora ?? []).map(() => 0) : (s.per_ora ?? [])).map((n, i, all) => {
+              const max = Math.max(1, ...all);
+              return <i key={i} style={{ height: `${Math.max(3, (n / max) * 100)}%` }} title={`${n}/h`} />;
+            })}
+          </div>
+          <div className="ctc-tip">{t('contest.rateHint')}</div>
+          <div className="ctc-actions">
+            <button type="button" className="ctc-btn" title={t('tip.contest.rules')} onClick={() => apri('regole')}>
+              {t('contest.rules')}
+            </button>
+            <button type="button" className="ctc-btn" title={t('tip.contest.calendar')} onClick={() => apri('calendario')}>
+              {t('contest.calendar')}
+            </button>
+            <button type="button" className="ctc-btn" title={t('tip.contest.export')} onClick={() => apri('export')}>
+              {t('contest.export')}
+            </button>
+            <button type="button" className="ctc-btn" title={t('tip.contest.settings')} onClick={() => apri('impostazioni')}>
+              {t('contest.settings')}
+            </button>
+            <button type="button" className="ctc-btn" onClick={() => vai('allena')}>
+              {t('contest.training')}
+            </button>
+            <button type="button" className="ctc-btn" onClick={() => vai('analisi')}>
+              {t('contest.analysis')}
+            </button>
+            <button type="button" className="ctc-btn ctc-btn--stop" title={t('tip.contest.end')} onClick={fine}>
+              {t('contest.end')}
+            </button>
+          </div>
+        </section>
       </div>
 
       <LogContest t={t} qso={s.totali?.qso ?? 0} />
 
-      <section className="dock-panel ctc-box">
-        <header className="dock-grip dock-grip--fixed">
-          <span className="dock-grip-dots" aria-hidden="true" />
-          <h2>{t('contest.tips')}</h2>
-        </header>
-        <Avvisi s={s} t={t} />
-        <div className="ctc-rate">
-          {(s.per_ora ?? []).map((n, i, all) => {
-            const max = Math.max(1, ...all);
-            return <i key={i} style={{ height: `${Math.max(3, (n / max) * 100)}%` }} title={`${n}/h`} />;
-          })}
-        </div>
-        <div className="ctc-tip">{t('contest.rateHint')}</div>
-        <div className="ctc-actions">
-          <button type="button" className="ctc-btn" title={t('tip.contest.rules')} onClick={() => apri('regole')}>
-            {t('contest.rules')}
-          </button>
-          <button type="button" className="ctc-btn" title={t('tip.contest.calendar')} onClick={() => apri('calendario')}>
-            {t('contest.calendar')}
-          </button>
-          <button type="button" className="ctc-btn" title={t('tip.contest.export')} onClick={() => apri('export')}>
-            {t('contest.export')}
-          </button>
-          <button type="button" className="ctc-btn" title={t('tip.contest.settings')} onClick={() => apri('impostazioni')}>
-            {t('contest.settings')}
-          </button>
-          <button type="button" className="ctc-btn" onClick={() => vai('allena')}>
-            {t('contest.training')}
-          </button>
-          <button type="button" className="ctc-btn" onClick={() => vai('analisi')}>
-            {t('contest.analysis')}
-          </button>
-          <button type="button" className="ctc-btn ctc-btn--stop" title={t('tip.contest.end')} onClick={fine}>
-            {t('contest.end')}
-          </button>
-        </div>
-      </section>
     </main>
   );
 }
@@ -757,14 +815,14 @@ function ConsiglioBanda({ t }: { t: T }) {
   const qui = q.bande.find((b) => b.banda === q.banda);
   const resta = !!best && best.banda === q.banda && best.modo.toUpperCase() === q.modo.toUpperCase();
   const max = Math.max(1, ...q.bande.map((b) => b.punteggio));
-  const porta = async () => {
-    if (!best || best.khz == null) return;
+  const porta = async (dove = best) => {
+    if (!dove || dove.khz == null) return;
     setInvio(true);
     try {
       // prima il modo (la radio va sulla frequenza del modo nella banda di adesso), poi la frequenza del consiglio
-      if (best.modo.toUpperCase() !== q.modo.toUpperCase()) await postMode(best.modo);
-      await postFrequency(Math.round(best.khz * 1000));
-      toast(t('contest.adv.done', { b: best.banda, m: best.modo }), 'info');
+      if (dove.modo.toUpperCase() !== q.modo.toUpperCase()) await postMode(dove.modo);
+      await postFrequency(Math.round(dove.khz * 1000));
+      toast(t('contest.adv.done', { b: dove.banda, m: dove.modo }), 'info');
     } catch (e) {
       toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error');
     } finally {
@@ -796,7 +854,14 @@ function ConsiglioBanda({ t }: { t: T }) {
         ) : null}
         <div className="ctc-adv-bands data">
           {q.bande.map((b) => (
-            <div key={b.banda} className="ctc-adv-row" title={b.molt_nuovi.join(' ') || undefined}>
+            <div
+              key={b.banda}
+              className={`ctc-adv-row${b.khz != null && b.banda !== q.banda ? ' ctc-adv-row--go' : ''}${b.banda === q.banda ? ' ctc-adv-row--here' : ''}`}
+              title={b.khz != null && b.banda !== q.banda ? t('contest.adv.click', { b: b.banda, m: b.modo }) : b.molt_nuovi.join(' ') || undefined}
+              onClick={() => {
+                if (!invio && b.khz != null && b.banda !== q.banda) void porta(b);
+              }}
+            >
               <b>{b.banda}</b>
               <div className="ctc-adv-bar">
                 <i className={b.banda === q.migliore ? 'best' : undefined} style={{ width: `${b.dati ? Math.max(4, (b.punteggio / max) * 100) : 0}%` }} />
@@ -849,7 +914,7 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
       toast(t('contest.map.gone', { c: call }), 'info');
       return;
     }
-    void postReply(id).catch((e: unknown) => toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error'));
+    void postReply(id, true).catch((e: unknown) => toast(t('contest.err', { e: e instanceof Error ? e.message : String(e) }), 'error'));
   };
   const tipo = m?.tipo ?? r.moltiplicatori[0]?.tipo ?? '';
   const quad = tipo === 'grid4';
@@ -938,26 +1003,26 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
             </>
           ) : (
             <div className="ctc-scroll data">
-              <table>
-                <tbody>
-                  {nuovi.length === 0 ? (
-                    <tr>
-                      <td className="ctc-muted">{t('contest.map.noneNew')}</td>
-                    </tr>
-                  ) : (
-                    nuovi.map((s) => (
-                      <tr key={s.call} className="ctc-r ctc-map-row" title={t('tip.contest.mapCall')} onClick={() => chiama(s.call)}>
-                        <td className="ctc-mult">{s.molt_nuovi.join(' ')}</td>
-                        <td>
-                          <b>{s.call}</b>
-                        </td>
-                        <td className="num">{s.snr}</td>
-                        <td className="ctc-muted">{s.cq ? 'CQ' : ''}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              {/* a tessere su piu' colonne: molti piu' nominativi a vista; chi fa CQ ha il bordo verde */}
+              {nuovi.length === 0 ? (
+                <p className="ctc-muted">{t('contest.map.noneNew')}</p>
+              ) : (
+                <div className="ctc-mtiles">
+                  {nuovi.map((s) => (
+                    <button
+                      type="button"
+                      key={s.call}
+                      className={`ctc-mtile${s.cq ? ' ctc-mtile--cq' : ''}`}
+                      title={`${t('tip.contest.mapCall')} · ${s.molt_nuovi.join(' ')} · ${s.snr} dB${s.cq ? ' · CQ' : ''}`}
+                      onClick={() => chiama(s.call)}
+                    >
+                      <span className="ctc-mult">{s.molt_nuovi.join(' ')}</span>
+                      <b>{s.call}</b>
+                      <span className="ctc-mtile-snr">{s.snr}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="ctc-legend">{t('contest.multTaken', { b: scelta, n: m?.lavorati.length ?? 0 })}</div>
             </div>
           )}
@@ -974,6 +1039,18 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
   const qc = useQueryClient();
   const log = useQuery({ queryKey: ['contest-log', qso], queryFn: getContestLog, refetchInterval: 10_000, retry: false }).data;
   const [modifica, setModifica] = useState<{ n: number; testo: string } | null>(null);
+  // tasto destro su una riga: menu piccolo per segnarla valida, incerta o «non in contest» (0 punti, fuori dal Cabrillo)
+  const [menu, setMenu] = useState<{ n: number; x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const chiudi = () => setMenu(null);
+    window.addEventListener('click', chiudi);
+    window.addEventListener('scroll', chiudi, true);
+    return () => {
+      window.removeEventListener('click', chiudi);
+      window.removeEventListener('scroll', chiudi, true);
+    };
+  }, [menu]);
   const righe = [...(log?.qso ?? [])].reverse();
   const incerti = righe.filter((q) => q.stato === 'incerto').length;
   const aggiorna = () => {
@@ -982,7 +1059,7 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
   };
   const salva = (n: number, patch: Parameters<typeof modificaQso>[1]) => modificaQso(n, patch).then(aggiorna).catch((e: unknown) => toast(String(e), 'error'));
   return (
-    <section className="dock-panel ctc-box">
+    <section className="dock-panel ctc-box ctc-logbox">
       <header className="dock-grip dock-grip--fixed">
         <span className="dock-grip-dots" aria-hidden="true" />
         <h2 title={t('tip.contest.log')}>
@@ -1009,7 +1086,15 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
           </thead>
           <tbody>
             {righe.map((q: LogQso) => (
-              <tr key={q.n} className={q.doppio ? 'dup' : q.stato === 'incerto' ? 'warn' : q.stato === 'errore' ? 'dup' : undefined}>
+              <tr
+                key={q.n}
+                className={q.doppio ? 'dup' : q.stato === 'incerto' ? 'warn' : q.stato === 'errore' ? 'dup' : undefined}
+                title={t('tip.contest.rowMenu')}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setMenu({ n: q.n, x: e.clientX, y: e.clientY });
+                }}
+              >
                 <td>{utcHm(q.time_ms)}</td>
                 <td>{q.band}</td>
                 <td>{q.call}</td>
@@ -1053,6 +1138,13 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
           </tbody>
         </table>
       </div>
+      {menu ? (
+        <div className="ctc-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+          <button type="button" role="menuitem" onClick={() => void salva(menu.n, { stato: 'valido' })}>{t('contest.state.valido')}</button>
+          <button type="button" role="menuitem" onClick={() => void salva(menu.n, { stato: 'incerto' })}>{t('contest.state.incerto')}</button>
+          <button type="button" role="menuitem" className="ctc-bad" onClick={() => void salva(menu.n, { stato: 'errore' })}>{t('contest.notInContest')}</button>
+        </div>
+      ) : null}
     </section>
   );
 }

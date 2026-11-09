@@ -261,3 +261,89 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-sim-badge { background: color-mix(in srgb, var(--ct-yellow) 22%, transparent); color: var(--ct-yellow); font-size: 10px; letter-spacing: 0.08em; }
 .ctc tr.ctc-sim-tx td { color: var(--ct-violet); }
 @media (max-width: 900px) { .ctc-extra { grid-template-columns: minmax(0, 1fr); } }
+/* «fuori regola» nelle decodifiche: discreto, senza alone rosso, staccato dalla colonna dei km */
+.ctc-r .badge--tag.ctc-bad { box-shadow: none !important; text-shadow: none !important; animation: none !important; background: transparent !important; border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent) !important; color: var(--danger) !important; font-weight: 600; opacity: 0.85; }
+.ctc-r td:has(> .badge--tag) { padding-left: 12px; }
+/* decodifiche del contest: colonne a larghezza fissa, tutte le righe allineate */
+.ctc-dec-table { table-layout: fixed; width: 100%; }
+.ctc-dec-table col.w-utc { width: 76px; }
+.ctc-dec-table col.w-db { width: 44px; }
+.ctc-dec-table col.w-hz { width: 52px; }
+.ctc-dec-table col.w-msg { width: 220px; }
+.ctc-dec-table col.w-country { width: auto; }
+.ctc-dec-table col.w-km { width: 76px; }
+.ctc-dec-table col.w-new { width: 130px; }
+.ctc-dec-table col.w-val { width: 76px; }
+.ctc-dec-table td, .ctc-dec-table th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctc-dec-table td.ctc-new-cell { padding-left: 12px; }
+.ctc-new { display: inline-flex; gap: 3px; flex-wrap: nowrap; vertical-align: middle; }
+/* le pastiglie nelle decodifiche stanno dentro la riga: niente bordo della riga che le taglia a meta' */
+.ctc-dec-table td { vertical-align: middle; }
+.ctc-dec-table .badge { display: inline-block; line-height: 16px; padding: 0 7px; margin: 0; position: static; transform: none; }
+.ctc-dec-table .ctc-new { display: inline-flex; align-items: center; height: 18px; }
+/* consiglio di banda: ogni riga porta la radio su quella banda; la banda di adesso e' segnata */
+.ctc-adv-row--go { cursor: pointer; border-radius: 5px; }
+.ctc-adv-row--go:hover { background: color-mix(in srgb, var(--accent, #8e7bff) 14%, transparent); }
+.ctc-adv-row--here b { text-decoration: underline; text-underline-offset: 3px; }
+/* selettore delle frequenze a destra delle schede In gara / Allenamento / Analisi */
+.ctc-views { align-items: center; }
+.ctc-views .ctc-freq { margin-left: auto; }
+/* decodifiche e spettro al centro, QSO in corso e log del contest a sinistra (richiesta del proprietario, 2026-11-09) */
+@media (min-width: 1101px) {
+  .ctc-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 0.9fr); }
+  .ctc-main > .ctc-left { grid-column: 2; grid-row: 1 / 3; }
+  .ctc-main > .ctc-qso { grid-column: 1; grid-row: 1; }
+  .ctc-main > .ctc-logbox { grid-column: 1; grid-row: 2; }
+  .ctc-main > .ctc-stack { grid-column: 3; grid-row: 1; }
+}
+/* selettore delle frequenze a sinistra, prima delle schede */
+.ctc-views .ctc-freq { order: -1; margin-left: 0; margin-right: 10px; }
+/* selettore delle frequenze sopra le decodifiche */
+.ctc-left > .ctc-freq { flex: none; order: 0; margin: 0; display: flex; }
+/* colonna Novita' 40 punti piu' a destra (intestazione e celle) */
+.ctc-dec-table col.w-new { width: 170px; }
+.ctc-dec-table td.ctc-new-cell, .ctc-dec-table thead th:nth-child(7) { padding-left: 52px; }
+/* decodifiche: griglia visibile e colonne a misura dei dati veri (orario intero, paese leggibile) */
+.ctc-dec-table col.w-utc { width: 84px; }
+.ctc-dec-table col.w-db { width: 42px; }
+.ctc-dec-table col.w-hz { width: 50px; }
+.ctc-dec-table col.w-msg { width: 205px; }
+.ctc-dec-table col.w-country { width: auto; }
+.ctc-dec-table col.w-km { width: 72px; }
+.ctc-dec-table col.w-new { width: 92px; }
+.ctc-dec-table col.w-val { width: 74px; }
+.ctc-dec-table td.ctc-new-cell, .ctc-dec-table thead th:nth-child(7) { padding-left: 8px; text-align: center; }
+.ctc-dec-table th, .ctc-dec-table td { padding-left: 6px; padding-right: 6px; border-right: 1px solid color-mix(in srgb, var(--ct-line, #2a3a55) 85%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--ct-line, #2a3a55) 70%, transparent); }
+.ctc-dec-table th:last-child, .ctc-dec-table td:last-child { border-right: 0; }
+.ctc-dec-table thead th { border-bottom: 1px solid var(--ct-line, #2a3a55); }
+.ctc-dec-table td:last-child, .ctc-dec-table th:last-child { text-align: center; }
+/* titoli delle colonne sempre allineati a sinistra */
+.ctc-dec-table thead th, .ctc-dec-table thead th.num, .ctc-dec-table thead th:nth-child(7), .ctc-dec-table thead th:last-child { text-align: left !important; }
+/* selettore delle frequenze sulla riga delle schede, subito dopo «Analisi» */
+.ctc-views > .ctc-freq { order: 0; margin: 0 0 0 14px; display: inline-flex; }
+/* QSO con chi non fa il contest: riga con i tre messaggi normali */
+.ctc-normal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 8px; }
+.ctc-normal .ctc-actions { margin: 0; }
+/* menu del tasto destro nel log del contest */
+.ctc-menu { position: fixed; z-index: 950; display: flex; flex-direction: column; min-width: 170px; padding: 4px; border: 1px solid var(--ct-line, #2a3a55); border-radius: 8px; background: var(--panel, #0b1220); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+.ctc-menu button { text-align: left; padding: 5px 10px; border: 0; border-radius: 5px; background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
+.ctc-menu button:hover { background: color-mix(in srgb, var(--accent, #8e7bff) 16%, transparent); }
+/* colonna destra: consiglio, mappa dei moltiplicatori e consigli e ritmo in una sola pila alta quanto la pagina;
+   «Consigli e ritmo» compatto, la mappa dei moltiplicatori prende tutto lo spazio che resta */
+@media (min-width: 1101px) { .ctc-main > .ctc-stack { grid-row: 1 / 3; } }
+.ctc-stack > .ctc-map-box { flex: 1 1 auto; min-height: 160px; }
+.ctc-tipsbox { flex: none; }
+.ctc-tipsbox .ctc-rate { height: 26px; padding: 3px 9px; }
+.ctc-tipsbox .ctc-tip { margin: 0 9px 2px; font-size: 10.5px; }
+.ctc-tipsbox .ctc-actions { gap: 4px; padding: 4px 8px 6px; }
+.ctc-tipsbox .ctc-actions .ctc-btn { padding: 2px 8px; font-size: 11px; }
+/* elenco dei moltiplicatori fitto: righe basse, piu' nominativi a vista */
+.ctc-map-box table td, .ctc-map-box table th { padding-top: 1px; padding-bottom: 1px; line-height: 17px; font-size: 12px; }
+/* moltiplicatori nuovi a tessere: griglia su piu' colonne, una riga piccola per stazione */
+.ctc-mtiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px; padding: 4px 6px; }
+.ctc-mtile { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) 2.2em; align-items: center; gap: 4px; height: 22px; padding: 0 6px; border: 1px solid var(--ct-line, #2a3a55); border-radius: 5px; background: transparent; color: inherit; font: inherit; font-size: 11.5px; text-align: left; cursor: pointer; }
+.ctc-mtile:hover { border-color: var(--accent, #8e7bff); }
+.ctc-mtile--cq { border-color: color-mix(in srgb, var(--ok, #2cf5a4) 60%, transparent); }
+.ctc-mtile b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctc-mtile .ctc-mult { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctc-mtile-snr { text-align: right; opacity: 0.75; }
