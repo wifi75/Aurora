@@ -210,7 +210,9 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   }, [listEl]);
   // la priorita' sono sempre le decodifiche nuove (scelta del proprietario): appena arriva un periodo nuovo la lista torna subito
   // all'ultima decodifica, anche se si stava scorrendo
-  const newestId = decodes.find((d) => d.id >= 0)?.id ?? null;
+  // anche le righe Tx (id negativo) e il cambio della frequenza RX (la Finestra RX mostra altre righe) contano: Luc, 2026-11-09, dopo il
+  // doppio clic la Finestra RX non scorreva e non si vedeva l'ultima riga
+  const newestId = decodes.length === 0 ? null : `${decodes.length}:${decodes[0]?.id ?? ''}:${decodes[decodes.length - 1]?.id ?? ''}`;
   useEffect(() => {
     const list = listEl;
     if (!list || newestId === null) return;
