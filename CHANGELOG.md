@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.218 - 2026-11-09
+- **Contest, tastiera**: F1 Auto CQ, F2/F3/F4 scambio, R + scambio e chiusura; Esc ferma, doppio Esc cancella il QSO; i tasti sono scritti accanto ai pulsanti.
+- **Contest, pagina**: frequenza e quadratino RX/TX sopra le decodifiche (clic su TX ferma, su RX cancella il QSO); «Come funziona» con il riassunto del regolamento e un QSO d'esempio; Abilita Tx e Auto CQ rossi quando accesi; tolta la scritta Fox/Hound (vietato da tutti i regolamenti, il blocco resta); moltiplicatori 4 per riga con legenda a quadratini nel titolo; tabella con dB, Hz, km, Novita' e Valore a sinistra.
+- **Avvisi in primo piano**: messaggi a scomparsa, avviso del DXCC nuovo e schede della stazione sopra le Impostazioni.
+- **Ricarica**: ricaricando la pagina si resta dove si era (l'apertura di Aurora parte sempre dalla Stazione).
+
 ## 0.11.217 - 2026-11-09
 - **Paesi non confermati** (richiesta di Luc): a scelta, un paese lavorato ma non confermato (LoTW o QSL nel log) resta «DXCC nuovo», nei colori, nel filtro e nelle Automazioni.
 - **Mappa DX**: banda in uso di base, «Solo chi mi sente» (solo le linee di PSK Reporter), nominativi visibili al passaggio del mouse, linea rossa verso la stazione chiamata in trasmissione; la linguetta Mappa del pannello Log e' la Mappa DX completa.

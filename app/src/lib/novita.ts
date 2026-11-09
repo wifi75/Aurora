@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.218',
+    released: '2026-11-10T00:00:00Z',
+    kind: 'new',
+    title: ["Contest da tastiera", "Contest from the keyboard", "Contest per Tastatur", "Contest au clavier", "Concurso con el teclado", "Concurso pelo teclado"],
+    text: [
+      "Nella pagina Contest si lavora da tastiera: F1 Auto CQ, F2, F3 e F4 per scambio, R + scambio e chiusura, Esc ferma e doppio Esc cancella il QSO. Sopra le decodifiche ci sono la frequenza e il quadratino RX/TX, «Come funziona» spiega il regolamento in breve, i moltiplicatori sono più leggibili. Gli avvisi restano sempre in primo piano e ricaricando la pagina si resta dove si era.",
+      "On the Contest page you work from the keyboard: F1 Auto CQ, F2, F3 and F4 for exchange, R + exchange and closing, Esc stops and double Esc clears the QSO. Above the decodes there are the frequency and the RX/TX box, “How it works” sums up the rules, multipliers are easier to read. Alerts always stay on top and reloading keeps you on the same page.",
+      "Auf der Contest-Seite arbeitest du per Tastatur: F1 Auto-CQ, F2, F3 und F4 für Austausch, R + Austausch und Abschluss, Esc stoppt, doppeltes Esc löscht das QSO. Über den Dekodierungen stehen Frequenz und RX/TX-Feld, „So funktioniert’s“ fasst die Regeln zusammen, Multiplikatoren sind besser lesbar. Hinweise bleiben immer vorne, Neuladen bleibt auf derselben Seite.",
+      "Sur la page Contest on travaille au clavier : F1 CQ auto, F2, F3 et F4 pour échange, R + échange et clôture, Échap arrête et double Échap efface le QSO. Au-dessus des décodages : la fréquence et la case RX/TX, « Comment ça marche » résume le règlement, les multiplicateurs sont plus lisibles. Les alertes restent au premier plan et recharger garde la même page.",
+      "En la página Contest se trabaja con el teclado: F1 CQ automático, F2, F3 y F4 para intercambio, R + intercambio y cierre, Esc detiene y doble Esc borra el QSO. Encima de las decodificaciones están la frecuencia y la casilla RX/TX, «Cómo funciona» resume el reglamento, los multiplicadores se leen mejor. Los avisos quedan siempre delante y al recargar se queda en la misma página.",
+      "Na página Contest trabalha-se pelo teclado: F1 CQ automático, F2, F3 e F4 para troca, R + troca e fecho, Esc pára e duplo Esc apaga o QSO. Por cima das descodificações estão a frequência e a caixa RX/TX, «Como funciona» resume o regulamento, os multiplicadores lêem-se melhor. Os alertas ficam sempre à frente e ao recarregar fica-se na mesma página.",
+    ],
+  },
+  {
     version: '0.11.217',
     released: '2026-11-09T20:20:31Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "La fiche DXCC du panneau Log est un peu plus compacte : indicatif et pays, drapeau, champ d’essai et cases plus petits.",
       "La ficha DXCC del panel Log es algo más compacta: indicativo y país, bandera, campo de prueba y casillas más pequeños.",
       "O cartão DXCC do painel Log está um pouco mais compacto: indicativo e país, bandeira, campo de teste e caixas mais pequenos.",
-    ],
-  },
-  {
-    version: '0.11.178',
-    released: '2026-11-07T12:56:55Z',
-    kind: 'new',
-    title: ['Le tue trasmissioni uguali in una riga', 'Your identical transmissions in one row', 'Deine gleichen Sendungen in einer Zeile', 'Tes émissions identiques sur une ligne', 'Tus transmisiones iguales en una fila', 'As tuas transmissões iguais numa linha'],
-    text: [
-      "In Attività di banda il CQ ripetuto ogni periodo non riempie più la lista: resta solo l'ultima trasmissione con «×N» (quante volte l'hai mandata). I messaggi diversi del QSO restano tutti. Durante un QSO, oltre alla riga ferma in cima, resta in lista la sua ultima risposta ricevuta da te.",
-      "In Band activity the CQ repeated every period no longer fills the list: only the last transmission stays, with «×N» (how many times you sent it). The different QSO messages all stay. During a QSO, besides the fixed row at the top, his last reply you received stays in the list.",
-      "In der Bandaktivität füllt der in jeder Periode wiederholte CQ die Liste nicht mehr: nur die letzte Sendung bleibt, mit «×N» (wie oft du sie gesendet hast). Die unterschiedlichen QSO-Nachrichten bleiben alle. Während eines QSO bleibt neben der festen Zeile oben seine letzte von dir empfangene Antwort in der Liste.",
-      "Dans l'Activité de bande le CQ répété à chaque période ne remplit plus la liste : seule la dernière émission reste, avec « ×N » (combien de fois tu l'as envoyée). Les messages différents du QSO restent tous. Pendant un QSO, en plus de la ligne fixe en haut, sa dernière réponse reçue par toi reste dans la liste.",
-      "En Actividad de banda el CQ repetido cada periodo ya no llena la lista: queda solo la última transmisión con «×N» (cuántas veces la enviaste). Los mensajes distintos del QSO se quedan todos. Durante un QSO, además de la fila fija arriba, queda en la lista su última respuesta recibida por ti.",
-      "Na Atividade de banda o CQ repetido em cada período já não enche a lista: fica só a última transmissão com «×N» (quantas vezes a enviaste). As mensagens diferentes do QSO ficam todas. Durante um QSO, além da linha fixa no topo, fica na lista a última resposta dele recebida por ti.",
     ],
   },
 ];
