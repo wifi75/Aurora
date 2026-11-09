@@ -113,6 +113,7 @@ export function ReportsBox() {
             <input type="checkbox" checked={data.count_active ?? true} onChange={(e) => change({ count_active: e.target.checked })} />
             <span>{t('rep.active')}</span>
           </label>
+          <p className="about-support-note">{t('rep.activeTip')}</p>
           <p className="about-support-note">{t('rep.autoHint', { max: data.max_per_day })}</p>
           {data.auto_errors ? <p className="about-support-note">{t('rep.queue', { n: data.queue.length, sent: data.sent_today, max: data.max_per_day })}</p> : null}
           <div className="about-support-actions">

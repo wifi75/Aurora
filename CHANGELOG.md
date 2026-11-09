@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- **Statistiche**: l'interruttore si chiama «Invia statistiche» (acceso di fabbrica) e dice cosa si manda. Con il nominativo impostato, il segnale giornaliero aggiunge un codice ricavato dal nominativo sul PC (SHA-256, il nominativo non si manda mai) per contare le persone e non i PC; il servizio lo salva solo dopo un HMAC con una chiave segreta.
 ## 0.11.213 - 2026-11-09
 - **Aggiornamento dal tray**: con «Aggiorna ora» del tray la finestra di Aurora non mostra la locandina (c'e' gia' la cartolina del tray), anche se Aurora viene aperta per l'occasione.
 - **Auto**: colorato solo quando e' acceso (arancio in prova a vuoto, verde in modo reale); spento e' come gli altri pulsanti.

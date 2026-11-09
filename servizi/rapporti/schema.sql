@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS attivi (
   installazione TEXT NOT NULL,
   versione TEXT NOT NULL,
   sistema TEXT NOT NULL,
+  -- codice della persona (HMAC del codice ricavato dal nominativo), null per i client vecchi
+  persona TEXT,
   PRIMARY KEY (giorno, installazione)
 );
 CREATE INDEX IF NOT EXISTS attivi_versione ON attivi (versione, giorno);
@@ -45,7 +47,9 @@ CREATE TABLE IF NOT EXISTS installazioni (
   prima TEXT NOT NULL,
   ultima TEXT NOT NULL,
   -- la nazione (sigla di due lettere data da Cloudflare, `XX` se non si sa): niente IP, niente citta'
-  paese TEXT
+  paese TEXT,
+  -- codice della persona (HMAC), null se il nominativo non e' impostato o per i client vecchi
+  persona TEXT
 );
 -- Conteggi di ogni giorno (per versione e sistema, senza identificativi), salvati prima che la pulizia tolga le righe di `attivi`.
 CREATE TABLE IF NOT EXISTS storico (
@@ -85,3 +89,7 @@ CREATE TABLE IF NOT EXISTS messaggi_visti (
   giorno TEXT NOT NULL,
   PRIMARY KEY (messaggio, installazione)
 );
+
+-- Database gia' creati prima della colonna persona (0.11.214):
+-- ALTER TABLE attivi ADD COLUMN persona TEXT;
+-- ALTER TABLE installazioni ADD COLUMN persona TEXT;

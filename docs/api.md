@@ -138,3 +138,16 @@ Voci nuove di `GET/PUT /api/v1/engine-settings` (solo di Aurora, non di JTDX; tu
 - Voce `UdpDestinations` di `GET/PUT /api/v1/engine-settings` (viva, ha effetto subito): testo JSON con l'elenco dei destinatari UDP (al piu' 16). Ogni elemento: `name` (al piu' 40 caratteri), `host` (IP o `localhost`), `port` (1-65535), `enabled`, `wsjtx` (flusso binario WSJT-X), `loggedAdif` (Logged ADIF, tipo 12), `adif` (ADIF testuale su UDP), `n1mm` (XML `contactinfo` di N1MM), `multicast` (l'indirizzo deve essere un gruppo; un gruppo senza `multicast` si rifiuta), `ttl` (1-255), `iface` (indirizzo IPv4 dell'interfaccia di uscita o vuoto). Campi mancanti = valori di base; campi sconosciuti o valori fuori regola = `400 bad_setting`. Valori iniziali da `AURORA_UDP_FORWARD` (oltre il primo) e `AURORA_EXPORT_UDP`.
 - Evento WebSocket `highlight_callsign`: `call`, `background` e `foreground` (`#rrggbb` o `null`; entrambi `null` = togli), `last_only`. Arriva quando un programma collegato manda Highlight Callsign (tipo 13) con «accetta le richieste UDP» acceso; le evidenziazioni in vigore si mandano anche subito dopo lo stato a chi si collega.
 - Evento WebSocket `clear_decodes`: `window` (0 attivita' di banda, 1 frequenza Rx, 2 entrambe). Arriva con il Clear (tipo 3) in ingresso; la pagina svuota le liste come «Cancella».
+
+## Servizio dei rapporti: `POST /v1/attivo` (Worker `servizi/rapporti`)
+
+Segnale «installazione aperta oggi», una volta al giorno, solo con «Invia statistiche» acceso (`count_active` di `GET/PUT /api/v1/reports`, acceso di fabbrica). Corpo JSON:
+
+| Campo | Obbligatorio | Contenuto |
+|---|---|---|
+| `installazione` | si' | UUID casuale dell'installazione (36 caratteri) |
+| `versione` | si' | versione di Aurora |
+| `sistema` | si' | sistema operativo |
+| `persona` | no (dalla 0.11.214) | SHA-256 in esadecimale (64 caratteri) di un testo fisso del progetto piu' il nominativo di base, calcolato sul PC (`rapporti::codice_persona`); assente se il nominativo e' vuoto o non valido. Il nominativo non si manda mai |
+
+Il servizio ignora `persona` se non sono 64 caratteri esadecimali o se manca il segreto `PERSONA_SEGRETO`; altrimenti salva `HMAC-SHA256(PERSONA_SEGRETO, persona)` troncato a 32 caratteri nelle colonne `persona` di `attivi` e `installazioni`. I client vecchi senza il campo funzionano come prima. `GET /v1/attivi` conta le persone con `COUNT(DISTINCT COALESCE(persona, installazione))` (`oggi`, `settimana`, `mese`, `totale`); `installazioni` e' il numero di installazioni di sempre.

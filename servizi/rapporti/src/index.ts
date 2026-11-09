@@ -3,7 +3,8 @@
  *
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
- * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione e sistema (una riga al giorno)
+ * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema e, facoltativo, il codice della persona
+ *   (SHA-256 del nominativo fatto sul PC, salvato solo dopo un HMAC con PERSONA_SEGRETO); una riga al giorno
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
  * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
  * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
@@ -23,6 +24,8 @@ interface Env {
   CHIAVE_INGRESSO: string;
   GIORNI_CONSERVAZIONE: string;
   ADMIN_TOKEN?: string;
+  /** Segreto dell'HMAC che trasforma il codice della persona prima di salvarlo (senza segreto il codice si ignora). */
+  PERSONA_SEGRETO?: string;
   /** Workers AI: traduce i messaggi dell'autore nelle altre lingue (solo con il segreto). */
   AI: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
 }
@@ -200,6 +203,17 @@ async function pulizia(env: Env): Promise<void> {
   // l'elenco `installazioni` (totale di sempre) non si cancella mai
 }
 
+/**
+ * Il codice della persona (SHA-256 del nominativo calcolato sul PC, 64 caratteri esadecimali): prima di salvarlo diventa HMAC-SHA256
+ * con `PERSONA_SEGRETO`, troncato a 32 caratteri, cosi' nel database non c'e' nemmeno il codice mandato. Null se manca o non e' valido.
+ */
+async function persona(v: unknown, segreto: string | undefined): Promise<string | null> {
+  if (typeof v !== 'string' || !/^[0-9a-f]{64}$/.test(v) || !segreto) return null;
+  const chiave = await crypto.subtle.importKey('raw', new TextEncoder().encode(segreto), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const firma = new Uint8Array(await crypto.subtle.sign('HMAC', chiave, new TextEncoder().encode(v)));
+  return [...firma].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+}
+
 /** Una installazione dice che oggi e' aperta: una sola riga al giorno, la versione e il sistema si aggiornano. */
 async function attivo(req: Request, env: Env): Promise<Response> {
   const corpo = await leggiCorpo(req, 2048);
@@ -212,13 +226,15 @@ async function attivo(req: Request, env: Env): Promise<Response> {
   }
   const id = corto(dati.installazione, 36);
   if (!/^[0-9a-f-]{36}$/.test(id)) return risposta(400, { error: 'installazione' });
-  await env.INDICE.prepare('INSERT INTO attivi (giorno, installazione, versione, sistema) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione, sistema = excluded.sistema')
-    .bind(oggi(), id, corto(dati.versione, 20), corto(dati.sistema, 60))
+  // facoltativo (dalla 0.11.214): i client vecchi non lo mandano e restano contati per installazione
+  const chi = await persona(dati.persona, env.PERSONA_SEGRETO);
+  await env.INDICE.prepare('INSERT INTO attivi (giorno, installazione, versione, sistema, persona) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione, sistema = excluded.sistema, persona = COALESCE(excluded.persona, attivi.persona)')
+    .bind(oggi(), id, corto(dati.versione, 20), corto(dati.sistema, 60), chi)
     .run();
   // la nazione la dice Cloudflare (`cf.country`, sigla di due lettere): ne' l'indirizzo IP ne' la citta' si salvano
   const paese = corto((req as Request & { cf?: { country?: string } }).cf?.country, 2).toUpperCase() || 'XX';
-  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese) VALUES (?1, ?2, ?2, ?3) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese')
-    .bind(id, oggi(), paese)
+  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese, persona) VALUES (?1, ?2, ?2, ?3, ?4) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese, persona = COALESCE(excluded.persona, installazioni.persona)')
+    .bind(id, oggi(), paese, chi)
     .run();
   return risposta(200, { ok: true });
 }
@@ -226,16 +242,18 @@ async function attivo(req: Request, env: Env): Promise<Response> {
 /** Quante installazioni sono attive: oggi, ultimi 7 e 30 giorni, per versione e per giorno. */
 async function attivi(env: Env): Promise<Response> {
   const giorni = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
-  const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
+  // le persone, non i PC: chi ha il nominativo conta una volta sola anche con piu' installazioni
+  const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT COALESCE(persona, installazione)) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
   const perGiorno = await env.INDICE.prepare('SELECT giorno, COUNT(*) AS n FROM attivi WHERE giorno >= ?1 GROUP BY giorno ORDER BY giorno DESC').bind(giorni(30)).all();
   const perVersione = await env.INDICE.prepare('SELECT versione, COUNT(DISTINCT installazione) AS n FROM attivi WHERE giorno >= ?1 GROUP BY versione ORDER BY n DESC').bind(giorni(7)).all();
   // il totale di sempre: tutte le installazioni viste dall'inizio
-  const totale = (await env.INDICE.prepare('SELECT COUNT(*) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
+  const totale = (await env.INDICE.prepare('SELECT COUNT(DISTINCT COALESCE(persona, installazione)) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
+  const installazioniTotali = (await env.INDICE.prepare('SELECT COUNT(*) AS n FROM installazioni').first<{ n: number }>())?.n ?? 0;
   // giorni oltre i 90 di `attivi`: dallo storico
   const storico = await env.INDICE.prepare('SELECT giorno, SUM(attivi) AS n FROM storico GROUP BY giorno ORDER BY giorno DESC').all();
   const nuove = await env.INDICE.prepare('SELECT prima AS giorno, COUNT(*) AS n FROM installazioni WHERE prima >= ?1 GROUP BY prima ORDER BY prima DESC').bind(giorni(30)).all();
   const perPaese = await env.INDICE.prepare("SELECT COALESCE(paese, 'XX') AS paese, COUNT(*) AS n FROM installazioni GROUP BY paese ORDER BY n DESC").all();
-  return risposta(200, { totale, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
+  return risposta(200, { totale, installazioni: installazioniTotali, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
 }
 
 const CORS_ADMIN: Record<string, string> = {

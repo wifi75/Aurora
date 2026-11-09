@@ -260,6 +260,37 @@ pub fn e_nominativo(p: &str) -> bool {
         && prefisso.iter().any(u8::is_ascii_uppercase)
 }
 
+/// Il nominativo di base, per contare le persone e non i PC: maiuscolo, senza `/P`, `/M`, `/MM`, `/QRP`, `/A` ne' prefissi di
+/// portatile (`EA/IU3ABC` -> `IU3ABC`). `None` se vuoto o non valido.
+pub fn nominativo_base(nominativo: &str) -> Option<String> {
+    let su = nominativo.trim().to_ascii_uppercase();
+    su.split('/').filter(|p| e_nominativo(p)).max_by_key(|p| p.len()).map(str::to_string)
+}
+
+/// Fisso del progetto davanti al nominativo: lo stesso nominativo da' lo stesso codice su ogni PC, ma il codice non e' quello di altri servizi.
+const SALE_PERSONA: &str = "aurora-persona-v1:";
+
+/// Il codice della persona: SHA-256 di `SALE_PERSONA` + nominativo di base, in esadecimale (64 caratteri). Il nominativo non lascia il PC.
+pub fn codice_persona(nominativo: &str) -> Option<String> {
+    use sha2::{Digest, Sha256};
+    let base = nominativo_base(nominativo)?;
+    let hash = Sha256::digest(format!("{SALE_PERSONA}{base}").as_bytes());
+    Some(hash.iter().map(|b| format!("{b:02x}")).collect())
+}
+
+/// Il corpo del segnale «attivo», o `None` se l'utente l'ha spento: codice casuale dell'installazione, versione, sistema e, se c'e' un
+/// nominativo valido, il codice della persona (mai il nominativo).
+pub fn corpo_attivo(acceso: bool, installazione: &str, nominativo: &str) -> Option<String> {
+    if !acceso {
+        return None;
+    }
+    let mut corpo = json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "sistema": sistema() });
+    if let Some(persona) = codice_persona(nominativo) {
+        corpo["persona"] = json!(persona);
+    }
+    Some(corpo.to_string())
+}
+
 fn e_ipv4(p: &str) -> bool {
     let parti: Vec<&str> = p.split('.').collect();
     parti.len() == 4 && parti.iter().all(|x| !x.is_empty() && x.len() <= 3 && x.bytes().all(|c| c.is_ascii_digit()) && x.parse::<u16>().is_ok_and(|n| n <= 255))
@@ -414,6 +445,9 @@ pub struct Contesto {
     pub audio_out: String,
     #[serde(skip)]
     pub noti: Vec<String>,
+    /// Il nominativo della stazione: serve solo a calcolare in locale il codice della persona, non si manda.
+    #[serde(skip)]
+    pub nominativo: String,
 }
 
 pub type FonteContesto = Arc<dyn Fn() -> Contesto + Send + Sync>;
@@ -560,7 +594,10 @@ impl Rapporti {
         if std::fs::read_to_string(&file).is_ok_and(|g| g.trim() == oggi) {
             return;
         }
-        let corpo = json!({ "installazione": id, "versione": aurora_core::version::APP_VERSION, "sistema": sistema() }).to_string();
+        // il nominativo arriva con la fonte del contesto, impostata dopo l'avvio del server: fino ad allora si aspetta
+        let Some(fonte) = self.contesto.lock().ok().and_then(|c| c.clone()) else { return };
+        let nominativo = fonte().nominativo;
+        let Some(corpo) = corpo_attivo(acceso, &id, &nominativo) else { return };
         let inviato = agente(TIMEOUT)
             .post(&format!("{INDIRIZZO}/v1/attivo"))
             .header("X-Aurora-Key", CHIAVE_INGRESSO)
@@ -1032,6 +1069,36 @@ fn scrivi_json<T: Serialize>(path: &Path, valore: &T) {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn il_nominativo_si_normalizza_prima_del_codice() {
+        assert_eq!(super::nominativo_base("IU3ABC").as_deref(), Some("IU3ABC"));
+        assert_eq!(super::nominativo_base("iu3abc/p").as_deref(), Some("IU3ABC"));
+        assert_eq!(super::nominativo_base("EA/IU3ABC").as_deref(), Some("IU3ABC"));
+        assert_eq!(super::nominativo_base("IU3ABC/MM").as_deref(), Some("IU3ABC"));
+        assert_eq!(super::nominativo_base("IU3ABC/QRP").as_deref(), Some("IU3ABC"));
+        assert_eq!(super::nominativo_base(""), None);
+        assert_eq!(super::codice_persona(""), None);
+    }
+
+    #[test]
+    fn lo_stesso_nominativo_da_sempre_lo_stesso_codice() {
+        let a = super::codice_persona("IU3ABC").unwrap_or_default();
+        assert_eq!(a.len(), 64);
+        assert!(a.bytes().all(|c| c.is_ascii_hexdigit()));
+        assert_eq!(super::codice_persona("iu3abc/p").as_deref(), Some(a.as_str()));
+        assert_eq!(super::codice_persona("EA/IU3ABC").as_deref(), Some(a.as_str()));
+        assert_ne!(super::codice_persona("IU3ABD").as_deref(), Some(a.as_str()));
+    }
+
+    #[test]
+    fn il_segnale_non_contiene_il_nominativo_e_spento_non_parte() {
+        let corpo = super::corpo_attivo(true, "abc", "IU3ABC").unwrap_or_default();
+        assert!(!corpo.contains("IU3ABC"));
+        assert!(corpo.contains("\"persona\""));
+        assert!(!super::corpo_attivo(true, "abc", "").unwrap_or_default().contains("persona"));
+        assert_eq!(super::corpo_attivo(false, "abc", "IU3ABC"), None);
+    }
 
     #[test]
     fn il_riassunto_del_crash_va_in_un_intestazione_e_si_ferma_a_1500_caratteri() {

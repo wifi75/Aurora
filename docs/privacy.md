@@ -70,15 +70,22 @@ l'indirizzo IP del mittente: lo usa solo per limitare le richieste.
 
 Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Serve
 solo a sapere quante persone usano Aurora e con quale versione. È **acceso di fabbrica** e si spegne in Impostazioni → Assistenza
-→ «Conta questa installazione tra quelle attive».
+→ «Invia statistiche».
 
 **Cosa contiene**: l'identificativo casuale dell'installazione (lo stesso dei rapporti, rigenerabile), la versione di Aurora e
-quella di Windows, il giorno. **Niente altro**: nessun nominativo, locatore, radio, log o impostazione. Il servizio non registra
-l'indirizzo IP. Le righe restano 90 giorni, poi la pulizia notturna le cancella.
+quella di Windows, il giorno e, dalla 0.11.214, se hai impostato il nominativo, un **codice ricavato dal nominativo**. **Niente
+altro**: il nominativo, il locatore, la radio, il log e le impostazioni non si mandano. Il servizio non registra l'indirizzo IP.
+Le righe restano 90 giorni, poi la pulizia notturna le cancella.
+
+**Il codice ricavato dal nominativo** serve a contare le persone e non i PC (chi usa Aurora su due computer conta una volta).
+Aurora lo calcola sul tuo PC: prende il nominativo di base (maiuscolo, senza /P, /M, /MM, /QRP, /A ne' prefissi come EA/) e ne fa
+l'impronta SHA-256 insieme a un testo fisso del progetto. **Il nominativo non lascia mai il PC.** Il servizio, prima di salvarlo,
+trasforma di nuovo il codice con una chiave segreta (HMAC-SHA256) e ne tiene 32 caratteri: nel database non c'e' nemmeno il codice
+mandato. Senza nominativo impostato si manda solo il codice casuale, come prima.
 
 **Storico delle installazioni**: per sapere quante installazioni hanno usato Aurora dall'inizio, il servizio tiene per sempre un
 elenco con il solo identificativo casuale, il primo e l'ultimo giorno in cui l'installazione si è fatta viva e la **nazione**
-(la sigla di due lettere, per esempio IT, che Cloudflare ricava dalla connessione; niente città, regione o indirizzo IP), e i conteggi di ogni giorno per versione e sistema (solo numeri, senza identificativi). Rigenerando
+(la sigla di due lettere, per esempio IT, che Cloudflare ricava dalla connessione; niente città, regione o indirizzo IP), il codice della persona trasformato come sopra (se c'e'), e i conteggi di ogni giorno per versione e sistema (solo numeri, senza identificativi). Rigenerando
 l'identificativo in Impostazioni → Assistenza si conta come un'installazione nuova.
 
 ## Pacchetto per l'assistenza

@@ -2456,7 +2456,9 @@ pub async fn run(
             let radio = cat.config();
             let audio = state.audio.as_ref().map(|a| a.devices());
             let mut noti: Vec<String> = Vec::new();
+            let mut nominativo = String::new();
             if let Some(s) = state.current_status() {
+                nominativo = s.de_call.clone();
                 noti.push(s.de_call);
                 noti.push(s.de_grid);
             }
@@ -2470,6 +2472,7 @@ pub async fn run(
                 audio_in: audio.as_ref().and_then(|a| a.input_in_use.clone()).or_else(|| config.audio_device.clone()).unwrap_or_default(),
                 audio_out: audio.as_ref().and_then(|a| a.output_in_use.clone()).or_else(|| config.audio_out_device.clone()).unwrap_or_default(),
                 noti,
+                nominativo,
             }
         }));
     }

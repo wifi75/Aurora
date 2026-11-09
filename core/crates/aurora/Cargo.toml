@@ -51,6 +51,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 zip = { version = "9.3.0", default-features = false, features = ["deflate"] }
 ureq = { version = "3.5.0", default-features = false, features = ["rustls"] }
+sha2 = { workspace = true }
 getrandom = { workspace = true }
 
 # l'ora locale del PC per la fascia oraria dell'automazione
