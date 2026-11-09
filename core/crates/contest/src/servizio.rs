@@ -233,6 +233,8 @@ pub struct ContestService {
     paese: Mutex<Option<punteggio::PaeseFn>>,
     /// Ricerca del continente (cty.dat) per i punti `per-continente`.
     continente: Mutex<Option<punteggio::PaeseFn>>,
+    /// Il QSO in corso e' partito dalla pagina Contest (doppio clic o CQ contest): solo questi entrano nel log del contest.
+    da_contest: std::sync::atomic::AtomicBool,
 }
 
 fn ora_ms() -> i64 {
@@ -259,6 +261,7 @@ impl ContestService {
             versione: versione.to_string(),
             paese: Mutex::new(None),
             continente: Mutex::new(None),
+            da_contest: std::sync::atomic::AtomicBool::new(false),
             dentro: Mutex::new(Dentro { regole, errori_regole, stato, log: Vec::new(), log_di: None, recenti: Vec::new(), non_contest: Vec::new(), sentiti: Vec::new(), radio: (String::new(), String::new()), consiglio: None }),
         });
         if let Ok(mut d) = s.dentro.lock() {
@@ -320,6 +323,15 @@ impl ContestService {
         }
         d.log = std::fs::read_to_string(self.file_log(&id, anno)).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
         d.log_di = Some((id, anno));
+        // i QSO finiti nel log del contest prima della 0.11.215 anche fuori dall'orario della gara: si tolgono (restano nel log normale)
+        if let Some(f) = Self::finestra(d, &r, ora_ms()) {
+            let prima = d.log.len();
+            d.log.retain(|q| q.time_ms >= f.inizio_ms && q.time_ms < f.fine_ms);
+            if d.log.len() != prima {
+                tracing::info!("contest: tolti {} QSO fuori dall'orario della gara dal log del contest", prima - d.log.len());
+                self.salva_log(d);
+            }
+        }
     }
 
     fn salva_log(&self, d: &Dentro) {
@@ -439,10 +451,30 @@ impl ContestService {
     }
 
     /// Un QSO registrato nel log di Aurora: se c'e' un contest attivo entra anche nel suo log.
+    /// Da quale pagina e' partita l'ultima chiamata o l'ultimo CQ: `true` = pagina Contest.
+    pub fn imposta_origine(&self, contest: bool) {
+        self.da_contest.store(contest, std::sync::atomic::Ordering::Relaxed);
+    }
+
     pub fn registra(&self, q: &QsoRecord) -> Option<u32> {
+        // un QSO fatto dalla pagina Stazione resta solo nel log normale, anche con il contest acceso
+        if !self.da_contest.load(std::sync::atomic::Ordering::Relaxed) {
+            return None;
+        }
         let mut d = self.lock();
-        d.stato.attivo.as_ref()?;
+        let id = d.stato.attivo.clone()?;
+        // fuori dalla finestra della gara (prima dell'inizio o dopo la fine) il QSO resta solo nel log normale: non conta per il contest
+        let time_ms = if q.time_on_unix_ms > 0 { q.time_on_unix_ms as i64 } else { ora_ms() };
+        if let Some(r) = d.regole.iter().find(|r| r.id() == id).cloned()
+            && let Some(f) = Self::finestra(&d, &r, time_ms)
+            && (time_ms < f.inizio_ms || time_ms >= f.fine_ms)
+        {
+            return None;
+        }
         self.carica_log(&mut d);
+        // chi ha risposto con un rapporto invece dello scambio del contest (ultimi 30 minuti) non fa la gara: resta nel log, non valido e 0 punti
+        let call_su = q.call.to_ascii_uppercase();
+        let non_contest = d.non_contest.iter().any(|(c, t)| *c == call_su && ora_ms() - *t < 30 * 60_000);
         let n = d.log.iter().map(|x| x.n).max().unwrap_or(0) + 1;
         let time_ms = if q.time_on_unix_ms > 0 { q.time_on_unix_ms as i64 } else { ora_ms() };
         d.log.push(ContestQso {
@@ -457,7 +489,7 @@ impl ContestService {
             rst_rcvd: q.rst_rcvd.clone(),
             exch_sent: q.exch_sent.clone(),
             exch_rcvd: q.exch_rcvd.clone(),
-            stato: Stato::Valido,
+            stato: if non_contest { Stato::Errore } else { Stato::Valido },
             modificato: false,
         });
         d.recenti.push((q.call.to_ascii_uppercase(), n, ora_ms()));

@@ -525,6 +525,13 @@ struct ReplyBody {
     decode_id: u64,
 }
 
+/// La pagina Contest manda `X-Aurora-Origine: contest` con le chiamate e il CQ: solo quei QSO entrano nel log del contest.
+fn segna_origine(state: &AppState, headers: &HeaderMap) {
+    if let Some(c) = &state.contest {
+        c.imposta_origine(headers.get("x-aurora-origine").is_some_and(|v| v.as_bytes().eq_ignore_ascii_case(b"contest")));
+    }
+}
+
 #[utoipa::path(post, path = "/api/v1/commands/reply", responses((status = 200, description = "Risposta inviata al motore"), (status = 403, description = "Trasmissione non abilitata (tx_disabled) o non consentita da questa via"), (status = 404, description = "Decode sconosciuto")))]
 async fn reply(
     State(state): State<AppState>,
@@ -532,6 +539,7 @@ async fn reply(
     headers: HeaderMap,
     Json(body): Json<ReplyBody>,
 ) -> Result<Json<Value>, ApiError> {
+    segna_origine(&state, &headers);
     if !state.policy.live_tx() {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"));
     }
@@ -551,6 +559,7 @@ async fn queue_reply(
     headers: HeaderMap,
     Json(body): Json<ReplyBody>,
 ) -> Result<Json<Value>, ApiError> {
+    segna_origine(&state, &headers);
     check_tx_allowed(&state, &headers)?;
     if !state.knows_decode(body.decode_id) {
         return Err(ApiError::new(StatusCode::NOT_FOUND, "unknown_decode"));
@@ -795,6 +804,7 @@ struct CqBody {
 
 #[utoipa::path(post, path = "/api/v1/commands/cq", responses((status = 200, description = "CQ chiesto a JTDX"), (status = 400, description = "Modificatore non valido"), (status = 403, description = "Trasmissione non abilitata o non consentita da questa via")))]
 async fn call_cq(State(state): State<AppState>, _: Authed, headers: HeaderMap, body: Option<Json<CqBody>>) -> Result<Json<Value>, ApiError> {
+    segna_origine(&state, &headers);
     let modifier = body.map(|Json(b)| b.modifier).unwrap_or_default().trim().to_uppercase();
     if modifier.len() > 4 || !modifier.chars().all(|c| c.is_ascii_uppercase()) {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_modifier"));

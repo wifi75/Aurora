@@ -59,8 +59,11 @@ export async function postHalt(): Promise<void> {
   await request('/commands/halt-tx', { method: 'POST' });
 }
 
-export async function postReply(decodeId: number): Promise<void> {
-  await request('/commands/reply', jsonInit({ decode_id: decodeId }));
+/** Le chiamate e il CQ dalla pagina Contest lo dicono al motore: solo quei QSO entrano nel log del contest. */
+const fromContest = (init: RequestInit, contest: boolean): RequestInit => (contest ? { ...init, headers: { ...(init.headers as Record<string, string>), 'x-aurora-origine': 'contest' } } : init);
+
+export async function postReply(decodeId: number, contest = false): Promise<void> {
+  await request('/commands/reply', fromContest(jsonInit({ decode_id: decodeId }), contest));
 }
 
 /** Tasto destro su una stazione: in coda per il prossimo QSO (o subito, se non ce n'e' uno in corso); di nuovo la toglie. */
@@ -160,8 +163,8 @@ export async function postLogQso(): Promise<void> {
   await request('/commands/log-qso', { method: 'POST' });
 }
 
-export async function postCq(modifier: string): Promise<void> {
-  await request('/commands/cq', jsonInit({ modifier }));
+export async function postCq(modifier: string, contest = false): Promise<void> {
+  await request('/commands/cq', fromContest(jsonInit({ modifier }), contest));
 }
 
 /** Sceglie a mano il messaggio Tx (1-6) da cui il motore parte, come il pallino accanto ai messaggi. */
