@@ -279,3 +279,7 @@ d3-array 3.2.4, d3-geo 3.1.1, internmap 2.0.3, topojson-client 3.1.0, world-atla
 leaflet 1.9.4
 
 </details>
+
+## Voce degli avvisi (app/public/voice)
+
+Le frasi parlate degli avvisi sono generate con **Kokoro** (modello Kokoro-82M, licenza Apache 2.0, https://huggingface.co/hexgrad/Kokoro-82M) tramite kokoro-onnx (licenza MIT), con lo script `scripts/genera-voce-kokoro.py`. Voci: if_sara, af_heart, ff_siwis, ef_dora, pf_dora. Il modello non e' incluso in Aurora: ci sono solo i file audio generati.

@@ -173,7 +173,7 @@ export function hasSound(id: string | null | undefined): id is string {
 
 export function soundName(id: string, lang: Lang): string {
   const s = BY_ID.get(id);
-  if (id === 'voice') return pick(['Voce (Ava)', 'Voice (Ava)', 'Stimme (Ava)', 'Voix (Ava)', 'Voz (Ava)', 'Voz (Ava)'], lang);
+  if (id === 'voice') return pick(['Voce', 'Voice', 'Stimme', 'Voix', 'Voz', 'Voz'], lang);
   return s ? pick(s.name, lang) : id.startsWith('file:') ? id.slice(5) : id;
 }
 

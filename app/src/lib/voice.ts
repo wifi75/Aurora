@@ -79,10 +79,10 @@ const base = (): string => import.meta.env.BASE_URL ?? '/';
 
 /** I pezzi da dire: la frase della funzione e il nominativo lettera per lettera (alfabeto fonetico, uguale in tutte le lingue). */
 export function voiceParts(event: SoundEvent, call: string | undefined, lang: string): string[] {
-  const parts = [`${base()}voice/${lang}/${event}.mp3`];
+  const parts = [`${base()}voice/${lang}/${event}.ogg`];
   for (const ch of (call ?? '').toUpperCase()) {
-    if (/[A-Z0-9]/.test(ch)) parts.push(`${base()}voice/nato/${ch}.mp3`);
-    else if (ch === '/') parts.push(`${base()}voice/nato/slash.mp3`);
+    if (/[A-Z0-9]/.test(ch)) parts.push(`${base()}voice/nato/${ch}.ogg`);
+    else if (ch === '/') parts.push(`${base()}voice/nato/slash.ogg`);
   }
   return parts;
 }
