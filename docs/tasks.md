@@ -58,3 +58,4 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 # Richieste degli utenti (2026-11-09)
 
 - **Nuovo stato nelle Automazioni** (Luc): oggi solo pillole di Attivita' di banda; il motore non conosce lo stato. Stato anche dal log interno di Aurora (oggi solo Log4OM).
+- **Confermati e non confermati** (Luc): come GridTracker, distinguere «lavorato e confermato» da «lavorato, non confermato» (LoTW, QSL di carta nell'ADIF): colori piu' pieni per i confermati e, a scelta, un paese lavorato ma non confermato che conta ancora come «nuovo DXCC» nei filtri e nelle Automazioni. Il log ha gia' la conferma (`confirmed`, colonne `qslrcvd`/`lotw*` di Log4OM, `QSL_RCVD`/`LOTW_QSL_RCVD` dell'ADIF).
